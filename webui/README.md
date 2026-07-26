@@ -298,6 +298,9 @@ available through expandable guidance.
   payload resolves 46 conditions to 53 source rows and finds zero exact typed
   MissionRuntime consumers for those operands. Source identity is debug
   context, not a mission edge.
+  Task labels also expose an exact typed
+  `CheckLevelScriptTaskFinished(scene, script, task)` consumer if one appears;
+  the current receiver payload has zero.
   Where exact level/script/task keys agree, the same rows also show
   `ScriptTaskExtraInfoTable` title keys and SubGame main-task ids. The current
   corpus has 13 task-info joins and ten SubGame task joins; every matched

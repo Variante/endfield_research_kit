@@ -1845,6 +1845,11 @@ gameplay-video OCR/audio workflow.
   same-receiver Story keys, `3` same-level MissionArea rows, and `1`
   same-level SpawnerConfig. Exact MissionRuntime indexes for those operand
   families find `0` typed consumers, so the source annotations add no owner.
+  The report also indexes exact
+  `CheckLevelScriptTaskFinished(scene, script, task)` consumers. The current
+  MissionRuntime corpus has two such conditions globally, but neither matches
+  any of the `31` receiver tasks, so schema v5 publishes `0` typed task
+  consumers.
   Exact level/script/task joins add
   display/tracking metadata for `13` tasks and SubGame main-task bindings for
   `10`; all ten SubGame rows have null `dungeonMissionId`. The `82` distinct

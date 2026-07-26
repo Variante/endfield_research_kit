@@ -2441,6 +2441,7 @@
                 const taskSources = [
                   task.taskExtraInfo?.taskTitleKey || "",
                   ...(task.subGameMainTaskBindings || []).map((binding) => `SubGame ${binding.subGameId || "?"}`),
+                  ...(task.missionRuntimeTaskConsumers || []).map((consumer) => `${t("taskMissionConsumers")} ${consumer.missionId || "?"}/${consumer.questId || "?"}`),
                 ].filter(Boolean);
                 const taskLabel = `${t("taskConditionEvidence")} · ${task.taskKey} / objective ${conditionRow.objectiveEnum ?? "?"}${taskSources.length ? ` · ${taskSources.join(" · ")}` : ""}`;
                 return `<div><span>${esc(taskLabel)}</span><i aria-hidden="true">→</i><code>${esc(condition.type || "unresolved")}</code><b>${esc(condition.conditionUnionTag || "")}</b>${detail ? `<small>${esc(detail)}</small>` : ""}</div>`;

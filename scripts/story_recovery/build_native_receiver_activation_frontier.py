@@ -60,7 +60,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v4"
+SCHEMA = "nativeReceiverActivationFrontier.v5"
 DEFAULT_PIPELINE_INDEX = ROOT / "webui" / "data" / "mission_pipeline" / "index.json"
 DEFAULT_PIPELINE_MISSION_ROOT = (
     ROOT / "webui" / "data" / "mission_pipeline" / "missions"
@@ -345,7 +345,7 @@ def mission_runtime_operand_consumers_from_payloads(
     """Index typed MissionRuntime condition operands by exact authored key."""
     indexes: dict[str, dict[tuple[Any, ...], list[dict[str, Any]]]] = {
         kind: defaultdict(list)
-        for kind in ("dialog", "area", "spawner", "script", "entity")
+        for kind in ("dialog", "area", "spawner", "script", "entity", "task")
     }
     for mission_id, raw, source_file in payloads:
         for row in decode_mission_script_conditions(raw):
@@ -427,6 +427,36 @@ def mission_runtime_operand_consumers_from_payloads(
                     and isinstance(level_id, str)
                 ):
                     indexes["spawner"][(level_id, str(spawner_id))].append({
+                        "missionId": mission_id,
+                        "questId": quest_id,
+                        "conditionType": condition_type,
+                        "sourceFile": source_file,
+                    })
+            elif condition_type == "CheckLevelScriptTaskFinished":
+                level_id = _unwrap_const(
+                    node.get(
+                        "_sceneId",
+                        node.get(
+                            "sceneId",
+                            node.get("_levelId", node.get("levelId")),
+                        ),
+                    )
+                )
+                script_value = _unwrap_const(
+                    node.get("_scriptId", node.get("scriptId"))
+                )
+                if isinstance(script_value, dict):
+                    script_value = script_value.get("scriptId")
+                task_id = _unwrap_const(
+                    node.get("_taskId", node.get("taskId"))
+                )
+                level_text = safe_text(level_id)
+                script_text = safe_text(script_value)
+                task_text = safe_text(task_id)
+                if level_text and script_text and task_text:
+                    indexes["task"][
+                        (level_text, script_text, task_text)
+                    ].append({
                         "missionId": mission_id,
                         "questId": quest_id,
                         "conditionType": condition_type,
@@ -521,6 +551,12 @@ def annotate_task_condition_operands(
     }
     story_key_set = set(story_keys)
     for task in (decoded_task_map or {}).get("tasks") or []:
+        task_consumers = mission_consumers["task"].get(
+            (level_id, script_id, safe_text(task.get("taskKey"))),
+            [],
+        )
+        if task_consumers:
+            task["missionRuntimeTaskConsumers"] = task_consumers
         for condition_row in task.get("conditions") or []:
             condition = condition_row.get("condition") or {}
             sources = []
@@ -950,6 +986,7 @@ def build_report(
     task_mission_consumer_types: Counter[str] = Counter()
     task_conditions_with_operand_sources = 0
     task_conditions_with_mission_consumers = 0
+    tasks_with_mission_consumers = 0
 
     for receiver in receiver_script_rows(index_payload):
         level_id = receiver["levelId"]
@@ -1005,6 +1042,9 @@ def build_report(
             spawner_root=spawner_root,
         )
         for task in (decoded_task_map or {}).get("tasks") or []:
+            tasks_with_mission_consumers += bool(
+                task.get("missionRuntimeTaskConsumers")
+            )
             for condition_row in task.get("conditions") or []:
                 condition = condition_row.get("condition") or {}
                 condition_type = safe_text(condition.get("type"))
@@ -1149,6 +1189,12 @@ def build_report(
                 "a mission-side cross-reference; source identity alone proves "
                 "no mission ownership or execution order."
             ),
+            "taskConsumerBoundary": (
+                "An exact CheckLevelScriptTaskFinished tuple would prove that "
+                "one MissionRuntime objective waits on this task. It would be a "
+                "mission-side completion dependency, not proof that the task "
+                "activates or owns any Story playback in the receiver script."
+            ),
         },
         "counts": {
             "receiverNodes": sum(row["receiverNodeCount"] for row in rows),
@@ -1213,6 +1259,9 @@ def build_report(
             ),
             "decodedTaskMissionRuntimeOperandConsumerTypes": dict(
                 sorted(task_mission_consumer_types.items())
+            ),
+            "decodedTasksWithMissionRuntimeTaskConsumer": (
+                tasks_with_mission_consumers
             ),
             "decodedTasksWithExtraInfo": sum(
                 bool(task.get("taskExtraInfo"))
@@ -1390,6 +1439,10 @@ def markdown_report(payload: dict[str, Any]) -> str:
         (
             "- Conditions with an exact typed MissionRuntime operand consumer: "
             f"`{counts.get('decodedTaskConditionsWithMissionRuntimeOperandConsumer')}`"
+        ),
+        (
+            "- Tasks with an exact `CheckLevelScriptTaskFinished` consumer: "
+            f"`{counts.get('decodedTasksWithMissionRuntimeTaskConsumer')}`"
         ),
         (
             "- Tasks with exact ScriptTaskExtraInfo / SubGame main-task rows: "
