@@ -2530,6 +2530,35 @@ zero mission graph edges and classifies the apparent nested join as
 reflection construction, unexported data, future IFix, and future builds remain
 outside the bounded result.
 
+### Implicit current-mission action parameters do not bridge LevelScript
+
+The action parameter system exposes a real implicit identity source that field
+co-carrier scans would otherwise miss. Installed metadata assigns
+`ParamSource.CURRENT_MISSION_ID=1004`; `Param<T>` stores `paramSource` and an
+action context and exposes `get_isCurrentMissionId`. This made a
+LevelScript Story action inheriting mission identity from its execution context
+a plausible candidate even when no literal `missionId` field was serialized.
+
+The complete authored census closes that route. All 490 current
+MissionRuntime assets contain 18 `paramSource=1004` occurrences across six
+missions, and every one is the `_missionId` input of a self-mission property
+condition: 17 `CheckMissionIntProperty` rows and one
+`CheckMissionBoolProperty` row. None is a Story playback operand. Across all
+4,512 raw LevelScript files and 74,839 decoded UID records, the little-endian
+value 1004 occurs zero times; validated Param tails and embedded JSON parameter
+blobs likewise contain zero current-mission sources.
+
+This proves the implicit context feature exists but is not used as a current
+mission-to-LevelScript or mission-to-Story carrier. In MissionRuntime, the
+mission owner is already explicit; in LevelScript, the authored source is
+absent. The installed 30-target Gameplay IFix replaces none of the reviewed
+ActionContext/Param/MissionRuntime paths. The fail-closed report is
+`reports/story/recovery/param_source_mission_context_audit.{json,md}` and its
+classification is
+`implicit_context_only_missionruntime_no_levelscript_story_edge`. Server-only
+action graphs, opaque runtime-created Params, reflection/XLua construction,
+future IFix, and future builds remain outside the bound.
+
 ### AirWall state gates recover exact non-owning radio contexts
 
 A broader exact runtime-type census found one productive non-protobuf carrier:
@@ -3088,6 +3117,12 @@ Current main-story priorities:
    direct `m_scriptPtr` setters belong to LevelScript event registration.
    Reopen only when the binary, metadata, authored property shape, or IFix
    changes.
+   The implicit action-context shortcut is closed as well:
+   `ParamSource.CURRENT_MISSION_ID=1004` appears only in 18 MissionRuntime
+   self-property checks across six missions and in zero of 4,512 LevelScript
+   files / 74,839 UID records. It adds no Story or order edge. Do not revisit
+   current-mission Param inheritance until authored data, metadata, binary, or
+   IFix changes.
    The recovered LevelScript task packet family still sharpens the dynamic side
    of the target. Its concrete sender/handlers and decoded object offsets are
    mapped in `mission_runtime_trace_hooks.json`; the guarded message-815

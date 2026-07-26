@@ -668,6 +668,24 @@ matches none of the reviewed paths. The maintained fail-closed report is
 classification is `runtime_context_only_no_mission_levelscript_edge` and it
 adds zero bindings.
 
+The action-context form of the same proposed bridge is now closed separately.
+Current metadata proves `ParamSource.CURRENT_MISSION_ID=1004` and
+`Param<T>.get_isCurrentMissionId`, so an authored action can request its
+mission identity without serializing a literal string. The exact current
+corpus uses that feature only 18 times across six of 490 MissionRuntime assets:
+17 `CheckMissionIntProperty` inputs and one `CheckMissionBoolProperty` input,
+all referring back to the already-owned current mission. None supplies a Story
+id.
+
+No LevelScript uses the feature. A complete scan of 4,512 raw LevelScript
+files / 74,839 UID records finds zero little-endian 1004 values, zero validated
+Param tails with source 1004, and zero embedded JSON parameter objects with
+that source. The installed IFix target list adds no reviewed context method.
+The maintained report is
+`reports/story/recovery/param_source_mission_context_audit.{json,md}`; it adds
+zero mission-to-script, Story, quest, or order edges and fails closed on
+binary, metadata, authored-count, action-type, or IFix drift.
+
 The non-protobuf runtime-type census found one complete serialized carrier in
 `Beyond.Gameplay.LevelData.airWalls`. The current LevelData MemoryPack root has
 43 members and `airWalls` is member 0. Generated wrapper setters prove the
