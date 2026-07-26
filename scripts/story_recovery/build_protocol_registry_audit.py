@@ -965,13 +965,18 @@ def protobuf_identity_field_classes(field_name: str) -> set[str]:
     """Classify protobuf storage fields relevant to the missing ownership join."""
     name = normalized_field_name(field_name)
     classes: set[str] = set()
-    if "missionid" in name or "questid" in name:
+    name_without_request_id = name.replace("requestid", "")
+    if "missionid" in name or "questid" in name_without_request_id:
         classes.add("mission_or_quest")
-    if "scriptid" in name:
+    if "scriptid" in name.replace("transcriptid", ""):
         classes.add("level_script")
     if (
         name in {"scenenumid", "sceneid", "scenename", "levelid", "mapid"}
-        or name.endswith(("scenenumid", "sceneid", "levelid"))
+        or name.endswith(("scenenumid", "scenename", "levelid", "mapid"))
+        or (
+            name.endswith("sceneid")
+            and not name.endswith("cutsceneid")
+        )
     ):
         classes.add("scene_host")
     if any(

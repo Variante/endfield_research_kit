@@ -905,6 +905,31 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         )
         self.assertIn("zero mission/quest + LevelScript/Story", native["finding"])
 
+    def test_airwall_contract_is_state_gated_context_not_transition_owner(self):
+        audit = pipeline.RUNTIME_CONTRACT["airWallMissionRadioContext"]
+        self.assertEqual(audit["memoryPackSchema"]["levelDataMemberCount"], 43)
+        self.assertEqual(audit["memoryPackSchema"]["airWallsMemberIndex"], 0)
+        self.assertEqual(
+            audit["memoryPackSchema"]["airWallGroupMemberCount"],
+            8,
+        )
+        corpus = audit["corpus"]
+        self.assertEqual(corpus["levelDataFiles"], 958)
+        self.assertEqual(corpus["airWallGroups"], 822)
+        self.assertEqual(corpus["missionCheckedRadioGroups"], 60)
+        self.assertEqual(corpus["acceptedStoryContexts"], 58)
+        self.assertEqual(corpus["missionAttachmentEdges"], 61)
+        self.assertEqual(corpus["parseFailures"], 0)
+        self.assertEqual(audit["installedPatch"]["matchedAirWallMethods"], 0)
+        self.assertIn("not a mission-transition", audit["finding"])
+        native = next(
+            row
+            for row in pipeline.RUNTIME_CONTRACT["nativeEvidence"]
+            if row["symbol"].startswith("AirWallManager mission/quest")
+        )
+        self.assertIn("58 resolve completely", native["finding"])
+        self.assertIn("non-owning", native["finding"])
+
     def test_missionless_subgame_reference_audit_rejects_non_owning_joins(self):
         audit = pipeline.RUNTIME_CONTRACT["subGameMissionRegistry"]["missionlessPlaybackAudit"]
         self.assertEqual(audit["subGameRows"], 10)

@@ -609,7 +609,10 @@ mission/quest identity with a LevelScript or Story identity. The only weaker
 mission/scene carriers are `CS_MISSION_CLIENT_TRIGGER_DONE` (317), whose
 current fallback sender is absent, and the nested
 `roleBaseInfo.sceneName` fields in `SC_MISSION_STATE_UPDATE` (112) and
-`SC_QUEST_STATE_UPDATE` (111).
+`SC_QUEST_STATE_UPDATE` (111). Identity normalization explicitly excludes
+`requestId`/`soilRequestId` from quest classification, strips `transcriptId`
+before script classification, and treats `cutsceneId` as Story rather than a
+generic scene host; focused regressions pin those boundaries.
 
 Native decoding closes the active pair as operational state. Both handlers
 read `roleBaseInfo.leaderPosition`, `leaderRotation`, and `sceneName` and call
@@ -621,6 +624,34 @@ matches none of the handlers or consumer. The result adds no graph edge and
 must remain bounded to typed current-client schemas; opaque bytes, dynamic
 parameters, server-only data, native construction, and future builds remain
 outside it.
+
+The non-protobuf runtime-type census found one complete serialized carrier in
+`Beyond.Gameplay.LevelData.airWalls`. The current LevelData MemoryPack root has
+43 members and `airWalls` is member 0. Generated wrapper setters prove the
+alphabetical `AirWallGroup` order:
+`bounds/checkData/defaultOn/groupId/polyLineWalls/pushBackRadioId/scriptId/slotId`.
+The nested check schema is likewise exact:
+`AirWallCheckData(checkType, missionData)`,
+`MissionTotalCheckData(downReason, isDownAny, isRiseAny, riseReason)`, and
+`MissionCheckData(detailState, id, isQuest, isSame)`.
+
+The maintained guarded parser validates every object member count, collection
+frame, UTF-8 string, boolean, and nested boundary. It decodes 822 groups from
+228 of 958 LevelData files with zero failures. There are 211 mission-checked
+groups, 78 radio groups, and 60 groups carrying both. Exact current
+MissionRuntime/quest and Story lookups retain 58 radio contexts; two mixed
+`e7m3` groups are rejected because quest-looking ids are authored with
+`isQuest=false`. This is a useful fail-closed model for future non-protobuf
+carrier work: accept typed discriminator semantics, not identifier spelling.
+
+Native consumers give the fields their bounded operational meaning.
+`AirWallManager` indexes groups by cared mission/quest id and listens for the
+synchronized state changes; `AirWallGroupAgent` re-evaluates the predicates.
+`TriggerMainCharGoBack` later reads `pushBackRadioId`, and its callback calls
+`GameAction.PlayRadio`. The carrier therefore creates an exact local
+state-gated playback context. It does not make state transition equal playback,
+and it creates no Story ownership or mission-order edge. The current installed
+30-target Gameplay IFix replaces no AirWall method.
 
 GameAssembly metadata names server-action families such as
 `TriggerLevelScriptCustomEvent`, `TriggerClientLevelScriptEvent`,
@@ -1757,7 +1788,11 @@ remain gated on the recovery work below:
    the proven WorldChallenge quit consumer. One narrow typed co-carrier is now
    recovered: LevelData `RadioTriggerZoneData` directly pairs four radio ids
    with mission-state boundaries and the native playback consumer, producing
-   six context placements. Two exact member-20 narrative entities also pair
+   six context placements. The new `LevelData.airWalls` decoder adds the
+   stronger predicate-rich form: 58 accepted authored rows, 20 Story radios,
+   30 checked missions, and 61 record-level non-owning attachments, with two
+   inconsistent mixed-type groups rejected. Two exact member-20 narrative
+   entities also pair
    `radio_c16m4_50/51` with the `c16m4d5` FX-change mission key through the
    typed template and native NarrativeComponent. These are local state-gated
    playback dependencies, not the missing
@@ -1779,7 +1814,10 @@ remain gated on the recovery work below:
    synchronized role snapshot and are not authored hosts. Do not repeat either
    the message-schema or role-snapshot join until the metadata, binary, or IFix
    hash changes; prioritize non-protobuf server-state/config and asset-consumer
-   registries.
+   registries. For those registries, reuse the AirWall admission rule: require
+   one completely framed typed object that co-carries the state predicate and
+   Story consumer, then prove both native consumption lanes before adding even
+   a non-owning context.
    The current ten missionless SubGame playback rows are now closed across
    their complete exported exact-reference and receiver-task surfaces: nine
    unique Story files across fourteen placements, one non-owning activity
