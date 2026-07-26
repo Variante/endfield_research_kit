@@ -584,11 +584,21 @@ eventName, ctxToken}`, constructs the exact script receiver, and calls
 `EventParams`, sets its receiver to `LevelScriptPtr(scriptId)`, and, when the
 protobuf `ctxToken` bytes are non-empty, stores them in the inherited parameter
 blackboard before dispatch. The token is therefore opaque propagated event
-context rather than an ignored field; the handler does not decode it into a
+context rather than an ignored field. Its static ParamBlackboard key lives at
+`0x18e2eef08`; a whole-binary direct RIP-reference census finds four references
+in exactly the handler and `Beyond.Gameplay.Actions.CallServer.Execute`.
+CallServer's generic-shared `TryGetValue` call reads the value as `netToken`,
+then `GameAction.TriggerServerEvent` and
+`GameplayNetwork.TriggerLevelScriptServerEvent` pass it to
+`CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken`. The current installed
+30-target Gameplay IFix payload targets none of these methods. This closes the
+current direct AOT lane as server-event round-trip/correlation context, not a
 mission or quest id. Neither message carries a mission, quest, condition, or
 Story id. The server push is therefore exact runtime causality but not a
 pipeline ownership edge; event-name equality or token presence alone must
-remain unpromoted.
+remain unpromoted. Separately constructed equal keys, reflection, native
+memory manipulation, future patches, and future builds remain outside this
+bounded result.
 
 GameAssembly metadata names server-action families such as
 `TriggerLevelScriptCustomEvent`, `TriggerClientLevelScriptEvent`,

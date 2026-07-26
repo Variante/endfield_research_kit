@@ -280,6 +280,49 @@ RUNTIME_CONTRACT = {
         "storyBindingsAdded": 0,
         "confidence": "native_proven_bounded",
     },
+    "levelScriptCtxTokenAudit": {
+        "serverMessage": "SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT (57)",
+        "clientMessage": "CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER (55)",
+        "paramBlackboardKeySlot": "0x18e2eef08",
+        "directKeySlotReferences": 4,
+        "referencingMethods": [
+            "Beyond.Gameplay.GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent",
+            "Beyond.Gameplay.Actions.CallServer.Execute",
+        ],
+        "writer": {
+            "symbol": (
+                "Beyond.Gameplay.GameplayNetwork."
+                "_Handle_SceneTriggerClientLevelScriptEvent"
+            ),
+            "address": "0x187386320",
+            "operation": "ParamBlackboard.SetValue(ctxToken)",
+        },
+        "reader": {
+            "symbol": "Beyond.Gameplay.Actions.CallServer.Execute",
+            "address": "0x1845f6000",
+            "operation": "ParamBlackboard.TryGetValue(netToken)",
+        },
+        "outboundPath": [
+            "Beyond.Gameplay.Actions.GameAction.TriggerServerEvent(..., netToken)",
+            "Beyond.Gameplay.GameplayNetwork.TriggerLevelScriptServerEvent(..., netToken)",
+            "Proto.CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken",
+        ],
+        "finding": (
+            "The sole current direct AOT reader of message 57's blackboard key names "
+            "the recovered value netToken and returns it on a client-to-server "
+            "LevelScript event. This is a server-event round-trip/correlation lane, not "
+            "a mission, quest, condition, or Story identity carrier."
+        ),
+        "patchBoundary": (
+            "The current 30-target Gameplay.Beyond IFix payload targets none of the "
+            "handler, CallServer.Execute, GameAction.TriggerServerEvent, or "
+            "GameplayNetwork.TriggerLevelScriptServerEvent methods. Direct references "
+            "through a separately constructed equal key, reflection, native memory "
+            "manipulation, future IFix, and future builds remain outside this bound."
+        ),
+        "storyBindingsAdded": 0,
+        "confidence": "native_proven_bounded",
+    },
     "guideCompletion": {
         "conditionType": 11,
         "conditionTypeName": "GuideFinish",
@@ -899,8 +942,10 @@ RUNTIME_CONTRACT = {
             "fields": ["sceneNumId", "scriptId", "eventName", "ctxToken"],
             "effect": (
                 "Raise the named client event on the exact LevelScript receiver selected "
-                "by scriptId. The server push carries no mission, quest, condition, or "
-                "Story id, so event-name equality alone cannot attach it to a pipeline."
+                "by scriptId. CallServer can read ctxToken back as netToken and return it "
+                "on a client LevelScript event, making it round-trip correlation context. "
+                "The push carries no mission, quest, condition, or Story id, so neither "
+                "event-name equality nor token presence can attach it to a pipeline."
             ),
             "exchangeFamily": "level_script_event",
             "exchangeRole": "server_push",
@@ -1477,7 +1522,12 @@ RUNTIME_CONTRACT = {
             "handler": "GameplayNetwork.TriggerLevelScriptServerEvent[WithProperties]",
             "address": "0x1845f6710 / 0x187383640",
             "fields": ["sceneNumId", "scriptId", "eventName", "properties", "ctxToken"],
-            "effect": "Trigger a server LevelScript event and await an empty acknowledgement; this does not itself prove quest completion.",
+            "effect": (
+                "Trigger a server LevelScript event and await an empty acknowledgement. "
+                "When CallServer handles a server-pushed client event, it can echo that "
+                "event's ctxToken as netToken; the token still carries no mission, quest, "
+                "condition, or Story identity."
+            ),
             "exchangeFamily": "level_script_event",
             "exchangeRole": "request",
             "runtimeScope": "LevelScriptRuntime",
@@ -1812,16 +1862,23 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent",
-            "address": "0x187386320",
+            "address": (
+                "0x187386320 -> 0x1845f6000 -> 0x1845f6640 -> "
+                "0x1845f6710 -> 0x1865a3aac"
+            ),
             "finding": (
                 "Consumes SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT, constructs the "
                 "LevelScript receiver from scriptId, copies a non-empty ctxToken into "
                 "EventParams/ParamBlackboard, and raises eventName through "
-                "LevelEventManager. The token is opaque propagated context; the handler "
-                "does not decode it as mission/quest identity, and the packet has no "
-                "mission, quest, condition, or Story identity."
+                "LevelEventManager. The only current direct AOT reader of the same key is "
+                "CallServer.Execute: it names the value netToken and passes it through "
+                "GameAction.TriggerServerEvent and GameplayNetwork."
+                "TriggerLevelScriptServerEvent to "
+                "CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken. This closes the token "
+                "as round-trip/correlation context, not mission/quest identity; neither "
+                "packet carries a mission, quest, condition, or Story identity."
             ),
-            "confidence": "native_proven",
+            "confidence": "native_proven_bounded",
         },
         {
             "symbol": "GameplayNetwork._Handle_SyncLevelScriptStage",

@@ -125,11 +125,25 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         evidence = audit.NATIVE_LEVEL_SCRIPT_EVENT_PATHS[57]
         self.assertEqual(evidence["token"], "0x06004dbf")
         self.assertEqual(evidence["fieldOffsets"]["ctxToken"], "0x30")
-        self.assertIn("opaque event context", evidence["ctxTokenFinding"])
+        self.assertIn("returns it", evidence["ctxTokenFinding"])
         self.assertIn(
             "LevelEventManager.RaiseScriptEvent",
             evidence["eventParamsPath"]["dispatch"],
         )
+        reader = evidence["ctxTokenReaderAudit"]
+        self.assertEqual(reader["paramBlackboardKeySlotVa"], "0x18e2eef08")
+        self.assertEqual(reader["directRipReferenceCount"], 4)
+        self.assertEqual(reader["referencingMethodCount"], 2)
+        self.assertEqual(
+            reader["outboundPath"][-1]["symbol"],
+            "Proto.CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken",
+        )
+        self.assertEqual(
+            reader["classification"],
+            "level_script_event_round_trip_correlation",
+        )
+        self.assertEqual(reader["missionQuestReaders"], 0)
+        self.assertEqual(reader["storyBindingsAdded"], 0)
 
 
 if __name__ == "__main__":
