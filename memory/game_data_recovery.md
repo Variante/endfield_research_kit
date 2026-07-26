@@ -557,6 +557,21 @@ quest, Story, or black-line id. The teleport-coupled black action uses the
 normal `CS_SCENE_TELEPORT` / `SC_SCENE_TELEPORT` / finish-ack lifecycle, which
 also carries no mission/quest ownership field.
 
+The client-side teleport carrier does not restore that missing ownership.
+`Beyond.Gameplay.TeleportParam` is a 0x38-byte value with `missionId` at
+`+0x18`, `levelScriptId` at `+0x20`, `actionId` at `+0x28`, and `performId` at
+`+0x30`, making it the sole new actionable result in a whole-metadata 20-type
+nominal mission/script co-carrier census. Exact current direct callers show
+that its producers either zero the entire value or set only
+source/UI/options/reset/callback state. `LoadingPipeline.LoadFinishStep` reads
+source/script/action for the local teleport-finish LevelScript event or
+callback identity for the callback lane, while `PerformerFactory` reads
+`performId`; none of the audited consumers reads `missionId`. The current
+30-target Gameplay IFix payload replaces none of those methods. This field is
+therefore unused on the audited current fallback path, not a mission-to-script
+edge. Future patch, indirect, reflection, or XLua construction remains outside
+the bounded negative.
+
 The installed binary also separates a client LevelScript request from an
 independent server-pushed client event. `GameplayNetwork` sends
 `CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER {sceneNumId, scriptId, eventName,
@@ -1720,11 +1735,15 @@ remain gated on the recovery work below:
    LevelScript operands, LevelScript activation contains no mission identity,
    script packets carry scene/script ids without mission ids, and mission-event
    packets carry mission/event ids without a script address. Lua adds two exact
-   system cutscene consumers but no mission owner. Search other shipped config,
-   indirect-dispatch, or asset-consumer registries for a carrier that resolves
-   both identities, prioritizing the seven missionless SubGame rows with exact
-   native playback. Never promote Story naming, OCR, gameplay observation, or
-   same-LevelData siblings into that missing identity.
+   system cutscene consumers but no mission owner. The tempting
+   `TeleportParam` co-carrier is now closed too: current producers never
+   co-populate mission/script identity and current consumers never read its
+   `missionId`. Search other shipped config, indirect-dispatch, or
+   asset-consumer registries for a carrier that resolves both identities,
+   prioritizing the seven missionless SubGame rows with exact native playback.
+   Do not revisit the current loading-pipeline carrier unless the installed
+   binary or IFix payload changes. Never promote Story naming, OCR, gameplay
+   observation, or same-LevelData siblings into that missing identity.
    The new `MissionRuntime WorldEntity condition -> WorldEntityRegistry ->
    LevelScriptBriefData.refWorldEntityIdList` route is the model for further
    recovery: require a complete typed group, globally unique mission/quest

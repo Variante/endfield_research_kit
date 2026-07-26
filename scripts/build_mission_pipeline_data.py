@@ -232,6 +232,54 @@ RUNTIME_CONTRACT = {
         },
         "confidence": "native_proven",
     },
+    "teleportMissionScriptCarrier": {
+        "type": "Beyond.Gameplay.TeleportParam",
+        "size": "0x38",
+        "layout": {
+            "source": "0x00",
+            "uiType": "0x04",
+            "options": "0x08",
+            "resetMap": "0x0c",
+            "callbackHandle": "0x10",
+            "missionId": "0x18",
+            "levelScriptId": "0x20",
+            "actionId": "0x28",
+            "performId": "0x30",
+        },
+        "metadataCandidateCount": 20,
+        "directCallerCensus": {
+            "GameLevelLoader.OpenLevel": 2,
+            "GameLevelLoader.LoadAtPos": 1,
+            "GameLevelLoader.LoadAtPosInCurrentMap": 2,
+            "SquadManager.ServerTeleportSquad": 1,
+            "LoadingPipeline.get_teleportParam": 2,
+        },
+        "producerFinding": (
+            "The current direct AOT producers either zero all 0x38 bytes or populate only "
+            "source/UI/options/reset/callback fields. The server pass-through decoder "
+            "explicitly leaves missionId, levelScriptId, actionId, and performId zero, so "
+            "no audited producer co-populates missionId and levelScriptId."
+        ),
+        "consumerFinding": (
+            "LoadFinishStep consumes source with levelScriptId/actionId for the local "
+            "teleport-finish LevelScript event, or source with callbackHandle for the "
+            "callback lane. PerformerFactory consumes performId. No audited current "
+            "consumer reads missionId."
+        ),
+        "finding": (
+            "Although this was the sole new actionable type in a 20-type nominal "
+            "mission/script co-carrier census, its missionId field is unused on the "
+            "audited current loading paths and creates no mission ownership or order edge."
+        ),
+        "patchBoundary": (
+            "The current 30-target Gameplay.Beyond IFix payload does not target the "
+            "audited TeleportProcessor, GameLevelLoader, LoadingPipeline, or "
+            "PerformerFactory methods. Future patches and unresolved indirect, reflection, "
+            "or XLua construction remain outside this bounded result."
+        ),
+        "storyBindingsAdded": 0,
+        "confidence": "native_proven_bounded",
+    },
     "guideCompletion": {
         "conditionType": 11,
         "conditionTypeName": "GuideFinish",
@@ -1688,6 +1736,19 @@ RUNTIME_CONTRACT = {
                 "does not appear in the teleport protocol payloads."
             ),
             "confidence": "native_proven",
+        },
+        {
+            "symbol": "TeleportParam -> LoadingPipeline.LoadFinishStep",
+            "address": "0x18315a6c0 -> 0x18315ade0 -> 0x183dd8c60",
+            "finding": (
+                "A whole-metadata census found 20 nominal mission/script co-carrier "
+                "types; the sole new actionable carrier was TeleportParam. Current "
+                "producers zero missionId and levelScriptId or never set them together. "
+                "LoadFinishStep consumes source/levelScriptId/actionId or callbackHandle, "
+                "and PerformerFactory consumes performId; no audited consumer reads "
+                "missionId. This adds zero ownership or order edges."
+            ),
+            "confidence": "native_proven_bounded",
         },
         {
             "symbol": "MissionSystem.StartQuest",

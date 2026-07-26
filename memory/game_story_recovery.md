@@ -551,6 +551,23 @@ mission, while mission-event packets carry mission/event identity without a
 script address. Virtual, delegate, and IFix dispatch remain outside that
 negative, so the result rejects a generic edge but does not claim an impossible
 server-side relationship.
+The whole-metadata mission/script co-carrier census closes one especially
+plausible current-client candidate. Only 20 of 63,987 types nominally declare
+both identity families, and most are enum/static-constant false positives. The
+sole new actionable runtime carrier is the 0x38-byte
+`Beyond.Gameplay.TeleportParam`, with `missionId` at `+0x18`,
+`levelScriptId` at `+0x20`, `actionId` at `+0x28`, and `performId` at `+0x30`.
+Its current direct producers either zero the whole carrier or set only
+source/UI/options/reset/callback fields; the server pass-through decoder also
+leaves mission, script, action, and performer identity zero. The loading
+consumer uses source/script/action for the local teleport-finish LevelScript
+event, the callback lane uses callback identity, and presentation uses
+`performId`; no audited consumer reads `missionId`. The current 30-target
+Gameplay IFix payload replaces none of these methods. `TeleportParam` therefore
+adds zero Mission Pipeline bindings and should not be treated as a hidden
+mission-to-script bridge. This is bounded to the current direct AOT/fallback
+paths and installed IFix payload; future patches and unresolved
+indirect/reflection/XLua construction still require fail-closed re-audit.
 The current installed Lua chunk independently closes another candidate surface:
 zero of the 182 residual native-playback Story ids and zero of their 106
 listener/target LevelScript ids occur in its 1,290 valid modules. Only
@@ -3032,9 +3049,12 @@ Current main-story priorities:
    file has a second unresolved parent use. The other 61 have
    no current-build original-game playback consumer. The next useful binary
    frontier is a serialized server/runtime activation registry that contains
-   both LevelScript and MissionRuntime/quest identity. Repeating current
-   LevelScript, DialogTree, Timeline, PlayableDirector, or MissionRuntime
-   scans will not bind them unless the installed build/export changes; event
+   both LevelScript and MissionRuntime/quest identity. The current
+   `TeleportParam` loading carrier is also closed: producers do not co-populate
+   its mission/script fields and consumers never read `missionId`. Repeating
+   current LevelScript, DialogTree, Timeline, PlayableDirector,
+   MissionRuntime, or teleport-loading scans will not bind them unless the
+   installed build/export or IFix payload changes; event
    names, slots, Story-name co-membership, and Common Mask visual PPtrs remain
    insufficient. The current installed Lua corpus contains no `black_*` Story
    id and therefore does not supply that missing consumer.
