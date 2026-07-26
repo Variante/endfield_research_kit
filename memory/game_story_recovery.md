@@ -169,6 +169,19 @@ the fully decoded task-condition operands when present. They now also show the
 exact authored source object behind each resolvable operand and would show an
 exact typed MissionRuntime consumer if a future export introduced one; the
 current consumer count is zero. The audit adds no graph edge.
+The follow-up task-completion callback audit also closes the possibility that a
+serialized receiver task hides a playback action. The serialized task and
+condition records have no action or callback member. In the current fallback
+bodies, the sole direct registration path for the completion delegate is
+`CheckLevelScriptTaskFinished`, whose callback updates MissionSystem objective
+progress rather than executing an ActionMap or Story method. The two exact
+MissionRuntime instances of that condition target other level/script/task
+tuples, so all 31 receiver tasks have zero typed
+`CheckLevelScriptTaskFinished` consumers. Schema v5 publishes this zero
+explicitly. Future progress on these receivers therefore requires a different
+producer/owner registry, a changed export/build, or supported runtime evidence;
+task-map proximity and completion callbacks are no longer open ownership
+routes.
 In debug mode, the Storyline frontend now consumes this same
 `storyCoverage.storyTriggerManifest` for every file row and selected-file
 detail panel; normal Story browsing does not load or display the trigger
@@ -2954,10 +2967,12 @@ Current main-story priorities:
    exact conditions across 11 types, with no `CheckMissionState` condition.
    A complete 82-id task/condition census finds zero MissionRuntimeAsset use;
    the only foreign roots are 13 task-display rows and ten null-mission SubGame
-   main-task bindings. Continue from typed entity/spawner/dialog/area/property/
-   script operands only when an exact same-source foreign key reaches
-   MissionRuntime; condition presence, same level, and evaluation order remain
-   non-owning.
+   main-task bindings. The typed operand pass now resolves 53 exact source rows
+   but finds zero MissionRuntime consumers, and the native callback pass finds
+   zero exact `CheckLevelScriptTaskFinished` consumers for the 31 receiver
+   tasks. These task-map ownership routes are closed on the current export;
+   condition presence, source identity, same level, callback registration, and
+   evaluation order remain non-owning.
    A diagnostic level intersection with the atmospheric switcher context finds
    89 receivers / 103 Story files on 13 shared levels. Four shared levels have
    only one atmospheric route mission, but their native Story families often

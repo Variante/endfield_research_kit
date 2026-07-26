@@ -969,6 +969,22 @@ dialog/finish, level/area, level/spawner, level/script, and level/entity
 operands yield zero consumers. This is a full negative for the current receiver
 corpus, not an ambiguity fallback: the remaining eight rows are property/param
 or empty combine conditions with no authored-object operand to resolve.
+The task-completion callback lane is closed separately. Current-build metadata
+shows that serialized `LevelScriptTaskData` contains only `conditionDict`,
+`taskType`, `needManualCheck`, and `canBeTracked`; nested
+`TaskConditionData` contains only `isMainObjective`, `objectiveEnum`, and the
+condition. Callback delegates exist only on the runtime `TaskCondition`
+object. A whole-GameAssembly current-fallback direct-call census resolves the
+completion registration chain exclusively as
+`CheckLevelScriptTaskFinished._TryBindScriptTaskProgChangeCallback ->
+LevelScriptRuntime.SetTaskMainObjectiveIsCompleteChangedAction ->
+TaskCondition.AddOnIsCompleteChangeAction`. Its progress callback reaches
+`MissionSystem.UpdateObjProgress`; it does not enter an ActionMap or Story
+playback method. Only two MissionRuntime conditions use
+`CheckLevelScriptTaskFinished` (`c17m2` task `d800b872` and `sm1l3m3` task
+`fbb9e474`), and neither exact level/script/task tuple matches any of the 31
+receiver tasks. The activation-frontier v5 report now checks this typed tuple
+directly and records zero consumers.
 
 The existing exact positive remains:
 `map02_lv003/23300090001` decodes task `cf5a771c`, condition `cb696abe`, and

@@ -339,9 +339,23 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                     "mission_fixture",
                     {
                         "questId": "quest_fixture",
-                        "$type": "CheckTalkOptionFinish",
-                        "_dialogId": {"constValue": "dialog_fixture"},
-                        "_finishId": {"constValue": 2},
+                        "conditions": [
+                            {
+                                "$type": "CheckTalkOptionFinish",
+                                "_dialogId": {
+                                    "constValue": "dialog_fixture"
+                                },
+                                "_finishId": {"constValue": 2},
+                            },
+                            {
+                                "$type": "CheckLevelScriptTaskFinished",
+                                "_sceneId": {"constValue": "map_fixture"},
+                                "_scriptId": {
+                                    "constValue": {"scriptId": 1001}
+                                },
+                                "_taskId": {"constValue": "task_fixture"},
+                            },
+                        ],
                     },
                     "fixture.json",
                 )
@@ -353,6 +367,12 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         )
         self.assertNotIn(("dialog_fixture", 1), indexes["dialog"])
         self.assertEqual({}, indexes["area"])
+        self.assertEqual(
+            "quest_fixture",
+            indexes["task"][("map_fixture", "1001", "task_fixture")][0][
+                "questId"
+            ],
+        )
 
     def test_world_entity_sources_keep_only_unique_script_slots(self) -> None:
         logic_rows, slot_rows = frontier.world_entity_operand_sources(
@@ -406,7 +426,14 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         }
         consumers = {
             kind: {}
-            for kind in ("dialog", "area", "spawner", "script", "entity")
+            for kind in (
+                "dialog",
+                "area",
+                "spawner",
+                "script",
+                "entity",
+                "task",
+            )
         }
         consumers["entity"][("map_fixture", 9001)] = [
             {
@@ -414,6 +441,14 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 "questId": "quest_fixture",
                 "conditionType": "CheckEntityHp",
                 "sourceFile": "mission_fixture.json",
+            }
+        ]
+        consumers["task"][("map_fixture", "1001", "fixture_task")] = [
+            {
+                "missionId": "task_mission_fixture",
+                "questId": "task_quest_fixture",
+                "conditionType": "CheckLevelScriptTaskFinished",
+                "sourceFile": "task_mission_fixture.json",
             }
         ]
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -442,6 +477,12 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 spawner_root=empty_root,
             )
         entity_row, area_row = task_map["tasks"][0]["conditions"]
+        self.assertEqual(
+            "task_mission_fixture",
+            task_map["tasks"][0]["missionRuntimeTaskConsumers"][0][
+                "missionId"
+            ],
+        )
         self.assertEqual(
             "world_entity_logic_id",
             entity_row["operandSources"][0]["kind"],
