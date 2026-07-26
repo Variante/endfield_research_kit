@@ -722,16 +722,22 @@ objects whose independent caches must not be joined; the positive-looking
 rows are already recovered AirWall/FocusMode/NpcProxy/SubGame/DomainDepot/
 RadioTriggerZone contexts.
 
-The last binary check closes the only otherwise novel small path.
+The last binary/Lua check bounds the only otherwise novel small path.
 `DialogManager.m_pendingItemSubmitter` is at `+0x200`, while
 `InventoryItemSubmitter.questId` is at `+0x20`.
 `CinematicSystem.SendFinishDialog` is the sole direct
 `TryGetSubmitMsg` caller, but there are zero whole-binary direct callers of
 both the submitter constructor and `RegisterPendingSubmission`, and current
-IFix targets none of them. The hash-pinned report
+IFix targets none of them. This is not an inactive producer: a hash-pinned
+targeted VFS dump proves shipped `SubmitItemCtrl.lua` constructs and registers
+the object through XLua. `DialogOpenUIPanel` is directly called by both
+`DialogManager.OpenUI` and the generated XLua wrapper. The typed authored
+surface contains 13 SubmitItem OpenUI terminals, but only three stock
+placeholder parameter objects, ten empty params, and zero concrete quest ids.
+The hash-pinned report
 `reports/story/recovery/nested_managed_identity_carrier_census.{json,md}`
 therefore adds no graph edge and fails closed if the candidate set, callers,
-binary, metadata, or patch changes.
+binary, metadata, Lua, authored OpenUI census, or patch changes.
 
 The non-protobuf runtime-type census found one complete serialized carrier in
 `Beyond.Gameplay.LevelData.airWalls`. The current LevelData MemoryPack root has

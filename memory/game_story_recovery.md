@@ -2617,21 +2617,36 @@ The one newly traced candidate is
 InventoryItemSubmitter.questId (+0x20)`. `DialogManager._SendServer` can pass
 the current dialog id and that object to
 `CinematicSystem.SendFinishDialog`; `InventoryItemSubmitter.TryGetSubmitMsg`
-then supplies the item-submission fields. But a whole-GameAssembly direct-call
-census finds zero callers of both `InventoryItemSubmitter..ctor`
-(`0x1873b0234`) and `DialogManager.RegisterPendingSubmission`
-(`0x186e17bc8`). The only `TryGetSubmitMsg` caller is
-`SendFinishDialog`, and the installed IFix replaces none of this path. The
-carrier is therefore an inactive current-fallback producer, not a recovered
-quest-to-dialog edge.
+then supplies the item-submission fields. A whole-GameAssembly direct-call
+census still finds zero native `E8` callers of both
+`InventoryItemSubmitter..ctor` (`0x1873b0234`) and
+`DialogManager.RegisterPendingSubmission` (`0x186e17bc8`), while
+`SendFinishDialog` is the only native `TryGetSubmitMsg` caller and current IFix
+replaces none of the path. Those counts describe only the AOT native call
+surface: the shipped
+`Data/LuaScripts/UI/Panels/SubmitItem/SubmitItemCtrl.lua` constructs the
+seven-field submitter through XLua and calls `RegisterPendingSubmission` when
+submission came from a playing dialog and is not configured for immediate
+server submission. `DialogOpenUIPanel` has two native direct callers:
+`DialogManager.OpenUI` and its generated XLua wrapper. The earlier inactive-
+producer conclusion was therefore wrong.
+
+This active bridge still does not recover a quest-to-dialog edge. The typed
+DialogTree census contains 95 terminal `DialogOpenUIAction` rows, including 13
+with `panelType=9` matching SubmitItem. Three carry the exact
+`DIALOG_OPEN_UI_PARAM_SUBMITITEM` stock placeholder JSON, ten have empty
+params, and zero exports a concrete `questId`. Runtime-substituted parameters
+remain possible but are not present in current authored evidence, so filename
+or nominal-mission matching must not fill the gap.
 
 The maintained fail-closed evidence is
 `reports/story/recovery/nested_managed_identity_carrier_census.{json,md}` with
 classification `all_nested_managed_identity_carriers_reviewed`. It adds zero
-Story bindings and zero order edges. Reflection/XLua construction,
-native-only opaque objects, server-only state, paths deeper than three custom
-type hops, unexported asset kinds, future IFix, and future builds remain
-outside the bound.
+Story bindings and zero order edges. The exact shipped SubmitItem XLua producer
+is now inside the bound; other reflection/XLua construction,
+runtime-substituted OpenUI params, native-only opaque objects, server-only
+state, paths deeper than three custom type hops, unexported asset kinds, future
+IFix, and future builds remain outside it.
 
 ### AirWall state gates recover exact non-owning radio contexts
 
@@ -3207,10 +3222,14 @@ Current main-story priorities:
    of that frontier to three custom-type hops as well: 25 candidates, 14
    nested-dependent, and zero unreviewed. Its last concrete candidate,
    `DialogManager.m_pendingItemSubmitter -> InventoryItemSubmitter.questId`,
-   has no current constructor or registration caller and no matching IFix
-   target. Do not repeat this typed traversal until the binary, metadata, or
-   patch changes; only indirect/reflection/XLua construction, deeper object
-   paths, unexported asset kinds, or opaque server state remain outside it.
+   is actively produced by shipped `SubmitItemCtrl.lua` through XLua even
+   though the native direct-call census is zero. Current DialogTrees expose 13
+   typed SubmitItem terminals but only three stock placeholder parameter
+   objects, ten empty parameter objects, and zero concrete quest ids. Do not
+   repeat this typed traversal until the binary, metadata, authored DialogTree,
+   Lua, or patch changes. The next useful join must recover runtime-substituted
+   OpenUI parameters or another independently typed owner; do not infer it from
+   dialog filenames.
    The recovered LevelScript task packet family still sharpens the dynamic side
    of the target. Its concrete sender/handlers and decoded object offsets are
    mapped in `mission_runtime_trace_hooks.json`; the guarded message-815

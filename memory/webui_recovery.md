@@ -346,8 +346,15 @@ Mission Pipeline:
   `DialogManager.m_pendingItemSubmitter@+0x200` and
   `InventoryItemSubmitter.questId@+0x20`, plus the constructor,
   `TryGetSubmitMsg`, and registration addresses/caller counts. Zero current
-  constructor and registration callers and zero matching IFix targets keep
-  this at an inactive fallback producer with no quest-to-dialog or order edge.
+  native constructor and registration callers were initially mislabeled as an
+  inactive fallback producer.
+  Schema v12 corrects that boundary with the shipped XLua producer. The card
+  now shows the one exact `SubmitItemCtrl.lua` constructor/registration call,
+  the two native `DialogOpenUIPanel` callers (DialogManager plus the generated
+  XLua wrapper), 13 typed SubmitItem OpenUI terminals, and zero concrete
+  authored quest ids. The bridge is active, but the three parameterized rows
+  are stock placeholders and the other ten are empty, so it still adds no
+  quest-to-dialog or order edge.
   Native paths with no network exchange are separated again: BattleSignal is
   shown as local Ability-action dispatch with only signal/value identity, not
   placed into either C->S or S->C lanes.

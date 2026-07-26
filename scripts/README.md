@@ -963,9 +963,13 @@ Expected active inputs and outputs:
   that depend on a nested path, with zero unreviewed rows. The last newly
   audited path is
   `DialogManager.m_pendingItemSubmitter -> InventoryItemSubmitter.questId`:
-  dialog finish could forward that object, but the installed fallback has
-  zero direct callers of both the submitter constructor and
-  `RegisterPendingSubmission`; current IFix replaces none of the path.
+  dialog finish can forward that object. Native direct callers of the
+  constructor and `RegisterPendingSubmission` remain zero, but the audit now
+  target-dumps the shipped `SubmitItemCtrl.lua` and proves its XLua
+  constructor/registration call. It also checks all typed DialogTree OpenUI
+  terminals: 13 are SubmitItem actions, three use the stock placeholder params,
+  ten have empty params, and none exports a concrete quest id. The report
+  therefore records an active producer but adds no graph edge.
 
   ```bat
   python scripts\story_recovery\build_nested_managed_identity_carrier_census.py
