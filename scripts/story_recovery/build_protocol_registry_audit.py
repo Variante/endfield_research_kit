@@ -141,10 +141,86 @@ NATIVE_LEVEL_SCRIPT_EVENT_PATHS: dict[int, dict[str, Any]] = {
             "dispatch": "Beyond.Gameplay.Core.LevelEventManager.RaiseScriptEvent",
         },
         "ctxTokenFinding": (
-            "ctxToken is propagated as opaque event context; it is not discarded. "
-            "The handler does not decode it into missionId or questId, and the packet "
-            "contains neither identity."
+            "ctxToken is propagated as event context rather than discarded. Its sole "
+            "current direct AOT key-slot reader is CallServer.Execute, which recovers it "
+            "as netToken and returns it on CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER. Neither "
+            "side decodes it into missionId or questId, and neither packet contains "
+            "either identity."
         ),
+        "ctxTokenReaderAudit": {
+            "paramBlackboardKeySlotVa": "0x18e2eef08",
+            "directRipReferenceCount": 4,
+            "referencingMethodCount": 2,
+            "referencingMethods": [
+                {
+                    "symbol": (
+                        "Beyond.Gameplay.GameplayNetwork."
+                        "_Handle_SceneTriggerClientLevelScriptEvent"
+                    ),
+                    "va": "0x187386320",
+                    "references": ["0x187386362", "0x187386442"],
+                    "role": "static-key initialization and ctxToken writer",
+                },
+                {
+                    "symbol": "Beyond.Gameplay.Actions.CallServer.Execute",
+                    "token": "0x06008f04",
+                    "va": "0x1845f6000",
+                    "references": ["0x1845f6098", "0x1845f618f"],
+                    "role": (
+                        "static-key initialization and "
+                        "ParamBlackboard.TryGetValue(netToken) reader"
+                    ),
+                },
+            ],
+            "readerCall": {
+                "symbol": "Beyond.Gameplay.ParamBlackboard.TryGetValue",
+                "va": "0x1836eb730",
+                "callSite": "0x1845f61a6",
+                "genericInstantiation": True,
+            },
+            "outboundPath": [
+                {
+                    "symbol": "Beyond.Gameplay.Actions.GameAction.TriggerServerEvent",
+                    "token": "0x060080c7",
+                    "va": "0x1845f6640",
+                    "parameter": "netToken",
+                },
+                {
+                    "symbol": (
+                        "Beyond.Gameplay.GameplayNetwork."
+                        "TriggerLevelScriptServerEvent"
+                    ),
+                    "token": "0x06004dc5",
+                    "va": "0x1845f6710",
+                    "parameter": "netToken",
+                },
+                {
+                    "symbol": (
+                        "Proto.CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken"
+                    ),
+                    "token": "0x0600891c",
+                    "va": "0x1865a3aac",
+                },
+            ],
+            "installedIfix": {
+                "sha256": (
+                    "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21"
+                ),
+                "signatureTargetCount": 30,
+                "fallbackPatchIds": ["0x5ac7", "0x8939", "0x39bb", "0x39bc"],
+                "matchedMethods": 0,
+            },
+            "classification": "level_script_event_round_trip_correlation",
+            "missionQuestReaders": 0,
+            "storyBindingsAdded": 0,
+            "coverage": (
+                "Current installed AOT direct RIP references to the exact static key "
+                "slot, including the generic-shared TryGetValue instantiation, plus the "
+                "decoded installed IFix target list. Separately constructed equal keys, "
+                "reflection, native memory manipulation, future IFix, and future builds "
+                "remain outside the bound."
+            ),
+        },
         "finding": (
             "The handler constructs a LevelScript receiver from scriptId, optionally "
             "copies ctxToken into EventParams, and raises eventName through "
@@ -1019,10 +1095,11 @@ def build_report(
             ),
             "levelScriptEventContext": (
                 "Message 57 constructs a LevelScript receiver from scriptId, preserves a "
-                "non-empty ctxToken in EventParams, and raises eventName. ctxToken is "
-                "therefore opaque propagated event context, not a discarded field. The "
-                "handler neither decodes it as mission/quest identity nor receives either "
-                "identity in the packet, so it creates no Mission Pipeline ownership edge."
+                "non-empty ctxToken in EventParams, and raises eventName. The sole current "
+                "direct AOT key-slot reader is CallServer.Execute, which reads the value "
+                "as netToken and returns it on CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER. This "
+                "closes the token as round-trip/correlation context rather than a hidden "
+                "mission/quest carrier, so it creates no Mission Pipeline ownership edge."
             ),
             "traffic": (
                 "Header-only traffic can recover message-type chronology. Payload-aware "
@@ -1190,10 +1267,14 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
             (
                 "When `ctxToken` is non-empty, the handler copies the protobuf bytes into "
-                "the EventParams/ParamBlackboard before raising the event. It does not "
-                "interpret the token as a mission or quest id. This proves context "
-                "propagation into downstream event actions, but message 57 still carries "
-                "no mission/quest identity and therefore creates no ownership or order edge."
+                "the EventParams/ParamBlackboard before raising the event. The exact key "
+                "slot has four direct RIP references in two methods: this writer and "
+                "`CallServer.Execute`. CallServer reads the value as `netToken`, passes it "
+                "through `GameAction.TriggerServerEvent` and "
+                "`GameplayNetwork.TriggerLevelScriptServerEvent`, and writes it to "
+                "`CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.CtxToken`. This proves a server-event "
+                "round trip, not mission/quest identity, and therefore creates no ownership "
+                "or order edge."
             ),
         ]
     )

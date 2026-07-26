@@ -2418,6 +2418,21 @@ surface named as the highest-value binary target, and it upgrades message 57
 from `native_handler_proven_elsewhere` to a decoded route into the LevelScript
 event system.
 
+The token lane is now decoded end to end as well. The handler stores non-empty
+`ctxToken` bytes under the static ParamBlackboard key slot `0x18e2eef08`. A
+whole-GameAssembly direct RIP-reference scan finds four references to that slot
+in exactly two methods: the handler's initialization/write pair and
+`Beyond.Gameplay.Actions.CallServer::Execute` at `0x1845f6000`.
+`CallServer::Execute` calls the generic-shared
+`ParamBlackboard::TryGetValue` body at `0x1836eb730`, names the result
+`netToken` in the typed method chain, and passes it through
+`GameAction::TriggerServerEvent` (`0x1845f6640`) and
+`GameplayNetwork::TriggerLevelScriptServerEvent` (`0x1845f6710`) to
+`CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER::set_CtxToken` (`0x1865a3aac`).
+The current installed 30-target Gameplay IFix payload replaces none of those
+fallback methods. Message 57's token is therefore a LevelScript server-event
+round-trip/correlation value, not a hidden mission or quest carrier.
+
 It does **not** close the join. Message 57 carries scene/script identity and no
 mission or quest identity, exactly mirroring the task packet family. The two
 death/property bridges are likewise capability proofs at the architecture level,
@@ -2904,11 +2919,17 @@ Current main-story priorities:
    `_Handle_SceneTriggerClientLevelScriptEvent` constructs the exact
    `LevelScriptPtr`, allocates `EventParams`, copies a non-empty protobuf
    `ctxToken` into the inherited parameter blackboard, and then calls
-   `RaiseScriptEvent(eventName)`. The token is therefore propagated opaque
-   event context rather than an ignored field, but the handler does not decode
-   it as mission/quest identity and its packet carries neither. Chasing the
-   token alone cannot fill the ownership join; a useful downstream consumer
-   would have to read it into an independently typed mission/quest carrier.
+   `RaiseScriptEvent(eventName)`. The downstream chase is now complete for the
+   exact static key slot: four direct RIP references resolve to the handler and
+   `CallServer::Execute` only. CallServer reads the value as `netToken`, passes
+   it through `GameAction::TriggerServerEvent` and
+   `GameplayNetwork::TriggerLevelScriptServerEvent`, and writes it back to
+   `CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.CtxToken`. This is round-trip
+   correlation context, not an independently typed mission/quest carrier, and
+   it adds zero ownership or order edges. The current IFix target list does not
+   replace any method on this chain. Separately constructed equal keys,
+   reflection, native memory manipulation, future patches, and future builds
+   remain outside this bounded closure.
    The recovered LevelScript task packet family still sharpens the dynamic side
    of the target. Its concrete sender/handlers and decoded object offsets are
    mapped in `mission_runtime_trace_hooks.json`; the guarded message-815

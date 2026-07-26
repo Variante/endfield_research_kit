@@ -287,7 +287,11 @@ Mission Pipeline:
   and an explicit not-attached-to-quest label. LevelScript rows distinguish the
   client request, its empty acknowledgement, and the independent server-pushed
   client event; the last identifies only scene/script/event/token and is never
-  presented as mission ownership. The one-way
+  presented as mission ownership. The exchange descriptions also expose the
+  completed token trace: `CallServer.Execute` reads the pushed `ctxToken` as
+  `netToken` and returns it on `CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER`, making it
+  round-trip correlation context rather than a hidden mission carrier. The
+  one-way
   `SC_SCENE_LEVEL_SCRIPT_STAGE_CHANGE {sceneNumId, scriptId, stage}` row is
   labeled as a server push with no client request or expected response.
   Native paths with no network exchange are separated again: BattleSignal is

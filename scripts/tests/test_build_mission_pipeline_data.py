@@ -834,6 +834,34 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         )
         self.assertIn("zero ownership or order edges", native["finding"])
 
+    def test_level_script_ctx_token_is_bounded_round_trip_not_mission_carrier(self):
+        audit = pipeline.RUNTIME_CONTRACT["levelScriptCtxTokenAudit"]
+        self.assertEqual(audit["paramBlackboardKeySlot"], "0x18e2eef08")
+        self.assertEqual(audit["directKeySlotReferences"], 4)
+        self.assertEqual(len(audit["referencingMethods"]), 2)
+        self.assertEqual(
+            audit["reader"]["symbol"],
+            "Beyond.Gameplay.Actions.CallServer.Execute",
+        )
+        self.assertIn("TryGetValue(netToken)", audit["reader"]["operation"])
+        self.assertEqual(
+            audit["outboundPath"][-1],
+            "Proto.CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken",
+        )
+        self.assertIn("round-trip/correlation lane", audit["finding"])
+        self.assertEqual(audit["storyBindingsAdded"], 0)
+        self.assertEqual(audit["confidence"], "native_proven_bounded")
+
+        native = next(
+            row
+            for row in pipeline.RUNTIME_CONTRACT["nativeEvidence"]
+            if row["symbol"]
+            == "GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent"
+        )
+        self.assertIn("CallServer.Execute", native["finding"])
+        self.assertIn("set_CtxToken", native["finding"])
+        self.assertIn("round-trip/correlation context", native["finding"])
+
     def test_missionless_subgame_reference_audit_rejects_non_owning_joins(self):
         audit = pipeline.RUNTIME_CONTRACT["subGameMissionRegistry"]["missionlessPlaybackAudit"]
         self.assertEqual(audit["subGameRows"], 10)
