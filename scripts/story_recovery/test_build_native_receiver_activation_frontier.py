@@ -160,6 +160,24 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             ),
         )
 
+    def test_memorypack_string_scan_requires_exact_length_prefix(self) -> None:
+        exact = (7).to_bytes(4, "little", signed=True) + b"mission"
+        embedded = (13).to_bytes(4, "little", signed=True) + b"radio_mission"
+        self.assertEqual(
+            ["mission"],
+            frontier.exact_memorypack_string_tokens(
+                exact + embedded,
+                {"mission", "missing"},
+            ),
+        )
+        self.assertEqual(
+            [],
+            frontier.exact_memorypack_string_tokens(
+                embedded,
+                {"mission"},
+            ),
+        )
+
     def test_nonmanual_shape_is_kept_separate(self) -> None:
         self.assertEqual(
             "nonmanual_start_with_shapes",
