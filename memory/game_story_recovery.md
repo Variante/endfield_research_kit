@@ -2559,6 +2559,41 @@ classification is
 action graphs, opaque runtime-created Params, reflection/XLua construction,
 future IFix, and future builds remain outside the bound.
 
+### The direct managed identity-carrier surface is exhausted
+
+A metadata-wide exact-field census now closes the complete direct managed
+carrier class rather than leaving individual type names as an implicit queue.
+Across all 63,987 current managed types, ten types place a mission/quest
+identity beside a LevelScript/scene identity or Story playback identity. Two
+are not value carriers at all (`IdPickerAttribute.StringIdType` is an editor
+enum and `PropertyKeys` is a static key catalog); the other eight are all
+reviewed.
+
+Three productive pairs were already admitted by their proper bounded evidence
+classes: 13 FocusMode mission/radio rows (ten unique radios), 453
+NpcProxyEx mission/dialog rows, and 20 SubGame mission/bound-script rows.
+They remain mission-shell context or runtime-shell evidence, not generic quest
+activation or Story chronology. `MissionOptionData`, `TeleportParam`, and the
+inactive `CS_MISSION_CLIENT_TRIGGER_DONE` mission/scene packet are already
+closed separately.
+
+The last unreviewed-looking pair was tracking data. Native
+`CommonTrackingSystem.AddMissionTrack` (`0x184792ac0`) writes the supplied
+mission id into `CommonTrackingPointInfoBase+0x20` and allocates a tracking
+key. `CommonTrackingPointInfoBase._UpdateVisible` (`0x183482bb0`) reads
+`sceneId` at `+0x30`, maps it through
+`GameUtil.GetSystemMapIdByLevelId`, and compares it with the current level's
+system map. `TrackingInfoBase.ActivateTrackUnit` and `DeactivateTrackUnit`
+only add/remove that HUD/map tracker. None of these methods calls Story
+playback, and the installed IFix replaces none of them.
+
+The maintained fail-closed result is
+`reports/story/recovery/managed_identity_carrier_census.{json,md}` with
+classification `all_direct_managed_identity_carriers_reviewed`. It adds zero
+Story bindings or order edges. Nested object graphs, reflection/XLua,
+indirect construction, opaque server-only state, unexported asset kinds,
+future IFix, and future builds remain outside this direct-field bound.
+
 ### AirWall state gates recover exact non-owning radio contexts
 
 A broader exact runtime-type census found one productive non-protobuf carrier:
@@ -3123,6 +3158,13 @@ Current main-story priorities:
    files / 74,839 UID records. It adds no Story or order edge. Do not revisit
    current-mission Param inheritance until authored data, metadata, binary, or
    IFix changes.
+   The complete direct managed identity-carrier census is closed as well:
+   ten exact candidate types, eight runtime/serialized object candidates, and
+   zero unreviewed candidates. The only newly decoded pair is mission/scene
+   tracking state, whose native consumers add and display HUD/map trackers and
+   never call Story playback. Do not repeat direct managed field-pair searches
+   until metadata, binary, authored tables, or IFix changes; the remaining
+   frontier is nested/indirect shipped registries or opaque server state.
    The recovered LevelScript task packet family still sharpens the dynamic side
    of the target. Its concrete sender/handlers and decoded object offsets are
    mapped in `mission_runtime_trace_hooks.json`; the guarded message-815

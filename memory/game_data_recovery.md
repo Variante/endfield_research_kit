@@ -686,6 +686,32 @@ The maintained report is
 zero mission-to-script, Story, quest, or order edges and fails closed on
 binary, metadata, authored-count, action-type, or IFix drift.
 
+The complete direct managed-field carrier surface is now enumerated too.
+Across all 63,987 current metadata types, ten types directly pair a
+mission/quest identity field with a LevelScript/scene or Story identity field.
+Two are schema vocabularies rather than value carriers
+(`IdPickerAttribute.StringIdType` and `PropertyKeys`). The eight object types
+are `CommonTrackingPointInfoBase`, `FocusModeInstanceData`,
+`NpcRuntimeProxyExData`, `SubGameInstanceData`, `MissionOptionData`,
+`TeleportParam`, `TrackingInfoBase`, and
+`CS_MISSION_CLIENT_TRIGGER_DONE`; all eight now have bounded verdicts.
+
+FocusMode, NpcProxyEx, and SubGame are the already recovered productive
+classes, with 13 mission/radio rows, 453 mission/dialog rows, and 20
+mission/bound-script rows respectively. Their semantics remain bounded context
+or runtime shells. The newly decoded tracking pair is not activation:
+`CommonTrackingSystem.AddMissionTrack` stores mission identity on a tracking
+point, `_UpdateVisible` uses `sceneId` only to compare system maps, and
+`TrackingInfoBase` adds/removes the tracker key. There is no Story call and no
+current IFix replacement.
+
+The hash-pinned report
+`reports/story/recovery/managed_identity_carrier_census.{json,md}` therefore
+records ten direct candidates, eight object candidates, zero unreviewed
+candidates, and zero new graph edges. This closes direct named-field searches;
+nested object graphs, indirect construction, opaque server state, and
+unexported asset kinds remain distinct frontiers.
+
 The non-protobuf runtime-type census found one complete serialized carrier in
 `Beyond.Gameplay.LevelData.airWalls`. The current LevelData MemoryPack root has
 43 members and `airWalls` is member 0. Generated wrapper setters prove the

@@ -333,6 +333,12 @@ Mission Pipeline:
   current uses as already-owned self-mission property checks, exposes the
   `Param<T>.paramSource` and `get_isCurrentMissionId` tokens, and explicitly
   adds zero mission-to-LevelScript, Story, quest, or order edges.
+  Schema v10 adds the complete direct managed identity-carrier census. The
+  closed-carrier area reports ten exact candidate types, eight runtime/object
+  candidates, and zero unreviewed candidates. It identifies the last newly
+  decoded mission/scene pair as HUD/map tracking context, exposes the relevant
+  tracking field tokens and native consumer addresses, and keeps the result at
+  zero new Story bindings and order edges.
   Native paths with no network exchange are separated again: BattleSignal is
   shown as local Ability-action dispatch with only signal/value identity, not
   placed into either C->S or S->C lanes.

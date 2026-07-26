@@ -1007,6 +1007,39 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "implicit_context_only_missionruntime_no_levelscript_story_edge",
         )
 
+    def test_direct_managed_identity_carrier_census_has_no_open_candidate(self):
+        audit = pipeline.RUNTIME_CONTRACT["managedIdentityCarrierCensus"]
+        metadata = audit["metadata"]
+        self.assertEqual(metadata["managedTypeCount"], 63987)
+        self.assertEqual(metadata["directCandidateTypes"], 10)
+        self.assertEqual(metadata["runtimeObjectCandidates"], 8)
+        self.assertEqual(metadata["unreviewedCandidates"], 0)
+        authored = audit["authored"]
+        self.assertEqual(authored["focusModeMissionRadioRows"], 13)
+        self.assertEqual(authored["focusModeUniqueRadios"], 10)
+        self.assertEqual(authored["npcProxyExMissionDialogRows"], 453)
+        self.assertEqual(authored["subGameMissionScriptRows"], 20)
+        tracking = audit["trackingClosure"]
+        self.assertEqual(
+            tracking["classification"],
+            "closed_tracking_ui_context",
+        )
+        self.assertEqual(
+            tracking["commonTrackingFields"]["missionId"]["offset"],
+            "0x20",
+        )
+        self.assertEqual(
+            tracking["commonTrackingFields"]["sceneId"]["offset"],
+            "0x30",
+        )
+        self.assertEqual(len(tracking["nativeConsumers"]), 3)
+        self.assertEqual(audit["storyBindingsAdded"], 0)
+        self.assertEqual(audit["missionOrderEdgesAdded"], 0)
+        self.assertEqual(
+            audit["classification"],
+            "all_direct_managed_identity_carriers_reviewed",
+        )
+
     def test_airwall_contract_is_state_gated_context_not_transition_owner(self):
         audit = pipeline.RUNTIME_CONTRACT["airWallMissionRadioContext"]
         self.assertEqual(audit["memoryPackSchema"]["levelDataMemberCount"], 43)
