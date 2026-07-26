@@ -139,10 +139,19 @@ LevelScript property/stage checks, destination checks, and empty combine
 envelopes. No receiver task map contains `CheckMissionState`. These operands
 are exact authored evaluation or completion dependencies; they neither
 activate the receiver nor identify its mission owner. The highest-value next
-offline join is therefore to follow each exact entity, spawner, dialog, area,
-property, and foreign LevelScript operand into typed same-level sources and
-accept a mission edge only if that same source also carries an unambiguous
-MissionRuntime/quest foreign key.
+offline join was therefore to follow each exact entity, spawner, dialog, area,
+property, and foreign LevelScript operand into typed same-level sources. That
+pass is now complete for the authored object-bearing operands: 46 of 54
+conditions resolve to 53 exact sources—26 current-script entity slots, 15
+WorldEntity logic ids, five same-level LevelScripts, three same-receiver Story
+keys, three same-level MissionArea rows, and one same-level SpawnerConfig. The
+same exact dialog/finish, level/area, level/spawner, level/script, and
+level/entity operands were indexed across all MissionRuntime assets; zero
+condition has a typed MissionRuntime consumer. The eight conditions without a
+source are parameter/property or empty combine envelopes rather than missed
+authored-object lookups. This closes the task-condition operand route for
+ownership on the current export. Source resolution remains useful debug
+context but adds no mission, quest, activation, or order edge.
 The first complete id census closes the direct task-id route. The 31 task ids
 and 51 distinct condition ids occur only in their LevelScripts, LevelData
 `lt:p`/`lt:mp` bookkeeping, 13 exact `ScriptTaskExtraInfoTable` display rows,
@@ -156,8 +165,10 @@ The durable details live at
 `reports/story/recovery/native_receiver_activation_frontier.{json,md}`.
 Mission Pipeline debug cards expose the start policy, validated LevelData
 container, SubGame carrier when present, both zero-count ownership checks, and
-the fully decoded task-condition operands when present; the audit adds no graph
-edge.
+the fully decoded task-condition operands when present. They now also show the
+exact authored source object behind each resolvable operand and would show an
+exact typed MissionRuntime consumer if a future export introduced one; the
+current consumer count is zero. The audit adds no graph edge.
 In debug mode, the Storyline frontend now consumes this same
 `storyCoverage.storyTriggerManifest` for every file row and selected-file
 detail panel; normal Story browsing does not load or display the trigger

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -328,6 +329,132 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             task["subGameMainTaskBindings"][0]["subGameId"],
         )
         self.assertNotIn("taskExtraInfo", task_map["tasks"][1])
+
+    def test_mission_runtime_operand_consumers_require_exact_typed_operands(
+        self,
+    ) -> None:
+        indexes = frontier.mission_runtime_operand_consumers_from_payloads(
+            [
+                (
+                    "mission_fixture",
+                    {
+                        "questId": "quest_fixture",
+                        "$type": "CheckTalkOptionFinish",
+                        "_dialogId": {"constValue": "dialog_fixture"},
+                        "_finishId": {"constValue": 2},
+                    },
+                    "fixture.json",
+                )
+            ]
+        )
+        self.assertEqual(
+            "mission_fixture",
+            indexes["dialog"][("dialog_fixture", 2)][0]["missionId"],
+        )
+        self.assertNotIn(("dialog_fixture", 1), indexes["dialog"])
+        self.assertEqual({}, indexes["area"])
+
+    def test_world_entity_sources_keep_only_unique_script_slots(self) -> None:
+        logic_rows, slot_rows = frontier.world_entity_operand_sources(
+            {
+                "worldEntityBriefInfos": {
+                    "9001": {
+                        "entityType": 2,
+                        "detailId": "enemy_fixture",
+                    }
+                },
+                "m_scriptEntityIdList": [
+                    {"scriptIdGlobal": "1001", "slotId": 4},
+                    {"scriptIdGlobal": "1001", "slotId": 5},
+                    {"scriptIdGlobal": "1001", "slotId": 5},
+                ],
+                "m_scriptEntityBriefInfo": [
+                    {"entityType": 2, "detailId": "slot_fixture"},
+                    {"entityType": 2, "detailId": "duplicate_a"},
+                    {"entityType": 2, "detailId": "duplicate_b"},
+                ],
+            }
+        )
+        self.assertEqual("enemy_fixture", logic_rows["9001"]["detailId"])
+        self.assertEqual("slot_fixture", slot_rows[("1001", 4)]["entityDetailId"])
+        self.assertNotIn(("1001", 5), slot_rows)
+
+    def test_task_operand_annotations_preserve_non_owning_sources(self) -> None:
+        task_map = {
+            "tasks": [
+                {
+                    "taskKey": "fixture_task",
+                    "conditions": [
+                        {
+                            "condition": {
+                                "type": "CheckEntityHp",
+                                "entity": {
+                                    "useSlotId": False,
+                                    "logicId": "9001",
+                                },
+                            }
+                        },
+                        {
+                            "condition": {
+                                "type": "TaskReachDestination",
+                                "areaId": {"value": "area_fixture"},
+                            }
+                        },
+                    ],
+                }
+            ]
+        }
+        consumers = {
+            kind: {}
+            for kind in ("dialog", "area", "spawner", "script", "entity")
+        }
+        consumers["entity"][("map_fixture", 9001)] = [
+            {
+                "missionId": "mission_fixture",
+                "questId": "quest_fixture",
+                "conditionType": "CheckEntityHp",
+                "sourceFile": "mission_fixture.json",
+            }
+        ]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            empty_root = Path(temp_dir)
+            frontier.annotate_task_condition_operands(
+                task_map,
+                level_id="map_fixture",
+                script_id="1001",
+                story_keys=[],
+                mission_areas=[
+                    {
+                        "missionAreaId": "area_fixture",
+                        "subDataParentId": 7,
+                        "shape": {"type": 2},
+                    }
+                ],
+                logic_entities={
+                    "9001": {
+                        "entityType": 2,
+                        "detailId": "enemy_fixture",
+                    }
+                },
+                slot_entities={},
+                mission_consumers=consumers,
+                levelscript_root=empty_root,
+                spawner_root=empty_root,
+            )
+        entity_row, area_row = task_map["tasks"][0]["conditions"]
+        self.assertEqual(
+            "world_entity_logic_id",
+            entity_row["operandSources"][0]["kind"],
+        )
+        self.assertEqual(
+            "mission_fixture",
+            entity_row["missionRuntimeOperandConsumers"][0]["missionId"],
+        )
+        self.assertEqual(
+            "same_level_mission_area",
+            area_row["operandSources"][0]["kind"],
+        )
+        self.assertNotIn("missionRuntimeOperandConsumers", area_row)
 
 
 if __name__ == "__main__":
