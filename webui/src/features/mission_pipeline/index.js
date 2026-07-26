@@ -110,6 +110,8 @@
       noGraphEdges: "zero mission graph edges",
       alternateActions: "mutually exclusive actions",
       currentAuthoredInstances: "current authored instances",
+      runtimeContextOnly: "runtime subscription context only",
+      authoredPropertyRows: "authored property rows",
       nonOwningCrossReference: "non-owning original-data cross-reference",
       unlockQuestPrerequisite: "unlock quest prerequisite",
       unlockPreviousSubGame: "prior challenge prerequisite",
@@ -494,6 +496,8 @@
       noGraphEdges: "使命图边为零",
       alternateActions: "互斥动作分支",
       currentAuthoredInstances: "当前原始实例",
+      runtimeContextOnly: "仅运行时订阅上下文",
+      authoredPropertyRows: "原始属性行",
       nonOwningCrossReference: "不表示所有权的原始数据交叉参考",
       unlockQuestPrerequisite: "解锁任务前置条件",
       unlockPreviousSubGame: "前一挑战前置条件",
@@ -2302,6 +2306,7 @@
     const localRows = (contract.localOnly || []).filter((row) => row && row.event);
     const protocolOnlyRows = (contract.protocolOnly || []).filter((row) => row && row.message);
     const missionOptionAudit = contract.missionOptionCarrierAudit || null;
+    const missionPropertyAudit = contract.missionPropertyScriptPtrAudit || null;
     const eventFamilies = Object.entries(state.index?.storyCoverage?.nativePlaybackEventFamilies || {})
       .filter(([, count]) => Number(count) > 0)
       .sort((a, b) => Number(b[1]) - Number(a[1]) || a[0].localeCompare(b[0]));
@@ -2335,7 +2340,10 @@
       </article>`; }).join("")}</div>
       ${localRows.length ? `<section class="mp-local-only"><header><strong>${esc(t("localOnlyPaths"))}</strong><span>${esc(t("noServerExchange"))}</span></header><div>${localRows.map((row) => `<article class="mp-contract-card is-local-only"><span>LOCAL · ${esc(row.confidence || "native_proven")}</span><strong>${esc(row.event)}</strong><div class="mp-contract-tags"><b>${esc(t("noServerExchange"))}</b></div>${(row.fields || []).length ? `<small><b>${esc(t("protocolFields"))}:</b> ${(row.fields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</small>` : ""}<code>${esc(row.handler || "")}${row.address ? ` @ ${esc(row.address)}` : ""}</code><p>${esc(row.effect || "")}</p></article>`).join("")}</div></section>` : ""}
       ${protocolOnlyRows.length ? `<section class="mp-local-only mp-protocol-capabilities"><header><strong>${esc(protocolLabel("capability"))}</strong><span>${esc(protocolLabel("schemaOnly"))}</span></header><div>${protocolOnlyRows.map((row) => `<article class="mp-contract-card"><span>${esc(protocolLabel(row.boundary === "runtime_unconfirmed" ? "runtimeUnconfirmed" : "senderUnconfirmed"))}</span><strong>${esc(row.message)}</strong><div class="mp-contract-tags"><b>${esc(row.confidence || "protocol_schema_only")}</b></div>${(row.fields || []).length ? `<small><b>${esc(t("protocolFields"))}:</b> ${(row.fields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</small>` : ""}${row.possibleServerPush ? `<small><b>${esc(protocolLabel("possible"))}:</b> <code>${esc(row.possibleServerPush)}</code></small>` : ""}<p>${esc(row.effect || "")}</p></article>`).join("")}</div></section>` : ""}
-      ${missionOptionAudit?.finding ? `<section class="mp-local-only mp-carrier-audits"><header><strong>${esc(t("carrierAudit"))}</strong><span>${esc(t("noGraphEdges"))}</span></header><div><article class="mp-contract-card is-boundary-only"><span>${esc(missionOptionAudit.classification || "schema_only")}</span><strong>${esc(missionOptionAudit.managedCarrier?.type || "MissionOptionData")}</strong><div class="mp-contract-tags"><b>${esc(t("alternateActions"))}</b><b>${esc(t("currentAuthoredInstances"))}: ${Number(missionOptionAudit.authoredInstanceSearch?.matches || 0).toLocaleString()}</b></div><small><b>${esc(t("protocolFields"))}:</b> ${(missionOptionAudit.managedCarrier?.fields || []).map((field) => `<code>${esc(`${field.name}@${field.offset}`)}</code>`).join(" ")}</small><code>${esc(missionOptionAudit.nativeConsumer?.symbol || "")}${missionOptionAudit.nativeConsumer?.address ? ` @ ${esc(missionOptionAudit.nativeConsumer.address)}` : ""}</code><p>${esc(missionOptionAudit.finding)}</p><small>${esc(missionOptionAudit.boundary || "")}</small></article></div></section>` : ""}
+      ${missionOptionAudit?.finding || missionPropertyAudit?.finding ? `<section class="mp-local-only mp-carrier-audits"><header><strong>${esc(t("carrierAudit"))}</strong><span>${esc(t("noGraphEdges"))}</span></header><div>
+        ${missionOptionAudit?.finding ? `<article class="mp-contract-card is-boundary-only"><span>${esc(missionOptionAudit.classification || "schema_only")}</span><strong>${esc(missionOptionAudit.managedCarrier?.type || "MissionOptionData")}</strong><div class="mp-contract-tags"><b>${esc(t("alternateActions"))}</b><b>${esc(t("currentAuthoredInstances"))}: ${Number(missionOptionAudit.authoredInstanceSearch?.matches || 0).toLocaleString()}</b></div><small><b>${esc(t("protocolFields"))}:</b> ${(missionOptionAudit.managedCarrier?.fields || []).map((field) => `<code>${esc(`${field.name}@${field.offset}`)}</code>`).join(" ")}</small><code>${esc(missionOptionAudit.nativeConsumer?.symbol || "")}${missionOptionAudit.nativeConsumer?.address ? ` @ ${esc(missionOptionAudit.nativeConsumer.address)}` : ""}</code><p>${esc(missionOptionAudit.finding)}</p><small>${esc(missionOptionAudit.boundary || "")}</small></article>` : ""}
+        ${missionPropertyAudit?.finding ? `<article class="mp-contract-card is-boundary-only"><span>${esc(missionPropertyAudit.classification || "runtime_context_only")}</span><strong>MissionRuntimeAsset.properties → MissionData.propertyDict → ParamVariable.m_scriptPtr</strong><div class="mp-contract-tags"><b>${esc(t("runtimeContextOnly"))}</b><b>${esc(t("authoredPropertyRows"))}: ${Number(missionPropertyAudit.authoredMissionProperties?.propertyRows || 0).toLocaleString()}</b></div><small><b>${esc(t("protocolFields"))}:</b> <code>properties@${esc(missionPropertyAudit.managedLayout?.MissionRuntimeAsset?.properties?.offset || "")}</code> <code>propertyDic@${esc(missionPropertyAudit.managedLayout?.MissionRuntimeAsset?.propertyDic?.offset || "")}</code> <code>m_scriptPtr@${esc(missionPropertyAudit.managedLayout?.ParamVariable?.m_scriptPtr?.offset || "")}</code></small><code>${esc((missionPropertyAudit.missionPropertyWriters || []).map((row) => row.symbol).join(" · "))} → ToVariable</code><p>${esc(missionPropertyAudit.finding)}</p><small>${esc(missionPropertyAudit.boundary || "")}</small></article>` : ""}
+      </div></section>` : ""}
       ${eventFamilies.length ? `<section class="mp-gap-queue">
         <header><strong>${esc(t("nativeGapQueue"))}</strong><p>${esc(t("nativeGapQueueHint"))}</p></header>
         ${coveragePolicy ? `<p class="mp-gap-policy"><b>${esc(t("evidencePolicy"))}:</b> ${esc(coveragePolicy)}</p>` : ""}

@@ -644,6 +644,30 @@ methods. The hash-pinned rerunnable report is
 adds zero ownership/order edges and should not be repeated until the binary,
 metadata, exported data, or IFix changes.
 
+The superficially stronger nested managed-type join through mission properties
+is also a false foreign key. `MissionRuntimeAsset` serializes
+`List<ParamKeyValue> properties` at `+0xe0` and allocates a separate empty
+`Dictionary<string, ParamVariable> propertyDic` at `+0xf8`.
+`MissionSystem.MissionData.propertyDict` is another dictionary at `+0x20`.
+Although the shared `ParamVariable` type has `m_scriptPtr` at `+0x70`, current
+authored `properties` rows contain only the ParamKeyValue/value scalar shape,
+not a script pointer: 214 rows across 70 of 490 mission assets, with zero
+`scriptId`/`LevelScriptPtr` nested fields.
+
+Native construction keeps the two contexts separate. Sync-all, incremental
+mission-property update, and mission-state update each call
+`ParamVariableExtensions.ToVariable(Proto.DYNAMIC_PARAMETER)` and write
+`MissionData.propertyDict`. A complete direct-call census finds zero
+MissionSystem call to either LevelScript setup method. The mapped setters of
+`m_scriptPtr` are property/blackboard event registration paths owned by
+`LevelEventManager` and LevelScript `ScriptEvent` receivers. One BB setter
+callsite remains native/generic without a managed owner, but its call shape has
+only a LevelScript pointer/key and no mission identity. The installed IFix
+matches none of the reviewed paths. The maintained fail-closed report is
+`reports/story/recovery/mission_property_scriptptr_audit.{json,md}`; its
+classification is `runtime_context_only_no_mission_levelscript_edge` and it
+adds zero bindings.
+
 The non-protobuf runtime-type census found one complete serialized carrier in
 `Beyond.Gameplay.LevelData.airWalls`. The current LevelData MemoryPack root has
 43 members and `airWalls` is member 0. Generated wrapper setters prove the
@@ -1840,6 +1864,11 @@ remain gated on the recovery work below:
    `MissionOptionData` no longer belongs in that queue: its two fields drive
    mutually exclusive action branches and no current authored instance exists.
    Reopen only on a binary/export/IFix change.
+   The nested mission-property carrier no longer belongs there either.
+   `MissionRuntimeAsset.properties` has no script pointer, MissionSystem
+   synchronization writes `MissionData.propertyDict`, and `m_scriptPtr` is
+   attached by LevelScript event subscriptions rather than mission handlers.
+   Reopen only on a binary/metadata/export/IFix change.
    The current ten missionless SubGame playback rows are now closed across
    their complete exported exact-reference and receiver-task surfaces: nine
    unique Story files across fourteen placements, one non-owning activity

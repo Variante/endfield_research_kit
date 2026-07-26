@@ -319,6 +319,14 @@ Mission Pipeline:
   `schema_only_current_export_absent`. The Native boundary panel renders this
   as a closed managed-carrier card with the exact offsets, consumer address,
   zero-instance count, and explicit zero-edge result.
+  Schema v8 adds the adjacent mission-property carrier closure. The Native
+  boundary now distinguishes 214 authored `MissionRuntimeAsset.properties`
+  rows and the server-synchronized `MissionData.propertyDict` from
+  `ParamVariable.m_scriptPtr`, which is attached by LevelScript
+  property/blackboard event subscriptions. The card exposes the exact
+  `properties@0xe0`, `propertyDic@0xf8`, and `m_scriptPtr@0x70` layout, labels
+  the result `runtime_context_only_no_mission_levelscript_edge`, and preserves
+  the explicit zero-edge boundary.
   Native paths with no network exchange are separated again: BattleSignal is
   shown as local Ability-action dispatch with only signal/value identity, not
   placed into either C->S or S->C lanes.
