@@ -76,8 +76,22 @@ EXPECTED_IFIX_SHA256 = (
 SUBMIT_ITEM_LUA_LOGICAL_PATH = (
     "Data/LuaScripts/UI/Panels/SubmitItem/SubmitItemCtrl.lua"
 )
+PHASE_DIALOG_LUA_LOGICAL_PATH = (
+    "Data/LuaScripts/Phase/Dialog/PhaseDialog.lua"
+)
 EXPECTED_SUBMIT_ITEM_LUA_SHA256 = (
     "1c2a81f42d5512fc0bcfa35b78820d6482af15e2a2c8189fe85d81199286128e"
+)
+EXPECTED_PHASE_DIALOG_LUA_SHA256 = (
+    "59df40f905d038f8a0527d680eca612e7b2ed4e0e9b3f7cfc96bf97bbe882b13"
+)
+DEFAULT_MISSION_RUNTIME_ROOT = (
+    ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json"
+    / "MissionRuntimeAsset"
+)
+DEFAULT_SUBMIT_ITEM_TABLE = (
+    ROOT / "export_full" / "structured" / "StreamingAssets" / "Table"
+    / "SubmitItem.json"
 )
 SUBMIT_ITEM_PANEL_TYPE = 9
 SUBMIT_ITEM_PLACEHOLDER_PARAM = {
@@ -262,6 +276,18 @@ DIALOG_OPEN_UI_CALLERS = [{
     "token": "0x060033f2",
     "address": "0x18630c078",
 }]
+DIALOG_MANAGER_OPEN_UI_TARGET = {
+    "symbol": "Beyond.Gameplay.Core.DialogManager.OpenUI",
+    "methodIndex": 63380,
+    "token": "0x0600f795",
+    "address": "0x186e145d8",
+}
+DIALOG_MANAGER_OPEN_UI_EXPECTED_CALLER = {
+    "symbol": "Beyond.Gameplay.DialogTreeOpenUINode.DoAction",
+    "methodIndex": 15072,
+    "token": "0x06003ae1",
+    "address": "0x1872a5e1c",
+}
 
 
 def load_module(name: str, path: Path) -> Any:
@@ -282,11 +308,12 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def dump_submit_item_lua(
+def dump_target_lua(
     *,
     animestudio_cli: Path,
     game_root: Path,
     lua_source: Path | None,
+    logical_path: str,
 ) -> tuple[bytes, dict[str, Any]]:
     """Read a supplied plaintext Lua file or target-dump it from installed VFS."""
     if lua_source is not None:
@@ -294,9 +321,10 @@ def dump_submit_item_lua(
         return raw, {
             "mode": "supplied_plaintext",
             "path": str(lua_source.resolve()),
-            "logicalPath": SUBMIT_ITEM_LUA_LOGICAL_PATH,
+            "logicalPath": logical_path,
         }
 
+    file_name = Path(logical_path).name
     streaming_assets = game_root / "StreamingAssets"
     if not animestudio_cli.is_file():
         raise FileNotFoundError(f"AnimeStudio CLI not found: {animestudio_cli}")
@@ -305,7 +333,7 @@ def dump_submit_item_lua(
             f"installed StreamingAssets not found: {streaming_assets}"
         )
     with tempfile.TemporaryDirectory(
-        prefix="endfield-submit-item-lua-"
+        prefix=f"endfield-{file_name.lower().replace('.', '-')}-"
     ) as temp_name:
         output_root = Path(temp_name)
         command = [
@@ -320,7 +348,7 @@ def dump_submit_item_lua(
             "--block-type",
             "lua",
             "--file-regex",
-            r"SubmitItemCtrl\.lua$",
+            rf"{re.escape(file_name)}$",
         ]
         completed = subprocess.run(
             command,
@@ -335,16 +363,16 @@ def dump_submit_item_lua(
                 "AnimeStudio targeted Lua dump failed "
                 f"({completed.returncode}): {completed.stderr or completed.stdout}"
             )
-        matches = list(output_root.rglob("SubmitItemCtrl.lua"))
+        matches = list(output_root.rglob(file_name))
         if len(matches) != 1:
             raise RuntimeError(
                 "AnimeStudio targeted Lua dump returned "
-                f"{len(matches)} SubmitItemCtrl.lua files"
+                f"{len(matches)} {file_name} files"
             )
         raw = matches[0].read_bytes()
     return raw, {
         "mode": "targeted_installed_vfs_dump",
-        "logicalPath": SUBMIT_ITEM_LUA_LOGICAL_PATH,
+        "logicalPath": logical_path,
         "animeStudioCli": str(animestudio_cli.resolve()),
         "animeStudioCliSha256": sha256_file(animestudio_cli),
         "streamingAssets": str(streaming_assets.resolve()),
@@ -421,6 +449,196 @@ def audit_submit_item_lua(raw: bytes, source: dict[str, Any]) -> dict[str, Any]:
             "InventoryItemSubmitter through XLua and registers it on the active "
             "DialogManager when submission originated from a playing dialog and "
             "is not configured for immediate server submission."
+        ),
+    }
+
+
+def audit_phase_dialog_lua(raw: bytes, source: dict[str, Any]) -> dict[str, Any]:
+    text = raw.decode("utf-8-sig")
+    patterns = {
+        "unpackActionArguments": (
+            "local panelIdStr, paramStr, actionData = unpack(arg)"
+        ),
+        "jsonDecodeParam": "Utils.stringJsonToTable(paramStr)",
+        "markFromDialog": "param.fromDialog = true",
+        "attachActionData": "param.actionData = actionData",
+        "openPhase": "PhaseManager:OpenPhase(phaseId, param, nil, true)",
+    }
+    return {
+        "source": {
+            **source,
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "bytes": len(raw),
+        },
+        "patternCounts": {
+            name: text.count(pattern) for name, pattern in patterns.items()
+        },
+        "lines": {
+            name: lua_line_number(text, pattern)
+            for name, pattern in patterns.items()
+        },
+        "finding": (
+            "PhaseDialog.OpenUI unpacks the native panel id, parameter string, "
+            "and original action object; JSON-decodes the parameter verbatim; "
+            "then adds only fromDialog and actionData before opening the phase. "
+            "It performs no mission or quest lookup and supplies no fallback "
+            "submission identity."
+        ),
+    }
+
+
+def type_name(value: Any) -> str:
+    return str(value or "").split(",", 1)[0].rsplit(".", 1)[-1]
+
+
+def const_value(value: Any) -> Any:
+    if isinstance(value, dict) and "constValue" in value:
+        return value.get("constValue")
+    return value
+
+
+def iter_condition_rows(value: Any):
+    if isinstance(value, dict):
+        yield value
+        for child in value.get("subConditions") or []:
+            yield from iter_condition_rows(child)
+
+
+def audit_authored_submit_item_objectives(
+    mission_root: Path,
+    submit_item_table_path: Path,
+    open_ui_actions: dict[str, Any],
+) -> dict[str, Any]:
+    table = json.loads(submit_item_table_path.read_text(encoding="utf-8"))
+    rows: list[dict[str, Any]] = []
+    with_subgame_count = 0
+    for path in sorted(mission_root.glob("*.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        mission_id = str(payload.get("missionId") or path.stem)
+        for quest_id, quest in (payload.get("questDic") or {}).items():
+            if not isinstance(quest, dict):
+                continue
+            for objective_index, objective in enumerate(
+                quest.get("objectiveList") or [], 1
+            ):
+                if not isinstance(objective, dict):
+                    continue
+                condition = objective.get("condition")
+                condition_rows = list(iter_condition_rows(condition))
+                with_subgame_count += sum(
+                    type_name(row.get("$type"))
+                    == "CheckQuestSubmitItemWithSubGame"
+                    for row in condition_rows
+                )
+                for condition_row in condition_rows:
+                    if (
+                        type_name(condition_row.get("$type"))
+                        != "CheckQuestSubmitItem"
+                    ):
+                        continue
+                    submission_id = const_value(
+                        condition_row.get("_submissionId")
+                    )
+                    table_row = (
+                        table.get(submission_id)
+                        if isinstance(submission_id, str)
+                        else None
+                    )
+                    co_gates: list[dict[str, Any]] = []
+                    for combine in condition_rows:
+                        children = [
+                            child
+                            for child in combine.get("subConditions") or []
+                            if isinstance(child, dict)
+                        ]
+                        if condition_row not in children or "and" not in str(
+                            combine.get("conditionEvalString") or ""
+                        ).lower():
+                            continue
+                        for sibling in children:
+                            if type_name(sibling.get("$type")) != (
+                                "CheckTalkOptionFinish"
+                            ):
+                                continue
+                            co_gates.append({
+                                "dialogId": const_value(
+                                    sibling.get("_dialogId")
+                                ),
+                                "finishId": const_value(
+                                    sibling.get("_finishId")
+                                ),
+                                "combineConditionId": str(
+                                    combine.get("uniqueId") or ""
+                                ),
+                                "relation": "same_authored_and_objective",
+                            })
+                    requirements = []
+                    if isinstance(table_row, dict):
+                        for group in table_row.get("paramData") or []:
+                            params = group.get("paramList") or []
+                            item_ids = (
+                                params[0].get("valueStringList") or []
+                                if len(params) > 0
+                                and isinstance(params[0], dict)
+                                else []
+                            )
+                            counts = (
+                                params[1].get("valueIntList") or []
+                                if len(params) > 1
+                                and isinstance(params[1], dict)
+                                else []
+                            )
+                            requirements.append([{
+                                "itemId": str(item_id),
+                                "count": (
+                                    counts[index]
+                                    if index < len(counts)
+                                    else counts[0] if counts else None
+                                ),
+                            } for index, item_id in enumerate(item_ids)])
+                    rows.append({
+                        "missionId": mission_id,
+                        "questId": str(quest_id),
+                        "objectiveIndex": objective_index,
+                        "conditionId": str(
+                            condition_row.get("uniqueId") or ""
+                        ),
+                        "submissionId": submission_id,
+                        "tableDefined": isinstance(table_row, dict),
+                        "requirements": requirements,
+                        "dialogCoGates": co_gates,
+                    })
+    open_ui_dialogs = {
+        str(row.get("dialogKey") or "")
+        for row in open_ui_actions.get("actions") or []
+        if row.get("dialogKey")
+    }
+    co_gate_dialogs = {
+        str(gate.get("dialogId") or "")
+        for row in rows
+        for gate in row["dialogCoGates"]
+        if gate.get("dialogId")
+    }
+    return {
+        "source": {
+            "missionRuntimeRoot": str(mission_root.resolve()),
+            "submitItemTable": str(submit_item_table_path.resolve()),
+        },
+        "conditionCount": len(rows),
+        "questCount": len({row["questId"] for row in rows}),
+        "missionCount": len({row["missionId"] for row in rows}),
+        "tableDefinedCount": sum(row["tableDefined"] for row in rows),
+        "dialogCoGateCount": sum(len(row["dialogCoGates"]) for row in rows),
+        "dialogCoGateOpenUiOverlap": len(co_gate_dialogs & open_ui_dialogs),
+        "withSubGameConditionCount": with_subgame_count,
+        "rows": rows,
+        "finding": (
+            "Three exact MissionRuntime objectives test a SubmitItem table id; "
+            "all three table definitions resolve to exact item requirements. "
+            "Two checks share an authored AND objective with a dialog-finish "
+            "condition, but neither dialog occurs among the 13 typed SubmitItem "
+            "OpenUI terminals. These are exact quest-to-submission requirements "
+            "and bounded dialog co-gates, not quest-to-OpenUI ownership."
         ),
     }
 
@@ -519,6 +737,9 @@ def build_report(
     game_root: Path,
     animestudio_cli: Path,
     lua_source: Path | None,
+    phase_dialog_lua_source: Path | None,
+    mission_root: Path = DEFAULT_MISSION_RUNTIME_ROOT,
+    submit_item_table_path: Path = DEFAULT_SUBMIT_ITEM_TABLE,
 ) -> dict[str, Any]:
     metadata_module = load_module("nested_carrier_metadata", METADATA_HELPER)
     mapper = load_module("nested_carrier_mapper", MAPPER_HELPER)
@@ -722,16 +943,34 @@ def build_report(
     target_by_va[int(DIALOG_OPEN_UI_TARGET["address"], 16)] = (
         DIALOG_OPEN_UI_TARGET["symbol"]
     )
+    target_by_va[int(DIALOG_MANAGER_OPEN_UI_TARGET["address"], 16)] = (
+        DIALOG_MANAGER_OPEN_UI_TARGET["symbol"]
+    )
     direct_callers = scan_direct_callers(
         pe, method_by_pointer, method_pointers, target_by_va
     )
-    lua_raw, lua_source_info = dump_submit_item_lua(
+    lua_raw, lua_source_info = dump_target_lua(
         animestudio_cli=animestudio_cli,
         game_root=game_root,
         lua_source=lua_source,
+        logical_path=SUBMIT_ITEM_LUA_LOGICAL_PATH,
     )
     lua_producer = audit_submit_item_lua(lua_raw, lua_source_info)
+    phase_dialog_raw, phase_dialog_source_info = dump_target_lua(
+        animestudio_cli=animestudio_cli,
+        game_root=game_root,
+        lua_source=phase_dialog_lua_source,
+        logical_path=PHASE_DIALOG_LUA_LOGICAL_PATH,
+    )
+    phase_dialog_flow = audit_phase_dialog_lua(
+        phase_dialog_raw, phase_dialog_source_info
+    )
     authored_open_ui = audit_authored_submit_item_actions()
+    authored_objectives = audit_authored_submit_item_objectives(
+        mission_root,
+        submit_item_table_path,
+        authored_open_ui,
+    )
     ifix_audit = json.loads(ifix_audit_path.read_text(encoding="utf-8"))
     fixed_signatures = [
         str(row.get("signature") or "")
@@ -802,6 +1041,21 @@ def build_report(
             "SubmitItemCtrl direct submission call count changed: "
             f"{lua_producer['directInventorySubmissionCalls']}"
         )
+    if (
+        phase_dialog_flow["source"]["sha256"]
+        != EXPECTED_PHASE_DIALOG_LUA_SHA256
+    ):
+        errors.append("PhaseDialog.lua SHA256 changed")
+    unexpected_phase_counts = {
+        key: count
+        for key, count in phase_dialog_flow["patternCounts"].items()
+        if count != 1
+    }
+    if unexpected_phase_counts:
+        errors.append(
+            "PhaseDialog OpenUI pass-through patterns changed: "
+            f"{unexpected_phase_counts}"
+        )
     actual_open_ui_counts = {
         key: authored_open_ui[key] for key in EXPECTED_OPEN_UI_COUNTS
     }
@@ -829,6 +1083,38 @@ def build_report(
                 "DialogOpenUIPanel direct callers changed: "
                 f"{sorted(resolved_open_ui_callers)}"
             )
+    dialog_manager_open_ui_callers = direct_callers[
+        DIALOG_MANAGER_OPEN_UI_TARGET["symbol"]
+    ]
+    resolved_dialog_manager_open_ui_callers = {
+        f"{row.get('type')}.{row.get('method')}"
+        for caller in dialog_manager_open_ui_callers
+        for row in caller.get("resolved", [])
+    }
+    if resolved_dialog_manager_open_ui_callers != {
+        DIALOG_MANAGER_OPEN_UI_EXPECTED_CALLER["symbol"]
+    }:
+        errors.append(
+            "DialogManager.OpenUI direct callers changed: "
+            f"{sorted(resolved_dialog_manager_open_ui_callers)}"
+        )
+    expected_objective_counts = {
+        "conditionCount": 3,
+        "questCount": 3,
+        "missionCount": 3,
+        "tableDefinedCount": 3,
+        "dialogCoGateCount": 2,
+        "dialogCoGateOpenUiOverlap": 0,
+        "withSubGameConditionCount": 0,
+    }
+    actual_objective_counts = {
+        key: authored_objectives[key] for key in expected_objective_counts
+    }
+    if actual_objective_counts != expected_objective_counts:
+        errors.append(
+            "authored SubmitItem objective counts changed: "
+            f"{actual_objective_counts}"
+        )
 
     direct_exact_count = sum(
         "mission_or_quest" in row["directClasses"]
@@ -839,7 +1125,7 @@ def build_report(
         for row in candidates
     )
     return {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "source": {
             "gameAssembly": str(game_assembly.resolve()),
             "gameAssemblySha256": game_sha,
@@ -917,7 +1203,32 @@ def build_report(
                 ),
             },
             "shippedLuaProducer": lua_producer,
+            "fallbackParamFlow": {
+                "nativePath": [{
+                    **DIALOG_MANAGER_OPEN_UI_EXPECTED_CALLER,
+                    "directCallTarget": DIALOG_MANAGER_OPEN_UI_TARGET,
+                    "matchingDirectCallCount": len(
+                        dialog_manager_open_ui_callers
+                    ),
+                    "effect": "passes the original DialogOpenUIAction to DialogManager.OpenUI",
+                }, {
+                    **DIALOG_MANAGER_OPEN_UI_TARGET,
+                    "effect": "passes the original action to GameAction.DialogOpenUIPanel",
+                }, {
+                    "symbol": "GameAction.DialogOpenUIPanel",
+                    "token": "0x06008031",
+                    "address": "0x1875e0224",
+                    "effect": "forwards panelType, param string, and original action object",
+                }],
+                "shippedLuaConsumer": phase_dialog_flow,
+                "finding": (
+                    "The installed native fallback and shipped PhaseDialog Lua "
+                    "forward and decode the authored parameter string without "
+                    "substituting a mission, quest, submission, or objective id."
+                ),
+            },
             "authoredOpenUiActions": authored_open_ui,
+            "authoredMissionObjectives": authored_objectives,
             "sendFinishDialog": {
                 "symbol": "Beyond.Gameplay.CinematicSystem.SendFinishDialog",
                 "token": "0x06004027",
@@ -930,7 +1241,7 @@ def build_report(
             },
             "installedPatchMatches": submitter_ifix_matches,
             "classification": (
-                "active_shipped_xlua_producer_without_concrete_authored_join"
+                "active_shipped_xlua_producer_with_exact_submission_context_without_ui_join"
             ),
             "finding": (
                 "The shipped SubmitItemCtrl Lua is the missing producer: it "
@@ -939,8 +1250,11 @@ def build_report(
                 "callers never implied inactivity. The typed authored census finds "
                 "13 SubmitItem OpenUI terminals, but three contain only the stock "
                 "placeholder params, ten contain no params, and none exports a "
-                "concrete quest id. The active bridge therefore adds no exact "
-                "quest-to-dialog or order edge."
+                "concrete quest id. Separately, three quest objectives resolve "
+                "exact submission requirements and two bounded dialog co-gates, "
+                "but those dialog ids do not overlap the SubmitItem OpenUI "
+                "terminals. The fallback parameter flow supplies no missing id, "
+                "so the active bridge adds no exact quest-to-dialog or order edge."
             ),
         },
         "finding": (
@@ -949,14 +1263,16 @@ def build_report(
             "FocusMode, NpcProxy, SubGame, DomainDepot, and RadioTriggerZone contexts "
             "were already recovered. The remaining joins are global aggregate "
             "managers, previously closed property/task paths, static registries, or "
-            "the active XLua pending-submission bridge whose current authored "
-            "actions expose no concrete quest id."
+            "the active XLua pending-submission bridge. That bridge now carries "
+            "three exact quest-to-submission requirements, but no quest-to-OpenUI "
+            "join or mission-order edge."
         ),
         "boundary": (
-            "The exact shipped SubmitItem XLua producer is included. Other "
-            "reflection/XLua construction, runtime-substituted OpenUI params, "
-            "native-only opaque objects, server-only state, paths deeper than three "
-            "custom-type hops, unexported asset kinds, future IFix, and future builds "
+            "The exact shipped SubmitItem XLua producer, current fallback OpenUI "
+            "parameter pass-through, and authored submission objectives are "
+            "included. Dynamic mutation or reflection outside this path, native-"
+            "only opaque objects, server-only state, paths deeper than three custom-"
+            "type hops, unexported asset kinds, future IFix, and future builds "
             "remain outside the bound."
         ),
         "classification": "all_nested_managed_identity_carriers_reviewed",
@@ -971,7 +1287,10 @@ def render_markdown(report: dict[str, Any]) -> str:
     census = report["census"]
     closure = report["pendingItemSubmitterClosure"]
     lua_producer = closure["shippedLuaProducer"]
+    fallback = closure["fallbackParamFlow"]
+    phase_dialog = fallback["shippedLuaConsumer"]
     authored = closure["authoredOpenUiActions"]
+    objectives = closure["authoredMissionObjectives"]
     lines = [
         "# Nested managed identity carrier census",
         "",
@@ -1000,6 +1319,17 @@ def render_markdown(report: dict[str, Any]) -> str:
         "- Ordered constructor argument matches: "
         f"`{lua_producer['orderedConstructorArgumentMatches']}`",
         "",
+        "### Fallback OpenUI parameter flow",
+        "",
+        fallback["finding"],
+        "",
+        f"- PhaseDialog path: `{phase_dialog['source']['logicalPath']}`",
+        f"- PhaseDialog SHA-256: `{phase_dialog['source']['sha256']}`",
+        "- Verified native path: "
+        + " -> ".join(
+            f"`{row['symbol']}`" for row in fallback["nativePath"]
+        ),
+        "",
         "### Typed authored OpenUI terminals",
         "",
         authored["finding"],
@@ -1011,11 +1341,46 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"`{authored['placeholderSubmitItemActions']}` / "
         f"`{authored['concreteQuestIdActions']}`",
         "",
+        "### Authored mission submission objectives",
+        "",
+        objectives["finding"],
+        "",
+        f"- Conditions / quests / missions: `{objectives['conditionCount']}` / "
+        f"`{objectives['questCount']}` / `{objectives['missionCount']}`",
+        f"- Table-defined requirements: `{objectives['tableDefinedCount']}`",
+        f"- Same-AND dialog co-gates: `{objectives['dialogCoGateCount']}`",
+        "- Co-gate overlap with SubmitItem OpenUI terminals: "
+        f"`{objectives['dialogCoGateOpenUiOverlap']}`",
+        "",
+        "| Mission | Quest | Condition | Submission | Requirement | Dialog co-gate |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for row in objectives["rows"]:
+        requirements = " or ".join(
+            " + ".join(
+                f"{item['itemId']} x{item['count']}"
+                for item in group
+            )
+            for group in row["requirements"]
+        )
+        co_gates = ", ".join(
+            f"{gate['dialogId']} finish {gate['finishId']}"
+            for gate in row["dialogCoGates"]
+        )
+        lines.append(
+            f"| `{md_escape(row['missionId'])}` | "
+            f"`{md_escape(row['questId'])}` | "
+            f"`{md_escape(row['conditionId'])}` | "
+            f"`{md_escape(str(row['submissionId']))}` | "
+            f"{md_escape(requirements)} | {md_escape(co_gates or '-')} |"
+        )
+    lines.extend([
+        "",
         "### Native fallback path",
         "",
         "| Method | Token | Address | Native direct callers |",
         "| --- | --- | --- | ---: |",
-    ]
+    ])
     for name, row in closure["methods"].items():
         lines.append(
             f"| `{md_escape(name)}` | `{row['token']}` | `{row['address']}` | "
@@ -1079,6 +1444,24 @@ def main() -> int:
             "single file is target-dumped from the installed VFS."
         ),
     )
+    parser.add_argument(
+        "--phase-dialog-lua-source",
+        type=Path,
+        help=(
+            "Optional plaintext PhaseDialog.lua override. By default the single "
+            "file is target-dumped from the installed VFS."
+        ),
+    )
+    parser.add_argument(
+        "--mission-root",
+        type=Path,
+        default=DEFAULT_MISSION_RUNTIME_ROOT,
+    )
+    parser.add_argument(
+        "--submit-item-table",
+        type=Path,
+        default=DEFAULT_SUBMIT_ITEM_TABLE,
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MARKDOWN)
     args = parser.parse_args()
@@ -1089,6 +1472,9 @@ def main() -> int:
         game_root=args.game_root,
         animestudio_cli=args.animestudio_cli,
         lua_source=args.lua_source,
+        phase_dialog_lua_source=args.phase_dialog_lua_source,
+        mission_root=args.mission_root,
+        submit_item_table_path=args.submit_item_table,
     )
     write_report_json(args.out, report)
     write_text_if_changed(args.markdown, render_markdown(report))

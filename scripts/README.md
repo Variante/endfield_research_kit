@@ -968,8 +968,15 @@ Expected active inputs and outputs:
   target-dumps the shipped `SubmitItemCtrl.lua` and proves its XLua
   constructor/registration call. It also checks all typed DialogTree OpenUI
   terminals: 13 are SubmitItem actions, three use the stock placeholder params,
-  ten have empty params, and none exports a concrete quest id. The report
-  therefore records an active producer but adds no graph edge.
+  ten have empty params, and none exports a concrete quest id. The audit also
+  target-dumps and hash-pins `PhaseDialog.lua`, proving that the current native/
+  Lua OpenUI fallback forwards and JSON-decodes the authored parameter without
+  a mission/quest lookup. Finally it scans all MissionRuntime objectives and
+  `SubmitItem.json`: three exact quest submission checks resolve to item/count
+  requirements, two have a same-AND dialog-finish co-gate, and those dialog ids
+  overlap no SubmitItem OpenUI terminal. The report therefore records an active
+  producer plus exact quest-to-submission context, but adds no quest-to-OpenUI,
+  Story ownership, or order edge.
 
   ```bat
   python scripts\story_recovery\build_nested_managed_identity_carrier_census.py

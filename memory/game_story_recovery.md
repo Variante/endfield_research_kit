@@ -2635,18 +2635,36 @@ This active bridge still does not recover a quest-to-dialog edge. The typed
 DialogTree census contains 95 terminal `DialogOpenUIAction` rows, including 13
 with `panelType=9` matching SubmitItem. Three carry the exact
 `DIALOG_OPEN_UI_PARAM_SUBMITITEM` stock placeholder JSON, ten have empty
-params, and zero exports a concrete `questId`. Runtime-substituted parameters
-remain possible but are not present in current authored evidence, so filename
-or nominal-mission matching must not fill the gap.
+params, and zero exports a concrete `questId`. The current fallback does not
+fill that gap: `DialogTreeOpenUINode.DoAction` passes the original action to
+`DialogManager.OpenUI`, `GameAction.DialogOpenUIPanel` forwards its `param`
+string and original action object, and hash-pinned shipped
+`Data/LuaScripts/Phase/Dialog/PhaseDialog.lua` only JSON-decodes the string and
+adds `fromDialog` plus `actionData`. It performs no mission/quest lookup or
+submission-identity substitution.
+
+MissionRuntime does supply a separate exact quest-to-submission relation.
+There are exactly three `CheckQuestSubmitItem` objectives:
+`sm1l1m5_q#4 -> submit_sm1l1m5_phone`,
+`sm1l6m3_q#3 -> submit_item_e2m6_2`, and
+`sm2l7m1_q#17 -> submit_item_sm2l7m1`. All three resolve in `SubmitItem.json`
+to exact item/count alternatives. The first two share an authored
+`CombineCondition "{0} and {1}"` with a `CheckTalkOptionFinish`; these are
+bounded same-objective co-gates, not playback ownership. Their dialog ids have
+zero overlap with the 13 typed SubmitItem OpenUI dialogs, while the third
+submission is co-gated by a LevelScript-stage condition instead. The recovered
+graph can therefore show quest -> submission requirement and the two dialog
+co-gates, but must not add a quest -> OpenUI or order edge.
 
 The maintained fail-closed evidence is
 `reports/story/recovery/nested_managed_identity_carrier_census.{json,md}` with
 classification `all_nested_managed_identity_carriers_reviewed`. It adds zero
-Story bindings and zero order edges. The exact shipped SubmitItem XLua producer
-is now inside the bound; other reflection/XLua construction,
-runtime-substituted OpenUI params, native-only opaque objects, server-only
-state, paths deeper than three custom type hops, unexported asset kinds, future
-IFix, and future builds remain outside it.
+Story bindings and zero order edges. The exact shipped SubmitItem XLua
+producer, fallback parameter pass-through, and authored submission-objective
+census are now inside the bound. Dynamic mutation or reflection outside that
+path, native-only opaque objects, server-only state, paths deeper than three
+custom type hops, unexported asset kinds, future IFix, and future builds remain
+outside it.
 
 ### AirWall state gates recover exact non-owning radio contexts
 
@@ -3225,11 +3243,15 @@ Current main-story priorities:
    is actively produced by shipped `SubmitItemCtrl.lua` through XLua even
    though the native direct-call census is zero. Current DialogTrees expose 13
    typed SubmitItem terminals but only three stock placeholder parameter
-   objects, ten empty parameter objects, and zero concrete quest ids. Do not
-   repeat this typed traversal until the binary, metadata, authored DialogTree,
-   Lua, or patch changes. The next useful join must recover runtime-substituted
-   OpenUI parameters or another independently typed owner; do not infer it from
-   dialog filenames.
+   objects, ten empty parameter objects, and zero concrete quest ids. The
+   fallback native/`PhaseDialog.lua` path forwards and decodes those params
+   without quest substitution. Three exact MissionRuntime submission checks
+   now recover quest-to-submission requirements; two have same-AND dialog
+   co-gates, but those dialog ids overlap zero SubmitItem OpenUI terminals.
+   Do not repeat this typed traversal until the binary, metadata, authored
+   MissionRuntime/DialogTree/SubmitItem data, Lua, or patch changes. The next
+   useful join must be another independently typed owner or newly changed
+   authored/runtime surface; do not infer it from dialog filenames.
    The recovered LevelScript task packet family still sharpens the dynamic side
    of the target. Its concrete sender/handlers and decoded object offsets are
    mapped in `mission_runtime_trace_hooks.json`; the guarded message-815

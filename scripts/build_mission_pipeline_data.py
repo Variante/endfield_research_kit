@@ -141,6 +141,7 @@ DEFAULT_ACTIVITY_SNAPSHOT_STAGE_TABLE = (
 DEFAULT_GAME_MECHANIC_CONDITION_TABLE = DEFAULT_TABLE_ROOT / "GameMechanicConditionTable.json"
 DEFAULT_DUNGEON_TABLE = DEFAULT_TABLE_ROOT / "DungeonTable.json"
 DEFAULT_TEXT_VO_ID_TABLE = DEFAULT_TABLE_ROOT / "TextVoIdTable.json"
+DEFAULT_SUBMIT_ITEM_TABLE = DEFAULT_TABLE_ROOT / "SubmitItem.json"
 DEFAULT_OUTPUT_ROOT = ROOT / "webui" / "data" / "mission_pipeline"
 DEFAULT_STORY_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "build"
@@ -158,8 +159,11 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # implicit ParamSource.CURRENT_MISSION_ID candidate across the complete
 # authored MissionRuntime and LevelScript action surfaces. v10 closes the
 # complete direct managed mission/quest identity co-carrier census and proves
-# the remaining mission/scene pair is HUD/map tracking context.
-SCHEMA_VERSION = 12
+# the remaining mission/scene pair is HUD/map tracking context. v11 closes the
+# nested managed-carrier census. v12 recovers the shipped XLua pending-item
+# submitter producer. v13 adds exact authored quest-to-submission requirements
+# while keeping same-objective dialog co-gates distinct from UI ownership.
+SCHEMA_VERSION = 13
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -731,7 +735,7 @@ RUNTIME_CONTRACT = {
         },
         "pendingItemSubmitterClosure": {
             "classification": (
-                "active_shipped_xlua_producer_without_concrete_authored_join"
+                "active_shipped_xlua_producer_with_exact_submission_context_without_ui_join"
             ),
             "fields": {
                 "DialogManager.m_pendingItemSubmitter": {
@@ -798,6 +802,27 @@ RUNTIME_CONTRACT = {
                     "itemIds",
                 ],
             },
+            "fallbackParamFlow": {
+                "nativePath": [
+                    "DialogTreeOpenUINode.DoAction@0x1872a5e1c",
+                    "DialogManager.OpenUI@0x186e145d8",
+                    "GameAction.DialogOpenUIPanel@0x1875e0224",
+                ],
+                "shippedLuaConsumer": {
+                    "logicalPath": (
+                        "Data/LuaScripts/Phase/Dialog/PhaseDialog.lua"
+                    ),
+                    "sha256": (
+                        "59df40f905d038f8a0527d680eca612e7b2ed4e0e9b3f7cfc96bf97bbe882b13"
+                    ),
+                },
+                "finding": (
+                    "The native fallback forwards the original action and param "
+                    "string. PhaseDialog JSON-decodes that string and adds only "
+                    "fromDialog and actionData; it performs no quest lookup or "
+                    "submission-identity substitution."
+                ),
+            },
             "authoredOpenUiActions": {
                 "typedTerminalActions": 95,
                 "submitItemPanelType": 9,
@@ -806,6 +831,21 @@ RUNTIME_CONTRACT = {
                 "placeholderSubmitItemActions": 3,
                 "emptyParamSubmitItemActions": 10,
                 "concreteQuestIdActions": 0,
+            },
+            "authoredMissionObjectives": {
+                "conditionCount": 3,
+                "questCount": 3,
+                "missionCount": 3,
+                "tableDefinedCount": 3,
+                "dialogCoGateCount": 2,
+                "dialogCoGateOpenUiOverlap": 0,
+                "withSubGameConditionCount": 0,
+                "finding": (
+                    "Three exact MissionRuntime quest objectives resolve to "
+                    "SubmitItem table requirements. Two share an authored AND "
+                    "objective with a dialog finish, but those dialog ids do not "
+                    "overlap the 13 SubmitItem OpenUI terminals."
+                ),
             },
             "sendFinishDialog": {
                 "symbol": "CinematicSystem.SendFinishDialog",
@@ -819,7 +859,11 @@ RUNTIME_CONTRACT = {
                 "direct-call counts therefore describe only the AOT call surface, "
                 "not an inactive producer. Thirteen typed SubmitItem OpenUI terminals "
                 "exist, but three contain only stock placeholder params, ten contain "
-                "no params, and none exports a concrete quest id."
+                "no params, and none exports a concrete quest id. Three separate "
+                "quest objectives do resolve exact submission requirements; two "
+                "have bounded same-AND dialog co-gates, with zero overlap against "
+                "the SubmitItem OpenUI dialog set. The fallback parameter flow "
+                "does not supply a missing quest identity."
             ),
         },
         "finding": (
@@ -827,14 +871,16 @@ RUNTIME_CONTRACT = {
             "or custom typed fields to depth three are reviewed. Productive contexts "
             "were already recovered; remaining joins are global aggregate managers, "
             "previously closed paths, static registries, or the active XLua pending-"
-            "submission bridge without a concrete authored quest parameter."
+            "submission bridge with exact quest-to-submission context but no "
+            "quest-to-OpenUI join."
         ),
         "boundary": (
-            "The exact shipped SubmitItem XLua producer is included. Other "
-            "reflection/XLua construction, runtime-substituted OpenUI params, "
-            "native-only opaque objects, server-only state, paths deeper than three "
-            "custom-type hops, unexported asset kinds, future IFix, and future builds "
-            "remain outside the bound."
+            "The exact shipped SubmitItem XLua producer, fallback OpenUI parameter "
+            "pass-through, and authored submission objectives are included. "
+            "Dynamic mutation or reflection outside this path, native-only opaque "
+            "objects, server-only state, paths deeper than three custom-type hops, "
+            "unexported asset kinds, future IFix, and future builds remain outside "
+            "the bound."
         ),
         "classification": "all_nested_managed_identity_carriers_reviewed",
         "storyBindingsAdded": 0,
@@ -4559,6 +4605,7 @@ FACT_KEYS = (
     "conditionEvalString",
     "_dialogId",
     "_finishId",
+    "_submissionId",
     "_questId",
     "questId",
     "_targetQuestId",
@@ -4577,6 +4624,103 @@ FACT_KEYS = (
     "_mapId",
     "needAllKill",
 )
+
+_SUBMIT_ITEM_ROWS_CACHE: dict[str, Any] | None = None
+
+
+def submit_item_requirements(submission_id: str) -> dict[str, Any]:
+    """Return exact authored SubmitItem requirements for one submission id."""
+    global _SUBMIT_ITEM_ROWS_CACHE
+    if _SUBMIT_ITEM_ROWS_CACHE is None:
+        payload = read_json(DEFAULT_SUBMIT_ITEM_TABLE)
+        _SUBMIT_ITEM_ROWS_CACHE = payload if isinstance(payload, dict) else {}
+    row = _SUBMIT_ITEM_ROWS_CACHE.get(submission_id)
+    if not isinstance(row, dict):
+        return {
+            "submissionId": submission_id,
+            "tableDefined": False,
+            "requirementGroups": [],
+        }
+    groups: list[dict[str, Any]] = []
+    for group_index, group in enumerate(row.get("paramData") or []):
+        if not isinstance(group, dict):
+            continue
+        params = group.get("paramList") or []
+        item_param = params[0] if len(params) > 0 and isinstance(params[0], dict) else {}
+        count_param = params[1] if len(params) > 1 and isinstance(params[1], dict) else {}
+        item_ids = [
+            str(value)
+            for value in item_param.get("valueStringList") or []
+            if value not in (None, "")
+        ]
+        counts = [
+            int(value)
+            for value in count_param.get("valueIntList") or []
+            if isinstance(value, (int, float))
+        ]
+        items = [{
+            "itemId": item_id,
+            "count": counts[index] if index < len(counts) else (
+                counts[0] if counts else None
+            ),
+        } for index, item_id in enumerate(item_ids)]
+        groups.append({
+            "index": group_index + 1,
+            "type": group.get("type"),
+            "items": items,
+        })
+    return {
+        "submissionId": submission_id,
+        "tableDefined": True,
+        "requirementGroups": groups,
+    }
+
+
+def submission_dialog_co_gates(condition: Any) -> list[dict[str, Any]]:
+    """Find direct SubmitItem + dialog-finish siblings under authored AND groups."""
+    output: list[dict[str, Any]] = []
+
+    def walk(value: Any) -> None:
+        if not isinstance(value, dict):
+            return
+        children = [
+            child
+            for child in value.get("subConditions") or []
+            if isinstance(child, dict)
+        ]
+        expression = str(value.get("conditionEvalString") or "").lower()
+        if children and "and" in expression:
+            submissions = []
+            dialogs = []
+            for child in children:
+                child_type = type_name(child.get("$type"))
+                if child_type == "CheckQuestSubmitItem":
+                    submission_id = get_const(
+                        child, "_submissionId", "submissionId"
+                    )
+                    if isinstance(submission_id, str) and submission_id:
+                        submissions.append(submission_id)
+                elif child_type == "CheckTalkOptionFinish":
+                    dialog_id = get_const(child, "_dialogId", "dialogId")
+                    finish_id = get_const(child, "_finishId", "finishId")
+                    if isinstance(dialog_id, str) and dialog_id:
+                        dialogs.append((dialog_id, finish_id))
+            for submission_id in submissions:
+                for dialog_id, finish_id in dialogs:
+                    output.append({
+                        "submissionId": submission_id,
+                        "dialogId": dialog_id,
+                        "finishId": finish_id,
+                        "combineConditionId": str(
+                            value.get("uniqueId") or ""
+                        ),
+                        "relation": "same_authored_and_objective",
+                    })
+        for child in children:
+            walk(child)
+
+    walk(condition)
+    return output
 
 
 def condition_tree(condition: Any) -> dict[str, Any] | None:
@@ -4651,6 +4795,7 @@ def objective_row(objective: dict[str, Any], index: int) -> dict[str, Any]:
     level_scripts: set[str] = set()
     properties: set[str] = set()
     server_placeholder_condition_ids: set[str] = set()
+    submission_checks: list[dict[str, Any]] = []
     for row in objects:
         name = type_name(row.get("$type"))
         if name == "GameConditionServerPlaceHolder":
@@ -4662,6 +4807,12 @@ def objective_row(objective: dict[str, Any], index: int) -> dict[str, Any]:
             finish = get_const(row, "_finishId", "finishId")
             if isinstance(dialog, str):
                 dialog_finishes.append({"dialogId": dialog, "finishId": finish})
+        if name == "CheckQuestSubmitItem":
+            submission_id = get_const(row, "_submissionId", "submissionId")
+            if isinstance(submission_id, str) and submission_id:
+                submission_check = submit_item_requirements(submission_id)
+                submission_check["conditionId"] = str(row.get("uniqueId") or "")
+                submission_checks.append(submission_check)
         if name in {"CheckQuestState", "SimpleConditionCheckQuestState"}:
             quest_id = get_const(row, "_questId", "questId", "_targetQuestId", "targetQuestId")
             state = get_const(row, "_targetQuestState", "targetQuestState", "compareTarget")
@@ -4686,6 +4837,8 @@ def objective_row(objective: dict[str, Any], index: int) -> dict[str, Any]:
         "authority": classify_authority(types),
         "serverPlaceholderConditionIds": sorted(server_placeholder_condition_ids),
         "dialogFinishes": dialog_finishes,
+        "submissionChecks": submission_checks,
+        "submissionDialogCoGates": submission_dialog_co_gates(condition),
         "questStateRefs": quest_state_refs,
         "levelScriptIds": sorted(level_scripts),
         "propertyKeys": sorted(properties),
@@ -4771,6 +4924,9 @@ def build_mission(
     active_join_count = 0
     failure_count = 0
     external_dependency_count = 0
+    submit_item_count = 0
+    submit_item_quest_count = 0
+    submit_item_dialog_co_gate_count = 0
     annotations = (CASE_STUDIES.get(mission_id) or {}).get("nodes") or {}
 
     ordered_quests = sorted(
@@ -4791,6 +4947,20 @@ def build_mission(
         condition_types = sorted({item for objective in objectives for item in objective["conditionTypes"]})
         condition_counts.update(condition_types)
         dialog_finishes = [item for objective in objectives for item in objective["dialogFinishes"]]
+        submission_checks = [
+            item
+            for objective in objectives
+            for item in objective["submissionChecks"]
+        ]
+        submission_dialog_co_gates = [
+            item
+            for objective in objectives
+            for item in objective["submissionDialogCoGates"]
+        ]
+        submit_item_count += len(submission_checks)
+        if submission_checks:
+            submit_item_quest_count += 1
+        submit_item_dialog_co_gate_count += len(submission_dialog_co_gates)
         exact_finish_count += sum(1 for item in dialog_finishes if isinstance(item.get("finishId"), int) and item["finishId"] >= 0)
         placeholder_condition_ids = [
             condition_id
@@ -4818,6 +4988,8 @@ def build_mission(
             "prev": prev,
             "successors": sorted(successors.get(quest_id, []), key=natural_quest_key),
             "objectives": objectives,
+            "submissionChecks": submission_checks,
+            "submissionDialogCoGates": submission_dialog_co_gates,
             "serverPlaceholderKeys": [
                 {"questId": quest_id, "conditionId": condition_id}
                 for condition_id in placeholder_condition_ids
@@ -4919,6 +5091,9 @@ def build_mission(
         "serverPlaceholderQuestCount": server_placeholder_quest_count,
         "failureConditionCount": failure_count,
         "externalDependencyCount": external_dependency_count,
+        "submitItemConditionCount": submit_item_count,
+        "submitItemQuestCount": submit_item_quest_count,
+        "submitItemDialogCoGateCount": submit_item_dialog_co_gate_count,
         "nativeRuntimeBindingCount": len(native_runtime_bindings or []),
         "activityStageHostCount": sum(
             len(node.get("activityStageHosts") or []) for node in nodes
@@ -5165,6 +5340,18 @@ def build_all(
             "serverPlaceholderMaxConditionIdReuse": max(
                 placeholder_condition_counts.values(),
                 default=0,
+            ),
+            "submitItemConditions": sum(
+                row["submitItemConditionCount"] for row in summaries
+            ),
+            "submitItemQuests": sum(
+                row["submitItemQuestCount"] for row in summaries
+            ),
+            "submitItemMissions": sum(
+                1 for row in summaries if row["submitItemConditionCount"]
+            ),
+            "submitItemDialogCoGates": sum(
+                row["submitItemDialogCoGateCount"] for row in summaries
             ),
             "nativeRuntimeBindings": subgame_registry["missionBindingCount"],
             "nativeRuntimeBoundMissions": subgame_registry["boundMissionCount"],
