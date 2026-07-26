@@ -131,11 +131,24 @@ token (`a1m6d6`, `a1m6d7`). None of the 83 non-SubGame receiver scripts embeds
 one. This closes literal mission-id constants across the complete receiver
 LevelScript blobs, including their task maps; it does not close dynamic params,
 indirect registries, or server-authored activation.
+The task-map layer is now decoded rather than searched only for literals. All
+24 task-map receiver scripts consume exactly as 31 tasks and 54 conditions
+across 11 concrete root `GameCondition` types: entity/interactive checks,
+monster-kill and spawner-complete checks, dialog-option completion,
+LevelScript property/stage checks, destination checks, and empty combine
+envelopes. No receiver task map contains `CheckMissionState`. These operands
+are exact authored evaluation or completion dependencies; they neither
+activate the receiver nor identify its mission owner. The highest-value next
+offline join is therefore to follow each exact entity, spawner, dialog, area,
+property, and foreign LevelScript operand into typed same-level sources and
+accept a mission edge only if that same source also carries an unambiguous
+MissionRuntime/quest foreign key.
 The durable details live at
 `reports/story/recovery/native_receiver_activation_frontier.{json,md}`.
 Mission Pipeline debug cards expose the start policy, validated LevelData
-container, SubGame carrier when present, and both zero-count ownership checks;
-the audit adds no graph edge.
+container, SubGame carrier when present, both zero-count ownership checks, and
+the fully decoded task-condition operands when present; the audit adds no graph
+edge.
 In debug mode, the Storyline frontend now consumes this same
 `storyCoverage.storyTriggerManifest` for every file row and selected-file
 detail panel; normal Story browsing does not load or display the trigger
@@ -2916,9 +2929,12 @@ Current main-story priorities:
    already SubGame-scoped `22800950006`; all 83 non-SubGame receiver scripts
    have zero exact mission-id string tokens. This closes broad LevelData,
    start-type, start-shape, objective-operand, literal mission-id, and literal
-   ManualStart searches as generic ownership routes. Further task-map work is
-   useful only if dynamic parameter semantics or another exact authored
-   foreign key reaches MissionRuntime.
+   ManualStart searches as generic ownership routes. The task maps themselves
+   are now completely decoded for all 24 affected scripts: 31 tasks carry 54
+   exact conditions across 11 types, with no `CheckMissionState` condition.
+   Continue from their typed entity/spawner/dialog/area/property/script
+   operands only when an exact same-source foreign key reaches MissionRuntime;
+   condition presence, same level, and evaluation order remain non-owning.
    A diagnostic level intersection with the atmospheric switcher context finds
    89 receivers / 103 Story files on 13 shared levels. Four shared levels have
    only one atmospheric route mission, but their native Story families often

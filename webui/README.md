@@ -286,6 +286,12 @@ available through expandable guidance.
   Mission-state dependency cards also expose task/condition ids and offsets.
   A same-script taskMap condition is explicitly marked as not control-path
   linked, dependency-only, and non-owning.
+  Native receiver activation cards additionally expose every fully decoded
+  task-map condition and its exact entity, spawner, dialog, destination,
+  property, stage, monster, or combine operand. The current receiver corpus has
+  24 fully decoded task-map scripts, 31 tasks, and 54 conditions. These rows
+  describe evaluation/completion requirements only; the UI must not present
+  them as activation, mission ownership, or execution order.
   A separate mission-lifecycle section shows exact NPC accept dialogs and
   explicit `NpcProxyEx.missionId` context. A collapsed `Unassigned Story`
   section keeps all remaining same-owner mission scenes visible without

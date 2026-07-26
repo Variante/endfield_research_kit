@@ -228,6 +228,26 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                     "subGameBindings": [],
                     "incomingLiteralManualControls": [],
                     "missionRuntimeScriptConsumers": [],
+                    "decodedTaskMap": {
+                        "taskCount": 1,
+                        "tasks": [
+                            {
+                                "taskKey": "fixture_task",
+                                "conditions": [
+                                    {
+                                        "conditionKey": "fixture_condition",
+                                        "condition": {
+                                            "type": "TaskReachDestination",
+                                            "areaId": {
+                                                "kind": "string",
+                                                "value": "fixture_area",
+                                            },
+                                        },
+                                    }
+                                ],
+                            }
+                        ],
+                    },
                 }
             ],
         }
@@ -240,6 +260,12 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         ]
         self.assertEqual("Manual", annotation["startTypeName"])
         self.assertNotIn("missionOwnerStatus", annotation)
+        self.assertEqual(
+            "fixture_area",
+            annotation["decodedTaskMap"]["tasks"][0]["conditions"][0][
+                "condition"
+            ]["areaId"]["value"],
+        )
         self.assertEqual(
             1,
             index["storyCoverage"]["nativeReceiverActivationFrontier"][

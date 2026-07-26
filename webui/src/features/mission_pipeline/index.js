@@ -80,6 +80,8 @@
       literalCrossScriptControls: "literal cross-script manual controls",
       exactStartShapeAreaMatches: "exact complete start-shape / MissionArea matches",
       serializedMissionIdTokens: "serialized MissionRuntime ID tokens",
+      taskConditionEvidence: "fully decoded task conditions",
+      taskConditionBoundary: "task evaluation dependency, not mission ownership or execution order",
       exactRuntimeTarget: "exact original-data runtime target",
       encounterModule: "Encounter module",
       modulePointer: "level-script module pointer",
@@ -2353,6 +2355,44 @@
           const activation = row.activationFrontier || {};
           const activationHosts = (activation.levelDataHosts || [])
             .filter((host) => host && host.fileName);
+          const activationTasks = (activation.decodedTaskMap?.tasks || [])
+            .filter((task) => task && task.taskKey);
+          const paramValue = (param) => {
+            if (!param || typeof param !== "object") return "";
+            if (param.value !== null && param.value !== undefined && param.value !== "") return String(param.value);
+            if (param.scriptId) return String(param.scriptId);
+            return "";
+          };
+          const entityValue = (param) => {
+            if (!param || typeof param !== "object") return "";
+            if (param.logicId && String(param.logicId) !== "0") return `entity ${param.logicId}`;
+            if (param.slotId) return `slot ${param.slotId}`;
+            return "";
+          };
+          const conditionDetails = (condition) => {
+            if (!condition || typeof condition !== "object") return "";
+            const values = [
+              ["mission", paramValue(condition.missionId)],
+              ["dialog", paramValue(condition.dialogId)],
+              ["finish", paramValue(condition.finishId)],
+              ["area", paramValue(condition.areaId)],
+              ["key", paramValue(condition.key)],
+              ["map", paramValue(condition.mapId)],
+              ["level", paramValue(condition.levelId)],
+              ["scene", paramValue(condition.sceneId)],
+              ["script", paramValue(condition.scriptId)],
+              ["spawner", paramValue(condition.spawnerId)],
+              ["entity", entityValue(condition.entity || condition.entityId)],
+              ["compare", paramValue(condition.compareValue || condition.targetValue)],
+              ["state", condition.targetMissionStateName || ""],
+              ["expression", condition.conditionEvalString || ""],
+            ].filter(([, value]) => value);
+            const enemies = (condition.enemyIds?.values || [])
+              .map((enemy) => entityValue(enemy))
+              .filter(Boolean);
+            if (enemies.length) values.push(["enemies", enemies.join(", ")]);
+            return values.map(([label, value]) => `${label}=${value}`).join(" · ");
+          };
           const target = row.runtimeTarget && row.runtimeTarget.status === "exact_top_level_encounter_module_target" ? row.runtimeTarget : null;
           const battlePart = target?.battlePart || {};
           const enemySlots = [...new Set((target?.enemyPointers || []).map((pointer) => pointer?.slotId).filter(Boolean))];
@@ -2368,6 +2408,12 @@
             <div class="mp-runtime-selector">${selectorRows.map(([field, value]) => `<span title="${esc(field)}"><b>${esc(selectorFieldLabel(field))}</b><code>${esc(selectorValue(value))}</code></span>`).join("")}</div>
             ${activation.activationClass ? `<div class="mp-runtime-associations">
               <strong>${esc(t("activationFrontier"))}</strong>
+              ${activationTasks.flatMap((task) => (task.conditions || []).map((conditionRow) => {
+                const condition = conditionRow.condition || {};
+                const detail = conditionDetails(condition);
+                return `<div><span>${esc(`${t("taskConditionEvidence")} · ${task.taskKey} / objective ${conditionRow.objectiveEnum ?? "?"}`)}</span><i aria-hidden="true">→</i><code>${esc(condition.type || "unresolved")}</code><b>${esc(condition.conditionUnionTag || "")}</b>${detail ? `<small>${esc(detail)}</small>` : ""}</div>`;
+              })).join("")}
+              ${activationTasks.length ? `<small>${esc(t("taskConditionBoundary"))}</small>` : ""}
               <div><span>${esc(t("activationClass"))}</span><i aria-hidden="true">→</i><code>${esc(String(activation.activationClass).replaceAll("_", " "))}</code><b>${esc(t("noMissionOwner"))}</b></div>
               <div><span>${esc(t("startPolicy"))}</span><i aria-hidden="true">→</i><code>${esc(`${activation.startTypeName || "unresolved"} · shapes ${activation.startShapeListStatus || "unresolved"}/${activation.startShapeListCount ?? 0} · taskMap ${activation.taskMapStatus || "unresolved"}/${activation.taskMapCount ?? 0}`)}</code></div>
               ${activationHosts.map((host) => `<div><span>${esc(t("levelDataContainer"))}</span><i aria-hidden="true">→</i><code>${esc(host.fileName)}</code><b>${esc(host.hostMissionId || "generic")}</b><small>${esc(`${host.dictionaryEntryCount ?? "?"} LevelScripts`)}</small></div>`).join("")}
