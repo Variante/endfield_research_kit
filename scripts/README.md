@@ -86,6 +86,13 @@ Story chain through explicit context nodes. Every edge is marked non-owning
 context with playback and order evidence disabled; no direct mission-to-Story
 edge is emitted.
 
+The same graph build indexes Mission Pipeline's exact unowned native runtime
+receivers. Each receiver must retain one unique level/script/header identity,
+the current-build MemoryPack mapping, and a Story source path agreeing with that
+identity. Receiver -> Story means exact playback control flow; it deliberately
+emits no mission or quest edge. The current frontier has 158 receivers and 182
+placements covering 153 Story files across 25 event families and 23 levels.
+
 When the exported Table inputs are also unchanged, add `--reuse-reference` to
 validate and preserve the current localized Text Tables reference index and all
 of its indexed files. The wrapper rejects this mode with `--export-from-game`

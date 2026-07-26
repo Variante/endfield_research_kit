@@ -23,6 +23,7 @@ story key, option id, actor, asset, audio id, map/level id, or evidence link.
 python tools\endfield_source_graph.py query dlg_c28m3_23
 python tools\endfield_source_graph.py query option_dlg_c28m3_23_2_001
 python tools\endfield_source_graph.py query au_dlg_e1m1_5_001
+python tools\endfield_source_graph.py query radio_sm2l6m1_29 --kind story
 python tools\endfield_source_graph.py story dlg_e1m1_5 --limit-lines 8
 ```
 
@@ -101,6 +102,9 @@ python -c "import sqlite3; c=sqlite3.connect('reports/source_graph/endfield_sour
 - `webui/mission_pipeline/env_talk_context`: exact same-level,
   complete-NPC-set atmospheric switcher state context. It is non-owning
   availability evidence, never playback or order evidence.
+- `webui/mission_pipeline/native_runtime_receivers`: exact current-build
+  receiver-to-Story playback control flow with unresolved mission ownership.
+  It never supplies a mission/quest edge or Story order.
 - `AnimeStudio/maps`: Unity AssetMap entries; exact WebUI consumers in relevant
   mode and all entries in exhaustive mode.
 

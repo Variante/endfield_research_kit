@@ -1845,8 +1845,8 @@ orders.
 ## Source graph and generated audit surface
 
 The source graph is an evidence index, not runtime simulation. The current
-canonical relevant-AssetMap CN rebuild contains 1,860,441 nodes, 4,400,623
-edges, and 2,284,922 aliases; all 1,140 required original AssetMap identities
+canonical relevant-AssetMap CN rebuild contains 1,860,722 nodes, 4,401,960
+edges, and 2,285,532 aliases; all 1,140 required original AssetMap identities
 matched. Story-recovery queries include:
 
 ```bat
@@ -2872,6 +2872,18 @@ Current main-story priorities:
    event families; the largest unique-file groups are Leader trigger volume
    (67), BattleSignal (16), Script custom event (13), and ScriptStageChanged
    (9).
+   The source graph now mirrors all 158 exact runtime receiver nodes and 182
+   receiver-to-Story placements. Every receiver retains its exact level,
+   LevelScript, header id, selector, event family, native action, and source
+   file while emitting zero mission/quest edges. This closes a queryability gap
+   without changing the 153-file ownership frontier.
+   A diagnostic level intersection with the atmospheric switcher context finds
+   89 receivers / 103 Story files on 13 shared levels. Four shared levels have
+   only one atmospheric route mission, but their native Story families often
+   name different missions (for example `map01_lv002` context is
+   `sm1l2m2` while its receivers include `e1m7`/`e1m8` Story). Same-level
+   atmospheric state is therefore useful only for capture-session triage; it
+   remains non-owning and creates no receiver-to-context or mission edge.
    The exact WorldEntity bridge has removed three Leader-family files, two
    ScriptStageChanged files, and one InteractiveStateChanged file. Revisit remaining rows only
    when another typed MissionRuntime/LevelData bridge, shipped asset carrier, or
