@@ -941,18 +941,30 @@ retains `serverExchange=false`, no client request, no expected return, and
 unresolved mission ownership. This is local runtime causality, not an inferred
 mission binding.
 
-The top-level LevelScript task-map decoder now has a narrow, fail-closed
-`CheckMissionState` path for current union tag `0x67` / seven members. It
-requires a uniquely validated script-id tail, present task-map interval, exact
-one-condition `LevelScriptTaskData` envelope, matching task/condition ids,
-constant comparer/mission/state params, and an empty trigger-volume map at EOF.
-Current `map02_lv003/23300090001` decodes task `cf5a771c`, condition
-`cb696abe`, and `e7m4 Equal Completed`. A separate exact black-screen action
-exists in that script, but no control edge joins the task condition to it.
-Accordingly the maintained relation is same-script dependency only. Native
-mission-state evaluation reads the synchronized local MissionSystem cache;
-`SC_SYNC_ALL_MISSION` and `SC_MISSION_STATE_UPDATE` are independent upstream
-pushes, not replies to this condition.
+The top-level LevelScript task-map decoder is now a generic, fail-closed
+current-build parser rather than a `CheckMissionState` special case. Metadata
+registration resolves `LevelScriptTaskData.TaskConditionData.condition` to the
+root `Beyond.Gameplay.GameCondition`; its formatter has 308 union
+registrations, so formatter audits must use `--full-tag-limit 400` (or another
+limit above 308) to retain the full tag rows. The root table is distinct from
+the overlapping `GameConditionServer` and `GameConditionClient` tag spaces.
+The decoder validates the task map interval, declared task/condition counts,
+matching dictionary keys, member counts, constant-param envelopes, and exact
+trailers before emitting anything. It currently handles the 11 concrete
+condition shapes present in the receiver corpus, including string, UInt64,
+entity pointer, and entity-list parameters. All 24 receiver scripts with task
+maps decode completely as 31 tasks and 54 conditions.
+
+The existing exact positive remains:
+`map02_lv003/23300090001` decodes task `cf5a771c`, condition `cb696abe`, and
+`e7m4 Equal Completed` from root union tag `0x67` / seven members. A separate
+exact black-screen action exists in that script, but no control edge joins the
+task condition to it. None of the 24 native receiver task maps contains
+`CheckMissionState`; their entity, spawner, dialog, destination, property,
+stage, monster, and combine conditions are evaluation dependencies rather than
+mission owners. Native mission-state evaluation reads the synchronized local
+MissionSystem cache; `SC_SYNC_ALL_MISSION` and `SC_MISSION_STATE_UPDATE` are
+independent upstream pushes, not replies to a condition.
 
 The full battle-signal ownership pass reaches 36 producer actions in 27 files
 (24 SkillData, three BuffData). Exact current AbilitySystemData skill lists

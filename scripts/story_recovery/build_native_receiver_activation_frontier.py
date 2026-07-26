@@ -49,11 +49,12 @@ from story_builder.level_bindings import (  # noqa: E402
     parse_leveldata_levelscript_brief_dictionary,
 )
 from story_builder.levelscript_binary import (  # noqa: E402
+    decode_levelscript_task_conditions,
     decode_levelscript_binary_file,
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v1"
+SCHEMA = "nativeReceiverActivationFrontier.v2"
 DEFAULT_PIPELINE_INDEX = ROOT / "webui" / "data" / "mission_pipeline" / "index.json"
 DEFAULT_PIPELINE_MISSION_ROOT = (
     ROOT / "webui" / "data" / "mission_pipeline" / "missions"
@@ -479,6 +480,7 @@ def build_report(
     classes: Counter[str] = Counter()
     start_types: Counter[str] = Counter()
     host_shapes: Counter[str] = Counter()
+    task_condition_types: Counter[str] = Counter()
 
     for receiver in receiver_script_rows(index_payload):
         level_id = receiver["levelId"]
@@ -507,6 +509,19 @@ def build_report(
             script_data,
             mission_ids,
         )
+        decoded_task_maps = decode_levelscript_task_conditions(
+            script_data,
+            script_id,
+        )
+        decoded_task_map = (
+            decoded_task_maps[0] if len(decoded_task_maps) == 1 else None
+        )
+        for task in (decoded_task_map or {}).get("tasks") or []:
+            for condition_row in task.get("conditions") or []:
+                condition = condition_row.get("condition") or {}
+                condition_type = safe_text(condition.get("type"))
+                if condition_type:
+                    task_condition_types[condition_type] += 1
         classification = activation_class(
             levelscript,
             hosts,
@@ -561,6 +576,7 @@ def build_report(
                 "missionRuntimeScriptConsumers": consumers,
                 "startShapeMissionAreaMatches": start_shape_area_matches,
                 "serializedMissionRuntimeIdTokens": serialized_mission_ids,
+                "decodedTaskMap": decoded_task_map,
                 "activationClass": classification,
                 "missionOwnerStatus": "unresolved",
                 "evidenceBoundary": (
@@ -611,6 +627,13 @@ def build_report(
                 "closes literal-constant carriers, not dynamic, indirect, or "
                 "server-authored activation."
             ),
+            "taskConditionBoundary": (
+                "A completely decoded task map proves authored task evaluation "
+                "requirements inside this LevelScript. Entity, spawner, dialog, "
+                "area, property, stage, and mission operands are dependencies "
+                "or completion gates, not mission ownership, activation order, "
+                "or proof that the task executes."
+            ),
         },
         "counts": {
             "receiverNodes": sum(row["receiverNodeCount"] for row in rows),
@@ -652,6 +675,17 @@ def build_report(
                 safe_text((row.get("levelScript") or {}).get("taskMapStatus"))
                 == "present"
                 for row in rows
+            ),
+            "scriptsWithFullyDecodedTaskMap": sum(
+                bool(row.get("decodedTaskMap")) for row in rows
+            ),
+            "decodedTaskCount": sum(
+                len((row.get("decodedTaskMap") or {}).get("tasks") or [])
+                for row in rows
+            ),
+            "decodedTaskConditionCount": sum(task_condition_types.values()),
+            "decodedTaskConditionTypes": dict(
+                sorted(task_condition_types.items())
             ),
             "scriptsWithSerializedMissionRuntimeIdToken": sum(
                 bool(row["serializedMissionRuntimeIdTokens"]) for row in rows
@@ -740,6 +774,7 @@ def publish_to_pipeline_index(
             "serializedMissionRuntimeIdTokens": (
                 row.get("serializedMissionRuntimeIdTokens") or []
             ),
+            "decodedTaskMap": row.get("decodedTaskMap"),
         }
         annotated += 1
 
@@ -799,6 +834,16 @@ def markdown_report(payload: dict[str, Any]) -> str:
             "- Scripts with task maps / exact serialized MissionRuntime-id "
             f"tokens: `{counts.get('scriptsWithTaskMap')}` / "
             f"`{counts.get('scriptsWithSerializedMissionRuntimeIdToken')}`"
+        ),
+        (
+            "- Fully decoded task-map scripts / tasks / conditions: "
+            f"`{counts.get('scriptsWithFullyDecodedTaskMap')}` / "
+            f"`{counts.get('decodedTaskCount')}` / "
+            f"`{counts.get('decodedTaskConditionCount')}`"
+        ),
+        (
+            "- Decoded task condition types: "
+            f"`{counts.get('decodedTaskConditionTypes')}`"
         ),
         (
             "- Non-SubGame task-map scripts with a serialized MissionRuntime-id "

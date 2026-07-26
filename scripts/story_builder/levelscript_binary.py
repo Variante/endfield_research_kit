@@ -5430,6 +5430,23 @@ def _tail_candidate(data: bytes, offset: int) -> dict[str, Any]:
 LEVELSCRIPT_TASK_MISSION_STATE_MAPPING_ID = (
     "gameassembly-2026-07-22-levelscript-task-check-mission-state-0x67"
 )
+LEVELSCRIPT_TASK_CONDITION_MAPPING_ID = (
+    "gameassembly-2026-07-25-levelscript-task-root-gamecondition-tags"
+)
+LEVELSCRIPT_TASK_CONDITION_TAGS = {
+    0x0045: ("CheckInteractiveDestroyed", 6),
+    0x0050: ("CheckLevelScriptPropertyBool", 9),
+    0x0051: ("CheckLevelScriptPropertyInt", 9),
+    0x0053: ("CheckLevelScriptStage", 8),
+    0x0067: ("CheckMissionState", 7),
+    0x006A: ("CheckMonsterKilled", 9),
+    0x006B: ("CheckMonsterSpawnerComplete", 6),
+    0x009F: ("CheckTalkOptionFinish", 6),
+    0x00B2: ("CombineCondition", 6),
+    0x0129: ("InteractiveCheckBool", 8),
+    0x012A: ("InteractiveCheckInt", 9),
+    0x0132: ("TaskReachDestination", 6),
+}
 _MISSION_STATE_NAMES = {
     0: "None",
     1: "Available",
@@ -5442,6 +5459,328 @@ _MISSION_STATE_COMPARER_NAMES = {
     0: "Equal",
     1: "NotEqual",
 }
+_NUMBER_COMPARER_NAMES = {
+    0: "Equal",
+    1: "NotEqual",
+    2: "GreaterThan",
+    3: "GreaterEqual",
+    4: "LessThan",
+    5: "LessEqual",
+}
+
+
+def _decode_string_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode an authored ``Param<string>`` including a null constant value."""
+    if cursor + 5 > len(payload) or payload[cursor] != 0x04:
+        return None
+    size = struct.unpack_from("<i", payload, cursor + 1)[0]
+    cursor += 5
+    if size == -1:
+        value = None
+    elif 0 <= size <= 1024 and cursor + size <= len(payload):
+        try:
+            value = payload[cursor : cursor + size].decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+        cursor += size
+    else:
+        return None
+    tail = _decode_param_tail(payload, cursor)
+    if tail is None:
+        return None
+    detail, end = tail
+    return {"value": value, **detail}, end
+
+
+def _decode_u64_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode an authored eight-byte integer Param value."""
+    if cursor + 9 > len(payload) or payload[cursor] != 0x04:
+        return None
+    value = struct.unpack_from("<Q", payload, cursor + 1)[0]
+    tail = _decode_param_tail(payload, cursor + 9)
+    if tail is None:
+        return None
+    detail, end = tail
+    return {"value": str(value), **detail}, end
+
+
+def _decode_entity_ptr_list_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode the current constant ``Param<List<ScriptEntityPtr>>`` shape."""
+    if cursor + 5 > len(payload) or payload[cursor] != 0x04:
+        return None
+    count = struct.unpack_from("<i", payload, cursor + 1)[0]
+    cursor += 5
+    if count == -1:
+        values = None
+    elif 0 <= count <= 1024:
+        values = []
+        for _ in range(count):
+            if cursor + 14 > len(payload) or payload[cursor] != 0x03:
+                return None
+            logic_id = struct.unpack_from("<Q", payload, cursor + 1)[0]
+            slot_id = struct.unpack_from("<I", payload, cursor + 9)[0]
+            use_slot_id = payload[cursor + 13]
+            if use_slot_id not in (0, 1):
+                return None
+            values.append({
+                "logicId": str(logic_id),
+                "slotId": slot_id,
+                "useSlotId": bool(use_slot_id),
+            })
+            cursor += 14
+    else:
+        return None
+    tail = _decode_param_tail(payload, cursor)
+    if tail is None:
+        return None
+    detail, end = tail
+    return {"values": values, **detail}, end
+
+
+def _decode_task_condition_union_header(
+    data: bytes,
+    offset: int,
+    limit: int,
+) -> tuple[int, int, str, int] | None:
+    if offset + 2 > limit:
+        return None
+    if data[offset] < 0xFA:
+        return data[offset], data[offset + 1], "memorypack-u8", offset + 2
+    if data[offset] == 0xFA and offset + 4 <= limit:
+        return (
+            struct.unpack_from("<H", data, offset + 1)[0],
+            data[offset + 3],
+            "memorypack-fa-u16",
+            offset + 4,
+        )
+    return None
+
+
+def _decode_task_condition_common(
+    data: bytes,
+    offset: int,
+    limit: int,
+) -> tuple[dict[str, Any], int] | None:
+    if offset + 4 > limit:
+        return None
+    scope_mask = struct.unpack_from("<i", data, offset)[0]
+    unique_id, cursor = _read_compact_string(data, offset + 4)
+    if (
+        unique_id is None
+        or cursor is None
+        or cursor + 2 > limit
+        or not re.fullmatch(r"[0-9a-f]{8}", unique_id)
+        or data[cursor] not in (0, 1)
+        or data[cursor + 1] not in (0, 1)
+        or scope_mask < 0
+        or scope_mask > 0xFFFF
+    ):
+        return None
+    return {
+        "scopeMask": scope_mask,
+        "uniqueId": unique_id,
+        "useCurrentScope": bool(data[cursor]),
+        "useGraphScope": bool(data[cursor + 1]),
+    }, cursor + 2
+
+
+def _condition_param(
+    decoder: Any,
+    data: bytes,
+    cursor: int,
+    limit: int,
+) -> tuple[Any, int] | None:
+    decoded = decoder(data, cursor)
+    if decoded is None or decoded[1] > limit:
+        return None
+    return decoded
+
+
+def _decode_levelscript_task_condition(
+    data: bytes,
+    offset: int,
+    limit: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode one supported root ``GameCondition`` task payload exactly."""
+    start = offset
+    header = _decode_task_condition_union_header(data, offset, limit)
+    if header is None:
+        return None
+    union_tag, member_count, tag_encoding, cursor = header
+    identity = LEVELSCRIPT_TASK_CONDITION_TAGS.get(union_tag)
+    if identity is None or identity[1] != member_count:
+        return None
+    condition_type = identity[0]
+    common_decoded = _decode_task_condition_common(data, cursor, limit)
+    if common_decoded is None:
+        return None
+    common, cursor = common_decoded
+    fields: dict[str, Any] = {}
+
+    def read_param(name: str, decoder: Any) -> bool:
+        nonlocal cursor
+        decoded = _condition_param(decoder, data, cursor, limit)
+        if decoded is None:
+            return False
+        fields[name], cursor = decoded
+        return True
+
+    if condition_type == "CheckMissionState":
+        if not (
+            read_param("comparer", _decode_i32_param)
+            and read_param("missionId", _decode_string_param)
+            and read_param("targetMissionState", _decode_i32_param)
+        ):
+            return None
+        comparer_raw = fields["comparer"]["value"]
+        target_raw = fields["targetMissionState"]["value"]
+        if (
+            comparer_raw not in _MISSION_STATE_COMPARER_NAMES
+            or target_raw not in _MISSION_STATE_NAMES
+        ):
+            return None
+        fields["comparerName"] = _MISSION_STATE_COMPARER_NAMES[comparer_raw]
+        fields["targetMissionStateName"] = _MISSION_STATE_NAMES[target_raw]
+    elif condition_type == "CheckInteractiveDestroyed":
+        if not (
+            read_param("entity", _decode_constant_entity_ptr_param)
+            and read_param("mapId", _decode_string_param)
+        ):
+            return None
+    elif condition_type in (
+        "CheckLevelScriptPropertyBool",
+        "CheckLevelScriptPropertyInt",
+    ):
+        value_decoder = (
+            _decode_bool_param
+            if condition_type.endswith("Bool")
+            else _decode_i32_param
+        )
+        if not (
+            read_param("comparer", _decode_i32_param)
+            and read_param("key", _decode_string_param)
+            and read_param("mapId", _decode_string_param)
+            and read_param("scriptId", _decode_levelscript_ptr_param)
+            and read_param("value", value_decoder)
+        ):
+            return None
+        fields["comparerName"] = _NUMBER_COMPARER_NAMES.get(
+            fields["comparer"]["value"],
+            "",
+        )
+    elif condition_type == "CheckLevelScriptStage":
+        if not (
+            read_param("compareOperator", _decode_i32_param)
+            and read_param("progressToCompare", _decode_i32_param)
+            and read_param("levelId", _decode_string_param)
+            and read_param("scriptId", _decode_levelscript_ptr_param)
+        ):
+            return None
+        fields["compareOperatorName"] = _NUMBER_COMPARER_NAMES.get(
+            fields["compareOperator"]["value"],
+            "",
+        )
+    elif condition_type == "CheckMonsterKilled":
+        if not (
+            read_param("comparer", _decode_i32_param)
+            and read_param("enemyIds", _decode_entity_ptr_list_param)
+            and read_param("sceneId", _decode_string_param)
+            and read_param("targetValue", _decode_u64_param)
+            and cursor < limit
+            and data[cursor] in (0, 1)
+        ):
+            return None
+        fields["needKillAll"] = bool(data[cursor])
+        fields["comparerName"] = _NUMBER_COMPARER_NAMES.get(
+            fields["comparer"]["value"],
+            "",
+        )
+        cursor += 1
+    elif condition_type == "CheckMonsterSpawnerComplete":
+        if not (
+            read_param("levelId", _decode_string_param)
+            and read_param("spawnerId", _decode_u64_param)
+        ):
+            return None
+    elif condition_type == "CheckTalkOptionFinish":
+        if not (
+            read_param("dialogId", _decode_string_param)
+            and read_param("finishId", _decode_i32_param)
+        ):
+            return None
+    elif condition_type == "InteractiveCheckBool":
+        if not (
+            read_param("compareValue", _decode_bool_param)
+            and read_param("entityId", _decode_constant_entity_ptr_param)
+            and read_param("key", _decode_string_param)
+            and read_param("levelId", _decode_string_param)
+        ):
+            return None
+    elif condition_type == "InteractiveCheckInt":
+        if not (
+            read_param("comparer", _decode_i32_param)
+            and read_param("compareValue", _decode_i32_param)
+            and read_param("entityId", _decode_constant_entity_ptr_param)
+            and read_param("key", _decode_string_param)
+            and read_param("levelId", _decode_string_param)
+        ):
+            return None
+        fields["comparerName"] = _NUMBER_COMPARER_NAMES.get(
+            fields["comparer"]["value"],
+            "",
+        )
+    elif condition_type == "TaskReachDestination":
+        if not (
+            read_param("areaId", _decode_string_param)
+            and read_param("mapId", _decode_string_param)
+        ):
+            return None
+    elif condition_type == "CombineCondition":
+        if cursor + 4 > limit:
+            return None
+        size = struct.unpack_from("<i", data, cursor)[0]
+        cursor += 4
+        if size < 0 or size > 1024 or cursor + size + 4 > limit:
+            return None
+        try:
+            expression = data[cursor : cursor + size].decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+        cursor += size
+        subcondition_count = struct.unpack_from("<I", data, cursor)[0]
+        cursor += 4
+        # Current receiver task maps use only the exact empty serialized list.
+        # A non-empty list has no element lengths and needs its own recursive
+        # boundary proof before it can be accepted.
+        if subcondition_count != 0:
+            return None
+        fields["conditionEvalString"] = expression
+        fields["subConditionCount"] = 0
+    else:
+        return None
+
+    return {
+        "type": condition_type,
+        "conditionUnionTag": f"0x{union_tag:04x}",
+        "conditionUnionTagEncoding": tag_encoding,
+        "serializedMemberCount": member_count,
+        "conditionOffset": start,
+        "conditionOffsetHex": _offset_hex(start),
+        "conditionEndOffset": cursor,
+        "conditionEndOffsetHex": _offset_hex(cursor),
+        **common,
+        **fields,
+        "nativeMappingId": LEVELSCRIPT_TASK_CONDITION_MAPPING_ID,
+    }, cursor
 
 
 def _decode_levelscript_check_mission_state_condition(
@@ -5612,6 +5951,202 @@ def _looks_like_levelscript_task_entry_prefix(
         and data[cursor + 1] in (0, 1)
         and struct.unpack_from("<I", data, cursor + 2)[0] <= 128
     )
+
+
+def _decode_levelscript_task_entry(
+    data: bytes,
+    offset: int,
+    limit: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode one complete current-build ``LevelScriptTaskData`` envelope."""
+    start = offset
+    task_key, cursor = _read_compact_string(data, offset)
+    if (
+        task_key is None
+        or cursor is None
+        or cursor + 6 > limit
+        or not re.fullmatch(r"[0-9a-f]{8}", task_key)
+        or data[cursor] != 4
+        or data[cursor + 1] not in (0, 1)
+    ):
+        return None
+    task_data_member_count = data[cursor]
+    can_be_tracked = bool(data[cursor + 1])
+    condition_count = struct.unpack_from("<I", data, cursor + 2)[0]
+    cursor += 6
+    if condition_count > 128:
+        return None
+
+    conditions: list[dict[str, Any]] = []
+    for _ in range(condition_count):
+        condition_entry_start = cursor
+        condition_key, next_cursor = _read_compact_string(data, cursor)
+        if (
+            condition_key is None
+            or next_cursor is None
+            or next_cursor >= limit
+            or not re.fullmatch(r"[0-9a-f]{8}", condition_key)
+            or data[next_cursor] != 3
+        ):
+            return None
+        cursor = next_cursor + 1
+        condition_decoded = _decode_levelscript_task_condition(
+            data,
+            cursor,
+            limit,
+        )
+        if condition_decoded is None:
+            return None
+        condition, cursor = condition_decoded
+        if (
+            condition["uniqueId"] != condition_key
+            or cursor + 5 > limit
+            or data[cursor] not in (0, 1)
+        ):
+            return None
+        is_main_objective = bool(data[cursor])
+        objective_enum = struct.unpack_from("<i", data, cursor + 1)[0]
+        cursor += 5
+        if objective_enum < 0 or objective_enum > 0x100:
+            return None
+        conditions.append({
+            "conditionKey": condition_key,
+            "conditionEntryOffset": condition_entry_start,
+            "conditionEntryOffsetHex": _offset_hex(condition_entry_start),
+            "taskConditionMemberCount": 3,
+            "isMainObjective": is_main_objective,
+            "objectiveEnum": objective_enum,
+            "condition": condition,
+        })
+
+    if cursor + 5 > limit or data[cursor] not in (0, 1):
+        return None
+    need_manual_check = bool(data[cursor])
+    task_type = struct.unpack_from("<i", data, cursor + 1)[0]
+    cursor += 5
+    if task_type < 0 or task_type > 0x100:
+        return None
+    return {
+        "taskKey": task_key,
+        "taskEntryOffset": start,
+        "taskEntryOffsetHex": _offset_hex(start),
+        "taskEntryEndOffset": cursor,
+        "taskEntryEndOffsetHex": _offset_hex(cursor),
+        "taskDataMemberCount": task_data_member_count,
+        "canBeTracked": can_be_tracked,
+        "conditionDictCount": condition_count,
+        "conditions": conditions,
+        "needManualCheck": need_manual_check,
+        "taskType": task_type,
+    }, cursor
+
+
+def decode_levelscript_task_conditions(
+    data: bytes,
+    script_id: int | str,
+) -> list[dict[str, Any]]:
+    """Recover only completely bounded LevelScript task-condition maps.
+
+    The task dictionary begins at an exact validated top-level tail candidate.
+    Every declared task and condition must decode in sequence, including its
+    IDs and trailing fields.  When a trigger-volume dictionary follows, its
+    exact offset is also required to equal the parsed task-map end.  Missing
+    later top-level members are allowed only after the declared task count has
+    parsed completely.  Results are dependency/evaluation evidence, never
+    mission ownership or Story order.
+    """
+    try:
+        numeric_script_id = int(script_id)
+    except (TypeError, ValueError):
+        return []
+    if not data or data[0] not in (26, 27) or len(data) < 8:
+        return []
+
+    parsed_hosts: list[dict[str, Any]] = []
+    for script_id_offset in _u64_offsets(data, numeric_script_id):
+        host = _tail_candidate(data, script_id_offset)
+        task_count = host.get("taskMapCount")
+        task_map_offset = host.get("taskMapOffset")
+        if (
+            not host.get("startTypeName")
+            or host.get("taskMapStatus") != "present"
+            or not isinstance(task_count, int)
+            or not isinstance(task_map_offset, int)
+            or task_count <= 0
+            or task_count > 128
+        ):
+            continue
+        cursor = task_map_offset + 4
+        trigger_offset = host.get("triggerVolumesOffset")
+        limit = (
+            int(trigger_offset)
+            if isinstance(trigger_offset, int) and trigger_offset > cursor
+            else len(data)
+        )
+        tasks: list[dict[str, Any]] = []
+        valid = True
+        for _ in range(task_count):
+            decoded = _decode_levelscript_task_entry(data, cursor, limit)
+            if decoded is None:
+                valid = False
+                break
+            task, cursor = decoded
+            tasks.append(task)
+        if not valid:
+            continue
+        if isinstance(trigger_offset, int) and cursor != trigger_offset:
+            continue
+        parsed_hosts.append({
+            "scriptId": str(numeric_script_id),
+            "levelScriptSerializedMemberCount": data[0],
+            "scriptIdOffset": script_id_offset,
+            "scriptIdOffsetHex": _offset_hex(script_id_offset),
+            "startType": str(host.get("startTypeName") or ""),
+            "taskMapOffset": task_map_offset,
+            "taskMapOffsetHex": _offset_hex(task_map_offset),
+            "taskMapCount": task_count,
+            "taskMapEndOffset": cursor,
+            "taskMapEndOffsetHex": _offset_hex(cursor),
+            "taskMapBoundaryStatus": (
+                "exact_trigger_volumes_offset"
+                if isinstance(trigger_offset, int)
+                else "exact_declared_task_count"
+            ),
+            "triggerVolumesStatus": str(
+                host.get("triggerVolumesStatus") or "missing"
+            ),
+            "triggerVolumesOffset": trigger_offset,
+            "triggerVolumesOffsetHex": _offset_hex(trigger_offset),
+            "tasks": tasks,
+            "payloadShape": (
+                "validated-top-level-task-map-complete-supported-"
+                "gameconditions"
+            ),
+        })
+
+    signatures: dict[tuple[Any, ...], dict[str, Any]] = {}
+    for row in parsed_hosts:
+        signature = (
+            row["scriptIdOffset"],
+            row["taskMapOffset"],
+            row["taskMapEndOffset"],
+            tuple(
+                (
+                    task["taskKey"],
+                    tuple(
+                        (
+                            condition["conditionKey"],
+                            condition["condition"]["conditionUnionTag"],
+                            condition["condition"]["conditionEndOffset"],
+                        )
+                        for condition in task["conditions"]
+                    ),
+                )
+                for task in row["tasks"]
+            ),
+        )
+        signatures.setdefault(signature, row)
+    return list(signatures.values()) if len(signatures) == 1 else []
 
 
 def decode_levelscript_task_mission_state_dependencies(

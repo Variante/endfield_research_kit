@@ -1835,7 +1835,11 @@ gameplay-video OCR/audio workflow.
   objective or an incoming literal cross-script manual-control row. All `12`
   non-SubGame scripts with non-empty authored start shapes have zero complete
   exact shape matches in the same-level MissionArea table. Of `24` receiver
-  scripts with task maps, only the already SubGame-scoped
+  scripts with task maps, all `24` now decode completely as `31` tasks and
+  `54` conditions across `11` concrete root `GameCondition` types. None is
+  `CheckMissionState`; the exact entity, spawner, dialog, area, property,
+  stage, monster, and combine operands are published as dependency/completion
+  evidence, not activation or ownership. Only the already SubGame-scoped
   `map02_lv002/22800950006` contains exact serialized MissionRuntime-id string
   tokens (`a1m6d6`, `a1m6d7`); all `83` non-SubGame receiver scripts contain
   none. These
@@ -1939,7 +1943,11 @@ gameplay-video OCR/audio workflow.
   `reports/story/recovery/memorypack_union_formatter_tag_audit.json` / `.md`.
   The current installed audit reaches raw ActionBase union tag `0x0520` and
   fully recovers the exact `ActionHeader` formatter table as 230 contiguous
-  tags `0x0000..0x00e5`. Story consumers use the complete header table only for
+  tags `0x0000..0x00e5`. The root `Beyond.Gameplay.GameCondition` formatter
+  has 308 registrations; use `--full-tag-limit 400` when its complete tag rows
+  are required, and do not mix its tag meanings with the overlapping
+  `GameConditionServer` or `GameConditionClient` tables. Story consumers use
+  the complete header table only for
   proved `headerList` records because the ActionBase/PureGetter/Header tag
   spaces overlap. The x64 helper preserves successfully decoded registrations
   when the final cctor instruction is a bounded/truncated tail, so the complete
