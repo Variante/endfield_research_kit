@@ -2283,6 +2283,7 @@
     const coveragePolicy = state.index?.storyCoverage?.policy || "";
     const missionlessNodes = (state.index?.storyCoverage?.missionlessSubGamePlaybackNodes || [])
       .filter((row) => row && row.subGameId && row.bindScriptId);
+    const missionlessAudit = contract.subGameMissionRegistry?.missionlessPlaybackAudit || {};
     const receiverNodes = (state.index?.storyCoverage?.missionlessNativeRuntimeNodes || [])
       .filter((row) => row && row.eventName && row.selector && (row.storyFiles || []).length);
     const rows = [...(contract.outbound || []), ...(contract.inbound || [])];
@@ -2327,7 +2328,7 @@
         <div class="mp-gap-family-list">${eventFamilies.map(([eventName, count]) => `<div class="mp-gap-family-row"><code>${esc(eventName)}</code><span><i style="width:${Math.max(4, Math.round((Number(count) / maxEventFamilyCount) * 100))}%"></i></span><b>${Number(count).toLocaleString()}</b></div>`).join("")}</div>
       </section>` : ""}
       ${missionlessNodes.length ? `<section class="mp-missionless-runtime">
-        <header><strong>${esc(t("missionlessSubGameNodes"))} <span>${missionlessNodes.length}</span></strong><p>${esc(t("missionlessSubGameNodesHint"))}</p></header>
+        <header><strong>${esc(t("missionlessSubGameNodes"))} <span>${missionlessNodes.length}</span></strong><p>${esc(t("missionlessSubGameNodesHint"))}${missionlessAudit.finding ? ` ${esc(missionlessAudit.finding)}` : ""}</p></header>
         <div class="mp-missionless-runtime-grid">${missionlessNodes.map((row) => {
           const stories = (row.storyFiles || []).filter((story) => story && story.key);
           const levelIds = [...new Set(stories.flatMap((story) => story.levelIds || []))];

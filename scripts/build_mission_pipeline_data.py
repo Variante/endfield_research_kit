@@ -327,6 +327,31 @@ RUNTIME_CONTRACT = {
             "sceneNumId, or bindScriptId. The row has no questId or sceneNumId, so the "
             "operational script identity cannot by itself attach a Story file."
         ),
+        "missionlessPlaybackAudit": {
+            "referenceScope": (
+                "Current exported Table and GameplayConfig JSON exact-identity census, "
+                "plus the complete decoded receiver task/condition audit."
+            ),
+            "subGameRows": 10,
+            "uniqueStoryFiles": 9,
+            "storyPlacements": 14,
+            "primaryTaskIds": 10,
+            "secondaryTaskIds": 3,
+            "exactMissionAssociations": 1,
+            "questUnlockPrerequisites": 1,
+            "previousSubGamePrerequisites": 5,
+            "missionRuntimeTaskConsumers": 0,
+            "finding": (
+                "The ten current missionless SubGame playback nodes have no additional "
+                "exported ownership carrier. Only activity_qingxi_qiangti_6 has an exact "
+                "mission association, and that typed stage relation is explicitly "
+                "non-owning. Boss-rush references provide one quest unlock, five prior-"
+                "challenge gates, and scene/reward grouping. Task ids remain local "
+                "LevelScript/SubGame display identities with zero MissionRuntime consumer."
+            ),
+            "storyBindingsAdded": 0,
+            "confidence": "complete_current_export_reference_census",
+        },
         "confidence": "typed_original_data_and_native_runtime",
     },
     "activityQuestLevelHosts": {
