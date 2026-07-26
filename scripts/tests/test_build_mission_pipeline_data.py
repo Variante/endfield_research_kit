@@ -975,6 +975,38 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "runtime_context_only_no_mission_levelscript_edge",
         )
 
+    def test_current_mission_param_source_has_no_levelscript_story_use(self):
+        audit = pipeline.RUNTIME_CONTRACT["paramSourceMissionContextAudit"]
+        managed = audit["managedContract"]
+        self.assertEqual(managed["currentMissionId"], 1004)
+        self.assertEqual(managed["paramSourceFieldToken"], "0x04006c3d")
+        self.assertEqual(managed["currentMissionGetterToken"], "0x060091d6")
+        mission = audit["authoredMissionRuntime"]
+        self.assertEqual(mission["missionFiles"], 490)
+        self.assertEqual(mission["currentMissionIdOccurrences"], 18)
+        self.assertEqual(mission["missions"], 6)
+        self.assertEqual(mission["storyPlaybackOperands"], 0)
+        self.assertEqual(
+            mission["actionTypes"]["CheckMissionIntProperty"],
+            17,
+        )
+        levelscript = audit["authoredLevelScripts"]
+        self.assertEqual(levelscript["levelScriptFiles"], 4512)
+        self.assertEqual(levelscript["uidRecords"], 74839)
+        self.assertEqual(levelscript["rawCurrentMissionIdValues"], 0)
+        self.assertEqual(levelscript["validatedParamTails"], 0)
+        self.assertEqual(
+            levelscript["embeddedJsonCurrentMissionIdValues"],
+            0,
+        )
+        self.assertEqual(audit["installedPatch"]["matchedMethods"], 0)
+        self.assertEqual(audit["storyBindingsAdded"], 0)
+        self.assertEqual(audit["missionOrderEdgesAdded"], 0)
+        self.assertEqual(
+            audit["classification"],
+            "implicit_context_only_missionruntime_no_levelscript_story_edge",
+        )
+
     def test_airwall_contract_is_state_gated_context_not_transition_owner(self):
         audit = pipeline.RUNTIME_CONTRACT["airWallMissionRadioContext"]
         self.assertEqual(audit["memoryPackSchema"]["levelDataMemberCount"], 43)

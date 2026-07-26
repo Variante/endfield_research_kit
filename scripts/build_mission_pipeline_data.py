@@ -154,8 +154,10 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # LevelData AirWall mission/quest-state-gated radio playback contexts. v7
 # records the bounded MissionOptionData alternate-action carrier result. v8
 # closes the Mission property -> ParamVariable.m_scriptPtr nested-type
-# candidate as runtime LevelScript subscription context.
-SCHEMA_VERSION = 8
+# candidate as runtime LevelScript subscription context. v9 closes the
+# implicit ParamSource.CURRENT_MISSION_ID candidate across the complete
+# authored MissionRuntime and LevelScript action surfaces.
+SCHEMA_VERSION = 9
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -591,6 +593,59 @@ RUNTIME_CONTRACT = {
         "classification": "runtime_context_only_no_mission_levelscript_edge",
         "storyBindingsAdded": 0,
         "confidence": "native_proven_bounded",
+    },
+    "paramSourceMissionContextAudit": {
+        "source": (
+            "reports/story/recovery/param_source_mission_context_audit.json"
+        ),
+        "managedContract": {
+            "enum": "Beyond.Gameplay.Actions.ParamSource",
+            "currentMissionId": 1004,
+            "paramType": "Beyond.Gameplay.Actions.Param<T>",
+            "paramSourceFieldToken": "0x04006c3d",
+            "contextFieldToken": "0x04006c41",
+            "currentMissionGetterToken": "0x060091d6",
+        },
+        "authoredMissionRuntime": {
+            "missionFiles": 490,
+            "paramSourceOccurrences": 18,
+            "currentMissionIdOccurrences": 18,
+            "missions": 6,
+            "actionTypes": {
+                "CheckMissionBoolProperty": 1,
+                "CheckMissionIntProperty": 17,
+            },
+            "storyPlaybackOperands": 0,
+        },
+        "authoredLevelScripts": {
+            "levelScriptFiles": 4512,
+            "uidRecords": 74839,
+            "rawCurrentMissionIdValues": 0,
+            "validatedParamTails": 0,
+            "embeddedJsonCurrentMissionIdValues": 0,
+        },
+        "installedPatch": {
+            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
+            "signatureTargetCount": 30,
+            "matchedMethods": 0,
+        },
+        "finding": (
+            "CURRENT_MISSION_ID is a real implicit action-context source, but every "
+            "current authored use is a MissionRuntime self-property check whose "
+            "mission owner is already explicit. The complete LevelScript corpus "
+            "contains no use, and no current use co-carries a Story playback id."
+        ),
+        "boundary": (
+            "Server-only action graphs, opaque runtime-created Param objects, "
+            "reflection/XLua construction, future IFix, and future builds remain "
+            "outside the bound."
+        ),
+        "classification": (
+            "implicit_context_only_missionruntime_no_levelscript_story_edge"
+        ),
+        "storyBindingsAdded": 0,
+        "missionOrderEdgesAdded": 0,
+        "confidence": "metadata_and_complete_authored_corpus_bounded",
     },
     "airWallMissionRadioContext": {
         "managedCarrier": {

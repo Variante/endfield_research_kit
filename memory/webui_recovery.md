@@ -327,6 +327,12 @@ Mission Pipeline:
   `properties@0xe0`, `propertyDic@0xf8`, and `m_scriptPtr@0x70` layout, labels
   the result `runtime_context_only_no_mission_levelscript_edge`, and preserves
   the explicit zero-edge boundary.
+  Schema v9 adds the implicit action-context closure. The Native boundary card
+  shows `ParamSource.CURRENT_MISSION_ID=1004`, 18 MissionRuntime uses, and zero
+  LevelScript uses across 4,512 files / 74,839 UID records. It labels all
+  current uses as already-owned self-mission property checks, exposes the
+  `Param<T>.paramSource` and `get_isCurrentMissionId` tokens, and explicitly
+  adds zero mission-to-LevelScript, Story, quest, or order edges.
   Native paths with no network exchange are separated again: BattleSignal is
   shown as local Ability-action dispatch with only signal/value identity, not
   placed into either C->S or S->C lanes.

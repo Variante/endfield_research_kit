@@ -923,6 +923,20 @@ Expected active inputs and outputs:
   python scripts\story_recovery\build_mission_property_scriptptr_audit.py
   ```
 
+- `story_recovery/build_param_source_mission_context_audit.py`: verifies the
+  installed `ParamSource.CURRENT_MISSION_ID = 1004` enum contract, scans every
+  structured MissionRuntime action/condition and every raw LevelScript UID
+  record, and checks the current IFix target list. It writes
+  `reports/story/recovery/param_source_mission_context_audit.{json,md}` and
+  fails closed on binary, metadata, corpus, action-type, or patch drift. The
+  current result finds 18 MissionRuntime self-property checks across six
+  missions and zero LevelScript uses, Story operands, bindings, or order
+  edges.
+
+  ```bat
+  python scripts\story_recovery\build_param_source_mission_context_audit.py
+  ```
+
 - `story_recovery/import_mission_runtime_trace.py`: validates hook-produced
   JSONL and builds a `missionRuntimeTrace.v1` observational bundle. The input
   fails closed: every session needs one `session_start`, sequence numbers must
