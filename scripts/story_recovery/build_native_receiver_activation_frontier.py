@@ -54,7 +54,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v2"
+SCHEMA = "nativeReceiverActivationFrontier.v3"
 DEFAULT_PIPELINE_INDEX = ROOT / "webui" / "data" / "mission_pipeline" / "index.json"
 DEFAULT_PIPELINE_MISSION_ROOT = (
     ROOT / "webui" / "data" / "mission_pipeline" / "missions"
@@ -66,6 +66,9 @@ DEFAULT_JSON = STORY_RECOVERY_REPORTS_DIR / "native_receiver_activation_frontier
 DEFAULT_MARKDOWN = STORY_RECOVERY_REPORTS_DIR / "native_receiver_activation_frontier.md"
 DEFAULT_MISSION_AREA_TABLE = GAMEPLAY_CONFIG_DIR / "MissionAreaTable.json"
 DEFAULT_LEVEL_BASIC_INFO_TABLE = GAMEPLAY_CONFIG_DIR / "LevelBasicInfoTable.json"
+DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE = (
+    GAMEPLAY_CONFIG_DIR / "ScriptTaskExtraInfoTable.json"
+)
 
 
 def safe_text(value: Any) -> str:
@@ -204,6 +207,102 @@ def subgame_script_bindings(
             }
         )
     return bindings
+
+
+def script_task_extra_info_rows(
+    payload: dict[str, Any],
+    *,
+    source_file: str = "",
+) -> dict[tuple[str, str, str], dict[str, Any]]:
+    """Index exact level/script/task display metadata without inferring owners."""
+    indexed: dict[tuple[str, str, str], dict[str, Any]] = {}
+    data_table = payload.get("dataTable") or {}
+    if not isinstance(data_table, dict):
+        return indexed
+    for level_id_raw, scripts in data_table.items():
+        level_id = safe_text(level_id_raw)
+        if not level_id or not isinstance(scripts, dict):
+            continue
+        for script_id_raw, tasks in scripts.items():
+            script_id = safe_text(script_id_raw)
+            if not script_id.isdigit() or not isinstance(tasks, dict):
+                continue
+            for task_id_raw, info in tasks.items():
+                task_id = safe_text(task_id_raw)
+                if not task_id or not isinstance(info, dict):
+                    continue
+                tracking_info = info.get("trackingInfoDict")
+                if not isinstance(tracking_info, dict):
+                    tracking_info = {}
+                objectives = []
+                for objective_id_raw, objective in tracking_info.items():
+                    if not isinstance(objective, dict):
+                        continue
+                    description = objective.get("description")
+                    if not isinstance(description, dict):
+                        description = {}
+                    objectives.append({
+                        "objectiveId": safe_text(objective_id_raw),
+                        "descriptionKey": safe_text(
+                            description.get("key")
+                        ),
+                        "needFormatProgress": objective.get(
+                            "needFormatProgress"
+                        ),
+                        "progressDisplayMode": objective.get(
+                            "progressDisplayMode"
+                        ),
+                    })
+                task_title = info.get("taskTitle")
+                if not isinstance(task_title, dict):
+                    task_title = {}
+                indexed[(level_id, script_id, task_id)] = {
+                    "taskTitleKey": safe_text(task_title.get("key")),
+                    "objectiveCount": info.get("objectiveCount"),
+                    "singleDescriptionFormatProgress": info.get(
+                        "singleDescriptionFormatProgress"
+                    ),
+                    "objectives": objectives,
+                    "sourceFile": source_file,
+                    "evidenceBoundary": (
+                        "Exact task display/tracking metadata only; it carries "
+                        "no mission or quest owner."
+                    ),
+                }
+    return indexed
+
+
+def annotate_task_sources(
+    decoded_task_map: dict[str, Any] | None,
+    *,
+    level_id: str,
+    script_id: str,
+    subgames: list[dict[str, Any]],
+    extra_info: dict[tuple[str, str, str], dict[str, Any]],
+) -> None:
+    """Attach exact task-table/SubGame cross-references in place."""
+    for task in (decoded_task_map or {}).get("tasks") or []:
+        task_id = safe_text(task.get("taskKey"))
+        if not task_id:
+            continue
+        detail = extra_info.get((level_id, script_id, task_id))
+        if detail:
+            task["taskExtraInfo"] = detail
+        bindings = []
+        for subgame in subgames:
+            if task_id not in set(subgame.get("mainTaskIds") or []):
+                continue
+            bindings.append({
+                "subGameId": safe_text(subgame.get("subGameId")),
+                "modeId": safe_text(subgame.get("modeId")),
+                "runtimeType": safe_text(subgame.get("runtimeType")),
+                "missionOwnerStatus": safe_text(
+                    subgame.get("missionOwnerStatus")
+                ),
+                "sourceFile": safe_text(subgame.get("sourceFile")),
+            })
+        if bindings:
+            task["subGameMainTaskBindings"] = bindings
 
 
 def mission_runtime_script_consumers(
@@ -466,6 +565,7 @@ def build_report(
     leveldata_root: Path = LEVELDATA_DIR,
     levelscript_root: Path = LEVELSCRIPT_DIR,
     mission_root: Path = DEFAULT_PIPELINE_MISSION_ROOT,
+    script_task_extra_info_path: Path = DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE,
 ) -> dict[str, Any]:
     mission_ids = {
         safe_text(row.get("id"))
@@ -475,6 +575,10 @@ def build_report(
     incoming_by_target = manual_control_targets(manual_control_payload)
     subgames_by_script = subgame_script_bindings(index_payload)
     consumers_by_script = mission_runtime_script_consumers(mission_root)
+    task_extra_info = script_task_extra_info_rows(
+        read_json(script_task_extra_info_path) or {},
+        source_file=rel_path(script_task_extra_info_path),
+    )
     mission_areas = mission_areas_by_level()
     rows: list[dict[str, Any]] = []
     classes: Counter[str] = Counter()
@@ -515,6 +619,13 @@ def build_report(
         )
         decoded_task_map = (
             decoded_task_maps[0] if len(decoded_task_maps) == 1 else None
+        )
+        annotate_task_sources(
+            decoded_task_map,
+            level_id=level_id,
+            script_id=script_id,
+            subgames=subgames,
+            extra_info=task_extra_info,
         )
         for task in (decoded_task_map or {}).get("tasks") or []:
             for condition_row in task.get("conditions") or []:
@@ -687,6 +798,16 @@ def build_report(
             "decodedTaskConditionTypes": dict(
                 sorted(task_condition_types.items())
             ),
+            "decodedTasksWithExtraInfo": sum(
+                bool(task.get("taskExtraInfo"))
+                for row in rows
+                for task in (row.get("decodedTaskMap") or {}).get("tasks") or []
+            ),
+            "decodedTasksWithSubGameMainTaskBinding": sum(
+                bool(task.get("subGameMainTaskBindings"))
+                for row in rows
+                for task in (row.get("decodedTaskMap") or {}).get("tasks") or []
+            ),
             "scriptsWithSerializedMissionRuntimeIdToken": sum(
                 bool(row["serializedMissionRuntimeIdTokens"]) for row in rows
             ),
@@ -844,6 +965,11 @@ def markdown_report(payload: dict[str, Any]) -> str:
         (
             "- Decoded task condition types: "
             f"`{counts.get('decodedTaskConditionTypes')}`"
+        ),
+        (
+            "- Tasks with exact ScriptTaskExtraInfo / SubGame main-task rows: "
+            f"`{counts.get('decodedTasksWithExtraInfo')}` / "
+            f"`{counts.get('decodedTasksWithSubGameMainTaskBinding')}`"
         ),
         (
             "- Non-SubGame task-map scripts with a serialized MissionRuntime-id "

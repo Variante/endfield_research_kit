@@ -292,6 +292,10 @@ available through expandable guidance.
   24 fully decoded task-map scripts, 31 tasks, and 54 conditions. These rows
   describe evaluation/completion requirements only; the UI must not present
   them as activation, mission ownership, or execution order.
+  Where exact level/script/task keys agree, the same rows also show
+  `ScriptTaskExtraInfoTable` title keys and SubGame main-task ids. The current
+  corpus has 13 task-info joins and ten SubGame task joins; every matched
+  SubGame row lacks `dungeonMissionId`.
   A separate mission-lifecycle section shows exact NPC accept dialogs and
   explicit `NpcProxyEx.missionId` context. A collapsed `Unassigned Story`
   section keeps all remaining same-owner mission scenes visible without
