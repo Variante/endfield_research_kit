@@ -128,6 +128,38 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             ),
         )
 
+    def test_start_shape_requires_complete_exact_mission_area_geometry(self) -> None:
+        shape = {
+            "offset": "0x10",
+            "typeRaw": 2,
+            "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+            "radius": 5.0,
+        }
+        area = {
+            "missionAreaId": "fixture_area",
+            "subDataParentId": 10,
+            "shape": {
+                "type": 2,
+                "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+                "radius": 5.0,
+            },
+        }
+        self.assertEqual(
+            "fixture_area",
+            frontier.exact_start_shape_mission_area_matches(
+                [shape],
+                [area],
+            )[0]["missionAreaId"],
+        )
+        area["shape"]["position"]["x"] = 1.01
+        self.assertEqual(
+            [],
+            frontier.exact_start_shape_mission_area_matches(
+                [shape],
+                [area],
+            ),
+        )
+
     def test_nonmanual_shape_is_kept_separate(self) -> None:
         self.assertEqual(
             "nonmanual_start_with_shapes",
