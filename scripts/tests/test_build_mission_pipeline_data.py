@@ -502,6 +502,62 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(summary["activeJoinCount"], 1)
         self.assertEqual(summary["exactFinishCount"], 1)
 
+    def test_objective_recovers_submit_item_requirement_and_dialog_co_gate(self):
+        submit_condition = condition(
+            "CheckQuestSubmitItem",
+            _submissionId={"constValue": "submit_fixture"},
+        )
+        submit_condition["uniqueId"] = "submit_condition"
+        dialog_condition = condition(
+            "CheckTalkOptionFinish",
+            _dialogId={"constValue": "dlg_fixture"},
+            _finishId={"constValue": 1},
+        )
+        combined = condition(
+            "CombineCondition",
+            conditionEvalString="{0} and {1}",
+            subConditions=[submit_condition, dialog_condition],
+        )
+        previous_cache = pipeline._SUBMIT_ITEM_ROWS_CACHE
+        pipeline._SUBMIT_ITEM_ROWS_CACHE = {
+            "submit_fixture": {
+                "submitId": "submit_fixture",
+                "paramData": [{
+                    "type": 1,
+                    "paramList": [
+                        {"valueStringList": ["item_fixture"]},
+                        {"valueIntList": [2]},
+                    ],
+                }],
+            },
+        }
+        try:
+            row = pipeline.objective_row(
+                {"description": {"key": "fixture"}, "condition": combined},
+                1,
+            )
+        finally:
+            pipeline._SUBMIT_ITEM_ROWS_CACHE = previous_cache
+
+        self.assertEqual(row["condition"]["children"][0]["facts"]["submissionId"], "submit_fixture")
+        self.assertEqual(row["submissionChecks"], [{
+            "submissionId": "submit_fixture",
+            "tableDefined": True,
+            "requirementGroups": [{
+                "index": 1,
+                "type": 1,
+                "items": [{"itemId": "item_fixture", "count": 2}],
+            }],
+            "conditionId": "submit_condition",
+        }])
+        self.assertEqual(row["submissionDialogCoGates"], [{
+            "submissionId": "submit_fixture",
+            "dialogId": "dlg_fixture",
+            "finishId": 1,
+            "combineConditionId": "id_CombineCondition",
+            "relation": "same_authored_and_objective",
+        }])
+
     def test_build_all_writes_lazy_index_and_mission_payload(self):
         self.maxDiff = None
         with tempfile.TemporaryDirectory() as temporary:
@@ -523,6 +579,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "serverPlaceholderReusedConditionIds": 0,
                 "serverPlaceholderRowsWithReusedConditionId": 0,
                 "serverPlaceholderMaxConditionIdReuse": 0,
+                "submitItemConditions": 0,
+                "submitItemQuests": 0,
+                "submitItemMissions": 0,
+                "submitItemDialogCoGates": 0,
                 "nativeRuntimeBindings": 0,
                 "nativeRuntimeBoundMissions": 0,
                 "nativeRuntimeDistinctScriptIds": 0,
@@ -1054,7 +1114,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         submitter = audit["pendingItemSubmitterClosure"]
         self.assertEqual(
             submitter["classification"],
-            "active_shipped_xlua_producer_without_concrete_authored_join",
+            "active_shipped_xlua_producer_with_exact_submission_context_without_ui_join",
         )
         self.assertEqual(
             submitter["fields"]["DialogManager.m_pendingItemSubmitter"]["offset"],
@@ -1096,6 +1156,17 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(authored["placeholderSubmitItemActions"], 3)
         self.assertEqual(authored["emptyParamSubmitItemActions"], 10)
         self.assertEqual(authored["concreteQuestIdActions"], 0)
+        objectives = submitter["authoredMissionObjectives"]
+        self.assertEqual(objectives["conditionCount"], 3)
+        self.assertEqual(objectives["questCount"], 3)
+        self.assertEqual(objectives["missionCount"], 3)
+        self.assertEqual(objectives["tableDefinedCount"], 3)
+        self.assertEqual(objectives["dialogCoGateCount"], 2)
+        self.assertEqual(objectives["dialogCoGateOpenUiOverlap"], 0)
+        self.assertIn(
+            "no quest lookup",
+            submitter["fallbackParamFlow"]["finding"],
+        )
         self.assertEqual(submitter["installedPatchMatches"], 0)
         self.assertEqual(audit["storyBindingsAdded"], 0)
         self.assertEqual(audit["missionOrderEdgesAdded"], 0)

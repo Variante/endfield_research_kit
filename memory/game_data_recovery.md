@@ -734,10 +734,24 @@ the object through XLua. `DialogOpenUIPanel` is directly called by both
 `DialogManager.OpenUI` and the generated XLua wrapper. The typed authored
 surface contains 13 SubmitItem OpenUI terminals, but only three stock
 placeholder parameter objects, ten empty params, and zero concrete quest ids.
+The fallback does not synthesize the absent id:
+`DialogTreeOpenUINode.DoAction -> DialogManager.OpenUI ->
+GameAction.DialogOpenUIPanel` forwards the original action and parameter
+string, while hash-pinned shipped `PhaseDialog.lua` JSON-decodes that string
+and adds only `fromDialog` and `actionData`.
+
+The authored mission surface nevertheless contains three exact
+`CheckQuestSubmitItem` objective conditions across three quests/missions. All
+three submission ids resolve to `SubmitItem.json` item/count requirements.
+Two share the same authored AND objective with `CheckTalkOptionFinish`, but
+their dialog ids overlap none of the 13 SubmitItem OpenUI terminals. These
+relations are emitted as quest-to-submission requirements and bounded dialog
+co-gates, never as quest-to-OpenUI ownership or mission order.
 The hash-pinned report
 `reports/story/recovery/nested_managed_identity_carrier_census.{json,md}`
-therefore adds no graph edge and fails closed if the candidate set, callers,
-binary, metadata, Lua, authored OpenUI census, or patch changes.
+therefore adds no Story ownership/order edge and fails closed if the candidate
+set, callers, binary, metadata, either Lua file, authored MissionRuntime/
+SubmitItem/OpenUI census, or patch changes.
 
 The non-protobuf runtime-type census found one complete serialized carrier in
 `Beyond.Gameplay.LevelData.airWalls`. The current LevelData MemoryPack root has

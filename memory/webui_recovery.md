@@ -355,6 +355,15 @@ Mission Pipeline:
   authored quest ids. The bridge is active, but the three parameterized rows
   are stock placeholders and the other ten are empty, so it still adds no
   quest-to-dialog or order edge.
+  Schema v13 closes the current fallback-parameter ambiguity and exposes the
+  useful part of the authored submission relation. The native boundary card
+  pins the `DialogTreeOpenUINode -> DialogManager -> DialogOpenUIPanel ->
+  PhaseDialog.lua` pass-through, which JSON-decodes the authored param without
+  a quest lookup. It also reports three exact MissionRuntime submission checks,
+  two same-AND dialog co-gates, and zero overlap between those dialogs and the
+  13 SubmitItem OpenUI terminals. The three affected quest inspectors render
+  their exact submission ids and `SubmitItem.json` item/count alternatives;
+  co-gates are labeled as non-owning condition context.
   Native paths with no network exchange are separated again: BattleSignal is
   shown as local Ability-action dispatch with only signal/value identity, not
   placed into either C->S or S->C lanes.

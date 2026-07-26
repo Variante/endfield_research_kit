@@ -122,6 +122,13 @@
       shippedLuaProducer: "shipped XLua producer",
       authoredSubmitItemActions: "typed SubmitItem actions",
       concreteQuestIds: "concrete authored quest ids",
+      missionSubmissionChecks: "mission submission checks",
+      submissionDialogCoGates: "same-AND dialog co-gates",
+      submitOpenUiOverlap: "SubmitItem OpenUI overlap",
+      submissionRequirement: "submission requirement",
+      submissionDialogCoGate: "same AND objective with dialog finish",
+      submissionDialogCoGateHint: "Authored co-gate only; it does not prove this dialog opens the submission UI.",
+      or: "or",
       nativeDirectCallers: "native direct callers",
       runtimeObjectCandidates: "runtime/object candidates",
       unreviewedCandidates: "unreviewed candidates",
@@ -522,6 +529,13 @@
       shippedLuaProducer: "已发布 XLua 生产者",
       authoredSubmitItemActions: "类型化提交物品动作",
       concreteQuestIds: "具体原始 questId",
+      missionSubmissionChecks: "任务提交物品条件",
+      submissionDialogCoGates: "同一 AND 目标的对话条件",
+      submitOpenUiOverlap: "提交物品 OpenUI 重叠",
+      submissionRequirement: "提交物品需求",
+      submissionDialogCoGate: "与对话完成条件同属 AND 目标",
+      submissionDialogCoGateHint: "仅表示原始条件共同成立；不证明该对话会打开提交界面。",
+      or: "或",
       nativeDirectCallers: "原生直接调用者",
       runtimeObjectCandidates: "运行时/对象候选",
       unreviewedCandidates: "未审查候选",
@@ -2386,11 +2400,15 @@
             <b>${esc(t("shippedLuaProducer"))}: ${Number(nestedCarrierCensus.pendingItemSubmitterClosure?.shippedLuaProducer?.constructorAndRegistrationCalls || 0).toLocaleString()}</b>
             <b>${esc(t("authoredSubmitItemActions"))}: ${Number(nestedCarrierCensus.pendingItemSubmitterClosure?.authoredOpenUiActions?.submitItemActions || 0).toLocaleString()}</b>
             <b>${esc(t("concreteQuestIds"))}: ${Number(nestedCarrierCensus.pendingItemSubmitterClosure?.authoredOpenUiActions?.concreteQuestIdActions || 0).toLocaleString()}</b>
+            <b>${esc(t("missionSubmissionChecks"))}: ${Number(nestedCarrierCensus.pendingItemSubmitterClosure?.authoredMissionObjectives?.conditionCount || 0).toLocaleString()}</b>
+            <b>${esc(t("submissionDialogCoGates"))}: ${Number(nestedCarrierCensus.pendingItemSubmitterClosure?.authoredMissionObjectives?.dialogCoGateCount || 0).toLocaleString()}</b>
+            <b>${esc(t("submitOpenUiOverlap"))}: ${Number(nestedCarrierCensus.pendingItemSubmitterClosure?.authoredMissionObjectives?.dialogCoGateOpenUiOverlap || 0).toLocaleString()}</b>
           </div>
           <small><b>${esc(t("protocolFields"))}:</b> <code>m_pendingItemSubmitter ${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.fields?.["DialogManager.m_pendingItemSubmitter"]?.token || "")}@${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.fields?.["DialogManager.m_pendingItemSubmitter"]?.offset || "")}</code> <code>questId ${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.fields?.["InventoryItemSubmitter.questId"]?.token || "")}@${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.fields?.["InventoryItemSubmitter.questId"]?.offset || "")}</code></small>
           <code>${(nestedCarrierCensus.pendingItemSubmitterClosure?.methods || []).map((row) => `${esc(row.symbol || "")}${row.address ? ` @ ${esc(row.address)}` : ""} [${Number(row.nativeDirectCallerCount || 0).toLocaleString()} ${esc(t("nativeDirectCallers"))}]`).join(" 路 ")}</code>
           <code>${(nestedCarrierCensus.pendingItemSubmitterClosure?.nativeOpenUiBridge?.callers || []).map((row) => esc(row.symbol || "")).join(" + ")} → ${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.nativeOpenUiBridge?.callee?.symbol || "")}</code>
           <small><code>${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.shippedLuaProducer?.logicalPath || "")}</code></small>
+          <small><code>${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.fallbackParamFlow?.shippedLuaConsumer?.logicalPath || "")}</code> · ${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.fallbackParamFlow?.finding || "")}</small>
           <p>${esc(nestedCarrierCensus.finding)}</p>
           <small>${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.finding || "")}</small>
           <small>${esc(nestedCarrierCensus.boundary || "")}</small>
@@ -2839,9 +2857,14 @@
     const localIds = new Set((state.mission?.nodes || []).map((node) => node.id));
     const stateRows = (objective.questStateRefs || []).map((row) => `<span class="mp-state-chip${localIds.has(row.questId) ? "" : " is-external"}"><b>${esc(row.questId)}</b> · ${esc(t("state"))} ${esc(row.state ?? "?")}${localIds.has(row.questId) ? "" : ` · ${esc(t("externalDependency"))}`}</span>`).join("");
     const placeholderRows = (objective.serverPlaceholderConditionIds || []).map((conditionId) => `<span class="mp-finish-chip"><b>${esc(t("serverPlaceholderKey"))}</b> · <code>(${esc(questId)}, ${esc(conditionId)})</code></span>`).join("");
+    const submissionRows = (objective.submissionChecks || []).map((row) => {
+      const requirements = (row.requirementGroups || []).map((group) => (group.items || []).map((item) => `${item.itemId} × ${item.count ?? "?"}`).join(" + ")).filter(Boolean).join(` ${t("or")} `);
+      return `<span class="mp-finish-chip"><b>${esc(t("submissionRequirement"))}</b> · <code>${esc(row.submissionId || "")}</code>${requirements ? ` · ${esc(requirements)}` : ""}</span>`;
+    }).join("");
+    const submissionCoGates = (objective.submissionDialogCoGates || []).map((row) => `<span class="mp-state-chip" title="${esc(t("submissionDialogCoGateHint"))}"><b>${esc(t("submissionDialogCoGate"))}</b> · <code>${esc(row.submissionId || "")}</code> + <code>${esc(row.dialogId || "")}</code> · ${row.finishId < 0 ? esc(t("anyFinish")) : `${esc(t("finish"))} ${esc(row.finishId)}`}</span>`).join("");
     return `<article class="mp-objective"><header><strong>${esc(t("objectives"))} ${objective.index}</strong><span class="mp-authority is-${esc(objective.authority)}">${esc(objective.authority)}</span></header>
       <p>${esc(objective.descriptionKey || t("noObjective"))}</p>
-      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}</div>
+      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}</div>
       ${renderConditionTree(objective.condition)}
     </article>`;
   }
