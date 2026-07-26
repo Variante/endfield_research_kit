@@ -2457,6 +2457,39 @@ consumer. This adds zero ownership or order edges. Opaque bytes, dynamic
 parameter values, server-only schemas, native construction, future IFix, and
 future builds remain outside the bound.
 
+### MissionOptionData is an alternate-action carrier, not a dialog bridge
+
+The next exact non-protobuf candidate is now closed. Managed metadata gives
+`Beyond.Gameplay.MissionOptionData : DialogTreeOptionBase` two direct string
+fields: `missionId` at runtime offset `+0x68` and `callDialogId` at `+0x70`.
+`get_optionHandlerType` returns enum value 3 (`Mission`). Its only exact typed
+consumer is `MissionOptionHandler._DoAction` (token `0x0600fa1a`, address
+`0x186e510a4`, IFix id `0xc337`).
+
+The native control flow rejects the tempting co-carrier join. `_DoAction`
+checks `callDialogId` first. A non-empty value calls
+`DialogManager.StopAndPlayDialogById` and then jumps to the method end. Only
+the empty-dialog branch tests `missionId` and calls
+`MissionSystem.AcceptMission`. The two fields are therefore mutually exclusive
+action alternatives in the current fallback, not a mission-to-dialog causal
+edge. They cannot establish Story ownership or order even if a future record
+contains both values.
+
+The current authored-data census is also empty: zero exact instances across
+1,325,026 exported MonoBehaviour index rows (3,240,614,105 bytes), 8,195
+decoded TextAsset scripts (687,580,854 bytes), 179,925 structured JsonData
+files, and 1,291 installed VFS Lua files (20,161,714 bytes). A complete direct
+`E8 rel32` census finds no caller of the constructor or handler-type getter;
+the only two `_DoAction` callers are the expected option-end and dialog-end
+callbacks. The installed 30-target IFix replaces none of the audited methods.
+The rerunnable evidence is
+`reports/story/recovery/mission_option_carrier_audit.{json,md}`.
+
+This adds zero graph edges and closes `MissionOptionData` for the current
+binary/export. Reflection, dynamically constructed names, server-only
+construction, unexported object kinds, future IFix, and future builds remain
+outside the bound.
+
 ### AirWall state gates recover exact non-owning radio contexts
 
 A broader exact runtime-type census found one productive non-protobuf carrier:
@@ -3004,6 +3037,10 @@ Current main-story priorities:
    that search: prioritize typed config roots whose state predicate and Story
    consumer coexist in one validated object, then trace both the state listener
    and playback consumer before promotion.
+   `MissionOptionData` is now closed under the same rule: its two identities
+   select mutually exclusive native branches, its current authored-instance
+   census is empty, and the installed IFix replaces none of the path. Do not
+   revisit it until the binary, export, or patch hash changes.
    The recovered LevelScript task packet family still sharpens the dynamic side
    of the target. Its concrete sender/handlers and decoded object offsets are
    mapped in `mission_runtime_trace_hooks.json`; the guarded message-815

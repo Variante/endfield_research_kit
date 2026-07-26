@@ -625,6 +625,25 @@ must remain bounded to typed current-client schemas; opaque bytes, dynamic
 parameters, server-only data, native construction, and future builds remain
 outside it.
 
+The remaining exact managed-carrier queue also closes
+`Beyond.Gameplay.MissionOptionData`. Metadata proves `missionId` at `+0x68`,
+`callDialogId` at `+0x70`, and handler enum value 3 (`Mission`).
+`MissionOptionHandler._DoAction` at `0x186e510a4` does not consume those fields
+as a pair: a non-empty `callDialogId` calls `StopAndPlayDialogById` and jumps to
+the end, while `AcceptMission(missionId)` is reachable only through the
+empty-dialog branch. The record shape is therefore an alternate-action union
+in practice, not a mission/dialog bridge.
+
+The source boundary is complete for current exported surfaces: 1,325,026
+MonoBehaviour object-index rows, 8,195 decoded TextAsset payloads, 179,925
+structured JsonData files, and 1,291 installed Lua files contain zero exact
+`MissionOptionData`/`callDialogId` occurrence. Whole-binary direct calls add no
+constructor/getter producer, and current IFix replaces none of the four pinned
+methods. The hash-pinned rerunnable report is
+`reports/story/recovery/mission_option_carrier_audit.{json,md}`. This result
+adds zero ownership/order edges and should not be repeated until the binary,
+metadata, exported data, or IFix changes.
+
 The non-protobuf runtime-type census found one complete serialized carrier in
 `Beyond.Gameplay.LevelData.airWalls`. The current LevelData MemoryPack root has
 43 members and `airWalls` is member 0. Generated wrapper setters prove the
@@ -1818,6 +1837,9 @@ remain gated on the recovery work below:
    one completely framed typed object that co-carries the state predicate and
    Story consumer, then prove both native consumption lanes before adding even
    a non-owning context.
+   `MissionOptionData` no longer belongs in that queue: its two fields drive
+   mutually exclusive action branches and no current authored instance exists.
+   Reopen only on a binary/export/IFix change.
    The current ten missionless SubGame playback rows are now closed across
    their complete exported exact-reference and receiver-task surfaces: nine
    unique Story files across fourteen placements, one non-owning activity

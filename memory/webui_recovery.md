@@ -306,9 +306,19 @@ Mission Pipeline:
   mission/quest state controls the wall and later local contact can play the
   pushback radio, while explicitly denying transition causality, quest
   activation/completion, Story ownership, and mission order. The runtime
-  contract is schema v6 and records the complete 958-file/822-group decoder
-  census, 58 accepted contexts, two rejected inconsistent rows, and zero
-  current IFix AirWall replacements.
+  AirWall contract entered at schema v6 and records the complete
+  958-file/822-group decoder census, 58 accepted contexts, two rejected
+  inconsistent rows, and zero current IFix AirWall replacements.
+  The current schema v7 also exposes the bounded `MissionOptionData` carrier
+  audit. It records the exact `missionId`/`callDialogId` layout, but makes the
+  native branch exclusivity explicit: a non-empty dialog id plays the dialog
+  and exits, while mission acceptance is reachable only when the dialog id is
+  empty. The contract publishes the zero-match current-instance census across
+  MonoBehaviour indexes, TextAssets, structured JsonData, and installed Lua,
+  adds zero Story bindings, and labels the result
+  `schema_only_current_export_absent`. The Native boundary panel renders this
+  as a closed managed-carrier card with the exact offsets, consumer address,
+  zero-instance count, and explicit zero-edge result.
   Native paths with no network exchange are separated again: BattleSignal is
   shown as local Ability-action dispatch with only signal/value identity, not
   placed into either C->S or S->C lanes.

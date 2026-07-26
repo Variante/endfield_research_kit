@@ -151,8 +151,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # extends ``envTalkContext`` with exact atmospheric-switcher state context. v5
 # adds the recursive protobuf identity-carrier census and closes
 # roleBaseInfo.sceneName as position-reconciliation context. v6 adds exact
-# LevelData AirWall mission/quest-state-gated radio playback contexts.
-SCHEMA_VERSION = 6
+# LevelData AirWall mission/quest-state-gated radio playback contexts. v7
+# records the bounded MissionOptionData alternate-action carrier result.
+SCHEMA_VERSION = 7
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -406,6 +407,85 @@ RUNTIME_CONTRACT = {
             "Opaque bytes, dynamic parameter values, server-only schemas, native memory "
             "construction, future IFix, and future builds remain outside this bound."
         ),
+        "storyBindingsAdded": 0,
+        "confidence": "native_proven_bounded",
+    },
+    "missionOptionCarrierAudit": {
+        "source": "reports/story/recovery/mission_option_carrier_audit.json",
+        "managedCarrier": {
+            "type": "Beyond.Gameplay.MissionOptionData",
+            "typeToken": "0x02000986",
+            "baseType": "Beyond.Gameplay.DialogTreeOptionBase",
+            "fields": [
+                {
+                    "name": "missionId",
+                    "token": "0x04003bcd",
+                    "type": "string",
+                    "offset": "0x68",
+                },
+                {
+                    "name": "callDialogId",
+                    "token": "0x04003bce",
+                    "type": "string",
+                    "offset": "0x70",
+                },
+            ],
+            "handlerType": {
+                "enum": "Beyond.Gameplay.DialogEnums+OptionHandlerType",
+                "value": 3,
+                "name": "Mission",
+            },
+        },
+        "nativeConsumer": {
+            "symbol": "Beyond.Gameplay.Core.MissionOptionHandler._DoAction",
+            "token": "0x0600fa1a",
+            "address": "0x186e510a4",
+            "fallbackPatchId": "0xc337",
+            "callDialogBranch": (
+                "when callDialogId is non-empty, call "
+                "DialogManager.StopAndPlayDialogById(callDialogId), then jump to end"
+            ),
+            "missionBranch": (
+                "only when callDialogId is empty and missionId is non-empty, call "
+                "MissionSystem.AcceptMission(missionId)"
+            ),
+        },
+        "authoredInstanceSearch": {
+            "monoBehaviourRows": 1325026,
+            "monoBehaviourBytes": 3240614105,
+            "textAssets": 8195,
+            "textAssetScriptBytes": 687580854,
+            "structuredJsonFiles": 179925,
+            "installedLuaFiles": 1291,
+            "installedLuaBytes": 20161714,
+            "matches": 0,
+        },
+        "wholeBinaryDirectCallCensus": {
+            "MissionOptionDataConstructor": 0,
+            "MissionOptionDataHandlerTypeGetter": 0,
+            "MissionOptionHandlerDoAction": 2,
+            "doActionCallers": [
+                "MissionOptionHandler.OnSelectWhenDialogEnd",
+                "MissionOptionHandler.OnSelectWhenOptionEnd",
+            ],
+        },
+        "installedPatch": {
+            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
+            "signatureTargetCount": 30,
+            "matchedMethods": 0,
+        },
+        "finding": (
+            "missionId and callDialogId are mutually exclusive action alternatives "
+            "in the current native fallback. Their co-carriage creates no "
+            "mission-to-dialog causality, Story ownership, or order edge."
+        ),
+        "boundary": (
+            "No exact authored instance exists in current exported MonoBehaviour, "
+            "TextAsset, structured JsonData, or installed Lua surfaces. Reflection, "
+            "dynamically constructed names, server-only construction, unexported "
+            "object kinds, future IFix, and future builds remain possible."
+        ),
+        "classification": "schema_only_current_export_absent",
         "storyBindingsAdded": 0,
         "confidence": "native_proven_bounded",
     },
