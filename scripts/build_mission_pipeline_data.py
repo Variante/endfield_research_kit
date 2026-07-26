@@ -21,6 +21,7 @@ try:
         compact_dict,
         non_mission_content_keys,
         read_bytes_cached,
+        read_json,
         write_report_json,
         write_text_if_changed,
     )
@@ -35,6 +36,14 @@ try:
         build_report as build_node_attachment_report,
         render_markdown as render_node_attachment_markdown,
     )
+    from story_recovery.build_native_receiver_activation_frontier import (
+        DEFAULT_JSON as NATIVE_RECEIVER_FRONTIER_JSON,
+        DEFAULT_MANUAL_CONTROL_AUDIT as NATIVE_RECEIVER_MANUAL_CONTROL_AUDIT,
+        DEFAULT_MARKDOWN as NATIVE_RECEIVER_FRONTIER_MARKDOWN,
+        build_report as build_native_receiver_activation_frontier_report,
+        markdown_report as render_native_receiver_activation_frontier_markdown,
+        publish_to_pipeline_index as publish_native_receiver_activation_frontier,
+    )
     from story_recovery.build_source_story_partial_order import (
         build_report as build_source_story_partial_order_report,
         render_markdown as render_source_story_partial_order_markdown,
@@ -44,6 +53,7 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
         compact_dict,
         non_mission_content_keys,
         read_bytes_cached,
+        read_json,
         write_report_json,
         write_text_if_changed,
     )
@@ -59,6 +69,14 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
     from scripts.story_recovery.build_node_attachment_coverage import (
         build_report as build_node_attachment_report,
         render_markdown as render_node_attachment_markdown,
+    )
+    from scripts.story_recovery.build_native_receiver_activation_frontier import (
+        DEFAULT_JSON as NATIVE_RECEIVER_FRONTIER_JSON,
+        DEFAULT_MANUAL_CONTROL_AUDIT as NATIVE_RECEIVER_MANUAL_CONTROL_AUDIT,
+        DEFAULT_MARKDOWN as NATIVE_RECEIVER_FRONTIER_MARKDOWN,
+        build_report as build_native_receiver_activation_frontier_report,
+        markdown_report as render_native_receiver_activation_frontier_markdown,
+        publish_to_pipeline_index as publish_native_receiver_activation_frontier,
     )
     from scripts.story_recovery.build_source_story_partial_order import (
         build_report as build_source_story_partial_order_report,
@@ -4861,6 +4879,28 @@ def main() -> int:
             "reportJson": repo_path(coverage_report),
             "reportMarkdown": repo_path(args.report_root.resolve() / f"{report_stem}.md"),
         }
+        activation_frontier = build_native_receiver_activation_frontier_report(
+            index,
+            read_json(NATIVE_RECEIVER_MANUAL_CONTROL_AUDIT) or {},
+            mission_root=output_root / "missions",
+        )
+        # Fixture/test builds use temporary output roots and must not overwrite
+        # the canonical recovery report with their reduced corpus.
+        if output_root == DEFAULT_OUTPUT_ROOT.resolve():
+            write_report_json(
+                NATIVE_RECEIVER_FRONTIER_JSON,
+                activation_frontier,
+            )
+            write_text_if_changed(
+                NATIVE_RECEIVER_FRONTIER_MARKDOWN,
+                render_native_receiver_activation_frontier_markdown(
+                    activation_frontier
+                ),
+            )
+        publish_native_receiver_activation_frontier(
+            index,
+            activation_frontier,
+        )
         node_attachment = publish_quest_objective_story_scope(
             index,
             output_root,

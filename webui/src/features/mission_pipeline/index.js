@@ -72,6 +72,12 @@
       exactPlayback: "exact native playback",
       exactReceiverNodes: "Exact serialized runtime receivers",
       exactReceiverNodesHint: "Each node is an original LevelScript event selector with an exact control path to Story playback. It organizes more recovered files without claiming a mission or quest owner.",
+      activationFrontier: "offline activation frontier",
+      activationClass: "static activation class",
+      startPolicy: "LevelScript start policy",
+      levelDataContainer: "validated LevelData container",
+      missionRuntimeConsumers: "typed MissionRuntime objective consumers",
+      literalCrossScriptControls: "literal cross-script manual controls",
       exactRuntimeTarget: "exact original-data runtime target",
       encounterModule: "Encounter module",
       modulePointer: "level-script module pointer",
@@ -2342,6 +2348,9 @@
         <header><strong>${esc(t("exactReceiverNodes"))} <span>${receiverNodes.length}</span></strong><p>${esc(t("exactReceiverNodesHint"))}</p></header>
         <div class="mp-missionless-runtime-grid">${receiverNodes.map((row) => {
           const selector = row.selector || {};
+          const activation = row.activationFrontier || {};
+          const activationHosts = (activation.levelDataHosts || [])
+            .filter((host) => host && host.fileName);
           const target = row.runtimeTarget && row.runtimeTarget.status === "exact_top_level_encounter_module_target" ? row.runtimeTarget : null;
           const battlePart = target?.battlePart || {};
           const enemySlots = [...new Set((target?.enemyPointers || []).map((pointer) => pointer?.slotId).filter(Boolean))];
@@ -2355,6 +2364,14 @@
             <p><span>${esc(row.serverExchange ? t("serverBackedEvent") : t("localEvent"))}</span><code>${esc(row.transport || "—")}</code></p>
             ${row.eventSummary ? `<p><span>${esc(t("evidence"))}</span><small>${esc(row.eventSummary)}</small></p>` : ""}
             <div class="mp-runtime-selector">${selectorRows.map(([field, value]) => `<span title="${esc(field)}"><b>${esc(selectorFieldLabel(field))}</b><code>${esc(selectorValue(value))}</code></span>`).join("")}</div>
+            ${activation.activationClass ? `<div class="mp-runtime-associations">
+              <strong>${esc(t("activationFrontier"))}</strong>
+              <div><span>${esc(t("activationClass"))}</span><i aria-hidden="true">→</i><code>${esc(String(activation.activationClass).replaceAll("_", " "))}</code><b>${esc(t("noMissionOwner"))}</b></div>
+              <div><span>${esc(t("startPolicy"))}</span><i aria-hidden="true">→</i><code>${esc(`${activation.startTypeName || "unresolved"} · shapes ${activation.startShapeListStatus || "unresolved"}/${activation.startShapeListCount ?? 0} · taskMap ${activation.taskMapStatus || "unresolved"}/${activation.taskMapCount ?? 0}`)}</code></div>
+              ${activationHosts.map((host) => `<div><span>${esc(t("levelDataContainer"))}</span><i aria-hidden="true">→</i><code>${esc(host.fileName)}</code><b>${esc(host.hostMissionId || "generic")}</b><small>${esc(`${host.dictionaryEntryCount ?? "?"} LevelScripts`)}</small></div>`).join("")}
+              ${(activation.subGameIds || []).map((subGameId) => `<div><span>SubGame bindScriptId</span><i aria-hidden="true">→</i><code>${esc(subGameId)}</code><b>${esc(t("noMissionOwner"))}</b></div>`).join("")}
+              <small>${esc(`${t("missionRuntimeConsumers")}: ${activation.missionRuntimeObjectiveConsumerCount ?? 0} · ${t("literalCrossScriptControls")}: ${activation.incomingLiteralCrossControlCount ?? 0}`)}</small>
+            </div>` : ""}
             ${target ? `<div class="mp-runtime-associations mp-runtime-target"><strong>${esc(t("exactRuntimeTarget"))}</strong><div><span>${esc(t("modulePointer"))}</span><i aria-hidden="true">→</i><code>${esc(target.levelScriptVariablePtr)}</code><b>${esc(target.moduleType || t("encounterModule"))}</b><small>${esc(`${target.sourceFile || ""} @ ${target.dictionaryOffsetHex || "—"} · union ${target.moduleUnionTag || "—"}/${target.serializedMemberCount || "—"}`)}</small></div><div><span>${esc(t("activationSlot"))}</span><i aria-hidden="true">→</i><code>${esc(target.activateTriggerSlotId ?? "—")}</code><b>LOCAL</b><small>${esc(`${t("battleExitSlot")}: ${battlePart.exitTriggerSlotId ?? "—"}${enemySlots.length ? ` · ${t("localEntitySlots")}: ${enemySlots.join(", ")}` : ""}`)}</small></div><div class="is-boundary"><span>${esc(t("missingOwnershipBridge"))}</span><i aria-hidden="true">⇥</i><code>missionId / questId / MissionArea</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(row.ownershipBoundary || target.ownershipBoundary || "")}</small></div><small>${esc(t("noServerRequestOrReturn"))}</small></div>` : ""}
             ${producers.length ? `<div class="mp-runtime-associations"><strong>${esc(t("localProducerChain"))}</strong>${producers.map((producer) => `<div><span>${esc(`${t("abilityProducer")} · ${producer.producerDomain || "AbilityActionData"}`)}</span><i aria-hidden="true">→</i><code>${esc(producer.producerAssetId)}</code><b>LOCAL · ${esc(t("noServerRequestOrReturn"))}</b><small>${esc(`${t("literalSignal")}: ${producer.receiverSignalId || "—"} / ${producer.doubleValue?.value ?? "—"} · ${producer.actionUnionTag || ""}/${producer.serializedMemberCount || ""} · ${producer.producerSourceFile || ""} @ ${producer.actionOffset || "—"}`)}</small></div>`).join("")}<small>${esc(t("producerBoundaryHint"))}</small></div>` : ""}
             <div class="mp-missionless-story-links">${stories.map((story) => `<a href="${esc(storyHref(story.key))}"><span>${esc(story.kind || "story")}</span><code>${esc(story.key)}</code><b aria-hidden="true">→</b><small>${esc((story.nativeActions || []).join(" · "))}</small></a>`).join("")}</div>
