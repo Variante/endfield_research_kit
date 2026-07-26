@@ -182,6 +182,18 @@ explicitly. Future progress on these receivers therefore requires a different
 producer/owner registry, a changed export/build, or supported runtime evidence;
 task-map proximity and completion callbacks are no longer open ownership
 routes.
+The installed hotfix caveat has now been closed for the same lane. The current
+Persistent `Gameplay.Beyond.patch.bytes` is 82,021 bytes
+(`737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21`)
+and parses to EOF as 30 fixed-method targets, including two anonymous-storey
+records. It has zero selected receiver-ownership targets, zero selected
+LevelScript task registration/completion targets, and zero explicit references
+to the task lane. Its two `MissionSystem` replacements are HUD presentation
+methods. Seven targets are dialog/cinematic implementation methods, including
+`DialogManager._DoPlayCinematicNode`; they change playback implementation but
+introduce no exact mission/task/LevelScript owner. The Mission Pipeline runtime
+contract now exposes these counts and the patch hash. This is build-scoped:
+repeat the structural audit whenever that hash changes.
 In debug mode, the Storyline frontend now consumes this same
 `storyCoverage.storyTriggerManifest` for every file row and selected-file
 detail panel; normal Story browsing does not load or display the trigger
@@ -276,7 +288,7 @@ sides, and this removes 126/316/317 from the unlinked-file frontier rather than
 connecting any file. The only live mission-event inbound path stays 125 ->
 `Handle_ClientMissionEvent`, which has zero current serialized listeners.
 `Handle_ClientMissionEvent` is IFix-gated (checks `IsPatched`/`GetPatch` id
-`0x5eca`); the sole Persistent IFix payload's 18 targets replace none of these
+`0x5eca`); the current Persistent IFix payload's 30 targets replace none of these
 methods, so the fallback-negative holds for this build and must be re-audited on
 an IFix update. Message 317 must not be paired with 125 merely because their
 names are adjacent. Reproduce with
@@ -868,7 +880,7 @@ joins:
   `CS_UPDATE_QUEST_OBJECTIVE`. Its server update is
   `SC_QUEST_OBJECTIVES_UPDATE` keyed by `(questId, conditionId)`. The packet has
   no scene/script/entity/trigger/spawner/Story identity, and condition ids are
-  not globally unique. The sole current Persistent IFix payload has 18 targets
+  not globally unique. The current Persistent IFix payload has 30 targets
   and replaces none of the placeholder condition-type/activation methods, so
   this fallback is effective in the installed build. Exhaustive exact joins
   over all 193 residual native
@@ -1027,8 +1039,8 @@ mission. The source graph independently confirms exact authored chains such as
 `a1m6d5_q#11 -> PlayRadio -> radio_a1m6d5_1`.
 
 Those addresses and calls describe the installed build's native fallback.
-The same methods contain IFix patch-dispatch paths, but the sole current
-Persistent patch has 18 targets and replaces none of the placeholder
+The same methods contain IFix patch-dispatch paths, but the current
+Persistent patch has 30 targets and replaces none of the placeholder
 condition-type/activation methods. The WebUI records both the effective current
 path and the requirement to re-audit after a patch update.
 
@@ -1471,7 +1483,7 @@ inventing ownership:
   dependent wave can start. Exact typed `LevelEvent_OnSpawnerWaveBegin`
   actions therefore prove
   `radio_e11m1_85` (wave 4) -> `radio_e11m1_84` (wave 5). The installed
-  Persistent IFix payload's 18 targets replace none of `Timeline.Tick`,
+  Persistent IFix payload's 30 targets replace none of `Timeline.Tick`,
   `TryGetWaveBlock`, `TimelineWaveBlock.OnInit`, `AllowToSendStart`, or
   `StartWave`.
   The same original config nests story-bearing groups `201`, `601`, and `701`

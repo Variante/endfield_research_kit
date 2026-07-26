@@ -703,11 +703,17 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertIsNone(contract["outboundMessage"])
         self.assertIn("extraDetails", " ".join(contract["inboundFields"]))
         self.assertIn("does not send CS_UPDATE_QUEST_OBJECTIVE", contract["finding"])
-        self.assertEqual(contract["installedPatch"]["signatureTargetCount"], 18)
+        self.assertEqual(contract["installedPatch"]["signatureTargetCount"], 30)
         self.assertEqual(contract["installedPatch"]["matchedRelevantPatchIds"], [])
+        self.assertEqual(contract["installedPatch"]["taskCompletionTargetMatches"], 0)
+        self.assertEqual(contract["installedPatch"]["taskCompletionExplicitReferenceMatches"], 0)
+        self.assertEqual(contract["installedPatch"]["receiverOwnershipTargetMatches"], 0)
+        self.assertEqual(contract["installedPatch"]["receiverOwnershipExplicitReferenceMatches"], 0)
+        self.assertEqual(contract["installedPatch"]["missionHudTargets"], 2)
+        self.assertEqual(contract["installedPatch"]["dialogCinematicTargets"], 7)
         self.assertEqual(
             contract["installedPatch"]["sha256"],
-            "79ad16be86e488eca829ce60b133f1c3c6d3d4c3d180e04621713e57f8c3bbea",
+            "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
         )
 
         objective_update = next(

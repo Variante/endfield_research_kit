@@ -175,8 +175,9 @@ RUNTIME_CONTRACT = {
         ),
         "nativeScope": (
             "Addresses and control flow describe the installed build. IFix dispatch can "
-            "replace methods in principle, but the current installed Gameplay.Beyond patch "
-            "does not target the server-placeholder condition-type or activation methods."
+            "replace methods in principle. The current installed Gameplay.Beyond patch was "
+            "fully parsed at 30 targets and contains no receiver-ownership or LevelScript "
+            "task registration/completion target or explicit reference."
         ),
         "protocolAudit": "reports/story/recovery/protocol_registry_audit.json",
         "protocolBoundary": (
@@ -210,17 +211,24 @@ RUNTIME_CONTRACT = {
             "(questId, conditionId) key."
         ),
         "patchBoundary": (
-            "The current installed Gameplay.Beyond patch has 18 signature targets and "
+            "The current installed Gameplay.Beyond patch has 30 signature targets and "
             "matches none of patch ids 0x5605, 0x54d1, or 0x54d2. Future patches can "
             "change that result, so rebuild-scoped audits must still fail closed."
         ),
         "installedPatch": {
             "source": "Persistent VFS: Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes",
-            "size": 55576,
-            "sha256": "79ad16be86e488eca829ce60b133f1c3c6d3d4c3d180e04621713e57f8c3bbea",
-            "signatureTargetCount": 18,
+            "size": 82021,
+            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
+            "signatureTargetCount": 30,
             "relevantPatchIds": ["0x5605", "0x54d1", "0x54d2"],
             "matchedRelevantPatchIds": [],
+            "taskCompletionTargetMatches": 0,
+            "taskCompletionExplicitReferenceMatches": 0,
+            "receiverOwnershipTargetMatches": 0,
+            "receiverOwnershipExplicitReferenceMatches": 0,
+            "missionHudTargets": 2,
+            "dialogCinematicTargets": 7,
+            "auditReport": "reports/story/recovery/current_ifix_mission_graph_audit.json",
         },
         "confidence": "native_proven",
     },
@@ -1653,9 +1661,12 @@ RUNTIME_CONTRACT = {
         {
             "symbol": "Gameplay.Beyond.patch.bytes",
             "finding": (
-                "The sole current Persistent IFix payload has 18 signature targets and "
-                "does not replace placeholder get_conditionType or inherited server "
-                "condition activation/deactivation."
+                "The current 82,021-byte Persistent IFix payload parses completely as "
+                "30 signature targets. It replaces no selected receiver-ownership or "
+                "LevelScript task registration/completion method and contains no explicit "
+                "selected task-lane reference. Its two MissionSystem targets are HUD "
+                "presentation methods; its seven dialog/cinematic targets alter playback "
+                "implementation without adding an exact mission/task/LevelScript owner."
             ),
             "confidence": "installed_patch_proven",
         },

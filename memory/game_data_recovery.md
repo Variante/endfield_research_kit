@@ -502,9 +502,9 @@ callback binder at `0x183a89700` retains a `ResultChange` callback only for
 the fallback in principle, but the current installed patch path is now audited.
 StreamingAssets contains an empty 73-byte IFix block, while Persistent supplies
 one logical `Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes` payload
-(55,576 bytes after VFS decryption, SHA-256
-`79ad16be86e488eca829ce60b133f1c3c6d3d4c3d180e04621713e57f8c3bbea`).
-Its 18 signature targets match none of `0x5605`, inherited OnActivate
+(82,021 bytes after VFS decryption, SHA-256
+`737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21`).
+Its 30 signature targets match none of `0x5605`, inherited OnActivate
 `0x54d1`, or OnDeactivate `0x54d2`. The effective current behavior is therefore
 the `int.MaxValue` condition type plus no-op server-condition activation and
 deactivation. Future installed patches still require a fresh fail-closed audit.
@@ -985,6 +985,18 @@ playback method. Only two MissionRuntime conditions use
 `fbb9e474`), and neither exact level/script/task tuple matches any of the 31
 receiver tasks. The activation-frontier v5 report now checks this typed tuple
 directly and records zero consumers.
+The current installed IFix payload does not reopen either negative. Its
+82,021-byte decoded `Gameplay.Beyond.patch.bytes`
+(`737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21`)
+parses completely as 30 fixed-method targets plus two anonymous storeys with
+zero trailing bytes. Exact target and explicit-reference scans find no selected
+receiver-ownership, `LevelScriptRuntime`, `ScriptTaskRuntime`, `TaskCondition`,
+`CheckLevelScriptTaskFinished`, server-placeholder, or objective-progress
+replacement. Two `MissionSystem` targets operate on HUD display orders, while
+the dialog/cinematic targets—including
+`DialogManager._DoPlayCinematicNode`—remain playback implementation without a
+mission/task/LevelScript identity. Re-audit on any patch-hash change; the result
+does not authorize a graph edge.
 
 The existing exact positive remains:
 `map02_lv003/23300090001` decodes task `cf5a771c`, condition `cb696abe`, and
