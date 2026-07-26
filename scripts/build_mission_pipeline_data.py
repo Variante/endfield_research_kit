@@ -152,8 +152,10 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # adds the recursive protobuf identity-carrier census and closes
 # roleBaseInfo.sceneName as position-reconciliation context. v6 adds exact
 # LevelData AirWall mission/quest-state-gated radio playback contexts. v7
-# records the bounded MissionOptionData alternate-action carrier result.
-SCHEMA_VERSION = 7
+# records the bounded MissionOptionData alternate-action carrier result. v8
+# closes the Mission property -> ParamVariable.m_scriptPtr nested-type
+# candidate as runtime LevelScript subscription context.
+SCHEMA_VERSION = 8
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -486,6 +488,107 @@ RUNTIME_CONTRACT = {
             "object kinds, future IFix, and future builds remain possible."
         ),
         "classification": "schema_only_current_export_absent",
+        "storyBindingsAdded": 0,
+        "confidence": "native_proven_bounded",
+    },
+    "missionPropertyScriptPtrAudit": {
+        "source": "reports/story/recovery/mission_property_scriptptr_audit.json",
+        "managedLayout": {
+            "MissionRuntimeAsset": {
+                "missionId": {"token": "0x04003206", "offset": "0x10"},
+                "properties": {"token": "0x04003224", "offset": "0xe0"},
+                "propertyDic": {"token": "0x0400322b", "offset": "0xf8"},
+            },
+            "MissionSystem+MissionData": {
+                "missionId": {"token": "0x0400487f", "offset": "0x10"},
+                "propertyDict": {"token": "0x04004882", "offset": "0x20"},
+            },
+            "ParamVariable": {
+                "m_sendToScript": {"token": "0x040038d4", "offset": "0x68"},
+                "m_scriptPtr": {"token": "0x040038d5", "offset": "0x70"},
+            },
+        },
+        "authoredMissionProperties": {
+            "missionFiles": 490,
+            "missionsWithProperties": 70,
+            "propertyRows": 214,
+            "uniquePropertyKeys": 186,
+            "valueTypeCounts": {"1": 10, "3": 204},
+            "serializedFieldKeys": [
+                "key",
+                "type",
+                "value",
+                "valueArray",
+                "valueBit64",
+                "valueString",
+            ],
+            "levelScriptPointerFieldRows": 0,
+        },
+        "missionPropertyWriters": [
+            {
+                "symbol": "MissionSystem.Handle_SyncAllMission",
+                "token": "0x0600529c",
+                "address": "0x1833784e0",
+                "toVariableOffset": "0x2044",
+            },
+            {
+                "symbol": "MissionSystem.Handle_UpdateMissionProperty",
+                "token": "0x060052a1",
+                "address": "0x1873c02e4",
+                "toVariableOffset": "0x2c8",
+            },
+            {
+                "symbol": "MissionSystem.Handle_MissionStateUpdate",
+                "token": "0x060052a2",
+                "address": "0x1873be300",
+                "toVariableOffset": "0x416",
+            },
+        ],
+        "scriptPointerWriters": [
+            {
+                "symbol": (
+                    "ParamVariable."
+                    "SetupOnPropertyChangedEventForLevelScript"
+                ),
+                "token": "0x06003626",
+                "address": "0x183be53e0",
+                "managedDirectCallers": 2,
+            },
+            {
+                "symbol": (
+                    "ParamVariable."
+                    "SetupOnBBVariableChangedEventForLevelScript"
+                ),
+                "token": "0x0600362d",
+                "address": "0x1849832c0",
+                "managedDirectCallers": 1,
+                "unmappedNativeOrGenericCallers": 1,
+            },
+        ],
+        "directCallCensus": {
+            "ParamVariableExtensions.ToVariable": 7,
+            "SetupOnPropertyChangedEventForLevelScript": 2,
+            "SetupOnBBVariableChangedEventForLevelScript": 2,
+            "missionSystemScriptPointerSetterCalls": 0,
+        },
+        "installedPatch": {
+            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
+            "signatureTargetCount": 30,
+            "matchedMethods": 0,
+        },
+        "finding": (
+            "The nested managed type shape is not a mission-to-LevelScript foreign "
+            "key. Authored/server mission properties are converted into MissionData."
+            "propertyDict, while m_scriptPtr is attached only by local LevelScript "
+            "property/blackboard event subscription setup."
+        ),
+        "boundary": (
+            "One BB setter callsite is native/generic with no mapped managed owner; "
+            "its call shape carries a LevelScriptPtr and key but no mission identity. "
+            "Indirect/delegate/reflection construction, unexported data, future IFix, "
+            "and future builds remain outside the bound."
+        ),
+        "classification": "runtime_context_only_no_mission_levelscript_edge",
         "storyBindingsAdded": 0,
         "confidence": "native_proven_bounded",
     },

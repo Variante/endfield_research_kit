@@ -907,6 +907,22 @@ Expected active inputs and outputs:
   python scripts\story_recovery\build_mission_option_carrier_audit.py
   ```
 
+- `story_recovery/build_mission_property_scriptptr_audit.py`: closes the
+  nested `MissionRuntimeAsset.propertyDic -> ParamVariable.m_scriptPtr`
+  candidate without treating shared managed types as foreign keys. It counts
+  current authored `properties` rows, verifies the hash-pinned mission sync
+  and LevelScript subscription bodies, performs a whole-GameAssembly direct
+  caller census for `ToVariable` and the four entity/script subscription
+  setters, checks the current IFix target list, and writes
+  `reports/story/recovery/mission_property_scriptptr_audit.{json,md}`. The
+  current result keeps authored/server mission values in
+  `MissionData.propertyDict` separate from the `m_scriptPtr` attached by local
+  LevelScript event registration and adds zero Story bindings.
+
+  ```bat
+  python scripts\story_recovery\build_mission_property_scriptptr_audit.py
+  ```
+
 - `story_recovery/import_mission_runtime_trace.py`: validates hook-produced
   JSONL and builds a `missionRuntimeTrace.v1` observational bundle. The input
   fails closed: every session needs one `session_start`, sequence numbers must

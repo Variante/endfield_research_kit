@@ -2490,6 +2490,46 @@ binary/export. Reflection, dynamically constructed names, server-only
 construction, unexported object kinds, future IFix, and future builds remain
 outside the bound.
 
+### Mission properties do not acquire mission-to-LevelScript identity
+
+The next nested managed-type candidate is also closed.
+`MissionRuntimeAsset` carries `missionId` at `+0x10`, serialized
+`List<ParamKeyValue> properties` at `+0xe0`, and a separate runtime
+`Dictionary<string, ParamVariable> propertyDic` at `+0xf8`.
+`MissionSystem.MissionData` instead carries its synchronized
+`propertyDict` at `+0x20`. `ParamVariable` contains `m_sendToScript` at
+`+0x68` and `m_scriptPtr` at `+0x70`, but that shared value container does not
+make every dictionary which stores it a LevelScript relation.
+
+The current authored MissionRuntime corpus has 490 files. Seventy missions
+serialize 214 property rows with 186 unique keys. Their complete nested field
+shape is only `key/value/type/valueArray/valueBit64/valueString`; no row has a
+`LevelScriptPtr`, `scriptId`, `propertyDic`, or `propertyDict` field.
+`MissionRuntimeAsset::.ctor` allocates an empty `propertyDic` separately and
+does not populate it from `properties`.
+
+All three native mission synchronization paths have the same distinct
+semantics. `Handle_SyncAllMission` (`0x1833784e0`, `ToVariable` at `+0x2044`),
+`Handle_UpdateMissionProperty` (`0x1873c02e4`, `+0x2c8`), and
+`Handle_MissionStateUpdate` (`0x1873be300`, `+0x416`) convert
+`Proto.DYNAMIC_PARAMETER` values with
+`ParamVariableExtensions.ToVariable` and write `MissionData.propertyDict`.
+None calls either LevelScript setter. A whole-GameAssembly direct-call census
+instead resolves `SetupOnPropertyChangedEventForLevelScript` only to
+`LevelEventManager`/`ScriptEvent.OnPropertyChanged` registration and resolves
+the managed `SetupOnBBVariableChangedEventForLevelScript` caller to
+`ScriptEvent.OnBBVariableChanged` registration. One additional BB callsite is
+native/generic and unmapped, but its local call shape carries a script pointer
+and key with no mission identity. Current IFix replaces none of the reviewed
+paths.
+
+The hash-pinned rerunnable evidence is
+`reports/story/recovery/mission_property_scriptptr_audit.{json,md}`. It adds
+zero mission graph edges and classifies the apparent nested join as
+`runtime_context_only_no_mission_levelscript_edge`. Indirect/delegate or
+reflection construction, unexported data, future IFix, and future builds remain
+outside the bounded result.
+
 ### AirWall state gates recover exact non-owning radio contexts
 
 A broader exact runtime-type census found one productive non-protobuf carrier:
@@ -3041,6 +3081,13 @@ Current main-story priorities:
    select mutually exclusive native branches, its current authored-instance
    census is empty, and the installed IFix replaces none of the path. Do not
    revisit it until the binary, export, or patch hash changes.
+   The nested `MissionRuntimeAsset.propertyDic -> ParamVariable.m_scriptPtr`
+   shape is closed too. Current authored mission properties contain values but
+   no script pointer, all three MissionSystem property handlers write the
+   server-synchronized `MissionData.propertyDict` through `ToVariable`, and
+   direct `m_scriptPtr` setters belong to LevelScript event registration.
+   Reopen only when the binary, metadata, authored property shape, or IFix
+   changes.
    The recovered LevelScript task packet family still sharpens the dynamic side
    of the target. Its concrete sender/handlers and decoded object offsets are
    mapped in `mission_runtime_trace_hooks.json`; the guarded message-815

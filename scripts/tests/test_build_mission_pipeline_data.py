@@ -938,6 +938,43 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "schema_only_current_export_absent",
         )
 
+    def test_mission_property_script_pointer_is_runtime_subscription_context(self):
+        audit = pipeline.RUNTIME_CONTRACT["missionPropertyScriptPtrAudit"]
+        layout = audit["managedLayout"]
+        self.assertEqual(
+            layout["MissionRuntimeAsset"]["properties"]["offset"],
+            "0xe0",
+        )
+        self.assertEqual(
+            layout["MissionRuntimeAsset"]["propertyDic"]["offset"],
+            "0xf8",
+        )
+        self.assertEqual(
+            layout["MissionSystem+MissionData"]["propertyDict"]["offset"],
+            "0x20",
+        )
+        self.assertEqual(
+            layout["ParamVariable"]["m_scriptPtr"]["offset"],
+            "0x70",
+        )
+        authored = audit["authoredMissionProperties"]
+        self.assertEqual(authored["missionFiles"], 490)
+        self.assertEqual(authored["missionsWithProperties"], 70)
+        self.assertEqual(authored["propertyRows"], 214)
+        self.assertEqual(authored["levelScriptPointerFieldRows"], 0)
+        self.assertEqual(len(audit["missionPropertyWriters"]), 3)
+        self.assertEqual(
+            audit["directCallCensus"]["missionSystemScriptPointerSetterCalls"],
+            0,
+        )
+        self.assertEqual(audit["installedPatch"]["matchedMethods"], 0)
+        self.assertIn("not a mission-to-LevelScript", audit["finding"])
+        self.assertEqual(audit["storyBindingsAdded"], 0)
+        self.assertEqual(
+            audit["classification"],
+            "runtime_context_only_no_mission_levelscript_edge",
+        )
+
     def test_airwall_contract_is_state_gated_context_not_transition_owner(self):
         audit = pipeline.RUNTIME_CONTRACT["airWallMissionRadioContext"]
         self.assertEqual(audit["memoryPackSchema"]["levelDataMemberCount"], 43)
