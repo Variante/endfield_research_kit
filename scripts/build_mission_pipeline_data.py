@@ -156,8 +156,10 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # closes the Mission property -> ParamVariable.m_scriptPtr nested-type
 # candidate as runtime LevelScript subscription context. v9 closes the
 # implicit ParamSource.CURRENT_MISSION_ID candidate across the complete
-# authored MissionRuntime and LevelScript action surfaces.
-SCHEMA_VERSION = 9
+# authored MissionRuntime and LevelScript action surfaces. v10 closes the
+# complete direct managed mission/quest identity co-carrier census and proves
+# the remaining mission/scene pair is HUD/map tracking context.
+SCHEMA_VERSION = 10
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -646,6 +648,72 @@ RUNTIME_CONTRACT = {
         "storyBindingsAdded": 0,
         "missionOrderEdgesAdded": 0,
         "confidence": "metadata_and_complete_authored_corpus_bounded",
+    },
+    "managedIdentityCarrierCensus": {
+        "source": (
+            "reports/story/recovery/managed_identity_carrier_census.json"
+        ),
+        "metadata": {
+            "managedTypeCount": 63987,
+            "directCandidateTypes": 10,
+            "runtimeObjectCandidates": 8,
+            "unreviewedCandidates": 0,
+        },
+        "authored": {
+            "focusModeMissionRadioRows": 13,
+            "focusModeUniqueRadios": 10,
+            "npcProxyExMissionDialogRows": 453,
+            "subGameMissionScriptRows": 20,
+            "missionOptionAuthoredMatches": 0,
+        },
+        "trackingClosure": {
+            "classification": "closed_tracking_ui_context",
+            "commonTrackingFields": {
+                "missionId": {
+                    "token": "0x04003f3b",
+                    "offset": "0x20",
+                },
+                "sceneId": {
+                    "token": "0x04003f3d",
+                    "offset": "0x30",
+                },
+            },
+            "nativeConsumers": [{
+                "symbol": "CommonTrackingPointInfoBase._UpdateVisible",
+                "token": "0x0600403b",
+                "address": "0x183482bb0",
+            }, {
+                "symbol": "CommonTrackingSystem.AddMissionTrack",
+                "token": "0x0600407e",
+                "address": "0x184792ac0",
+            }, {
+                "symbol": "TrackingInfoBase.ActivateTrackUnit",
+                "token": "0x06004c8a",
+                "address": "0x184792960",
+            }],
+            "finding": (
+                "The mission/scene fields create and display a HUD/map tracking "
+                "point. sceneId is mapped to the current system map for visibility, "
+                "while missionId is stored on the tracking point; no audited method "
+                "calls Story playback."
+            ),
+        },
+        "finding": (
+            "All ten direct managed mission/quest identity co-carrier types are "
+            "reviewed. Productive FocusMode, NpcProxyEx, and SubGame pairs are "
+            "already represented by their bounded evidence classes; the remaining "
+            "object pairs and two apparent enum/static pairs add no new Story "
+            "ownership or order edge."
+        ),
+        "boundary": (
+            "Nested object graphs, indirect/reflection/XLua construction, opaque "
+            "server-only state, unexported asset kinds, future IFix, and future "
+            "builds remain outside the bound."
+        ),
+        "classification": "all_direct_managed_identity_carriers_reviewed",
+        "storyBindingsAdded": 0,
+        "missionOrderEdgesAdded": 0,
+        "confidence": "metadata_and_native_consumers_bounded",
     },
     "airWallMissionRadioContext": {
         "managedCarrier": {

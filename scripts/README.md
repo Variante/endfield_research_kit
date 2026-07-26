@@ -937,6 +937,22 @@ Expected active inputs and outputs:
   python scripts\story_recovery\build_param_source_mission_context_audit.py
   ```
 
+- `story_recovery/build_managed_identity_carrier_census.py`: scans all current
+  managed types for direct mission/quest identity beside LevelScript/scene or
+  Story playback identity, validates the exact authored FocusMode,
+  NpcProxyEx, SubGame, and MissionOption counts, and checks the installed IFix
+  target list. It writes
+  `reports/story/recovery/managed_identity_carrier_census.{json,md}` and fails
+  closed on binary, metadata, authored-count, candidate-set, or patch drift.
+  The current result classifies all ten direct candidate types with zero
+  unreviewed rows. Its new native closure proves that
+  `CommonTrackingPointInfoBase` and `TrackingInfoBase` use mission/scene
+  identity only for HUD/map tracking, not Story playback or mission order.
+
+  ```bat
+  python scripts\story_recovery\build_managed_identity_carrier_census.py
+  ```
+
 - `story_recovery/import_mission_runtime_trace.py`: validates hook-produced
   JSONL and builds a `missionRuntimeTrace.v1` observational bundle. The input
   fails closed: every session needs one `session_start`, sequence numbers must
