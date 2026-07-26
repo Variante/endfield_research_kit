@@ -2433,6 +2433,30 @@ The current installed 30-target Gameplay IFix payload replaces none of those
 fallback methods. Message 57's token is therefore a LevelScript server-event
 round-trip/correlation value, not a hidden mission or quest carrier.
 
+The complete protobuf carrier census now closes the remaining typed message
+surface for this build. Using the MetadataRegistration runtime type table
+rather than unresolved metadata placeholders, recursive traversal covers all
+983 enum-backed CS/SC message classes and their nested `Proto.*` fields. It
+finds 33 mission/quest-bearing message types, 29 `scriptId`-bearing types, and
+zero message that carries mission/quest identity beside a LevelScript or Story
+identity. A weaker mission/scene pass produces exactly three rows:
+`CS_MISSION_CLIENT_TRIGGER_DONE` (317), whose fallback sender is inactive, and
+`SC_MISSION_STATE_UPDATE` (112) / `SC_QUEST_STATE_UPDATE` (111), where
+`roleBaseInfo.sceneName` is nested beside the mission or quest id.
+
+The two active weak rows are not authored scene ownership.
+`Handle_MissionStateUpdate` (`0x1873be300`) and
+`Handle_QuestStateUpdate` (`0x1873bf0a0`) read the role snapshot's leader
+position, rotation, and scene name and pass them to
+`MissionSystem.CharacterPositionCorrection` (`0x1873b84c4`). That method
+resolves the scene to a map, checks the current player/controller level and
+network-position guards, and may teleport the squad to reconcile server state.
+It does not retain the scene as a mission/quest host or address a LevelScript
+or Story file. The installed IFix targets none of the two handlers or the
+consumer. This adds zero ownership or order edges. Opaque bytes, dynamic
+parameter values, server-only schemas, native construction, future IFix, and
+future builds remain outside the bound.
+
 It does **not** close the join. Message 57 carries scene/script identity and no
 mission or quest identity, exactly mirroring the task packet family. The two
 death/property bridges are likewise capability proofs at the architecture level,
@@ -2930,6 +2954,16 @@ Current main-story priorities:
    replace any method on this chain. Separately constructed equal keys,
    reflection, native memory manipulation, future patches, and future builds
    remain outside this bounded closure.
+   The current protobuf surface has now been exhaustively checked with the same
+   fail-closed rule: recursive typed-field traversal across 983 enum-backed
+   CS/SC message classes finds zero mission/quest + LevelScript/Story
+   co-carriers. The three weaker mission/scene rows are message 317's inactive
+   sender and the mission/quest state role snapshots. Native consumers close
+   the latter as server position reconciliation through
+   `CharacterPositionCorrection`, not authored scene ownership. Do not repeat
+   this schema join until the binary, metadata, or IFix hash changes; search
+   non-protobuf config/asset registries or independently typed server-state
+   evidence instead.
    The recovered LevelScript task packet family still sharpens the dynamic side
    of the target. Its concrete sender/handlers and decoded object offsets are
    mapped in `mission_runtime_trace_hooks.json`; the guarded message-815

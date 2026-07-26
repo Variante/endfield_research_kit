@@ -291,7 +291,12 @@ Mission Pipeline:
   completed token trace: `CallServer.Execute` reads the pushed `ctxToken` as
   `netToken` and returns it on `CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER`, making it
   round-trip correlation context rather than a hidden mission carrier. The
-  one-way
+  runtime contract also exposes the complete recursive protobuf identity
+  census: zero mission/quest + LevelScript/Story co-carriers across 983 current
+  enum-backed CS/SC message classes. Its three weaker scene rows remain
+  non-owning: message 317 has no active fallback sender, while messages 111 and
+  112 pass `roleBaseInfo.sceneName` only to
+  `CharacterPositionCorrection` for server-position reconciliation. The one-way
   `SC_SCENE_LEVEL_SCRIPT_STAGE_CHANGE {sceneNumId, scriptId, stage}` row is
   labeled as a server push with no client request or expected response.
   Native paths with no network exchange are separated again: BattleSignal is

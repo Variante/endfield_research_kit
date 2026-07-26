@@ -148,8 +148,10 @@ DEFAULT_ORDER_REPORT_ROOT = ROOT / "reports" / "mission_order"
 DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v3 added per-mission ``missionGraph`` and quest-tracked ambient lines. v4
-# extends ``envTalkContext`` with exact atmospheric-switcher state context.
-SCHEMA_VERSION = 4
+# extends ``envTalkContext`` with exact atmospheric-switcher state context. v5
+# adds the recursive protobuf identity-carrier census and closes
+# roleBaseInfo.sceneName as position-reconciliation context.
+SCHEMA_VERSION = 5
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -319,6 +321,89 @@ RUNTIME_CONTRACT = {
             "GameplayNetwork.TriggerLevelScriptServerEvent methods. Direct references "
             "through a separately constructed equal key, reflection, native memory "
             "manipulation, future IFix, and future builds remain outside this bound."
+        ),
+        "storyBindingsAdded": 0,
+        "confidence": "native_proven_bounded",
+    },
+    "protobufIdentityCarrierAudit": {
+        "source": "reports/story/recovery/protocol_registry_audit.json",
+        "coverage": {
+            "protoTypeDefinitions": 3743,
+            "csScTypeDefinitions": 1983,
+            "registryEntries": 1186,
+            "registryMessageTypes": 983,
+            "fieldBearingRegistryMessageTypes": 936,
+            "missionOrQuestMessageTypes": 33,
+            "levelScriptMessageTypes": 29,
+        },
+        "exactMissionScriptOrStoryCandidateCount": 0,
+        "weakMissionSceneCandidateCount": 3,
+        "weakCandidates": [
+            {
+                "message": "CS_MISSION_CLIENT_TRIGGER_DONE (317)",
+                "fields": ["missionId", "sceneName"],
+                "classification": "inactive_current_fallback_sender",
+                "finding": (
+                    "The schema co-carries the fields, but the current fallback has no "
+                    "gameplay constructor/sender and the installed IFix adds none."
+                ),
+            },
+            {
+                "message": "SC_MISSION_STATE_UPDATE (112)",
+                "fields": ["missionId", "roleBaseInfo.sceneName"],
+                "classification": "role_snapshot_position_correction",
+            },
+            {
+                "message": "SC_QUEST_STATE_UPDATE (111)",
+                "fields": ["questId", "roleBaseInfo.sceneName"],
+                "classification": "role_snapshot_position_correction",
+            },
+        ],
+        "roleSnapshotConsumer": {
+            "handlers": [
+                {
+                    "symbol": "MissionSystem.Handle_MissionStateUpdate",
+                    "token": "0x060052a2",
+                    "address": "0x1873be300",
+                    "fallbackPatchId": "0x5ec5",
+                },
+                {
+                    "symbol": "MissionSystem.Handle_QuestStateUpdate",
+                    "token": "0x0600529e",
+                    "address": "0x1873bf0a0",
+                    "fallbackPatchId": "0x5ebe",
+                },
+            ],
+            "symbol": "MissionSystem.CharacterPositionCorrection",
+            "token": "0x0600527b",
+            "address": "0x1873b84c4",
+            "fallbackPatchId": "0x5ea7",
+            "fields": [
+                "roleBaseInfo.leaderPosition",
+                "roleBaseInfo.leaderRotation",
+                "roleBaseInfo.sceneName",
+            ],
+            "finding": (
+                "The handlers use the role snapshot to reconcile the player's map and "
+                "position. sceneName is not retained as an authored mission/quest scene "
+                "host and creates no Story ownership or order edge."
+            ),
+        },
+        "installedPatch": {
+            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
+            "signatureTargetCount": 30,
+            "relevantPatchIds": ["0x5ec5", "0x5ebe", "0x5ea7"],
+            "matchedMethods": 0,
+        },
+        "finding": (
+            "Recursive typed-field traversal across every current enum-backed CS/SC "
+            "message found no mission/quest + LevelScript/Story identity co-carrier. "
+            "The only weaker scene carriers are one inactive sender and two operational "
+            "role-position snapshots."
+        ),
+        "boundary": (
+            "Opaque bytes, dynamic parameter values, server-only schemas, native memory "
+            "construction, future IFix, and future builds remain outside this bound."
         ),
         "storyBindingsAdded": 0,
         "confidence": "native_proven_bounded",
@@ -847,7 +932,10 @@ RUNTIME_CONTRACT = {
             "effect": (
                 "Dispatch to AvailableMission, StartMission, or CompleteMission. On the "
                 "completion path succeedId is the completion outcome/result selector; it "
-                "is not a successor mission id and must not create an order edge."
+                "is not a successor mission id and must not create an order edge. "
+                "roleBaseInfo leader position/rotation/sceneName is passed only to "
+                "CharacterPositionCorrection for operational map/position reconciliation; "
+                "it is not an authored mission scene host."
             ),
             "confidence": "native_proven",
         },
@@ -857,7 +945,11 @@ RUNTIME_CONTRACT = {
             "message": "SC_QUEST_STATE_UPDATE { questId, questState = 2, bRollback, roleBaseInfo }",
             "handler": "MissionSystem.Handle_QuestStateUpdate -> MissionRuntime.StartQuest",
             "address": "0x1873bf0a0 -> 0x183a885d0",
-            "effect": "Create/bind the active client quest and its objective callbacks.",
+            "effect": (
+                "Create/bind the active client quest and its objective callbacks. "
+                "roleBaseInfo leader position/rotation/sceneName is consumed only by "
+                "CharacterPositionCorrection and adds no quest-to-scene or Story edge."
+            ),
             "confidence": "native_proven",
         },
         {
@@ -866,7 +958,10 @@ RUNTIME_CONTRACT = {
             "message": "SC_QUEST_STATE_UPDATE { questId, questState = 3, bRollback, roleBaseInfo }",
             "handler": "MissionSystem.Handle_QuestStateUpdate -> MissionRuntime.SucceedQuest",
             "address": "0x1873bf0a0 -> 0x1873c32ac",
-            "effect": "Mark the quest completed on the client.",
+            "effect": (
+                "Mark the quest completed on the client. Any roleBaseInfo sceneName is "
+                "position-reconciliation context, not an authored quest host."
+            ),
             "confidence": "native_proven",
         },
         {
@@ -1877,6 +1972,24 @@ RUNTIME_CONTRACT = {
                 "CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken. This closes the token "
                 "as round-trip/correlation context, not mission/quest identity; neither "
                 "packet carries a mission, quest, condition, or Story identity."
+            ),
+            "confidence": "native_proven_bounded",
+        },
+        {
+            "symbol": (
+                "MissionSystem.Handle_MissionStateUpdate / Handle_QuestStateUpdate "
+                "-> CharacterPositionCorrection"
+            ),
+            "address": "0x1873be300 / 0x1873bf0a0 -> 0x1873b84c4",
+            "finding": (
+                "Recursive runtime-type traversal across all 983 current enum-backed "
+                "CS/SC message classes found zero mission/quest + LevelScript/Story "
+                "identity co-carriers. The two active weaker scene carriers are messages "
+                "112 and 111: their handlers pass roleBaseInfo leader position, rotation, "
+                "and sceneName to CharacterPositionCorrection. That method resolves the "
+                "scene to a map and performs guarded player-position reconciliation; it "
+                "does not retain an authored mission/quest scene host. The installed "
+                "30-target Gameplay IFix matches none of the two handlers or consumer."
             ),
             "confidence": "native_proven_bounded",
         },

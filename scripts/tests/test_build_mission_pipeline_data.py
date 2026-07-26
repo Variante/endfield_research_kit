@@ -862,6 +862,49 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertIn("set_CtxToken", native["finding"])
         self.assertIn("round-trip/correlation context", native["finding"])
 
+    def test_recursive_protobuf_census_closes_role_scene_snapshots(self):
+        audit = pipeline.RUNTIME_CONTRACT["protobufIdentityCarrierAudit"]
+        self.assertEqual(audit["coverage"]["protoTypeDefinitions"], 3743)
+        self.assertEqual(audit["coverage"]["registryMessageTypes"], 983)
+        self.assertEqual(audit["coverage"]["fieldBearingRegistryMessageTypes"], 936)
+        self.assertEqual(audit["coverage"]["missionOrQuestMessageTypes"], 33)
+        self.assertEqual(audit["coverage"]["levelScriptMessageTypes"], 29)
+        self.assertEqual(audit["exactMissionScriptOrStoryCandidateCount"], 0)
+        self.assertEqual(audit["weakMissionSceneCandidateCount"], 3)
+        self.assertEqual(
+            [row["classification"] for row in audit["weakCandidates"]],
+            [
+                "inactive_current_fallback_sender",
+                "role_snapshot_position_correction",
+                "role_snapshot_position_correction",
+            ],
+        )
+        consumer = audit["roleSnapshotConsumer"]
+        self.assertEqual(consumer["token"], "0x0600527b")
+        self.assertEqual(consumer["fallbackPatchId"], "0x5ea7")
+        self.assertIn("position", consumer["finding"])
+        self.assertEqual(audit["installedPatch"]["matchedMethods"], 0)
+        self.assertEqual(audit["storyBindingsAdded"], 0)
+        self.assertEqual(audit["confidence"], "native_proven_bounded")
+
+        inbound = {
+            row["id"]: row for row in pipeline.RUNTIME_CONTRACT["inbound"]
+        }
+        self.assertIn(
+            "CharacterPositionCorrection",
+            inbound["mission-state"]["effect"],
+        )
+        self.assertIn(
+            "adds no quest-to-scene or Story edge",
+            inbound["quest-start"]["effect"],
+        )
+        native = next(
+            row
+            for row in pipeline.RUNTIME_CONTRACT["nativeEvidence"]
+            if "CharacterPositionCorrection" in row["symbol"]
+        )
+        self.assertIn("zero mission/quest + LevelScript/Story", native["finding"])
+
     def test_missionless_subgame_reference_audit_rejects_non_owning_joins(self):
         audit = pipeline.RUNTIME_CONTRACT["subGameMissionRegistry"]["missionlessPlaybackAudit"]
         self.assertEqual(audit["subGameRows"], 10)
