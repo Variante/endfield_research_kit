@@ -265,7 +265,13 @@ Mission Pipeline:
   event, LevelScript, playback action, and Story terminal. Unresolved playback
   retains an ownership-gap step and definition-only files remain separate;
   compact exact serialized event/action paths are expandable rather than being
-  flattened into the attachment label.
+  flattened into the attachment label. The route normalizer also unwraps the
+  `listener` retained in `worldEntityLevelScriptEvidence`; all 30 currently
+  published mission-tracked world-entity routes therefore expose their exact
+  native paths instead of collapsing to context rows with zero paths. For
+  example, the live `e6m4` card for `radio_e6m4_18` shows Leader slot `80001`
+  at script `22800110022` header `6`, then `Split.actions[0]` local `8` and
+  `PlayRadio`.
 - Lazy mission payloads embed the source-only Story partial order with reduced
   causal edges, topological frontiers, cycles, quest forks/joins, and exact
   option branches. Exact native Split/IfElse/Switch Story arms and strictly
