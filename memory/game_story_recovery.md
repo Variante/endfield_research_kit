@@ -690,11 +690,16 @@ changes prioritization only and creates or removes no scene edge or mission
 ownership.
 
 The gap queue also no longer treats every weak-only or isolated row as a
-missing LevelScript decoder. Of 2,063 weak-only placements, 1,788 have a
-complete exact native event-to-playback path but no prefix-comparable second
-Story action, 241 retain only non-ordering topology, and 34 remain actionable
-control-flow rows. Exact-native singleton and divergent-event routes stay
-visible with their paths but contribute no recovery score. Isolated rows are
+missing LevelScript decoder. The current source graph has 2,063 weak-only
+placements: 1,788 have a complete exact native event-to-playback path but no
+prefix-comparable second Story action, 256 retain only non-ordering topology,
+and 19 remain actionable control-flow rows. Two former false positives,
+`radio_e6m4_18` and `radio_sm1l1m1_5`, were already exact current-build
+`StopRadio` records (`0x04b5/0x09`); the weak-only fallback now applies the
+same non-playback formatter map as the multi-scene classifier instead of
+relabeling those records as missing decoders. Exact-native singleton,
+non-playback, and divergent-event routes stay visible but contribute no
+recovery score. Isolated rows are
 similarly separated: 223 core placements already have exact native playback
 paths, 84 have exact mission-scoped `NpcProxyEx` runtime configuration but no
 relative order, and 80 current mission-audit `black_*` definition-only

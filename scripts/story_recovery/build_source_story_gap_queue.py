@@ -1346,6 +1346,13 @@ def build_gap_row(
                 continue
             record_class = safe_key(occurrence.get("recordClass"))
             action_name = safe_key(occurrence.get("actionName"))
+            if not record_class or not action_name:
+                mapped = KNOWN_NON_PLAYBACK_ACTIONS.get((
+                    safe_key(occurrence.get("actionCode")).lower(),
+                    safe_key(occurrence.get("actionKind")).lower(),
+                ))
+                if mapped:
+                    action_name, record_class = mapped
             if record_class and action_name and not record_class.startswith(
                 "play_"
             ):

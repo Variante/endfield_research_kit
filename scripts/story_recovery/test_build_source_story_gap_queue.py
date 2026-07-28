@@ -254,6 +254,40 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ["dlg_a"],
         )
 
+    def test_weak_only_stop_radio_is_not_a_playback_decoder_gap(self) -> None:
+        partial = partial_mission(
+            "e1m1",
+            scenes=["radio_a", "cutscene_b"],
+            weak_only=["radio_a"],
+            edges=[{
+                "from": "radio_a",
+                "to": "cutscene_b",
+                "kind": "levelscriptFileOrder",
+                "tier": "weak",
+                "sourceFiles": ["LevelScriptData/lv1/1001.json"],
+            }],
+        )
+        action_story_occurrences = {
+            "radio_a": [{
+                "sourceFile": "LevelScriptData/lv1/1001.json",
+                "actionMapRole": "actionList#2 root",
+                "actionCode": "0x04b5",
+                "actionKind": "0x09",
+                "localId": 10,
+            }],
+        }
+
+        row = gap_queue.build_gap_row(
+            partial,
+            mission_payload(),
+            mission_bundle_exists=True,
+            action_story_occurrences=action_story_occurrences,
+        )
+
+        self.assertEqual(row["metrics"]["actionableWeakOnlyScenes"], 0)
+        self.assertEqual(row["metrics"]["nonActionableWeakOnlyScenes"], 1)
+        self.assertEqual(row["nonActionableWeakOnlySceneKeys"], ["radio_a"])
+
     def test_native_index_closes_exact_stub_weak_scene(self) -> None:
         partial = partial_mission(
             "e1m1",
