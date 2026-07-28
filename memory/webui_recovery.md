@@ -296,7 +296,11 @@ Mission Pipeline:
   `levelscriptCallServerCallbacks` with explicit non-Story/non-order/non-owner
   flags and are excluded from nodes, edges, scene placement, and Mission
   Pipeline ownership. This removes the former hash-terminal pseudo-scenes
-  without discarding source-file or preceding-scene diagnostics. The
+  without discarding source-file or preceding-scene diagnostics. The one
+  current punctuation-only `#` value in a typed
+  `PlayDialogAndHideSceneObjectAction` is handled the same way under
+  `levelscriptNonNodeScalarPayloads`: visible diagnostic provenance, no graph
+  node or edge. The
   runtime contract also exposes the complete recursive protobuf identity
   census: zero mission/quest + LevelScript/Story co-carriers across 983 current
   enum-backed CS/SC message classes. Its three weaker scene rows remain

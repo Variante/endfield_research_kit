@@ -2048,7 +2048,10 @@ gameplay-video OCR/audio workflow.
   CallServer corpus serializes each hash-shaped event name as `#` plus its own
   eight-hex-digit action UID. Builders retain these as
   `levelscriptCallServerSelfUidCallback` diagnostics but exclude them from
-  Story nodes, order edges, and mission ownership. High
+  Story nodes, order edges, and mission ownership. The one current typed
+  `PlayDialogAndHideSceneObjectAction` (`0x035a/0x0f`) punctuation-only `#`
+  payload is likewise retained as `levelscriptNonNodeScalarPayload` rather
+  than emitted as a graph identifier. High
   event/gate/terminal records such as `0x0a03/0x00`, `0x0bed/0x00`, current
   trigger events `0x12be/0x00` and `0x12c0/0x00`, dialog exit
   `0x1355/0x00`, and quest-state change `0x1385/0x00` are outside that

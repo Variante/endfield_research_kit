@@ -775,6 +775,11 @@ CallServer action-record UID. This closes the value as an action-local
 callback/correlation label rather than a handler hash, Story node, mission
 owner, or chronology edge. The Story builder now preserves it only as a
 diagnostic callback record and excludes it from scene-graph nodes and edges.
+The adjacent graph audit also found one distinct punctuation-only `#` string
+in `PlayDialogAndHideSceneObjectAction` `0x035a/0x0f` (record UID
+`15196cb4`, `map02_lv005/23200050003`) beside the actual dialog id. It is
+retained as a typed non-node scalar diagnostic and does not become an
+identifier or edge.
 The script therefore contains
 no hidden submission id, item id, UI key, branch target, or typed SubmitItem
 OpenUI action. Mission Pipeline schema 14 emits one

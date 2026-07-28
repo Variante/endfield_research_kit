@@ -859,6 +859,15 @@ mission/quest identity. This proves objective co-gating and local
 playback/presentation-cleanup context, not that the quest or script opens the
 submission UI and not that submission completion triggers either dialog.
 
+A follow-up full generated-graph scan closed the only remaining symbol-only
+node. `map02_lv005/23200050003`, record UID `15196cb4`, is the sole current
+`PlayDialogAndHideSceneObjectAction` (`0x035a/0x0f`) row that serializes the
+punctuation-only string `#` beside its real `dlg_sm2l5m1_7` id. With no
+identifier body it is not a runtime/Story key. The builder now retains the raw
+binding plus a `levelscriptNonNodeScalarPayload` diagnostic, but excludes `#`
+from graph nodes and edges. This exact opcode/value guard must not be widened
+to suppress other symbol payloads without typed evidence.
+
 Mission-level Story evidence stays separate from quest attachments.
 `MissionRuntimeAsset/<mission>_meta.json` NPC accept mode (`mode = 3`, native
 `MissionAcceptMode+NPCInfo`) attaches its exact `dialogId` to the mission accept

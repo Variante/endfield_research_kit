@@ -1139,6 +1139,34 @@ def is_call_server_self_uid_callback(node_key: str, step: dict | None) -> bool:
     )
 
 
+def is_play_dialog_hide_non_identifier_payload(
+    node_key: str,
+    step: dict | None,
+) -> bool:
+    """Recognize the lone punctuation-only payload in the current typed corpus.
+
+    One ``PlayDialogAndHideSceneObjectAction`` serializes ``#`` beside its real
+    dialog id. With no identifier body it cannot name a Story/runtime node.
+    Keep the guard exact to the typed action so broader symbol recovery remains
+    fail-closed.
+    """
+    if str(node_key or "") != "#" or not isinstance(step, dict):
+        return False
+    source = step.get("source")
+    if not isinstance(source, dict):
+        source = ((step.get("_debug") or {}).get("source") or {})
+    if not isinstance(source, dict):
+        return False
+    code = source.get("code")
+    kind = source.get("kind")
+    try:
+        code_value = int(str(code), 0) if not isinstance(code, int) else code
+        kind_value = int(str(kind), 0) if not isinstance(kind, int) else kind
+    except (TypeError, ValueError):
+        return False
+    return code_value == 0x035A and kind_value == 0x0F
+
+
 def first_string(values: Any) -> str:
     if not isinstance(values, list):
         return ""

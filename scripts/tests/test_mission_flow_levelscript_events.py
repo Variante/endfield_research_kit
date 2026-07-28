@@ -28,6 +28,7 @@ from scripts.story_builder.levelscript_binary import (
 )
 from scripts.story_builder.mission_recovery import (
     is_call_server_self_uid_callback,
+    is_play_dialog_hide_non_identifier_payload,
     source_backed_call_server_callbacks_from_scene_graph,
     source_backed_hash_terminals_from_scene_graph,
 )
@@ -1205,6 +1206,33 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertFalse(callbacks[0]["storyNode"])
         self.assertFalse(callbacks[0]["missionOwnershipEvidence"])
         self.assertFalse(callbacks[0]["orderEvidence"])
+
+    def test_play_dialog_hide_punctuation_payload_is_not_a_graph_node(self):
+        step = {
+            "_debug": {
+                "source": {
+                    "code": "0x035a",
+                    "kind": "0x0f",
+                    "uid": "15196cb4",
+                },
+            },
+        }
+        self.assertTrue(is_play_dialog_hide_non_identifier_payload("#", step))
+        self.assertFalse(
+            is_play_dialog_hide_non_identifier_payload("#a354645e", step)
+        )
+        other_action = {
+            "_debug": {
+                "source": {
+                    "code": "0x0357",
+                    "kind": "0x14",
+                    "uid": "15196cb4",
+                },
+            },
+        }
+        self.assertFalse(
+            is_play_dialog_hide_non_identifier_payload("#", other_action)
+        )
 
     def test_uid_parser_accepts_dont_log_and_wide_compact_member_count(self):
         compact = bytearray(30)
