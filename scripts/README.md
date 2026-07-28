@@ -2014,8 +2014,11 @@ gameplay-video OCR/audio workflow.
   `95` scripts and `155` Story keys: `10` have an exact SubGame activation
   scope, `55` are Manual with no decoded static shape/task/parent carrier, and
   none has an incoming literal cross-script manual-control row. One receiver
-  script is read by a typed MissionRuntime objective, but that condition
-  observes its `isFinished` property and does not activate or own its playback.
+  script is read by a typed MissionRuntime objective. The compact debug
+  annotation publishes its exact mission, quest, objective index, and
+  condition types with explicit false ownership, activation, and Story-playback
+  flags. That condition observes its `isFinished` property and does not
+  activate or own its playback.
   All `12`
   non-SubGame scripts with non-empty authored start shapes have zero complete
   exact shape matches in the same-level MissionArea table. Of `25` receiver

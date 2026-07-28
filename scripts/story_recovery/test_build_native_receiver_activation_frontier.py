@@ -15,6 +15,22 @@ import build_native_receiver_activation_frontier as frontier  # noqa: E402
 
 
 class NativeReceiverActivationFrontierTests(unittest.TestCase):
+    def test_frontend_renders_objective_consumer_as_observation_only(self) -> None:
+        source = (
+            ROOT / "webui" / "src" / "features" / "mission_pipeline" / "index.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "activation.missionRuntimeScriptConsumers",
+            source,
+        )
+        self.assertIn('class="is-boundary"', source)
+        self.assertIn('t("questObserver")', source)
+        self.assertIn('t("observationOnly")', source)
+        self.assertIn(
+            "playback handoff sets the observed property",
+            source,
+        )
+
     def test_receiver_nodes_collapse_by_exact_levelscript(self) -> None:
         payload = {
             "storyCoverage": {
@@ -326,7 +342,17 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                         }
                     ],
                     "incomingLiteralManualControls": [],
-                    "missionRuntimeScriptConsumers": [],
+                    "missionRuntimeScriptConsumers": [
+                        {
+                            "missionId": "fixture_mission",
+                            "questId": "fixture_mission_q#1",
+                            "objectiveIndex": 1,
+                            "conditionTypes": [
+                                "CheckLevelScriptPropertyBool"
+                            ],
+                            "sourceFile": "fixture_mission.json",
+                        }
+                    ],
                     "decodedTaskMap": {
                         "taskCount": 1,
                         "tasks": [
@@ -388,6 +414,25 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 "condition"
             ]["areaId"]["value"],
         )
+        self.assertEqual(
+            1,
+            annotation["missionRuntimeObjectiveConsumerCount"],
+        )
+        consumer = annotation["missionRuntimeScriptConsumers"][0]
+        self.assertEqual(
+            "mission_runtime_objective_references_level_script",
+            consumer["relation"],
+        )
+        self.assertEqual("fixture_mission", consumer["missionId"])
+        self.assertEqual("fixture_mission_q#1", consumer["questId"])
+        self.assertEqual(
+            ["CheckLevelScriptPropertyBool"],
+            consumer["conditionTypes"],
+        )
+        self.assertFalse(consumer["ownership"])
+        self.assertFalse(consumer["activation"])
+        self.assertFalse(consumer["storyPlayback"])
+        self.assertNotIn("sourceFile", consumer)
         self.assertEqual(
             1,
             index["storyCoverage"]["nativeReceiverActivationFrontier"][
