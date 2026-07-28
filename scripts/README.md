@@ -302,12 +302,14 @@ that index, run:
 
 ```bat
 python scripts\story_recovery\build_animestudio_story_carrier_audit.py
+python scripts\story_recovery\build_animestudio_story_gameobject_audit.py
 ```
 
-The audit reads the current source-gap queue and reports only exact actionable
-Story values that occur in typed Story-id fields on the same completely decoded
-object as typed mission/quest or scene/script identifiers. It validates the
-merged summary, stage signature, and output hashes first. Partial/truncated
+The carrier audit reads the current source-gap queue and reports only exact
+actionable Story values that occur in typed Story-id fields on the same
+completely decoded object as typed mission/quest or scene/script identifiers.
+It validates the merged summary, stage signature, and output hashes first.
+Partial/truncated
 objects, unresolved MonoScript identity, substrings, names, neighboring
 objects, PathID proximity, OCR, and manual overrides are rejected. Output goes
 to `reports/story/recovery/animestudio_story_carrier_audit.{json,md}`. Rows are
@@ -316,6 +318,19 @@ ownership or playback, and the audit never creates an order edge.
 `--output-root` is the `export_full` root, not its nested
 `recovered/AnimeStudio-cli` directory; the default already uses the repository
 `export_full`.
+
+The GameObject audit consumes the same validated index but follows only exact,
+resolved `m_GameObject` PPtrs from actionable Story-bearing objects. It maps
+their physical chunk offsets through the current VFS index, extracts only the
+original logical AssetBundles, exports their GameObjects in a temporary
+`tmp/story/` work directory, and resolves exact sibling component PathIDs back
+through the typed object index. Output goes to
+`reports/story/recovery/animestudio_story_gameobject_audit.{json,md}`.
+GameObject co-membership is exact serialized evidence, but a typed
+mission/runtime sibling is still only a candidate until native consumer
+semantics prove playback or ownership; it never supplies order by itself.
+Pass `--game-root PATH` or set `ENDFIELD_GAME_ROOT` when the installed
+`Endfield_Data` root is not at the repository default.
 
 When MonoBehaviour TypeTree decoding fails inside a managed-reference registry,
 AnimeStudio now emits partial JSON instead of collapsing to metadata-only JSON
