@@ -1622,7 +1622,9 @@ gameplay-video OCR/audio workflow.
   `mission_story_context` nodes for exact playback context and
   `mission_story_definition` nodes for preload-only references. It never emits
   a direct mission-to-Story ownership edge for either class, and it does not
-  create a Story node for a preload-only identifier.
+  create an indexed Story card for a preload-only identifier. A generic
+  source-reference placeholder may still exist because the LevelScript
+  literally contains that id.
   Native `Branch` (`0x002d/0x09`) is distinct from conditional fan-out. Its
   runtime fields are `_idList` and `m_index`; the installed
   `GameAssembly.dll` `Branch.Execute` body reads the indexed list entry, uses
