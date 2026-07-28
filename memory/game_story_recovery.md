@@ -691,9 +691,11 @@ ownership.
 
 The gap queue also no longer treats every weak-only or isolated row as a
 missing LevelScript decoder. The current source graph has 2,063 weak-only
-placements: 1,788 have a complete exact native event-to-playback path but no
+placements: 1,803 have a complete exact native event-to-playback path but no
 prefix-comparable second Story action, 256 retain only non-ordering topology,
-and 19 remain actionable control-flow rows. Two former false positives,
+and four remain actionable control-flow rows. None of those four is in a
+main-story (`e*`) mission: the residual queue is `radio_c31m3_16` plus
+`radio_sm1l3m2_8`, `_10`, and `_12`. Two former false positives,
 `radio_e6m4_18` and `radio_sm1l1m1_5`, were already exact current-build
 `StopRadio` records (`0x04b5/0x09`); the weak-only fallback now applies the
 same non-playback formatter map as the multi-scene classifier instead of
@@ -718,6 +720,42 @@ ownership, not mission activation, quest placement, or cross-row chronology.
 These placement counts are a different scope from the global unassigned-black
 denominator below. None of the three classes can be ordered by trigger-slot
 number, proxy suffix, table/file position, OCR, or manual lists.
+
+The final five main-story weak-only decoder rows are now closed without adding
+scene order. The installed ActionBase formatter table maps union tag `0x0501`
+to `WhileAction`; its generated MemoryPack setters serialize `_condition`
+before `_doID`. Current LevelScript records use the corresponding exact
+18-byte shape: one `Param<bool>` followed by the signed local action id.
+Following the recovered `WhileAction.doAction` edge restores four event paths:
+
+- e7m2 script `22800180009` Leader slots `80001` and `80002` reach
+  `radio_e7m2_15` and `radio_e7m2_3` through separate
+  `WhileAction -> WaitForSeconds -> IsLookAtPointInScreen -> IfElse -> Split`
+  chains;
+- e6m1 script `22800080005` Leader slot `80003` reaches
+  `radio_e6m1_10` through locals `25 -> 26 -> 27 -> 28 -> 29 -> 34`;
+- e8m1 script `23400010019` Leader slot `80001` reaches
+  `radio_e8m1_19` directly through `WhileAction` local `3` to
+  `Play3DRadio` local `4`.
+
+The same decoder closes `radio_c31m3_17` and `_18` outside the main-story
+bucket. Separately, `radio_e1m2_10d5` was already reached by exact Leader-slot
+and script-stage-2 paths, but both traverse duplicate serialized `Split` local
+`36` records. The control-path builder accepts duplicates only when every
+record has the same typed tag/member count, texts, `nextId`, and decoded branch
+targets; conflicting duplicates fail closed. The gap classifier now accepts
+that explicitly retained
+`exact_serialized_control_path_equivalent_duplicates` status as exact evidence
+instead of reporting a decoder gap.
+
+These recoveries are local playback reachability, not a playlist. The two e7m2
+radios have different trigger events; the e1m2 row has alternative event paths;
+and none of the recovered singleton paths contains a second prefix-comparable
+Story action. Trigger-slot numbers, equivalent-record offsets, and action-list
+position therefore still supply no relative Story order. More generally, any
+path containing `WhileAction.doAction` is excluded from strict prefix-order
+promotion because the loop body can repeat; it remains exact trigger
+reachability evidence only.
 
 The former `e6m3` top parser gap is one of those exact negatives.
 `map02_lv002/22800100007` plays `radio_e6m3_14` from a Leader-enter listener

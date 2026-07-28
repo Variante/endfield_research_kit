@@ -870,6 +870,15 @@ def _strict_native_path_prefix(
     source_path: tuple[tuple[Any, ...], ...],
     target_path: tuple[tuple[Any, ...], ...],
 ) -> bool:
+    # WhileAction can execute its body repeatedly. A path through doAction is
+    # exact reachability evidence, but collapsing repeated Story files into
+    # one node would make a prefix look like a false global chronology edge.
+    if any(
+        step[1] == "WhileAction.doAction"
+        for path in (source_path, target_path)
+        for step in path
+    ):
+        return False
     source_ids = tuple(step[0] for step in source_path)
     target_ids = tuple(step[0] for step in target_path)
     return (

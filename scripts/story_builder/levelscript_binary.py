@@ -595,6 +595,15 @@ LEVELSCRIPT_RECORD_HINTS = {
         "propertyValueType": "int",
         "actionBaseAction": "SetIntIncrease",
     },
+    (0x0501, 0x0A): {
+        "label": "actionbase-while",
+        "confidence": "high",
+        "note": (
+            "current installed ActionBase formatter tag maps this code to "
+            "WhileAction; generated setters serialize _condition before _doID"
+        ),
+        "actionBaseAction": "WhileAction",
+    },
     (0x0A03, 0x00): {
         "label": "property-key-gate",
         "confidence": "medium",
@@ -4233,6 +4242,51 @@ def _decode_if_else_action_refs(payload: bytes) -> dict[str, Any]:
     return out
 
 
+def _decode_while_action(payload: bytes) -> dict[str, Any]:
+    """Decode exact ``WhileAction`` condition and loop-body action id.
+
+    The installed ``WhileActionForMemoryPack`` exposes generated setters for
+    ``_condition`` followed by ``_doID``. The first field is one authored
+    ``Param<bool>`` and the final field is the signed local action id.
+    """
+    condition = _decode_bool_param(payload, 0)
+    condition_action_local_id: int | None = None
+    if condition is not None:
+        condition_detail, cursor = condition
+    elif (
+        len(payload) >= 14
+        and payload[0] == 0x04
+        and payload[1] in (0, 1)
+        and payload[6:14] == b"\xff" * 8
+    ):
+        # Action-output parameters use the producing action id followed by
+        # source/path sentinels, as in `$27@result` conditions.
+        condition_action_local_id = struct.unpack_from("<i", payload, 2)[0]
+        if condition_action_local_id <= 0 or condition_action_local_id > 0x10000:
+            return {}
+        condition_detail = {
+            "value": bool(payload[1]),
+            "idRef": condition_action_local_id,
+            "paramSource": -1,
+            "path": None,
+        }
+        cursor = 14
+    else:
+        return {}
+    if cursor + 4 != len(payload):
+        return {}
+    do_action_local_id = struct.unpack_from("<i", payload, cursor)[0]
+    if do_action_local_id <= 0 or do_action_local_id > 0x10000:
+        return {}
+    out = {
+        "whileConditionParam": condition_detail,
+        "whileDoActionLocalId": do_action_local_id,
+    }
+    if condition_action_local_id is not None:
+        out["whileConditionActionLocalId"] = condition_action_local_id
+    return out
+
+
 def _decode_switch_int_action(payload: bytes) -> dict[str, Any]:
     """Decode the current-build ``SwitchInt`` branch table exactly.
 
@@ -5354,6 +5408,12 @@ def decode_levelscript_record_payload(
                 if isinstance(ref, int)
             ))
             out["branchRole"] = "typed-if-else-actions"
+    if semantic_key == (0x0501, 0x0A):
+        while_action = _decode_while_action(payload)
+        if while_action:
+            out.update(while_action)
+            out["branchLocalRefs"] = [while_action["whileDoActionLocalId"]]
+            out["branchRole"] = "typed-while-action-body"
     if semantic_key == (0x04BD, 0x0C):
         switch_int = _decode_switch_int_action(payload)
         if switch_int:
