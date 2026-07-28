@@ -3171,6 +3171,7 @@ NATIVE_OCCURRENCE_FIELDS = (
     "nativeBlackActionOccurrences",
     "parentDialogNativeOccurrences",
     "preloadOccurrences",
+    "worldEntityLevelScriptEvidence",
 )
 
 
@@ -3181,6 +3182,18 @@ def _native_occurrence_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
         for occurrence in row.get(field) or []:
             if not isinstance(occurrence, dict):
                 continue
+            if (
+                field == "worldEntityLevelScriptEvidence"
+                and isinstance(occurrence.get("listener"), dict)
+            ):
+                occurrence = {
+                    **occurrence,
+                    "actionName": (
+                        occurrence.get("actionName")
+                        or occurrence.get("nativeAction")
+                    ),
+                    "nativeEventOwners": [occurrence["listener"]],
+                }
             signature = json.dumps(
                 occurrence,
                 ensure_ascii=False,

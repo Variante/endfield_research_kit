@@ -699,7 +699,14 @@ and 19 remain actionable control-flow rows. Two former false positives,
 same non-playback formatter map as the multi-scene classifier instead of
 relabeling those records as missing decoders. Exact-native singleton,
 non-playback, and divergent-event routes stay visible but contribute no
-recovery score. Isolated rows are
+recovery score. Independently, `radio_e6m4_18` has a real playback occurrence
+in script `22800110022`: Leader slot `80001 -> Split.actions[0] ->
+PlayRadio`. Its mission-tracked world-entity connection already retained that
+listener under `worldEntityLevelScriptEvidence`, but the Mission Pipeline
+trigger-manifest normalizer did not unwrap the nested field. It now does so
+for all 30 published routes in that connection family, restoring exact native
+event/action paths to the WebUI without turning shared navigation context into
+quest activation, ownership, or relative Story order. Isolated rows are
 similarly separated: 223 core placements already have exact native playback
 paths, 84 have exact mission-scoped `NpcProxyEx` runtime configuration but no
 relative order, and 80 current mission-audit `black_*` definition-only

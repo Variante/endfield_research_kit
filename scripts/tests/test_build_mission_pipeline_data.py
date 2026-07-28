@@ -47,6 +47,43 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(route["controlPathCount"], 1)
         self.assertEqual(route["nativePaths"][0]["headerLocalId"], 4)
 
+    def test_trigger_route_reads_world_entity_listener_evidence(self):
+        row = {
+            "key": "radio_testm1_1",
+            "relation": "mission_tracked_world_entity_levelscript_context",
+            "direction": "context",
+            "worldEntityLevelScriptEvidence": [{
+                "levelId": "map_test",
+                "scriptId": "70000000001",
+                "sourceFile": "LevelScriptData/map_test/70000000001.json",
+                "nativeAction": "PlayRadio",
+                "listener": {
+                    "status": "exact_serialized_control_path",
+                    "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    "headerLocalId": 6,
+                    "eventDetail": {
+                        "summary": "leader enters trigger slot 80001",
+                    },
+                    "path": [{
+                        "edge": "Split.actions[0]",
+                        "localId": 8,
+                        "actionName": "PlayRadio",
+                        "recordClass": "play_radio",
+                    }],
+                },
+            }],
+        }
+
+        route = pipeline.build_story_trigger_route(row, mission_id="testm1")
+
+        self.assertEqual(
+            route["eventNames"],
+            ["ScriptEvent_OnLeaderEnterTriggerVolume"],
+        )
+        self.assertEqual(route["actionNames"], ["PlayRadio"])
+        self.assertEqual(route["controlPathCount"], 1)
+        self.assertEqual(route["nativePaths"][0]["headerLocalId"], 6)
+
     def test_publish_source_story_partial_order_embeds_lazy_mission_graph(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
