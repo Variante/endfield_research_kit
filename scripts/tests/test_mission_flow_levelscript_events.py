@@ -1027,6 +1027,94 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
             detail["exitLevelCustomPerformance"],
         )
 
+    def test_dialog_teleport_followups_are_exact_presentation_actions(self):
+        toggle_payload = bytes.fromhex(
+            "04 00 ff ff ff ff 00 00 00 00 ff ff ff ff"
+        )
+        toggle_record = {
+            "code": 0x04CA,
+            "kind": 0x09,
+            "unionTag": 0x04CA,
+            "serializedMemberCount": 9,
+            "payloadStart": 0,
+        }
+        toggle_detail = decode_levelscript_record_payload(
+            toggle_payload,
+            toggle_record,
+            next_start=len(toggle_payload),
+            action_map_role="actionList#3 linked",
+        )
+        self.assertEqual(
+            "ToggleClearScreenButRadio",
+            levelscript_native_action_name(toggle_record),
+        )
+        self.assertEqual(
+            "presentation_toggle",
+            classify_levelscript_record(toggle_record),
+        )
+        self.assertEqual(
+            {
+                "payloadShape": "is-show-bool-param-exact-eof",
+                "isShow": {
+                    "value": False,
+                    "idRef": -1,
+                    "paramSource": 0,
+                    "path": None,
+                },
+                "consumedBytes": 14,
+            },
+            toggle_detail["toggleClearScreenButRadio"],
+        )
+
+        move_payload = bytes.fromhex(
+            "04 00 00 00 00 00 00 00 00 00 00 00 00 "
+            "ff ff ff ff c8 00 00 00 0c 00 00 00 "
+            "77 61 6c 6b 5f 65 6e 64 5f 70 6f 73 "
+            "04 00 00 00 00 ff ff ff ff 00 00 00 00 ff ff ff ff"
+        )
+        move_record = {
+            "code": 0x02FE,
+            "kind": 0x0A,
+            "unionTag": 0x02FE,
+            "serializedMemberCount": 10,
+            "payloadStart": 0,
+        }
+        move_detail = decode_levelscript_record_payload(
+            move_payload,
+            move_record,
+            next_start=len(move_payload),
+            action_map_role="actionList#4 linked",
+        )
+        self.assertEqual(
+            "MainCharMoveTo",
+            levelscript_native_action_name(move_record),
+        )
+        self.assertEqual(
+            "movement_control",
+            classify_levelscript_record(move_record),
+        )
+        self.assertEqual(
+            {
+                "payloadShape": "end-pos-vector3-and-grounded-gait-exact-eof",
+                "endPos": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "idRef": -1,
+                    "paramSource": 200,
+                    "path": "walk_end_pos",
+                },
+                "groundedMoveGait": {
+                    "value": 0,
+                    "idRef": -1,
+                    "paramSource": 0,
+                    "path": None,
+                },
+                "consumedBytes": 54,
+            },
+            move_detail["mainCharMoveTo"],
+        )
+
     def test_uid_parser_accepts_dont_log_and_wide_compact_member_count(self):
         compact = bytearray(30)
         compact[0] = 0x8A

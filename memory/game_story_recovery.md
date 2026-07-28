@@ -832,10 +832,15 @@ dialog-exit path already supplies the strong source edge
 legacy-looking `0x09b9/0x00` records in all three chains as compact tag
 `0x00b9`, nine members, `ExitLevelCustomPerformance`. The exit-only
 dialog path is that cleanup action, while each `dlg_sm2l7m1_9` chain reaches
-the same action after its teleport/walk steps. The target script's three
-17-byte payloads contain only an unbound zero `Param<uint>` handle and no
-mission, submission, item, UI, or Story key. This proves objective co-gating
-and local playback/cleanup context, not that the quest or script opens the
+the same action through an identical, now fully typed sequence:
+`StartDialogAndTeleportAction -> ToggleClearScreenButRadio(false) ->
+MainCharMoveTo(walk_end_pos, gait 0) ->
+ToggleClearScreenButRadio(true) -> ExitLevelCustomPerformance`. The target
+script's three exit-action payloads contain only an unbound zero
+`Param<uint>` handle; the movement action has only the authored
+`walk_end_pos` parameter. No step contains a mission, submission, item, UI,
+branch, or additional Story key. This proves objective co-gating and local
+playback/presentation-cleanup context, not that the quest or script opens the
 submission UI and not that submission completion triggers either dialog.
 
 Mission-level Story evidence stays separate from quest attachments.
@@ -3277,9 +3282,12 @@ Current main-story priorities:
    no submission id or SubmitItem OpenUI action. Its former `0x09b9/0x00`
    unknowns are now exactly normalized to ActionBase tag `0x00b9`/nine members,
    `ExitLevelCustomPerformance`; all three carry only the same unbound zero
-   handle payload. Keep this as objective co-gating plus independently proved
-   playback/cleanup context, not UI activation or a new quest-to-Story
-   playback edge.
+   handle payload. The two playback branches are otherwise fully typed as
+   dialog-and-teleport, clear-screen toggle off, main-character move to
+   `walk_end_pos`, clear-screen toggle on, and custom-performance exit. Keep
+   this as objective co-gating plus independently proved
+   playback/presentation-cleanup context, not UI activation or a new
+   quest-to-Story playback edge.
    Do not repeat this typed traversal until the binary, metadata, authored
    MissionRuntime/DialogTree/SubmitItem data, Lua, or patch changes. The next
    useful join must be another independently typed owner or newly changed

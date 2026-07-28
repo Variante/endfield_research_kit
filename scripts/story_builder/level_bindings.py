@@ -263,6 +263,8 @@ LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {
     (0x0020, 0x0B): "BlackScreenFadeOut",
     (0x0052, 0x09): "CheckBoolIfTrue",
     (0x00B9, 0x09): "ExitLevelCustomPerformance",
+    (0x02FE, 0x0A): "MainCharMoveTo",
+    (0x04CA, 0x09): "ToggleClearScreenButRadio",
     (0x04DA, 0x09): "TravelPoleHandoverToCutscene",
 }
 LEVELSCRIPT_NATIVE_GETTER_MAPPING_ID = (
@@ -678,6 +680,8 @@ LEVELSCRIPT_OPCODE_TABLE: dict[tuple[int, int], str] = {
     (0x0020, 0x0B): "presentation_fade",
     (0x0052, 0x09): "gate",
     (0x00B9, 0x09): "presentation_cleanup",
+    (0x02FE, 0x0A): "movement_control",
+    (0x04CA, 0x09): "presentation_toggle",
     (0x04DA, 0x09): "play_cutscene",
     (0x0016, 0x09): "set_state",
     (0x0015, 0x09): "set_state",

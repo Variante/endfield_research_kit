@@ -759,12 +759,17 @@ are compact MemoryPack tag `0x00b9` with nine members. Installed ActionBase
 formatter registration (`mov r8d,0xb9`, metadata type index 125956) names the
 class `ExitLevelCustomPerformance`; each target-script instance has the exact
 same 17-byte, string-free payload containing only an unbound zero
-`Param<uint>` handle. The script therefore contains no hidden submission id,
-item id, UI key, branch target, or typed SubmitItem OpenUI action. Mission
-Pipeline schema 14 emits one LevelScript co-gate and the source graph joins
-the quest, submission, script, dialog-exit trigger, and playback target while
-marking every context edge `openUiOwnership=false` and
-`orderEvidence=false`.
+`Param<uint>` handle. The neighboring formatter tags close both playback
+chains end to end: `0x04ca/0x09` is
+`ToggleClearScreenButRadio(_isShow)`, first `false` and later `true`;
+`0x02fe/0x0a` is `MainCharMoveTo(_endPos,_groundedMoveGait)`, with
+`_endPos` bound through param source 200 to `walk_end_pos` and gait 0. Both
+generated setter names and exact EOF payload decodes agree. The script
+therefore contains no hidden submission id, item id, UI key, branch target,
+or typed SubmitItem OpenUI action. Mission Pipeline schema 14 emits one
+LevelScript co-gate and the source graph joins the quest, submission, script,
+dialog-exit trigger, and playback target while marking every context edge
+`openUiOwnership=false` and `orderEvidence=false`.
 The hash-pinned report
 `reports/story/recovery/nested_managed_identity_carrier_census.{json,md}`
 therefore adds no Story ownership/order edge and fails closed if the candidate
