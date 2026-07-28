@@ -3002,6 +3002,7 @@ def build_language_bundle(
         tree_after: dict[str, str] = {}
         tree_after_sources: dict[str, list[str]] = {}
         tree_branches: dict[str, list[str]] = {}
+        tree_branch_sources: dict[str, list[dict]] = {}
         tree_merge: dict[str, str] = {}
         tree_converge: dict[str, str] = {}
         tree_pre: set[str] = set()
@@ -3035,6 +3036,7 @@ def build_language_bundle(
             tree_after = tree_meta.get("after", {}) or {}
             tree_after_sources = tree_meta.get("afterSources", {}) or {}
             tree_branches = tree_meta.get("branches", {}) or {}
+            tree_branch_sources = tree_meta.get("branchSources", {}) or {}
             tree_merge = tree_meta.get("merge", {}) or {}
             tree_converge = tree_meta.get("converge", {}) or {}
             tree_pre_sources = tree_meta.get("preSources", {}) or {}
@@ -3672,7 +3674,10 @@ def build_language_bundle(
         def timeline_route_branch_for_group(group_opt_ids: list[str], after_id: str) -> dict:
             if len(group_opt_ids) < 2 or not after_id:
                 return {}
-            if any(tree_branches.get(opt_id) for opt_id in group_opt_ids):
+            if any(
+                any(line_id in valid_line_ids for line_id in (tree_branches.get(opt_id) or []))
+                for opt_id in group_opt_ids
+            ):
                 return {}
             anchors = [timeline_after.get(opt_id) or "" for opt_id in group_opt_ids]
             if not all(anchor == after_id for anchor in anchors):
@@ -3687,22 +3692,20 @@ def build_language_bundle(
                 for route in routes
             ):
                 return {}
-            branch_line_ids_by_option: dict[str, list[str]] = {}
+            route_classification = classify_runtime_jump_option_routes(
+                group_opt_ids,
+                routes,
+                local_ordered_line_ids,
+                after_line_id=after_id,
+            )
+            if route_classification.get("status") != "branched":
+                return {}
+            branch_line_ids_by_option = route_classification[
+                "branchLineIdsByOption"
+            ]
             skipped_line_ids_by_option: dict[str, list[str]] = {}
             reverse_range_line_ids_by_option: dict[str, list[str]] = {}
-            terminating_option_ids: list[str] = []
             for opt_id, route in zip(group_opt_ids, routes):
-                path_line_ids = [
-                    str(line_id)
-                    for line_id in (route.get("pathLineIds") or [])
-                    if line_id in valid_line_ids
-                ]
-                terminates_slot = bool(route.get("terminatesSlot"))
-                if terminates_slot and not path_line_ids:
-                    terminating_option_ids.append(opt_id)
-                elif not path_line_ids:
-                    return {}
-                branch_line_ids_by_option[opt_id] = path_line_ids
                 skipped_line_ids_by_option[opt_id] = [
                     str(line_id)
                     for line_id in (route.get("skippedLineIds") or [])
@@ -3713,12 +3716,6 @@ def build_language_bundle(
                     for line_id in (route.get("reverseRangeLineIds") or [])
                     if line_id in valid_line_ids
                 ]
-            distinct_branch_signatures = {
-                ("__terminatesSlot__",) if opt_id in terminating_option_ids else tuple(value)
-                for opt_id, value in branch_line_ids_by_option.items()
-            }
-            if len(distinct_branch_signatures) < 2:
-                return {}
             continuation_option_ids = _unique_preserve([
                 str(option_id)
                 for route in routes
@@ -3743,6 +3740,15 @@ def build_language_bundle(
                     for opt_id, line_ids in reverse_range_line_ids_by_option.items()
                     if line_ids
                 },
+                "directContinuationOptionIds": route_classification.get(
+                    "directContinuationOptionIds"
+                ) or [],
+                "commonContinuationLineId": route_classification.get(
+                    "commonContinuationLineId"
+                ) or "",
+                "commonContinuationLineIds": route_classification.get(
+                    "commonContinuationLineIds"
+                ) or [],
                 "continuationOptionIds": continuation_option_ids,
                 "source": "dialogTimeline",
                 "optionIndex": [
@@ -3756,20 +3762,23 @@ def build_language_bundle(
                     if str(raw_range.get("track") or raw_range.get("assetTrack") or "").strip()
                 ]),
             }
+            terminating_option_ids = route_classification.get(
+                "terminatingOptionIds"
+            ) or []
             if terminating_option_ids:
                 payload["terminatingOptionIds"] = terminating_option_ids
             return payload
         def following_line_risk_for_group(group_opt_ids: list[str], after_id: str) -> dict:
-            if len(group_opt_ids) < 2 or not after_id:
+            if len(group_opt_ids) < 2:
                 return {}
-            if any(tree_branches.get(opt_id) for opt_id in group_opt_ids):
-                return {}
-            anchors = [timeline_after.get(opt_id) or "" for opt_id in group_opt_ids]
-            if not all(anchor == after_id for anchor in anchors):
+            if any(
+                any(line_id in valid_line_ids for line_id in (tree_branches.get(opt_id) or []))
+                for opt_id in group_opt_ids
+            ):
                 return {}
             # Dialog tree shows all options converge to the same response trunk.
-            # Only emit cosmeticChoice when Timeline anchors already matched (so this
-            # is a group that would otherwise have become inferredFollowingLines).
+            # This is complete authored route evidence on its own: every
+            # serialized option edge reaches the same visible trunk.
             if all(opt_id in tree_converge for opt_id in group_opt_ids):
                 trunk_ids = {tree_converge[opt_id] for opt_id in group_opt_ids}
                 if len(trunk_ids) == 1:
@@ -3789,6 +3798,11 @@ def build_language_bundle(
                             "commonContinuationLineId": common_trunk,
                             "source": "dialogTree",
                         }
+            if not after_id:
+                return {}
+            anchors = [timeline_after.get(opt_id) or "" for opt_id in group_opt_ids]
+            if not all(anchor == after_id for anchor in anchors):
+                return {}
             timeline_line_ids: list[str] = []
             timeline_line_timing_by_id: dict[str, dict] = {}
             for opt_id in group_opt_ids:
@@ -4384,6 +4398,13 @@ def build_language_bundle(
                 ]
                 if branch_lines:
                     opt["branchLines"] = expand_transparent_single_option_branch(branch_lines)
+                    sources = [
+                        source
+                        for source in (tree_branch_sources.get(opt_id) or [])
+                        if isinstance(source, dict)
+                    ]
+                    if sources:
+                        opt.setdefault("_debug", {})["branchLineSources"] = sources
             pre_option_ids = [opt_id for opt_id in group_opt_ids if opt_id in tree_pre]
             timeline_pre_option_ids = [opt_id for opt_id in group_opt_ids if opt_id in timeline_pre]
             text_alias_pre_option_ids = list(group_opt_ids) if g in text_alias_pre_by_group else []

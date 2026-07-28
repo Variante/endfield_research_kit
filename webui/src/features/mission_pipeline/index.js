@@ -272,6 +272,7 @@
       nativePredicate: "predicate",
       nativePredicateOpaque: "inline predicate not semantically decoded",
       optionBranches: "dialog option branches",
+      optionDirectContinuation: "direct shared continuation",
       isolatedScenes: "isolated Story files",
       weakOnlyScenes: "weak-context-only files",
       orderCycleHint: "Files in one cyclic component have no proven internal total order.",
@@ -819,6 +820,7 @@
       nativePredicate: "\u5206\u652f\u6761\u4ef6",
       nativePredicateOpaque: "\u5185\u8054\u6761\u4ef6\u5c1a\u672a\u8bed\u4e49\u89e3\u7801",
       optionBranches: "\u5bf9\u8bdd\u9009\u9879\u5206\u652f",
+      optionDirectContinuation: "\u76f4\u63a5\u8fdb\u5165\u5171\u4eab\u540e\u7eed",
       isolatedScenes: "\u5b64\u7acb\u5267\u60c5\u6587\u4ef6",
       weakOnlyScenes: "\u4ec5\u5f31\u4e0a\u4e0b\u6587\u6587\u4ef6",
       orderCycleHint: "\u540c\u4e00\u5faa\u73af\u5206\u91cf\u5185\u6ca1\u6709\u5df2\u8bc1\u660e\u7684\u552f\u4e00\u987a\u5e8f\u3002",
@@ -2252,7 +2254,13 @@
     const nativeBranches = (branches.nativeControlBranches || []).map((row) => `<details><summary><b>${esc(nativeBranchLabel(row.kind))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code></summary><small>${esc(row.eventName || "")}</small>${nativeEventDetailHtml(row.eventDetail)}${nativePredicateHtml(row.predicate)}${(row.arms || []).map((arm) => `<div><code>${esc(arm.edge || "?")} &rarr; #${esc(arm.entryLocalId ?? "?")}</code><span>${(arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("")}</details>`).join("");
     const nativeMerges = (branches.nativeControlMerges || []).map((row) => `<div><b>${esc(t("nativeControlMerge"))}</b><code>#${esc(row.branchLocalId ?? "?")}</code><i>&rarr;</i><code>#${esc(row.mergeLocalId ?? "?")}</code><span>${(row.downstreamStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("");
     const sceneOptions = (branches.sceneGraphOptions || []).map((row) => `<div><b>${esc(t("optionBranches"))}</b><a href="${esc(storyHref(row.from))}"><code>${esc(row.from || "?")}</code></a><i>&rarr;</i><span>${(row.arms || []).flatMap((arm) => arm.targets || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("");
-    const dialogOptions = (branches.dialogLineOptions || []).map((row) => `<details><summary><code>${esc(row.storyKey || "?")}</code> 路 ${esc(t("optionBranches"))} ${esc(row.group ?? "?")}</summary>${(row.options || []).map((option) => `<div><code>${esc(option.optionId || "?")}</code><i>&rarr;</i><span>${(option.branchLineIds || []).map((line) => `<code>${esc(line)}</code>`).join(" ")}</span></div>`).join("")}</details>`).join("");
+    const dialogOptions = (branches.dialogLineOptions || []).map((row) => `<details><summary><code>${esc(row.storyKey || "?")}</code> 路 ${esc(t("optionBranches"))} ${esc(row.group ?? "?")}</summary>${(row.options || []).map((option) => {
+      const branchLines = option.branchLineIds || [];
+      const directContinuation = option.directContinuation && option.continuationLineId
+        ? `<small>${esc(t("optionDirectContinuation"))}</small> <code>${esc(option.continuationLineId)}</code>`
+        : "";
+      return `<div><code>${esc(option.optionId || "?")}</code><i>&rarr;</i><span>${branchLines.map((line) => `<code>${esc(line)}</code>`).join(" ")}${directContinuation}</span></div>`;
+    }).join("")}</details>`).join("");
     const cycles = (order.cycles || []).map((component) => componentHtml(component.id)).join("");
     return `<details class="mp-mission-story mp-story-order" data-weight="${Number(summary.strongEdgeCount) ? "strong" : "context"}"${Number(summary.strongEdgeCount) ? " open" : ""}>
       <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
