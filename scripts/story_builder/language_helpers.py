@@ -397,6 +397,116 @@ def classify_zero_index_timeline_continuation(
         "candidateLineClipOptionIndexPattern": candidate_pattern,
     }
 
+
+def classify_runtime_jump_option_routes(
+    option_ids: list[str],
+    routes: list[dict],
+    ordered_line_ids: list[str],
+    *,
+    after_line_id: str = "",
+) -> dict:
+    """Reduce complete Runtime Jump paths to option-exclusive line spans.
+
+    Timeline recovery deliberately keeps each option's complete path until the
+    next option slot.  That path can contain a long shared suffix, while a
+    route marked ``terminatesSlot`` can contain no line because it skips the
+    option-response window and resumes at the shared continuation.  This
+    classifier removes the common suffix and names direct-continuation options
+    explicitly so callers do not require a fake response line for every
+    choice.
+    """
+    if len(option_ids) < 2 or len(option_ids) != len(routes):
+        return {"status": "incomplete", "reason": "optionRouteCardinality"}
+
+    valid_line_ids = {
+        str(line_id)
+        for line_id in ordered_line_ids
+        if str(line_id or "").strip()
+    }
+    paths: dict[str, list[str]] = {}
+    terminates_slot: list[str] = []
+    for option_id, route in zip(option_ids, routes):
+        if not option_id or not isinstance(route, dict):
+            return {"status": "incomplete", "reason": "missingOptionRoute"}
+        path = []
+        for raw_line_id in route.get("pathLineIds") or []:
+            line_id = str(raw_line_id or "")
+            if line_id in valid_line_ids and line_id not in path:
+                path.append(line_id)
+        if not path and not route.get("terminatesSlot"):
+            return {"status": "incomplete", "reason": "emptyOptionRoute"}
+        paths[option_id] = path
+        if route.get("terminatesSlot"):
+            terminates_slot.append(option_id)
+
+    nonempty_paths = [path for path in paths.values() if path]
+    common_suffix: list[str] = []
+    if len(nonempty_paths) == len(paths):
+        suffix_length = 0
+        min_length = min(len(path) for path in nonempty_paths)
+        while suffix_length < min_length:
+            candidate = nonempty_paths[0][-suffix_length - 1]
+            if not all(path[-suffix_length - 1] == candidate for path in nonempty_paths):
+                break
+            suffix_length += 1
+        if suffix_length:
+            common_suffix = nonempty_paths[0][-suffix_length:]
+
+    exclusive_paths = {
+        option_id: (
+            path[:-len(common_suffix)]
+            if common_suffix
+            else list(path)
+        )
+        for option_id, path in paths.items()
+    }
+    direct_continuation_ids = [
+        option_id
+        for option_id in option_ids
+        if not exclusive_paths.get(option_id)
+    ]
+    signatures = {
+        tuple(exclusive_paths.get(option_id) or [])
+        for option_id in option_ids
+    }
+    if len(signatures) < 2:
+        return {
+            "status": "shared",
+            "reason": "identicalRuntimeJumpPaths",
+            "commonContinuationLineIds": common_suffix,
+        }
+
+    common_continuation = common_suffix[0] if common_suffix else ""
+    if not common_continuation and terminates_slot:
+        line_index = {
+            line_id: index
+            for index, line_id in enumerate(ordered_line_ids)
+        }
+        covered_indexes = [
+            line_index[line_id]
+            for path in paths.values()
+            for line_id in path
+            if line_id in line_index
+        ]
+        if covered_indexes:
+            continuation_index = max(covered_indexes) + 1
+        else:
+            continuation_index = line_index.get(after_line_id, -1) + 1
+        if 0 <= continuation_index < len(ordered_line_ids):
+            common_continuation = ordered_line_ids[continuation_index]
+
+    return {
+        "status": "branched",
+        "reason": "runtimeJumpExclusivePaths",
+        "branchLineIdsByOption": exclusive_paths,
+        "directContinuationOptionIds": direct_continuation_ids,
+        "commonContinuationLineId": common_continuation,
+        "commonContinuationLineIds": common_suffix,
+        "terminatingOptionIds": terminates_slot,
+        "fullPathLineIdsByOption": paths,
+    }
+
+
 def dialog_story_issue_codes(payload: dict) -> list[str]:
     codes: list[str] = []
     debug = payload.get("_debug") if isinstance(payload.get("_debug"), dict) else {}

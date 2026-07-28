@@ -2568,6 +2568,7 @@ def load_dialog_tree(conv_key: str) -> dict | None:
         "after": {},
         "afterSources": {},
         "branches": {},
+        "branchSources": {},
         "merge": {},
         "converge": {},
         "pre": [],
@@ -2613,6 +2614,18 @@ def load_dialog_tree(conv_key: str) -> dict | None:
                     source_bucket.append(source_label)
         for opt_id, branch_lines in (meta.get("branches") or {}).items():
             combined["branches"].setdefault(opt_id, branch_lines)
+            branch_source = {
+                "kind": (
+                    "DialogTree"
+                    if source_key == conv_key
+                    else "DialogTreeFragment"
+                ),
+                "sourceKey": source_key,
+                "file": meta.get("file") or "",
+            }
+            source_bucket = combined["branchSources"].setdefault(opt_id, [])
+            if branch_source not in source_bucket:
+                source_bucket.append(branch_source)
         for opt_id, merge_id in (meta.get("merge") or {}).items():
             combined["merge"].setdefault(opt_id, merge_id)
         for opt_id, converge_trunk in (meta.get("converge") or {}).items():

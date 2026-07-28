@@ -45,7 +45,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v12"
+SCHEMA = "sourceStoryPartialOrder.v13"
 SPAWNER_CONFIG_ROOTS = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Data" / "Json" / "SpawnerConfig",
@@ -430,6 +430,9 @@ def _compact_option_risk(risk: dict[str, Any]) -> dict[str, Any]:
         "candidateLineIds",
         "candidateWindowLineIds",
         "commonContinuationLineId",
+        "commonContinuationLineIds",
+        "directContinuationOptionIds",
+        "terminatingOptionIds",
         "optionIndex",
         "candidateLineClipOptionIndex",
         "optionIndexPattern",
@@ -479,6 +482,65 @@ def _dialog_tree_routes(conv: dict[str, Any]) -> dict[str, list[dict[str, Any]]]
                 "endNodeType": safe_key(debug.get("endNodeType")),
             })
     return routes
+
+
+def _dialog_tree_non_line_outcomes(
+    conv: dict[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    """Index exact authored option outcomes that do not target local lines."""
+    story_key = safe_key(conv.get("key"))
+    outcomes: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for link in conv.get("sceneGraphLinks") or []:
+        if not isinstance(link, dict):
+            continue
+        source_key = safe_key(link.get("sourceKey"))
+        source_debug = (link.get("_debug") or {}).get("source") or {}
+        source_file = safe_key(link.get("file")) or safe_key(source_debug.get("file"))
+        if not source_file:
+            continue
+        provenance_kind = (
+            "DialogTree"
+            if not source_key or source_key == story_key
+            else "DialogTreeFragment"
+        )
+        for raw in link.get("options") or []:
+            if not isinstance(raw, dict):
+                continue
+            option_id = safe_key(raw.get("optionId"))
+            if not option_id:
+                continue
+            path_line_ids = _string_list(raw.get("pathLineIds"))
+            has_non_line_outcome = bool(
+                safe_key(raw.get("terminal"))
+                or safe_key(raw.get("outcomeKind"))
+                or safe_key(raw.get("firstSceneKey"))
+                or _string_list(raw.get("submenuSceneKeys"))
+                or isinstance(raw.get("loop"), dict)
+            )
+            if not has_non_line_outcome:
+                continue
+            outcome = {
+                "kind": provenance_kind,
+                "sourceKey": source_key,
+                "sourceFile": source_file,
+                "after": safe_key(link.get("after")),
+                "firstLineId": safe_key(raw.get("firstLineId")),
+                "firstSceneKey": safe_key(raw.get("firstSceneKey")),
+                "pathLineIds": path_line_ids,
+                "sceneKeys": _string_list(raw.get("sceneKeys")),
+                "submenuSceneKeys": _string_list(raw.get("submenuSceneKeys")),
+                "outcomeKind": safe_key(raw.get("outcomeKind")),
+                "terminal": safe_key(raw.get("terminal")),
+            }
+            loop = raw.get("loop")
+            if isinstance(loop, dict) and loop:
+                outcome["loop"] = loop
+            outcomes[option_id].append({
+                key: value
+                for key, value in outcome.items()
+                if value not in (None, "", [], {})
+            })
+    return outcomes
 
 
 def _route_covers_branch_lines(route: dict[str, Any], branch_lines: list[str]) -> bool:
@@ -538,6 +600,7 @@ def collect_dialog_line_option_branches(
     """
     story_key = safe_key(conv.get("key"))
     direct_routes = _dialog_tree_routes(conv)
+    non_line_outcomes = _dialog_tree_non_line_outcomes(conv)
     allowed: list[dict[str, Any]] = []
     excluded: list[dict[str, Any]] = []
     no_route: list[dict[str, Any]] = []
@@ -568,19 +631,31 @@ def collect_dialog_line_option_branches(
         if _is_runtime_jump_branch_risk(risk) and not has_manual and not risk_tagged_options:
             branch_map = risk.get("branchLineIdsByOption") or {}
             skipped_map = risk.get("skippedLineIdsByOption") or {}
+            common_continuation = safe_key(risk.get("commonContinuationLineId"))
+            direct_continuation_ids = set(
+                _string_list(risk.get("directContinuationOptionIds"))
+            )
             runtime_options: list[dict[str, Any]] = []
             complete = True
             for option in options:
                 option_id = safe_key(option.get("id"))
                 branch_lines = _string_list(branch_map.get(option_id))
-                if not option_id or not branch_lines:
+                is_direct_continuation = (
+                    option_id in direct_continuation_ids
+                    and bool(common_continuation)
+                )
+                if not option_id or (not branch_lines and not is_direct_continuation):
                     complete = False
                     break
-                runtime_options.append({
+                runtime_option = {
                     **_compact_dialog_option(option),
                     "branchLineIds": branch_lines,
                     "skippedLineIds": _string_list(skipped_map.get(option_id)),
-                })
+                }
+                if is_direct_continuation:
+                    runtime_option["directContinuation"] = True
+                    runtime_option["continuationLineId"] = common_continuation
+                runtime_options.append(runtime_option)
             if complete and runtime_options:
                 allowed.append({
                     **base,
@@ -606,6 +681,11 @@ def collect_dialog_line_option_branches(
                     "continuationOptionIds": _string_list(
                         risk.get("continuationOptionIds") or group.get("continuationOptionIds")
                     ),
+                    "directContinuationOptionIds": sorted(
+                        direct_continuation_ids,
+                        key=natural_key,
+                    ),
+                    "commonContinuationLineId": common_continuation,
                 })
                 continue
             excluded.append({
@@ -671,6 +751,33 @@ def collect_dialog_line_option_branches(
                 None,
             )
             if not matching_route:
+                debug = (
+                    option.get("_debug")
+                    if isinstance(option.get("_debug"), dict)
+                    else {}
+                )
+                authored_sources = [
+                    source
+                    for source in (debug.get("branchLineSources") or [])
+                    if (
+                        isinstance(source, dict)
+                        and safe_key(source.get("kind"))
+                        in {"DialogTree", "DialogTreeFragment"}
+                        and safe_key(source.get("file"))
+                    )
+                ]
+                if authored_sources:
+                    source = authored_sources[0]
+                    matching_route = {
+                        "kind": safe_key(source.get("kind")),
+                        "sourceKey": safe_key(source.get("sourceKey")),
+                        "sourceFile": safe_key(source.get("file")),
+                        "after": after,
+                        "firstLineId": branch_lines[0],
+                        "pathLineIds": branch_lines,
+                        "outcomeKind": "sameScenePath",
+                    }
+            if not matching_route:
                 direct_failures.append({
                     **_compact_dialog_option(option),
                     "branchLineIds": branch_lines,
@@ -708,6 +815,37 @@ def collect_dialog_line_option_branches(
             })
             continue
         if not any_branch_lines and not direct_failures:
+            outcomes_by_option = {
+                option_id: non_line_outcomes.get(option_id) or []
+                for option_id in option_ids
+            }
+            covered_option_ids = [
+                option_id
+                for option_id, outcomes in outcomes_by_option.items()
+                if outcomes
+            ]
+            if option_ids and len(covered_option_ids) == len(option_ids):
+                excluded.append({
+                    **base,
+                    "optionIds": option_ids,
+                    "exclusionReason": "authoredNonLineOptionOutcomes",
+                    "outcomesByOption": outcomes_by_option,
+                })
+                continue
+            if covered_option_ids:
+                excluded.append({
+                    **base,
+                    "optionIds": option_ids,
+                    "exclusionReason":
+                        "incompleteAuthoredNonLineOptionOutcomes",
+                    "coveredOptionIds": covered_option_ids,
+                    "outcomesByOption": {
+                        option_id: outcomes
+                        for option_id, outcomes in outcomes_by_option.items()
+                        if outcomes
+                    },
+                })
+                continue
             no_route.append({
                 **base,
                 "options": [_compact_dialog_option(option) for option in options],
@@ -2089,7 +2227,8 @@ def build_mission_partial_order(
     closed_excluded_dialog_line_options = [
         row
         for row in excluded_dialog_line_options
-        if row.get("exclusionReason") == "sharedOrDefaultCandidates"
+        if row.get("exclusionReason")
+        in {"sharedOrDefaultCandidates", "authoredNonLineOptionOutcomes"}
         or (
             row.get("exclusionReason") == "inferredOrUnsupportedRisk"
             and safe_key((row.get("riskEvidence") or {}).get("code"))

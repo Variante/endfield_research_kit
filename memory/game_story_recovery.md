@@ -3834,25 +3834,30 @@ Current main-story priorities:
    occurrence reuse, action type, physical `ActionSerializedMap` list
    membership, and quest-instance projection before treating it as playback
    recurrence.
-7. Expand exact Runtime Jump routes and keep the known conflict groups
-   diagnostic until runtime option-index/post-jump semantics are proven. The
-   generated option frontier now separates evidence classes instead of scoring
-   every option row as a missing branch. Of 2,358 groups with no explicit
-   route, 1,505 contain only one option and are acknowledgement prompts rather
-   than choice forks; 853 are multi-choice groups that still warrant source
-   review. Of 298 excluded groups, 131 already have a shared/default Timeline
-   continuation and 120 are authored cosmetic convergence, leaving 47
-   actionable exclusions (38 branch paths lacking direct DialogTree
-   provenance, six sibling-scene text branches, two incomplete Runtime Jump
-   mappings, and one inferred-following-lines case). Scoring only multi-choice
-   no-route groups plus actionable exclusions reduces the current main-story
-   option frontier from 495 to 154 groups without deleting any diagnostic
-   evidence. Single-option and closed groups remain in the report but no
-   longer distort mission rank. `e3m6` is the highest pure option target:
-   eleven groups currently lack explicit promoted routes and
-   `dlg_e3m6_102` has a directionally decoded but incomplete Runtime Jump
-   mapping. Use those concrete source shapes to extend the maintained decoder;
-   do not map choices from text sentiment or option order alone.
+7. Keep the residual option frontier evidence-strict. Complete Runtime Jump
+   paths are now reduced to their option-exclusive prefixes, with a
+   no-exclusive-response arm represented as a direct jump to the shared
+   continuation rather than rejected for lacking a fabricated response line.
+   This recovers the exact asymmetry in `dlg_e3m6_101` (one arm skips `_019`
+   and both resume at `_006`) and `dlg_e3m6_102` (one arm plays `_002`, the
+   other resumes at `_003`). Exact per-option branch provenance is also carried
+   from both direct DialogTree and DialogTreeFragment sources, and complete
+   authored terminal/OpenUI/menu-loop outcomes are closed as non-line outcomes
+   instead of being mislabeled missing line routes. The current generated
+   frontier therefore contains 366 strict groups / 763 option arms, 1,921
+   closed exclusions, and only 111 actionable multi-choice groups globally:
+   97 with no explicit route plus 14 excluded by an unresolved evidence
+   boundary. The main-story frontier fell from 154 to 21 groups. The remaining
+   14 exclusions comprise six incomplete authored non-line outcome groups, six
+   sibling-scene text-branch risks, one inferred-following-lines risk, and one
+   branch whose corrected second arm lacks direct source provenance. Of the 97
+   no-route groups, 62 have neither DialogTree nor Timeline route evidence; 27
+   have Timeline option anchors but no matching authored tree node; the final
+   eight have only partial/mismatched source shapes. These rows remain visible
+   for diagnostics, while 584 single-option prompts remain separately counted
+   and do not affect recovery rank. Continue by decoding exact Timeline control
+   semantics or finding a new authored source; do not map choices from text
+   sentiment, option order, sibling-scene text, or corrected identifiers alone.
 8. Keep unresolved narrative videos standalone until Timeline or another
    original-data source binding establishes placement; observed playback may
    cross-check but does not promote the connection.
