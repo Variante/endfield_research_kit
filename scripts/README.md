@@ -1918,8 +1918,8 @@ gameplay-video OCR/audio workflow.
   Mission Pipeline's exact unresolved runtime receivers to their hosting
   LevelScripts, decodes each top-level start policy and validated LevelData
   member-22 container, and intersects them with literal manual-control targets,
-  typed MissionRuntime objective operands, and original-data SubGame
-  `bindScriptId` rows. It writes
+  typed MissionRuntime objective operands, original-data SubGame
+  `bindScriptId` rows, and exact `DungeonTable.sceneId` hosts. It writes
   `reports/story/recovery/native_receiver_activation_frontier.json` / `.md`;
   the normal Mission Pipeline builder also refreshes this report and publishes
   compact fail-closed annotations on all receiver nodes for the debug UI.
@@ -1942,8 +1942,15 @@ gameplay-video OCR/audio workflow.
   The report also indexes exact
   `CheckLevelScriptTaskFinished(scene, script, task)` consumers. The current
   MissionRuntime corpus has two such conditions globally, but neither matches
-  any of the `31` receiver tasks, so schema v5 publishes `0` typed task
-  consumers.
+  any of the `31` receiver tasks, so schema v6 publishes `0` typed task
+  consumers. It also finds `18` receiver scripts and `14` Story keys
+  on `6` exact Dungeon/SubGame scenes, producing `40` scene-context
+  placements (`7` bound-script and `33` sibling-script placements) and `31`
+  availability-prerequisite annotations. Same-scene placement is loading
+  context only. In particular, `dung02_bdg002/41100000004` plays
+  `cutscene_e9m3_2` while its first boss-rush SubGame is unlocked by
+  `e9m4_q#1`, proving that a scene's unlock identity cannot be promoted to
+  Story ownership or activation.
   Exact level/script/task joins add
   display/tracking metadata for `13` tasks and SubGame main-task bindings for
   `10`; all ten SubGame rows have null `dungeonMissionId`. The `82` distinct

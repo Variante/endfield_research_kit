@@ -6016,6 +6016,11 @@ def main() -> int:
             index,
             read_json(NATIVE_RECEIVER_MANUAL_CONTROL_AUDIT) or {},
             mission_root=output_root / "missions",
+            subgame_table_path=args.subgame_table.resolve(),
+            game_mechanic_condition_table_path=(
+                args.game_mechanic_condition_table.resolve()
+            ),
+            dungeon_table_path=args.dungeon_table.resolve(),
         )
         # Fixture/test builds use temporary output roots and must not overwrite
         # the canonical recovery report with their reduced corpus.
