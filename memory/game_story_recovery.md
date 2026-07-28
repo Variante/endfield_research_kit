@@ -3632,35 +3632,41 @@ Current main-story priorities:
    candidates; even a positive same-object row still requires independently
    recovered native consumer semantics before ownership/playback promotion and
    a separate serialized control relation before any order edge.
-   The generated coverage report now inventories 153 files across 25 decoded
+   The generated coverage report now inventories 155 files across 25 decoded
    event families; the largest unique-file groups are Leader trigger volume
    (67), BattleSignal (16), Script custom event (13), and ScriptStageChanged
    (9).
-   The source graph now mirrors all 158 exact runtime receiver nodes and 182
+   The source graph now mirrors all 161 exact runtime receiver nodes and 185
    receiver-to-Story placements. Every receiver retains its exact level,
    LevelScript, header id, selector, event family, native action, and source
    file while emitting zero mission/quest edges. This closes a queryability gap
-   without changing the 153-file ownership frontier.
-   The offline activation-frontier pass further divides the 93 hosting scripts
+   without changing the 155-file ownership frontier.
+   The offline activation-frontier pass further divides the 95 hosting scripts
    into 10 exact SubGame activation scopes, 12 non-SubGame scripts with
-   non-empty start shapes, 17 other non-null static start/task shapes, and 54
+   non-empty start shapes, 18 other non-null static start/task shapes, and 55
    Manual scripts with no decoded static shape/task/parent carrier. No receiver
-   script is named by a typed MissionRuntime objective and no incoming literal
-   cross-script manual control targets one. The 12 shaped scripts have zero
+   script has an incoming literal cross-script manual control. One receiver
+   script is named by a typed MissionRuntime objective:
+   `e3m5_q#1` reads `isFinished` from
+   `map01_lv007/2800010051`, whose exact Leader-enter path plays
+   `cutscene_e3m5_4`. This is a strict mission/quest-to-script observation
+   context, but the condition consumes a property after runtime state changes;
+   it does not prove that the quest activates, owns, or orders the cutscene.
+   The 12 shaped scripts have zero
    complete exact same-level MissionArea shape matches; nearby centers with
-   mismatched shape fields do not qualify. Across the 24 task-map scripts, the
+   mismatched shape fields do not qualify. Across the 25 task-map scripts, the
    only serialized MissionRuntime-id constants are `a1m6d6`/`a1m6d7` in the
-   already SubGame-scoped `22800950006`; all 83 non-SubGame receiver scripts
+   already SubGame-scoped `22800950006`; all 85 non-SubGame receiver scripts
    have zero exact mission-id string tokens. This closes broad LevelData,
    start-type, start-shape, objective-operand, literal mission-id, and literal
    ManualStart searches as generic ownership routes. The task maps themselves
-   are now completely decoded for all 24 affected scripts: 31 tasks carry 54
+   are now completely decoded for all 25 affected scripts: 32 tasks carry 55
    exact conditions across 11 types, with no `CheckMissionState` condition.
    A complete 82-id task/condition census finds zero MissionRuntimeAsset use;
    the only foreign roots are 13 task-display rows and ten null-mission SubGame
    main-task bindings. The typed operand pass now resolves 53 exact source rows
    but finds zero MissionRuntime consumers, and the native callback pass finds
-   zero exact `CheckLevelScriptTaskFinished` consumers for the 31 receiver
+   zero exact `CheckLevelScriptTaskFinished` consumers for the 32 receiver
    tasks. These task-map ownership routes are closed on the current export;
    condition presence, source identity, same level, callback registration, and
    evaluation order remain non-owning.
@@ -3720,6 +3726,17 @@ Current main-story priorities:
    importer and WebUI overlay are ready; no real capture has been ingested, and
    the current protected client blocks Frida injection. Do not weaken or bypass
    that protection; wait for a supported capture environment.
+   The injection-free local-artifact audit now provides a repeatable fallback
+   after normal play. It scans only Unity `Player*.log` plus
+   `ClientData/**/*.json`, matches the 10,895 exact generated Story keys, and
+   accepts typed same-object candidates only when Story and owner/runtime
+   fields coexist. The current local corpus is 13 files / 150,929 bytes and
+   yields zero Story-bearing log lines and zero typed carriers. One Player-log
+   error names `map02_lv002`, but carries no Story or mission/quest identity
+   and remains runtime diagnostics only. Reports redact account directory ids,
+   absolute paths, and arbitrary log text. This closes the current normal-play
+   local persistence surface as an ownership source while leaving future
+   sessions cheap to re-audit.
 2. Continue original-data ownership recovery for the 67 unassigned black
    scenes. Six already have exact current-build LevelScript playback and
    event/control paths but no validated mission host. No wholly unlinked black
@@ -3787,7 +3804,7 @@ Current main-story priorities:
    diverges earlier at `Split` local 101 (`actions[3]` versus the cutscene's
    `actions[0]`), so the two remain unordered and no file-order edge is
    promoted. This closes e10m4's sole actionable weak-control row.
-   The current `e11m4` queue score is 229: 49 core isolated scenes split into
+   The current `e11m4` queue score is 205: 49 core isolated scenes split into
    41 actionable rows, three exact-native closed rows, and five exact
    runtime-configuration closed dialogs. The latter are
    `dlg_e11m4_4`, `_9`, `_10`, `_11`, and `_12`. Their exact
@@ -3873,7 +3890,7 @@ Current main-story priorities:
    runtime-configuration carriers.
 5. `e7m3` no longer has an actionable LevelScript control-flow row: it has zero
    untyped multi-scene contexts and zero actionable weak-only scenes. The
-   source-only queue now scores it 83 at main-story rank 12, with 58 scenes,
+   source-only queue now scores it 51 at main-story rank 14, with 58 scenes,
    23 strong/reduced edges, zero cycles, 19 isolated scenes, and nine
    actionable core-isolated source-link gaps. The installed DialogTree resolves
    `black_e7m3_1` to the exact `dlg_e7m3_14` playback context described above,

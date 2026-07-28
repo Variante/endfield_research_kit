@@ -1206,6 +1206,22 @@ Expected active inputs and outputs:
   launcher and importer remain useful for a future supported capture
   environment.
 
+  `story_recovery/build_local_runtime_artifact_audit.py` is the supported
+  injection-free follow-up for artifacts produced by normal play. It scans
+  only `Player*.log` and `ClientData/**/*.json` under Unity persistent data,
+  matches exact keys from the generated Story index, and accepts a typed JSON
+  candidate only when one object co-carries a typed Story field with a typed
+  mission/quest or scene/script field. Reports go to
+  `reports/story/recovery/local_runtime_artifact_audit.{json,md}`. They retain
+  relative redacted filenames, game identifiers, counts, and line numbers,
+  but no arbitrary log text, account directory ids, or absolute user paths.
+  This is observational evidence only and never creates authored ownership,
+  playback, branch, completion, or order edges.
+
+  ```bat
+  python scripts\story_recovery\build_local_runtime_artifact_audit.py
+  ```
+
   Captures default to `scratch/story/runtime_trace/`; hook errors and missing
   playback-key probes are written to a sibling diagnostics JSONL. The current
   live `_RaiseOnScriptEvent` probe resolves the exact level/script pair but not
@@ -1994,14 +2010,17 @@ gameplay-video OCR/audio workflow.
   `reports/story/recovery/native_receiver_activation_frontier.json` / `.md`;
   the normal Mission Pipeline builder also refreshes this report and publishes
   compact fail-closed annotations on all receiver nodes for the debug UI.
-  Current recovery covers `158` receiver nodes on `93` scripts: `10` have an
-  exact SubGame activation scope, `54` are Manual with no decoded static
-  shape/task/parent carrier, and none is named by a typed MissionRuntime
-  objective or an incoming literal cross-script manual-control row. All `12`
+  Current recovery covers `161` receiver nodes / `185` Story placements on
+  `95` scripts and `155` Story keys: `10` have an exact SubGame activation
+  scope, `55` are Manual with no decoded static shape/task/parent carrier, and
+  none has an incoming literal cross-script manual-control row. One receiver
+  script is read by a typed MissionRuntime objective, but that condition
+  observes its `isFinished` property and does not activate or own its playback.
+  All `12`
   non-SubGame scripts with non-empty authored start shapes have zero complete
-  exact shape matches in the same-level MissionArea table. Of `24` receiver
-  scripts with task maps, all `24` now decode completely as `31` tasks and
-  `54` conditions across `11` concrete root `GameCondition` types. None is
+  exact shape matches in the same-level MissionArea table. Of `25` receiver
+  scripts with task maps, all `25` now decode completely as `32` tasks and
+  `55` conditions across `11` concrete root `GameCondition` types. None is
   `CheckMissionState`; the exact entity, spawner, dialog, area, property,
   stage, monster, and combine operands are published as dependency/completion
   evidence, not activation or ownership. A complete typed operand pass resolves
@@ -2013,7 +2032,7 @@ gameplay-video OCR/audio workflow.
   The report also indexes exact
   `CheckLevelScriptTaskFinished(scene, script, task)` consumers. The current
   MissionRuntime corpus has two such conditions globally, but neither matches
-  any of the `31` receiver tasks, so schema v7 publishes `0` typed task
+  any of the `32` receiver tasks, so the report publishes `0` typed task
   consumers. It also finds `18` receiver scripts and `14` Story keys
   on `6` exact Dungeon/SubGame scenes, producing `40` scene-context
   placements (`7` bound-script and `33` sibling-script placements) and `31`
@@ -2033,7 +2052,7 @@ gameplay-video OCR/audio workflow.
   task/condition ids have zero MissionRuntimeAsset occurrence. Only the already
   SubGame-scoped
   `map02_lv002/22800950006` contains exact serialized MissionRuntime-id string
-  tokens (`a1m6d6`, `a1m6d7`); all `83` non-SubGame receiver scripts contain
+  tokens (`a1m6d6`, `a1m6d7`); all `85` non-SubGame receiver scripts contain
   none. These
   classifications narrow the producer queue and create no mission, quest,
   playback, or order edge.
