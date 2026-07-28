@@ -3606,32 +3606,26 @@ Current main-story priorities:
    candidate rows only and cannot create ownership or order without a separate
    native consumer proof. Partial/truncated objects, unresolved scripts,
    untyped names, substrings, neighboring objects, filename/PathID proximity,
-   OCR, and overrides fail closed. The last hash-validated installed-game
-   census scanned 1,335,450 object rows for 2,691 actionable gap keys. It found
-   190 objects with exact target values but zero typed
-   same-object Story plus owner/runtime candidates. Exact
+   OCR, and overrides fail closed. The current hash-validated installed-game
+   census was rebuilt with
+   `export.bat --export-from-game --animestudio-object-index
+   --mission-pipeline-only`. All ten exporter commands succeeded, freshness
+   passed, and both published indexes are complete: StreamingAssets has
+   1,218,871 objects / 1,018 MonoScripts / 883 schemas and Persistent has
+   116,579 objects / 1,018 MonoScripts / 271 schemas. After rebuilding the CN
+   Story gap queue, the synchronized audit scanned all 1,335,450 object rows
+   for 2,459 actionable gap keys. It found 190 objects with exact target values
+   but zero typed same-object Story plus owner/runtime candidates. Exact
    `TimelineAsset.m_Name` and `CutsceneRootComponent._timelineName` occurrences
    remain rejected name/timeline clues, not ownership or order evidence. The
-   historical result is preserved in
+   current result is preserved in
    `reports/story/recovery/animestudio_story_carrier_audit.{json,md}` and adds
-   zero bindings or edges. A later Story carrier refresh ran without
-   `--animestudio-object-index` and deliberately invalidated the published
-   commit marker. Installed-data fingerprints still match that indexed run,
-   but current AnimeStudio CLI provenance does not, so the maintained audit
-   correctly refuses the leftover compressed index. Do not relabel its old
-   zero-candidate result as current evidence or manually restore the marker.
-   The next authorized offline refresh is:
-
-   ```bat
-   .\export.bat --export-from-game --animestudio-object-index --mission-pipeline-only
-   python scripts\story_recovery\build_animestudio_story_carrier_audit.py
-   python scripts\story_recovery\build_source_story_gap_queue.py --language CN
-   ```
-
-   A fresh hash-validated index can close or nominate serialized carrier
-   candidates; even a positive same-object row still requires independently
-   recovered native consumer semantics before ownership/playback promotion and
-   a separate serialized control relation before any order edge.
+   zero bindings or edges. This closes the stale-provenance work item: do not
+   repeat the full serialized-carrier census until installed data, exporter
+   identity, or the actionable gap-key set changes. Even a future positive
+   same-object row still requires independently recovered native consumer
+   semantics before ownership/playback promotion and a separate serialized
+   control relation before any order edge.
    The generated coverage report now inventories 155 files across 25 decoded
    event families; the largest unique-file groups are Leader trigger volume
    (67), BattleSignal (16), Script custom event (13), and ScriptStageChanged
@@ -3721,11 +3715,14 @@ Current main-story priorities:
    Use the report's exact key lists as the queue instead of filename sampling.
    Continue to require typed gates and unambiguous `ActionHeader.nextId`
    chains; do not reuse raw task-map proximity.
-   The last validated merged object-index carrier census produced no typed
-   carrier; refresh it after the exporter provenance changes before treating
-   that negative as current. Apart from that refresh, the remaining concrete
-   experiment is the first supported runtime capture rather than another
-   receiver-name or loose-object pass. Start with `e11m1`: use the
+   The current hash-validated merged object-index carrier census produced no
+   typed carrier across all 1,335,450 indexed objects, so another loose-object
+   or same-object scan is not an actionable offline frontier. The refreshed
+   source-only queue ranks `e11m4` first (score 205, 41 actionable isolated
+   core scenes), followed by `e10m4` (190/38) and `e11m1` (150/30). Continue
+   offline from those exact isolated-scene source-link rows and require a new
+   typed producer, consumer, or control relation before promotion. If supported
+   runtime capture later becomes possible, start with `e11m1`: use the
    existing hash-locked recorder around
    `LevelScriptRuntime._RaiseOnScriptEvent` (current token `0x060121a3`, method
    index `74146`), propagate one unique chain id through ActionHeader/ActionBase
