@@ -783,42 +783,6 @@ script. The generated gap audit now classifies character weak-only rows as
 377 exact plus 41 non-ordering, and other rows as 623 exact plus 115
 non-ordering, with zero actionable rows in both.
 
-With the weak-only decoder queue closed, the highest-ranked remaining main
-frontier is isolated source attachment rather than another ActionBase layout.
-`e11m4` currently has 41 actionable isolated files: one cutscene, two dialogs,
-32 radios (`radio_e11m4_29` through `_55`, excluding `_56`, plus `_57`
-through `_61`), and four reading-text files, plus radios `_7` and `_8`.
-A representative exact search for `radio_e11m4_29` finds only its
-`RadioTable` definition and `AudioDialog` metadata in current structured
-tables, and no authored JsonData reference. That is not yet a complete
-definition-only negative because serialized Unity carriers and runtime name
-construction remain possible.
-
-The maintained AnimeStudio Story-carrier audit is the next bounded check, but
-its current commit marker is deliberately absent: the latest Story carrier
-refresh ran without `--animestudio-object-index`. Installed-data fingerprints
-still match the last indexed run exactly (StreamingAssets
-`20438582...e14`, Persistent `f47beb46...1cd`), while the tracked AnimeStudio
-CLI provenance changed from `14522748...037` to `617d3e58...7ad`. Therefore
-the leftover compressed index and the 2026-07-23 audit cannot be promoted as
-current evidence. That older valid audit scanned 1,335,450 object rows for
-2,691 actionable Story keys and found zero typed same-object carrier
-candidates; a direct exploratory scan of the stale index likewise finds no
-exact `radio_e11m4_29` scalar, but both results remain historical/diagnostic
-only. The next authorized offline refresh is:
-
-```bat
-.\export.bat --export-from-game --animestudio-object-index --mission-pipeline-only
-python scripts\story_recovery\build_animestudio_story_carrier_audit.py
-python scripts\story_recovery\build_source_story_gap_queue.py --language CN
-```
-
-The export must complete and publish a hash-validated `summary.json` before
-the audit result can close or nominate any isolated scene. Even a typed
-same-object candidate would still require native consumer semantics before
-mission ownership or playback is promoted, and a separate serialized control
-relation before any Story-order edge is added.
-
 The former `e6m3` top parser gap is one of those exact negatives.
 `map02_lv002/22800100007` plays `radio_e6m3_14` from a Leader-enter listener
 for trigger slot `80001`. `dlg_e6m3_13` occurs only in the separate slot
@@ -3584,15 +3548,32 @@ Current main-story priorities:
    candidate rows only and cannot create ownership or order without a separate
    native consumer proof. Partial/truncated objects, unresolved scripts,
    untyped names, substrings, neighboring objects, filename/PathID proximity,
-   OCR, and overrides fail closed. The current-build installed-game census is
-   now complete: 1,335,450 object rows were scanned for 2,691 actionable gap
-   keys. It found 190 objects with exact target values but zero typed
+   OCR, and overrides fail closed. The last hash-validated installed-game
+   census scanned 1,335,450 object rows for 2,691 actionable gap keys. It found
+   190 objects with exact target values but zero typed
    same-object Story plus owner/runtime candidates. Exact
    `TimelineAsset.m_Name` and `CutsceneRootComponent._timelineName` occurrences
    remain rejected name/timeline clues, not ownership or order evidence. The
-   result is preserved in
+   historical result is preserved in
    `reports/story/recovery/animestudio_story_carrier_audit.{json,md}` and adds
-   zero bindings or edges.
+   zero bindings or edges. A later Story carrier refresh ran without
+   `--animestudio-object-index` and deliberately invalidated the published
+   commit marker. Installed-data fingerprints still match that indexed run,
+   but current AnimeStudio CLI provenance does not, so the maintained audit
+   correctly refuses the leftover compressed index. Do not relabel its old
+   zero-candidate result as current evidence or manually restore the marker.
+   The next authorized offline refresh is:
+
+   ```bat
+   .\export.bat --export-from-game --animestudio-object-index --mission-pipeline-only
+   python scripts\story_recovery\build_animestudio_story_carrier_audit.py
+   python scripts\story_recovery\build_source_story_gap_queue.py --language CN
+   ```
+
+   A fresh hash-validated index can close or nominate serialized carrier
+   candidates; even a positive same-object row still requires independently
+   recovered native consumer semantics before ownership/playback promotion and
+   a separate serialized control relation before any order edge.
    The generated coverage report now inventories 153 files across 25 decoded
    event families; the largest unique-file groups are Leader trigger volume
    (67), BattleSignal (16), Script custom event (13), and ScriptStageChanged
@@ -3653,9 +3634,11 @@ Current main-story priorities:
    Use the report's exact key lists as the queue instead of filename sampling.
    Continue to require typed gates and unambiguous `ActionHeader.nextId`
    chains; do not reuse raw task-map proximity.
-   The merged object-index carrier census has produced no typed carrier. The
-   remaining concrete experiment is the first supported runtime capture rather
-   than another receiver-name or loose-object pass. Start with `e11m1`: use the
+   The last validated merged object-index carrier census produced no typed
+   carrier; refresh it after the exporter provenance changes before treating
+   that negative as current. Apart from that refresh, the remaining concrete
+   experiment is the first supported runtime capture rather than another
+   receiver-name or loose-object pass. Start with `e11m1`: use the
    existing hash-locked recorder around
    `LevelScriptRuntime._RaiseOnScriptEvent` (current token `0x060121a3`, method
    index `74146`), propagate one unique chain id through ActionHeader/ActionBase
@@ -3852,7 +3835,24 @@ Current main-story priorities:
    membership, and quest-instance projection before treating it as playback
    recurrence.
 7. Expand exact Runtime Jump routes and keep the known conflict groups
-   diagnostic until runtime option-index/post-jump semantics are proven.
+   diagnostic until runtime option-index/post-jump semantics are proven. The
+   generated option frontier now separates evidence classes instead of scoring
+   every option row as a missing branch. Of 2,358 groups with no explicit
+   route, 1,505 contain only one option and are acknowledgement prompts rather
+   than choice forks; 853 are multi-choice groups that still warrant source
+   review. Of 298 excluded groups, 131 already have a shared/default Timeline
+   continuation and 120 are authored cosmetic convergence, leaving 47
+   actionable exclusions (38 branch paths lacking direct DialogTree
+   provenance, six sibling-scene text branches, two incomplete Runtime Jump
+   mappings, and one inferred-following-lines case). Scoring only multi-choice
+   no-route groups plus actionable exclusions reduces the current main-story
+   option frontier from 495 to 154 groups without deleting any diagnostic
+   evidence. Single-option and closed groups remain in the report but no
+   longer distort mission rank. `e3m6` is the highest pure option target:
+   eleven groups currently lack explicit promoted routes and
+   `dlg_e3m6_102` has a directionally decoded but incomplete Runtime Jump
+   mapping. Use those concrete source shapes to extend the maintained decoder;
+   do not map choices from text sentiment or option order alone.
 8. Keep unresolved narrative videos standalone until Timeline or another
    original-data source binding establishes placement; observed playback may
    cross-check but does not promote the connection.

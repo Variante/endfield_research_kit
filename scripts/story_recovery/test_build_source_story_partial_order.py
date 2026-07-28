@@ -1079,6 +1079,14 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             result["branches"]["excludedDialogLineOptions"][0]["exclusionReason"],
             "inferredOrUnsupportedRisk",
         )
+        self.assertEqual(
+            result["summary"]["actionableExcludedDialogLineOptionGroupCount"],
+            1,
+        )
+        self.assertEqual(
+            result["summary"]["closedExcludedDialogLineOptionGroupCount"],
+            0,
+        )
 
     def test_option_group_without_explicit_route_stays_unknown(self) -> None:
         conv = {
@@ -1098,6 +1106,97 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(
             result["branches"]["noExplicitRouteGroups"][0]["reason"],
             "noExplicitSourceRoute",
+        )
+        self.assertEqual(
+            result["summary"]["branchingNoExplicitRouteGroupCount"],
+            1,
+        )
+        self.assertEqual(
+            result["summary"]["singleOptionNoExplicitRouteGroupCount"],
+            0,
+        )
+
+    def test_single_option_without_route_is_not_a_missing_choice_branch(self) -> None:
+        conv = {
+            "key": "dlg_m1_ack",
+            "optionGroups": [{
+                "g": 1,
+                "after": "dlg_m1_ack_001",
+                "options": [{"id": "option_ack"}],
+            }],
+        }
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"dlg_m1_ack": "dlg"},
+            mission_payload([]),
+            [("conv/dlg_m1_ack.json", conv)],
+        )
+
+        self.assertEqual(
+            result["summary"]["singleOptionNoExplicitRouteGroupCount"],
+            1,
+        )
+        self.assertEqual(
+            result["summary"]["branchingNoExplicitRouteGroupCount"],
+            0,
+        )
+        self.assertEqual(
+            result["branches"]["singleOptionNoExplicitRouteGroups"][0][
+                "storyKey"
+            ],
+            "dlg_m1_ack",
+        )
+
+    def test_shared_and_cosmetic_exclusions_are_closed_option_evidence(self) -> None:
+        conversations = [
+            ("conv/dlg_m1_shared.json", {
+                "key": "dlg_m1_shared",
+                "optionGroups": [{
+                    "g": 1,
+                    "after": "dlg_m1_shared_001",
+                    "options": [{"id": "option_1"}, {"id": "option_2"}],
+                    "optionBranchRisk": {
+                        "code": "sharedTimelineContinuation",
+                        "reason": "defaultTrunkClipContinuation",
+                    },
+                }],
+            }),
+            ("conv/dlg_m1_cosmetic.json", {
+                "key": "dlg_m1_cosmetic",
+                "optionGroups": [{
+                    "g": 1,
+                    "after": "dlg_m1_cosmetic_001",
+                    "options": [{"id": "option_1"}, {"id": "option_2"}],
+                    "optionBranchRisk": {
+                        "code": "cosmeticChoice",
+                        "reason": "treeSourcedConvergence",
+                    },
+                }],
+            }),
+        ]
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {
+                "dlg_m1_shared": "dlg",
+                "dlg_m1_cosmetic": "dlg",
+            },
+            mission_payload([]),
+            conversations,
+        )
+
+        self.assertEqual(
+            result["summary"]["closedExcludedDialogLineOptionGroupCount"],
+            2,
+        )
+        self.assertEqual(
+            result["summary"]["actionableExcludedDialogLineOptionGroupCount"],
+            0,
+        )
+        self.assertEqual(
+            len(result["branches"]["closedExcludedDialogLineOptions"]),
+            2,
         )
 
     def test_manual_option_evidence_is_never_promoted(self) -> None:

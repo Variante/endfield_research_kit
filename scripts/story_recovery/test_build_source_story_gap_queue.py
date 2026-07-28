@@ -83,6 +83,63 @@ def mission_payload(
 
 
 class SourceStoryGapQueueTests(unittest.TestCase):
+    def test_option_frontier_scores_only_multi_choice_and_actionable_exclusions(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "e1m1",
+            scenes=["dlg_a"],
+            no_route_groups=5,
+            excluded_groups=4,
+        )
+        partial["summary"].update({
+            "branchingNoExplicitRouteGroupCount": 2,
+            "singleOptionNoExplicitRouteGroupCount": 3,
+            "actionableExcludedDialogLineOptionGroupCount": 1,
+            "closedExcludedDialogLineOptionGroupCount": 3,
+        })
+
+        row = gap_queue.build_gap_row(
+            partial,
+            mission_payload(),
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["noExplicitOptionRouteGroups"], 5)
+        self.assertEqual(
+            row["metrics"]["actionableNoExplicitOptionRouteGroups"],
+            2,
+        )
+        self.assertEqual(
+            row["metrics"]["singleOptionNoExplicitRouteGroups"],
+            3,
+        )
+        self.assertEqual(row["metrics"]["excludedOptionEvidenceGroups"], 4)
+        self.assertEqual(
+            row["metrics"]["actionableExcludedOptionEvidenceGroups"],
+            1,
+        )
+        self.assertEqual(
+            row["metrics"]["closedExcludedOptionEvidenceGroups"],
+            3,
+        )
+        self.assertEqual(
+            row["scoreContributions"][
+                "actionableNoExplicitOptionRouteGroups"
+            ],
+            4,
+        )
+        self.assertEqual(
+            row["scoreContributions"][
+                "actionableExcludedOptionEvidenceGroups"
+            ],
+            2,
+        )
+        self.assertEqual(
+            row["frontierContributions"]["dialog-option-runtime"],
+            6,
+        )
+
     def test_main_story_sorts_before_higher_scoring_event(self) -> None:
         main = partial_mission("e1m1", scenes=["a"], isolated=["a"])
         event = partial_mission("a1m1", scenes=["a", "b", "c"], isolated=["a", "b", "c"])
