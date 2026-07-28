@@ -230,19 +230,40 @@ LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID = (
     "gameassembly-2026-07-11-cr-0x18b9217d0-actionbase-0x0000-0x0520"
 )
 LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {
+    (0x0001, 0x00): "ActionForSubGame_ConfirmLeaveSubGame",
+    (0x0007, 0x0D): "AddBuffsToTargetsFromGodEntity",
+    (0x0009, 0x0D): "AddBuffToTargetFromGodEntity",
+    (0x000B, 0x0F): "AddCameraControlState",
+    (0x000D, 0x0C): "AddGlobalBuffFromGodEntity",
     (0x002D, 0x09): "Branch",
+    (0x0041, 0x18): "CharacterPlayMontage",
+    (0x004B, 0x0E): "CharSetSpMoveLoop",
+    (0x006B, 0x0F): "CreateEffectAtPosition",
+    (0x0089, 0x0B): "EnterCustomMusicMode",
+    (0x008A, 0x25): "EnterDollyTrackCamera",
+    (0x00B5, 0x0D): "ExitCamera",
     (0x00FF, 0x0B): "IfElseAction",
     (0x0410, 0x0A): "SetInt",
     (0x0310, 0x14): "NarrativeBlackScreenAction",
     (0x031E, 0x0C): "NpcPatrolStart",
+    (0x0303, 0x09): "ManuallyAcceptClientGuideGroup",
+    (0x0304, 0x09): "ManuallyStartGuideGroup",
     (0x034A, 0x14): "Play3DRadio",
     (0x034B, 0x14): "Play3DRadioAndWait",
+    (0x034C, 0x0C): "PlayAudiAtPosition",
+    (0x034E, 0x0B): "PlayAudio",
+    (0x0352, 0x0C): "PlayAudioOnTarget",
     (0x0357, 0x14): "PlayCutsceneAction",
     (0x0358, 0x14): "PlayCutsceneIgnoreCinematicQueue",
     (0x035E, 0x0E): "PlayFmvAction",
+    (0x036B, 0x13): "PostAudioCue",
+    (0x0373, 0x0C): "PostMusicEvent",
     (0x0376, 0x0C): "PreloadCutsceneAction",
+    (0x0378, 0x0A): "PreloadLevelSeqAction",
     (0x037E, 0x0A): "RaiseCustomLevelEvent",
     (0x0380, 0x0B): "RaiseCustomScriptEvent",
+    (0x038E, 0x09): "RemoveTrackingPoint",
+    (0x0392, 0x0B): "RequireSettlementShow",
     (0x035A, 0x0F): "PlayDialogAndHideSceneObjectAction",
     (0x0360, 0x0F): "PlayLevelSequenceAction",
     (0x0361, 0x12): "PlayLevelSequenceAndControlSceneObjectsAction",
@@ -256,17 +277,27 @@ LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {
     (0x049F, 0x10): "StartDialogAndTeleportAction",
     (0x04A1, 0x10): "StartFmvAndTeleportAction",
     (0x04A5, 0x1B): "StartNarrativeBlackScreenAndTeleport",
+    (0x04AD, 0x0C): "StopCharScriptedMode",
+    (0x04B1, 0x0C): "StopLevelSeqLoopSegment",
+    (0x04B2, 0x09): "StopLevelSequenceAction",
     (0x04BD, 0x0C): "SwitchInt",
     (0x0495, 0x09): "Split",
+    (0x0478, 0x09): "ShowDramaticPerformanceNewItemToast",
+    (0x0480, 0x0F): "ShowLimitedGuide",
+    (0x048C, 0x09): "ShowUIReadingPopPanel",
     (0x04F6, 0x08): "WaitForOneFrame",
     (0x04F5, 0x09): "WaitForNpcProxyReady",
+    (0x04F0, 0x09): "WaitForCondition",
+    (0x0506, 0x09): "Core_RemoveMovementSettingModifier",
     (0x0020, 0x0B): "BlackScreenFadeOut",
     (0x0052, 0x09): "CheckBoolIfTrue",
     (0x00B9, 0x09): "ExitLevelCustomPerformance",
     (0x0034, 0x0E): "CallServer",
     (0x02FE, 0x0A): "MainCharMoveTo",
     (0x04CA, 0x09): "ToggleClearScreenButRadio",
+    (0x04D2, 0x0A): "ToggleMainHudActionPlayIgnoreMainHud",
     (0x04DA, 0x09): "TravelPoleHandoverToCutscene",
+    (0x0456, 0x0A): "SetOverrideSceneState",
 }
 LEVELSCRIPT_NATIVE_GETTER_MAPPING_ID = (
     "gameassembly-2026-07-11-cr-0x18413bed0-puregetter-0x0000-0x044e"
@@ -1587,6 +1618,7 @@ def _load_levelscript_binding_data(level_id: str) -> dict:
         _attach_hits_to_records(records, plain_string_hits, "plainStrings")
         if not records and not string_hits and not plain_string_hits:
             continue
+        _action_map, membership = levelscript_action_map_membership(data, records)
 
         sorted_hits = sorted(string_hits, key=lambda hit: hit["offset"])
         sorted_plain_hits = sorted(plain_string_hits, key=lambda hit: hit["offset"])
@@ -1609,6 +1641,7 @@ def _load_levelscript_binding_data(level_id: str) -> dict:
             "file": repo_rel(path),
             "fileStem": path.stem,
             "records": records,
+            "actionMapMembership": membership,
             "stringHits": sorted_hits,
             "plainStringHits": sorted_plain_hits,
         })
@@ -8660,24 +8693,43 @@ def _build_level_binding_groups(
     return [group for group in groups if group["rows"]]
 
 
-def _make_levelscript_chain_step(record: dict, dialog_key_resolver, mission_id: str = "") -> dict:
+def _make_levelscript_chain_step(
+    record: dict,
+    dialog_key_resolver,
+    mission_id: str = "",
+    action_map_role: str = "",
+) -> dict:
     payloads = _annotate_binding_payloads(
         [hit["text"] for hit in record["strings"]],
         dialog_key_resolver,
         mission_id,
     )
+    source = {
+        "layout": record["layout"],
+        "code": f"0x{record['code']:04x}",
+        "kind": f"0x{record['kind']:02x}",
+        "uid": record["uid"],
+        "start": record["start"],
+    }
+    if action_map_role:
+        source["actionMapRole"] = action_map_role
+    if action_map_role.startswith("actionList#"):
+        if action_name := levelscript_native_action_name(record):
+            source["actionName"] = action_name
+        if record_class := classify_levelscript_record(record):
+            source["recordClass"] = record_class
+    elif action_map_role.startswith("headerList#"):
+        if header_name := levelscript_native_header_name(
+            record,
+            allow_union_tag_fallback=True,
+        ):
+            source["headerName"] = header_name
     return {
         "localId": record["localId"],
         "nextId": record["nextId"],
         "payloads": payloads,
         "_debug": {
-            "source": {
-                "layout": record["layout"],
-                "code": f"0x{record['code']:04x}",
-                "kind": f"0x{record['kind']:02x}",
-                "uid": record["uid"],
-                "start": record["start"],
-            },
+            "source": source,
         },
     }
 
@@ -8692,10 +8744,19 @@ def _build_levelscript_scene_chain_map(
     seen_signatures: set[tuple] = set()
 
     for file_info in info["files"]:
+        membership = file_info.get("actionMapMembership") or {}
         for chain in _build_uid_record_chains(file_info["records"]):
             if len(chain) < 2:
                 continue
-            steps = [_make_levelscript_chain_step(record, dialog_key_resolver, mission_id) for record in chain]
+            steps = [
+                _make_levelscript_chain_step(
+                    record,
+                    dialog_key_resolver,
+                    mission_id,
+                    str(membership.get(int(record.get("start") or 0)) or ""),
+                )
+                for record in chain
+            ]
             scene_keys: list[str] = []
             seen_scene_keys: set[str] = set()
             for step in steps:

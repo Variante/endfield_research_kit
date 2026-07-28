@@ -296,11 +296,26 @@ Mission Pipeline:
   `levelscriptCallServerCallbacks` with explicit non-Story/non-order/non-owner
   flags and are excluded from nodes, edges, scene placement, and Mission
   Pipeline ownership. This removes the former hash-terminal pseudo-scenes
-  without discarding source-file or preceding-scene diagnostics. The one
-  current punctuation-only `#` value in a typed
-  `PlayDialogAndHideSceneObjectAction` is handled the same way under
+  without discarding source-file or preceding-scene diagnostics. The current
+  punctuation-only `#` and `%` values in two typed
+  `PlayDialogAndHideSceneObjectAction` records are handled the same way under
   `levelscriptNonNodeScalarPayloads`: visible diagnostic provenance, no graph
-  node or edge. The
+  node or edge. That guard requires exact action-list membership and a
+  co-record dialog id. The same exact guard now covers four one-character
+  parameters (`P`, `Y`, `e`, and `A`) serialized beside real cutscene ids in
+  typed
+  `StartCutsceneAndControlSceneObjectAction` and
+  `StartCutsceneAndHideSceneObjectAction` records. Those parameters remain
+  inspectable with source/action identity and explicit false Story,
+  mission-owner, and order flags, but no longer appear as graph events. For
+  the remaining generic-symbol topology, all 208 Story-boundary edges are
+  typed from physical serialized-map membership: 200 carry exact
+  formatter-derived `sourceActions`, and eight header-list boundaries carry
+  exact formatter-derived `sourceEvents`. Debug chips and tooltips show those
+  names without promoting the weak `levelscriptChain` relation. The localized
+  builder also copies them onto exact matching
+  `timelineRecovery.sourceBackedSceneEdges` rows, which are the parallel edge
+  copy rendered by the Story panel. The
   runtime contract also exposes the complete recursive protobuf identity
   census: zero mission/quest + LevelScript/Story co-carriers across 983 current
   enum-backed CS/SC message classes. Its three weaker scene rows remain

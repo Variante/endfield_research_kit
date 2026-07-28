@@ -1143,19 +1143,30 @@ def is_play_dialog_hide_non_identifier_payload(
     node_key: str,
     step: dict | None,
 ) -> bool:
-    """Recognize the lone punctuation-only payload in the current typed corpus.
+    """Recognize action-local punctuation beside a real dialog id.
 
-    One ``PlayDialogAndHideSceneObjectAction`` serializes ``#`` beside its real
-    dialog id. With no identifier body it cannot name a Story/runtime node.
-    Keep the guard exact to the typed action so broader symbol recovery remains
+    Two current ``PlayDialogAndHideSceneObjectAction`` records serialize one
+    punctuation character (``#`` or ``%``) beside their real dialog ids. With
+    no identifier body these values cannot name Story/runtime nodes. Keep the
+    guard tied to physical ActionSerializedMap membership, the exact typed
+    action, and a co-record dialog payload so broader symbol recovery remains
     fail-closed.
     """
-    if str(node_key or "") != "#" or not isinstance(step, dict):
+    value = str(node_key or "")
+    if (
+        len(value) != 1
+        or not value.isascii()
+        or value.isalnum()
+        or value == "_"
+        or not isinstance(step, dict)
+    ):
         return False
     source = step.get("source")
     if not isinstance(source, dict):
         source = ((step.get("_debug") or {}).get("source") or {})
     if not isinstance(source, dict):
+        return False
+    if not str(source.get("actionMapRole") or "").startswith("actionList#"):
         return False
     code = source.get("code")
     kind = source.get("kind")
@@ -1164,7 +1175,68 @@ def is_play_dialog_hide_non_identifier_payload(
         kind_value = int(str(kind), 0) if not isinstance(kind, int) else kind
     except (TypeError, ValueError):
         return False
-    return code_value == 0x035A and kind_value == 0x0F
+    if code_value != 0x035A or kind_value != 0x0F:
+        return False
+    return any(
+        isinstance(payload, dict)
+        and (
+            str(payload.get("kind") or "") in {"dlg", "runtimeDialog"}
+            or str(payload.get("sceneKey") or "").startswith(
+                ("dlg_", "misc_dlg_")
+            )
+        )
+        for payload in (step.get("payloads") or [])
+    )
+
+
+def typed_cutscene_single_char_parameter_action(
+    node_key: str,
+    step: dict | None,
+) -> str:
+    """Return the typed cutscene action for an action-local one-char value.
+
+    Four current-build StartCutscene control/hide records expose a single
+    alphabetic character beside the real cutscene id.  The concrete action
+    schemas carry cutscene configuration/parameter fields, so that character
+    is not a second runtime event or Story identity.  Keep this deliberately
+    narrower than generic symbol filtering: require the exact typed action,
+    the observed one-character shape, and a cutscene payload in the same
+    serialized record.
+    """
+    value = str(node_key or "")
+    if len(value) != 1 or not value.isascii() or not value.isalpha():
+        return ""
+    if not isinstance(step, dict):
+        return ""
+    source = step.get("source")
+    if not isinstance(source, dict):
+        source = ((step.get("_debug") or {}).get("source") or {})
+    if not isinstance(source, dict):
+        return ""
+    if not str(source.get("actionMapRole") or "").startswith("actionList#"):
+        return ""
+    code = source.get("code")
+    kind = source.get("kind")
+    try:
+        code_value = int(str(code), 0) if not isinstance(code, int) else code
+        kind_value = int(str(kind), 0) if not isinstance(kind, int) else kind
+    except (TypeError, ValueError):
+        return ""
+    action_name = {
+        (0x049B, 0x13): "StartCutsceneAndControlSceneObjectAction",
+        (0x049C, 0x12): "StartCutsceneAndHideSceneObjectAction",
+    }.get((code_value, kind_value), "")
+    if not action_name:
+        return ""
+    has_cutscene_payload = any(
+        isinstance(payload, dict)
+        and (
+            payload.get("kind") == "cutscene"
+            or str(payload.get("sceneKey") or "").startswith("cutscene_")
+        )
+        for payload in (step.get("payloads") or [])
+    )
+    return action_name if has_cutscene_payload else ""
 
 
 def first_string(values: Any) -> str:
@@ -3445,6 +3517,61 @@ def recover_mission(
         "unresolved": unresolved,
     }
     return payload
+
+
+def enrich_source_backed_scene_edge_context(
+    timeline_recovery: dict | None,
+    scene_graph: dict | None,
+) -> int:
+    """Copy typed action/header context onto the WebUI timeline edge copy.
+
+    Mission recovery and the localized scene graph preserve parallel copies of
+    the same source-backed edges. The Story panel renders the former, while
+    physical ActionSerializedMap membership is recovered while building the
+    latter. Join only on the complete edge identity and copy diagnostic fields;
+    this never changes edge kind, direction, ownership, or order strength.
+    """
+    if not isinstance(timeline_recovery, dict) or not isinstance(scene_graph, dict):
+        return 0
+    context_by_edge: dict[tuple[str, str, str], dict] = {}
+    for edge in scene_graph.get("edges") or []:
+        if not isinstance(edge, dict):
+            continue
+        signature = (
+            str(edge.get("from") or ""),
+            str(edge.get("to") or ""),
+            str(edge.get("kind") or ""),
+        )
+        if not all(signature):
+            continue
+        if edge.get("sourceActions") or edge.get("sourceEvents"):
+            context_by_edge[signature] = edge
+
+    enriched = 0
+    for edge in timeline_recovery.get("sourceBackedSceneEdges") or []:
+        if not isinstance(edge, dict):
+            continue
+        signature = (
+            str(edge.get("from") or ""),
+            str(edge.get("to") or ""),
+            str(edge.get("kind") or ""),
+        )
+        context = context_by_edge.get(signature)
+        if not context:
+            continue
+        changed = False
+        for field in ("sourceActions", "sourceActionClasses", "sourceEvents"):
+            values = [
+                str(value)
+                for value in context.get(field) or []
+                if str(value)
+            ]
+            if values and edge.get(field) != values:
+                edge[field] = values
+                changed = True
+        if changed:
+            enriched += 1
+    return enriched
 
 
 def mission_files(mra_dir: Path, selected: set[str]) -> list[Path]:

@@ -2048,10 +2048,25 @@ gameplay-video OCR/audio workflow.
   CallServer corpus serializes each hash-shaped event name as `#` plus its own
   eight-hex-digit action UID. Builders retain these as
   `levelscriptCallServerSelfUidCallback` diagnostics but exclude them from
-  Story nodes, order edges, and mission ownership. The one current typed
-  `PlayDialogAndHideSceneObjectAction` (`0x035a/0x0f`) punctuation-only `#`
-  payload is likewise retained as `levelscriptNonNodeScalarPayload` rather
-  than emitted as a graph identifier. High
+  Story nodes, order edges, and mission ownership. The two current typed
+  `PlayDialogAndHideSceneObjectAction` (`0x035a/0x0f`) punctuation-only
+  payloads, `#` beside `dlg_sm2l5m1_7` and `%` beside `dlg_sm2l5m1_8`, are
+  likewise retained as `levelscriptNonNodeScalarPayload` diagnostics rather
+  than emitted as graph identifiers. This recognizer requires exact
+  action-list membership and a co-record dialog id. The same fail-closed graph
+  hygiene recognizes the four current one-character parameters beside real
+  cutscene ids in typed `StartCutsceneAndControlSceneObjectAction` and
+  `StartCutsceneAndHideSceneObjectAction` records. It retains `P`, `Y`, `e`,
+  and `A` as non-node diagnostics and emits no graph edge for them. Remaining
+  generic-symbol edges retain their weak topology. Physical
+  `ActionSerializedMap` membership—not overlapping union tags—controls their
+  annotations: action-list boundaries carry exact formatter-derived
+  `sourceActions`, while header-list boundaries carry `sourceEvents`, for
+  WebUI debug chips/tooltips. The localized build joins these fields onto the
+  exact matching `timelineRecovery.sourceBackedSceneEdges` copy by
+  source/target/kind. Knowing that a symbol belongs to camera, audio, guide,
+  level-sequence, or custom-event action context does not promote order or
+  mission ownership. High
   event/gate/terminal records such as `0x0a03/0x00`, `0x0bed/0x00`, current
   trigger events `0x12be/0x00` and `0x12c0/0x00`, dialog exit
   `0x1355/0x00`, and quest-state change `0x1385/0x00` are outside that

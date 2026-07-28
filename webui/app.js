@@ -8071,11 +8071,19 @@ function renderMissionTimelineSceneEdges(edges, flowKeyMap, currentKey) {
     row.appendChild(arrow);
     row.appendChild(createFlowSceneChip(edge.to || "?", flowKeyMap, currentKey));
     appendMissionTimelineChip(row, edge.kind || "edge");
+    for (const actionName of missionTimelineArray(edge.sourceActions).slice(0, 3)) {
+      appendMissionTimelineChip(row, actionName);
+    }
+    for (const eventName of missionTimelineArray(edge.sourceEvents).slice(0, 2)) {
+      appendMissionTimelineChip(row, eventName);
+    }
     const sourceCount = missionTimelineArray(edge.sourceFiles).length + missionTimelineArray(edge.sourceKeys).length;
     if (sourceCount) appendMissionTimelineChip(row, `${uiText("missionTimelineSource")} ${sourceCount}`);
     const title = [
       ...missionTimelineArray(edge.sourceFiles),
       ...missionTimelineArray(edge.sourceKeys),
+      ...missionTimelineArray(edge.sourceActions),
+      ...missionTimelineArray(edge.sourceEvents),
     ].join("\n");
     if (title) row.title = title;
     details.appendChild(row);
@@ -8183,9 +8191,17 @@ function renderMissionTimelineSceneEdgeGraph(edges, flowKeyMap, currentKey) {
         target.className = "mission-scene-edge-target";
         target.appendChild(createFlowSceneChip(edge.to, flowKeyMap, currentKey));
         appendMissionTimelineChip(target, edge.kind || "edge");
+        for (const actionName of missionTimelineArray(edge.sourceActions).slice(0, 2)) {
+          appendMissionTimelineChip(target, actionName);
+        }
+        for (const eventName of missionTimelineArray(edge.sourceEvents).slice(0, 1)) {
+          appendMissionTimelineChip(target, eventName);
+        }
         const titleText = [
           ...missionTimelineArray(edge.sourceFiles),
           ...missionTimelineArray(edge.sourceKeys),
+          ...missionTimelineArray(edge.sourceActions),
+          ...missionTimelineArray(edge.sourceEvents),
           missionTimelineSourceTitle(edge.source),
         ].filter(Boolean).join("\n");
         if (titleText) target.title = titleText;
@@ -8240,9 +8256,17 @@ function renderMissionTimelineInlineEdges(edges, flowKeyMap, currentKey, { limit
     row.appendChild(arrow);
     row.appendChild(createFlowSceneChip(edge.to || "?", flowKeyMap, currentKey));
     appendMissionTimelineChip(row, edge.kind || "edge");
+    for (const actionName of missionTimelineArray(edge.sourceActions).slice(0, 3)) {
+      appendMissionTimelineChip(row, actionName);
+    }
+    for (const eventName of missionTimelineArray(edge.sourceEvents).slice(0, 2)) {
+      appendMissionTimelineChip(row, eventName);
+    }
     const title = [
       ...missionTimelineArray(edge.sourceFiles),
       ...missionTimelineArray(edge.sourceKeys),
+      ...missionTimelineArray(edge.sourceActions),
+      ...missionTimelineArray(edge.sourceEvents),
       missionTimelineSourceTitle(edge.source),
     ].filter(Boolean).join("\n");
     if (title) row.title = title;

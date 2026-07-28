@@ -13,10 +13,10 @@ authoritative total scene list for every mission. The current strict CN audit
 contains:
 
 - 486 missions and 8,853 candidate Story scene placements;
-- 1,425 accepted strong scene edges and 820 retained supported-topology edges;
-- 1,319 transitively reduced component edges;
-- 3,633 comparable pairs out of 248,838 within-mission pairs (1.46%);
-- 5,097 isolated scenes and 2,063 scenes with weak/supported evidence only;
+- 1,426 accepted strong scene edges and 820 retained supported-topology edges;
+- 1,320 transitively reduced component edges;
+- 3,638 comparable pairs out of 248,838 within-mission pairs (1.46%);
+- 5,096 isolated scenes and 2,063 scenes with weak/supported evidence only;
 - zero cyclic strongly connected components;
 - 250 explicit quest forks, 53 quest merges, and 59 authored cross-scene
   option groups.
@@ -777,6 +777,33 @@ IL2CPP metadata is not an authored playlist. It explains how serialized data
 is interpreted; the concrete order still has to come from authored quest,
 event, action, tree, or Timeline relations.
 
+The current LevelScript symbol hygiene pass keeps that diagnostic topology
+without presenting action-local parameters as events. Across generated CN
+mission graphs, 208 remaining generic-symbol edges touch a recognized Story
+node. Six same-record one-character values have been removed from graph
+identity: `P`, `Y`, `e`, and `A` occur beside the real cutscene id only in exact
+typed
+`StartCutsceneAndControlSceneObjectAction`/`StartCutsceneAndHideSceneObjectAction`
+records, while `#` and `%` occur beside real dialog ids in two exact typed
+`PlayDialogAndHideSceneObjectAction` records. All six are retained under
+`levelscriptNonNodeScalarPayloads` with explicit
+non-Story/non-owner/non-order flags and are excluded from graph nodes and
+edges. Every one of the 208 retained boundaries is now typed by physical
+`ActionSerializedMap` membership: 200 carry formatter-derived
+`sourceActions`, while eight header-list boundaries carry formatter-derived
+`sourceEvents`; none is unlabeled and none is labeled from an overlapping
+union tag alone. The largest action context families are `PlayRadio`,
+`PlayRadioAndWait`, `StartDialogAction`, `RaiseCustomScriptEvent`,
+`AddCameraControlState`, and `StartDialogAndTeleportAction`; the header
+contexts comprise custom-event, dialog-exit, teleport-finish, and saved-property
+events. The WebUI debug graph and native-route display surface these names, but
+the edges remain `levelscriptChain` context and never become chronology or
+mission ownership merely because their classes are now known. The localized
+builder copies the same diagnostic fields onto exact matching
+`timelineRecovery.sourceBackedSceneEdges` rows because that parallel edge view
+feeds the Story panel; the join requires identical source, target, and edge
+kind.
+
 ## Quest, mission, and scene model
 
 Quest Tree nodes are `MissionRuntimeAsset.questDic` quest ids. The durable join
@@ -859,14 +886,17 @@ mission/quest identity. This proves objective co-gating and local
 playback/presentation-cleanup context, not that the quest or script opens the
 submission UI and not that submission completion triggers either dialog.
 
-A follow-up full generated-graph scan closed the only remaining symbol-only
-node. `map02_lv005/23200050003`, record UID `15196cb4`, is the sole current
-`PlayDialogAndHideSceneObjectAction` (`0x035a/0x0f`) row that serializes the
-punctuation-only string `#` beside its real `dlg_sm2l5m1_7` id. With no
-identifier body it is not a runtime/Story key. The builder now retains the raw
-binding plus a `levelscriptNonNodeScalarPayload` diagnostic, but excludes `#`
-from graph nodes and edges. This exact opcode/value guard must not be widened
-to suppress other symbol payloads without typed evidence.
+A follow-up full generated-graph scan closed the two remaining punctuation-only
+nodes. `map02_lv005/23200050003`, record UID `15196cb4`, serializes `#` beside
+its real `dlg_sm2l5m1_7` id; sibling script `23200050004`, record UID
+`4b93dcf6`, serializes `%` beside `dlg_sm2l5m1_8`. Both are exact
+`PlayDialogAndHideSceneObjectAction` (`0x035a/0x0f`) action-list members. With
+no identifier body, neither value is a runtime/Story key. The builder retains
+their raw bindings plus `levelscriptNonNodeScalarPayload` diagnostics, but
+excludes both from graph nodes and edges. The recognizer requires physical
+action-list membership, the exact typed opcode, a single ASCII punctuation
+character, and a co-record dialog id; it must not be widened to suppress other
+symbol payloads without equivalent typed evidence.
 
 Mission-level Story evidence stays separate from quest attachments.
 `MissionRuntimeAsset/<mission>_meta.json` NPC accept mode (`mode = 3`, native

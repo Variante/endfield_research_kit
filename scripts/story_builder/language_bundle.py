@@ -22,8 +22,10 @@ from .mission_recovery import (
     decode_mission_script_conditions,
     decode_mission_world_entity_condition_groups,
     decode_mission_world_entity_condition_refs,
+    enrich_source_backed_scene_edge_context,
     is_call_server_self_uid_callback,
     is_play_dialog_hide_non_identifier_payload,
+    typed_cutscene_single_char_parameter_action,
 )
 
 _RADIO_CONTINUATION_REPORT_PATH = (
@@ -12399,7 +12401,17 @@ def build_language_bundle(
             }
             compact_source = {
                 key: source_info.get(key)
-                for key in ("layout", "code", "kind", "uid", "start")
+                for key in (
+                    "layout",
+                    "code",
+                    "kind",
+                    "uid",
+                    "start",
+                    "actionMapRole",
+                    "actionName",
+                    "recordClass",
+                    "headerName",
+                )
                 if source_info.get(key) not in (None, "", [], {})
             }
             if compact_source:
@@ -12494,6 +12506,40 @@ def build_language_bundle(
                                     "sourceStep": source_step,
                                 })
                             continue
+                        typed_cutscene_action = (
+                            typed_cutscene_single_char_parameter_action(
+                                node_key,
+                                step,
+                            )
+                        )
+                        if typed_cutscene_action:
+                            source_step = compact_levelscript_step(
+                                step,
+                                node_key,
+                                raw_text,
+                            )
+                            source_info = source_step.get("source") or {}
+                            scalar_signature = (
+                                file_ref,
+                                level_id,
+                                str(source_info.get("uid") or "").casefold(),
+                                node_key,
+                            )
+                            if scalar_signature not in seen_non_node_scalar_contexts:
+                                seen_non_node_scalar_contexts.add(scalar_signature)
+                                non_node_scalar_contexts.append({
+                                    "kind": "levelscriptNonNodeScalarPayload",
+                                    "file": file_ref,
+                                    "levelId": level_id,
+                                    "payloadText": node_key,
+                                    "nativeAction": typed_cutscene_action,
+                                    "identityRole": "typed_cutscene_action_parameter",
+                                    "storyNode": False,
+                                    "missionOwnershipEvidence": False,
+                                    "orderEvidence": False,
+                                    "sourceStep": source_step,
+                                })
+                            continue
                         if file_ref and _is_story_scene_graph_key(node_key, available):
                             signature = (file_ref, level_id, start, payload_index, node_key)
                             if signature not in seen_story_call_items:
@@ -12526,6 +12572,7 @@ def build_language_bundle(
                     "file": chain.get("file") or "",
                     "levelId": chain.get("levelId") or "",
                     "sequence": sequence,
+                    "steps": sequence_steps,
                 })
                 for pos, (src, dst) in enumerate(zip(sequence, sequence[1:])):
                     src_kind = _scene_graph_node_kind(src, available)
@@ -12926,7 +12973,8 @@ def build_language_bundle(
                                     edge["sourceKeys"].append(source_key)
         for chain in chain_sequences:
             sequence = chain.get("sequence") or []
-            for src, dst in zip(sequence, sequence[1:]):
+            sequence_steps = chain.get("steps") or []
+            for pos, (src, dst) in enumerate(zip(sequence, sequence[1:])):
                 if edge := ensure_edge(src, dst, "levelscriptChain"):
                     file_ref = chain.get("file") or ""
                     if file_ref:
@@ -12938,6 +12986,27 @@ def build_language_bundle(
                         refs = edge.setdefault("levelIds", [])
                         if level_id not in refs:
                             refs.append(level_id)
+                    for step_index in (pos, pos + 1):
+                        if step_index >= len(sequence_steps):
+                            continue
+                        source_info = (
+                            sequence_steps[step_index].get("source") or {}
+                        )
+                        action_name = source_info.get("actionName") or ""
+                        if action_name:
+                            refs = edge.setdefault("sourceActions", [])
+                            if action_name not in refs:
+                                refs.append(action_name)
+                        record_class = source_info.get("recordClass") or ""
+                        if record_class:
+                            refs = edge.setdefault("sourceActionClasses", [])
+                            if record_class not in refs:
+                                refs.append(record_class)
+                        header_name = source_info.get("headerName") or ""
+                        if header_name:
+                            refs = edge.setdefault("sourceEvents", [])
+                            if header_name not in refs:
+                                refs.append(header_name)
         chain_start_meta: dict[str, dict] = defaultdict(lambda: {
             "sourceFiles": [],
             "levelIds": [],
@@ -13720,6 +13789,11 @@ def build_language_bundle(
         for mission in mission_timeline_recovery_payload.get("missions") or []
         if mission.get("mission")
     }
+    for mission, timeline_recovery in mission_timelines_by_mission.items():
+        enrich_source_backed_scene_edge_context(
+            timeline_recovery,
+            mission_scene_graphs.get(mission),
+        )
 
     recovered_attachment_types = {
         "scriptCondition": (
