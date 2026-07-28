@@ -764,9 +764,14 @@ chains end to end: `0x04ca/0x09` is
 `ToggleClearScreenButRadio(_isShow)`, first `false` and later `true`;
 `0x02fe/0x0a` is `MainCharMoveTo(_endPos,_groundedMoveGait)`, with
 `_endPos` bound through param source 200 to `walk_end_pos` and gait 0. Both
-generated setter names and exact EOF payload decodes agree. The script
-therefore contains no hidden submission id, item id, UI key, branch target,
-or typed SubmitItem OpenUI action. Mission Pipeline schema 14 emits one
+generated setter names and exact EOF payload decodes agree. Finally, raw
+`0x0e34/0x00` normalizes to ActionBase tag `0x0034`/14 members
+`CallServer`. Its generated six fields decode as null client-output UIDs,
+`event_args`, a hash-like event name, `useCustomEvent=false`,
+`waitForCallback=true`, and `withEventArgs=false`; no mission or quest
+identity is serialized in that server handoff. The script therefore contains
+no hidden submission id, item id, UI key, branch target, or typed SubmitItem
+OpenUI action. Mission Pipeline schema 14 emits one
 LevelScript co-gate and the source graph joins the quest, submission, script,
 dialog-exit trigger, and playback target while marking every context edge
 `openUiOwnership=false` and `orderEvidence=false`.

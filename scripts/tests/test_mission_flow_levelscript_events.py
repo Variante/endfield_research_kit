@@ -1115,6 +1115,51 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
             move_detail["mainCharMoveTo"],
         )
 
+    def test_compact_call_server_terminal_decodes_exact_generated_fields(self):
+        payload = bytes.fromhex(
+            "ff ff ff ff 04 01 0a 00 00 00 "
+            "65 76 65 6e 74 5f 61 72 67 73 "
+            "ff ff ff ff 00 00 00 00 ff ff ff ff "
+            "04 09 00 00 00 23 35 62 64 33 31 38 62 61 "
+            "ff ff ff ff 00 00 00 00 ff ff ff ff 00 01 00"
+        )
+        record = {
+            "code": 0x0E34,
+            "kind": 0,
+            "unionTag": 0x0034,
+            "serializedMemberCount": 14,
+            "payloadStart": 0,
+        }
+        detail = decode_levelscript_record_payload(
+            payload,
+            record,
+            next_start=len(payload),
+            action_map_role="actionList#7 linked",
+        )
+
+        self.assertEqual("CallServer", levelscript_native_action_name(record))
+        self.assertEqual("server_handoff", classify_levelscript_record(record))
+        self.assertEqual("actionbase-call-server", detail["label"])
+        self.assertEqual(
+            {
+                "payloadShape": "six-call-server-fields-exact-prefix",
+                "callClientOutputUIDs": None,
+                "eventArgsPtr": {
+                    "pathValue": "event_args",
+                    "idRef": -1,
+                    "paramSource": 0,
+                    "path": None,
+                },
+                "eventName": "#5bd318ba",
+                "useCustomEvent": False,
+                "waitForCallback": True,
+                "withEventArgs": False,
+                "consumedBytes": 61,
+                "trailingBytes": 0,
+            },
+            detail["callServer"],
+        )
+
     def test_uid_parser_accepts_dont_log_and_wide_compact_member_count(self):
         compact = bytearray(30)
         compact[0] = 0x8A
