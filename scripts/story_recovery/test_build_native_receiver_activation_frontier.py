@@ -138,6 +138,7 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                     "dungeon_fixture": {
                         "id": "dungeon_fixture",
                         "bindScriptId": 1002,
+                        "dungeonMissionId": "different_mission",
                     }
                 }
             },
@@ -167,6 +168,12 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertEqual("1002", context["bindScriptId"])
         self.assertFalse(context["ownership"])
         self.assertFalse(context["storyBinding"])
+        self.assertEqual(
+            "different_mission",
+            context["dungeonMissionContext"]["missionId"],
+        )
+        self.assertFalse(context["dungeonMissionContext"]["ownership"])
+        self.assertFalse(context["dungeonMissionContext"]["playback"])
         self.assertEqual(
             "mission_fixture",
             context["associations"][0]["targetId"],
@@ -295,6 +302,12 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                             "dungeonSeriesId": "series_fixture",
                             "bindScriptId": "1002",
                             "receiverIsBoundScript": False,
+                            "dungeonMissionContext": {
+                                "missionId": "different_mission",
+                                "ownership": False,
+                                "playback": False,
+                                "finding": "mission shell only",
+                            },
                             "associations": [
                                 {
                                     "relation": (
@@ -351,6 +364,17 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         )
         self.assertFalse(
             annotation["dungeonSceneContexts"][0]["storyBinding"]
+        )
+        self.assertEqual(
+            "different_mission",
+            annotation["dungeonSceneContexts"][0][
+                "dungeonMissionContext"
+            ]["missionId"],
+        )
+        self.assertFalse(
+            annotation["dungeonSceneContexts"][0][
+                "dungeonMissionContext"
+            ]["ownership"],
         )
         self.assertEqual(
             "unrelated_quest",

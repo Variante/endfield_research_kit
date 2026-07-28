@@ -177,7 +177,7 @@ bodies, the sole direct registration path for the completion delegate is
 progress rather than executing an ActionMap or Story method. The two exact
 MissionRuntime instances of that condition target other level/script/task
 tuples, so all 31 receiver tasks have zero typed
-`CheckLevelScriptTaskFinished` consumers. Schema v6 continues to publish this
+`CheckLevelScriptTaskFinished` consumers. Schema v7 continues to publish this
 zero explicitly. Future progress on these receivers therefore requires a
 different producer/owner registry, a changed export/build, or supported runtime evidence;
 task-map proximity and completion callbacks are no longer open ownership
@@ -193,9 +193,20 @@ examples pin the boundary: `dung01_bdg003/17500000001` plays
 not that shell's bound script, while `dung02_bdg002/41100000004` plays
 `cutscene_e9m3_2` beside a first-tier boss rush unlocked by `e9m4_q#1`.
 Therefore even an exact same-scene mission/quest prerequisite cannot identify
-the Story owner, trigger, or order. Schema v6 publishes this context and the
+the Story owner, trigger, or order. Schema v7 publishes this context and the
 bound-versus-sibling distinction on the existing receiver cards and adds zero
-graph edges.
+graph edges. It adds the mission-shell field below without changing that
+boundary.
+The same typed SubGame rows expose a second, stronger boundary:
+`DungeonSubGameData.dungeonMissionId` exists for nine receiver scripts carrying
+ten Story keys, but every receiver is a sibling of the exact bound script.
+`dung_wolfgd_01` names mission `c6m3` while its sibling receivers play
+`radio_c6m1_13` / `dlg_c6m1_24`; `dung_aglina_01` names `c13m2d5` while its
+four sibling receivers play `c13m2` radios. `dung_kamiu_01` happens to name
+`c33m2`, matching its sibling Story family, but the two mismatches prove that
+name agreement cannot change the evidence class. The UI now shows all nine as
+typed dungeon mission-shell context with `no mission owner`; no coverage or
+graph edge is added.
 The installed hotfix caveat has now been closed for the same lane. The current
 Persistent `Gameplay.Beyond.patch.bytes` is 82,021 bytes
 (`737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21`)
@@ -3496,6 +3507,9 @@ Current main-story priorities:
    actual bound script and `33` are siblings. The `cutscene_e9m3_2` /
    `e9m4_q#1` mismatch proves availability cannot stand in for ownership, so
    this lane is closed as a promotion source and remains debug context only.
+   Nine of those sibling receivers also have a typed dungeon mission shell.
+   The `c6m3`/`c6m1` and `c13m2d5`/`c13m2` mismatches reject even this stronger
+   field as sibling-Story ownership; preserve it as runtime context only.
    A diagnostic level intersection with the atmospheric switcher context finds
    89 receivers / 103 Story files on 13 shared levels. Four shared levels have
    only one atmospheric route mission, but their native Story families often

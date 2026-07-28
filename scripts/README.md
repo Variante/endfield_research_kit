@@ -1942,7 +1942,7 @@ gameplay-video OCR/audio workflow.
   The report also indexes exact
   `CheckLevelScriptTaskFinished(scene, script, task)` consumers. The current
   MissionRuntime corpus has two such conditions globally, but neither matches
-  any of the `31` receiver tasks, so schema v6 publishes `0` typed task
+  any of the `31` receiver tasks, so schema v7 publishes `0` typed task
   consumers. It also finds `18` receiver scripts and `14` Story keys
   on `6` exact Dungeon/SubGame scenes, producing `40` scene-context
   placements (`7` bound-script and `33` sibling-script placements) and `31`
@@ -1950,7 +1950,12 @@ gameplay-video OCR/audio workflow.
   context only. In particular, `dung02_bdg002/41100000004` plays
   `cutscene_e9m3_2` while its first boss-rush SubGame is unlocked by
   `e9m4_q#1`, proving that a scene's unlock identity cannot be promoted to
-  Story ownership or activation.
+  Story ownership or activation. Nine receiver scripts / ten Story keys also
+  share a scene with a typed `DungeonSubGameData.dungeonMissionId`. All nine
+  are sibling scripts, not the mission shell's bound script. The mismatches
+  `c6m3` shell vs. `c6m1` Story and `c13m2d5` shell vs. `c13m2` Story prove
+  that this mission id is non-owning scene/runtime context rather than a
+  playback attachment.
   Exact level/script/task joins add
   display/tracking metadata for `13` tasks and SubGame main-task bindings for
   `10`; all ten SubGame rows have null `dungeonMissionId`. The `82` distinct

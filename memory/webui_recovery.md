@@ -458,6 +458,9 @@ Mission Pipeline:
   receiver scripts and 14 Story keys across six scenes. All 40 placements
   distinguish the seven exact bound scripts from 33 siblings, and attached
   quest/mission/prior-challenge prerequisites remain visibly non-owning.
+  Nine sibling receivers additionally show the typed dungeon mission shell;
+  mismatched shipped mission/Story families make the `no mission owner`
+  boundary visible even when another shell happens to share the Story prefix.
 - Organizes its left browser like Story: collapsible mission-type groups with
   naturally ordered mission rows. Graph dragging suppresses node selection
   after a movement threshold, and the unmodified wheel controls graph scale.
