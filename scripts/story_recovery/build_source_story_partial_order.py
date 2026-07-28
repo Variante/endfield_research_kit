@@ -45,7 +45,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v13"
+SCHEMA = "sourceStoryPartialOrder.v14"
 SPAWNER_CONFIG_ROOTS = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Data" / "Json" / "SpawnerConfig",
@@ -434,6 +434,12 @@ def _compact_option_risk(risk: dict[str, Any]) -> dict[str, Any]:
         "directContinuationOptionIds",
         "terminatingOptionIds",
         "optionIndex",
+        "optionStartTimes",
+        "optionAnchors",
+        "foreignOptionIds",
+        "timeline",
+        "finishNums",
+        "targetFinishNums",
         "candidateLineClipOptionIndex",
         "optionIndexPattern",
         "candidateLineClipOptionIndexPattern",
@@ -720,14 +726,23 @@ def collect_dialog_line_option_branches(
             })
             continue
         if risk and risk_code not in {"dialogTreeBranchConvergence"}:
+            if risk_code in {
+                "sequentialTimelineOptionPrompts",
+                "terminalTimelineOptionSlot",
+                "foreignTimelineOptionDefinitions",
+            }:
+                exclusion_reason = "closedTimelineOptionLayout"
+            elif risk_code in {
+                "sharedTimelineContinuation",
+                "defaultTimelineContinuation",
+            }:
+                exclusion_reason = "sharedOrDefaultCandidates"
+            else:
+                exclusion_reason = "inferredOrUnsupportedRisk"
             excluded.append({
                 **base,
                 "optionIds": option_ids,
-                "exclusionReason": (
-                    "sharedOrDefaultCandidates"
-                    if risk_code in {"sharedTimelineContinuation", "defaultTimelineContinuation"}
-                    else "inferredOrUnsupportedRisk"
-                ),
+                "exclusionReason": exclusion_reason,
                 "riskEvidence": _compact_option_risk(risk),
             })
             continue
@@ -2228,7 +2243,11 @@ def build_mission_partial_order(
         row
         for row in excluded_dialog_line_options
         if row.get("exclusionReason")
-        in {"sharedOrDefaultCandidates", "authoredNonLineOptionOutcomes"}
+        in {
+            "sharedOrDefaultCandidates",
+            "authoredNonLineOptionOutcomes",
+            "closedTimelineOptionLayout",
+        }
         or (
             row.get("exclusionReason") == "inferredOrUnsupportedRisk"
             and safe_key((row.get("riskEvidence") or {}).get("code"))

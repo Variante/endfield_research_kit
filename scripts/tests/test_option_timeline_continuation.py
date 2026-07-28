@@ -110,6 +110,33 @@ class OptionTimelineContinuationTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "shared")
 
+    def test_runtime_jump_paths_can_branch_before_the_first_local_line(self):
+        result = classify_runtime_jump_option_routes(
+            ["option_1", "option_2"],
+            [
+                {"pathLineIds": ["line_1", "line_2", "line_3"]},
+                {"pathLineIds": ["line_4", "line_5", "line_6"]},
+            ],
+            [
+                "line_1",
+                "line_2",
+                "line_3",
+                "line_4",
+                "line_5",
+                "line_6",
+                "shared",
+            ],
+        )
+
+        self.assertEqual(result["status"], "branched")
+        self.assertEqual(
+            result["branchLineIdsByOption"],
+            {
+                "option_1": ["line_1", "line_2", "line_3"],
+                "option_2": ["line_4", "line_5", "line_6"],
+            },
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

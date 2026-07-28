@@ -3115,6 +3115,14 @@ def build_language_bundle(
                     elif anchor.get("position") == "pre":
                         timeline_authored_option_ids.add(opt_id)
                         timeline_pre.add(opt_id)
+                        if timeline_line_ids and opt_id not in timeline_after_line_ids:
+                            timeline_after_line_ids[opt_id] = timeline_line_ids
+                            timeline_after_line_timings[opt_id] = timeline_line_timing_by_id
+                            timeline_after_runtime_jump_clips[opt_id] = (
+                                list(timeline.get("runtimeJumpClips") or [])
+                                if "runtimeJumpClips" in timeline
+                                else None
+                            )
         line_idxs: list[tuple[int, str]] = []
         valid_line_ids: set[str] = set()
         if lines:
@@ -3364,6 +3372,93 @@ def build_language_bundle(
                     "source": "siblingSceneGraphText",
                     "sources": source_bits,
                 }
+            return {}
+        def foreign_timeline_option_definition_for_group(
+            group_opt_ids: list[str],
+            sibling_text_risk: dict,
+        ) -> dict:
+            """Close local table-only options when the cinematic consumes foreign ids."""
+            if sibling_text_risk.get("code") != "siblingSceneTextBranches":
+                return {}
+            if any(opt_id in authored_option_ids for opt_id in group_opt_ids):
+                return {}
+            sibling_mapping = sibling_text_risk.get("siblingOptionIdsByOption") or {}
+            foreign_option_ids = [
+                str(sibling_mapping.get(opt_id) or "")
+                for opt_id in group_opt_ids
+            ]
+            if (
+                not all(foreign_option_ids)
+                or any(
+                    _dialog_tree_option_prefix(option_id) == conv_key
+                    for option_id in foreign_option_ids
+                )
+            ):
+                return {}
+            for finish_group in cinematic_finish_groups:
+                timeline_name = str(finish_group.get("timeline") or "")
+                finish_nums = [
+                    value
+                    for value in (finish_group.get("finishNums") or [])
+                    if isinstance(value, int) and not isinstance(value, bool)
+                ]
+                if not timeline_name or len(finish_nums) < 2:
+                    continue
+                for timeline in timeline_entries:
+                    entry_name = str(
+                        timeline.get("timeline")
+                        or timeline.get("sourceKey")
+                        or ""
+                    )
+                    if entry_name != timeline_name:
+                        continue
+                    rows_by_id = {
+                        str(row.get("id") or ""): row
+                        for row in (timeline.get("optionRows") or [])
+                        if isinstance(row, dict) and str(row.get("id") or "")
+                    }
+                    if any(opt_id in rows_by_id for opt_id in group_opt_ids):
+                        continue
+                    foreign_rows = [
+                        rows_by_id.get(option_id) or {}
+                        for option_id in foreign_option_ids
+                    ]
+                    if not all(foreign_rows):
+                        continue
+                    if not all(row.get("changeFinishNum") == 1 for row in foreign_rows):
+                        continue
+                    target_finish_nums = [
+                        row.get("targetFinishNum")
+                        for row in foreign_rows
+                    ]
+                    if set(target_finish_nums) != set(finish_nums):
+                        continue
+                    return {
+                        "code": "foreignTimelineOptionDefinitions",
+                        "reason": "cinematicConsumesForeignOptionIds",
+                        "detail": (
+                            "The local DialogTree launches this exact cinematic "
+                            "Timeline, but the Timeline consumes only sibling-scene "
+                            "option ids and maps them completely onto its authored "
+                            "finish numbers. The same-text local option rows are "
+                            "unconsumed table definitions, not missing local routes."
+                        ),
+                        "after": sibling_text_risk.get("after") or "",
+                        "optionIds": group_opt_ids,
+                        "foreignOptionIds": foreign_option_ids,
+                        "timeline": timeline_name,
+                        "finishNums": finish_nums,
+                        "targetFinishNums": target_finish_nums,
+                        "source": "dialogTimeline",
+                        "sources": _unique_preserve([
+                            str(finish_group.get("file") or ""),
+                            str(timeline.get("file") or ""),
+                            *[
+                                str(value)
+                                for value in (sibling_text_risk.get("sources") or [])
+                            ],
+                        ]),
+                    }
             return {}
         def sibling_scene_template_branch_for_group(
             group_opt_ids: list[str],
@@ -3672,15 +3767,18 @@ def build_language_bundle(
                 ),
             )
         def timeline_route_branch_for_group(group_opt_ids: list[str], after_id: str) -> dict:
-            if len(group_opt_ids) < 2 or not after_id:
+            if len(group_opt_ids) < 2:
                 return {}
             if any(
                 any(line_id in valid_line_ids for line_id in (tree_branches.get(opt_id) or []))
                 for opt_id in group_opt_ids
             ):
                 return {}
-            anchors = [timeline_after.get(opt_id) or "" for opt_id in group_opt_ids]
-            if not all(anchor == after_id for anchor in anchors):
+            if after_id:
+                anchors = [timeline_after.get(opt_id) or "" for opt_id in group_opt_ids]
+                if not all(anchor == after_id for anchor in anchors):
+                    return {}
+            elif not all(opt_id in timeline_pre for opt_id in group_opt_ids):
                 return {}
             routes = [preferred_timeline_option_route(opt_id) for opt_id in group_opt_ids]
             # A route is acceptable when either it lists per-option lines OR it
@@ -3798,39 +3896,132 @@ def build_language_bundle(
                             "commonContinuationLineId": common_trunk,
                             "source": "dialogTree",
                         }
-            if not after_id:
-                return {}
-            anchors = [timeline_after.get(opt_id) or "" for opt_id in group_opt_ids]
-            if not all(anchor == after_id for anchor in anchors):
+            preferred_rows = [preferred_timeline_option_row(opt_id) for opt_id in group_opt_ids]
+            option_indices = [
+                row.get("optionIndex") if isinstance(row.get("optionIndex"), int) else None
+                for row in preferred_rows
+            ]
+            option_starts = [
+                float(row.get("start"))
+                if isinstance(row.get("start"), (int, float))
+                else None
+                for row in preferred_rows
+            ]
+            authored_after_anchors = [
+                timeline_after.get(opt_id) or ""
+                for opt_id in group_opt_ids
+            ]
+            if (
+                all(option_index == 0 for option_index in option_indices)
+                and all(start is not None for start in option_starts)
+                and len({round(start, 6) for start in option_starts}) == len(group_opt_ids)
+                and all(authored_after_anchors)
+                and len(set(authored_after_anchors)) == len(group_opt_ids)
+            ):
+                return {
+                    "code": "sequentialTimelineOptionPrompts",
+                    "reason": "distinctZeroIndexTimelineSlots",
+                    "detail": (
+                        "These option ids share a text-table group but occur in "
+                        "distinct authored Timeline slots, each with raw "
+                        "optionIndex 0 and a different preceding line. They are "
+                        "sequential single-option prompts, not one choice fork."
+                    ),
+                    "after": after_id,
+                    "optionIds": group_opt_ids,
+                    "candidateLineIds": [],
+                    "source": "dialogTimeline",
+                    "optionIndex": option_indices,
+                    "optionStartTimes": option_starts,
+                    "optionAnchors": authored_after_anchors,
+                }
+            if after_id:
+                anchors = authored_after_anchors
+                if not all(anchor == after_id for anchor in anchors):
+                    return {}
+            elif not all(opt_id in timeline_pre for opt_id in group_opt_ids):
                 return {}
             timeline_line_ids: list[str] = []
             timeline_line_timing_by_id: dict[str, dict] = {}
             for opt_id in group_opt_ids:
                 candidate_order = timeline_after_line_ids.get(opt_id) or []
-                if after_id in candidate_order:
-                    timeline_line_ids = candidate_order
+                visible_candidate_order = [
+                    line_id
+                    for line_id in candidate_order
+                    if line_id in valid_line_ids
+                ]
+                if (
+                    (after_id and after_id in visible_candidate_order)
+                    or (not after_id and visible_candidate_order)
+                ):
+                    timeline_line_ids = visible_candidate_order
                     timeline_line_timing_by_id = timeline_after_line_timings.get(opt_id) or {}
                     break
-            if not timeline_line_ids or after_id not in timeline_line_ids:
+            if not timeline_line_ids or (after_id and after_id not in timeline_line_ids):
                 return {}
-            after_index = timeline_line_ids.index(after_id)
+            after_index = timeline_line_ids.index(after_id) if after_id else -1
             candidate_line_ids = [
                 line_id
                 for line_id in timeline_line_ids[after_index + 1 : after_index + 1 + len(group_opt_ids)]
                 if line_id in valid_line_ids
             ]
-            if len(candidate_line_ids) != len(group_opt_ids):
+            runtime_jump_clips = (
+                timeline_after_runtime_jump_clips.get(group_opt_ids[0])
+                if group_opt_ids
+                else None
+            )
+            if not candidate_line_ids:
+                positive_jumps_after_option = []
+                if isinstance(runtime_jump_clips, list) and all(
+                    start is not None for start in option_starts
+                ):
+                    option_start = min(option_starts)
+                    positive_jumps_after_option = [
+                        clip
+                        for clip in runtime_jump_clips
+                        if (
+                            isinstance(clip, dict)
+                            and isinstance(clip.get("optionIndex"), int)
+                            and clip.get("optionIndex") > 0
+                            and isinstance(clip.get("start"), (int, float))
+                            and float(clip["start"]) >= option_start - 1e-6
+                        )
+                    ]
+                if (
+                    after_id
+                    and after_index == len(timeline_line_ids) - 1
+                    and all(start is not None for start in option_starts)
+                    and len({round(start, 6) for start in option_starts}) == 1
+                    and isinstance(runtime_jump_clips, list)
+                    and not positive_jumps_after_option
+                    and not any(
+                        preferred_timeline_option_route(opt_id)
+                        for opt_id in group_opt_ids
+                    )
+                ):
+                    return {
+                        "code": "terminalTimelineOptionSlot",
+                        "reason": "afterLastLocalTimelineLine",
+                        "detail": (
+                            "The authored option slot follows the final local "
+                            "dialog line, and the decoded Timeline contains no "
+                            "later local line or positive option-index Runtime "
+                            "Jump. It has no intra-dialog line route; this does "
+                            "not claim that an external scene cannot follow."
+                        ),
+                        "after": after_id,
+                        "optionIds": group_opt_ids,
+                        "candidateLineIds": [],
+                        "source": "dialogTimeline",
+                        "optionIndex": option_indices,
+                        "optionStartTimes": option_starts,
+                    }
                 return {}
             common_continuation_id = ""
             for line_id in timeline_line_ids[after_index + 1 + len(group_opt_ids) :]:
                 if line_id in valid_line_ids:
                     common_continuation_id = line_id
                     break
-            preferred_rows = [preferred_timeline_option_row(opt_id) for opt_id in group_opt_ids]
-            option_indices = [
-                row.get("optionIndex") if isinstance(row.get("optionIndex"), int) else None
-                for row in preferred_rows
-            ]
             candidate_clip_indices = [
                 (timeline_line_timing_by_id.get(line_id) or {}).get("clipOptionIndex")
                 for line_id in candidate_line_ids
@@ -3849,11 +4040,6 @@ def build_language_bundle(
                 for row in candidate_timing_rows
                 if isinstance(row.get("start"), (int, float))
             ]
-            runtime_jump_clips = (
-                timeline_after_runtime_jump_clips.get(group_opt_ids[0])
-                if group_opt_ids
-                else None
-            )
             continuation_classification = classify_zero_index_timeline_continuation(
                 option_indices,
                 candidate_clip_indices,
@@ -3895,6 +4081,7 @@ def build_language_bundle(
                     "reason": reason,
                     "detail": detail,
                     "after": after_id,
+                    **({"position": "pre"} if not after_id else {}),
                     "optionIds": group_opt_ids,
                     "candidateLineIds": [],
                     "candidateWindowLineIds": candidate_line_ids,
@@ -4543,6 +4730,14 @@ def build_language_bundle(
                         g,
                         group_opt_ids,
                         group.get("after") or "",
+                    )
+                if sibling_text_branch.get("code") == "siblingSceneTextBranches":
+                    sibling_text_branch = (
+                        foreign_timeline_option_definition_for_group(
+                            group_opt_ids,
+                            sibling_text_branch,
+                        )
+                        or sibling_text_branch
                     )
                 sibling_branch_lines_by_option = sibling_text_branch.get("branchLineIdsByOption") or {}
                 sibling_after = str(sibling_text_branch.get("after") or "")

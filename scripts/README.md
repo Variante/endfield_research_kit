@@ -1670,9 +1670,15 @@ gameplay-video OCR/audio workflow.
   DialogTree/DialogTreeFragment paths or the exact decoded Runtime Jump Track
   signature. Runtime Jump paths are reduced to their option-exclusive prefixes;
   a choice that skips directly to the shared continuation is represented
-  explicitly instead of requiring a fabricated response line. Complete
-  authored menu, UI, loop, and terminal outcomes are retained as closed
-  non-line outcomes rather than missing line routes. Run
+  explicitly instead of requiring a fabricated response line, including
+  option slots before the first local dialog line. Zero-index Timeline trunk
+  clips remain shared even when fewer local lines than options remain.
+  Distinct zero-index Timeline slots are sequential prompts, a slot after the
+  last local line has no local line route, and same-text local table options
+  are definition-only when the exact cinematic consumes a complete foreign
+  option-id/finish-number set. Complete authored menu, UI, loop, and terminal
+  outcomes are likewise retained as closed non-line outcomes rather than
+  missing line routes. Run
   `python scripts\story_recovery\build_source_story_partial_order.py`; it
   writes `reports/mission_order/source_story_partial_order_<LANG>.json` / `.md`.
 - `story_recovery/build_source_story_order_cross_reference.py`: compares only

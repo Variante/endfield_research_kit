@@ -3844,19 +3844,30 @@ Current main-story priorities:
    from both direct DialogTree and DialogTreeFragment sources, and complete
    authored terminal/OpenUI/menu-loop outcomes are closed as non-line outcomes
    instead of being mislabeled missing line routes. The current generated
-   frontier therefore contains 366 strict groups / 763 option arms, 1,921
-   closed exclusions, and only 111 actionable multi-choice groups globally:
-   97 with no explicit route plus 14 excluded by an unresolved evidence
-   boundary. The main-story frontier fell from 154 to 21 groups. The remaining
-   14 exclusions comprise six incomplete authored non-line outcome groups, six
+   frontier now contains 367 strict groups / 765 option arms, 1,952 closed
+   exclusions, and only 79 actionable multi-choice groups globally: 66 with no
+   explicit route plus 13 excluded by an unresolved evidence boundary.
+   Pre-dialog Runtime Jump windows recover the exact `dlg_e11m3_16` split
+   (`_001.._003` versus `_004.._006`). Zero-index Timeline trunks are also
+   closed as shared continuation when only one or two local lines remain;
+   groups whose same text-table option ids occur at distinct zero-index
+   Timeline positions are sequential prompts rather than one fork; and an
+   option slot after the final local Timeline line is recorded as having no
+   intra-dialog line route without claiming that no external scene follows.
+   `dlg_e2m6_11` is a separate exact definition-only closure: its local
+   DialogTree launches `dlgtl_e2m6_11_sub_1`, but that Timeline consumes only
+   the two `dlg_e2m6_19` option ids and maps them completely to finish numbers
+   `0/1`; the same-text local option rows are not runtime consumers.
+   The main-story option frontier therefore fell from 154 to one unique group,
+   `dlg_e2m6_18` g1. That scene has only its text-table line/options: no
+   DialogTree, no matching Timeline option rows or Runtime Jump route, and no
+   other original-data consumer currently names the group. The remaining 13
+   exclusions comprise six incomplete authored non-line outcome groups, five
    sibling-scene text-branch risks, one inferred-following-lines risk, and one
-   branch whose corrected second arm lacks direct source provenance. Of the 97
-   no-route groups, 62 have neither DialogTree nor Timeline route evidence; 27
-   have Timeline option anchors but no matching authored tree node; the final
-   eight have only partial/mismatched source shapes. These rows remain visible
-   for diagnostics, while 584 single-option prompts remain separately counted
-   and do not affect recovery rank. Continue by decoding exact Timeline control
-   semantics or finding a new authored source; do not map choices from text
+   branch whose corrected second arm lacks direct source provenance. These rows
+   remain visible for diagnostics, while 584 single-option prompts remain
+   separately counted and do not affect recovery rank. Continue only with a
+   new authored source or exact runtime consumer; do not map choices from text
    sentiment, option order, sibling-scene text, or corrected identifiers alone.
 8. Keep unresolved narrative videos standalone until Timeline or another
    original-data source binding establishes placement; observed playback may
