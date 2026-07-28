@@ -783,6 +783,42 @@ script. The generated gap audit now classifies character weak-only rows as
 377 exact plus 41 non-ordering, and other rows as 623 exact plus 115
 non-ordering, with zero actionable rows in both.
 
+With the weak-only decoder queue closed, the highest-ranked remaining main
+frontier is isolated source attachment rather than another ActionBase layout.
+`e11m4` currently has 41 actionable isolated files: one cutscene, two dialogs,
+32 radios (`radio_e11m4_29` through `_55`, excluding `_56`, plus `_57`
+through `_61`), and four reading-text files, plus radios `_7` and `_8`.
+A representative exact search for `radio_e11m4_29` finds only its
+`RadioTable` definition and `AudioDialog` metadata in current structured
+tables, and no authored JsonData reference. That is not yet a complete
+definition-only negative because serialized Unity carriers and runtime name
+construction remain possible.
+
+The maintained AnimeStudio Story-carrier audit is the next bounded check, but
+its current commit marker is deliberately absent: the latest Story carrier
+refresh ran without `--animestudio-object-index`. Installed-data fingerprints
+still match the last indexed run exactly (StreamingAssets
+`20438582...e14`, Persistent `f47beb46...1cd`), while the tracked AnimeStudio
+CLI provenance changed from `14522748...037` to `617d3e58...7ad`. Therefore
+the leftover compressed index and the 2026-07-23 audit cannot be promoted as
+current evidence. That older valid audit scanned 1,335,450 object rows for
+2,691 actionable Story keys and found zero typed same-object carrier
+candidates; a direct exploratory scan of the stale index likewise finds no
+exact `radio_e11m4_29` scalar, but both results remain historical/diagnostic
+only. The next authorized offline refresh is:
+
+```bat
+.\export.bat --export-from-game --animestudio-object-index --mission-pipeline-only
+python scripts\story_recovery\build_animestudio_story_carrier_audit.py
+python scripts\story_recovery\build_source_story_gap_queue.py --language CN
+```
+
+The export must complete and publish a hash-validated `summary.json` before
+the audit result can close or nominate any isolated scene. Even a typed
+same-object candidate would still require native consumer semantics before
+mission ownership or playback is promoted, and a separate serialized control
+relation before any Story-order edge is added.
+
 The former `e6m3` top parser gap is one of those exact negatives.
 `map02_lv002/22800100007` plays `radio_e6m3_14` from a Leader-enter listener
 for trigger slot `80001`. `dlg_e6m3_13` occurs only in the separate slot
