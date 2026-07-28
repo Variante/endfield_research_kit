@@ -2247,6 +2247,8 @@ def build_mission_partial_order(
         lambda: {
             "incidentEdgeKinds": set(),
             "recordClasses": set(),
+            "sourceFiles": set(),
+            "levelIds": set(),
         }
     )
     for source_edge in scene_graph.get("edges") or []:
@@ -2285,6 +2287,16 @@ def build_mission_partial_order(
                     definition_only_nodes[key][
                         "recordClasses"
                     ].update(endpoint_classes)
+                    definition_only_nodes[key]["sourceFiles"].update(
+                        safe_key(value)
+                        for value in source_edge.get("sourceFiles") or []
+                        if safe_key(value)
+                    )
+                    definition_only_nodes[key]["levelIds"].update(
+                        safe_key(value)
+                        for value in source_edge.get("levelIds") or []
+                        if safe_key(value)
+                    )
                 else:
                     unresolved_nodes[key].add(kind)
 
@@ -2658,6 +2670,8 @@ def build_mission_partial_order(
                     evidence["incidentEdgeKinds"]
                 ),
                 "recordClasses": sorted(evidence["recordClasses"]),
+                "sourceFiles": sorted(evidence["sourceFiles"]),
+                "levelIds": sorted(evidence["levelIds"]),
             }
             for key, evidence in sorted(
                 definition_only_nodes.items(),

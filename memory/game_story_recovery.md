@@ -95,7 +95,9 @@ The source graph mirrors both classes without adding direct mission-to-Story
 ownership: playback placements pass through
 `mission_story_context` nodes with the exact shared source files and
 `orderEvidence=false`; preload-only ids become aliased
-`mission_story_definition` nodes and do not fabricate Story records.
+`mission_story_definition` nodes. They do not create indexed Story cards;
+generic source-reference placeholders may still exist because the underlying
+LevelScript literally names those ids.
 
 The original binary also resolves the misleadingly named ActionBase
 `Branch` (`0x002d/0x09`) as an ordered action list, not conditional fan-out.
@@ -2204,8 +2206,8 @@ orders.
 ## Source graph and generated audit surface
 
 The source graph is an evidence index, not runtime simulation. The current
-canonical relevant-AssetMap CN rebuild contains 2,112,698 nodes, 4,754,145
-edges, and 2,285,597 aliases; all 1,140 required original AssetMap identities
+canonical relevant-AssetMap CN rebuild contains 2,112,711 nodes, 4,754,180
+edges, and 2,285,599 aliases; all 1,140 required original AssetMap identities
 matched. Story-recovery queries include:
 
 ```bat

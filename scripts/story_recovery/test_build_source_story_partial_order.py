@@ -969,6 +969,8 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             "kind": "levelscriptSceneChain",
             "fromActionClasses": ["play_radio"],
             "toActionClasses": ["preload_cutscene"],
+            "sourceFiles": ["preload-source.json"],
+            "levelIds": ["level_preload"],
         }])
         next(
             node
@@ -990,6 +992,8 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
                 "kind": "cutscene",
                 "incidentEdgeKinds": ["levelscriptSceneChain"],
                 "recordClasses": ["preload_cutscene"],
+                "sourceFiles": ["preload-source.json"],
+                "levelIds": ["level_preload"],
             }],
         )
         self.assertEqual(

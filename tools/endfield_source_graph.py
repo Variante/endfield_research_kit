@@ -9946,14 +9946,26 @@ class SourceGraphBuilder:
                     "recordClasses": record_classes,
                     "sourceFiles": sorted({
                         safe_key(source_file)
-                        for edge in incident_edges
-                        for source_file in edge.get("sourceFiles") or []
+                        for source_file in (
+                            list(definition.get("sourceFiles") or [])
+                            + [
+                                value
+                                for edge in incident_edges
+                                for value in edge.get("sourceFiles") or []
+                            ]
+                        )
                         if safe_key(source_file)
                     }),
                     "levelIds": sorted({
                         safe_key(level_id)
-                        for edge in incident_edges
-                        for level_id in edge.get("levelIds") or []
+                        for level_id in (
+                            list(definition.get("levelIds") or [])
+                            + [
+                                value
+                                for edge in incident_edges
+                                for value in edge.get("levelIds") or []
+                            ]
+                        )
                         if safe_key(level_id)
                     }),
                     "playbackTarget": False,
