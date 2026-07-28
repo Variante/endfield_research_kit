@@ -824,6 +824,30 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
                                 }],
                             },
                         },
+                        "definitions": {
+                            "cs_video_e1m3_3": {
+                                "fmvId": "cs_video_e1m3_3",
+                                "numericIds": [18],
+                                "placementEvidence": False,
+                                "videos": [
+                                    (
+                                        "export_full/structured/"
+                                        "StreamingAssets/Data/Video/PC/"
+                                        "Narrative/Cutscene/"
+                                        "cs_video_e1m3_3.mp4"
+                                    )
+                                ],
+                                "sources": [{
+                                    "kind": "fmvConfigDefinition",
+                                    "asset": (
+                                        "export_full/recovered/"
+                                        "cs_video_e1m3_3.json"
+                                    ),
+                                    "pathId": 100,
+                                    "defaultPlayablePathId": 200,
+                                }],
+                            }
+                        },
                     },
                     indent=2,
                 ),
@@ -882,6 +906,57 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
                         "sources[0].sourceFile",
                     ),
                     source_edges,
+                )
+                definition_data = json.loads(
+                    builder.db.execute(
+                        """
+                        SELECT data
+                        FROM nodes
+                        WHERE id = 'fmv_definition:cs_video_e1m3_3'
+                        """
+                    ).fetchone()[0]
+                )
+                self.assertFalse(
+                    definition_data["placementEvidence"]
+                )
+                self.assertFalse(
+                    definition_data["hasAuthoritativeBinding"]
+                )
+                definition_edges = {
+                    (row[0], row[1])
+                    for row in builder.db.execute(
+                        """
+                        SELECT kind, dst
+                        FROM edges
+                        WHERE src =
+                            'fmv_definition:cs_video_e1m3_3'
+                        """
+                    ).fetchall()
+                }
+                self.assertIn(
+                    (
+                        "fmv_definition_resolves_video",
+                        (
+                            "video:StreamingAssets-structured/"
+                            "Data/Video/PC/Narrative/Cutscene/"
+                            "cs_video_e1m3_3.mp4"
+                        ),
+                    ),
+                    definition_edges,
+                )
+                self.assertIn(
+                    (
+                        "fmv_definition_pathid",
+                        "unity_pathid:100",
+                    ),
+                    definition_edges,
+                )
+                self.assertNotIn(
+                    (
+                        "fmv_binding_targets_story",
+                        "story:dlg_e1m3_3",
+                    ),
+                    definition_edges,
                 )
                 self.assertIn(
                     (

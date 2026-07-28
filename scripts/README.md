@@ -1083,6 +1083,15 @@ Expected active inputs and outputs:
   `f_cs_video_e9m3_1` remain diagnostics; prefix resemblance does not create a
   Story edge.
 
+  The offline video index also inventories exported FMV config definitions as
+  a separate evidence class. The current export has `72` definitions, of
+  which `59` have no authoritative Timeline, MissionRuntime, or LevelScript
+  binding. Definition records retain exact config/source PathIDs and
+  `NumIdStrTable.fmv_id` values, but always set
+  `placementEvidence=false`; they do not populate the scene/mission binding
+  indexes. Standalone video cards and the source graph may display this
+  provenance without turning it into playback, ownership, or order.
+
   SNS uses a distinct field-backed final boundary:
   `MainCharForceSNSBrain._StartSNSUI` (`0x06014493`, index `83090`, RVA
   `0x70ef8b4`) reads the exact `SNSDialogTable` dialog key from

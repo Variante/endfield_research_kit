@@ -12098,6 +12098,33 @@ def build_language_bundle(
                     {"text": f"Files: {len(refs)} exported variant(s)"},
                     {"text": attachment_text},
                 ]
+                definition = next(
+                    (
+                        ref.get("definition")
+                        for ref in refs
+                        if isinstance(ref.get("definition"), dict)
+                    ),
+                    None,
+                )
+                if isinstance(definition, dict):
+                    numeric_ids = [
+                        str(value)
+                        for value in (
+                            definition.get("numericIds") or []
+                        )
+                    ]
+                    numeric_note = (
+                        f"; fmv_id={','.join(numeric_ids)}"
+                        if numeric_ids
+                        else ""
+                    )
+                    summary_rows.append({
+                        "text": (
+                            "Definition status: exported FMV config exists"
+                            f"{numeric_note}; definition is not playback or "
+                            "mission-placement evidence."
+                        ),
+                    })
                 if text_candidates:
                     candidate_preview = " / ".join(
                         str(row.get("text") or "")
