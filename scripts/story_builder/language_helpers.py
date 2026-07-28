@@ -1221,6 +1221,10 @@ def compact_narrative_video_ref(ref: dict) -> dict:
     if isinstance(binding, dict):
         compact["binding"] = binding
         compact["_debug"]["source"]["binding"] = binding
+    definition = ref.get("definition")
+    if isinstance(definition, dict):
+        compact["definition"] = definition
+        compact["_debug"]["source"]["definition"] = definition
     if ref.get("authoritativeKeys"):
         compact["_debug"]["source"]["authoritativeKeys"] = list(ref["authoritativeKeys"])
     attachment_override = ref.get("attachmentOverride")

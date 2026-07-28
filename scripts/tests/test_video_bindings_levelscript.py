@@ -95,6 +95,36 @@ class VideoBindingsLevelScriptTests(unittest.TestCase):
             [],
         )
 
+    def test_definition_is_not_an_authoritative_binding(self) -> None:
+        definition = {
+            "fmvId": "cs_video_e1m3_3",
+            "numericIds": [18],
+            "placementEvidence": False,
+        }
+        with (
+            patch.object(
+                anime_assets,
+                "_VIDEO_BINDINGS_CACHE",
+                {},
+            ),
+            patch.object(
+                anime_assets,
+                "_VIDEO_DEFINITIONS_CACHE",
+                {"cs_video_e1m3_3": definition},
+            ),
+        ):
+            self.assertIsNone(
+                anime_assets._video_binding_for_stem(
+                    "cs_video_e1m3_3"
+                )
+            )
+            self.assertIs(
+                anime_assets._video_definition_for_stem(
+                    "cs_video_e1m3_3"
+                ),
+                definition,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

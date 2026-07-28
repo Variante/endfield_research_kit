@@ -324,6 +324,7 @@ _CUTSCENE_ASSET_CACHE: dict[str, dict] | None = None
 _CUTSCENE_SUBTITLE_TRACK_CACHE: dict[str, list[dict]] | None = None
 _NARRATIVE_VIDEO_CACHE: list[dict] | None = None
 _VIDEO_BINDINGS_CACHE: dict[str, dict] | None = None
+_VIDEO_DEFINITIONS_CACHE: dict[str, dict] | None = None
 VIDEO_BINDINGS_PATH = EXPORT_ROOT / "recovered" / "video_bindings.json"
 _DIALOG_REF_FIELDS = ("_dialogId", "snsDialogId")
 _CUTSCENE_REF_FIELDS = ("_cutsceneId",)

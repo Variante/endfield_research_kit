@@ -85,6 +85,10 @@ ASSET_MAPS = (
     ANIMESTUDIO_CLI / "StreamingAssets" / "maps" / "endfield_streamingassets_assets.json",
     ANIMESTUDIO_CLI / "Persistent" / "maps" / "endfield_persistent_assets.json",
 )
+FMV_ID_TABLES = (
+    EXPORT_ROOT / "structured" / "StreamingAssets" / "Table" / "NumIdStrTable.json",
+    EXPORT_ROOT / "structured" / "Persistent" / "Table" / "NumIdStrTable.json",
+)
 
 MRA_DIRS = (
     EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset",
@@ -271,6 +275,75 @@ def iter_fmv_tracks() -> Iterable[tuple[Path, dict[str, Any]]]:
                 yield p, payload
 
 
+def iter_fmv_definitions() -> Iterable[tuple[Path, dict[str, Any]]]:
+    """Yield authored FMV config objects without treating them as consumers."""
+    seen: set[tuple[str, int | None]] = set()
+    for mb_dir in _iter_mono_behaviour_dirs():
+        paths: list[Path] = []
+        for pattern in (
+            "cs_video_*.json",
+            "f_cs_video_*.json",
+            "m_cs_video_*.json",
+            "fmv_*.json",
+        ):
+            paths.extend(fast_glob_files(mb_dir, pattern))
+        for path in sorted(set(paths)):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+                continue
+            if not isinstance(payload, dict):
+                continue
+            fmv_id = str(payload.get("fmvId") or "").strip()
+            config = payload.get("config")
+            if not fmv_id or not isinstance(config, dict):
+                continue
+            anime = (
+                payload.get("$animestudio")
+                if isinstance(payload.get("$animestudio"), dict)
+                else {}
+            )
+            try:
+                path_id = (
+                    int(anime.get("pathId"))
+                    if anime.get("pathId") is not None
+                    else None
+                )
+            except (TypeError, ValueError):
+                path_id = None
+            identity = (fmv_id, path_id)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            yield path, payload
+
+
+def load_fmv_numeric_ids() -> dict[str, list[int]]:
+    """Load the exact NumIdStrTable `fmv_id` dictionary in both source roots."""
+    out: dict[str, set[int]] = defaultdict(set)
+    for path in FMV_ID_TABLES:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        fmv_table = payload.get("fmv_id") if isinstance(payload, dict) else None
+        values = fmv_table.get("dic") if isinstance(fmv_table, dict) else None
+        if not isinstance(values, dict):
+            continue
+        for raw_id, raw_name in values.items():
+            name = str(raw_name or "").strip()
+            try:
+                numeric_id = int(raw_id)
+            except (TypeError, ValueError):
+                continue
+            if name:
+                out[name].add(numeric_id)
+    return {
+        name: sorted(numeric_ids)
+        for name, numeric_ids in sorted(out.items())
+    }
+
+
 def walk_check_fmv_finish(node: Any) -> Iterable[str]:
     if isinstance(node, dict):
         type_tag = str(node.get("$type") or "")
@@ -435,6 +508,49 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
                 "playableAssetPathId": asset_pid_int,
             })
 
+    numeric_ids = load_fmv_numeric_ids()
+    definitions: dict[str, dict[str, Any]] = {}
+    for path, payload in iter_fmv_definitions():
+        fmv_id = str(payload.get("fmvId") or "").strip()
+        if not fmv_id:
+            continue
+        anime = (
+            payload.get("$animestudio")
+            if isinstance(payload.get("$animestudio"), dict)
+            else {}
+        )
+        config = payload.get("config") if isinstance(payload.get("config"), dict) else {}
+        default_playable = (
+            config.get("defaultPlayable")
+            if isinstance(config.get("defaultPlayable"), dict)
+            else {}
+        )
+        source = {
+            "kind": "fmvConfigDefinition",
+            "asset": rel(path),
+            "pathId": anime.get("pathId"),
+            "sourceFile": str(anime.get("sourceFile") or ""),
+            "version": str(payload.get("version") or ""),
+            "defaultPlayablePathId": default_playable.get("m_PathID"),
+        }
+        source = {
+            key: value
+            for key, value in source.items()
+            if value not in (None, "")
+        }
+        record = definitions.setdefault(
+            fmv_id,
+            {
+                "fmvId": fmv_id,
+                "numericIds": list(numeric_ids.get(fmv_id) or []),
+                "videos": [],
+                "sources": [],
+                "placementEvidence": False,
+            },
+        )
+        if source not in record["sources"]:
+            record["sources"].append(source)
+
     mission_to_fmv: dict[str, list[dict[str, Any]]] = defaultdict(list)
     fmv_to_missions: dict[str, set[str]] = defaultdict(set)
     for mra_dir in MRA_DIRS:
@@ -573,6 +689,16 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
                     candidates.append(rec_path)
         rec["videos"] = candidates
 
+    for fmv_id, rec in definitions.items():
+        _, base = strip_gender(fmv_id)
+        candidates: list[str] = []
+        for key in (fmv_id, base):
+            for video_path in by_name.get(key, []):
+                video_rel = rel(video_path)
+                if video_rel not in candidates:
+                    candidates.append(video_rel)
+        rec["videos"] = candidates
+
     for fmv_id in list(bindings.keys()):
         rec = bindings[fmv_id]
         if not rec["scene"] and rec["fallbackSceneHint"]:
@@ -627,6 +753,10 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
                 for source in record.get("sources") or []
             )
         ),
+        "fmvDefinitions": len(definitions),
+        "definitionOnlyFmvIds": sum(
+            1 for fmv_id in definitions if fmv_id not in bindings
+        ),
         "videoFiles": len(video_files),
         "videoFilesBound": len(by_video),
         "videoFilesUnbound": len(unbound_videos),
@@ -636,6 +766,7 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
         "generated": int(time.time()),
         "summary": summary,
         "bindings": dict(sorted(bindings.items())),
+        "definitions": dict(sorted(definitions.items())),
         "indexByScene": {k: sorted(set(v)) for k, v in sorted(by_scene.items())},
         "indexByMission": {k: sorted(set(v)) for k, v in sorted(by_mission.items())},
         "indexByVideo": {k: sorted(set(v)) for k, v in sorted(by_video.items())},
@@ -660,6 +791,8 @@ def render_report(payload: dict[str, Any]) -> str:
         f"- with timeline-resolved scene: `{summary.get('withTimelineScene', 0)}`",
         f"- with MissionRuntime CheckFMVFinish: `{summary.get('withMissionRuntime', 0)}`",
         f"- with LevelScript FMV action: `{summary.get('withLevelScriptFmvAction', 0)}`",
+        f"- exported FMV definitions: `{summary.get('fmvDefinitions', 0)}`",
+        f"- definition-only FMV ids: `{summary.get('definitionOnlyFmvIds', 0)}`",
         f"- video files scanned: `{summary.get('videoFiles', 0)}`",
         f"- video files bound: `{summary.get('videoFilesBound', 0)}`",
         f"- video files unbound: `{summary.get('videoFilesUnbound', 0)}`",
@@ -701,6 +834,7 @@ def main(argv: list[str] | None = None) -> int:
         f"{s['withTimelineScene']} via timeline, "
         f"{s['withMissionRuntime']} via MissionRuntime, "
         f"{s['withLevelScriptFmvAction']} via LevelScript, "
+        f"{s['fmvDefinitions']} definitions, "
         f"{s['videoFilesBound']}/{s['videoFiles']} files bound"
     )
     print(f"Wrote {args.output}")

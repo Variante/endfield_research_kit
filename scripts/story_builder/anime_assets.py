@@ -2994,6 +2994,33 @@ def _video_binding_for_stem(stem: str) -> dict | None:
     return None
 
 
+def _load_video_definitions_index() -> dict[str, dict]:
+    """Read definition-only FMV provenance without promoting it to a binding."""
+    global _VIDEO_DEFINITIONS_CACHE
+    if _VIDEO_DEFINITIONS_CACHE is not None:
+        return _VIDEO_DEFINITIONS_CACHE
+    try:
+        payload = json.loads(VIDEO_BINDINGS_PATH.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        _VIDEO_DEFINITIONS_CACHE = {}
+        return _VIDEO_DEFINITIONS_CACHE
+    definitions = payload.get("definitions") if isinstance(payload, dict) else None
+    _VIDEO_DEFINITIONS_CACHE = (
+        definitions if isinstance(definitions, dict) else {}
+    )
+    return _VIDEO_DEFINITIONS_CACHE
+
+
+def _video_definition_for_stem(stem: str) -> dict | None:
+    definitions = _load_video_definitions_index()
+    direct = definitions.get(stem)
+    if isinstance(direct, dict):
+        return direct
+    _gender, base_stem = _strip_gender_video_prefix(stem)
+    base_definition = definitions.get(base_stem)
+    return base_definition if isinstance(base_definition, dict) else None
+
+
 def _authoritative_scene_keys(kind: str, binding: dict) -> list[str]:
     """Convert a binding record into scene-key candidates suitable for index lookup.
 
@@ -3035,6 +3062,7 @@ def _load_narrative_video_assets() -> list[dict]:
                 gender, base_stem = _strip_gender_video_prefix(path.stem)
                 heuristic_candidates = _narrative_video_key_candidates(kind, path.stem)
                 binding = _video_binding_for_stem(path.stem)
+                definition = _video_definition_for_stem(path.stem)
                 authoritative_keys = _authoritative_scene_keys(kind, binding or {})
 
                 candidates: list[str] = []
@@ -3111,6 +3139,27 @@ def _load_narrative_video_assets() -> list[dict]:
                     }
                     if binding_sources:
                         ref["binding"]["evidence"] = binding_sources[:8]
+                if definition:
+                    ref["definition"] = {
+                        "fmvId": str(
+                            definition.get("fmvId") or path.stem
+                        ),
+                        "numericIds": [
+                            int(value)
+                            for value in (
+                                definition.get("numericIds") or []
+                            )
+                            if isinstance(value, int)
+                        ],
+                        "placementEvidence": False,
+                        "evidence": [
+                            source
+                            for source in (
+                                definition.get("sources") or []
+                            )
+                            if isinstance(source, dict)
+                        ][:8],
+                    }
                 if authoritative_keys:
                     ref["authoritativeKeys"] = list(authoritative_keys)
                 out.append(ref)

@@ -3969,6 +3969,23 @@ Current main-story priorities:
    `cs_video_e1m3_3`, `remotecomm_e1m2_2`, and `remotecomm_e1m2_3`. Keep these
    standalone until another original-data source establishes placement;
    observed playback may cross-check but does not promote the connection.
+   The definition-only pass closes another false lead without closing the
+   placement gap. `cs_video_e1m3_3` has an exact exported FMV config
+   (PathID `986193157330339290`, default playable PathID
+   `-2966884015788067377`, `fmv_id=18`, version `v1d3d0`). Its default
+   playable resolves to two empty Audio tracks and one empty Subtitle track,
+   so it supplies no dialog/subtitle bridge to `dlg_e1m3_3`. The complete
+   current `PlayFmvAction` plus `StartFmvAndTeleportAction` census contains no
+   consumer for it, and literal UTF-8/UTF-16 scans of `GameAssembly.dll` and
+   `global-metadata.dat` also contain none. The two `remotecomm_e1m2_{2,3}`
+   files have no exact `RemoteCommonTable`, FMV-config, LevelScript,
+   MissionRuntime, client-binary, or metadata consumer. Their video contents
+   visually resemble mission briefings, but that observation is not original
+   placement evidence. `video_bindings.json` now retains all `72` exported
+   FMV definitions separately from the `60` authoritative bindings; `59`
+   definition-only ids never create Story or mission edges. Standalone WebUI
+   cards expose this distinction, and the source graph builder mirrors it
+   through `fmv_definition` nodes with `placementEvidence=false`.
 9. The inter-mission graph is now recovered from cross-mission state
    conditions and is complete with respect to that evidence class: 153 edges,
    zero dangling targets, zero unclassified operands, and the one mission-level
