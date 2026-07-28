@@ -2139,6 +2139,16 @@ gameplay-video OCR/audio workflow.
   exact registry casing, and reports nearby table names as triage rather than
   data-flow proof. Table-fed ids, handles, concatenation, and parameters remain
   unresolved instead of being guessed.
+- `story_recovery/build_cutscene_case_resolution_audit.py`: follows the exact
+  current-build `GameAction.PlayCutsceneAndGetHandle -> CutsceneManager ->
+  GetGenderedCutsceneId -> TryGetCinematicData -> CachedPathAssetLoader ->
+  StringPathHash` chain for the Lua literal `Cutscene_e0m0_1`. It validates the
+  Lua and IFix audits, maps null open-generic slots through concrete IL2CPP
+  MethodSpecs, and writes
+  `reports/story/recovery/cutscene_case_resolution_audit.{json,md}`. The current
+  result proves case-sensitive resource lookup and permanently rejects that
+  spelling as playback evidence for lowercase `cutscene_e0m0_1` on the reviewed
+  build. Binary, metadata, or IFix fingerprint drift fails closed.
 - `story_recovery/build_skipped_vfs_block_audit.py`: summarizes an
   AnimeStudio/fluffy-dumper `vfs-index` JSON for WebUI-skipped VFS blocks such
   as Lua, ExtendData, Streaming, DynamicStreaming, and BundleManifest. It

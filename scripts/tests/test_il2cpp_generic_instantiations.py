@@ -213,6 +213,38 @@ class GenericMethodIndexTests(unittest.TestCase):
 
         self.assertEqual({}, helper.build_generic_method_index(image, md, code_reg, meta_reg))
 
+    def test_generic_body_candidates_groups_shared_entry_point(self) -> None:
+        helper = load_helper()
+        index = {
+            IMAGE_BASE + 0x2000: [
+                {"methodIndex": 7, "methodSpecIndex": 2},
+                {"methodIndex": 7, "methodSpecIndex": 3},
+            ],
+            IMAGE_BASE + 0x2100: [
+                {"methodIndex": 8, "methodSpecIndex": 4},
+            ],
+        }
+
+        rows = helper.generic_body_candidates(index, 7)
+
+        self.assertEqual(1, len(rows))
+        self.assertEqual(f"0x{IMAGE_BASE + 0x2000:x}", rows[0]["methodPointerVa"])
+        self.assertEqual([2, 3], [
+            row["methodSpecIndex"]
+            for row in rows[0]["instantiations"]
+        ])
+
+    def test_generic_body_candidates_preserves_distinct_entry_points(self) -> None:
+        helper = load_helper()
+        index = {
+            IMAGE_BASE + 0x2000: [{"methodIndex": 7, "methodSpecIndex": 2}],
+            IMAGE_BASE + 0x2100: [{"methodIndex": 7, "methodSpecIndex": 3}],
+        }
+
+        rows = helper.generic_body_candidates(index, 7)
+
+        self.assertEqual(2, len(rows))
+
 
 if __name__ == "__main__":
     unittest.main()

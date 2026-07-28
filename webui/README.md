@@ -169,8 +169,11 @@ available through expandable guidance.
   manifest renders the proven chain as quest/mission ownership, server message,
   native event, LevelScript, native action, and Story terminal steps. Unresolved
   playback keeps an explicit ownership gap, while definition-only files remain
-  visibly distinct. Every recovered serialized event occurrence renders in its
-  own causal lane with its event summary and selector fields, listening
+  visibly distinct. Build-pinned candidates rejected by native resolution remain
+  route-free and, with `Show debug info` enabled, render on the unassigned Story
+  card as recovery boundaries rather than graph edges. Every recovered
+  serialized event occurrence renders in its own causal lane with its event
+  summary and selector fields, listening
   LevelScript/header, transport boundary, and complete native action chain;
   multiple lanes are alternatives or distinct occurrences rather than an
   inferred sequence.

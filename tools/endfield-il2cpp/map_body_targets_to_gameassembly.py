@@ -388,6 +388,36 @@ def build_generic_method_index(
     return index
 
 
+def generic_body_candidates(
+    generic_index: dict[int, list[dict[str, Any]]],
+    method_index: int,
+) -> list[dict[str, Any]]:
+    """Return distinct generic entry points for one open method definition.
+
+    IL2CPP leaves some open generic method slots null in the normal codegen
+    module table even though a concrete shipped MethodSpec has an executable
+    body in ``genericMethodPointers``.  Group MethodSpecs by entry point so a
+    uniquely shared body can be decoded safely while genuinely distinct
+    instantiations remain fail-closed.
+    """
+    by_pointer: dict[int, list[dict[str, Any]]] = {}
+    for pointer, rows in generic_index.items():
+        matches = [
+            dict(row)
+            for row in rows
+            if int(row.get("methodIndex", -1)) == method_index
+        ]
+        if matches:
+            by_pointer.setdefault(pointer, []).extend(matches)
+    return [
+        {
+            "methodPointerVa": f"0x{pointer:x}",
+            "instantiations": rows,
+        }
+        for pointer, rows in sorted(by_pointer.items())
+    ]
+
+
 def decode_modrm(byte: int) -> tuple[int, int, int]:
     return (byte >> 6) & 0x3, (byte >> 3) & 0x7, byte & 0x7
 
@@ -2530,6 +2560,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     modules = parse_codegen_modules(pe, code_reg)
     ranges = image_method_ranges(md)
     pointers_by_image, method_by_pointer = build_pointer_indexes(pe, md, modules, ranges)
+    generic_index: dict[int, list[dict[str, Any]]] = {}
     generic_index_summary: dict[str, Any] = {"enabled": False}
     if getattr(args, "include_generic_instantiations", False):
         metadata_reg = (
@@ -2552,14 +2583,12 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 "genericInstantiations": len(generic_index),
                 "namedEntryPointsAdded": added,
             }
-    sorted_all_pointers = sorted(
-        {
-            pointer
-            for pointers in pointers_by_image.values()
-            for pointer in pointers
-            if pointer
-        }
-    )
+    sorted_all_pointers = sorted({
+        pointer
+        for pointers in pointers_by_image.values()
+        for pointer in pointers
+        if pointer
+    } | set(generic_index))
     catalog_target_keys = {
         (row["methodIndex"], row["type"], row["method"])
         for row in catalog.get("bodyTargets", [])
@@ -2587,6 +2616,22 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             mapped_targets.append(mapped)
             continue
         pointer = pointers[slot]
+        generic_candidates = (
+            generic_body_candidates(generic_index, int(row["methodIndex"]))
+            if not pointer and generic_index
+            else []
+        )
+        if len(generic_candidates) == 1:
+            pointer = int(generic_candidates[0]["methodPointerVa"], 16)
+            mapped["genericBodyCandidate"] = generic_candidates[0]
+            mapping_status = "mappedGenericInstantiation"
+        elif len(generic_candidates) > 1:
+            mapped["mappingStatus"] = "ambiguousGenericInstantiations"
+            mapped["genericBodyCandidates"] = generic_candidates
+            mapped_targets.append(mapped)
+            continue
+        else:
+            mapping_status = "mapped" if pointer else "nullPointer"
         file_offset, section, rva = pe.file_offset_for_va(pointer)
         scan_size, next_pointer = estimate_scan_size(pointer, sorted_all_pointers, args.max_scan_bytes)
         direct_calls, unresolved_call_count = scan_direct_calls(
@@ -2600,7 +2645,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         )
         mapped.update(
             {
-                "mappingStatus": "mapped" if pointer else "nullPointer",
+                "mappingStatus": mapping_status,
                 "methodPointerVa": f"0x{pointer:x}",
                 "methodPointerRva": f"0x{rva:x}",
                 "fileOffset": f"0x{file_offset:x}" if file_offset is not None else "",
@@ -2646,7 +2691,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "codeRegistration": code_reg_summary,
         "summary": {
             "catalogBodyTargetCount": len(catalog.get("bodyTargets", [])),
-            "mappedTargetCount": sum(1 for row in mapped_targets if row["mappingStatus"] == "mapped"),
+            "mappedTargetCount": sum(
+                1
+                for row in mapped_targets
+                if row["mappingStatus"] in {"mapped", "mappedGenericInstantiation"}
+            ),
             "codeGenModuleCount": len(modules),
             "genericInstantiationIndex": generic_index_summary,
             "resolvedDirectCallCount": sum(len(row.get("directCalls", [])) for row in mapped_targets),
@@ -3061,9 +3110,16 @@ def write_markdown(path: Path, report: dict[str, Any]) -> None:
                 f"- mapping: {row['mappingStatus']}; slot: {row.get('moduleMethodSlot', '')}",
             ]
         )
-        if row["mappingStatus"] != "mapped":
+        if row["mappingStatus"] not in {"mapped", "mappedGenericInstantiation"}:
             lines.extend(["", ""])
             continue
+        generic_body = row.get("genericBodyCandidate") or {}
+        if generic_body:
+            specs = generic_body.get("instantiations") or []
+            lines.append(
+                "- generic body: "
+                f"{len(specs)} MethodSpec row(s) share this entry point"
+            )
         lines.extend(
             [
                 f"- VA: `{row['methodPointerVa']}`; RVA: `{row['methodPointerRva']}`; file: `{row['fileOffset']}`",

@@ -2944,12 +2944,21 @@ keys that the gap queue currently lists as `actionableCoreIsolatedSceneKeys`**:
   `cutscene_e1m10_1`, owned by the gender-change phase.
 - `Phase/GenderSelect/PhaseGenderSelect.lua` holds
   `EnterCutsceneId = "Cutscene_e0m0_1"` and calls
-  `GameAction.PlayCutsceneAndGetHandle(EnterCutsceneId, ...)`. Treat this one as
-  **probable but unproven**: the capitalised form occurs **zero** times anywhere
-  in `export_full`, while `cutscene_e0m0_1` occurs exactly once, so the binding
-  holds only if cutscene id resolution is case-insensitive. That has not been
-  proved. Do not promote it until the native resolver's casing behaviour is
-  decoded.
+  `GameAction.PlayCutsceneAndGetHandle(EnterCutsceneId, ...)`. This route is now
+  **binary-proven invalid for the current build**, not merely unproven.
+  `GameAction.PlayCutsceneAndGetHandle` passes the spelling unchanged through
+  `CutsceneManager.PlayCutscene`; `CheckCanPlay` calls
+  `NarrativeUtils.GetGenderedCutsceneId` and then
+  `CinematicTimelineManagerBase.TryGetCinematicData`. The gender helper either
+  tries a gender-prefixed candidate or returns the original string; it performs
+  no case fold. `_TryLoadCutsceneDataByName` embeds that result in the resource
+  path, `CachedPathAssetLoader.TryLoad` converts the path directly through
+  `StringPathHash(string)`, and the reviewed hash path consumes the original
+  string bytes without lowercasing. The current 30-target Gameplay IFix replaces
+  none of these methods. Therefore `Cutscene_e0m0_1` does not prove playback of
+  lowercase `cutscene_e0m0_1`; keep it rejected. Reproduce with
+  `build_cutscene_case_resolution_audit.py`, whose build-fingerprint guard
+  writes `reports/story/recovery/cutscene_case_resolution_audit.{json,md}`.
 - `UI/Panels/ActivitySkipChapter1Confirm/ActivitySkipChapter1ConfirmCtrl.lua`
   subscribes `MessageConst.ON_SKIP_CHAPTER_SUCCESS` to `_OnSkipChapterSuccess`,
   which reads `Tables.skipChapterTable:TryGetValue(skipChapterConfigId)`, takes
@@ -2986,8 +2995,14 @@ with `causality=playback_owner_unresolved`, `ownerStatus=unresolved`, and
 therefore moves from **zero** trigger routes to an exact playback trigger; it
 stays owner-unresolved because the gender-change phase serializes no mission or
 quest identity. `cutscene_e0m0_1` is deliberately **not** pinned, so it still
-displays "no playback trigger recovered" — the capitalised Lua literal remains
-unproven. Both states were verified in-browser.
+displays "no playback trigger recovered" — the capitalised Lua literal is now
+known to fail the current case-sensitive native resource lookup. Mission
+Pipeline now publishes that failed literal under
+`storyTriggerManifest.cutscene_e0m0_1.rejectedPlaybackCandidates`; with
+`Show debug info` enabled, the unassigned Story card renders it as a
+binary-proven rejected candidate. Its `routes` array remains empty,
+`attachmentStatus` remains `unlinked_no_trigger_route`, and the rejection does
+not change graph, ownership, or trigger counts.
 
 The manifest's `attachmentStatus` is now route-aware, but only for **playback**
 causality. An intermediate version promoted any row with a route, which
@@ -3002,7 +3017,7 @@ corpus. `build_lua_consumer_reference_audit.py` enumerates all 72 direct
 `GameAction.*` calls across 36 methods and classifies the bounded Story playback
 surface: ten calls in four modules. Seven are generic handle dispatch in
 `CinematicSystem.lua`; one is the already-pinned exact-case
-`cutscene_e1m10_1`; one is the still-rejected case-mismatched
+`cutscene_e1m10_1`; one is the binary-rejected case-mismatched
 `Cutscene_e0m0_1`; and one is the table-fed SkipChapter `bindDlgId` route already
 documented above. No additional exact Story-id literal was recovered. The audit
 resolves only direct literals and simple string assignments; table fields,

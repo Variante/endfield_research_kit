@@ -114,9 +114,11 @@ DEFAULT_GAMEPLAY_CONFIG_ROOT = (
 # Admission rule: the Lua literal must match the Story key EXACTLY, including
 # case. `Phase/GenderSelect/PhaseGenderSelect.lua` holds
 # `EnterCutsceneId = "Cutscene_e0m0_1"` with a capital C; that spelling occurs
-# zero times anywhere in export_full while `cutscene_e0m0_1` occurs once, so the
-# binding depends on case-insensitive resolution that has NOT been proved. It is
-# deliberately excluded until the native resolver's casing behaviour is decoded.
+# zero times anywhere in export_full while `cutscene_e0m0_1` occurs once.
+# `reports/story/recovery/cutscene_case_resolution_audit.json` proves that the
+# current native chain preserves the spelling into case-sensitive
+# StringPathHash resource lookup. It is deliberately excluded as a rejected
+# playback edge, not merely held pending.
 LUA_STORY_PLAYBACK_CALL_SITES = (
     {
         "storyKey": "cutscene_e1m10_1",
@@ -128,6 +130,33 @@ LUA_STORY_PLAYBACK_CALL_SITES = (
         "note": (
             "Exact-case literal in a shipped Lua phase controller; the phase "
             "owns playback and no mission or quest identity is serialized."
+        ),
+    },
+)
+
+# Shipped-Lua literals which look like Story playback ids but fail the exact
+# current-build admission rule above. Keep these visible as recovery boundaries
+# without creating routes or changing attachment status. Each rejection must be
+# backed by a build-fingerprint-pinned audit.
+LUA_STORY_PLAYBACK_REJECTIONS = (
+    {
+        "storyKey": "cutscene_e0m0_1",
+        "luaLiteral": "Cutscene_e0m0_1",
+        "luaFile": "Lua/Data/LuaScripts/Phase/GenderSelect/PhaseGenderSelect.lua",
+        "luaSymbol": "EnterCutsceneId",
+        "luaCall": "GameAction.PlayCutsceneAndGetHandle",
+        "nativeEntry": (
+            "Beyond.Gameplay.Actions.GameAction::PlayCutsceneAndGetHandle"
+        ),
+        "reason": "case_sensitive_native_resource_lookup",
+        "confidence": "binary_proven_rejection",
+        "auditReport": (
+            "reports/story/recovery/cutscene_case_resolution_audit.json"
+        ),
+        "note": (
+            "The current native resolver preserves the capitalized Lua literal "
+            "through StringPathHash resource lookup. It therefore does not "
+            "resolve the lowercase exported Story key."
         ),
     },
 )
@@ -4171,6 +4200,11 @@ def build_story_binding_coverage(
         if key not in connected_keys and key in non_mission_content
     }
     story_trigger_manifest: dict[str, dict[str, Any]] = {}
+    rejected_playback_by_key: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for candidate in LUA_STORY_PLAYBACK_REJECTIONS:
+        rejected_playback_by_key[str(candidate["storyKey"])].append(
+            dict(candidate)
+        )
     story_files_with_trigger_routes = 0
     unlinked_files_with_trigger_routes = 0
     trigger_route_count = 0
@@ -4207,13 +4241,18 @@ def build_story_binding_coverage(
             trigger_route_count += len(routes)
             if key not in connected_keys:
                 unlinked_files_with_trigger_routes += 1
-        story_trigger_manifest[key] = {
+        manifest_row = {
             "key": key,
             "kind": story["kind"],
             "nominalMissionId": story["missionId"],
             "attachmentStatus": attachment_status,
             "routes": routes,
         }
+        if rejected_playback_by_key.get(key):
+            manifest_row["rejectedPlaybackCandidates"] = (
+                rejected_playback_by_key[key]
+            )
+        story_trigger_manifest[key] = manifest_row
     kind_counts: dict[str, dict[str, int]] = {}
     for kind in sorted(PIPELINE_STORY_KINDS):
         total = sum(1 for row in story_rows.values() if row["kind"] == kind)
@@ -4306,6 +4345,11 @@ def build_story_binding_coverage(
             "storyTriggerRoutes": trigger_route_count,
             "storyFilesWithTriggerRoutes": story_files_with_trigger_routes,
             "unlinkedStoryFilesWithTriggerRoutes": unlinked_files_with_trigger_routes,
+            "rejectedStoryPlaybackCandidates": sum(
+                len(rows)
+                for key, rows in rejected_playback_by_key.items()
+                if key in story_rows
+            ),
             "missionStateDependencyStoryFiles": len(
                 mission_state_dependency_keys
             ),

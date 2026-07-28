@@ -400,6 +400,11 @@
       triggerDependency: "dependency only",
       triggerUnresolved: "trigger known · owner unresolved",
       triggerDefinition: "definition only · no consumer",
+      rejectedPlaybackCandidate: "Rejected playback candidate",
+      rejectedPlaybackBoundary: "binary-proven boundary · no graph edge",
+      rejectedPlaybackLiteral: "Lua literal",
+      rejectedPlaybackStoryKey: "exported Story key",
+      rejectedPlaybackCaseReason: "case-sensitive native resource lookup",
       triggerQuest: "quest",
       triggerMission: "mission",
       triggerOwnershipGap: "missing mission / quest owner",
@@ -758,6 +763,11 @@
       triggerDependency: "\u4ec5\u4f9d\u8d56",
       triggerUnresolved: "\u89e6\u53d1\u5df2\u77e5 \u00b7 \u5f52\u5c5e\u672a\u89e3\u6790",
       triggerDefinition: "\u4ec5\u5b9a\u4e49 \u00b7 \u65e0\u6d88\u8d39\u8005",
+      rejectedPlaybackCandidate: "\u5df2\u62d2\u7edd\u7684\u64ad\u653e\u5019\u9009",
+      rejectedPlaybackBoundary: "\u4e8c\u8fdb\u5236\u5df2\u8bc1\u8fb9\u754c \u00b7 \u4e0d\u751f\u6210\u56fe\u8fb9",
+      rejectedPlaybackLiteral: "Lua \u5b57\u9762\u91cf",
+      rejectedPlaybackStoryKey: "\u5bfc\u51fa\u7684\u5267\u60c5\u952e",
+      rejectedPlaybackCaseReason: "\u533a\u5206\u5927\u5c0f\u5199\u7684\u539f\u751f\u8d44\u6e90\u67e5\u627e",
       triggerQuest: "\u4efb\u52a1",
       triggerMission: "\u4f7f\u547d",
       triggerOwnershipGap: "\u7f3a\u5c11\u4f7f\u547d / \u4efb\u52a1\u5f52\u5c5e",
@@ -1755,6 +1765,34 @@
     return scoped.length ? scoped : routes;
   }
 
+  function storyPlaybackRejections(row) {
+    const manifest = state.index?.storyCoverage?.storyTriggerManifest || {};
+    return (manifest[row?.key]?.rejectedPlaybackCandidates || [])
+      .filter((candidate) => candidate && candidate.storyKey === row?.key);
+  }
+
+  function playbackRejectionHtml(candidate) {
+    const reason = candidate.reason === "case_sensitive_native_resource_lookup"
+      ? t("rejectedPlaybackCaseReason")
+      : candidate.reason;
+    const provenance = [
+      candidate.luaFile,
+      candidate.luaCall,
+      candidate.auditReport,
+    ].filter(Boolean);
+    return `<div class="mp-playback-rejection" title="${esc(candidate.auditReport || "")}">
+      <header><strong>${esc(t("rejectedPlaybackCandidate"))}</strong><span>${esc(t("rejectedPlaybackBoundary"))}</span></header>
+      <div class="mp-trigger-chain">
+        <span><small>${esc(t("rejectedPlaybackLiteral"))}</small><code>${esc(candidate.luaLiteral || "?")}</code></span>
+        <i aria-hidden="true">&#8603;</i>
+        <span><small>${esc(t("rejectedPlaybackStoryKey"))}</small><code>${esc(candidate.storyKey || "?")}</code></span>
+      </div>
+      <b>${esc(reason || "")}</b>
+      ${candidate.note ? `<small>${esc(candidate.note)}</small>` : ""}
+      ${provenance.length ? `<em>${provenance.map((value) => `<code>${esc(value)}</code>`).join(" · ")}</em>` : ""}
+    </div>`;
+  }
+
   function triggerCausalityLabel(causality) {
     return t(({
       playback: "triggerPlayback",
@@ -1869,11 +1907,13 @@
   function storyConnectionLink(row, className, questId = "") {
     const details = storyConnectionDetails(row);
     const routeHtml = storyTriggerRoutes(row, questId).map(triggerRouteHtml).join("");
+    const rejectionHtml = storyPlaybackRejections(row).map(playbackRejectionHtml).join("");
     const evidence = [row.confidence, row.source || row.evidence].filter(Boolean).join(" · ");
     return `<a class="is-${className}" href="${esc(storyHref(row.key))}" title="${esc(`${t("openInStory")} · ${evidence}`)}">
       <span>${esc(storyDisplayKind(row))}</span><code>${esc(row.key)}</code><b aria-hidden="true">→</b>
       <em>${esc(details.join(" · "))}</em>${evidence ? `<small>${esc(evidence)}</small>` : ""}
       ${routeHtml}
+      ${rejectionHtml}
     </a>`;
   }
 
