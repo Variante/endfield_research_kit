@@ -1054,6 +1054,50 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(groups[0]["provenance"]["kind"], "DialogTimelineRuntimeJump")
         self.assertEqual(result["summary"]["dialogLineOptionRouteCount"], 2)
 
+    def test_pre_dialog_runtime_jump_signature_is_source_backed(self) -> None:
+        conv = {
+            "key": "dlg_m1_pre",
+            "optionGroups": [{
+                "g": 1,
+                "position": "pre",
+                "options": [
+                    {"id": "option_1", "branchLines": ["dlg_m1_pre_001"]},
+                    {"id": "option_2", "branchLines": ["dlg_m1_pre_004"]},
+                ],
+                "optionBranchRisk": {
+                    "code": "timelineRouteBranches",
+                    "reason": "runtimeJumpTrack",
+                    "source": "dialogTimeline",
+                    "branchLineIdsByOption": {
+                        "option_1": [
+                            "dlg_m1_pre_001",
+                            "dlg_m1_pre_002",
+                            "dlg_m1_pre_003",
+                        ],
+                        "option_2": [
+                            "dlg_m1_pre_004",
+                            "dlg_m1_pre_005",
+                            "dlg_m1_pre_006",
+                        ],
+                    },
+                    "assetTracks": ["Runtime Jump Track.json"],
+                },
+            }],
+        }
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"dlg_m1_pre": "dlg"},
+            mission_payload([]),
+            [("conv/dlg_m1_pre.json", conv)],
+        )
+
+        groups = result["branches"]["dialogLineOptions"]
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0]["after"], "")
+        self.assertEqual(groups[0]["provenance"]["kind"], "DialogTimelineRuntimeJump")
+        self.assertEqual(result["summary"]["dialogLineOptionRouteCount"], 2)
+
     def test_direct_dialog_tree_branch_debug_is_source_provenance(self) -> None:
         conv = {
             "key": "dlg_m1_direct",
@@ -1354,6 +1398,42 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
                     },
                 }],
             }),
+            ("conv/dlg_m1_sequential.json", {
+                "key": "dlg_m1_sequential",
+                "optionGroups": [{
+                    "g": 1,
+                    "after": "dlg_m1_sequential_001",
+                    "options": [{"id": "option_1"}, {"id": "option_2"}],
+                    "optionBranchRisk": {
+                        "code": "sequentialTimelineOptionPrompts",
+                        "reason": "distinctZeroIndexTimelineSlots",
+                    },
+                }],
+            }),
+            ("conv/dlg_m1_terminal_slot.json", {
+                "key": "dlg_m1_terminal_slot",
+                "optionGroups": [{
+                    "g": 1,
+                    "after": "dlg_m1_terminal_slot_001",
+                    "options": [{"id": "option_1"}, {"id": "option_2"}],
+                    "optionBranchRisk": {
+                        "code": "terminalTimelineOptionSlot",
+                        "reason": "afterLastLocalTimelineLine",
+                    },
+                }],
+            }),
+            ("conv/dlg_m1_foreign_options.json", {
+                "key": "dlg_m1_foreign_options",
+                "optionGroups": [{
+                    "g": 1,
+                    "after": "dlg_m1_foreign_options_001",
+                    "options": [{"id": "option_1"}, {"id": "option_2"}],
+                    "optionBranchRisk": {
+                        "code": "foreignTimelineOptionDefinitions",
+                        "reason": "cinematicConsumesForeignOptionIds",
+                    },
+                }],
+            }),
         ]
 
         result = partial_order.build_mission_partial_order(
@@ -1361,6 +1441,9 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             {
                 "dlg_m1_shared": "dlg",
                 "dlg_m1_cosmetic": "dlg",
+                "dlg_m1_sequential": "dlg",
+                "dlg_m1_terminal_slot": "dlg",
+                "dlg_m1_foreign_options": "dlg",
             },
             mission_payload([]),
             conversations,
@@ -1368,7 +1451,7 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
 
         self.assertEqual(
             result["summary"]["closedExcludedDialogLineOptionGroupCount"],
-            2,
+            5,
         )
         self.assertEqual(
             result["summary"]["actionableExcludedDialogLineOptionGroupCount"],
@@ -1376,7 +1459,7 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         )
         self.assertEqual(
             len(result["branches"]["closedExcludedDialogLineOptions"]),
-            2,
+            5,
         )
 
     def test_manual_option_evidence_is_never_promoted(self) -> None:
