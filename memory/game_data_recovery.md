@@ -916,6 +916,19 @@ admissible ownership evidence. Keep `dungeonMissionId` as typed SubGame
 mission-shell context unless the receiver itself is the bound script or a
 separate exact control edge connects the two.
 
+The remaining serialized SubGame whitelist fields are now census-closed as an
+ownership route. Across all 469 typed rows, `missionWhitelist` and
+`logicIdWhitelist` are always empty. Exactly one row,
+`f1m18d1_1`, carries a `proxyWhitelist` (three proxy ids). Those proxies resolve
+to two nonempty NpcProxyEx dialogs, `dlg_f1m18d1_4` and
+`dlg_f1m18d1_8`, and every NpcProxyEx `missionId` on the three rows is blank.
+Both dialogs already have stronger exact evidence: q4 checks completion of
+`dlg_f1m18d1_4`, while the bound LevelScript contains the native
+`dlg_f1m18d1_8` playback. The third proxy has no dialog. Whatever additional
+runtime filtering the whitelist performs, the complete shipped instance
+surface contributes zero new unlinked Story owner, quest placement, or order
+edge.
+
 The companion installed-VFS scan also closes the server-action-enum shortcut.
 Across 90,659 JsonData/Table candidates, 532 structured files were schema-
 checked for action ids 2013, 4003, 5106, and 5212. Sixteen scalar matches were
@@ -2033,6 +2046,11 @@ remain gated on the recovery work below:
    Nine sibling receivers also see a typed `dungeonMissionId`; the
    `c6m3`/`c6m1` and `c13m2d5`/`c13m2` counterexamples reject mission-shell
    inheritance.
+   The sibling `missionWhitelist`/`logicIdWhitelist` fields are empty in all
+   469 rows. The sole nonempty `proxyWhitelist` belongs to `f1m18d1_1`; its two
+   dialogs are already covered by stronger quest-condition/native-playback
+   evidence and its NpcProxyEx rows carry no mission id. Do not repeat this
+   whitelist census on the current export.
    Prioritize a different registry surface
    rather than repeating these SubGame/task/display joins.
    Do not revisit the current loading-pipeline carrier unless the installed
