@@ -502,7 +502,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(summary["activeJoinCount"], 1)
         self.assertEqual(summary["exactFinishCount"], 1)
 
-    def test_objective_recovers_submit_item_requirement_and_dialog_co_gate(self):
+    def test_objective_recovers_submit_item_requirement_and_co_gates(self):
         submit_condition = condition(
             "CheckQuestSubmitItem",
             _submissionId={"constValue": "submit_fixture"},
@@ -513,10 +513,20 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             _dialogId={"constValue": "dlg_fixture"},
             _finishId={"constValue": 1},
         )
+        level_script_condition = condition(
+            "CheckLevelScriptStageReachMax",
+            levelId={"constValue": "map_fixture"},
+            scriptId={"constValue": {"scriptId": 12345}},
+        )
+        level_script_condition["uniqueId"] = "script_condition"
         combined = condition(
             "CombineCondition",
-            conditionEvalString="{0} and {1}",
-            subConditions=[submit_condition, dialog_condition],
+            conditionEvalString="{0} and {1} and {2}",
+            subConditions=[
+                submit_condition,
+                dialog_condition,
+                level_script_condition,
+            ],
         )
         previous_cache = pipeline._SUBMIT_ITEM_ROWS_CACHE
         pipeline._SUBMIT_ITEM_ROWS_CACHE = {
@@ -557,6 +567,14 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "combineConditionId": "id_CombineCondition",
             "relation": "same_authored_and_objective",
         }])
+        self.assertEqual(row["submissionLevelScriptCoGates"], [{
+            "submissionId": "submit_fixture",
+            "levelId": "map_fixture",
+            "scriptId": "12345",
+            "conditionId": "script_condition",
+            "combineConditionId": "id_CombineCondition",
+            "relation": "same_authored_and_objective",
+        }])
 
     def test_build_all_writes_lazy_index_and_mission_payload(self):
         self.maxDiff = None
@@ -583,6 +601,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "submitItemQuests": 0,
                 "submitItemMissions": 0,
                 "submitItemDialogCoGates": 0,
+                "submitItemLevelScriptCoGates": 0,
                 "nativeRuntimeBindings": 0,
                 "nativeRuntimeBoundMissions": 0,
                 "nativeRuntimeDistinctScriptIds": 0,

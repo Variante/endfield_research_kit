@@ -163,7 +163,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # nested managed-carrier census. v12 recovers the shipped XLua pending-item
 # submitter producer. v13 adds exact authored quest-to-submission requirements
 # while keeping same-objective dialog co-gates distinct from UI ownership.
-SCHEMA_VERSION = 13
+# v14 adds exact same-objective SubmitItem + LevelScript-stage co-gates and
+# preserves their dialog playback context as non-owning evidence.
+SCHEMA_VERSION = 14
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -4614,6 +4616,8 @@ FACT_KEYS = (
     "compareTarget",
     "_sceneId",
     "sceneId",
+    "_levelId",
+    "levelId",
     "_scriptId",
     "scriptId",
     "_propertyKey",
@@ -4711,6 +4715,60 @@ def submission_dialog_co_gates(condition: Any) -> list[dict[str, Any]]:
                         "submissionId": submission_id,
                         "dialogId": dialog_id,
                         "finishId": finish_id,
+                        "combineConditionId": str(
+                            value.get("uniqueId") or ""
+                        ),
+                        "relation": "same_authored_and_objective",
+                    })
+        for child in children:
+            walk(child)
+
+    walk(condition)
+    return output
+
+
+def submission_level_script_co_gates(condition: Any) -> list[dict[str, Any]]:
+    """Find direct SubmitItem + LevelScript-stage siblings under authored AND groups."""
+    output: list[dict[str, Any]] = []
+
+    def walk(value: Any) -> None:
+        if not isinstance(value, dict):
+            return
+        children = [
+            child
+            for child in value.get("subConditions") or []
+            if isinstance(child, dict)
+        ]
+        expression = str(value.get("conditionEvalString") or "").lower()
+        if children and "and" in expression:
+            submissions: list[str] = []
+            level_scripts: list[tuple[str, str, str]] = []
+            for child in children:
+                child_type = type_name(child.get("$type"))
+                if child_type == "CheckQuestSubmitItem":
+                    submission_id = get_const(
+                        child, "_submissionId", "submissionId"
+                    )
+                    if isinstance(submission_id, str) and submission_id:
+                        submissions.append(submission_id)
+                elif child_type == "CheckLevelScriptStageReachMax":
+                    level_id = get_const(child, "_levelId", "levelId")
+                    script_id = get_const(child, "_scriptId", "scriptId")
+                    if isinstance(script_id, dict):
+                        script_id = script_id.get("scriptId")
+                    if isinstance(script_id, (str, int)) and str(script_id):
+                        level_scripts.append((
+                            str(level_id or ""),
+                            str(script_id),
+                            str(child.get("uniqueId") or ""),
+                        ))
+            for submission_id in submissions:
+                for level_id, script_id, condition_id in level_scripts:
+                    output.append({
+                        "submissionId": submission_id,
+                        "levelId": level_id,
+                        "scriptId": script_id,
+                        "conditionId": condition_id,
                         "combineConditionId": str(
                             value.get("uniqueId") or ""
                         ),
@@ -4839,6 +4897,9 @@ def objective_row(objective: dict[str, Any], index: int) -> dict[str, Any]:
         "dialogFinishes": dialog_finishes,
         "submissionChecks": submission_checks,
         "submissionDialogCoGates": submission_dialog_co_gates(condition),
+        "submissionLevelScriptCoGates": submission_level_script_co_gates(
+            condition
+        ),
         "questStateRefs": quest_state_refs,
         "levelScriptIds": sorted(level_scripts),
         "propertyKeys": sorted(properties),
@@ -4927,6 +4988,7 @@ def build_mission(
     submit_item_count = 0
     submit_item_quest_count = 0
     submit_item_dialog_co_gate_count = 0
+    submit_item_level_script_co_gate_count = 0
     annotations = (CASE_STUDIES.get(mission_id) or {}).get("nodes") or {}
 
     ordered_quests = sorted(
@@ -4957,10 +5019,18 @@ def build_mission(
             for objective in objectives
             for item in objective["submissionDialogCoGates"]
         ]
+        submission_level_script_co_gates = [
+            item
+            for objective in objectives
+            for item in objective["submissionLevelScriptCoGates"]
+        ]
         submit_item_count += len(submission_checks)
         if submission_checks:
             submit_item_quest_count += 1
         submit_item_dialog_co_gate_count += len(submission_dialog_co_gates)
+        submit_item_level_script_co_gate_count += len(
+            submission_level_script_co_gates
+        )
         exact_finish_count += sum(1 for item in dialog_finishes if isinstance(item.get("finishId"), int) and item["finishId"] >= 0)
         placeholder_condition_ids = [
             condition_id
@@ -4990,6 +5060,7 @@ def build_mission(
             "objectives": objectives,
             "submissionChecks": submission_checks,
             "submissionDialogCoGates": submission_dialog_co_gates,
+            "submissionLevelScriptCoGates": submission_level_script_co_gates,
             "serverPlaceholderKeys": [
                 {"questId": quest_id, "conditionId": condition_id}
                 for condition_id in placeholder_condition_ids
@@ -5094,6 +5165,9 @@ def build_mission(
         "submitItemConditionCount": submit_item_count,
         "submitItemQuestCount": submit_item_quest_count,
         "submitItemDialogCoGateCount": submit_item_dialog_co_gate_count,
+        "submitItemLevelScriptCoGateCount": (
+            submit_item_level_script_co_gate_count
+        ),
         "nativeRuntimeBindingCount": len(native_runtime_bindings or []),
         "activityStageHostCount": sum(
             len(node.get("activityStageHosts") or []) for node in nodes
@@ -5352,6 +5426,9 @@ def build_all(
             ),
             "submitItemDialogCoGates": sum(
                 row["submitItemDialogCoGateCount"] for row in summaries
+            ),
+            "submitItemLevelScriptCoGates": sum(
+                row["submitItemLevelScriptCoGateCount"] for row in summaries
             ),
             "nativeRuntimeBindings": subgame_registry["missionBindingCount"],
             "nativeRuntimeBoundMissions": subgame_registry["boundMissionCount"],

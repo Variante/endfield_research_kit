@@ -822,6 +822,16 @@ one undifferentiated file list:
 - spatial proximity is diagnostic only and is never promoted to a Story
   attachment.
 
+Mission Pipeline schema 14 also preserves one exact authored cross-condition
+context without changing those direction rules. `sm2l7m1_q#17` requires both
+`submit_item_sm2l7m1` and stage-max for LevelScript
+`map02_lv008/23100170008` in the same AND objective. The script's exact
+dialog-exit path already supplies the strong source edge
+`dlg_sm2l7m1_17 -> dlg_sm2l7m1_9`; a separate Leader-enter path also plays
+`dlg_sm2l7m1_9`. This proves objective co-gating and local playback context,
+not that the quest or script opens the submission UI and not that submission
+completion triggers either dialog.
+
 Mission-level Story evidence stays separate from quest attachments.
 `MissionRuntimeAsset/<mission>_meta.json` NPC accept mode (`mode = 3`, native
 `MissionAcceptMode+NPCInfo`) attaches its exact `dialogId` to the mission accept
@@ -1956,8 +1966,8 @@ orders.
 ## Source graph and generated audit surface
 
 The source graph is an evidence index, not runtime simulation. The current
-canonical relevant-AssetMap CN rebuild contains 1,860,722 nodes, 4,401,960
-edges, and 2,285,532 aliases; all 1,140 required original AssetMap identities
+canonical relevant-AssetMap CN rebuild contains 2,112,725 nodes, 4,748,203
+edges, and 2,285,546 aliases; all 1,140 required original AssetMap identities
 matched. Story-recovery queries include:
 
 ```bat
@@ -1966,13 +1976,19 @@ python tools\endfield_source_graph.py mission-flow e7m3 --limit 40
 python tools\endfield_source_graph.py scene-gaps --warning sceneOrderDisorder
 python tools\endfield_source_graph.py option-gaps --audit-only
 python tools\endfield_source_graph.py option-route-audit --conflicts
+python tools\endfield_source_graph.py query "sm2l7m1_q#17"
+python tools\endfield_source_graph.py query 23100170008
 ```
 
 The graph exposes Story/line/option reverse links, MissionRuntime actions and
 conditions, quest narrative refs, LevelScript refs and property-flow audits,
 scene-order gaps, option conflict evidence, FMV/video bindings, and comparison
-reports. These links improve explainability; they do not promote chronology by
-themselves.
+reports. It now also exposes three exact quest-to-SubmitItem requirements, two
+same-objective dialog co-gates, and one same-objective LevelScript co-gate.
+The latter has one exact dialog-exit trigger and one exact playback target;
+all 18 new bounded edge payloads retain false submission-UI ownership and
+order flags. These links improve explainability; they do not promote
+chronology by themselves.
 
 Useful generated report families:
 
@@ -3248,6 +3264,13 @@ Current main-story priorities:
    without quest substitution. Three exact MissionRuntime submission checks
    now recover quest-to-submission requirements; two have same-AND dialog
    co-gates, but those dialog ids overlap zero SubmitItem OpenUI terminals.
+   The remaining authored shape is now explicit rather than left as an
+   untyped condition-tree coincidence: `sm2l7m1_q#17` requires both the flute
+   submission and stage-max for `map02_lv008/23100170008`. That script's exact
+   dialog-exit path orders `dlg_sm2l7m1_17 -> dlg_sm2l7m1_9`, but it contains
+   no submission id or SubmitItem OpenUI action. Keep this as objective
+   co-gating plus independently proved playback context, not UI activation or
+   a new quest-to-Story playback edge.
    Do not repeat this typed traversal until the binary, metadata, authored
    MissionRuntime/DialogTree/SubmitItem data, Lua, or patch changes. The next
    useful join must be another independently typed owner or newly changed

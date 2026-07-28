@@ -3288,6 +3288,8 @@ class SourceGraphBuilder:
             self.commit_step("itemAcquisition")
             self.ingest_item_submission_semantics()
             self.commit_step("itemSubmission")
+            self.ingest_mission_pipeline_submission_context()
+            self.commit_step("missionPipelineSubmissionContext")
             self.ingest_reward_catalog_semantics()
             self.commit_step("rewardCatalog")
             self.ingest_equipment_gem_semantics()
@@ -14626,6 +14628,327 @@ class SourceGraphBuilder:
                 row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
                 self.add_edge(table_node, row_node, "has_row", source="structured/item_submission")
                 self.add_item_submission_row_edges(table, row_key, row, row_node)
+
+    def ingest_mission_pipeline_submission_context(self) -> None:
+        """Join authored quest objectives to SubmitItem and co-gated context.
+
+        Direct quest-to-submission edges mean only that the authored objective
+        requires the named SubmitItem row. Dialog and LevelScript siblings are
+        represented through explicit context nodes so they cannot be mistaken
+        for submission UI ownership or mission/Story ordering.
+        """
+        mission_root = MISSION_PIPELINE_ROOT / "missions"
+        if not mission_root.is_dir():
+            return
+        source = "webui/mission_pipeline/submission_context"
+        for mission_path in sorted(mission_root.glob("*.json")):
+            payload = read_json(mission_path, {})
+            mission_id = (
+                safe_key((payload.get("mission") or {}).get("id"))
+                or mission_path.stem
+            )
+            mission_node = self.add_node(
+                "mission",
+                mission_id,
+                name=mission_id,
+                source=source,
+            )
+            file_node = self.add_file(
+                slash(mission_path),
+                kind="mission_pipeline",
+                source=source,
+            )
+            self.add_edge(
+                file_node,
+                mission_node,
+                "mission_pipeline_defines_mission",
+                source=source,
+                evidence="mission.id",
+            )
+            direct_story_edges = (
+                (payload.get("storyOrder") or {}).get("directEdges") or []
+            )
+            for node_index, node in enumerate(payload.get("nodes") or []):
+                if not isinstance(node, dict):
+                    continue
+                quest_id = safe_key(node.get("id"))
+                objectives = node.get("objectives") or []
+                if not quest_id or not any(
+                    isinstance(objective, dict)
+                    and (
+                        objective.get("submissionChecks")
+                        or objective.get("submissionDialogCoGates")
+                        or objective.get("submissionLevelScriptCoGates")
+                    )
+                    for objective in objectives
+                ):
+                    continue
+                quest_node = self.add_quest_task_node(quest_id, source=source)
+                self.add_edge(
+                    quest_node,
+                    mission_node,
+                    "quest_task_in_mission",
+                    source=source,
+                    evidence=f"nodes[{node_index}].id",
+                )
+                for objective_index, objective in enumerate(objectives):
+                    if not isinstance(objective, dict):
+                        continue
+                    objective_number = objective.get("index") or objective_index + 1
+                    for check_index, check in enumerate(
+                        objective.get("submissionChecks") or []
+                    ):
+                        if not isinstance(check, dict):
+                            continue
+                        submission_id = safe_key(check.get("submissionId"))
+                        submit_node = self.add_submit_item_node(
+                            submission_id,
+                            source=source,
+                        )
+                        evidence = (
+                            f"nodes[{node_index}].objectives[{objective_index}]"
+                            f".submissionChecks[{check_index}]"
+                        )
+                        boundary = {
+                            "missionId": mission_id,
+                            "questId": quest_id,
+                            "objectiveIndex": objective_number,
+                            "conditionId": check.get("conditionId"),
+                            "tableDefined": check.get("tableDefined"),
+                            "requirementGroups": check.get("requirementGroups") or [],
+                            "objectiveRequirement": True,
+                            "playbackOwnership": False,
+                            "openUiOwnership": False,
+                            "orderEvidence": False,
+                        }
+                        self.add_edge(
+                            quest_node,
+                            submit_node,
+                            "quest_objective_requires_submit_item",
+                            source=source,
+                            evidence=evidence,
+                            data=boundary,
+                        )
+                        self.add_edge(
+                            submit_node,
+                            quest_node,
+                            "submit_item_required_by_quest_objective",
+                            source=source,
+                            evidence=evidence,
+                            data=boundary,
+                        )
+                    for co_gate_index, co_gate in enumerate(
+                        objective.get("submissionDialogCoGates") or []
+                    ):
+                        if not isinstance(co_gate, dict):
+                            continue
+                        submission_id = safe_key(co_gate.get("submissionId"))
+                        dialog_id = safe_key(co_gate.get("dialogId"))
+                        if not submission_id or not dialog_id:
+                            continue
+                        evidence = (
+                            f"nodes[{node_index}].objectives[{objective_index}]"
+                            f".submissionDialogCoGates[{co_gate_index}]"
+                        )
+                        boundary = {
+                            **compact_payload(co_gate, depth=2),
+                            "missionId": mission_id,
+                            "questId": quest_id,
+                            "objectiveIndex": objective_number,
+                            "playbackOwnership": False,
+                            "openUiOwnership": False,
+                            "orderEvidence": False,
+                        }
+                        context_key = (
+                            f"{quest_id}:objective:{objective_number}:"
+                            f"{submission_id}:dialog:{dialog_id}:"
+                            f"{safe_key(co_gate.get('finishId'))}"
+                        )
+                        context_node = self.add_semantic_node(
+                            "mission_submission_dialog_co_gate",
+                            context_key,
+                            source=source,
+                            data=boundary,
+                        )
+                        submit_node = self.add_submit_item_node(
+                            submission_id,
+                            source=source,
+                        )
+                        story_node = self.add_node(
+                            "story",
+                            dialog_id,
+                            name=dialog_id,
+                            source=source,
+                        )
+                        self.add_alias(
+                            dialog_id,
+                            story_node,
+                            kind="story_key",
+                            source=source,
+                        )
+                        self.add_edge(
+                            quest_node,
+                            context_node,
+                            "quest_has_submission_dialog_co_gate",
+                            source=source,
+                            evidence=evidence,
+                            data=boundary,
+                        )
+                        self.add_edge(
+                            context_node,
+                            submit_node,
+                            "submission_dialog_co_gate_tests_submit_item",
+                            source=source,
+                            evidence=evidence,
+                            data=boundary,
+                        )
+                        self.add_edge(
+                            context_node,
+                            story_node,
+                            "submission_dialog_co_gate_tests_dialog_finish",
+                            source=source,
+                            evidence=evidence,
+                            data=boundary,
+                        )
+                    for co_gate_index, co_gate in enumerate(
+                        objective.get("submissionLevelScriptCoGates") or []
+                    ):
+                        if not isinstance(co_gate, dict):
+                            continue
+                        submission_id = safe_key(co_gate.get("submissionId"))
+                        script_id = safe_key(co_gate.get("scriptId"))
+                        if not submission_id or not script_id:
+                            continue
+                        evidence = (
+                            f"nodes[{node_index}].objectives[{objective_index}]"
+                            f".submissionLevelScriptCoGates[{co_gate_index}]"
+                        )
+                        boundary = {
+                            **compact_payload(co_gate, depth=2),
+                            "missionId": mission_id,
+                            "questId": quest_id,
+                            "objectiveIndex": objective_number,
+                            "playbackOwnership": False,
+                            "openUiOwnership": False,
+                            "orderEvidence": False,
+                        }
+                        context_key = (
+                            f"{quest_id}:objective:{objective_number}:"
+                            f"{submission_id}:levelscript:{script_id}"
+                        )
+                        context_node = self.add_semantic_node(
+                            "mission_submission_level_script_co_gate",
+                            context_key,
+                            source=source,
+                            data=boundary,
+                        )
+                        submit_node = self.add_submit_item_node(
+                            submission_id,
+                            source=source,
+                        )
+                        script_node = self.add_node(
+                            "level_script",
+                            script_id,
+                            name=script_id,
+                            source=source,
+                        )
+                        self.add_alias(
+                            script_id,
+                            script_node,
+                            kind="level_script_id",
+                            source=source,
+                        )
+                        self.add_edge(
+                            quest_node,
+                            context_node,
+                            "quest_has_submission_level_script_co_gate",
+                            source=source,
+                            evidence=evidence,
+                            data=boundary,
+                        )
+                        self.add_edge(
+                            quest_node,
+                            script_node,
+                            "quest_objective_requires_level_script_stage_max",
+                            source=source,
+                            evidence=evidence,
+                            data=boundary,
+                        )
+                        self.add_edge(
+                            context_node,
+                            submit_node,
+                            "submission_level_script_co_gate_tests_submit_item",
+                            source=source,
+                            evidence=evidence,
+                            data=boundary,
+                        )
+                        self.add_edge(
+                            context_node,
+                            script_node,
+                            "submission_level_script_co_gate_tests_stage_max",
+                            source=source,
+                            evidence=evidence,
+                            data=boundary,
+                        )
+                        for story_edge_index, story_edge in enumerate(
+                            direct_story_edges
+                        ):
+                            if (
+                                not isinstance(story_edge, dict)
+                                or safe_key(story_edge.get("sourceScript"))
+                                != script_id
+                                or story_edge.get("kind")
+                                != "levelscriptDialogExit"
+                                or story_edge.get("tier") != "strong"
+                            ):
+                                continue
+                            for field, edge_kind in (
+                                (
+                                    "from",
+                                    "level_script_exact_dialog_exit_trigger",
+                                ),
+                                (
+                                    "to",
+                                    "level_script_exact_dialog_playback_target",
+                                ),
+                            ):
+                                story_id = safe_key(story_edge.get(field))
+                                if not story_id:
+                                    continue
+                                story_node = self.add_node(
+                                    "story",
+                                    story_id,
+                                    name=story_id,
+                                    source=source,
+                                )
+                                self.add_alias(
+                                    story_id,
+                                    story_node,
+                                    kind="story_key",
+                                    source=source,
+                                )
+                                story_evidence = (
+                                    f"storyOrder.directEdges[{story_edge_index}]"
+                                )
+                                story_boundary = {
+                                    **boundary,
+                                    "storyEdgeKind": story_edge.get("kind"),
+                                    "storyEdgeTier": story_edge.get("tier"),
+                                    "headerLocalId": story_edge.get(
+                                        "headerLocalId"
+                                    ),
+                                    "targetLocalId": story_edge.get(
+                                        "targetLocalId"
+                                    ),
+                                }
+                                self.add_edge(
+                                    script_node,
+                                    story_node,
+                                    edge_kind,
+                                    source=source,
+                                    evidence=story_evidence,
+                                    data=story_boundary,
+                                )
 
     def add_item_submission_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         return self.add_semantic_node(kind, key, name=name, source=source, data=data)

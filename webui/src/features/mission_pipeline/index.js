@@ -124,10 +124,13 @@
       concreteQuestIds: "concrete authored quest ids",
       missionSubmissionChecks: "mission submission checks",
       submissionDialogCoGates: "same-AND dialog co-gates",
+      submissionLevelScriptCoGates: "same-AND LevelScript co-gates",
       submitOpenUiOverlap: "SubmitItem OpenUI overlap",
       submissionRequirement: "submission requirement",
       submissionDialogCoGate: "same AND objective with dialog finish",
       submissionDialogCoGateHint: "Authored co-gate only; it does not prove this dialog opens the submission UI.",
+      submissionLevelScriptCoGate: "same AND objective with LevelScript stage max",
+      submissionLevelScriptCoGateHint: "Exact authored co-gate only. The LevelScript can provide dialog playback context, but this does not prove it opens or owns the submission UI.",
       or: "or",
       nativeDirectCallers: "native direct callers",
       runtimeObjectCandidates: "runtime/object candidates",
@@ -531,10 +534,13 @@
       concreteQuestIds: "具体原始 questId",
       missionSubmissionChecks: "任务提交物品条件",
       submissionDialogCoGates: "同一 AND 目标的对话条件",
+      submissionLevelScriptCoGates: "同一 AND 目标的关卡脚本条件",
       submitOpenUiOverlap: "提交物品 OpenUI 重叠",
       submissionRequirement: "提交物品需求",
       submissionDialogCoGate: "与对话完成条件同属 AND 目标",
       submissionDialogCoGateHint: "仅表示原始条件共同成立；不证明该对话会打开提交界面。",
+      submissionLevelScriptCoGate: "与关卡脚本阶段完成同属 AND 目标",
+      submissionLevelScriptCoGateHint: "仅表示精确的原始条件共门。关卡脚本可提供对话播放上下文，但不证明它会打开或拥有提交界面。",
       or: "或",
       nativeDirectCallers: "原生直接调用者",
       runtimeObjectCandidates: "运行时/对象候选",
@@ -2862,9 +2868,10 @@
       return `<span class="mp-finish-chip"><b>${esc(t("submissionRequirement"))}</b> · <code>${esc(row.submissionId || "")}</code>${requirements ? ` · ${esc(requirements)}` : ""}</span>`;
     }).join("");
     const submissionCoGates = (objective.submissionDialogCoGates || []).map((row) => `<span class="mp-state-chip" title="${esc(t("submissionDialogCoGateHint"))}"><b>${esc(t("submissionDialogCoGate"))}</b> · <code>${esc(row.submissionId || "")}</code> + <code>${esc(row.dialogId || "")}</code> · ${row.finishId < 0 ? esc(t("anyFinish")) : `${esc(t("finish"))} ${esc(row.finishId)}`}</span>`).join("");
+    const submissionLevelScriptCoGates = (objective.submissionLevelScriptCoGates || []).map((row) => `<span class="mp-state-chip" title="${esc(t("submissionLevelScriptCoGateHint"))}"><b>${esc(t("submissionLevelScriptCoGate"))}</b> · <code>${esc(row.submissionId || "")}</code> + <code>${esc(row.levelId || "")}/${esc(row.scriptId || "")}</code></span>`).join("");
     return `<article class="mp-objective"><header><strong>${esc(t("objectives"))} ${objective.index}</strong><span class="mp-authority is-${esc(objective.authority)}">${esc(objective.authority)}</span></header>
       <p>${esc(objective.descriptionKey || t("noObjective"))}</p>
-      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}</div>
+      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>
       ${renderConditionTree(objective.condition)}
     </article>`;
   }

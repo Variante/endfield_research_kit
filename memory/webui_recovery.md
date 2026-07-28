@@ -364,6 +364,12 @@ Mission Pipeline:
   13 SubmitItem OpenUI terminals. The three affected quest inspectors render
   their exact submission ids and `SubmitItem.json` item/count alternatives;
   co-gates are labeled as non-owning condition context.
+  Schema v14 adds the remaining exact authored submission shape:
+  `sm2l7m1_q#17` renders the same-AND
+  `submit_item_sm2l7m1 + map02_lv008/23100170008` LevelScript-stage co-gate.
+  Its tooltip explicitly separates the script's recovered dialog playback
+  context from submission UI ownership. The current corpus has exactly one
+  such co-gate across 490 missions.
   Native paths with no network exchange are separated again: BattleSignal is
   shown as local Ability-action dispatch with only signal/value identity, not
   placed into either C->S or S->C lanes.
