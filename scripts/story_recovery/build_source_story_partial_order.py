@@ -38,6 +38,9 @@ from story_builder.mission_recovery import (  # noqa: E402
     natural_key,
     scene_order_infer_kind,
 )
+from story_builder.level_bindings import (  # noqa: E402
+    build_levelscript_action_story_occurrences,
+)
 from story_builder.spawner_binary import (  # noqa: E402
     SPAWNER_WAVE_RUNTIME_MAPPING_ID,
     SpawnerWaveDecodeError,
@@ -45,7 +48,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v17"
+SCHEMA = "sourceStoryPartialOrder.v18"
 SPAWNER_CONFIG_ROOTS = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Data" / "Json" / "SpawnerConfig",
@@ -123,7 +126,15 @@ EDGE_EVIDENCE_FIELDS = (
     "spawnerDependencyPath",
     "runtimeMappingId",
     "schemaMappingId",
+    "fromActions",
+    "toActions",
+    "fromActionClasses",
+    "toActionClasses",
 )
+
+DEFINITION_ONLY_SOURCE_RECORD_CLASSES = frozenset({
+    "preload_cutscene",
+})
 
 SOURCE_STORY_NODE_KINDS = frozenset({
     "black",
@@ -142,6 +153,7 @@ SOURCE_STORY_NODE_KINDS = frozenset({
 EVIDENCE_POLICY = {
     "uses": [
         "index-backed nominal Story scene membership",
+        "cross-owner Story context only when an indexed Story card, exact typed LevelScript final-playback occurrence, and mission scene-chain source file all agree",
         "cross-owner Story context only when an exact serialized native control path strictly prefixes or extends an index-backed scene path under the same event header",
         "MissionRuntimeAsset questPrev edges backed by prevQuestIdList",
         "DialogTree authoredDirect option routes",
@@ -2196,6 +2208,9 @@ def build_mission_partial_order(
     candidate_kinds: dict[str, str],
     mission_payload: dict[str, Any] | None,
     dialog_payloads: list[tuple[str, dict[str, Any]]] | None = None,
+    exact_playback_source_keys: set[str] | None = None,
+    exact_levelscript_playback_context_keys: set[str] | None = None,
+    exact_native_control_path_context_keys: set[str] | None = None,
 ) -> dict[str, Any]:
     """Build one source-only mission partial order from generated source evidence."""
     mission_payload = mission_payload if isinstance(mission_payload, dict) else {}
@@ -2206,10 +2221,20 @@ def build_mission_partial_order(
         if isinstance(mission_payload.get("timelineRecovery"), dict)
         else {}
     )
-    candidate_kinds, native_context_scene_keys = (
-        _expand_native_control_path_candidates(flow, candidate_kinds)
-    )
+    if exact_native_control_path_context_keys is None:
+        candidate_kinds, native_context_scene_keys = (
+            _expand_native_control_path_candidates(flow, candidate_kinds)
+        )
+    else:
+        candidate_kinds = dict(candidate_kinds)
+        native_context_scene_keys = set(
+            exact_native_control_path_context_keys
+        )
     candidate_keys = set(candidate_kinds)
+    exact_playback_source_keys = exact_playback_source_keys or set()
+    exact_levelscript_playback_context_keys = (
+        exact_levelscript_playback_context_keys or set()
+    )
     graph_node_kinds = {
         safe_key(node.get("key")): safe_key(node.get("kind"))
         for node in scene_graph.get("nodes") or []
@@ -2218,6 +2243,12 @@ def build_mission_partial_order(
 
     direct_edges: list[dict[str, Any]] = []
     unresolved_nodes: dict[str, set[str]] = defaultdict(set)
+    definition_only_nodes: dict[str, dict[str, set[str]]] = defaultdict(
+        lambda: {
+            "incidentEdgeKinds": set(),
+            "recordClasses": set(),
+        }
+    )
     for source_edge in scene_graph.get("edges") or []:
         if not isinstance(source_edge, dict):
             continue
@@ -2230,11 +2261,35 @@ def build_mission_partial_order(
             continue
         if tier not in {"strong", "supported"}:
             continue
-        for key in (src, dst):
+        for endpoint, key in (("from", src), ("to", dst)):
             if key in candidate_keys or not key:
                 continue
             if graph_node_kinds.get(key) in SOURCE_STORY_NODE_KINDS:
-                unresolved_nodes[key].add(kind)
+                endpoint_classes = {
+                    safe_key(value)
+                    for value in source_edge.get(
+                        f"{endpoint}ActionClasses"
+                    ) or []
+                    if safe_key(value)
+                }
+                if (
+                    kind == "levelscriptSceneChain"
+                    and endpoint_classes
+                    and endpoint_classes
+                    <= DEFINITION_ONLY_SOURCE_RECORD_CLASSES
+                    and key not in exact_playback_source_keys
+                ):
+                    definition_only_nodes[key][
+                        "incidentEdgeKinds"
+                    ].add(kind)
+                    definition_only_nodes[key][
+                        "recordClasses"
+                    ].update(endpoint_classes)
+                else:
+                    unresolved_nodes[key].add(kind)
+
+    for key in unresolved_nodes:
+        definition_only_nodes.pop(key, None)
 
     direct_edges.extend(_native_control_path_story_edges(flow, candidate_keys))
     direct_edges.extend(_quest_state_action_path_story_edges(flow, candidate_keys))
@@ -2322,7 +2377,12 @@ def build_mission_partial_order(
             "membership": (
                 "exactNativeControlPathContext"
                 if scene_key in native_context_scene_keys
-                else "index"
+                else (
+                    "exactLevelScriptPlaybackContext"
+                    if scene_key
+                    in exact_levelscript_playback_context_keys
+                    else "index"
+                )
             ),
             "component": component_by_scene[scene_key],
             "relationStatus": status,
@@ -2502,6 +2562,8 @@ def build_mission_partial_order(
         "summary": {
             "sceneCount": len(candidate_keys),
             "nativeControlPathContextSceneCount": len(native_context_scene_keys),
+            "exactLevelScriptPlaybackContextSceneCount":
+                len(exact_levelscript_playback_context_keys),
             "directEdgeCount": len(direct_edges),
             "strongEdgeCount": tier_counts.get("strong", 0),
             "supportedEdgeCount": tier_counts.get("supported", 0),
@@ -2513,6 +2575,7 @@ def build_mission_partial_order(
             "isolatedSceneCount": len(isolated),
             "weakOnlySceneCount": len(weak_only),
             "unknownSceneCount": len(unknown),
+            "definitionOnlySourceNodeCount": len(definition_only_nodes),
             "totalScenePairs": total_pairs,
             "comparableScenePairs": comparable_pairs,
             "unorderedScenePairs": total_pairs - comparable_pairs,
@@ -2587,6 +2650,20 @@ def build_mission_partial_order(
             }
             for key, kinds in sorted(unresolved_nodes.items(), key=lambda item: natural_key(item[0]))
         ],
+        "definitionOnlySourceNodes": [
+            {
+                "key": key,
+                "kind": graph_node_kinds.get(key) or "unknown",
+                "incidentEdgeKinds": sorted(
+                    evidence["incidentEdgeKinds"]
+                ),
+                "recordClasses": sorted(evidence["recordClasses"]),
+            }
+            for key, evidence in sorted(
+                definition_only_nodes.items(),
+                key=lambda item: natural_key(item[0]),
+            )
+        ],
         "warnings": warnings,
     }
 
@@ -2598,6 +2675,55 @@ def _split_missions(values: list[str]) -> set[str]:
         for mission in str(value).split(",")
         if mission.strip()
     }
+
+
+def _expand_levelscript_playback_context_candidates(
+    candidate_kinds: dict[str, str],
+    mission_payload: dict[str, Any],
+    index_kind_by_key: dict[str, str],
+    playback_source_files_by_key: dict[str, set[str]],
+) -> tuple[dict[str, str], set[str]]:
+    """Add exact cross-owner playback cards as context, not ownership."""
+    expanded = dict(candidate_kinds)
+    context_keys: set[str] = set()
+    flow = (
+        mission_payload.get("flow")
+        if isinstance(mission_payload.get("flow"), dict)
+        else {}
+    )
+    scene_graph = (
+        flow.get("sceneGraph")
+        if isinstance(flow.get("sceneGraph"), dict)
+        else {}
+    )
+    for edge in scene_graph.get("edges") or []:
+        if (
+            not isinstance(edge, dict)
+            or safe_key(edge.get("kind")) != "levelscriptSceneChain"
+        ):
+            continue
+        edge_source_files = {
+            safe_key(value)
+            for value in edge.get("sourceFiles") or []
+            if safe_key(value)
+        }
+        if not edge_source_files:
+            continue
+        for endpoint in ("from", "to"):
+            story_key = safe_key(edge.get(endpoint))
+            if (
+                not story_key
+                or story_key in expanded
+                or story_key not in index_kind_by_key
+                or not (
+                    edge_source_files
+                    & playback_source_files_by_key.get(story_key, set())
+                )
+            ):
+                continue
+            expanded[story_key] = index_kind_by_key[story_key]
+            context_keys.add(story_key)
+    return expanded, context_keys
 
 
 def build_report(
@@ -2612,6 +2738,11 @@ def build_report(
     index_payload = read_json(index_path, {})
     index_entries = index_payload.get("entries") if isinstance(index_payload, dict) else []
     index_entries = index_entries if isinstance(index_entries, list) else []
+    index_kind_by_key = {
+        safe_key(entry.get("k")): safe_key(entry.get("d")) or "unknown"
+        for entry in index_entries
+        if isinstance(entry, dict) and safe_key(entry.get("k"))
+    }
     missions = sorted(
         {
             safe_key(entry.get("m"))
@@ -2623,6 +2754,22 @@ def build_report(
     if selected_missions:
         missions = [mission for mission in missions if mission in selected_missions]
 
+    playback_source_files_by_key: dict[str, set[str]] = defaultdict(set)
+    for story_key, occurrences in (
+        build_levelscript_action_story_occurrences().items()
+    ):
+        for occurrence in occurrences:
+            if (
+                not isinstance(occurrence, dict)
+                or not safe_key(
+                    occurrence.get("recordClass")
+                ).startswith("play_")
+            ):
+                continue
+            source_file = safe_key(occurrence.get("sourceFile"))
+            if source_file:
+                playback_source_files_by_key[story_key].add(source_file)
+    exact_playback_source_keys = set(playback_source_files_by_key)
     rows: list[dict[str, Any]] = []
     totals: Counter[str] = Counter()
     edge_kind_totals: Counter[str] = Counter()
@@ -2637,11 +2784,22 @@ def build_report(
             if isinstance(mission_payload.get("flow"), dict)
             else {}
         )
-        dialog_candidate_kinds, _native_context_scene_keys = (
-            _expand_native_control_path_candidates(mission_flow, candidate_kinds)
+        candidate_kinds, exact_native_control_path_context_keys = (
+            _expand_native_control_path_candidates(
+                mission_flow,
+                candidate_kinds,
+            )
+        )
+        candidate_kinds, exact_levelscript_playback_context_keys = (
+            _expand_levelscript_playback_context_candidates(
+                candidate_kinds,
+                mission_payload,
+                index_kind_by_key,
+                playback_source_files_by_key,
+            )
         )
         dialog_payloads: list[tuple[str, dict[str, Any]]] = []
-        for story_key in sorted(dialog_candidate_kinds, key=natural_key):
+        for story_key in sorted(candidate_kinds, key=natural_key):
             if not story_key.startswith("dlg_"):
                 continue
             conversation_path = conversation_dir / f"{story_key}.json"
@@ -2655,6 +2813,9 @@ def build_report(
             candidate_kinds,
             mission_payload,
             dialog_payloads,
+            exact_playback_source_keys,
+            exact_levelscript_playback_context_keys,
+            exact_native_control_path_context_keys,
         )
         row["missionData"] = (
             mission_path.relative_to(ROOT).as_posix() if mission_path.is_file() else ""
@@ -2665,6 +2826,9 @@ def build_report(
         totals["scenes"] += summary["sceneCount"]
         totals["nativeControlPathContextScenes"] += summary[
             "nativeControlPathContextSceneCount"
+        ]
+        totals["exactLevelScriptPlaybackContextScenes"] += summary[
+            "exactLevelScriptPlaybackContextSceneCount"
         ]
         totals["directEdges"] += summary["directEdgeCount"]
         totals["strongEdges"] += summary["strongEdgeCount"]
@@ -2677,6 +2841,9 @@ def build_report(
         totals["isolatedScenes"] += summary["isolatedSceneCount"]
         totals["weakOnlyScenes"] += summary["weakOnlySceneCount"]
         totals["unknownScenes"] += summary["unknownSceneCount"]
+        totals["definitionOnlySourceNodes"] += summary[
+            "definitionOnlySourceNodeCount"
+        ]
         totals["totalScenePairs"] += summary["totalScenePairs"]
         totals["comparableScenePairs"] += summary["comparableScenePairs"]
         totals["unorderedScenePairs"] += summary["unorderedScenePairs"]

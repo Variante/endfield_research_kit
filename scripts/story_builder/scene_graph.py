@@ -113,6 +113,28 @@ def _compact_scene_graph_sequence(
     return out
 
 
+def _compact_scene_graph_sequence_steps(
+    sequence: list[str],
+    steps: list[dict],
+    available_keys: set[str] | None = None,
+) -> tuple[list[str], list[dict]]:
+    """Keep Story nodes and their typed source steps aligned."""
+    out: list[str] = []
+    out_steps: list[dict] = []
+    for index, node_key in enumerate(sequence):
+        if not _is_story_scene_graph_key(node_key, available_keys):
+            continue
+        if out and out[-1] == node_key:
+            continue
+        out.append(node_key)
+        out_steps.append(
+            steps[index]
+            if index < len(steps) and isinstance(steps[index], dict)
+            else {}
+        )
+    return out, out_steps
+
+
 def _refine_scene_graph_order(
     node_keys: set[str],
     edges: list[dict],
