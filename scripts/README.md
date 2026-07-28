@@ -1618,6 +1618,11 @@ gameplay-video OCR/audio workflow.
   for that Story key exists anywhere in the installed corpus. Current schema
   `sourceStoryPartialOrder.v18` has zero unresolved source nodes and preserves
   two `e9m2` preload-only definitions.
+  Source-graph ingestion preserves the same boundary through explicit
+  `mission_story_context` nodes for exact playback context and
+  `mission_story_definition` nodes for preload-only references. It never emits
+  a direct mission-to-Story ownership edge for either class, and it does not
+  create a Story node for a preload-only identifier.
   Native `Branch` (`0x002d/0x09`) is distinct from conditional fan-out. Its
   runtime fields are `_idList` and `m_index`; the installed
   `GameAssembly.dll` `Branch.Execute` body reads the indexed list entry, uses

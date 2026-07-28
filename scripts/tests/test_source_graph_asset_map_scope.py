@@ -198,6 +198,41 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
                                 ],
                             }
                         ],
+                        "flow": {
+                            "sceneGraph": {
+                                "edges": [{
+                                    "from": "radio_testm1_1",
+                                    "to": "cutscene_preload_only",
+                                    "kind": "levelscriptSceneChain",
+                                    "sourceFiles": ["preload-source.json"],
+                                    "levelIds": ["level_preload"],
+                                }],
+                            },
+                        },
+                        "storyOrder": {
+                            "nodes": [{
+                                "key": "cutscene_other_owner_1",
+                                "kind": "cutscene",
+                                "membership":
+                                    "exactLevelScriptPlaybackContext",
+                                "relationStatus": "weak-only",
+                            }],
+                            "directEdges": [{
+                                "from": "radio_testm1_1",
+                                "to": "cutscene_other_owner_1",
+                                "kind": "levelscriptSceneChain",
+                                "sourceFiles": ["playback-source.json"],
+                                "levelIds": ["level_playback"],
+                            }],
+                            "definitionOnlySourceNodes": [{
+                                "key": "cutscene_preload_only",
+                                "kind": "cutscene",
+                                "incidentEdgeKinds": [
+                                    "levelscriptSceneChain",
+                                ],
+                                "recordClasses": ["preload_cutscene"],
+                            }],
+                        },
                     }
                 ),
                 encoding="utf-8",
@@ -241,6 +276,55 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
                         WHERE kind = 'quest_objective_scopes_level_script'
                         """
                     ).fetchone()
+                )
+                context_row = builder.db.execute(
+                    """
+                    SELECT data FROM edges
+                    WHERE kind =
+                        'level_script_playback_context_targets_story'
+                    """
+                ).fetchone()
+                self.assertIsNotNone(context_row)
+                context_data = json.loads(context_row[0])
+                self.assertEqual(
+                    context_data["sourceFiles"],
+                    ["playback-source.json"],
+                )
+                self.assertTrue(context_data["playbackTarget"])
+                self.assertFalse(context_data["missionOwnership"])
+                self.assertFalse(context_data["orderEvidence"])
+                self.assertIsNone(
+                    builder.db.execute(
+                        """
+                        SELECT 1 FROM edges
+                        WHERE src = 'mission:testm1'
+                          AND dst = 'story:cutscene_other_owner_1'
+                        """
+                    ).fetchone()
+                )
+                definition_row = builder.db.execute(
+                    """
+                    SELECT data FROM edges
+                    WHERE kind =
+                        'mission_has_definition_only_story_reference'
+                    """
+                ).fetchone()
+                self.assertIsNotNone(definition_row)
+                definition_data = json.loads(definition_row[0])
+                self.assertEqual(
+                    definition_data["recordClasses"],
+                    ["preload_cutscene"],
+                )
+                self.assertEqual(
+                    definition_data["sourceFiles"],
+                    ["preload-source.json"],
+                )
+                self.assertFalse(definition_data["playbackTarget"])
+                self.assertFalse(
+                    builder.node_exists(
+                        "story",
+                        "cutscene_preload_only",
+                    )
                 )
             finally:
                 builder.close()

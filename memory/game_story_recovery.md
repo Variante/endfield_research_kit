@@ -91,6 +91,11 @@ playback cards. A global exact playback occurrence overrides that closure;
 this keeps `cutscene_e2m7_010` actionable/contextual despite one separate
 preload edge. Current schema `sourceStoryPartialOrder.v18` therefore has zero
 unresolved source nodes and two definition-only preload nodes.
+The source graph mirrors both classes without adding direct mission-to-Story
+ownership: playback placements pass through
+`mission_story_context` nodes with the exact shared source files and
+`orderEvidence=false`; preload-only ids become aliased
+`mission_story_definition` nodes and do not fabricate Story records.
 
 The original binary also resolves the misleadingly named ActionBase
 `Branch` (`0x002d/0x09`) as an ordered action list, not conditional fan-out.

@@ -9803,6 +9803,188 @@ class SourceGraphBuilder:
                 source=source,
                 evidence="mission.id",
             )
+            story_order = (
+                payload.get("storyOrder")
+                if isinstance(payload.get("storyOrder"), dict)
+                else {}
+            )
+            story_order_edges = [
+                edge
+                for edge in story_order.get("directEdges") or []
+                if isinstance(edge, dict)
+            ]
+            scene_graph_edges = [
+                edge
+                for edge in (
+                    ((payload.get("flow") or {}).get("sceneGraph") or {}).get(
+                        "edges"
+                    )
+                    or []
+                )
+                if isinstance(edge, dict)
+            ]
+            for order_node_index, order_node in enumerate(
+                story_order.get("nodes") or []
+            ):
+                if (
+                    not isinstance(order_node, dict)
+                    or order_node.get("membership")
+                    != "exactLevelScriptPlaybackContext"
+                ):
+                    continue
+                story_key = safe_key(order_node.get("key"))
+                if not story_key:
+                    continue
+                incident_edges = [
+                    edge
+                    for edge in story_order_edges
+                    if story_key
+                    in {
+                        safe_key(edge.get("from")),
+                        safe_key(edge.get("to")),
+                    }
+                    and safe_key(edge.get("kind"))
+                    == "levelscriptSceneChain"
+                ]
+                boundary = {
+                    "membership": "exactLevelScriptPlaybackContext",
+                    "relationStatus": order_node.get("relationStatus"),
+                    "sourceFiles": sorted({
+                        safe_key(source_file)
+                        for edge in incident_edges
+                        for source_file in edge.get("sourceFiles") or []
+                        if safe_key(source_file)
+                    }),
+                    "levelIds": sorted({
+                        safe_key(level_id)
+                        for edge in incident_edges
+                        for level_id in edge.get("levelIds") or []
+                        if safe_key(level_id)
+                    }),
+                    "playbackTarget": True,
+                    "missionOwnership": False,
+                    "questOwnership": False,
+                    "orderEvidence": False,
+                }
+                context_node = self.add_node(
+                    "mission_story_context",
+                    (
+                        f"{mission_id}:exactLevelScriptPlaybackContext:"
+                        f"{story_key}"
+                    ),
+                    name=f"{mission_id} LevelScript playback context {story_key}",
+                    source=source,
+                    data=boundary,
+                )
+                story_node = self.add_node(
+                    "story",
+                    story_key,
+                    name=story_key,
+                    source=source,
+                )
+                evidence = (
+                    f"storyOrder.nodes[{order_node_index}].membership"
+                )
+                self.add_edge(
+                    mission_node,
+                    context_node,
+                    "mission_has_level_script_playback_context",
+                    source=source,
+                    evidence=evidence,
+                    data=boundary,
+                )
+                self.add_edge(
+                    context_node,
+                    story_node,
+                    "level_script_playback_context_targets_story",
+                    source=source,
+                    evidence=evidence,
+                    data=boundary,
+                )
+                self.add_edge(
+                    story_node,
+                    context_node,
+                    "story_has_level_script_playback_context",
+                    source=source,
+                    evidence=evidence,
+                    data=boundary,
+                )
+
+            for definition_index, definition in enumerate(
+                story_order.get("definitionOnlySourceNodes") or []
+            ):
+                if not isinstance(definition, dict):
+                    continue
+                story_key = safe_key(definition.get("key"))
+                record_classes = sorted({
+                    safe_key(value)
+                    for value in definition.get("recordClasses") or []
+                    if safe_key(value)
+                })
+                if (
+                    not story_key
+                    or not record_classes
+                    or any(
+                        record_class != "preload_cutscene"
+                        for record_class in record_classes
+                    )
+                ):
+                    continue
+                incident_edges = [
+                    edge
+                    for edge in scene_graph_edges
+                    if story_key
+                    in {
+                        safe_key(edge.get("from")),
+                        safe_key(edge.get("to")),
+                    }
+                    and safe_key(edge.get("kind"))
+                    == "levelscriptSceneChain"
+                ]
+                boundary = {
+                    "storyKey": story_key,
+                    "recordClasses": record_classes,
+                    "sourceFiles": sorted({
+                        safe_key(source_file)
+                        for edge in incident_edges
+                        for source_file in edge.get("sourceFiles") or []
+                        if safe_key(source_file)
+                    }),
+                    "levelIds": sorted({
+                        safe_key(level_id)
+                        for edge in incident_edges
+                        for level_id in edge.get("levelIds") or []
+                        if safe_key(level_id)
+                    }),
+                    "playbackTarget": False,
+                    "missionOwnership": False,
+                    "questOwnership": False,
+                    "orderEvidence": False,
+                }
+                definition_node = self.add_node(
+                    "mission_story_definition",
+                    f"{mission_id}:preload_cutscene:{story_key}",
+                    name=f"{mission_id} preload definition {story_key}",
+                    source=source,
+                    data=boundary,
+                )
+                self.add_alias(
+                    story_key,
+                    definition_node,
+                    kind="definition_only_story_ref",
+                    source=source,
+                )
+                self.add_edge(
+                    mission_node,
+                    definition_node,
+                    "mission_has_definition_only_story_reference",
+                    source=source,
+                    evidence=(
+                        "storyOrder.definitionOnlySourceNodes"
+                        f"[{definition_index}]"
+                    ),
+                    data=boundary,
+                )
             for node_index, node in enumerate(payload.get("nodes") or []):
                 if not isinstance(node, dict):
                     continue
