@@ -45,7 +45,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v16"
+SCHEMA = "sourceStoryPartialOrder.v17"
 SPAWNER_CONFIG_ROOTS = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Data" / "Json" / "SpawnerConfig",
@@ -446,6 +446,7 @@ def _compact_option_risk(risk: dict[str, Any]) -> dict[str, Any]:
         "candidateLineClipOptionIndexPattern",
         "candidateMapping",
         "assetTracks",
+        "optionNodeLayouts",
     )
     return {
         field: risk[field]
@@ -522,6 +523,7 @@ def _dialog_tree_non_line_outcomes(
                 or safe_key(raw.get("outcomeKind"))
                 or safe_key(raw.get("firstSceneKey"))
                 or _string_list(raw.get("submenuSceneKeys"))
+                or isinstance(raw.get("conditionalOutcomes"), list)
                 or isinstance(raw.get("loop"), dict)
             )
             if not has_non_line_outcome:
@@ -539,6 +541,10 @@ def _dialog_tree_non_line_outcomes(
                 "outcomeKind": safe_key(raw.get("outcomeKind")),
                 "terminal": safe_key(raw.get("terminal")),
             }
+            if isinstance(raw.get("conditionalOutcomes"), list):
+                outcome["conditionalOutcomes"] = raw[
+                    "conditionalOutcomes"
+                ]
             loop = raw.get("loop")
             if isinstance(loop, dict) and loop:
                 outcome["loop"] = loop
@@ -619,6 +625,25 @@ def collect_dialog_line_option_branches(
     story_key = safe_key(conv.get("key"))
     direct_routes = _dialog_tree_routes(conv)
     non_line_outcomes = _dialog_tree_non_line_outcomes(conv)
+    runtime_registry = (
+        (conv.get("_debug") or {}).get("runtimeRegistry")
+        if isinstance(conv.get("_debug"), dict)
+        and isinstance((conv.get("_debug") or {}).get("runtimeRegistry"), dict)
+        else {}
+    )
+    unregistered_scene = runtime_registry.get("registered") is False
+    compact_runtime_registry = {
+        key: runtime_registry[key]
+        for key in (
+            "registered",
+            "sceneKey",
+            "reason",
+            "hasSummary",
+            "summaryKey",
+            "summaryNote",
+        )
+        if runtime_registry.get(key) not in (None, "")
+    }
     allowed: list[dict[str, Any]] = []
     excluded: list[dict[str, Any]] = []
     no_route: list[dict[str, Any]] = []
@@ -760,6 +785,27 @@ def collect_dialog_line_option_branches(
             })
             continue
 
+        if (
+            unregistered_scene
+            and (
+                has_manual
+                or risk_tagged_options
+                or (
+                    risk
+                    and risk_code not in {"dialogTreeBranchConvergence"}
+                )
+            )
+        ):
+            excluded.append({
+                **base,
+                "optionIds": option_ids,
+                "exclusionReason":
+                    "unregisteredSceneWithoutAuthoredOptionConsumer",
+                "runtimeRegistry": compact_runtime_registry,
+                "retainedRiskEvidence": _compact_option_risk(risk),
+            })
+            continue
+
         if has_manual:
             excluded.append({
                 **base,
@@ -790,6 +836,11 @@ def collect_dialog_line_option_branches(
                 "foreignTimelineOptionDefinitions",
             }:
                 exclusion_reason = "closedTimelineOptionLayout"
+            elif risk_code in {
+                "separateDialogTreeOptionNodes",
+                "orphanDialogTreeOptionDefinitions",
+            }:
+                exclusion_reason = "closedDialogTreeOptionLayout"
             elif risk_code in {
                 "sharedTimelineContinuation",
                 "defaultTimelineContinuation",
@@ -865,6 +916,45 @@ def collect_dialog_line_option_branches(
                 "provenance": _compact_dialog_tree_provenance(matching_route),
             })
 
+        group_debug = (
+            group.get("_debug")
+            if isinstance(group.get("_debug"), dict)
+            else {}
+        )
+        partial_coverage = (
+            group_debug.get("partialAuthoredOptionCoverage")
+            if isinstance(
+                group_debug.get("partialAuthoredOptionCoverage"),
+                dict,
+            )
+            else {}
+        )
+        definition_only_option_ids = set(
+            _string_list(partial_coverage.get("definitionOnlyOptionIds"))
+        )
+        definition_only_failures = [
+            row
+            for row in direct_failures
+            if row.get("optionId") in definition_only_option_ids
+        ]
+        direct_failures = [
+            row
+            for row in direct_failures
+            if row.get("optionId") not in definition_only_option_ids
+        ]
+        if definition_only_failures:
+            excluded.append({
+                **base,
+                "optionIds": [
+                    row["optionId"] for row in definition_only_failures
+                ],
+                "exclusionReason": "branchLinesForDefinitionOnlyRows",
+                "definitionOnlyOptionIds": sorted(
+                    definition_only_option_ids,
+                    key=natural_key,
+                ),
+                "options": definition_only_failures,
+            })
         if direct_failures:
             excluded.append({
                 **base,
@@ -906,19 +996,6 @@ def collect_dialog_line_option_branches(
                 })
                 continue
             if covered_option_ids:
-                group_debug = (
-                    group.get("_debug")
-                    if isinstance(group.get("_debug"), dict)
-                    else {}
-                )
-                partial_coverage = (
-                    group_debug.get("partialAuthoredOptionCoverage")
-                    if isinstance(
-                        group_debug.get("partialAuthoredOptionCoverage"),
-                        dict,
-                    )
-                    else {}
-                )
                 authored_option_ids = set(
                     _string_list(partial_coverage.get("authoredOptionIds"))
                 )
@@ -966,11 +1043,25 @@ def collect_dialog_line_option_branches(
                     },
                 })
                 continue
-            no_route.append({
-                **base,
-                "options": [_compact_dialog_option(option) for option in options],
-                "reason": "noExplicitSourceRoute",
-            })
+            compact_options = [
+                _compact_dialog_option(option)
+                for option in options
+            ]
+            if unregistered_scene:
+                excluded.append({
+                    **base,
+                    "optionIds": option_ids,
+                    "options": compact_options,
+                    "exclusionReason":
+                        "unregisteredSceneWithoutAuthoredOptionConsumer",
+                    "runtimeRegistry": compact_runtime_registry,
+                })
+            else:
+                no_route.append({
+                    **base,
+                    "options": compact_options,
+                    "reason": "noExplicitSourceRoute",
+                })
 
     return {
         "dialogLineOptions": allowed,
@@ -2352,7 +2443,10 @@ def build_mission_partial_order(
             "sharedOrDefaultCandidates",
             "authoredNonLineOptionOutcomes",
             "authoredOutcomesWithDefinitionOnlyRows",
+            "branchLinesForDefinitionOnlyRows",
+            "closedDialogTreeOptionLayout",
             "closedTimelineOptionLayout",
+            "unregisteredSceneWithoutAuthoredOptionConsumer",
         }
         or (
             row.get("exclusionReason") == "inferredOrUnsupportedRisk"

@@ -1452,6 +1452,185 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(row["definitionOnlyOptionIds"], ["option_2"])
         self.assertEqual(row["coveredOptionIds"], ["option_1"])
 
+    def test_unregistered_scene_without_authored_consumer_is_closed(
+        self,
+    ) -> None:
+        conv = {
+            "key": "dlg_m1_unregistered",
+            "_debug": {
+                "runtimeRegistry": {
+                    "registered": False,
+                    "sceneKey": "dlg_m1_unregistered",
+                    "reason": "sceneKey is not present in DialogIdTable",
+                },
+            },
+            "optionGroups": [{
+                "g": 1,
+                "options": [{"id": "option_1"}, {"id": "option_2"}],
+            }],
+        }
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"dlg_m1_unregistered": "dlg"},
+            mission_payload([]),
+            [("conv/dlg_m1_unregistered.json", conv)],
+        )
+
+        self.assertEqual(result["branches"]["noExplicitRouteGroups"], [])
+        self.assertEqual(
+            result["summary"]["actionableExcludedDialogLineOptionGroupCount"],
+            0,
+        )
+        row = result["branches"]["closedExcludedDialogLineOptions"][0]
+        self.assertEqual(
+            row["exclusionReason"],
+            "unregisteredSceneWithoutAuthoredOptionConsumer",
+        )
+        self.assertFalse(row["runtimeRegistry"]["registered"])
+
+    def test_unregistered_sibling_template_risk_is_closed(self) -> None:
+        conv = {
+            "key": "dlg_m1_unregistered_risk",
+            "_debug": {
+                "runtimeRegistry": {
+                    "registered": False,
+                    "sceneKey": "dlg_m1_unregistered_risk",
+                },
+            },
+            "optionGroups": [{
+                "g": 1,
+                "options": [{"id": "option_1"}, {"id": "option_2"}],
+                "optionBranchRisk": {
+                    "code": "siblingSceneTextBranches",
+                    "reason": "siblingSceneTemplate",
+                    "source": "siblingSceneGraphText",
+                },
+            }],
+        }
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"dlg_m1_unregistered_risk": "dlg"},
+            mission_payload([]),
+            [("conv/dlg_m1_unregistered_risk.json", conv)],
+        )
+
+        row = result["branches"]["closedExcludedDialogLineOptions"][0]
+        self.assertEqual(
+            row["exclusionReason"],
+            "unregisteredSceneWithoutAuthoredOptionConsumer",
+        )
+        self.assertEqual(
+            row["retainedRiskEvidence"]["code"],
+            "siblingSceneTextBranches",
+        )
+
+    def test_definition_only_branch_lines_do_not_create_actionable_gap(
+        self,
+    ) -> None:
+        conv = {
+            "key": "dlg_m1_partial_branch",
+            "optionGroups": [{
+                "g": 1,
+                "options": [{
+                    "id": "option_1",
+                    "branchLines": ["dlg_m1_partial_branch_001"],
+                }, {
+                    "id": "option_2",
+                    "branchLines": ["dlg_m1_partial_branch_002"],
+                }],
+                "_debug": {
+                    "partialAuthoredOptionCoverage": {
+                        "authoredOptionIds": ["option_1"],
+                        "definitionOnlyOptionIds": ["option_2"],
+                    },
+                },
+            }],
+            "sceneGraphLinks": [{
+                "sourceKey": "dlg_m1_partial_branch",
+                "file": "export_full/source/DialogTree/partial.json",
+                "after": "",
+                "options": [{
+                    "optionId": "option_1",
+                    "firstLineId": "dlg_m1_partial_branch_001",
+                    "pathLineIds": ["dlg_m1_partial_branch_001"],
+                }],
+            }],
+        }
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"dlg_m1_partial_branch": "dlg"},
+            mission_payload([]),
+            [("conv/dlg_m1_partial_branch.json", conv)],
+        )
+
+        self.assertEqual(
+            len(result["branches"]["dialogLineOptions"]),
+            1,
+        )
+        self.assertEqual(
+            result["branches"]["closedExcludedDialogLineOptions"][0][
+                "exclusionReason"
+            ],
+            "branchLinesForDefinitionOnlyRows",
+        )
+        self.assertEqual(
+            result["summary"]["actionableExcludedDialogLineOptionGroupCount"],
+            0,
+        )
+
+    def test_exact_dialog_tree_option_node_layout_negatives_are_closed(
+        self,
+    ) -> None:
+        for code, reason in (
+            (
+                "separateDialogTreeOptionNodes",
+                "distinctAuthoredOptionNodes",
+            ),
+            (
+                "orphanDialogTreeOptionDefinitions",
+                "optionNodeHasNoOutgoingConnection",
+            ),
+        ):
+            with self.subTest(code=code):
+                conv = {
+                    "key": f"dlg_m1_{code}",
+                    "optionGroups": [{
+                        "g": 1,
+                        "options": [
+                            {"id": "option_1"},
+                            {"id": "option_2"},
+                        ],
+                        "optionBranchRisk": {
+                            "code": code,
+                            "reason": reason,
+                            "source": "dialogTree",
+                        },
+                    }],
+                }
+                result = partial_order.build_mission_partial_order(
+                    "m1",
+                    {conv["key"]: "dlg"},
+                    mission_payload([]),
+                    [(f"conv/{conv['key']}.json", conv)],
+                )
+
+                row = result["branches"][
+                    "closedExcludedDialogLineOptions"
+                ][0]
+                self.assertEqual(
+                    row["exclusionReason"],
+                    "closedDialogTreeOptionLayout",
+                )
+                self.assertEqual(
+                    result["summary"][
+                        "actionableExcludedDialogLineOptionGroupCount"
+                    ],
+                    0,
+                )
+
     def test_single_option_without_route_is_not_a_missing_choice_branch(self) -> None:
         conv = {
             "key": "dlg_m1_ack",

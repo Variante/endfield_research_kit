@@ -1867,6 +1867,41 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             summary["firstLineId"] = line_path[0]
         if scene_path:
             summary["firstSceneKey"] = scene_path[0]
+        conditional_outcomes: list[dict] = []
+        conditional_node_id = path[-1] if path else ""
+        conditional_targets = _unique_preserve(
+            succs.get(conditional_node_id, [])
+        )
+        if (
+            node_type(conditional_node_id) == "DialogTreeIfNode"
+            and len(conditional_targets) > 1
+        ):
+            for target_id in conditional_targets:
+                target_path = walk_linear_path(target_id)
+                target_line_ids = _unique_preserve([
+                    trunk_id
+                    for node_id in target_path
+                    if (trunk_id := node_trunk_id(node_id))
+                ])
+                target_summary: dict[str, object] = {
+                    "targetNodeId": target_id,
+                    "pathNodeIds": target_path,
+                }
+                if target_line_ids:
+                    target_summary["firstLineId"] = target_line_ids[0]
+                    target_summary["pathLineIds"] = target_line_ids
+                if target_path:
+                    end_node_id = target_path[-1]
+                    end_node_type = node_type(end_node_id)
+                    target_summary["endNodeId"] = end_node_id
+                    target_summary["endNodeType"] = end_node_type
+                    if end_node_type == "DialogTreeFinishNode":
+                        target_summary["terminal"] = "finish"
+                    elif end_node_type == "DialogTreeOpenUINode":
+                        target_summary["terminal"] = "openUi"
+                conditional_outcomes.append(target_summary)
+        if conditional_outcomes:
+            summary["conditionalOutcomes"] = conditional_outcomes
         if path:
             last_id = path[-1]
             last_type = node_type(last_id)
@@ -2042,6 +2077,8 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
                 outcome_kind = "crossSceneTerminal"
             else:
                 outcome_kind = "terminalOnly"
+        elif summary.get("conditionalOutcomes"):
+            outcome_kind = "authoredConditionalBranch"
         elif same_scene_path:
             outcome_kind = "sameScenePath"
         elif scene_keys:
@@ -2219,6 +2256,8 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
                 if summary.get("loop"):
                     has_interesting_target = True
                 if summary.get("terminal"):
+                    has_interesting_target = True
+                if summary.get("conditionalOutcomes"):
                     has_interesting_target = True
                 if summary.get("firstSceneKey") and summary.get("firstSceneKey") != target_key:
                     has_interesting_target = True
@@ -2576,6 +2615,7 @@ def load_dialog_tree(conv_key: str) -> dict | None:
         "lineIds": [],
         "sources": [],
         "cinematicFinishGroups": [],
+        "optionNodeLayouts": {},
     }
     tree_sources: list[dict] = []
     if meta := _load_dialog_tree_file(conv_key):
@@ -2606,6 +2646,49 @@ def load_dialog_tree(conv_key: str) -> dict | None:
             if line_id and line_id not in seen_line_ids:
                 seen_line_ids.add(line_id)
                 combined["lineIds"].append(line_id)
+        line_graph = (
+            meta.get("lineGraph")
+            if isinstance(meta.get("lineGraph"), dict)
+            else {}
+        )
+        outgoing_by_node: dict[str, list[str]] = defaultdict(list)
+        incoming_by_node: dict[str, list[str]] = defaultdict(list)
+        for edge in line_graph.get("edges") or []:
+            if not isinstance(edge, dict):
+                continue
+            source_node_id = str(edge.get("from") or "")
+            target_node_id = str(edge.get("to") or "")
+            if source_node_id and target_node_id:
+                outgoing_by_node[source_node_id].append(target_node_id)
+                incoming_by_node[target_node_id].append(source_node_id)
+        for node in line_graph.get("nodes") or []:
+            if (
+                not isinstance(node, dict)
+                or node.get("type") != "DialogTreeOptionNode"
+            ):
+                continue
+            node_id = str(node.get("id") or "")
+            for option_id in node.get("optionIds") or []:
+                option_id = str(option_id or "")
+                if not option_id:
+                    continue
+                layout = {
+                    "sourceKey": source_key,
+                    "file": meta.get("file") or "",
+                    "nodeId": node_id,
+                    "outgoingNodeIds": _unique_preserve(
+                        outgoing_by_node.get(node_id, [])
+                    ),
+                    "incomingNodeIds": _unique_preserve(
+                        incoming_by_node.get(node_id, [])
+                    ),
+                }
+                bucket = combined["optionNodeLayouts"].setdefault(
+                    option_id,
+                    [],
+                )
+                if layout not in bucket:
+                    bucket.append(layout)
         for opt_id, after in (meta.get("after") or {}).items():
             combined["after"].setdefault(opt_id, after)
             if source_label:
@@ -2651,7 +2734,14 @@ def load_dialog_tree(conv_key: str) -> dict | None:
             combined["cinematicFinishGroups"].append(finish_group)
 
     _DIALOG_TREE_CACHE[conv_key] = combined if any(
-        combined[key] for key in ("after", "branches", "merge", "converge")
+        combined[key]
+        for key in (
+            "after",
+            "branches",
+            "merge",
+            "converge",
+            "optionNodeLayouts",
+        )
     ) or combined["pre"] or combined["lineIds"] or combined["cinematicFinishGroups"] else None
     return _DIALOG_TREE_CACHE[conv_key]
 
@@ -3420,6 +3510,8 @@ def build_dialog_tree_scene_link_payload(conv_key: str) -> list[dict]:
             for key in ("pathLineIds", "sceneKeys", "submenuSceneKeys"):
                 if opt.get(key):
                     entry[key] = opt[key]
+            if opt.get("conditionalOutcomes"):
+                entry["conditionalOutcomes"] = opt["conditionalOutcomes"]
             if opt.get("outcomeKind"):
                 entry["outcomeKind"] = opt["outcomeKind"]
             if opt.get("loop"):
