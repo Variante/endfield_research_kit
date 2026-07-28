@@ -303,6 +303,7 @@ that index, run:
 ```bat
 python scripts\story_recovery\build_animestudio_story_carrier_audit.py
 python scripts\story_recovery\build_animestudio_story_gameobject_audit.py
+python scripts\story_recovery\build_animestudio_story_guide_consumer_audit.py
 ```
 
 The carrier audit reads the current source-gap queue and reports only exact
@@ -331,6 +332,20 @@ mission/runtime sibling is still only a candidate until native consumer
 semantics prove playback or ownership; it never supplies order by itself.
 Pass `--game-root PATH` or set `ENDFIELD_GAME_ROOT` when the installed
 `Endfield_Data` root is not at the repository default.
+
+The guide-consumer audit scans the same current, source-fingerprint-validated
+merged index for exact typed `GuideRuntimeAsset` managed references. It accepts
+only `FacSetInteractLockedState` actions that serialize `radioId` and a factory
+instance key in the same action, live in a `guide_blackbox_*` asset, and
+co-carry no mission, quest, scene, or script owner. The current native
+`Execute` mapping is hash-gated and proves that the locked branch passes
+`instKey` and `radioId` to `RemoteFactoryInteract.LockBuildingInteract`.
+Its compact report feeds the source-gap queue and Mission Pipeline only while
+the report, object-index stage signature, latest export source fingerprint,
+and native mapping all agree. `export.bat --export-from-game
+--animestudio-object-index` refreshes this audit automatically. The
+classification removes known factory tutorial content from mission recovery;
+it never adds mission ownership or Story order.
 
 When MonoBehaviour TypeTree decoding fails inside a managed-reference registry,
 AnimeStudio now emits partial JSON instead of collapsing to metadata-only JSON
@@ -1827,6 +1842,13 @@ gameplay-video OCR/audio workflow.
   `original_text_definition_without_consumer` classification are also excluded
   from actionable isolation after the bounded LevelScript, DialogTree, and
   Timeline consumer search.
+  Authored non-mission isolation is also closed without an edge. Speaker radio
+  continuation and character SNS topics come only from their keyed tables.
+  `radio_blackbox_common_1` comes from the separately freshness-checked
+  GuideRuntime audit: 13 exact `FacSetInteractLockedState` actions across 10
+  factory tutorial assets, with current native `Execute` semantics and no
+  mission/quest owner. Filename shapes never admit this class, and guide action
+  ids or `nextId` values never become mission order.
   Run
   `python scripts\story_recovery\build_source_story_gap_queue.py --language CN`;
   it writes `reports/mission_order/source_story_gap_queue_<LANG>.json` / `.md`.

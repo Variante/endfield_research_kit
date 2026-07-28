@@ -24,6 +24,7 @@ if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from common import (  # noqa: E402
+    combined_non_mission_content_keys,
     md_escape,
     non_mission_content_keys,
     read_json,
@@ -36,7 +37,7 @@ from build_source_story_partial_order import build_report as build_partial_order
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v11"
+SCHEMA = "sourceStoryGapQueue.v12"
 BUCKET_ORDER = ("main", "event", "major", "character", "other")
 
 # The score is a triage aid, not recovered chronology. Every contribution is
@@ -631,22 +632,42 @@ def _closed_exact_native_unordered_scenes(
 
 def _closed_non_mission_content_isolated_scenes(
     isolated_scene_keys: set[str],
-    non_mission_content: dict[str, dict[str, str]],
+    non_mission_content: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Keep table-proven non-mission content out of the narrative queue."""
+    """Keep exact authored non-mission content out of the narrative queue."""
     closed: list[dict[str, Any]] = []
     for scene_key in sorted(isolated_scene_keys, key=natural_key):
         row = non_mission_content.get(scene_key)
         if row is None:
             continue
-        closed.append({
-            "sceneKey": scene_key,
-            "recoveryStatus": "closed_table_backed_non_mission_content",
-            "definitionTable": row["table"],
-            "definitionField": row["field"],
-            "tableKeyedBy": row["keyedBy"],
-            "contentClass": row["content"],
-        })
+        if row.get("evidenceKind") == "guide_runtime_asset":
+            closed.append({
+                "sceneKey": scene_key,
+                "recoveryStatus":
+                    "closed_exact_guide_runtime_non_mission_content",
+                "evidenceKind": "guide_runtime_asset",
+                "contentClass": row.get("content"),
+                "assetType": row.get("assetType"),
+                "consumerClass": row.get("consumerClass"),
+                "assetCount": row.get("assetCount"),
+                "actionCount": row.get("actionCount"),
+                "assetNames": row.get("assetNames") or [],
+                "guideLevelIds": row.get("guideLevelIds") or [],
+                "nativeMappingId": row.get("nativeMappingId"),
+                "nativeMethod": row.get("nativeMethod") or {},
+                "orderBoundary": row.get("orderBoundary"),
+                "evidenceReport": row.get("evidenceReport"),
+            })
+        else:
+            closed.append({
+                "sceneKey": scene_key,
+                "recoveryStatus": "closed_table_backed_non_mission_content",
+                "evidenceKind": "authored_table",
+                "definitionTable": row["table"],
+                "definitionField": row["field"],
+                "tableKeyedBy": row["keyedBy"],
+                "contentClass": row["content"],
+            })
     return closed
 
 
@@ -1163,7 +1184,7 @@ def build_gap_row(
     mission_bundle_exists: bool,
     native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
     action_story_occurrences: dict[str, list[dict[str, Any]]] | None = None,
-    non_mission_content: dict[str, dict[str, str]] | None = None,
+    non_mission_content: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     non_mission_content = non_mission_content or {}
     mission = safe_key(partial_row.get("mission"))
@@ -1514,7 +1535,9 @@ def build_gap_report(
     table_root: Path | None = None,
 ) -> dict[str, Any]:
     non_mission_content = (
-        non_mission_content_keys(table_root) if table_root is not None else {}
+        combined_non_mission_content_keys(table_root)
+        if table_root is not None
+        else {}
     )
     rows = [
         build_gap_row(

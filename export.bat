@@ -13,6 +13,7 @@ set "MISSION_PIPELINE_ONLY=0"
 set "MISSION_PIPELINE_DATA_ONLY=0"
 set "REUSE_TIMELINE_ORDERS=0"
 set "REUSE_REFERENCE=0"
+set "ANIMESTUDIO_OBJECT_INDEX=0"
 
 if exist "%~dp0endfield_paths.bat" call "%~dp0endfield_paths.bat"
 if errorlevel 1 exit /b %errorlevel%
@@ -39,6 +40,12 @@ if /I "%~1"=="--export-from-game" (
 )
 if /I "%~1"=="--with-assets" (
   set "WITH_ASSETS=1"
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="--animestudio-object-index" (
+  set "ANIMESTUDIO_OBJECT_INDEX=1"
+  set "EXPORT_ARGS=%EXPORT_ARGS% "%~1""
   shift
   goto :parse_args
 )
@@ -196,6 +203,11 @@ if "%WITH_ASSETS%"=="1" (
 python .\scripts\verify_export_freshness.py %FRESHNESS_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
+if "%ANIMESTUDIO_OBJECT_INDEX%"=="1" (
+  python .\scripts\story_recovery\build_animestudio_story_guide_consumer_audit.py
+  if errorlevel 1 exit /b %errorlevel%
+)
+
 python .\scripts\story_builder\refresh_evidence.py
 if errorlevel 1 exit /b %errorlevel%
 
@@ -283,7 +295,7 @@ echo Expected webui, full, or debug.
 exit /b 2
 
 :help
-echo Usage: export.bat [--export-from-game] [--with-assets] [--mission-pipeline-only] [--mission-pipeline-data-only] [--reuse-timeline-orders] [--reuse-reference] [--full-source-graph] [--game-root PATH] [export_full_from_game.py options]
+echo Usage: export.bat [--export-from-game] [--with-assets] [--mission-pipeline-only] [--mission-pipeline-data-only] [--reuse-timeline-orders] [--reuse-reference] [--full-source-graph] [--animestudio-object-index] [--game-root PATH] [export_full_from_game.py options]
 echo.
 echo Runs the Story/Reference WebUI refresh from existing export_full by default,
 echo rebuilds source-link evidence, builds CN Story/Text/Gameplay plus the experimental mission pipeline,
@@ -344,6 +356,10 @@ echo                         aggressive requires CLI secondary-export flag suppo
 echo   --animestudio-dummy-dlls PATH
 echo                         DummyDll directory for AnimeStudio MonoBehaviour schema recovery.
 echo                         Can also be set with ANIMESTUDIO_DUMMY_DLLS.
+echo   --animestudio-object-index
+echo                         Build the current AnimeStudio object index during an
+echo                         installed-game export, then refresh exact guide-runtime
+echo                         non-mission Story consumer evidence before Story builders.
 echo   --world-scene-chunk MAP:X:Z
 echo                         Export one static world-streaming cell, including InitChunkData
 echo                         and StreamingChunkData. May be repeated. Chunk X/Z are
