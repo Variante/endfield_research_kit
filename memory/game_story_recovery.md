@@ -3849,9 +3849,11 @@ Current main-story priorities:
    from both direct DialogTree and DialogTreeFragment sources, and complete
    authored terminal/OpenUI/menu-loop outcomes are closed as non-line outcomes
    instead of being mislabeled missing line routes. The current generated
-   frontier now contains 368 strict groups / 767 option arms, 1,958 closed
-   exclusions, and only 72 actionable multi-choice groups globally: 66 with no
-   explicit route plus six excluded by an unresolved evidence boundary.
+   partial-order frontier contains 368 strict groups / 767 option arms / 1,597
+   branch lines. It retains 2,146 closed exclusions and 468 no-route groups,
+   but 463 of those no-route groups are single-option prompts. Only five
+   multi-choice groups remain globally, and the main-story option frontier is
+   now zero.
    Pre-dialog Runtime Jump windows recover the exact `dlg_e11m3_16` split
    (`_001.._003` versus `_004.._006`). Zero-index Timeline trunks are also
    closed as shared continuation when only one or two local lines remain;
@@ -3878,17 +3880,35 @@ Current main-story priorities:
    option-index 1, starts after `_024` ends, and lands exactly at the shared
    `_021` start, so it accelerates convergence past the inactive option-2 tail
    rather than contradicting the mapping.
-   The main-story option frontier therefore fell from 154 to one unique group,
-   `dlg_e2m6_18` g1. That scene has only its text-table line/options: no
-   DialogTree, no matching Timeline option rows or Runtime Jump route, and no
-   other original-data consumer currently names the group. The remaining six
-   exclusions comprise five sibling-scene text-branch risks and one branch
-   whose corrected second arm lacks direct source provenance. These rows remain
-   visible for diagnostics,
-   while 584 single-option prompts remain
-   separately counted and do not affect recovery rank. Continue only with a
-   new authored source or exact runtime consumer; do not map choices from text
-   sentiment, option order, sibling-scene text, or corrected identifiers alone.
+   The remaining false gaps were closed by exact negative evidence rather than
+   branch guesses. A scene absent from `DialogIdTable` is now closed only after
+   the full route/outcome collector finds no authored consumer; this accounts
+   for 180 source-less groups. One branch-line row belongs only to a proven
+   definition-only option id. Eight DialogTree layout negatives are also
+   closed: same-prefix ids on distinct option nodes are separate conditional
+   prompts, while ids on a disconnected option node with no outgoing edge are
+   orphan definitions. In the positive direction, an option route that reaches
+   an actual `DialogTreeIfNode` retains all serialized conditional outcomes.
+   The current corpus has 14 such option rows across eight scenes. The parser
+   explicitly rejects following option/submenu nodes as conditional branches;
+   that regression guard prevents hundreds of false outcomes and a spurious
+   strong edge.
+
+   The five surviving groups are `dlg_gm02m2_2` g1,
+   `dlg_gm02m2_3` g2, and `dlg_gm02m3_{1,2,3}` g1. All five are exact
+   `DialogIdTable` roots with complete option-id membership, but the registry
+   has no line/trunk fields or `usedDialogTimelineIds` for them. The current
+   export has no matching DialogTree, Timeline, MissionRuntimeAsset, or
+   LevelScript source and the source graph finds no route consumer. A targeted
+   local installed-VFS census matched zero `gm02m2`/`gm02m3` files across all
+   936 chunks and every block family; a complete extraction of the 1,290
+   readable Lua modules also contains no exact mission, scene, or option-id
+   reference. No saved `export_1d2` tree is present to test an older build.
+   Their option text suggests mission-state or return-location choices, but
+   text semantics cannot establish the outcome graph. This is now a bounded
+   unavailable-source frontier: further offline recovery requires an older or
+   newer authored data archive containing those mission assets (or another
+   exact consumer surface), not more inference over the current installation.
 8. Keep unresolved narrative videos standalone until Timeline or another
    original-data source binding establishes placement; observed playback may
    cross-check but does not promote the connection.

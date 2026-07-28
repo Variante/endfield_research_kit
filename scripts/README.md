@@ -1685,7 +1685,16 @@ gameplay-video OCR/audio workflow.
   consumer, the absent ids remain visible as definition-only rows instead of
   being counted as missing authored branches. Complete authored menu, UI,
   loop, and terminal outcomes are likewise retained as closed non-line
-  outcomes rather than missing line routes. Run
+  outcomes rather than missing line routes. An option target that reaches an
+  exact `DialogTreeIfNode` retains every serialized conditional outcome (line
+  path, OpenUI, or Finish); a following option/submenu node is explicitly not
+  classified as a conditional branch. Same-prefix ids serialized on distinct
+  DialogTree option nodes are closed as separate conditional prompts, while
+  ids on one disconnected option node with no outgoing connection are closed
+  as orphan definitions. Neither layout is promoted into a fabricated choice
+  fork. Source-less option rows on a scene absent from the runtime
+  `DialogIdTable` are also closed only after the complete collector finds no
+  authored route or outcome consumer. Run
   `python scripts\story_recovery\build_source_story_partial_order.py`; it
   writes `reports/mission_order/source_story_partial_order_<LANG>.json` / `.md`.
 - `story_recovery/build_source_story_order_cross_reference.py`: compares only

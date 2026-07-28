@@ -3005,6 +3005,7 @@ def build_language_bundle(
         tree_branch_sources: dict[str, list[dict]] = {}
         tree_merge: dict[str, str] = {}
         tree_converge: dict[str, str] = {}
+        tree_option_node_layouts: dict[str, list[dict]] = {}
         tree_pre: set[str] = set()
         tree_pre_sources: dict[str, list[str]] = {}
         scene_link_after: dict[str, str] = {}
@@ -3039,6 +3040,9 @@ def build_language_bundle(
             tree_branch_sources = tree_meta.get("branchSources", {}) or {}
             tree_merge = tree_meta.get("merge", {}) or {}
             tree_converge = tree_meta.get("converge", {}) or {}
+            tree_option_node_layouts = (
+                tree_meta.get("optionNodeLayouts", {}) or {}
+            )
             tree_pre_sources = tree_meta.get("preSources", {}) or {}
             cinematic_finish_groups = [
                 group
@@ -3730,6 +3734,7 @@ def build_language_bundle(
             | tree_pre
             | scene_link_authored_option_ids
             | timeline_authored_option_ids
+            | set(tree_option_node_layouts)
         )
         authored_group_count = 0
         pre_group_count = 0
@@ -3766,6 +3771,86 @@ def build_language_bundle(
                     str(route.get("source") or ""),
                 ),
             )
+        def dialog_tree_option_node_layout_for_group(
+            group_opt_ids: list[str],
+            after_id: str,
+        ) -> dict:
+            if len(group_opt_ids) < 2:
+                return {}
+            layouts_by_option = {
+                option_id: [
+                    layout
+                    for layout in (
+                        tree_option_node_layouts.get(option_id) or []
+                    )
+                    if isinstance(layout, dict)
+                    and layout.get("nodeId") is not None
+                ]
+                for option_id in group_opt_ids
+            }
+            if any(
+                not layouts_by_option.get(option_id)
+                for option_id in group_opt_ids
+            ):
+                return {}
+            node_ids_by_option = {
+                option_id: {
+                    (
+                        str(layout.get("sourceKey") or ""),
+                        str(layout.get("file") or ""),
+                        str(layout.get("nodeId") or ""),
+                    )
+                    for layout in layouts
+                }
+                for option_id, layouts in layouts_by_option.items()
+            }
+            shared_node_ids = set.intersection(
+                *node_ids_by_option.values()
+            )
+            if not shared_node_ids:
+                return {
+                    "code": "separateDialogTreeOptionNodes",
+                    "reason": "distinctAuthoredOptionNodes",
+                    "detail": (
+                        "The same-prefix table ids are authored on distinct "
+                        "DialogTree option nodes. They are separate conditional "
+                        "prompts, not arms of one runtime choice fork."
+                    ),
+                    "after": after_id,
+                    "optionIds": group_opt_ids,
+                    "source": "dialogTree",
+                    "optionNodeLayouts": layouts_by_option,
+                }
+            shared_layouts = [
+                layout
+                for layouts in layouts_by_option.values()
+                for layout in layouts
+                if (
+                    str(layout.get("sourceKey") or ""),
+                    str(layout.get("file") or ""),
+                    str(layout.get("nodeId") or ""),
+                )
+                in shared_node_ids
+            ]
+            if shared_layouts and all(
+                not layout.get("outgoingNodeIds")
+                for layout in shared_layouts
+            ):
+                return {
+                    "code": "orphanDialogTreeOptionDefinitions",
+                    "reason": "optionNodeHasNoOutgoingConnection",
+                    "detail": (
+                        "The registered DialogTree serializes these option ids "
+                        "on a disconnected option node with no outgoing "
+                        "connection. The rows are authored definitions but do "
+                        "not form a playable route in this tree."
+                    ),
+                    "after": after_id,
+                    "optionIds": group_opt_ids,
+                    "source": "dialogTree",
+                    "optionNodeLayouts": layouts_by_option,
+                }
+            return {}
         def timeline_route_branch_for_group(group_opt_ids: list[str], after_id: str) -> dict:
             if len(group_opt_ids) < 2:
                 return {}
@@ -4829,10 +4914,19 @@ def build_language_bundle(
                             "lineIds": remaining_line_ids,
                         }
             branch_convergence_risk = normalize_group_branch_convergence(group, opts, group_opt_ids)
+            dialog_tree_node_layout = {}
+            if not any(opt.get("branchLines") for opt in opts):
+                dialog_tree_node_layout = (
+                    dialog_tree_option_node_layout_for_group(
+                        group_opt_ids,
+                        group.get("after") or "",
+                    )
+                )
             following_line_risk = (
                 timeline_route_branch
                 or sibling_text_branch
                 or branch_convergence_risk
+                or dialog_tree_node_layout
                 or following_line_risk_for_group(group_opt_ids, group.get("after") or "")
             )
             original_following_line_risk = dict(following_line_risk) if following_line_risk else {}
@@ -5713,6 +5807,16 @@ def build_language_bundle(
                     add("optionBranch:runtimeClipOptionIndex")
                 elif branch_risk.get("code") == "siblingSceneTextBranches":
                     add("optionBranch:siblingSceneText")
+                elif (
+                    branch_risk.get("code")
+                    == "separateDialogTreeOptionNodes"
+                ):
+                    add("optionBranch:separateDialogTreeOptionNodes")
+                elif (
+                    branch_risk.get("code")
+                    == "orphanDialogTreeOptionDefinitions"
+                ):
+                    add("optionBranch:orphanDialogTreeOptionDefinitions")
                 elif branch_risk.get("candidateMapping") == "trunkClipOptionIndex":
                     add("optionBranch:rawIndexMatched")
                 elif branch_risk.get("code") == "inferredFollowingLines":

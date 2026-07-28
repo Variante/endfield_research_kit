@@ -278,6 +278,8 @@ def scene_link_option_payload(raw_option: dict) -> dict:
     for key in ("pathLineIds", "sceneKeys", "submenuSceneKeys"):
         if raw_option.get(key):
             entry[key] = raw_option[key]
+    if raw_option.get("conditionalOutcomes"):
+        entry["conditionalOutcomes"] = raw_option["conditionalOutcomes"]
     if raw_option.get("loop"):
         entry["loop"] = raw_option["loop"]
     if raw_option.get("outcomeKind"):
