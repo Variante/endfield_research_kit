@@ -3641,6 +3641,13 @@ Current main-story priorities:
    LevelScript, header id, selector, event family, native action, and source
    file while emitting zero mission/quest edges. This closes a queryability gap
    without changing the 155-file ownership frontier.
+   The current canonical graph rebuild passes SQLite `quick_check` and makes
+   the new e3m5 observation path explicit:
+   `e3m5_q#1 -> CheckLevelScriptPropertyBool(isFinished) ->
+   LevelScript 2800010051 <- native receiver -> cutscene_e3m5_4`.
+   The property condition and playback receiver converge on one exact script,
+   but remain separate observation/playback relations with no ownership or
+   activation edge.
    The offline activation-frontier pass further divides the 95 hosting scripts
    into 10 exact SubGame activation scopes, 12 non-SubGame scripts with
    non-empty start shapes, 18 other non-null static start/task shapes, and 55
@@ -4005,6 +4012,10 @@ Current main-story priorities:
    create Story or mission edges. Standalone WebUI
    cards expose this distinction, and the source graph builder mirrors it
    through `fmv_definition` nodes with `placementEvidence=false`.
+   A clean canonical graph rebuild verifies 72 definition nodes, 59
+   definition-to-authoritative-binding edges, 13 unbound definitions, 46
+   canonicalized gender variants, 46 subtitle-text edges, and zero
+   definition-to-mission/quest/Story edges.
 
    The 13-row definition-only audit is now structurally complete. Only
    `cs_video_e1m3_3` has an exported/current VFS movie. `cs_video_e5m2_3`
