@@ -3844,9 +3844,9 @@ Current main-story priorities:
    from both direct DialogTree and DialogTreeFragment sources, and complete
    authored terminal/OpenUI/menu-loop outcomes are closed as non-line outcomes
    instead of being mislabeled missing line routes. The current generated
-   frontier now contains 367 strict groups / 765 option arms, 1,952 closed
-   exclusions, and only 79 actionable multi-choice groups globally: 66 with no
-   explicit route plus 13 excluded by an unresolved evidence boundary.
+   frontier now contains 367 strict groups / 765 option arms, 1,958 closed
+   exclusions, and only 73 actionable multi-choice groups globally: 66 with no
+   explicit route plus seven excluded by an unresolved evidence boundary.
    Pre-dialog Runtime Jump windows recover the exact `dlg_e11m3_16` split
    (`_001.._003` versus `_004.._006`). Zero-index Timeline trunks are also
    closed as shared continuation when only one or two local lines remain;
@@ -3858,14 +3858,22 @@ Current main-story priorities:
    DialogTree launches `dlgtl_e2m6_11_sub_1`, but that Timeline consumes only
    the two `dlg_e2m6_19` option ids and maps them completely to finish numbers
    `0/1`; the same-text local option rows are not runtime consumers.
+   Six more apparent incomplete non-line outcomes are also exact
+   definition-only closures. In each case the recovered DialogTree option node
+   explicitly names only option 1, while the same-prefix option 2 exists only
+   in `DialogOptionTable` and is absent from every recovered DialogTree,
+   scene-link, Timeline, and route consumer. The generated conversation keeps
+   both text rows but marks the unused id as definition-only; the Mission
+   Pipeline records the authored option 1 outcome without inventing an option
+   2 branch.
    The main-story option frontier therefore fell from 154 to one unique group,
    `dlg_e2m6_18` g1. That scene has only its text-table line/options: no
    DialogTree, no matching Timeline option rows or Runtime Jump route, and no
-   other original-data consumer currently names the group. The remaining 13
-   exclusions comprise six incomplete authored non-line outcome groups, five
-   sibling-scene text-branch risks, one inferred-following-lines risk, and one
-   branch whose corrected second arm lacks direct source provenance. These rows
-   remain visible for diagnostics, while 584 single-option prompts remain
+   other original-data consumer currently names the group. The remaining seven
+   exclusions comprise five sibling-scene text-branch risks, one
+   inferred-following-lines risk, and one branch whose corrected second arm
+   lacks direct source provenance. These rows remain visible for diagnostics,
+   while 584 single-option prompts remain
    separately counted and do not affect recovery rank. Continue only with a
    new authored source or exact runtime consumer; do not map choices from text
    sentiment, option order, sibling-scene text, or corrected identifiers alone.
