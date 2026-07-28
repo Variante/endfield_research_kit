@@ -108,6 +108,7 @@ from .mission_recovery import (
     mission_files as mission_timeline_files,
     recover_mission as recover_source_mission_timeline,
     render_markdown as render_mission_timeline_markdown,
+    source_backed_call_server_callbacks_from_scene_graph,
     source_backed_scene_edges_from_scene_graph,
     source_backed_hash_terminals_from_scene_graph,
     source_backed_story_call_contexts_from_scene_graph,

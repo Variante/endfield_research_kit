@@ -730,8 +730,10 @@ writes them or feeds them back into recovery.
 - reciprocal file-level `questPrev` projections from distinct directed quest
   instances.
 - LevelScript byte/file order and cross-file numeric proximity.
-- Untyped LevelScript membership, Story-call contexts, and hash terminals that
-  do not establish direction.
+- Untyped LevelScript membership and Story-call contexts that do not establish
+  direction. Hash-shaped payloads require typed opcode/UID classification:
+  current `CallServer` values equal `#` plus the owning action-record UID and
+  are callback/correlation diagnostics, not Story nodes.
 - LevelData quest references, PRTS collection order, trigger/spatial
   proximity, audio tags, and shared Timeline membership.
 - `radioContinuation` while its file-adjacency component remains unresolved by
@@ -837,9 +839,18 @@ the same action through an identical, now fully typed sequence:
 MainCharMoveTo(walk_end_pos, gait 0) ->
 ToggleClearScreenButRadio(true) -> ExitLevelCustomPerformance -> CallServer`.
 The terminal compact tag `0x0034`/14 members has the generated
-`CallServer` fields: null client-output UIDs, `event_args`, a hash-like
-event name, `useCustomEvent=false`, `waitForCallback=true`, and
-`withEventArgs=false`. The target script's three exit-action payloads contain
+`CallServer` fields: null client-output UIDs, `event_args`, an event name,
+`useCustomEvent=false`, `waitForCallback=true`, and `withEventArgs=false`.
+The event names close exactly as `#` plus their own eight-hex-digit
+CallServer record UIDs (`#5bd318ba`/UID `5bd318ba` and
+`#2f436d36`/UID `2f436d36`). The complete current typed corpus follows the
+same identity rule, so these are action-local callback/correlation labels,
+not server-handler hashes, Story nodes, mission owners, or order evidence.
+Story and Mission Pipeline generation now removes them from graph nodes/edges
+while retaining explicit `levelscriptCallServerSelfUidCallback` diagnostics;
+the generated corpus audit lives in
+`reports/story/build/mission_timeline_recovery_CN.json`. The target script's
+three exit-action payloads contain
 only an unbound zero
 `Param<uint>` handle; the movement action has only the authored
 `walk_end_pos` parameter. No step contains a mission, submission, item, UI,
@@ -3289,10 +3300,13 @@ Current main-story priorities:
    `ExitLevelCustomPerformance`; all three carry only the same unbound zero
    handle payload. The two playback branches are otherwise fully typed as
    dialog-and-teleport, clear-screen toggle off, main-character move to
-   `walk_end_pos`, clear-screen toggle on, and custom-performance exit. Keep
-   Their former low-confidence `0x0e34/0x00` tails are now exact
-   `CallServer` actions waiting for callback with an `event_args` pointer and
-   hash-like event name, still without mission/quest/submission identity. Keep
+   `walk_end_pos`, clear-screen toggle on, and custom-performance exit. Their
+   former low-confidence `0x0e34/0x00` tails are now exact
+   `CallServer` actions waiting for callback with an `event_args` pointer.
+   Each event name is exactly `#` plus that action's own record UID, matching
+   the complete current typed corpus. Treat these as local callback/correlation
+   labels and diagnostic-only records, never hash-terminal Story nodes or
+   mission/order evidence. Keep
    this as objective co-gating plus independently proved
    playback/presentation-cleanup context, not UI activation or a new
    quest-to-Story playback edge.
