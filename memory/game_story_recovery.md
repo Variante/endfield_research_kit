@@ -207,6 +207,12 @@ four sibling receivers play `c13m2` radios. `dung_kamiu_01` happens to name
 name agreement cannot change the evidence class. The UI now shows all nine as
 typed dungeon mission-shell context with `no mission owner`; no coverage or
 graph edge is added.
+The rest of the typed whitelist surface is also closed on this export:
+`missionWhitelist` and `logicIdWhitelist` are empty on all 469 SubGame rows.
+Only `f1m18d1_1` has a `proxyWhitelist`; its three proxies expose two dialogs,
+both already connected by stronger exact quest-condition or native-playback
+evidence, and all three NpcProxyEx mission ids are blank. This adds no owner,
+node attachment, or order edge and does not belong in the unlinked queue.
 The installed hotfix caveat has now been closed for the same lane. The current
 Persistent `Gameplay.Beyond.patch.bytes` is 82,021 bytes
 (`737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21`)
@@ -3510,6 +3516,9 @@ Current main-story priorities:
    Nine of those sibling receivers also have a typed dungeon mission shell.
    The `c6m3`/`c6m1` and `c13m2d5`/`c13m2` mismatches reject even this stronger
    field as sibling-Story ownership; preserve it as runtime context only.
+   All typed SubGame mission/logic whitelists are empty. The only proxy
+   whitelist reaches two already-connected `f1m18d1` dialogs and no NpcProxyEx
+   mission id, so the current whitelist surface is exhausted.
    A diagnostic level intersection with the atmospheric switcher context finds
    89 receivers / 103 Story files on 13 shared levels. Four shared levels have
    only one atmospheric route mission, but their native Story families often
