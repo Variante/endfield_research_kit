@@ -2025,12 +2025,84 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
                 )
             self.assertTrue(row["luaFile"].endswith(".lua"))
 
-    def test_case_unproven_gender_select_cutscene_is_not_pinned(self) -> None:
-        # "Cutscene_e0m0_1" occurs zero times in export_full; admitting it would
-        # assume case-insensitive resolution that has not been proved.
+    def test_case_sensitive_gender_select_cutscene_is_not_pinned(self) -> None:
+        # The current native resolver preserves "Cutscene_e0m0_1" into
+        # case-sensitive StringPathHash resource lookup, so it cannot prove
+        # playback of lowercase "cutscene_e0m0_1".
         keys = {row["storyKey"] for row in pipeline.LUA_STORY_PLAYBACK_CALL_SITES}
         self.assertNotIn("cutscene_e0m0_1", keys)
         self.assertNotIn("Cutscene_e0m0_1", keys)
+
+    def test_every_rejected_candidate_has_auditable_provenance(self) -> None:
+        admitted = {
+            row["storyKey"] for row in pipeline.LUA_STORY_PLAYBACK_CALL_SITES
+        }
+        for row in pipeline.LUA_STORY_PLAYBACK_REJECTIONS:
+            for field in (
+                "storyKey", "luaLiteral", "luaFile", "luaSymbol", "luaCall",
+                "nativeEntry", "reason", "confidence", "auditReport", "note",
+            ):
+                self.assertTrue(
+                    str(row.get(field) or "").strip(),
+                    f"{row.get('storyKey')} missing {field}",
+                )
+            self.assertNotIn(row["storyKey"], admitted)
+            self.assertNotEqual(row["luaLiteral"], row["storyKey"])
+            self.assertEqual(
+                row["reason"],
+                "case_sensitive_native_resource_lookup",
+            )
+            self.assertTrue(row["auditReport"].endswith(".json"))
+
+    def test_rejected_candidate_is_published_without_a_trigger_route(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            story_root = root / "lang"
+            language_root = story_root / "CN"
+            mission_root = language_root / "mission"
+            report_root = root / "reports"
+            mission_root.mkdir(parents=True)
+            (language_root / "index.json").write_text(json.dumps({
+                "entries": [{
+                    "k": "cutscene_e0m0_1",
+                    "d": "cutscene",
+                    "m": "e0m0",
+                    "p": "fixture",
+                }],
+            }), encoding="utf-8")
+            (mission_root / "e0m0.json").write_text(json.dumps({
+                "flow": {},
+            }), encoding="utf-8")
+            table_paths = [
+                root / "SubGameInstanceDataTable.json",
+                root / "ActivityConditionalMultiStageTable.json",
+                root / "GameMechanicConditionTable.json",
+                root / "DungeonTable.json",
+                root / "TextVoIdTable.json",
+            ]
+            for path in table_paths:
+                path.write_text("{}", encoding="utf-8")
+
+            report = pipeline.build_story_binding_coverage(
+                {"missions": [{"id": "e0m0"}]},
+                root / "pipeline" / "index.json",
+                story_root,
+                "CN",
+                report_root,
+                *table_paths,
+            )
+
+        row = report["storyTriggerManifest"]["cutscene_e0m0_1"]
+        self.assertEqual(row["attachmentStatus"], "unlinked_no_trigger_route")
+        self.assertEqual(row["routes"], [])
+        self.assertEqual(
+            row["rejectedPlaybackCandidates"],
+            list(pipeline.LUA_STORY_PLAYBACK_REJECTIONS),
+        )
+        self.assertEqual(
+            report["counts"]["rejectedStoryPlaybackCandidates"],
+            1,
+        )
 
     def test_pinned_story_keys_are_lowercase_exact(self) -> None:
         for row in pipeline.LUA_STORY_PLAYBACK_CALL_SITES:
