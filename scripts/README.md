@@ -324,12 +324,16 @@ The GameObject audit consumes the same validated index but follows only exact,
 resolved `m_GameObject` PPtrs from actionable Story-bearing objects. It maps
 their physical chunk offsets through the current VFS index, extracts only the
 original logical AssetBundles, exports their GameObjects in a temporary
-`tmp/story/` work directory, and resolves exact sibling component PathIDs back
-through the typed object index. Output goes to
+`tmp/story/` work directory, and resolves exact sibling component PathIDs plus
+the complete recursive Transform child hierarchy back through the typed object
+index. Child traversal is accepted only when each parent `m_Children` relation
+agrees with the child's `m_Father`; unresolved or inconsistent hierarchies fail
+closed. Output goes to
 `reports/story/recovery/animestudio_story_gameobject_audit.{json,md}`.
-GameObject co-membership is exact serialized evidence, but a typed
-mission/runtime sibling is still only a candidate until native consumer
-semantics prove playback or ownership; it never supplies order by itself.
+GameObject co-membership and Transform ancestry are exact serialized evidence,
+but a typed mission/runtime sibling or descendant is still only a candidate
+until native consumer semantics prove playback or ownership; neither supplies
+order by itself.
 Pass `--game-root PATH` or set `ENDFIELD_GAME_ROOT` when the installed
 `Endfield_Data` root is not at the repository default.
 
