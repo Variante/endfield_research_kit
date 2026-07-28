@@ -3310,6 +3310,27 @@ as non-mission authored table/tutorial content. Action ids, `nextId`, asset
 names, PathIDs, and object order remain explicitly barred from mission or
 Story-order inference.
 
+### Video duration and subtitle registries are non-owning
+
+The other exact non-Timeline objects surfaced by the refreshed carrier census
+do not bridge mission ownership. `cutscene_e0m0_1` and
+`cutscene_e3m4_1` occur as matching key/value entries in the one typed
+`Beyond.Gameplay.VideoDataTable`; `cutscene_e0m0_1` also occurs in
+`I18NCutsceneSubtitleConfig`. Metadata proves that `VideoData` contains only
+`videoName` and `length`, while `VideoDataTable` exposes only `Clear`,
+`get_instance`, `GetVideoLength`, and its constructor.
+
+On the current GameAssembly hash, `VideoDataTable.GetVideoLength` (token
+`0x060016f1`, VA `0x186d5876c`) reads the table at `this+0x18`, performs a
+key lookup by the supplied video name, and returns the matched `VideoData`
+float at `+0x18`. Shipped `SNSContentVideo.lua` uses this method only to obtain
+display duration. `I18NCutsceneSubtitleConfig` has no lookup/playback method of
+its own beyond construction; it is a cutscene-to-subtitle configuration map.
+These rows prove retained media metadata, not activation, mission/quest
+ownership, or chronology. Both cutscenes remain genuine source-ownership gaps;
+the registry rows are not promoted and do not close them as non-mission
+content.
+
 ### The cinematic queue: a deterministic cross-type order rule
 
 The same lane exposes the runtime **sequencer** for Story playback, and it is
@@ -3671,21 +3692,31 @@ Current main-story priorities:
    control relation before any order edge.
    The maintained
    `build_animestudio_story_gameobject_audit.py` closes the immediately adjacent
-   co-component class without broad GameObject export. It follows only resolved
+   co-component and descendant-hierarchy classes without broad GameObject
+   export. It follows only resolved
    `m_GameObject` PPtrs from exact actionable Story-value objects, maps their
    physical chunk offsets through the current VFS index, extracts only the
    exact original logical bundles into a temporary work root, exports
-   GameObjects, and resolves sibling component PathIDs back through the
-   provenance-valid typed index. On the current 2,459-key queue, 88 of the 190
-   exact-value objects expose that relation, covering 84 Story keys and 88
-   original bundles. All 88 are `CutsceneRootComponent`s; every referenced
+   GameObjects, and resolves sibling plus recursive descendant component
+   PathIDs back through the provenance-valid typed index. Parent/child traversal
+   requires each Transform's `m_Children` and each child's `m_Father` to agree.
+   On the current post-guide-closure 2,458-key queue, 88 of the 180 exact-value
+   objects expose that relation, covering 84 Story keys and 88 original
+   bundles. All 88 are `CutsceneRootComponent`s; every referenced root
    GameObject has no parent and exactly two components, its Transform and that
-   CutsceneRoot. The audit therefore finds zero typed sibling components and
-   zero mission/runtime sibling candidates. The current report is
+   CutsceneRoot. Beneath them, the audit resolves all 13,833 descendant
+   GameObjects to depth 22 and 2,478 typed descendant components, with zero
+   unresolved child transforms, zero typed sibling candidates, and zero typed
+   mission/quest/runtime descendant candidates. The largest typed descendant
+   classes are 529 `PlayableDirector`, 298 `EffectSetting`, 221
+   `CinemachineDOFSync`, and the expected Cinemachine/VFX presentation
+   components; none carries a typed Story, owner, or runtime identity.
+   The current report is
    `reports/story/recovery/animestudio_story_gameobject_audit.{json,md}`.
-   This closes same-GameObject co-components for these current cutscene
-   carriers, not child-hierarchy, neighboring-object, bundle-proximity,
-   external-registry, or server-selected activation hypotheses.
+   This closes same-GameObject co-components and complete Transform descendants
+   for these current cutscene carriers, not neighboring unrelated objects,
+   bundle-proximity, external-registry, or server-selected activation
+   hypotheses.
    The generated coverage report now inventories 155 files across 25 decoded
    event families; the largest unique-file groups are Leader trigger volume
    (67), BattleSignal (16), Script custom event (13), and ScriptStageChanged

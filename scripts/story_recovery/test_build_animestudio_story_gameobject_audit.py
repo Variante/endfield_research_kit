@@ -144,6 +144,10 @@ class AnimeStudioStoryGameObjectAuditTests(unittest.TestCase):
             "m_Transform": {
                 "m_GameObject": {"m_PathID": 55},
                 "m_Father": {"m_PathID": 0},
+                "m_Children": [
+                    {"m_PathID": 303},
+                    {"m_PathID": 404},
+                ],
             },
         }
         with tempfile.TemporaryDirectory() as temp_name:
@@ -155,6 +159,53 @@ class AnimeStudioStoryGameObjectAuditTests(unittest.TestCase):
         self.assertEqual(result[55]["componentPathIds"], [101, 202])
         self.assertEqual(result[55]["transformComponentPathId"], 101)
         self.assertEqual(result[55]["parentTransformPathId"], 0)
+        self.assertEqual(result[55]["childTransformPathIds"], [303, 404])
+
+    def test_resolves_exact_recursive_descendant_hierarchy(self) -> None:
+        game_objects = {
+            1: {
+                "name": "root",
+                "componentPathIds": [101, 11],
+                "transformComponentPathId": 101,
+                "parentTransformPathId": 0,
+                "childTransformPathIds": [102],
+            },
+            2: {
+                "name": "child",
+                "componentPathIds": [102, 22],
+                "transformComponentPathId": 102,
+                "parentTransformPathId": 101,
+                "childTransformPathIds": [103],
+            },
+            3: {
+                "name": "grandchild",
+                "componentPathIds": [103, 33],
+                "transformComponentPathId": 103,
+                "parentTransformPathId": 102,
+                "childTransformPathIds": [],
+            },
+        }
+        descendants, unresolved = audit.descendant_game_objects(
+            game_objects, 1
+        )
+        self.assertEqual(unresolved, [])
+        self.assertEqual(
+            [(row["pathId"], row["depth"]) for row in descendants],
+            [(2, 1), (3, 2)],
+        )
+
+    def test_rejects_unresolved_declared_child_transform(self) -> None:
+        game_objects = {
+            1: {
+                "name": "root",
+                "componentPathIds": [101, 11],
+                "transformComponentPathId": 101,
+                "parentTransformPathId": 0,
+                "childTransformPathIds": [999],
+            },
+        }
+        with self.assertRaises(audit.AuditError):
+            audit.descendant_game_objects(game_objects, 1)
 
     def test_analyze_roots_emits_typed_owner_sibling_candidate(self) -> None:
         roots = [{
@@ -176,6 +227,7 @@ class AnimeStudioStoryGameObjectAuditTests(unittest.TestCase):
                     "componentPathIds": [100, 11, 33],
                     "transformComponentPathId": 100,
                     "parentTransformPathId": 0,
+                    "childTransformPathIds": [],
                 },
             },
         }
@@ -194,6 +246,56 @@ class AnimeStudioStoryGameObjectAuditTests(unittest.TestCase):
         self.assertEqual(candidate["type"]["scriptFullName"], "Test.Owner")
         self.assertEqual(candidate["ownerFields"][0]["value"], "e1m1")
         self.assertEqual(analyzed[0]["unindexedComponentPathIds"], [])
+
+    def test_analyze_roots_emits_typed_owner_descendant_candidate(self) -> None:
+        roots = [{
+            "storyKeys": ["cutscene_e1m1_test"],
+            "expectedGapMissions": ["e1m1"],
+            "source": "StreamingAssets",
+            "object": {
+                "serializedFile": "CAB-test",
+                "pathId": 11,
+            },
+            "type": {},
+            "gameObjectPathIds": [22],
+            "logicalBundle": {"name": "Data/Bundles/a.ab"},
+        }]
+        game_objects = {
+            "StreamingAssets": {
+                22: {
+                    "name": "root",
+                    "componentPathIds": [100, 11],
+                    "transformComponentPathId": 100,
+                    "parentTransformPathId": 0,
+                    "childTransformPathIds": [200],
+                },
+                23: {
+                    "name": "child",
+                    "componentPathIds": [200, 33],
+                    "transformComponentPathId": 200,
+                    "parentTransformPathId": 100,
+                    "childTransformPathIds": [],
+                },
+            },
+        }
+        component_rows = {
+            ("StreamingAssets", "CAB-test", 33): object_row(
+                path_id=33,
+                scalars=[["$.missionId", "s", "e1m1"]],
+                script="Test.DescendantOwner",
+            ),
+        }
+        analyzed, counts = audit.analyze_roots(
+            roots, game_objects, component_rows
+        )
+        self.assertEqual(counts["gameObjectsWithCandidateDescendant"], 1)
+        descendant = analyzed[0]["descendantGameObjects"][0]
+        self.assertEqual(descendant["pathId"], 23)
+        self.assertEqual(descendant["depth"], 1)
+        self.assertEqual(
+            descendant["candidateComponents"][0]["type"]["scriptFullName"],
+            "Test.DescendantOwner",
+        )
 
 
 if __name__ == "__main__":

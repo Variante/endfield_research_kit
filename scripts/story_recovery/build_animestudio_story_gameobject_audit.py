@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit exact GameObject co-components for actionable Story carriers.
+"""Audit exact GameObject component hierarchies for actionable Story carriers.
 
 The compact AnimeStudio object index intentionally contains the Story-facing
 JSON types, not every GameObject. This audit:
@@ -9,11 +9,13 @@ JSON types, not every GameObject. This audit:
    ``m_GameObject`` PPtr;
 3. maps each original chunk offset back to its logical AssetBundle;
 4. extracts only those bundles and exports their GameObjects; and
-5. resolves sibling components back through the typed object index.
+5. resolves sibling and descendant components back through the typed object
+   index.
 
-GameObject co-membership is an exact serialized relation, but this report still
-emits candidates only. Native consumer semantics are required before any
-ownership, playback, or order edge can be promoted.
+GameObject co-membership and Transform parent/child links are exact serialized
+relations, but this report still emits candidates only. Native consumer
+semantics are required before any ownership, playback, or order edge can be
+promoted.
 """
 
 from __future__ import annotations
@@ -37,7 +39,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import build_animestudio_story_carrier_audit as carrier  # noqa: E402
 
-SCHEMA = "animestudioStoryGameObjectAudit.v1"
+SCHEMA = "animestudioStoryGameObjectAudit.v2"
 DEFAULT_OUTPUT_ROOT = ROOT / "export_full"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"
@@ -375,6 +377,11 @@ def game_object_components(
                 f"duplicate GameObject PathID {path_id} under {game_object_root}"
             )
         father = transform.get("m_Father") or {}
+        child_transform_path_ids = []
+        for item in transform.get("m_Children") or []:
+            child_id = item.get("m_PathID") if isinstance(item, dict) else None
+            if isinstance(child_id, int) and child_id:
+                child_transform_path_ids.append(child_id)
         result[path_id] = {
             "name": str(payload.get("m_Name") or payload.get("Name") or ""),
             "componentPathIds": components,
@@ -382,9 +389,106 @@ def game_object_components(
                 components[0] if components and transform else 0
             ),
             "parentTransformPathId": int(father.get("m_PathID") or 0),
+            "childTransformPathIds": child_transform_path_ids,
             "sourceJson": str(path),
         }
     return result
+
+
+def descendant_game_objects(
+    game_objects: dict[int, dict[str, Any]],
+    root_path_id: int,
+) -> tuple[list[dict[str, Any]], list[int]]:
+    """Resolve an exact Transform child tree beneath one exported GameObject."""
+    root = game_objects.get(root_path_id)
+    if root is None:
+        raise AuditError(f"GameObject PathID {root_path_id} was not exported")
+    transform_to_game_object: dict[int, int] = {}
+    children_by_parent: dict[int, set[int]] = defaultdict(set)
+    for game_object_path_id, row in game_objects.items():
+        transform_path_id = int(row.get("transformComponentPathId") or 0)
+        if transform_path_id:
+            previous = transform_to_game_object.setdefault(
+                transform_path_id, game_object_path_id
+            )
+            if previous != game_object_path_id:
+                raise AuditError(
+                    f"duplicate Transform PathID {transform_path_id}"
+                )
+        parent_transform_path_id = int(
+            row.get("parentTransformPathId") or 0
+        )
+        if parent_transform_path_id:
+            children_by_parent[parent_transform_path_id].add(
+                game_object_path_id
+            )
+
+    descendants: list[dict[str, Any]] = []
+    unresolved_child_transforms: set[int] = set()
+    visited = {root_path_id}
+    pending = [(root_path_id, 0)]
+    while pending:
+        parent_path_id, parent_depth = pending.pop()
+        parent = game_objects[parent_path_id]
+        parent_transform_path_id = int(
+            parent.get("transformComponentPathId") or 0
+        )
+        declared_child_transforms = {
+            int(value)
+            for value in parent.get("childTransformPathIds") or []
+            if isinstance(value, int) and value
+        }
+        declared_child_game_objects = set()
+        for transform_path_id in declared_child_transforms:
+            child_path_id = transform_to_game_object.get(transform_path_id)
+            if child_path_id is None:
+                unresolved_child_transforms.add(transform_path_id)
+                continue
+            declared_child_game_objects.add(child_path_id)
+        parent_link_children = children_by_parent.get(
+            parent_transform_path_id, set()
+        )
+        if declared_child_game_objects != parent_link_children:
+            raise AuditError(
+                f"GameObject PathID {parent_path_id}: Transform child/father "
+                "relations disagree"
+            )
+        for child_path_id in sorted(parent_link_children, reverse=True):
+            if child_path_id in visited:
+                raise AuditError(
+                    f"GameObject hierarchy cycle or repeated child "
+                    f"{child_path_id}"
+                )
+            visited.add(child_path_id)
+            child = game_objects[child_path_id]
+            depth = parent_depth + 1
+            descendants.append({
+                "pathId": child_path_id,
+                "name": child["name"],
+                "depth": depth,
+                "parentGameObjectPathId": parent_path_id,
+                "parentTransformPathId": child["parentTransformPathId"],
+                "transformComponentPathId":
+                    child["transformComponentPathId"],
+                "childTransformPathIds":
+                    child.get("childTransformPathIds") or [],
+                "componentPathIds": child["componentPathIds"],
+            })
+            pending.append((child_path_id, depth))
+    if unresolved_child_transforms:
+        sample = ", ".join(
+            str(value) for value in sorted(unresolved_child_transforms)[:5]
+        )
+        raise AuditError(
+            f"GameObject PathID {root_path_id}: unresolved child Transform "
+            f"PathIDs ({sample})"
+        )
+    descendants.sort(key=lambda row: (
+        row["depth"],
+        row["parentGameObjectPathId"],
+        row["pathId"],
+    ))
+    return descendants, sorted(unresolved_child_transforms)
 
 
 def collect_component_rows(
@@ -477,6 +581,45 @@ def analyze_roots(
                     unresolved_component_path_ids.append(component_path_id)
                     continue
                 siblings.append(compact_component(component))
+            descendants, unresolved_child_transform_path_ids = (
+                descendant_game_objects(
+                    game_objects_by_source.get(source, {}),
+                    game_object_path_id,
+                )
+            )
+            descendant_rows = []
+            descendant_candidates = []
+            for descendant in descendants:
+                typed_components = []
+                unresolved_descendant_component_path_ids = []
+                for component_path_id in descendant["componentPathIds"]:
+                    if component_path_id == (
+                        descendant["transformComponentPathId"]
+                    ):
+                        continue
+                    component = component_rows.get((
+                        source,
+                        serialized_file,
+                        component_path_id,
+                    ))
+                    if component is None:
+                        unresolved_descendant_component_path_ids.append(
+                            component_path_id
+                        )
+                        continue
+                    typed_components.append(compact_component(component))
+                candidates_for_descendant = [
+                    row for row in typed_components
+                    if row["ownerFields"] or row["runtimeFields"]
+                ]
+                descendant_candidates.extend(candidates_for_descendant)
+                descendant_rows.append({
+                    **descendant,
+                    "typedComponents": typed_components,
+                    "unindexedComponentPathIds":
+                        unresolved_descendant_component_path_ids,
+                    "candidateComponents": candidates_for_descendant,
+                })
             candidates = [
                 row for row in siblings
                 if row["ownerFields"] or row["runtimeFields"]
@@ -484,8 +627,17 @@ def analyze_roots(
             counts["gameObjectsAudited"] += 1
             counts["typedSiblingComponents"] += len(siblings)
             counts["candidateSiblingComponents"] += len(candidates)
+            counts["descendantGameObjectsAudited"] += len(descendant_rows)
+            counts["typedDescendantComponents"] += sum(
+                len(row["typedComponents"]) for row in descendant_rows
+            )
+            counts["candidateDescendantComponents"] += len(
+                descendant_candidates
+            )
             if candidates:
                 counts["gameObjectsWithCandidateSibling"] += 1
+            if descendant_candidates:
+                counts["gameObjectsWithCandidateDescendant"] += 1
             analyzed.append({
                 **root,
                 "gameObject": {
@@ -495,16 +647,22 @@ def analyze_roots(
                         game_object["parentTransformPathId"],
                     "transformComponentPathId":
                         game_object["transformComponentPathId"],
+                    "childTransformPathIds":
+                        game_object.get("childTransformPathIds") or [],
                     "componentPathIds": game_object["componentPathIds"],
                 },
                 "typedSiblingComponents": siblings,
                 "unindexedComponentPathIds":
                     unresolved_component_path_ids,
                 "candidateSiblingComponents": candidates,
+                "descendantGameObjects": descendant_rows,
+                "unresolvedChildTransformPathIds":
+                    unresolved_child_transform_path_ids,
+                "candidateDescendantComponents": descendant_candidates,
                 "candidateStatus": (
-                    "exact_gameobject_typed_owner_or_runtime_sibling"
-                    if candidates
-                    else "no_typed_owner_or_runtime_sibling"
+                    "exact_hierarchy_typed_owner_or_runtime_candidate"
+                    if candidates or descendant_candidates
+                    else "no_typed_owner_or_runtime_sibling_or_descendant"
                 ),
                 "edgeStatus": "no_edge_candidate_only",
             })
@@ -529,14 +687,33 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Exact GameObjects audited: `{summary['gameObjectsAudited']}`",
         "- GameObjects with a typed owner/runtime sibling candidate: "
         f"`{summary['gameObjectsWithCandidateSibling']}`",
+        f"- Exact descendant GameObjects audited: "
+        f"`{summary['descendantGameObjectsAudited']}`",
+        "- Roots with a typed owner/runtime descendant candidate: "
+        f"`{summary['gameObjectsWithCandidateDescendant']}`",
         "",
         "This is a candidate audit, not an ownership or ordering graph. "
         "Exact GameObject component membership does not prove which component "
         "activates Story playback.",
         "",
-        "## Candidate sibling components",
+        "## Descendant typed-component census",
         "",
     ]
+    component_type_counts = report.get("descendantComponentTypeCounts") or []
+    if not component_type_counts:
+        lines.append("_No typed descendant components._")
+    else:
+        lines.extend([
+            "| component type | count |",
+            "| --- | ---: |",
+        ])
+        for row in component_type_counts[:20]:
+            lines.append(f"| `{row['type']}` | {row['count']} |")
+    lines.extend([
+        "",
+        "## Candidate sibling components",
+        "",
+    ])
     candidate_roots = [
         row for row in report["gameObjects"]
         if row["candidateSiblingComponents"]
@@ -570,17 +747,63 @@ def render_markdown(report: dict[str, Any]) -> str:
                 )
     lines.extend([
         "",
+        "## Candidate descendant components",
+        "",
+    ])
+    candidate_descendant_roots = [
+        row for row in report["gameObjects"]
+        if row["candidateDescendantComponents"]
+    ]
+    if not candidate_descendant_roots:
+        lines.append("_No typed owner/runtime descendant candidates._")
+    else:
+        lines.extend([
+            "| Story keys | source object | descendant | depth | "
+            "component type | owner/runtime fields |",
+            "| --- | --- | --- | ---: | --- | --- |",
+        ])
+        for row in candidate_descendant_roots:
+            for descendant in row["descendantGameObjects"]:
+                for component in descendant["candidateComponents"]:
+                    type_row = component["type"]
+                    type_name = (
+                        type_row.get("scriptFullName")
+                        or type_row.get("objectType")
+                        or "unknown"
+                    )
+                    fields = (
+                        component["ownerFields"]
+                        + component["runtimeFields"]
+                    )
+                    field_text = ", ".join(
+                        f"`{field['path']}={field['value']}`"
+                        for field in fields
+                    )
+                    lines.append(
+                        f"| {', '.join(f'`{key}`' for key in row['storyKeys'])} "
+                        f"| `{row['object']['serializedFile']}` / "
+                        f"`{row['object']['pathId']}` | "
+                        f"`{descendant['name']}` / "
+                        f"`{descendant['pathId']}` | "
+                        f"{descendant['depth']} | `{type_name}` | "
+                        f"{field_text} |"
+                    )
+    lines.extend([
+        "",
         "## Evidence boundary",
         "",
         "- Accepted: exact actionable Story value, complete published object "
         "index provenance, resolved `m_GameObject` PPtr, targeted extraction "
-        "of the exact original logical bundle, and exact GameObject component "
-        "PathIDs.",
-        "- Rejected: neighboring GameObjects, parent/child hierarchy, bundle "
-        "proximity, filenames, untyped scalar names, and unresolved PPtrs.",
-        "- Promotion: a candidate sibling still needs independently recovered "
-        "native consumer semantics before ownership/playback promotion and a "
-        "separate control relation before any order edge.",
+        "of the exact original logical bundle, exact GameObject component "
+        "PathIDs, and mutually consistent Transform `m_Children` / `m_Father` "
+        "links for descendants.",
+        "- Rejected: neighboring unrelated GameObjects, bundle proximity, "
+        "filenames, untyped scalar names, unresolved PPtrs, and incomplete or "
+        "inconsistent Transform hierarchies.",
+        "- Promotion: a candidate sibling or descendant still needs "
+        "independently recovered native consumer semantics before ownership/"
+        "playback promotion and a separate control relation before any order "
+        "edge.",
         "",
     ])
     return "\n".join(lines)
@@ -664,12 +887,32 @@ def build_report(
                     wanted[source].add(
                         (serialized_file, component_path_id)
                     )
+                descendants, _ = descendant_game_objects(
+                    game_objects_by_source[source],
+                    game_object_path_id,
+                )
+                for descendant in descendants:
+                    for component_path_id in descendant["componentPathIds"]:
+                        wanted[source].add(
+                            (serialized_file, component_path_id)
+                        )
         component_rows = collect_component_rows(output_root, wanted)
         analyzed, analysis_counts = analyze_roots(
             roots,
             game_objects_by_source,
             component_rows,
         )
+        descendant_component_types: Counter[str] = Counter()
+        for root in analyzed:
+            for descendant in root["descendantGameObjects"]:
+                for component in descendant["typedComponents"]:
+                    type_row = component["type"]
+                    type_name = str(
+                        type_row.get("scriptFullName")
+                        or type_row.get("objectType")
+                        or "unknown"
+                    )
+                    descendant_component_types[type_name] += 1
     totals.update(analysis_counts)
     for key in (
         "objectsScanned",
@@ -679,6 +922,10 @@ def build_report(
         "typedSiblingComponents",
         "candidateSiblingComponents",
         "gameObjectsWithCandidateSibling",
+        "descendantGameObjectsAudited",
+        "typedDescendantComponents",
+        "candidateDescendantComponents",
+        "gameObjectsWithCandidateDescendant",
     ):
         totals.setdefault(key, 0)
     return {
@@ -688,11 +935,19 @@ def build_report(
         "sources": source_indexes,
         "logicalBundles": logical_by_source,
         "summary": dict(sorted(totals.items())),
+        "descendantComponentTypeCounts": [
+            {"type": type_name, "count": count}
+            for type_name, count in sorted(
+                descendant_component_types.items(),
+                key=lambda item: (-item[1], item[0]),
+            )
+        ],
         "gameObjects": analyzed,
         "evidencePolicy": {
             "accepted": (
-                "exact Story value plus resolved m_GameObject PPtr and exact "
-                "component membership from the targeted original AssetBundle"
+                "exact Story value plus resolved m_GameObject PPtr, exact "
+                "component membership, and consistent Transform child/father "
+                "relations from the targeted original AssetBundle"
             ),
             "candidateOnly": (
                 "native consumer semantics are required before ownership or "
