@@ -929,6 +929,15 @@ runtime filtering the whitelist performs, the complete shipped instance
 surface contributes zero new unlinked Story owner, quest placement, or order
 edge.
 
+The DungeonSubGame death-presentation tail is also exhausted for Story
+recovery. All 250 typed Dungeon rows have an empty
+`conditionalDeathPerformanceEntries` collection. Sixteen enable
+`useTeamDieBlackscreen`, but their only nonempty hint is the shared localization
+key `dungeon_blackscreen_text`; no row serializes a `black_*`, dialog, radio,
+cutscene, mission-option, or LevelScript action id in these fields. They prove
+generic team-death presentation policy only and cannot attach any unassigned
+black Story file to the row's otherwise exact `dungeonMissionId`.
+
 The companion installed-VFS scan also closes the server-action-enum shortcut.
 Across 90,659 JsonData/Table candidates, 532 structured files were schema-
 checked for action ids 2013, 4003, 5106, and 5212. Sixteen scalar matches were
@@ -2051,6 +2060,10 @@ remain gated on the recovery work below:
    dialogs are already covered by stronger quest-condition/native-playback
    evidence and its NpcProxyEx rows carry no mission id. Do not repeat this
    whitelist census on the current export.
+   `conditionalDeathPerformanceEntries` is empty on all 250 DungeonSubGame
+   rows. The 16 enabled team-death blackscreens use only the generic
+   `dungeon_blackscreen_text` key or blank values, so this tail adds no
+   `black_*` Story carrier.
    Prioritize a different registry surface
    rather than repeating these SubGame/task/display joins.
    Do not revisit the current loading-pipeline carrier unless the installed

@@ -213,6 +213,11 @@ Only `f1m18d1_1` has a `proxyWhitelist`; its three proxies expose two dialogs,
 both already connected by stronger exact quest-condition or native-playback
 evidence, and all three NpcProxyEx mission ids are blank. This adds no owner,
 node attachment, or order edge and does not belong in the unlinked queue.
+The adjacent DungeonSubGame death-presentation tail does not reopen the black
+Story frontier. `conditionalDeathPerformanceEntries` is empty on all 250
+Dungeon rows. Sixteen set `useTeamDieBlackscreen`, but the only nonempty hint
+is the generic `dungeon_blackscreen_text` localization key; no row carries a
+`black_*` Story id or action. These fields add zero black-scene bindings.
 The installed hotfix caveat has now been closed for the same lane. The current
 Persistent `Gameplay.Beyond.patch.bytes` is 82,021 bytes
 (`737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21`)
@@ -3519,6 +3524,9 @@ Current main-story priorities:
    All typed SubGame mission/logic whitelists are empty. The only proxy
    whitelist reaches two already-connected `f1m18d1` dialogs and no NpcProxyEx
    mission id, so the current whitelist surface is exhausted.
+   The DungeonSubGame death-performance collection is universally empty, and
+   its team-death hint is generic rather than a Story key. Do not revisit it
+   for the 67 unassigned black scenes on this export.
    A diagnostic level intersection with the atmospheric switcher context finds
    89 receivers / 103 Story files on 13 shared levels. Four shared levels have
    only one atmospheric route mission, but their native Story families often
