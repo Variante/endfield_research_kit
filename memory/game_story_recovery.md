@@ -3887,7 +3887,25 @@ Current main-story priorities:
    ChangePlayerGender, and typed Play/StartCutscene actions; decoded Lua and
    exported actions contain no exact e11 transition id. Registry position and
    code address therefore remain identity/cross-reference only, not playback
-   or mission order.
+   or mission order. The refreshed full object index closes the remaining
+   same-GameObject co-component question as well. A focused uncapped scan of
+   all 1,335,450 rows finds exactly two objects carrying the transition id:
+   `TimelineAsset.m_Name` in
+   `CAB-82d26b6bae7321cb80d0443546ece0f3` and
+   `CutsceneRootComponent._timelineName` at PathID
+   `5882731246680757668` in
+   `CAB-84ca91b621bbb75e85fe087c756a78d7`; Persistent contributes none.
+   The latter resolves `m_GameObject` exactly to PathID
+   `1687459436474226084`. Targeted VFS extraction maps its chunk offset to the
+   original 8,966-byte logical bundle
+   `Data/Bundles/Windows/main/77c5ba675b4cfbfd03ec8487.ab`.
+   That root GameObject has no parent and exactly two components: Transform
+   PathID `7900791903818372516` and the same CutsceneRootComponent. A targeted
+   export of the complete bundle contains 10 GameObjects, seven
+   MonoBehaviours, and six PlayableDirectors; no mission, quest, LevelScript,
+   trigger, runtime-owner field, or additional component on the cutscene root
+   exists. This is exact negative component evidence, but it still cannot rule
+   out an external registry or server-selected activator, so it adds no edge.
    The mission evidence audit now enforces the same boundary for Reading/PRTS:
    exact `contentId` joins count as links, while five e11m4 same-number/suffix
    candidates are labeled cross-references only. In particular,
