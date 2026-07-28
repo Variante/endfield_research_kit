@@ -307,6 +307,11 @@ Mission Pipeline:
   causal edges, topological frontiers, cycles, quest forks/joins, and exact
   option branches. Exact native Split/IfElse/Switch Story arms and strictly
   observed downstream convergence are displayed in the same partial graph.
+  Cross-owner cards joined by the same exact typed LevelScript playback source
+  file are retained as `exactLevelScriptPlaybackContext`, not silently
+  reassigned to the selected mission. Generic cutscene preloads remain in a
+  separate `definitionOnlySourceNodes` list. The current CN payload has 11 of
+  the former, two of the latter, and zero unresolved source nodes.
   Conditional rows show their exact event selector plus decoded PureGetter or
   inline-Param predicate operands; exact class-only predicates remain labeled
   without inventing their inner value. Current generated data has exact event

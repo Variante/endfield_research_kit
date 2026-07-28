@@ -1605,6 +1605,19 @@ gameplay-video OCR/audio workflow.
   scene-graph clues do not expand the candidate set. Current CN data admits 21
   such context placements across 14 missions and exposes 31 additional strong
   edges.
+  A second, weaker cross-owner candidate rule requires three exact inputs:
+  an already indexed Story card, a typed final-playback occurrence, and a
+  `levelscriptSceneChain` edge carrying the same source file. These nodes are
+  labeled `exactLevelScriptPlaybackContext`; they remain supported/weak
+  context and never become authored mission ownership or strict chronology.
+  Current CN data adds 11 such cutscene placements and leaves the stronger 21
+  native-control-path placements unchanged. Per-endpoint action classes remain
+  on generic scene-chain edges. A missing endpoint that is only
+  `preload_cutscene` is reported separately under
+  `definitionOnlySourceNodes`, unless another exact final-playback occurrence
+  for that Story key exists anywhere in the installed corpus. Current schema
+  `sourceStoryPartialOrder.v18` has zero unresolved source nodes and preserves
+  two `e9m2` preload-only definitions.
   Native `Branch` (`0x002d/0x09`) is distinct from conditional fan-out. Its
   runtime fields are `_idList` and `m_index`; the installed
   `GameAssembly.dll` `Branch.Execute` body reads the indexed list entry, uses

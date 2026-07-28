@@ -13052,12 +13052,19 @@ def build_language_bundle(
                     continue
                 seen_chain_signatures.add(signature)
                 chain_nodes.update(sequence)
-                scene_sequence = _compact_scene_graph_sequence(sequence, available)
+                scene_sequence, scene_sequence_steps = (
+                    _compact_scene_graph_sequence_steps(
+                        sequence,
+                        sequence_steps,
+                        available,
+                    )
+                )
                 if scene_sequence:
                     scene_chain_sequences.append({
                         "file": chain.get("file") or "",
                         "levelId": chain.get("levelId") or "",
                         "sequence": scene_sequence,
+                        "steps": scene_sequence_steps,
                     })
                 if len(sequence) < 2:
                     continue
@@ -13507,6 +13514,7 @@ def build_language_bundle(
         })
         for chain in scene_chain_sequences:
             sequence = chain.get("sequence") or []
+            sequence_steps = chain.get("steps") or []
             if sequence:
                 first_scene = sequence[0]
                 meta = chain_start_meta[first_scene]
@@ -13532,6 +13540,27 @@ def build_language_bundle(
                     edge.setdefault("positions", [])
                     if pos not in edge["positions"]:
                         edge["positions"].append(pos)
+                    for endpoint, step_index in (
+                        ("from", pos),
+                        ("to", pos + 1),
+                    ):
+                        if step_index >= len(sequence_steps):
+                            continue
+                        source_info = (
+                            sequence_steps[step_index].get("source") or {}
+                        )
+                        action_name = source_info.get("actionName") or ""
+                        if action_name:
+                            field = f"{endpoint}Actions"
+                            refs = edge.setdefault(field, [])
+                            if action_name not in refs:
+                                refs.append(action_name)
+                        record_class = source_info.get("recordClass") or ""
+                        if record_class:
+                            field = f"{endpoint}ActionClasses"
+                            refs = edge.setdefault(field, [])
+                            if record_class not in refs:
+                                refs.append(record_class)
         # Levelscript file-order edges (weak ordering hints).
         # File-order tokens within a single SerializeReference dump usually
         # track authored event flow even when the records aren't UID-linked,

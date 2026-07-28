@@ -12,11 +12,11 @@ The original client data supports a useful **partial order**, not one
 authoritative total scene list for every mission. The current strict CN audit
 contains:
 
-- 486 missions and 8,853 candidate Story scene placements;
-- 1,426 accepted strong scene edges and 820 retained supported-topology edges;
-- 1,320 transitively reduced component edges;
-- 3,638 comparable pairs out of 248,838 within-mission pairs (1.46%);
-- 5,096 isolated scenes and 2,063 scenes with weak/supported evidence only;
+- 487 missions and 8,872 candidate Story scene placements;
+- 1,428 accepted strong scene edges and 834 retained supported-topology edges;
+- 1,322 transitively reduced component edges;
+- 3,640 comparable pairs out of 249,479 within-mission pairs (1.46%);
+- 5,097 isolated scenes and 2,077 scenes with weak/supported evidence only;
 - zero cyclic strongly connected components;
 - 250 explicit quest forks, 53 quest merges, and 59 authored cross-scene
   option groups.
@@ -68,6 +68,29 @@ For `e11m6`, the original `23100100001` Leader-enter path proves
 cutscene_e11m2467_liexitexiao_03` before the latter cutscene path reaches
 `remotecomm_e11m6_1` and `radio_e11m6_4`. These are binary path relations, not
 filename, OCR, or manual-order promotions.
+
+A separate weaker cross-owner rule now closes the source-node attachment
+frontier without claiming ownership or chronology. It admits an existing
+indexed Story card only when an exact typed LevelScript final-playback
+occurrence and a mission `levelscriptSceneChain` name the same source file.
+Eleven cutscene cards satisfy this three-way join across `e2m6`, `e2m7`,
+`e8m2`, `e8m3`, and `sm2l6m1`; their node membership is explicitly
+`exactLevelScriptPlaybackContext` and their relations remain weak/supported.
+The join includes the five designer anchor-perish cutscenes and the map/indie
+cutscenes because their exported AnimeStudio Actor/Audio/Effect/Light/Others
+containers already provide real Story cards. It does not create a card from a
+bare identifier. The 21 stronger exact native-control-path contexts retain
+their original classification.
+
+Endpoint action metadata also separates preload definitions from playback.
+`cutscene_test_map02_lv002_FZDS_1` and
+`cutscene_test_map02_lv002_ZLHX_3` occur only on exact
+`PreloadCutsceneAction` records in the `e9m2` source chains, so they remain
+visible under `definitionOnlySourceNodes` rather than appearing as missing
+playback cards. A global exact playback occurrence overrides that closure;
+this keeps `cutscene_e2m7_010` actionable/contextual despite one separate
+preload edge. Current schema `sourceStoryPartialOrder.v18` therefore has zero
+unresolved source nodes and two definition-only preload nodes.
 
 The original binary also resolves the misleadingly named ActionBase
 `Branch` (`0x002d/0x09`) as an ordered action list, not conditional fan-out.

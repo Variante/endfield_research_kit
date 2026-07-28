@@ -959,6 +959,163 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             ["dlg_override_only"],
         )
 
+    def test_preload_only_source_node_is_definition_not_unresolved(
+        self,
+    ) -> None:
+        candidates = {"radio_m1_1": "radio"}
+        payload = mission_payload([{
+            "from": "radio_m1_1",
+            "to": "cutscene_test_preload",
+            "kind": "levelscriptSceneChain",
+            "fromActionClasses": ["play_radio"],
+            "toActionClasses": ["preload_cutscene"],
+        }])
+        next(
+            node
+            for node in payload["flow"]["sceneGraph"]["nodes"]
+            if node["key"] == "cutscene_test_preload"
+        )["kind"] = "cutscene"
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            candidates,
+            payload,
+        )
+
+        self.assertEqual(result["unresolvedSourceNodes"], [])
+        self.assertEqual(
+            result["definitionOnlySourceNodes"],
+            [{
+                "key": "cutscene_test_preload",
+                "kind": "cutscene",
+                "incidentEdgeKinds": ["levelscriptSceneChain"],
+                "recordClasses": ["preload_cutscene"],
+            }],
+        )
+        self.assertEqual(
+            result["summary"]["definitionOnlySourceNodeCount"],
+            1,
+        )
+
+    def test_final_playback_source_node_remains_unresolved(self) -> None:
+        candidates = {"radio_m1_1": "radio"}
+        payload = mission_payload([{
+            "from": "radio_m1_1",
+            "to": "cutscene_missing_playback",
+            "kind": "levelscriptSceneChain",
+            "fromActionClasses": ["play_radio"],
+            "toActionClasses": ["play_cutscene"],
+        }])
+        next(
+            node
+            for node in payload["flow"]["sceneGraph"]["nodes"]
+            if node["key"] == "cutscene_missing_playback"
+        )["kind"] = "cutscene"
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            candidates,
+            payload,
+        )
+
+        self.assertEqual(
+            [row["key"] for row in result["unresolvedSourceNodes"]],
+            ["cutscene_missing_playback"],
+        )
+        self.assertEqual(result["definitionOnlySourceNodes"], [])
+
+    def test_global_final_playback_overrides_preload_only_incident_edge(
+        self,
+    ) -> None:
+        candidates = {"radio_m1_1": "radio"}
+        payload = mission_payload([{
+            "from": "radio_m1_1",
+            "to": "cutscene_played_elsewhere",
+            "kind": "levelscriptSceneChain",
+            "fromActionClasses": ["play_radio"],
+            "toActionClasses": ["preload_cutscene"],
+        }])
+        next(
+            node
+            for node in payload["flow"]["sceneGraph"]["nodes"]
+            if node["key"] == "cutscene_played_elsewhere"
+        )["kind"] = "cutscene"
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            candidates,
+            payload,
+            exact_playback_source_keys={"cutscene_played_elsewhere"},
+        )
+
+        self.assertEqual(
+            [row["key"] for row in result["unresolvedSourceNodes"]],
+            ["cutscene_played_elsewhere"],
+        )
+        self.assertEqual(result["definitionOnlySourceNodes"], [])
+
+    def test_exact_playback_source_file_adds_cross_owner_context(
+        self,
+    ) -> None:
+        payload = mission_payload([{
+            "from": "radio_m1_1",
+            "to": "cutscene_other_owner_1",
+            "kind": "levelscriptSceneChain",
+            "sourceFiles": ["source.json"],
+        }])
+        candidates, context_keys = (
+            partial_order._expand_levelscript_playback_context_candidates(
+                {"radio_m1_1": "radio"},
+                payload,
+                {"cutscene_other_owner_1": "cutscene"},
+                {"cutscene_other_owner_1": {"source.json"}},
+            )
+        )
+
+        self.assertEqual(
+            candidates["cutscene_other_owner_1"],
+            "cutscene",
+        )
+        self.assertEqual(
+            context_keys,
+            {"cutscene_other_owner_1"},
+        )
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            candidates,
+            payload,
+            exact_levelscript_playback_context_keys=context_keys,
+        )
+        context_node = next(
+            node
+            for node in result["nodes"]
+            if node["key"] == "cutscene_other_owner_1"
+        )
+        self.assertEqual(
+            context_node["membership"],
+            "exactLevelScriptPlaybackContext",
+        )
+
+    def test_playback_context_requires_same_source_file(self) -> None:
+        payload = mission_payload([{
+            "from": "radio_m1_1",
+            "to": "cutscene_other_owner_1",
+            "kind": "levelscriptSceneChain",
+            "sourceFiles": ["mission-source.json"],
+        }])
+
+        candidates, context_keys = (
+            partial_order._expand_levelscript_playback_context_candidates(
+                {"radio_m1_1": "radio"},
+                payload,
+                {"cutscene_other_owner_1": "cutscene"},
+                {"cutscene_other_owner_1": {"other-source.json"}},
+            )
+        )
+
+        self.assertEqual(candidates, {"radio_m1_1": "radio"})
+        self.assertEqual(context_keys, set())
+
     def test_quest_forks_and_merges_are_preserved(self) -> None:
         candidates = {"dlg_a": "dlg"}
         payload = mission_payload(
