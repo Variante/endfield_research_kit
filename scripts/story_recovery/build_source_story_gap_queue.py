@@ -36,7 +36,7 @@ from build_source_story_partial_order import build_report as build_partial_order
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v10"
+SCHEMA = "sourceStoryGapQueue.v11"
 BUCKET_ORDER = ("main", "event", "major", "character", "other")
 
 # The score is a triage aid, not recovered chronology. Every contribution is
@@ -50,8 +50,8 @@ SCORE_WEIGHTS = {
     "actionableWeakOnlyScenes": 4,
     "unresolvedSourceNodes": 4,
     "questIdsWithoutStrictStoryAttachment": 3,
-    "noExplicitOptionRouteGroups": 2,
-    "excludedOptionEvidenceGroups": 2,
+    "actionableNoExplicitOptionRouteGroups": 2,
+    "actionableExcludedOptionEvidenceGroups": 2,
 }
 
 CORE_STORY_NODE_KINDS = frozenset({
@@ -442,8 +442,8 @@ def _frontier_contributions(metrics: dict[str, int]) -> dict[str, int]:
         "source-cycle-review": metrics["sourceCycles"] * 20 + metrics["cycleScenes"] * 8,
         "quest-scene-attachment": metrics["questIdsWithoutStrictStoryAttachment"] * 3,
         "dialog-option-runtime": (
-            metrics["noExplicitOptionRouteGroups"] * 2
-            + metrics["excludedOptionEvidenceGroups"] * 2
+            metrics["actionableNoExplicitOptionRouteGroups"] * 2
+            + metrics["actionableExcludedOptionEvidenceGroups"] * 2
         ),
         "unresolved-source-node": metrics["unresolvedSourceNodes"] * 4,
         "isolated-scene-source-link":
@@ -1422,8 +1422,32 @@ def build_gap_row(
         "questForks": int(summary.get("questForkCount") or 0),
         "questMerges": int(summary.get("questMergeCount") or 0),
         "strictDialogOptionGroups": int(summary.get("dialogLineOptionGroupCount") or 0),
-        "noExplicitOptionRouteGroups": int(summary.get("noExplicitRouteGroupCount") or 0),
-        "excludedOptionEvidenceGroups": int(summary.get("excludedDialogLineOptionGroupCount") or 0),
+        "noExplicitOptionRouteGroups": int(
+            summary.get("noExplicitRouteGroupCount") or 0
+        ),
+        "actionableNoExplicitOptionRouteGroups": int(
+            summary.get(
+                "branchingNoExplicitRouteGroupCount",
+                summary.get("noExplicitRouteGroupCount"),
+            )
+            or 0
+        ),
+        "singleOptionNoExplicitRouteGroups": int(
+            summary.get("singleOptionNoExplicitRouteGroupCount") or 0
+        ),
+        "excludedOptionEvidenceGroups": int(
+            summary.get("excludedDialogLineOptionGroupCount") or 0
+        ),
+        "actionableExcludedOptionEvidenceGroups": int(
+            summary.get(
+                "actionableExcludedDialogLineOptionGroupCount",
+                summary.get("excludedDialogLineOptionGroupCount"),
+            )
+            or 0
+        ),
+        "closedExcludedOptionEvidenceGroups": int(
+            summary.get("closedExcludedDialogLineOptionGroupCount") or 0
+        ),
         "timelineUnresolvedRecords": sum(unresolved_kinds.values()),
     }
     score_contributions = {
@@ -1575,8 +1599,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in report["summary"]["buckets"]:
-        option_gaps = int(row.get("noExplicitOptionRouteGroups") or 0) + int(
-            row.get("excludedOptionEvidenceGroups") or 0
+        option_gaps = int(
+            row.get("actionableNoExplicitOptionRouteGroups") or 0
+        ) + int(
+            row.get("actionableExcludedOptionEvidenceGroups") or 0
         )
         lines.append(
             f"| `{row['bucket']}` | {row.get('missions', 0)} | {row.get('score', 0)} | "
@@ -1604,7 +1630,10 @@ def render_markdown(report: dict[str, Any]) -> str:
     ])
     for row in report["missions"][:100]:
         metrics = row["metrics"]
-        option_gaps = metrics["noExplicitOptionRouteGroups"] + metrics["excludedOptionEvidenceGroups"]
+        option_gaps = (
+            metrics["actionableNoExplicitOptionRouteGroups"]
+            + metrics["actionableExcludedOptionEvidenceGroups"]
+        )
         lines.append(
             f"| {row['rank']} | `{md_escape(row['mission'])}` | {row['bucketRank']} | {row['score']} | "
             f"{metrics['sceneCount']} | {metrics['isolatedScenes']} "
@@ -1650,8 +1679,11 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"LevelScript contexts: `{metrics['untypedMultiSceneLevelscriptContexts']}`; "
             f"closed binary-negative contexts: "
             f"`{metrics['closedNonPlaybackLevelscriptContexts']}`; "
-            f"option gap groups: "
-            f"`{metrics['noExplicitOptionRouteGroups'] + metrics['excludedOptionEvidenceGroups']}`.",
+            f"actionable option gap groups: "
+            f"`{metrics['actionableNoExplicitOptionRouteGroups'] + metrics['actionableExcludedOptionEvidenceGroups']}` "
+            f"(`{metrics['singleOptionNoExplicitRouteGroups']}` single-option "
+            f"acknowledgements and `{metrics['closedExcludedOptionEvidenceGroups']}` "
+            "shared/cosmetic exclusions are retained but not scored).",
             "",
         ])
         contexts = row.get("untypedMultiSceneLevelscriptContexts") or []

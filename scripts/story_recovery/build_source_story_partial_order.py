@@ -45,7 +45,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v11"
+SCHEMA = "sourceStoryPartialOrder.v12"
 SPAWNER_CONFIG_ROOTS = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Data" / "Json" / "SpawnerConfig",
@@ -2076,6 +2076,36 @@ def build_mission_partial_order(
     dialog_line_options.sort(key=dialog_row_sort_key)
     excluded_dialog_line_options.sort(key=dialog_row_sort_key)
     no_explicit_route_groups.sort(key=dialog_row_sort_key)
+    single_option_no_explicit_route_groups = [
+        row
+        for row in no_explicit_route_groups
+        if len(row.get("options") or []) == 1
+    ]
+    branching_no_explicit_route_groups = [
+        row
+        for row in no_explicit_route_groups
+        if len(row.get("options") or []) > 1
+    ]
+    closed_excluded_dialog_line_options = [
+        row
+        for row in excluded_dialog_line_options
+        if row.get("exclusionReason") == "sharedOrDefaultCandidates"
+        or (
+            row.get("exclusionReason") == "inferredOrUnsupportedRisk"
+            and safe_key((row.get("riskEvidence") or {}).get("code"))
+            == "cosmeticChoice"
+        )
+    ]
+    closed_excluded_ids = {
+        (safe_key(row.get("storyKey")), row.get("group"))
+        for row in closed_excluded_dialog_line_options
+    }
+    actionable_excluded_dialog_line_options = [
+        row
+        for row in excluded_dialog_line_options
+        if (safe_key(row.get("storyKey")), row.get("group"))
+        not in closed_excluded_ids
+    ]
     dialog_line_route_count = sum(len(row.get("options") or []) for row in dialog_line_options)
     dialog_line_count = sum(
         len(option.get("branchLineIds") or [])
@@ -2095,6 +2125,10 @@ def build_mission_partial_order(
     no_explicit_route_option_count = sum(
         len(row.get("options") or [])
         for row in no_explicit_route_groups
+    )
+    branching_no_explicit_route_option_count = sum(
+        len(row.get("options") or [])
+        for row in branching_no_explicit_route_groups
     )
     cycles = [component for component in components if component["cyclic"]]
     tier_counts = Counter(edge["tier"] for edge in direct_edges)
@@ -2140,8 +2174,18 @@ def build_mission_partial_order(
             "dialogLineOptionLineCount": dialog_line_count,
             "excludedDialogLineOptionGroupCount": len(excluded_dialog_line_options),
             "excludedDialogLineOptionCount": excluded_dialog_line_option_count,
+            "actionableExcludedDialogLineOptionGroupCount":
+                len(actionable_excluded_dialog_line_options),
+            "closedExcludedDialogLineOptionGroupCount":
+                len(closed_excluded_dialog_line_options),
             "noExplicitRouteGroupCount": len(no_explicit_route_groups),
             "noExplicitRouteOptionCount": no_explicit_route_option_count,
+            "branchingNoExplicitRouteGroupCount":
+                len(branching_no_explicit_route_groups),
+            "branchingNoExplicitRouteOptionCount":
+                branching_no_explicit_route_option_count,
+            "singleOptionNoExplicitRouteGroupCount":
+                len(single_option_no_explicit_route_groups),
             "dialogLineOptionProvenance": dict(sorted(dialog_line_provenance_counts.items())),
             "edgeKinds": dict(sorted(kind_counts.items())),
         },
@@ -2158,7 +2202,15 @@ def build_mission_partial_order(
             "nativeControlMerges": native_control_merges,
             "dialogLineOptions": dialog_line_options,
             "excludedDialogLineOptions": excluded_dialog_line_options,
+            "actionableExcludedDialogLineOptions":
+                actionable_excluded_dialog_line_options,
+            "closedExcludedDialogLineOptions":
+                closed_excluded_dialog_line_options,
             "noExplicitRouteGroups": no_explicit_route_groups,
+            "branchingNoExplicitRouteGroups":
+                branching_no_explicit_route_groups,
+            "singleOptionNoExplicitRouteGroups":
+                single_option_no_explicit_route_groups,
             "questForks": quest_branches,
             "questMerges": quest_merges,
         },
@@ -2285,8 +2337,23 @@ def build_report(
         totals["dialogLineOptionLines"] += summary["dialogLineOptionLineCount"]
         totals["excludedDialogLineOptionGroups"] += summary["excludedDialogLineOptionGroupCount"]
         totals["excludedDialogLineOptions"] += summary["excludedDialogLineOptionCount"]
+        totals["actionableExcludedDialogLineOptionGroups"] += (
+            summary["actionableExcludedDialogLineOptionGroupCount"]
+        )
+        totals["closedExcludedDialogLineOptionGroups"] += (
+            summary["closedExcludedDialogLineOptionGroupCount"]
+        )
         totals["noExplicitRouteGroups"] += summary["noExplicitRouteGroupCount"]
         totals["noExplicitRouteOptions"] += summary["noExplicitRouteOptionCount"]
+        totals["branchingNoExplicitRouteGroups"] += (
+            summary["branchingNoExplicitRouteGroupCount"]
+        )
+        totals["branchingNoExplicitRouteOptions"] += (
+            summary["branchingNoExplicitRouteOptionCount"]
+        )
+        totals["singleOptionNoExplicitRouteGroups"] += (
+            summary["singleOptionNoExplicitRouteGroupCount"]
+        )
         totals["missingMissionBundles"] += int("missingMissionBundle" in row["warnings"])
         totals["missionsWithStrongEdges"] += int(summary["strongEdgeCount"] > 0)
         totals["missionsWithCycles"] += int(summary["cycleCount"] > 0)
@@ -2357,9 +2424,15 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"operand decodes, `{summary.get('nativeClassOnlyPredicates', 0)}` exact class-only, "
         f"and `{summary.get('nativeUnresolvedPredicates', 0)}` unresolved",
         f"- excluded option evidence: `{summary.get('excludedDialogLineOptions', 0)}` options "
-        f"in `{summary.get('excludedDialogLineOptionGroups', 0)}` groups",
+        f"in `{summary.get('excludedDialogLineOptionGroups', 0)}` groups "
+        f"(`{summary.get('actionableExcludedDialogLineOptionGroups', 0)}` still "
+        f"actionable, `{summary.get('closedExcludedDialogLineOptionGroups', 0)}` "
+        "closed shared/cosmetic)",
         f"- option groups with no explicit route: `{summary.get('noExplicitRouteGroups', 0)}` "
-        f"(`{summary.get('noExplicitRouteOptions', 0)}` options)",
+        f"(`{summary.get('noExplicitRouteOptions', 0)}` options); "
+        f"`{summary.get('branchingNoExplicitRouteGroups', 0)}` are multi-choice "
+        f"groups and `{summary.get('singleOptionNoExplicitRouteGroups', 0)}` are "
+        "single-option acknowledgements",
         "",
         "## Evidence Policy",
         "",
