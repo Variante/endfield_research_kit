@@ -12,6 +12,159 @@ from tools import endfield_source_graph
 
 
 class SourceGraphAssetMapScopeTests(unittest.TestCase):
+    def test_mission_submission_context_preserves_non_ownership_boundaries(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            mission_root = root / "mission_pipeline" / "missions"
+            mission_root.mkdir(parents=True)
+            (mission_root / "testm1.json").write_text(
+                json.dumps(
+                    {
+                        "mission": {"id": "testm1"},
+                        "nodes": [
+                            {
+                                "id": "testm1_q#1",
+                                "objectives": [
+                                    {
+                                        "index": 1,
+                                        "submissionChecks": [
+                                            {
+                                                "submissionId": "submit_fixture",
+                                                "conditionId": "submit_condition",
+                                                "tableDefined": True,
+                                                "requirementGroups": [
+                                                    {
+                                                        "index": 1,
+                                                        "items": [
+                                                            {
+                                                                "itemId": "item_fixture",
+                                                                "count": 1,
+                                                            }
+                                                        ],
+                                                    }
+                                                ],
+                                            }
+                                        ],
+                                        "submissionDialogCoGates": [
+                                            {
+                                                "submissionId": "submit_fixture",
+                                                "dialogId": "dlg_fixture_1",
+                                                "finishId": -1,
+                                                "combineConditionId": "combine_1",
+                                                "relation": (
+                                                    "same_authored_and_objective"
+                                                ),
+                                            }
+                                        ],
+                                        "submissionLevelScriptCoGates": [
+                                            {
+                                                "submissionId": "submit_fixture",
+                                                "levelId": "map_fixture",
+                                                "scriptId": "12345",
+                                                "conditionId": "script_condition",
+                                                "combineConditionId": "combine_2",
+                                                "relation": (
+                                                    "same_authored_and_objective"
+                                                ),
+                                            }
+                                        ],
+                                    }
+                                ],
+                            }
+                        ],
+                        "storyOrder": {
+                            "directEdges": [
+                                {
+                                    "from": "dlg_fixture_1",
+                                    "to": "dlg_fixture_2",
+                                    "kind": "levelscriptDialogExit",
+                                    "tier": "strong",
+                                    "sourceScript": "12345",
+                                    "headerLocalId": 6,
+                                    "targetLocalId": 7,
+                                }
+                            ]
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            builder = endfield_source_graph.SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                include_asset_maps=False,
+            )
+            builder.open()
+            try:
+                builder.add_submit_item_node(
+                    "submit_fixture",
+                    source="SubmitItem",
+                )
+                with patch.object(
+                    endfield_source_graph,
+                    "MISSION_PIPELINE_ROOT",
+                    root / "mission_pipeline",
+                ):
+                    builder.ingest_mission_pipeline_submission_context()
+
+                required_edge = builder.db.execute(
+                    """
+                    SELECT data FROM edges
+                    WHERE kind = 'quest_objective_requires_submit_item'
+                    """
+                ).fetchone()
+                self.assertIsNotNone(required_edge)
+                required_data = json.loads(required_edge[0])
+                self.assertTrue(required_data["objectiveRequirement"])
+                self.assertFalse(required_data["playbackOwnership"])
+                self.assertFalse(required_data["openUiOwnership"])
+                self.assertFalse(required_data["orderEvidence"])
+                edge_kinds = {
+                    row[0]
+                    for row in builder.db.execute(
+                        "SELECT kind FROM edges"
+                    ).fetchall()
+                }
+                self.assertIn(
+                    "quest_has_submission_dialog_co_gate",
+                    edge_kinds,
+                )
+                self.assertIn(
+                    "submission_dialog_co_gate_tests_dialog_finish",
+                    edge_kinds,
+                )
+                self.assertIn(
+                    "quest_has_submission_level_script_co_gate",
+                    edge_kinds,
+                )
+                self.assertIn(
+                    "submission_level_script_co_gate_tests_stage_max",
+                    edge_kinds,
+                )
+                self.assertIn(
+                    "level_script_exact_dialog_exit_trigger",
+                    edge_kinds,
+                )
+                self.assertIn(
+                    "level_script_exact_dialog_playback_target",
+                    edge_kinds,
+                )
+                story_edge = builder.db.execute(
+                    """
+                    SELECT data FROM edges
+                    WHERE kind = 'level_script_exact_dialog_playback_target'
+                    """
+                ).fetchone()
+                self.assertIsNotNone(story_edge)
+                story_data = json.loads(story_edge[0])
+                self.assertEqual(story_data["headerLocalId"], 6)
+                self.assertEqual(story_data["targetLocalId"], 7)
+                self.assertFalse(story_data["openUiOwnership"])
+                self.assertFalse(story_data["orderEvidence"])
+            finally:
+                builder.close()
+
     def test_mission_pipeline_story_scope_stays_non_owning_in_graph(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
