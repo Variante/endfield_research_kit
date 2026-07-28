@@ -873,19 +873,24 @@ inherit its mission. The next useful binary surface must co-carry or resolve a
 full scene/script address and an authored mission/quest owner; the proven quit
 consumer alone cannot provide either missing identity.
 
-Those seven missionless intersections are now represented rather than hidden.
+Those ten missionless intersections are now represented rather than hidden.
 The coverage builder joins each missionless row's exact `bindScriptId` to the
-same script id on a decoded native playback occurrence, yielding seven runtime
-nodes, eight unique Story files, and eleven SubGame-to-Story placements. The
-four boss-rush rows share `cutscene_e1m8_2`; the three WorldChallenge rows cover
-seven activity Story files. These remain outside connected-mission coverage.
-The strongest original-data owner candidates were also exhausted: boss-rush
-`_01` has a `QuestStateEqual(e1m8_q#4)` unlock prerequisite, not a playback
-owner, while activity stage 6 co-identifies `missionId=a1m6d6` and
-`rankRelatedId=activity_qingxi_qiangti_6` but native runtime storage keeps stage
-mission state separate from rank-related game-mechanic info. Stages 3/4 have
-blank `rankRelatedId`. All seven target scripts are parent-zero roots with one
-MainTask, no mission/quest literal, and no exact MissionRuntime occurrence.
+same script id on a decoded native playback occurrence, yielding ten runtime
+nodes, nine unique Story files, and fourteen SubGame-to-Story placements. Four
+boss-rush rows share `cutscene_e1m8_2`, three share
+`cutscene_e3m5_1`, and the three WorldChallenge rows cover seven activity Story
+files. These remain outside connected-mission coverage. The strongest
+original-data owner candidates were also exhausted. Boss-rush
+`dung01_bossrush01_01` has a `QuestStateEqual(e1m8_q#4)` unlock prerequisite,
+while `dung01_bossrush03_01` has the adjacent enum value
+`MissionStateEqual(e3m5)`. The latter's exact node reaches
+`bindScriptId=17500000002 -> cutscene_e3m5_1`, but the mission state gates only
+SubGame availability; it does not own or trigger playback. Activity stage 6
+co-identifies `missionId=a1m6d6` and
+`rankRelatedId=activity_qingxi_qiangti_6`, but native runtime storage keeps
+stage mission state separate from rank-related game-mechanic info. Stages 3/4
+have blank `rankRelatedId`. All ten target scripts are parent-zero roots with
+one MainTask, no mission/quest literal, and no exact MissionRuntime occurrence.
 
 The companion installed-VFS scan also closes the server-action-enum shortcut.
 Across 90,659 JsonData/Table candidates, 532 structured files were schema-
@@ -1996,8 +2001,9 @@ remain gated on the recovery work below:
    The current ten missionless SubGame playback rows are now closed across
    their complete exported exact-reference and receiver-task surfaces: nine
    unique Story files across fourteen placements, one non-owning activity
-   mission association, one quest unlock, five prior-challenge gates, and zero
-   MissionRuntime task consumers. Prioritize a different registry surface
+   mission association, one quest unlock, one mission-state unlock, five
+   prior-challenge gates, and zero MissionRuntime task consumers. Prioritize a
+   different registry surface
    rather than repeating these SubGame/task/display joins.
    Do not revisit the current loading-pipeline carrier unless the installed
    binary or IFix payload changes. Never promote Story naming, OCR, gameplay

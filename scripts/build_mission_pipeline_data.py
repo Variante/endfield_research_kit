@@ -3494,6 +3494,18 @@ def load_subgame_cross_references(
                         "conditionTypeName": "QuestStateEqual",
                         "finding": "The quest state gates SubGame availability; it does not own runtime playback.",
                     }
+                elif condition_type == 19 and params:
+                    association = {
+                        "relation": "subgame_unlock_mission_prerequisite",
+                        "targetType": "mission",
+                        "targetId": params[0],
+                        "conditionType": 19,
+                        "conditionTypeName": "MissionStateEqual",
+                        "finding": (
+                            "The mission state gates SubGame availability; it "
+                            "does not own or trigger runtime playback."
+                        ),
+                    }
                 elif condition_type == 5031 and params:
                     association = {
                         "relation": "subgame_unlock_previous_game_mechanic",
