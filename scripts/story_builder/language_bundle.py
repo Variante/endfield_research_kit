@@ -23,6 +23,7 @@ from .mission_recovery import (
     decode_mission_world_entity_condition_groups,
     decode_mission_world_entity_condition_refs,
     is_call_server_self_uid_callback,
+    is_play_dialog_hide_non_identifier_payload,
 )
 
 _RADIO_CONTINUATION_REPORT_PATH = (
@@ -12379,6 +12380,8 @@ def build_language_bundle(
         seen_hash_terminal_contexts: set[tuple] = set()
         call_server_callback_contexts: list[dict] = []
         seen_call_server_callback_contexts: set[tuple] = set()
+        non_node_scalar_contexts: list[dict] = []
+        seen_non_node_scalar_contexts: set[tuple] = set()
         if flow:
             for quest in flow.get("quests") or []:
                 for hint in quest.get("tracking") or []:
@@ -12466,6 +12469,30 @@ def build_language_bundle(
                                 if preceding_scene_key:
                                     callback["precedingSceneKey"] = preceding_scene_key
                                 call_server_callback_contexts.append(callback)
+                            continue
+                        if is_play_dialog_hide_non_identifier_payload(node_key, step):
+                            source_step = compact_levelscript_step(step, node_key, raw_text)
+                            source_info = source_step.get("source") or {}
+                            scalar_signature = (
+                                file_ref,
+                                level_id,
+                                str(source_info.get("uid") or "").casefold(),
+                                node_key,
+                            )
+                            if scalar_signature not in seen_non_node_scalar_contexts:
+                                seen_non_node_scalar_contexts.add(scalar_signature)
+                                non_node_scalar_contexts.append({
+                                    "kind": "levelscriptNonNodeScalarPayload",
+                                    "file": file_ref,
+                                    "levelId": level_id,
+                                    "payloadText": node_key,
+                                    "nativeAction": "PlayDialogAndHideSceneObjectAction",
+                                    "identityRole": "punctuation_only_non_identifier",
+                                    "storyNode": False,
+                                    "missionOwnershipEvidence": False,
+                                    "orderEvidence": False,
+                                    "sourceStep": source_step,
+                                })
                             continue
                         if file_ref and _is_story_scene_graph_key(node_key, available):
                             signature = (file_ref, level_id, start, payload_index, node_key)
@@ -13220,6 +13247,8 @@ def build_language_bundle(
             payload["levelscriptHashTerminals"] = hash_terminal_contexts
         if call_server_callback_contexts:
             payload["levelscriptCallServerCallbacks"] = call_server_callback_contexts
+        if non_node_scalar_contexts:
+            payload["levelscriptNonNodeScalarPayloads"] = non_node_scalar_contexts
         if scene_file_order:
             payload["sceneFileOrder"] = {
                 key: value
