@@ -1479,6 +1479,104 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
             inline_condition["conditionParam"],
         )
 
+        while_payload = (
+            b"\x04\x00"
+            + struct.pack("<iii", 58, -1, -1)
+            + struct.pack("<i", 26)
+        )
+        while_action = decode_levelscript_record_payload(
+            while_payload,
+            {
+                "code": 0x0501,
+                "kind": 0x0A,
+                "unionTag": 0x0501,
+                "serializedMemberCount": 0x0A,
+                "payloadStart": 0,
+            },
+            next_start=len(while_payload),
+            action_map_role="actionList#1 root",
+        )
+        self.assertEqual(26, while_action["whileDoActionLocalId"])
+        self.assertEqual(
+            {
+                "value": False,
+                "idRef": 58,
+                "paramSource": -1,
+                "path": None,
+            },
+            while_action["whileConditionParam"],
+        )
+        self.assertEqual([26], while_action["branchLocalRefs"])
+        self.assertEqual("typed-while-action-body", while_action["branchRole"])
+        self.assertEqual(58, while_action["whileConditionActionLocalId"])
+
+        malformed_while = decode_levelscript_record_payload(
+            while_payload + b"\x00",
+            {
+                "code": 0x0501,
+                "kind": 0x0A,
+                "unionTag": 0x0501,
+                "serializedMemberCount": 0x0A,
+                "payloadStart": 0,
+            },
+            next_start=len(while_payload) + 1,
+            action_map_role="actionList#1 root",
+        )
+        self.assertNotIn("whileDoActionLocalId", malformed_while)
+
+    def test_control_path_traverses_typed_while_action_body(self):
+        header = {
+            "code": 0x1052,
+            "kind": 0x00,
+            "start": 10,
+            "localId": 1,
+            "nextId": 0,
+            "strings": [],
+            "plainStrings": [],
+        }
+        while_action = {
+            "code": 0x0501,
+            "kind": 0x0A,
+            "start": 100,
+            "localId": 3,
+            "nextId": -1,
+            "strings": [],
+            "plainStrings": [],
+        }
+        target = {
+            "code": 0x0363,
+            "kind": 0x0D,
+            "start": 200,
+            "localId": 4,
+            "nextId": -1,
+            "strings": [{"text": "radio_testm1_1"}],
+            "plainStrings": [],
+        }
+        records = [header, while_action, target]
+        membership = {
+            10: "headerList#1",
+            100: "actionList#1 root",
+            200: "actionList#2 root",
+        }
+
+        def decode(_data, record, **_kwargs):
+            if record is header:
+                return {"actionHeader": {"nextId": 3}}
+            if record is while_action:
+                return {"whileDoActionLocalId": 4}
+            return {}
+
+        with mock.patch(
+            "scripts.story_builder.level_bindings.decode_levelscript_record_payload",
+            side_effect=decode,
+        ):
+            paths = _levelscript_native_control_paths_to_record(
+                bytes(300), records, membership, target
+            )
+        self.assertEqual(1, len(paths))
+        self.assertEqual([3, 4], paths[0]["pathLocalIds"])
+        self.assertEqual("WhileAction.doAction", paths[0]["path"][-1]["edge"])
+
     def test_control_path_traverses_typed_branch_sequence_entries(self):
         header = {
             "code": 0x1052,

@@ -497,6 +497,10 @@ def _closed_exact_native_unordered_scenes(
         defaultdict(dict)
     )
     exact_stub_scopes: dict[str, set[tuple[str, str, str]]] = defaultdict(set)
+    exact_control_path_statuses = {
+        "exact_serialized_control_path",
+        "exact_serialized_control_path_equivalent_duplicates",
+    }
     for connection in _flow_story_connections(flow):
         scene_key = safe_key(connection.get("key"))
         if scene_key not in weak_only_scene_keys:
@@ -510,7 +514,7 @@ def _closed_exact_native_unordered_scenes(
                 source_file = safe_key(occurrence.get("sourceFile"))
                 if any(
                     isinstance(owner, dict)
-                    and owner.get("status") == "exact_serialized_control_path"
+                    and owner.get("status") in exact_control_path_statuses
                     for owner in occurrence.get("nativeEventOwners") or []
                 ):
                     exact_stub_scopes[scene_key].add(
@@ -575,7 +579,7 @@ def _closed_exact_native_unordered_scenes(
             for owner in occurrence.get("nativeEventOwners") or []:
                 if (
                     not isinstance(owner, dict)
-                    or owner.get("status") != "exact_serialized_control_path"
+                    or owner.get("status") not in exact_control_path_statuses
                     or not isinstance(owner.get("headerLocalId"), int)
                 ):
                     continue
@@ -608,6 +612,7 @@ def _closed_exact_native_unordered_scenes(
                     "sourceFile": safe_key(occurrence.get("sourceFile")),
                     "headerName": safe_key(owner.get("headerName")),
                     "headerLocalId": owner.get("headerLocalId"),
+                    "controlPathStatus": safe_key(owner.get("status")),
                     "eventSummary": safe_key(event_detail.get("summary")),
                     "actionName": safe_key(occurrence.get("actionName")),
                     "actionLocalId": action_local_id,

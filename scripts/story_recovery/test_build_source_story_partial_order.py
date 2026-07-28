@@ -550,6 +550,64 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertTrue(all(edge["tier"] == "strong" for edge in native_edges))
         self.assertEqual(result["summary"]["comparableScenePairs"], 3)
 
+    def test_while_action_path_is_reachability_not_global_story_order(self) -> None:
+        candidates = {"radio_m1_1": "radio", "radio_m1_2": "radio"}
+        payload = mission_payload([])
+
+        def owner(path: list[tuple[int, str]]) -> dict:
+            return {
+                "status": "exact_serialized_control_path",
+                "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                "headerLocalId": 4,
+                "path": [
+                    {"localId": local_id, "edge": edge}
+                    for local_id, edge in path
+                ],
+            }
+
+        payload["flow"]["missionStoryConnections"] = [
+            {
+                "key": "radio_m1_1",
+                "levelScriptOccurrences": [{
+                    "levelId": "map_test",
+                    "scriptId": "70000000001",
+                    "sourceFile": "fixture.json",
+                    "nativeEventOwners": [owner([
+                        (5, "ActionHeader.nextId"),
+                        (6, "WhileAction.doAction"),
+                    ])],
+                }],
+            },
+            {
+                "key": "radio_m1_2",
+                "levelScriptOccurrences": [{
+                    "levelId": "map_test",
+                    "scriptId": "70000000001",
+                    "sourceFile": "fixture.json",
+                    "nativeEventOwners": [owner([
+                        (5, "ActionHeader.nextId"),
+                        (6, "WhileAction.doAction"),
+                        (7, "ActionBase.nextId"),
+                    ])],
+                }],
+            },
+        ]
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            candidates,
+            payload,
+        )
+
+        self.assertEqual(
+            [],
+            [
+                edge
+                for edge in result["directEdges"]
+                if edge["kind"] == "levelscriptNativeControlPath"
+            ],
+        )
+
     def test_exact_native_path_admits_cross_owner_scene_context(self) -> None:
         candidates = {"radio_m1_1": "radio"}
         payload = mission_payload([])

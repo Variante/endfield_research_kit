@@ -288,6 +288,7 @@ LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {
     (0x04F6, 0x08): "WaitForOneFrame",
     (0x04F5, 0x09): "WaitForNpcProxyReady",
     (0x04F0, 0x09): "WaitForCondition",
+    (0x0501, 0x0A): "WhileAction",
     (0x0506, 0x09): "Core_RemoveMovementSettingModifier",
     (0x0020, 0x0B): "BlackScreenFadeOut",
     (0x0052, 0x09): "CheckBoolIfTrue",
@@ -709,6 +710,7 @@ LEVELSCRIPT_OPCODE_TABLE: dict[tuple[int, int], str] = {
     (0x0495, 0x09): "branch",
     (0x04F6, 0x08): "control_wait",
     (0x04F5, 0x09): "control_wait_npc_proxy",
+    (0x0501, 0x0A): "control_loop",
     (0x0020, 0x0B): "presentation_fade",
     (0x0052, 0x09): "gate",
     (0x00B9, 0x09): "presentation_cleanup",
@@ -823,6 +825,7 @@ def _prepare_levelscript_native_control_context(
             tuple(detail.get("splitActionLocalIds") or []),
             detail.get("trueActionLocalId"),
             detail.get("falseActionLocalId"),
+            detail.get("whileDoActionLocalId"),
             tuple(detail.get("switchCaseActionLocalIds") or []),
             tuple(detail.get("switchCaseValues") or []),
             detail.get("switchDefaultActionLocalId"),
@@ -937,6 +940,10 @@ def _levelscript_native_control_paths_to_record(
                 local_id = detail.get(field_name)
                 if isinstance(local_id, int):
                     edges.append((label, local_id))
+        elif pair == (0x0501, 0x0A):
+            local_id = detail.get("whileDoActionLocalId")
+            if isinstance(local_id, int):
+                edges.append(("WhileAction.doAction", local_id))
         elif pair == (0x04BD, 0x0C):
             case_ids = detail.get("switchCaseActionLocalIds") or []
             case_values = detail.get("switchCaseValues") or []

@@ -184,6 +184,60 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "closed_exact_native_event_path_no_relative_order",
         )
 
+    def test_equivalent_duplicate_native_path_is_closed_not_actionable(self) -> None:
+        partial = partial_mission(
+            "e1m1",
+            scenes=["radio_a"],
+            weak_only=["radio_a"],
+        )
+        payload = mission_payload(connections=[{
+            "key": "radio_a",
+            "levelScriptOccurrences": [{
+                "levelId": "lv1",
+                "scriptId": "1001",
+                "sourceFile": "LevelScriptData/lv1/1001.json",
+                "actionMapRole": "actionList#3 linked",
+                "actionName": "Play3DRadio",
+                "recordClass": "play_radio",
+                "localId": 8,
+                "allStoryKeysInRecord": ["radio_a"],
+                "nativeEventOwners": [{
+                    "status":
+                        "exact_serialized_control_path_equivalent_duplicates",
+                    "headerName": "ScriptEvent_OnScriptStageChanged",
+                    "headerLocalId": 4,
+                    "eventDetail": {
+                        "summary": "local LevelScript stage changes to 2",
+                    },
+                    "path": [
+                        {
+                            "localId": 7,
+                            "equivalentRecordOffsets": [100, 200],
+                        },
+                        {"localId": 8},
+                    ],
+                }],
+            }],
+        }])
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableWeakOnlyScenes"], 0)
+        self.assertEqual(
+            row["metrics"]["closedExactNativeWeakOnlyScenes"],
+            1,
+        )
+        self.assertEqual(
+            row["closedExactNativeWeakOnlyScenes"][0]["nativeEventPaths"][0][
+                "controlPathStatus"
+            ],
+            "exact_serialized_control_path_equivalent_duplicates",
+        )
+
     def test_incomplete_native_weak_only_scene_remains_actionable(self) -> None:
         partial = partial_mission(
             "e1m1",

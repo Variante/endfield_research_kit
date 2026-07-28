@@ -272,6 +272,14 @@ Mission Pipeline:
   example, the live `e6m4` card for `radio_e6m4_18` shows Leader slot `80001`
   at script `22800110022` header `6`, then `Split.actions[0]` local `8` and
   `PlayRadio`.
+- The generated trigger manifest and live Mission Pipeline now expose the
+  recovered `WhileAction.doAction` control edge. A verified e6m1 card for
+  `radio_e6m1_10` displays Leader slot `80003`, script `22800080005`, header
+  `24`, then `WhileAction` local `25`, its `doAction` target `26`,
+  `IfElseAction` local `28`, `Split` local `29`, and `PlayRadio` local `34`.
+  The e7m2, e8m1, and equivalent-duplicate e1m2 paths are present in the same
+  trigger manifest. Cards continue to label host-only and world-entity routes
+  as context/dependency rather than quest activation or relative Story order.
 - Lazy mission payloads embed the source-only Story partial order with reduced
   causal edges, topological frontiers, cycles, quest forks/joins, and exact
   option branches. Exact native Split/IfElse/Switch Story arms and strictly
