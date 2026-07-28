@@ -835,11 +835,16 @@ dialog path is that cleanup action, while each `dlg_sm2l7m1_9` chain reaches
 the same action through an identical, now fully typed sequence:
 `StartDialogAndTeleportAction -> ToggleClearScreenButRadio(false) ->
 MainCharMoveTo(walk_end_pos, gait 0) ->
-ToggleClearScreenButRadio(true) -> ExitLevelCustomPerformance`. The target
-script's three exit-action payloads contain only an unbound zero
+ToggleClearScreenButRadio(true) -> ExitLevelCustomPerformance -> CallServer`.
+The terminal compact tag `0x0034`/14 members has the generated
+`CallServer` fields: null client-output UIDs, `event_args`, a hash-like
+event name, `useCustomEvent=false`, `waitForCallback=true`, and
+`withEventArgs=false`. The target script's three exit-action payloads contain
+only an unbound zero
 `Param<uint>` handle; the movement action has only the authored
 `walk_end_pos` parameter. No step contains a mission, submission, item, UI,
-branch, or additional Story key. This proves objective co-gating and local
+branch, or additional Story key; the server handoff likewise serializes no
+mission/quest identity. This proves objective co-gating and local
 playback/presentation-cleanup context, not that the quest or script opens the
 submission UI and not that submission completion triggers either dialog.
 
@@ -3285,6 +3290,9 @@ Current main-story priorities:
    handle payload. The two playback branches are otherwise fully typed as
    dialog-and-teleport, clear-screen toggle off, main-character move to
    `walk_end_pos`, clear-screen toggle on, and custom-performance exit. Keep
+   Their former low-confidence `0x0e34/0x00` tails are now exact
+   `CallServer` actions waiting for callback with an `event_args` pointer and
+   hash-like event name, still without mission/quest/submission identity. Keep
    this as objective co-gating plus independently proved
    playback/presentation-cleanup context, not UI activation or a new
    quest-to-Story playback edge.

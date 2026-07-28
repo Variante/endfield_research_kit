@@ -2043,7 +2043,8 @@ gameplay-video OCR/audio workflow.
   raw `0x09b9/0x00` is tag `0x00b9` with nine members and maps exactly to
   `ExitLevelCustomPerformance`, not to an unknown high opcode. Other exact
   presentation-chain mappings include `0x04ca/0x09`
-  `ToggleClearScreenButRadio` and `0x02fe/0x0a` `MainCharMoveTo`. High
+  `ToggleClearScreenButRadio`, `0x02fe/0x0a` `MainCharMoveTo`, and compact
+  `0x0e34/0x00` -> tag `0x0034`/14 members `CallServer`. High
   event/gate/terminal records such as `0x0a03/0x00`, `0x0bed/0x00`, current
   trigger events `0x12be/0x00` and `0x12c0/0x00`, dialog exit
   `0x1355/0x00`, and quest-state change `0x1385/0x00` are outside that

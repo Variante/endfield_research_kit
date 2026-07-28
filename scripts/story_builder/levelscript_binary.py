@@ -475,9 +475,15 @@ LEVELSCRIPT_RECORD_HINTS = {
         "note": "payload carries guide_* ids and usually precedes tutorial radio/dialog flow",
     },
     (0x0E34, 0x00): {
-        "label": "event-args-continuation",
-        "confidence": "low",
-        "note": "payload carries event_args plus a UID-like token; exact ScriptEvent class is not proven",
+        "label": "actionbase-call-server",
+        "confidence": "high",
+        "note": (
+            "compact MemoryPack tag 0x34 with member count 0x0e maps to "
+            "CallServer; generated setters name the event-args, event-name, "
+            "callback, and custom-event fields"
+        ),
+        "actionBaseAction": "CallServer",
+        "networkRole": "server-handoff",
     },
     (0x104A, 0x00): {
         "label": "float-property-signal",
@@ -713,6 +719,7 @@ LEVELSCRIPT_RECORD_TAG_HINTS = {
     (0x0020, 0x0B): LEVELSCRIPT_RECORD_HINTS[(0x0B20, 0x00)],
     (0x0052, 0x09): LEVELSCRIPT_RECORD_HINTS[(0x0952, 0x00)],
     (0x00B9, 0x09): LEVELSCRIPT_RECORD_HINTS[(0x09B9, 0x00)],
+    (0x0034, 0x0E): LEVELSCRIPT_RECORD_HINTS[(0x0E34, 0x00)],
     (0x0003, 0x0A): LEVELSCRIPT_RECORD_HINTS[(0x0A03, 0x00)],
     (0x00ED, 0x0B): LEVELSCRIPT_RECORD_HINTS[(0x0BED, 0x00)],
 }
@@ -4562,6 +4569,51 @@ def _decode_main_char_move_to_action(payload: bytes) -> dict[str, Any]:
     }
 
 
+def _decode_call_server_action(payload: bytes) -> dict[str, Any]:
+    """Decode the six generated fields in the current ``CallServer`` prefix."""
+    if len(payload) < 61 or payload[:6] != b"\xff\xff\xff\xff\x04\x01":
+        return {}
+    event_args_size = struct.unpack_from("<i", payload, 6)[0]
+    cursor = 10
+    if event_args_size <= 0 or cursor + event_args_size > len(payload):
+        return {}
+    try:
+        event_args_path = payload[cursor : cursor + event_args_size].decode("utf-8")
+    except UnicodeDecodeError:
+        return {}
+    event_args_tail = _decode_param_tail(payload, cursor + event_args_size)
+    if event_args_tail is None:
+        return {}
+    event_args_detail, cursor = event_args_tail
+    event_name = _decode_constant_string_param(payload, cursor)
+    if event_name is None:
+        return {}
+    event_name_value, cursor = event_name
+    if cursor + 3 > len(payload) or any(
+        value not in (0, 1)
+        for value in payload[cursor : cursor + 3]
+    ):
+        return {}
+    use_custom_event, wait_for_callback, with_event_args = (
+        bool(value) for value in payload[cursor:cursor + 3]
+    )
+    cursor += 3
+    return {
+        "payloadShape": "six-call-server-fields-exact-prefix",
+        "callClientOutputUIDs": None,
+        "eventArgsPtr": {
+            "pathValue": event_args_path,
+            **event_args_detail,
+        },
+        "eventName": event_name_value,
+        "useCustomEvent": use_custom_event,
+        "waitForCallback": wait_for_callback,
+        "withEventArgs": with_event_args,
+        "consumedBytes": cursor,
+        "trailingBytes": len(payload) - cursor,
+    }
+
+
 def _decode_entity_compare_getter(payload: bytes, property_outputs: list[dict]) -> dict[str, Any]:
     """Decode the exact current-build EntityCompare ScriptEntityPtr operand.
 
@@ -5334,6 +5386,10 @@ def decode_levelscript_record_payload(
         main_char_move_to = _decode_main_char_move_to_action(payload)
         if main_char_move_to:
             out["mainCharMoveTo"] = main_char_move_to
+    if semantic_key == (0x0034, 0x0E):
+        call_server = _decode_call_server_action(payload)
+        if call_server:
+            out["callServer"] = call_server
     if semantic_key == (0x0166, 0x0A):
         list_add = _decode_list_add_value_entity_ptr(payload)
         if list_add:
