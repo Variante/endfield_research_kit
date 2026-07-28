@@ -767,9 +767,15 @@ chains end to end: `0x04ca/0x09` is
 generated setter names and exact EOF payload decodes agree. Finally, raw
 `0x0e34/0x00` normalizes to ActionBase tag `0x0034`/14 members
 `CallServer`. Its generated six fields decode as null client-output UIDs,
-`event_args`, a hash-like event name, `useCustomEvent=false`,
+`event_args`, an event name, `useCustomEvent=false`,
 `waitForCallback=true`, and `withEventArgs=false`; no mission or quest
-identity is serialized in that server handoff. The script therefore contains
+identity is serialized in that server handoff. Across the complete current
+typed corpus, every hash-shaped event name equals `#` plus the same
+CallServer action-record UID. This closes the value as an action-local
+callback/correlation label rather than a handler hash, Story node, mission
+owner, or chronology edge. The Story builder now preserves it only as a
+diagnostic callback record and excludes it from scene-graph nodes and edges.
+The script therefore contains
 no hidden submission id, item id, UI key, branch target, or typed SubmitItem
 OpenUI action. Mission Pipeline schema 14 emits one
 LevelScript co-gate and the source graph joins the quest, submission, script,

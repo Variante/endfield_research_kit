@@ -1148,6 +1148,9 @@ def build_mission_timeline_recovery_report(
                 source_backed_hash_terminals_from_scene_graph(
                     scene_graphs.get(mission_id)
                 ),
+                source_backed_call_server_callbacks_from_scene_graph(
+                    scene_graphs.get(mission_id)
+                ),
                 script_condition_ownership=script_condition_ownership,
                 mission_flow=mission_flows.get(mission_id),
             )

@@ -291,6 +291,12 @@ Mission Pipeline:
   completed token trace: `CallServer.Execute` reads the pushed `ctxToken` as
   `netToken` and returns it on `CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER`, making it
   round-trip correlation context rather than a hidden mission carrier. The
+  Story graph applies the same boundary to serialized CallServer event names:
+  values equal to `#` plus their own typed action-record UID are retained under
+  `levelscriptCallServerCallbacks` with explicit non-Story/non-order/non-owner
+  flags and are excluded from nodes, edges, scene placement, and Mission
+  Pipeline ownership. This removes the former hash-terminal pseudo-scenes
+  without discarding source-file or preceding-scene diagnostics. The
   runtime contract also exposes the complete recursive protobuf identity
   census: zero mission/quest + LevelScript/Story co-carriers across 983 current
   enum-backed CS/SC message classes. Its three weaker scene rows remain

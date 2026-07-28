@@ -1107,6 +1107,38 @@ def is_levelscript_hash_key(node_key: str) -> bool:
     return re.match(r"^#[0-9a-fA-F]{8}$", str(node_key or "")) is not None
 
 
+def is_call_server_self_uid_callback(node_key: str, step: dict | None) -> bool:
+    """Return whether a hash-like payload is the owning CallServer record UID.
+
+    Current-build ``CallServer`` rows serialize ``eventName`` as ``#`` plus
+    their own eight-hex-digit action UID. That is an action-local callback /
+    correlation label, not an independent Story node or mission-order edge.
+    Require the exact typed opcode and source UID so unrelated hash-shaped
+    payloads remain available for future recovery.
+    """
+    if not is_levelscript_hash_key(node_key) or not isinstance(step, dict):
+        return False
+    source = step.get("source")
+    if not isinstance(source, dict):
+        source = ((step.get("_debug") or {}).get("source") or {})
+    if not isinstance(source, dict):
+        return False
+    code = source.get("code")
+    kind = source.get("kind")
+    try:
+        code_value = int(str(code), 0) if not isinstance(code, int) else code
+        kind_value = int(str(kind), 0) if not isinstance(kind, int) else kind
+    except (TypeError, ValueError):
+        return False
+    uid = str(source.get("uid") or "").strip()
+    return (
+        code_value == 0x0E34
+        and kind_value == 0x00
+        and re.fullmatch(r"[0-9a-fA-F]{8}", uid) is not None
+        and str(node_key).casefold() == f"#{uid}".casefold()
+    )
+
+
 def first_string(values: Any) -> str:
     if not isinstance(values, list):
         return ""
@@ -2627,6 +2659,9 @@ def source_backed_hash_terminals_from_scene_graph(
         hash_key = str(terminal.get("hash") or "").strip()
         if not scene_key or not is_sequence_scene_key(scene_key) or not is_levelscript_hash_key(hash_key):
             continue
+        hash_step = terminal.get("hashStep") or {}
+        if is_call_server_self_uid_callback(hash_key, hash_step):
+            continue
         row = {
             "kind": terminal.get("kind") or "levelscriptHashTerminal",
             "sourceFile": terminal.get("file") or terminal.get("sourceFile") or "",
@@ -2635,12 +2670,54 @@ def source_backed_hash_terminals_from_scene_graph(
             "hash": hash_key,
             "direction": terminal.get("direction") or "",
             "sourceStep": terminal.get("sourceStep") or {},
-            "hashStep": terminal.get("hashStep") or {},
+            "hashStep": hash_step,
             "recoveredBy": "scripts/story_builder/build.py",
         }
         if source:
             bundle_source = dict(source)
             bundle_source["field"] = f"{bundle_source.get('field', 'flow.sceneGraph.levelscriptHashTerminals')}[{index}]"
+            row["bundleSource"] = bundle_source
+        out.append(row)
+    return out
+
+
+def source_backed_call_server_callbacks_from_scene_graph(
+    scene_graph: dict | None,
+    source: dict | None = None,
+) -> list[dict]:
+    """Load diagnostic-only self-UID CallServer callback labels."""
+    callbacks = (scene_graph or {}).get("levelscriptCallServerCallbacks")
+    if not isinstance(callbacks, list):
+        return []
+
+    out: list[dict] = []
+    for index, callback in enumerate(callbacks):
+        if not isinstance(callback, dict):
+            continue
+        label = str(callback.get("callbackLabel") or "").strip()
+        source_step = callback.get("sourceStep") or {}
+        if not is_call_server_self_uid_callback(label, source_step):
+            continue
+        row = {
+            "kind": callback.get("kind") or "levelscriptCallServerSelfUidCallback",
+            "sourceFile": callback.get("file") or callback.get("sourceFile") or "",
+            "levelId": callback.get("levelId") or "",
+            "precedingSceneKey": callback.get("precedingSceneKey") or "",
+            "callbackLabel": label,
+            "recordUid": callback.get("recordUid") or "",
+            "identityRole": "self_uid_callback_label",
+            "storyNode": False,
+            "missionOwnershipEvidence": False,
+            "orderEvidence": False,
+            "sourceStep": source_step,
+            "recoveredBy": "scripts/story_builder/build.py",
+        }
+        if source:
+            bundle_source = dict(source)
+            bundle_source["field"] = (
+                f"{bundle_source.get('field', 'flow.sceneGraph.levelscriptCallServerCallbacks')}"
+                f"[{index}]"
+            )
             row["bundleSource"] = bundle_source
         out.append(row)
     return out
@@ -2762,6 +2839,8 @@ def source_backed_hash_terminals_from_scene_bindings(
                     hash_key = dst
                     direction = "story->hash"
                 else:
+                    continue
+                if is_call_server_self_uid_callback(hash_key, hash_step):
                     continue
                 signature = (source_file, level_id, scene_key, hash_key, direction, pos)
                 if signature in seen:
@@ -3053,6 +3132,27 @@ def load_source_backed_hash_terminals(mission_id: str, generated_mission_dir: Pa
     )
 
 
+def load_source_backed_call_server_callbacks(
+    mission_id: str,
+    generated_mission_dir: Path | None,
+) -> list[dict]:
+    """Load non-Story CallServer callback-label diagnostics."""
+    if not generated_mission_dir:
+        return []
+    path = generated_mission_dir / f"{mission_id}.json"
+    if not path.exists():
+        return []
+    try:
+        payload = load_json(path)
+    except (OSError, json.JSONDecodeError):
+        return []
+    scene_graph = ((payload.get("flow") or {}).get("sceneGraph") or {})
+    return source_backed_call_server_callbacks_from_scene_graph(
+        scene_graph,
+        source=source_ref(path, "flow.sceneGraph.levelscriptCallServerCallbacks"),
+    )
+
+
 def extract_quest(raw_quest: dict, source_path: Path, quest_field: str) -> dict:
     quest_id = raw_quest.get("questId") or ""
     quest = {
@@ -3172,6 +3272,7 @@ def recover_mission(
     source_backed_scene_edges: list[dict] | None = None,
     source_backed_story_call_contexts: list[dict] | None = None,
     source_backed_hash_terminals: list[dict] | None = None,
+    source_backed_call_server_callbacks: list[dict] | None = None,
     script_condition_ownership: dict[tuple[str, str], list[str]] | None = None,
     mission_flow: dict | None = None,
 ) -> dict:
@@ -3253,6 +3354,11 @@ def recover_mission(
         if source_backed_hash_terminals is not None
         else load_source_backed_hash_terminals(mission_id, generated_mission_dir)
     )
+    call_server_callbacks = (
+        source_backed_call_server_callbacks
+        if source_backed_call_server_callbacks is not None
+        else load_source_backed_call_server_callbacks(mission_id, generated_mission_dir)
+    )
     scene_placement = build_scene_placement_index(
         quests,
         client_actions,
@@ -3299,6 +3405,7 @@ def recover_mission(
         "sourceBackedSceneSequences": scene_sequences,
         "sourceBackedStoryCallContexts": story_call_contexts,
         "sourceBackedHashTerminals": hash_terminals,
+        "sourceBackedCallServerCallbacks": call_server_callbacks,
         "referencedScenes": referenced_scenes,
         "sceneTimelineEvidence": timeline_evidence,
         "scenePlacement": scene_placement,
@@ -3484,10 +3591,12 @@ def summarize(
     missions_with_scene_sequences = 0
     missions_with_story_call_contexts = 0
     missions_with_hash_terminals = 0
+    missions_with_call_server_callbacks = 0
     scene_edge_counter: Counter = Counter()
     scene_sequence_total = 0
     story_call_context_total = 0
     hash_terminal_total = 0
+    call_server_callback_total = 0
     hash_terminal_catalog = build_hash_terminal_catalog(recovered)
     scene_placement_counter: Counter = Counter()
     scene_placement_total = 0
@@ -3509,6 +3618,11 @@ def summarize(
         if mission.get("sourceBackedHashTerminals"):
             missions_with_hash_terminals += 1
             hash_terminal_total += len(mission.get("sourceBackedHashTerminals") or [])
+        if mission.get("sourceBackedCallServerCallbacks"):
+            missions_with_call_server_callbacks += 1
+            call_server_callback_total += len(
+                mission.get("sourceBackedCallServerCallbacks") or []
+            )
         for edge in mission.get("sourceBackedSceneEdges") or []:
             scene_edge_counter[edge.get("kind") or "edge"] += 1
         scene_placement_total += len(mission.get("scenePlacement") or {})
@@ -3546,6 +3660,8 @@ def summarize(
         "sourceBackedHashTerminalUniqueHashes": hash_terminal_catalog.get("uniqueHashes", 0),
         "sourceBackedHashTerminalExceptionCount": hash_terminal_catalog.get("exceptionCount", 0),
         "hashTerminalCatalog": hash_terminal_catalog,
+        "missionsWithSourceBackedCallServerCallbacks": missions_with_call_server_callbacks,
+        "sourceBackedCallServerCallbacks": call_server_callback_total,
         "scenePlacementEntries": scene_placement_total,
         "missionsWithLevelscriptSpatialProximity": missions_with_levelscript_spatial,
         "levelscriptSpatialProximityMatches": levelscript_spatial_match_total,
@@ -3581,6 +3697,14 @@ def render_markdown(payload: dict) -> str:
         f"- source-backed hash terminals: `{summary.get('sourceBackedHashTerminals', 0)}`",
         f"- unique source-backed terminal hashes: `{summary.get('sourceBackedHashTerminalUniqueHashes', 0)}`",
         f"- hash-terminal pattern exceptions: `{summary.get('sourceBackedHashTerminalExceptionCount', 0)}`",
+        (
+            "- missions with diagnostic CallServer self-UID callbacks: "
+            f"`{summary.get('missionsWithSourceBackedCallServerCallbacks', 0)}`"
+        ),
+        (
+            "- diagnostic CallServer self-UID callbacks (not Story/order evidence): "
+            f"`{summary.get('sourceBackedCallServerCallbacks', 0)}`"
+        ),
         f"- scene placement entries: `{summary.get('scenePlacementEntries', 0)}`",
         f"- LevelScript spatial proximity matches (weak): "
         f"`{summary.get('levelscriptSpatialProximityMatches', 0)}` "
@@ -3706,8 +3830,8 @@ def render_markdown(payload: dict) -> str:
         "",
         "## Mission Index",
         "",
-        "| Mission | Quests | Branches | Timeline Scenes | Scene Edges | Scene Seq | Story Calls | Hash Terms | Scene Signals | Unresolved | Level |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Mission | Quests | Branches | Timeline Scenes | Scene Edges | Scene Seq | Story Calls | Hash Terms | CallServer Callbacks | Scene Signals | Unresolved | Level |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ])
     for mission in payload.get("missions") or []:
         metadata = mission.get("metadata") or {}
@@ -3721,6 +3845,7 @@ def render_markdown(payload: dict) -> str:
             f"{len(mission.get('sourceBackedSceneSequences') or [])} | "
             f"{len(mission.get('sourceBackedStoryCallContexts') or [])} | "
             f"{len(mission.get('sourceBackedHashTerminals') or [])} | "
+            f"{len(mission.get('sourceBackedCallServerCallbacks') or [])} | "
             f"{len(mission.get('scenePlacement') or {})} | "
             f"{len(mission.get('unresolved') or [])} | "
             f"`{metadata.get('levelId', '')}` |"

@@ -22,6 +22,7 @@ from .mission_recovery import (
     decode_mission_script_conditions,
     decode_mission_world_entity_condition_groups,
     decode_mission_world_entity_condition_refs,
+    is_call_server_self_uid_callback,
 )
 
 _RADIO_CONTINUATION_REPORT_PATH = (
@@ -12376,6 +12377,8 @@ def build_language_bundle(
         seen_story_call_items: set[tuple[str, str, int, int, str]] = set()
         hash_terminal_contexts: list[dict] = []
         seen_hash_terminal_contexts: set[tuple] = set()
+        call_server_callback_contexts: list[dict] = []
+        seen_call_server_callback_contexts: set[tuple] = set()
         if flow:
             for quest in flow.get("quests") or []:
                 for hint in quest.get("tracking") or []:
@@ -12427,6 +12430,43 @@ def build_language_bundle(
                             continue
                         file_ref = chain.get("file") or ""
                         level_id = chain.get("levelId") or ""
+                        if is_call_server_self_uid_callback(node_key, step):
+                            source_step = compact_levelscript_step(step, node_key, raw_text)
+                            source_info = source_step.get("source") or {}
+                            callback_signature = (
+                                file_ref,
+                                level_id,
+                                str(source_info.get("uid") or "").casefold(),
+                                node_key.casefold(),
+                            )
+                            if callback_signature not in seen_call_server_callback_contexts:
+                                seen_call_server_callback_contexts.add(callback_signature)
+                                preceding_scene_key = next(
+                                    (
+                                        key
+                                        for key in reversed(sequence)
+                                        if _is_story_scene_graph_kind(
+                                            _scene_graph_node_kind(key, available)
+                                        )
+                                    ),
+                                    "",
+                                )
+                                callback = {
+                                    "kind": "levelscriptCallServerSelfUidCallback",
+                                    "file": file_ref,
+                                    "levelId": level_id,
+                                    "callbackLabel": node_key,
+                                    "recordUid": source_info.get("uid") or "",
+                                    "identityRole": "self_uid_callback_label",
+                                    "storyNode": False,
+                                    "missionOwnershipEvidence": False,
+                                    "orderEvidence": False,
+                                    "sourceStep": source_step,
+                                }
+                                if preceding_scene_key:
+                                    callback["precedingSceneKey"] = preceding_scene_key
+                                call_server_callback_contexts.append(callback)
+                            continue
                         if file_ref and _is_story_scene_graph_key(node_key, available):
                             signature = (file_ref, level_id, start, payload_index, node_key)
                             if signature not in seen_story_call_items:
@@ -13178,6 +13218,8 @@ def build_language_bundle(
             payload["levelscriptStoryCallContexts"] = story_call_contexts
         if hash_terminal_contexts:
             payload["levelscriptHashTerminals"] = hash_terminal_contexts
+        if call_server_callback_contexts:
+            payload["levelscriptCallServerCallbacks"] = call_server_callback_contexts
         if scene_file_order:
             payload["sceneFileOrder"] = {
                 key: value

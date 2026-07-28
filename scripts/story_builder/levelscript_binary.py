@@ -5389,6 +5389,19 @@ def decode_levelscript_record_payload(
     if semantic_key == (0x0034, 0x0E):
         call_server = _decode_call_server_action(payload)
         if call_server:
+            record_uid = str(record.get("uid") or "").strip()
+            event_name = str(call_server.get("eventName") or "").strip()
+            if (
+                re.fullmatch(r"[0-9a-fA-F]{8}", record_uid)
+                and event_name.casefold() == f"#{record_uid}".casefold()
+            ):
+                call_server.update({
+                    "eventNameIdentity": "record-uid-prefixed",
+                    "callbackCorrelationLabel": True,
+                    "storyGraphRole": "diagnostic-only",
+                    "missionOwnershipEvidence": False,
+                    "orderEvidence": False,
+                })
             out["callServer"] = call_server
     if semantic_key == (0x0166, 0x0A):
         list_add = _decode_list_add_value_entity_ptr(payload)

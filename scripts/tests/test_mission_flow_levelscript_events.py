@@ -26,6 +26,11 @@ from scripts.story_builder.levelscript_binary import (
     extract_levelscript_uid_records,
     levelscript_native_header_name,
 )
+from scripts.story_builder.mission_recovery import (
+    is_call_server_self_uid_callback,
+    source_backed_call_server_callbacks_from_scene_graph,
+    source_backed_hash_terminals_from_scene_graph,
+)
 
 
 class MissionFlowLevelScriptEventTests(unittest.TestCase):
@@ -1129,6 +1134,7 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
             "unionTag": 0x0034,
             "serializedMemberCount": 14,
             "payloadStart": 0,
+            "uid": "5bd318ba",
         }
         detail = decode_levelscript_record_payload(
             payload,
@@ -1151,6 +1157,11 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
                     "path": None,
                 },
                 "eventName": "#5bd318ba",
+                "eventNameIdentity": "record-uid-prefixed",
+                "callbackCorrelationLabel": True,
+                "storyGraphRole": "diagnostic-only",
+                "missionOwnershipEvidence": False,
+                "orderEvidence": False,
                 "useCustomEvent": False,
                 "waitForCallback": True,
                 "withEventArgs": False,
@@ -1159,6 +1170,41 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
             },
             detail["callServer"],
         )
+        step = {
+            "source": {
+                "code": "0x0e34",
+                "kind": "0x00",
+                "uid": "5bd318ba",
+            },
+        }
+        self.assertTrue(is_call_server_self_uid_callback("#5bd318ba", step))
+        self.assertFalse(is_call_server_self_uid_callback("#2f436d36", step))
+        self.assertEqual(
+            [],
+            source_backed_hash_terminals_from_scene_graph({
+                "levelscriptHashTerminals": [{
+                    "sceneKey": "dlg_sm2l7m1_9",
+                    "hash": "#5bd318ba",
+                    "direction": "story->hash",
+                    "hashStep": step,
+                }],
+            }),
+        )
+        callbacks = source_backed_call_server_callbacks_from_scene_graph({
+            "levelscriptCallServerCallbacks": [{
+                "kind": "levelscriptCallServerSelfUidCallback",
+                "file": "LevelScriptData/map02_lv006/22999990003.json",
+                "levelId": "map02_lv006",
+                "precedingSceneKey": "dlg_sm2l7m1_9",
+                "callbackLabel": "#5bd318ba",
+                "recordUid": "5bd318ba",
+                "sourceStep": step,
+            }],
+        })
+        self.assertEqual(1, len(callbacks))
+        self.assertFalse(callbacks[0]["storyNode"])
+        self.assertFalse(callbacks[0]["missionOwnershipEvidence"])
+        self.assertFalse(callbacks[0]["orderEvidence"])
 
     def test_uid_parser_accepts_dont_log_and_wide_compact_member_count(self):
         compact = bytearray(30)
