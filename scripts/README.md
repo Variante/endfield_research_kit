@@ -1666,9 +1666,13 @@ gameplay-video OCR/audio workflow.
   into an SCC DAG and transitively reduced; weak file/order clues,
   cycles, isolated scenes, rejected option evidence, and option groups with no
   explicit route remain visible instead of being forced into a total order.
-  Intra-dialog option routes are promoted only from direct
-  DialogTree/DialogTreeFragment paths or the exact decoded Runtime Jump Track
-  signature. Runtime Jump paths are reduced to their option-exclusive prefixes;
+  Intra-dialog option routes are promoted from direct
+  DialogTree/DialogTreeFragment paths, the exact decoded Runtime Jump Track
+  signature, or complete distinct positive Timeline clip `optionIndex`
+  coverage. The latter fails closed unless every branch clip matches its
+  authored option index and every in-window Runtime Jump occurs after that
+  option's last response clip and converges forward to the shared continuation.
+  Runtime Jump paths are reduced to their option-exclusive prefixes;
   a choice that skips directly to the shared continuation is represented
   explicitly instead of requiring a fabricated response line, including
   option slots before the first local dialog line. Zero-index Timeline trunk

@@ -45,7 +45,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v15"
+SCHEMA = "sourceStoryPartialOrder.v16"
 SPAWNER_CONFIG_ROOTS = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Data" / "Json" / "SpawnerConfig",
@@ -147,6 +147,7 @@ EVIDENCE_POLICY = {
         "DialogTree authoredDirect option routes",
         "DialogTree/DialogTreeFragment option-to-line branchLines verified against sceneGraphLinks",
         "Dialog Timeline Runtime Jump routes with the exact timelineRouteBranches/runtimeJumpTrack signature",
+        "Dialog Timeline branch clips with complete distinct positive runtime optionIndex coverage and convergent post-response jumps",
         "LevelScript LevelEvent_OnDialogExit action-chain edges",
         "exact serialized LevelScript event-to-action strict path-prefix edges",
         "exact LevelEvent_OnQuestStateChanged typed playback action paths",
@@ -593,16 +594,27 @@ def _is_runtime_jump_branch_risk(risk: dict[str, Any]) -> bool:
     )
 
 
+def _is_timeline_clip_option_index_branch_risk(risk: dict[str, Any]) -> bool:
+    return (
+        safe_key(risk.get("code")) == "timelineClipOptionIndexBranches"
+        and safe_key(risk.get("reason")) == "runtimeClipOptionIndex"
+        and safe_key(risk.get("source")) == "dialogTimeline"
+        and safe_key(risk.get("candidateMapping")) == "trunkClipOptionIndex"
+        and isinstance(risk.get("branchLineIdsByOption"), dict)
+        and bool(risk.get("branchLineIdsByOption"))
+    )
+
+
 def collect_dialog_line_option_branches(
     conv: dict[str, Any],
     conversation_file: str,
 ) -> dict[str, list[dict[str, Any]]]:
     """Collect strictly source-backed intra-dialog option-to-line routes.
 
-    Allowed routes are either direct DialogTree paths that exactly cover the
-    emitted ``branchLines`` without inferred/manual risk, or the exact Runtime
-    Jump signature checked by ``_is_runtime_jump_branch_risk``. Everything else
-    remains explicit in an exclusion or no-route bucket.
+    Allowed routes are direct DialogTree paths that exactly cover the emitted
+    ``branchLines`` without inferred/manual risk, exact Runtime Jump routes, or
+    complete distinct positive Timeline clip optionIndex routes. Everything
+    else remains explicit in an exclusion or no-route bucket.
     """
     story_key = safe_key(conv.get("key"))
     direct_routes = _dialog_tree_routes(conv)
@@ -633,6 +645,52 @@ def collect_dialog_line_option_branches(
             "after": after,
             "conversationFile": conversation_file,
         }
+
+        if (
+            _is_timeline_clip_option_index_branch_risk(risk)
+            and not has_manual
+            and not risk_tagged_options
+        ):
+            branch_map = risk.get("branchLineIdsByOption") or {}
+            runtime_options: list[dict[str, Any]] = []
+            complete = True
+            for option in options:
+                option_id = safe_key(option.get("id"))
+                branch_lines = _string_list(branch_map.get(option_id))
+                if not option_id or not branch_lines:
+                    complete = False
+                    break
+                runtime_options.append({
+                    **_compact_dialog_option(option),
+                    "branchLineIds": branch_lines,
+                })
+            if complete and runtime_options:
+                allowed.append({
+                    **base,
+                    "provenance": {
+                        "kind": "DialogTimelineClipOptionIndex",
+                        "code": "timelineClipOptionIndexBranches",
+                        "reason": "runtimeClipOptionIndex",
+                        "source": "dialogTimeline",
+                        "assetTracks": _string_list(
+                            risk.get("assetTracks")
+                        ),
+                        "optionIndex": risk.get("optionIndex") or [],
+                        "candidateMapping": "trunkClipOptionIndex",
+                    },
+                    "options": runtime_options,
+                    "commonContinuationLineId": safe_key(
+                        risk.get("commonContinuationLineId")
+                    ),
+                })
+                continue
+            excluded.append({
+                **base,
+                "optionIds": option_ids,
+                "exclusionReason": "incompleteTimelineClipOptionIndexMapping",
+                "riskEvidence": _compact_option_risk(risk),
+            })
+            continue
 
         if _is_runtime_jump_branch_risk(risk) and not has_manual and not risk_tagged_options:
             branch_map = risk.get("branchLineIdsByOption") or {}

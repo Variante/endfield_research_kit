@@ -1054,6 +1054,70 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(groups[0]["provenance"]["kind"], "DialogTimelineRuntimeJump")
         self.assertEqual(result["summary"]["dialogLineOptionRouteCount"], 2)
 
+    def test_exact_timeline_clip_option_indices_are_source_backed(self) -> None:
+        conv = {
+            "key": "dlg_m1_clip_indices",
+            "optionGroups": [{
+                "g": 1,
+                "after": "dlg_m1_clip_indices_001",
+                "options": [
+                    {
+                        "id": "option_1",
+                        "branchLines": [
+                            "dlg_m1_clip_indices_002",
+                            "dlg_m1_clip_indices_003",
+                        ],
+                    },
+                    {
+                        "id": "option_2",
+                        "branchLines": ["dlg_m1_clip_indices_004"],
+                    },
+                ],
+                "optionBranchRisk": {
+                    "code": "timelineClipOptionIndexBranches",
+                    "reason": "runtimeClipOptionIndex",
+                    "source": "dialogTimeline",
+                    "candidateMapping": "trunkClipOptionIndex",
+                    "optionIndex": [1, 2],
+                    "branchLineIdsByOption": {
+                        "option_1": [
+                            "dlg_m1_clip_indices_002",
+                            "dlg_m1_clip_indices_003",
+                        ],
+                        "option_2": ["dlg_m1_clip_indices_004"],
+                    },
+                    "commonContinuationLineId":
+                        "dlg_m1_clip_indices_005",
+                    "assetTracks": ["Dialog Option Track.json"],
+                },
+            }],
+        }
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"dlg_m1_clip_indices": "dlg"},
+            mission_payload([]),
+            [("conv/dlg_m1_clip_indices.json", conv)],
+        )
+
+        groups = result["branches"]["dialogLineOptions"]
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(
+            groups[0]["provenance"]["kind"],
+            "DialogTimelineClipOptionIndex",
+        )
+        self.assertEqual(
+            [option["branchLineIds"] for option in groups[0]["options"]],
+            [
+                [
+                    "dlg_m1_clip_indices_002",
+                    "dlg_m1_clip_indices_003",
+                ],
+                ["dlg_m1_clip_indices_004"],
+            ],
+        )
+        self.assertEqual(result["summary"]["dialogLineOptionRouteCount"], 2)
+
     def test_pre_dialog_runtime_jump_signature_is_source_backed(self) -> None:
         conv = {
             "key": "dlg_m1_pre",
