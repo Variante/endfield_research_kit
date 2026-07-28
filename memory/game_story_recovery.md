@@ -828,6 +828,10 @@ writes them or feeds them back into recovery.
 - Direct DialogTree/DialogTreeFragment option-to-line paths.
 - Runtime Jump option routes only when the generated provenance is exactly
   `timelineRouteBranches` / `runtimeJumpTrack` / `dialogTimeline`.
+- Timeline clip option routes when authored option rows have distinct positive
+  `optionIndex` values, every branch trunk clip has the matching index, and
+  every in-window Runtime Jump occurs after that option's final response clip
+  and converges forward to the shared continuation.
 - Timeline clip order for lines within one decoded dialog or cutscene asset.
 
 ### Retained but non-ordering evidence
@@ -1950,15 +1954,16 @@ Intra-conversation line order is usually strong when a DialogTree or Timeline
 exists. Numeric line suffixes remain fallback identity only; authored clip
 times can skip or reorder suffixes.
 
-The strict audit currently accepts 328 option groups, 676 routes, and 1,486
+The strict audit currently accepts 368 option groups, 767 routes, and 1,597
 branch lines:
 
-- 312 groups come from direct DialogTree/DialogTreeFragment paths;
-- 16 groups come from exact Runtime Jump Track routes.
+- 345 groups come from direct DialogTree/DialogTreeFragment paths;
+- 22 groups come from exact Runtime Jump Track routes;
+- one group comes from exact positive Timeline clip `optionIndex` routes.
 
-It retains 298 rejected evidence groups (609 options) and 2,357 groups (3,289
-options) with no explicit route. Missing routes are not silently converted to
-branches.
+It retains 1,964 excluded evidence groups (3,077 options), of which only six
+remain actionable, plus 650 groups (732 options) with no explicit route.
+Missing routes are not silently converted to branches.
 
 Runtime field evidence establishes the following model:
 
@@ -3844,9 +3849,9 @@ Current main-story priorities:
    from both direct DialogTree and DialogTreeFragment sources, and complete
    authored terminal/OpenUI/menu-loop outcomes are closed as non-line outcomes
    instead of being mislabeled missing line routes. The current generated
-   frontier now contains 367 strict groups / 765 option arms, 1,958 closed
-   exclusions, and only 73 actionable multi-choice groups globally: 66 with no
-   explicit route plus seven excluded by an unresolved evidence boundary.
+   frontier now contains 368 strict groups / 767 option arms, 1,958 closed
+   exclusions, and only 72 actionable multi-choice groups globally: 66 with no
+   explicit route plus six excluded by an unresolved evidence boundary.
    Pre-dialog Runtime Jump windows recover the exact `dlg_e11m3_16` split
    (`_001.._003` versus `_004.._006`). Zero-index Timeline trunks are also
    closed as shared continuation when only one or two local lines remain;
@@ -3866,13 +3871,20 @@ Current main-story priorities:
    both text rows but marks the unused id as definition-only; the Mission
    Pipeline records the authored option 1 outcome without inventing an option
    2 branch.
+   `dlg_c28m3_10` g1 is now an exact positive clip-index route rather than an
+   inferred-following-lines risk. Its authored option indices are `1/2`; every
+   response trunk clip matches those values, yielding option 1 ->
+   `_023,_024` and option 2 -> `_025,_026`. The only in-window Runtime Jump is
+   option-index 1, starts after `_024` ends, and lands exactly at the shared
+   `_021` start, so it accelerates convergence past the inactive option-2 tail
+   rather than contradicting the mapping.
    The main-story option frontier therefore fell from 154 to one unique group,
    `dlg_e2m6_18` g1. That scene has only its text-table line/options: no
    DialogTree, no matching Timeline option rows or Runtime Jump route, and no
-   other original-data consumer currently names the group. The remaining seven
-   exclusions comprise five sibling-scene text-branch risks, one
-   inferred-following-lines risk, and one branch whose corrected second arm
-   lacks direct source provenance. These rows remain visible for diagnostics,
+   other original-data consumer currently names the group. The remaining six
+   exclusions comprise five sibling-scene text-branch risks and one branch
+   whose corrected second arm lacks direct source provenance. These rows remain
+   visible for diagnostics,
    while 584 single-option prompts remain
    separately counted and do not affect recovery rank. Continue only with a
    new authored source or exact runtime consumer; do not map choices from text

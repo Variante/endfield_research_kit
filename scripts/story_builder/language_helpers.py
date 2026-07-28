@@ -398,6 +398,113 @@ def classify_zero_index_timeline_continuation(
     }
 
 
+def classify_timeline_clip_option_index_routes(
+    option_ids: list[str],
+    option_indices: list[object],
+    branch_line_ids_by_option: dict[str, list[str]],
+    branch_clip_indices_by_option: dict[str, list[int]],
+    line_timing_by_id: dict[str, dict],
+    runtime_jump_clips: object,
+    common_continuation_line_id: str,
+) -> dict:
+    """Validate exact nonzero Timeline option-index branch ownership.
+
+    A selected dialog option is written into the runtime option field, and
+    option-bound Timeline clips are enabled by that value. Distinct positive
+    option indices therefore identify branch clips directly. Runtime Jumps in
+    the same window are accepted only when they occur after that option's last
+    response clip and converge forward to the shared continuation.
+    """
+    if (
+        len(option_ids) < 2
+        or len(option_ids) != len(option_indices)
+        or not all(isinstance(value, int) and value > 0 for value in option_indices)
+        or len(set(option_indices)) != len(option_indices)
+        or not isinstance(runtime_jump_clips, list)
+        or not common_continuation_line_id
+    ):
+        return {
+            "status": "incomplete",
+            "reason": "routeCardinalityOrRuntimeEvidence",
+        }
+
+    continuation_timing = line_timing_by_id.get(common_continuation_line_id) or {}
+    continuation_start = continuation_timing.get("start")
+    if not isinstance(continuation_start, (int, float)):
+        return {"status": "incomplete", "reason": "continuationTimingMissing"}
+    continuation_start = float(continuation_start)
+
+    branch_end_by_index: dict[int, float] = {}
+    branch_starts: list[float] = []
+    for option_id, option_index in zip(option_ids, option_indices):
+        branch_lines = branch_line_ids_by_option.get(option_id) or []
+        clip_indices = branch_clip_indices_by_option.get(option_id) or []
+        if (
+            not branch_lines
+            or len(branch_lines) != len(clip_indices)
+            or any(value != option_index for value in clip_indices)
+        ):
+            return {"status": "incomplete", "reason": "branchClipIndexCoverage"}
+        ends: list[float] = []
+        for line_id in branch_lines:
+            timing = line_timing_by_id.get(line_id) or {}
+            start = timing.get("start")
+            duration = timing.get("duration")
+            if not isinstance(start, (int, float)) or not isinstance(
+                duration, (int, float)
+            ):
+                return {"status": "incomplete", "reason": "branchTimingMissing"}
+            start = float(start)
+            end = start + float(duration)
+            if end < start or start >= continuation_start + 1e-6:
+                return {"status": "blocked", "reason": "branchTimingInvalid"}
+            branch_starts.append(start)
+            ends.append(end)
+        branch_end_by_index[int(option_index)] = max(ends)
+
+    branch_window_start = min(branch_starts)
+    convergence_jumps: list[dict] = []
+    option_index_set = {int(value) for value in option_indices}
+    for raw in runtime_jump_clips:
+        if not isinstance(raw, dict):
+            return {"status": "blocked", "reason": "runtimeJumpEvidenceMalformed"}
+        start = raw.get("start")
+        end = raw.get("end")
+        if end is None and isinstance(start, (int, float)) and isinstance(
+            raw.get("duration"), (int, float)
+        ):
+            end = float(start) + float(raw["duration"])
+        if not isinstance(start, (int, float)) or not isinstance(end, (int, float)):
+            return {"status": "blocked", "reason": "runtimeJumpTimingMissing"}
+        start = float(start)
+        end = float(end)
+        if end <= branch_window_start + 1e-6 or start >= continuation_start - 1e-6:
+            continue
+        option_index = raw.get("optionIndex")
+        if (
+            not isinstance(option_index, int)
+            or option_index not in option_index_set
+            or raw.get("isReverseJump") not in (None, 0, False)
+            or raw.get("needChangeOptionAfterJump") not in (None, 0, False)
+            or start + 1e-6 < branch_end_by_index[option_index]
+            or end > continuation_start + 1e-6
+            or end <= start
+        ):
+            return {
+                "status": "blocked",
+                "reason": "runtimeJumpDoesNotConvergeAfterBranch",
+                "runtimeJump": raw,
+            }
+        convergence_jumps.append(raw)
+
+    return {
+        "status": "exact",
+        "reason": "runtimeClipOptionIndex",
+        "commonContinuationLineId": common_continuation_line_id,
+        "convergenceRuntimeJumps": convergence_jumps,
+    }
+
+
 def classify_runtime_jump_option_routes(
     option_ids: list[str],
     routes: list[dict],

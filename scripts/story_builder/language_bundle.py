@@ -4170,6 +4170,53 @@ def build_language_bundle(
                         if line_id in valid_line_ids:
                             common_continuation_id = line_id
                             break
+            clip_route_classification = {}
+            if candidate_mapping:
+                clip_route_classification = (
+                    classify_timeline_clip_option_index_routes(
+                        group_opt_ids,
+                        option_indices,
+                        branch_line_ids_by_option,
+                        branch_clip_indices_by_option,
+                        timeline_line_timing_by_id,
+                        runtime_jump_clips,
+                        common_continuation_id,
+                    )
+                )
+            if clip_route_classification.get("status") == "exact":
+                return {
+                    "code": "timelineClipOptionIndexBranches",
+                    "reason": "runtimeClipOptionIndex",
+                    "detail": (
+                        "The authored Timeline option rows use distinct positive "
+                        "optionIndex values, and every response trunk clip carries "
+                        "the matching runtime optionIndex. Any Runtime Jump inside "
+                        "the branch window occurs only after that option's final "
+                        "response clip and converges forward to the shared "
+                        "continuation."
+                    ),
+                    "after": after_id,
+                    "optionIds": group_opt_ids,
+                    "branchLineIdsByOption": branch_line_ids_by_option,
+                    "branchLineClipOptionIndexByOption":
+                        branch_clip_indices_by_option,
+                    "commonContinuationLineId": common_continuation_id,
+                    "source": "dialogTimeline",
+                    "optionIndex": option_indices,
+                    "candidateMapping": candidate_mapping,
+                    "candidateLineClipOptionIndex": candidate_clip_indices,
+                    "assetTracks": _unique_preserve([
+                        str(row.get("assetTrack") or "")
+                        for row in preferred_rows
+                        if row.get("assetTrack")
+                    ]),
+                    "convergenceRuntimeJumps": (
+                        clip_route_classification.get(
+                            "convergenceRuntimeJumps"
+                        )
+                        or []
+                    ),
+                }
             detail = (
                 "Timeline option metadata anchors this group to a trunk line, "
                 "but the option entries do not name explicit target trunk ids; "
@@ -4863,7 +4910,24 @@ def build_language_bundle(
                 sibling_text_group_count += 1
             if following_line_risk:
                 group["optionBranchRisk"] = following_line_risk
-                if following_line_risk.get("code") == "inferredFollowingLines":
+                if (
+                    following_line_risk.get("code")
+                    == "timelineClipOptionIndexBranches"
+                ):
+                    branch_map = (
+                        following_line_risk.get("branchLineIdsByOption")
+                        or {}
+                    )
+                    for opt in opts:
+                        opt_id = opt.get("id") or ""
+                        branch_lines = [
+                            line_id
+                            for line_id in (branch_map.get(opt_id) or [])
+                            if line_id in valid_line_ids
+                        ]
+                        if branch_lines:
+                            opt["branchLines"] = branch_lines
+                elif following_line_risk.get("code") == "inferredFollowingLines":
                     strong_raw_index_mapping = (
                         following_line_risk.get("candidateMapping") == "trunkClipOptionIndex"
                         and bool(following_line_risk.get("branchLineIdsByOption"))
@@ -5642,6 +5706,11 @@ def build_language_bundle(
             def add_option_branch_methods(branch_risk: dict) -> None:
                 if branch_risk.get("code") == "timelineRouteBranches":
                     add("optionBranch:runtimeJump")
+                elif (
+                    branch_risk.get("code")
+                    == "timelineClipOptionIndexBranches"
+                ):
+                    add("optionBranch:runtimeClipOptionIndex")
                 elif branch_risk.get("code") == "siblingSceneTextBranches":
                     add("optionBranch:siblingSceneText")
                 elif branch_risk.get("candidateMapping") == "trunkClipOptionIndex":
