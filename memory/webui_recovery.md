@@ -280,6 +280,20 @@ Mission Pipeline:
   The e7m2, e8m1, and equivalent-duplicate e1m2 paths are present in the same
   trigger manifest. Cards continue to label host-only and world-entity routes
   as context/dependency rather than quest activation or relative Story order.
+- The same live view now exposes the last recovered weak-only LevelScript
+  control paths. On `sm1l3m2`, `radio_sm1l3m2_8` shows custom event
+  `WaitArea`, script `300010007` header `22`, `SwitchInt` local `23`,
+  phase-zero `WaitForSecondsInTriggerVolume` local `31`, and its typed success
+  edge to `PlayRadio` local `32`; the phase-one and loop-body paths to
+  `radio_sm1l3m2_10` and `_12` are present on the same card. On dungeon
+  mission `c31m3d5`, `radio_c31m3_16` shows
+  `ScriptEvent_OnStartScriptControlledCharMode`, script `35400010010` header
+  `130`, `SwitchString` local `141`, case `chr_9000_endmin` to
+  `ScriptedCharPatrolStart` local `131`, `Split` local `132`, and
+  `PlayRadioAndWait` local `133`. These stay labeled as exact local trigger
+  reachability/context: they do not imply server quest activation or global
+  Story order. The rebuild has 282 native branch groups and still 1,426 strong
+  Story-order edges, so the new typed branch path did not invent chronology.
 - Lazy mission payloads embed the source-only Story partial order with reduced
   causal edges, topological frontiers, cycles, quest forks/joins, and exact
   option branches. Exact native Split/IfElse/Switch Story arms and strictly

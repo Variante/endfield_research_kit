@@ -378,6 +378,16 @@ LEVELSCRIPT_RECORD_HINTS = {
         "note": "current installed ActionBase formatter tag maps this code to SwitchInt",
         "actionBaseAction": "SwitchInt",
     },
+    (0x04BF, 0x0C): {
+        "label": "actionbase-switch-string",
+        "confidence": "high",
+        "note": (
+            "current installed ActionBase formatter tag maps this code to "
+            "SwitchString; generated setters serialize _caseIDList, "
+            "_caseValueList, _defaultID, then _value"
+        ),
+        "actionBaseAction": "SwitchString",
+    },
     (0x0495, 0x09): {
         "label": "actionbase-split",
         "confidence": "high",
@@ -395,6 +405,16 @@ LEVELSCRIPT_RECORD_HINTS = {
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to WaitForNpcProxyReady",
         "actionBaseAction": "WaitForNpcProxyReady",
+    },
+    (0x04F9, 0x0E): {
+        "label": "actionbase-wait-seconds-trigger-volume",
+        "confidence": "high",
+        "note": (
+            "current installed ActionBase formatter tag maps this code to "
+            "WaitForSecondsInTriggerVolume; inherited generated setters expose "
+            "_failID, _seconds, and _successID before _scriptPtr and _triggerSlotId"
+        ),
+        "actionBaseAction": "WaitForSecondsInTriggerVolume",
     },
     (0x02FE, 0x0A): {
         "label": "actionbase-main-char-move-to",
@@ -4367,6 +4387,145 @@ def _decode_switch_int_action(payload: bytes) -> dict[str, Any]:
     return out
 
 
+def _decode_switch_string_action(payload: bytes) -> dict[str, Any]:
+    """Decode the current-build ``SwitchString`` branch table exactly."""
+    cursor = 0
+
+    def read_i32_list() -> list[int] | None:
+        nonlocal cursor
+        if cursor + 4 > len(payload):
+            return None
+        count = struct.unpack_from("<I", payload, cursor)[0]
+        cursor += 4
+        if count > 64 or cursor + count * 4 > len(payload):
+            return None
+        values = [
+            struct.unpack_from("<i", payload, cursor + index * 4)[0]
+            for index in range(count)
+        ]
+        cursor += count * 4
+        return values
+
+    def read_string_list() -> list[str | None] | None:
+        nonlocal cursor
+        if cursor + 4 > len(payload):
+            return None
+        count = struct.unpack_from("<I", payload, cursor)[0]
+        cursor += 4
+        if count > 64:
+            return None
+        values: list[str | None] = []
+        for _ in range(count):
+            if cursor + 4 > len(payload):
+                return None
+            size = struct.unpack_from("<i", payload, cursor)[0]
+            cursor += 4
+            if size == -1:
+                values.append(None)
+                continue
+            if size < 0 or size > 1024 or cursor + size > len(payload):
+                return None
+            try:
+                value = payload[cursor : cursor + size].decode("utf-8")
+            except UnicodeDecodeError:
+                return None
+            if any(ord(char) < 0x20 or ord(char) == 0x7F for char in value):
+                return None
+            values.append(value)
+            cursor += size
+        return values
+
+    case_ids = read_i32_list()
+    case_values = read_string_list()
+    if case_ids is None or case_values is None or len(case_ids) != len(case_values):
+        return {}
+    if cursor + 4 > len(payload):
+        return {}
+    default_id = struct.unpack_from("<i", payload, cursor)[0]
+    cursor += 4
+    if any(ref < -1 or ref > 0x10000 for ref in [*case_ids, default_id]):
+        return {}
+
+    value_param = _decode_string_param(payload, cursor)
+    value_getter_local_id: int | None = None
+    if value_param is not None and value_param[1] == len(payload):
+        value_detail = value_param[0]
+    elif (
+        cursor + 17 == len(payload)
+        and payload[cursor] == 0x04
+        and payload[cursor + 1 : cursor + 5] == b"\xff" * 4
+        and payload[cursor + 9 : cursor + 17] == b"\xff" * 8
+    ):
+        value_getter_local_id = struct.unpack_from("<i", payload, cursor + 5)[0]
+        if value_getter_local_id <= 0 or value_getter_local_id > 0x10000:
+            return {}
+        value_detail = {
+            "value": None,
+            "idRef": value_getter_local_id,
+            "paramSource": -1,
+            "path": None,
+        }
+    else:
+        return {}
+
+    branch_refs = list(dict.fromkeys(
+        ref for ref in [*case_ids, default_id] if ref > 0
+    ))
+    out: dict[str, Any] = {
+        "switchStringCaseActionLocalIds": case_ids,
+        "switchStringCaseValues": case_values,
+        "switchStringCases": [
+            {"value": value, "actionLocalId": action_id}
+            for value, action_id in zip(case_values, case_ids)
+        ],
+        "switchStringDefaultActionLocalId": default_id,
+        "switchStringValueParam": value_detail,
+        "branchLocalRefs": branch_refs,
+        "branchRole": "typed-switch-string-actions",
+        "payloadShape": "switch-string-four-fields-exact-eof",
+        "consumedBytes": len(payload),
+    }
+    if value_getter_local_id is not None:
+        out["switchStringValueGetterLocalId"] = value_getter_local_id
+    return out
+
+
+def _decode_wait_for_seconds_in_trigger_volume_action(
+    payload: bytes,
+) -> dict[str, Any]:
+    """Decode the inherited success/fail targets and trigger receiver exactly."""
+    if len(payload) < 10 or payload[0] != 0xFF:
+        return {}
+    fail_id = struct.unpack_from("<i", payload, 1)[0]
+    seconds = _decode_float_param(payload, 5)
+    if seconds is None or seconds[1] + 4 > len(payload):
+        return {}
+    success_id = struct.unpack_from("<i", payload, seconds[1])[0]
+    cursor = seconds[1] + 4
+    script_ptr = _decode_levelscript_ptr_param(payload, cursor)
+    if script_ptr is None:
+        return {}
+    trigger_slot = _decode_i32_param(payload, script_ptr[1])
+    if trigger_slot is None or trigger_slot[1] != len(payload):
+        return {}
+    if any(ref < -1 or ref > 0x10000 for ref in (fail_id, success_id)):
+        return {}
+    return {
+        "waitAreaEntity": None,
+        "waitFailActionLocalId": fail_id,
+        "waitSeconds": seconds[0],
+        "waitSuccessActionLocalId": success_id,
+        "waitScriptPtr": script_ptr[0],
+        "waitTriggerSlotId": trigger_slot[0],
+        "branchLocalRefs": list(dict.fromkeys(
+            ref for ref in (fail_id, success_id) if ref > 0
+        )),
+        "branchRole": "typed-wait-trigger-volume-outcomes",
+        "payloadShape": "wait-trigger-volume-five-inherited-fields-exact-eof",
+        "consumedBytes": len(payload),
+    }
+
+
 def _decode_play3d_radio_action(payload: bytes) -> dict[str, Any]:
     """Decode the exact current-build ``Play3DRadio`` field sequence.
 
@@ -5418,6 +5577,16 @@ def decode_levelscript_record_payload(
         switch_int = _decode_switch_int_action(payload)
         if switch_int:
             out.update(switch_int)
+    if semantic_key == (0x04BF, 0x0C):
+        switch_string = _decode_switch_string_action(payload)
+        if switch_string:
+            out.update(switch_string)
+    if semantic_key == (0x04F9, 0x0E):
+        wait_trigger_volume = _decode_wait_for_seconds_in_trigger_volume_action(
+            payload
+        )
+        if wait_trigger_volume:
+            out.update(wait_trigger_volume)
     if semantic_key == (0x034A, 0x14):
         play3d_radio = _decode_play3d_radio_action(payload)
         if play3d_radio:

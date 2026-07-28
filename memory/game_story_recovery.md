@@ -691,11 +691,10 @@ ownership.
 
 The gap queue also no longer treats every weak-only or isolated row as a
 missing LevelScript decoder. The current source graph has 2,063 weak-only
-placements: 1,803 have a complete exact native event-to-playback path but no
-prefix-comparable second Story action, 256 retain only non-ordering topology,
-and four remain actionable control-flow rows. None of those four is in a
-main-story (`e*`) mission: the residual queue is `radio_c31m3_16` plus
-`radio_sm1l3m2_8`, `_10`, and `_12`. Two former false positives,
+placements: 1,807 have a complete exact native event-to-playback path but no
+prefix-comparable second Story action, and 256 retain only non-ordering
+topology. The actionable weak-only LevelScript control-flow queue is now zero
+in every mission bucket. Two former false positives,
 `radio_e6m4_18` and `radio_sm1l1m1_5`, were already exact current-build
 `StopRadio` records (`0x04b5/0x09`); the weak-only fallback now applies the
 same non-playback formatter map as the multi-scene classifier instead of
@@ -756,6 +755,33 @@ position therefore still supply no relative Story order. More generally, any
 path containing `WhileAction.doAction` is excluded from strict prefix-order
 promotion because the loop body can repeat; it remains exact trigger
 reachability evidence only.
+
+The last four weak-only decoder rows close through two additional exact
+ActionBase layouts. The installed formatter and generated setter metadata map
+tag `0x04f9`/member count `0x0e` to
+`WaitForSecondsInTriggerVolume`. Its inherited field sequence is null
+`_areaEntity`, `_failID`, `_seconds`, `_successID`, followed by current-script
+`_scriptPtr` and `_triggerSlotId`. In
+`map01_lv003/300010007`, the three records select trigger slot `80001` and
+serialize success ids `32`, `26`, and `20`, which are respectively
+`radio_sm1l3m2_8`, `_10`, and `_12`. Their exact paths begin at the local
+`WaitArea` custom-event header, choose phase `0`, `1`, or `2` through
+`SwitchInt`, and follow the wait action's success edge to playback. The phase
+2 route also traverses `WhileAction`, so its playback is exact but its loop
+body remains excluded from strict prefix order.
+
+Tag `0x04bf`/member count `0x0c` is `SwitchString`; its exact fields are
+`_caseIDList`, `_caseValueList`, `_defaultID`, and `_value`. In
+`dung02_rdg007/35400010010`, the
+`ScriptEvent_OnStartScriptControlledCharMode` header reaches local `141`,
+whose `chr_9000_endmin` case selects `ScriptedCharPatrolStart` local `131`;
+that action continues to `Split` local `132` and
+`radio_c31m3_16` at local `133`. Both new decoders require the complete
+current-build payload through exact EOF, accept only bounded local ids, and
+the wait outcome is traversable only when its receiver decodes as the current
+script. The generated gap audit now classifies character weak-only rows as
+377 exact plus 41 non-ordering, and other rows as 623 exact plus 115
+non-ordering, with zero actionable rows in both.
 
 The former `e6m3` top parser gap is one of those exact negatives.
 `map02_lv002/22800100007` plays `radio_e6m3_14` from a Leader-enter listener

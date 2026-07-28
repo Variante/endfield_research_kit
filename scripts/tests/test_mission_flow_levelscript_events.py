@@ -1784,6 +1784,213 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
                     paths[0]["path"][1]["edge"],
                 )
 
+    def test_switch_string_decodes_exact_case_targets_and_rejects_trailing_bytes(self):
+        value_param = (
+            b"\x04"
+            + (-1).to_bytes(4, "little", signed=True)
+            + (142).to_bytes(4, "little", signed=True)
+            + (-1).to_bytes(4, "little", signed=True)
+            + (-1).to_bytes(4, "little", signed=True)
+        )
+        payload = (
+            struct.pack("<Iii", 2, 131, -1)
+            + struct.pack("<I", 2)
+            + struct.pack("<I", len(b"chr_9000_endmin"))
+            + b"chr_9000_endmin"
+            + struct.pack("<I", len(b"chr_0031_mifu"))
+            + b"chr_0031_mifu"
+            + struct.pack("<i", 0)
+            + value_param
+        )
+        record = {
+            "code": 0x04BF,
+            "kind": 0x0C,
+            "unionTag": 0x04BF,
+            "serializedMemberCount": 0x0C,
+            "payloadStart": 0,
+        }
+        decoded = decode_levelscript_record_payload(
+            payload,
+            record,
+            next_start=len(payload),
+            action_map_role="actionList#1 root",
+        )
+        self.assertEqual("SwitchString", decoded["actionBaseAction"])
+        self.assertEqual([131, -1], decoded["switchStringCaseActionLocalIds"])
+        self.assertEqual(
+            ["chr_9000_endmin", "chr_0031_mifu"],
+            decoded["switchStringCaseValues"],
+        )
+        self.assertEqual(0, decoded["switchStringDefaultActionLocalId"])
+        self.assertEqual(142, decoded["switchStringValueGetterLocalId"])
+        self.assertEqual([131], decoded["branchLocalRefs"])
+        self.assertEqual(
+            "switch-string-four-fields-exact-eof",
+            decoded["payloadShape"],
+        )
+
+        malformed = decode_levelscript_record_payload(
+            payload + b"\x00",
+            record,
+            next_start=len(payload) + 1,
+            action_map_role="actionList#1 root",
+        )
+        self.assertNotIn("switchStringCaseActionLocalIds", malformed)
+
+    def test_wait_trigger_volume_decodes_exact_success_target_and_receiver(self):
+        default_tail = struct.pack("<iii", -1, 0, -1)
+        seconds = b"\x04" + struct.pack("<f", 40.0) + default_tail
+        current_script = (
+            b"\x04"
+            + (0).to_bytes(8, "little")
+            + (0).to_bytes(8, "little")
+            + struct.pack("<iii", -1, 1002, -1)
+        )
+        trigger_slot = b"\x04" + struct.pack("<i", 80001) + default_tail
+        payload = (
+            b"\xff"
+            + struct.pack("<i", 0)
+            + seconds
+            + struct.pack("<i", 32)
+            + current_script
+            + trigger_slot
+        )
+        record = {
+            "code": 0x04F9,
+            "kind": 0x0E,
+            "unionTag": 0x04F9,
+            "serializedMemberCount": 0x0E,
+            "payloadStart": 0,
+        }
+        decoded = decode_levelscript_record_payload(
+            payload,
+            record,
+            next_start=len(payload),
+            action_map_role="actionList#1 root",
+        )
+        self.assertEqual(
+            "WaitForSecondsInTriggerVolume",
+            decoded["actionBaseAction"],
+        )
+        self.assertEqual(0, decoded["waitFailActionLocalId"])
+        self.assertEqual(32, decoded["waitSuccessActionLocalId"])
+        self.assertEqual(40.0, decoded["waitSeconds"]["value"])
+        self.assertEqual("current_script", decoded["waitScriptPtr"]["mode"])
+        self.assertEqual(80001, decoded["waitTriggerSlotId"]["value"])
+        self.assertEqual([32], decoded["branchLocalRefs"])
+
+        malformed = decode_levelscript_record_payload(
+            payload + b"\x00",
+            record,
+            next_start=len(payload) + 1,
+            action_map_role="actionList#1 root",
+        )
+        self.assertNotIn("waitSuccessActionLocalId", malformed)
+
+    def test_control_path_traverses_switch_string_and_wait_success_targets(self):
+        header = {
+            "code": 0x12BA,
+            "kind": 0,
+            "start": 10,
+            "localId": 1,
+            "nextId": 0,
+            "strings": [{"text": "WaitArea"}],
+            "plainStrings": [],
+        }
+        switch_string = {
+            "code": 0x04BF,
+            "kind": 0x0C,
+            "unionTag": 0x04BF,
+            "serializedMemberCount": 0x0C,
+            "start": 100,
+            "localId": 2,
+            "nextId": -1,
+            "strings": [],
+            "plainStrings": [],
+        }
+        wait = {
+            "code": 0x04F9,
+            "kind": 0x0E,
+            "unionTag": 0x04F9,
+            "serializedMemberCount": 0x0E,
+            "start": 200,
+            "localId": 3,
+            "nextId": -1,
+            "strings": [],
+            "plainStrings": [],
+        }
+        target = {
+            "code": 0x0363,
+            "kind": 0x0D,
+            "start": 300,
+            "localId": 4,
+            "nextId": -1,
+            "strings": [{"text": "radio_testm1_1"}],
+            "plainStrings": [],
+        }
+        records = [header, switch_string, wait, target]
+        membership = {
+            10: "headerList#1",
+            100: "actionList#1 root",
+            200: "actionList#2 root",
+            300: "actionList#3 root",
+        }
+
+        def decode(_data, record, **_kwargs):
+            if record is header:
+                return {"actionHeader": {"nextId": 2}}
+            if record is switch_string:
+                return {
+                    "switchStringCaseActionLocalIds": [3],
+                    "switchStringCaseValues": ["chr_9000_endmin"],
+                    "switchStringDefaultActionLocalId": 0,
+                }
+            if record is wait:
+                return {
+                    "waitSuccessActionLocalId": 4,
+                    "waitFailActionLocalId": 0,
+                    "waitScriptPtr": {"mode": "current_script"},
+                }
+            return {}
+
+        with mock.patch(
+            "scripts.story_builder.level_bindings.decode_levelscript_record_payload",
+            side_effect=decode,
+        ):
+            paths = _levelscript_native_control_paths_to_record(
+                bytes(400), records, membership, target
+            )
+        self.assertEqual(1, len(paths))
+        self.assertEqual([2, 3, 4], paths[0]["pathLocalIds"])
+        self.assertEqual(
+            "SwitchString.case[0]=chr_9000_endmin",
+            paths[0]["path"][1]["edge"],
+        )
+        self.assertEqual(
+            "WaitForSecondsInTriggerVolume.successAction",
+            paths[0]["path"][2]["edge"],
+        )
+
+        def decode_cross_script(_data, record, **_kwargs):
+            detail = decode(_data, record, **_kwargs)
+            if record is wait:
+                detail["waitScriptPtr"] = {
+                    "mode": "explicit_script",
+                    "scriptId": "300010008",
+                }
+            return detail
+
+        with mock.patch(
+            "scripts.story_builder.level_bindings.decode_levelscript_record_payload",
+            side_effect=decode_cross_script,
+        ):
+            self.assertEqual(
+                [],
+                _levelscript_native_control_paths_to_record(
+                    bytes(400), records, membership, target
+                ),
+            )
+
     def test_entity_hp_header_separates_filter_level_mask_and_exact_condition(self):
         payload = bytearray(84)
         payload[0:4] = (3).to_bytes(4, "little", signed=True)
