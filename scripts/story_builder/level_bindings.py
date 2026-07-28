@@ -281,12 +281,14 @@ LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {
     (0x04B1, 0x0C): "StopLevelSeqLoopSegment",
     (0x04B2, 0x09): "StopLevelSequenceAction",
     (0x04BD, 0x0C): "SwitchInt",
+    (0x04BF, 0x0C): "SwitchString",
     (0x0495, 0x09): "Split",
     (0x0478, 0x09): "ShowDramaticPerformanceNewItemToast",
     (0x0480, 0x0F): "ShowLimitedGuide",
     (0x048C, 0x09): "ShowUIReadingPopPanel",
     (0x04F6, 0x08): "WaitForOneFrame",
     (0x04F5, 0x09): "WaitForNpcProxyReady",
+    (0x04F9, 0x0E): "WaitForSecondsInTriggerVolume",
     (0x04F0, 0x09): "WaitForCondition",
     (0x0501, 0x0A): "WhileAction",
     (0x0506, 0x09): "Core_RemoveMovementSettingModifier",
@@ -707,9 +709,11 @@ LEVELSCRIPT_OPCODE_TABLE: dict[tuple[int, int], str] = {
     (0x04A1, 0x10): "play_fmv",
     (0x04A5, 0x1B): "play_black",
     (0x04BD, 0x0C): "branch",
+    (0x04BF, 0x0C): "branch",
     (0x0495, 0x09): "branch",
     (0x04F6, 0x08): "control_wait",
     (0x04F5, 0x09): "control_wait_npc_proxy",
+    (0x04F9, 0x0E): "control_wait_trigger_volume",
     (0x0501, 0x0A): "control_loop",
     (0x0020, 0x0B): "presentation_fade",
     (0x0052, 0x09): "gate",
@@ -829,6 +833,12 @@ def _prepare_levelscript_native_control_context(
             tuple(detail.get("switchCaseActionLocalIds") or []),
             tuple(detail.get("switchCaseValues") or []),
             detail.get("switchDefaultActionLocalId"),
+            tuple(detail.get("switchStringCaseActionLocalIds") or []),
+            tuple(detail.get("switchStringCaseValues") or []),
+            detail.get("switchStringDefaultActionLocalId"),
+            detail.get("waitFailActionLocalId"),
+            detail.get("waitSuccessActionLocalId"),
+            (detail.get("waitScriptPtr") or {}).get("mode"),
         )
 
     # Authored files can repeat one local-id record byte-for-byte in separate
@@ -877,11 +887,12 @@ def _levelscript_native_control_paths_to_record(
     graph uses only authored ``ActionHeader.nextId``, ``ActionBase.nextId``,
     the current-build ordered ``Branch._idList``, ``Split.actions`` list,
     current-build ``IfElseAction`` true/false fields, and current-build
-    ``SwitchInt`` case/default lists. It deliberately does not use record
-    adjacency or infer a mission owner from an event name/trigger slot. Callers
-    scanning one file should reuse the prepared context so typed payloads and
-    duplicate-id validation are decoded once rather than once per
-    Story-bearing action.
+    ``SwitchInt``/``SwitchString`` case/default lists, ``WhileAction`` body,
+    and same-script ``WaitForSecondsInTriggerVolume`` success/fail ids. It
+    deliberately does not use record adjacency or infer a mission owner from
+    an event name/trigger slot. Callers scanning one file should reuse the
+    prepared context so typed payloads and duplicate-id validation are decoded
+    once rather than once per Story-bearing action.
     """
     context = prepared or _prepare_levelscript_native_control_context(
         data,
@@ -953,6 +964,24 @@ def _levelscript_native_control_paths_to_record(
             default_id = detail.get("switchDefaultActionLocalId")
             if isinstance(default_id, int) and default_id > 0:
                 edges.append(("SwitchInt.default", default_id))
+        elif pair == (0x04BF, 0x0C):
+            case_ids = detail.get("switchStringCaseActionLocalIds") or []
+            case_values = detail.get("switchStringCaseValues") or []
+            for index, (case_value, local_id) in enumerate(zip(case_values, case_ids)):
+                if isinstance(local_id, int) and local_id > 0:
+                    edges.append((f"SwitchString.case[{index}]={case_value}", local_id))
+            default_id = detail.get("switchStringDefaultActionLocalId")
+            if isinstance(default_id, int) and default_id > 0:
+                edges.append(("SwitchString.default", default_id))
+        elif pair == (0x04F9, 0x0E):
+            if (detail.get("waitScriptPtr") or {}).get("mode") == "current_script":
+                for field_name, label in (
+                    ("waitSuccessActionLocalId", "WaitForSecondsInTriggerVolume.successAction"),
+                    ("waitFailActionLocalId", "WaitForSecondsInTriggerVolume.failAction"),
+                ):
+                    local_id = detail.get(field_name)
+                    if isinstance(local_id, int) and local_id > 0:
+                        edges.append((label, local_id))
         return list(dict.fromkeys(edges))
 
     def compact_step(record: dict, edge: str) -> dict:
@@ -965,8 +994,13 @@ def _levelscript_native_control_paths_to_record(
         getter_local_id = None
         if pair == (0x00FF, 0x0B):
             getter_local_id = detail.get("conditionGetterLocalId")
-        elif pair == (0x04BD, 0x0C):
-            getter_local_id = detail.get("switchValueGetterLocalId")
+        elif pair in {(0x04BD, 0x0C), (0x04BF, 0x0C)}:
+            getter_field = (
+                "switchValueGetterLocalId"
+                if pair == (0x04BD, 0x0C)
+                else "switchStringValueGetterLocalId"
+            )
+            getter_local_id = detail.get(getter_field)
         if isinstance(getter_local_id, int):
             getter = getter_by_local.get(getter_local_id)
             predicate = {
@@ -1044,10 +1078,15 @@ def _levelscript_native_control_paths_to_record(
                             }.items()
                             if value not in ("", None, [], {})
                         }
-        elif pair in {(0x00FF, 0x0B), (0x04BD, 0x0C)}:
+        elif pair in {
+            (0x00FF, 0x0B),
+            (0x04BD, 0x0C),
+            (0x04BF, 0x0C),
+        }:
             inline_param = (
                 detail.get("conditionParam")
                 or detail.get("switchValueParam")
+                or detail.get("switchStringValueParam")
                 or {}
             )
             predicate = {
