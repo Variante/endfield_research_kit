@@ -3659,6 +3659,22 @@ Current main-story priorities:
    `cutscene_e3m5_4`. This is a strict mission/quest-to-script observation
    context, but the condition consumes a property after runtime state changes;
    it does not prove that the quest activates, owns, or orders the cutscene.
+   The exact producer follow-up closes the tempting local bridge. The only
+   serialized record carrying the `isFinished` key is local id `0` at offset
+   `0x31f`, opcode `0x0178/0x08`; the recovered MemoryPack union table maps
+   `0x0178` to `ListAddValueWaterVolumePtr`, not a bool-property setter. It is
+   not on the playback control chain. The Leader-enter receiver instead follows
+   local ids `3 -> 4 -> 5 -> 6`: `BlackScreenFadeOut`,
+   `PlayFmvAction(cs_video_e3m5_4)`, opaque `0x111e`, then
+   `CallServer(#27b725be)`. Exact searches find that server-event hash only in
+   the two exported copies of this LevelScript, with no current
+   MissionRuntime, Lua, or source-graph consumer; the named setter audit also
+   has no row for script `2800010051`. A second dialog-exit path hands off
+   `#8e6317c4`, likewise without an exported consumer. Therefore the missing
+   relation is server-side: current offline data cannot prove that the FMV
+   handoff sets `isFinished`. The Mission Pipeline now publishes the exact
+   `e3m5/e3m5_q#1/objective 1/CheckLevelScriptPropertyBool` observer identity
+   as debug context with ownership, activation, and Story playback all false.
    The 12 shaped scripts have zero
    complete exact same-level MissionArea shape matches; nearby centers with
    mismatched shape fields do not qualify. Across the 25 task-map scripts, the

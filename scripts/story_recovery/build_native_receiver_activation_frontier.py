@@ -1686,6 +1686,32 @@ def publish_to_pipeline_index(
             "missionRuntimeObjectiveConsumerCount": len(
                 row.get("missionRuntimeScriptConsumers") or []
             ),
+            "missionRuntimeScriptConsumers": [
+                {
+                    "relation": (
+                        "mission_runtime_objective_references_level_script"
+                    ),
+                    "missionId": safe_text(consumer.get("missionId")),
+                    "questId": safe_text(consumer.get("questId")),
+                    "objectiveIndex": consumer.get("objectiveIndex"),
+                    "conditionTypes": [
+                        safe_text(condition_type)
+                        for condition_type in consumer.get("conditionTypes") or []
+                        if safe_text(condition_type)
+                    ],
+                    "ownership": False,
+                    "activation": False,
+                    "storyPlayback": False,
+                    "evidenceBoundary": (
+                        "The typed MissionRuntime objective reads this "
+                        "LevelScript as an operand. It does not prove that the "
+                        "quest starts or owns Story playback, or that playback "
+                        "sets the observed script property."
+                    ),
+                }
+                for consumer in row.get("missionRuntimeScriptConsumers") or []
+                if isinstance(consumer, dict)
+            ],
             "exactStartShapeMissionAreaMatchCount": len(
                 row.get("startShapeMissionAreaMatches") or []
             ),

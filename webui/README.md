@@ -292,9 +292,14 @@ available through expandable guidance.
   Native receiver activation cards additionally expose every fully decoded
   task-map condition and its exact entity, spawner, dialog, destination,
   property, stage, monster, or combine operand. The current receiver corpus has
-  24 fully decoded task-map scripts, 31 tasks, and 54 conditions. These rows
+  25 fully decoded task-map scripts, 32 tasks, and 55 conditions. These rows
   describe evaluation/completion requirements only; the UI must not present
   them as activation, mission ownership, or execution order.
+  One receiver script is also named by a typed MissionRuntime objective. Its
+  card exposes the exact mission/quest/objective and condition type as a
+  `Quest observer` boundary row with ownership, activation, and Story playback
+  all false; observing a LevelScript property does not prove that the quest
+  starts the playback or that playback writes the property.
   Each condition also shows an exact authored operand source when available:
   current-script or logic-id WorldEntity rows, same-level LevelScripts,
   MissionArea/SpawnerConfig rows, or same-receiver Story keys. The current
