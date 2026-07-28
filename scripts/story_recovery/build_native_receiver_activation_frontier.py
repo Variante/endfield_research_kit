@@ -60,7 +60,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v5"
+SCHEMA = "nativeReceiverActivationFrontier.v6"
 DEFAULT_PIPELINE_INDEX = ROOT / "webui" / "data" / "mission_pipeline" / "index.json"
 DEFAULT_PIPELINE_MISSION_ROOT = (
     ROOT / "webui" / "data" / "mission_pipeline" / "missions"
@@ -76,6 +76,23 @@ DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE = (
     GAMEPLAY_CONFIG_DIR / "ScriptTaskExtraInfoTable.json"
 )
 DEFAULT_WORLD_ENTITY_REGISTRY = GAMEPLAY_CONFIG_DIR / "WorldEntityRegistry.json"
+DEFAULT_SUBGAME_TABLE = GAMEPLAY_CONFIG_DIR / "SubGameInstanceDataTable.json"
+DEFAULT_GAME_MECHANIC_CONDITION_TABLE = (
+    ROOT
+    / "export_full"
+    / "structured"
+    / "StreamingAssets"
+    / "Table"
+    / "GameMechanicConditionTable.json"
+)
+DEFAULT_DUNGEON_TABLE = (
+    ROOT
+    / "export_full"
+    / "structured"
+    / "StreamingAssets"
+    / "Table"
+    / "DungeonTable.json"
+)
 
 
 def safe_text(value: Any) -> str:
@@ -214,6 +231,137 @@ def subgame_script_bindings(
             }
         )
     return bindings
+
+
+def subgame_availability_associations(
+    condition_payload: dict[str, Any],
+    *,
+    source_file: str = "",
+) -> dict[str, list[dict[str, Any]]]:
+    """Index only understood typed SubGame availability prerequisites."""
+    associations: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    condition_specs = {
+        18: (
+            "subgame_unlock_quest_prerequisite",
+            "quest",
+            "QuestStateEqual",
+            "The quest state gates SubGame availability; it does not own "
+            "runtime playback.",
+        ),
+        19: (
+            "subgame_unlock_mission_prerequisite",
+            "mission",
+            "MissionStateEqual",
+            "The mission state gates SubGame availability; it does not own "
+            "or trigger runtime playback.",
+        ),
+        5031: (
+            "subgame_unlock_previous_game_mechanic",
+            "subgame",
+            "CheckPassGameMechanicsId",
+            "The prior challenge gates this SubGame; it supplies no mission "
+            "owner.",
+        ),
+    }
+    for raw in condition_payload.values():
+        if not isinstance(raw, dict):
+            continue
+        condition_type = raw.get("conditionType")
+        spec = condition_specs.get(condition_type)
+        subgame_id = safe_text(raw.get("gameMechanicsId"))
+        if spec is None or not subgame_id:
+            continue
+        params = [
+            safe_text(value)
+            for parameter in raw.get("parameter") or []
+            if isinstance(parameter, dict)
+            for value in parameter.get("valueStringList") or []
+            if safe_text(value)
+        ]
+        if not params:
+            continue
+        relation, target_type, type_name, finding = spec
+        associations[subgame_id].append(
+            {
+                "relation": relation,
+                "targetType": target_type,
+                "targetId": params[0],
+                "conditionType": condition_type,
+                "conditionTypeName": type_name,
+                "sourceId": safe_text(raw.get("conditionId")),
+                "ownership": False,
+                "finding": finding,
+                "source": source_file,
+                "confidence": (
+                    "typed_original_data_and_native_enum_non_owning"
+                ),
+            }
+        )
+    return associations
+
+
+def dungeon_scene_contexts(
+    subgame_payload: dict[str, Any],
+    dungeon_payload: dict[str, Any],
+    condition_payload: dict[str, Any],
+    *,
+    subgame_source: str = "",
+    dungeon_source: str = "",
+    condition_source: str = "",
+) -> dict[str, list[dict[str, Any]]]:
+    """Join exact Dungeon scene hosts to typed SubGames without adding owners."""
+    subgames = subgame_payload.get("dataTable") or {}
+    if not isinstance(subgames, dict):
+        return {}
+    availability = subgame_availability_associations(
+        condition_payload,
+        source_file=condition_source,
+    )
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for raw in dungeon_payload.values():
+        if not isinstance(raw, dict):
+            continue
+        dungeon_id = safe_text(raw.get("dungeonId"))
+        scene_id = safe_text(raw.get("sceneId"))
+        subgame = subgames.get(dungeon_id)
+        if not dungeon_id or not scene_id or not isinstance(subgame, dict):
+            continue
+        bind_script_id = safe_text(subgame.get("bindScriptId"))
+        if not bind_script_id.isdigit():
+            continue
+        contexts[scene_id].append(
+            {
+                "subGameId": dungeon_id,
+                "dungeonId": dungeon_id,
+                "sceneId": scene_id,
+                "levelId": safe_text(raw.get("levelId")),
+                "dungeonSeriesId": safe_text(raw.get("dungeonSeriesId")),
+                "bindScriptId": bind_script_id,
+                "associations": availability.get(dungeon_id, []),
+                "ownership": False,
+                "storyBinding": False,
+                "sources": {
+                    "subGame": subgame_source,
+                    "dungeon": dungeon_source,
+                },
+                "confidence": "typed_original_data_scene_context",
+                "evidenceBoundary": (
+                    "Dungeon.sceneId proves that this SubGame loads the same "
+                    "authored scene as the receiver. A sibling LevelScript in "
+                    "that scene is not the SubGame bindScriptId, and any "
+                    "availability prerequisite is not a Story owner or trigger."
+                ),
+            }
+        )
+    for scene_rows in contexts.values():
+        scene_rows.sort(
+            key=lambda row: (
+                row["dungeonSeriesId"],
+                row["subGameId"],
+                int(row["bindScriptId"]),
+            )
+        )
+    return dict(contexts)
 
 
 def script_task_extra_info_rows(
@@ -957,6 +1105,11 @@ def build_report(
     spawner_root: Path = SPAWNER_CONFIG_DIR,
     script_task_extra_info_path: Path = DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE,
     world_entity_registry_path: Path = DEFAULT_WORLD_ENTITY_REGISTRY,
+    subgame_table_path: Path = DEFAULT_SUBGAME_TABLE,
+    game_mechanic_condition_table_path: Path = (
+        DEFAULT_GAME_MECHANIC_CONDITION_TABLE
+    ),
+    dungeon_table_path: Path = DEFAULT_DUNGEON_TABLE,
 ) -> dict[str, Any]:
     mission_ids = {
         safe_text(row.get("id"))
@@ -976,6 +1129,14 @@ def build_report(
     )
     logic_entities, slot_entities = world_entity_operand_sources(
         read_json(world_entity_registry_path) or {}
+    )
+    dungeon_contexts_by_scene = dungeon_scene_contexts(
+        read_json(subgame_table_path) or {},
+        read_json(dungeon_table_path) or {},
+        read_json(game_mechanic_condition_table_path) or {},
+        subgame_source=rel_path(subgame_table_path),
+        dungeon_source=rel_path(dungeon_table_path),
+        condition_source=rel_path(game_mechanic_condition_table_path),
     )
     rows: list[dict[str, Any]] = []
     classes: Counter[str] = Counter()
@@ -1006,6 +1167,15 @@ def build_report(
         )
         incoming = incoming_by_target.get((level_id, script_id), [])
         subgames = subgames_by_script.get(script_id, [])
+        dungeon_contexts = [
+            {
+                **context,
+                "receiverIsBoundScript": (
+                    safe_text(context.get("bindScriptId")) == script_id
+                ),
+            }
+            for context in dungeon_contexts_by_scene.get(level_id, [])
+        ]
         consumers = consumers_by_script.get(script_id, [])
         start_shape_area_matches = exact_start_shape_mission_area_matches(
             levelscript.get("startShapeListShapes") or [],
@@ -1117,6 +1287,7 @@ def build_report(
                 "levelDataHosts": hosts,
                 "incomingLiteralManualControls": incoming,
                 "subGameBindings": subgames,
+                "dungeonSceneContexts": dungeon_contexts,
                 "missionRuntimeScriptConsumers": consumers,
                 "startShapeMissionAreaMatches": start_shape_area_matches,
                 "serializedMissionRuntimeIdTokens": serialized_mission_ids,
@@ -1144,6 +1315,11 @@ def build_report(
             "spawnerRoot": rel_path(spawner_root),
             "scriptTaskExtraInfo": rel_path(script_task_extra_info_path),
             "worldEntityRegistry": rel_path(world_entity_registry_path),
+            "subGameTable": rel_path(subgame_table_path),
+            "gameMechanicConditionTable": rel_path(
+                game_mechanic_condition_table_path
+            ),
+            "dungeonTable": rel_path(dungeon_table_path),
         },
         "evidencePolicy": {
             "purpose": (
@@ -1168,6 +1344,14 @@ def build_report(
                 "SubGame bindScriptId proves the runtime system that activates "
                 "the script shell, but a SubGame row without dungeonMissionId "
                 "does not identify a mission or quest owner."
+            ),
+            "dungeonSceneBoundary": (
+                "An exact Dungeon.sceneId -> SubGame row proves that the "
+                "receiver LevelScript lives in the scene loaded for that "
+                "SubGame. It does not make a sibling receiver the bound script. "
+                "Quest, mission, and prior-challenge conditions prove only "
+                "SubGame availability, never Story ownership, activation, or "
+                "order."
             ),
             "literalMissionIdBoundary": (
                 "An exact MemoryPack string token proves only that the literal "
@@ -1221,6 +1405,43 @@ def build_report(
             ),
             "scriptsWithSubGameBinding": sum(
                 bool(row["subGameBindings"]) for row in rows
+            ),
+            "scriptsWithExactDungeonSceneContext": sum(
+                bool(row["dungeonSceneContexts"]) for row in rows
+            ),
+            "storyKeysWithExactDungeonSceneContext": len(
+                {
+                    story_key
+                    for row in rows
+                    if row["dungeonSceneContexts"]
+                    for story_key in row["storyKeys"]
+                }
+            ),
+            "exactDungeonSceneContextPlacements": sum(
+                len(row["dungeonSceneContexts"]) for row in rows
+            ),
+            "exactDungeonSceneIds": len(
+                {
+                    safe_text(context.get("sceneId"))
+                    for row in rows
+                    for context in row["dungeonSceneContexts"]
+                    if safe_text(context.get("sceneId"))
+                }
+            ),
+            "directBoundDungeonSceneContextPlacements": sum(
+                bool(context.get("receiverIsBoundScript"))
+                for row in rows
+                for context in row["dungeonSceneContexts"]
+            ),
+            "siblingDungeonSceneContextPlacements": sum(
+                not context.get("receiverIsBoundScript")
+                for row in rows
+                for context in row["dungeonSceneContexts"]
+            ),
+            "dungeonSceneContextAvailabilityAssociations": sum(
+                len(context.get("associations") or [])
+                for row in rows
+                for context in row["dungeonSceneContexts"]
             ),
             "scriptsWithMissionRuntimeObjectiveConsumer": sum(
                 bool(row["missionRuntimeScriptConsumers"]) for row in rows
@@ -1346,6 +1567,49 @@ def publish_to_pipeline_index(
                 for binding in row.get("subGameBindings") or []
                 if isinstance(binding, dict) and safe_text(binding.get("subGameId"))
             ],
+            "dungeonSceneContexts": [
+                {
+                    "subGameId": safe_text(context.get("subGameId")),
+                    "sceneId": safe_text(context.get("sceneId")),
+                    "levelId": safe_text(context.get("levelId")),
+                    "dungeonSeriesId": safe_text(
+                        context.get("dungeonSeriesId")
+                    ),
+                    "bindScriptId": safe_text(context.get("bindScriptId")),
+                    "receiverIsBoundScript": bool(
+                        context.get("receiverIsBoundScript")
+                    ),
+                    "associations": [
+                        {
+                            "relation": safe_text(
+                                association.get("relation")
+                            ),
+                            "targetType": safe_text(
+                                association.get("targetType")
+                            ),
+                            "targetId": safe_text(
+                                association.get("targetId")
+                            ),
+                            "conditionTypeName": safe_text(
+                                association.get("conditionTypeName")
+                            ),
+                            "ownership": False,
+                            "finding": safe_text(
+                                association.get("finding")
+                            ),
+                        }
+                        for association in context.get("associations") or []
+                        if isinstance(association, dict)
+                    ],
+                    "ownership": False,
+                    "storyBinding": False,
+                    "evidenceBoundary": safe_text(
+                        context.get("evidenceBoundary")
+                    ),
+                }
+                for context in row.get("dungeonSceneContexts") or []
+                if isinstance(context, dict)
+            ],
             "incomingLiteralCrossControlCount": sum(
                 not control.get("selfTarget")
                 for control in row.get("incomingLiteralManualControls") or []
@@ -1406,6 +1670,22 @@ def markdown_report(payload: dict[str, Any]) -> str:
         (
             "- Scripts with an exact SubGame `bindScriptId` carrier: "
             f"`{counts.get('scriptsWithSubGameBinding')}`"
+        ),
+        (
+            "- Scripts / Story keys / scenes with exact Dungeon scene context: "
+            f"`{counts.get('scriptsWithExactDungeonSceneContext')}` / "
+            f"`{counts.get('storyKeysWithExactDungeonSceneContext')}` / "
+            f"`{counts.get('exactDungeonSceneIds')}`"
+        ),
+        (
+            "- Dungeon scene-context placements (bound / sibling): "
+            f"`{counts.get('exactDungeonSceneContextPlacements')}` "
+            f"(`{counts.get('directBoundDungeonSceneContextPlacements')}` / "
+            f"`{counts.get('siblingDungeonSceneContextPlacements')}`)"
+        ),
+        (
+            "- Availability prerequisites carried by those scene contexts: "
+            f"`{counts.get('dungeonSceneContextAvailabilityAssociations')}`"
         ),
         (
             "- Scripts named by a typed MissionRuntime objective operand: "

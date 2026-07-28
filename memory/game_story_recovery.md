@@ -93,8 +93,8 @@ The Mission Pipeline attachment audit is a separate, changing coverage metric
 over 490 exported MissionRuntime graphs. The current generated report at
 `reports/story/build/mission_pipeline_story_binding_coverage_CN.md` records
 5,273 unique pipeline-relevant or exactly connected cross-owner
-`dlg`/`sns`/`cutscene`/`black`/`remotecomm`/`radio` files: 4,060 have at least
-one original-data connection across 4,345 mission placements and 1,213 remain
+`dlg`/`sns`/`cutscene`/`black`/`remotecomm`/`radio` files: 4,065 have at least
+one original-data connection across 4,361 mission placements and 1,208 remain
 unassigned. The denominator now admits 106 Story files whose nominal Story
 owner is not one of the 490 MissionRuntime ids only because accepted generated
 pipeline edges connect them; this repairs an accounting blind spot and does not
@@ -177,11 +177,25 @@ bodies, the sole direct registration path for the completion delegate is
 progress rather than executing an ActionMap or Story method. The two exact
 MissionRuntime instances of that condition target other level/script/task
 tuples, so all 31 receiver tasks have zero typed
-`CheckLevelScriptTaskFinished` consumers. Schema v5 publishes this zero
-explicitly. Future progress on these receivers therefore requires a different
-producer/owner registry, a changed export/build, or supported runtime evidence;
+`CheckLevelScriptTaskFinished` consumers. Schema v6 continues to publish this
+zero explicitly. Future progress on these receivers therefore requires a
+different producer/owner registry, a changed export/build, or supported runtime evidence;
 task-map proximity and completion callbacks are no longer open ownership
 routes.
+The exact dungeon-scene join is now represented without reopening those
+ownership routes. `DungeonTable.sceneId` intersects `18` receiver scripts and
+`14` Story keys on `6` scenes, yielding `40` SubGame scene-context placements:
+`7` receivers are the exact `bindScriptId` and `33` are sibling scripts in the
+same scene. The `31` attached quest, mission-state, or prior-challenge
+conditions gate SubGame availability only. Two complementary current-build
+examples pin the boundary: `dung01_bdg003/17500000001` plays
+`cutscene_e3m5_2` beside the `MissionStateEqual(e3m5)` boss-rush shell but is
+not that shell's bound script, while `dung02_bdg002/41100000004` plays
+`cutscene_e9m3_2` beside a first-tier boss rush unlocked by `e9m4_q#1`.
+Therefore even an exact same-scene mission/quest prerequisite cannot identify
+the Story owner, trigger, or order. Schema v6 publishes this context and the
+bound-versus-sibling distinction on the existing receiver cards and adds zero
+graph edges.
 The installed hotfix caveat has now been closed for the same lane. The current
 Persistent `Gameplay.Beyond.patch.bytes` is 82,021 bytes
 (`737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21`)
@@ -215,7 +229,7 @@ place observations on the corresponding node, while mission-only rows stay at
 mission scope. Both placement types remain observed temporal context, add no
 authored graph edge, and are excluded from the source partial order. No real
 gameplay capture has been ingested yet, so this path currently improves the
-measurement contract rather than the 4,060/1,213 ownership counts.
+measurement contract rather than the 4,065/1,208 ownership counts.
 
 The current-build protobuf metadata audit now gives the runtime capture a
 complete message-ID inventory: 515 client-to-server and 671 server-to-client
@@ -2266,15 +2280,15 @@ graph draws *quests*, so the operational question is "does this file reach a
 node". `scripts/story_recovery/build_node_attachment_coverage.py` measures the
 difference. Current CN corpus:
 
-- 4,461 quest nodes, of which **1,338 (30.0%)** carry at least one Story file;
-- **1,712** Story keys reach a quest node;
-- **2,351** reach only the mission shell;
-- **1,213** reach no mission at all.
+- 4,461 quest nodes, of which **1,331 (29.8%)** carry at least one Story file;
+- **1,705** Story keys reach a quest node;
+- **2,363** reach only the mission shell;
+- **1,208** reach no mission at all.
 
 The shell-only bucket is therefore twice the fully-unlinked bucket, and it is
 the larger real gap. It is dominated by evidence classes that have no quest
-granularity to give: 1,702 `leveldata_levelscript_mission_context` rows plus
-281 `levelscript_mission_context`, 124 `npc_proxy_ex_mission_context`, and 79
+granularity to give: 1,703 `leveldata_levelscript_mission_context` rows plus
+287 `levelscript_mission_context`, 124 `npc_proxy_ex_mission_context`, and 79
 `mission_area_leveldata_mission_context`. Those are asset-host containers and
 mission-scoped registries; they identify a mission shell by construction and
 cannot select a quest no matter how they are re-read.
@@ -2305,10 +2319,10 @@ shell-only rows' hosting `scriptIds` yields:
 
 - 277 distinct LevelScript ids named by quest objectives, 235 of them unique to
   one quest, and **zero** named by quests in more than one mission;
-- **35 shell-only rows over 33 Story files** (27 radio, 6 cutscene, 2 dlg)
+- **42 shell-only rows over 40 Story files**
   whose hosting script is named by exactly one quest, globally unique and in
   the row's own mission;
-- 2 rows rejected as ambiguous.
+- 10 rows rejected as ambiguous.
 
 The relation is quest-level **scope**, not playback: the objective condition
 reads the same script that hosts the Story, but it may read a different
@@ -2316,15 +2330,18 @@ property of that script than the one that plays it. This is the same bound the
 mission-level `levelscript_condition_scope` rows already carry, refined from
 mission to quest by the uniqueness of the script-to-quest mapping.
 
-So the realistically placeable remainder is 33 files by this lane plus at most
-49 by the single-candidate lane — under 4% of the 2,351 shell-only files. The
+So the realistically placeable remainder is 40 files by this lane plus at most
+49 by the single-candidate lane — under 4% of the 2,363 shell-only files. The
 rest are shell-only for structural reasons and no re-reading will move them.
 
 ### Closed: conversation-payload cross-references
 
-A sweep of all connected `webui/data/lang/CN/conv/*.json` payloads for
-references to the 1,213 unlinked keys returns 107 keys across 110 pairs, and
-**every one is inadmissible**. 102 sit in `_debug.attachedTo.source.key`, which
+A complete superset sweep of all connected
+`webui/data/lang/CN/conv/*.json` payloads against the prior 1,213-key unlinked
+queue returned 107 keys across 110 pairs, and **every one was inadmissible**.
+The current 1,208-key queue is a subset after accepted edges moved five files
+out, so the negative conclusion still covers it. Of those rows, 102 sit in
+`_debug.attachedTo.source.key`, which
 `language_bundle.attach_target` builds by pure filename construction
 (`f"dlg_{mission}_{scene}"`) for UI grouping; the rest are
 `_debug.source.keyCandidates`, `_debug.cutsceneKey`, `_debug.textGroup`, or
@@ -3474,6 +3491,11 @@ Current main-story priorities:
    tasks. These task-map ownership routes are closed on the current export;
    condition presence, source identity, same level, callback registration, and
    evaluation order remain non-owning.
+   The exact Dungeon/SubGame scene join now adds context to `18` scripts and
+   `14` Story files across `6` scenes (`40` placements), but only `7` are the
+   actual bound script and `33` are siblings. The `cutscene_e9m3_2` /
+   `e9m4_q#1` mismatch proves availability cannot stand in for ownership, so
+   this lane is closed as a promotion source and remains debug context only.
    A diagnostic level intersection with the atmospheric switcher context finds
    89 receivers / 103 Story files on 13 shared levels. Four shared levels have
    only one atmospheric route mission, but their native Story families often

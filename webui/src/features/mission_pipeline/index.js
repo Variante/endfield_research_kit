@@ -76,6 +76,10 @@
       activationClass: "static activation class",
       startPolicy: "LevelScript start policy",
       levelDataContainer: "validated LevelData container",
+      dungeonSceneContext: "exact Dungeon/SubGame scene context",
+      boundReceiverScript: "receiver is bound script",
+      siblingReceiverScript: "receiver is a sibling script",
+      dungeonSceneBoundary: "Same-scene hosting and availability prerequisites are context only; they do not identify the Story owner, trigger, or order.",
       missionRuntimeConsumers: "typed MissionRuntime objective consumers",
       literalCrossScriptControls: "literal cross-script manual controls",
       exactStartShapeAreaMatches: "exact complete start-shape / MissionArea matches",
@@ -500,6 +504,14 @@
       exactPlayback: "精确原生播放",
       exactReceiverNodes: "精确序列化运行时接收器",
       exactReceiverNodesHint: "每个节点都来自原始 LevelScript 事件选择器，并有到剧情播放的精确控制路径；它能组织更多恢复文件，但不声明使命或任务所有者。",
+      activationFrontier: "离线激活边界",
+      activationClass: "静态激活分类",
+      startPolicy: "LevelScript 启动策略",
+      levelDataContainer: "已验证的 LevelData 容器",
+      dungeonSceneContext: "精确 Dungeon/SubGame 场景上下文",
+      boundReceiverScript: "接收器就是绑定脚本",
+      siblingReceiverScript: "接收器是同场景兄弟脚本",
+      dungeonSceneBoundary: "同场景宿主和可用性前置条件仅提供上下文，不识别剧情所有者、触发器或顺序。",
       exactRuntimeTarget: "精确原始数据运行时目标",
       encounterModule: "遭遇战模块",
       modulePointer: "关卡脚本模块指针",
@@ -2499,6 +2511,13 @@
           const activation = row.activationFrontier || {};
           const activationHosts = (activation.levelDataHosts || [])
             .filter((host) => host && host.fileName);
+          const activationDungeonContexts = (activation.dungeonSceneContexts || [])
+            .filter((context) => context && context.subGameId && context.sceneId);
+          const activationAssociationLabel = (relation) => ({
+            subgame_unlock_quest_prerequisite: t("unlockQuestPrerequisite"),
+            subgame_unlock_mission_prerequisite: t("unlockMissionPrerequisite"),
+            subgame_unlock_previous_game_mechanic: t("unlockPreviousSubGame"),
+          })[relation] || t("nonOwningCrossReference");
           const activationTasks = (activation.decodedTaskMap?.tasks || [])
             .filter((task) => task && task.taskKey);
           const paramValue = (param) => {
@@ -2593,6 +2612,11 @@
               <div><span>${esc(t("startPolicy"))}</span><i aria-hidden="true">→</i><code>${esc(`${activation.startTypeName || "unresolved"} · shapes ${activation.startShapeListStatus || "unresolved"}/${activation.startShapeListCount ?? 0} · taskMap ${activation.taskMapStatus || "unresolved"}/${activation.taskMapCount ?? 0}`)}</code></div>
               ${activationHosts.map((host) => `<div><span>${esc(t("levelDataContainer"))}</span><i aria-hidden="true">→</i><code>${esc(host.fileName)}</code><b>${esc(host.hostMissionId || "generic")}</b><small>${esc(`${host.dictionaryEntryCount ?? "?"} LevelScripts`)}</small></div>`).join("")}
               ${(activation.subGameIds || []).map((subGameId) => `<div><span>SubGame bindScriptId</span><i aria-hidden="true">→</i><code>${esc(subGameId)}</code><b>${esc(t("noMissionOwner"))}</b></div>`).join("")}
+              ${activationDungeonContexts.flatMap((context) => [
+                `<div><span>${esc(t("dungeonSceneContext"))}</span><i aria-hidden="true">→</i><code>${esc(`${context.subGameId} · ${context.sceneId}`)}</code><b>${esc(context.receiverIsBoundScript ? t("boundReceiverScript") : t("siblingReceiverScript"))}</b><small>${esc([context.dungeonSeriesId, `bindScriptId ${context.bindScriptId}`].filter(Boolean).join(" · "))}</small></div>`,
+                ...(context.associations || []).filter((association) => association && association.targetId).map((association) => `<div class="is-boundary"><span>${esc(activationAssociationLabel(association.relation))}</span><i aria-hidden="true">⇢</i><code>${esc(association.targetId)}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(association.finding || "")}</small></div>`),
+              ]).join("")}
+              ${activationDungeonContexts.length ? `<small>${esc(t("dungeonSceneBoundary"))}</small>` : ""}
               ${(activation.serializedMissionRuntimeIdTokens || []).length ? `<div><span>${esc(t("serializedMissionIdTokens"))}</span><i aria-hidden="true">→</i><code>${esc(activation.serializedMissionRuntimeIdTokens.join(", "))}</code><b>${esc(t("nonOwningCrossReference"))}</b></div>` : ""}
               <small>${esc(`${t("missionRuntimeConsumers")}: ${activation.missionRuntimeObjectiveConsumerCount ?? 0} · ${t("literalCrossScriptControls")}: ${activation.incomingLiteralCrossControlCount ?? 0} · ${t("exactStartShapeAreaMatches")}: ${activation.exactStartShapeMissionAreaMatchCount ?? 0}`)}</small>
             </div>` : ""}

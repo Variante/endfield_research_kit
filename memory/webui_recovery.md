@@ -431,7 +431,7 @@ Mission Pipeline:
 - Keeps exact native playback visible even when no mission owner exists. The
   global native-boundary panel now renders ten missionless SubGame nodes as
   `SubGame -> bindScriptId -> native playback -> Story`, covering nine unique
-  Story files and fourteen placements. They remain included in the 1,213
+  Story files and fourteen placements. They remain included in the 1,208
   unlinked-mission files and are not counted as connected Story. Exact original-
   data prerequisites/associations are shown as dashed non-owning edges: the
   boss-rush quest/prior-challenge unlock chain and activity stage 6's explicit
@@ -454,6 +454,10 @@ Mission Pipeline:
   shown so causality is not mistaken for mission ownership. Same-script
   task-map mission-state dependencies show exact task/condition ids and
   offsets, plus a visible `not linked to playback control path` boundary.
+  The same cards now publish exact Dungeon/SubGame scene context for 18
+  receiver scripts and 14 Story keys across six scenes. All 40 placements
+  distinguish the seven exact bound scripts from 33 siblings, and attached
+  quest/mission/prior-challenge prerequisites remain visibly non-owning.
 - Organizes its left browser like Story: collapsible mission-type groups with
   naturally ordered mission rows. Graph dragging suppresses node selection
   after a movement threshold, and the unmodified wheel controls graph scale.
@@ -471,8 +475,8 @@ Mission Pipeline:
 - Story files are attached per quest only from authored runtime references or
   bounded LevelData, LevelScript, variant-runtime, and unique NPC-proxy
   evidence, never from mission-id co-membership or spatial proximity alone.
-- The generated CN coverage is currently 4,060 of 5,273 unique Story files
-  across 4,345 mission placements; 1,213 remain unlinked. Of the connected
+- The generated CN coverage is currently 4,065 of 5,273 unique Story files
+  across 4,361 mission placements; 1,208 remain unlinked. Of the connected
   total, 106 have non-MissionRuntime nominal Story owners and enter the metric
   only because accepted generated pipeline edges connect them. This is an
   accounting repair; the unlinked denominator is not widened with unrelated

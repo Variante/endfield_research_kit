@@ -129,6 +129,66 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             ),
         )
 
+    def test_dungeon_scene_context_keeps_sibling_receiver_non_owning(
+        self,
+    ) -> None:
+        contexts = frontier.dungeon_scene_contexts(
+            {
+                "dataTable": {
+                    "dungeon_fixture": {
+                        "id": "dungeon_fixture",
+                        "bindScriptId": 1002,
+                    }
+                }
+            },
+            {
+                "dungeon_fixture": {
+                    "dungeonId": "dungeon_fixture",
+                    "sceneId": "map_fixture",
+                    "levelId": "level_fixture",
+                    "dungeonSeriesId": "series_fixture",
+                }
+            },
+            {
+                "condition_fixture": {
+                    "conditionId": "condition_fixture",
+                    "gameMechanicsId": "dungeon_fixture",
+                    "conditionType": 19,
+                    "parameter": [
+                        {"valueStringList": ["mission_fixture"]}
+                    ],
+                }
+            },
+            subgame_source="subgame.json",
+            dungeon_source="dungeon.json",
+            condition_source="condition.json",
+        )
+        context = contexts["map_fixture"][0]
+        self.assertEqual("1002", context["bindScriptId"])
+        self.assertFalse(context["ownership"])
+        self.assertFalse(context["storyBinding"])
+        self.assertEqual(
+            "mission_fixture",
+            context["associations"][0]["targetId"],
+        )
+        self.assertFalse(context["associations"][0]["ownership"])
+
+    def test_unknown_subgame_condition_type_fails_closed(self) -> None:
+        self.assertEqual(
+            {},
+            frontier.subgame_availability_associations(
+                {
+                    "condition_fixture": {
+                        "gameMechanicsId": "dungeon_fixture",
+                        "conditionType": 9999,
+                        "parameter": [
+                            {"valueStringList": ["mission_fixture"]}
+                        ],
+                    }
+                }
+            ),
+        )
+
     def test_start_shape_requires_complete_exact_mission_area_geometry(self) -> None:
         shape = {
             "offset": "0x10",
@@ -227,6 +287,31 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                         }
                     ],
                     "subGameBindings": [],
+                    "dungeonSceneContexts": [
+                        {
+                            "subGameId": "dungeon_fixture",
+                            "sceneId": "map_fixture",
+                            "levelId": "",
+                            "dungeonSeriesId": "series_fixture",
+                            "bindScriptId": "1002",
+                            "receiverIsBoundScript": False,
+                            "associations": [
+                                {
+                                    "relation": (
+                                        "subgame_unlock_quest_prerequisite"
+                                    ),
+                                    "targetType": "quest",
+                                    "targetId": "unrelated_quest",
+                                    "conditionTypeName": "QuestStateEqual",
+                                    "ownership": False,
+                                    "finding": "availability only",
+                                }
+                            ],
+                            "ownership": False,
+                            "storyBinding": False,
+                            "evidenceBoundary": "scene context only",
+                        }
+                    ],
                     "incomingLiteralManualControls": [],
                     "missionRuntimeScriptConsumers": [],
                     "decodedTaskMap": {
@@ -261,6 +346,18 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         ]
         self.assertEqual("Manual", annotation["startTypeName"])
         self.assertNotIn("missionOwnerStatus", annotation)
+        self.assertFalse(
+            annotation["dungeonSceneContexts"][0]["receiverIsBoundScript"]
+        )
+        self.assertFalse(
+            annotation["dungeonSceneContexts"][0]["storyBinding"]
+        )
+        self.assertEqual(
+            "unrelated_quest",
+            annotation["dungeonSceneContexts"][0]["associations"][0][
+                "targetId"
+            ],
+        )
         self.assertEqual(
             "fixture_area",
             annotation["decodedTaskMap"]["tasks"][0]["conditions"][0][

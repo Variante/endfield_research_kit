@@ -892,6 +892,19 @@ stage mission state separate from rank-related game-mechanic info. Stages 3/4
 have blank `rankRelatedId`. All ten target scripts are parent-zero roots with
 one MainTask, no mission/quest literal, and no exact MissionRuntime occurrence.
 
+`DungeonTable.sceneId` now supplies a broader, still non-owning host join for
+the unresolved native receiver frontier. Eighteen receiver scripts carrying
+fourteen Story keys live on six exact scenes used by typed SubGame rows,
+producing forty receiver/SubGame context placements. Seven placements are the
+SubGame's exact `bindScriptId`; thirty-three are other LevelScripts in the same
+scene and are explicitly labeled siblings. The attached condition rows produce
+thirty-one availability annotations, not owner edges. The strongest negative
+control is `dung02_bdg002/41100000004 -> cutscene_e9m3_2`: its same-scene
+first-tier boss rush is unlocked by `QuestStateEqual(e9m4_q#1)`. This
+cross-named current-build row demonstrates that even an exact dungeon scene
+plus quest/mission prerequisite cannot be promoted to Story ownership,
+activation, or order.
+
 The companion installed-VFS scan also closes the server-action-enum shortcut.
 Across 90,659 JsonData/Table candidates, 532 structured files were schema-
 checked for action ids 2013, 4003, 5106, and 5212. Sixteen scalar matches were
@@ -2002,8 +2015,11 @@ remain gated on the recovery work below:
    their complete exported exact-reference and receiver-task surfaces: nine
    unique Story files across fourteen placements, one non-owning activity
    mission association, one quest unlock, one mission-state unlock, five
-   prior-challenge gates, and zero MissionRuntime task consumers. Prioritize a
-   different registry surface
+   prior-challenge gates, and zero MissionRuntime task consumers. The broader
+   exact-scene join adds eighteen receiver scripts across six Dungeon/SubGame
+   scenes, but thirty-three of forty placements are sibling scripts and the
+   `cutscene_e9m3_2` / `e9m4_q#1` mismatch rejects availability as ownership.
+   Prioritize a different registry surface
    rather than repeating these SubGame/task/display joins.
    Do not revisit the current loading-pipeline carrier unless the installed
    binary or IFix payload changes. Never promote Story naming, OCR, gameplay

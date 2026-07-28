@@ -308,6 +308,12 @@ available through expandable guidance.
   `ScriptTaskExtraInfoTable` title keys and SubGame main-task ids. The current
   corpus has 13 task-info joins and ten SubGame task joins; every matched
   SubGame row lacks `dungeonMissionId`.
+  Receiver cards also show exact `DungeonTable.sceneId` / SubGame context:
+  `18` receiver scripts and `14` Story files share `6` authored dungeon
+  scenes, for `40` context placements. Only `7` placements are the SubGame's
+  exact `bindScriptId`; the other `33` are explicitly labeled sibling scripts.
+  Quest, mission-state, and prior-challenge unlock rows are availability
+  prerequisites only and never become Story ownership, activation, or order.
   A separate mission-lifecycle section shows exact NPC accept dialogs and
   explicit `NpcProxyEx.missionId` context. A collapsed `Unassigned Story`
   section keeps all remaining same-owner mission scenes visible without
@@ -316,8 +322,8 @@ available through expandable guidance.
   variants without a standalone Story group, and client-action inspection
   follows the authored `_nextID` chain. Native addresses describe the installed
   build's fallback implementation; IFix-dispatched hotfix behavior may differ.
-  The current CN coverage audit connects 4,060 of 5,273 unique Story files
-  across 4,345 mission placements; 1,213 remain unlinked, including 153 with
+  The current CN coverage audit connects 4,065 of 5,273 unique Story files
+  across 4,361 mission placements; 1,208 remain unlinked, including 153 with
   exact native playback but no decoded mission/quest trigger. OCR, manual
   overrides, and observed gameplay do not change these counts.
 
