@@ -4961,6 +4961,18 @@ def build_language_bundle(
                 group_detail["manualLayoutOverride"] = True
             if manual_response_applied:
                 group_detail["manualResponseOverride"] = True
+            if authored_group_option_ids and unauthored_group_option_ids:
+                group.setdefault("_debug", {})[
+                    "partialAuthoredOptionCoverage"
+                ] = {
+                    "authoredOptionIds": authored_group_option_ids,
+                    "definitionOnlyOptionIds": unauthored_group_option_ids,
+                    "reason": (
+                        "The generated text-table group contains option ids that "
+                        "are absent from every recovered DialogTree, scene-link, "
+                        "and Timeline option consumer for this scene."
+                    ),
+                }
             group_details.append(group_detail)
             out.append(group)
         has_meaningful_option_text = any(

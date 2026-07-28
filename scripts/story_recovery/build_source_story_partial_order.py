@@ -45,7 +45,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v14"
+SCHEMA = "sourceStoryPartialOrder.v15"
 SPAWNER_CONFIG_ROOTS = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Data" / "Json" / "SpawnerConfig",
@@ -848,6 +848,53 @@ def collect_dialog_line_option_branches(
                 })
                 continue
             if covered_option_ids:
+                group_debug = (
+                    group.get("_debug")
+                    if isinstance(group.get("_debug"), dict)
+                    else {}
+                )
+                partial_coverage = (
+                    group_debug.get("partialAuthoredOptionCoverage")
+                    if isinstance(
+                        group_debug.get("partialAuthoredOptionCoverage"),
+                        dict,
+                    )
+                    else {}
+                )
+                authored_option_ids = set(
+                    _string_list(partial_coverage.get("authoredOptionIds"))
+                )
+                definition_only_option_ids = set(
+                    _string_list(
+                        partial_coverage.get("definitionOnlyOptionIds")
+                    )
+                )
+                uncovered_option_ids = set(option_ids) - set(
+                    covered_option_ids
+                )
+                if (
+                    set(covered_option_ids).issubset(authored_option_ids)
+                    and uncovered_option_ids
+                    and uncovered_option_ids == definition_only_option_ids
+                ):
+                    excluded.append({
+                        **base,
+                        "optionIds": option_ids,
+                        "exclusionReason":
+                            "authoredOutcomesWithDefinitionOnlyRows",
+                        "coveredOptionIds": covered_option_ids,
+                        "definitionOnlyOptionIds": sorted(
+                            definition_only_option_ids,
+                            key=natural_key,
+                        ),
+                        "outcomesByOption": {
+                            option_id: outcomes
+                            for option_id, outcomes
+                            in outcomes_by_option.items()
+                            if outcomes
+                        },
+                    })
+                    continue
                 excluded.append({
                     **base,
                     "optionIds": option_ids,
@@ -2246,6 +2293,7 @@ def build_mission_partial_order(
         in {
             "sharedOrDefaultCandidates",
             "authoredNonLineOptionOutcomes",
+            "authoredOutcomesWithDefinitionOnlyRows",
             "closedTimelineOptionLayout",
         }
         or (

@@ -1338,6 +1338,54 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             row["exclusionReason"],
             "incompleteAuthoredNonLineOptionOutcomes",
         )
+
+    def test_partial_authored_outcome_closes_proven_definition_only_rows(
+        self,
+    ) -> None:
+        conv = {
+            "key": "dlg_m1_partial_definition",
+            "optionGroups": [{
+                "g": 1,
+                "after": "dlg_m1_partial_definition_001",
+                "options": [{"id": "option_1"}, {"id": "option_2"}],
+                "_debug": {
+                    "partialAuthoredOptionCoverage": {
+                        "authoredOptionIds": ["option_1"],
+                        "definitionOnlyOptionIds": ["option_2"],
+                    },
+                },
+            }],
+            "sceneGraphLinks": [{
+                "sourceKey": "dlg_m1_partial_definition",
+                "file":
+                    "export_full/source/DialogTree/"
+                    "dlg_m1_partial_definition.json",
+                "after": "dlg_m1_partial_definition_001",
+                "options": [{
+                    "optionId": "option_1",
+                    "terminal": "finish",
+                    "outcomeKind": "terminalOnly",
+                }],
+            }],
+        }
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"dlg_m1_partial_definition": "dlg"},
+            mission_payload([]),
+            [("conv/dlg_m1_partial_definition.json", conv)],
+        )
+
+        self.assertEqual(
+            result["summary"]["actionableExcludedDialogLineOptionGroupCount"],
+            0,
+        )
+        row = result["branches"]["closedExcludedDialogLineOptions"][0]
+        self.assertEqual(
+            row["exclusionReason"],
+            "authoredOutcomesWithDefinitionOnlyRows",
+        )
+        self.assertEqual(row["definitionOnlyOptionIds"], ["option_2"])
         self.assertEqual(row["coveredOptionIds"], ["option_1"])
 
     def test_single_option_without_route_is_not_a_missing_choice_branch(self) -> None:

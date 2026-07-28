@@ -1676,9 +1676,12 @@ gameplay-video OCR/audio workflow.
   Distinct zero-index Timeline slots are sequential prompts, a slot after the
   last local line has no local line route, and same-text local table options
   are definition-only when the exact cinematic consumes a complete foreign
-  option-id/finish-number set. Complete authored menu, UI, loop, and terminal
-  outcomes are likewise retained as closed non-line outcomes rather than
-  missing line routes. Run
+  option-id/finish-number set. When a generated same-prefix table group is
+  only partly present in every recovered DialogTree, scene-link, and Timeline
+  consumer, the absent ids remain visible as definition-only rows instead of
+  being counted as missing authored branches. Complete authored menu, UI,
+  loop, and terminal outcomes are likewise retained as closed non-line
+  outcomes rather than missing line routes. Run
   `python scripts\story_recovery\build_source_story_partial_order.py`; it
   writes `reports/mission_order/source_story_partial_order_<LANG>.json` / `.md`.
 - `story_recovery/build_source_story_order_cross_reference.py`: compares only
