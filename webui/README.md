@@ -314,6 +314,10 @@ available through expandable guidance.
   exact `bindScriptId`; the other `33` are explicitly labeled sibling scripts.
   Quest, mission-state, and prior-challenge unlock rows are availability
   prerequisites only and never become Story ownership, activation, or order.
+  Nine sibling receivers additionally show the typed
+  `DungeonSubGameData.dungeonMissionId` mission shell. The card retains
+  `no mission owner`; the shell mission identifies the SubGame, not a different
+  LevelScript's Story playback.
   A separate mission-lifecycle section shows exact NPC accept dialogs and
   explicit `NpcProxyEx.missionId` context. A collapsed `Unassigned Story`
   section keeps all remaining same-owner mission scenes visible without

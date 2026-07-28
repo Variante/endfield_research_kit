@@ -905,6 +905,17 @@ cross-named current-build row demonstrates that even an exact dungeon scene
 plus quest/mission prerequisite cannot be promoted to Story ownership,
 activation, or order.
 
+The typed SubGame payload further sharpens three raid scenes without changing
+that result. `DungeonSubGameData.dungeonMissionId` supplies nine exact
+receiver-scene mission-shell contexts covering ten Story keys, but all nine
+receivers differ from the row's `bindScriptId`. The shipped rows disprove
+sibling inheritance: `dung_wolfgd_01` carries `c6m3` while its sibling scripts
+play `c6m1` Story, and `dung_aglina_01` carries `c13m2d5` while its siblings
+play `c13m2` Story. `dung_kamiu_01`'s `c33m2` name agreement is therefore not
+admissible ownership evidence. Keep `dungeonMissionId` as typed SubGame
+mission-shell context unless the receiver itself is the bound script or a
+separate exact control edge connects the two.
+
 The companion installed-VFS scan also closes the server-action-enum shortcut.
 Across 90,659 JsonData/Table candidates, 532 structured files were schema-
 checked for action ids 2013, 4003, 5106, and 5212. Sixteen scalar matches were
@@ -2019,6 +2030,9 @@ remain gated on the recovery work below:
    exact-scene join adds eighteen receiver scripts across six Dungeon/SubGame
    scenes, but thirty-three of forty placements are sibling scripts and the
    `cutscene_e9m3_2` / `e9m4_q#1` mismatch rejects availability as ownership.
+   Nine sibling receivers also see a typed `dungeonMissionId`; the
+   `c6m3`/`c6m1` and `c13m2d5`/`c13m2` counterexamples reject mission-shell
+   inheritance.
    Prioritize a different registry surface
    rather than repeating these SubGame/task/display joins.
    Do not revisit the current loading-pipeline carrier unless the installed

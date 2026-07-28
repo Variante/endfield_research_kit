@@ -79,6 +79,7 @@
       dungeonSceneContext: "exact Dungeon/SubGame scene context",
       boundReceiverScript: "receiver is bound script",
       siblingReceiverScript: "receiver is a sibling script",
+      dungeonMissionShellContext: "typed dungeon mission shell context",
       dungeonSceneBoundary: "Same-scene hosting and availability prerequisites are context only; they do not identify the Story owner, trigger, or order.",
       missionRuntimeConsumers: "typed MissionRuntime objective consumers",
       literalCrossScriptControls: "literal cross-script manual controls",
@@ -511,6 +512,7 @@
       dungeonSceneContext: "精确 Dungeon/SubGame 场景上下文",
       boundReceiverScript: "接收器就是绑定脚本",
       siblingReceiverScript: "接收器是同场景兄弟脚本",
+      dungeonMissionShellContext: "类型化地下城使命外壳上下文",
       dungeonSceneBoundary: "同场景宿主和可用性前置条件仅提供上下文，不识别剧情所有者、触发器或顺序。",
       exactRuntimeTarget: "精确原始数据运行时目标",
       encounterModule: "遭遇战模块",
@@ -2614,6 +2616,7 @@
               ${(activation.subGameIds || []).map((subGameId) => `<div><span>SubGame bindScriptId</span><i aria-hidden="true">→</i><code>${esc(subGameId)}</code><b>${esc(t("noMissionOwner"))}</b></div>`).join("")}
               ${activationDungeonContexts.flatMap((context) => [
                 `<div><span>${esc(t("dungeonSceneContext"))}</span><i aria-hidden="true">→</i><code>${esc(`${context.subGameId} · ${context.sceneId}`)}</code><b>${esc(context.receiverIsBoundScript ? t("boundReceiverScript") : t("siblingReceiverScript"))}</b><small>${esc([context.dungeonSeriesId, `bindScriptId ${context.bindScriptId}`].filter(Boolean).join(" · "))}</small></div>`,
+                ...(context.dungeonMissionContext?.missionId ? [`<div class="is-boundary"><span>${esc(t("dungeonMissionShellContext"))}</span><i aria-hidden="true">⇢</i><code>${esc(context.dungeonMissionContext.missionId)}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(context.dungeonMissionContext.finding || "")}</small></div>`] : []),
                 ...(context.associations || []).filter((association) => association && association.targetId).map((association) => `<div class="is-boundary"><span>${esc(activationAssociationLabel(association.relation))}</span><i aria-hidden="true">⇢</i><code>${esc(association.targetId)}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(association.finding || "")}</small></div>`),
               ]).join("")}
               ${activationDungeonContexts.length ? `<small>${esc(t("dungeonSceneBoundary"))}</small>` : ""}

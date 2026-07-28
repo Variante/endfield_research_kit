@@ -60,7 +60,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v6"
+SCHEMA = "nativeReceiverActivationFrontier.v7"
 DEFAULT_PIPELINE_INDEX = ROOT / "webui" / "data" / "mission_pipeline" / "index.json"
 DEFAULT_PIPELINE_MISSION_ROOT = (
     ROOT / "webui" / "data" / "mission_pipeline" / "missions"
@@ -329,6 +329,7 @@ def dungeon_scene_contexts(
         bind_script_id = safe_text(subgame.get("bindScriptId"))
         if not bind_script_id.isdigit():
             continue
+        dungeon_mission_id = safe_text(subgame.get("dungeonMissionId"))
         contexts[scene_id].append(
             {
                 "subGameId": dungeon_id,
@@ -337,6 +338,23 @@ def dungeon_scene_contexts(
                 "levelId": safe_text(raw.get("levelId")),
                 "dungeonSeriesId": safe_text(raw.get("dungeonSeriesId")),
                 "bindScriptId": bind_script_id,
+                "dungeonMissionContext": (
+                    {
+                        "missionId": dungeon_mission_id,
+                        "ownership": False,
+                        "playback": False,
+                        "finding": (
+                            "DungeonSubGameData co-carries dungeonMissionId "
+                            "with the bound script. A different receiver in "
+                            "the same scene has mission-shell runtime context "
+                            "only; it does not inherit Story ownership."
+                        ),
+                        "source": subgame_source,
+                        "confidence": "typed_original_data_non_owning",
+                    }
+                    if dungeon_mission_id
+                    else None
+                ),
                 "associations": availability.get(dungeon_id, []),
                 "ownership": False,
                 "storyBinding": False,
@@ -1353,6 +1371,13 @@ def build_report(
                 "SubGame availability, never Story ownership, activation, or "
                 "order."
             ),
+            "dungeonMissionBoundary": (
+                "DungeonSubGameData.dungeonMissionId identifies the mission "
+                "shell for that SubGame and its exact bindScriptId. A Story "
+                "receiver that is only a sibling script in the same scene "
+                "does not inherit that mission, even when its nominal Story "
+                "name happens to match."
+            ),
             "literalMissionIdBoundary": (
                 "An exact MemoryPack string token proves only that the literal "
                 "mission id exists somewhere in the LevelScript blob. Absence "
@@ -1440,6 +1465,29 @@ def build_report(
             ),
             "dungeonSceneContextAvailabilityAssociations": sum(
                 len(context.get("associations") or [])
+                for row in rows
+                for context in row["dungeonSceneContexts"]
+            ),
+            "scriptsWithDungeonMissionShellContext": sum(
+                any(
+                    context.get("dungeonMissionContext")
+                    for context in row["dungeonSceneContexts"]
+                )
+                for row in rows
+            ),
+            "storyKeysWithDungeonMissionShellContext": len(
+                {
+                    story_key
+                    for row in rows
+                    if any(
+                        context.get("dungeonMissionContext")
+                        for context in row["dungeonSceneContexts"]
+                    )
+                    for story_key in row["storyKeys"]
+                }
+            ),
+            "dungeonMissionShellContextPlacements": sum(
+                bool(context.get("dungeonMissionContext"))
                 for row in rows
                 for context in row["dungeonSceneContexts"]
             ),
@@ -1579,6 +1627,26 @@ def publish_to_pipeline_index(
                     "receiverIsBoundScript": bool(
                         context.get("receiverIsBoundScript")
                     ),
+                    "dungeonMissionContext": (
+                        {
+                            "missionId": safe_text(
+                                (
+                                    context.get("dungeonMissionContext")
+                                    or {}
+                                ).get("missionId")
+                            ),
+                            "ownership": False,
+                            "playback": False,
+                            "finding": safe_text(
+                                (
+                                    context.get("dungeonMissionContext")
+                                    or {}
+                                ).get("finding")
+                            ),
+                        }
+                        if context.get("dungeonMissionContext")
+                        else None
+                    ),
                     "associations": [
                         {
                             "relation": safe_text(
@@ -1686,6 +1754,13 @@ def markdown_report(payload: dict[str, Any]) -> str:
         (
             "- Availability prerequisites carried by those scene contexts: "
             f"`{counts.get('dungeonSceneContextAvailabilityAssociations')}`"
+        ),
+        (
+            "- Scripts / Story keys / placements with typed dungeon-mission "
+            "shell context: "
+            f"`{counts.get('scriptsWithDungeonMissionShellContext')}` / "
+            f"`{counts.get('storyKeysWithDungeonMissionShellContext')}` / "
+            f"`{counts.get('dungeonMissionShellContextPlacements')}`"
         ),
         (
             "- Scripts named by a typed MissionRuntime objective operand: "
