@@ -25,6 +25,12 @@ uses heuristic filename matching.
     link as dialog Timelines, but they are not always present in the smaller
     `timeline_extract/` diagnostic tree.
 
+  Graph D: LevelScript PlayFmvAction -> video file.
+    The exact decoded native `_moviePath` / `_fmvId` field names the canonical
+    video id. The typed action occurrence normalizes that same value to its
+    `cutscene_*` Story key, providing an authoritative binding even when no
+    Timeline playable was exported.
+
 This script joins:
   - Every `BeyondFMVPlayableAsset*.json` (and clones) under
     export_full/recovered/AnimeStudio-cli/timeline_extract/*/MonoBehaviour/.
@@ -170,10 +176,20 @@ def strip_gender(fmv_id: str) -> tuple[str, str]:
 def scene_to_mission(scene: str) -> str:
     if not scene:
         return ""
-    for prefix in ("dlg_", "cutscene_", "remotecomm_", "radio_", "black_"):
-        if scene.startswith(prefix):
-            scene = scene[len(prefix):]
-            break
+    removed_prefix = True
+    while removed_prefix:
+        removed_prefix = False
+        for prefix in (
+            "dlg_",
+            "cutscene_",
+            "remotecomm_",
+            "radio_",
+            "black_",
+        ):
+            if scene.startswith(prefix):
+                scene = scene[len(prefix):]
+                removed_prefix = True
+                break
     match = _MISSION_FROM_DLG.match(scene)
     if match:
         return match.group("mission").lower()
@@ -269,6 +285,84 @@ def walk_check_fmv_finish(node: Any) -> Iterable[str]:
     elif isinstance(node, list):
         for item in node:
             yield from walk_check_fmv_finish(item)
+
+
+def collect_levelscript_fmv_actions(
+    occurrences: dict[str, list[dict[str, Any]]] | None = None,
+) -> list[dict[str, Any]]:
+    """Return exact native LevelScript FMV target fields and Story keys."""
+    if occurrences is None:
+        from story_builder.level_bindings import (  # noqa: PLC0415
+            build_levelscript_action_story_occurrences,
+        )
+
+        occurrences = build_levelscript_action_story_occurrences()
+    rows: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str, int]] = set()
+    for story_key, story_occurrences in sorted(occurrences.items()):
+        for occurrence in story_occurrences or []:
+            if (
+                not isinstance(occurrence, dict)
+                or occurrence.get("recordClass") != "play_fmv"
+            ):
+                continue
+            fmv_action = (
+                occurrence.get("fmvAction")
+                if isinstance(occurrence.get("fmvAction"), dict)
+                else {}
+            )
+            fmv_id = str(fmv_action.get("fmvId") or "").strip()
+            expected_story_key = (
+                f"cutscene_{fmv_id[len('cs_video_') :]}"
+                if fmv_id.startswith("cs_video_")
+                else ""
+            )
+            if (
+                not fmv_id
+                or story_key != expected_story_key
+                or not fmv_action.get("sourceField")
+                or not fmv_action.get("nativeMappingId")
+            ):
+                continue
+            source_file = str(occurrence.get("sourceFile") or "")
+            record_offset = int(occurrence.get("recordOffset") or 0)
+            identity = (
+                fmv_id,
+                story_key,
+                source_file,
+                record_offset,
+            )
+            if identity in seen:
+                continue
+            seen.add(identity)
+            rows.append({
+                "fmvId": fmv_id,
+                "storyKey": story_key,
+                "levelId": str(occurrence.get("levelId") or ""),
+                "scriptId": str(occurrence.get("scriptId") or ""),
+                "sourceFile": source_file,
+                "actionMapRole": str(
+                    occurrence.get("actionMapRole") or ""
+                ),
+                "recordOffset": record_offset,
+                "localId": occurrence.get("localId"),
+                "actionName": str(occurrence.get("actionName") or ""),
+                "nativeMappingId": str(
+                    occurrence.get("nativeMappingId") or ""
+                ),
+                "fmvAction": {
+                    key: fmv_action[key]
+                    for key in (
+                        "action",
+                        "sourceField",
+                        "fieldOffset",
+                        "payloadShape",
+                        "nativeMappingId",
+                    )
+                    if fmv_action.get(key) not in (None, "")
+                },
+            })
+    return rows
 
 
 def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
@@ -426,6 +520,36 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
         if not rec["scene"]:
             rec["mission"] = next(iter(sorted(missions)))
 
+    for action in collect_levelscript_fmv_actions():
+        fmv_id = action["fmvId"]
+        story_key = action["storyKey"]
+        rec = get_or_create(fmv_id)
+        if not rec["scene"]:
+            rec["scene"] = story_key
+            rec["mission"] = scene_to_mission(story_key)
+        elif rec["scene"] != story_key:
+            conflicts = rec.setdefault("sceneConflicts", [])
+            if story_key not in conflicts:
+                conflicts.append(story_key)
+        rec["sources"].append({
+            "kind": "levelscriptFmvAction",
+            **{
+                key: action[key]
+                for key in (
+                    "levelId",
+                    "scriptId",
+                    "sourceFile",
+                    "actionMapRole",
+                    "recordOffset",
+                    "localId",
+                    "actionName",
+                    "nativeMappingId",
+                    "fmvAction",
+                )
+                if action.get(key) not in (None, "", {})
+            },
+        })
+
     video_files = iter_video_files()
     by_name: dict[str, list[Path]] = defaultdict(list)
     for p in video_files:
@@ -479,8 +603,30 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
 
     summary = {
         "fmvIds": len(bindings),
-        "withTimelineScene": sum(1 for r in bindings.values() if r.get("scene") and not r.get("sceneIsHint")),
+        "withResolvedScene": sum(
+            1
+            for record in bindings.values()
+            if record.get("scene") and not record.get("sceneIsHint")
+        ),
+        "withTimelineScene": sum(
+            1
+            for record in bindings.values()
+            if any(
+                isinstance(source, dict)
+                and source.get("kind") == "timelinePlayable"
+                for source in record.get("sources") or []
+            )
+        ),
         "withMissionRuntime": sum(1 for r in bindings.values() if r.get("missions")),
+        "withLevelScriptFmvAction": sum(
+            1
+            for record in bindings.values()
+            if any(
+                isinstance(source, dict)
+                and source.get("kind") == "levelscriptFmvAction"
+                for source in record.get("sources") or []
+            )
+        ),
         "videoFiles": len(video_files),
         "videoFilesBound": len(by_video),
         "videoFilesUnbound": len(unbound_videos),
@@ -504,13 +650,16 @@ def render_report(payload: dict[str, Any]) -> str:
         "# Video Bindings",
         "",
         "Authoritative cs_video / FMV -> dialog scene -> mission graph recovered from",
-        "Unity Timeline playable assets and MissionRuntimeAsset.CheckFMVFinish nodes.",
+        "Unity Timeline playable assets, MissionRuntimeAsset.CheckFMVFinish nodes,",
+        "and exact native LevelScript FMV target fields.",
         "",
         "## Summary",
         "",
         f"- fmvIds total: `{summary.get('fmvIds', 0)}`",
+        f"- with authoritative scene: `{summary.get('withResolvedScene', 0)}`",
         f"- with timeline-resolved scene: `{summary.get('withTimelineScene', 0)}`",
         f"- with MissionRuntime CheckFMVFinish: `{summary.get('withMissionRuntime', 0)}`",
+        f"- with LevelScript FMV action: `{summary.get('withLevelScriptFmvAction', 0)}`",
         f"- video files scanned: `{summary.get('videoFiles', 0)}`",
         f"- video files bound: `{summary.get('videoFilesBound', 0)}`",
         f"- video files unbound: `{summary.get('videoFilesUnbound', 0)}`",
@@ -551,6 +700,7 @@ def main(argv: list[str] | None = None) -> int:
         f"Video bindings: {s['fmvIds']} fmvIds, "
         f"{s['withTimelineScene']} via timeline, "
         f"{s['withMissionRuntime']} via MissionRuntime, "
+        f"{s['withLevelScriptFmvAction']} via LevelScript, "
         f"{s['videoFilesBound']}/{s['videoFiles']} files bound"
     )
     print(f"Wrote {args.output}")

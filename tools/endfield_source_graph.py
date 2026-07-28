@@ -9348,7 +9348,21 @@ class SourceGraphBuilder:
             self.add_alias(fmv_id, binding_node, kind="fmv_id", source="video_bindings")
             self.add_alias(binding.get("baseFmvId"), binding_node, kind="fmv_base_id", source="video_bindings")
 
-            story_key = safe_key(binding.get("fallbackSceneHint"))
+            scene_key = safe_key(binding.get("scene"))
+            fallback_story_key = safe_key(binding.get("fallbackSceneHint"))
+            if (
+                scene_key
+                and not binding.get("sceneIsHint")
+                and self.node_exists("story", scene_key)
+            ):
+                story_key = scene_key
+                story_evidence = "scene"
+            elif fallback_story_key:
+                story_key = fallback_story_key
+                story_evidence = "fallbackSceneHint"
+            else:
+                story_key = scene_key
+                story_evidence = "scene"
             if story_key:
                 story_node = self.add_node("story", story_key, source="video_bindings")
                 self.add_edge(
@@ -9356,7 +9370,7 @@ class SourceGraphBuilder:
                     story_node,
                     "fmv_binding_targets_story",
                     source="video_bindings",
-                    evidence="fallbackSceneHint",
+                    evidence=story_evidence,
                     data={"scene": binding.get("scene"), "sceneIsHint": bool(binding.get("sceneIsHint"))},
                 )
                 self.add_edge(
@@ -9364,7 +9378,7 @@ class SourceGraphBuilder:
                     binding_node,
                     "story_has_fmv_binding",
                     source="video_bindings",
-                    evidence="fallbackSceneHint",
+                    evidence=story_evidence,
                     data={"scene": binding.get("scene"), "sceneIsHint": bool(binding.get("sceneIsHint"))},
                 )
             mission_id = safe_key(binding.get("mission") or binding.get("fallbackMissionHint"))
@@ -9449,10 +9463,15 @@ class SourceGraphBuilder:
             for source_index, source_row in enumerate(binding.get("sources") or []):
                 if not isinstance(source_row, dict):
                     continue
-                source_file = safe_key(source_row.get("asset"))
+                source_field = (
+                    "asset"
+                    if safe_key(source_row.get("asset"))
+                    else "sourceFile"
+                )
+                source_file = safe_key(source_row.get(source_field))
                 if source_file:
                     file_node = self.add_file(source_file, kind="fmv_binding_source", source=safe_key(source_row.get("kind")) or "video_bindings", data=compact_payload(source_row, depth=2))
-                    self.add_edge(binding_node, file_node, "fmv_binding_source_file", source="video_bindings", evidence=f"sources[{source_index}].asset", data=compact_payload(source_row, depth=2))
+                    self.add_edge(binding_node, file_node, "fmv_binding_source_file", source="video_bindings", evidence=f"sources[{source_index}].{source_field}", data=compact_payload(source_row, depth=2))
                 path_id = safe_key(source_row.get("pathId"))
                 if path_id:
                     pid_node = self.add_node("unity_pathid", path_id, name=f"pathid:{path_id}", source="video_bindings")

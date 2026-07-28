@@ -7505,6 +7505,58 @@ def build_language_bundle(
         }
         return report
     cutscene_assets = _load_cutscene_assets()
+    for ref in narrative_video_assets:
+        if ref.get("kind") != "cutscene":
+            continue
+        binding = (
+            ref.get("binding")
+            if isinstance(ref.get("binding"), dict)
+            else {}
+        )
+        if (
+            not binding
+            or binding.get("isHint")
+            or "levelscriptFmvAction"
+            not in set(binding.get("sourceKinds") or [])
+        ):
+            continue
+        for candidate in ref.get("authoritativeKeys") or []:
+            candidate_key = str(candidate or "")
+            if not candidate_key.startswith("cutscene_"):
+                continue
+            canonical = _canonical_cutscene_key(candidate_key)
+            if not canonical:
+                continue
+            cutscene = ensure_cutscene_asset(canonical)
+            bindings = cutscene.setdefault("levelscriptFmvBindings", [])
+            fmv_id = str(binding.get("fmvId") or ref.get("stem") or "")
+            sources = [
+                source
+                for source in (binding.get("evidence") or [])
+                if isinstance(source, dict)
+                and source.get("kind") == "levelscriptFmvAction"
+            ]
+            row = next(
+                (
+                    item
+                    for item in bindings
+                    if item.get("fmvId") == fmv_id
+                    and item.get("sources") == sources
+                ),
+                None,
+            )
+            if row is None:
+                row = {
+                    "fmvId": fmv_id,
+                    "videos": [],
+                    "sources": sources,
+                }
+                bindings.append(row)
+            video = str(ref.get("rel") or "")
+            if video and video not in row["videos"]:
+                row["videos"].append(video)
+            if "levelscript-fmv" not in cutscene["tags"]:
+                cutscene["tags"].append("levelscript-fmv")
     cutscene_text_by_key = cutscene_text_lines(set(cutscene_assets), _load_cutscene_subtitle_tracks())
     source_backed_cutscene_keys = story_source_backed_cutscene_keys()
     video_backed_cutscene_keys = narrative_video_backed_cutscene_keys()
@@ -7555,19 +7607,22 @@ def build_language_bundle(
         if target_key in cutscene_assets:
             existing = cutscene_assets[target_key].setdefault("suppressedTextOnlyGroups", [])
             existing.extend(groups)
-    timeline_bound_cutscene_video_keys: set[str] = set()
+    authoritatively_bound_cutscene_video_keys: set[str] = set()
     for ref in narrative_video_assets:
         if ref.get("kind") != "cutscene":
             continue
         binding = ref.get("binding") if isinstance(ref.get("binding"), dict) else {}
         if not binding or binding.get("isHint"):
             continue
-        if "timelinePlayable" not in set(binding.get("sourceKinds") or []):
+        if not {
+            "timelinePlayable",
+            "levelscriptFmvAction",
+        } & set(binding.get("sourceKinds") or []):
             continue
         for candidate in ref.get("authoritativeKeys") or ref.get("keyCandidates") or []:
             candidate_key = str(candidate or "")
             if candidate_key in cutscene_assets:
-                timeline_bound_cutscene_video_keys.add(candidate_key)
+                authoritatively_bound_cutscene_video_keys.add(candidate_key)
     print(f"Writing {len(cutscene_assets)} cutscene conversations...")
     for cutscene_key, cutscene in sorted(cutscene_assets.items()):
         mission, scene = _infer_cutscene_mission_and_scene(cutscene_key, known_cutscene_missions)
@@ -7608,6 +7663,13 @@ def build_language_bundle(
             )
             if names:
                 summary_rows.append({"text": f"Suppressed duplicate text groups: {names}"})
+        if cutscene.get("levelscriptFmvBindings"):
+            summary_rows.append({
+                "text": (
+                    "Playback source: exact LevelScript FMV target field "
+                    f"({len(cutscene['levelscriptFmvBindings'])} binding(s))"
+                ),
+            })
         if cutscene.get("textOnlyUnconfirmed"):
             summary_rows.append({
                 "text": "Text-only candidate: no matching AnimeStudio cutscene asset, source link, or narrative video was found.",
@@ -7631,7 +7693,7 @@ def build_language_bundle(
             lines
             and not cutscene.get("hasSubtitleTrack")
             and (
-                cutscene_key in timeline_bound_cutscene_video_keys
+                cutscene_key in authoritatively_bound_cutscene_video_keys
                 or fmv_clips_by_key.get(cutscene_key)
             )
         ):
@@ -7665,6 +7727,8 @@ def build_language_bundle(
                 "useBlackScreen": bool(cutscene.get("useBlackScreen")),
                 "isTransition": bool(cutscene.get("isTransition")),
                 "hasSubtitleTrack": bool(cutscene.get("hasSubtitleTrack")),
+                "levelscriptFmvBindings":
+                    cutscene.get("levelscriptFmvBindings") or [],
                 "suppressedTextOnlyGroups": cutscene.get("suppressedTextOnlyGroups") or [],
                 "textOnlyUnconfirmed": bool(cutscene.get("textOnlyUnconfirmed")),
             },
@@ -11828,7 +11892,10 @@ def build_language_bundle(
             elif not resolved_key:
                 unresolved_videos.append(ref)
         authoritative_evidence: list[dict] = []
-        def timeline_video_evidence_rows(key: str, refs: list[dict]) -> list[dict]:
+        def authoritative_video_evidence_rows(
+            key: str,
+            refs: list[dict],
+        ) -> list[dict]:
             rows: list[dict] = []
             seen: set[tuple[str, str, str]] = set()
             for ref in refs:
@@ -11836,11 +11903,16 @@ def build_language_bundle(
                 if not binding or binding.get("isHint"):
                     continue
                 source_kinds = set(binding.get("sourceKinds") or [])
-                if "timelinePlayable" not in source_kinds:
+                accepted_source_kinds = {
+                    "timelinePlayable",
+                    "levelscriptFmvAction",
+                } & source_kinds
+                if not accepted_source_kinds:
                     continue
                 evidence_sources = [
                     source for source in (binding.get("evidence") or [])
-                    if isinstance(source, dict) and source.get("kind") == "timelinePlayable"
+                    if isinstance(source, dict)
+                    and source.get("kind") in accepted_source_kinds
                 ]
                 clips = [
                     clip for clip in (binding.get("clips") or [])
@@ -11854,6 +11926,20 @@ def build_language_bundle(
                 if evidence_key in seen:
                     continue
                 seen.add(evidence_key)
+                method = (
+                    "timelinePlayable"
+                    if "timelinePlayable" in accepted_source_kinds
+                    else "levelscriptFmvAction"
+                )
+                why = (
+                    "Timeline FMV clip references a BeyondFMVPlayableAsset; "
+                    "that playable's fmvId selects this narrative video."
+                    if method == "timelinePlayable"
+                    else
+                    "The exact decoded native LevelScript FMV target field "
+                    "selects this narrative video and normalizes to this "
+                    "cutscene Story key."
+                )
                 rows.append({
                     "webuiKey": key,
                     "webuiFile": f"data/lang/{language_code}/conv/{key}.json",
@@ -11871,11 +11957,8 @@ def build_language_bundle(
                         "sourceKinds": sorted(source_kinds),
                     },
                     "evidence": {
-                        "method": "timelinePlayable",
-                        "why": (
-                            "Timeline FMV clip references a BeyondFMVPlayableAsset; "
-                            "that playable's fmvId selects this narrative video."
-                        ),
+                        "method": method,
+                        "why": why,
                         "sources": evidence_sources,
                         "clips": clips[:8],
                     },
@@ -11933,8 +12016,15 @@ def build_language_bundle(
                 else:
                     label, target = "scene", scene
                 attached_note = " (also embedded inline)" if resolved_kind else ""
+                source_kinds = set(binding.get("sourceKinds") or [])
+                if "timelinePlayable" in source_kinds:
+                    binding_label = "timeline-bound"
+                elif "levelscriptFmvAction" in source_kinds:
+                    binding_label = "LevelScript FMV-action-bound"
+                else:
+                    binding_label = "authoritatively bound"
                 return (
-                    f"Attachment status: timeline-bound to {label} `{target}`{attached_note}; kept standalone in WebUI",
+                    f"Attachment status: {binding_label} to {label} `{target}`{attached_note}; kept standalone in WebUI",
                     "standaloneVideoBoundButKeptSeparate",
                 )
             resolved_key = next(
@@ -12097,7 +12187,9 @@ def build_language_bundle(
             if not refs:
                 continue
             attached_refs += len(refs)
-            authoritative_evidence.extend(timeline_video_evidence_rows(key, refs))
+            authoritative_evidence.extend(
+                authoritative_video_evidence_rows(key, refs)
+            )
             compact_refs = [compact_narrative_video_ref(ref) for ref in refs[:16]]
             omitted = max(0, len(refs) - len(compact_refs))
             entry["vid"] = narrative_video_index_summary(refs)

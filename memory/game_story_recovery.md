@@ -1494,6 +1494,29 @@ current `cutscene_*` Story file, and those 22 exact pairs are embedded in
 gender-prefixed id are intentionally absent and produce missing-key
 diagnostics. No general prefix rule, OCR, or manual override participates.
 
+The offline Story builder can use the same exact typed LevelScript evidence
+without weakening that runtime boundary. `video_bindings.py` now accepts a
+LevelScript FMV occurrence only when it is a decoded `play_fmv` record, retains
+the native mapping and source field, and its literal `cs_video_*` target agrees
+with the occurrence's normalized `cutscene_*` Story key. This recovers 30
+distinct LevelScript FMV ids. Together with 30 Timeline-bound ids and one
+overlapping MissionRuntime `CheckFMVFinish` source, the current binding index
+contains 60 authoritative ids and binds 166/188 exported narrative-video
+files. Exact base bindings also cover the exported `f_`/`m_` gender variants;
+the prefix is stripped only after the canonical binding already exists.
+
+Unlike the live recorder's intentionally closed 22-entry playback-key map, the
+offline builder may materialize an otherwise missing `cutscene_*` card when the
+exact LevelScript field and matching video file coexist. This created the
+`cutscene_dlg_e9m2_3` Story node. Once present in the index, its already
+recovered LevelScript path establishes a strong
+`cutscene_dlg_e9m2_3 -> dlg_e9m2_20` native-control edge and reduces `e9m2`
+unresolved source nodes from three to two. The evidence remains one-way: an
+FMV field proves that playback target, not arbitrary neighboring order or
+mission ownership. The source graph now prefers that exact scene only when the
+generated Story node exists, falls back to the legacy filename hint otherwise,
+and preserves the originating LevelScript JSON file as binding evidence.
+
 The bridge produces importable JSONL plus separate diagnostics. Observed
 sequence and active-quest context remain an overlay: they do not create authored
 mission ownership or source order. The present hook cannot recover the
@@ -2153,8 +2176,8 @@ orders.
 ## Source graph and generated audit surface
 
 The source graph is an evidence index, not runtime simulation. The current
-canonical relevant-AssetMap CN rebuild contains 2,112,725 nodes, 4,748,203
-edges, and 2,285,546 aliases; all 1,140 required original AssetMap identities
+canonical relevant-AssetMap CN rebuild contains 2,112,698 nodes, 4,754,145
+edges, and 2,285,597 aliases; all 1,140 required original AssetMap identities
 matched. Story-recovery queries include:
 
 ```bat
@@ -2188,7 +2211,7 @@ Useful generated report families:
 - `reports/scene_order_gap_report_CN.{json,md}`
 - `reports/runtime_jump_option_route_audit_CN*.{json,md}`
 - `reports/option_response_audio_evidence_CN.{json,md}`
-- `reports/narrative_video_override_audit_CN.{json,md}`
+- `reports/story/recovery/narrative_video/narrative_video_override_audit_CN.{json,md}`
 - `reports/source_graph/option_branch_gaps.{json,md}`
 - `reports/source_graph/unresolved_narrative_video_candidates.{json,md}`
 - `reports/mission_graph/mission_dependency_graph.{json,md}`
@@ -3909,9 +3932,13 @@ Current main-story priorities:
    unavailable-source frontier: further offline recovery requires an older or
    newer authored data archive containing those mission assets (or another
    exact consumer surface), not more inference over the current installation.
-8. Keep unresolved narrative videos standalone until Timeline or another
-   original-data source binding establishes placement; observed playback may
-   cross-check but does not promote the connection.
+8. Exact LevelScript FMV targets now join Timeline playables as authoritative
+   narrative-video placement and can materialize missing cutscene Story cards.
+   The current WebUI attaches 180/188 video references across 53 Story keys;
+   the remaining six files collapse to three unresolved groups:
+   `cs_video_e1m3_3`, `remotecomm_e1m2_2`, and `remotecomm_e1m2_3`. Keep these
+   standalone until another original-data source establishes placement;
+   observed playback may cross-check but does not promote the connection.
 9. The inter-mission graph is now recovered from cross-mission state
    conditions and is complete with respect to that evidence class: 153 edges,
    zero dangling targets, zero unclassified operands, and the one mission-level

@@ -709,6 +709,106 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
             finally:
                 builder.close()
 
+    def test_video_bindings_prefer_existing_exact_scene_and_keep_source_file(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            recovered = root / "recovered"
+            recovered.mkdir()
+            (recovered / "video_bindings.json").write_text(
+                json.dumps(
+                    {
+                        "bindings": {
+                            "cs_video_dlg_e9m2_3": {
+                                "fmvId": "cs_video_dlg_e9m2_3",
+                                "scene": "cutscene_dlg_e9m2_3",
+                                "mission": "e9m2",
+                                "fallbackSceneHint": "dlg_e9m2_3",
+                                "sources": [{
+                                    "kind": "levelscriptFmvAction",
+                                    "sourceFile": "export_full/levelscript.json",
+                                }],
+                            },
+                            "cs_video_dlg_e10m1_1": {
+                                "fmvId": "cs_video_dlg_e10m1_1",
+                                "scene": "e10m1_1",
+                                "fallbackSceneHint": "dlg_e10m1_1",
+                                "sources": [{
+                                    "kind": "timelinePlayable",
+                                    "asset": "export_full/playable.json",
+                                }],
+                            },
+                        },
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            builder = endfield_source_graph.SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                include_asset_maps=False,
+            )
+            builder.open()
+            try:
+                builder.add_node("story", "cutscene_dlg_e9m2_3")
+                builder.add_node("story", "dlg_e10m1_1")
+                with patch.object(
+                    endfield_source_graph,
+                    "EXPORT_ROOT",
+                    root,
+                ):
+                    builder.ingest_video_bindings()
+
+                targets = {
+                    row[0]: (row[1], row[2])
+                    for row in builder.db.execute(
+                        """
+                        SELECT src, dst, evidence
+                        FROM edges
+                        WHERE kind = 'fmv_binding_targets_story'
+                        """
+                    ).fetchall()
+                }
+                self.assertEqual(
+                    targets[
+                        "fmv_binding:cs_video_dlg_e9m2_3"
+                    ],
+                    ("story:cutscene_dlg_e9m2_3", "scene"),
+                )
+                self.assertEqual(
+                    targets[
+                        "fmv_binding:cs_video_dlg_e10m1_1"
+                    ],
+                    ("story:dlg_e10m1_1", "fallbackSceneHint"),
+                )
+                source_edges = {
+                    (row[0], row[1])
+                    for row in builder.db.execute(
+                        """
+                        SELECT dst, evidence
+                        FROM edges
+                        WHERE kind = 'fmv_binding_source_file'
+                        """
+                    ).fetchall()
+                }
+                self.assertIn(
+                    (
+                        "file:export_full/levelscript.json",
+                        "sources[0].sourceFile",
+                    ),
+                    source_edges,
+                )
+                self.assertIn(
+                    (
+                        "file:export_full/playable.json",
+                        "sources[0].asset",
+                    ),
+                    source_edges,
+                )
+            finally:
+                builder.close()
+
     def test_relevant_scope_keeps_only_consumed_original_map_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
