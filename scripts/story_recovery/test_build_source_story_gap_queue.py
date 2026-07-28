@@ -1318,6 +1318,50 @@ class NonMissionContentClosureTests(unittest.TestCase):
             keys["sns_topic_chr_0004_pelica_1"]["field"], "includeDialogIds"
         )
 
+    def test_exact_guide_runtime_radio_is_closed_without_order(self) -> None:
+        story_key = "radio_blackbox_common_1"
+        partial = partial_mission(
+            "blackbox_common",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        partial["nodes"][0]["kind"] = "radio"
+        row = gap_queue.build_gap_row(
+            partial,
+            mission_payload(),
+            mission_bundle_exists=True,
+            non_mission_content={
+                story_key: {
+                    "evidenceKind": "guide_runtime_asset",
+                    "content": "factory_interaction_lock_guide_radio",
+                    "assetType":
+                        "Beyond.Gameplay.Actions.GuideRuntimeAsset",
+                    "consumerClass":
+                        "Beyond.Gameplay.Actions."
+                        "FacSetInteractLockedState",
+                    "assetCount": 10,
+                    "actionCount": 13,
+                    "assetNames": ["guide_blackbox_test"],
+                    "guideLevelIds": ["blackbox_test"],
+                    "nativeMappingId": "mapping-v1",
+                    "nativeMethod": {"token": "0x06008a6d"},
+                    "orderBoundary": "no mission or Story order edge",
+                    "evidenceReport": "report.json",
+                },
+            },
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(
+            row["metrics"]["closedNonMissionContentIsolatedScenes"], 1
+        )
+        closed = row["closedNonMissionContentIsolatedScenes"][0]
+        self.assertEqual(
+            closed["recoveryStatus"],
+            "closed_exact_guide_runtime_non_mission_content",
+        )
+        self.assertEqual(closed["actionCount"], 13)
+
     def test_lookalike_key_not_in_any_table_stays_actionable(self) -> None:
         # Same filename shape, absent from the tables: must NOT be closed.
         root = self._table_root(AudioRadioContinueTable={})

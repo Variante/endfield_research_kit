@@ -3247,11 +3247,12 @@ The Mission Pipeline builder carries the same classification
 (`counts.nonMissionContentFiles`, `nonMissionContentKeys`, attachment status
 `non_mission_content`), and both frontends render it: a corpus stat plus a
 separate collapsed section on the pipeline page, and a
-`storyTriggerNonMissionContent` category on the Storyline page. **That surface
-is currently inert by design**: the pipeline's 5,273-file denominator never
-included any `radio_continue_*` or `sns_topic_*` key, so it reports zero today.
-It is kept so a future export that pulls those keys into the pipeline classifies
-them instead of showing them as unassigned gaps.
+`storyTriggerNonMissionContent` category on the Storyline page. The table-only
+surface remains outside the pipeline denominator because none of its
+`radio_continue_*` or `sns_topic_*` keys is pipeline-owned. A later exact
+GuideRuntime consumer classification now admits one otherwise missionless key
+explicitly; current pipeline counts are 5,282 Story files, 1,211 unlinked, and
+one classified non-mission file.
 
 Note the count is 233, not the 163 an earlier filename-pattern estimate
 suggested, because the table admits rows such as `sns_topic_map01_lv001_4` whose
@@ -3266,6 +3267,48 @@ The other newly-examined tables are facility content with no mission carrier:
 `SpaceshipSubCharGiftTable` (per-character `dlg_npc_*_spaceshipgift`),
 `SpaceshipRoomLvTable`, `SpaceshipEmptyRoomTable`, `SNSDialogValidMapTable`, and
 `SNSChatTable`.
+
+### Factory GuideRuntime Story consumer
+
+The remaining exact AnimeStudio carrier family resolves one false mission gap.
+`radio_blackbox_common_1` occurs in **13** exact managed-reference actions
+across **10** typed
+`Beyond.Gameplay.Actions.GuideRuntimeAsset` objects. Every action is
+`Beyond.Gameplay.Actions.FacSetInteractLockedState`, stores the radio id and a
+factory instance key in the same managed reference, and lives in a
+`guide_blackbox_*` tutorial asset. The objects expose blackbox guide level ids
+(`blackbox_conditioner_1`, `blackbox_speedlimit_1`,
+`blackbox_transmuter_2`) where applicable, but no mission or quest owner.
+
+This is not merely a field-name interpretation. On current GameAssembly
+SHA-256
+`0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE`,
+`FacSetInteractLockedState.Execute` (token `0x06008a6d`, VA
+`0x187654fa0`) reads `_isLocked` at `this+0xd0`, `_instKey` at `+0xd8`,
+and `_radioId` at `+0xe0`. The locked branch calls
+`RemoteFactoryInteract.LockBuildingInteract(instanceKey, radioId, false)`;
+the unlocked branch calls `UnlockBuildingInteract(instanceKey, false)`.
+This proves an executable factory-guide radio consumer, but supplies neither a
+mission owner nor cross-Story chronology.
+
+`build_animestudio_story_guide_consumer_audit.py` now reproduces that result
+from the current merged object index and refuses to publish against a changed
+source fingerprint or GameAssembly hash. Its compact report is consumed only
+while the report, latest export source fingerprint, and current object-index
+stage signature agree. `export.bat --export-from-game
+--animestudio-object-index` refreshes it automatically.
+
+The source-gap queue schema is now `sourceStoryGapQueue.v12`.
+`blackbox_common` falls from score 5 to 0 and
+`radio_blackbox_common_1` moves from actionable isolation to
+`closed_exact_guide_runtime_non_mission_content`. Current non-mission closures
+are **234** (233 authored-table rows plus this guide-runtime row), and current
+actionable core-isolated scenes total **2,458**. No main, event, major, or
+character bucket changes. The WebUI reflects the result: Mission Pipeline
+reports one non-mission file, while the Storyline debug view labels the radio
+as non-mission authored table/tutorial content. Action ids, `nextId`, asset
+names, PathIDs, and object order remain explicitly barred from mission or
+Story-order inference.
 
 ### The cinematic queue: a deterministic cross-type order rule
 

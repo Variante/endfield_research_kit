@@ -42,7 +42,7 @@
       nativePlaybackGaps: "exact-native gaps",
       definitionOnlyStory: "definition-only black text",
       nonMissionContentStory: "non-mission content",
-      nonMissionContentStoryHint: "Story ids defined only by non-mission authored content tables (per-speaker radio continuation voice, character SNS topics). Those tables are keyed by speaker or topic and serialize no mission, quest, scene, or script field, so no mission can own these rows. Table contents admit a key; filenames never do.",
+      nonMissionContentStoryHint: "Story ids proven to be authored non-mission content: speaker radio continuation, character SNS topics, or exact factory tutorial guide actions. The evidence serializes no mission or quest owner. Authored fields and typed consumers admit a key; filenames never do.",
       missionGraph: "Cross-mission relations",
       missionGraphUpstream: "upstream",
       missionGraphDownstream: "downstream",
@@ -479,7 +479,7 @@
       nativePlaybackGaps: "原生路径缺口",
       definitionOnlyStory: "仅有定义的黑屏文本",
       nonMissionContentStory: "非使命内容",
-      nonMissionContentStoryHint: "这些剧情 ID 仅由非使命内容表定义（按说话人分的电台续播语音、角色 SNS 话题）。相关表以说话人或话题为键，未序列化任何使命、任务、场景或脚本字段，因此不可能有使命拥有它们。仅依据表内容判定，绝不依据文件名。",
+      nonMissionContentStoryHint: "这些剧情 ID 已由原生数据证明属于非使命内容：按说话人分的电台续播语音、角色 SNS 话题，或工厂教程资产中的精确动作。证据没有序列化使命或任务归属。仅依据原生字段和强类型消费者判定，绝不依据文件名。",
       missionGraph: "跨使命关系",
       missionGraphUpstream: "上游",
       missionGraphDownstream: "下游",
@@ -2110,13 +2110,20 @@
     return `<details class="mp-mission-story mp-non-mission-content" data-weight="context">
       <summary>${esc(t("nonMissionContentStory"))} <span>${rows.length}</span></summary>
       <div class="mp-story-files"><section class="mp-story-group is-context">
-        ${rows.map((row) => storyConnectionLink({
-          key: row.key,
-          relation: "non_mission_content",
-          direction: "context",
-          confidence: "table_backed_non_mission_content",
-          source: `${row.table}.${row.field} (keyed by ${row.keyedBy})`,
-        }, "context")).join("")}
+        ${rows.map((row) => {
+          const guideRuntime = row.evidenceKind === "guide_runtime_asset";
+          return storyConnectionLink({
+            key: row.key,
+            relation: "non_mission_content",
+            direction: "context",
+            confidence: guideRuntime
+              ? "exact_typed_guide_runtime_non_mission_content"
+              : "table_backed_non_mission_content",
+            source: guideRuntime
+              ? `${row.consumerClass} · ${row.actionCount || 0} actions / ${row.assetCount || 0} guide assets`
+              : `${row.table}.${row.field} (keyed by ${row.keyedBy})`,
+          }, "context");
+        }).join("")}
       </section></div>
       <small>${esc(t("nonMissionContentStoryHint"))}</small>
     </details>`;

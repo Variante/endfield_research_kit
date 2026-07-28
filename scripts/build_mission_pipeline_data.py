@@ -18,8 +18,8 @@ from typing import Any, Iterable
 
 try:
     from common import (
+        combined_non_mission_content_keys,
         compact_dict,
-        non_mission_content_keys,
         read_bytes_cached,
         read_json,
         write_report_json,
@@ -50,8 +50,8 @@ try:
     )
 except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data``
     from scripts.common import (
+        combined_non_mission_content_keys,
         compact_dict,
-        non_mission_content_keys,
         read_bytes_cached,
         read_json,
         write_report_json,
@@ -3805,6 +3805,25 @@ def build_story_binding_coverage(
             if mission_id in mission_ids:
                 story_rows[key] = normalized_row
 
+    # Exact authored non-mission content. Table-only continuation/topic rows
+    # remain outside the pipeline denominator as before. A freshness-checked
+    # guide-runtime consumer is admitted explicitly so its Story trigger card
+    # can be classified even though its nominal blackbox bucket is not a
+    # MissionRuntime mission.
+    non_mission_content = combined_non_mission_content_keys(
+        DEFAULT_TABLE_ROOT
+    )
+    for key, evidence in non_mission_content.items():
+        if (
+            evidence.get("evidenceKind") == "guide_runtime_asset"
+            and key in all_story_rows
+            and key not in story_rows
+        ):
+            story_rows[key] = {
+                **all_story_rows[key],
+                "pipelineOwnerStatus": "non_mission_content",
+            }
+
     connected_keys: set[str] = set()
     connected_cross_owner_keys: set[str] = set()
     pipeline_owned_story_keys = set(story_rows)
@@ -4214,11 +4233,6 @@ def build_story_binding_coverage(
         text_vo_id_table_path,
     )
     definition_only_class_counts = definition_only_classification["counts"]
-    # Story ids defined only by non-mission authored content tables. These are
-    # per-speaker radio continuation voice and character SNS topics; no mission
-    # can own them, so they are reported as their own class instead of sitting
-    # in the unassigned-Story queue. Table contents admit a key, never filenames.
-    non_mission_content = non_mission_content_keys(DEFAULT_TABLE_ROOT)
     unlinked_non_mission_content = {
         key: non_mission_content[key]
         for key in story_rows
@@ -4536,7 +4550,7 @@ def build_story_binding_coverage(
         f"- Those with non-empty original audio metadata only: `{counts['unlinkedDefinitionOnlyAudioMetadataFiles']}`",
         f"- Those with explicit empty audio mappings (likely legacy definitions): `{counts['unlinkedDefinitionOnlyEmptyAudioLikelyLegacyFiles']}`",
         f"- Those with no original audio metadata row: `{counts['unlinkedDefinitionOnlyWithoutAudioMetadataFiles']}`",
-        f"- Table-proven non-mission content (speaker radio continuation, character SNS topics): `{counts['nonMissionContentFiles']}`",
+        f"- Exact non-mission authored content (speaker radio continuation, character SNS topics, factory guides): `{counts['nonMissionContentFiles']}`",
         f"- Missionless SubGame runtime nodes with exact playback: `{counts['missionlessSubGameRows']}`",
         f"- Unique Story files attached to those missionless nodes: `{counts['missionlessSubGameStoryFiles']}`",
         f"- Missionless SubGame-to-Story placements: `{counts['missionlessSubGameStoryPlacements']}`",
