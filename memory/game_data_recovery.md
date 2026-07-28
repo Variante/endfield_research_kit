@@ -753,11 +753,18 @@ One separate objective, `sm2l7m1_q#17`, has an exact authored AND between
 requires one `item_mission_sm2l7m1_flute`. The LevelScript independently has
 an exact `LevelEvent_OnDialogExit(dlg_sm2l7m1_17)` path whose typed
 `StartDialogAndTeleportAction` target is `dlg_sm2l7m1_9`, plus a separate
-Leader-enter path to the same target. It contains no submission id or typed
-SubmitItem OpenUI action. Mission Pipeline schema 14 therefore emits one
-LevelScript co-gate and the source graph joins the quest, submission, script,
-dialog-exit trigger, and playback target while marking every context edge
-`openUiOwnership=false` and `orderEvidence=false`.
+Leader-enter path to the same target. The raw `0x09b9/0x00` record at the
+other dialog-exit root and the matching records late in both playback chains
+are compact MemoryPack tag `0x00b9` with nine members. Installed ActionBase
+formatter registration (`mov r8d,0xb9`, metadata type index 125956) names the
+class `ExitLevelCustomPerformance`; each target-script instance has the exact
+same 17-byte, string-free payload containing only an unbound zero
+`Param<uint>` handle. The script therefore contains no hidden submission id,
+item id, UI key, branch target, or typed SubmitItem OpenUI action. Mission
+Pipeline schema 14 emits one LevelScript co-gate and the source graph joins
+the quest, submission, script, dialog-exit trigger, and playback target while
+marking every context edge `openUiOwnership=false` and
+`orderEvidence=false`.
 The hash-pinned report
 `reports/story/recovery/nested_managed_identity_carrier_census.{json,md}`
 therefore adds no Story ownership/order edge and fails closed if the candidate

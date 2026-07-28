@@ -2038,7 +2038,10 @@ gameplay-video OCR/audio workflow.
   `StartDialogAction`. Manual control opcodes are `0x0308/0x0a`
   `ManualStartLevelScript` and `0x0302/0x0a` `ManualEndLevelScript`; setter
   examples are `0x03da/0x0a` `SetBool`, `0x0410/0x0a` `SetInt`, and
-  `0x0413/0x0a` `SetIntIncrease`. High
+  `0x0413/0x0a` `SetIntIncrease`. Compact-u8 records must first be normalized
+  from the legacy combined `(memberCount << 8) | tag` code: for example,
+  raw `0x09b9/0x00` is tag `0x00b9` with nine members and maps exactly to
+  `ExitLevelCustomPerformance`, not to an unknown high opcode. High
   event/gate/terminal records such as `0x0a03/0x00`, `0x0bed/0x00`, current
   trigger events `0x12be/0x00` and `0x12c0/0x00`, dialog exit
   `0x1355/0x00`, and quest-state change `0x1385/0x00` are outside that

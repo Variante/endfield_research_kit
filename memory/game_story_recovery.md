@@ -828,9 +828,15 @@ context without changing those direction rules. `sm2l7m1_q#17` requires both
 `map02_lv008/23100170008` in the same AND objective. The script's exact
 dialog-exit path already supplies the strong source edge
 `dlg_sm2l7m1_17 -> dlg_sm2l7m1_9`; a separate Leader-enter path also plays
-`dlg_sm2l7m1_9`. This proves objective co-gating and local playback context,
-not that the quest or script opens the submission UI and not that submission
-completion triggers either dialog.
+`dlg_sm2l7m1_9`. The installed ActionBase formatter further resolves the
+legacy-looking `0x09b9/0x00` records in all three chains as compact tag
+`0x00b9`, nine members, `ExitLevelCustomPerformance`. The exit-only
+dialog path is that cleanup action, while each `dlg_sm2l7m1_9` chain reaches
+the same action after its teleport/walk steps. The target script's three
+17-byte payloads contain only an unbound zero `Param<uint>` handle and no
+mission, submission, item, UI, or Story key. This proves objective co-gating
+and local playback/cleanup context, not that the quest or script opens the
+submission UI and not that submission completion triggers either dialog.
 
 Mission-level Story evidence stays separate from quest attachments.
 `MissionRuntimeAsset/<mission>_meta.json` NPC accept mode (`mode = 3`, native
@@ -3268,9 +3274,12 @@ Current main-story priorities:
    untyped condition-tree coincidence: `sm2l7m1_q#17` requires both the flute
    submission and stage-max for `map02_lv008/23100170008`. That script's exact
    dialog-exit path orders `dlg_sm2l7m1_17 -> dlg_sm2l7m1_9`, but it contains
-   no submission id or SubmitItem OpenUI action. Keep this as objective
-   co-gating plus independently proved playback context, not UI activation or
-   a new quest-to-Story playback edge.
+   no submission id or SubmitItem OpenUI action. Its former `0x09b9/0x00`
+   unknowns are now exactly normalized to ActionBase tag `0x00b9`/nine members,
+   `ExitLevelCustomPerformance`; all three carry only the same unbound zero
+   handle payload. Keep this as objective co-gating plus independently proved
+   playback/cleanup context, not UI activation or a new quest-to-Story
+   playback edge.
    Do not repeat this typed traversal until the binary, metadata, authored
    MissionRuntime/DialogTree/SubmitItem data, Lua, or patch changes. The next
    useful join must be another independently typed owner or newly changed
