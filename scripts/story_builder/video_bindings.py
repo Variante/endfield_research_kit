@@ -344,6 +344,209 @@ def load_fmv_numeric_ids() -> dict[str, list[int]]:
     }
 
 
+def _path_id_hex(path_id: Any) -> str:
+    try:
+        value = int(path_id)
+    except (TypeError, ValueError):
+        return ""
+    return f"{value & ((1 << 64) - 1):016X}"
+
+
+def _definition_resource_dirs(definition: dict[str, Any]) -> tuple[Path, ...]:
+    sources = definition.get("sources") or []
+    asset_paths = [
+        str(source.get("asset") or "")
+        for source in sources
+        if isinstance(source, dict)
+    ]
+    if any("/Persistent/" in path.replace("\\", "/") for path in asset_paths):
+        return (MONOBEHAVIOUR_DIRS[1],)
+    return (MONOBEHAVIOUR_DIRS[0],)
+
+
+def collect_definition_timeline_evidence(
+    definition: dict[str, Any],
+    *,
+    object_cache: dict[tuple[str, int], list[tuple[Path, dict[str, Any]]]]
+    | None = None,
+) -> dict[str, Any]:
+    """Trace a definition's exact playable, tracks, and clip payloads.
+
+    This is definition provenance only. It deliberately does not synthesize a
+    scene, mission, playback binding, or localized subtitle text.
+    """
+    cache = object_cache if object_cache is not None else {}
+    resource_dirs = _definition_resource_dirs(definition)
+
+    def find_objects(
+        path_id: Any,
+        expected_source_file: str = "",
+    ) -> list[tuple[Path, dict[str, Any]]]:
+        try:
+            numeric_path_id = int(path_id)
+        except (TypeError, ValueError):
+            return []
+        cache_key = ("|".join(str(path) for path in resource_dirs), numeric_path_id)
+        if cache_key not in cache:
+            suffix = _path_id_hex(numeric_path_id)
+            found: list[tuple[Path, dict[str, Any]]] = []
+            for resource_dir in resource_dirs:
+                for path in fast_glob_files(
+                    resource_dir,
+                    f"*_p{suffix}.json",
+                ):
+                    try:
+                        payload = json.loads(
+                            path.read_text(encoding="utf-8")
+                        )
+                    except (
+                        OSError,
+                        UnicodeDecodeError,
+                        json.JSONDecodeError,
+                    ):
+                        continue
+                    if isinstance(payload, dict):
+                        found.append((path, payload))
+            cache[cache_key] = found
+        rows = cache[cache_key]
+        if not expected_source_file:
+            return rows
+        exact = [
+            row
+            for row in rows
+            if str(
+                (
+                    row[1].get("$animestudio")
+                    if isinstance(
+                        row[1].get("$animestudio"), dict
+                    )
+                    else {}
+                ).get("sourceFile")
+                or ""
+            )
+            == expected_source_file
+        ]
+        return exact or rows
+
+    tracks: list[dict[str, Any]] = []
+    subtitle_text_ids: list[str] = []
+    audio_event_keys: list[str] = []
+    playable_assets: list[str] = []
+    total_clips = 0
+
+    for source in definition.get("sources") or []:
+        if not isinstance(source, dict):
+            continue
+        playable_path_id = source.get("defaultPlayablePathId")
+        expected_source_file = str(
+            source.get("defaultPlayableSourceFile") or ""
+        )
+        for playable_path, playable in find_objects(
+            playable_path_id,
+            expected_source_file,
+        ):
+            playable_rel = rel(playable_path)
+            if playable_rel not in playable_assets:
+                playable_assets.append(playable_rel)
+            playable_anime = (
+                playable.get("$animestudio")
+                if isinstance(playable.get("$animestudio"), dict)
+                else {}
+            )
+            playable_source_file = str(
+                playable_anime.get("sourceFile") or expected_source_file
+            )
+            for track_index, track_pointer in enumerate(
+                playable.get("m_Tracks") or []
+            ):
+                if not isinstance(track_pointer, dict):
+                    continue
+                track_path_id = track_pointer.get("m_PathID")
+                for track_path, track in find_objects(
+                    track_path_id,
+                    playable_source_file,
+                ):
+                    clips = [
+                        clip
+                        for clip in (track.get("m_Clips") or [])
+                        if isinstance(clip, dict)
+                    ]
+                    total_clips += len(clips)
+                    track_record = {
+                        "index": track_index,
+                        "name": str(track.get("m_Name") or ""),
+                        "pathId": track_path_id,
+                        "asset": rel(track_path),
+                        "clipCount": len(clips),
+                    }
+                    clip_records: list[dict[str, Any]] = []
+                    for clip_index, clip in enumerate(clips):
+                        asset_pointer = clip.get("m_Asset")
+                        asset_path_id = (
+                            asset_pointer.get("m_PathID")
+                            if isinstance(asset_pointer, dict)
+                            else None
+                        )
+                        for clip_path, clip_asset in find_objects(
+                            asset_path_id,
+                            playable_source_file,
+                        ):
+                            clip_record = {
+                                "index": clip_index,
+                                "asset": rel(clip_path),
+                                "pathId": asset_path_id,
+                                "start": clip.get("m_Start"),
+                                "duration": clip.get("m_Duration"),
+                            }
+                            text_ids: list[str] = []
+                            for field_name, raw_value in clip_asset.items():
+                                if not (
+                                    field_name == "_textId"
+                                    or re.fullmatch(
+                                        r"_textId_\d+",
+                                        str(field_name),
+                                    )
+                                ):
+                                    continue
+                                text_id = str(raw_value or "").strip()
+                                if text_id and text_id not in text_ids:
+                                    text_ids.append(text_id)
+                                if (
+                                    text_id
+                                    and text_id not in subtitle_text_ids
+                                ):
+                                    subtitle_text_ids.append(text_id)
+                            audio_event = str(
+                                clip_asset.get("_audioEventKey") or ""
+                            ).strip()
+                            if text_ids:
+                                clip_record["subtitleTextIds"] = text_ids
+                            if audio_event:
+                                clip_record["audioEventKey"] = audio_event
+                                if audio_event not in audio_event_keys:
+                                    audio_event_keys.append(audio_event)
+                            clip_records.append(clip_record)
+                    if clip_records:
+                        track_record["clips"] = clip_records
+                    tracks.append(track_record)
+
+    return {
+        "playableAssets": playable_assets,
+        "trackCount": len(tracks),
+        "clipCount": total_clips,
+        "subtitleClipCount": sum(
+            1
+            for track in tracks
+            for clip in track.get("clips") or []
+            if clip.get("subtitleTextIds")
+        ),
+        "subtitleTextIds": subtitle_text_ids,
+        "audioEventKeys": audio_event_keys,
+        "tracks": tracks,
+        "placementEvidence": False,
+    }
+
+
 def walk_check_fmv_finish(node: Any) -> Iterable[str]:
     if isinstance(node, dict):
         type_tag = str(node.get("$type") or "")
@@ -525,6 +728,16 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
             if isinstance(config.get("defaultPlayable"), dict)
             else {}
         )
+        default_playable_source_file = ""
+        for pointer in anime.get("pptrReferences") or []:
+            if (
+                isinstance(pointer, dict)
+                and pointer.get("path") == "$.config.defaultPlayable"
+            ):
+                default_playable_source_file = str(
+                    pointer.get("expectedTargetSourceFile") or ""
+                )
+                break
         source = {
             "kind": "fmvConfigDefinition",
             "asset": rel(path),
@@ -532,6 +745,7 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
             "sourceFile": str(anime.get("sourceFile") or ""),
             "version": str(payload.get("version") or ""),
             "defaultPlayablePathId": default_playable.get("m_PathID"),
+            "defaultPlayableSourceFile": default_playable_source_file,
         }
         source = {
             key: value
@@ -698,6 +912,24 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
                 if video_rel not in candidates:
                     candidates.append(video_rel)
         rec["videos"] = candidates
+        if fmv_id in bindings:
+            rec["authoritativeBindingFmvId"] = fmv_id
+        elif base in bindings:
+            rec["authoritativeBindingFmvId"] = base
+
+    definition_object_cache: dict[
+        tuple[str, int],
+        list[tuple[Path, dict[str, Any]]],
+    ] = {}
+    for definition in definitions.values():
+        if definition.get("authoritativeBindingFmvId"):
+            continue
+        definition["timelineEvidence"] = (
+            collect_definition_timeline_evidence(
+                definition,
+                object_cache=definition_object_cache,
+            )
+        )
 
     for fmv_id in list(bindings.keys()):
         rec = bindings[fmv_id]
@@ -755,7 +987,9 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
         ),
         "fmvDefinitions": len(definitions),
         "definitionOnlyFmvIds": sum(
-            1 for fmv_id in definitions if fmv_id not in bindings
+            1
+            for definition in definitions.values()
+            if not definition.get("authoritativeBindingFmvId")
         ),
         "videoFiles": len(video_files),
         "videoFilesBound": len(by_video),
@@ -808,6 +1042,38 @@ def render_report(payload: dict[str, Any]) -> str:
         lines.append(
             f"| `{fmv_id}` | `{rec.get('scene', '')}`{scene_marker} | "
             f"`{rec.get('mission', '')}` | {', '.join(kinds) or '-'} |"
+        )
+    lines.append("")
+    lines.extend([
+        "## Definition-only FMVs",
+        "",
+        "These rows have exported FMV configuration provenance but no exact",
+        "Timeline, MissionRuntime, LevelScript, or gender/base binding. They are",
+        "not scene, mission, ownership, or playback edges.",
+        "",
+        "| fmvId | numeric ids | videos | tracks | clips | subtitle ids | audio events |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: |",
+    ])
+    for fmv_id, definition in payload.get("definitions", {}).items():
+        if not isinstance(definition, dict) or definition.get(
+            "authoritativeBindingFmvId"
+        ):
+            continue
+        timeline = (
+            definition.get("timelineEvidence")
+            if isinstance(definition.get("timelineEvidence"), dict)
+            else {}
+        )
+        numeric_ids = ", ".join(
+            str(value) for value in definition.get("numericIds") or []
+        )
+        lines.append(
+            f"| `{fmv_id}` | `{numeric_ids}` | "
+            f"{len(definition.get('videos') or [])} | "
+            f"{timeline.get('trackCount', 0)} | "
+            f"{timeline.get('clipCount', 0)} | "
+            f"{len(timeline.get('subtitleTextIds') or [])} | "
+            f"{len(timeline.get('audioEventKeys') or [])} |"
         )
     lines.append("")
     return "\n".join(lines)

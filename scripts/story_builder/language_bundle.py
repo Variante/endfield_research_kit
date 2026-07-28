@@ -12125,6 +12125,27 @@ def build_language_bundle(
                             "mission-placement evidence."
                         ),
                     })
+                    timeline_evidence = (
+                        definition.get("timelineEvidence")
+                        if isinstance(
+                            definition.get("timelineEvidence"), dict
+                        )
+                        else {}
+                    )
+                    if timeline_evidence:
+                        summary_rows.append({
+                            "text": (
+                                "Definition timeline: "
+                                f"{timeline_evidence.get('trackCount', 0)} "
+                                "track(s), "
+                                f"{timeline_evidence.get('clipCount', 0)} "
+                                "clip(s), "
+                                f"{timeline_evidence.get('subtitleClipCount', 0)} "
+                                "subtitle clip(s), "
+                                f"{len(timeline_evidence.get('audioEventKeys') or [])} "
+                                "audio event(s)."
+                            ),
+                        })
                 if text_candidates:
                     candidate_preview = " / ".join(
                         str(row.get("text") or "")
