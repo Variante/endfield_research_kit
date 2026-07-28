@@ -1475,19 +1475,29 @@ These are kept because the WebUI story builders import or use them:
   by the Story builder. It scans dialog `timeline_extract` outputs plus the
   full story-scoped AnimeStudio `json_by_type/MonoBehaviour` exports, so
   gameplay cutscene playables such as `*_cutscene_*_actor.playable` can bind
-  `BeyondFMVPlayableAsset.fmvId` back to a cutscene entry. Timeline-backed
-  links are preserved into
+  `BeyondFMVPlayableAsset.fmvId` back to a cutscene entry. It also consumes
+  typed LevelScript `PlayFmvAction` occurrences when the exact decoded native
+  `_moviePath` / `_fmvId` field and native schema mapping agree with the
+  normalized `cutscene_*` Story key. Timeline- and LevelScript-backed links are
+  preserved into
   `webui/data/lang/<LANG>/narrative_video_evidence.json` so a WebUI video can
-  be traced to the exact `BeyondFMVPlayableAsset` / Timeline source instead of
-  relying on filename matching. Narrative videos that only match by name are
-  emitted as standalone `video` story files grouped by mission, while resolved
-  mappings attach to the dialog, cutscene, remotecomm, or other story file and
-  keep the standalone row adjacent in Story sort. Timeline / playable evidence
-  supplies authored inline placement when available. Manual attach and
-  suppression rules in `webui/overrides/narrative_videos.json` cover known
-  filename mismatches and known false attachments while keeping standalone
-  video rows. An attach rule can also set `audioFrom` to copy source cutscene
-  audio events into the attached target during the audio relink step.
+  be traced to the exact playable or native LevelScript source instead of
+  relying on filename matching. An exact LevelScript FMV action can materialize
+  a missing `cutscene_*` Story card, which in turn lets existing LevelScript
+  control-path evidence participate in the Mission Pipeline. Gender-prefixed
+  video variants inherit only the exact canonical base-FMV binding. Narrative
+  videos that only match by name are emitted as standalone `video` story files
+  grouped by mission, while resolved mappings attach to the dialog, cutscene,
+  remotecomm, or other story file and keep the standalone row adjacent in
+  Story sort. Timeline / playable evidence supplies authored inline placement
+  when available. Manual attach and suppression rules in
+  `webui/overrides/narrative_videos.json` cover known filename mismatches and
+  known false attachments while keeping standalone video rows. An attach rule
+  can also set `audioFrom` to copy source cutscene audio events into the
+  attached target during the audio relink step. The source graph resolves an
+  FMV edge to the exact scene when that generated Story node exists, otherwise
+  retains the established fallback Story hint, and keeps typed LevelScript
+  source-file edges alongside playable-asset sources.
 - `story_builder/` also scans narrative video folders under
   `Data/Video/PC/Narrative/Cutscene` and `RemoteComm`, attaches matching
   `narrativeVideos` to dialog/cutscene/remotecomm conv JSON, and writes

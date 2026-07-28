@@ -54,6 +54,15 @@ fell from about 72 seconds to 0.4 seconds, Timeline action candidate enumeration
 fell to about 6.5 seconds, and FMV binding recovery fell from about 269 seconds
 to about 32 seconds with identical non-timestamp output.
 
+Narrative-video recovery also consumes exact typed LevelScript
+`PlayFmvAction` target fields. The WebUI treats those as authoritative only
+when the native field mapping and normalized `cutscene_*` key agree, preserves
+the LevelScript source details in the cutscene debug payload, and may create a
+cutscene card that was previously only a source-side Mission Pipeline node.
+The current CN build exposes 298 cutscene cards and 53 video-attached Story
+keys; 180/188 video references are attached. Gender-prefixed FMV files inherit
+only an already-proved canonical base binding.
+
 The 2026-07-21 CN Story build profile found repeated LevelScript path
 resolution/decoding, all-pairs weak spatial checks, duplicate LevelScript file
 reads, repeated DialogTree JSON parsing, an accidental recursive scan below an

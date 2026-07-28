@@ -2960,7 +2960,7 @@ def _narrative_video_key_candidates(kind: str, stem: str) -> list[str]:
 
 
 def _load_video_bindings_index() -> dict[str, dict]:
-    """Read recovered/video_bindings.json (Graph A + Graph B) keyed by fmvId.
+    """Read recovered/video_bindings.json keyed by fmvId.
 
     Empty dict if the recovery output is missing or unreadable; downstream code
     must treat any missing entry as "no authoritative binding, fall back to
@@ -2986,6 +2986,11 @@ def _video_binding_for_stem(stem: str) -> dict | None:
     direct = bindings.get(stem)
     if isinstance(direct, dict):
         return direct
+    _gender, base_stem = _strip_gender_video_prefix(stem)
+    if base_stem != stem:
+        base_binding = bindings.get(base_stem)
+        if isinstance(base_binding, dict):
+            return base_binding
     return None
 
 
@@ -3060,7 +3065,23 @@ def _load_narrative_video_assets() -> list[dict]:
                     binding_sources = [
                         {
                             key: source.get(key)
-                            for key in ("kind", "asset", "container", "pathId", "duration", "missions")
+                            for key in (
+                                "kind",
+                                "asset",
+                                "container",
+                                "pathId",
+                                "duration",
+                                "missions",
+                                "levelId",
+                                "scriptId",
+                                "sourceFile",
+                                "actionMapRole",
+                                "recordOffset",
+                                "localId",
+                                "actionName",
+                                "nativeMappingId",
+                                "fmvAction",
+                            )
                             if key in source
                         }
                         for source in (binding.get("sources") or [])
