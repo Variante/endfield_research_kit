@@ -3626,6 +3626,23 @@ Current main-story priorities:
    same-object row still requires independently recovered native consumer
    semantics before ownership/playback promotion and a separate serialized
    control relation before any order edge.
+   The maintained
+   `build_animestudio_story_gameobject_audit.py` closes the immediately adjacent
+   co-component class without broad GameObject export. It follows only resolved
+   `m_GameObject` PPtrs from exact actionable Story-value objects, maps their
+   physical chunk offsets through the current VFS index, extracts only the
+   exact original logical bundles into a temporary work root, exports
+   GameObjects, and resolves sibling component PathIDs back through the
+   provenance-valid typed index. On the current 2,459-key queue, 88 of the 190
+   exact-value objects expose that relation, covering 84 Story keys and 88
+   original bundles. All 88 are `CutsceneRootComponent`s; every referenced
+   GameObject has no parent and exactly two components, its Transform and that
+   CutsceneRoot. The audit therefore finds zero typed sibling components and
+   zero mission/runtime sibling candidates. The current report is
+   `reports/story/recovery/animestudio_story_gameobject_audit.{json,md}`.
+   This closes same-GameObject co-components for these current cutscene
+   carriers, not child-hierarchy, neighboring-object, bundle-proximity,
+   external-registry, or server-selected activation hypotheses.
    The generated coverage report now inventories 155 files across 25 decoded
    event families; the largest unique-file groups are Leader trigger volume
    (67), BattleSignal (16), Script custom event (13), and ScriptStageChanged
