@@ -846,6 +846,15 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
                                     "pathId": 100,
                                     "defaultPlayablePathId": 200,
                                 }],
+                                "timelineEvidence": {
+                                    "subtitleTextIds": [
+                                        "fmv_e1m3_3_01"
+                                    ],
+                                    "audioEventKeys": [
+                                        "au_vo_fmv_e1m3_3"
+                                    ],
+                                    "placementEvidence": False,
+                                },
                             }
                         },
                     },
@@ -941,6 +950,20 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
                             "Data/Video/PC/Narrative/Cutscene/"
                             "cs_video_e1m3_3.mp4"
                         ),
+                    ),
+                    definition_edges,
+                )
+                self.assertIn(
+                    (
+                        "fmv_definition_subtitle_text",
+                        "text_key:fmv_e1m3_3_01",
+                    ),
+                    definition_edges,
+                )
+                self.assertIn(
+                    (
+                        "fmv_definition_audio_event",
+                        "audio:au_vo_fmv_e1m3_3",
                     ),
                     definition_edges,
                 )

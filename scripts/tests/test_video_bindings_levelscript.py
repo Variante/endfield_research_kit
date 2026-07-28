@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import unittest
+import json
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 from scripts.story_builder import anime_assets
@@ -21,6 +24,19 @@ class VideoBindingsLevelScriptTests(unittest.TestCase):
                 ),
                 binding,
             )
+
+    def test_gender_definition_base_is_not_a_definition_only_gap(
+        self,
+    ) -> None:
+        bindings = {"cs_video_e2m8_2": {}}
+        fmv_id = "f_cs_video_e2m8_2"
+        base = video_bindings.fmv_id_to_base(fmv_id)
+        resolved = (
+            fmv_id
+            if fmv_id in bindings
+            else base if base in bindings else ""
+        )
+        self.assertEqual(resolved, "cs_video_e2m8_2")
 
     def test_nested_cutscene_dialog_scene_maps_to_mission(self) -> None:
         self.assertEqual(
@@ -124,6 +140,85 @@ class VideoBindingsLevelScriptTests(unittest.TestCase):
                 ),
                 definition,
             )
+
+    def test_collects_definition_timeline_without_placement(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            mono = root / "StreamingAssets" / "json_by_type" / "MonoBehaviour"
+            persistent = root / "Persistent" / "json_by_type" / "MonoBehaviour"
+            mono.mkdir(parents=True)
+            persistent.mkdir(parents=True)
+
+            def write_object(
+                path_id: int,
+                name: str,
+                payload: dict,
+            ) -> None:
+                suffix = f"{path_id & ((1 << 64) - 1):016X}"
+                (mono / f"{name}_p{suffix}.json").write_text(
+                    json.dumps({
+                        "$animestudio": {
+                            "pathId": path_id,
+                            "sourceFile": "CAB-fixture",
+                        },
+                        "m_Name": name,
+                        **payload,
+                    }),
+                    encoding="utf-8",
+                )
+
+            write_object(
+                100,
+                "fixture_playable",
+                {"m_Tracks": [{"m_PathID": 200}]},
+            )
+            write_object(
+                200,
+                "Subtitle Track",
+                {
+                    "m_Clips": [{
+                        "m_Start": 1.5,
+                        "m_Duration": 2.0,
+                        "m_Asset": {"m_PathID": 300},
+                    }]
+                },
+            )
+            write_object(
+                300,
+                "SubtitlePlayableAsset",
+                {"_textId": "fmv_fixture_01"},
+            )
+            definition = {
+                "sources": [{
+                    "asset": (
+                        "export_full/recovered/AnimeStudio-cli/"
+                        "StreamingAssets/json_by_type/MonoBehaviour/"
+                        "fmv_fixture.json"
+                    ),
+                    "defaultPlayablePathId": 100,
+                    "defaultPlayableSourceFile": "CAB-fixture",
+                }]
+            }
+            with patch.object(
+                video_bindings,
+                "MONOBEHAVIOUR_DIRS",
+                (mono, persistent),
+            ):
+                evidence = (
+                    video_bindings.collect_definition_timeline_evidence(
+                        definition
+                    )
+                )
+            self.assertEqual(evidence["trackCount"], 1)
+            self.assertEqual(evidence["clipCount"], 1)
+            self.assertEqual(evidence["subtitleClipCount"], 1)
+            self.assertEqual(
+                evidence["subtitleTextIds"],
+                ["fmv_fixture_01"],
+            )
+            self.assertFalse(evidence["placementEvidence"])
 
 
 if __name__ == "__main__":

@@ -3152,6 +3152,14 @@ def _load_narrative_video_assets() -> list[dict]:
                             if isinstance(value, int)
                         ],
                         "placementEvidence": False,
+                        "timelineEvidence": (
+                            definition.get("timelineEvidence")
+                            if isinstance(
+                                definition.get("timelineEvidence"),
+                                dict,
+                            )
+                            else {}
+                        ),
                         "evidence": [
                             source
                             for source in (

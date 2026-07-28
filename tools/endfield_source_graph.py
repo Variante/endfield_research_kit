@@ -9517,7 +9517,19 @@ class SourceGraphBuilder:
                         "sourceCount": len(
                             definition.get("sources") or []
                         ),
-                        "hasAuthoritativeBinding": fmv_id in bindings,
+                        "authoritativeBindingFmvId": definition.get(
+                            "authoritativeBindingFmvId"
+                        ),
+                        "hasAuthoritativeBinding": bool(
+                            definition.get(
+                                "authoritativeBindingFmvId"
+                            )
+                        ),
+                        "timelineEvidence": compact_payload(
+                            definition.get("timelineEvidence") or {},
+                            depth=3,
+                            list_limit=80,
+                        ),
                     },
                 )
                 self.add_edge(
@@ -9534,12 +9546,88 @@ class SourceGraphBuilder:
                     kind="fmv_definition_id",
                     source="video_bindings",
                 )
+                authoritative_binding_id = safe_key(
+                    definition.get("authoritativeBindingFmvId")
+                )
+                if authoritative_binding_id:
+                    binding_node = self.add_node(
+                        "fmv_binding",
+                        authoritative_binding_id,
+                        name=authoritative_binding_id,
+                        source="video_bindings",
+                    )
+                    self.add_edge(
+                        definition_node,
+                        binding_node,
+                        "fmv_definition_has_authoritative_binding",
+                        source="video_bindings",
+                        evidence="authoritativeBindingFmvId",
+                        data={
+                            "placementEvidence": False,
+                            "genderVariant": (
+                                authoritative_binding_id != fmv_id
+                            ),
+                        },
+                    )
                 for numeric_id in definition.get("numericIds") or []:
                     self.add_alias(
                         f"fmv_id:{numeric_id}",
                         definition_node,
                         kind="fmv_numeric_id",
                         source="video_bindings",
+                    )
+                timeline_evidence = (
+                    definition.get("timelineEvidence")
+                    if isinstance(
+                        definition.get("timelineEvidence"), dict
+                    )
+                    else {}
+                )
+                for text_index, text_id in enumerate(
+                    timeline_evidence.get("subtitleTextIds") or []
+                ):
+                    text_key = safe_key(text_id)
+                    if not text_key:
+                        continue
+                    text_node = self.add_node(
+                        "text_key",
+                        text_key,
+                        name=text_key,
+                        source="video_bindings",
+                    )
+                    self.add_edge(
+                        definition_node,
+                        text_node,
+                        "fmv_definition_subtitle_text",
+                        source="video_bindings",
+                        evidence=(
+                            f"timelineEvidence.subtitleTextIds"
+                            f"[{text_index}]"
+                        ),
+                        data={"placementEvidence": False},
+                    )
+                for audio_index, audio_id in enumerate(
+                    timeline_evidence.get("audioEventKeys") or []
+                ):
+                    audio_key = safe_key(audio_id)
+                    if not audio_key:
+                        continue
+                    audio_node = self.add_node(
+                        "audio",
+                        audio_key,
+                        name=audio_key,
+                        source="video_bindings",
+                    )
+                    self.add_edge(
+                        definition_node,
+                        audio_node,
+                        "fmv_definition_audio_event",
+                        source="video_bindings",
+                        evidence=(
+                            f"timelineEvidence.audioEventKeys"
+                            f"[{audio_index}]"
+                        ),
+                        data={"placementEvidence": False},
                     )
                 for video_index, video_path in enumerate(
                     definition.get("videos") or []
@@ -32261,6 +32349,9 @@ VIDEO_USAGE_EDGE_KINDS = (
     "video_has_fmv_definition",
     "fmv_definition_source_file",
     "fmv_definition_pathid",
+    "fmv_definition_has_authoritative_binding",
+    "fmv_definition_subtitle_text",
+    "fmv_definition_audio_event",
     "fmv_binding_targets_story",
     "story_has_fmv_binding",
     "fmv_binding_in_mission",

@@ -3982,10 +3982,32 @@ Current main-story priorities:
    MissionRuntime, client-binary, or metadata consumer. Their video contents
    visually resemble mission briefings, but that observation is not original
    placement evidence. `video_bindings.json` now retains all `72` exported
-   FMV definitions separately from the `60` authoritative bindings; `59`
-   definition-only ids never create Story or mission edges. Standalone WebUI
+   FMV definitions separately from the `60` authoritative bindings. After
+   resolving `46` female/male config variants through an already-authoritative
+   canonical base binding, only `13` definitions have no binding; they never
+   create Story or mission edges. Standalone WebUI
    cards expose this distinction, and the source graph builder mirrors it
    through `fmv_definition` nodes with `placementEvidence=false`.
+
+   The 13-row definition-only audit is now structurally complete. Only
+   `cs_video_e1m3_3` has an exported/current VFS movie. `cs_video_e5m2_3`
+   retains two audio/music clips but no subtitle or movie;
+   `f/m_cs_video_{c35m4_liinoshow,e4m2_1}` retain gender-specific audio/music
+   configs but no movie. Seven legacy `fmv_*` configs retain exact numeric ids
+   and audio events; `fmv_e0m1_{1,3,4}` additionally carry 46 ordered subtitle
+   clip ids. None of those 46 ids exists in the current StreamingAssets or
+   Persistent Table export, and none of the 12 non-`e1m3_3` definitions has a
+   filename in any of the installed client's 579 `Video`/`AuditVideo` chunks.
+   A control query finds `cs_video_e1m3_3`, so the zero result is not a broken
+   VFS filter. Of 19 exact audio-event ids across the 13 definitions, seven
+   remain registered in current Wwise metadata and four resolve decoded media:
+   the c35 Liino-show SFX/voice, e4m2_1 SFX, and seven e2m8_2 SFX media. Those
+   audio dependencies recover surviving components but do not supply the
+   missing movie, subtitle localization, consumer, or placement. These are
+   retained authored definitions from unavailable media, not recoverable
+   current-build Story playback. The generated video-binding report and source
+   graph preserve their exact tracks, clip timing, subtitle ids, audio events,
+   config files, and PathIDs without inventing content or mission placement.
 9. The inter-mission graph is now recovered from cross-mission state
    conditions and is complete with respect to that evidence class: 153 edges,
    zero dangling targets, zero unclassified operands, and the one mission-level
