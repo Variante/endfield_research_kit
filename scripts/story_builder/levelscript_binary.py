@@ -667,6 +667,17 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "CheckBoolIfTrue",
     },
+    (0x09B9, 0x00): {
+        "label": "actionbase-exit-level-custom-performance",
+        "confidence": "high",
+        "note": (
+            "compact MemoryPack tag 0xb9 with member count 0x09 maps to "
+            "ExitLevelCustomPerformance; 0x09b9/0x00 is the legacy parser's "
+            "combined observed pair"
+        ),
+        "actionBaseAction": "ExitLevelCustomPerformance",
+        "presentationRole": "exit-level-custom-performance",
+    },
     (0x04B8, 0x09): {
         "label": "uid-keyed-control",
         "confidence": "low",
@@ -682,6 +693,7 @@ LEVELSCRIPT_RECORD_HINTS = {
 LEVELSCRIPT_RECORD_TAG_HINTS = {
     (0x0020, 0x0B): LEVELSCRIPT_RECORD_HINTS[(0x0B20, 0x00)],
     (0x0052, 0x09): LEVELSCRIPT_RECORD_HINTS[(0x0952, 0x00)],
+    (0x00B9, 0x09): LEVELSCRIPT_RECORD_HINTS[(0x09B9, 0x00)],
     (0x0003, 0x0A): LEVELSCRIPT_RECORD_HINTS[(0x0A03, 0x00)],
     (0x00ED, 0x0B): LEVELSCRIPT_RECORD_HINTS[(0x0BED, 0x00)],
 }
@@ -4471,6 +4483,28 @@ def _decode_npc_patrol_start_action(payload: bytes) -> dict[str, Any]:
     }
 
 
+def _decode_exit_level_custom_performance_action(
+    payload: bytes,
+) -> dict[str, Any]:
+    """Decode the current action's sole authored ``Param<uint>`` handle."""
+    if (
+        len(payload) != 17
+        or payload[0] != 0x04
+        or payload[5:17] != b"\xff" * 12
+    ):
+        return {}
+    return {
+        "payloadShape": "uint-handle-with-unset-param-tail-exact-eof",
+        "handle": {
+            "serializedConstValue": struct.unpack_from("<I", payload, 1)[0],
+            "idRef": -1,
+            "paramSource": -1,
+            "path": None,
+        },
+        "consumedBytes": len(payload),
+    }
+
+
 def _decode_entity_compare_getter(payload: bytes, property_outputs: list[dict]) -> dict[str, Any]:
     """Decode the exact current-build EntityCompare ScriptEntityPtr operand.
 
@@ -5227,6 +5261,12 @@ def decode_levelscript_record_payload(
         npc_patrol_start = _decode_npc_patrol_start_action(payload)
         if npc_patrol_start:
             out["npcPatrolStart"] = npc_patrol_start
+    if semantic_key == (0x00B9, 0x09):
+        exit_custom_performance = _decode_exit_level_custom_performance_action(
+            payload
+        )
+        if exit_custom_performance:
+            out["exitLevelCustomPerformance"] = exit_custom_performance
     if semantic_key == (0x0166, 0x0A):
         list_add = _decode_list_add_value_entity_ptr(payload)
         if list_add:

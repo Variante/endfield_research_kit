@@ -973,6 +973,60 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertEqual(0x20, shared_record["unionTag"])
         self.assertEqual(0x0B, shared_record["serializedMemberCount"])
 
+    def test_compact_exit_level_custom_performance_is_exact_cleanup_action(self):
+        data = bytearray(47)
+        data[0] = 0xB9
+        data[1] = 0x09
+        data[2] = 0
+        data[3:7] = (5).to_bytes(4, "little")
+        data[7] = 0
+        data[8:12] = (8).to_bytes(4, "little")
+        data[12:20] = b"604fd823"
+        data[20:24] = (1).to_bytes(4, "little")
+        data[24] = 1
+        data[25] = 1
+        data[26:30] = (-1).to_bytes(4, "little", signed=True)
+        data[30] = 0x04
+        data[31:35] = (0).to_bytes(4, "little")
+        data[35:47] = b"\xff" * 12
+
+        record = _decode_uid_record(bytes(data), 12, "604fd823")
+        detail = decode_levelscript_record_payload(
+            bytes(data),
+            record,
+            next_start=len(data),
+            action_map_role="actionList#1 root",
+        )
+
+        self.assertEqual(0x09B9, record["code"])
+        self.assertEqual(0xB9, record["unionTag"])
+        self.assertEqual(0x09, record["serializedMemberCount"])
+        self.assertEqual(
+            "ExitLevelCustomPerformance",
+            levelscript_native_action_name(record),
+        )
+        self.assertEqual(
+            "presentation_cleanup",
+            classify_levelscript_record(record),
+        )
+        self.assertEqual(
+            "actionbase-exit-level-custom-performance",
+            detail["label"],
+        )
+        self.assertEqual(
+            {
+                "payloadShape": "uint-handle-with-unset-param-tail-exact-eof",
+                "handle": {
+                    "serializedConstValue": 0,
+                    "idRef": -1,
+                    "paramSource": -1,
+                    "path": None,
+                },
+                "consumedBytes": 17,
+            },
+            detail["exitLevelCustomPerformance"],
+        )
+
     def test_uid_parser_accepts_dont_log_and_wide_compact_member_count(self):
         compact = bytearray(30)
         compact[0] = 0x8A
