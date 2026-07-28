@@ -2041,7 +2041,9 @@ gameplay-video OCR/audio workflow.
   `0x0413/0x0a` `SetIntIncrease`. Compact-u8 records must first be normalized
   from the legacy combined `(memberCount << 8) | tag` code: for example,
   raw `0x09b9/0x00` is tag `0x00b9` with nine members and maps exactly to
-  `ExitLevelCustomPerformance`, not to an unknown high opcode. High
+  `ExitLevelCustomPerformance`, not to an unknown high opcode. Other exact
+  presentation-chain mappings include `0x04ca/0x09`
+  `ToggleClearScreenButRadio` and `0x02fe/0x0a` `MainCharMoveTo`. High
   event/gate/terminal records such as `0x0a03/0x00`, `0x0bed/0x00`, current
   trigger events `0x12be/0x00` and `0x12c0/0x00`, dialog exit
   `0x1355/0x00`, and quest-state change `0x1385/0x00` are outside that

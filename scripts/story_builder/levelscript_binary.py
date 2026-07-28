@@ -396,6 +396,25 @@ LEVELSCRIPT_RECORD_HINTS = {
         "note": "current installed ActionBase formatter tag maps this code to WaitForNpcProxyReady",
         "actionBaseAction": "WaitForNpcProxyReady",
     },
+    (0x02FE, 0x0A): {
+        "label": "actionbase-main-char-move-to",
+        "confidence": "high",
+        "note": (
+            "current installed ActionBase formatter tag maps this code to "
+            "MainCharMoveTo; generated setters name _endPos and _groundedMoveGait"
+        ),
+        "actionBaseAction": "MainCharMoveTo",
+    },
+    (0x04CA, 0x09): {
+        "label": "actionbase-toggle-clear-screen-but-radio",
+        "confidence": "high",
+        "note": (
+            "current installed ActionBase formatter tag maps this code to "
+            "ToggleClearScreenButRadio; its generated setter names _isShow"
+        ),
+        "actionBaseAction": "ToggleClearScreenButRadio",
+        "presentationRole": "toggle-clear-screen-but-radio",
+    },
     (0x0376, 0x0C): {
         "label": "actionbase-preload-cutscene",
         "confidence": "high",
@@ -4505,6 +4524,44 @@ def _decode_exit_level_custom_performance_action(
     }
 
 
+def _decode_toggle_clear_screen_but_radio_action(
+    payload: bytes,
+) -> dict[str, Any]:
+    """Decode the current action's sole authored ``Param<bool> _isShow``."""
+    is_show = _decode_bool_param(payload, 0)
+    if is_show is None or is_show[1] != len(payload):
+        return {}
+    return {
+        "payloadShape": "is-show-bool-param-exact-eof",
+        "isShow": is_show[0],
+        "consumedBytes": is_show[1],
+    }
+
+
+def _decode_main_char_move_to_action(payload: bytes) -> dict[str, Any]:
+    """Decode ``_endPos`` and ``_groundedMoveGait`` for the current action."""
+    if len(payload) < 13 or payload[0] != 0x04:
+        return {}
+    end_pos = {
+        "x": _round_float(struct.unpack_from("<f", payload, 1)[0]),
+        "y": _round_float(struct.unpack_from("<f", payload, 5)[0]),
+        "z": _round_float(struct.unpack_from("<f", payload, 9)[0]),
+    }
+    end_pos_tail = _decode_param_tail(payload, 13)
+    if end_pos_tail is None:
+        return {}
+    end_pos_detail, cursor = end_pos_tail
+    gait = _decode_i32_param(payload, cursor)
+    if gait is None or gait[1] != len(payload):
+        return {}
+    return {
+        "payloadShape": "end-pos-vector3-and-grounded-gait-exact-eof",
+        "endPos": {**end_pos, **end_pos_detail},
+        "groundedMoveGait": gait[0],
+        "consumedBytes": gait[1],
+    }
+
+
 def _decode_entity_compare_getter(payload: bytes, property_outputs: list[dict]) -> dict[str, Any]:
     """Decode the exact current-build EntityCompare ScriptEntityPtr operand.
 
@@ -5267,6 +5324,16 @@ def decode_levelscript_record_payload(
         )
         if exit_custom_performance:
             out["exitLevelCustomPerformance"] = exit_custom_performance
+    if semantic_key == (0x04CA, 0x09):
+        toggle_clear_screen = _decode_toggle_clear_screen_but_radio_action(
+            payload
+        )
+        if toggle_clear_screen:
+            out["toggleClearScreenButRadio"] = toggle_clear_screen
+    if semantic_key == (0x02FE, 0x0A):
+        main_char_move_to = _decode_main_char_move_to_action(payload)
+        if main_char_move_to:
+            out["mainCharMoveTo"] = main_char_move_to
     if semantic_key == (0x0166, 0x0A):
         list_add = _decode_list_add_value_entity_ptr(payload)
         if list_add:
