@@ -27,14 +27,65 @@ from scripts.story_builder.levelscript_binary import (
     levelscript_native_header_name,
 )
 from scripts.story_builder.mission_recovery import (
+    enrich_source_backed_scene_edge_context,
     is_call_server_self_uid_callback,
     is_play_dialog_hide_non_identifier_payload,
+    typed_cutscene_single_char_parameter_action,
     source_backed_call_server_callbacks_from_scene_graph,
     source_backed_hash_terminals_from_scene_graph,
 )
 
 
 class MissionFlowLevelScriptEventTests(unittest.TestCase):
+    def test_timeline_scene_edges_receive_only_exact_graph_context(self):
+        timeline = {
+            "sourceBackedSceneEdges": [
+                {
+                    "from": "state",
+                    "to": "dlg_testm1_1",
+                    "kind": "levelscriptChain",
+                },
+                {
+                    "from": "state",
+                    "to": "dlg_testm1_2",
+                    "kind": "levelscriptChain",
+                },
+            ],
+        }
+        graph = {
+            "edges": [
+                {
+                    "from": "state",
+                    "to": "dlg_testm1_1",
+                    "kind": "levelscriptChain",
+                    "sourceActions": ["StartDialogAction"],
+                    "sourceActionClasses": ["play_dialog"],
+                },
+                {
+                    "from": "state",
+                    "to": "dlg_testm1_2",
+                    "kind": "authoredDirect",
+                    "sourceEvents": ["LevelEvent_OnCustomEvent"],
+                },
+            ],
+        }
+        self.assertEqual(
+            1,
+            enrich_source_backed_scene_edge_context(timeline, graph),
+        )
+        self.assertEqual(
+            ["StartDialogAction"],
+            timeline["sourceBackedSceneEdges"][0]["sourceActions"],
+        )
+        self.assertEqual(
+            ["play_dialog"],
+            timeline["sourceBackedSceneEdges"][0]["sourceActionClasses"],
+        )
+        self.assertNotIn(
+            "sourceEvents",
+            timeline["sourceBackedSceneEdges"][1],
+        )
+
     def test_prepared_control_context_reuses_typed_record_decodes(self):
         header = {
             "code": 0x1052,
@@ -1209,29 +1260,139 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
 
     def test_play_dialog_hide_punctuation_payload_is_not_a_graph_node(self):
         step = {
+            "payloads": [
+                {
+                    "text": "#",
+                    "nodeKey": "#",
+                    "kind": "levelscriptSymbol",
+                },
+                {
+                    "text": "dlg_sm2l5m1_7",
+                    "sceneKey": "dlg_sm2l5m1_7",
+                    "nodeKey": "dlg_sm2l5m1_7",
+                    "kind": "runtimeDialog",
+                },
+            ],
             "_debug": {
                 "source": {
                     "code": "0x035a",
                     "kind": "0x0f",
                     "uid": "15196cb4",
+                    "actionMapRole": "actionList#1 root",
                 },
             },
         }
         self.assertTrue(is_play_dialog_hide_non_identifier_payload("#", step))
+        self.assertTrue(is_play_dialog_hide_non_identifier_payload("%", step))
         self.assertFalse(
             is_play_dialog_hide_non_identifier_payload("#a354645e", step)
         )
+        step_without_dialog = {
+            **step,
+            "payloads": [step["payloads"][0]],
+        }
+        self.assertFalse(
+            is_play_dialog_hide_non_identifier_payload("#", step_without_dialog)
+        )
+        step_with_header_membership = {
+            **step,
+            "_debug": {
+                "source": {
+                    **step["_debug"]["source"],
+                    "actionMapRole": "headerList#1",
+                },
+            },
+        }
+        self.assertFalse(
+            is_play_dialog_hide_non_identifier_payload(
+                "#",
+                step_with_header_membership,
+            )
+        )
         other_action = {
+            "payloads": step["payloads"],
             "_debug": {
                 "source": {
                     "code": "0x0357",
                     "kind": "0x14",
                     "uid": "15196cb4",
+                    "actionMapRole": "actionList#1 root",
                 },
             },
         }
         self.assertFalse(
             is_play_dialog_hide_non_identifier_payload("#", other_action)
+        )
+
+    def test_typed_cutscene_single_char_parameter_is_not_a_graph_node(self):
+        step = {
+            "payloads": [
+                {
+                    "text": "P",
+                    "nodeKey": "P",
+                    "kind": "levelscriptSymbol",
+                },
+                {
+                    "text": "cutscene_e6m1_2_1",
+                    "sceneKey": "cutscene_e6m1_2_1",
+                    "nodeKey": "cutscene_e6m1_2_1",
+                    "kind": "cutscene",
+                },
+            ],
+            "_debug": {
+                "source": {
+                    "code": "0x049c",
+                    "kind": "0x12",
+                    "uid": "63889ee7",
+                    "actionMapRole": "actionList#1 root",
+                },
+            },
+        }
+        self.assertEqual(
+            "StartCutsceneAndHideSceneObjectAction",
+            typed_cutscene_single_char_parameter_action("P", step),
+        )
+        self.assertEqual(
+            "",
+            typed_cutscene_single_char_parameter_action(
+                "cutscene_e6m1_2_1",
+                step,
+            ),
+        )
+        self.assertEqual(
+            "",
+            typed_cutscene_single_char_parameter_action("parameterName", step),
+        )
+        step["_debug"]["source"]["code"] = "0x0357"
+        step["_debug"]["source"]["kind"] = "0x14"
+        self.assertEqual(
+            "",
+            typed_cutscene_single_char_parameter_action("P", step),
+        )
+        step["_debug"]["source"]["code"] = "0x049c"
+        step["_debug"]["source"]["kind"] = "0x12"
+        step["_debug"]["source"]["actionMapRole"] = "headerList#1"
+        self.assertEqual(
+            "",
+            typed_cutscene_single_char_parameter_action("P", step),
+        )
+
+    def test_story_boundary_context_actions_use_formatter_names(self):
+        self.assertEqual(
+            "AddCameraControlState",
+            levelscript_native_action_name({
+                "layout": "plain",
+                "code": 0x0F0B,
+                "kind": 0,
+            }),
+        )
+        self.assertEqual(
+            "RequireSettlementShow",
+            levelscript_native_action_name({
+                "layout": "fa",
+                "code": 0x0392,
+                "kind": 0x0B,
+            }),
         )
 
     def test_uid_parser_accepts_dont_log_and_wide_compact_member_count(self):
