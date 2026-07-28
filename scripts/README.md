@@ -595,6 +595,10 @@ Expected active inputs and outputs:
   `ActivityConditionalMultiStageTable`, and `DungeonTable` cross-references are
   retained as non-owning prerequisite/association/scene-host evidence. Blank
   `rankRelatedId` values and name similarity do not create edges.
+  `QuestStateEqual` (18) and `MissionStateEqual` (19) identify only the quest
+  or mission state that gates SubGame availability; `CheckPassGameMechanicsId`
+  (5031) identifies a preceding challenge. None makes the gated SubGame's
+  Story playback mission-owned.
   A separate exact-runtime-receiver inventory organizes unlinked playback under
   current-build serialized event selectors without changing mission ownership.
   The current CN payload has 182 nodes, 182 unique Story files, and 210

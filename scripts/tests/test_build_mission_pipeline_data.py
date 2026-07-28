@@ -1730,6 +1730,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "conditionType": 18,
                     "parameter": [{"valueStringList": ["testm1_q#2", "0"]}],
                 },
+                "fixture_mission_condition": {
+                    "conditionId": "fixture_mission_condition",
+                    "gameMechanicsId": "missionless_test",
+                    "conditionType": 19,
+                    "parameter": [{"valueStringList": ["testm1", "0"]}],
+                },
             }), encoding="utf-8")
             dungeon_table.write_text(json.dumps({
                 "missionless_test": {
@@ -1821,7 +1827,18 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             self.assertFalse(runtime_node["storyBinding"])
             self.assertEqual(
                 [row["relation"] for row in runtime_node["associations"]],
-                ["activity_stage_mission_association", "subgame_unlock_quest_prerequisite"],
+                [
+                    "activity_stage_mission_association",
+                    "subgame_unlock_quest_prerequisite",
+                    "subgame_unlock_mission_prerequisite",
+                ],
+            )
+            mission_prerequisite = runtime_node["associations"][2]
+            self.assertEqual(mission_prerequisite["targetType"], "mission")
+            self.assertEqual(mission_prerequisite["targetId"], "testm1")
+            self.assertEqual(
+                mission_prerequisite["conditionTypeName"],
+                "MissionStateEqual",
             )
             self.assertTrue(all(not row["ownership"] for row in runtime_node["associations"]))
             self.assertEqual(runtime_node["sceneHosts"][0]["sceneId"], "dung_fixture")

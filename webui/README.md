@@ -439,7 +439,9 @@ available through expandable guidance.
   Missionless rows are still useful: when the same `bindScriptId` occurs on an
   exact decoded native Story-playback action, the global boundary panel shows a
   missionless `SubGame -> script -> playback -> Story` node. These nodes remain
-  outside mission-connected Story coverage. Dashed edges show only exact non-
+  outside mission-connected Story coverage. Exact quest/mission-state unlock
+  prerequisites are labeled as SubGame availability context and never as
+  playback ownership or activation. Dashed edges show only exact non-
   owning cross-references from the activity-stage and GameMechanic condition
   tables; naming and blank association fields remain invisible.
   The same boundary panel separately renders exact serialized runtime-receiver

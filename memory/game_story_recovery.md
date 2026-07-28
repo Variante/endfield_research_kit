@@ -1813,9 +1813,13 @@ Current binary-first negative audits further constrain the residual set:
   census adds no owner. The ten primary task ids occur only in their SubGame
   rows and `ScriptTaskExtraInfoTable`; three secondary task ids occur only in
   the display table, and the already complete receiver-task audit has zero
-  MissionRuntime consumers. Boss `e1m8_q#4` is only one unlock prerequisite,
-  five other boss rows carry only prior-challenge gates, and dungeon
-  series/scene/reward records contain no mission or quest owner. The exact
+  MissionRuntime consumers. Boss `e1m8_q#4` and mission `e3m5` are exact
+  `QuestStateEqual`/`MissionStateEqual` unlock prerequisites for the first
+  tiers of their respective boss-rush SubGames; the latter now appears on
+  `dung01_bossrush03_01 -> bindScriptId 17500000002 ->
+  cutscene_e3m5_1` as availability context only. Five other boss rows carry
+  only prior-challenge gates, and dungeon series/scene/reward records contain
+  no playback owner. The exact
   activity-stage-6 mission/rank association remains separate in native runtime
   storage. The activity stage-3/4 rows do name `a1m6d3/a1m6d4`, but serialize
   no `rankRelatedId` or other exact reference to

@@ -138,6 +138,7 @@
       trackingContextOnly: "HUD/map tracking context only",
       nonOwningCrossReference: "non-owning original-data cross-reference",
       unlockQuestPrerequisite: "unlock quest prerequisite",
+      unlockMissionPrerequisite: "unlock mission-state prerequisite",
       unlockPreviousSubGame: "prior challenge prerequisite",
       activityStageAssociation: "activity-stage association",
       activityStageLevel: "exact activity quest level",
@@ -553,6 +554,7 @@
       trackingContextOnly: "仅 HUD/地图追踪上下文",
       nonOwningCrossReference: "不表示所有权的原始数据交叉参考",
       unlockQuestPrerequisite: "解锁任务前置条件",
+      unlockMissionPrerequisite: "解锁使命状态前置条件",
       unlockPreviousSubGame: "前一挑战前置条件",
       activityStageAssociation: "活动阶段关联",
       search: "搜索任务",
@@ -2474,6 +2476,7 @@
           const sceneHosts = (row.sceneHosts || []).filter((host) => host && (host.sceneId || host.levelId));
           const associationLabel = (relation) => ({
             subgame_unlock_quest_prerequisite: t("unlockQuestPrerequisite"),
+            subgame_unlock_mission_prerequisite: t("unlockMissionPrerequisite"),
             subgame_unlock_previous_game_mechanic: t("unlockPreviousSubGame"),
             activity_stage_mission_association: t("activityStageAssociation"),
           })[relation] || t("nonOwningCrossReference");
