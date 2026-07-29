@@ -2363,6 +2363,27 @@ gameplay-video OCR/audio workflow.
 
   The current 7.24 GB structured/object census plus the 280 MB native scan
   takes about nine minutes on this checkout and is not part of `export.bat`.
+- `story_recovery/build_world_streaming_story_selector_audit.py`: closes the
+  skipped binary-scene variant for the three unresolved CutsceneRoot selectors.
+  It first validates both complete AnimeStudio object-index publications and
+  searches resolved script/type identities plus distinctive nested
+  Encounter/BattlerStage fields. It then uses AnimeStudio `stream` to scan the
+  current `Streaming` and `DynamicStreaming` VFS blocks in place, including the
+  effective Persistent overlay with StreamingAssets fallback. Exact patterns
+  cover each root and all 34 registered resource paths as UTF-8/ASCII and
+  UTF-16LE, plus both byte orders of every registered `StringPathHash`.
+  Results and corpus fingerprints go to
+  `reports/story/recovery/world_streaming_story_selector_audit.{json,md}`:
+
+  ```bat
+  python scripts\story_recovery\build_world_streaming_story_selector_audit.py
+  ```
+
+  This standalone audit takes about four minutes on the current checkout and
+  is not part of `export.bat`. A zero result closes exact selectors only; it
+  does not rule out transformed nested identities, runtime/server construction,
+  or future data, and never creates ownership or order from world-file
+  co-location.
 - `story_recovery/build_compress_data_story_audit.py`: replaces the raw-byte
   `CompressData.bin` probe with a full logical decode. It hash-gates the current
   `DataCompressManager` native mapping, validates the count/absolute-offset

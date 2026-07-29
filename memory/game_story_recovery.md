@@ -3067,6 +3067,31 @@ BattlerStage as **present in code, absent from data** and do not reopen it unles
 a future build ships the authored records or a header with tag `0x4b` appears in
 a `headerList`.
 
+The newer complete AnimeStudio object indexes and skipped-world-byte stream
+now close the previously untested binary-scene variant for the three remaining
+CutsceneRoot selectors. The validated indexes contain 1,218,871
+StreamingAssets objects and 116,579 Persistent objects, plus 1,018
+MonoScripts in each source. Across all rows there are zero resolved
+`Encounter`, `BattlerStage`, or `BossBattlerData` script/type identities and
+zero distinctive nested leaves such as `operaSegments`, `stageDataList`, or
+`completeDelayMode`.
+
+The maintained `build_world_streaming_story_selector_audit.py` then streams
+the normally skipped `Streaming` and `DynamicStreaming` blocks without
+materializing them. It checks 142 exact forms: the three root names and all 34
+registered resource paths as UTF-8/ASCII and UTF-16LE, plus both byte orders of
+all 34 `StringPathHash` values. Current StreamingAssets yields 53,206 files /
+752,851,287 bytes and the effective Persistent overlay with Streaming fallback
+yields 53,206 files / 752,882,465 bytes. Both return **zero exact hits**.
+
+This closes exact current Unity-object and world-streaming selectors for those
+three roots. It does not rule out an identity transformed inside an unknown
+nested format, indirect runtime construction, server-provided state, or a
+future build. Do not infer that all Encounter/BattlerStage data is universally
+absent, and do not promote world-file co-location into ownership or chronology.
+The corpus fingerprints and exact boundary are in
+`reports/story/recovery/world_streaming_story_selector_audit.{json,md}`.
+
 ### The two native lanes, re-scanned in both directions
 
 The "no bridge between the two native lanes" negative was recorded from a scan
@@ -3932,8 +3957,12 @@ Current main-story priorities:
    was repeated in both directions with generic instantiations named over
    1,662,080 resolved calls, and the Lua surface was re-queried by global-event
    subscription name instead of by id. See the two sections above for the
-   enumerated edges and the `MessageConst` vocabulary. Indirect dispatch and
-   other shipped serialized consumer registries remain the original-data
+   enumerated edges and the `MessageConst` vocabulary. The exact world-byte
+   consumer variant is now closed for the three unresolved CutsceneRoot
+   selectors as well: the complete Unity-object indexes plus current
+   Streaming/DynamicStreaming corpora contain zero exact root, registered path,
+   or hash representations. Indirect dispatch, transformed nested formats,
+   and other shipped serialized consumer registries remain the original-data
    frontier; the negative result must not be filled with OCR or observed
    gameplay.
    The completed NpcProxy selector trace also closes a tempting false bridge:
