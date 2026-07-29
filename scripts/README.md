@@ -2428,7 +2428,13 @@ gameplay-video OCR/audio workflow.
   tempting slot bridge: all 387 mission-controlled roots carry only IdComp,
   MissionControlComp, ResourceComp, and BlightMiasmaComp, with zero
   TriggerComp. The TriggerComp schema contains geometry and a position-list
-  group but no trigger-slot or LevelScript identity.
+  group but no trigger-slot or LevelScript identity. The audit also resolves
+  the event's slot `80001` to the owning LevelScript's exact embedded Leader
+  trigger-volume row. Its fully decoded eight-member schema contains only
+  local flags, slot/count, exit index, and shape geometry; current metadata
+  gives the Leader subtype zero additional fields. With no DynamicScene,
+  mission, quest, or foreign entity identity, this route remains
+  `missionGraphAction=none` and coordinate proximity is not promoted.
 - `story_recovery/build_compress_data_story_audit.py`: replaces the raw-byte
   `CompressData.bin` probe with a full logical decode. It hash-gates the current
   `DataCompressManager` native mapping, validates the count/absolute-offset

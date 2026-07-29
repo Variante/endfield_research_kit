@@ -40,6 +40,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
     _decode_bool_param,
     _decode_u64_param,
     _record_payload_window,
+    decode_levelscript_binary_file,
     extract_levelscript_uid_records,
     levelscript_action_map_membership,
 )
@@ -91,6 +92,29 @@ ACTION_SCHEMAS = {
     },
 }
 MAPPING_ID = "current-global-metadata-dynamic-scene-decoration-action-fields"
+TRIGGER_VOLUME_SCHEMA_MAPPING_ID = (
+    "current-global-metadata-levelscript-trigger-volume-data-fields"
+)
+TRIGGER_VOLUME_BASE_FIELDS = [
+    "isImportant",
+    "waitSrvRes",
+    "enterCheckOnGround",
+    "triggerOnPole",
+    "slotId",
+    "triggerCountLimit",
+    "exitShapeStartIndex",
+    "shapeList",
+]
+TRIGGER_VOLUME_SERIALIZED_FIELDS = [
+    "enterCheckOnGround",
+    "exitShapeStartIndex",
+    "isImportant",
+    "shapeList",
+    "slotId",
+    "triggerCountLimit",
+    "triggerOnPole",
+    "waitSrvRes",
+]
 
 
 def _safe_text(value: Any) -> str:
@@ -232,6 +256,82 @@ def shared_control_paths(
     return out
 
 
+def classify_local_trigger_volume_context(
+    decoded: dict[str, Any],
+    selector_slot_ids: list[int],
+) -> dict[str, Any]:
+    """Join exact event selectors to embedded same-LevelScript trigger volumes."""
+    unique_slots = sorted(set(selector_slot_ids))
+    details = decoded.get("triggerVolumesDetails") or {}
+    by_slot = {
+        int(volume["slotId"]): volume
+        for volume in details.get("volumes") or []
+        if isinstance(volume, dict) and isinstance(volume.get("slotId"), int)
+    }
+    matches = [by_slot[slot_id] for slot_id in unique_slots if slot_id in by_slot]
+    missing = [slot_id for slot_id in unique_slots if slot_id not in by_slot]
+    exact = bool(unique_slots) and not missing and len(matches) == len(unique_slots)
+    return {
+        "status": (
+            "exact_local_levelscript_trigger_volume_without_foreign_identity"
+            if exact
+            else "unresolved_local_levelscript_trigger_volume"
+        ),
+        "selectorSlotIds": unique_slots,
+        "matchedSlotIds": [
+            int(volume["slotId"]) for volume in matches
+        ],
+        "missingSlotIds": missing,
+        "triggerVolumesStatus": decoded.get("triggerVolumesStatus") or "",
+        "triggerVolumesParseStatus": details.get("parseStatus") or "",
+        "triggerVolumesOffsetHex": decoded.get("triggerVolumesOffsetHex") or "",
+        "topLevelSerializedMemberCount": decoded.get("serializedMemberCount"),
+        "scriptIdVerified": bool(decoded.get("scriptIdVerified")),
+        "triggerVolumes": matches,
+        "schema": {
+            "baseType": "Beyond.Gameplay.LevelScriptTriggerVolumeData",
+            "baseDeclaredFieldCount": 8,
+            "baseDeclaredFields": TRIGGER_VOLUME_BASE_FIELDS,
+            "leaderType": (
+                "Beyond.Gameplay.LevelScriptTriggerVolumeDataForLeader"
+            ),
+            "leaderDeclaredFieldCount": 0,
+            "serializedMemberCount": 8,
+            "serializedFields": TRIGGER_VOLUME_SERIALIZED_FIELDS,
+            "mappingId": TRIGGER_VOLUME_SCHEMA_MAPPING_ID,
+        },
+        "dynamicSceneIdentityFieldPresent": False,
+        "missionOrQuestIdentityFieldPresent": False,
+        "foreignKeyBridgeFound": False,
+        "missionGraphAction": "none",
+    }
+
+
+def local_trigger_volume_context(
+    path: Path,
+    script_id: str,
+    shared_paths: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    selector_slot_ids = sorted({
+        slot_id
+        for shared in shared_paths
+        for slot_id in [
+            (shared.get("eventDetail") or {}).get("triggerSlotIdFilter")
+        ]
+        if isinstance(slot_id, int)
+    })
+    if not selector_slot_ids:
+        return None
+    decoded = decode_levelscript_binary_file(path, script_id)
+    if not decoded:
+        return None
+    return {
+        **classify_local_trigger_volume_context(decoded, selector_slot_ids),
+        "sourceFile": repo_rel(path),
+        "sourceSha256": _sha256(path),
+    }
+
+
 def _effective_path(
     level_id: str,
     script_id: str,
@@ -363,12 +463,14 @@ def build_audit(
                 prepared=parsed["context"],
             )
             story_links: list[dict[str, Any]] = []
+            all_shared_paths: list[dict[str, Any]] = []
             for story_path, _story_parsed, story, story_paths in candidate_story_rows:
                 if story_path != path:
                     continue
                 shared = shared_control_paths(story_paths, action_paths)
                 if not shared:
                     continue
+                all_shared_paths.extend(shared)
                 story_key = _safe_text(story.get("storyKey"))
                 if story_key:
                     shared_story_keys.add(story_key)
@@ -384,6 +486,11 @@ def build_audit(
                 "sourceSha256": _sha256(path),
                 "controlPaths": action_paths,
                 "storyControlPathLinks": story_links,
+                "localTriggerVolumeContext": local_trigger_volume_context(
+                    path,
+                    path.stem,
+                    all_shared_paths,
+                ),
             })
 
         bridge_rows.append({
@@ -419,6 +526,13 @@ def build_audit(
 
     bridge_rows.sort(key=lambda row: (int(row["logicId"]), _safe_text(row["scene"])))
     shared_rows = [row for row in bridge_rows if row.get("sharedStoryKeys")]
+    local_trigger_contexts = [
+        context
+        for row in bridge_rows
+        for action in row.get("exactTargetActions") or []
+        for context in [action.get("localTriggerVolumeContext")]
+        if isinstance(context, dict)
+    ]
     shared_story_keys = sorted({
         story_key
         for row in shared_rows
@@ -485,6 +599,18 @@ def build_audit(
             "exactTargetBridgeRootsWithTriggerComp": sum(
                 row.get("triggerCompPresent") is True for row in bridge_rows
             ),
+            "exactLocalLevelScriptTriggerVolumeContexts": sum(
+                context.get("status")
+                == (
+                    "exact_local_levelscript_trigger_volume_without_"
+                    "foreign_identity"
+                )
+                for context in local_trigger_contexts
+            ),
+            "levelScriptTriggerVolumeForeignKeyBridges": sum(
+                context.get("foreignKeyBridgeFound") is True
+                for context in local_trigger_contexts
+            ),
             "missingScriptFiles": len(missing_files),
             "missingStoryRecords": missing_story_records,
             "rejectedTargetActionRecords": sum(rejected.values()),
@@ -504,6 +630,35 @@ def build_audit(
                     "triggerComponentBoundary"
                 ) or {}
             ),
+            "levelScriptTriggerVolumeBoundary": {
+                "classification": (
+                    "exact_local_trigger_geometry_without_dynamic_scene_"
+                    "or_mission_foreign_key"
+                ),
+                "exactContexts": sum(
+                    context.get("status")
+                    == (
+                        "exact_local_levelscript_trigger_volume_without_"
+                        "foreign_identity"
+                    )
+                    for context in local_trigger_contexts
+                ),
+                "foreignKeyBridgeFound": any(
+                    context.get("foreignKeyBridgeFound") is True
+                    for context in local_trigger_contexts
+                ),
+                "schemaMappingId": TRIGGER_VOLUME_SCHEMA_MAPPING_ID,
+                "baseDeclaredFields": TRIGGER_VOLUME_BASE_FIELDS,
+                "leaderDeclaredFieldCount": 0,
+                "serializedFields": TRIGGER_VOLUME_SERIALIZED_FIELDS,
+                "conclusion": (
+                    "The event selector resolves to an embedded same-LevelScript "
+                    "Leader trigger-volume row. Its complete current-build "
+                    "schema contains local slot, flags, count, and geometry only; "
+                    "it has no DynamicScene, mission, quest, or foreign entity "
+                    "identity field."
+                ),
+            },
             "promotionRequirement": (
                 "a typed serialized or runtime edge must show that the "
                 "DynamicScene mission condition activates the matched "
@@ -544,6 +699,14 @@ def render_markdown(report: dict[str, Any]) -> str:
         (
             f"- Story-bearing roots with DynamicScene TriggerComp: "
             f"`{counts.get('storyIdentityRootsWithTriggerComp', 0)}`"
+        ),
+        (
+            f"- Exact embedded LevelScript trigger-volume contexts: "
+            f"`{counts.get('exactLocalLevelScriptTriggerVolumeContexts', 0)}`"
+        ),
+        (
+            f"- Trigger-volume foreign-key bridges: "
+            f"`{counts.get('levelScriptTriggerVolumeForeignKeyBridges', 0)}`"
         ),
         f"- Mission graph action: `{boundary.get('missionGraphAction', 'none')}`",
         "",
@@ -610,6 +773,17 @@ def render_markdown(report: dict[str, Any]) -> str:
             "`TriggerComp` schema contains geometry and a position-list group "
             "but no trigger-slot or LevelScript identity, so slot `80001` "
             "cannot be joined through this component family."
+        ),
+        "",
+        (
+            "The exact `ScriptEvent_OnLeaderEnterTriggerVolume` selector also "
+            "resolves slot `80001` to the owning LevelScript's embedded Leader "
+            "trigger-volume row. The fully decoded row contains only local "
+            "slot/count/flags and shape geometry. Current metadata declares "
+            "eight base fields and zero Leader-specific fields; none carries "
+            "DynamicScene, mission, quest, or foreign entity identity. This "
+            "closes the LevelScript trigger-volume foreign-key route without "
+            "promoting coordinate proximity."
         ),
         "",
         (

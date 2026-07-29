@@ -70,6 +70,8 @@
     "storyOccurrencesWithSharedControlPath": 1,
     "storyIdentityRootsWithTriggerComp": 0,
     "exactTargetBridgeRootsWithTriggerComp": 0,
+    "exactLocalLevelScriptTriggerVolumeContexts": 1,
+    "levelScriptTriggerVolumeForeignKeyBridges": 0,
     "missingScriptFiles": 0,
     "missingStoryRecords": 0,
     "rejectedTargetActionRecords": 2
@@ -319,7 +321,109 @@
                 }
               ]
             }
-          ]
+          ],
+          "localTriggerVolumeContext": {
+            "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+            "selectorSlotIds": [
+              80001
+            ],
+            "matchedSlotIds": [
+              80001
+            ],
+            "missingSlotIds": [],
+            "triggerVolumesStatus": "present",
+            "triggerVolumesParseStatus": "decoded",
+            "triggerVolumesOffsetHex": "0x2c7",
+            "topLevelSerializedMemberCount": 27,
+            "scriptIdVerified": true,
+            "triggerVolumes": [
+              {
+                "offset": "0x2cb",
+                "keySlotId": 80001,
+                "unionTag": 1,
+                "triggerVolumeType": "Leader",
+                "memberCount": 8,
+                "enterCheckOnGround": false,
+                "exitShapeStartIndex": -1,
+                "isImportant": false,
+                "shapeList": {
+                  "offset": "0x2d7",
+                  "status": "present",
+                  "count": 1,
+                  "parseStatus": "decoded",
+                  "shapes": [
+                    {
+                      "offset": "0x2db",
+                      "memberCount": 6,
+                      "shapeTypeRaw": 2,
+                      "shapeType": "Sphere",
+                      "position": {
+                        "x": -757.75,
+                        "y": 234.828,
+                        "z": -1185.85
+                      },
+                      "radius": 59.0,
+                      "rotation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                      },
+                      "size": {
+                        "x": 3.0,
+                        "y": 3.0,
+                        "z": 3.0
+                      },
+                      "polyLinePoints": {
+                        "offset": "0x2dc",
+                        "status": "present",
+                        "count": 0,
+                        "endOffset": "0x2e0"
+                      }
+                    }
+                  ],
+                  "endOffset": "0x30c"
+                },
+                "slotId": 80001,
+                "triggerCountLimit": 1,
+                "triggerOnPole": false,
+                "waitSrvRes": false
+              }
+            ],
+            "schema": {
+              "baseType": "Beyond.Gameplay.LevelScriptTriggerVolumeData",
+              "baseDeclaredFieldCount": 8,
+              "baseDeclaredFields": [
+                "isImportant",
+                "waitSrvRes",
+                "enterCheckOnGround",
+                "triggerOnPole",
+                "slotId",
+                "triggerCountLimit",
+                "exitShapeStartIndex",
+                "shapeList"
+              ],
+              "leaderType": "Beyond.Gameplay.LevelScriptTriggerVolumeDataForLeader",
+              "leaderDeclaredFieldCount": 0,
+              "serializedMemberCount": 8,
+              "serializedFields": [
+                "enterCheckOnGround",
+                "exitShapeStartIndex",
+                "isImportant",
+                "shapeList",
+                "slotId",
+                "triggerCountLimit",
+                "triggerOnPole",
+                "waitSrvRes"
+              ],
+              "mappingId": "current-global-metadata-levelscript-trigger-volume-data-fields"
+            },
+            "dynamicSceneIdentityFieldPresent": false,
+            "missionOrQuestIdentityFieldPresent": false,
+            "foreignKeyBridgeFound": false,
+            "missionGraphAction": "none",
+            "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/map02_lv001/10100282001.json",
+            "sourceSha256": "4bf3c50206608a79553d1e36e61ebeb62fc76133da4b189631aa673b7b9290e7"
+          }
         }
       ],
       "sharedStoryKeys": [
@@ -374,6 +478,34 @@
       "missionOrQuestFieldFound": false,
       "storyFieldFound": false,
       "classification": "no_dynamic_scene_trigger_slot_or_levelscript_carrier"
+    },
+    "levelScriptTriggerVolumeBoundary": {
+      "classification": "exact_local_trigger_geometry_without_dynamic_scene_or_mission_foreign_key",
+      "exactContexts": 1,
+      "foreignKeyBridgeFound": false,
+      "schemaMappingId": "current-global-metadata-levelscript-trigger-volume-data-fields",
+      "baseDeclaredFields": [
+        "isImportant",
+        "waitSrvRes",
+        "enterCheckOnGround",
+        "triggerOnPole",
+        "slotId",
+        "triggerCountLimit",
+        "exitShapeStartIndex",
+        "shapeList"
+      ],
+      "leaderDeclaredFieldCount": 0,
+      "serializedFields": [
+        "enterCheckOnGround",
+        "exitShapeStartIndex",
+        "isImportant",
+        "shapeList",
+        "slotId",
+        "triggerCountLimit",
+        "triggerOnPole",
+        "waitSrvRes"
+      ],
+      "conclusion": "The event selector resolves to an embedded same-LevelScript Leader trigger-volume row. Its complete current-build schema contains local slot, flags, count, and geometry only; it has no DynamicScene, mission, quest, or foreign entity identity field."
     },
     "promotionRequirement": "a typed serialized or runtime edge must show that the DynamicScene mission condition activates the matched LevelScript header/action chain"
   }

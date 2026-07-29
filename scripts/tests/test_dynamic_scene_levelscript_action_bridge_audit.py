@@ -11,6 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.story_recovery.build_dynamic_scene_levelscript_action_bridge_audit import (
+    classify_local_trigger_volume_context,
     decode_decoration_action,
     shared_control_paths,
 )
@@ -117,6 +118,60 @@ class DynamicSceneLevelScriptActionBridgeAuditTests(unittest.TestCase):
             ),
             [],
         )
+
+    def test_local_trigger_volume_is_exact_but_not_a_foreign_key(self) -> None:
+        context = classify_local_trigger_volume_context(
+            {
+                "serializedMemberCount": 27,
+                "scriptIdVerified": True,
+                "triggerVolumesStatus": "present",
+                "triggerVolumesOffsetHex": "0x2c7",
+                "triggerVolumesDetails": {
+                    "parseStatus": "decoded",
+                    "volumes": [
+                        {
+                            "slotId": 80001,
+                            "triggerVolumeType": "Leader",
+                            "memberCount": 8,
+                            "shapeList": {
+                                "shapes": [
+                                    {
+                                        "shapeType": "Sphere",
+                                        "radius": 59.0,
+                                    }
+                                ]
+                            },
+                        }
+                    ],
+                },
+            },
+            [80001],
+        )
+        self.assertEqual(
+            context["status"],
+            "exact_local_levelscript_trigger_volume_without_foreign_identity",
+        )
+        self.assertEqual(context["matchedSlotIds"], [80001])
+        self.assertFalse(context["foreignKeyBridgeFound"])
+        self.assertEqual(context["schema"]["baseDeclaredFieldCount"], 8)
+        self.assertEqual(context["schema"]["leaderDeclaredFieldCount"], 0)
+
+    def test_missing_local_trigger_volume_fails_closed(self) -> None:
+        context = classify_local_trigger_volume_context(
+            {
+                "triggerVolumesStatus": "present",
+                "triggerVolumesDetails": {
+                    "parseStatus": "decoded",
+                    "volumes": [{"slotId": 80002}],
+                },
+            },
+            [80001],
+        )
+        self.assertEqual(
+            context["status"],
+            "unresolved_local_levelscript_trigger_volume",
+        )
+        self.assertEqual(context["missingSlotIds"], [80001])
 
 
 if __name__ == "__main__":
