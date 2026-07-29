@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v52"
+SCHEMA = "sourceStoryGapQueue.v53"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -128,7 +128,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v31"
+    "current-build-offline-story-carrier-exhaustion-v32"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -667,6 +667,94 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
                 "envTalkData": {"envTalkOverrideNpc": True},
                 "dialogExOptionData": [],
                 "dialogId": "dlg_e1m2_6",
+                "missionId": "",
+            },
+        },
+    },
+    "dlg_e2m2_7": {
+        "missionId": "e2m2",
+        "filename": "dlg_e2m2_7_p28BF6C7E795E9C93.json",
+        "sha256":
+            "514C97986686C2C30733D0496511E4F44208A3F6252D95E3F80FEDEF1C82D5D5",
+        "extraConfigFilename":
+            "dlg_e2m2_7_extra_config_pFC77A69216F00A44.json",
+        "extraConfigSha256":
+            "7F88C33446D83009C0D7C3E8C8650743EA0A46DD2D1D07489A2FCE9BC3E824C2",
+        "lineIds": tuple(
+            f"dlg_e2m2_7_{number:03d}" for number in range(1, 13)
+        ),
+        "optionIds": (
+            "option_dlg_e2m2_7_1_001",
+            "option_dlg_e2m2_7_1_002",
+            "option_dlg_e2m2_7_2_001",
+        ),
+        "npcProxyConsumer": {
+            "proxyId": "tata_map01_i002",
+            "entryIndex": 1,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e2m2_7",
+                "missionId": "",
+            },
+        },
+    },
+    "misc_dlg_e2m2_1d5": {
+        "missionId": "e2m2",
+        "registryKey": "dlg_e2m2_1d5",
+        "definitionName": "dlg_e2m2_1d5",
+        "linePrefix": "dlg_e2m2_1d5",
+        "filename": "dlg_e2m2_1d5_p32D55E7FEE2AB358.json",
+        "sha256":
+            "4872E1D7D5AA7B30E36AD86D3AC6AD5DC1C577D33C1A1D5DC88684A1EC3D964B",
+        "extraConfigFilename":
+            "dlg_e2m2_1d5_extra_config_pD4CCA655FC1BBDC9.json",
+        "extraConfigSha256":
+            "AE06AC62D18F6D29C144B410A1280C3DB900EECFF111812EEF49F3EAA208D50F",
+        "lineIds": tuple(
+            f"dlg_e2m2_1d5_{number:03d}" for number in range(1, 12)
+        ),
+        "optionIds": ("option_dlg_e2m2_1d5_1_001",),
+        "npcProxyConsumer": {
+            "proxyId": "fabian_map01_lv005",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e2m2_1d5",
+                "missionId": "",
+            },
+        },
+    },
+    "misc_dlg_e2m2_4d5": {
+        "missionId": "e2m2",
+        "registryKey": "dlg_e2m2_4d5",
+        "definitionName": "dlg_e2m2_4d5",
+        "linePrefix": "dlg_e2m2_4d5",
+        "filename": "dlg_e2m2_4d5_pD12E16AC83FB67E1.json",
+        "sha256":
+            "170B3BC1425BA0786A9273C110B770C9115DFD7043B53C81AC7C9860FB6A2BBD",
+        "extraConfigFilename":
+            "dlg_e2m2_4d5_extra_config_p64CA0B5FC6406B2D.json",
+        "extraConfigSha256":
+            "7884230613647CB1E8CCB771743DCE5DE997D8CDB229C4396A80779570ACC10B",
+        "lineIds": tuple(
+            f"dlg_e2m2_4d5_{number:03d}" for number in range(1, 8)
+        ),
+        "optionIds": (
+            "option_dlg_e2m2_4d5_1_001",
+            "option_dlg_e2m2_4d5_1_002",
+        ),
+        "npcProxyConsumer": {
+            "proxyId": "ailaizha_map01_lv005",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e2m2_4d5",
                 "missionId": "",
             },
         },
@@ -1650,7 +1738,6 @@ OFFLINE_EXHAUSTION_E9M3_RADIOS = frozenset({
     "radio_e9m3_22",
 })
 OFFLINE_EXHAUSTION_E6M3_RADIOS = frozenset({
-    "radio_e6m3_1",
     "radio_e6m3_10d6",
     "radio_e6m3_21",
     "radio_e6m3_22",
@@ -1734,6 +1821,7 @@ OFFLINE_EXHAUSTION_E2M7_RADIOS = frozenset({
     "radio_e2m7_10",
     "radio_e2m7_16",
 })
+OFFLINE_EXHAUSTION_E2M2_RADIOS = frozenset({"radio_e2m2_7"})
 OFFLINE_EXHAUSTION_E5M2_RADIOS = frozenset({"radio_e5m2_3"})
 OFFLINE_EXHAUSTION_E5M1_RADIOS = frozenset({
     "radio_e5m1_7",
@@ -1753,6 +1841,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
+    "e2m2": OFFLINE_EXHAUSTION_E2M2_RADIOS,
     "e2m4": OFFLINE_EXHAUSTION_E2M4_RADIOS,
     "e2m5": OFFLINE_EXHAUSTION_E2M5_RADIOS,
     "e2m6": OFFLINE_EXHAUSTION_E2M6_RADIOS,
@@ -5716,6 +5805,38 @@ def _closed_exact_runtime_config_isolated_scenes(
         "client_action_succeed": (2, "succeed"),
         "client_action_failed": (4, "failed"),
     }
+
+    def append_exact_quest_action(
+        raw_row: dict[str, Any],
+        quest_id: str,
+    ) -> None:
+        scene_key = safe_key(raw_row.get("key"))
+        relation = safe_key(raw_row.get("relation"))
+        expected = expected_quest_actions.get(relation)
+        if (
+            scene_key not in isolated_scene_keys
+            or not quest_id
+            or not expected
+            or safe_key(raw_row.get("direction")) != "quest_to_story"
+            or safe_key(raw_row.get("phase")) != expected[1]
+            or safe_key(raw_row.get("confidence")) != "native_typed_direct"
+            or raw_row.get("actionSlot") != expected[0]
+            or not isinstance(raw_row.get("actionId"), int)
+            or isinstance(raw_row.get("actionId"), bool)
+            or int(raw_row["actionId"]) < 0
+            or not safe_key(raw_row.get("actionType"))
+            or not re.fullmatch(
+                r"MissionRuntimeAsset\.clientActionMapKey\[\d+\] -> "
+                r"actionMapRaw\.actionList\[\d+\]\._[A-Za-z]+Id",
+                safe_key(raw_row.get("source")),
+            )
+        ):
+            return
+        quest_action_grouped[scene_key].append({
+            **raw_row,
+            "contextQuestId": quest_id,
+        })
+
     for quest in flow.get("quests") or []:
         if not isinstance(quest, dict):
             continue
@@ -5723,34 +5844,18 @@ def _closed_exact_runtime_config_isolated_scenes(
         if not quest_id:
             continue
         for raw_row in quest.get("storyConnections") or []:
-            if not isinstance(raw_row, dict):
-                continue
-            scene_key = safe_key(raw_row.get("key"))
-            relation = safe_key(raw_row.get("relation"))
-            expected = expected_quest_actions.get(relation)
-            if (
-                scene_key not in isolated_scene_keys
-                or not expected
-                or safe_key(raw_row.get("direction")) != "quest_to_story"
-                or safe_key(raw_row.get("phase")) != expected[1]
-                or safe_key(raw_row.get("confidence"))
-                != "native_typed_direct"
-                or raw_row.get("actionSlot") != expected[0]
-                or not isinstance(raw_row.get("actionId"), int)
-                or isinstance(raw_row.get("actionId"), bool)
-                or int(raw_row["actionId"]) < 0
-                or not safe_key(raw_row.get("actionType"))
-                or not re.fullmatch(
-                    r"MissionRuntimeAsset\.clientActionMapKey\[\d+\] -> "
-                    r"actionMapRaw\.actionList\[\d+\]\._[A-Za-z]+Id",
-                    safe_key(raw_row.get("source")),
-                )
-            ):
-                continue
-            quest_action_grouped[scene_key].append({
-                **raw_row,
-                "contextQuestId": quest_id,
-            })
+            if isinstance(raw_row, dict):
+                append_exact_quest_action(raw_row, quest_id)
+    for raw_row in flow.get("missionStoryConnections") or []:
+        if (
+            isinstance(raw_row, dict)
+            and safe_key(raw_row.get("contextMissionBundle"))
+            and safe_key(raw_row.get("contextMissionBundle")) != owner_mission
+        ):
+            append_exact_quest_action(
+                raw_row,
+                safe_key(raw_row.get("contextQuestId")),
+            )
     for scene_key, rows in quest_action_grouped.items():
         closed.append({
             "sceneKey": scene_key,
@@ -5758,6 +5863,15 @@ def _closed_exact_runtime_config_isolated_scenes(
                 "closed_exact_mission_quest_client_action_no_relative_order",
             "relation": safe_key(rows[0].get("relation")),
             "missionId": owner_mission,
+            "contextMissionIds": sorted({
+                safe_key(row.get("contextMissionBundle")) or owner_mission
+                for row in rows
+            }, key=natural_key),
+            "contextMissionMismatch": any(
+                safe_key(row.get("contextMissionBundle"))
+                and safe_key(row.get("contextMissionBundle")) != owner_mission
+                for row in rows
+            ),
             "questIds": sorted({
                 safe_key(row.get("contextQuestId"))
                 for row in rows
@@ -5789,10 +5903,14 @@ def _closed_exact_runtime_config_isolated_scenes(
                 "quest lifecycle placement proves mission/quest playback "
                 "context but creates no relative edge between Story files"
             ),
-            "sourceFiles": [
-                "export_full/structured/Persistent/Data/Json/"
-                f"MissionRuntimeAsset/{owner_mission}.json"
-            ],
+            "sourceFiles": sorted({
+                safe_key(row.get("sourceFile"))
+                or (
+                    "export_full/structured/Persistent/Data/Json/"
+                    f"MissionRuntimeAsset/{owner_mission}.json"
+                )
+                for row in rows
+            }),
         })
 
     already_closed = {row["sceneKey"] for row in closed}
@@ -7099,16 +7217,42 @@ def build_gap_report(
                     continue
                 story_key = safe_key(connection.get("key"))
                 owners = story_owners.get(story_key) or set()
-                if (
-                    len(owners) != 1
-                    or safe_key(connection.get("relation"))
-                    != "objective_condition"
-                    or safe_key(connection.get("conditionType"))
-                    != "CheckTalkOptionFinish"
-                    or safe_key(connection.get("direction"))
-                    != "story_to_quest"
-                    or safe_key(connection.get("confidence")) != "direct"
-                ):
+                if len(owners) != 1:
+                    continue
+                relation = safe_key(connection.get("relation"))
+                exact_dialog_finish = (
+                    relation == "objective_condition"
+                    and safe_key(connection.get("conditionType"))
+                    == "CheckTalkOptionFinish"
+                    and safe_key(connection.get("direction"))
+                    == "story_to_quest"
+                    and safe_key(connection.get("confidence")) == "direct"
+                )
+                expected_action = {
+                    "client_action_start": (1, "start"),
+                    "client_action_succeed": (2, "succeed"),
+                    "client_action_failed": (4, "failed"),
+                }.get(relation)
+                exact_client_action = (
+                    expected_action is not None
+                    and safe_key(connection.get("direction"))
+                    == "quest_to_story"
+                    and safe_key(connection.get("phase"))
+                    == expected_action[1]
+                    and safe_key(connection.get("confidence"))
+                    == "native_typed_direct"
+                    and connection.get("actionSlot") == expected_action[0]
+                    and isinstance(connection.get("actionId"), int)
+                    and not isinstance(connection.get("actionId"), bool)
+                    and int(connection["actionId"]) >= 0
+                    and bool(safe_key(connection.get("actionType")))
+                    and bool(re.fullmatch(
+                        r"MissionRuntimeAsset\.clientActionMapKey\[\d+\] -> "
+                        r"actionMapRaw\.actionList\[\d+\]\._[A-Za-z]+Id",
+                        safe_key(connection.get("source")),
+                    ))
+                )
+                if not exact_dialog_finish and not exact_client_action:
                     continue
                 owner_mission = next(iter(owners))
                 if owner_mission not in mission_payloads:

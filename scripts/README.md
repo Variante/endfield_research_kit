@@ -2008,18 +2008,21 @@ gameplay-video OCR/audio workflow.
   rows likewise count as strict quest attachment when their lifecycle slot,
   phase, action id/type, and serialized Story-id source all agree. An isolated
   Story file reached by such an action is closed as exact quest-lifecycle
-  playback context, not relative Story order.
+  playback context, not relative Story order. The same fail-closed shape is
+  imported across mission bundles only when the Story key has one nominal
+  owner in the partial-order corpus; the foreign mission/quest remains
+  explicit context and does not transfer ownership.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v52` evaluates 286 active declarations: 199 residual
-  radio definitions, 27 root cutscene carriers, 34 registered dialog
-  definitions, nine exact NpcProxy
-  dialog consumers without a mission owner, eight exact
+  `sourceStoryGapQueue.v53` evaluates 289 active declarations: 199 residual
+  radio definitions, 27 root cutscene carriers, 37 registered dialog
+  definitions, twelve exact NpcProxy rows across eleven dialogs without a
+  mission owner, eight exact
   DialogTextTable-only/no-registry groups, ten exact
   ReadingPopUp/RichContent definitions, two exact SNS dialog definitions, four
   text-only cutscenes (including two e2m5 rows), and two TextTable-only black narrative
   definitions across
-  `e0m0`, `e1m2`, `e1m3`, `e2m4`, `e2m5`, `e2m6`, `e2m7`,
+  `e0m0`, `e1m2`, `e1m3`, `e2m2`, `e2m4`, `e2m5`, `e2m6`, `e2m7`,
   `e3m3`, `e5m1`, `e5m2`, `e6m1`, `e6m3`, `e6m4`, `e7m2`,
   `e7m3`, `e7m4`, `e9m2`, `e9m3`, `e10m1`, `e10m3`, `e10m4`,
   `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`.
@@ -2137,6 +2140,17 @@ gameplay-video OCR/audio workflow.
   native mapping, event-to-action path, and foreign mission shell all agree.
   It proves playback context but neither transfers nominal Story ownership
   nor orders the file inside its filename-named mission.
+  e2m2 adds four zero-route definition boundaries:
+  audio-complete `radio_e2m2_7`, registered 12-line/three-option
+  `dlg_e2m2_7`, registered 11-line/one-option `dlg_e2m2_1d5`, and registered
+  seven-line/two-option `dlg_e2m2_4d5`. The three dialogs have exact
+  NpcProxyEx consumers at `tata_map01_i002[1]`,
+  `fabian_map01_lv005[0]`, and `ailaizha_map01_lv005[0]`, but every consumer
+  mission id is empty. `radio_e2m2_1` closes positively instead: e2m1
+  `e2m1_q#3` has an exact typed succeed-slot `PlayRadio` client action for it.
+  Applying the same cross-owner quest-action rule also closes
+  `radio_e2m3_3` through e2m2 q3 and `radio_e6m3_1` through e6m2 q25.
+  All three retain foreign mission/quest context and no relative Story order.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
   e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`
@@ -2149,7 +2163,7 @@ gameplay-video OCR/audio workflow.
   containment does not establish a Story-file edge. A disconnected exact
   DialogTree narrative action closes `black_e11m3_11` under the same
   no-playback/no-order boundary.
-  The class also includes all five bounded
+  The class also includes four bounded residual
   `e6m3` radios, its three dialogs, two text
   definitions, and 14-row text-only cutscene; all eight residual `e9m2` radios and five
   root cutscenes, all 23 residual `e11m1` radios, all nine residual `e11m2`
