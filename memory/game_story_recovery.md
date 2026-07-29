@@ -4306,9 +4306,9 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v41`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v42`
    turns the completed exact `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e10m4`, `e11m1`, `e11m2`,
-   `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
+   `e11m3`, `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
    operational deferrals.
    It activates only while the exact
    current `GameAssembly.dll`, RadioTable, AudioDialog, TextTable,
@@ -4331,19 +4331,13 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 245 deferred
-   rows: three `e0m0` radios, five cutscene roots, and one ReadingPopUp
-   definition; seven `e1m3` radios, one dialog, and one Timeline root; eight
-   `e3m3` radios and two dialogs; five `e6m3`
-   radios, three dialogs, two ReadingPopUp definitions, and
-   one text-only cutscene; eight `e9m2` radios plus five cutscenes;
-   five `e7m2` radios, two dialogs, two ReadingPopUp definitions, and one
-   Timeline root;
-   21 `e10m4` radios;
-   23 `e11m1` radios plus five cutscenes; nine `e11m2`
-   radios, four cutscenes, and two dialogs; 34 `e11m4` radios plus its
-   rift-camera cutscene; seven `e11m5` radios plus seven dialogs; and 22
-   `e11m6` radios, two exact one-host cutscenes, and one dialog. Every
+   and reopen automatically if any gate changes. There are now 250 actual
+   isolated-scene deferrals: 177 radios, 27 cutscene roots, 26 registered
+   dialogs, ten ReadingPopUp definitions, six DialogTextTable-only groups, two
+   text-only cutscenes, and two TextTable-only black definitions. The
+   hash-validated declaration set contains 253 rows because three declared
+   radios close through stronger exact native/runtime contexts instead of
+   using the deferral. Every
    deferred row has graph effect `none` and contributes
    zero actionable-isolation score while its exact gates remain valid.
    The three dialog rows are admitted only while their exact MemoryPack
@@ -4365,6 +4359,30 @@ Current main-story priorities:
    and root `_last_02` hosts playable asset `_last_03`. The reverse-PPtr audit
    proves both `_director -> PlayableDirector.m_PlayableAsset` pairs; they are
    not chronology or mission ownership.
+   The e11m3 pass adds one positive WebUI mission-context recovery rather than
+   hiding every residual under negative evidence. `dlg_e11m3_16` is absent
+   from the DialogId registry and has no standalone DialogTree, but all eight
+   of its current DialogTextTable lines and both option ids occur in
+   `dlgtl_e11m3_7_sub_1`. The exact line block is contiguous, lies between
+   parent lines `dlg_e11m3_7_009` and `_005`, and preserves the already
+   recovered Runtime Jump split (`_001.._003` versus `_004.._006`).
+   `dlg_e11m3_7` is independently reached by
+   `map02_lv008/23100080005` local id 5
+   `StartDialogAndTeleportAction`, under the exact leader-enter-trigger path
+   and validated e11m3 LevelData host. The generated mission flow now exposes
+   `timeline_dialog_contains_foreign_dialog` with that full chain. It proves
+   nested playback context, but parent content on both sides prevents a
+   Story-file precedence edge. `black_e11m3_11` is separately closed as an
+   exact narrative action on `dlg_e11m3_7` node 2 whose local outgoing
+   connection reaches `_001` but whose node has no serialized path from the
+   DialogTree prime node; unknown external activation is not inferred. The
+   remaining five e11m3 radios (`3`, `15`, `18`, `22`, and `23`) are exact
+   RadioTable/AudioDialog definitions with no recovered consumer. Incidental
+   appearance of `_18`, `_22`, or `_3` in an event header's text pool is not a
+   playback step: the actual typed actions on those paths play `_17`, `_19`,
+   and `_30`. e11m3 therefore has zero actionable core-isolated rows, four
+   exact native closures, and five fail-closed deferrals, with no invented
+   chronology. The next main-story source-link frontier is e9m3.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,

@@ -1021,6 +1021,97 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
         self.assertEqual(closure["graphEffect"], "none")
 
+    def test_timeline_foreign_dialog_with_exact_parent_path_is_closed(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "e11m3",
+            scenes=["dlg_e11m3_16"],
+            isolated=["dlg_e11m3_16"],
+        )
+        payload = mission_payload(connections=[{
+            "key": "dlg_e11m3_16",
+            "relation": "timeline_dialog_contains_foreign_dialog",
+            "confidence": "native_exact_host",
+            "storyOwnerMission": "e11m3",
+            "parentStoryKey": "dlg_e11m3_7",
+            "occurrenceCount": 1,
+            "textIds": [
+                "dlg_e11m3_16_001",
+                "dlg_e11m3_16_002",
+            ],
+            "optionIds": [
+                "option_dlg_e11m3_16_1_001",
+                "option_dlg_e11m3_16_1_002",
+            ],
+            "timelines": ["dlgtl_e11m3_7_sub_1"],
+            "sourceFiles": ["CAB-story"],
+            "graphEffect": "none",
+            "timelineDialogContainments": [{
+                "key": "dlg_e11m3_16",
+                "rawDialogKey": "dlg_e11m3_16",
+                "dialogKey": "dlg_e11m3_7",
+                "timeline": "dlgtl_e11m3_7_sub_1",
+                "sourceFile": "CAB-story",
+                "lineIds": [
+                    "dlg_e11m3_16_001",
+                    "dlg_e11m3_16_002",
+                ],
+                "optionIds": [
+                    "option_dlg_e11m3_16_1_001",
+                    "option_dlg_e11m3_16_1_002",
+                ],
+                "beforeParentLineId": "dlg_e11m3_7_009",
+                "afterParentLineId": "dlg_e11m3_7_005",
+                "dialogJoin": "dialog_id_table_used_timeline",
+                "placementStatus":
+                    "exact_contiguous_foreign_dialog_lines_"
+                    "with_parent_on_both_sides",
+                "graphEffect": "none",
+            }],
+            "parentDialogNativeOccurrences": [{
+                "levelId": "map02_lv008",
+                "scriptId": "23100080005",
+                "sourceFile":
+                    "LevelScriptData/map02_lv008/23100080005.json",
+                "actionName": "StartDialogAndTeleportAction",
+                "recordClass": "play_dialog",
+                "localId": 5,
+                "allStoryKeysInRecord": ["dlg_e11m3_7"],
+                "levelDataHosts": [{
+                    "missionId": "e11m3",
+                    "levelDataFile": "LevelData/e11m3.json",
+                }],
+                "nativeEventOwners": [{
+                    "status": "exact_serialized_control_path",
+                    "headerName":
+                        "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    "headerLocalId": 4,
+                    "path": [{"localId": 5}],
+                }],
+            }],
+        }])
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(row["metrics"]["closedExactNativeIsolatedScenes"], 1)
+        closure = row["closedExactNativeIsolatedScenes"][0]
+        self.assertEqual(
+            closure["recoveryStatus"],
+            "closed_exact_native_timeline_foreign_dialog_playback_"
+            "context_no_file_order",
+        )
+        self.assertEqual(
+            closure["beforeParentLineIds"],
+            ["dlg_e11m3_7_009"],
+        )
+        self.assertEqual(closure["graphEffect"], "none")
+
     def test_exact_npc_proxy_runtime_config_is_closed_without_order(self) -> None:
         partial = partial_mission(
             "e1m1",
@@ -2646,6 +2737,41 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ["black_e11m8_27"],
         )
         disconnected["dialogTreeNarrativeActions"][0][
+            "incomingNodeIds"
+        ] = []
+        self.assertEqual(
+            [
+                row["sceneKey"]
+                for row in (
+                    gap_queue
+                    ._closed_exact_disconnected_dialog_tree_context_isolated_scenes(
+                        {"missionStoryConnections": [disconnected]},
+                        {"black_e11m8_27"},
+                        "e11m8",
+                    )
+                )
+            ],
+            ["black_e11m8_27"],
+        )
+        disconnected["dialogTreeNarrativeActions"][0][
+            "outgoingNodeIds"
+        ] = []
+        self.assertEqual(
+            gap_queue
+            ._closed_exact_disconnected_dialog_tree_context_isolated_scenes(
+                {"missionStoryConnections": [disconnected]},
+                {"black_e11m8_27"},
+                "e11m8",
+            ),
+            [],
+        )
+        disconnected["dialogTreeNarrativeActions"][0][
+            "incomingNodeIds"
+        ] = ["12"]
+        disconnected["dialogTreeNarrativeActions"][0][
+            "outgoingNodeIds"
+        ] = ["14"]
+        disconnected["dialogTreeNarrativeActions"][0][
             "reachableFromPrimeNode"
         ] = True
         self.assertEqual(
@@ -2656,6 +2782,18 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "e11m8",
             ),
             [],
+        )
+
+    def test_declared_e11m3_radio_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E11M3_RADIOS,
+            {
+                "radio_e11m3_3",
+                "radio_e11m3_15",
+                "radio_e11m3_18",
+                "radio_e11m3_22",
+                "radio_e11m3_23",
+            },
         )
 
     def test_declared_e11m5_frontier_preserves_owned_mixed_timeline(

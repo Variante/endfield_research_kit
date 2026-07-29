@@ -1202,6 +1202,164 @@ def load_dialog_timeline_line_orders(conv_key: str) -> list[dict]:
     return list(_load_dialog_timeline_line_order_index().get(conv_key, []))
 
 
+def recover_foreign_dialog_timeline_containments(
+    dialog_id_registry: dict[str, dict],
+    available_story_keys: set[str],
+    dialog_line_ids: set[str],
+    *,
+    timeline_loader=None,
+) -> list[dict]:
+    """Return exact foreign-dialog blocks in registered dialog Timelines.
+
+    A row is emitted only when one ``usedDialogTimelineIds`` value has one
+    registered owner, every current DialogTextTable line for the foreign
+    dialog occurs exactly once as one contiguous Timeline block, and the
+    owner's own lines occur on both sides.  This proves playback containment,
+    but deliberately does not turn the flat Timeline layout into a Story-file
+    precedence edge.
+    """
+    timeline_loader = timeline_loader or load_dialog_timeline_line_orders
+    owners_by_timeline: dict[str, set[str]] = defaultdict(set)
+    for parent_story_key, registration in dialog_id_registry.items():
+        if not isinstance(registration, dict):
+            continue
+        for timeline_id in registration.get("usedDialogTimelineIds") or []:
+            timeline_id = str(timeline_id or "").strip()
+            if timeline_id:
+                owners_by_timeline[timeline_id].add(
+                    str(parent_story_key)
+                )
+
+    expected_lines_by_raw_key: dict[str, set[str]] = defaultdict(set)
+    for line_id in dialog_line_ids:
+        line_id = str(line_id or "").strip()
+        raw_story_key = _dialog_tree_scene_prefix(line_id)
+        if raw_story_key and raw_story_key.startswith("dlg_"):
+            expected_lines_by_raw_key[raw_story_key].add(line_id)
+
+    deduped: dict[tuple, dict] = {}
+    for timeline_id, parent_story_keys in owners_by_timeline.items():
+        if len(parent_story_keys) != 1:
+            continue
+        parent_story_key = next(iter(parent_story_keys))
+        for entry in timeline_loader(parent_story_key) or []:
+            if (
+                not isinstance(entry, dict)
+                or str(entry.get("timeline") or "") != timeline_id
+            ):
+                continue
+            line_ids = [
+                str(line_id or "").strip()
+                for line_id in entry.get("lineIds") or []
+                if str(line_id or "").strip()
+            ]
+            positions_by_raw_key: dict[
+                str,
+                list[tuple[int, str]],
+            ] = defaultdict(list)
+            parent_positions: list[int] = []
+            for position, line_id in enumerate(line_ids):
+                raw_story_key = _dialog_tree_scene_prefix(line_id)
+                if raw_story_key == parent_story_key:
+                    parent_positions.append(position)
+                elif (
+                    raw_story_key
+                    and raw_story_key.startswith("dlg_")
+                ):
+                    positions_by_raw_key[raw_story_key].append(
+                        (position, line_id)
+                    )
+
+            for raw_story_key, positioned_lines in (
+                positions_by_raw_key.items()
+            ):
+                candidates = [
+                    candidate
+                    for candidate in (
+                        raw_story_key,
+                        f"misc_{raw_story_key}",
+                    )
+                    if candidate in available_story_keys
+                ]
+                expected_line_ids = expected_lines_by_raw_key.get(
+                    raw_story_key
+                ) or set()
+                positions = [
+                    position
+                    for position, _line_id in positioned_lines
+                ]
+                embedded_line_ids = [
+                    line_id
+                    for _position, line_id in positioned_lines
+                ]
+                if (
+                    len(candidates) != 1
+                    or candidates[0] == parent_story_key
+                    or not expected_line_ids
+                    or set(embedded_line_ids) != expected_line_ids
+                    or len(embedded_line_ids) != len(expected_line_ids)
+                    or positions
+                    != list(range(min(positions), max(positions) + 1))
+                ):
+                    continue
+                before_positions = [
+                    position
+                    for position in parent_positions
+                    if position < min(positions)
+                ]
+                after_positions = [
+                    position
+                    for position in parent_positions
+                    if position > max(positions)
+                ]
+                if not before_positions or not after_positions:
+                    continue
+                before_line_id = line_ids[max(before_positions)]
+                after_line_id = line_ids[min(after_positions)]
+                target_story_key = candidates[0]
+                option_ids = sorted({
+                    str(option_id)
+                    for option_id in entry.get("optionIds") or []
+                    if str(option_id).startswith(
+                        f"option_{raw_story_key}_"
+                    )
+                })
+                row = {
+                    "key": target_story_key,
+                    "rawDialogKey": raw_story_key,
+                    "dialogKey": parent_story_key,
+                    "timeline": timeline_id,
+                    "sourceKey": str(entry.get("sourceKey") or ""),
+                    "sourceFile": str(entry.get("file") or ""),
+                    "lineIds": embedded_line_ids,
+                    "optionIds": option_ids,
+                    "beforeParentLineId": before_line_id,
+                    "afterParentLineId": after_line_id,
+                    "dialogJoin": "dialog_id_table_used_timeline",
+                    "placementStatus":
+                        "exact_contiguous_foreign_dialog_lines_"
+                        "with_parent_on_both_sides",
+                    "graphEffect": "none",
+                }
+                identity = (
+                    target_story_key,
+                    parent_story_key,
+                    timeline_id,
+                    tuple(embedded_line_ids),
+                    before_line_id,
+                    after_line_id,
+                )
+                deduped[identity] = row
+    return sorted(
+        deduped.values(),
+        key=lambda row: (
+            row["key"],
+            row["dialogKey"],
+            row["timeline"],
+        ),
+    )
+
+
 def load_dialog_timeline_option_anchors(conv_key: str) -> list[dict]:
     return [
         entry

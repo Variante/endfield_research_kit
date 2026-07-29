@@ -1990,13 +1990,13 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v41` evaluates 175 residual radio definitions, 27 root
+  `sourceStoryGapQueue.v42` evaluates 180 residual radio definitions, 27 root
   cutscene carriers, 26 registered dialog definitions, six exact
   DialogTextTable-only/no-registry groups, ten exact
   ReadingPopUp/RichContent definitions, two text-only cutscenes, and two
   TextTable-only black narrative definitions across
   `e0m0`, `e1m3`, `e2m4`, `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e10m3`, `e10m4`,
-  `e11m1`, `e11m2`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 172 radio definitions;
+  `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 177 radio definitions;
   two close through strict exact native mission context, and one through
   strict exact runtime configuration. This includes seven bounded `e1m3`
   radio definitions, its canonical misc-dialog definition and one-host
@@ -2030,6 +2030,16 @@ gameplay-video OCR/audio workflow.
   e2m4 adds seven radios and one registered five-line/two-option dialog.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
+  e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`
+  residual is not deferred: the Story builder now emits
+  `timeline_dialog_contains_foreign_dialog` from its exact complete contiguous
+  block inside registered parent Timeline `dlgtl_e11m3_7_sub_1`, including
+  both option ids, parent lines on both sides, and the parent's independently
+  recovered native playback/LevelData mission context. The gap queue closes
+  that nested playback context with graph effect `none`, because Timeline
+  containment does not establish a Story-file edge. A disconnected exact
+  DialogTree narrative action closes `black_e11m3_11` under the same
+  no-playback/no-order boundary.
   The class also includes all five bounded
   `e6m3` radios, its three dialogs, two text
   definitions, and 14-row text-only cutscene; all eight residual `e9m2` radios and five
@@ -2072,6 +2082,10 @@ gameplay-video OCR/audio workflow.
   native context only when every clip, parent dialog, registered Timeline,
   variant LevelData host, and parent event-to-dialog path agrees. It adds no
   scene edge when the parent dialog has content on both sides. Unique
+  complete foreign-dialog Timeline blocks use the same parent-playback gates
+  and additionally require every current DialogTextTable line exactly once in
+  one contiguous block, one registered Timeline owner, and parent lines on
+  both sides. They remain context-only and add no scene edge. Unique
   `levelscript_mission_context` rows whose every occurrence names one exact
   MissionRuntime objective-script owner also count as strict quest attachment,
   without implying relative Story order.

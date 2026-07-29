@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v41"
+SCHEMA = "sourceStoryGapQueue.v42"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v20"
+    "current-build-offline-story-carrier-exhaustion-v21"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -1221,6 +1221,13 @@ OFFLINE_EXHAUSTION_E7M3_RADIOS = frozenset({
     "radio_e7m3_16",
     "radio_e7m3_26",
 })
+OFFLINE_EXHAUSTION_E11M3_RADIOS = frozenset({
+    "radio_e11m3_3",
+    "radio_e11m3_15",
+    "radio_e11m3_18",
+    "radio_e11m3_22",
+    "radio_e11m3_23",
+})
 OFFLINE_EXHAUSTION_E11M8_RADIOS = frozenset({"radio_e11m8_5"})
 OFFLINE_EXHAUSTION_E3M3_RADIOS = frozenset({
     "radio_e3m3_1d5",
@@ -1267,6 +1274,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
     "e11m1": OFFLINE_EXHAUSTION_E11M1_RADIOS,
     "e11m2": OFFLINE_EXHAUSTION_E11M2_RADIOS,
+    "e11m3": OFFLINE_EXHAUSTION_E11M3_RADIOS,
     "e11m4": OFFLINE_EXHAUSTION_E11M4_RADIOS,
     "e11m5": OFFLINE_EXHAUSTION_E11M5_RADIOS,
     "e11m6": OFFLINE_EXHAUSTION_E11M6_RADIOS,
@@ -4148,8 +4156,10 @@ def _closed_exact_disconnected_dialog_tree_context_isolated_scenes(
                 or _string_list(
                     occurrence.get("primeToActionConnectionPath")
                 )
-                or not _string_list(occurrence.get("incomingNodeIds"))
-                or not _string_list(occurrence.get("outgoingNodeIds"))
+                or not (
+                    _string_list(occurrence.get("incomingNodeIds"))
+                    or _string_list(occurrence.get("outgoingNodeIds"))
+                )
                 or not safe_key(occurrence.get("textId"))
                 or not safe_key(occurrence.get("actionPath"))
                 or not safe_key(occurrence.get("nodeId"))
@@ -4322,6 +4332,186 @@ def _closed_exact_timeline_dialog_embedded_isolated_scenes(
                 "the exact parent playback path and Timeline clips establish "
                 "embedded playback; parent dialog content occurs on both "
                 "sides, so no scene-file edge is created"
+            ),
+            "graphEffect": "none",
+        })
+    return sorted(closed, key=lambda row: natural_key(row["sceneKey"]))
+
+
+def _closed_exact_timeline_foreign_dialog_isolated_scenes(
+    flow: dict[str, Any],
+    isolated_scene_keys: set[str],
+    mission: str,
+) -> list[dict[str, Any]]:
+    """Close exact foreign-dialog Timeline blocks with parent playback scope."""
+    accepted_host_missions = {
+        mission,
+        *_string_list(flow.get("_sourceVariantMissionIds")),
+    }
+    exact_owner_statuses = {
+        "exact_serialized_control_path",
+        "exact_serialized_control_path_equivalent_duplicates",
+    }
+    closed: list[dict[str, Any]] = []
+    for row in _flow_story_connections(flow):
+        scene_key = safe_key(row.get("key"))
+        parent_story_key = safe_key(row.get("parentStoryKey"))
+        text_ids = set(_string_list(row.get("textIds")))
+        option_ids = set(_string_list(row.get("optionIds")))
+        timeline_ids = set(_string_list(row.get("timelines")))
+        source_files = set(_string_list(row.get("sourceFiles")))
+        containments = [
+            containment
+            for containment in row.get(
+                "timelineDialogContainments"
+            ) or []
+            if isinstance(containment, dict)
+        ]
+        parent_occurrences = [
+            occurrence
+            for occurrence in row.get(
+                "parentDialogNativeOccurrences"
+            ) or []
+            if isinstance(occurrence, dict)
+        ]
+        if (
+            scene_key not in isolated_scene_keys
+            or safe_key(row.get("relation"))
+            != "timeline_dialog_contains_foreign_dialog"
+            or safe_key(row.get("confidence")) != "native_exact_host"
+            or safe_key(row.get("storyOwnerMission")) != mission
+            or safe_key(row.get("graphEffect")) != "none"
+            or not parent_story_key
+            or not text_ids
+            or not timeline_ids
+            or not source_files
+            or len(containments) != int(row.get("occurrenceCount") or 0)
+            or not containments
+            or not parent_occurrences
+        ):
+            continue
+        if any(
+            safe_key(containment.get("key")) != scene_key
+            or scene_key not in {
+                safe_key(containment.get("rawDialogKey")),
+                "misc_"
+                + safe_key(containment.get("rawDialogKey")),
+            }
+            or safe_key(containment.get("dialogKey"))
+            != parent_story_key
+            or safe_key(containment.get("timeline"))
+            not in timeline_ids
+            or safe_key(containment.get("sourceFile"))
+            not in source_files
+            or set(_string_list(containment.get("lineIds")))
+            != text_ids
+            or not set(_string_list(containment.get("optionIds")))
+            <= option_ids
+            or safe_key(containment.get("dialogJoin"))
+            != "dialog_id_table_used_timeline"
+            or safe_key(containment.get("placementStatus"))
+            != (
+                "exact_contiguous_foreign_dialog_lines_"
+                "with_parent_on_both_sides"
+            )
+            or not safe_key(
+                containment.get("beforeParentLineId")
+            ).startswith(f"{parent_story_key}_")
+            or not safe_key(
+                containment.get("afterParentLineId")
+            ).startswith(f"{parent_story_key}_")
+            or safe_key(containment.get("graphEffect")) != "none"
+            for containment in containments
+        ):
+            continue
+
+        native_paths: list[dict[str, Any]] = []
+        valid = True
+        for occurrence in parent_occurrences:
+            action_local_id = occurrence.get("localId")
+            if (
+                safe_key(occurrence.get("recordClass"))
+                != "play_dialog"
+                or not safe_key(occurrence.get("actionName"))
+                or parent_story_key
+                not in _string_list(
+                    occurrence.get("allStoryKeysInRecord")
+                )
+                or not isinstance(action_local_id, int)
+                or isinstance(action_local_id, bool)
+            ):
+                valid = False
+                break
+            level_data_hosts = [
+                host
+                for host in occurrence.get("levelDataHosts") or []
+                if isinstance(host, dict)
+            ]
+            if (
+                not level_data_hosts
+                or any(
+                    safe_key(host.get("missionId"))
+                    not in accepted_host_missions
+                    or not safe_key(host.get("levelDataFile"))
+                    for host in level_data_hosts
+                )
+            ):
+                valid = False
+                break
+            exact_owners = [
+                owner
+                for owner in occurrence.get("nativeEventOwners") or []
+                if (
+                    isinstance(owner, dict)
+                    and safe_key(owner.get("status"))
+                    in exact_owner_statuses
+                    and action_local_id
+                    in {
+                        step.get("localId")
+                        for step in owner.get("path") or []
+                        if isinstance(step, dict)
+                    }
+                )
+            ]
+            if not exact_owners:
+                valid = False
+                break
+            native_paths.extend({
+                "levelId": safe_key(occurrence.get("levelId")),
+                "scriptId": safe_key(occurrence.get("scriptId")),
+                "sourceFile": safe_key(occurrence.get("sourceFile")),
+                "headerName": safe_key(owner.get("headerName")),
+                "headerLocalId": owner.get("headerLocalId"),
+                "actionName": safe_key(occurrence.get("actionName")),
+                "actionLocalId": action_local_id,
+            } for owner in exact_owners)
+        if not valid:
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_native_timeline_foreign_dialog_playback_"
+                "context_no_file_order",
+            "relation":
+                "timeline_dialog_contains_foreign_dialog",
+            "parentStoryKey": parent_story_key,
+            "timelineIds": sorted(timeline_ids, key=natural_key),
+            "textIds": sorted(text_ids, key=natural_key),
+            "optionIds": sorted(option_ids, key=natural_key),
+            "beforeParentLineIds": sorted({
+                safe_key(containment.get("beforeParentLineId"))
+                for containment in containments
+            }, key=natural_key),
+            "afterParentLineIds": sorted({
+                safe_key(containment.get("afterParentLineId"))
+                for containment in containments
+            }, key=natural_key),
+            "nativeEventPaths": native_paths,
+            "placementBoundary": (
+                "the exact registered parent Timeline and native parent "
+                "playback path establish nested playback; parent dialog "
+                "content occurs on both sides, so no Story-file edge is "
+                "created"
             ),
             "graphEffect": "none",
         })
@@ -5359,6 +5549,15 @@ def build_gap_row(
             row,
         )
     for row in _closed_exact_timeline_dialog_embedded_isolated_scenes(
+        flow,
+        set(isolated_scene_keys),
+        safe_key(partial_row.get("mission")),
+    ):
+        closed_exact_native_isolated_by_key.setdefault(
+            row["sceneKey"],
+            row,
+        )
+    for row in _closed_exact_timeline_foreign_dialog_isolated_scenes(
         flow,
         set(isolated_scene_keys),
         safe_key(partial_row.get("mission")),
