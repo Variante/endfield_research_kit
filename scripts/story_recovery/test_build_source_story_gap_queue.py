@@ -2072,6 +2072,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS),
             {
                 "misc_dlg_e1m3_5d5",
+                "dlg_e2m4_10",
                 "dlg_e3m3_12",
                 "dlg_e3m3_13",
                 "dlg_e6m3_6",
@@ -2146,6 +2147,31 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "misc_dlg_e1m3_5d5"
             ]["registryKey"],
             "dlg_e1m3_5d5",
+        )
+
+    def test_declared_e2m4_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E2M4_RADIOS,
+            {
+                "radio_e2m4_4",
+                "radio_e2m4_5d5",
+                "radio_e2m4_11",
+                "radio_e2m4_14",
+                "radio_e2m4_15",
+                "radio_e2m4_19",
+                "radio_e2m4_22",
+            },
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e2m4_10"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 5)
+        self.assertEqual(
+            dialog["optionIds"],
+            (
+                "option_dlg_e2m4_10_1_001",
+                "option_dlg_e2m4_10_1_002",
+            ),
         )
 
     def test_exact_native_context_isolated_scenes_are_fail_closed(

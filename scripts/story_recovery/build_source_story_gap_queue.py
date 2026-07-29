@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v39"
+SCHEMA = "sourceStoryGapQueue.v40"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v18"
+    "current-build-offline-story-carrier-exhaustion-v19"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -569,6 +569,19 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
             "dlg_e1m3_5d5_003",
         ),
         "optionIds": (),
+    },
+    "dlg_e2m4_10": {
+        "missionId": "e2m4",
+        "filename": "dlg_e2m4_10_pE6CEEAF69EAEC061.json",
+        "sha256":
+            "2F438CED7B5B49349A966E365B69798F4F835F9C3797CB7E8C47DA2E1CC3D6A7",
+        "lineIds": tuple(
+            f"dlg_e2m4_10_{number:03d}" for number in range(1, 6)
+        ),
+        "optionIds": (
+            "option_dlg_e2m4_10_1_001",
+            "option_dlg_e2m4_10_1_002",
+        ),
     },
     "dlg_e10m3_3": {
         "missionId": "e10m3",
@@ -1180,10 +1193,20 @@ OFFLINE_EXHAUSTION_E0M0_RADIOS = frozenset({
     "radio_e0m0_10",
     "radio_e0m0_21",
 })
+OFFLINE_EXHAUSTION_E2M4_RADIOS = frozenset({
+    "radio_e2m4_4",
+    "radio_e2m4_5d5",
+    "radio_e2m4_11",
+    "radio_e2m4_14",
+    "radio_e2m4_15",
+    "radio_e2m4_19",
+    "radio_e2m4_22",
+})
 OFFLINE_EXHAUSTION_E10M3_RADIOS = frozenset({"radio_e10m3_10"})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
+    "e2m4": OFFLINE_EXHAUSTION_E2M4_RADIOS,
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e6m4": OFFLINE_EXHAUSTION_E6M4_RADIOS,
