@@ -2355,8 +2355,8 @@ gameplay-video OCR/audio workflow.
 
   ```bat
   call endfield_paths.bat
-  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump --streaming-assets "%ENDFIELD_GAME_ROOT%\Endfield_Data\StreamingAssets" --output tmp\story\root_selector_string_path_hash --block-type initial-extend-data --block-type extend-data --file-regex "(?i)StringPathHash"
-  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump --streaming-assets "%ENDFIELD_GAME_ROOT%\Endfield_Data\StreamingAssets" --output tmp\story\root_selector_compress_data --block-type initial-extend-data --block-type extend-data --file-regex "(?i)CompressData"
+  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump --streaming-assets "%ENDFIELD_GAME_ROOT%\StreamingAssets" --output tmp\story\root_selector_string_path_hash --block-type initial-extend-data --block-type extend-data --file-regex "(?i)StringPathHash"
+  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump --streaming-assets "%ENDFIELD_GAME_ROOT%\StreamingAssets" --output tmp\story\root_selector_compress_data --block-type initial-extend-data --block-type extend-data --file-regex "(?i)CompressData"
   python scripts\story_recovery\build_string_path_hash_story_audit.py
   ```
 
@@ -2396,9 +2396,27 @@ gameplay-video OCR/audio workflow.
 
   ```bat
   call endfield_paths.bat
-  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index --streaming-assets "%ENDFIELD_GAME_ROOT%\Endfield_Data\StreamingAssets" --output tmp\story\extend_data_inventory\current.json --block-type initial-extend-data --block-type extend-data
-  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump --streaming-assets "%ENDFIELD_GAME_ROOT%\Endfield_Data\StreamingAssets" --output tmp\story\facbone_trs --block-type extend-data --file-regex "(?i)FacBoneTRS\.bin$"
+  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index --streaming-assets "%ENDFIELD_GAME_ROOT%\StreamingAssets" --output tmp\story\extend_data_inventory\current.json --block-type initial-extend-data --block-type extend-data
+  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump --streaming-assets "%ENDFIELD_GAME_ROOT%\StreamingAssets" --output tmp\story\facbone_trs --block-type extend-data --file-regex "(?i)FacBoneTRS\.bin$"
   python scripts\story_recovery\build_facbone_trs_story_audit.py
+  ```
+
+- `story_recovery/build_bundle_manifest_story_audit.py`: inventories both
+  installed BundleManifest copies, selects the newer effective Persistent
+  version, Brotli-decompresses `manifest.hgmmap`, and validates its magic/build
+  strings, asset and bundle hash-table partitions, equal-count bundle array,
+  and framed shared data pool. The native schema restricts its records to
+  asset-path routing and bundle dependency metadata, so the report at
+  `reports/story/recovery/bundle_manifest_story_audit.{json,md}` treats bundle
+  membership as resource availability rather than Story ownership. This
+  standalone audit requires Python `brotli`. Prepare the bounded inputs with:
+
+  ```bat
+  call endfield_paths.bat
+  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index --streaming-assets "%ENDFIELD_GAME_ROOT%\StreamingAssets" --output tmp\story\bundle_manifest_probe\streaming.json --block-type bundle-manifest
+  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index --streaming-assets "%ENDFIELD_GAME_ROOT%\Persistent" --fallback-assets "%ENDFIELD_GAME_ROOT%\StreamingAssets" --output tmp\story\bundle_manifest_probe\persistent.json --block-type bundle-manifest
+  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump --streaming-assets "%ENDFIELD_GAME_ROOT%\Persistent" --fallback-assets "%ENDFIELD_GAME_ROOT%\StreamingAssets" --output tmp\story\bundle_manifest_probe\persistent_dump --block-type bundle-manifest
+  python scripts\story_recovery\build_bundle_manifest_story_audit.py
   ```
 
 - `story_recovery/build_skipped_vfs_block_audit.py`: summarizes an
