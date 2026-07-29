@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v32"
+SCHEMA = "sourceStoryGapQueue.v33"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v11"
+    "current-build-offline-story-carrier-exhaustion-v12"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -193,6 +193,13 @@ OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES = frozenset({
     "cutscene_e11m1_shenjiaoe",
 })
 OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
+    "e0m0": frozenset({
+        "cutscene_e0m0_1",
+        "cutscene_e0m0_10",
+        "cutscene_e0m0_11",
+        "cutscene_e0m0_12",
+        "cutscene_e0m0_11111",
+    }),
     "e1m3": frozenset({"cutscene_e1m3_1"}),
     "e6m3": frozenset({"cutscene_e6m3_2"}),
     "e7m2": frozenset({"cutscene_e7m2_designer_QingBoZhai"}),
@@ -220,6 +227,11 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
     }),
 }
 OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
+    "cutscene_e0m0_1": 1,
+    "cutscene_e0m0_10": 1,
+    "cutscene_e0m0_11": 1,
+    "cutscene_e0m0_12": 1,
+    "cutscene_e0m0_11111": 1,
     "cutscene_e1m3_1": 1,
     "cutscene_e7m2_designer_QingBoZhai": 1,
     "cutscene_dung02_dg002_e9m2_lightthewall": 1,
@@ -240,6 +252,42 @@ OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e11m6_zhuangcomein": 1,
 }
 OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
+    "cutscene_e0m0_1": {
+        "timelineRegistryId": 158,
+        "files": ((
+            "cutscene_e0m0_1_pE3B9F4725855A80B.json",
+            "E9571177CCA5CF3690DB72C5DA9CEE58675A3EFA5F09BB9A3E089227221F229D",
+            "cutscene_e0m0_1",
+        ),),
+    },
+    "cutscene_e0m0_10": {
+        "timelineRegistryId": 134,
+        "files": ((
+            "cutscene_e0m0_10_p0BACFA664DABE351.json",
+            "BAF4A8C03B894FD38949A55AE1098F55692A1C57C8A99ED2986424AE8A20F03E",
+            "cutscene_e0m0_10",
+        ),),
+    },
+    "cutscene_e0m0_11": {
+        "timelineRegistryId": 133,
+        "files": ((
+            "cutscene_e0m0_11_pF7E1B65901F9C153.json",
+            "A9FDB83E16EB188E74FC77016CDB1F60A0754268DB975626C4D6FC1F15D654F3",
+            "cutscene_e0m0_11",
+        ),),
+    },
+    "cutscene_e0m0_12": {
+        "timelineRegistryId": 135,
+        "files": ((
+            "cutscene_e0m0_12_pE8E7E6C9DCF62878.json",
+            "E49889DD3AA96950A71C9089357E96DA0A66D88F379006C254340198E8C897C2",
+            "cutscene_e0m0_12",
+        ),),
+    },
+    "cutscene_e0m0_11111": {
+        "timelineRegistryId": None,
+        "files": (),
+    },
     "cutscene_e1m3_1": {
         "timelineRegistryId": 89,
         "files": (
@@ -437,6 +485,11 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
     },
 }
 OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS = {
+    "cutscene_e0m0_1": 1,
+    "cutscene_e0m0_10": 1,
+    "cutscene_e0m0_11": 1,
+    "cutscene_e0m0_12": 1,
+    "cutscene_e0m0_11111": 1,
     "cutscene_e1m3_1": 1,
     "cutscene_e7m2_designer_QingBoZhai": 1,
     "cutscene_dung02_dg002_e9m2_lightthewall": 1,
@@ -884,7 +937,13 @@ OFFLINE_EXHAUSTION_E3M3_RADIOS = frozenset({
     "radio_e3m3_5",
     "radio_e3m3_6",
 })
+OFFLINE_EXHAUSTION_E0M0_RADIOS = frozenset({
+    "radio_e0m0_9d5",
+    "radio_e0m0_10",
+    "radio_e0m0_21",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
+    "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
@@ -898,6 +957,12 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e11m6": OFFLINE_EXHAUSTION_E11M6_RADIOS,
 }
 OFFLINE_EXHAUSTION_MISSING_AUDIO_IDS = {
+    "radio_e0m0_10": frozenset({
+        "au_radio_e0m0_10_001",
+        "au_radio_e0m0_10_002",
+        "au_radio_e0m0_10_003",
+    }),
+    "radio_e0m0_21": frozenset({"au_radio_e0m0_21_001"}),
     "radio_e10m4_11": frozenset({"au_radio_e10m4_11_001"}),
     "radio_e10m4_38": frozenset({"au_radio_e10m4_38_001"}),
 }
@@ -909,6 +974,18 @@ OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS = frozenset({
     "radioType",
 })
 OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
+    "text_e0m0_1": {
+        "missionId": "e0m0",
+        "readingPopupRowId": "text_e0m0_1",
+        "bgType": 2,
+        "iconType": 0,
+        "titleId": -3638864379184205404,
+        "contentTextIds": (
+            2511221695470576053,
+            5177474080784617714,
+            8007409330529367903,
+        ),
+    },
     "text_e6m3_1": {
         "missionId": "e6m3",
         "readingPopupRowId": "text_e6m3_1",
@@ -1849,8 +1926,19 @@ def build_offline_exhaustion_index(
         set(OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS)
         == set(OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS)
         and all(
-            safe_key(timeline_ids.get(str(definition["timelineRegistryId"])))
-            == story_key
+            (
+                (
+                    isinstance(definition["timelineRegistryId"], int)
+                    and safe_key(timeline_ids.get(
+                        str(definition["timelineRegistryId"])
+                    )) == story_key
+                )
+                or (
+                    definition["timelineRegistryId"] is None
+                    and not definition["files"]
+                    and story_key not in registered_timeline_story_keys
+                )
+            )
             and all(
                 (
                     isinstance(
