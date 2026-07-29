@@ -152,7 +152,12 @@ available through expandable guidance.
   info` renders the current five-file override list; normal mode keeps it
   hidden. The current 980/980 override yields 490 missions and 4,462 quests,
   including the exact `f1m32_q#3` dialog-option gate and `hidden62_q#19` state
-  window. Selecting a quest shows the native asynchronous protocol sequence:
+  window. With `Show debug info`, objective cards also expose exact authored
+  tracking targets and visibility filters, while the structure panel lists
+  initial mission-property values. The current schema retains 3,496 tracking
+  rows on 3,241 objectives and 217 property rows across 71 missions. These
+  displays do not infer property writers, completion sources, playback,
+  ownership, or order. Selecting a quest shows the native asynchronous protocol sequence:
   `SC_QUEST_STATE_UPDATE` activation, local condition callbacks,
   `CS_UPDATE_QUEST_OBJECTIVE` / `SC_QUEST_OBJECTIVES_UPDATE`, optional
   `CS_FINISH_DIALOG` / `SC_FINISH_DIALOG`, authoritative completion/failure,

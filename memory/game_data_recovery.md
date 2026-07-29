@@ -47,6 +47,16 @@ base/override counts, missing base files, extra override files, and the exact
 common filenames whose bytes differ. Explicit `--mission-root` builds are
 labeled separately.
 
+All maintained offline Story-recovery audits that consume authored
+MissionRuntime now use the same complete-Persistent-or-whole-Streaming
+selector. This prevents the WebUI builder, property audits, protocol census,
+option scan, and mission-order evidence tools from silently reasoning about
+different versions of the same five files. The effective corpus contains
+3,496 typed tracking rows on 3,241 objectives and 217 mission-property rows
+across 71 missions. Tracking filters and initial property values are authored
+configuration; without a decoded consumer/writer bridge they remain context
+and do not create mission, quest, playback, completion, or ordering edges.
+
 The current binary-first system-carrier audit demonstrates the intended
 cross-layer standard. Three typed DomainDepot tables plus native request/reply
 handlers prove 24 residual f1m25 dialog bindings; one SkipChapter row plus its
@@ -754,7 +764,7 @@ is also a false foreign key. `MissionRuntimeAsset` serializes
 `MissionSystem.MissionData.propertyDict` is another dictionary at `+0x20`.
 Although the shared `ParamVariable` type has `m_scriptPtr` at `+0x70`, current
 authored `properties` rows contain only the ParamKeyValue/value scalar shape,
-not a script pointer: 214 rows across 70 of 490 mission assets, with zero
+not a script pointer: 217 rows across 71 of 490 mission assets, with zero
 `scriptId`/`LevelScriptPtr` nested fields.
 
 Native construction keeps the two contexts separate. Sync-all, incremental

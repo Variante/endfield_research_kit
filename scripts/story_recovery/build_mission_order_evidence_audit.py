@@ -31,11 +31,17 @@ from story_builder.mission_recovery import (  # noqa: E402
     TARGET_MISSION_PREFIXES,
     mission_id_matches_target_prefix,
 )
+from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
 
 
 ORDER_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio", "video"}
 TABLE_ROOT = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
 DATA_JSON_ROOT = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"
+PERSISTENT_JSON_ROOT = EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Json"
+MRA_DIR = select_complete_mission_runtime_root(
+    DATA_JSON_ROOT / "MissionRuntimeAsset",
+    PERSISTENT_JSON_ROOT / "MissionRuntimeAsset",
+)
 ASSET_MAP = (
     EXPORT_ROOT
     / "recovered"
@@ -345,11 +351,11 @@ def collect_leveldata_quest_ownership(leveldata_files: list[dict[str, Any]]) -> 
         mission_hint = quest_id.split("_q#", 1)[0] if "_q#" in quest_id else ""
         candidate_paths: list[Path] = []
         if mission_hint:
-            candidate = DATA_JSON_ROOT / "MissionRuntimeAsset" / f"{mission_hint}.json"
+            candidate = MRA_DIR / f"{mission_hint}.json"
             if candidate.exists():
                 candidate_paths.append(candidate)
         if not candidate_paths:
-            candidate_paths = sorted((DATA_JSON_ROOT / "MissionRuntimeAsset").glob("*.json"))
+            candidate_paths = sorted(MRA_DIR.glob("*.json"))
         found = False
         for path in candidate_paths:
             payload = read_json(path, {})
@@ -953,7 +959,7 @@ def build_report(
 ) -> dict[str, Any]:
     index_path = ROOT / "webui" / "data" / "lang" / language / "index.json"
     webui_mission_path = ROOT / "webui" / "data" / "lang" / language / "mission" / f"{mission}.json"
-    mission_runtime_path = DATA_JSON_ROOT / "MissionRuntimeAsset" / f"{mission}.json"
+    mission_runtime_path = MRA_DIR / f"{mission}.json"
     mission_timeline_path = reports_dir / f"mission_timeline_recovery_{language}.json"
 
     index_payload = read_json(index_path, {})

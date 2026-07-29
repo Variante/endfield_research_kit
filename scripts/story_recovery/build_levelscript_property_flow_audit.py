@@ -55,6 +55,7 @@ for _path in (_REPO_ROOT / "scripts", _REPO_ROOT / "scripts" / "story_recovery")
 
 from common import ROOT, md_escape, read_json, write_report_json, write_text_if_changed  # noqa: E402
 from build_mission_order_evidence_audit import collect_mission_runtime_script_conditions  # noqa: E402
+from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
 
 try:
     from story_builder.level_bindings import (  # noqa: E402
@@ -68,7 +69,13 @@ except ImportError:
     decode_levelscript_record_payload = None
 
 DATA_JSON_ROOT = ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json"
-MRA_DIR = DATA_JSON_ROOT / "MissionRuntimeAsset"
+PERSISTENT_JSON_ROOT = (
+    ROOT / "export_full" / "structured" / "Persistent" / "Data" / "Json"
+)
+MRA_DIR = select_complete_mission_runtime_root(
+    DATA_JSON_ROOT / "MissionRuntimeAsset",
+    PERSISTENT_JSON_ROOT / "MissionRuntimeAsset",
+)
 LEVELSCRIPT_DIR = DATA_JSON_ROOT / "LevelScriptData"
 
 

@@ -632,7 +632,13 @@ Expected active inputs and outputs:
   filenames; an explicit `--mission-root` is labeled separately. The current
   980/980 Persistent override changes five files and yields 490
   missions, 4,462 quests, 155 mission-state edges, and the additional strong
-  `dlg_f1m32_1 -> dlg_f1m32_2` Story edge. `export.bat` runs it after Story
+  `dlg_f1m32_1 -> dlg_f1m32_2` Story edge. Schema 17 also preserves 3,496
+  authored tracking rows on 3,241 objectives, including exact positions,
+  entity/script operands, and normalized tracking filters, plus 217 initial
+  mission-property rows across 71 missions. These fields are debug context and
+  never create graph edges without an independent consumer/writer proof.
+  Maintained offline recovery audits that scan MissionRuntime use the same
+  complete-Persistent-or-whole-Streaming selector. `export.bat` runs it after Story
   so the experimental page can merge names and objective text from
   the selected language's existing mission sidecars. Story bundle generation
   also localizes base/quest-override mission descriptions and emits per-quest
@@ -1000,7 +1006,8 @@ Expected active inputs and outputs:
   caller census for `ToVariable` and the four entity/script subscription
   setters, checks the current IFix target list, and writes
   `reports/story/recovery/mission_property_scriptptr_audit.{json,md}`. The
-  current result keeps authored/server mission values in
+  current result counts 217 authored rows across 71 missions and keeps
+  authored/server mission values in
   `MissionData.propertyDict` separate from the `m_scriptPtr` attached by local
   LevelScript event registration and adds zero Story bindings.
 

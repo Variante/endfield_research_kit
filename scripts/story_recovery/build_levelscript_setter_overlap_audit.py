@@ -31,11 +31,18 @@ from build_mission_order_evidence_audit import collect_mission_runtime_script_co
 from story_builder.context import LEVELSCRIPT_DIR  # noqa: E402
 from story_builder.level_bindings import _load_levelscript_binding_data  # noqa: E402
 from story_builder.levelscript_binary import decode_levelscript_record_payload  # noqa: E402
+from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
 
 
 REPORT_DIR = ROOT / "reports" / "mission_order"
 DATA_JSON_ROOT = ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json"
-MRA_DIR = DATA_JSON_ROOT / "MissionRuntimeAsset"
+PERSISTENT_JSON_ROOT = (
+    ROOT / "export_full" / "structured" / "Persistent" / "Data" / "Json"
+)
+MRA_DIR = select_complete_mission_runtime_root(
+    DATA_JSON_ROOT / "MissionRuntimeAsset",
+    PERSISTENT_JSON_ROOT / "MissionRuntimeAsset",
+)
 
 SETTER_OPCODES = {
     (0x03DA, 0x0A): "SetBool",

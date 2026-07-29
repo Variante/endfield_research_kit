@@ -28,6 +28,7 @@ for _path in (ROOT / "scripts",):
         sys.path.insert(0, str(_path))
 
 from common import md_escape, write_report_json, write_text_if_changed  # noqa: E402
+from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
 
 
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
@@ -36,7 +37,22 @@ DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 DEFAULT_METADATA = DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 DEFAULT_MISSION_ROOTS = (
-    ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset",
+    select_complete_mission_runtime_root(
+        ROOT
+        / "export_full"
+        / "structured"
+        / "StreamingAssets"
+        / "Data"
+        / "Json"
+        / "MissionRuntimeAsset",
+        ROOT
+        / "export_full"
+        / "structured"
+        / "Persistent"
+        / "Data"
+        / "Json"
+        / "MissionRuntimeAsset",
+    ),
 )
 DEFAULT_IFIX = (
     ROOT / "reports" / "story" / "recovery" / "current_ifix_mission_graph_audit.json"
@@ -449,10 +465,10 @@ def main() -> None:
     )
     expected_authored = {
         "missionFiles": 490,
-        "missionsWithProperties": 70,
-        "propertyRows": 214,
-        "uniquePropertyKeys": 186,
-        "valueTypeCounts": {"1": 10, "3": 204},
+        "missionsWithProperties": 71,
+        "propertyRows": 217,
+        "uniquePropertyKeys": 189,
+        "valueTypeCounts": {"1": 10, "3": 207},
     }
     for key, expected in expected_authored.items():
         if authored[key] != expected:
@@ -532,7 +548,7 @@ def main() -> None:
             {
                 "carrier": "MissionRuntimeAsset.properties",
                 "finding": (
-                    "Authored ParamKeyValue initial values only; 214 current rows "
+                    "Authored ParamKeyValue initial values only; 217 current rows "
                     "contain no LevelScriptPtr/scriptId field."
                 ),
             },
