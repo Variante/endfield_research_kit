@@ -196,10 +196,10 @@ available through expandable guidance.
   interactive -> Story` context route when an exact progress lock exists.
   The route retains the LevelData asset, entity logic id, exact mission/quest
   state leaves, raw compare operators, and nested combined-condition fields.
-  Final records require the
-  validated member-21/member-22 boundary and retain that provenance. A
-  progress-lock owner is availability evidence, not Story ownership,
-  activation causality, or order.
+  Final records require either a complete nonempty member-22 BriefData
+  dictionary or the exact environment-only members 21-43 empty-script suffix
+  through EOF, and retain that provenance. A progress-lock owner is
+  availability evidence, not Story ownership, activation causality, or order.
   Exact, build-pinned
   CutsceneRoot playback aliases render as
   `Story root -> native playback action -> Story file` debug routes with their

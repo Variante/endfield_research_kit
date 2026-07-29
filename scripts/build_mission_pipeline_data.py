@@ -243,7 +243,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # narrative-interactive routes without treating their owner ids as Story
 # ownership or chronology.
 # v23 retains nested combined-condition structure and raw NotEqual leaves.
-SCHEMA_VERSION = 23
+# v24 admits final environment-only LevelData rows through the exact complete
+# empty-script member suffix and retains its boundary provenance.
+SCHEMA_VERSION = 24
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -3610,6 +3612,18 @@ def build_story_trigger_route(
             row.get("levelScriptBriefDictionaryCountOffset"),
         "levelScriptBriefDictionaryCount":
             row.get("levelScriptBriefDictionaryCount"),
+        "levelScriptDataPathDictionaryCountOffset":
+            row.get("levelScriptDataPathDictionaryCountOffset"),
+        "levelScriptDataPathDictionaryCount":
+            row.get("levelScriptDataPathDictionaryCount"),
+        "levelDataSafeZoneOffset": row.get("levelDataSafeZoneOffset"),
+        "levelDataSceneId": str(row.get("levelDataSceneId") or ""),
+        "levelDataSpecificDataOffset":
+            row.get("levelDataSpecificDataOffset"),
+        "levelDataEmptySuffixEndOffset":
+            row.get("levelDataEmptySuffixEndOffset"),
+        "levelDataFinalBoundaryValidation":
+            str(row.get("levelDataFinalBoundaryValidation") or ""),
         "progressLockConditionStatus":
             str(row.get("progressLockConditionStatus") or ""),
         "progressLockConditionUnionTag":
@@ -5250,7 +5264,7 @@ def build_story_binding_coverage(
 
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 8,
+        "schemaVersion": 9,
         "generated": int(time.time()),
         "language": language,
         "policy": (

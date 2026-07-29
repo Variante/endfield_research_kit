@@ -1523,8 +1523,12 @@ These are kept because the WebUI story builders import or use them:
   It also decodes the counted `LevelData` interactive list using exact
   StreamingAssets/Persistent byte mirrors. Non-final 25-member values use the
   next typed record as their boundary. A final value is admitted only when it
-  ends at top-level member 21 and the adjacent complete member-22
-  LevelScriptBriefData dictionary independently validates. The suffix accepts
+  ends at top-level member 21 and either the adjacent complete nonempty
+  member-22 LevelScriptBriefData dictionary independently validates or the
+  exact environment-only members 21-43 empty-script suffix validates through
+  EOF. That suffix checks every current-build field, including the containing
+  level's scene id, zero-valued safe-zone data, null level-specific data, and
+  all empty collections. The interactive record accepts
   a null progress lock or exact current-build mission/quest-state leaf and
   recursively nested combined condition forms. Raw compare/combined operators
   are restricted to observed values `0..1`; unknown tags, member counts,

@@ -961,6 +961,48 @@ class LevelDataScriptHostTests(unittest.TestCase):
             _leveldata_interactive_final_record_boundary(data, {999})
         )
 
+    def test_leveldata_interactive_final_boundary_accepts_exact_empty_suffix(
+        self,
+    ) -> None:
+        record = self._levelscript_narrative_interactive_record(
+            "int_narrative_scene_book",
+            "text_test_1",
+        )
+        record_end = 1 + 4 + len(record)
+        suffix = (
+            (77).to_bytes(4, "little", signed=True)
+            + (0).to_bytes(4, "little", signed=True) * 14
+            + b"\x01\x00\x00\x00\x00"
+            + self._mp_string("map_test")
+            + (0).to_bytes(4, "little", signed=True) * 2
+            + b"\xff"
+            + (0).to_bytes(4, "little", signed=True) * 3
+        )
+        data = (
+            b"\x2b"
+            + (1).to_bytes(4, "little", signed=True)
+            + record
+            + suffix
+        )
+
+        boundary = _leveldata_interactive_final_record_boundary(
+            data,
+            set(),
+            expected_level_id="map_test",
+        )
+        rows = parse_leveldata_interactive_narrative_records(
+            data,
+            final_record_end_offset=boundary["recordEndOffset"],
+        )
+
+        self.assertEqual(record_end, boundary["recordEndOffset"])
+        self.assertEqual(
+            "complete_empty_script_suffix_to_eof",
+            boundary["levelDataFinalBoundaryValidation"],
+        )
+        self.assertEqual(0, boundary["levelScriptBriefDictionaryCount"])
+        self.assertEqual("text_test_1", rows[0]["typeId"])
+
     def test_leveldata_interactive_narrative_context_requires_exact_mirror(
         self,
     ) -> None:

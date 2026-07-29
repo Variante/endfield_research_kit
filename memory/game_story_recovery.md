@@ -3387,14 +3387,14 @@ while the report, latest export source fingerprint, and current object-index
 stage signature agree. `export.bat --export-from-game
 --animestudio-object-index` refreshes it automatically.
 
-The source-gap queue schema is now `sourceStoryGapQueue.v17`.
+The source-gap queue schema is now `sourceStoryGapQueue.v18`.
 `blackbox_common` falls from score 5 to 0 and
 `radio_blackbox_common_1` moves from actionable isolation to
 `closed_exact_guide_runtime_non_mission_content`. Current non-mission closures
 are **234** (233 authored-table rows plus this guide-runtime row), and current
-actionable core-isolated scenes total **2,162** after the later exact
+actionable core-isolated scenes total **2,152** after the later exact
 LevelScript and expanded LevelData interactive-configuration passes. The
-LevelData family now closes 190 isolated source-link rows, 169 more than the
+LevelData family now closes 200 isolated source-link rows, 179 more than the
 null-lock-only pass, while preserving all chronology gaps. The WebUI reflects
 the result:
 Mission Pipeline

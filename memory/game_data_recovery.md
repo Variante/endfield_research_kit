@@ -510,16 +510,26 @@ operator and serialized runtime flag remains raw evidence rather than a
 guessed enum name.
 
 A direct Story id or exact `ReadingPopUpTable.contentId` join then supplies
-source-configuration context. The current corpus has **224 placements for 219
-unique Story keys across 47 LevelData assets**: 22 null locks, 124 direct
-quest-state locks, 65 direct mission-state locks, and 13 combined locks.
+source-configuration context. The current corpus has **234 placements for 229
+unique Story keys across 49 LevelData assets**: 22 null locks, 129 direct
+quest-state locks, 68 direct mission-state locks, and 15 combined locks.
 Non-final records end at the next typed item. A final record is accepted only
 when its complete 25-member decoder lands exactly at member 21 (`levelIdNum`)
-and the adjacent member-22
-`Dictionary<ulong, LevelScriptBriefData/8>` independently validates. Twenty-four
+and either the adjacent member-22
+`Dictionary<ulong, LevelScriptBriefData/8>` independently validates or the
+complete environment-only members 21-43 suffix validates through exact EOF.
+The latter requires the signed level number, fourteen zero-count collections,
+the exact five-byte zero-valued `LevelSafeZoneData/1`, a MemoryPack `sceneId`
+equal to the containing level directory, two more zero-count collections, a
+null `LevelSpecificData`, and three final zero-count collections. Thirty-four
 final placements pass: the two null-lock rows remain `text_e10m4_3` and
-`text_e11m5_4`, while 22 more have fully decoded state locks. The last two
-bounded Story-bearing failures are now closed exactly:
+`text_e11m5_4`, while 32 more have fully decoded state locks. The exact
+empty-script suffix newly closes `dlg_map02_lv002_25`,
+`dlg_map02_lv002_12003`, `dlg_map02_lv004_11`, `radio_map01_lv002_1`,
+`dlg_map01_lv003_17`, `dlg_map01_lv006_5`, `dlg_map02_lv001_7`,
+`dlg_map02_lv002_12006`, `text_e8m1_1`, and `dlg_map02_lv005_12006`.
+The last two previously bounded Story-bearing progress-lock failures are also
+closed exactly:
 `dlg_c6m1_36` has a direct `c6m1_q#7` quest-state leaf with raw compare
 operator `1` / target `3`; `dlg_gm02m12_10` has an outer combined node with an
 `e8m5` target-`3` leaf and a nested combined node over `gm02m12` targets `2`

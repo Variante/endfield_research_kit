@@ -989,7 +989,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "source": (
                 "exact counted LevelData interactive list -> 25-member "
                 "LevelInteractiveData bounded by the next record or validated "
-                "member-21/member-22 boundary, including an exact null or "
+                "member-21 suffix (nonempty BriefData dictionary or complete "
+                "empty-script suffix), including an exact null or "
                 "decoded mission/quest-state progress lock -> "
                 "componentProperties[94].type_id"
             ),
@@ -997,7 +998,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "storyBinding": True,
             "ownership": False,
             "nativeMappingId":
-                "leveldata-interactive-narrative-config-v4",
+                "leveldata-interactive-narrative-config-v5",
             "orderBoundary": (
                 "interactive-list order, record index, entity logic id, "
                 "object position, and Story suffix do not establish relative "
@@ -1115,6 +1116,30 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         connection["levelScriptBriefDictionaryCountOffset"] = 204
         connection["levelScriptBriefDictionaryCount"] = 1
         connection["levelIdNum"] = 10
+        connection["levelDataFinalBoundaryValidation"] = (
+            "nonempty_levelscript_brief_dictionary"
+        )
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(
+            row["metrics"]["closedExactRuntimeConfigIsolatedScenes"],
+            1,
+        )
+
+        connection["levelScriptBriefDictionaryCount"] = 0
+        connection["levelScriptDataPathDictionaryCountOffset"] = 208
+        connection["levelScriptDataPathDictionaryCount"] = 0
+        connection["levelDataSafeZoneOffset"] = 260
+        connection["levelDataSceneId"] = "map_test"
+        connection["levelDataSpecificDataOffset"] = 280
+        connection["levelDataEmptySuffixEndOffset"] = 320
+        connection["levelDataFinalBoundaryValidation"] = (
+            "complete_empty_script_suffix_to_eof"
+        )
         row = gap_queue.build_gap_row(
             partial,
             payload,
