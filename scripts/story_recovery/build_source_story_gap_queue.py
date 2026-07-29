@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v36"
+SCHEMA = "sourceStoryGapQueue.v37"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v15"
+    "current-build-offline-story-carrier-exhaustion-v16"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -662,6 +662,46 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
             "au_dlg_e7m2_13_002",
         ),
     },
+    "dlg_e7m3_13": {
+        "missionId": "e7m3",
+        "filename": "dlg_e7m3_13_pD75255B67D51A16E.json",
+        "sha256":
+            "437FD848FEBF1BD10E90C9CAB6B68F415E29ED7A8DAFDE21EE1A35C10DDAB56B",
+        "lineIds": tuple(
+            f"dlg_e7m3_13_{number:03d}" for number in range(1, 10)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_e7m3_13_1_{number:03d}"
+            for number in range(1, 4)
+        ),
+    },
+    "dlg_e7m3_15": {
+        "missionId": "e7m3",
+        "filename": "dlg_e7m3_15_pC808C6988F2464AA.json",
+        "sha256":
+            "62FF31B559B95F30B5AEE5547D4964044F818ED6C41F75101CF5E602739572F1",
+        "lineIds": tuple(
+            f"dlg_e7m3_15_{number:03d}" for number in range(1, 13)
+        ),
+        "optionIds": (
+            "option_dlg_e7m3_15_1_001",
+            "option_dlg_e7m3_15_1_002",
+            "option_dlg_e7m3_15_2_001",
+            "option_dlg_e7m3_15_3_001",
+            "option_dlg_e7m3_15_4_001",
+            "option_dlg_e7m3_15_4_002",
+        ),
+    },
+    "dlg_e7m3_16": {
+        "missionId": "e7m3",
+        "filename": "dlg_e7m3_16_p9BE01C45211C9E1C.json",
+        "sha256":
+            "0CF7478E1B968C0E164FC13E0EB79BF73A72D15DC6EE80B87B32A85490C37F76",
+        "lineIds": tuple(
+            f"dlg_e7m3_16_{number:03d}" for number in range(1, 7)
+        ),
+        "optionIds": ("option_dlg_e7m3_16_1_001",),
+    },
     "dlg_e6m3_6": {
         "missionId": "e6m3",
         "filename": "dlg_e6m3_6_p5CAF49EFDB182127.json",
@@ -1051,6 +1091,10 @@ OFFLINE_EXHAUSTION_E6M4_RADIOS = frozenset({
     "radio_e6m4_36",
     "radio_e6m4_37",
 })
+OFFLINE_EXHAUSTION_E7M3_RADIOS = frozenset({
+    "radio_e7m3_16",
+    "radio_e7m3_26",
+})
 OFFLINE_EXHAUSTION_E3M3_RADIOS = frozenset({
     "radio_e3m3_1d5",
     "radio_e3m3_1d7",
@@ -1074,6 +1118,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e6m4": OFFLINE_EXHAUSTION_E6M4_RADIOS,
     "e7m2": OFFLINE_EXHAUSTION_E7M2_RADIOS,
+    "e7m3": OFFLINE_EXHAUSTION_E7M3_RADIOS,
     "e9m2": OFFLINE_EXHAUSTION_E9M2_RADIOS,
     "e10m3": OFFLINE_EXHAUSTION_E10M3_RADIOS,
     "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
@@ -1211,6 +1256,31 @@ OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
             4817078487535843049,
             -7532010202595511572,
             -5193057068623944858,
+        ),
+    },
+    "text_e7m3_1": {
+        "missionId": "e7m3",
+        "readingPopupRowId": "text_e7m3_1",
+        "bgType": 2,
+        "iconType": 0,
+        "titleId": -8375347242993854697,
+        "contentTextIds": (
+            -6133919335048897276,
+            -1559385323000989057,
+        ),
+    },
+    "text_e7m3_2": {
+        "missionId": "e7m3",
+        "readingPopupRowId": "rp_text_e7m3_2",
+        "bgType": 0,
+        "iconType": 0,
+        "titleId": -3623905206393849629,
+        "contentTextIds": (
+            1089492432684854980,
+            -7215172534009505028,
+            -6240633693489330108,
+            -2308406107308525111,
+            -587549745278413952,
         ),
     },
 }
