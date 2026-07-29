@@ -294,10 +294,25 @@ registries `Main/StringPathHash.bin` and
 UTF-16LE pool` layout. The main registry contains 538,806 entries; the initial
 registry contains 1,659. The initial registry contributes zero paths for the
 three unresolved CutsceneRoot selector keys, while the main registry
-contributes all 34. The current inventory also contains the separate
-17,909,576-byte `Main/FacBone/FacBoneTRS.bin`; it remains a distinct format
-surface until independently classified. These conclusions are build-specific
-and do not cover runtime-added data, server state, or future files.
+contributes all 34.
+
+The final current file,
+`Main/FacBone/FacBoneTRS.bin`, is also decoded completely. Its 2,020-byte
+serialized unit hash table maps 84 signed unit GUIDs to 762 bone records; the
+bone records map 64-bit bone-name hashes and frame indexes to 279,615
+contiguous 64-byte matrices. The matrix region ends exactly at the
+17,909,576-byte EOF and contains no non-finite `float32` values. Native
+`FacBoneTRSBinary.TryGetBoneTRS` confirms the exact
+`guid -> boneNameHash -> frame -> matrix` lookup, and
+`STATICVATDATA.GetBoneTRS` supplies the entity's current VAT frame and a
+`StringHash64` of the requested bone name. See
+`reports/story/recovery/facbone_trs_story_audit.{json,md}`.
+
+The current ExtendData/InitialExtendData inventory is therefore exhaustive:
+one initial resource-path registry and three main files comprising the main
+resource-path registry, the compressed BehaviourTree pool, and the factory
+bone-transform table. These conclusions are build-specific and do not cover
+runtime-added data, server state, or future files.
 
 Do not infer that a VFS block is irrelevant merely because the normal WebUI
 export skips it. Promote it only when a bounded decoder or query need justifies

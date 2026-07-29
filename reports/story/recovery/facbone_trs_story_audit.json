@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "file": "tmp/story/facbone_trs/Data/ExtendData/Main/FacBone/FacBoneTRS.bin",
+    "sha256": "d0882963c6a90c9f19ef41eb5f0983b83b925b075e7ea7d1f2ffc9ef2640c5a4"
+  },
+  "scope": {
+    "targets": [
+      "cutscene_e11m2_liexi_xs_m_01_last_01",
+      "cutscene_e11m2_liexi_xs_m_01_last_02",
+      "cutscene_f1m9d3_1"
+    ],
+    "purpose": "classify the final current ExtendData-family file and test whether it can co-carry unresolved Story selectors"
+  },
+  "layout": {
+    "fileBytes": 17909576,
+    "unitTableBytes": 2020,
+    "unitTableStart": 4,
+    "bucketCount": 84,
+    "nonEmptyBucketCount": 55,
+    "unitCount": 84,
+    "unitEntryBytes": 16,
+    "boneTableStart": 2024,
+    "boneTableEnd": 14216,
+    "boneCount": 762,
+    "boneEntryBytes": 16,
+    "matrixTableStart": 14216,
+    "matrixTableEnd": 17909576,
+    "matrixCount": 279615,
+    "matrixBytes": 64,
+    "frameCountMin": 2,
+    "frameCountMax": 1102,
+    "duplicateBoneHashesWithinUnit": 6,
+    "nonFiniteFloatCount": 0,
+    "unitGuidMin": -2108562606,
+    "unitGuidMax": 2105808650
+  },
+  "extendDataInventory": {
+    "index": "tmp/story/extend_data_inventory/current.json",
+    "version": [
+      22097503
+    ],
+    "blockCount": 2,
+    "chunkCount": 2,
+    "fileCount": 4,
+    "files": [
+      {
+        "name": "Data/ExtendData/Initial/InitStringPathHash.bin",
+        "blockType": "InitialExtendData",
+        "length": 305796,
+        "dataMd5": "DE473419868A89EC8E8BD6F72083D2ED"
+      },
+      {
+        "name": "Data/ExtendData/Main/CompressData.bin",
+        "blockType": "ExtendData",
+        "length": 789844,
+        "dataMd5": "490BB497AA3517F781228FB81CFB0556"
+      },
+      {
+        "name": "Data/ExtendData/Main/FacBone/FacBoneTRS.bin",
+        "blockType": "ExtendData",
+        "length": 17909576,
+        "dataMd5": "087D084B92C6FBACD786BE77AEE09087"
+      },
+      {
+        "name": "Data/ExtendData/Main/StringPathHash.bin",
+        "blockType": "ExtendData",
+        "length": 118687426,
+        "dataMd5": "D2F5B204E803E9B0C1515FBCE442BC0C"
+      }
+    ]
+  },
+  "nativeEvidence": {
+    "mappingId": "gameassembly-2026-07-29-facbone-trs-v1",
+    "gameAssembly": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
+    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "metadata": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+    "metadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "methods": [
+      {
+        "name": "Beyond.Gameplay.Factory.FacBoneTRSBinary.InitMain",
+        "token": "0x060004c5",
+        "methodIndex": 394317,
+        "va": "0x18449b330",
+        "finding": "memory-maps FacBoneTRS.bin, retains its base pointer, and initializes the unit lookup table"
+      },
+      {
+        "name": "Beyond.Gameplay.Factory.FacBoneTRSBinary._InitTable",
+        "token": "0x060004c6",
+        "methodIndex": 394318,
+        "va": "0x18449bb30",
+        "finding": "initializes the unit hash table from file base + 4"
+      },
+      {
+        "name": "Beyond.Gameplay.Factory.FacBoneTRSBinary.TryGetBoneTRS",
+        "token": "0x060004c7",
+        "methodIndex": 394319,
+        "va": "0x1869bf644",
+        "finding": "looks up signed guid, scans 16-byte bone entries for a 64-bit bone hash, bounds-checks frame, and copies one 64-byte matrix"
+      },
+      {
+        "name": "Beyond.Gameplay.Factory.STATICVATDATA.GetBoneTRS",
+        "token": "0x060069bd",
+        "methodIndex": 27068,
+        "va": "0x1874e4ae0",
+        "finding": "gets the entity's current VAT frame, hashes boneName with StringHash64, and calls TryGetBoneTRS"
+      }
+    ]
+  },
+  "exactEncodedTargetHits": [],
+  "conclusion": {
+    "classification": "factory_animation_transform_only",
+    "missionGraphAction": "none",
+    "reason": "The complete file is an exact guid -> bone hash -> frame -> 64-byte matrix lookup. The native caller supplies an entity VAT frame and hashed bone name; the schema has no Story key, mission, quest, LevelScript, phase, or playback-owner field. No unresolved Story root occurs in ASCII or UTF-16LE form."
+  },
+  "boundary": "This closes the hash-gated current FacBoneTRS.bin as a Story carrier. It does not classify runtime/server state, future ExtendData files, or arbitrary semantic meaning assigned to numeric guids outside this reader path."
+}
