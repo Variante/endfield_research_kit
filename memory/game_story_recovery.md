@@ -3817,7 +3817,22 @@ Current main-story priorities:
    DialogTree quest-state gates raise it to 20/25. The exact AirWall carrier
    now adds 20 radio files across 61 record-level mission attachments (60
    unique mission/radio placements); these are wall-state-gated pushback
-   contexts and remain non-owning. The next useful step is
+   contexts and remain non-owning. The current DynamicStreaming mission-control
+   audit adds another bounded candidate surface: 387 typed
+   `RootComp -> IdComp / MissionControlComp` roots include 125 exact numeric
+   `IdComp.logicId == LevelScript scriptId` matches, and 72 matching scripts
+   contain 216 Story occurrences. The two occurrences newly visible after the
+   current LevelScript parser refresh are `cutscene_e1m3_1` under logic/script
+   id `2100060003`, whose DynamicScene conditions mention `e1m2_q#5` and
+   `e1m2_q#7`, and `cutscene_e7m4_2` under id `23300000023`, whose condition
+   mentions `e7m4`. These are exact authored cross-references only. Native
+   DynamicScene registration resolves the logic id through its entity map,
+   while LevelScript resolution uses the selected LevelScript container; no
+   direct runtime bridge passes one identity into the other. The maintained
+   report therefore sets `missionGraphAction=none`, and the WebUI must keep
+   this evidence candidate-only unless a typed serialized carrier or runtime
+   bridge closes the namespace/owner gap.
+   The next useful step is
    no longer another pass over listener names or payload fields: the exact
    interactive progress-lock join has already promoted every current row that
    passes its typed entity/config/quest gates, while the remaining

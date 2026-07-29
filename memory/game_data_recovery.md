@@ -1704,7 +1704,11 @@ Across 457 current main chunks, `FBDynamicSceneSingleGrid` exposes typed
 `IdComp.UniqueId` only in the DynamicScene logic-id-to-entity-id map, while
 `DynamicSceneMissionControlSystem` reacts to mission/quest state changes. The
 scan found 387 mission-controlled roots and 125 numeric identities also present
-as LevelScript ids; 72 of those touch 214 Story actions. This equality is a
+as LevelScript ids; 72 of those touch 216 Story actions. The maintained current
+audit is
+`reports/story/recovery/dynamic_scene_mission_control_audit.{json,md}` and
+streams the effective installed Persistent overlay rather than depending on a
+saved scratch dump. This equality is a
 useful authored cross-reference but not an ownership bridge: exhaustive native
 caller scans found no DynamicScene/LevelScript-manager join, and the remaining
 `23200013031` candidate is a mission-controlled world-resource root with no
