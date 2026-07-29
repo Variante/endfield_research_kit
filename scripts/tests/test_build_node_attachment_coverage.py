@@ -345,6 +345,92 @@ class ScriptScopedPlacementTests(Base):
         )
         self.assertEqual(report["counts"]["scriptScopedQuestPlacementRows"], 0)
 
+    def test_exact_existing_quest_condition_scope_is_published(self):
+        flow = {
+            "alpha": {
+                "quests": [{
+                    "id": "alpha_q#1",
+                    "storyConnections": [{
+                        "key": "dlg_alpha_1",
+                        "kind": "dialog",
+                        "relation": "levelscript_condition_scope",
+                        "direction": "context",
+                        "confidence": "scoped_script",
+                        "mapId": "map_alpha",
+                        "scriptId": "1001",
+                    }],
+                }],
+                "missionStoryConnections": [{
+                    "key": "dlg_alpha_1",
+                    "kind": "dialog",
+                    "relation": "levelscript_mission_context",
+                    "confidence": "scoped_script",
+                    "hasUnscopedOrOtherMissionOccurrences": False,
+                    "occurrenceCount": 1,
+                    "allOccurrenceCount": 1,
+                    "scopeEvidenceKinds": ["mission_condition_checks_script"],
+                    "levelScriptOccurrences": [{
+                        "levelId": "map_alpha",
+                        "scriptId": "1001",
+                        "actionMapRole": "actionList#1 root",
+                        "recordClass": "play_dialog",
+                        "allStoryKeysInRecord": ["dlg_alpha_1"],
+                        "scopeEvidenceKinds": [
+                            "mission_condition_checks_script",
+                        ],
+                        "missionConditions": [{
+                            "missionId": "alpha",
+                            "questId": "alpha_q#1",
+                        }],
+                    }],
+                }],
+            },
+        }
+
+        report = self.make(flow)
+
+        self.assertEqual(report["counts"]["scriptScopedQuestPlacementRows"], 1)
+        placement = report["scriptScopedQuestPlacements"][0]
+        self.assertEqual(placement["questId"], "alpha_q#1")
+        self.assertEqual(placement["storyKey"], "dlg_alpha_1")
+        self.assertEqual(
+            placement["scopeDiscriminator"],
+            "exact_quest_condition_and_complete_native_playback_scope",
+        )
+
+    def test_quest_condition_scope_without_complete_native_match_is_not_published(
+        self,
+    ):
+        flow = {
+            "alpha": {
+                "quests": [{
+                    "id": "alpha_q#1",
+                    "storyConnections": [{
+                        "key": "dlg_alpha_1",
+                        "relation": "levelscript_condition_scope",
+                        "direction": "context",
+                        "confidence": "scoped_script",
+                        "mapId": "map_alpha",
+                        "scriptId": "1001",
+                    }],
+                }],
+                "missionStoryConnections": [{
+                    "key": "dlg_alpha_1",
+                    "relation": "levelscript_mission_context",
+                    "confidence": "scoped_script",
+                    "hasUnscopedOrOtherMissionOccurrences": True,
+                    "occurrenceCount": 1,
+                    "allOccurrenceCount": 2,
+                    "scopeEvidenceKinds": ["mission_condition_checks_script"],
+                    "levelScriptOccurrences": [],
+                }],
+            },
+        }
+
+        report = self.make(flow)
+
+        self.assertEqual(report["counts"]["scriptScopedQuestPlacementRows"], 0)
+
     def test_placement_claim_is_bounded_to_scope_not_playback(self):
         note = self.make(self.FLOW)["evidencePolicy"]["scriptScopedQuestPlacement"]
         self.assertIn("does not prove the quest plays", note)

@@ -198,7 +198,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v45"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v46"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -7002,6 +7002,15 @@ def publish_quest_objective_story_scope(
                 "uniquely-decoded quest getter gates this Story playback path"
             )
             confidence = "derived_exact_quest_scope_path_predicate"
+        elif (
+            discriminator
+            == "exact_quest_condition_and_complete_native_playback_scope"
+        ):
+            evidence_text = (
+                "quest condition names this LevelScript and the complete exact "
+                "native Story occurrence carries that same quest condition"
+            )
+            confidence = "derived_exact_quest_condition_scope"
         else:
             evidence_text = (
                 "quest objective names the unique LevelScript that hosts "
