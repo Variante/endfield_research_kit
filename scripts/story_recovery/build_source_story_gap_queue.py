@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v53"
+SCHEMA = "sourceStoryGapQueue.v54"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -128,7 +128,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v32"
+    "current-build-offline-story-carrier-exhaustion-v33"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -183,6 +183,12 @@ OFFLINE_EXHAUSTION_E11M4_CUTSCENE = (
 )
 OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE = "cutscene_e11m1_2"
 OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
+    "cutscene_e1m1_6": {
+        "missionId": "e1m1",
+        "definitionRowKeys": tuple(
+            f"cutscene_e1m1_6_{number:02d}" for number in range(1, 6)
+        ),
+    },
     "cutscene_e2m5_2": {
         "missionId": "e2m5",
         "definitionRowKeys": (
@@ -274,6 +280,11 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
         "cutscene_e0m0_12",
         "cutscene_e0m0_11111",
     }),
+    "e1m1": frozenset({
+        "cutscene_e1m1_3_1_test",
+        "cutscene_e1m1_4",
+        "cutscene_e1m1_6",
+    }),
     "e1m3": frozenset({"cutscene_e1m3_1"}),
     "e2m5": frozenset({
         "cutscene_e2m5_2",
@@ -318,6 +329,8 @@ OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e0m0_11": 1,
     "cutscene_e0m0_12": 1,
     "cutscene_e0m0_11111": 1,
+    "cutscene_e1m1_3_1_test": 1,
+    "cutscene_e1m1_4": 2,
     "cutscene_e1m3_1": 1,
     "cutscene_e2m6_designer_AngelSurrounding": 1,
     "cutscene_e2m6_designer_anchorperish_001": 1,
@@ -377,6 +390,29 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
     "cutscene_e0m0_11111": {
         "timelineRegistryId": None,
         "files": (),
+    },
+    "cutscene_e1m1_3_1_test": {
+        "timelineRegistryId": 70,
+        "files": ((
+            "cutscene_e1m1_3_1_test_p9F77BA72F7CBE5D2.json",
+            "CB22EB28D3500691B0A00F6862F93164F69D9D8B6315E05E2C072B8A8DB0D653",
+            "cutscene_e1m1_3_1_test",
+        ),),
+    },
+    "cutscene_e1m1_4": {
+        "timelineRegistryId": 190,
+        "files": (
+            (
+                "f_cutscene_e1m1_4_p45CAD9531490A151.json",
+                "8BA0287DD75E0FD55AF4D86ABA157964A3A7D8A3F03563DC5291CEE4FA9A2AEF",
+                "f_cutscene_e1m1_4",
+            ),
+            (
+                "m_cutscene_e1m1_4_p52315EB9895D6AEB.json",
+                "F421068C0B963F45B077BC8776D39EF0A5766332BB43B8B0B39C6EE73211F567",
+                "m_cutscene_e1m1_4",
+            ),
+        ),
     },
     "cutscene_e1m3_1": {
         "timelineRegistryId": 89,
@@ -612,6 +648,8 @@ OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS = {
     "cutscene_e0m0_11": 1,
     "cutscene_e0m0_12": 1,
     "cutscene_e0m0_11111": 1,
+    "cutscene_e1m1_3_1_test": 1,
+    "cutscene_e1m1_4": 2,
     "cutscene_e1m3_1": 1,
     "cutscene_e2m6_designer_AngelSurrounding": 1,
     "cutscene_e2m6_designer_anchorperish_001": 1,
@@ -667,6 +705,31 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
                 "envTalkData": {"envTalkOverrideNpc": True},
                 "dialogExOptionData": [],
                 "dialogId": "dlg_e1m2_6",
+                "missionId": "",
+            },
+        },
+    },
+    "dlg_e1m1_6": {
+        "missionId": "e1m1",
+        "filename": "dlg_e1m1_6_p90B20316D58C764A.json",
+        "sha256":
+            "9696F301E71FAA3350DD30612CA5C00A6D2F49635E501219AA03D3E5E4F7BCE0",
+        "extraConfigFilename":
+            "dlg_e1m1_6_extra_config_pDCB49B20E5F08D9B.json",
+        "extraConfigSha256":
+            "94B7CCDF409671461EBA12616DB65D27C18D9C00269142DFF5E999ABDDAFE218",
+        "lineIds": tuple(
+            f"dlg_e1m1_6_{number:03d}" for number in range(1, 6)
+        ),
+        "optionIds": (),
+        "npcProxyConsumer": {
+            "proxyId": "chen_map01_e1m1Basement1",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e1m1_6",
                 "missionId": "",
             },
         },
@@ -3691,7 +3754,7 @@ def build_offline_exhaustion_index(
             "recoveryStatus":
                 "deferred_current_build_offline_surface_exhausted",
             "evidenceKind":
-                "text_table_only_cutscene_without_recovered_asset_or_consumer",
+                "text_table_only_cutscene_without_recovered_original_story_consumer",
             "definitionTable": "TextTable",
             "definitionRowKeys": sorted(
                 definition["definitionRowKeys"],
