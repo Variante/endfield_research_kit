@@ -75,12 +75,18 @@ from common import (  # noqa: E402
     write_report_json,
     write_text_if_changed,
 )
+from story_builder.mission_assets import (  # noqa: E402
+    select_complete_mission_runtime_root,
+)
 
 
 SCHEMA = "missionDependencyGraph.v1"
 
-DEFAULT_MISSION_ROOT = (
-    ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
+DEFAULT_MISSION_ROOT = select_complete_mission_runtime_root(
+    ROOT / "export_full" / "structured" / "StreamingAssets" / "Data"
+    / "Json" / "MissionRuntimeAsset",
+    ROOT / "export_full" / "structured" / "Persistent" / "Data" / "Json"
+    / "MissionRuntimeAsset",
 )
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 

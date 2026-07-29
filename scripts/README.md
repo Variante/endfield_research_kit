@@ -624,7 +624,14 @@ Expected active inputs and outputs:
   exported `MissionRuntimeAsset`. It preserves predecessor and condition-state
   edges as authored evidence, annotates the client/server protocol proven in
   the current native binary, retains exact dialog finish `0`, and never treats
-  `flowIndex` as an exclusive branch selector. `export.bat` runs it after Story
+  `flowIndex` as an exclusive branch selector. The default input is selected
+  as one coherent corpus: Persistent wins only when it contains every
+  StreamingAssets mission filename, otherwise the builder falls back wholly
+  to StreamingAssets instead of creating a partial hybrid. The index records
+  the selected root and completeness decision; an explicit `--mission-root`
+  is labeled separately. The current 980/980 Persistent override yields 490
+  missions, 4,462 quests, 155 mission-state edges, and the additional strong
+  `dlg_f1m32_1 -> dlg_f1m32_2` Story edge. `export.bat` runs it after Story
   so the experimental page can merge names and objective text from
   the selected language's existing mission sidecars. Story bundle generation
   also localizes base/quest-override mission descriptions and emits per-quest
@@ -663,7 +670,7 @@ Expected active inputs and outputs:
   The coverage pass also joins missionless SubGame `bindScriptId` values to the
   exact script ids on unlinked native-playback occurrences. These become
   explicit missionless runtime nodes, not mission-owned Story connections; the
-  current corpus has seven nodes, eight unique Story files, and eleven
+  current corpus has ten nodes, nine unique Story files, and fourteen
   SubGame-to-Story placements. Exact `GameMechanicConditionTable`,
   `ActivityConditionalMultiStageTable`, and `DungeonTable` cross-references are
   retained as non-owning prerequisite/association/scene-host evidence. Blank
@@ -1648,7 +1655,10 @@ gameplay-video OCR/audio workflow.
   plus cross-mission quest precedence, and only calls a mission-level cycle an
   `interleaving` when that quest graph is acyclic -- otherwise it is reported
   as an unexplained cycle. Mission unlock order is server-authored, so a
-  missing edge never means two missions are unordered. Mission Pipeline embeds
+  missing edge never means two missions are unordered. It uses the same
+  complete-Persistent-or-Streaming fallback selector as Mission Pipeline; the
+  current corpus has 524 state rows, 197 cross-mission rows, and 155 edges
+  across 154 missions (141 precedence). Mission Pipeline embeds
   the per-mission entry as `missionGraph`.
 - `story_recovery/build_envtalk_attachment.py`: maps ambient `env_*` Story
   files to their authored consumers. `EnvTalkTable` is definition-only and has

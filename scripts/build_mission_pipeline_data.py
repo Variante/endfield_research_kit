@@ -28,6 +28,10 @@ try:
         write_text_if_changed,
     )
     from story_builder.levelscript_binary import decode_levelscript_encounter_module_target
+    from story_builder.mission_assets import (
+        mission_runtime_source_summary,
+        select_complete_mission_runtime_root,
+    )
     from story_recovery.build_envtalk_attachment import (
         build_report as build_envtalk_attachment_report,
     )
@@ -63,6 +67,10 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
     from scripts.story_builder.levelscript_binary import (
         decode_levelscript_encounter_module_target,
     )
+    from scripts.story_builder.mission_assets import (
+        mission_runtime_source_summary,
+        select_complete_mission_runtime_root,
+    )
     from scripts.story_recovery.build_envtalk_attachment import (
         build_report as build_envtalk_attachment_report,
     )
@@ -88,8 +96,16 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MISSION_ROOT = (
+STREAMING_MISSION_ROOT = (
     ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
+)
+PERSISTENT_MISSION_ROOT = (
+    ROOT / "export_full" / "structured" / "Persistent" / "Data" / "Json"
+    / "MissionRuntimeAsset"
+)
+DEFAULT_MISSION_ROOT = select_complete_mission_runtime_root(
+    STREAMING_MISSION_ROOT,
+    PERSISTENT_MISSION_ROOT,
 )
 DEFAULT_SUBGAME_TABLE = (
     ROOT
@@ -6125,10 +6141,28 @@ def build_all(
         if stale.name not in produced:
             stale.unlink()
     summaries.sort(key=lambda row: natural_quest_key(row["id"]))
+    default_mission_root = select_complete_mission_runtime_root(
+        STREAMING_MISSION_ROOT,
+        PERSISTENT_MISSION_ROOT,
+    )
+    if mission_root.resolve() == default_mission_root.resolve():
+        source_summary = mission_runtime_source_summary(
+            STREAMING_MISSION_ROOT,
+            PERSISTENT_MISSION_ROOT,
+        )
+        source_summary["selectedRoot"] = repo_path(
+            Path(source_summary["selectedRoot"])
+        )
+    else:
+        source_summary = {
+            "selectedRoot": repo_path(mission_root),
+            "selection": "explicit_mission_root",
+        }
     index = {
         "schemaVersion": SCHEMA_VERSION,
         "generated": int(time.time()),
         "source": mission_root.relative_to(ROOT).as_posix() if mission_root.is_relative_to(ROOT) else mission_root.as_posix(),
+        "missionRuntimeSource": source_summary,
         "counts": {
             "missions": len(summaries),
             "quests": quest_count,

@@ -32,9 +32,15 @@ SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 from common import read_bytes_cached
+from story_builder.mission_assets import select_complete_mission_runtime_root
 
 EXPORT_ROOT = ROOT / "export_full"
-DEFAULT_MRA_DIR = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
+DEFAULT_MRA_DIR = select_complete_mission_runtime_root(
+    EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"
+    / "MissionRuntimeAsset",
+    EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Json"
+    / "MissionRuntimeAsset",
+)
 DEFAULT_TIMELINE_ORDERS = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json"
 DEFAULT_GENERATED_MISSION_DIR = ROOT / "webui" / "data" / "lang" / "CN" / "mission"
 DEFAULT_OUT_JSON = ROOT / "reports" / "story" / "build" / "mission_timeline_recovery_CN.json"
@@ -4034,7 +4040,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     export_root = args.export_root if args.export_root.is_absolute() else ROOT / args.export_root
-    mra_dir = args.mra_dir or export_root / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
+    mra_dir = args.mra_dir or select_complete_mission_runtime_root(
+        export_root / "structured" / "StreamingAssets" / "Data" / "Json"
+        / "MissionRuntimeAsset",
+        export_root / "structured" / "Persistent" / "Data" / "Json"
+        / "MissionRuntimeAsset",
+    )
     mra_dir = mra_dir if mra_dir.is_absolute() else ROOT / mra_dir
     timeline_orders = args.timeline_orders or export_root / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json"
     timeline_orders = timeline_orders if timeline_orders.is_absolute() else ROOT / timeline_orders

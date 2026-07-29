@@ -11,9 +11,22 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(ROOT / "scripts"))
+
+from story_builder.mission_assets import (  # noqa: E402
+    select_complete_mission_runtime_root,
+)
+
 DATA_JSON_DIR = ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json"
+PERSISTENT_DATA_JSON_DIR = (
+    ROOT / "export_full" / "structured" / "Persistent" / "Data" / "Json"
+)
 REQUIRED_SOURCE_LINK_ROOTS = (
-    DATA_JSON_DIR / "MissionRuntimeAsset",
+    select_complete_mission_runtime_root(
+        DATA_JSON_DIR / "MissionRuntimeAsset",
+        PERSISTENT_DATA_JSON_DIR / "MissionRuntimeAsset",
+    ),
     DATA_JSON_DIR / "LevelScriptData",
     DATA_JSON_DIR / "LevelScriptTemplateData",
 )
