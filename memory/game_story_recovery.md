@@ -128,26 +128,26 @@ one original-data connection across 4,361 mission placements and 1,208 remain
 unassigned. The denominator now admits 106 Story files whose nominal Story
 owner is not one of the 490 MissionRuntime ids only because accepted generated
 pipeline edges connect them; this repairs an accounting blind spot and does not
-invent 106 new evidence claims. Of the unassigned rows, 153 have an exact current-build native
+invent 106 new evidence claims. Of the unassigned rows, 155 have an exact current-build native
 playback action but still lack a decoded mission/quest trigger. Every one of
 those playback routes now has a native ActionHeader event name and exact
 serialized control path from the complete installed-build union table. Those rows remain
 visible as unresolved evidence rather than being attached by filename or OCR.
 The global binary boundary groups the unassigned native-playback files under
-158 exact serialized runtime-receiver nodes (182 receiver-to-Story placements),
+161 exact serialized runtime-receiver nodes (185 receiver-to-Story placements),
 leaving zero exact-native rows without a decoded runtime selector.
 These nodes expose entity/slot/property, script event, spawner,
 patrol/checkpoint, signal, guide, and stage selectors but do not count as
 mission ownership.
-The maintained offline activation-frontier audit now collapses those 158 nodes
-to 93 hosting LevelScripts and decodes the next static layer. Seventy scripts
-are `Manual`, 13 are `ByEnterStartShape`, and 10 are `SameWithActive`. Ten have
+The maintained offline activation-frontier audit now collapses those 161 nodes
+to 95 hosting LevelScripts and decodes the next static layer. Ten have
 an exact original-data SubGame `bindScriptId` activation scope; the SubGame
-rows still carry no mission owner. Of the remainder, 54 are Manual with null
+rows still carry no mission owner. Of the remainder, 55 are Manual with null
 start shapes, null task maps, zero parent script ids, and no incoming literal
-cross-script ManualStart target. Across all 93, zero typed MissionRuntime
-objective operand names the receiver script and the manual-control audit still
-has zero incoming literal cross-script target. Only one receiver script is in
+cross-script ManualStart target. One typed MissionRuntime objective observes a
+receiver script property without activating or owning its playback, and the
+manual-control audit still has zero incoming literal cross-script target. Only
+one receiver script is in
 an exact mission-named LevelData host, which remains loading/registration
 context rather than playback ownership. The 12 non-SubGame scripts with
 non-empty authored start shapes also have zero complete exact matches against
@@ -3871,8 +3871,16 @@ Current main-story priorities:
    zero safe promotions. Progress now requires an independently typed
    cross-system owner from MissionRuntime, LevelData parent/host registries, or
    the opaque server-state implementation, plus another typed bridge for
-   server-placeholder rules. The
-   current IFix payload is proven not to replace those methods; only a future
+   server-placeholder rules. The current v8 static nominal-host pass
+   additionally closes all five
+   exact-playback black ownership candidates: validated mission-named
+   LevelData dictionaries exclude the receiver scripts for `black_e9m2_1`,
+   `black_sm2l6m1_4`, and `black_e11m1_2`; `black_a1m6d3_1` and
+   `black_a1m6d4_1` instead have exact
+   `activity_qingxi_qiangti_3/_4` SubGame bind carriers and no same-level
+   nominal-mission host. These are container/activation-scope negatives, not
+   ownership promotions. The current IFix payload is proven not to replace
+   those methods; only a future
    patch update warrants repeating that audit. The placeholder
    packet shape itself is recovered and cannot bind Story because it lacks all
    LevelScript/Story identities. Do not add name guesses.
@@ -4236,12 +4244,16 @@ Current main-story priorities:
    absolute paths, and arbitrary log text. This closes the current normal-play
    local persistence surface as an ownership source while leaving future
    sessions cheap to re-audit.
-2. Continue original-data ownership recovery for the 67 unassigned black
-   scenes. Six already have exact current-build LevelScript playback and
-   event/control paths but no validated mission host. No wholly unlinked black
-   file remains recoverable through an exact DialogTree parent; one connected
-   file has a second unresolved parent use. The other 61 have
-   no current-build original-game playback consumer. The next useful binary
+2. Continue original-data ownership recovery for the 65 unassigned black
+   scenes. Five have exact current-build LevelScript playback and
+   event/control paths, but their complete static nominal-owner route is now
+   closed: three validated same-level mission-named LevelData dictionaries
+   exclude the receiver script, while two receiver scripts are bound to
+   non-mission activity SubGames and have no same-level nominal-mission host.
+   No wholly unlinked black file remains recoverable through an exact
+   DialogTree parent; one connected file has a second unresolved parent use.
+   The remaining 60 rows are definition-only or have no current-build
+   original-game playback consumer. The next useful binary
    frontier is a serialized server/runtime activation registry that contains
    both LevelScript and MissionRuntime/quest identity. The current
    `TeleportParam` loading carrier is also closed: producers do not co-populate
