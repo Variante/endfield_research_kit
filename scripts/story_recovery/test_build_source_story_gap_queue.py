@@ -2781,6 +2781,27 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_e1m4_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E1M4_RADIOS,
+            {
+                "radio_e1m4_0d5",
+                "radio_e1m4_1d5",
+                "radio_e1m4_2d5",
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_RADIO_AUDIO_VARIANTS[
+                "radio_e1m4_0d5"
+            ],
+            {
+                "au_radio_e1m4_0d5_001": (
+                    "au_radio_e1m4_0d5_001_f",
+                    "au_radio_e1m4_0d5_001_m",
+                ),
+            },
+        )
+
     def test_exact_lua_controller_playback_closes_isolated_cutscene(
         self,
     ) -> None:
@@ -3426,13 +3447,15 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             {"radio_e0m0_9d5", "radio_e0m0_10", "radio_e0m0_21"},
         )
         self.assertEqual(
-            gap_queue.OFFLINE_EXHAUSTION_MISSING_AUDIO_IDS[
+            gap_queue.OFFLINE_EXHAUSTION_RADIO_AUDIO_VARIANTS[
                 "radio_e0m0_10"
             ],
             {
-                "au_radio_e0m0_10_001",
-                "au_radio_e0m0_10_002",
-                "au_radio_e0m0_10_003",
+                f"au_radio_e0m0_10_{number:03d}": (
+                    f"au_radio_e0m0_10_{number:03d}_f",
+                    f"au_radio_e0m0_10_{number:03d}_m",
+                )
+                for number in range(1, 4)
             },
         )
         self.assertEqual(
