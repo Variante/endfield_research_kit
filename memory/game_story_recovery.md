@@ -4306,7 +4306,7 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v29`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v30`
    turns the completed exact `e1m3`, `e6m3`, `e9m2`, `e10m4`, `e11m1`, `e11m2`,
    `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
    operational deferrals.
@@ -4331,8 +4331,8 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 173 deferred
-   rows: nine `e1m3` radios, one dialog, and one Timeline root; five `e6m3`
+   and reopen automatically if any gate changes. There are now 171 deferred
+   rows: seven `e1m3` radios, one dialog, and one Timeline root; five `e6m3`
    radios, three dialogs, two ReadingPopUp definitions, and
    one text-only cutscene; eight `e9m2` radios plus five cutscenes;
    21 `e10m4` radios;
@@ -4408,12 +4408,19 @@ Current main-story priorities:
    14-row TextTable-only `cutscene_e6m3_2`, which has no Timeline registry,
    indexed root, reverse PPtr relation, or director host. e6m3 drops from
    63/12 plus one quest-attachment diagnostic to score zero. The genuine
-   offline queue then closes e1m3's eleven remaining isolated carriers:
-   nine exact RadioTable definitions with complete AudioDialog membership,
+   offline queue then closes e1m3's eleven remaining isolated carriers.
+   Seven exact RadioTable definitions with complete AudioDialog membership,
    canonical registered `dlg_e1m3_5d5` surfaced as
    `misc_dlg_e1m3_5d5`, and `cutscene_e1m3_1` with Timeline registry id 89,
    one hash-locked root definition, one forward GameObject row, one reverse
    PlayableDirector host, and no cross-Story alias or typed owner candidate.
+   The other two radios have stronger exact context:
+   `radio_e1m3_13` is co-carried by a union-tag-9 LevelData radio trigger zone
+   whose before/complete gates both name e1m3, while `radio_e1m3_32` has an
+   exact leader-trigger-to-`PlayRadio` LevelScript path joined through world
+   entity `2100130040` to MissionRuntime tracking for `e1m3_q#44`. These two
+   rows close as native playback context, not offline-exhausted definitions;
+   neither context establishes activation chronology or a Story edge.
    e1m3 drops from score 55/11 to zero without changing its 27 strong Story
    edges. The genuine offline queue now ranks `e7m2` first. Continue
    offline from its exact isolated-scene source-link rows and require a new

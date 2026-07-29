@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v29"
+SCHEMA = "sourceStoryGapQueue.v30"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -2693,6 +2693,153 @@ def _closed_exact_native_unordered_scenes(
     return closed, incomplete
 
 
+def _closed_exact_native_context_isolated_scenes(
+    flow: dict[str, Any],
+    isolated_scene_keys: set[str],
+    owner_mission: str,
+) -> list[dict[str, Any]]:
+    """Close exact playback contexts that deliberately provide no chronology."""
+    closed: list[dict[str, Any]] = []
+    for connection in _flow_story_connections(flow):
+        scene_key = safe_key(connection.get("key"))
+        if (
+            scene_key not in isolated_scene_keys
+            or safe_key(connection.get("storyOwnerMission")) != owner_mission
+            or connection.get("storyBinding") is not True
+            or connection.get("ownership") is not False
+            or safe_key(connection.get("direction")) != "context"
+        ):
+            continue
+        relation = safe_key(connection.get("relation"))
+        if relation == "radio_trigger_zone_mission_state_playback_context":
+            if (
+                safe_key(connection.get("phase"))
+                != "mission_state_trigger_zone"
+                or safe_key(connection.get("confidence"))
+                != "native_exact_serialized_co_carrier"
+                or safe_key(connection.get("evidenceTier")) != "direct"
+                or safe_key(connection.get("missionStateId"))
+                != owner_mission
+                or set(_string_list(
+                    connection.get("missionStateGateRoles")
+                ))
+                != {"hideBeforeMissionId", "hideCompleteMissionId"}
+                or not safe_key(connection.get("nativeMappingId"))
+                or "PlayRadio" not in safe_key(
+                    connection.get("nativeConsumer")
+                )
+                or connection.get("unionTag") != 9
+                or connection.get("serializedMemberCount") != 7
+                or connection.get("specificDataListCount") != 1
+                or not _string_list(connection.get("levelIds"))
+                or not _string_list(connection.get("sourceFiles"))
+                or not isinstance(connection.get("recordOffset"), int)
+                or not isinstance(connection.get("recordEndOffset"), int)
+            ):
+                continue
+            closed.append({
+                "sceneKey": scene_key,
+                "recoveryStatus":
+                    "closed_exact_native_playback_context_no_relative_order",
+                "relation": relation,
+                "missionStateId": owner_mission,
+                "missionStateGateRoles": sorted(
+                    _string_list(connection.get("missionStateGateRoles")),
+                    key=natural_key,
+                ),
+                "levelIds": _string_list(connection.get("levelIds")),
+                "sourceFiles": _string_list(connection.get("sourceFiles")),
+                "nativeMappingId": safe_key(
+                    connection.get("nativeMappingId")
+                ),
+                "orderBoundary": (
+                    "the exact radio trigger-zone row and mission-state "
+                    "gates establish playback context, but entering the "
+                    "world trigger supplies no relative Story order"
+                ),
+            })
+            continue
+        if relation != "mission_tracked_world_entity_levelscript_context":
+            continue
+        native_rows = connection.get("worldEntityLevelScriptEvidence") or []
+        candidate_quest_ids = _string_list(
+            connection.get("candidateQuestIds")
+        )
+        tracking_rows = connection.get("trackingRows") or []
+        native_rows_valid = bool(native_rows)
+        for row in native_rows:
+            listener = row.get("listener") if isinstance(row, dict) else None
+            path = (
+                listener.get("path")
+                if isinstance(listener, dict)
+                else None
+            )
+            if (
+                not isinstance(row, dict)
+                or safe_key(row.get("nativeAction")) != "PlayRadio"
+                or not isinstance(row.get("playbackRecordOffset"), int)
+                or not isinstance(listener, dict)
+                or safe_key(listener.get("status"))
+                != "exact_serialized_control_path"
+                or not isinstance(path, list)
+                or not any(
+                    isinstance(step, dict)
+                    and safe_key(step.get("actionName")) == "PlayRadio"
+                    and safe_key(step.get("recordClass")) == "play_radio"
+                    and scene_key in _string_list(step.get("texts"))
+                    for step in path
+                )
+            ):
+                native_rows_valid = False
+                break
+        if (
+            safe_key(connection.get("phase"))
+            != "local_leader_trigger_world_entity_context"
+            or safe_key(connection.get("confidence"))
+            != "native_exact_mission_navigation_context"
+            or safe_key(connection.get("evidenceTier"))
+            != "derived_exact_foreign_key"
+            or connection.get("questActivation") is not False
+            or connection.get("questPlayback") is not False
+            or connection.get("questCompletion") is not False
+            or not candidate_quest_ids
+            or any(
+                not quest_id.startswith(f"{owner_mission}_q#")
+                for quest_id in candidate_quest_ids
+            )
+            or not tracking_rows
+            or any(
+                not isinstance(row, dict)
+                or safe_key(row.get("missionId")) != owner_mission
+                or safe_key(row.get("questId")) not in candidate_quest_ids
+                for row in tracking_rows
+            )
+            or not native_rows_valid
+        ):
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_native_playback_context_no_relative_order",
+            "relation": relation,
+            "candidateQuestIds": candidate_quest_ids,
+            "worldEntityIds": _string_list(
+                connection.get("worldEntityIds")
+            ),
+            "levelIds": _string_list(connection.get("levelIds")),
+            "scriptIds": _string_list(connection.get("scriptIds")),
+            "sourceFiles": _string_list(connection.get("sourceFiles")),
+            "nativeEventPathCount": len(native_rows),
+            "orderBoundary": (
+                "the exact local leader-trigger playback path and typed "
+                "MissionRuntime world-entity tracking join establish mission "
+                "context, but tracking is not activation, playback, "
+                "completion, ownership, or relative Story order"
+            ),
+        })
+    return sorted(closed, key=lambda row: natural_key(row["sceneKey"]))
+
+
 def _closed_non_mission_content_isolated_scenes(
     isolated_scene_keys: set[str],
     non_mission_content: dict[str, dict[str, Any]],
@@ -4276,6 +4423,15 @@ def build_gap_row(
             row,
         )
     for row in _closed_exact_timeline_dialog_embedded_isolated_scenes(
+        flow,
+        set(isolated_scene_keys),
+        safe_key(partial_row.get("mission")),
+    ):
+        closed_exact_native_isolated_by_key.setdefault(
+            row["sceneKey"],
+            row,
+        )
+    for row in _closed_exact_native_context_isolated_scenes(
         flow,
         set(isolated_scene_keys),
         safe_key(partial_row.get("mission")),
