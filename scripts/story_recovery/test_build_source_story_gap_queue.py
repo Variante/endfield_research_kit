@@ -1858,6 +1858,30 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_dialog_deferrals_preserve_shared_timeline_boundary(
+        self,
+    ) -> None:
+        self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS),
+            {"dlg_e11m2_17", "dlg_e11m2_18", "dlg_e11m6_9"},
+        )
+        shared = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e11m6_9"
+        ]["sharedTimeline"]
+        self.assertEqual(shared["ownerDialogKey"], "dlg_e11m5_9")
+        self.assertEqual(shared["trackPathId"], 5795311945645305682)
+        self.assertEqual(
+            shared["embeddedLineIds"],
+            (
+                "dlg_e11m6_9_005",
+                "dlg_e11m6_9_006",
+                "dlg_e11m6_9_007",
+                "dlg_e11m6_9_003",
+                "dlg_e11m6_9_008",
+                "dlg_e11m6_9_004",
+            ),
+        )
+
     def test_declared_e11m6_radio_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E11M6_RADIOS,

@@ -1979,11 +1979,12 @@ gameplay-video OCR/audio workflow.
   Timeline consumer search.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v24` covers 109 residual radio definitions and 11 root
-  Timeline cutscenes across `e10m4`, `e11m1`, `e11m2`, `e11m4`, and `e11m6`,
-  plus the text-only `cutscene_e11m1_2`. This includes all 23 residual `e11m1`
-  radios, all nine residual `e11m2` radios, and all 22 residual `e11m6`
-  radios. It requires the expected
+  `sourceStoryGapQueue.v25` covers 109 residual radio definitions, 11 root
+  Timeline cutscenes, and three registered dialog definitions across `e10m4`,
+  `e11m1`, `e11m2`, `e11m4`, and `e11m6`, plus the text-only
+  `cutscene_e11m1_2`. This includes all 23 residual `e11m1` radios, all nine
+  residual `e11m2` radios, and all 22 residual `e11m6` radios. It requires the
+  expected
   `GameAssembly.dll`,
   RadioTable, AudioDialog, TextTable, NumIdStrTable, and cutscene-definition
   hashes; the complete provenance-valid carrier audit and current core-target
@@ -1994,7 +1995,12 @@ gameplay-video OCR/audio workflow.
   require exact forward GameObject row counts and exact `PlayableDirector` host
   counts. The two e11m2 `liexi` cross-Story root/playable-asset aliases are
   retained as exact composition evidence but explicitly remain non-chronology,
-  non-ownership relations. A text-only group
+  non-ownership relations. Dialog deferrals additionally require exact
+  MemoryPack DialogId source/index hashes and registration rows, complete
+  DialogTree hashes, exact DialogTextTable row schemas, AudioDialog membership,
+  and no recovered route. The e11m6 dialog also requires its exact six-line
+  insertion inside the shared e11m5 Timeline; that containment remains context,
+  not activation or whole-file order. A text-only group
   is admitted only when its complete TextTable rows remain exact and no
   Timeline registry row, GameObject target, reverse relation, director host, or
   route exists. Deferred rows remain visible as
