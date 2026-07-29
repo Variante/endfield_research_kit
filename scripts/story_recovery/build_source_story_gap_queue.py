@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v40"
+SCHEMA = "sourceStoryGapQueue.v41"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v19"
+    "current-build-offline-story-carrier-exhaustion-v20"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -213,6 +213,10 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
         "cutscene_e0m0_11111",
     }),
     "e1m3": frozenset({"cutscene_e1m3_1"}),
+    "e2m6": frozenset({
+        "cutscene_e2m6_designer_AngelSurrounding",
+        "cutscene_e2m6_designer_anchorperish_001",
+    }),
     "e6m3": frozenset({"cutscene_e6m3_2"}),
     "e6m4": frozenset({
         "cutscene_e6m4_1",
@@ -249,6 +253,8 @@ OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e0m0_12": 1,
     "cutscene_e0m0_11111": 1,
     "cutscene_e1m3_1": 1,
+    "cutscene_e2m6_designer_AngelSurrounding": 1,
+    "cutscene_e2m6_designer_anchorperish_001": 1,
     "cutscene_e6m4_1": 1,
     "cutscene_e6m4_hydrantStart": 1,
     "cutscene_e7m2_designer_QingBoZhai": 1,
@@ -315,6 +321,22 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
                 "cutscene_e1m3_1",
             ),
         ),
+    },
+    "cutscene_e2m6_designer_AngelSurrounding": {
+        "timelineRegistryId": 310,
+        "files": ((
+            "cutscene_e2m6_designer_AngelSurrounding_p9E14E210A67B0AF8.json",
+            "4CFD3CEECC55198E4B99FDEA37EB02E6E62F3676600AE6DA3B4D878264659FBD",
+            "cutscene_e2m6_designer_AngelSurrounding",
+        ),),
+    },
+    "cutscene_e2m6_designer_anchorperish_001": {
+        "timelineRegistryId": 265,
+        "files": ((
+            "cutscene_e2m6_designer_anchorperish_001_p47B0268A95477A92.json",
+            "EB2D6F282B72DC47FAFAB970B64360A4FA8BF9B6B19D531E37980042604DE960",
+            "cutscene_e2m6_designer_anchorperish_001",
+        ),),
     },
     "cutscene_e6m4_1": {
         "timelineRegistryId": 400,
@@ -525,6 +547,8 @@ OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS = {
     "cutscene_e0m0_12": 1,
     "cutscene_e0m0_11111": 1,
     "cutscene_e1m3_1": 1,
+    "cutscene_e2m6_designer_AngelSurrounding": 1,
+    "cutscene_e2m6_designer_anchorperish_001": 1,
     "cutscene_e6m4_1": 1,
     "cutscene_e6m4_hydrantStart": 1,
     "cutscene_e7m2_designer_QingBoZhai": 1,
@@ -581,6 +605,19 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
         "optionIds": (
             "option_dlg_e2m4_10_1_001",
             "option_dlg_e2m4_10_1_002",
+        ),
+    },
+    "dlg_e2m6_12": {
+        "missionId": "e2m6",
+        "filename": "dlg_e2m6_12_p5F708F0BF48A1164.json",
+        "sha256":
+            "38B38F5C9170CDCA9476545072F986FCF9C3BC6E62EA7B1CA0FA074352E12EDB",
+        "lineIds": tuple(
+            f"dlg_e2m6_12_{number:03d}" for number in range(1, 25)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_e2m6_12_1_{number:03d}"
+            for number in range(1, 5)
         ),
     },
     "dlg_e10m3_3": {
@@ -1020,6 +1057,13 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
             f"au_dlg_e10m3_12_{number:03d}" for number in range(1, 17)
         ),
     },
+    "dlg_e2m6_18": {
+        "missionId": "e2m6",
+        "lineIds": tuple(
+            f"dlg_e2m6_18_{number:03d}" for number in range(1, 8)
+        ),
+        "missingAudioIds": (),
+    },
     "dlg_e11m8_13": {
         "missionId": "e11m8",
         "lineIds": ("dlg_e11m8_13_001",),
@@ -1202,11 +1246,17 @@ OFFLINE_EXHAUSTION_E2M4_RADIOS = frozenset({
     "radio_e2m4_19",
     "radio_e2m4_22",
 })
+OFFLINE_EXHAUSTION_E2M6_RADIOS = frozenset({
+    "radio_e2m6_2",
+    "radio_e2m6_7d2",
+    "radio_e2m6_7d4",
+})
 OFFLINE_EXHAUSTION_E10M3_RADIOS = frozenset({"radio_e10m3_10"})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
     "e2m4": OFFLINE_EXHAUSTION_E2M4_RADIOS,
+    "e2m6": OFFLINE_EXHAUSTION_E2M6_RADIOS,
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e6m4": OFFLINE_EXHAUSTION_E6M4_RADIOS,
