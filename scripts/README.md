@@ -1990,12 +1990,12 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v36` evaluates 162 residual radio definitions, 25 root
-  cutscene carriers, 20 registered dialog definitions, three exact
-  DialogTextTable-only/no-registry groups, eight exact
+  `sourceStoryGapQueue.v37` evaluates 164 residual radio definitions, 25 root
+  cutscene carriers, 23 registered dialog definitions, three exact
+  DialogTextTable-only/no-registry groups, ten exact
   ReadingPopUp/RichContent definitions, and two text-only cutscenes across
-  `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e9m2`, `e10m3`, `e10m4`,
-  `e11m1`, `e11m2`, `e11m4`, `e11m5`, and `e11m6`. It defers 159 radio definitions;
+  `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e10m3`, `e10m4`,
+  `e11m1`, `e11m2`, `e11m4`, `e11m5`, and `e11m6`. It defers 161 radio definitions;
   two close through strict exact native mission context, and one through
   strict exact runtime configuration. This includes seven bounded `e1m3`
   radio definitions, its canonical misc-dialog definition and one-host
@@ -2019,6 +2019,8 @@ gameplay-video OCR/audio workflow.
   DialogTree assets and Timeline rows, and the carrier-audit negative.
   e6m4 adds seven audio-complete radios and two one-host, registry/hash-locked
   Timeline roots.
+  e7m3 adds two radios, two readings, and three registered dialogs while
+  retaining their option groups without treating option presence as a route.
   The class also includes all five bounded
   `e6m3` radios, its three dialogs, two text
   definitions, and 14-row text-only cutscene; all eight residual `e9m2` radios and five

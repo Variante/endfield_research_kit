@@ -2079,6 +2079,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "misc_dlg_e6m3_3d5",
                 "dlg_e7m2_11",
                 "dlg_e7m2_13",
+                "dlg_e7m3_13",
+                "dlg_e7m3_15",
+                "dlg_e7m3_16",
                 "dlg_e10m3_3",
                 "dlg_e10m3_9",
                 "dlg_e11m2_17",
@@ -2443,6 +2446,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e6m3_4",
                 "text_e7m2_2",
                 "text_e7m2_3",
+                "text_e7m3_1",
+                "text_e7m3_2",
                 "text_e10m3_4",
                 "text_e10m3_6",
                 "text_e10m3_8",
@@ -2479,6 +2484,34 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "cutscene_e6m4_hydrantStart"
             ],
             1,
+        )
+
+    def test_declared_e7m3_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E7M3_RADIOS,
+            {"radio_e7m3_16", "radio_e7m3_26"},
+        )
+        self.assertEqual(
+            len(
+                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                    "dlg_e7m3_13"
+                ]["optionIds"]
+            ),
+            3,
+        )
+        self.assertEqual(
+            len(
+                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                    "dlg_e7m3_15"
+                ]["optionIds"]
+            ),
+            6,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                "dlg_e7m3_16"
+            ]["optionIds"],
+            ("option_dlg_e7m3_16_1_001",),
         )
 
     def test_declared_e11m5_frontier_preserves_owned_mixed_timeline(

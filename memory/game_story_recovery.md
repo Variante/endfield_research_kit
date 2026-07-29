@@ -4306,7 +4306,7 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v36`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v37`
    turns the completed exact `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e10m4`, `e11m1`, `e11m2`,
    `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
    operational deferrals.
@@ -4331,7 +4331,7 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 217 deferred
+   and reopen automatically if any gate changes. There are now 224 deferred
    rows: three `e0m0` radios, five cutscene roots, and one ReadingPopUp
    definition; seven `e1m3` radios, one dialog, and one Timeline root; eight
    `e3m3` radios and two dialogs; five `e6m3`
@@ -4464,8 +4464,13 @@ Current main-story priorities:
    definitions plus registry-id-400 `cutscene_e6m4_1` and registry-id-324
    `cutscene_e6m4_hydrantStart`; both roots have exact hashes, one GameObject
    row, one PlayableDirector host, and no typed owner candidate. e6m4 drops
-   from score 45/9 to zero without a Story edge. The genuine offline queue now
-   ranks `e7m3` first. Continue
+   from score 45/9 to zero without a Story edge. e7m3 then closes two
+   audio-complete radios, two ReadingPopUp/RichContent definitions, and three
+   registered dialogs while preserving their exact 3/6/1 option sets as
+   non-routing authored content. It drops from score 41 to 6; the remaining
+   `e7m3_q#25` and `e7m3_q#30` diagnostics are scope-only rather than strict
+   Story attachments. The genuine offline queue now ranks `e11m8` first.
+   Continue
    offline from its exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
    runtime capture later becomes possible, the existing `e11m1` probe remains
