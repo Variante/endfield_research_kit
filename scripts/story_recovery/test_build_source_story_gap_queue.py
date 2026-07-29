@@ -1805,6 +1805,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             set(gap_queue.OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS),
         )
         self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS),
+            set(gap_queue.OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS),
+        )
+        self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
                 "cutscene_e11m6_rift_camera_state1to2"
             ]["timelineRegistryId"],
@@ -1815,6 +1819,43 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "cutscene_e11m6_zhuangcomein"
             ]["timelineRegistryId"],
             547,
+        )
+
+    def test_declared_e11m2_alias_chain_is_composition_only(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES,
+            {
+                "cutscene_e11m2_liexi_xs_m_01_last_02": (
+                    "cutscene_e11m2_liexi_xs_m_01_last_01",
+                    "cutscene_e11m2_liexi_xs_m_01_last_02",
+                ),
+                "cutscene_e11m2_liexi_xs_m_01_last_03": (
+                    "cutscene_e11m2_liexi_xs_m_01_last_02",
+                    "cutscene_e11m2_liexi_xs_m_01_last_03",
+                ),
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS[
+                "cutscene_e11m2_liexi_xs_m_01_last_03"
+            ],
+            0,
+        )
+
+    def test_declared_e11m2_radio_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E11M2_RADIOS,
+            {
+                "radio_e11m2_22",
+                "radio_e11m2_25",
+                "radio_e11m2_27",
+                "radio_e11m2_30",
+                "radio_e11m2_33",
+                "radio_e11m2_34",
+                "radio_e11m2_35",
+                "radio_e11m2_36",
+                "radio_e11m2_37",
+            },
         )
 
     def test_declared_e11m6_radio_frontier_is_exact(self) -> None:
