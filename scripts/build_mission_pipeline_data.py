@@ -233,7 +233,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # the composition recovers owner context without creating Story chronology.
 # v17 preserves authored quest tracking markers, visibility filters, and
 # mission-variable defaults as debug context without creating graph edges.
-SCHEMA_VERSION = 17
+# v18 pins the native tracking-property evaluator and server-sync path while
+# preserving the unknown server producer/timing boundary.
+SCHEMA_VERSION = 18
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -588,10 +590,10 @@ RUNTIME_CONTRACT = {
         },
         "authoredMissionProperties": {
             "missionFiles": 490,
-            "missionsWithProperties": 70,
-            "propertyRows": 214,
-            "uniquePropertyKeys": 186,
-            "valueTypeCounts": {"1": 10, "3": 204},
+            "missionsWithProperties": 71,
+            "propertyRows": 217,
+            "uniquePropertyKeys": 189,
+            "valueTypeCounts": {"1": 10, "3": 207},
             "serializedFieldKeys": [
                 "key",
                 "type",
@@ -601,6 +603,91 @@ RUNTIME_CONTRACT = {
                 "valueString",
             ],
             "levelScriptPointerFieldRows": 0,
+        },
+        "trackingPropertyFilterRuntime": {
+            "conditionType": (
+                "Beyond.Gameplay.SimpleConditionCheckMissionVariableInt"
+            ),
+            "authoredRows": 204,
+            "authoredMissions": 46,
+            "authoredVariables": 110,
+            "evaluator": {
+                "symbol": (
+                    "SimpleConditionCheckMissionVariableInt."
+                    "GetResultWithoutListening"
+                ),
+                "token": "0x06004b72",
+                "address": "0x18736e6b0",
+                "flow": [
+                    "MissionSystem.TryGetSaveProperty(missionId, missionVarName)",
+                    "TableUtils.DoCompare(value, compareOperator, compareTarget)",
+                ],
+            },
+            "listener": {
+                "start": {
+                    "symbol": (
+                        "SimpleConditionCheckMissionVariableInt."
+                        "InnerStartListening"
+                    ),
+                    "token": "0x06004b6f",
+                    "address": "0x18736e8ec",
+                    "operation": "EventManager.BindGlobal",
+                },
+                "end": {
+                    "symbol": (
+                        "SimpleConditionCheckMissionVariableInt."
+                        "InnerEndListening"
+                    ),
+                    "token": "0x06004b70",
+                    "address": "0x18736e7e8",
+                    "operation": "EventManager.UnBindGlobal",
+                },
+                "onChange": {
+                    "symbol": (
+                        "SimpleConditionCheckMissionVariableInt."
+                        "_OnMissionVarChange"
+                    ),
+                    "token": "0x06004b71",
+                    "address": "0x18736ea90",
+                    "operation": (
+                        "match changed mission/property identity and "
+                        "reevaluate the condition"
+                    ),
+                },
+            },
+            "serverUpdate": {
+                "message": "SC_UPDATE_MISSION_PROPERTY (124)",
+                "direction": "server_to_client",
+                "fields": [
+                    "missionId",
+                    "properties{propertyId -> DYNAMIC_PARAMETER}",
+                ],
+                "handler": "MissionSystem.Handle_UpdateMissionProperty",
+                "token": "0x060052a1",
+                "address": "0x1873c02e4",
+                "flow": [
+                    "MissionPropertyKeyIdTable.TryGetPropertyKey",
+                    "ParamVariableExtensions.ToVariable",
+                    "MissionData.propertyDict.TryInsert",
+                    "EventManager.SendGlobal",
+                ],
+            },
+            "finding": (
+                "Tracking filters are local conditions over server-synchronized "
+                "MissionData.propertyDict values. They control marker/HUD "
+                "visibility, but the exported client does not contain the "
+                "server-side producer or timing rule for an individual property."
+            ),
+            "boundary": (
+                "The exact client evaluator and inbound update path do not prove "
+                "which server rule changes a property, when it changes, or that "
+                "the change starts/completes a quest or plays Story."
+            ),
+            "classification": (
+                "server_synchronized_tracking_visibility_no_graph_edge"
+            ),
+            "storyBindingsAdded": 0,
+            "missionOrderEdgesAdded": 0,
         },
         "missionPropertyWriters": [
             {

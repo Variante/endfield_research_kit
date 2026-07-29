@@ -117,6 +117,30 @@ NATIVE_METHODS = {
         "bytes": 208,
         "sha256": "f3eb3722c7d689a43e662e215b7181a5df0d9b9315621b9e98b2c60d8ac5be15",
     },
+    "SimpleConditionCheckMissionVariableInt::GetResultWithoutListening": {
+        "token": "0x06004b72",
+        "va": 0x18736E6B0,
+        "bytes": 312,
+        "sha256": "2b4da16b1521f3a40a4e6071dc839386b5ae7e2ca9f95f757b4b4e189bae6fb6",
+    },
+    "SimpleConditionCheckMissionVariableInt::InnerEndListening": {
+        "token": "0x06004b70",
+        "va": 0x18736E7E8,
+        "bytes": 260,
+        "sha256": "7752fcf25ff8d5d867ca85131028103216d50107ca22fdfb74ac061895d15004",
+    },
+    "SimpleConditionCheckMissionVariableInt::InnerStartListening": {
+        "token": "0x06004b6f",
+        "va": 0x18736E8EC,
+        "bytes": 260,
+        "sha256": "7e34ccc8f960e507e08c2322921976099a9d064a62e699836b0668c89cd1bfc2",
+    },
+    "SimpleConditionCheckMissionVariableInt::_OnMissionVarChange": {
+        "token": "0x06004b71",
+        "va": 0x18736EA90,
+        "bytes": 116,
+        "sha256": "c8edbe12f235b301d860771697780576f23af078316b8ed3e1faa50df03af287",
+    },
 }
 
 DIRECT_TARGETS = {
@@ -181,6 +205,73 @@ def recursive_keys(value: Any) -> set[str]:
     return keys
 
 
+def short_type_name(value: Any) -> str:
+    text = str(value or "").split(",", 1)[0]
+    return text.rsplit(".", 1)[-1]
+
+
+def iter_condition_nodes(value: Any) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    if isinstance(value, dict):
+        rows.append(value)
+        for child in value.values():
+            rows.extend(iter_condition_nodes(child))
+    elif isinstance(value, list):
+        for child in value:
+            rows.extend(iter_condition_nodes(child))
+    return rows
+
+
+def scan_tracking_property_filters(
+    payload: dict[str, Any],
+    source_path: Path,
+) -> list[dict[str, Any]]:
+    """Collect mission-variable conditions used only to filter tracking rows."""
+    rows: list[dict[str, Any]] = []
+
+    def walk(value: Any, quest_id: str = "") -> None:
+        if isinstance(value, dict):
+            current_quest_id = str(value.get("questId") or quest_id)
+            tracking_list = value.get("trackingInfoList")
+            if isinstance(tracking_list, list):
+                for tracking_index, tracking in enumerate(tracking_list):
+                    if not isinstance(tracking, dict):
+                        continue
+                    condition = tracking.get("filterCondition")
+                    for node in iter_condition_nodes(condition):
+                        if short_type_name(node.get("$type")) != (
+                            "SimpleConditionCheckMissionVariableInt"
+                        ):
+                            continue
+                        rows.append(
+                            {
+                                "source": repo_rel(source_path),
+                                "questId": current_quest_id,
+                                "trackingIndex": tracking_index,
+                                "trackingType": short_type_name(
+                                    tracking.get("$type")
+                                ),
+                                "missionId": str(node.get("missionId") or ""),
+                                "missionVarName": str(
+                                    node.get("missionVarName") or ""
+                                ),
+                                "compareOperator": node.get(
+                                    "compareOperator"
+                                ),
+                                "compareTarget": node.get("compareTarget"),
+                            }
+                        )
+            for key, child in value.items():
+                if key != "trackingInfoList":
+                    walk(child, current_quest_id)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child, quest_id)
+
+    walk(payload)
+    return rows
+
+
 def scan_authored_properties(roots: list[Path]) -> dict[str, Any]:
     mission_count = 0
     missions_with_properties = 0
@@ -190,6 +281,7 @@ def scan_authored_properties(roots: list[Path]) -> dict[str, Any]:
     serialized_keys: set[str] = set()
     forbidden_rows: list[dict[str, Any]] = []
     literal_runtime_field_hits: list[dict[str, Any]] = []
+    tracking_property_filters: list[dict[str, Any]] = []
     layered_paths: dict[str, Path] = {}
     for root in roots:
         if not root.exists():
@@ -206,6 +298,9 @@ def scan_authored_properties(roots: list[Path]) -> dict[str, Any]:
                     {"path": repo_rel(path), "term": term.decode("ascii")}
                 )
         payload = json.loads(raw)
+        tracking_property_filters.extend(
+            scan_tracking_property_filters(payload, path)
+        )
         properties = payload.get("properties") or []
         mission_count += 1
         if properties:
@@ -239,6 +334,13 @@ def scan_authored_properties(roots: list[Path]) -> dict[str, Any]:
                         "keys": forbidden,
                     }
                 )
+    tracking_filter_missions = {
+        row["missionId"] for row in tracking_property_filters
+    }
+    tracking_filter_variables = {
+        (row["missionId"], row["missionVarName"])
+        for row in tracking_property_filters
+    }
     return {
         "missionFiles": mission_count,
         "missionsWithProperties": missions_with_properties,
@@ -248,6 +350,10 @@ def scan_authored_properties(roots: list[Path]) -> dict[str, Any]:
         "serializedFieldKeys": sorted(serialized_keys),
         "forbiddenNestedFieldRows": forbidden_rows,
         "literalRuntimeFieldHits": literal_runtime_field_hits,
+        "trackingPropertyFilterRows": len(tracking_property_filters),
+        "trackingPropertyFilterMissions": len(tracking_filter_missions),
+        "trackingPropertyFilterVariables": len(tracking_filter_variables),
+        "trackingPropertyFilters": tracking_property_filters,
     }
 
 
@@ -389,6 +495,7 @@ def direct_call_census(
 
 def render_markdown(payload: dict[str, Any]) -> str:
     authored = payload["authoredMissionProperties"]
+    tracking = payload["trackingPropertyFilterRuntime"]
     lines = [
         "# Mission property / LevelScript pointer audit",
         "",
@@ -398,6 +505,9 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Missions with serialized properties: `{authored['missionsWithProperties']}`",
         f"- Serialized ParamKeyValue rows: `{authored['propertyRows']}`",
         f"- Unique property keys: `{authored['uniquePropertyKeys']}`",
+        f"- Tracking property filters: `{tracking['authoredRows']}` across "
+        f"`{tracking['authoredMissions']}` missions / "
+        f"`{tracking['authoredVariables']}` mission-variable identities",
         f"- Story bindings added: `{payload['summary']['storyBindingsAdded']}`",
         "",
         "## Finding",
@@ -411,6 +521,21 @@ def render_markdown(payload: dict[str, Any]) -> str:
         lines.append(
             f"- `{md_escape(row['carrier'])}`: {md_escape(row['finding'])}"
         )
+    lines.extend(
+        [
+            "",
+            "## Tracking-property filter runtime",
+            "",
+            f"- Evaluator: `{tracking['evaluator']['symbol']}` at "
+            f"`{tracking['evaluator']['address']}`.",
+            f"- Evaluation: `{' -> '.join(tracking['evaluator']['flow'])}`.",
+            f"- Inbound update: `{tracking['serverUpdate']['message']}` -> "
+            f"`{' -> '.join(tracking['serverUpdate']['flow'])}`.",
+            f"- Classification: `{tracking['classification']}`.",
+            f"- Finding: {tracking['finding']}",
+            f"- Boundary: {tracking['boundary']}",
+        ]
+    )
     lines.extend(["", "## Direct-call census", ""])
     for row in payload["wholeBinaryDirectCallCensus"]["targets"]:
         callers = ", ".join(row["resolvedManagedCallers"]) or "none"
@@ -469,6 +594,9 @@ def main() -> None:
         "propertyRows": 217,
         "uniquePropertyKeys": 189,
         "valueTypeCounts": {"1": 10, "3": 207},
+        "trackingPropertyFilterRows": 204,
+        "trackingPropertyFilterMissions": 46,
+        "trackingPropertyFilterVariables": 110,
     }
     for key, expected in expected_authored.items():
         if authored[key] != expected:
@@ -494,6 +622,7 @@ def main() -> None:
         "Handle_MissionStateUpdate",
         "ParamVariable",
         "ParamVariableExtensions",
+        "SimpleConditionCheckMissionVariableInt",
     )
     ifix_matches = [
         row
@@ -516,7 +645,7 @@ def main() -> None:
     )
 
     payload = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "source": {
             "gameAssembly": str(args.gameassembly.resolve()),
             "gameAssemblySha256": game_hash,
@@ -541,9 +670,113 @@ def main() -> None:
                 "m_sendToScript": {"token": "0x040038d4", "offset": "0x68"},
                 "m_scriptPtr": {"token": "0x040038d5", "offset": "0x70"},
             },
+            "SimpleConditionCheckMissionVariableInt": {
+                "missionId": {"token": "0x0400447d", "offset": "0x58"},
+                "missionVarName": {
+                    "token": "0x0400447e",
+                    "offset": "0x60",
+                },
+                "compareOperator": {
+                    "token": "0x0400447f",
+                    "offset": "0x68",
+                },
+                "compareTarget": {
+                    "token": "0x04004480",
+                    "offset": "0x6c",
+                },
+            },
         },
         "authoredMissionProperties": authored,
         "nativeMethods": native_methods,
+        "trackingPropertyFilterRuntime": {
+            "conditionType": (
+                "Beyond.Gameplay.SimpleConditionCheckMissionVariableInt"
+            ),
+            "authoredRows": authored["trackingPropertyFilterRows"],
+            "authoredMissions": authored[
+                "trackingPropertyFilterMissions"
+            ],
+            "authoredVariables": authored[
+                "trackingPropertyFilterVariables"
+            ],
+            "evaluator": {
+                "symbol": (
+                    "SimpleConditionCheckMissionVariableInt."
+                    "GetResultWithoutListening"
+                ),
+                "token": "0x06004b72",
+                "address": "0x18736e6b0",
+                "flow": [
+                    "MissionSystem.TryGetSaveProperty(missionId, missionVarName)",
+                    "TableUtils.DoCompare(value, compareOperator, compareTarget)",
+                ],
+            },
+            "listener": {
+                "start": {
+                    "symbol": (
+                        "SimpleConditionCheckMissionVariableInt."
+                        "InnerStartListening"
+                    ),
+                    "token": "0x06004b6f",
+                    "address": "0x18736e8ec",
+                    "operation": "EventManager.BindGlobal",
+                },
+                "end": {
+                    "symbol": (
+                        "SimpleConditionCheckMissionVariableInt."
+                        "InnerEndListening"
+                    ),
+                    "token": "0x06004b70",
+                    "address": "0x18736e7e8",
+                    "operation": "EventManager.UnBindGlobal",
+                },
+                "onChange": {
+                    "symbol": (
+                        "SimpleConditionCheckMissionVariableInt."
+                        "_OnMissionVarChange"
+                    ),
+                    "token": "0x06004b71",
+                    "address": "0x18736ea90",
+                    "operation": (
+                        "match changed mission/property identity and "
+                        "reevaluate the condition"
+                    ),
+                },
+            },
+            "serverUpdate": {
+                "message": "SC_UPDATE_MISSION_PROPERTY (124)",
+                "direction": "server_to_client",
+                "fields": [
+                    "missionId",
+                    "properties{propertyId -> DYNAMIC_PARAMETER}",
+                ],
+                "handler": "MissionSystem.Handle_UpdateMissionProperty",
+                "token": "0x060052a1",
+                "address": "0x1873c02e4",
+                "flow": [
+                    "MissionPropertyKeyIdTable.TryGetPropertyKey",
+                    "ParamVariableExtensions.ToVariable",
+                    "MissionData.propertyDict.TryInsert",
+                    "EventManager.SendGlobal",
+                ],
+            },
+            "finding": (
+                "Tracking filters are local conditions over server-synchronized "
+                "MissionData.propertyDict values. They can control marker/HUD "
+                "visibility, but the exported client has no server-side producer "
+                "or timing rule for an individual property."
+            ),
+            "boundary": (
+                "The exact client evaluator and inbound update path do not prove "
+                "which server rule changes a property, when it changes, or that "
+                "the change starts/completes a quest or plays Story."
+            ),
+            "classification": (
+                "server_synchronized_tracking_visibility_no_graph_edge"
+            ),
+            "storyBindingsAdded": 0,
+            "missionOrderEdgesAdded": 0,
+        },
         "runtimeSeparation": [
             {
                 "carrier": "MissionRuntimeAsset.properties",
@@ -574,6 +807,16 @@ def main() -> None:
                     "Written by explicit LevelScript property/blackboard event "
                     "subscription setup at +0x70; the mapped managed callers are "
                     "LevelEventManager/ScriptEvent registration, not MissionSystem."
+                ),
+            },
+            {
+                "carrier": (
+                    "SimpleConditionCheckMissionVariableInt tracking filter"
+                ),
+                "finding": (
+                    "The local evaluator reads MissionData.propertyDict and "
+                    "reacts to SC_UPDATE_MISSION_PROPERTY-driven change events. "
+                    "This controls marker visibility, not mission graph order."
                 ),
             },
         ],

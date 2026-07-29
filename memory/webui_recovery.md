@@ -478,6 +478,15 @@ Mission Pipeline:
   the exact `f1m19d3_q#7` tracked script/entity slot visible. Normal mode hides
   both blocks, and neither surface claims a writer, completion source, playback
   trigger, ownership relation, or ordering edge.
+  Schema v18 pins the filter runtime boundary. Tracking help and the native
+  property card now explain the exact
+  `TryGetSaveProperty -> DoCompare` evaluator and
+  `SC_UPDATE_MISSION_PROPERTY -> property-id lookup -> ToVariable ->
+  MissionData.propertyDict -> change event` path. The card reports 204
+  property-filtered tracking rows across 46 missions / 110 variable
+  identities, while explicitly retaining the unknown server producer and
+  timing gap. It also corrects the older embedded property census from the
+  Streaming mirror to the effective 217-row / 71-mission corpus.
   Native paths with no network exchange are separated again: BattleSignal is
   shown as local Ability-action dispatch with only signal/value identity, not
   placed into either C->S or S->C lanes.

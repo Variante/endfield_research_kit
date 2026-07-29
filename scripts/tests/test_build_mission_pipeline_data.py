@@ -1428,9 +1428,23 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         )
         authored = audit["authoredMissionProperties"]
         self.assertEqual(authored["missionFiles"], 490)
-        self.assertEqual(authored["missionsWithProperties"], 70)
-        self.assertEqual(authored["propertyRows"], 214)
+        self.assertEqual(authored["missionsWithProperties"], 71)
+        self.assertEqual(authored["propertyRows"], 217)
         self.assertEqual(authored["levelScriptPointerFieldRows"], 0)
+        tracking = audit["trackingPropertyFilterRuntime"]
+        self.assertEqual(tracking["authoredRows"], 204)
+        self.assertEqual(tracking["authoredMissions"], 46)
+        self.assertEqual(tracking["authoredVariables"], 110)
+        self.assertEqual(
+            tracking["evaluator"]["token"],
+            "0x06004b72",
+        )
+        self.assertEqual(
+            tracking["serverUpdate"]["message"],
+            "SC_UPDATE_MISSION_PROPERTY (124)",
+        )
+        self.assertEqual(tracking["storyBindingsAdded"], 0)
+        self.assertEqual(tracking["missionOrderEdgesAdded"], 0)
         self.assertEqual(len(audit["missionPropertyWriters"]), 3)
         self.assertEqual(
             audit["directCallCensus"]["missionSystemScriptPointerSetterCalls"],

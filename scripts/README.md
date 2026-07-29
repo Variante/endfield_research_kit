@@ -632,11 +632,18 @@ Expected active inputs and outputs:
   filenames; an explicit `--mission-root` is labeled separately. The current
   980/980 Persistent override changes five files and yields 490
   missions, 4,462 quests, 155 mission-state edges, and the additional strong
-  `dlg_f1m32_1 -> dlg_f1m32_2` Story edge. Schema 17 also preserves 3,496
+  `dlg_f1m32_1 -> dlg_f1m32_2` Story edge. Schema 18 also preserves 3,496
   authored tracking rows on 3,241 objectives, including exact positions,
   entity/script operands, and normalized tracking filters, plus 217 initial
   mission-property rows across 71 missions. These fields are debug context and
   never create graph edges without an independent consumer/writer proof.
+  The current native property audit identifies 204 tracking rows across 46
+  missions / 110 mission-variable identities whose visibility conditions read
+  `MissionData.propertyDict` through `TryGetSaveProperty -> DoCompare`.
+  `SC_UPDATE_MISSION_PROPERTY (124)` resolves numeric property ids, converts
+  `DYNAMIC_PARAMETER`, updates that dictionary, and sends the condition-change
+  event. The server producer/timing rule remains unavailable, so this is a
+  synchronized marker-visibility contract rather than quest or Story causality.
   Maintained offline recovery audits that scan MissionRuntime use the same
   complete-Persistent-or-whole-Streaming selector. `export.bat` runs it after Story
   so the experimental page can merge names and objective text from
@@ -1006,7 +1013,8 @@ Expected active inputs and outputs:
   caller census for `ToVariable` and the four entity/script subscription
   setters, checks the current IFix target list, and writes
   `reports/story/recovery/mission_property_scriptptr_audit.{json,md}`. The
-  current result counts 217 authored rows across 71 missions and keeps
+  current result counts 217 authored rows across 71 missions, verifies the 204
+  tracking-property filters and their native evaluator/update path, and keeps
   authored/server mission values in
   `MissionData.propertyDict` separate from the `m_scriptPtr` attached by local
   LevelScript event registration and adds zero Story bindings.
