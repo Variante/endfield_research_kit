@@ -4306,10 +4306,10 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v58`
-    turns the completed exact `e0m0`, `e1m1`, `e1m2`, `e1m3`, `e1m10`, `e2m2`, `e2m4`,
+   block metadata or the installed build changes. `sourceStoryGapQueue.v59`
+   turns the completed exact `e0m0`, `e1m1`, `e1m2`, `e1m3`, `e1m10`, `e2m2`, `e2m4`,
    `e2m5`, `e2m6`, `e2m7`, `e3m3`, `e3m4`, `e5m1`, `e5m2`, `e6m1`, `e6m2`, `e6m3`,
-   `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e8m2`, `e9m2`, `e9m3`,
+   `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e8m2`, `e9m2`, `e9m3`, `e9m4`,
    `e10m1`, `e10m3`, `e10m4`, `e11m1`, `e11m2`, `e11m3`, `e11m4`,
    `e11m5`, `e11m6`, and `e11m8` negative boundaries into fail-closed
    operational deferrals.
@@ -4335,12 +4335,12 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-    and reopen automatically if any gate changes. There are now 307 actual
-    isolated-scene deferrals: 208 radios, 29 cutscene roots, 41 registered
-    dialogs (fourteen dialogs carry fifteen exact NpcProxy consumers without a
-    mission owner), ten ReadingPopUp definitions, nine DialogTextTable-only groups, two
-    SNS dialog definitions, six text-only cutscenes, and two TextTable-only
-    black definitions. The hash-validated declaration set contains the same 307
+   and reopen automatically if any gate changes. There are now 310 actual
+   isolated-scene deferrals: 210 radios, 29 cutscene roots, 42 registered
+   dialogs (fifteen dialogs carry sixteen exact NpcProxy consumers without a
+   mission owner), ten ReadingPopUp definitions, nine DialogTextTable-only
+   groups, two SNS dialog definitions, six text-only cutscenes, and two TextTable-only
+   black definitions. The hash-validated declaration set contains the same 310
    rows; already-positive native/runtime contexts are excluded. Every
    deferred row has graph effect `none` and contributes
    zero actionable-isolation score while its exact gates remain valid.
@@ -4684,6 +4684,20 @@ Current main-story priorities:
    bucket is score 272 with 49 actionable core isolated rows, 106 exact-native
    isolated closures, 95 exact-runtime-config closures, and 9
    strict-attachment diagnostics. e9m4 is next at score 15.
+   The e9m4 pass closes that three-row frontier without turning name-shaped
+   context into mission ownership. Registered `dlg_e9m4_14` preserves exactly
+   seven authored lines (`_001` through `_006`, then `_009`), zero options,
+   exact primary/extra DialogTree hashes, and complete AudioDialog membership.
+   Its sole exact NpcProxyEx consumer is `lizhui_map02_e9m4[0]`; the entry has
+   no `missionId` field, so the proxy-id suffix remains diagnostic naming
+   rather than a serialized owner or activation time. `radio_e9m4_1` has one
+   authored line and `radio_e9m4_4d5` has `_002`, `_003`, and `_004`; all four
+   audio ids are present. All three Story manifest route arrays are empty and
+   the current carrier audit reports no typed candidate. v59/v38 therefore
+   has 310 declarations and 310 active deferrals. The main-story bucket is
+   score 257 with 46 actionable core isolated rows, 106 exact-native isolated
+   closures, 95 exact-runtime-config closures, and 9 strict-attachment
+   diagnostics. e4m1 is now the first ranked main-story cluster at score 15.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
