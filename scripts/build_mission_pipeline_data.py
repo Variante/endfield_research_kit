@@ -178,6 +178,13 @@ DEFAULT_STORY_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "build"
 DEFAULT_ORDER_REPORT_ROOT = ROOT / "reports" / "mission_order"
 DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
+DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
+    ROOT
+    / "reports"
+    / "story"
+    / "recovery"
+    / "dynamic_scene_mission_control_audit.json"
+)
 MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v3 added per-mission ``missionGraph`` and quest-tracked ambient lines. v4
 # extends ``envTalkContext`` with exact atmospheric-switcher state context. v5
@@ -3841,6 +3848,126 @@ def is_exact_battle_signal_producer_route(
     )
 
 
+def load_dynamic_scene_identity_cross_references(
+    audit_path: Path = DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT,
+) -> dict[str, Any] | None:
+    """Publish compact candidate-only DynamicScene/LevelScript cross-references.
+
+    The source audit intentionally proves no runtime ownership bridge. Refuse
+    publication if that boundary changes so a future positive result receives
+    an explicit graph-admission review instead of silently inheriting this
+    non-owning WebUI path.
+    """
+    audit = read_json(audit_path)
+    if not isinstance(audit, dict) or audit.get("schemaVersion") != 1:
+        return None
+    boundary = audit.get("nativeIdentityBoundary")
+    if (
+        not isinstance(boundary, dict)
+        or boundary.get("classification")
+        != "exact_cross_reference_not_runtime_owner"
+        or boundary.get("directBridgeFound") is not False
+        or boundary.get("missionGraphAction") != "none"
+    ):
+        return None
+
+    rows: list[dict[str, Any]] = []
+    for candidate in audit.get("storyIdentityCandidates") or []:
+        if not isinstance(candidate, dict):
+            continue
+        logic_id = str(candidate.get("logicId") or "")
+        scene = str(candidate.get("scene") or "")
+        conditions: list[dict[str, Any]] = []
+        seen_conditions: set[str] = set()
+        for control in candidate.get("missionControls") or []:
+            if not isinstance(control, dict):
+                continue
+            for condition in control.get("conditions") or []:
+                if not isinstance(condition, dict):
+                    continue
+                identifier = str(condition.get("identifier") or "")
+                if not identifier:
+                    continue
+                row = {
+                    "identifier": identifier,
+                    "isQuest": condition.get("isQuest") is True,
+                    "state": condition.get("state"),
+                    "isSame": condition.get("isSame") is True,
+                    "compareType": control.get("compareType"),
+                    "toBeTrue": control.get("toBeTrue") is True,
+                }
+                signature = json.dumps(row, sort_keys=True, separators=(",", ":"))
+                if signature not in seen_conditions:
+                    seen_conditions.add(signature)
+                    conditions.append(row)
+
+        story_occurrences: list[dict[str, Any]] = []
+        seen_occurrences: set[str] = set()
+        for occurrence in candidate.get("storyOccurrences") or []:
+            if not isinstance(occurrence, dict):
+                continue
+            story_key = str(occurrence.get("storyKey") or "")
+            script_id = str(occurrence.get("scriptId") or "")
+            if not story_key or not script_id or script_id != logic_id:
+                continue
+            row = compact_dict({
+                "storyKey": story_key,
+                "levelId": str(occurrence.get("levelId") or ""),
+                "scriptId": script_id,
+                "recordOffset": occurrence.get("recordOffset"),
+                "actionName": str(occurrence.get("actionName") or ""),
+                "sourceFile": str(occurrence.get("sourceFile") or ""),
+                "nativeEventOwnerStatus": str(
+                    occurrence.get("nativeEventOwnerStatus") or ""
+                ),
+            })
+            signature = json.dumps(row, sort_keys=True, separators=(",", ":"))
+            if signature not in seen_occurrences:
+                seen_occurrences.add(signature)
+                story_occurrences.append(row)
+        if not logic_id or not scene or not conditions or not story_occurrences:
+            continue
+        rows.append({
+            "scene": scene,
+            "logicId": logic_id,
+            "scriptId": logic_id,
+            "conditions": conditions,
+            "storyOccurrences": story_occurrences,
+            "dynamicSourceFile": str(candidate.get("sourceFile") or ""),
+            "classification": boundary["classification"],
+            "missionOwnerStatus": "unresolved",
+            "storyBinding": False,
+            "orderEvidence": False,
+            "missionGraphAction": "none",
+        })
+
+    rows.sort(key=lambda row: (
+        row["scene"],
+        natural_quest_key(row["logicId"]),
+        row["dynamicSourceFile"],
+    ))
+    return {
+        "classification": boundary["classification"],
+        "finding": (
+            "Exact authored DynamicScene logic ids equal exported LevelScript "
+            "script ids and co-carry mission/quest state conditions, but the "
+            "current native systems resolve those identities through separate "
+            "registries. These rows are candidate context only."
+        ),
+        "boundary": boundary.get("promotionRequirement"),
+        "directBridgeFound": False,
+        "missionGraphAction": "none",
+        "reportJson": repo_path(audit_path),
+        "counts": {
+            "candidateRoots": len(rows),
+            "storyOccurrences": sum(
+                len(row["storyOccurrences"]) for row in rows
+            ),
+        },
+        "rows": rows,
+    }
+
+
 def build_story_binding_coverage(
     pipeline_index: dict[str, Any],
     pipeline_index_path: Path,
@@ -4544,6 +4671,7 @@ def build_story_binding_coverage(
         )
     )
 
+    dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
         "schemaVersion": 3,
         "generated": int(time.time()),
@@ -4711,6 +4839,7 @@ def build_story_binding_coverage(
         ],
         "missionlessSubGamePlaybackNodes": missionless_nodes,
         "missionlessNativeRuntimeNodes": missionless_runtime_nodes,
+        "dynamicSceneIdentityCrossReferences": dynamic_scene_identity,
         "partiallyConnectedDialogTreeNarrativeKeys": sorted(
             unresolved_dialog_tree_containment & connected_keys,
             key=natural_quest_key,
@@ -6263,6 +6392,8 @@ def main() -> int:
             "nonMissionContentKeys": coverage.get("nonMissionContentKeys") or [],
             "missionlessSubGamePlaybackNodes": coverage["missionlessSubGamePlaybackNodes"],
             "missionlessNativeRuntimeNodes": coverage["missionlessNativeRuntimeNodes"],
+            "dynamicSceneIdentityCrossReferences":
+                coverage.get("dynamicSceneIdentityCrossReferences"),
             "reportJson": repo_path(coverage_report),
             "reportMarkdown": repo_path(args.report_root.resolve() / f"{report_stem}.md"),
         }

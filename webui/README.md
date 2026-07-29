@@ -475,6 +475,13 @@ available through expandable guidance.
   `radio_gm02m20_9/_18` to the `gm02m20` mission shell through a unique
   same-level SpawnerConfig, while explicitly retaining local/no-server and
   no-quest semantics.
+  DynamicScene mission-control identity matches are shown in the same
+  boundary area as candidate-only cross-references. Exact numeric
+  `IdComp.logicId == LevelScript scriptId` equality can expose a mission/quest
+  state condition beside a Story-playing LevelScript, but the two current
+  native systems resolve those identities through separate registries.
+  Accordingly these rows retain `storyBinding: false`,
+  `orderEvidence: false`, unresolved ownership, and zero graph edges.
   An optional `missionRuntimeTrace.v1` bundle can be published with
   `--runtime-trace-bundle`. The WebUI renders captured event/action/playback
   routes, active-quest context, and per-session sequence/fork/merge evidence as

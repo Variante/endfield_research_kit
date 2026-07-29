@@ -117,6 +117,12 @@
       noServerExchange: "no server exchange",
       carrierAudit: "Closed managed-carrier candidates",
       noGraphEdges: "zero mission graph edges",
+      dynamicSceneCrossReferences: "DynamicScene identity cross-references",
+      dynamicSceneCrossReferencesHint: "A DynamicScene object co-carries mission/quest state conditions, and its exact numeric logic id equals an exported LevelScript script id containing Story playback. The current native systems resolve those ids through separate registries, so this is candidate context—not mission ownership, playback causality, or order.",
+      dynamicSceneLogicId: "DynamicScene logic id",
+      levelScriptId: "LevelScript script id",
+      missionStateConditions: "co-carried state conditions",
+      candidateContextOnly: "candidate context only",
       alternateActions: "mutually exclusive actions",
       currentAuthoredInstances: "current authored instances",
       runtimeContextOnly: "runtime subscription context only",
@@ -549,6 +555,12 @@
       noServerExchange: "不与服务器交换",
       carrierAudit: "已关闭的托管载体候选",
       noGraphEdges: "使命图边为零",
+      dynamicSceneCrossReferences: "DynamicScene 身份交叉引用",
+      dynamicSceneCrossReferencesHint: "DynamicScene 对象携带任务状态条件，其精确数字逻辑 ID 与包含剧情播放的 LevelScript 脚本 ID 相同。当前原生系统通过不同注册表解析这两个 ID，因此这里只显示候选上下文，不表示任务所有权、播放因果或顺序。",
+      dynamicSceneLogicId: "DynamicScene 逻辑 ID",
+      levelScriptId: "LevelScript 脚本 ID",
+      missionStateConditions: "同对象携带的状态条件",
+      candidateContextOnly: "仅候选上下文",
       alternateActions: "互斥动作分支",
       currentAuthoredInstances: "当前原始实例",
       runtimeContextOnly: "仅运行时订阅上下文",
@@ -2478,6 +2490,19 @@
   function runtimeContractHtml() {
     const contract = state.index?.runtimeContract || {};
     const coveragePolicy = state.index?.storyCoverage?.policy || "";
+    const dynamicSceneAudit = state.index?.storyCoverage?.dynamicSceneIdentityCrossReferences || {};
+    const currentMissionId = String(state.missionId || state.mission?.mission?.id || "");
+    const dynamicSceneRows = (dynamicSceneAudit.rows || []).filter((row) => (
+      row
+      && row.missionGraphAction === "none"
+      && row.storyBinding === false
+      && row.orderEvidence === false
+      && (row.conditions || []).some((condition) => {
+        const identifier = String(condition?.identifier || "");
+        return identifier === currentMissionId
+          || identifier.startsWith(`${currentMissionId}_q#`);
+      })
+    ));
     const missionlessNodes = (state.index?.storyCoverage?.missionlessSubGamePlaybackNodes || [])
       .filter((row) => row && row.subGameId && row.bindScriptId);
     const missionlessAudit = contract.subGameMissionRegistry?.missionlessPlaybackAudit || {};
@@ -2553,6 +2578,20 @@
           <small>${esc(nestedCarrierCensus.boundary || "")}</small>
         </article>` : ""}
       </div></section>` : ""}
+      ${dynamicSceneRows.length ? `<section class="mp-missionless-runtime mp-dynamic-scene-crossrefs">
+        <header><strong>${esc(t("dynamicSceneCrossReferences"))} <span>${dynamicSceneRows.length}</span></strong><p>${esc(t("dynamicSceneCrossReferencesHint"))}</p></header>
+        <div class="mp-missionless-runtime-grid">${dynamicSceneRows.map((row) => {
+          const conditions = (row.conditions || []).filter((condition) => condition?.identifier);
+          const stories = (row.storyOccurrences || []).filter((story) => story?.storyKey);
+          return `<article>
+            <header><code>${esc(row.scene || "?")}</code><b>${esc(t("candidateContextOnly"))}</b></header>
+            <div class="mp-runtime-chain"><span>${esc(t("dynamicSceneLogicId"))}</span><code>${esc(row.logicId || "?")}</code><i aria-hidden="true">=</i><span>${esc(t("levelScriptId"))}</span><code>${esc(row.scriptId || "?")}</code><i aria-hidden="true">⇢</i><b>Story</b></div>
+            <p><span>${esc(t("missionStateConditions"))}</span><code>${esc(conditions.map((condition) => `${condition.identifier} ${condition.isSame ? "=" : "!="} ${condition.state ?? "?"}`).join(" · "))}</code></p>
+            <div class="mp-missionless-story-links">${stories.map((story) => `<a href="${esc(storyHref(story.storyKey))}" title="${esc(story.sourceFile || "")}"><span>${esc(story.actionName || "Story")}</span><code>${esc(story.storyKey)}</code><b aria-hidden="true">→</b><small>${esc(`${story.levelId || "?"}/${story.scriptId || "?"} @ ${story.recordOffset ?? "?"}`)}</small></a>`).join("")}</div>
+            <div class="mp-runtime-associations"><strong>${esc(t("noMissionOwner"))}</strong><div><span>${esc(dynamicSceneAudit.classification || row.classification || "")}</span><b>${esc(t("noGraphEdges"))}</b><small>${esc(dynamicSceneAudit.boundary || dynamicSceneAudit.finding || "")}</small></div></div>
+          </article>`;
+        }).join("")}</div>
+      </section>` : ""}
       ${eventFamilies.length ? `<section class="mp-gap-queue">
         <header><strong>${esc(t("nativeGapQueue"))}</strong><p>${esc(t("nativeGapQueueHint"))}</p></header>
         ${coveragePolicy ? `<p class="mp-gap-policy"><b>${esc(t("evidencePolicy"))}:</b> ${esc(coveragePolicy)}</p>` : ""}
