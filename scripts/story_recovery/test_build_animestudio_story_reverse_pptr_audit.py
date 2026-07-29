@@ -160,6 +160,38 @@ class AnimeStudioStoryReversePPtrAuditTests(unittest.TestCase):
         )
         self.assertEqual(relations, [])
 
+    def test_resolved_pointer_must_land_on_exact_object(self) -> None:
+        identity = {
+            "serializedFile": "CAB-host",
+            "pathId": 42,
+        }
+        pointer = {
+            "status": "resolved",
+            "target": {
+                "serializedFile": "CAB-host",
+                "pathId": 42,
+            },
+        }
+        self.assertTrue(audit.pointer_resolves_to_object(pointer, identity))
+        self.assertFalse(
+            audit.pointer_resolves_to_object(
+                {
+                    **pointer,
+                    "target": {
+                        "serializedFile": "CAB-other",
+                        "pathId": 42,
+                    },
+                },
+                identity,
+            )
+        )
+        self.assertFalse(
+            audit.pointer_resolves_to_object(
+                {**pointer, "status": "unresolved"},
+                identity,
+            )
+        )
+
     def test_ancestor_chain_reaches_exact_root(self) -> None:
         objects = {
             1: {
