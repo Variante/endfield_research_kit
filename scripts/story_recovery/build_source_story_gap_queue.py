@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v34"
+SCHEMA = "sourceStoryGapQueue.v35"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v13"
+    "current-build-offline-story-carrier-exhaustion-v14"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -842,6 +842,49 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
         },
     },
 }
+OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
+    "dlg_e10m3_10": {
+        "missionId": "e10m3",
+        "lineIds": (
+            "dlg_e10m3_10_001",
+            "dlg_e10m3_10_002",
+            "dlg_e10m3_10_003",
+            "dlg_e10m3_10_004",
+            "dlg_e10m3_10_006",
+            "dlg_e10m3_10_007",
+            "dlg_e10m3_10_009",
+            "dlg_e10m3_10_010",
+        ),
+        "missingAudioIds": (
+            "au_dlg_e10m3_10_001",
+            "au_dlg_e10m3_10_002",
+            "au_dlg_e10m3_10_003",
+            "au_dlg_e10m3_10_004",
+            "au_dlg_e10m3_10_006",
+            "au_dlg_e10m3_10_007",
+            "au_dlg_e10m3_10_009",
+            "au_dlg_e10m3_10_010",
+        ),
+    },
+    "dlg_e10m3_11": {
+        "missionId": "e10m3",
+        "lineIds": tuple(
+            f"dlg_e10m3_11_{number:03d}" for number in range(1, 5)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_e10m3_11_{number:03d}" for number in range(1, 5)
+        ),
+    },
+    "dlg_e10m3_12": {
+        "missionId": "e10m3",
+        "lineIds": tuple(
+            f"dlg_e10m3_12_{number:03d}" for number in range(1, 17)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_e10m3_12_{number:03d}" for number in range(1, 17)
+        ),
+    },
+}
 OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS = frozenset({
     "actorName",
     "actorNameId",
@@ -1422,6 +1465,16 @@ def build_offline_exhaustion_index(
         in OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
     }
     all_dialog_keys = set(dialog_mission_by_key)
+    text_only_dialog_mission_by_key = {
+        story_key: safe_key(definition.get("missionId"))
+        for story_key, definition
+        in OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS.items()
+    }
+    all_text_only_dialog_keys = set(text_only_dialog_mission_by_key)
+    all_dialog_mission_by_key = {
+        **dialog_mission_by_key,
+        **text_only_dialog_mission_by_key,
+    }
     text_mission_by_key = {
         story_key: safe_key(definition.get("missionId"))
         for story_key, definition
@@ -1432,6 +1485,7 @@ def build_offline_exhaustion_index(
         **radio_mission_by_key,
         **cutscene_mission_by_key,
         **dialog_mission_by_key,
+        **text_only_dialog_mission_by_key,
         **text_mission_by_key,
     }
     required_keys = set(required_key_missions)
@@ -1844,6 +1898,54 @@ def build_offline_exhaustion_index(
         status["status"] = "inactive_dialog_definition_validation_failed"
         return {}, status
 
+    text_only_dialog_validation_by_key: dict[str, dict[str, Any]] = {}
+    text_only_dialog_definitions_valid = True
+    for story_key, definition in (
+        OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS.items()
+    ):
+        expected_line_ids = tuple(definition["lineIds"])
+        actual_line_ids = tuple(sorted(
+            key
+            for key in dialog_text_table
+            if key.startswith(f"{story_key}_")
+        ))
+        line_audio_ids = tuple(
+            safe_key(dialog_text_table[line_id].get("audioOverride"))
+            for line_id in expected_line_ids
+            if isinstance(dialog_text_table.get(line_id), dict)
+        )
+        expected_missing_audio_ids = tuple(
+            definition["missingAudioIds"]
+        )
+        if (
+            actual_line_ids != expected_line_ids
+            or len(line_audio_ids) != len(expected_line_ids)
+            or not all(line_audio_ids)
+            or line_audio_ids != expected_missing_audio_ids
+            or set(line_audio_ids) & audio_stems
+            or any(
+                set(dialog_text_table[line_id])
+                != OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS
+                for line_id in expected_line_ids
+            )
+            or story_key in dialog_id_index
+            or story_key in timeline_line_orders
+            or any(cutscene_definition_root.glob(
+                f"{story_key}_p*.json"
+            ))
+        ):
+            text_only_dialog_definitions_valid = False
+            break
+        text_only_dialog_validation_by_key[story_key] = {
+            "lineIds": list(expected_line_ids),
+            "audioIds": list(line_audio_ids),
+        }
+    if not text_only_dialog_definitions_valid:
+        status["status"] = (
+            "inactive_text_only_dialog_definition_validation_failed"
+        )
+        return {}, status
+
     num_id_table = read_json(source_paths["numIdStrTable"], {})
     timeline_ids = (
         ((num_id_table.get("timelines_id") or {}).get("dic") or {})
@@ -2169,6 +2271,46 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
+    for story_key in sorted(
+        all_text_only_dialog_keys,
+        key=natural_key,
+    ):
+        validation = text_only_dialog_validation_by_key[story_key]
+        index[story_key] = {
+            "sceneKey": story_key,
+            "missionId": text_only_dialog_mission_by_key[story_key],
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "evidenceKind":
+                "dialog_text_table_only_without_registry_asset_or_consumer",
+            "definitionTable": "DialogTextTable",
+            "lineIds": validation["lineIds"],
+            "audioIds": validation["audioIds"],
+            "audioMembershipStatus":
+                "all_current_audio_dialog_ids_missing",
+            "dialogIdRegistrationStatus": "absent",
+            "dialogTreeAssetStatus": "absent",
+            "timelineStatus": "absent",
+            "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+            "gameAssemblySha256":
+                OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+            "consumerBoundary": (
+                "the exact DialogTextTable line/audio group has no current "
+                "DialogId registration, DialogTree asset, Timeline, "
+                "AudioDialog membership, typed MissionRuntime or LevelScript "
+                "consumer, Lua reference, or object-index carrier"
+            ),
+            "orderBoundary": (
+                "line ids and fallback/manual display positions do not "
+                "establish playback, option routing, or mission chronology"
+            ),
+            "reopenWhen": (
+                "installed binary, DialogTextTable, AudioDialog, DialogId "
+                "index, TextAsset inventory, Timeline index, object index, "
+                "Lua corpus, or another typed producer/consumer changes"
+            ),
+            "graphEffect": "none",
+        }
     for story_key in sorted(all_text_keys, key=natural_key):
         definition = OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[story_key]
         index[story_key] = {
@@ -2322,13 +2464,13 @@ def build_offline_exhaustion_index(
                 (
                     story_key
                     for story_key, story_mission
-                    in dialog_mission_by_key.items()
+                    in all_dialog_mission_by_key.items()
                     if story_mission == mission
                 ),
                 key=natural_key,
             )
             for mission in sorted(
-                set(dialog_mission_by_key.values()),
+                set(all_dialog_mission_by_key.values()),
                 key=natural_key,
             )
         },
