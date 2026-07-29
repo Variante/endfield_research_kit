@@ -286,25 +286,33 @@ Mission Pipeline:
   `PlayRadio`.
 - The same manifest now carries fail-closed `offlineRecovery` annotations from
   `reports/mission_order/source_story_gap_queue_CN.json` only while the queue is
-  schema `sourceStoryGapQueue.v46`, its current-build evidence is active, all
+  schema `sourceStoryGapQueue.v47`, its current-build evidence is active, all
   source hashes match, and `graphEffect=none`. Existing attachment statuses and
-  route arrays are left unchanged. The 11 ReadingPopup `text_*` keys outside
+  route arrays are left unchanged. The nine ReadingPopup `text_*` keys outside
   the historical coverage denominator are exposed through
   `offlineRecoveryEvidence.storyTriggerManifestOverlay`, with zero routes and
   an explicit denominator-neutral status. The current live projection covers
-  262 manifest keys plus those 11 overlay keys. Mission cards display the
+  263 manifest keys plus nine overlay keys. Mission cards display the
   evidence kind, consumer boundary, order boundary, and reopen condition; the
   Story debug row labels them as an exhausted current-build offline carrier
   search rather than an inferred trigger.
 - `nodeAttachmentCoverage.v4` also publishes an already-authored
   `levelscript_condition_scope` quest row when a complete exact same-key native
   playback occurrence independently carries that same quest condition.
-  Mission Pipeline currently exposes 368 deduplicated non-owning scope
-  contexts across 166 quest nodes. In e1m2, q3 shows six such rows across
+  Mission Pipeline currently exposes 374 deduplicated non-owning scope
+  contexts across 169 quest nodes. In e1m2, q3 shows six such rows across
   scripts `2100060024` through `2100060026`: three dialogs and three radios.
   Every row states `playbackOwnership=false` and `orderEvidence=false`; the
   objective observes completion of the hosting scripts but does not prove
   that q3 starts or owns their Story playback.
+- Exact empty/null `triggerVolumes` dictionaries at the EOF of 27-member
+  LevelScript records are now accepted only after the parser fails to find a
+  stricter non-empty map. This exposes six additional globally unique
+  objective-script scope rows: e10m1 q4 shows `dlg_e10m1_8` and
+  `dlg_e10m1_13`, e1m3 q71 shows `radio_e1m3_13d5` and `_13d7`, and the two
+  ReadingPopup-backed e7m2/e7m3 records close through exact runtime config.
+  These cards retain `ownership=false`; local interactive ids and objective
+  script membership are context, not activation or Story order.
 - Exact foreign-dialog Timeline containment uses dedicated parent-Story and
   dialog-Timeline chips in the same route. The live e11m3
   `dlg_e11m3_16` card retains the parent `dlg_e11m3_7`, Timeline

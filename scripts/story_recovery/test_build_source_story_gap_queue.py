@@ -2227,6 +2227,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e7m3_13",
                 "dlg_e7m3_15",
                 "dlg_e7m3_16",
+                "dlg_e10m1_7",
                 "dlg_e10m3_3",
                 "dlg_e10m3_9",
                 "dlg_e10m4_21",
@@ -2323,6 +2324,28 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             dialog["extraConfigSha256"],
             "89B14D65387F1567990671228000339E8AEC0EE76D7529324C3AD2204F490D48",
+        )
+
+    def test_declared_e10m1_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E10M1_RADIOS,
+            {
+                "radio_e10m1_6",
+                "radio_e10m1_9",
+            },
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e10m1_7"
+        ]
+        self.assertEqual(dialog["lineIds"], ("dlg_e10m1_7_001",))
+        self.assertEqual(dialog["optionIds"], ())
+        self.assertEqual(
+            dialog["missingAudioIds"],
+            ("au_dlg_e10m1_7_001",),
+        )
+        self.assertEqual(
+            dialog["extraConfigSha256"],
+            "95BB5B09DEA22F63EFBB5506FBF1900AFC43D7DC3C6411F8281E33216DA7E5FA",
         )
 
     def test_declared_e2m4_offline_frontier_is_exact(self) -> None:

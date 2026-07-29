@@ -4306,9 +4306,11 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v46`
-   turns the completed exact `e0m0`, `e1m2`, `e1m3`, `e2m5`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e9m3`, `e10m4`, `e11m1`, `e11m2`,
-   `e11m3`, `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
+   block metadata or the installed build changes. `sourceStoryGapQueue.v47`
+   turns the completed exact `e0m0`, `e1m2`, `e1m3`, `e2m4`, `e2m5`,
+   `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e9m3`,
+   `e10m1`, `e10m3`, `e10m4`, `e11m1`, `e11m2`, `e11m3`, `e11m4`,
+   `e11m5`, `e11m6`, and `e11m8` negative boundaries into fail-closed
    operational deferrals.
    It activates only while the exact
    current `GameAssembly.dll`, RadioTable, AudioDialog, TextTable,
@@ -4318,7 +4320,7 @@ Current main-story priorities:
    schema/audio and Timeline/text-definition gates remain exact; the forward
    GameObject and reverse-PPtr results stay negative; and no new route exists.
    The v3 carrier pass matched 294 exact targets, rejected 319 component/fuzzy
-   lookalikes, found zero typed candidates, and left 3,127 target keys
+   lookalikes, found zero typed candidates, and left 3,126 target keys
    negative. The v3 reverse pass resolved 883 references into 294 targets and
    134 exact director hosts, then traversed 51,462 host GameObjects and 5,918
    typed components without finding a candidate. The v3 GameObject pass
@@ -4332,14 +4334,14 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 273 actual
-   isolated-scene deferrals: 191 radios, 27 cutscene roots, 29 registered
-   dialogs, eleven ReadingPopUp definitions, eight DialogTextTable-only groups,
-   one SNS dialog definition, four text-only cutscenes, and two TextTable-only
-   black definitions. The hash-validated declaration set contains 276 rows
-   because three declared
-   radios close through stronger exact native/runtime contexts instead of
-   using the deferral. Every
+   and reopen automatically if any gate changes. There are now 272 actual
+   isolated-scene deferrals: 191 radios, 27 cutscene roots, 28 registered
+   dialogs, two exact NpcProxy dialog consumers without a mission owner, nine
+   ReadingPopUp definitions, eight DialogTextTable-only groups, one SNS dialog
+   definition, four text-only cutscenes, and two TextTable-only black
+   definitions. The hash-validated declaration set contains 279 rows. Seven
+   declared rows close through stronger exact native/runtime contexts instead:
+   five radios and two ReadingPopup files. Every
    deferred row has graph effect `none` and contributes
    zero actionable-isolation score while its exact gates remain valid.
    The registered-dialog rows are admitted only while their exact MemoryPack
@@ -4426,12 +4428,47 @@ Current main-story priorities:
    `exact_quest_condition_and_complete_native_playback_scope`; they remain
    non-owning context with `playbackOwnership=false` and
    `orderEvidence=false`. Across the corpus this exact same-key validation
-   admits 349 already-authored condition-scope rows. The audit contains 406
-   scoped rows total, and Mission Pipeline publishes 368 deduplicated contexts
-   across 166 quests. This is a quest dependency/scope recovery, not evidence
+   admits 349 already-authored condition-scope rows. The audit now contains 412
+   scoped rows / 311 keys total: 349 exact same-key condition/playback rows,
+   62 globally unique objective-script contexts, and one exact playback-path
+   predicate. Mission Pipeline publishes 374 deduplicated contexts across 169
+   quest nodes. This is a quest dependency/scope recovery, not evidence
    that the quest initiates, owns, or orders the Story calls. With both classes
-   resolved, e1m2 now scores zero; the current top main-story queue item is
-   e10m1 at score 28.
+   resolved, e1m2 now scores zero.
+   The following e10m1 pass found a broader exact parser boundary rather than
+   immediately deferring all five residual Story keys. LevelScript files with
+   a non-empty task map can encode the final 27-member
+   `triggerVolumes` dictionary as a four-byte empty/null value at EOF. The
+   former tail finder recognized only non-empty Leader maps, so it rejected
+   otherwise complete counted `LevelInteractiveData` records. The fixed
+   fail-closed parser first prefers a fully decoded non-empty map and then
+   accepts only an exact empty/null dictionary ending at EOF.
+   This recovers `dlg_e10m1_8` from
+   `indie_dg005/25600120006` local interactive `40003` and
+   `dlg_e10m1_13` from `25600123003` local interactive `40001`. Both resolve
+   through component `94` `type_id` to template `int_narrative_mission`; both
+   source scripts are uniquely named by the e10m1 q4
+   `CheckLevelScriptStage` objective. They are therefore exact non-owning q4
+   configuration/scope contexts, not proof that q4 activates the interaction
+   or orders either dialog. The same parser correction positively closes four
+   previously declared deferrals:
+   `radio_e1m3_13d5` and `_13d7` in script `2100130061`, plus
+   ReadingPopup-backed `text_e7m2_3` and `text_e7m3_2` in scripts
+   `23300030017` and `23300030018`.
+   The apparent e10m1 q12 attachment gap was a triage false positive:
+   q12 is an exact `CheckQuestState(e10m1d5_q#9 == Completed)` wait gate whose
+   tracked `zhuangfy_indie_dg005_e10m1opendoor` proxy can select
+   `dlg_e10m1_2`. `npcProxyDialog` proves availability/navigation context but
+   carries neither quest causality nor playback ownership, so it now remains
+   under `questIdsWithoutAnyStoryEvidence` instead of actionable strict
+   attachment. The remaining `dlg_e10m1_7` is a hash-locked one-line
+   registered DialogTree with an exact extra config and a missing current
+   AudioDialog entry; `radio_e10m1_6` and `_9` are exact one-line
+   RadioTable/AudioDialog definitions. All three have zero typed carrier
+   candidates and are graph-neutral v47 deferrals. e10m1 now scores zero.
+   The main-story bucket is score 589 with 104 actionable core isolated rows
+   and 23 actionable quest gaps; the current top main-story item is e5m2 at
+   score 26.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
