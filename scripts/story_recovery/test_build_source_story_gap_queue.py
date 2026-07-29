@@ -2566,6 +2566,64 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             self.assertEqual(len(definition["lineIds"]), line_count)
             self.assertEqual(len(definition["optionIds"]), option_count)
 
+    def test_declared_e1m1_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION["e1m1"],
+            {
+                "cutscene_e1m1_3_1_test",
+                "cutscene_e1m1_4",
+                "cutscene_e1m1_6",
+            },
+        )
+        roots = {
+            "cutscene_e1m1_3_1_test": (70, 1, 1, 1),
+            "cutscene_e1m1_4": (190, 2, 2, 2),
+        }
+        for story_key, (
+            registry_id,
+            file_count,
+            gameobject_count,
+            host_count,
+        ) in roots.items():
+            definition = (
+                gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[story_key]
+            )
+            self.assertEqual(
+                definition["timelineRegistryId"],
+                registry_id,
+            )
+            self.assertEqual(len(definition["files"]), file_count)
+            self.assertEqual(
+                gap_queue.OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS[story_key],
+                gameobject_count,
+            )
+            self.assertEqual(
+                gap_queue.OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS[story_key],
+                host_count,
+            )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES[
+                "cutscene_e1m1_6"
+            ]["definitionRowKeys"],
+            tuple(
+                f"cutscene_e1m1_6_{number:02d}"
+                for number in range(1, 6)
+            ),
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e1m1_6"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 5)
+        self.assertEqual(dialog["optionIds"], ())
+        self.assertEqual(
+            dialog["npcProxyConsumer"]["proxyId"],
+            "chen_map01_e1m1Basement1",
+        )
+        self.assertEqual(
+            dialog["npcProxyConsumer"]["entry"]["missionId"],
+            "",
+        )
+
     def test_declared_e9m2_offline_frontier_is_exact(self) -> None:
         cutscenes = {
             "cutscene_dung02_dg002_e9m2_lightthewall": 327,
@@ -2627,6 +2685,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS),
             {
+                "dlg_e1m1_6",
                 "dlg_e1m2_6",
                 "misc_dlg_e1m3_5d5",
                 "dlg_e2m2_7",

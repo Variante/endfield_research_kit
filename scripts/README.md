@@ -2014,15 +2014,15 @@ gameplay-video OCR/audio workflow.
   explicit context and does not transfer ownership.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v53` evaluates 289 active declarations: 199 residual
-  radio definitions, 27 root cutscene carriers, 37 registered dialog
-  definitions, twelve exact NpcProxy rows across eleven dialogs without a
+  `sourceStoryGapQueue.v54` evaluates 293 active declarations: 199 residual
+  radio definitions, 29 root cutscene carriers, 38 registered dialog
+  definitions, thirteen exact NpcProxy rows across twelve dialogs without a
   mission owner, eight exact
   DialogTextTable-only/no-registry groups, ten exact
   ReadingPopUp/RichContent definitions, two exact SNS dialog definitions, four
-  text-only cutscenes (including two e2m5 rows), and two TextTable-only black narrative
+  five text-only cutscenes (including two e2m5 rows), and two TextTable-only black narrative
   definitions across
-  `e0m0`, `e1m2`, `e1m3`, `e2m2`, `e2m4`, `e2m5`, `e2m6`, `e2m7`,
+  `e0m0`, `e1m1`, `e1m2`, `e1m3`, `e2m2`, `e2m4`, `e2m5`, `e2m6`, `e2m7`,
   `e3m3`, `e5m1`, `e5m2`, `e6m1`, `e6m3`, `e6m4`, `e7m2`,
   `e7m3`, `e7m4`, `e9m2`, `e9m3`, `e10m1`, `e10m3`, `e10m4`,
   `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`.
@@ -2151,6 +2151,19 @@ gameplay-video OCR/audio workflow.
   Applying the same cross-owner quest-action rule also closes
   `radio_e2m3_3` through e2m2 q3 and `radio_e6m3_1` through e6m2 q25.
   All three retain foreign mission/quest context and no relative Story order.
+  e1m1 adds two exact Timeline-root boundaries, one TextTable-only cutscene,
+  and one registered dialog. `cutscene_e1m1_3_1_test` has registry id 70,
+  one root definition, one indexed CutsceneRoot, and one exact director host.
+  `cutscene_e1m1_4` has registry id 190 plus complete female/male root
+  definitions, two indexed CutsceneRoots, and two director hosts. Neither root
+  has a recovered activator. `dlg_e1m1_6` is a registered five-line,
+  zero-option dialog with exact primary/extra assets and complete audio;
+  `chen_map01_e1m1Basement1[0]` selects it with an empty mission id.
+  `cutscene_e1m1_6` is five exact TextTable subtitle rows without an original
+  Story-key root or consumer. Its displayed `cs_video_e1m1_1` media is a
+  manual WebUI presentation override: the exact LevelScript `PlayFmvAction`
+  authoritatively targets `cutscene_e1m1_1`, so that media attachment is not
+  promoted into a route for `_6`.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
   e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`
