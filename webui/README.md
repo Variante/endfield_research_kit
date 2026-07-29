@@ -484,8 +484,11 @@ available through expandable guidance.
   `map02_lv001/10100282001` explicitly targets the same DynamicScene id with
   `ShowSceneDecorationNew(..., false)` immediately after `dlg_c27m3_6` on the
   same serialized slot-80001 trigger chain. The card shows that typed target
-  and shared local path, while separately stating that the mission condition
-  to trigger-header activation edge remains missing.
+  and shared local path. It also resolves slot `80001` to the exact embedded
+  Leader trigger sphere (position `-757.75, 234.828, -1185.85`, radius `59`)
+  and states that its complete local schema carries no DynamicScene,
+  mission/quest, or foreign entity identity. The mission condition to
+  trigger-header activation edge therefore remains missing.
   Accordingly these rows retain `storyBinding: false`,
   `orderEvidence: false`, unresolved ownership, and zero graph edges.
   An optional `missionRuntimeTrace.v1` bundle can be published with

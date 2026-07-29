@@ -3892,6 +3892,11 @@ def load_dynamic_scene_identity_cross_references(
             if isinstance(candidate_bridge_report, dict)
             else None
         )
+        trigger_volume_boundary = (
+            bridge_boundary.get("levelScriptTriggerVolumeBoundary")
+            if isinstance(bridge_boundary, dict)
+            else None
+        )
         identity_source = (
             (candidate_bridge_report.get("sources") or {}).get("identityAudit")
             if isinstance(candidate_bridge_report, dict)
@@ -3906,6 +3911,16 @@ def load_dynamic_scene_identity_cross_references(
             != "exact_local_context_without_mission_activation_edge"
             or bridge_boundary.get("missionActivationBridgeFound") is not False
             or bridge_boundary.get("missionGraphAction") != "none"
+            or not isinstance(trigger_volume_boundary, dict)
+            or trigger_volume_boundary.get("classification")
+            != (
+                "exact_local_trigger_geometry_without_dynamic_scene_"
+                "or_mission_foreign_key"
+            )
+            or trigger_volume_boundary.get("foreignKeyBridgeFound") is not False
+            or trigger_volume_boundary.get("schemaMappingId")
+            != "current-global-metadata-levelscript-trigger-volume-data-fields"
+            or trigger_volume_boundary.get("leaderDeclaredFieldCount") != 0
             or not isinstance(identity_source, dict)
             or identity_source.get("sha256") != current_audit_sha
         ):
@@ -3948,6 +3963,7 @@ def load_dynamic_scene_identity_cross_references(
                 ):
                     continue
                 story_links: list[dict[str, Any]] = []
+                shared_selector_slots: set[int] = set()
                 for link in action.get("storyControlPathLinks") or []:
                     if not isinstance(link, dict):
                         continue
@@ -3961,14 +3977,17 @@ def load_dynamic_scene_identity_cross_references(
                         ):
                             continue
                         event_detail = shared.get("eventDetail") or {}
+                        trigger_slot_id = event_detail.get(
+                            "triggerSlotIdFilter"
+                        )
+                        if isinstance(trigger_slot_id, int):
+                            shared_selector_slots.add(trigger_slot_id)
                         shared_paths.append(compact_dict({
                             "relation": str(shared.get("relation") or ""),
                             "headerName": str(shared.get("headerName") or ""),
                             "headerLocalId": shared.get("headerLocalId"),
                             "eventSummary": str(event_detail.get("summary") or ""),
-                            "triggerSlotId": event_detail.get(
-                                "triggerSlotIdFilter"
-                            ),
+                            "triggerSlotId": trigger_slot_id,
                             "storyPathLocalIds":
                                 shared.get("storyPathLocalIds") or [],
                             "decorationPathLocalIds":
@@ -3984,6 +4003,113 @@ def load_dynamic_scene_identity_cross_references(
                             ),
                             "sharedControlPaths": shared_paths,
                         })
+                local_trigger_context: dict[str, Any] | None = None
+                if shared_selector_slots:
+                    candidate_context = action.get("localTriggerVolumeContext")
+                    schema = (
+                        candidate_context.get("schema")
+                        if isinstance(candidate_context, dict)
+                        else None
+                    )
+                    selector_slots = (
+                        candidate_context.get("selectorSlotIds")
+                        if isinstance(candidate_context, dict)
+                        else None
+                    )
+                    matched_slots = (
+                        candidate_context.get("matchedSlotIds")
+                        if isinstance(candidate_context, dict)
+                        else None
+                    )
+                    if (
+                        not isinstance(candidate_context, dict)
+                        or candidate_context.get("status")
+                        != (
+                            "exact_local_levelscript_trigger_volume_without_"
+                            "foreign_identity"
+                        )
+                        or sorted(selector_slots or [])
+                        != sorted(shared_selector_slots)
+                        or sorted(matched_slots or [])
+                        != sorted(shared_selector_slots)
+                        or candidate_context.get("missingSlotIds") not in ([], None)
+                        or candidate_context.get("scriptIdVerified") is not True
+                        or candidate_context.get("triggerVolumesStatus")
+                        != "present"
+                        or candidate_context.get("triggerVolumesParseStatus")
+                        != "decoded"
+                        or candidate_context.get(
+                            "dynamicSceneIdentityFieldPresent"
+                        ) is not False
+                        or candidate_context.get(
+                            "missionOrQuestIdentityFieldPresent"
+                        ) is not False
+                        or candidate_context.get("foreignKeyBridgeFound")
+                        is not False
+                        or candidate_context.get("missionGraphAction") != "none"
+                        or not isinstance(schema, dict)
+                        or schema.get("baseDeclaredFieldCount") != 8
+                        or schema.get("leaderDeclaredFieldCount") != 0
+                        or schema.get("serializedMemberCount") != 8
+                        or schema.get("mappingId")
+                        != (
+                            "current-global-metadata-levelscript-trigger-"
+                            "volume-data-fields"
+                        )
+                    ):
+                        continue
+                    compact_volumes: list[dict[str, Any]] = []
+                    for volume in candidate_context.get("triggerVolumes") or []:
+                        if (
+                            not isinstance(volume, dict)
+                            or volume.get("slotId") not in shared_selector_slots
+                            or volume.get("keySlotId") != volume.get("slotId")
+                            or volume.get("triggerVolumeType") != "Leader"
+                            or volume.get("memberCount") != 8
+                        ):
+                            continue
+                        shape_list = volume.get("shapeList") or {}
+                        if (
+                            not isinstance(shape_list, dict)
+                            or shape_list.get("parseStatus") != "decoded"
+                        ):
+                            continue
+                        shapes = [
+                            compact_dict({
+                                "shapeType": shape.get("shapeType"),
+                                "position": shape.get("position"),
+                                "radius": shape.get("radius"),
+                                "rotation": shape.get("rotation"),
+                                "size": shape.get("size"),
+                            })
+                            for shape in shape_list.get("shapes") or []
+                            if isinstance(shape, dict)
+                        ]
+                        compact_volumes.append(compact_dict({
+                            "slotId": volume.get("slotId"),
+                            "triggerVolumeType":
+                                volume.get("triggerVolumeType"),
+                            "triggerCountLimit":
+                                volume.get("triggerCountLimit"),
+                            "enterCheckOnGround":
+                                volume.get("enterCheckOnGround"),
+                            "isImportant": volume.get("isImportant"),
+                            "triggerOnPole": volume.get("triggerOnPole"),
+                            "waitSrvRes": volume.get("waitSrvRes"),
+                            "shapes": shapes,
+                        }))
+                    if {
+                        volume.get("slotId") for volume in compact_volumes
+                    } != shared_selector_slots:
+                        continue
+                    local_trigger_context = {
+                        "status": candidate_context.get("status"),
+                        "selectorSlotIds": sorted(shared_selector_slots),
+                        "triggerVolumes": compact_volumes,
+                        "schemaMappingId": schema.get("mappingId"),
+                        "foreignKeyBridgeFound": False,
+                        "missionGraphAction": "none",
+                    }
                 exact_actions.append(compact_dict({
                     "actionName": action.get("actionName"),
                     "unionTag": action.get("unionTag"),
@@ -3998,6 +4124,7 @@ def load_dynamic_scene_identity_cross_references(
                     "visible": action.get("visible"),
                     "sourceFile": action.get("sourceFile"),
                     "storyControlPathLinks": story_links,
+                    "localTriggerVolumeContext": local_trigger_context,
                 }))
             if logic_id and exact_actions:
                 bridges_by_logic_id[logic_id] = {
@@ -4131,6 +4258,18 @@ def load_dynamic_scene_identity_cross_references(
                 )
                 for row in rows
             ),
+            "exactLocalTriggerVolumeContexts": sum(
+                bool(
+                    action.get("localTriggerVolumeContext")
+                )
+                for row in rows
+                for action in (
+                    (row.get("localContextBridge") or {}).get(
+                        "exactTargetActions"
+                    ) or []
+                )
+            ),
+            "triggerVolumeForeignKeyBridges": 0,
         },
         "rows": rows,
     }
