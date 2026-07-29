@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v47"
+SCHEMA = "sourceStoryGapQueue.v48"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -128,7 +128,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v26"
+    "current-build-offline-story-carrier-exhaustion-v27"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -727,6 +727,160 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
             f"option_dlg_e2m6_12_1_{number:03d}"
             for number in range(1, 5)
         ),
+    },
+    "dlg_e5m2_2": {
+        "missionId": "e5m2",
+        "filename": "dlg_e5m2_2_pEB6A5B995EA35166.json",
+        "sha256":
+            "4C31923E2B17DEA1FB0E79A9710D6BFEDC199FC0DA3AF8E46D31613879CDFC97",
+        "extraConfigFilename":
+            "dlg_e5m2_2_extra_config_pFC8C62321BCB344B.json",
+        "extraConfigSha256":
+            "CD05840A7EC0AFBEE61E7FB2952B860F7040C1B08A608B55C44B11ACC5102359",
+        "lineIds": (
+            "dlg_e5m2_2_001",
+            "dlg_e5m2_2_002",
+            "dlg_e5m2_2_003",
+            "dlg_e5m2_2_005",
+            "dlg_e5m2_2_006",
+            "dlg_e5m2_2_008",
+            "dlg_e5m2_2_010",
+            "dlg_e5m2_2_011",
+            "dlg_e5m2_2_012",
+            "dlg_e5m2_2_013",
+            "dlg_e5m2_2_014",
+            "dlg_e5m2_2_015",
+            "dlg_e5m2_2_019",
+            "dlg_e5m2_2_020",
+            "dlg_e5m2_2_022",
+            "dlg_e5m2_2_023",
+            "dlg_e5m2_2_024",
+            "dlg_e5m2_2_028",
+            "dlg_e5m2_2_030",
+            "dlg_e5m2_2_031",
+            "dlg_e5m2_2_032",
+            "dlg_e5m2_2_035",
+            "dlg_e5m2_2_036",
+            "dlg_e5m2_2_037",
+            "dlg_e5m2_2_039",
+            "dlg_e5m2_2_040",
+            "dlg_e5m2_2_041",
+            "dlg_e5m2_2_042",
+            "dlg_e5m2_2_043",
+        ),
+        "optionIds": (
+            "option_dlg_e5m2_2_3_001",
+            "option_dlg_e5m2_2_4_001",
+        ),
+        "missingAudioIds": ("au_dlg_e5m2_2_003",),
+        "ownedTimeline": {
+            "timeline": "dlgtl_e5m2_2_sub_1",
+            "sourceFile": "CAB-d519c34c420d1804280357b6cb378d57",
+            "trackPathId": -6721394561739517947,
+            "fullLineIds": (
+                "dlg_e5m2_2_001",
+                "dlg_e5m2_2_002",
+                "dlg_e5m2_2_003",
+                "dlg_e5m2_2_005",
+                "dlg_e5m2_2_006",
+                "dlg_e5m2_2_008",
+                "dlg_e5m2_2_032",
+                "dlg_e5m2_2_010",
+                "dlg_e5m2_2_011",
+                "dlg_e5m2_2_012",
+                "dlg_e5m2_2_013",
+                "dlg_e5m2_2_014",
+                "dlg_e5m2_2_035",
+                "dlg_e5m2_2_036",
+                "dlg_e5m2_2_015",
+                "dlg_e5m2_2_030",
+                "dlg_e5m2_2_019",
+                "dlg_e5m2_2_020",
+                "dlg_e5m2_2_037",
+                "dlg_e5m2_2_022",
+                "dlg_e5m2_2_023",
+                "dlg_e5m2_2_024",
+                "dlg_e5m2_2_039",
+                "dlg_e5m2_2_040",
+                "dlg_e5m2_2_041",
+                "dlg_e5m2_2_042",
+                "dlg_e5m2_2_043",
+                "dlg_e5m2_2_028",
+                "dlg_e5m2_2_031",
+            ),
+        },
+        "npcProxyConsumer": {
+            "proxyId": "tangtang_map02_e5m2rongdong",
+            "entryIndex": 1,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e5m2_2",
+                "missionId": "",
+            },
+        },
+    },
+    "dlg_e5m2_8": {
+        "missionId": "e5m2",
+        "filename": "dlg_e5m2_8_p0532B39D7F861ACB.json",
+        "sha256":
+            "DFD36D9BA920DB724F18D3508CE7EC31AB87D2BC8D4129ECA6141C08B83DB131",
+        "extraConfigFilename":
+            "dlg_e5m2_8_extra_config_pE99F71CD3EB3F7B3.json",
+        "extraConfigSha256":
+            "620C42152579A15BF41E9C314E2A111252860A29EED0CA571FE05E2EA4FC4083",
+        "lineIds": (
+            "dlg_e5m2_8_001",
+            "dlg_e5m2_8_004",
+        ),
+        "optionIds": (
+            "option_dlg_e5m2_8_1_001",
+            "option_dlg_e5m2_8_1_002",
+        ),
+        "npcProxyConsumer": {
+            "proxyId": "tangtang_map02_e5m2duizhi",
+            "entryIndex": 1,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e5m2_8",
+                "missionId": "",
+            },
+        },
+    },
+    "misc_dlg_e5m2_3d5": {
+        "missionId": "e5m2",
+        "registryKey": "dlg_e5m2_3d5",
+        "definitionName": "dlg_e5m2_3d5",
+        "linePrefix": "dlg_e5m2_3d5",
+        "filename": "dlg_e5m2_3d5_pBBF809F4820EC1D7.json",
+        "sha256":
+            "69AE360E3678E6A4E1497A38DF111829CEBD71A9B291A375D06C8E2CB82D99EA",
+        "extraConfigFilename":
+            "dlg_e5m2_3d5_extra_config_p4A78736D728AD6CA.json",
+        "extraConfigSha256":
+            "001E4FFBE713E679D7938CFABADEC973BF3749E014D14CBCD2D04F46A30954C0",
+        "lineIds": (
+            "dlg_e5m2_3d5_001",
+            "dlg_e5m2_3d5_003",
+            "dlg_e5m2_3d5_004",
+            "dlg_e5m2_3d5_005",
+            "dlg_e5m2_3d5_006",
+        ),
+        "optionIds": (),
+        "missingAudioIds": ("au_dlg_e5m2_3d5_003",),
+        "npcProxyConsumer": {
+            "proxyId": "ruanyi_map02_e5m2rongdong",
+            "entryIndex": 1,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e5m2_3d5",
+            },
+        },
     },
     "dlg_e10m1_7": {
         "missionId": "e10m1",
@@ -1445,6 +1599,7 @@ OFFLINE_EXHAUSTION_E2M6_RADIOS = frozenset({
     "radio_e2m6_7d2",
     "radio_e2m6_7d4",
 })
+OFFLINE_EXHAUSTION_E5M2_RADIOS = frozenset({"radio_e5m2_3"})
 OFFLINE_EXHAUSTION_E10M1_RADIOS = frozenset({
     "radio_e10m1_6",
     "radio_e10m1_9",
@@ -1458,6 +1613,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e2m5": OFFLINE_EXHAUSTION_E2M5_RADIOS,
     "e2m6": OFFLINE_EXHAUSTION_E2M6_RADIOS,
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
+    "e5m2": OFFLINE_EXHAUSTION_E5M2_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e6m4": OFFLINE_EXHAUSTION_E6M4_RADIOS,
     "e7m2": OFFLINE_EXHAUSTION_E7M2_RADIOS,
@@ -2363,10 +2519,10 @@ def build_offline_exhaustion_index(
                 and not isinstance(entry_index, bool)
                 and isinstance(expected_entry, dict)
                 and isinstance(proxy_entries, list)
-                and proxy_entries == [expected_entry]
-                and entry_index == 0
+                and 0 <= entry_index < len(proxy_entries)
+                and proxy_entries[entry_index] == expected_entry
                 and expected_entry.get("dialogId") == registry_key
-                and expected_entry.get("missionId") == ""
+                and not safe_key(expected_entry.get("missionId"))
             )
             npc_proxy_consumer_context = {
                 "proxyId": proxy_id,

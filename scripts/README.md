@@ -2006,8 +2006,8 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v47` evaluates 196 residual radio definitions, 27 root
-  cutscene carriers, 28 registered dialog definitions, two exact NpcProxy
+  `sourceStoryGapQueue.v48` evaluates 197 residual radio definitions, 27 root
+  cutscene carriers, 31 registered dialog definitions, five exact NpcProxy
   dialog consumers without a mission owner, eight exact
   DialogTextTable-only/no-registry groups, eleven exact
   ReadingPopUp/RichContent definitions, one exact SNS dialog definition, four
@@ -2084,6 +2084,18 @@ gameplay-video OCR/audio workflow.
   stronger exact runtime configuration. An `npcProxyDialog` placement remains
   non-owning availability context and is not scored as a strict quest
   attachment gap.
+  e5m2 adds one audio-complete three-line radio plus three registered dialog
+  definitions. `dlg_e5m2_2` preserves its exact 29-line/two-option owned
+  Timeline order; `dlg_e5m2_8` preserves two lines/two options; and
+  `misc_dlg_e5m2_3d5` resolves to the five-line `dlg_e5m2_3d5` registry key.
+  Each dialog has an exact extra config and an exact NpcProxyEx interaction
+  consumer at list index 1, but the consumer mission id is empty or absent.
+  The validation therefore accepts exact indexed consumers while retaining
+  explicit no-owner/no-activation/no-order boundaries. The two absent base
+  AudioDialog ids are recorded even though gender-suffixed variants exist.
+  The separate e5m2 q33 and e5m2d5 q12 diagnostics remain active: shared
+  LevelScript condition scope, weak LevelData adjacency, and AirWall
+  state-gated pushback playback do not prove quest-owned Story playback.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
   e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`
