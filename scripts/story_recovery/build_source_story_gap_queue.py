@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v67"
+SCHEMA = "sourceStoryGapQueue.v68"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -129,7 +129,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v46"
+    "current-build-offline-story-carrier-exhaustion-v47"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -722,6 +722,18 @@ OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES = {
     ),
 }
 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
+    "dlg_e10m2_8": {
+        "missionId": "e10m2",
+        "filename": "dlg_e10m2_8_p8F2AEBCBA2C91D5B.json",
+        "sha256":
+            "928A56F6901AD60BA2D7F2CC598EF88DDDFF614F14A803F0A588E9188C2217F5",
+        "extraConfigFilename":
+            "dlg_e10m2_8_extra_config_p38D17B98E4C62C52.json",
+        "extraConfigSha256":
+            "AE0E94E927ED9CBE169C0237078AC18290979CE25EE628FF1269F73E6860E928",
+        "lineIds": ("dlg_e10m2_8_001",),
+        "optionIds": (),
+    },
     "dlg_e8m1_10": {
         "missionId": "e8m1",
         "filename": "dlg_e8m1_10_p76A11D6AD289E50D.json",
@@ -2158,6 +2170,7 @@ OFFLINE_EXHAUSTION_E10M1_RADIOS = frozenset({
     "radio_e10m1_6",
     "radio_e10m1_9",
 })
+OFFLINE_EXHAUSTION_E10M2_RADIOS = frozenset({"radio_e10m2_1"})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
@@ -2191,6 +2204,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e9m3": OFFLINE_EXHAUSTION_E9M3_RADIOS,
     "e9m4": OFFLINE_EXHAUSTION_E9M4_RADIOS,
     "e10m1": OFFLINE_EXHAUSTION_E10M1_RADIOS,
+    "e10m2": OFFLINE_EXHAUSTION_E10M2_RADIOS,
     "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
     "e11m1": OFFLINE_EXHAUSTION_E11M1_RADIOS,
     "e11m2": OFFLINE_EXHAUSTION_E11M2_RADIOS,
