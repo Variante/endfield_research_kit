@@ -3635,6 +3635,30 @@ def _strict_quest_attachments(
                 continue
             scene_key = safe_key(row.get("key"))
             relation = safe_key(row.get("relation"))
+            objective_index = row.get("objectiveIndex")
+            finish_id = row.get("finishId")
+            if (
+                scene_key
+                and relation == "objective_condition"
+                and safe_key(row.get("direction")) == "story_to_quest"
+                and safe_key(row.get("phase")) == "progress"
+                and safe_key(row.get("confidence")) == "direct"
+                and safe_key(row.get("conditionType"))
+                == "CheckTalkOptionFinish"
+                and re.fullmatch(
+                    r"MissionRuntimeAsset\.questDic\[\*\]\.objectiveList"
+                    r"\[\d+\]\.condition\._dialogId",
+                    safe_key(row.get("source")),
+                )
+                and isinstance(objective_index, int)
+                and not isinstance(objective_index, bool)
+                and objective_index > 0
+                and isinstance(finish_id, int)
+                and not isinstance(finish_id, bool)
+            ):
+                quest_ids.add(quest_id)
+                scene_keys.add(scene_key)
+                continue
             expected = direct_quest_story_relations.get(relation)
             if (
                 not scene_key
