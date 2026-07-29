@@ -2192,6 +2192,98 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             )
         )
 
+    def test_exact_cross_mission_condition_playback_closes_story_gap(
+        self,
+    ) -> None:
+        story_key = "dlg_e8m3_1"
+        source_file = "LevelScriptData/map02_lv004/23400020010.json"
+        occurrence = {
+            "levelId": "map02_lv004",
+            "scriptId": "23400020010",
+            "sourceFile": source_file,
+            "actionMapRole": "actionList#8 linked",
+            "localId": 12,
+            "actionName": "StartDialogAndTeleportAction",
+            "recordClass": "play_dialog",
+            "nativeMappingId": "gameassembly-test-actionbase",
+            "allStoryKeysInRecord": [story_key],
+            "nativeEventOwnerStatus": "exact_serialized_control_path",
+            "nativeEventOwners": [{
+                "status": "exact_serialized_control_path",
+                "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                "headerLocalId": 6,
+                "eventDetail": {
+                    "summary": "leader enters trigger slot 80001",
+                },
+                "path": [
+                    {"localId": 7},
+                    {
+                        "localId": 12,
+                        "actionName": "StartDialogAndTeleportAction",
+                        "recordClass": "play_dialog",
+                    },
+                ],
+            }],
+            "missionConditions": [{
+                "missionId": "e8m2",
+                "questId": "e8m2_q#14d5",
+                "conditionType": "CheckLevelScriptPropertyBool",
+                "sourceFile": "MissionRuntimeAsset/e8m2.json",
+            }],
+            "scopeEvidenceKinds": ["mission_condition_checks_script"],
+        }
+        connection = {
+            "key": story_key,
+            "kind": "dialog",
+            "relation": "levelscript_mission_context",
+            "direction": "context",
+            "phase": "context",
+            "confidence": "scoped_script",
+            "storyOwnerMission": "e8m3",
+            "levelScriptMissionId": "e8m2",
+            "occurrenceCount": 1,
+            "allOccurrenceCount": 1,
+            "hasUnscopedOrOtherMissionOccurrences": False,
+            "scopeEvidenceKinds": ["mission_condition_checks_script"],
+            "levelScriptOccurrences": [occurrence],
+        }
+        partial = partial_mission(
+            "e8m3",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        report = gap_queue.build_gap_report(
+            {
+                "_schema": "partial",
+                "language": "CN",
+                "missions": [partial],
+            },
+            {
+                "e8m2": mission_payload(connections=[connection]),
+                "e8m3": mission_payload(),
+            },
+            {"e8m2", "e8m3"},
+        )
+
+        row = report["missions"][0]
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        closure = row["closedExactNativeIsolatedScenes"][0]
+        self.assertEqual(closure["sceneKey"], story_key)
+        self.assertEqual(
+            closure["nativeEventPaths"][0]["headerName"],
+            "ScriptEvent_OnLeaderEnterTriggerVolume",
+        )
+
+        invalid = dict(connection)
+        invalid["scopeEvidenceKinds"] = ["script_contains_mission_or_quest_ref"]
+        self.assertFalse(
+            gap_queue._exact_cross_owner_mission_condition_story_context(
+                invalid,
+                "e8m3",
+                "e8m2",
+            )
+        )
+
     def test_dialog_finish_dependency_requires_exact_typed_source(self) -> None:
         partial = partial_mission(
             "e9m2",
@@ -2898,6 +2990,12 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 1,
             )
 
+    def test_declared_e8m3_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E8M3_RADIOS,
+            {"radio_e8m3_27"},
+        )
+
     def test_exact_lua_controller_playback_closes_isolated_cutscene(
         self,
     ) -> None:
@@ -3290,10 +3388,12 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(len(dialog["lineIds"]), 24)
         self.assertEqual(len(dialog["optionIds"]), 4)
         self.assertEqual(
-            gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
-                "cutscene_e2m6_designer_anchorperish_001"
-            ]["timelineRegistryId"],
-            265,
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION["e2m6"],
+            {"cutscene_e2m6_designer_AngelSurrounding"},
+        )
+        self.assertNotIn(
+            "cutscene_e2m6_designer_anchorperish_001",
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS,
         )
         self.assertEqual(
             len(
