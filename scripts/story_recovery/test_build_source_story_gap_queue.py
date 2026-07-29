@@ -3259,6 +3259,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "misc_dlg_e2m5d5_1d5",
                 "misc_dlg_e2m5d5_1d7",
                 "dlg_e2m6_12",
+                "dlg_e2m8d5_2",
+                "dlg_e2m8d5_3",
                 "dlg_e3m2_3",
                 "dlg_e3m3_12",
                 "dlg_e3m3_13",
@@ -3939,6 +3941,51 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 },
             },
         )
+
+    def test_declared_e2m8d5_offline_frontier_is_exact(self) -> None:
+        expected = {
+            "dlg_e2m8d5_2": {
+                "lines": (
+                    "dlg_e2m8d5_2_001",
+                    "dlg_e2m8d5_2_002",
+                    "dlg_e2m8d5_2_004",
+                    "dlg_e2m8d5_2_006",
+                    "dlg_e2m8d5_2_007",
+                ),
+                "options": (
+                    "option_dlg_e2m8d5_2_1_001",
+                    "option_dlg_e2m8d5_2_1_002",
+                ),
+                "proxyId": "pelica_map01_e2m8d5",
+                "entryIndex": 2,
+                "missionIdPresent": False,
+            },
+            "dlg_e2m8d5_3": {
+                "lines": tuple(
+                    f"dlg_e2m8d5_3_{number:03d}"
+                    for number in range(1, 6)
+                ),
+                "options": ("option_dlg_e2m8d5_3_1_001",),
+                "proxyId": "chen_map01_e2m8d5",
+                "entryIndex": 0,
+                "missionIdPresent": True,
+            },
+        }
+        for story_key, facts in expected.items():
+            definition = (
+                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]
+            )
+            self.assertEqual(definition["missionId"], "e2m8d5")
+            self.assertEqual(definition["lineIds"], facts["lines"])
+            self.assertEqual(definition["optionIds"], facts["options"])
+            consumer = definition["npcProxyConsumer"]
+            self.assertEqual(consumer["proxyId"], facts["proxyId"])
+            self.assertEqual(consumer["entryIndex"], facts["entryIndex"])
+            self.assertEqual(
+                "missionId" in consumer["entry"],
+                facts["missionIdPresent"],
+            )
+            self.assertFalse(consumer["entry"].get("missionId"))
 
     def test_declared_e6m1_offline_frontier_is_exact(self) -> None:
         self.assertEqual(
