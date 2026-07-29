@@ -504,20 +504,26 @@ progress lock or exact current-build state conditions: union tag `12` /
 three members is `SimpleConditionCheckMissionState`, tag `16` / three members
 is `SimpleConditionCheckQuestState`, and tag `0` / three members is
 `CombinedConditionRuntime` containing only those two leaf forms. Leaf compare
-operator `0`, target state `0..5`, and the exact mission/quest id are retained;
-the combined operator and serialized runtime flag remain raw evidence rather
-than guessed enum names.
+operator `0` or `1`, target state `0..5`, and the exact mission/quest id are
+retained. Combined nodes may nest to the guarded depth/count limits; every
+operator and serialized runtime flag remains raw evidence rather than a
+guessed enum name.
 
 A direct Story id or exact `ReadingPopUpTable.contentId` join then supplies
-source-configuration context. The current corpus has **222 placements for 217
-unique Story keys across 45 LevelData assets**: 22 null locks, 123 direct
-quest-state locks, 65 direct mission-state locks, and 12 combined locks.
+source-configuration context. The current corpus has **224 placements for 219
+unique Story keys across 47 LevelData assets**: 22 null locks, 124 direct
+quest-state locks, 65 direct mission-state locks, and 13 combined locks.
 Non-final records end at the next typed item. A final record is accepted only
 when its complete 25-member decoder lands exactly at member 21 (`levelIdNum`)
 and the adjacent member-22
-`Dictionary<ulong, LevelScriptBriefData/8>` independently validates. Twenty-two
+`Dictionary<ulong, LevelScriptBriefData/8>` independently validates. Twenty-four
 final placements pass: the two null-lock rows remain `text_e10m4_3` and
-`text_e11m5_4`, while 20 more have fully decoded state locks.
+`text_e11m5_4`, while 22 more have fully decoded state locks. The last two
+bounded Story-bearing failures are now closed exactly:
+`dlg_c6m1_36` has a direct `c6m1_q#7` quest-state leaf with raw compare
+operator `1` / target `3`; `dlg_gm02m12_10` has an outer combined node with an
+`e8m5` target-`3` leaf and a nested combined node over `gm02m12` targets `2`
+and `3`.
 These rows establish the LevelData asset, narrative entity, and configured
 Story consumer. A decoded lock constrains interactive availability, but its
 referenced mission/quest is not thereby the Story owner; object instantiation,

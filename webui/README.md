@@ -195,7 +195,8 @@ available through expandable guidance.
   `mission -> LevelData -> interactive availability condition -> narrative
   interactive -> Story` context route when an exact progress lock exists.
   The route retains the LevelData asset, entity logic id, exact mission/quest
-  state leaves, and raw combined-condition fields. Final records require the
+  state leaves, raw compare operators, and nested combined-condition fields.
+  Final records require the
   validated member-21/member-22 boundary and retain that provenance. A
   progress-lock owner is availability evidence, not Story ownership,
   activation causality, or order.

@@ -997,7 +997,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "storyBinding": True,
             "ownership": False,
             "nativeMappingId":
-                "leveldata-interactive-narrative-config-v3",
+                "leveldata-interactive-narrative-config-v4",
             "orderBoundary": (
                 "interactive-list order, record index, entity logic id, "
                 "object position, and Story suffix do not establish relative "
@@ -1049,6 +1049,15 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "progressLockConditionSerializedMemberCount": 3,
             "progressLockConditionType":
                 "SimpleConditionCheckQuestState",
+            "progressLockConditionTree": {
+                "unionTag": 16,
+                "serializedMemberCount": 3,
+                "conditionType": "SimpleConditionCheckQuestState",
+                "ownerKind": "quest",
+                "ownerId": "e1m1_q#2",
+                "compareOperator": 0,
+                "compareTarget": 3,
+            },
             "progressLockConditions": [{
                 "unionTag": 16,
                 "serializedMemberCount": 3,
@@ -1084,6 +1093,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         connection.pop("progressLockConditionUnionTag")
         connection.pop("progressLockConditionSerializedMemberCount")
         connection.pop("progressLockConditionType")
+        connection.pop("progressLockConditionTree")
         connection[
             "interactiveRecordIndex"
         ] = 2

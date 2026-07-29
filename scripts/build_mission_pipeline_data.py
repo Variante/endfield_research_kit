@@ -242,7 +242,8 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v22 retains exact decoded mission/quest-state progress locks on LevelData
 # narrative-interactive routes without treating their owner ids as Story
 # ownership or chronology.
-SCHEMA_VERSION = 22
+# v23 retains nested combined-condition structure and raw NotEqual leaves.
+SCHEMA_VERSION = 23
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -3514,25 +3515,37 @@ def build_story_trigger_route(
             row.get("progressLockConditionStatus") == "decoded"
             and progress_conditions
         ):
-            condition_summaries = [
-                (
-                    f"{condition.get('ownerKind')} "
-                    f"{condition.get('ownerId')} state "
-                    f"{condition.get('compareTarget')} "
-                    f"(compare {condition.get('compareOperator')})"
-                )
-                for condition in progress_conditions
-            ]
-            if row.get("progressLockConditionType") == "CombinedConditionRuntime":
-                condition_summaries.insert(
-                    0,
+            condition_summaries: list[str] = []
+
+            def summarize_condition(node: object, depth: int = 0) -> None:
+                if not isinstance(node, dict):
+                    return
+                if node.get("conditionType") == "CombinedConditionRuntime":
+                    condition_summaries.append(
+                        (
+                            f"{'nested ' if depth else ''}combined operator "
+                            f"{node.get('conditionOperator')} runtime flag "
+                            f"{str(node.get('serializedRuntimeFlag')).lower()}"
+                        )
+                    )
+                    for child in node.get("conditions") or []:
+                        summarize_condition(child, depth + 1)
+                    return
+                condition_summaries.append(
                     (
-                        "combined operator "
-                        f"{row.get('progressLockConditionOperator')} "
-                        "runtime flag "
-                        f"{str(row.get('progressLockSerializedRuntimeFlag')).lower()}"
-                    ),
+                        f"{node.get('ownerKind')} "
+                        f"{node.get('ownerId')} state "
+                        f"{node.get('compareTarget')} "
+                        f"(compare {node.get('compareOperator')})"
+                    )
                 )
+
+            tree = row.get("progressLockConditionTree")
+            if isinstance(tree, dict):
+                summarize_condition(tree)
+            else:
+                for condition in progress_conditions:
+                    summarize_condition(condition)
             middle_steps.append({
                 "kind": "availability_condition",
                 "id": str(row.get("progressLockConditionType") or ""),
@@ -3609,6 +3622,8 @@ def build_story_trigger_route(
             row.get("progressLockConditionOperator"),
         "progressLockSerializedRuntimeFlag":
             row.get("progressLockSerializedRuntimeFlag"),
+        "progressLockConditionTree":
+            row.get("progressLockConditionTree"),
         "progressLockConditions": [
             dict(condition)
             for condition in row.get("progressLockConditions") or []
@@ -5235,7 +5250,7 @@ def build_story_binding_coverage(
 
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 7,
+        "schemaVersion": 8,
         "generated": int(time.time()),
         "language": language,
         "policy": (

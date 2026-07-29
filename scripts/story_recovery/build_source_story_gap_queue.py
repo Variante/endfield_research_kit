@@ -37,12 +37,12 @@ from build_source_story_partial_order import build_report as build_partial_order
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v16"
+SCHEMA = "sourceStoryGapQueue.v17"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
 LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID = (
-    "leveldata-interactive-narrative-config-v3"
+    "leveldata-interactive-narrative-config-v4"
 )
 BUCKET_ORDER = ("main", "event", "major", "character", "other")
 
@@ -1311,6 +1311,49 @@ def _closed_exact_runtime_config_isolated_scenes(
         "interactive-list order, record index, entity logic id, object "
         "position, and Story suffix do not establish relative Story chronology"
     )
+
+    def progress_tree_leaves(
+        node: object,
+        depth: int = 0,
+    ) -> list[dict[str, Any]] | None:
+        if not isinstance(node, dict) or depth > 8:
+            return None
+        condition_type = safe_key(node.get("conditionType"))
+        if condition_type == "CombinedConditionRuntime":
+            children = node.get("conditions")
+            if (
+                node.get("unionTag") != 0
+                or node.get("serializedMemberCount") != 3
+                or node.get("conditionOperator") not in (0, 1)
+                or not isinstance(node.get("serializedRuntimeFlag"), bool)
+                or not isinstance(children, list)
+                or not 1 <= len(children) <= 64
+            ):
+                return None
+            leaves: list[dict[str, Any]] = []
+            for child in children:
+                child_leaves = progress_tree_leaves(child, depth + 1)
+                if child_leaves is None:
+                    return None
+                leaves.extend(child_leaves)
+            return leaves
+        if (
+            condition_type not in {
+                "SimpleConditionCheckMissionState",
+                "SimpleConditionCheckQuestState",
+            }
+            or node.get("unionTag") not in (0x0C, 0x10)
+            or node.get("serializedMemberCount") != 3
+            or safe_key(node.get("ownerKind")) not in {"mission", "quest"}
+            or not safe_key(node.get("ownerId"))
+            or node.get("compareOperator") not in (0, 1)
+            or not isinstance(node.get("compareTarget"), int)
+            or isinstance(node.get("compareTarget"), bool)
+            or not 0 <= int(node.get("compareTarget")) <= 5
+        ):
+            return None
+        return [node]
+
     for row in _flow_story_connections(flow):
         scene_key = safe_key(row.get("key"))
         level_ids = _string_list(row.get("levelIds"))
@@ -1365,6 +1408,9 @@ def _closed_exact_runtime_config_isolated_scenes(
             row.get("progressLockConditionStatus")
         )
         progress_conditions = row.get("progressLockConditions")
+        tree_leaves = progress_tree_leaves(
+            row.get("progressLockConditionTree")
+        )
         decoded_progress_valid = (
             progress_status == "decoded"
             and safe_key(row.get("progressLockConditionType")) in {
@@ -1385,11 +1431,29 @@ def _closed_exact_runtime_config_isolated_scenes(
                 and safe_key(condition.get("ownerKind"))
                 in {"mission", "quest"}
                 and bool(safe_key(condition.get("ownerId")))
-                and condition.get("compareOperator") == 0
+                and condition.get("compareOperator") in (0, 1)
                 and isinstance(condition.get("compareTarget"), int)
                 and not isinstance(condition.get("compareTarget"), bool)
                 and 0 <= int(condition.get("compareTarget")) <= 5
                 for condition in progress_conditions
+            )
+            and tree_leaves is not None
+            and len(tree_leaves) == len(progress_conditions)
+            and all(
+                (
+                    safe_key(tree.get("conditionType")),
+                    safe_key(tree.get("ownerKind")),
+                    safe_key(tree.get("ownerId")),
+                    tree.get("compareOperator"),
+                    tree.get("compareTarget"),
+                ) == (
+                    safe_key(flat.get("conditionType")),
+                    safe_key(flat.get("ownerKind")),
+                    safe_key(flat.get("ownerId")),
+                    flat.get("compareOperator"),
+                    flat.get("compareTarget"),
+                )
+                for tree, flat in zip(tree_leaves, progress_conditions)
             )
         )
         progress_type = safe_key(row.get("progressLockConditionType"))
@@ -1491,6 +1555,8 @@ def _closed_exact_runtime_config_isolated_scenes(
                     row.get("progressLockConditionOperator"),
                 "serializedRuntimeFlag":
                     row.get("progressLockSerializedRuntimeFlag"),
+                "conditionTree":
+                    row.get("progressLockConditionTree"),
                 "conditions": [{
                     key: condition.get(key)
                     for key in (

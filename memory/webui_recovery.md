@@ -689,22 +689,23 @@ Mission Pipeline:
   as context-only manifest rows so the card is not visually lossy. The
   source-gap queue closes 106 isolated source-link rows across 43 missions from
   this exact configuration without adding an order edge.
-- Mission Pipeline schema 22, coverage schema 7, and source-gap schema 16
+- Mission Pipeline schema 23, coverage schema 8, and source-gap schema 17
   expand the parallel exact LevelData interactive-configuration family. The
-  source decoder now finds 222 placements for 217 Story keys across 45
-  LevelData assets: 22 null progress locks and 200 exact mission/quest-state
-  locks. Of these, 74 placements for 69 keys have publishable pipeline mission
+  source decoder now finds 224 placements for 219 Story keys across 47
+  LevelData assets: 22 null progress locks and 202 exact mission/quest-state
+  locks. Of these, 76 placements for 71 keys have publishable pipeline mission
   shells. Routes render
   `mission -> LevelData -> interactive availability condition -> narrative
   interactive -> Story` when a lock exists, retaining the raw combined
-  operator/runtime flag and each exact state owner/target. The state owner is
+  operator/runtime flag, nested combined structure, and each exact state
+  owner/target. The state owner is
   availability evidence, not Story ownership or chronology. Non-final records
   use the next typed item; final records require the member-21/member-22
-  boundary and retain that provenance. Twenty-two finals pass.
-  Relative to schema 21, 52 more trigger routes move coverage to 4,151
-  connected / 1,131 unlinked Story files; context-only manifest coverage rises
+  boundary and retain that provenance. Twenty-four finals pass.
+  Relative to schema 21, 54 more trigger routes move coverage to 4,153
+  connected / 1,129 unlinked Story files; context-only manifest coverage rises
   from 65 files / 66 routes to 89 files / 93 routes. The source queue closes
-  167 additional isolated rows while the strict graph remains unchanged at
+  169 additional isolated rows while the strict graph remains unchanged at
   1,429 strong Story-order edges.
 - Exact EOF-bounded `Play3DRadio` records can connect a radio to a same-scene
   tracked NPC emitter only when `useNpcProxy` is true and all typed consumers
