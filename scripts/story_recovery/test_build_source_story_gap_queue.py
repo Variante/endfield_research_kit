@@ -2679,6 +2679,17 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_e8m2_radio_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E8M2_RADIOS,
+            {
+                "radio_e8m2_1",
+                "radio_e8m2_9",
+                "radio_e8m2_15",
+                "radio_e8m2_16",
+            },
+        )
+
     def test_declared_dialog_definitions_preserve_shared_timeline_boundary(
         self,
     ) -> None:
