@@ -540,6 +540,34 @@ referenced mission/quest is not thereby the Story owner; object instantiation,
 player interaction timing, playback causality, and relative Story order remain
 unresolved.
 
+The final-record census is now structurally closed rather than merely
+Story-filtered. Of 53 final interactive candidates, 46 fully parse and seven
+do not carry narrative component 94. Six of those seven are exact non-narrative
+objects (`int_scannable_trace`, `int_empty`, `int_hidden_mark`,
+`int_trchest_common_gorgeous`, and `int_door_rolling`). The remaining row is a
+second exact Story consumer family:
+`map01_lv001_lv_data_sub_sm1l1m9` record 2 is `int_horn`, has component keys
+`0` and `132`, and has exactly the seven authored properties `audio_key`,
+`dialog_id`, `horn_lang_key`, `max_count`, `index`, `state`, and `count`.
+Its scalar `dialog_id` is `dlg_sm1l1m9_11`, and its exact progress lock is
+`sm1l1m9_q#16 == Completed`.
+
+This promotion is additionally pinned to byte-identical StreamingAssets and
+Persistent `data_int_horn.json` bytes with SHA-256
+`1200acb7208de5e4b9e861dc511cc3a3d4f1f5c56dd4b59f1dcb0ef7ab2ea33e`.
+The template carries `$33@_dialogId`, `$33@_finishId`, and
+`[HORN]OnDialogExit: finishid:`. Current metadata identifies
+`InteractiveLogicHorn.RegisterInteractOptions` and
+`_CheckHornCanInteractive`; current GameAssembly maps
+`InteractiveLogicBase.ReqInteractHorn(finishId)` at VA `0x187138aa0` to the
+protobuf Horn finish-id field. MissionRuntime independently places the same
+registered, option-bearing but textless dialog definition on
+`sm1l1m9_q#13`, whose predecessor is q16. The exact UI route is therefore
+`q13 -> LevelData -> q16 Completed availability -> int_horn -> dialog
+definition`. It does not alias the separate `dlg_sm1l1m9_11d5` text
+conversation and does not claim player-interaction timing, Story ownership,
+or an additional chronology edge.
+
 Top-level `LevelScriptData` itself is a current 27-member MemoryPack object,
 not the older 26-member working model; the omitted current field was
 `enablePreload`. The newly decoded `interactives` member

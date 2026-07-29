@@ -689,7 +689,7 @@ Mission Pipeline:
   as context-only manifest rows so the card is not visually lossy. The
   source-gap queue closes 106 isolated source-link rows across 43 missions from
   this exact configuration without adding an order edge.
-- Mission Pipeline schema 24, coverage schema 9, and source-gap schema 18
+- Mission Pipeline schema 25, coverage schema 10, and source-gap schema 19
   expand the parallel exact LevelData interactive-configuration family. The
   source decoder now finds 234 placements for 229 Story keys across 49
   LevelData assets: 22 null progress locks and 212 exact mission/quest-state
@@ -704,11 +704,19 @@ Mission Pipeline:
   member-22 BriefData dictionary or the exact environment-only members 21-43
   empty-script suffix through EOF, and retain that provenance. Thirty-four
   finals pass.
-  Relative to schema 21, 54 more trigger routes move coverage to 4,153
+  Relative to schema 21, 54 more Story trigger routes move coverage to 4,153
   connected / 1,129 unlinked Story files; context-only manifest coverage rises
-  from 65 files / 66 routes to 89 files / 93 routes. The source queue closes
+  from 65 files / 66 routes to 91 keys / 95 routes. The source queue closes
   179 additional isolated rows while the strict graph remains unchanged at
   1,429 strong Story-order edges.
+  The extra definition-level route comes from the exact final `int_horn`
+  record in `map01_lv001_lv_data_sub_sm1l1m9`: q13 consumes the registered
+  `dlg_sm1l1m9_11` definition, while the LevelData row is available after q16
+  completes. The card renders
+  `q13 -> LevelData -> q16 availability -> int_horn -> dialog definition`.
+  It remains outside the Story denominator because the base definition has
+  options but no emitted text conversation, and it is not aliased to the
+  separate `misc_dlg_sm1l1m9_11d5` conversation.
 - Exact EOF-bounded `Play3DRadio` records can connect a radio to a same-scene
   tracked NPC emitter only when `useNpcProxy` is true and all typed consumers
   agree on one mission. A complete typed TravelPole/entity-compare/custom-event
