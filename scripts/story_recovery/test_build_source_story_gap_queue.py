@@ -2808,6 +2808,32 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             {"radio_e2m3_4", "radio_e2m3_6", "radio_e2m3_15"},
         )
 
+    def test_declared_e3m2_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E3M2_RADIOS,
+            {"radio_e3m2_0d5", "radio_e3m2_4d5"},
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e3m2_3"
+        ]
+        self.assertEqual(
+            dialog["lineIds"],
+            ("dlg_e3m2_3_001", "dlg_e3m2_3_002"),
+        )
+        self.assertEqual(dialog["optionIds"], ())
+        self.assertEqual(
+            dialog["missingAudioIds"],
+            ("au_dlg_e3m2_3_001", "au_dlg_e3m2_3_002"),
+        )
+        self.assertEqual(
+            dialog["npcProxyConsumer"]["proxyId"],
+            "angelu_map01_e3m201",
+        )
+        self.assertNotIn(
+            "missionId",
+            dialog["npcProxyConsumer"]["entry"],
+        )
+
     def test_exact_lua_controller_playback_closes_isolated_cutscene(
         self,
     ) -> None:
@@ -2944,6 +2970,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e2m4_10",
                 "dlg_e2m5_6",
                 "dlg_e2m6_12",
+                "dlg_e3m2_3",
                 "dlg_e3m3_12",
                 "dlg_e3m3_13",
                 "dlg_e5m1_3",
