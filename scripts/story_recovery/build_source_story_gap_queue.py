@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v64"
+SCHEMA = "sourceStoryGapQueue.v65"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -129,7 +129,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v43"
+    "current-build-offline-story-carrier-exhaustion-v44"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -304,6 +304,10 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
         "cutscene_e0m0_12",
         "cutscene_e0m0_11111",
     }),
+    "e0m2": frozenset({
+        "cutscene_e0m2_3_3",
+        "cutscene_e0m2_99",
+    }),
     "e1m1": frozenset({
         "cutscene_e1m1_3_1_test",
         "cutscene_e1m1_4",
@@ -354,6 +358,8 @@ OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e0m0_11": 1,
     "cutscene_e0m0_12": 1,
     "cutscene_e0m0_11111": 1,
+    "cutscene_e0m2_3_3": 1,
+    "cutscene_e0m2_99": 1,
     "cutscene_e1m1_3_1_test": 1,
     "cutscene_e1m1_4": 2,
     "cutscene_e1m3_1": 1,
@@ -415,6 +421,22 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
     "cutscene_e0m0_11111": {
         "timelineRegistryId": None,
         "files": (),
+    },
+    "cutscene_e0m2_3_3": {
+        "timelineRegistryId": 262,
+        "files": ((
+            "cutscene_e0m2_3_3_p8B24FED0A23FB54B.json",
+            "4EF56CABF4E9136760664CD139ABC032A124E76B9EF411BD2A0D0B560FFDEFB9",
+            "cutscene_e0m2_3_3",
+        ),),
+    },
+    "cutscene_e0m2_99": {
+        "timelineRegistryId": 237,
+        "files": ((
+            "m_cutscene_e0m2_99_pEA3DAF65D39D43C5.json",
+            "0D33C200EA445BC610DD13FBA2EF7C1150E0E5344DE708CED686E64971C08E00",
+            "m_cutscene_e0m2_99",
+        ),),
     },
     "cutscene_e1m1_3_1_test": {
         "timelineRegistryId": 70,
@@ -673,6 +695,8 @@ OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS = {
     "cutscene_e0m0_11": 1,
     "cutscene_e0m0_12": 1,
     "cutscene_e0m0_11111": 1,
+    "cutscene_e0m2_3_3": 1,
+    "cutscene_e0m2_99": 1,
     "cutscene_e1m1_3_1_test": 1,
     "cutscene_e1m1_4": 2,
     "cutscene_e1m3_1": 1,
