@@ -293,6 +293,11 @@ Mission Pipeline:
   Its one admitted self-target row is rendered with a stronger local-context
   badge and the exact chain
   `slot 80001 -> dlg_c27m3_6 -> ShowSceneDecorationNew(10100282001, false)`.
+  The fail-closed bridge payload now also carries the exact embedded Leader
+  trigger volume selected by slot `80001`; the live card shows its sphere,
+  radius `59`, and position `-757.75, 234.828, -1185.85`, plus the explicit
+  negative that the complete trigger-volume schema has no DynamicScene,
+  mission/quest, or foreign entity identity.
   The same card still states that mission-condition-to-trigger activation is
   unresolved and retains `storyBinding=false`, `orderEvidence=false`, and
   `missionGraphAction=none`. Current live

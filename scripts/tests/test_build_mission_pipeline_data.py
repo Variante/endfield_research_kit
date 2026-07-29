@@ -148,6 +148,14 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "exact_local_context_without_mission_activation_edge",
                         "missionActivationBridgeFound": False,
                         "missionGraphAction": "none",
+                        "levelScriptTriggerVolumeBoundary": {
+                            "classification":
+                                "exact_local_trigger_geometry_without_dynamic_scene_or_mission_foreign_key",
+                            "foreignKeyBridgeFound": False,
+                            "schemaMappingId":
+                                "current-global-metadata-levelscript-trigger-volume-data-fields",
+                            "leaderDeclaredFieldCount": 0,
+                        },
                     },
                     "bridgeRows": [{
                         "logicId": "10100282001",
@@ -175,6 +183,50 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                                 "idRef": -1,
                                 "paramSource": 0,
                                 "path": None,
+                            },
+                            "localTriggerVolumeContext": {
+                                "status":
+                                    "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                                "selectorSlotIds": [80001],
+                                "matchedSlotIds": [80001],
+                                "missingSlotIds": [],
+                                "scriptIdVerified": True,
+                                "triggerVolumesStatus": "present",
+                                "triggerVolumesParseStatus": "decoded",
+                                "dynamicSceneIdentityFieldPresent": False,
+                                "missionOrQuestIdentityFieldPresent": False,
+                                "foreignKeyBridgeFound": False,
+                                "missionGraphAction": "none",
+                                "schema": {
+                                    "baseDeclaredFieldCount": 8,
+                                    "leaderDeclaredFieldCount": 0,
+                                    "serializedMemberCount": 8,
+                                    "mappingId":
+                                        "current-global-metadata-levelscript-trigger-volume-data-fields",
+                                },
+                                "triggerVolumes": [{
+                                    "keySlotId": 80001,
+                                    "slotId": 80001,
+                                    "triggerVolumeType": "Leader",
+                                    "memberCount": 8,
+                                    "triggerCountLimit": 1,
+                                    "enterCheckOnGround": False,
+                                    "isImportant": False,
+                                    "triggerOnPole": False,
+                                    "waitSrvRes": False,
+                                    "shapeList": {
+                                        "parseStatus": "decoded",
+                                        "shapes": [{
+                                            "shapeType": "Sphere",
+                                            "position": {
+                                                "x": -757.75,
+                                                "y": 234.828,
+                                                "z": -1185.85,
+                                            },
+                                            "radius": 59.0,
+                                        }],
+                                    },
+                                }],
                             },
                             "storyControlPathLinks": [{
                                 "storyKey": "dlg_c27m3_6",
@@ -225,6 +277,18 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         ][0]["sharedControlPaths"][0]
         self.assertEqual(path["triggerSlotId"], 80001)
         self.assertEqual(path["decorationPathLocalIds"], [5, 6])
+        context = bridge["exactTargetActions"][0][
+            "localTriggerVolumeContext"
+        ]
+        self.assertFalse(context["foreignKeyBridgeFound"])
+        self.assertEqual(
+            context["triggerVolumes"][0]["shapes"][0]["shapeType"],
+            "Sphere",
+        )
+        self.assertEqual(
+            published["counts"]["exactLocalTriggerVolumeContexts"],
+            1,
+        )
 
     def test_trigger_route_reads_exact_levelscript_occurrence_paths(self):
         row = {

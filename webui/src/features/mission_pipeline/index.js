@@ -125,6 +125,10 @@
       candidateContextOnly: "candidate context only",
       exactDynamicSceneLocalContext: "exact local control context",
       typedDynamicSceneTargetAction: "typed DynamicScene target action",
+      exactLocalTriggerVolume: "exact embedded LevelScript trigger volume",
+      noTriggerForeignIdentity: "local geometry only; no DynamicScene, mission, quest, or foreign entity identity",
+      triggerVolumePosition: "position",
+      triggerVolumeRadius: "radius",
       sameSerializedControlPath: "same serialized control path",
       missionActivationGap: "mission condition to trigger activation remains unresolved",
       alternateActions: "mutually exclusive actions",
@@ -567,6 +571,10 @@
       candidateContextOnly: "仅候选上下文",
       exactDynamicSceneLocalContext: "精确本地控制上下文",
       typedDynamicSceneTargetAction: "类型化 DynamicScene 目标动作",
+      exactLocalTriggerVolume: "精确嵌入的 LevelScript 触发区域",
+      noTriggerForeignIdentity: "仅本地几何；不含 DynamicScene、使命、任务或外部实体身份",
+      triggerVolumePosition: "位置",
+      triggerVolumeRadius: "半径",
       sameSerializedControlPath: "相同序列化控制路径",
       missionActivationGap: "任务条件到触发器激活的链路仍未解析",
       alternateActions: "互斥动作分支",
@@ -2597,12 +2605,16 @@
               (link.sharedControlPaths || []).map((path) => ({action, link, path}))
             ))
           ));
+          const triggerVolumes = (bridge?.exactTargetActions || []).flatMap((action) => (
+            action.localTriggerVolumeContext?.triggerVolumes || []
+          ));
           return `<article>
             <header><code>${esc(row.scene || "?")}</code><b>${esc(t(bridgeDetails.length ? "exactDynamicSceneLocalContext" : "candidateContextOnly"))}</b></header>
             <div class="mp-runtime-chain"><span>${esc(t("dynamicSceneLogicId"))}</span><code>${esc(row.logicId || "?")}</code><i aria-hidden="true">=</i><span>${esc(t("levelScriptId"))}</span><code>${esc(row.scriptId || "?")}</code><i aria-hidden="true">⇢</i><b>Story</b></div>
             <p><span>${esc(t("missionStateConditions"))}</span><code>${esc(conditions.map((condition) => `${condition.identifier} ${condition.isSame ? "=" : "!="} ${condition.state ?? "?"}`).join(" · "))}</code></p>
             <div class="mp-missionless-story-links">${stories.map((story) => `<a href="${esc(storyHref(story.storyKey))}" title="${esc(story.sourceFile || "")}"><span>${esc(story.actionName || "Story")}</span><code>${esc(story.storyKey)}</code><b aria-hidden="true">→</b><small>${esc(`${story.levelId || "?"}/${story.scriptId || "?"} @ ${story.recordOffset ?? "?"}`)}</small></a>`).join("")}</div>
             ${bridgeDetails.length ? `<div class="mp-runtime-associations"><strong>${esc(t("typedDynamicSceneTargetAction"))}</strong>${bridgeDetails.map(({action, link, path}) => `<div><span>${esc(path.eventSummary || path.headerName || t("sameSerializedControlPath"))}</span><code>${esc(`${path.headerName || "header"} #${path.headerLocalId ?? "?"}${path.triggerSlotId != null ? ` · slot ${path.triggerSlotId}` : ""}`)}</code><i aria-hidden="true">→</i><a href="${esc(storyHref(link.storyKey))}"><code>${esc(link.storyKey || "?")}</code></a><i aria-hidden="true">→</i><code>${esc(`${action.actionName || "action"}(${action.targetDynamicEntityLogicId || "?"}, visible=${String(Boolean(action.visible))})`)}</code><small>${esc(`${t("sameSerializedControlPath")}: ${(path.decorationPathLocalIds || []).map((id) => `#${id}`).join(" → ")}`)}</small></div>`).join("")}<small>${esc(t("missionActivationGap"))}</small></div>` : ""}
+            ${triggerVolumes.length ? `<div class="mp-runtime-associations"><strong>${esc(t("exactLocalTriggerVolume"))}</strong>${triggerVolumes.map((volume) => `<div><span>Leader slot ${esc(volume.slotId ?? "?")}</span>${(volume.shapes || []).map((shape) => { const position = shape.position || {}; return `<code>${esc(shape.shapeType || "?")}${shape.radius != null ? ` · ${t("triggerVolumeRadius")} ${shape.radius}` : ""}</code>${position.x != null && position.y != null && position.z != null ? `<small>${esc(`${t("triggerVolumePosition")}: ${position.x}, ${position.y}, ${position.z}`)}</small>` : ""}`; }).join("")}</div>`).join("")}<small>${esc(t("noTriggerForeignIdentity"))}</small></div>` : ""}
             <div class="mp-runtime-associations"><strong>${esc(t("noMissionOwner"))}</strong><div><span>${esc(dynamicSceneAudit.classification || row.classification || "")}</span><b>${esc(t("noGraphEdges"))}</b><small>${esc(dynamicSceneAudit.boundary || dynamicSceneAudit.finding || "")}</small></div></div>
           </article>`;
         }).join("")}</div>
