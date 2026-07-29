@@ -987,16 +987,16 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "relation": "leveldata_interactive_narrative_config",
             "confidence": "native_exact_serialized_config",
             "source": (
-                "exact counted LevelData interactive list -> next-record-"
-                "bounded 25-member LevelInteractiveData -> "
-                "componentProperties[94].type_id; the final unbounded list "
-                "item is excluded"
+                "exact counted LevelData interactive list -> 25-member "
+                "LevelInteractiveData bounded by the next record or validated "
+                "member-21/member-22 boundary -> "
+                "componentProperties[94].type_id"
             ),
             "storyOwnerMission": "e1m1",
             "storyBinding": True,
             "ownership": False,
             "nativeMappingId":
-                "leveldata-interactive-narrative-config-v1",
+                "leveldata-interactive-narrative-config-v2",
             "orderBoundary": (
                 "interactive-list order, record index, entity logic id, "
                 "object position, and Story suffix do not establish relative "
@@ -1008,6 +1008,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "interactiveListCount": 3,
             "interactiveRecordOffset": 100,
             "interactiveRecordEndOffset": 200,
+            "interactiveRecordBoundarySource": "next_record",
             "entityLogicId": 10002,
             "entityDetailIds": ["int_narrative_scene_book"],
             "entityTemplateIds": ["int_narrative_scene"],
@@ -1042,6 +1043,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         payload["flow"]["missionStoryConnections"][0][
             "interactiveRecordIndex"
         ] = 2
+        payload["flow"]["missionStoryConnections"][0][
+            "interactiveRecordBoundarySource"
+        ] = "leveldata_member21_start"
         row = gap_queue.build_gap_row(
             partial,
             payload,
@@ -1051,6 +1055,22 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             row["metrics"]["closedExactRuntimeConfigIsolatedScenes"],
             0,
+        )
+
+        connection = payload["flow"]["missionStoryConnections"][0]
+        connection["levelDataMember21Offset"] = 200
+        connection["levelScriptBriefDictionaryCountOffset"] = 204
+        connection["levelScriptBriefDictionaryCount"] = 1
+        connection["levelIdNum"] = 10
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(
+            row["metrics"]["closedExactRuntimeConfigIsolatedScenes"],
+            1,
         )
 
     def test_exact_embedded_dialog_tree_line_context_closes_without_file_edge(

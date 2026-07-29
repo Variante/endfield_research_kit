@@ -5506,7 +5506,11 @@ def build_levelscript_interactive_narrative_story_contexts(
     ]
 
 
-def _level_interactive_data_list_frames(data: bytes) -> list[dict]:
+def _level_interactive_data_list_frames(
+    data: bytes,
+    *,
+    final_record_end_offset: int | None = None,
+) -> list[dict]:
     """Locate fully counted LevelInteractiveData lists in one LevelData blob."""
     candidates: list[tuple[int, str]] = []
     for offset, value in enumerate(data):
@@ -5536,9 +5540,21 @@ def _level_interactive_data_list_frames(data: bytes) -> list[dict]:
                 "recordOffset": record_starts[record_index][0],
                 "recordEndOffset": record_starts[record_index + 1][0],
                 "entityDetailId": record_starts[record_index][1],
+                "recordBoundarySource": "next_record",
             }
             for record_index in range(max(0, count - 1))
         ]
+        if (
+            isinstance(final_record_end_offset, int)
+            and record_starts[-1][0] < final_record_end_offset <= len(data)
+        ):
+            bounded_records.append({
+                "recordIndex": count - 1,
+                "recordOffset": record_starts[-1][0],
+                "recordEndOffset": final_record_end_offset,
+                "entityDetailId": record_starts[-1][1],
+                "recordBoundarySource": "leveldata_member21_start",
+            })
         frames.append({
             "listCountOffset": offset - 4,
             "listCount": count,
@@ -5547,18 +5563,25 @@ def _level_interactive_data_list_frames(data: bytes) -> list[dict]:
     return frames
 
 
-def parse_leveldata_interactive_narrative_records(data: bytes) -> list[dict]:
-    """Recover fully next-record-bounded narrative interactives in LevelData.
+def parse_leveldata_interactive_narrative_records(
+    data: bytes,
+    *,
+    final_record_end_offset: int | None = None,
+) -> list[dict]:
+    """Recover fully bounded narrative interactives in LevelData.
 
-    The final item of a LevelData interactive list remains intentionally
-    excluded because the following top-level member is not borrowed as an
-    inferred record boundary.
+    Non-final records use the next typed list item. A caller may supply the
+    exact start of top-level member 21 to bound the final record, but only after
+    independently validating the adjacent member-22 dictionary.
     """
     if not data or data[0] != 43:
         return []
     rows: list[dict] = []
     seen_offsets: set[int] = set()
-    for frame in _level_interactive_data_list_frames(data):
+    for frame in _level_interactive_data_list_frames(
+        data,
+        final_record_end_offset=final_record_end_offset,
+    ):
         for boundary in frame.get("records") or []:
             offset = boundary.get("recordOffset")
             end_offset = boundary.get("recordEndOffset")
@@ -5585,8 +5608,54 @@ def parse_leveldata_interactive_narrative_records(data: bytes) -> list[dict]:
                 "interactiveListCount": frame.get("listCount"),
                 "interactiveListCountOffset":
                     frame.get("listCountOffset"),
+                "recordBoundarySource":
+                    boundary.get("recordBoundarySource"),
             })
     return rows
+
+
+def _leveldata_interactive_final_record_boundary(
+    data: bytes,
+    candidate_script_ids: set[int],
+) -> dict | None:
+    """Validate the member-20/21/22 boundary used by a final interactive.
+
+    Current ``LevelData/43`` member 20 is the interactive list, member 21 is
+    the fixed-width ``levelIdNum`` integer, and member 22 is the validated
+    ``Dictionary<ulong, LevelScriptBriefData/8>``. The independently decoded
+    dictionary therefore supplies an exact boundary without borrowing an
+    unrelated byte pattern.
+    """
+    if not candidate_script_ids:
+        return None
+    brief_rows = parse_leveldata_levelscript_brief_dictionary(
+        data,
+        candidate_script_ids,
+    )
+    count_offsets = {
+        int(row["dictionaryCountOffset"])
+        for row in brief_rows.values()
+        if isinstance(row.get("dictionaryCountOffset"), int)
+    }
+    if len(count_offsets) != 1:
+        return None
+    dictionary_count_offset = next(iter(count_offsets))
+    member21_offset = dictionary_count_offset - 4
+    level_id_num_decoded = _read_leveldata_i32(data, member21_offset)
+    if (
+        member21_offset <= 0
+        or level_id_num_decoded is None
+        or level_id_num_decoded[1] != dictionary_count_offset
+        or level_id_num_decoded[0] < 0
+    ):
+        return None
+    return {
+        "recordEndOffset": member21_offset,
+        "levelDataMember21Offset": member21_offset,
+        "levelIdNum": level_id_num_decoded[0],
+        "levelScriptBriefDictionaryCountOffset": dictionary_count_offset,
+        "levelScriptBriefDictionaryCount": len(brief_rows),
+    }
 
 
 def build_leveldata_interactive_narrative_story_contexts(
@@ -5596,6 +5665,7 @@ def build_leveldata_interactive_narrative_story_contexts(
     persistent_leveldata_root: Path = (
         PERSISTENT_DATA_JSON_DIR / "LevelData"
     ),
+    levelscript_root: Path = LEVELSCRIPT_DIR,
     reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
 ) -> list[dict]:
     """Bind Story files to exact, bounded LevelData narrative configuration."""
@@ -5603,6 +5673,7 @@ def build_leveldata_interactive_narrative_story_contexts(
         leveldata_root == LEVELDATA_DIR
         and persistent_leveldata_root
         == PERSISTENT_DATA_JSON_DIR / "LevelData"
+        and levelscript_root == LEVELSCRIPT_DIR
         and reading_popup_path
         == STREAMING_TABLE_DIR / "ReadingPopUpTable.json"
     )
@@ -5621,6 +5692,16 @@ def build_leveldata_interactive_narrative_story_contexts(
     interactive_index = _load_interactive_object_template_index()
     object_to_template = interactive_index.get("objectToTemplate") or {}
     core_paths = interactive_index.get("coreTemplatePaths") or {}
+    candidate_script_ids_by_level: dict[str, set[int]] = {}
+    if levelscript_root.is_dir():
+        for level_dir in levelscript_root.iterdir():
+            if not level_dir.is_dir():
+                continue
+            candidate_script_ids_by_level[level_dir.name] = {
+                int(path.stem)
+                for path in level_dir.glob("*.json")
+                if path.stem.isdigit()
+            }
     rows: list[dict] = []
     if leveldata_root.is_dir():
         for path in sorted(leveldata_root.rglob("*.json")):
@@ -5637,7 +5718,18 @@ def build_leveldata_interactive_narrative_story_contexts(
                 or b"int_narrative" not in data
             ):
                 continue
-            for record in parse_leveldata_interactive_narrative_records(data):
+            final_boundary = _leveldata_interactive_final_record_boundary(
+                data,
+                candidate_script_ids_by_level.get(path.parent.name, set()),
+            )
+            for record in parse_leveldata_interactive_narrative_records(
+                data,
+                final_record_end_offset=(
+                    final_boundary.get("recordEndOffset")
+                    if isinstance(final_boundary, dict)
+                    else None
+                ),
+            ):
                 raw_type_id = str(record.get("typeId") or "")
                 popup_row = reading_rows.get(raw_type_id)
                 popup_content_id = str(
@@ -5689,7 +5781,7 @@ def build_leveldata_interactive_narrative_story_contexts(
                         "_CollectNarrative -> dialog/reading-popup dispatch"
                     ),
                     "nativeMappingId":
-                        "leveldata-interactive-narrative-config-v1",
+                        "leveldata-interactive-narrative-config-v2",
                     "storyBinding": True,
                     "ownership": False,
                     "questActivation": False,
@@ -5697,6 +5789,15 @@ def build_leveldata_interactive_narrative_story_contexts(
                     "questCompletion": False,
                     "executionSide": "client",
                     "serverExchange": False,
+                    **(
+                        final_boundary
+                        if (
+                            isinstance(final_boundary, dict)
+                            and record.get("recordBoundarySource")
+                            == "leveldata_member21_start"
+                        )
+                        else {}
+                    ),
                 })
     rows.sort(key=lambda row: (
         str(row.get("levelId") or ""),

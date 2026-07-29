@@ -501,9 +501,13 @@ item, component key `94` must contain the complete `type_id` ParamValue map,
 and the entity must resolve through byte-identical InteractiveTable mirrors to
 an `int_narrative*` template. A direct Story id or exact
 `ReadingPopUpTable.contentId` join then supplies source-configuration context.
-The current corpus has 20 placements for 19 unique Story keys in four
-LevelData assets. The final item of every list remains excluded because the
-next top-level LevelData member is not borrowed as an inferred boundary.
+The current corpus has 22 placements for 21 unique Story keys in four
+LevelData assets. Non-final records end at the next typed item. A final record
+is accepted only when its complete 25-member decoder lands exactly at member
+21 (`levelIdNum`) and the adjacent member-22
+`Dictionary<ulong, LevelScriptBriefData/8>` independently validates. This
+admits exactly `text_e10m4_3` and `text_e11m5_4`; all other final candidates
+still fail closed.
 These rows establish the LevelData asset, narrative entity, and configured
 Story consumer; they do not establish availability, player interaction
 timing, mission/quest activation, ownership, or relative Story order.

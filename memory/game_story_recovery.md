@@ -3387,12 +3387,12 @@ while the report, latest export source fingerprint, and current object-index
 stage signature agree. `export.bat --export-from-game
 --animestudio-object-index` refreshes it automatically.
 
-The source-gap queue schema is now `sourceStoryGapQueue.v14`.
+The source-gap queue schema is now `sourceStoryGapQueue.v15`.
 `blackbox_common` falls from score 5 to 0 and
 `radio_blackbox_common_1` moves from actionable isolation to
 `closed_exact_guide_runtime_non_mission_content`. Current non-mission closures
 are **234** (233 authored-table rows plus this guide-runtime row), and current
-actionable core-isolated scenes total **2,333** after the later exact
+actionable core-isolated scenes total **2,331** after the later exact
 LevelScript and LevelData interactive-configuration passes. The WebUI reflects
 the result:
 Mission Pipeline
@@ -4271,8 +4271,9 @@ Current main-story priorities:
    The current hash-validated merged object-index carrier census produced no
    typed carrier across all 1,335,450 indexed objects, so another loose-object
    or same-object scan is not an actionable offline frontier. The refreshed
-   source-only queue ranks `e10m4` first (score 180, 36 actionable isolated
-   core scenes), followed by `e11m4` (175/35) and `e11m1` (145/29). Continue
+   source-only queue ranks `e10m4` and `e11m4` jointly first (175/35
+   actionable isolated core scenes each), followed by `e11m1` (145/29).
+   Continue
    offline from those exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
    runtime capture later becomes possible, start with `e11m1`: use the
@@ -4390,11 +4391,14 @@ Current main-story priorities:
    source-configuration gaps in
    `dung02_rdg002_lv_data_sub_e10m4d5`: record 0/entity
    `24400020008` binds `dlg_e10m4_20`, and record 1/entity
-   `24400020009` binds `rp_text_e10m4_2 -> text_e10m4_2`. Record 2
-   (`rp_text_e10m4_3`) remains rejected because it is the final unbounded list
-   item. Likewise, a final-only `dlg_e10m4_22` carrier and condition-bearing
+   `24400020009` binds `rp_text_e10m4_2 -> text_e10m4_2`. Record 2/entity
+   `24400020010` is now exact as well: its complete decoder ends at byte
+   `4039`, member 21 is `levelIdNum=244`, and the independently validated
+   32-entry member-22 dictionary begins with its count at byte `4043`. It binds
+   `rp_text_e10m4_3 -> text_e10m4_3`. A final-only `dlg_e10m4_22` carrier and
+   condition-bearing
    `dlg_e10m4_19` candidate are not promoted. The e10m4 queue is therefore
-   36 actionable rows, not 38; the two closures add no activation or order.
+   35 actionable rows; the three closures add no activation or order.
    The current `e11m4` queue score is 175: 49 core isolated scenes split into
    35 actionable rows, three exact-native closed rows, and eleven exact
    runtime-configuration closures. Five are
@@ -4510,11 +4514,12 @@ Current main-story priorities:
    now the second-highest main-story gap. Its 35 actionable rows are exactly
    the 34 exhausted radio definitions plus the ownerless rift-camera cutscene;
    its dialog and text source-configuration frontier is closed.
-   The generalized LevelData pass also closes `text_e11m5_1..3` from the
-   first three fully next-record-bounded entries of the four-item
-   `dung02_rdg008_lv_data_sub_mission_e11m5` interactive list. Final
-   `text_e11m5_4` remains rejected as unbounded. `e11m5` now has 15 actionable
-   isolated core rows and three exact runtime-configuration closures.
+   The generalized LevelData pass also closes `text_e11m5_1..4` from the
+   four-item `dung02_rdg008_lv_data_sub_mission_e11m5` interactive list. The
+   first three use next-record boundaries. The final record ends exactly at
+   byte `5896`; member 21 is `levelIdNum=356`, and the validated eight-entry
+   member-22 dictionary count is at byte `5900`. `e11m5` now has 14 actionable
+   isolated core rows and four exact runtime-configuration closures.
 5. `e7m3` no longer has an actionable LevelScript control-flow row: it has zero
    untyped multi-scene contexts and zero actionable weak-only scenes. The
    source-only queue now scores it 46, with 58 scenes,

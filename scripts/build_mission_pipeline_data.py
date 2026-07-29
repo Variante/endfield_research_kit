@@ -237,7 +237,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # preserving the unknown server producer/timing boundary. v19 adds exact
 # top-level LevelScript narrative-interactive configuration routes. v20 adds
 # next-record-bounded LevelData narrative-interactive configuration routes.
-SCHEMA_VERSION = 20
+# v21 admits final records only through the exact LevelData member-21/member-22
+# boundary and retains that boundary provenance in trigger routes.
+SCHEMA_VERSION = 21
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -3551,6 +3553,14 @@ def build_story_trigger_route(
         "localInteractiveId": row.get("localInteractiveId"),
         "entityLogicId": row.get("entityLogicId"),
         "interactiveRecordIndex": row.get("interactiveRecordIndex"),
+        "interactiveRecordBoundarySource":
+            str(row.get("interactiveRecordBoundarySource") or ""),
+        "levelDataMember21Offset": row.get("levelDataMember21Offset"),
+        "levelIdNum": row.get("levelIdNum"),
+        "levelScriptBriefDictionaryCountOffset":
+            row.get("levelScriptBriefDictionaryCountOffset"),
+        "levelScriptBriefDictionaryCount":
+            row.get("levelScriptBriefDictionaryCount"),
         "rawTypeId": str(row.get("rawTypeId") or ""),
         "entityDetailIds": _unique_route_strings(row.get("entityDetailIds")),
         "entityTemplateIds": _unique_route_strings(row.get("entityTemplateIds")),
@@ -5172,7 +5182,7 @@ def build_story_binding_coverage(
 
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 5,
+        "schemaVersion": 6,
         "generated": int(time.time()),
         "language": language,
         "policy": (
