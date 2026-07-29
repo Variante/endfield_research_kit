@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v44"
+SCHEMA = "sourceStoryGapQueue.v45"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v23"
+    "current-build-offline-story-carrier-exhaustion-v24"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -163,6 +163,9 @@ OFFLINE_EXHAUSTION_SNS_DIALOG_TABLE_SHA256 = (
 OFFLINE_EXHAUSTION_SNS_OPTION_TABLE_SHA256 = (
     "CB0DF9E75EC049B404D73F5A65502D043BE951072A7AF215C80D2FC078319C11"
 )
+OFFLINE_EXHAUSTION_NPC_PROXY_EX_TABLE_SHA256 = (
+    "19C9A7DC69DEED52A9EAFD26D216F31826065137490548E5917BE589BA11BBAC"
+)
 OFFLINE_EXHAUSTION_DIALOG_ID_SOURCE_SHA256 = (
     "AE2E68E93DCDE3C2AC792541A7456E5CE6B7AF4F2AE10887D178EBFBDC080F79"
 )
@@ -177,6 +180,20 @@ OFFLINE_EXHAUSTION_E11M4_CUTSCENE = (
 )
 OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE = "cutscene_e11m1_2"
 OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
+    "cutscene_e2m5_2": {
+        "missionId": "e2m5",
+        "definitionRowKeys": (
+            "cutscene_e2m5_2_01",
+            "cutscene_e2m5_2_11",
+        ),
+    },
+    "cutscene_e2m5_3": {
+        "missionId": "e2m5",
+        "definitionRowKeys": (
+            "cutscene_e2m5_3_01",
+            "cutscene_e2m5_3_11",
+        ),
+    },
     "cutscene_e6m3_2": {
         "missionId": "e6m3",
         "definitionRowKeys": tuple(
@@ -244,6 +261,10 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
         "cutscene_e0m0_11111",
     }),
     "e1m3": frozenset({"cutscene_e1m3_1"}),
+    "e2m5": frozenset({
+        "cutscene_e2m5_2",
+        "cutscene_e2m5_3",
+    }),
     "e2m6": frozenset({
         "cutscene_e2m6_designer_AngelSurrounding",
         "cutscene_e2m6_designer_anchorperish_001",
@@ -637,6 +658,34 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
             "option_dlg_e2m4_10_1_001",
             "option_dlg_e2m4_10_1_002",
         ),
+    },
+    "dlg_e2m5_6": {
+        "missionId": "e2m5",
+        "filename": "dlg_e2m5_6_p3913E9EAD5687F40.json",
+        "sha256":
+            "5DC06B64F1EED679B16A7AFFFE3AFE4671569390664C481FC0C926B14CB1BC5B",
+        "extraConfigFilename":
+            "dlg_e2m5_6_extra_config_pA53AAFF29A7089F5.json",
+        "extraConfigSha256":
+            "ECB4AAE557503DD87DD1D3C02088A41277EE32D977BAE4998BB23D457A1239EF",
+        "lineIds": tuple(
+            f"dlg_e2m5_6_{number:03d}" for number in range(1, 7)
+        ),
+        "optionIds": (
+            "option_dlg_e2m5_6_1_001",
+            "option_dlg_e2m5_6_1_002",
+        ),
+        "npcProxyConsumer": {
+            "proxyId": "tata_map01_i008",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e2m5_6",
+                "missionId": "",
+            },
+        },
     },
     "dlg_e2m6_12": {
         "missionId": "e2m6",
@@ -1339,6 +1388,11 @@ OFFLINE_EXHAUSTION_E2M4_RADIOS = frozenset({
     "radio_e2m4_19",
     "radio_e2m4_22",
 })
+OFFLINE_EXHAUSTION_E2M5_RADIOS = frozenset({
+    "radio_e2m5_5",
+    "radio_e2m5_27",
+    "radio_e2m5_29",
+})
 OFFLINE_EXHAUSTION_E2M6_RADIOS = frozenset({
     "radio_e2m6_2",
     "radio_e2m6_7d2",
@@ -1349,6 +1403,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
     "e2m4": OFFLINE_EXHAUSTION_E2M4_RADIOS,
+    "e2m5": OFFLINE_EXHAUSTION_E2M5_RADIOS,
     "e2m6": OFFLINE_EXHAUSTION_E2M6_RADIOS,
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
@@ -1687,6 +1742,16 @@ def build_offline_exhaustion_index(
         "richContentTable": table_root / "RichContentTable.json",
         "snsDialogTable": table_root / "SNSDialogTable.json",
         "snsOptionTable": table_root / "SNSDialogOptionTable.json",
+        "npcProxyExDataTable": (
+            ROOT
+            / "export_full"
+            / "structured"
+            / "Persistent"
+            / "Data"
+            / "Json"
+            / "GameplayConfig"
+            / "NpcProxyExDataTable.json"
+        ),
         "dialogIdSource": (
             ROOT
             / "export_full"
@@ -1759,6 +1824,8 @@ def build_offline_exhaustion_index(
             OFFLINE_EXHAUSTION_RICH_CONTENT_TABLE_SHA256,
         "snsDialogTable": OFFLINE_EXHAUSTION_SNS_DIALOG_TABLE_SHA256,
         "snsOptionTable": OFFLINE_EXHAUSTION_SNS_OPTION_TABLE_SHA256,
+        "npcProxyExDataTable":
+            OFFLINE_EXHAUSTION_NPC_PROXY_EX_TABLE_SHA256,
         "dialogIdSource": OFFLINE_EXHAUSTION_DIALOG_ID_SOURCE_SHA256,
         "dialogIdIndex": OFFLINE_EXHAUSTION_DIALOG_ID_INDEX_SHA256,
         "timelineLineOrders":
@@ -2168,11 +2235,16 @@ def build_offline_exhaustion_index(
     dialog_text_table = read_json(source_paths["dialogTextTable"], {})
     dialog_id_index = read_json(source_paths["dialogIdIndex"], {})
     timeline_line_orders = read_json(source_paths["timelineLineOrders"], {})
+    npc_proxy_ex_table = read_json(
+        source_paths["npcProxyExDataTable"],
+        {},
+    )
     dialog_validation_by_key: dict[str, dict[str, Any]] = {}
     dialog_definitions_valid = (
         isinstance(dialog_text_table, dict)
         and isinstance(dialog_id_index, dict)
         and isinstance(timeline_line_orders, dict)
+        and isinstance(npc_proxy_ex_table, dict)
     )
     for story_key, definition in (
         OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
@@ -2221,6 +2293,46 @@ def build_offline_exhaustion_index(
         actual_missing_audio_ids = set(line_audio_ids) - audio_stems
         shared_timeline = definition.get("sharedTimeline")
         owned_timeline = definition.get("ownedTimeline")
+        npc_proxy_consumer = definition.get("npcProxyConsumer")
+        npc_proxy_consumer_context: dict[str, Any] | None = None
+        npc_proxy_consumer_valid = True
+        if isinstance(npc_proxy_consumer, dict):
+            proxy_id = safe_key(npc_proxy_consumer.get("proxyId"))
+            entry_index = npc_proxy_consumer.get("entryIndex")
+            expected_entry = npc_proxy_consumer.get("entry")
+            proxy_entries = (
+                (npc_proxy_ex_table.get("data") or {}).get(proxy_id)
+                if isinstance(npc_proxy_ex_table.get("data"), dict)
+                else None
+            )
+            npc_proxy_consumer_valid = (
+                isinstance(entry_index, int)
+                and not isinstance(entry_index, bool)
+                and isinstance(expected_entry, dict)
+                and isinstance(proxy_entries, list)
+                and proxy_entries == [expected_entry]
+                and entry_index == 0
+                and expected_entry.get("dialogId") == registry_key
+                and expected_entry.get("missionId") == ""
+            )
+            npc_proxy_consumer_context = {
+                "proxyId": proxy_id,
+                "entryIndex": entry_index,
+                "dialogId": (
+                    safe_key(expected_entry.get("dialogId"))
+                    if isinstance(expected_entry, dict)
+                    else ""
+                ),
+                "missionId": (
+                    safe_key(expected_entry.get("missionId"))
+                    if isinstance(expected_entry, dict)
+                    else ""
+                ),
+                "relation": "npc_proxy_ex_dialog_consumer_without_mission_id",
+                "missionOwnership": False,
+                "orderEvidence": False,
+                "graphEffect": "none",
+            }
         timeline_context: dict[str, Any] | None = None
         if isinstance(shared_timeline, dict):
             owner_dialog_key = safe_key(
@@ -2412,6 +2524,7 @@ def build_offline_exhaustion_index(
                 for line_id in expected_line_ids
             )
             or not timeline_context_valid
+            or not npc_proxy_consumer_valid
         ):
             dialog_definitions_valid = False
             break
@@ -2426,6 +2539,7 @@ def build_offline_exhaustion_index(
             ),
             "optionIds": list(expected_option_ids),
             "timelineContext": timeline_context,
+            "npcProxyConsumer": npc_proxy_consumer_context,
         }
     if not dialog_definitions_valid:
         status["status"] = "inactive_dialog_definition_validation_failed"
@@ -2814,7 +2928,12 @@ def build_offline_exhaustion_index(
             "recoveryStatus":
                 "deferred_current_build_offline_surface_exhausted",
             "evidenceKind":
-                "registered_dialog_definition_without_recovered_activator",
+                (
+                    "npc_proxy_dialog_consumer_without_mission_owner"
+                    if validation["npcProxyConsumer"]
+                    else
+                    "registered_dialog_definition_without_recovered_activator"
+                ),
             "definitionAsset":
                 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]["filename"],
             "definitionAssets": [
@@ -2852,16 +2971,25 @@ def build_offline_exhaustion_index(
             ),
             "optionIds": validation["optionIds"],
             "sharedTimelineContext": validation["timelineContext"],
+            "npcProxyConsumer": validation["npcProxyConsumer"],
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
             "consumerBoundary": (
-                "the exact DialogTree, MemoryPack DialogId registration, "
-                "DialogTextTable rows, and AudioDialog membership where "
-                "present establish "
-                "a current runtime-loadable definition; no exact "
-                "MissionRuntime, LevelScript, NpcProxyEx, Lua, object-index, "
-                "or direct native playback caller exposes its activator"
+                (
+                    "the exact NpcProxyEx entry selects this registered "
+                    "DialogTree as an NPC interaction dialog, but its authored "
+                    "missionId is empty; no exact mission/quest owner or "
+                    "activation timing is serialized"
+                    if validation["npcProxyConsumer"]
+                    else
+                    "the exact DialogTree, MemoryPack DialogId registration, "
+                    "DialogTextTable rows, and AudioDialog membership where "
+                    "present establish a current runtime-loadable definition; "
+                    "no exact MissionRuntime, LevelScript, NpcProxyEx, Lua, "
+                    "object-index, or direct native playback caller exposes "
+                    "its activator"
+                )
             ),
             "orderBoundary": (
                 "DialogId registration, DialogTree node order, line ids, "
@@ -2870,8 +2998,9 @@ def build_offline_exhaustion_index(
             ),
             "reopenWhen": (
                 "installed binary, DialogId source/index, DialogTree, "
-                "DialogTextTable, AudioDialog, object index, shared Timeline, "
-                "or another typed producer/consumer registry changes"
+                "DialogTextTable, AudioDialog, NpcProxyExDataTable, object "
+                "index, shared Timeline, or another typed producer/consumer "
+                "registry changes"
             ),
             "graphEffect": "none",
         }

@@ -686,7 +686,7 @@ Expected active inputs and outputs:
   The builder also projects the active exact negative-evidence boundary from
   `reports/mission_order/source_story_gap_queue_CN.json` into
   `storyTriggerManifest[*].offlineRecovery`. It accepts only
-  `sourceStoryGapQueue.v44` with matching source hashes and `graphEffect=none`,
+  `sourceStoryGapQueue.v45` with matching source hashes and `graphEffect=none`,
   never changes an existing attachment status, and never adds a route. The 11
   ReadingPopup `text_*` keys outside the coverage denominator are published in
   the separate `offlineRecoveryEvidence.storyTriggerManifestOverlay`, each with
@@ -2006,13 +2006,14 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v44` evaluates 187 residual radio definitions, 27 root
-  cutscene carriers, 27 registered dialog definitions, eight exact
+  `sourceStoryGapQueue.v45` evaluates 190 residual radio definitions, 27 root
+  cutscene carriers, 28 registered dialog definitions, eight exact
   DialogTextTable-only/no-registry groups, eleven exact
-  ReadingPopUp/RichContent definitions, one exact SNS dialog definition, two
-  text-only cutscenes, and two TextTable-only black narrative definitions across
-  `e0m0`, `e1m3`, `e2m4`, `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e9m3`, `e10m3`, `e10m4`,
-  `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 184 radio definitions;
+  ReadingPopUp/RichContent definitions, one exact SNS dialog definition, four
+  text-only cutscenes (including two e2m5 rows), and two TextTable-only black narrative
+  definitions across
+  `e0m0`, `e1m3`, `e2m4`, `e2m5`, `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e9m3`, `e10m3`, `e10m4`,
+  `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 187 radio definitions;
   two close through strict exact native mission context, and one through
   strict exact runtime configuration. This includes seven bounded `e1m3`
   radio definitions, its canonical misc-dialog definition and one-host
@@ -2055,6 +2056,12 @@ gameplay-video OCR/audio workflow.
   third black file closes as an exact parent DialogTree action disconnected
   from the prime-node path, without asserting playback or order.
   e2m4 adds seven radios and one registered five-line/two-option dialog.
+  e2m5 adds three audio-complete radios and two exact two-row TextTable-only
+  cutscenes. Its registered six-line/two-option `dlg_e2m5_6` has an exact
+  interaction consumer at `NpcProxyExDataTable.data.tata_map01_i008[0]`, but
+  that entry's `missionId` is empty. The row therefore records NPC-interaction
+  selection while preserving an explicit mission/quest owner, activation-time,
+  and order gap.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
   e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`
@@ -2075,7 +2082,7 @@ gameplay-video OCR/audio workflow.
   residual `e11m6` radios. It requires the
   expected
   `GameAssembly.dll`,
-  RadioTable, AudioDialog, TextTable, NumIdStrTable, and cutscene-definition
+  RadioTable, AudioDialog, TextTable, NumIdStrTable, NpcProxyExDataTable, and cutscene-definition
   hashes; the complete provenance-valid carrier audit and current core-target
   digest; exact RadioTable schema and AudioDialog membership; exact Timeline
   registry ids and every physical root definition variant, or the complete
