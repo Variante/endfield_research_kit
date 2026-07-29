@@ -686,7 +686,7 @@ Expected active inputs and outputs:
   The builder also projects the active exact negative-evidence boundary from
   `reports/mission_order/source_story_gap_queue_CN.json` into
   `storyTriggerManifest[*].offlineRecovery`. It accepts only
-  `sourceStoryGapQueue.v48` with matching source hashes and `graphEffect=none`,
+  `sourceStoryGapQueue.v49` with matching source hashes and `graphEffect=none`,
   never changes an existing attachment status, and never adds a route. The nine
   ReadingPopup `text_*` keys outside the coverage denominator are published in
   the separate `offlineRecoveryEvidence.storyTriggerManifestOverlay`, each with
@@ -2011,11 +2011,11 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v48` evaluates 197 residual radio definitions, 27 root
-  cutscene carriers, 31 registered dialog definitions, five exact NpcProxy
+  `sourceStoryGapQueue.v49` evaluates 198 residual radio definitions, 27 root
+  cutscene carriers, 32 registered dialog definitions, five exact NpcProxy
   dialog consumers without a mission owner, eight exact
-  DialogTextTable-only/no-registry groups, eleven exact
-  ReadingPopUp/RichContent definitions, one exact SNS dialog definition, four
+  DialogTextTable-only/no-registry groups, twelve exact
+  ReadingPopUp/RichContent definitions, two exact SNS dialog definitions, four
   text-only cutscenes (including two e2m5 rows), and two TextTable-only black narrative
   definitions across
   `e0m0`, `e1m2`, `e1m3`, `e2m4`, `e2m5`, `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e9m3`, `e10m1`, `e10m3`, `e10m4`,
@@ -2101,6 +2101,13 @@ gameplay-video OCR/audio workflow.
   The separate e5m2 q33 and e5m2d5 q12 diagnostics remain active: shared
   LevelScript condition scope, weak LevelData adjacency, and AirWall
   state-gated pushback playback do not prove quest-owned Story playback.
+  e7m4 adds one one-line radio, one registered three-line dialog with all
+  three base audio ids absent, one two-row ReadingPopUp/RichContent
+  definition, and one eight-node/zero-option SNS graph. The SNS graph carries
+  `sns_image_e7m4_1` at content node 4; the validator derives the terminal id
+  from each definition and validates exact media params instead of assuming
+  the historical 26-node SNS shape. Its empty `relatedMissionId` and the
+  carrier-audit negative preserve the no-activator/no-mission-order boundary.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
   e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`

@@ -2283,6 +2283,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e7m3_13",
                 "dlg_e7m3_15",
                 "dlg_e7m3_16",
+                "dlg_e7m4_7",
                 "dlg_e10m1_7",
                 "dlg_e10m3_3",
                 "dlg_e10m3_9",
@@ -2858,6 +2859,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e7m2_3",
                 "text_e7m3_1",
                 "text_e7m3_2",
+                "text_e7m4_1",
                 "text_e10m3_4",
                 "text_e10m3_6",
                 "text_e10m3_8",
@@ -2914,7 +2916,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS),
-            {"sns_e10m4_1"},
+            {"sns_e7m4_1", "sns_e10m4_1"},
         )
         self.assertEqual(
             set(
@@ -2992,6 +2994,45 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e7m3_16"
             ]["optionIds"],
             ("option_dlg_e7m3_16_1_001",),
+        )
+
+    def test_declared_e7m4_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E7M4_RADIOS,
+            {"radio_e7m4_3"},
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e7m4_7"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 3)
+        self.assertEqual(
+            dialog["missingAudioIds"],
+            (
+                "au_dlg_e7m4_7_001",
+                "au_dlg_e7m4_7_002",
+                "au_dlg_e7m4_7_003",
+            ),
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS[
+                "sns_e7m4_1"
+            ]["contentIds"],
+            (-1, 1, 2, 3, 4, 5, 6, 7),
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS[
+                "sns_e7m4_1"
+            ]["contentParamsByContentId"],
+            {4: ("sns_image_e7m4_1",)},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+                "text_e7m4_1"
+            ]["contentTextIds"],
+            (
+                -11413322245013826,
+                -7389517897749196338,
+            ),
         )
 
     def test_declared_e11m8_partial_frontier_is_exact(self) -> None:
