@@ -1511,9 +1511,18 @@ These are kept because the WebUI story builders import or use them:
   writes `export_full/recovered/story_source_links.json`; the Story builder
   stamps matching conv files and index entries with source evidence and
   writes per-language coverage/orphan reports.
+- `story_builder/level_bindings.py`: among the fail-closed LevelData joins,
+  decodes the current 27-member top-level `LevelScriptData.interactives` map.
+  Each accepted value is a completely consumed 25-member
+  `LevelInteractiveData` record with an exact narrative template and component
+  `94` `type_id`. Direct Story ids and exact
+  `ReadingPopUpTable.contentId` joins become
+  `levelscript_interactive_narrative_config` Mission Pipeline context. These
+  rows bind source configuration only; script activation, player interaction,
+  quest causality, ownership, and Story order remain unresolved.
 - `story_builder/levelscript_binary.py`: shared raw LevelScriptData helpers.
   It verifies serialized script ids against file names and decodes the
-  top-level MemoryPack tail fields that are currently stable, including
+  current 27-member top-level MemoryPack tail fields that are stable, including
   `startType` when the adjacent `startShapeList` can be skipped safely. It
   also decodes the three serialized `ActionSerializedMap` UID-list boundaries
   in the GameAssembly/MetadataRegistration-backed order (`actionList`,

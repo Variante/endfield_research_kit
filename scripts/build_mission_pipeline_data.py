@@ -235,7 +235,7 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # mission-variable defaults as debug context without creating graph edges.
 # v18 pins the native tracking-property evaluator and server-sync path while
 # preserving the unknown server producer/timing boundary.
-SCHEMA_VERSION = 18
+SCHEMA_VERSION = 19
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -3491,6 +3491,19 @@ def build_story_trigger_route(
         })
     if script_ids:
         middle_steps.append({"kind": "levelscript", "ids": script_ids})
+    if (
+        relation == "levelscript_interactive_narrative_config"
+        and row.get("localInteractiveId") is not None
+    ):
+        interactive_summaries = _unique_route_strings(
+            row.get("rawTypeId"),
+            row.get("entityTemplateIds"),
+        )
+        middle_steps.append({
+            "kind": "narrative_interactive",
+            "id": str(row.get("localInteractiveId")),
+            "summaries": interactive_summaries,
+        })
     if action_names:
         middle_steps.append({"kind": "native_action", "ids": action_names})
     if direction == "story_to_quest":
@@ -3514,6 +3527,10 @@ def build_story_trigger_route(
         "eventSummaries": event_summaries,
         "actionNames": action_names,
         "scriptIds": script_ids,
+        "localInteractiveId": row.get("localInteractiveId"),
+        "rawTypeId": str(row.get("rawTypeId") or ""),
+        "entityDetailIds": _unique_route_strings(row.get("entityDetailIds")),
+        "entityTemplateIds": _unique_route_strings(row.get("entityTemplateIds")),
         "controlPathCount": int(row.get("nativeControlPathCount") or len(native_paths)),
         "nativePaths": native_paths,
         "sourceFiles": source_files,
@@ -4412,6 +4429,7 @@ def build_story_binding_coverage(
         for row in pipeline_index.get("missions") or []
         if isinstance(row, dict) and row.get("id")
     }
+    all_index_rows: dict[str, dict[str, Any]] = {}
     all_story_rows: dict[str, dict[str, Any]] = {}
     story_rows: dict[str, dict[str, Any]] = {}
     for row in story_index.get("entries") or []:
@@ -4420,13 +4438,15 @@ def build_story_binding_coverage(
         key = str(row.get("k") or "")
         kind = str(row.get("d") or "")
         mission_id = str(row.get("m") or "")
-        if key and kind in PIPELINE_STORY_KINDS:
+        if key:
             normalized_row = {
                 "key": key,
                 "kind": kind,
                 "missionId": mission_id,
                 "preview": str(row.get("p") or ""),
             }
+            all_index_rows[key] = normalized_row
+        if key and kind in PIPELINE_STORY_KINDS:
             all_story_rows[key] = normalized_row
             if mission_id in mission_ids:
                 story_rows[key] = normalized_row
@@ -4487,6 +4507,7 @@ def build_story_binding_coverage(
     missionless_subgame_nodes: dict[str, dict[str, Any]] = {}
     missionless_native_runtime_nodes: dict[str, dict[str, Any]] = {}
     story_trigger_routes: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+    context_only_trigger_route_keys: set[str] = set()
     sidecars_read = 0
 
     def add_trigger_route(route: dict[str, Any] | None) -> None:
@@ -4624,6 +4645,19 @@ def build_story_binding_coverage(
             ))
         for row, quest_id, scope in _scoped_connection_rows(flow):
             key = str(row.get("key") or "")
+            if (
+                str(row.get("relation") or "")
+                == "levelscript_interactive_narrative_config"
+                and key in all_index_rows
+            ):
+                if key not in all_story_rows:
+                    context_only_trigger_route_keys.add(key)
+                add_trigger_route(build_story_trigger_route(
+                    row,
+                    mission_id=mission_id,
+                    quest_id=quest_id,
+                    scope=scope,
+                ))
             if key not in story_rows and key in all_story_rows:
                 story_rows[key] = {
                     **all_story_rows[key],
@@ -4974,6 +5008,8 @@ def build_story_binding_coverage(
     story_files_with_trigger_routes = 0
     unlinked_files_with_trigger_routes = 0
     trigger_route_count = 0
+    context_only_trigger_route_files = 0
+    context_only_trigger_route_count = 0
     for key, story in sorted(story_rows.items(), key=lambda item: natural_quest_key(item[0])):
         routes = list(story_trigger_routes.get(key, {}).values())
         routes.sort(key=lambda route: (
@@ -5019,6 +5055,32 @@ def build_story_binding_coverage(
                 rejected_playback_by_key[key]
             )
         story_trigger_manifest[key] = manifest_row
+    for key in sorted(context_only_trigger_route_keys, key=natural_quest_key):
+        if key in story_trigger_manifest:
+            continue
+        story = all_index_rows.get(key)
+        if not story:
+            continue
+        routes = list(story_trigger_routes[key].values())
+        routes.sort(key=lambda route: (
+            natural_quest_key(str(route.get("missionId") or "")),
+            natural_quest_key(str(route.get("questId") or "")),
+            str(route.get("causality") or ""),
+            str(route.get("relation") or ""),
+        ))
+        if not routes:
+            continue
+        context_only_trigger_route_files += 1
+        context_only_trigger_route_count += len(routes)
+        trigger_route_count += len(routes)
+        story_trigger_manifest[key] = {
+            "key": key,
+            "kind": story["kind"],
+            "nominalMissionId": story["missionId"],
+            "attachmentStatus":
+                "context_only_outside_pipeline_coverage_denominator",
+            "routes": routes,
+        }
     kind_counts: dict[str, dict[str, int]] = {}
     for kind in sorted(PIPELINE_STORY_KINDS):
         total = sum(1 for row in story_rows.values() if row["kind"] == kind)
@@ -5085,7 +5147,7 @@ def build_story_binding_coverage(
 
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 3,
+        "schemaVersion": 4,
         "generated": int(time.time()),
         "language": language,
         "policy": (
@@ -5111,6 +5173,9 @@ def build_story_binding_coverage(
             "connectionEvidenceRows": evidence_row_count,
             "storyTriggerRoutes": trigger_route_count,
             "storyFilesWithTriggerRoutes": story_files_with_trigger_routes,
+            "contextOnlyTriggerRouteFiles":
+                context_only_trigger_route_files,
+            "contextOnlyTriggerRoutes": context_only_trigger_route_count,
             "unlinkedStoryFilesWithTriggerRoutes": unlinked_files_with_trigger_routes,
             "rootPlaybackAliasFiles": len({
                 row["playableAssetStoryKey"]

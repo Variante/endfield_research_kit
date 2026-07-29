@@ -25,6 +25,7 @@ from .mission_recovery import (
     enrich_source_backed_scene_edge_context,
     is_call_server_self_uid_callback,
     is_play_dialog_hide_non_identifier_payload,
+    natural_key,
     typed_cutscene_single_char_parameter_action,
 )
 
@@ -15311,6 +15312,143 @@ def build_language_bundle(
             })
 
     action_story_occurrences = build_levelscript_action_story_occurrences()
+
+    # LevelScriptData can author narrative interactives directly rather than
+    # through an ActionBase playback row. Recover the counted
+    # LevelInteractiveData map and component-94 TYPE_ID binding as exact source
+    # configuration. This binds the Story file to its script and interactive,
+    # but does not claim that script activation, interaction timing, quest
+    # causality, or relative Story order has been recovered.
+    levelscript_interactive_narrative_contexts = (
+        build_levelscript_interactive_narrative_story_contexts(
+            set(all_story_entry_keys)
+        )
+    )
+    for context in levelscript_interactive_narrative_contexts:
+        story_key = resolve_scene_ref_out_key(
+            str(context.get("storyKey") or ""),
+            all_story_entry_keys,
+        )
+        target_mission = str(story_owner_by_key.get(story_key) or "")
+        if (
+            not story_key
+            or not target_mission
+            or target_mission not in mission_flows_payload
+        ):
+            continue
+        level_id = str(context.get("levelId") or "")
+        script_id = str(context.get("scriptId") or "")
+        condition_rows = list(
+            script_condition_bindings.get((level_id, script_id)) or []
+        )
+        condition_missions = sorted({
+            str(row.get("missionId") or "")
+            for row in condition_rows
+            if row.get("missionId")
+        })
+        scoped_condition_rows = (
+            condition_rows
+            if condition_missions == [target_mission]
+            else []
+        )
+        quest_ids = sorted({
+            str(row.get("questId") or "")
+            for row in scoped_condition_rows
+            if row.get("questId")
+        }, key=natural_key)
+        connection = {
+            "key": story_key,
+            "kind": story_kind_by_key.get(story_key, "story"),
+            "relation": "levelscript_interactive_narrative_config",
+            "direction": "context",
+            "phase": "interactive_narrative_configuration",
+            "confidence": "native_exact_serialized_config",
+            "evidenceTier": "native_exact_context",
+            "source": (
+                "exact counted LevelScriptData interactive map -> 25-member "
+                "LevelInteractiveData -> componentProperties[94].type_id; "
+                "ReadingPopUpTable is joined only when TYPE_ID names a popup row"
+            ),
+            "storyOwnerMission": target_mission,
+            "storyBinding": True,
+            "ownership": False,
+            "dependencyOnly": False,
+            "questTriggerStatus": (
+                "exact_same_script_mission_condition_context_without_"
+                "interactive_causality"
+                if scoped_condition_rows
+                else "source_config_only_activation_and_quest_unresolved"
+            ),
+            "questContextIds": quest_ids,
+            "missionRuntimeScriptConditionContext": scoped_condition_rows,
+            "activationBoundary": (
+                "the source LevelScript and local interactive are exact; "
+                "serialized data does not establish when the script becomes "
+                "active or when the player performs the interaction"
+            ),
+            "orderBoundary": (
+                "interactive-map order, local interactive id, object position, "
+                "and Story suffix do not establish relative Story chronology"
+            ),
+            "executionSide": context.get("executionSide") or "client",
+            "networkRole": "local_interactive_narrative_dispatch",
+            "serverExchange": False,
+            "clientRequest": False,
+            "expectedServerReply": False,
+            "levelIds": [level_id],
+            "scriptIds": [script_id],
+            "sourceFiles": sorted({
+                str(context.get("sourceFile") or ""),
+                str(context.get("readingPopupTableSourceFile") or ""),
+                str(context.get("entityTemplatePath") or ""),
+            } - {""}),
+            "nativeMappingId": context.get("nativeMappingId"),
+            "nativeConsumer": context.get("nativeConsumer"),
+            "storyKeyResolution": context.get("storyKeyResolution"),
+            "rawTypeId": context.get("rawTypeId"),
+            "readingPopupId": context.get("readingPopupId"),
+            "interactiveMapCount": context.get("interactiveMapCount"),
+            "interactiveMapCountOffset":
+                context.get("interactiveMapCountOffset"),
+            "interactiveMapEndOffset": context.get("interactiveMapEndOffset"),
+            "interactiveRecordIndex": context.get("recordIndex"),
+            "interactiveRecordOffset": context.get("recordOffset"),
+            "interactiveRecordEndOffset": context.get("recordEndOffset"),
+            "localInteractiveId": context.get("localInteractiveId"),
+            "entityDetailIds": [str(context.get("entityDetailId") or "")],
+            "entityTemplateIds": [str(context.get("entityTemplateId") or "")],
+            "entityTemplatePaths": [
+                str(context.get("entityTemplatePath") or "")
+            ],
+            "narrativeComponentKey": context.get("narrativeComponentKey"),
+            "narrativeParamMapOffset": context.get(
+                "narrativeParamMapOffset"
+            ),
+            "narrativeParamMapEndOffset": context.get(
+                "narrativeParamMapEndOffset"
+            ),
+            "typeIdEntryOffset": context.get("typeIdEntryOffset"),
+            "propertiesCount": context.get("propertiesCount"),
+        }
+        connections = mission_flows_payload[target_mission].setdefault(
+            "missionStoryConnections",
+            [],
+        )
+        signature = (
+            story_key,
+            connection["relation"],
+            level_id,
+            script_id,
+            context.get("localInteractiveId"),
+        )
+        if not any((
+            str(existing.get("key") or ""),
+            str(existing.get("relation") or ""),
+            next(iter(existing.get("levelIds") or []), ""),
+            next(iter(existing.get("scriptIds") or []), ""),
+            existing.get("localInteractiveId"),
+        ) == signature for existing in connections if isinstance(existing, dict)):
+            connections.append(connection)
 
     # ON_SPAWNER_COMPLETE carries an exact uint64 SpawnerPtr from the server
     # completion push into the local LevelEvent.  A current SpawnerConfig can

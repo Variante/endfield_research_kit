@@ -471,6 +471,7 @@ MEMORYPACK_FIELD_SCHEMAS = {
         "activeShapeList",
         "allowStartOnTravelPole",
         "allowTick",
+        "enablePreload",
         "endType",
         "enemies",
         "exitBuffer",
@@ -13764,7 +13765,11 @@ def decode_levelscript_memorypack(path: Path, data: bytes) -> dict[str, Any] | N
     return {
         "kind": "memorypack-json",
         "subtype": "LevelScriptData",
-        "summary": f"MemoryPack LevelScriptData; 26 members; {', '.join(details[1:])}",
+        "summary": (
+            "MemoryPack LevelScriptData; "
+            f"{decoded.get('serializedMemberCount')} members; "
+            f"{', '.join(details[1:])}"
+        ),
         "rows": action_count,
         "keys": MEMORYPACK_FIELD_SCHEMAS["LevelScriptData"],
         "sample": "; ".join(details),

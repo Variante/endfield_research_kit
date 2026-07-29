@@ -6662,7 +6662,7 @@ def decode_levelscript_binary_summary(data: bytes, script_id: int) -> dict[str, 
     best = max(candidates, key=lambda item: int(item.get("score") or 0), default={})
     return {
         "serializedMemberCount": data[0],
-        "expectedMemberCount": 26,
+        "expectedMemberCount": 27,
         "actionMapStatus": action_map.get("status") or "",
         "actionMapRecordCount": action_map.get("recordCount"),
         "actionMapRecordStartOffsetHex": action_map.get("recordStartOffsetHex") or "",
@@ -6690,7 +6690,8 @@ def decode_levelscript_binary_summary(data: bytes, script_id: int) -> dict[str, 
         "triggerVolumesDetails": best.get("triggerVolumes") or {},
         "triggerVolumeSlotIds": (best.get("triggerVolumes") or {}).get("slotIds") or [],
         "note": (
-            "actionMap header plus scriptId/startType/shape-list trigger fields decoded from the top-level MemoryPack; "
+            "current 27-member top-level MemoryPack plus actionMap header and "
+            "scriptId/startType/shape-list trigger fields decoded; "
             "final current-build Leader trigger-volume maps include exact slot and geometry; "
             "action start/end opcodes are still not decoded"
         ),

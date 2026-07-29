@@ -3387,13 +3387,14 @@ while the report, latest export source fingerprint, and current object-index
 stage signature agree. `export.bat --export-from-game
 --animestudio-object-index` refreshes it automatically.
 
-The source-gap queue schema is now `sourceStoryGapQueue.v12`.
+The source-gap queue schema is now `sourceStoryGapQueue.v13`.
 `blackbox_common` falls from score 5 to 0 and
 `radio_blackbox_common_1` moves from actionable isolation to
 `closed_exact_guide_runtime_non_mission_content`. Current non-mission closures
 are **234** (233 authored-table rows plus this guide-runtime row), and current
-actionable core-isolated scenes total **2,458**. No main, event, major, or
-character bucket changes. The WebUI reflects the result: Mission Pipeline
+actionable core-isolated scenes total **2,352** after the later exact
+LevelScript interactive-configuration pass. The WebUI reflects the result:
+Mission Pipeline
 reports one non-mission file, while the Storyline debug view labels the radio
 as non-mission authored table/tutorial content. Action ids, `nextId`, asset
 names, PathIDs, and object order remain explicitly barred from mission or
@@ -4269,8 +4270,8 @@ Current main-story priorities:
    The current hash-validated merged object-index carrier census produced no
    typed carrier across all 1,335,450 indexed objects, so another loose-object
    or same-object scan is not an actionable offline frontier. The refreshed
-   source-only queue ranks `e11m4` first (score 205, 41 actionable isolated
-   core scenes), followed by `e10m4` (190/38) and `e11m1` (150/30). Continue
+   source-only queue ranks `e10m4` first (score 190, 38 actionable isolated
+   core scenes), followed by `e11m4` (175/35) and `e11m1` (145/29). Continue
    offline from those exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
    runtime capture later becomes possible, start with `e11m1`: use the
@@ -4334,7 +4335,7 @@ Current main-story priorities:
    have a large LevelScript control-flow backlog. Of its 67 weak-only rows, 64
    have complete exact native event paths and three retain only non-ordering
    topology; zero remains an actionable control-flow decoder row. Its current
-   queue has 30 actionable core-isolated source-link candidates after exact
+   queue has 29 actionable core-isolated source-link candidates after exact
    native and runtime-configuration closures. The full current-build
    custom-event producer scan
    finds only the already recovered `TigerStart` same-script producer/listener
@@ -4379,9 +4380,9 @@ Current main-story priorities:
    diverges earlier at `Split` local 101 (`actions[3]` versus the cutscene's
    `actions[0]`), so the two remain unordered and no file-order edge is
    promoted. This closes e10m4's sole actionable weak-control row.
-   The current `e11m4` queue score is 205: 49 core isolated scenes split into
-   41 actionable rows, three exact-native closed rows, and five exact
-   runtime-configuration closed dialogs. The latter are
+   The current `e11m4` queue score is 175: 49 core isolated scenes split into
+   35 actionable rows, three exact-native closed rows, and eleven exact
+   runtime-configuration closures. Five are
    `dlg_e11m4_4`, `_9`, `_10`, `_11`, and `_12`. Their exact
    `NpcProxyExDataTable` rows name mission `e11m4`, map `map02_lv008`, and one
    proxy each. The installed native path
@@ -4461,38 +4462,53 @@ Current main-story priorities:
    trigger, runtime-owner field, or additional component on the cutscene root
    exists. This is exact negative component evidence, but it still cannot rule
    out an external registry or server-selected activator, so it adds no edge.
-   The mission evidence audit now enforces the same boundary for Reading/PRTS:
+   The mission evidence audit now enforces the same boundary for unrelated
+   Reading/PRTS rows:
    exact `contentId` joins count as links, while five e11m4 same-number/suffix
    candidates are labeled cross-references only. In particular,
    `dlg_e11m4_3` is not owned by unrelated facility readings merely because
    their suffixes match.
    The two remaining exact dialog definitions also close the local
-   DialogTree-internal frontier without adding ownership.
+   DialogTree-internal frontier without adding chronology.
    `dlg_e11m4_3` is a registered root with the pure directed chain
    `_001 -> _002 -> ... -> _008 -> Finish`; `dlg_e11m4_15` is
    `_001 -> _002 -> Finish`. Their extra configs contain only `DialogTreeData`
    voice settings (plus one per-line 2D-sound flag for `_15`). Neither graph
    has a narrative/subtitle/OpenUI action, quest-state gate, nested dialog, or
-   cross-Story trunk carrier. This proves their internal line order and
-   definition identity, but the exact external activator remains absent, so
-   both stay actionable source-ownership gaps.
+   cross-Story trunk carrier. A later exact top-level LevelScriptData decoder
+   recovered their external authored configuration:
+   `map02_lv008/23100090007` local interactive `40005`,
+   `int_narrative_scene_document`, binds `dlg_e11m4_3`; and
+   `23100090002` local `40003`, `int_narrative_chip`, binds
+   `dlg_e11m4_15`. The same two counted maps bind `text_e11m4_1..4` through
+   locals `40006`, `40007`, `40002`, and `40001`. Each source is a fully
+   bounded 25-member `LevelInteractiveData` record whose component `94`
+   ParamValue map contains the exact `type_id`; reading-popup ids are joined
+   through `ReadingPopUpTable.contentId`. Script `23100090002` is also consumed
+   by `e11m4_q#5` property conditions (`getbook`, `getusb`, `getfile`), which
+   is preserved as same-script mission context rather than interaction
+   causality. These six files therefore leave the actionable source-link queue,
+   but local interactive ids, map order, positions, and Story suffixes still
+   prove neither activation time nor relative Story order.
    Further progress needs a genuinely new cross-system producer/owner
-   registry or runtime capture, not another local carrier census. `e11m4`
-   remains the highest-scoring main-story gap; its remaining work is source
-   ownership, not the already-closed local playback, embedded placement, and
-   runtime-configuration carriers.
+   registry or runtime capture, not another local carrier census. `e11m4` is
+   now the second-highest main-story gap. Its 35 actionable rows are exactly
+   the 34 exhausted radio definitions plus the ownerless rift-camera cutscene;
+   its dialog and text source-configuration frontier is closed.
 5. `e7m3` no longer has an actionable LevelScript control-flow row: it has zero
    untyped multi-scene contexts and zero actionable weak-only scenes. The
-   source-only queue now scores it 51 at main-story rank 14, with 58 scenes,
-   23 strong/reduced edges, zero cycles, 19 isolated scenes, and nine
+   source-only queue now scores it 46, with 58 scenes,
+   23 strong/reduced edges, zero cycles, 19 isolated scenes, and eight
    actionable core-isolated source-link gaps. The installed DialogTree resolves
    `black_e7m3_1` to the exact `dlg_e7m3_14` playback context described above,
    while exact NpcProxyEx mission scope closes `dlg_e7m3_11` and `_12` without
-   relative order. The remaining actionable keys are `dlg_e7m3_13..16`,
-   `radio_e7m3_16`, `radio_e7m3_26`, and `text_e7m3_1..3`. The four dialog
+   relative order. Exact LevelScript interactive configuration now also closes
+   `text_e7m3_3`, leaving eight actionable keys:
+   `dlg_e7m3_13..16`, `radio_e7m3_16`, `radio_e7m3_26`, and
+   `text_e7m3_1..2`. The four dialog
    proxies have blank mission ids (and `_13` is attached only by a non-owning
    DialogTree quest-state dependency); the two radios are definition-only
-   RadioTable rows with no recovered consumer; the three text files have exact
+   RadioTable rows with no recovered consumer; the two text files have exact
    ReadingPopUp/RichContent definitions but no activator. Continue only if a
    new typed original-game producer or mission/quest carrier appears. Proxy
    suffixes, table order, filename numbers, OCR, and manual overrides remain
