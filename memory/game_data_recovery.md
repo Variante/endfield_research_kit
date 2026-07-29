@@ -314,6 +314,29 @@ resource-path registry, the compressed BehaviourTree pool, and the factory
 bone-transform table. These conclusions are build-specific and do not cover
 runtime-added data, server state, or future files.
 
+The separately skipped BundleManifest is a Brotli-compressed typed resource
+index. The current effective Persistent `manifest.hgmmap` expands from
+46,476,082 to 137,818,624 bytes and validates as:
+
+```text
+HEAD1 + UTF-16 manifest hash
+HEAD2 + UTF-16 hash-version string
+UTF-16 perforce CL
+length + asset hash-table blob
+length + bundle hash-table blob
+length + bundle-array blob
+length + shared data pool + matching trailing length
+```
+
+The current asset table has 327,584 24-byte records; the bundle dictionary and
+array each have 237,800 48-byte records. Every non-empty hash bucket partitions
+its record region without gaps or overlap, and the shared data pool consumes
+the framed remainder exactly. Native metadata identifies the logical fields as
+asset path/hash, bundle index/size, bundle names, dependency sets, flags,
+hashes, and category. It is a loader routing/dependency registry, not an
+authored mission/quest activation table. See
+`reports/story/recovery/bundle_manifest_story_audit.{json,md}`.
+
 Do not infer that a VFS block is irrelevant merely because the normal WebUI
 export skips it. Promote it only when a bounded decoder or query need justifies
 the cost.

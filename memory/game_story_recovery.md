@@ -3551,6 +3551,36 @@ server state, a future build, or a future new file remains outside that
 conclusion. Reproduce the result in
 `reports/story/recovery/facbone_trs_story_audit.{json,md}`.
 
+#### BundleManifest is resource routing, not activation ownership
+
+The remaining skipped registry surface is now decoded rather than inferred
+from its `.hgmmap` filename. Current VFS metadata contains a StreamingAssets
+manifest at version 22,097,503 and a newer effective Persistent manifest at
+version 22,764,515. The maintained
+`build_bundle_manifest_story_audit.py` hash-gates and Brotli-decompresses the
+effective 46,476,082-byte file to 137,818,624 bytes, then validates both magic
+words, the manifest/build hashes, three framed table blobs, and the complete
+data-pool prefix/suffix.
+
+The exact typed layout contains 327,584 24-byte asset records in a partitioned
+hash table and 237,800 48-byte bundle records represented by both a
+partitioned hash table and an equal-count array. Native
+`ManifestDataBinary.TryGetValue(path/hash)` reaches an `AssetInfo` record whose
+only fields are `pathHashHead`, `path`, `bundleIndex`, and `assetSize`.
+`Bundle` carries `bundleIndex`, name, dependency/reverse-dependency references,
+flags, name/version hashes, and resource category. Neither record type carries
+a mission, quest, LevelScript, phase, playback selector, or owner field.
+
+None of the three unresolved CutsceneRoot keys occurs in either compressed or
+decompressed ASCII/UTF-16LE form. More importantly, even a recovered matching
+asset path or shared bundle would prove only loader availability and dependency
+co-location. Bundle membership cannot be promoted into authored Story
+ownership or chronology. This audit therefore adds zero mission-graph edges
+and closes BundleManifest as the distinct asset-consumer registry lead.
+Runtime/server selection, a future manifest schema, and unrelated indirect
+consumers remain outside the result. Reproduce it in
+`reports/story/recovery/bundle_manifest_story_audit.{json,md}`.
+
 #### Transition-manager and played-Timeline event surfaces are not owners
 
 The remaining native transition-manager surface is now bounded. Current
