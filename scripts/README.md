@@ -1526,8 +1526,10 @@ These are kept because the WebUI story builders import or use them:
   ends at top-level member 21 and the adjacent complete member-22
   LevelScriptBriefData dictionary independently validates. The suffix accepts
   a null progress lock or exact current-build mission/quest-state leaf and
-  combined condition forms; unknown tags, member counts, operators, targets,
-  or trailing bytes fail closed. Narrative component `94`, InteractiveTable template identity,
+  recursively nested combined condition forms. Raw compare/combined operators
+  are restricted to observed values `0..1`; unknown tags, member counts,
+  operators, targets, depth/count overflow, or trailing bytes fail closed.
+  Narrative component `94`, InteractiveTable template identity,
   and direct Story or ReadingPopUp content-id resolution produce
   `leveldata_interactive_narrative_config` context. A decoded lock proves an
   interactive availability constraint, but its state owner is not Story

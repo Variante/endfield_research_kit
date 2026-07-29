@@ -841,6 +841,20 @@ class LevelDataScriptHostTests(unittest.TestCase):
             + mission_completed
             + mission_processing
         )
+        quest_not_equal = (
+            b"\x10\x03"
+            + (1).to_bytes(4, "little", signed=True)
+            + (3).to_bytes(4, "little", signed=True)
+            + self._mp_string("c6m1_q#7")
+        )
+        nested = (
+            b"\x00\x03"
+            + (0).to_bytes(4, "little", signed=True)
+            + b"\x00"
+            + (2).to_bytes(4, "little", signed=True)
+            + mission_completed
+            + combined
+        )
         records = [
             self._levelscript_narrative_interactive_record(
                 "int_narrative_scene_book",
@@ -852,10 +866,20 @@ class LevelDataScriptHostTests(unittest.TestCase):
                 "dlg_test_2",
                 progress_lock=combined,
             ),
+            self._levelscript_narrative_interactive_record(
+                "int_narrative_scene_empty",
+                "dlg_test_3",
+                progress_lock=nested,
+            ),
+            self._levelscript_narrative_interactive_record(
+                "int_narrative_scene_document",
+                "dlg_test_4",
+                progress_lock=quest_not_equal,
+            ),
         ]
         data = (
             b"\x2b"
-            + (2).to_bytes(4, "little", signed=True)
+            + (4).to_bytes(4, "little", signed=True)
             + b"".join(records)
         )
 
@@ -864,7 +888,7 @@ class LevelDataScriptHostTests(unittest.TestCase):
             final_record_end_offset=len(data),
         )
 
-        self.assertEqual(2, len(rows))
+        self.assertEqual(4, len(rows))
         self.assertEqual(
             "SimpleConditionCheckMissionState",
             rows[0]["progressLockConditionType"],
@@ -879,6 +903,23 @@ class LevelDataScriptHostTests(unittest.TestCase):
                 condition["compareTarget"]
                 for condition in rows[1]["progressLockConditions"]
             ],
+        )
+        self.assertEqual(
+            [3, 3, 2],
+            [
+                condition["compareTarget"]
+                for condition in rows[2]["progressLockConditions"]
+            ],
+        )
+        self.assertEqual(
+            "CombinedConditionRuntime",
+            rows[2]["progressLockConditionTree"]["conditions"][1][
+                "conditionType"
+            ],
+        )
+        self.assertEqual(
+            1,
+            rows[3]["progressLockConditions"][0]["compareOperator"],
         )
 
     def test_leveldata_interactive_final_boundary_requires_member22_dictionary(

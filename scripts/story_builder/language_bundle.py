@@ -15571,6 +15571,8 @@ def build_language_bundle(
                 context.get("progressLockConditionOperator"),
             "progressLockSerializedRuntimeFlag":
                 context.get("progressLockSerializedRuntimeFlag"),
+            "progressLockConditionTree":
+                context.get("progressLockConditionTree"),
             "progressLockConditions":
                 context.get("progressLockConditions") or [],
         }

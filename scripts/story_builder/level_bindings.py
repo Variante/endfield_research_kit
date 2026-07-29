@@ -5327,7 +5327,7 @@ def _parse_level_interactive_simple_state_condition(
         return None
     owner_id, cursor = owner_decoded
     if (
-        compare_operator != 0
+        compare_operator not in (0, 1)
         or not 0 <= compare_target <= 5
         or not owner_id
         or cursor > end_limit
@@ -5357,21 +5357,55 @@ def _parse_level_interactive_progress_lock_condition(
     end_limit: int,
 ) -> dict | None:
     """Decode an exact current-build narrative progress-lock condition."""
+    root = _parse_level_interactive_progress_lock_node(
+        data,
+        offset,
+        end_limit,
+    )
+    if root is None:
+        return None
+    leaves: list[dict] = []
+
+    def collect_leaves(node: dict) -> None:
+        if node.get("conditionType") == "CombinedConditionRuntime":
+            for child in node.get("conditions") or []:
+                collect_leaves(child)
+        else:
+            leaves.append(node)
+
+    collect_leaves(root)
+    return {
+        "endOffset": root["endOffset"],
+        "progressLockConditionOffset": offset,
+        "progressLockConditionStatus": "decoded",
+        "progressLockConditionUnionTag": root["unionTag"],
+        "progressLockConditionSerializedMemberCount": 3,
+        "progressLockConditionType": root["conditionType"],
+        "progressLockConditionOperator": root.get("conditionOperator"),
+        "progressLockSerializedRuntimeFlag":
+            root.get("serializedRuntimeFlag"),
+        "progressLockConditionTree": root,
+        "progressLockConditions": leaves,
+    }
+
+
+def _parse_level_interactive_progress_lock_node(
+    data: bytes,
+    offset: int,
+    end_limit: int,
+    *,
+    depth: int = 0,
+) -> dict | None:
+    """Decode one recursive state/combined progress-lock node."""
+    if depth > 8:
+        return None
     direct = _parse_level_interactive_simple_state_condition(
         data,
         offset,
         end_limit,
     )
     if direct is not None:
-        return {
-            "endOffset": direct["endOffset"],
-            "progressLockConditionOffset": offset,
-            "progressLockConditionStatus": "decoded",
-            "progressLockConditionUnionTag": direct["unionTag"],
-            "progressLockConditionSerializedMemberCount": 3,
-            "progressLockConditionType": direct["conditionType"],
-            "progressLockConditions": [direct],
-        }
+        return direct
     if (
         offset < 0
         or offset + 11 > end_limit
@@ -5397,10 +5431,11 @@ def _parse_level_interactive_progress_lock_condition(
     condition_count, cursor = count_decoded
     conditions: list[dict] = []
     for _ in range(condition_count):
-        condition = _parse_level_interactive_simple_state_condition(
+        condition = _parse_level_interactive_progress_lock_node(
             data,
             cursor,
             end_limit,
+            depth=depth + 1,
         )
         if condition is None:
             return None
@@ -5409,15 +5444,14 @@ def _parse_level_interactive_progress_lock_condition(
     if condition_operator not in (0, 1):
         return None
     return {
+        "offset": offset,
         "endOffset": cursor,
-        "progressLockConditionOffset": offset,
-        "progressLockConditionStatus": "decoded",
-        "progressLockConditionUnionTag": 0,
-        "progressLockConditionSerializedMemberCount": 3,
-        "progressLockConditionType": "CombinedConditionRuntime",
-        "progressLockConditionOperator": condition_operator,
-        "progressLockSerializedRuntimeFlag": serialized_runtime_flag,
-        "progressLockConditions": conditions,
+        "unionTag": 0,
+        "serializedMemberCount": 3,
+        "conditionType": "CombinedConditionRuntime",
+        "conditionOperator": condition_operator,
+        "serializedRuntimeFlag": serialized_runtime_flag,
+        "conditions": conditions,
     }
 
 
@@ -5929,7 +5963,7 @@ def build_leveldata_interactive_narrative_story_contexts(
                         "_CollectNarrative -> dialog/reading-popup dispatch"
                     ),
                     "nativeMappingId":
-                        "leveldata-interactive-narrative-config-v3",
+                        "leveldata-interactive-narrative-config-v4",
                     "storyBinding": True,
                     "ownership": False,
                     "questActivation": False,

@@ -405,6 +405,22 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "progressLockConditionType": "CombinedConditionRuntime",
             "progressLockConditionOperator": 1,
             "progressLockSerializedRuntimeFlag": False,
+            "progressLockConditionTree": {
+                "unionTag": 0,
+                "serializedMemberCount": 3,
+                "conditionType": "CombinedConditionRuntime",
+                "conditionOperator": 1,
+                "serializedRuntimeFlag": False,
+                "conditions": [{
+                    "unionTag": 12,
+                    "serializedMemberCount": 3,
+                    "conditionType": "SimpleConditionCheckMissionState",
+                    "ownerKind": "mission",
+                    "ownerId": "testm0",
+                    "compareOperator": 0,
+                    "compareTarget": 3,
+                }],
+            },
             "progressLockConditions": [{
                 "unionTag": 12,
                 "serializedMemberCount": 3,
@@ -446,6 +462,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(
             route["progressLockConditions"][0]["ownerId"],
             "testm0",
+        )
+        self.assertEqual(
+            route["progressLockConditionTree"]["conditionOperator"],
+            1,
         )
 
     def test_publish_source_story_partial_order_embeds_lazy_mission_graph(self):
