@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v71"
+SCHEMA = "sourceStoryGapQueue.v72"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -129,7 +129,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v50"
+    "current-build-offline-story-carrier-exhaustion-v51"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -160,6 +160,12 @@ OFFLINE_EXHAUSTION_READING_POPUP_TABLE_SHA256 = (
 )
 OFFLINE_EXHAUSTION_RICH_CONTENT_TABLE_SHA256 = (
     "1AB726FC15EA75A8212DB10D24630F75C565196A2EDCCCCCF5D57BC4D40B3301"
+)
+OFFLINE_EXHAUSTION_PRTS_ALL_ITEM_TABLE_SHA256 = (
+    "28767DA031EA923EEB7FF852B7FFDDE9FDDB6892B5C7AC9E306B734E7314D7AA"
+)
+OFFLINE_EXHAUSTION_PRTS_RECORD_TABLE_SHA256 = (
+    "7E9F2B5812494C045189C03C7E52513C4AB67FF16E06A0D817FC267784F8C61E"
 )
 OFFLINE_EXHAUSTION_SNS_DIALOG_TABLE_SHA256 = (
     "6DA0BCAB64EB0ECFCFF8D21A446D8AA637669D6DAE3E2A66D43FC2721098A0BF"
@@ -2168,6 +2174,7 @@ OFFLINE_EXHAUSTION_E6M4_RADIOS = frozenset({
     "radio_e6m4_36",
     "radio_e6m4_37",
 })
+OFFLINE_EXHAUSTION_E6M5_RADIOS = frozenset({"radio_e6m5_4"})
 OFFLINE_EXHAUSTION_E7M3_RADIOS = frozenset({
     "radio_e7m3_16",
     "radio_e7m3_26",
@@ -2296,6 +2303,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e6m2": OFFLINE_EXHAUSTION_E6M2_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e6m4": OFFLINE_EXHAUSTION_E6M4_RADIOS,
+    "e6m5": OFFLINE_EXHAUSTION_E6M5_RADIOS,
     "e7m2": OFFLINE_EXHAUSTION_E7M2_RADIOS,
     "e7m3": OFFLINE_EXHAUSTION_E7M3_RADIOS,
     "e7m4": OFFLINE_EXHAUSTION_E7M4_RADIOS,
@@ -2467,6 +2475,30 @@ OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
             -1462227912355393055,
             3546372858747322539,
         ),
+    },
+    "text_e6m5_1": {
+        "missionId": "e6m5",
+        "readingPopupRowId": "rp_text_e6m5_1",
+        "bgType": 2,
+        "iconType": 0,
+        "titleId": 5611922659515474422,
+        "contentTextIds": (
+            2915169207318156019,
+            -3317420327824307745,
+        ),
+        "prtsDefinition": {
+            "rowId": "nar_collection_map02_69_1",
+            "row": {
+                "contentId": "text_e6m5_1",
+                "desc": {"id": 0, "text": ""},
+                "firstLvId": "collection_map02_69",
+                "id": "nar_collection_map02_69_1",
+                "name": {"id": 6370990046482612204, "text": ""},
+                "order": 1,
+                "overrideRadioId": "",
+                "type": "text",
+            },
+        },
     },
     "text_e7m2_2": {
         "missionId": "e7m2",
@@ -2656,6 +2688,8 @@ def build_offline_exhaustion_index(
         "dialogTextTable": table_root / "DialogTextTable.json",
         "readingPopupTable": table_root / "ReadingPopUpTable.json",
         "richContentTable": table_root / "RichContentTable.json",
+        "prtsAllItemTable": table_root / "PrtsAllItem.json",
+        "prtsRecordTable": table_root / "PrtsRecord.json",
         "snsDialogTable": table_root / "SNSDialogTable.json",
         "snsOptionTable": table_root / "SNSDialogOptionTable.json",
         "npcProxyExDataTable": (
@@ -2738,6 +2772,10 @@ def build_offline_exhaustion_index(
             OFFLINE_EXHAUSTION_READING_POPUP_TABLE_SHA256,
         "richContentTable":
             OFFLINE_EXHAUSTION_RICH_CONTENT_TABLE_SHA256,
+        "prtsAllItemTable":
+            OFFLINE_EXHAUSTION_PRTS_ALL_ITEM_TABLE_SHA256,
+        "prtsRecordTable":
+            OFFLINE_EXHAUSTION_PRTS_RECORD_TABLE_SHA256,
         "snsDialogTable": OFFLINE_EXHAUSTION_SNS_DIALOG_TABLE_SHA256,
         "snsOptionTable": OFFLINE_EXHAUSTION_SNS_OPTION_TABLE_SHA256,
         "npcProxyExDataTable":
@@ -3007,9 +3045,13 @@ def build_offline_exhaustion_index(
 
     reading_popup_table = read_json(source_paths["readingPopupTable"], {})
     rich_content_table = read_json(source_paths["richContentTable"], {})
+    prts_all_item_table = read_json(source_paths["prtsAllItemTable"], {})
+    prts_record_table = read_json(source_paths["prtsRecordTable"], {})
     text_definitions_valid = (
         isinstance(reading_popup_table, dict)
         and isinstance(rich_content_table, dict)
+        and isinstance(prts_all_item_table, dict)
+        and isinstance(prts_record_table, dict)
     )
     for story_key, definition in (
         OFFLINE_EXHAUSTION_TEXT_DEFINITIONS.items()
@@ -3030,6 +3072,21 @@ def build_offline_exhaustion_index(
             if isinstance(item, dict)
             and isinstance(item.get("content"), dict)
         )
+        prts_definition = definition.get("prtsDefinition")
+        prts_definition_valid = prts_definition is None
+        if isinstance(prts_definition, dict):
+            prts_row_id = safe_key(prts_definition.get("rowId"))
+            expected_prts_row = prts_definition.get("row")
+            prts_definition_valid = (
+                bool(prts_row_id)
+                and isinstance(expected_prts_row, dict)
+                and prts_all_item_table.get(prts_row_id)
+                == expected_prts_row
+                and prts_record_table.get(prts_row_id)
+                == expected_prts_row
+                and expected_prts_row.get("id") == prts_row_id
+                and expected_prts_row.get("contentId") == story_key
+            )
         if (
             not isinstance(popup, dict)
             or set(popup) != {
@@ -3060,6 +3117,7 @@ def build_offline_exhaustion_index(
                     expected_content_ids,
                 )
             )
+            or not prts_definition_valid
         ):
             text_definitions_valid = False
             break
@@ -4162,26 +4220,53 @@ def build_offline_exhaustion_index(
             "definitionTables": [
                 "ReadingPopUpTable",
                 "RichContentTable",
+                *(
+                    ["PrtsAllItem", "PrtsRecord"]
+                    if definition.get("prtsDefinition")
+                    else []
+                ),
             ],
             "readingPopupRowId": definition["readingPopupRowId"],
             "contentTextIds": list(definition["contentTextIds"]),
+            "prtsDefinition": (
+                {
+                    "rowId": definition["prtsDefinition"]["rowId"],
+                    "firstLvId":
+                        definition["prtsDefinition"]["row"]["firstLvId"],
+                    "type": definition["prtsDefinition"]["row"]["type"],
+                    "order": definition["prtsDefinition"]["row"]["order"],
+                    "relation": "prts_archive_entry_targets_story",
+                    "missionOwnership": False,
+                    "orderEvidence": False,
+                }
+                if definition.get("prtsDefinition")
+                else None
+            ),
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
             "consumerBoundary": (
                 "the exact ReadingPopUpTable carrier and RichContentTable "
-                "payload define this current Story file; no exact "
+                "payload define this current Story file"
+                + (
+                    ", while the exact PRTS archive entry provides a second "
+                    "non-activating content carrier"
+                    if definition.get("prtsDefinition")
+                    else ""
+                )
+                + "; no exact "
                 "MissionRuntime, LevelScript/LevelData interactive, Lua, "
                 "object-index, or direct native caller exposes its activator"
             ),
             "orderBoundary": (
-                "popup table order, content-node order, text ids, and filename "
-                "suffixes do not place the Story file in mission chronology"
+                "popup table order, PRTS collection order, content-node "
+                "order, text ids, and filename suffixes do not place the "
+                "Story file in mission chronology"
             ),
             "reopenWhen": (
                 "installed binary, ReadingPopUpTable, RichContentTable, "
-                "object index, Lua corpus, or another typed producer/consumer "
-                "registry changes"
+                "PrtsAllItem, PrtsRecord, object index, Lua corpus, or "
+                "another typed producer/consumer registry changes"
             ),
             "graphEffect": "none",
         }
