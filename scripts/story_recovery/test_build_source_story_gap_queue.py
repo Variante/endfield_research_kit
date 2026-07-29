@@ -790,6 +790,42 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(row["metrics"]["strictQuestIdsWithStoryAttachment"], 1)
         self.assertEqual(row["questIdsWithoutStrictStoryAttachment"], ["e1m1_q#2"])
 
+    def test_npc_proxy_dialog_context_is_not_actionable_quest_attachment(
+        self,
+    ) -> None:
+        partial = partial_mission("e1m1", scenes=["dlg_a"])
+        payload = mission_payload(
+            quest_ids=["e1m1_q#2"],
+            placements={
+                "dlg_a": {
+                    "sceneKey": "dlg_a",
+                    "questIds": ["e1m1_q#2"],
+                    "questAttachSources": [{
+                        "questId": "e1m1_q#2",
+                        "source": "npcProxyDialog",
+                        "npcProxyId": "npc_e1m1_wait",
+                        "dialogId": "dlg_a",
+                    }],
+                },
+            },
+        )
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(
+            row["questIdsWithoutStrictStoryAttachment"],
+            [],
+        )
+        self.assertEqual(
+            row["questIdsWithoutAnyStoryEvidence"],
+            ["e1m1_q#2"],
+        )
+        self.assertEqual(row["diagnosticQuestAttachmentSources"], {})
+
     def test_unique_objective_script_owner_is_strict_quest_attachment(
         self,
     ) -> None:
