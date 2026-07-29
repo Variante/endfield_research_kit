@@ -286,19 +286,24 @@ Mission Pipeline:
   `PlayRadio`.
 - The same manifest now carries fail-closed `offlineRecovery` annotations from
   `reports/mission_order/source_story_gap_queue_CN.json` only while the queue is
-  schema `sourceStoryGapQueue.v50`, its current-build evidence is active, all
+  schema `sourceStoryGapQueue.v51`, its current-build evidence is active, all
   source hashes match, and `graphEffect=none`. Existing attachment statuses and
   route arrays are left unchanged. The nine ReadingPopup `text_*` keys outside
   the historical coverage denominator are exposed through
   `offlineRecoveryEvidence.storyTriggerManifestOverlay`, with zero routes and
   an explicit denominator-neutral status. The current live projection covers
-  275 manifest keys plus ten overlay keys. The four e5m2 rows retain empty
+  278 manifest keys plus ten overlay keys. The four e5m2 rows retain empty
   route arrays: three exact blank-owner NpcProxy dialog consumers and one
   consumerless RadioTable definition. e7m4 adds three manifest annotations
   plus one denominator-neutral ReadingPopup overlay; its SNS annotation
   retains the exact `sns_image_e7m4_1` media param at content node 4.
   e5m1 adds five more zero-route manifest annotations, including the exact
-  blank-owner NpcProxy consumer for `dlg_e5m1_3`.
+  blank-owner NpcProxy consumer for `dlg_e5m1_3`. e6m1 adds three zero-route
+  annotations: one audio-complete RadioTable definition and two registered
+  dialogs. `dlg_e6m1_15` exposes both exact blank-owner NpcProxy consumers.
+  Its other two residual radios remain connected without `offlineRecovery`:
+  `_20` retains exact e6m1d5 AirWall mission-state/playback context and `_21`
+  exact e6m1d5 focus-mode locked-interaction context.
   Mission cards display the
   evidence kind, consumer boundary, order boundary, and reopen condition; the
   Story debug row labels them as an exhausted current-build offline carrier

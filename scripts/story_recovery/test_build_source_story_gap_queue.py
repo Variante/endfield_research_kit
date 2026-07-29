@@ -1988,6 +1988,96 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(closure["dependentQuestIds"], ["e9m9_q#1"])
         self.assertEqual(closure["finishIds"], [-1])
 
+    def test_exact_cross_mission_runtime_configs_close_story_gaps(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "e6m1",
+            scenes=["radio_e6m1_20", "radio_e6m1_21"],
+            isolated=["radio_e6m1_20", "radio_e6m1_21"],
+        )
+        for node in partial["nodes"]:
+            node["kind"] = "radio"
+        dependent = mission_payload(connections=[
+            {
+                "key": "radio_e6m1_20",
+                "relation":
+                    "airwall_mission_state_radio_playback_context",
+                "direction": "context",
+                "phase": "airwall_mission_state_gate",
+                "confidence": "native_exact_serialized_co_carrier",
+                "evidenceTier": "direct",
+                "storyOwnerMission": "e6m1",
+                "missionStateId": "e6m1d5",
+                "storyBinding": True,
+                "ownership": False,
+                "dependencyOnly": False,
+                "questActivation": False,
+                "questPlayback": False,
+                "questCompletion": False,
+                "nativeMappingId":
+                    "leveldata-airwall-mission-radio-memorypack-v1d4",
+                "nativeConsumer":
+                    "AirWall pushback -> GameAction.PlayRadio",
+                "levelIds": ["indie_dg005"],
+                "sourceFiles": ["indie_dg005_lv_data_sub_e6m1.json"],
+                "sourcePath": "LevelData/indie_dg005/e6m1.json",
+                "recordOffset": 5,
+                "recordEndOffset": 242,
+                "serializedMemberCount": 8,
+                "airWallGroupId": "25600010001",
+                "airWallSlotId": 0,
+                "airWallDefaultOn": False,
+                "targetMissionStateChecks": [{
+                    "transition": "rise",
+                    "id": "e6m1d5",
+                    "isQuest": False,
+                    "targetMissionId": "e6m1d5",
+                    "detailState": 2,
+                    "comparison": "equal",
+                }],
+            },
+            {
+                "key": "radio_e6m1_21",
+                "relation": "focus_mode_interact_locked_radio",
+                "direction": "context",
+                "phase": "interact_locked",
+                "confidence": "direct_mission_scope",
+                "storyOwnerMission": "e6m1",
+                "focusModeId": "e6m1_ZhuangfyBanGongShi",
+                "focusModeMissionId": "e6m1d5",
+                "focusModeField": "radioIdInteractLocked",
+                "subDataParentId": 25600010000,
+            },
+        ])
+        report = gap_queue.build_gap_report(
+            {
+                "_schema": "partial",
+                "language": "CN",
+                "missions": [partial],
+            },
+            {
+                "e6m1": mission_payload(),
+                "e6m1d5": dependent,
+            },
+            {"e6m1", "e6m1d5"},
+        )
+
+        row = report["missions"][0]
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(
+            {
+                closure["relation"]
+                for closure in row[
+                    "closedExactRuntimeConfigIsolatedScenes"
+                ]
+            },
+            {
+                "airwall_mission_state_radio_playback_context",
+                "focus_mode_interact_locked_radio",
+            },
+        )
+
     def test_dialog_finish_dependency_requires_exact_typed_source(self) -> None:
         partial = partial_mission(
             "e9m2",
@@ -2276,6 +2366,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e5m2_2",
                 "dlg_e5m2_8",
                 "misc_dlg_e5m2_3d5",
+                "dlg_e6m1_14",
+                "dlg_e6m1_15",
                 "dlg_e6m3_6",
                 "dlg_e6m3_12",
                 "misc_dlg_e6m3_3d5",
@@ -2895,6 +2987,35 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e10m3_6",
                 "text_e10m3_8",
                 "text_e10m4_1",
+            },
+        )
+
+    def test_declared_e6m1_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E6M1_RADIOS,
+            {"radio_e6m1_19"},
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e6m1_14"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 4)
+        self.assertEqual(
+            dialog["npcProxyConsumer"]["proxyId"],
+            "lugang_map02_e6m1ZhenLie",
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e6m1_15"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 3)
+        self.assertEqual(len(dialog["optionIds"]), 2)
+        self.assertEqual(
+            {
+                row["proxyId"]
+                for row in dialog["npcProxyConsumers"]
+            },
+            {
+                "puyuan_map02_default",
+                "puyuan_map02_e6m1ZhenLie",
             },
         )
 

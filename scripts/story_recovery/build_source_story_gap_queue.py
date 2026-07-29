@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v50"
+SCHEMA = "sourceStoryGapQueue.v51"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -128,7 +128,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v29"
+    "current-build-offline-story-carrier-exhaustion-v30"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -1179,6 +1179,76 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
         ),
         "optionIds": (),
     },
+    "dlg_e6m1_14": {
+        "missionId": "e6m1",
+        "filename": "dlg_e6m1_14_p68EC42E095AD2906.json",
+        "sha256":
+            "2D52AD3AFC477391C10D0CC4F7A6E6EDAF26ABB4B5570D2A117FED25D4DB1D29",
+        "extraConfigFilename":
+            "dlg_e6m1_14_extra_config_p8B575A1C0B9C3E39.json",
+        "extraConfigSha256":
+            "CD3EA19136503B91592A6FE009C4158438C13EA999A3529B98FF8CE40B270359",
+        "lineIds": (
+            "dlg_e6m1_14_001",
+            "dlg_e6m1_14_002",
+            "dlg_e6m1_14_003",
+            "dlg_e6m1_14_004",
+        ),
+        "optionIds": (),
+        "npcProxyConsumer": {
+            "proxyId": "lugang_map02_e6m1ZhenLie",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e6m1_14",
+            },
+        },
+    },
+    "dlg_e6m1_15": {
+        "missionId": "e6m1",
+        "filename": "dlg_e6m1_15_pA6CAD82C1F00354C.json",
+        "sha256":
+            "60B8DBAD94965EDAD4936DCDCDEDC2B79F65B4C4514CDC0D54164AED44CD49AA",
+        "extraConfigFilename":
+            "dlg_e6m1_15_extra_config_p89766E5FF99A9E3D.json",
+        "extraConfigSha256":
+            "A59BE414E636958B7B85D98BE65563675160E538E9DB22E230A60FB486BE4A0A",
+        "lineIds": (
+            "dlg_e6m1_15_001",
+            "dlg_e6m1_15_002",
+            "dlg_e6m1_15_003",
+        ),
+        "optionIds": (
+            "option_dlg_e6m1_15_1_001",
+            "option_dlg_e6m1_15_1_002",
+        ),
+        "npcProxyConsumers": (
+            {
+                "proxyId": "puyuan_map02_default",
+                "entryIndex": 0,
+                "entry": {
+                    "addDialogExOption": False,
+                    "envTalkData": {"envTalkOverrideNpc": True},
+                    "dialogExOptionData": [],
+                    "dialogId": "dlg_e6m1_15",
+                    "missionId": "",
+                },
+            },
+            {
+                "proxyId": "puyuan_map02_e6m1ZhenLie",
+                "entryIndex": 0,
+                "entry": {
+                    "addDialogExOption": False,
+                    "envTalkData": {"envTalkOverrideNpc": True},
+                    "dialogExOptionData": [],
+                    "dialogId": "dlg_e6m1_15",
+                    "missionId": "",
+                },
+            },
+        ),
+    },
     "dlg_e6m3_12": {
         "missionId": "e6m3",
         "filename": "dlg_e6m3_12_p1A4EB66DB59018DA.json",
@@ -1667,6 +1737,9 @@ OFFLINE_EXHAUSTION_E5M1_RADIOS = frozenset({
     "radio_e5m1_12",
     "radio_e5m1_15",
 })
+OFFLINE_EXHAUSTION_E6M1_RADIOS = frozenset({
+    "radio_e6m1_19",
+})
 OFFLINE_EXHAUSTION_E7M4_RADIOS = frozenset({"radio_e7m4_3"})
 OFFLINE_EXHAUSTION_E10M1_RADIOS = frozenset({
     "radio_e10m1_6",
@@ -1683,6 +1756,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
     "e5m1": OFFLINE_EXHAUSTION_E5M1_RADIOS,
     "e5m2": OFFLINE_EXHAUSTION_E5M2_RADIOS,
+    "e6m1": OFFLINE_EXHAUSTION_E6M1_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e6m4": OFFLINE_EXHAUSTION_E6M4_RADIOS,
     "e7m2": OFFLINE_EXHAUSTION_E7M2_RADIOS,
@@ -2601,18 +2675,42 @@ def build_offline_exhaustion_index(
         shared_timeline = definition.get("sharedTimeline")
         owned_timeline = definition.get("ownedTimeline")
         npc_proxy_consumer = definition.get("npcProxyConsumer")
-        npc_proxy_consumer_context: dict[str, Any] | None = None
+        npc_proxy_consumers = definition.get("npcProxyConsumers")
+        npc_proxy_consumer_contexts: list[dict[str, Any]] = []
         npc_proxy_consumer_valid = True
-        if isinstance(npc_proxy_consumer, dict):
-            proxy_id = safe_key(npc_proxy_consumer.get("proxyId"))
-            entry_index = npc_proxy_consumer.get("entryIndex")
-            expected_entry = npc_proxy_consumer.get("entry")
+        if npc_proxy_consumer is not None and npc_proxy_consumers is not None:
+            npc_proxy_consumer_valid = False
+        consumer_specs = (
+            [npc_proxy_consumer]
+            if isinstance(npc_proxy_consumer, dict)
+            else (
+                list(npc_proxy_consumers)
+                if isinstance(npc_proxy_consumers, (list, tuple))
+                else []
+            )
+        )
+        if (
+            npc_proxy_consumers is not None
+            and (
+                not isinstance(npc_proxy_consumers, (list, tuple))
+                or not npc_proxy_consumers
+                or any(
+                    not isinstance(spec, dict)
+                    for spec in npc_proxy_consumers
+                )
+            )
+        ):
+            npc_proxy_consumer_valid = False
+        for consumer_spec in consumer_specs:
+            proxy_id = safe_key(consumer_spec.get("proxyId"))
+            entry_index = consumer_spec.get("entryIndex")
+            expected_entry = consumer_spec.get("entry")
             proxy_entries = (
                 (npc_proxy_ex_table.get("data") or {}).get(proxy_id)
                 if isinstance(npc_proxy_ex_table.get("data"), dict)
                 else None
             )
-            npc_proxy_consumer_valid = (
+            current_consumer_valid = (
                 isinstance(entry_index, int)
                 and not isinstance(entry_index, bool)
                 and isinstance(expected_entry, dict)
@@ -2622,7 +2720,10 @@ def build_offline_exhaustion_index(
                 and expected_entry.get("dialogId") == registry_key
                 and not safe_key(expected_entry.get("missionId"))
             )
-            npc_proxy_consumer_context = {
+            if not current_consumer_valid:
+                npc_proxy_consumer_valid = False
+                continue
+            npc_proxy_consumer_contexts.append({
                 "proxyId": proxy_id,
                 "entryIndex": entry_index,
                 "dialogId": (
@@ -2639,7 +2740,12 @@ def build_offline_exhaustion_index(
                 "missionOwnership": False,
                 "orderEvidence": False,
                 "graphEffect": "none",
-            }
+            })
+        npc_proxy_consumer_context = (
+            npc_proxy_consumer_contexts[0]
+            if len(npc_proxy_consumer_contexts) == 1
+            else None
+        )
         timeline_context: dict[str, Any] | None = None
         if isinstance(shared_timeline, dict):
             owner_dialog_key = safe_key(
@@ -2847,6 +2953,7 @@ def build_offline_exhaustion_index(
             "optionIds": list(expected_option_ids),
             "timelineContext": timeline_context,
             "npcProxyConsumer": npc_proxy_consumer_context,
+            "npcProxyConsumers": npc_proxy_consumer_contexts,
         }
     if not dialog_definitions_valid:
         status["status"] = "inactive_dialog_definition_validation_failed"
@@ -3237,7 +3344,7 @@ def build_offline_exhaustion_index(
             "evidenceKind":
                 (
                     "npc_proxy_dialog_consumer_without_mission_owner"
-                    if validation["npcProxyConsumer"]
+                    if validation["npcProxyConsumers"]
                     else
                     "registered_dialog_definition_without_recovered_activator"
                 ),
@@ -3279,6 +3386,7 @@ def build_offline_exhaustion_index(
             "optionIds": validation["optionIds"],
             "sharedTimelineContext": validation["timelineContext"],
             "npcProxyConsumer": validation["npcProxyConsumer"],
+            "npcProxyConsumers": validation["npcProxyConsumers"],
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
@@ -3288,7 +3396,7 @@ def build_offline_exhaustion_index(
                     "DialogTree as an NPC interaction dialog, but its authored "
                     "missionId is empty; no exact mission/quest owner or "
                     "activation timing is serialized"
-                    if validation["npcProxyConsumer"]
+                    if validation["npcProxyConsumers"]
                     else
                     "the exact DialogTree, MemoryPack DialogId registration, "
                     "DialogTextTable rows, and AudioDialog membership where "
@@ -5454,6 +5562,87 @@ def _closed_exact_runtime_config_isolated_scenes(
                 "establish relative Story chronology"
             ),
         })
+    for row in _flow_story_connections(flow):
+        scene_key = safe_key(row.get("key"))
+        mission_state_id = safe_key(row.get("missionStateId"))
+        target_checks = [
+            check
+            for check in row.get("targetMissionStateChecks") or []
+            if isinstance(check, dict)
+        ]
+        if (
+            scene_key not in isolated_scene_keys
+            or safe_key(row.get("relation"))
+            != "airwall_mission_state_radio_playback_context"
+            or safe_key(row.get("direction")) != "context"
+            or safe_key(row.get("phase"))
+            != "airwall_mission_state_gate"
+            or safe_key(row.get("confidence"))
+            != "native_exact_serialized_co_carrier"
+            or safe_key(row.get("evidenceTier")) != "direct"
+            or safe_key(row.get("storyOwnerMission")) != owner_mission
+            or not mission_state_id
+            or row.get("storyBinding") is not True
+            or row.get("ownership") is not False
+            or row.get("dependencyOnly") is not False
+            or row.get("questActivation") is not False
+            or row.get("questPlayback") is not False
+            or row.get("questCompletion") is not False
+            or safe_key(row.get("nativeMappingId"))
+            != "leveldata-airwall-mission-radio-memorypack-v1d4"
+            or "GameAction.PlayRadio" not in safe_key(
+                row.get("nativeConsumer")
+            )
+            or not _string_list(row.get("levelIds"))
+            or not _string_list(row.get("sourceFiles"))
+            or not safe_key(row.get("sourcePath"))
+            or not isinstance(row.get("recordOffset"), int)
+            or isinstance(row.get("recordOffset"), bool)
+            or not isinstance(row.get("recordEndOffset"), int)
+            or isinstance(row.get("recordEndOffset"), bool)
+            or row["recordEndOffset"] <= row["recordOffset"]
+            or row.get("serializedMemberCount") != 8
+            or not safe_key(row.get("airWallGroupId"))
+            or not isinstance(row.get("airWallSlotId"), int)
+            or isinstance(row.get("airWallSlotId"), bool)
+            or not isinstance(row.get("airWallDefaultOn"), bool)
+            or not target_checks
+            or any(
+                safe_key(check.get("targetMissionId"))
+                != mission_state_id
+                or safe_key(check.get("comparison")) != "equal"
+                or not isinstance(check.get("isQuest"), bool)
+                or not isinstance(check.get("detailState"), int)
+                or isinstance(check.get("detailState"), bool)
+                for check in target_checks
+            )
+        ):
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_native_playback_context_no_relative_order",
+            "relation": "airwall_mission_state_radio_playback_context",
+            "missionStateId": mission_state_id,
+            "targetMissionStateChecks": target_checks,
+            "levelIds": _string_list(row.get("levelIds")),
+            "sourceFiles": _string_list(row.get("sourceFiles")),
+            "sourcePath": safe_key(row.get("sourcePath")),
+            "recordOffset": row["recordOffset"],
+            "recordEndOffset": row["recordEndOffset"],
+            "airWallGroupId": safe_key(row.get("airWallGroupId")),
+            "nativeMappingId": safe_key(row.get("nativeMappingId")),
+            "activationBoundary": (
+                "the exact AirWall row gates wall state on synchronized "
+                "mission/quest state and the later pushback callback plays "
+                "this radio; it does not prove a mission transition trigger "
+                "or quest-owned playback"
+            ),
+            "orderBoundary": (
+                "wall state, row order, and a later local pushback event do "
+                "not establish relative Story chronology"
+            ),
+        })
     completion_grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in _flow_story_connections(flow):
         scene_key = safe_key(row.get("key"))
@@ -6755,14 +6944,20 @@ def build_gap_report(
         for connection in _flow_story_connections(flow):
             owner_mission = safe_key(connection.get("storyOwnerMission"))
             proxy_mission = safe_key(connection.get("npcProxyMissionId"))
+            relation = safe_key(connection.get("relation"))
             if (
-                safe_key(connection.get("relation"))
-                != "npc_proxy_ex_mission_context"
-                or not owner_mission
+                not owner_mission
                 or owner_mission == context_mission
-                or proxy_mission != context_mission
                 or owner_mission not in mission_payloads
             ):
+                continue
+            if relation == "npc_proxy_ex_mission_context":
+                if proxy_mission != context_mission:
+                    continue
+            elif relation not in {
+                "airwall_mission_state_radio_playback_context",
+                "focus_mode_interact_locked_radio",
+            }:
                 continue
             cross_owner_connections[owner_mission].append({
                 **connection,
