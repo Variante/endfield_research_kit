@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v59"
+SCHEMA = "sourceStoryGapQueue.v60"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -129,7 +129,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v38"
+    "current-build-offline-story-carrier-exhaustion-v39"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -218,6 +218,13 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
         "orderBoundary": (
             "the manual video attachment and TextTable row order do not "
             "establish e3m4 activation, ownership, or relative Story order"
+        ),
+    },
+    "cutscene_e4m1_1": {
+        "missionId": "e4m1",
+        "definitionRowKeys": (
+            "cutscene_e4m1_1_01",
+            "cutscene_e4m1_1_02",
         ),
     },
     "cutscene_e6m3_2": {
@@ -2045,6 +2052,10 @@ OFFLINE_EXHAUSTION_E3M4_RADIOS = frozenset({
     "radio_e3m4_1",
     "radio_e3m4_2",
 })
+OFFLINE_EXHAUSTION_E4M1_RADIOS = frozenset({
+    "radio_e4m1_106",
+    "radio_e4m1_107",
+})
 OFFLINE_EXHAUSTION_E7M4_RADIOS = frozenset({"radio_e7m4_3"})
 OFFLINE_EXHAUSTION_E8M2_RADIOS = frozenset({
     "radio_e8m2_1",
@@ -2068,6 +2079,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e2m7": OFFLINE_EXHAUSTION_E2M7_RADIOS,
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
     "e3m4": OFFLINE_EXHAUSTION_E3M4_RADIOS,
+    "e4m1": OFFLINE_EXHAUSTION_E4M1_RADIOS,
     "e5m1": OFFLINE_EXHAUSTION_E5M1_RADIOS,
     "e5m2": OFFLINE_EXHAUSTION_E5M2_RADIOS,
     "e6m1": OFFLINE_EXHAUSTION_E6M1_RADIOS,

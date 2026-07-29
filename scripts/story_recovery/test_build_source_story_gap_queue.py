@@ -2763,6 +2763,24 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_e4m1_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E4M1_RADIOS,
+            {"radio_e4m1_106", "radio_e4m1_107"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES[
+                "cutscene_e4m1_1"
+            ],
+            {
+                "missionId": "e4m1",
+                "definitionRowKeys": (
+                    "cutscene_e4m1_1_01",
+                    "cutscene_e4m1_1_02",
+                ),
+            },
+        )
+
     def test_exact_lua_controller_playback_closes_isolated_cutscene(
         self,
     ) -> None:
