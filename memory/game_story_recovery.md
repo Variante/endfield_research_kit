@@ -4306,13 +4306,14 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v66`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v67`
    turns the completed exact `e0m0`, `e0m2`, `e1m1`, `e1m2`, `e1m3`, `e1m4`,
    `e1m10`, `e2m2`, `e2m3`, `e2m4`,
    `e2m5`, `e2m6`, `e2m7`, `e3m2`, `e3m3`, `e3m4`, `e4m1`, `e5m1`,
    `e5m2`, `e5m4`,
    `e6m1`, `e6m2`, `e6m3`,
-   `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e8m2`, `e8m3`, `e9m2`, `e9m3`, `e9m4`,
+   `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e8m1`, `e8m2`, `e8m3`, `e9m2`, `e9m3`,
+   `e9m4`,
    `e10m1`, `e10m3`, `e10m4`, `e11m1`, `e11m2`, `e11m3`, `e11m4`,
    `e11m5`, `e11m6`, and `e11m8` negative boundaries into fail-closed
    operational deferrals.
@@ -4797,6 +4798,19 @@ Current main-story priorities:
    is score 162 with 27 actionable core isolated rows, 108 exact-native
    isolated closures, 95 exact-runtime-config closures, and 9
    strict-attachment diagnostics. e8m1 is next at score 10.
+   The e8m1 pass closes two different definition carriers without treating
+   dialog structure as activation evidence. Registered `dlg_e8m1_10` has
+   exactly 13 lines, five options, complete AudioDialog membership, and exact
+   primary/extra DialogTree hashes. `ximo_map02_default[0]` selects it as an
+   NPC interaction dialog, but the entry's `missionId` is empty; this proves
+   the consumer and preserves the option structure, not e8m1 ownership or
+   chronology. `radio_e8m1_9` is a one-line, audio-complete RadioTable
+   definition with no recovered consumer. Both Story route arrays are empty
+   and the carrier audit has no typed candidate. v67/v46 has 329 declarations
+   and 329 active deferrals. The main-story bucket is score 152 with 25
+   actionable core isolated rows, 108 exact-native isolated closures, 95
+   exact-runtime-config closures, and 9 strict-attachment diagnostics. e10m2
+   is next at score 10.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,

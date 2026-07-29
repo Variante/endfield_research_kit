@@ -2996,6 +2996,31 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             {"radio_e8m3_27"},
         )
 
+    def test_declared_e8m1_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E8M1_RADIOS,
+            {"radio_e8m1_9"},
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e8m1_10"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 13)
+        self.assertEqual(len(dialog["optionIds"]), 5)
+        self.assertEqual(
+            dialog["npcProxyConsumer"],
+            {
+                "proxyId": "ximo_map02_default",
+                "entryIndex": 0,
+                "entry": {
+                    "addDialogExOption": False,
+                    "envTalkData": {"envTalkOverrideNpc": True},
+                    "dialogExOptionData": [],
+                    "dialogId": "dlg_e8m1_10",
+                    "missionId": "",
+                },
+            },
+        )
+
     def test_exact_lua_controller_playback_closes_isolated_cutscene(
         self,
     ) -> None:
@@ -3153,6 +3178,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e7m3_15",
                 "dlg_e7m3_16",
                 "dlg_e7m4_7",
+                "dlg_e8m1_10",
                 "dlg_e10m1_7",
                 "dlg_e10m3_3",
                 "dlg_e10m3_9",
