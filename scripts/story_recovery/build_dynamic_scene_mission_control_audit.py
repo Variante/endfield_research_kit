@@ -472,7 +472,9 @@ def exported_level_scripts(root: Path) -> dict[str, list[dict[str, str]]]:
     return result
 
 
-def story_occurrences() -> dict[str, list[dict[str, Any]]]:
+def story_occurrences(
+    level_script_root: Path = DEFAULT_LEVEL_SCRIPT_ROOT,
+) -> dict[str, list[dict[str, Any]]]:
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
     from scripts.story_builder.level_bindings import (  # local import is expensive
@@ -480,7 +482,9 @@ def story_occurrences() -> dict[str, list[dict[str, Any]]]:
     )
 
     by_script: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for story_key, rows in build_levelscript_action_story_occurrences().items():
+    for story_key, rows in build_levelscript_action_story_occurrences(
+        level_script_root
+    ).items():
         for row in rows:
             compact = {
                 "storyKey": story_key,
@@ -513,8 +517,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- grids decoded: {counts['gridsDecoded']}",
         f"- mission-controlled roots: {counts['missionControlledRoots']}",
         f"- roots whose IdComp.logicId equals an exported LevelScript id: {counts['levelScriptIdentityRoots']}",
-        f"- identity-matched roots with Story playback: {counts['storyIdentityRoots']}",
-        f"- matching Story playback occurrences: {counts['storyOccurrences']}",
+        f"- identity-matched roots with Story action-list occurrences: {counts['storyIdentityRoots']}",
+        f"- matching Story action-list occurrences: {counts['storyOccurrences']}",
         f"- mission-controlled roots with ScriptControlComp: {counts['missionControlledRootsWithScriptControl']}",
         f"- LevelScript-id matches with ScriptControlComp: {counts['levelScriptIdentityRootsWithScriptControl']}",
         f"- Story-bearing id matches with ScriptControlComp: {counts['storyIdentityRootsWithScriptControl']}",
@@ -669,7 +673,7 @@ def main() -> int:
     chunks, errors = decode_chunks(lines)
     roots, duplicate_grids = build_mission_roots(chunks)
     scripts = exported_level_scripts(args.level_script_root)
-    occurrences = story_occurrences()
+    occurrences = story_occurrences(args.level_script_root)
     metadata_source = (
         fingerprint_file(args.metadata)
         if args.metadata.is_file()
@@ -751,10 +755,16 @@ def main() -> int:
                 "LevelScriptContainer selected by LevelScriptPtr"
             ),
             "directBridgeFound": False,
+            "directBridgeMeaning": (
+                "no DynamicScene MissionControl condition to LevelScript "
+                "activation edge"
+            ),
+            "missionActivationBridgeFound": False,
             "missionGraphAction": "none",
             "promotionRequirement": (
-                "a typed serialized carrier or runtime path must pass one "
-                "identity into the other subsystem without an unproven remap"
+                "a typed serialized or runtime edge must show that the "
+                "DynamicScene mission condition activates the matched "
+                "LevelScript header/action chain"
             ),
             "scriptControlBoundary": {
                 "serializedType":

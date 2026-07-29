@@ -8,8 +8,8 @@ This report uses installed DynamicStreaming FlatBuffers and exported LevelScript
 - grids decoded: 4717
 - mission-controlled roots: 387
 - roots whose IdComp.logicId equals an exported LevelScript id: 125
-- identity-matched roots with Story playback: 72
-- matching Story playback occurrences: 216
+- identity-matched roots with Story action-list occurrences: 72
+- matching Story action-list occurrences: 218
 - mission-controlled roots with ScriptControlComp: 0
 - LevelScript-id matches with ScriptControlComp: 0
 - Story-bearing id matches with ScriptControlComp: 0
@@ -77,7 +77,7 @@ This report uses installed DynamicStreaming FlatBuffers and exported LevelScript
 | map02 | 23100350002 | f1m32_q#Main2Complete | cutscene_f1m32_rift_main2_complete | `Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes` |
 | map02 | 23100350003 | f1m32_q#Main3Complete | dlg_f1m32_DapanShow, dlg_f1m32_5, cutscene_f1m32_rift_main3_complete | `Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes` |
 | map02 | 23100350004 | f1m32_q#Side1Complete | cutscene_f1m32_rift_side1_complete, dlg_f1m32_MifuShow, dlg_f1m32_9 | `Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes` |
-| map02 | 23100350005 | f1m32_q#Side2Complete | cutscene_f1m32_rift_side2_complete, dlg_f1m32_HezhiqiShow, dlg_f1m32_10 | `Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes` |
+| map02 | 23100350005 | f1m32_q#Side2Complete | dlg_f1m32_15, dlg_f1m32_15_1, dlg_f1m32_HezhiqiShow, dlg_f1m32_10, cutscene_f1m32_rift_side2_complete | `Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes` |
 | map02 | 23100350006 | f1m32_q#Side1Complete | dlg_f1m32_LizhiyanShow, dlg_f1m32_11, dlg_f1m32_12 | `Data/DynamicStreaming/PC/Scene/map02/fb_main_7_0000_0000.bytes` |
 | map02 | 23200013031 | sm2l5m1_q#24 | radio_sm2l5m1_21, radio_sm2l5m1_22, radio_sm2l5m1_23 | `Data/DynamicStreaming/PC/Scene/map02/fb_main_5_0002_0001.bytes` |
 | map02 | 23300000023 | e7m4 | radio_e7m4_12, radio_e7m4_10, radio_e7m4_14, radio_e7m4_20, radio_e7m4_8, radio_e7m4_15, radio_e7m4_11, radio_e7m4_16, radio_e7m4_18, radio_e7m4_19, radio_e7m4_17, cutscene_e7m4_2, dlg_e7m4_2, radio_e7m4_4, radio_e7m4_4, radio_e7m4_4, radio_e7m4_7, radio_e7m4_9 | `Data/DynamicStreaming/PC/Scene/map02/fb_main_4_0003_0001.bytes` |

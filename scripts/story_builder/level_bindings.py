@@ -1631,17 +1631,26 @@ def _load_leveldata_named_tables(path: Path) -> list[list[dict]]:
     return tables
 
 
-def _load_levelscript_binding_data(level_id: str) -> dict:
-    if level_id in _LEVELSCRIPT_BINDING_CACHE:
-        return _LEVELSCRIPT_BINDING_CACHE[level_id]
+def _load_levelscript_binding_data(
+    level_id: str,
+    level_script_root: Path | None = None,
+) -> dict:
+    root = level_script_root or LEVELSCRIPT_DIR
+    cache_key = (
+        level_id
+        if level_script_root is None
+        else f"{root.resolve()}::{level_id}"
+    )
+    if cache_key in _LEVELSCRIPT_BINDING_CACHE:
+        return _LEVELSCRIPT_BINDING_CACHE[cache_key]
 
     out = {
         "uidPayloads": {},
         "files": [],
     }
-    level_dir = LEVELSCRIPT_DIR / level_id
+    level_dir = root / level_id
     if not level_dir.is_dir():
-        _LEVELSCRIPT_BINDING_CACHE[level_id] = out
+        _LEVELSCRIPT_BINDING_CACHE[cache_key] = out
         return out
 
     def add_payload(uid: str, payload: str) -> None:
@@ -1692,23 +1701,32 @@ def _load_levelscript_binding_data(level_id: str) -> dict:
             "plainStringHits": sorted_plain_hits,
         })
 
-    _LEVELSCRIPT_BINDING_CACHE[level_id] = out
+    _LEVELSCRIPT_BINDING_CACHE[cache_key] = out
     return out
 
 
-def build_levelscript_action_story_occurrences() -> dict[str, list[dict]]:
+def build_levelscript_action_story_occurrences(
+    level_script_root: Path | None = None,
+) -> dict[str, list[dict]]:
     """Return exact tagged Story ids in decoded LevelScript actionList rows."""
     global _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE
-    if _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE is not None:
+    root = level_script_root or LEVELSCRIPT_DIR
+    use_default_cache = level_script_root is None
+    if use_default_cache and _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE is not None:
         return _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE
     out: dict[str, list[dict]] = defaultdict(list)
     seen: set[tuple] = set()
-    if not LEVELSCRIPT_DIR.is_dir():
-        _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE = {}
+    if not root.is_dir():
+        if use_default_cache:
+            _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE = {}
         return {}
 
-    for level_dir in sorted(path for path in LEVELSCRIPT_DIR.iterdir() if path.is_dir()):
-        info = _load_levelscript_binding_data(level_dir.name)
+    for level_dir in sorted(path for path in root.iterdir() if path.is_dir()):
+        info = (
+            _load_levelscript_binding_data(level_dir.name)
+            if level_script_root is None
+            else _load_levelscript_binding_data(level_dir.name, root)
+        )
         for file_info in info.get("files") or []:
             source_file = str(file_info.get("file") or "")
             if not source_file:
@@ -1888,8 +1906,10 @@ def build_levelscript_action_story_occurrences() -> dict[str, list[dict]]:
                             )
                             out[story_key][-1]["nativeEventOwners"] = control_paths
 
-    _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE = dict(out)
-    return _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE
+    result = dict(out)
+    if use_default_cache:
+        _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE = result
+    return result
 
 
 def build_levelscript_native_story_playback_index() -> dict[str, list[dict]]:

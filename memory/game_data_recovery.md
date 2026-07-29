@@ -1704,11 +1704,32 @@ Across 457 current main chunks, `FBDynamicSceneSingleGrid` exposes typed
 `IdComp.UniqueId` only in the DynamicScene logic-id-to-entity-id map, while
 `DynamicSceneMissionControlSystem` reacts to mission/quest state changes. The
 scan found 387 mission-controlled roots and 125 numeric identities also present
-as LevelScript ids; 72 of those touch 216 Story actions. The maintained current
+as LevelScript ids; 72 of those touch 218 Story occurrences in the effective
+Persistent LevelScript root. The maintained current
 audit is
 `reports/story/recovery/dynamic_scene_mission_control_audit.{json,md}` and
 streams the effective installed Persistent overlay rather than depending on a
-saved scratch dump. The adjacent `FBDynamicSceneScriptControlComp` is now
+saved scratch dump. The occurrence reader now uses that same Persistent root;
+the former mixed-root scan used StreamingAssets offsets for two patched
+`map02_lv008/23100350005` actions and omitted two additional tagged action-list
+occurrences. The additional `dlg_f1m32_15` and `_15_1` rows still lack a mapped
+native action class, so they are occurrence evidence rather than typed playback.
+
+The separate action-bridge audit at
+`reports/story/recovery/dynamic_scene_levelscript_action_bridge_audit.{json,md}`
+recovers a genuine identity crossing in the opposite direction. Current
+`ShowSceneDecorationNew` and `ShowSceneDecorationWithHandle` serialize
+`Param<DynamicSceneEntityPtr> _targetDynamicEntity` followed by
+`Param<bool> _visible`. Requiring action-list membership, constant parameters,
+the exact 10-member union layout, and complete payload consumption leaves one
+Story-bearing self-target: `map02_lv001/10100282001`. Its exact slot-80001
+leader-enter chain runs `dlg_c27m3_6` and then
+`ShowSceneDecorationNew(10100282001, false)`. This proves that the LevelScript
+addresses the same DynamicScene root and that both actions share local control
+flow. It does not prove that `MissionControlComp` activates the LevelScript
+header, so ownership/order remain unresolved and `missionGraphAction=none`.
+
+The adjacent `FBDynamicSceneScriptControlComp` is now
 closed rather than inferred from its name: current metadata exposes only
 `DefaultLoad:int32`, its runtime system indexes DynamicScene component/entity
 and logic ids for local decoration/animation/audio/view-state operations, and
@@ -1716,7 +1737,8 @@ zero of the 387 mission-controlled roots co-carries that component. The same
 zero therefore holds for all 125 LevelScript-id matches and all 72
 Story-bearing matches. This equality is a
 useful authored cross-reference but not an ownership bridge: exhaustive native
-caller scans found no DynamicScene/LevelScript-manager join, and the remaining
+caller scans found no DynamicScene mission-control/LevelScript-activation join,
+and the remaining
 `23200013031` candidate is a mission-controlled world-resource root with no
 script component. Its validated LevelData host is the generic `sub_01`, not the
 mission-named `sub_sm2l5m1`. The three `radio_sm2l5m1_21/_22/_23` rows therefore

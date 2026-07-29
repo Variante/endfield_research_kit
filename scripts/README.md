@@ -2405,6 +2405,26 @@ gameplay-video OCR/audio workflow.
   closes the adjacent `FBDynamicSceneScriptControlComp` lead: that struct has
   only `DefaultLoad:int32`, and zero current mission-controlled root co-carries
   it.
+- `story_recovery/build_dynamic_scene_levelscript_action_bridge_audit.py`:
+  follows the identity candidates into current effective LevelScripts and
+  admits only fully consumed constant `ShowSceneDecorationNew` /
+  `ShowSceneDecorationWithHandle` action rows. The typed
+  `DynamicSceneEntityPtr` target is a direct LevelScript-to-DynamicScene
+  identity edge; the audit also compares the exact serialized header/action
+  paths for the target action and Story playback. Results go to
+  `reports/story/recovery/dynamic_scene_levelscript_action_bridge_audit.{json,md}`:
+
+  ```bat
+  python scripts\story_recovery\build_dynamic_scene_levelscript_action_bridge_audit.py
+  ```
+
+  The current build has one exact self-target bridge:
+  `map02_lv001/10100282001` runs `dlg_c27m3_6` and then
+  `ShowSceneDecorationNew(10100282001, false)` on the same
+  `ScriptEvent_OnLeaderEnterTriggerVolume` slot-80001 chain. This proves shared
+  local LevelScript control context, not that the DynamicScene mission
+  condition starts that trigger header. The audit therefore keeps
+  `missionGraphAction=none`.
 - `story_recovery/build_compress_data_story_audit.py`: replaces the raw-byte
   `CompressData.bin` probe with a full logical decode. It hash-gates the current
   `DataCompressManager` native mapping, validates the count/absolute-offset
