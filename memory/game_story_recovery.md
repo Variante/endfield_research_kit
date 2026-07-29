@@ -40,6 +40,32 @@ Together with the existing predecessor topology it adds the strong
 yielding `requiresProcessing` and `abortsOnCompleted` relations without
 inventing precedence.
 
+The other three overrides improve authored context but do not create graph
+edges. `f1m19d3_q#7` replaces an NPC-proxy marker with
+`EntityTrackingInfo(map02_lv004, scriptId=110002, entitySlotId=40002)`.
+The native global-id conversion resolves that pair exactly to
+`WorldEntityRegistry` script `23400110002`, slot `40002`,
+`int_mission_beacon_mid`. The same script contains
+`LevelEvent_OnCustomEvent(f1m19d3_dlg1) ->
+StartDialogAction(dlg_f1m19d3_2)`, but the event has no decoded tracked-slot
+bridge; the quest's independent `CheckTalkOptionFinish(dlg_f1m19d3_2, -1)`
+remains the actual Story condition. The marker is therefore exact
+quest-navigation context, not playback or chronology.
+
+`hidden59` changes 13 guide actions from `ManuallyStartGuideGroup` to
+`ManuallyAcceptClientGuideGroup` and narrows 13 guide objectives from
+`OnUIPanelClose(FacTechTreePopUp) or OnUIPanelOpen(FacTechTree)` to the exact
+panel-close condition. The guide-group ids remain unchanged and no Story id is
+introduced. `sm2l8m1` adds three initial mission variables
+`track_1/track_2/track_3=1`; quest 18 replaces one broad position marker with
+three exact `map02_lv008` positions, each visible only under its corresponding
+mission-variable filter. These are HUD/map visibility rules around the
+server-placeholder objective, not completion, ownership, playback, or order.
+Mission Pipeline schema 17 preserves all exact tracking rows, filters, and
+mission-variable defaults behind `Show debug info`. The current corpus has
+3,496 tracking rows on 3,241 objectives and 217 mission-property rows across
+71 missions; none is converted into an edge.
+
 Unknown relationships must stay unknown. Filename suffixes, file order,
 generated rank, OCR, gameplay calibration, and manual WebUI overrides can be
 useful display or investigation inputs, but they are not original-data proof.
@@ -2780,8 +2806,8 @@ The next nested managed-type candidate is also closed.
 `+0x68` and `m_scriptPtr` at `+0x70`, but that shared value container does not
 make every dictionary which stores it a LevelScript relation.
 
-The current authored MissionRuntime corpus has 490 files. Seventy missions
-serialize 214 property rows with 186 unique keys. Their complete nested field
+The current authored MissionRuntime corpus has 490 files. Seventy-one missions
+serialize 217 property rows with 189 unique keys. Their complete nested field
 shape is only `key/value/type/valueArray/valueBit64/valueString`; no row has a
 `LevelScriptPtr`, `scriptId`, `propertyDic`, or `propertyDict` field.
 `MissionRuntimeAsset::.ctor` allocates an empty `propertyDic` separately and

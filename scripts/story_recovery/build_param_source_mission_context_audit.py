@@ -34,6 +34,7 @@ for _path in (ROOT / "scripts",):
 
 from common import md_escape, write_report_json, write_text_if_changed  # noqa: E402
 from story_builder import levelscript_binary  # noqa: E402
+from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
 
 
 CATALOG_PATH = (
@@ -44,14 +45,21 @@ DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 DEFAULT_METADATA = (
     DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 )
-DEFAULT_MISSION_ROOT = (
+DEFAULT_MISSION_ROOT = select_complete_mission_runtime_root(
     ROOT
     / "export_full"
     / "structured"
     / "StreamingAssets"
     / "Data"
     / "Json"
-    / "MissionRuntimeAsset"
+    / "MissionRuntimeAsset",
+    ROOT
+    / "export_full"
+    / "structured"
+    / "Persistent"
+    / "Data"
+    / "Json"
+    / "MissionRuntimeAsset",
 )
 DEFAULT_LEVELSCRIPT_ROOT = (
     ROOT

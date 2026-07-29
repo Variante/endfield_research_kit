@@ -33,16 +33,22 @@ from common import (
     split_csv_values,
     write_report_json as write_json,
 )
+from story_builder.mission_assets import select_complete_mission_runtime_root
 
 
 STRUCTURED_ROOT = EXPORT_ROOT / "structured" / "StreamingAssets"
 DATA_JSON_ROOT = STRUCTURED_ROOT / "Data" / "Json"
 TABLE_ROOT = STRUCTURED_ROOT / "Table"
 LUA_ROOT = STRUCTURED_ROOT / "Lua" / "Data" / "LuaScripts"
+PERSISTENT_JSON_ROOT = EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Json"
+MISSION_RUNTIME_ROOT = select_complete_mission_runtime_root(
+    DATA_JSON_ROOT / "MissionRuntimeAsset",
+    PERSISTENT_JSON_ROOT / "MissionRuntimeAsset",
+)
 
 DEFAULT_SCAN_TARGETS = (
     ("table", TABLE_ROOT),
-    ("missionRuntime", DATA_JSON_ROOT / "MissionRuntimeAsset"),
+    ("missionRuntime", MISSION_RUNTIME_ROOT),
     ("levelScript", DATA_JSON_ROOT / "LevelScriptData"),
     ("levelScriptTemplate", DATA_JSON_ROOT / "LevelScriptTemplateData"),
     ("gameplayConfig", DATA_JSON_ROOT / "GameplayConfig"),

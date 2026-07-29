@@ -420,7 +420,7 @@ Mission Pipeline:
   as a closed managed-carrier card with the exact offsets, consumer address,
   zero-instance count, and explicit zero-edge result.
   Schema v8 adds the adjacent mission-property carrier closure. The Native
-  boundary now distinguishes 214 authored `MissionRuntimeAsset.properties`
+  boundary now distinguishes 217 authored `MissionRuntimeAsset.properties`
   rows and the server-synchronized `MissionData.propertyDict` from
   `ParamVariable.m_scriptPtr`, which is attached by LevelScript
   property/blackboard event subscriptions. The card exposes the exact
@@ -470,6 +470,14 @@ Mission Pipeline:
   Its tooltip explicitly separates the script's recovered dialog playback
   context from submission UI ownership. The current corpus has exactly one
   such co-gate across 490 missions.
+  Schema v17 adds authored tracking and mission-variable inspection without
+  changing the graph. With `Show debug info`, objective cards expose all 3,496
+  typed tracking rows, exact positions/entity operands, and their normalized
+  visibility filters; the structure panel exposes 217 initial property rows
+  across 71 missions. This makes the three filtered `sm2l8m1_q#18` markers and
+  the exact `f1m19d3_q#7` tracked script/entity slot visible. Normal mode hides
+  both blocks, and neither surface claims a writer, completion source, playback
+  trigger, ownership relation, or ordering edge.
   Native paths with no network exchange are separated again: BattleSignal is
   shown as local Ability-action dispatch with only signal/value identity, not
   placed into either C->S or S->C lanes.

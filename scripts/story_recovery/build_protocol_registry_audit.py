@@ -30,6 +30,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
 from common import ROOT, md_escape, write_report_json, write_text_if_changed  # noqa: E402
+from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
 
 
 DEFAULT_METADATA = Path(
@@ -44,14 +45,21 @@ REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
 RUNTIME_HOOK_MANIFEST = (
     ROOT / "scripts" / "story_recovery" / "mission_runtime_trace_hooks.json"
 )
-MISSION_RUNTIME_ROOT = (
+MISSION_RUNTIME_ROOT = select_complete_mission_runtime_root(
     ROOT
     / "export_full"
     / "structured"
     / "StreamingAssets"
     / "Data"
     / "Json"
-    / "MissionRuntimeAsset"
+    / "MissionRuntimeAsset",
+    ROOT
+    / "export_full"
+    / "structured"
+    / "Persistent"
+    / "Data"
+    / "Json"
+    / "MissionRuntimeAsset",
 )
 MEMORYPACK_UNION_AUDIT = (
     REPORT_ROOT / "memorypack_union_formatter_tag_audit.json"
