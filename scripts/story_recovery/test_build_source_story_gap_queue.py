@@ -1990,7 +1990,18 @@ class SourceStoryGapQueueTests(unittest.TestCase):
     ) -> None:
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS),
-            {"dlg_e11m2_17", "dlg_e11m2_18", "dlg_e11m6_9"},
+            {
+                "dlg_e11m2_17",
+                "dlg_e11m2_18",
+                "dlg_e11m5_9",
+                "dlg_e11m5_10",
+                "dlg_e11m5_11",
+                "dlg_e11m5_12",
+                "dlg_e11m5_13",
+                "dlg_e11m5_18",
+                "dlg_e11m5_19",
+                "dlg_e11m6_9",
+            },
         )
         shared = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
             "dlg_e11m6_9"
@@ -1999,6 +2010,38 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(shared["trackPathId"], 5795311945645305682)
         self.assertEqual(
             shared["embeddedLineIds"],
+            (
+                "dlg_e11m6_9_005",
+                "dlg_e11m6_9_006",
+                "dlg_e11m6_9_007",
+                "dlg_e11m6_9_003",
+                "dlg_e11m6_9_008",
+                "dlg_e11m6_9_004",
+            ),
+        )
+
+    def test_declared_e11m5_frontier_preserves_owned_mixed_timeline(
+        self,
+    ) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E11M5_RADIOS,
+            {
+                "radio_e11m5_12",
+                "radio_e11m5_19",
+                "radio_e11m5_20",
+                "radio_e11m5_21",
+                "radio_e11m5_22",
+                "radio_e11m5_23",
+                "radio_e11m5_24",
+            },
+        )
+        owned = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e11m5_9"
+        ]["ownedTimeline"]
+        self.assertEqual(owned["timeline"], "dlgtl_e11m5_9_sub_1")
+        self.assertEqual(owned["trackPathId"], 5795311945645305682)
+        self.assertEqual(
+            owned["fullLineIds"][9:15],
             (
                 "dlg_e11m6_9_005",
                 "dlg_e11m6_9_006",
@@ -2061,6 +2104,46 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "evidenceKind"
             ],
             "radio_definition_without_recovered_consumer",
+        )
+        self.assertEqual(row["score"], 0)
+
+    def test_exact_owned_timeline_dialog_can_defer_without_unlinked_flag(
+        self,
+    ) -> None:
+        story_key = "dlg_e11m5_9"
+        partial = partial_mission(
+            "e11m5",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        evidence = {
+            story_key: {
+                "sceneKey": story_key,
+                "missionId": "e11m5",
+                "recoveryStatus":
+                    "deferred_current_build_offline_surface_exhausted",
+                "evidenceKind":
+                    "registered_dialog_definition_without_recovered_activator",
+                "sharedTimelineContext": {
+                    "relation":
+                        "owned_dialog_timeline_exact_mixed_story_context",
+                    "graphEffect": "none",
+                },
+                "graphEffect": "none",
+            },
+        }
+
+        row = gap_queue.build_gap_row(
+            partial,
+            mission_payload(),
+            mission_bundle_exists=True,
+            offline_exhaustion_index=evidence,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(
+            row["metrics"]["deferredOfflineExhaustedIsolatedScenes"],
+            1,
         )
         self.assertEqual(row["score"], 0)
 
