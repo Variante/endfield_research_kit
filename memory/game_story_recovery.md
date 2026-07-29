@@ -4306,10 +4306,10 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v27`
-   turns the completed exact `e9m2`, `e10m4`, `e11m1`, `e11m2`, `e11m4`,
-   `e11m5`, and `e11m6` negative boundaries into fail-closed operational
-   deferrals.
+   block metadata or the installed build changes. `sourceStoryGapQueue.v28`
+   turns the completed exact `e6m3`, `e9m2`, `e10m4`, `e11m1`, `e11m2`,
+   `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
+   operational deferrals.
    It activates only while the exact
    current `GameAssembly.dll`, RadioTable, AudioDialog, TextTable,
    NumIdStrTable, and cutscene-definition hashes match; the carrier-audit
@@ -4331,8 +4331,10 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 151 deferred
-   rows: eight `e9m2` radios plus five cutscenes; 21 `e10m4` radios;
+   and reopen automatically if any gate changes. There are now 162 deferred
+   rows: five `e6m3` radios, three dialogs, two ReadingPopUp definitions, and
+   one text-only cutscene; eight `e9m2` radios plus five cutscenes;
+   21 `e10m4` radios;
    23 `e11m1` radios plus five cutscenes; nine `e11m2`
    radios, four cutscenes, and two dialogs; 34 `e11m4` radios plus its
    rift-camera cutscene; seven `e11m5` radios plus seven dialogs; and 22
@@ -4392,7 +4394,20 @@ Current main-story priorities:
    or a whole-file edge. `dlg_e11m5_10` also records the exact current
    AudioDialog absence of `_002` and `_003` while requiring `_001` membership;
    a changed audio registry reopens the gate. e11m5 drops from 70/14 to score
-   zero. The genuine offline queue now ranks `e6m3` first. Continue
+   zero. The e6m3 pass also recovers one positive mission relation:
+   `e6m3_q#16` success action slot 2 points through exact
+   `MissionRuntimeAsset.clientActionMapKey[0] -> actionList[7]._radioId` to
+   `radio_e6m3_10d3`, whose typed action is `PlayRadio`. This now counts as a
+   strict quest attachment and exact quest-lifecycle playback closure, but
+   still adds no Story-to-Story edge. The other eleven isolated keys are
+   bounded definitions: five RadioTable rows with complete AudioDialog
+   membership; registered `dlg_e6m3_6`, `dlg_e6m3_12`, and canonical
+   `dlg_e6m3_3d5` (surfaced in the WebUI as `misc_dlg_e6m3_3d5`); exact
+   ReadingPopUp/RichContent definitions for `text_e6m3_1` and `_4`; and the
+   14-row TextTable-only `cutscene_e6m3_2`, which has no Timeline registry,
+   indexed root, reverse PPtr relation, or director host. e6m3 drops from
+   63/12 plus one quest-attachment diagnostic to score zero. The genuine
+   offline queue now ranks `e1m3` first. Continue
    offline from its exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
    runtime capture later becomes possible, the existing `e11m1` probe remains

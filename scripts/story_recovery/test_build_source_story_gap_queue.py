@@ -1840,6 +1840,86 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             0,
         )
 
+    def test_exact_mission_client_action_closes_and_attaches_quest(
+        self,
+    ) -> None:
+        story_key = "radio_e6m3_10d3"
+        partial = partial_mission(
+            "e6m3",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        partial["nodes"][0]["kind"] = "radio"
+        payload = mission_payload(quest_ids=["e6m3_q#16"])
+        payload["flow"]["quests"] = [{
+            "id": "e6m3_q#16",
+            "storyConnections": [{
+                "key": story_key,
+                "kind": "radio",
+                "relation": "client_action_succeed",
+                "direction": "quest_to_story",
+                "phase": "succeed",
+                "confidence": "native_typed_direct",
+                "source": (
+                    "MissionRuntimeAsset.clientActionMapKey[0] -> "
+                    "actionMapRaw.actionList[7]._radioId"
+                ),
+                "actionSlot": 2,
+                "actionId": 7,
+                "actionType": "PlayRadio",
+            }],
+        }]
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(row["metrics"]["strictQuestIdsWithStoryAttachment"], 1)
+        self.assertEqual(row["metrics"]["questIdsWithoutStrictStoryAttachment"], 0)
+        closure = row["closedExactRuntimeConfigIsolatedScenes"][0]
+        self.assertEqual(
+            closure["recoveryStatus"],
+            "closed_exact_mission_quest_client_action_no_relative_order",
+        )
+        self.assertEqual(closure["questIds"], ["e6m3_q#16"])
+        self.assertEqual(closure["actionTypes"], ["PlayRadio"])
+
+    def test_mission_client_action_requires_exact_slot_and_source(self) -> None:
+        story_key = "radio_e6m3_10d3"
+        partial = partial_mission(
+            "e6m3",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        payload = mission_payload(quest_ids=["e6m3_q#16"])
+        payload["flow"]["quests"] = [{
+            "id": "e6m3_q#16",
+            "storyConnections": [{
+                "key": story_key,
+                "relation": "client_action_succeed",
+                "direction": "quest_to_story",
+                "phase": "succeed",
+                "confidence": "native_typed_direct",
+                "source": "derived client action",
+                "actionSlot": 1,
+                "actionId": 7,
+                "actionType": "PlayRadio",
+            }],
+        }]
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 1)
+        self.assertEqual(row["metrics"]["strictQuestIdsWithStoryAttachment"], 0)
+        self.assertEqual(row["metrics"]["questIdsWithoutAnyStoryEvidence"], 1)
+
     def test_exact_definition_only_isolated_scene_is_closed(self) -> None:
         partial = partial_mission(
             "e1m1",
@@ -1991,6 +2071,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS),
             {
+                "dlg_e6m3_6",
+                "dlg_e6m3_12",
+                "misc_dlg_e6m3_3d5",
                 "dlg_e11m2_17",
                 "dlg_e11m2_18",
                 "dlg_e11m5_9",
@@ -2018,6 +2101,36 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m6_9_008",
                 "dlg_e11m6_9_004",
             ),
+        )
+
+    def test_declared_e6m3_definition_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E6M3_RADIOS,
+            {
+                "radio_e6m3_1",
+                "radio_e6m3_10d6",
+                "radio_e6m3_21",
+                "radio_e6m3_22",
+                "radio_e6m3_23",
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES[
+                "cutscene_e6m3_2"
+            ]["definitionRowKeys"],
+            tuple(
+                f"cutscene_e6m3_2_{number:02d}"
+                for number in range(1, 15)
+            ),
+        )
+        misc = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "misc_dlg_e6m3_3d5"
+        ]
+        self.assertEqual(misc["registryKey"], "dlg_e6m3_3d5")
+        self.assertEqual(misc["definitionName"], "dlg_e6m3_3d5")
+        self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS),
+            {"text_e6m3_1", "text_e6m3_4"},
         )
 
     def test_declared_e11m5_frontier_preserves_owned_mixed_timeline(

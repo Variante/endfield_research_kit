@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v27"
+SCHEMA = "sourceStoryGapQueue.v28"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v7"
+    "current-build-offline-story-carrier-exhaustion-v8"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -151,6 +151,12 @@ OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256 = (
 OFFLINE_EXHAUSTION_DIALOG_TEXT_TABLE_SHA256 = (
     "1C1BB59ACEA89212C9F2E34FE86457672FE5C8783FCD199F161D3F0DC9DEAD72"
 )
+OFFLINE_EXHAUSTION_READING_POPUP_TABLE_SHA256 = (
+    "119BEFCA19E85FB11DF33D945FBA6374BB24E622F717CC50D7DA011BDB2A533C"
+)
+OFFLINE_EXHAUSTION_RICH_CONTENT_TABLE_SHA256 = (
+    "1AB726FC15EA75A8212DB10D24630F75C565196A2EDCCCCCF5D57BC4D40B3301"
+)
 OFFLINE_EXHAUSTION_DIALOG_ID_SOURCE_SHA256 = (
     "AE2E68E93DCDE3C2AC792541A7456E5CE6B7AF4F2AE10887D178EBFBDC080F79"
 )
@@ -164,6 +170,22 @@ OFFLINE_EXHAUSTION_E11M4_CUTSCENE = (
     "cutscene_e11m4_rift_camera_state1to2"
 )
 OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE = "cutscene_e11m1_2"
+OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
+    "cutscene_e6m3_2": {
+        "missionId": "e6m3",
+        "definitionRowKeys": tuple(
+            f"cutscene_e6m3_2_{number:02d}"
+            for number in range(1, 15)
+        ),
+    },
+    OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE: {
+        "missionId": "e11m1",
+        "definitionRowKeys": tuple(
+            f"{OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE}_{number:02d}"
+            for number in range(1, 5)
+        ),
+    },
+}
 OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES = frozenset({
     "cutscene_e11m1_fire_end",
     "cutscene_e11m1_gatebattleend",
@@ -171,6 +193,7 @@ OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES = frozenset({
     "cutscene_e11m1_shenjiaoe",
 })
 OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
+    "e6m3": frozenset({"cutscene_e6m3_2"}),
     "e9m2": frozenset({
         "cutscene_dung02_dg002_e9m2_lightthewall",
         "cutscene_dung02_dg002_e9m2_zipline01",
@@ -418,6 +441,48 @@ OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES = {
     ),
 }
 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
+    "dlg_e6m3_6": {
+        "missionId": "e6m3",
+        "filename": "dlg_e6m3_6_p5CAF49EFDB182127.json",
+        "sha256":
+            "E955FC5FB469A635FCCA931CE68103F30E93CD81D3AE8CD98CEF358E245702DE",
+        "lineIds": tuple(
+            f"dlg_e6m3_6_{number:03d}"
+            for number in range(1, 10)
+        ),
+        "optionIds": (),
+    },
+    "dlg_e6m3_12": {
+        "missionId": "e6m3",
+        "filename": "dlg_e6m3_12_p1A4EB66DB59018DA.json",
+        "sha256":
+            "AD57436D5155E735D1897C1D6E4173E8AECBBEAEE0C31F9961C935C75475F5CC",
+        "lineIds": (
+            "dlg_e6m3_12_001",
+            "dlg_e6m3_12_002",
+            "dlg_e6m3_12_003",
+        ),
+        "optionIds": (
+            "option_dlg_e6m3_12_1_001",
+            "option_dlg_e6m3_12_1_002",
+        ),
+    },
+    "misc_dlg_e6m3_3d5": {
+        "missionId": "e6m3",
+        "registryKey": "dlg_e6m3_3d5",
+        "definitionName": "dlg_e6m3_3d5",
+        "linePrefix": "dlg_e6m3_3d5",
+        "filename": "dlg_e6m3_3d5_pF3CFDA0ED349033C.json",
+        "sha256":
+            "85D89C0B57537D497FB38F9C912FCCFFB2AE14A1E2F59AEDEDCA7849B7959BB6",
+        "lineIds": (
+            "dlg_e6m3_3d5_001",
+            "dlg_e6m3_3d5_002",
+            "dlg_e6m3_3d5_003",
+            "dlg_e6m3_3d5_004",
+        ),
+        "optionIds": ("option_dlg_e6m3_3d5_1_001",),
+    },
     "dlg_e11m5_9": {
         "missionId": "e11m5",
         "filename": "dlg_e11m5_9_pC23DB75515095666.json",
@@ -688,7 +753,15 @@ OFFLINE_EXHAUSTION_E9M2_RADIOS = frozenset({
     "radio_e9m2_50",
     "radio_e9m2_51",
 })
+OFFLINE_EXHAUSTION_E6M3_RADIOS = frozenset({
+    "radio_e6m3_1",
+    "radio_e6m3_10d6",
+    "radio_e6m3_21",
+    "radio_e6m3_22",
+    "radio_e6m3_23",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
+    "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e9m2": OFFLINE_EXHAUSTION_E9M2_RADIOS,
     "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
     "e11m1": OFFLINE_EXHAUSTION_E11M1_RADIOS,
@@ -708,6 +781,32 @@ OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS = frozenset({
     "radioSingleDataList",
     "radioType",
 })
+OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
+    "text_e6m3_1": {
+        "missionId": "e6m3",
+        "readingPopupRowId": "text_e6m3_1",
+        "bgType": 1,
+        "iconType": 3,
+        "titleId": -166052796557014664,
+        "contentTextIds": (
+            -1945154020598643100,
+            -9052274316405367490,
+            3894316646028624580,
+            -984061992837130580,
+        ),
+    },
+    "text_e6m3_4": {
+        "missionId": "e6m3",
+        "readingPopupRowId": "rp_text_e6m3_4",
+        "bgType": 2,
+        "iconType": 3,
+        "titleId": 9138086639682545558,
+        "contentTextIds": (
+            -1462227912355393055,
+            3546372858747322539,
+        ),
+    },
+}
 
 
 def _bucket(mission: str) -> str:
@@ -857,6 +956,8 @@ def build_offline_exhaustion_index(
         "numIdStrTable": table_root / "NumIdStrTable.json",
         "textTable": table_root / "TextTable.json",
         "dialogTextTable": table_root / "DialogTextTable.json",
+        "readingPopupTable": table_root / "ReadingPopUpTable.json",
+        "richContentTable": table_root / "RichContentTable.json",
         "dialogIdSource": (
             ROOT
             / "export_full"
@@ -916,6 +1017,10 @@ def build_offline_exhaustion_index(
         "numIdStrTable": OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256,
         "textTable": OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256,
         "dialogTextTable": OFFLINE_EXHAUSTION_DIALOG_TEXT_TABLE_SHA256,
+        "readingPopupTable":
+            OFFLINE_EXHAUSTION_READING_POPUP_TABLE_SHA256,
+        "richContentTable":
+            OFFLINE_EXHAUSTION_RICH_CONTENT_TABLE_SHA256,
         "dialogIdSource": OFFLINE_EXHAUSTION_DIALOG_ID_SOURCE_SHA256,
         "dialogIdIndex": OFFLINE_EXHAUSTION_DIALOG_ID_INDEX_SHA256,
         "timelineLineOrders":
@@ -987,10 +1092,17 @@ def build_offline_exhaustion_index(
         in OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
     }
     all_dialog_keys = set(dialog_mission_by_key)
+    text_mission_by_key = {
+        story_key: safe_key(definition.get("missionId"))
+        for story_key, definition
+        in OFFLINE_EXHAUSTION_TEXT_DEFINITIONS.items()
+    }
+    all_text_keys = set(text_mission_by_key)
     required_key_missions = {
         **radio_mission_by_key,
         **cutscene_mission_by_key,
         **dialog_mission_by_key,
+        **text_mission_by_key,
     }
     required_keys = set(required_key_missions)
     if (
@@ -1074,6 +1186,68 @@ def build_offline_exhaustion_index(
         status["status"] = "inactive_radio_definition_validation_failed"
         return {}, status
 
+    reading_popup_table = read_json(source_paths["readingPopupTable"], {})
+    rich_content_table = read_json(source_paths["richContentTable"], {})
+    text_definitions_valid = (
+        isinstance(reading_popup_table, dict)
+        and isinstance(rich_content_table, dict)
+    )
+    for story_key, definition in (
+        OFFLINE_EXHAUSTION_TEXT_DEFINITIONS.items()
+    ):
+        if not text_definitions_valid:
+            break
+        popup_row_id = definition["readingPopupRowId"]
+        popup = reading_popup_table.get(popup_row_id)
+        rich = rich_content_table.get(story_key)
+        expected_content_ids = tuple(definition["contentTextIds"])
+        actual_content_ids = tuple(
+            item.get("content", {}).get("id")
+            for item in (
+                rich.get("contentList") or []
+                if isinstance(rich, dict)
+                else []
+            )
+            if isinstance(item, dict)
+            and isinstance(item.get("content"), dict)
+        )
+        if (
+            not isinstance(popup, dict)
+            or set(popup) != {
+                "bgType",
+                "contentId",
+                "iconType",
+                "id",
+                "overrideRadioId",
+                "title",
+            }
+            or popup.get("id") != popup_row_id
+            or popup.get("contentId") != story_key
+            or popup.get("bgType") != definition["bgType"]
+            or popup.get("iconType") != definition["iconType"]
+            or popup.get("overrideRadioId") != ""
+            or popup.get("title") != {"id": 0, "text": ""}
+            or not isinstance(rich, dict)
+            or set(rich) != {"contentList", "title"}
+            or rich.get("title")
+            != {"id": definition["titleId"], "text": ""}
+            or len(rich.get("contentList") or [])
+            != len(expected_content_ids)
+            or actual_content_ids != expected_content_ids
+            or any(
+                item != {"content": {"id": text_id, "text": ""}}
+                for item, text_id in zip(
+                    rich.get("contentList") or [],
+                    expected_content_ids,
+                )
+            )
+        ):
+            text_definitions_valid = False
+            break
+    if not text_definitions_valid:
+        status["status"] = "inactive_text_definition_validation_failed"
+        return {}, status
+
     dialog_text_table = read_json(source_paths["dialogTextTable"], {})
     dialog_id_index = read_json(source_paths["dialogIdIndex"], {})
     timeline_line_orders = read_json(source_paths["timelineLineOrders"], {})
@@ -1092,12 +1266,21 @@ def build_offline_exhaustion_index(
             source_paths[f"dialogDefinition:{story_key}"],
             {},
         )
-        registry = dialog_id_index.get(story_key)
+        registry_key = safe_key(
+            definition.get("registryKey")
+        ) or story_key
+        definition_name = safe_key(
+            definition.get("definitionName")
+        ) or registry_key
+        line_prefix = safe_key(
+            definition.get("linePrefix")
+        ) or registry_key
+        registry = dialog_id_index.get(registry_key)
         expected_line_ids = tuple(definition["lineIds"])
         actual_line_ids = tuple(sorted(
             key
             for key in dialog_text_table
-            if key.startswith(f"{story_key}_")
+            if key.startswith(f"{line_prefix}_")
         ))
         expected_option_ids = tuple(definition["optionIds"])
         registered_option_ids = tuple(sorted(
@@ -1264,7 +1447,10 @@ def build_offline_exhaustion_index(
                 "graphEffect": "none",
             }
         else:
-            timeline_context_valid = story_key not in timeline_line_orders
+            timeline_context_valid = (
+                story_key not in timeline_line_orders
+                and registry_key not in timeline_line_orders
+            )
             registry_timeline_valid = (
                 isinstance(registry, dict)
                 and int(registry.get("usedDialogTimelineCount") or 0) == 0
@@ -1272,8 +1458,8 @@ def build_offline_exhaustion_index(
             )
         if (
             not isinstance(tree, dict)
-            or safe_key(tree.get("m_Name")) != story_key
-            or safe_key(tree.get("Name")) != story_key
+            or safe_key(tree.get("m_Name")) != definition_name
+            or safe_key(tree.get("Name")) != definition_name
             or not isinstance(tree.get("m_Script"), str)
             or not tree["m_Script"]
             or not isinstance(registry, dict)
@@ -1303,6 +1489,8 @@ def build_offline_exhaustion_index(
             dialog_definitions_valid = False
             break
         dialog_validation_by_key[story_key] = {
+            "registryKey": registry_key,
+            "definitionName": definition_name,
             "lineIds": list(expected_line_ids),
             "audioIds": list(line_audio_ids),
             "missingAudioIds": sorted(
@@ -1451,53 +1639,58 @@ def build_offline_exhaustion_index(
             presentation_cutscene_valid = False
             break
 
-    text_only_key = OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE
-    text_only_row_keys = {
-        key
-        for key in (
-            text_table
-            if isinstance(text_table, dict)
-            else {}
+    registered_timeline_story_keys = {
+        safe_key(value)
+        for value in (
+            timeline_ids.values()
+            if isinstance(timeline_ids, dict)
+            else []
         )
-        if key.startswith(f"{text_only_key}_")
     }
-    expected_text_only_row_keys = {
-        f"{text_only_key}_{number:02d}"
-        for number in range(1, 5)
-    }
-    text_only_cutscene_valid = (
-        text_only_row_keys == expected_text_only_row_keys
-        and all(
-            isinstance(text_table.get(key), dict)
-            and set(text_table[key]) == {"id", "text"}
-            and isinstance(text_table[key].get("id"), int)
-            and not isinstance(text_table[key].get("id"), bool)
-            for key in expected_text_only_row_keys
+    text_only_cutscene_valid = True
+    for text_only_key, definition in (
+        OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES.items()
+    ):
+        expected_text_only_row_keys = set(
+            definition["definitionRowKeys"]
         )
-        and text_only_key not in {
-            safe_key(value)
-            for value in (
-                timeline_ids.values()
-                if isinstance(timeline_ids, dict)
-                else []
+        text_only_row_keys = {
+            key
+            for key in (
+                text_table
+                if isinstance(text_table, dict)
+                else {}
             )
+            if key.startswith(f"{text_only_key}_")
         }
-        and not any(
-            text_only_key in _string_list(row.get("storyKeys"))
-            for row in gameobject_audit.get("gameObjects") or []
-            if isinstance(row, dict)
-        )
-        and not any(
-            text_only_key in _string_list(row.get("targetStoryKeys"))
-            for row in reverse_pptr_audit.get("relations") or []
-            if isinstance(row, dict)
-        )
-        and not any(
-            text_only_key in _string_list(row.get("storyKeys"))
-            for row in reverse_pptr_audit.get("directorHosts") or []
-            if isinstance(row, dict)
-        )
-    )
+        if (
+            text_only_row_keys != expected_text_only_row_keys
+            or not all(
+                isinstance(text_table.get(key), dict)
+                and set(text_table[key]) == {"id", "text"}
+                and isinstance(text_table[key].get("id"), int)
+                and not isinstance(text_table[key].get("id"), bool)
+                for key in expected_text_only_row_keys
+            )
+            or text_only_key in registered_timeline_story_keys
+            or any(
+                text_only_key in _string_list(row.get("storyKeys"))
+                for row in gameobject_audit.get("gameObjects") or []
+                if isinstance(row, dict)
+            )
+            or any(
+                text_only_key in _string_list(row.get("targetStoryKeys"))
+                for row in reverse_pptr_audit.get("relations") or []
+                if isinstance(row, dict)
+            )
+            or any(
+                text_only_key in _string_list(row.get("storyKeys"))
+                for row in reverse_pptr_audit.get("directorHosts") or []
+                if isinstance(row, dict)
+            )
+        ):
+            text_only_cutscene_valid = False
+            break
     cutscene_definitions_valid = (
         set(OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS)
         == set(OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS)
@@ -1587,6 +1780,8 @@ def build_offline_exhaustion_index(
                 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]["filename"],
             "definitionTable": "DialogTextTable",
             "runtimeRegistry": "Beyond.Gameplay.DialogIdTable",
+            "runtimeRegistryKey": validation["registryKey"],
+            "definitionName": validation["definitionName"],
             "runtimeRegistrationEvidence": [
                 "memorypack_record_key",
                 "printable_root_token",
@@ -1620,6 +1815,41 @@ def build_offline_exhaustion_index(
                 "installed binary, DialogId source/index, DialogTree, "
                 "DialogTextTable, AudioDialog, object index, shared Timeline, "
                 "or another typed producer/consumer registry changes"
+            ),
+            "graphEffect": "none",
+        }
+    for story_key in sorted(all_text_keys, key=natural_key):
+        definition = OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[story_key]
+        index[story_key] = {
+            "sceneKey": story_key,
+            "missionId": text_mission_by_key[story_key],
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "evidenceKind":
+                "reading_popup_definition_without_recovered_activator",
+            "definitionTables": [
+                "ReadingPopUpTable",
+                "RichContentTable",
+            ],
+            "readingPopupRowId": definition["readingPopupRowId"],
+            "contentTextIds": list(definition["contentTextIds"]),
+            "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+            "gameAssemblySha256":
+                OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+            "consumerBoundary": (
+                "the exact ReadingPopUpTable carrier and RichContentTable "
+                "payload define this current Story file; no exact "
+                "MissionRuntime, LevelScript/LevelData interactive, Lua, "
+                "object-index, or direct native caller exposes its activator"
+            ),
+            "orderBoundary": (
+                "popup table order, content-node order, text ids, and filename "
+                "suffixes do not place the Story file in mission chronology"
+            ),
+            "reopenWhen": (
+                "installed binary, ReadingPopUpTable, RichContentTable, "
+                "object index, Lua corpus, or another typed producer/consumer "
+                "registry changes"
             ),
             "graphEffect": "none",
         }
@@ -1694,32 +1924,36 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
-    index[text_only_key] = {
-        "sceneKey": text_only_key,
-        "missionId": "e11m1",
-        "recoveryStatus":
-            "deferred_current_build_offline_surface_exhausted",
-        "evidenceKind":
-            "text_table_only_cutscene_without_recovered_asset_or_consumer",
-        "definitionTable": "TextTable",
-        "definitionRowKeys": sorted(
-            expected_text_only_row_keys,
-            key=natural_key,
-        ),
-        "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
-        "gameAssemblySha256": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
-        "consumerBoundary": (
-            "the exact four-row TextTable group has no Timeline registry "
-            "entry, indexed cutscene root, reverse PPtr relation, "
-            "PlayableDirector host, structured action, Lua consumer, or "
-            "direct native cutscene caller in the audited build"
-        ),
-        "reopenWhen": (
-            "installed binary, TextTable, Timeline registry, object index, "
-            "Lua corpus, or another typed producer/consumer registry changes"
-        ),
-        "graphEffect": "none",
-    }
+    for text_only_key, definition in (
+        OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES.items()
+    ):
+        index[text_only_key] = {
+            "sceneKey": text_only_key,
+            "missionId": definition["missionId"],
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "evidenceKind":
+                "text_table_only_cutscene_without_recovered_asset_or_consumer",
+            "definitionTable": "TextTable",
+            "definitionRowKeys": sorted(
+                definition["definitionRowKeys"],
+                key=natural_key,
+            ),
+            "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+            "gameAssemblySha256": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+            "consumerBoundary": (
+                "the exact TextTable group has no Timeline registry entry, "
+                "indexed cutscene root, reverse PPtr relation, "
+                "PlayableDirector host, structured action, Lua consumer, or "
+                "direct native cutscene caller in the audited build"
+            ),
+            "reopenWhen": (
+                "installed binary, TextTable, Timeline registry, object "
+                "index, Lua corpus, or another typed producer/consumer "
+                "registry changes"
+            ),
+            "graphEffect": "none",
+        }
     status.update({
         "status": "active",
         "coreTargetSetSha256": core_target_digest,
@@ -1744,6 +1978,21 @@ def build_offline_exhaustion_index(
             )
             for mission in sorted(
                 set(dialog_mission_by_key.values()),
+                key=natural_key,
+            )
+        },
+        "deferredTextStoryKeysByMission": {
+            mission: sorted(
+                (
+                    story_key
+                    for story_key, story_mission
+                    in text_mission_by_key.items()
+                    if story_mission == mission
+                ),
+                key=natural_key,
+            )
+            for mission in sorted(
+                set(text_mission_by_key.values()),
                 key=natural_key,
             )
         },
@@ -1826,6 +2075,43 @@ def _strict_quest_attachments(
             )
         if complete and len(occurrence_quest_ids) == 1:
             quest_ids.update(occurrence_quest_ids)
+            scene_keys.add(scene_key)
+    direct_quest_story_relations = {
+        "client_action_start": (1, "start"),
+        "client_action_succeed": (2, "succeed"),
+        "client_action_failed": (4, "failed"),
+    }
+    for quest in (flow or {}).get("quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        quest_id = safe_key(quest.get("id"))
+        if not quest_id:
+            continue
+        for row in quest.get("storyConnections") or []:
+            if not isinstance(row, dict):
+                continue
+            scene_key = safe_key(row.get("key"))
+            relation = safe_key(row.get("relation"))
+            expected = direct_quest_story_relations.get(relation)
+            if (
+                not scene_key
+                or not expected
+                or safe_key(row.get("direction")) != "quest_to_story"
+                or safe_key(row.get("phase")) != expected[1]
+                or safe_key(row.get("confidence")) != "native_typed_direct"
+                or row.get("actionSlot") != expected[0]
+                or not isinstance(row.get("actionId"), int)
+                or isinstance(row.get("actionId"), bool)
+                or int(row["actionId"]) < 0
+                or not safe_key(row.get("actionType"))
+                or not re.fullmatch(
+                    r"MissionRuntimeAsset\.clientActionMapKey\[\d+\] -> "
+                    r"actionMapRaw\.actionList\[\d+\]\._[A-Za-z]+Id",
+                    safe_key(row.get("source")),
+                )
+            ):
+                continue
+            quest_ids.add(quest_id)
             scene_keys.add(scene_key)
     return quest_ids, scene_keys
 
@@ -2454,7 +2740,6 @@ def _deferred_offline_exhausted_isolated_scenes(
     offline_exhaustion_index: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """Defer exact-build exhausted rows without asserting a graph fact."""
-    unlinked_keys = set(_string_list(flow.get("unlinked")))
     routed_keys = {
         safe_key(row.get("key"))
         for row in _flow_story_connections(flow)
@@ -2463,25 +2748,9 @@ def _deferred_offline_exhausted_isolated_scenes(
     deferred: list[dict[str, Any]] = []
     for scene_key in sorted(isolated_scene_keys, key=natural_key):
         evidence = offline_exhaustion_index.get(scene_key)
-        timeline_context = (
-            evidence.get("sharedTimelineContext")
-            if isinstance(evidence, dict)
-            and isinstance(evidence.get("sharedTimelineContext"), dict)
-            else {}
-        )
-        exact_owned_timeline_without_route = (
-            safe_key(evidence.get("evidenceKind"))
-            == "registered_dialog_definition_without_recovered_activator"
-            and safe_key(timeline_context.get("relation"))
-            == "owned_dialog_timeline_exact_mixed_story_context"
-        ) if isinstance(evidence, dict) else False
         if (
             not isinstance(evidence, dict)
             or safe_key(evidence.get("missionId")) != owner_mission
-            or (
-                scene_key not in unlinked_keys
-                and not exact_owned_timeline_without_route
-            )
             or scene_key in routed_keys
             or evidence.get("graphEffect") != "none"
             or evidence.get("recoveryStatus")
@@ -3101,6 +3370,91 @@ def _closed_exact_runtime_config_isolated_scenes(
                 for row in rows
                 if safe_key(row.get("sourceFile"))
             }),
+        })
+
+    quest_action_grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    expected_quest_actions = {
+        "client_action_start": (1, "start"),
+        "client_action_succeed": (2, "succeed"),
+        "client_action_failed": (4, "failed"),
+    }
+    for quest in flow.get("quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        quest_id = safe_key(quest.get("id"))
+        if not quest_id:
+            continue
+        for raw_row in quest.get("storyConnections") or []:
+            if not isinstance(raw_row, dict):
+                continue
+            scene_key = safe_key(raw_row.get("key"))
+            relation = safe_key(raw_row.get("relation"))
+            expected = expected_quest_actions.get(relation)
+            if (
+                scene_key not in isolated_scene_keys
+                or not expected
+                or safe_key(raw_row.get("direction")) != "quest_to_story"
+                or safe_key(raw_row.get("phase")) != expected[1]
+                or safe_key(raw_row.get("confidence"))
+                != "native_typed_direct"
+                or raw_row.get("actionSlot") != expected[0]
+                or not isinstance(raw_row.get("actionId"), int)
+                or isinstance(raw_row.get("actionId"), bool)
+                or int(raw_row["actionId"]) < 0
+                or not safe_key(raw_row.get("actionType"))
+                or not re.fullmatch(
+                    r"MissionRuntimeAsset\.clientActionMapKey\[\d+\] -> "
+                    r"actionMapRaw\.actionList\[\d+\]\._[A-Za-z]+Id",
+                    safe_key(raw_row.get("source")),
+                )
+            ):
+                continue
+            quest_action_grouped[scene_key].append({
+                **raw_row,
+                "contextQuestId": quest_id,
+            })
+    for scene_key, rows in quest_action_grouped.items():
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_mission_quest_client_action_no_relative_order",
+            "relation": safe_key(rows[0].get("relation")),
+            "missionId": owner_mission,
+            "questIds": sorted({
+                safe_key(row.get("contextQuestId"))
+                for row in rows
+                if safe_key(row.get("contextQuestId"))
+            }, key=natural_key),
+            "phases": sorted({
+                safe_key(row.get("phase"))
+                for row in rows
+                if safe_key(row.get("phase"))
+            }),
+            "actionSlots": sorted({
+                int(row["actionSlot"])
+                for row in rows
+            }),
+            "actionIds": sorted({
+                int(row["actionId"])
+                for row in rows
+            }),
+            "actionTypes": sorted({
+                safe_key(row.get("actionType"))
+                for row in rows
+                if safe_key(row.get("actionType"))
+            }),
+            "playbackSemantics": (
+                "the exact typed MissionRuntime client action plays this "
+                "Story id at the named quest lifecycle phase"
+            ),
+            "orderBoundary": (
+                "quest lifecycle placement proves mission/quest playback "
+                "context but creates no relative edge between Story files"
+            ),
+            "sourceFiles": [
+                "export_full/structured/Persistent/Data/Json/"
+                f"MissionRuntimeAsset/{owner_mission}.json"
+            ],
         })
 
     already_closed = {row["sceneKey"] for row in closed}
