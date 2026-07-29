@@ -2063,6 +2063,20 @@ mission-to-Story edges and every relation records
 queryable without turning availability into ownership, playback, chronology,
 completion, or server-exchange evidence.
 
+Exact foreign-dialog Timeline containment is likewise queryable through
+`webui/mission_pipeline/timeline_dialog_context`. Admission requires the
+normalized trigger route to retain
+`timeline_dialog_contains_foreign_dialog`, `causality=context`, a connected
+mission scope, `graphEffect=none`, one parent Story, at least one registered
+Timeline, the complete embedded line set, surrounding parent lines, and
+explicit parent-Story/Timeline route steps. The graph inserts a
+`mission_story_context` node between the mission, parent Story, Timeline,
+source LevelScript, and target Story. It deliberately emits no direct
+mission-to-Story or parent-to-target edge; all emitted edges record
+`missionOwnership=false`, `questOwnership=false`, and
+`orderEvidence=false`. The current exact row is e11m3
+`dlg_e11m3_7 -> dlgtl_e11m3_7_sub_1 -> dlg_e11m3_16`.
+
 Mission Pipeline's unresolved native playback frontier is also first-class
 graph evidence under `webui/mission_pipeline/native_runtime_receivers`. A row
 is accepted only when its exact current-build MemoryPack classification,

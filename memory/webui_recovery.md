@@ -283,6 +283,13 @@ Mission Pipeline:
   example, the live `e6m4` card for `radio_e6m4_18` shows Leader slot `80001`
   at script `22800110022` header `6`, then `Split.actions[0]` local `8` and
   `PlayRadio`.
+- Exact foreign-dialog Timeline containment uses dedicated parent-Story and
+  dialog-Timeline chips in the same route. The live e11m3
+  `dlg_e11m3_16` card retains the parent `dlg_e11m3_7`, Timeline
+  `dlgtl_e11m3_7_sub_1`, both embedded option ids, surrounding parent lines,
+  and the parent's native trigger/action path. It remains
+  `causality=context` with `graphEffect=none`; parent content on both sides
+  does not become a Story-file order edge.
 - The mission-level native-boundary section also consumes
   `storyCoverage.dynamicSceneIdentityCrossReferences`. It renders only rows
   whose typed DynamicScene mission/quest condition belongs to the selected

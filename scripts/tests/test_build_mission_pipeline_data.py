@@ -360,6 +360,96 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(route["controlPathCount"], 1)
         self.assertEqual(route["nativePaths"][0]["headerLocalId"], 6)
 
+    def test_trigger_route_preserves_foreign_dialog_timeline_chain(self):
+        row = {
+            "key": "dlg_testm1_16",
+            "relation": "timeline_dialog_contains_foreign_dialog",
+            "direction": "context",
+            "phase": "timeline_contained",
+            "confidence": "native_exact_host",
+            "parentStoryKey": "dlg_testm1_7",
+            "timelines": ["dlgtl_testm1_7_sub_1"],
+            "textIds": [
+                "dlg_testm1_16_001",
+                "dlg_testm1_16_002",
+            ],
+            "optionIds": [
+                "option_dlg_testm1_16_1_001",
+                "option_dlg_testm1_16_1_002",
+            ],
+            "placementBoundary": "parent content on both sides",
+            "graphEffect": "none",
+            "timelineDialogContainments": [{
+                "timeline": "dlgtl_testm1_7_sub_1",
+                "lineIds": [
+                    "dlg_testm1_16_001",
+                    "dlg_testm1_16_002",
+                ],
+                "optionIds": [
+                    "option_dlg_testm1_16_1_001",
+                    "option_dlg_testm1_16_1_002",
+                ],
+                "beforeParentLineId": "dlg_testm1_7_009",
+                "afterParentLineId": "dlg_testm1_7_005",
+            }],
+            "parentDialogNativeOccurrences": [{
+                "levelId": "map_test",
+                "scriptId": "70000000001",
+                "sourceFile":
+                    "LevelScriptData/map_test/70000000001.json",
+                "actionName": "StartDialogAndTeleportAction",
+                "nativeEventOwners": [{
+                    "status": "exact_serialized_control_path",
+                    "headerName":
+                        "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    "headerLocalId": 4,
+                    "eventDetail": {
+                        "summary": "leader enters trigger slot 80001",
+                    },
+                    "path": [{
+                        "edge": "nextId",
+                        "localId": 5,
+                        "actionName":
+                            "StartDialogAndTeleportAction",
+                        "recordClass": "play_dialog",
+                    }],
+                }],
+            }],
+        }
+
+        route = pipeline.build_story_trigger_route(
+            row,
+            mission_id="testm1",
+        )
+
+        self.assertEqual(route["causality"], "context")
+        self.assertEqual(
+            [step["kind"] for step in route["steps"]],
+            [
+                "mission",
+                "native_event",
+                "levelscript",
+                "native_action",
+                "parent_story",
+                "dialog_timeline",
+                "story",
+            ],
+        )
+        self.assertEqual(route["parentStoryKey"], "dlg_testm1_7")
+        self.assertEqual(
+            route["timelineIds"],
+            ["dlgtl_testm1_7_sub_1"],
+        )
+        self.assertEqual(
+            route["beforeParentLineIds"],
+            ["dlg_testm1_7_009"],
+        )
+        self.assertEqual(
+            route["afterParentLineIds"],
+            ["dlg_testm1_7_005"],
+        )
+        self.assertEqual(route["graphEffect"], "none")
+
     def test_trigger_route_preserves_exact_narrative_interactive(self):
         row = {
             "key": "text_testm1_1",

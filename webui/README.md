@@ -200,6 +200,10 @@ available through expandable guidance.
   dictionary or the exact environment-only members 21-43 empty-script suffix
   through EOF, and retain that provenance. A progress-lock owner is
   availability evidence, not Story ownership, activation causality, or order.
+  Exact foreign-dialog Timeline containment adds explicit parent-Story and
+  dialog-Timeline steps between the native parent playback action and the
+  embedded Story file. Parent content on both sides keeps this route
+  context-only and prevents a Story-file order edge.
   One exact `int_horn.properties.dialog_id` row also renders a
   `quest -> LevelData -> availability condition -> horn interactive -> dialog
   definition` route. This registered base definition has options but no
