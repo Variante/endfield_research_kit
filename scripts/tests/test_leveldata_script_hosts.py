@@ -11,6 +11,7 @@ from scripts.story_builder.level_bindings import (
     _find_exact_bytes_offsets,
     _parse_leveldata_mission_host_name,
     build_leveldata_airwall_mission_radio_contexts,
+    build_leveldata_interactive_narrative_story_contexts,
     build_level_function_area_radio_trigger_story_contexts,
     build_level_interactive_narrative_mission_story_contexts,
     build_levelscript_interactive_narrative_story_contexts,
@@ -22,6 +23,7 @@ from scripts.story_builder.level_bindings import (
     find_levelscript_brief_data_entries,
     parse_leveldata_levelscript_brief_dictionary,
     parse_leveldata_airwall_groups,
+    parse_leveldata_interactive_narrative_records,
     parse_level_function_area_radio_trigger_zone_entry,
     parse_level_interactive_narrative_mission_context,
     parse_levelscript_interactive_narrative_maps,
@@ -762,6 +764,113 @@ class LevelDataScriptHostTests(unittest.TestCase):
             )
             self.assertEqual(40002, rows[0]["localInteractiveId"])
             self.assertEqual("123", rows[0]["scriptId"])
+
+    def test_leveldata_interactive_narrative_excludes_unbounded_final_record(
+        self,
+    ) -> None:
+        records = [
+            self._levelscript_narrative_interactive_record(
+                "int_narrative_scene_book",
+                "text_test_1",
+            ),
+            self._levelscript_narrative_interactive_record(
+                "int_narrative_scene_chip",
+                "rp_text_test_2",
+            ),
+            self._levelscript_narrative_interactive_record(
+                "int_narrative_scene_pad",
+                "text_test_3",
+            ),
+        ]
+        data = (
+            b"\x2b"
+            + (3).to_bytes(4, "little", signed=True)
+            + b"".join(records)
+        )
+
+        rows = parse_leveldata_interactive_narrative_records(data)
+
+        self.assertEqual(
+            ["text_test_1", "rp_text_test_2"],
+            [row["typeId"] for row in rows],
+        )
+        self.assertEqual([0, 1], [row["recordIndex"] for row in rows])
+        self.assertTrue(all(row["interactiveListCount"] == 3 for row in rows))
+
+    def test_leveldata_interactive_narrative_context_requires_exact_mirror(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            streaming = root / "Streaming" / "map_test"
+            persistent = root / "Persistent" / "map_test"
+            streaming.mkdir(parents=True)
+            persistent.mkdir(parents=True)
+            records = [
+                self._levelscript_narrative_interactive_record(
+                    "int_narrative_scene_book",
+                    "rp_text_test_1",
+                ),
+                self._levelscript_narrative_interactive_record(
+                    "int_narrative_scene_pad",
+                    "text_unbounded",
+                ),
+            ]
+            data = (
+                b"\x2b"
+                + (2).to_bytes(4, "little", signed=True)
+                + b"".join(records)
+            )
+            source_path = streaming / "map_test_lv_data_sub_fixture.json"
+            mirror_path = persistent / source_path.name
+            source_path.write_bytes(data)
+            mirror_path.write_bytes(data)
+            popup_path = root / "ReadingPopUpTable.json"
+            popup_path.write_text(
+                json.dumps({
+                    "rp_text_test_1": {"contentId": "text_test_1"},
+                }),
+                encoding="utf-8",
+            )
+            interactive_index = {
+                "objectToTemplate": {
+                    "int_narrative_scene_book":
+                        "int_narrative_scene",
+                },
+                "coreTemplatePaths": {
+                    "int_narrative_scene":
+                        "data_int_narrative_scene.json",
+                },
+                "sourceFile": "InteractiveTable.json",
+                "verifiedMirrorFile": "Persistent/InteractiveTable.json",
+            }
+            with patch.object(
+                level_bindings,
+                "_load_interactive_object_template_index",
+                return_value=interactive_index,
+            ):
+                rows = build_leveldata_interactive_narrative_story_contexts(
+                    {"text_test_1"},
+                    leveldata_root=root / "Streaming",
+                    persistent_leveldata_root=root / "Persistent",
+                    reading_popup_path=popup_path,
+                )
+                self.assertEqual(1, len(rows))
+                self.assertEqual("text_test_1", rows[0]["storyKey"])
+                self.assertEqual(
+                    "reading_popup_content_id",
+                    rows[0]["storyKeyResolution"],
+                )
+                self.assertEqual("map_test", rows[0]["levelId"])
+
+                mirror_path.write_bytes(data + b"\x00")
+                rows = build_leveldata_interactive_narrative_story_contexts(
+                    {"text_test_1"},
+                    leveldata_root=root / "Streaming",
+                    persistent_leveldata_root=root / "Persistent",
+                    reading_popup_path=popup_path,
+                )
+                self.assertEqual([], rows)
 
     def test_mission_area_parent_root_scopes_file_without_filename_inference(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

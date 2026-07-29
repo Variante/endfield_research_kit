@@ -974,6 +974,85 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual([40001], closure["localInteractiveIds"])
         self.assertEqual(["e1m1_q#2"], closure["questContextIds"])
 
+    def test_exact_leveldata_interactive_config_is_closed_without_order(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "e1m1",
+            scenes=["text_e1m1_2"],
+            isolated=["text_e1m1_2"],
+        )
+        payload = mission_payload(connections=[{
+            "key": "text_e1m1_2",
+            "relation": "leveldata_interactive_narrative_config",
+            "confidence": "native_exact_serialized_config",
+            "source": (
+                "exact counted LevelData interactive list -> next-record-"
+                "bounded 25-member LevelInteractiveData -> "
+                "componentProperties[94].type_id; the final unbounded list "
+                "item is excluded"
+            ),
+            "storyOwnerMission": "e1m1",
+            "storyBinding": True,
+            "ownership": False,
+            "nativeMappingId":
+                "leveldata-interactive-narrative-config-v1",
+            "orderBoundary": (
+                "interactive-list order, record index, entity logic id, "
+                "object position, and Story suffix do not establish relative "
+                "Story chronology"
+            ),
+            "levelIds": ["map_test"],
+            "levelDataAssets": ["map_test_lv_data_sub_e1m1"],
+            "interactiveRecordIndex": 1,
+            "interactiveListCount": 3,
+            "interactiveRecordOffset": 100,
+            "interactiveRecordEndOffset": 200,
+            "entityLogicId": 10002,
+            "entityDetailIds": ["int_narrative_scene_book"],
+            "entityTemplateIds": ["int_narrative_scene"],
+            "narrativeComponentKey": 94,
+            "rawTypeId": "rp_text_e1m1_2",
+            "storyKeyResolution": "reading_popup_content_id",
+            "sourceFiles": [
+                "export_full/structured/StreamingAssets/Data/Json/"
+                "LevelData/map_test/map_test_lv_data_sub_e1m1.json",
+            ],
+        }])
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(
+            row["metrics"]["closedExactRuntimeConfigIsolatedScenes"],
+            1,
+        )
+        closure = row["closedExactRuntimeConfigIsolatedScenes"][0]
+        self.assertEqual(
+            "leveldata_interactive_narrative_config",
+            closure["relation"],
+        )
+        self.assertEqual([1], closure["interactiveRecordIndexes"])
+        self.assertEqual([10002], closure["entityLogicIds"])
+
+        payload["flow"]["missionStoryConnections"][0][
+            "interactiveRecordIndex"
+        ] = 2
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 1)
+        self.assertEqual(
+            row["metrics"]["closedExactRuntimeConfigIsolatedScenes"],
+            0,
+        )
+
     def test_exact_embedded_dialog_tree_line_context_closes_without_file_edge(
         self,
     ) -> None:

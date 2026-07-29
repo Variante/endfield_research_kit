@@ -386,6 +386,35 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(route["localInteractiveId"], 40001)
         self.assertEqual(route["entityDetailIds"], ["int_narrative_book"])
 
+    def test_trigger_route_preserves_exact_leveldata_narrative_interactive(
+        self,
+    ):
+        row = {
+            "key": "text_testm1_2",
+            "relation": "leveldata_interactive_narrative_config",
+            "direction": "context",
+            "levelDataAssets": ["map_test_lv_data_sub_testm1"],
+            "entityLogicId": 10002,
+            "interactiveRecordIndex": 1,
+            "rawTypeId": "rp_text_testm1_2",
+            "entityDetailIds": ["int_narrative_book"],
+            "entityTemplateIds": ["int_narrative_scene"],
+        }
+
+        route = pipeline.build_story_trigger_route(row, mission_id="testm1")
+
+        self.assertEqual(
+            [step["kind"] for step in route["steps"]],
+            ["mission", "leveldata", "narrative_interactive", "story"],
+        )
+        self.assertEqual(
+            route["steps"][1]["ids"],
+            ["map_test_lv_data_sub_testm1"],
+        )
+        self.assertEqual(route["steps"][2]["id"], "10002")
+        self.assertEqual(route["entityLogicId"], 10002)
+        self.assertEqual(route["interactiveRecordIndex"], 1)
+
     def test_publish_source_story_partial_order_embeds_lazy_mission_graph(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

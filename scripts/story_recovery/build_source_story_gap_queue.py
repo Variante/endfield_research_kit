@@ -37,9 +37,12 @@ from build_source_story_partial_order import build_report as build_partial_order
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v13"
+SCHEMA = "sourceStoryGapQueue.v14"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
+)
+LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID = (
+    "leveldata-interactive-narrative-config-v1"
 )
 BUCKET_ORDER = ("main", "event", "major", "character", "other")
 
@@ -1294,6 +1297,130 @@ def _closed_exact_runtime_config_isolated_scenes(
                 "active or when the player performs the interaction"
             ),
             "orderBoundary": expected_order_boundary,
+        })
+    already_closed.update(row["sceneKey"] for row in closed)
+    leveldata_grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    leveldata_source = (
+        "exact counted LevelData interactive list -> next-record-bounded "
+        "25-member LevelInteractiveData -> "
+        "componentProperties[94].type_id; the final unbounded list item is "
+        "excluded"
+    )
+    leveldata_order_boundary = (
+        "interactive-list order, record index, entity logic id, object "
+        "position, and Story suffix do not establish relative Story chronology"
+    )
+    for row in _flow_story_connections(flow):
+        scene_key = safe_key(row.get("key"))
+        level_ids = _string_list(row.get("levelIds"))
+        asset_ids = _string_list(row.get("levelDataAssets"))
+        entity_details = _string_list(row.get("entityDetailIds"))
+        template_ids = _string_list(row.get("entityTemplateIds"))
+        record_index = row.get("interactiveRecordIndex")
+        record_offset = row.get("interactiveRecordOffset")
+        record_end = row.get("interactiveRecordEndOffset")
+        list_count = row.get("interactiveListCount")
+        entity_logic_id = row.get("entityLogicId")
+        if (
+            scene_key in already_closed
+            or scene_key not in isolated_scene_keys
+            or safe_key(row.get("relation"))
+            != "leveldata_interactive_narrative_config"
+            or safe_key(row.get("confidence"))
+            != "native_exact_serialized_config"
+            or safe_key(row.get("source")) != leveldata_source
+            or safe_key(row.get("storyOwnerMission")) != owner_mission
+            or row.get("storyBinding") is not True
+            or row.get("ownership") is not False
+            or safe_key(row.get("nativeMappingId"))
+            != LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID
+            or safe_key(row.get("orderBoundary"))
+            != leveldata_order_boundary
+            or len(level_ids) != 1
+            or len(asset_ids) != 1
+            or len(entity_details) != 1
+            or len(template_ids) != 1
+            or not template_ids[0].startswith("int_narrative")
+            or not isinstance(record_index, int)
+            or isinstance(record_index, bool)
+            or record_index < 0
+            or not isinstance(list_count, int)
+            or isinstance(list_count, bool)
+            or list_count <= record_index + 1
+            or not isinstance(record_offset, int)
+            or not isinstance(record_end, int)
+            or record_offset < 0
+            or record_end <= record_offset
+            or not isinstance(entity_logic_id, int)
+            or isinstance(entity_logic_id, bool)
+            or entity_logic_id <= 0
+            or row.get("narrativeComponentKey") != 94
+        ):
+            continue
+        leveldata_grouped[scene_key].append(row)
+
+    for scene_key, rows in leveldata_grouped.items():
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_runtime_config_no_relative_order",
+            "relation": "leveldata_interactive_narrative_config",
+            "missionId": owner_mission,
+            "levelIds": sorted({
+                value
+                for row in rows
+                for value in _string_list(row.get("levelIds"))
+            }, key=natural_key),
+            "levelDataAssets": sorted({
+                value
+                for row in rows
+                for value in _string_list(row.get("levelDataAssets"))
+            }, key=natural_key),
+            "interactiveRecordIndexes": sorted({
+                int(row["interactiveRecordIndex"])
+                for row in rows
+            }),
+            "entityLogicIds": sorted({
+                int(row["entityLogicId"])
+                for row in rows
+            }),
+            "entityDetailIds": sorted({
+                value
+                for row in rows
+                for value in _string_list(row.get("entityDetailIds"))
+            }, key=natural_key),
+            "entityTemplateIds": sorted({
+                value
+                for row in rows
+                for value in _string_list(row.get("entityTemplateIds"))
+            }, key=natural_key),
+            "rawTypeIds": sorted({
+                safe_key(row.get("rawTypeId"))
+                for row in rows
+                if safe_key(row.get("rawTypeId"))
+            }, key=natural_key),
+            "storyKeyResolutions": sorted({
+                safe_key(row.get("storyKeyResolution"))
+                for row in rows
+                if safe_key(row.get("storyKeyResolution"))
+            }),
+            "sourceFiles": sorted({
+                source_file
+                for row in rows
+                for source_file in _string_list(row.get("sourceFiles"))
+            }),
+            "nativeConsumer": (
+                "NarrativeComponent.ClientCollectNarrative -> "
+                "_CollectNarrative -> dialog/reading-popup dispatch"
+            ),
+            "nativeMappingId":
+                LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID,
+            "activationBoundary": (
+                "the LevelData asset and narrative interactive are exact; "
+                "serialized data does not establish availability, player "
+                "interaction timing, or mission/quest activation"
+            ),
+            "orderBoundary": leveldata_order_boundary,
         })
     return sorted(closed, key=lambda row: natural_key(row["sceneKey"]))
 
