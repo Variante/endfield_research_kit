@@ -2401,6 +2401,14 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "focus_mode_interact_locked_radio",
             )],
         )
+        text_only = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS
+        self.assertEqual(
+            set(text_only),
+            {"dlg_e10m3_10", "dlg_e10m3_11", "dlg_e10m3_12"},
+        )
+        self.assertEqual(len(text_only["dlg_e10m3_10"]["lineIds"]), 8)
+        self.assertEqual(len(text_only["dlg_e10m3_11"]["lineIds"]), 4)
+        self.assertEqual(len(text_only["dlg_e10m3_12"]["lineIds"]), 16)
 
     def test_declared_e6m3_definition_frontier_is_exact(self) -> None:
         self.assertEqual(
