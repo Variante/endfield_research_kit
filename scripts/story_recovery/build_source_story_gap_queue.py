@@ -36,14 +36,17 @@ from common import (  # noqa: E402
     write_text_if_changed,
 )
 from build_priority_story_order_audit import priority_bucket  # noqa: E402
-from build_source_story_partial_order import build_report as build_partial_order_report  # noqa: E402
+from build_source_story_partial_order import (  # noqa: E402
+    build_report as build_partial_order_report,
+    load_mission_payload_with_variants,
+)
 from build_animestudio_story_carrier_audit import (  # noqa: E402
     target_set_sha256,
 )
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v20"
+SCHEMA = "sourceStoryGapQueue.v21"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -154,6 +157,37 @@ OFFLINE_EXHAUSTION_E11M4_RADIOS = frozenset({
         for number in range(57, 62)
     },
 })
+OFFLINE_EXHAUSTION_E10M4_RADIOS = frozenset({
+    "radio_e10m4_2",
+    "radio_e10m4_4",
+    "radio_e10m4_5",
+    "radio_e10m4_11",
+    "radio_e10m4_20",
+    "radio_e10m4_21",
+    "radio_e10m4_22",
+    "radio_e10m4_24",
+    "radio_e10m4_26",
+    "radio_e10m4_27",
+    "radio_e10m4_28",
+    "radio_e10m4_31",
+    "radio_e10m4_32",
+    "radio_e10m4_33",
+    "radio_e10m4_34",
+    "radio_e10m4_35",
+    "radio_e10m4_38",
+    "radio_e10m4_57",
+    "radio_e10m4_63",
+    "radio_e10m4_65",
+    "radio_e10m4_66",
+})
+OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
+    "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
+    "e11m4": OFFLINE_EXHAUSTION_E11M4_RADIOS,
+}
+OFFLINE_EXHAUSTION_MISSING_AUDIO_IDS = {
+    "radio_e10m4_11": frozenset({"au_radio_e10m4_11_001"}),
+    "radio_e10m4_38": frozenset({"au_radio_e10m4_38_001"}),
+}
 OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS = frozenset({
     "continueAfterDialog",
     "continueAfterRadio",
@@ -355,10 +389,17 @@ def build_offline_exhaustion_index(
         if isinstance(carrier_audit, dict)
         else []
     ))
-    required_keys = (
-        set(OFFLINE_EXHAUSTION_E11M4_RADIOS)
-        | {OFFLINE_EXHAUSTION_E11M4_CUTSCENE}
-    )
+    radio_mission_by_key = {
+        story_key: mission
+        for mission, story_keys in OFFLINE_EXHAUSTION_RADIOS_BY_MISSION.items()
+        for story_key in story_keys
+    }
+    all_radio_keys = set(radio_mission_by_key)
+    required_key_missions = {
+        **radio_mission_by_key,
+        OFFLINE_EXHAUSTION_E11M4_CUTSCENE: "e11m4",
+    }
+    required_keys = set(required_key_missions)
     if (
         not isinstance(carrier_audit, dict)
         or carrier_audit.get("_schema") != "animestudioStoryCarrierAudit.v2"
@@ -367,6 +408,10 @@ def build_offline_exhaustion_index(
         or safe_key(carrier_audit.get("targetSetSha256")).lower()
         != core_target_digest.lower()
         or not required_keys <= no_candidate_keys
+        or any(
+            core_targets.get(story_key) != {mission}
+            for story_key, mission in required_key_missions.items()
+        )
         or not _audit_sources_match_current_indexes(carrier_audit)
     ):
         status.update({
@@ -387,8 +432,9 @@ def build_offline_exhaustion_index(
         if isinstance(row, dict) and safe_key(row.get("path"))
     }
     radio_audio_ids: set[str] = set()
+    missing_audio_ids_by_story: dict[str, set[str]] = {}
     radio_rows_valid = isinstance(radio_table, dict)
-    for story_key in OFFLINE_EXHAUSTION_E11M4_RADIOS:
+    for story_key in all_radio_keys:
         row = radio_table.get(story_key) if isinstance(radio_table, dict) else None
         if (
             not isinstance(row, dict)
@@ -398,6 +444,7 @@ def build_offline_exhaustion_index(
         ):
             radio_rows_valid = False
             break
+        row_audio_ids: set[str] = set()
         for line in row["radioSingleDataList"]:
             audio_id = (
                 safe_key(line.get("audioOverride"))
@@ -408,9 +455,29 @@ def build_offline_exhaustion_index(
                 radio_rows_valid = False
                 break
             radio_audio_ids.add(audio_id)
+            row_audio_ids.add(audio_id)
         if not radio_rows_valid:
             break
-    if not radio_rows_valid or not radio_audio_ids <= audio_stems:
+        missing_audio_ids = row_audio_ids - audio_stems
+        if missing_audio_ids:
+            missing_audio_ids_by_story[story_key] = missing_audio_ids
+    if (
+        not radio_rows_valid
+        or missing_audio_ids_by_story
+        != {
+            story_key: set(audio_ids)
+            for story_key, audio_ids
+            in OFFLINE_EXHAUSTION_MISSING_AUDIO_IDS.items()
+        }
+        or not (
+            radio_audio_ids
+            - {
+                audio_id
+                for audio_ids in missing_audio_ids_by_story.values()
+                for audio_id in audio_ids
+            }
+        ) <= audio_stems
+    ):
         status["status"] = "inactive_radio_definition_validation_failed"
         return {}, status
 
@@ -465,23 +532,33 @@ def build_offline_exhaustion_index(
 
     index: dict[str, dict[str, Any]] = {}
     for story_key in sorted(
-        OFFLINE_EXHAUSTION_E11M4_RADIOS,
+        all_radio_keys,
         key=natural_key,
     ):
         index[story_key] = {
             "sceneKey": story_key,
-            "missionId": "e11m4",
+            "missionId": radio_mission_by_key[story_key],
             "recoveryStatus":
                 "deferred_current_build_offline_surface_exhausted",
             "evidenceKind": "radio_definition_without_recovered_consumer",
             "definitionTable": "RadioTable",
             "audioMembershipTable": "AudioDialog",
+            "audioMembershipStatus": (
+                "partial_current_audio_dialog_missing_ids"
+                if story_key in missing_audio_ids_by_story
+                else "present_current_audio_dialog"
+            ),
+            "missingAudioIds": sorted(
+                missing_audio_ids_by_story.get(story_key) or set(),
+                key=natural_key,
+            ),
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
             "consumerBoundary": (
-                "exact ids occur only in current RadioTable/AudioDialog "
-                "definitions across the audited MissionRuntime, LevelScript, "
+                "exact ids occur only in current RadioTable definitions and "
+                "AudioDialog membership where present across the audited "
+                "MissionRuntime, LevelScript, "
                 "GameplayConfig, Table, Lua, object-index, and direct native "
                 "playback-caller surfaces"
             ),
@@ -521,7 +598,14 @@ def build_offline_exhaustion_index(
         "status": "active",
         "coreTargetSetSha256": core_target_digest,
         "deferredStoryKeys": len(index),
-        "deferredMissions": ["e11m4"],
+        "deferredMissions": sorted({
+            row["missionId"]
+            for row in index.values()
+        }, key=natural_key),
+        "deferredRadioStoryKeysByMission": {
+            mission: sorted(story_keys, key=natural_key)
+            for mission, story_keys in OFFLINE_EXHAUSTION_RADIOS_BY_MISSION.items()
+        },
     })
     return index, status
 
@@ -540,7 +624,10 @@ def _flow(mission_payload: dict[str, Any] | None) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
-def _strict_quest_attachments(partial_row: dict[str, Any]) -> tuple[set[str], set[str]]:
+def _strict_quest_attachments(
+    partial_row: dict[str, Any],
+    flow: dict[str, Any] | None = None,
+) -> tuple[set[str], set[str]]:
     quest_ids: set[str] = set()
     scene_keys: set[str] = set()
     for edge in partial_row.get("directEdges") or []:
@@ -554,6 +641,46 @@ def _strict_quest_attachments(partial_row: dict[str, Any]) -> tuple[set[str], se
             scene_key = safe_key(edge.get(field))
             if scene_key:
                 scene_keys.add(scene_key)
+    for row in _flow_story_connections(flow or {}):
+        scene_key = safe_key(row.get("key"))
+        occurrences = [
+            occurrence
+            for occurrence in row.get("levelScriptOccurrences") or []
+            if isinstance(occurrence, dict)
+        ]
+        if (
+            not scene_key
+            or safe_key(row.get("relation")) != "levelscript_mission_context"
+            or safe_key(row.get("confidence")) != "scoped_script"
+            or row.get("hasUnscopedOrOtherMissionOccurrences") is not False
+            or not occurrences
+            or "mission_condition_checks_script"
+            not in _string_list(row.get("scopeEvidenceKinds"))
+        ):
+            continue
+        occurrence_quest_ids: set[str] = set()
+        complete = True
+        for occurrence in occurrences:
+            conditions = [
+                condition
+                for condition in occurrence.get("missionConditions") or []
+                if isinstance(condition, dict)
+            ]
+            if (
+                not conditions
+                or "mission_condition_checks_script"
+                not in _string_list(occurrence.get("scopeEvidenceKinds"))
+            ):
+                complete = False
+                break
+            occurrence_quest_ids.update(
+                safe_key(condition.get("questId"))
+                for condition in conditions
+                if safe_key(condition.get("questId"))
+            )
+        if complete and len(occurrence_quest_ids) == 1:
+            quest_ids.update(occurrence_quest_ids)
+            scene_keys.add(scene_key)
     return quest_ids, scene_keys
 
 
@@ -883,6 +1010,61 @@ def _flow_story_connections(flow: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
+def _connection_native_occurrences(
+    connection: dict[str, Any],
+    scene_key: str,
+    occurrence_fields: tuple[str, ...],
+) -> list[dict[str, Any]]:
+    occurrences = [
+        occurrence
+        for field in occurrence_fields
+        for occurrence in connection.get(field) or []
+        if isinstance(occurrence, dict)
+    ]
+    if occurrences:
+        return occurrences
+
+    # Some stronger context rows compact one exact native path directly onto
+    # the connection instead of repeating its lower-level occurrence record.
+    # Reconstruct only the minimum occurrence shape needed by the closure
+    # classifier, and only when the playback step itself carries this exact
+    # Story key.
+    level_ids = _string_list(connection.get("levelIds"))
+    script_ids = _string_list(connection.get("scriptIds"))
+    source_files = [
+        source_file
+        for source_file in _string_list(connection.get("sourceFiles"))
+        if "/LevelScriptData/" in ("/" + source_file.replace("\\", "/"))
+    ]
+    if len(level_ids) != 1 or len(script_ids) != 1 or len(source_files) != 1:
+        return []
+    synthetic: list[dict[str, Any]] = []
+    for owner in connection.get("nativeEventOwners") or []:
+        if not isinstance(owner, dict):
+            continue
+        for step in owner.get("path") or []:
+            if (
+                not isinstance(step, dict)
+                or not safe_key(step.get("recordClass")).startswith("play_")
+                or not safe_key(step.get("actionName"))
+                or scene_key not in _string_list(step.get("texts"))
+                or not isinstance(step.get("localId"), int)
+            ):
+                continue
+            synthetic.append({
+                "levelId": level_ids[0],
+                "scriptId": script_ids[0],
+                "sourceFile": source_files[0],
+                "actionMapRole": "actionList#exact-native-owner-path",
+                "allStoryKeysInRecord": [scene_key],
+                "localId": step["localId"],
+                "actionName": safe_key(step.get("actionName")),
+                "recordClass": safe_key(step.get("recordClass")),
+                "nativeEventOwners": [owner],
+            })
+    return synthetic
+
+
 def _closed_exact_native_unordered_scenes(
     flow: dict[str, Any],
     weak_only_scene_keys: set[str],
@@ -915,44 +1097,45 @@ def _closed_exact_native_unordered_scenes(
         scene_key = safe_key(connection.get("key"))
         if scene_key not in weak_only_scene_keys:
             continue
-        for field in occurrence_fields:
-            for occurrence in connection.get(field) or []:
-                if not isinstance(occurrence, dict):
-                    continue
-                level_id = safe_key(occurrence.get("levelId"))
-                script_id = safe_key(occurrence.get("scriptId"))
-                source_file = safe_key(occurrence.get("sourceFile"))
-                if any(
-                    isinstance(owner, dict)
-                    and owner.get("status") in exact_control_path_statuses
-                    for owner in occurrence.get("nativeEventOwners") or []
-                ):
-                    exact_stub_scopes[scene_key].add(
-                        (level_id, script_id, source_file)
-                    )
-                if (
-                    not safe_key(occurrence.get("actionMapRole")).startswith(
-                        "actionList#"
-                    )
-                    or not safe_key(occurrence.get("recordClass")).startswith(
-                        "play_"
-                    )
-                    or not safe_key(occurrence.get("actionName"))
-                ):
-                    continue
-                record_story_keys = _string_list(
-                    occurrence.get("allStoryKeysInRecord")
+        for occurrence in _connection_native_occurrences(
+            connection,
+            scene_key,
+            occurrence_fields,
+        ):
+            level_id = safe_key(occurrence.get("levelId"))
+            script_id = safe_key(occurrence.get("scriptId"))
+            source_file = safe_key(occurrence.get("sourceFile"))
+            if any(
+                isinstance(owner, dict)
+                and owner.get("status") in exact_control_path_statuses
+                for owner in occurrence.get("nativeEventOwners") or []
+            ):
+                exact_stub_scopes[scene_key].add(
+                    (level_id, script_id, source_file)
                 )
-                if record_story_keys and scene_key not in record_story_keys:
-                    continue
-                signature = (
-                    level_id,
-                    script_id,
-                    source_file,
-                    occurrence.get("recordOffset"),
-                    occurrence.get("localId"),
+            if (
+                not safe_key(occurrence.get("actionMapRole")).startswith(
+                    "actionList#"
                 )
-                occurrences_by_scene[scene_key][signature] = occurrence
+                or not safe_key(occurrence.get("recordClass")).startswith(
+                    "play_"
+                )
+                or not safe_key(occurrence.get("actionName"))
+            ):
+                continue
+            record_story_keys = _string_list(
+                occurrence.get("allStoryKeysInRecord")
+            )
+            if record_story_keys and scene_key not in record_story_keys:
+                continue
+            signature = (
+                level_id,
+                script_id,
+                source_file,
+                occurrence.get("recordOffset"),
+                occurrence.get("localId"),
+            )
+            occurrences_by_scene[scene_key][signature] = occurrence
 
     incident_levelscript_files = incident_levelscript_files or {}
     for scene_key in weak_only_scene_keys:
@@ -1502,6 +1685,143 @@ def _closed_exact_dialog_tree_embedded_context_isolated_scenes(
                 "recovered; one or both adjacent parent trunk lines remain "
                 "unknown, and no Story-file edge is emitted"
             ),
+        })
+    return sorted(closed, key=lambda row: natural_key(row["sceneKey"]))
+
+
+def _closed_exact_timeline_dialog_embedded_isolated_scenes(
+    flow: dict[str, Any],
+    isolated_scene_keys: set[str],
+    mission: str,
+) -> list[dict[str, Any]]:
+    """Close exact Timeline-embedded Story playback with content on both sides."""
+    accepted_host_missions = {
+        mission,
+        *_string_list(flow.get("_sourceVariantMissionIds")),
+    }
+    closed: list[dict[str, Any]] = []
+    for row in _flow_story_connections(flow):
+        scene_key = safe_key(row.get("key"))
+        parent_story_key = safe_key(row.get("parentStoryKey"))
+        text_ids = set(_string_list(row.get("textIds")))
+        timeline_ids = set(_string_list(row.get("timelines")))
+        source_files = set(_string_list(row.get("sourceFiles")))
+        attachments = [
+            attachment
+            for attachment in row.get("timelineAttachments") or []
+            if isinstance(attachment, dict)
+        ]
+        parent_occurrences = [
+            occurrence
+            for occurrence in row.get("parentDialogNativeOccurrences") or []
+            if isinstance(occurrence, dict)
+        ]
+        if (
+            scene_key not in isolated_scene_keys
+            or safe_key(row.get("relation"))
+            != "timeline_dialog_contains_black"
+            or safe_key(row.get("confidence")) != "native_exact_host"
+            or safe_key(row.get("storyOwnerMission")) != mission
+            or not parent_story_key
+            or not text_ids
+            or not timeline_ids
+            or not source_files
+            or len(attachments) != len(text_ids)
+            or int(row.get("occurrenceCount") or 0) != len(text_ids)
+            or not parent_occurrences
+        ):
+            continue
+        if any(
+            safe_key(attachment.get("key")) != scene_key
+            or safe_key(attachment.get("textId")) not in text_ids
+            or safe_key(attachment.get("dialogKey")) != parent_story_key
+            or safe_key(attachment.get("timeline")) not in timeline_ids
+            or safe_key(attachment.get("sourceFile")) not in source_files
+            or safe_key(attachment.get("dialogJoin"))
+            != "dialog_id_table_used_timeline"
+            or not safe_key(attachment.get("assetPath"))
+            or not safe_key(attachment.get("trackPath"))
+            or not safe_key(attachment.get("rootPath"))
+            for attachment in attachments
+        ):
+            continue
+        native_paths: list[dict[str, Any]] = []
+        valid = True
+        for occurrence in parent_occurrences:
+            action_local_id = occurrence.get("localId")
+            if (
+                safe_key(occurrence.get("recordClass")) != "play_dialog"
+                or not safe_key(occurrence.get("actionName"))
+                or parent_story_key
+                not in _string_list(occurrence.get("allStoryKeysInRecord"))
+                or not isinstance(action_local_id, int)
+            ):
+                valid = False
+                break
+            level_data_hosts = [
+                host
+                for host in occurrence.get("levelDataHosts") or []
+                if isinstance(host, dict)
+            ]
+            if (
+                not level_data_hosts
+                or any(
+                    safe_key(host.get("missionId"))
+                    not in accepted_host_missions
+                    or not safe_key(host.get("levelDataFile"))
+                    for host in level_data_hosts
+                )
+            ):
+                valid = False
+                break
+            exact_owners = [
+                owner
+                for owner in occurrence.get("nativeEventOwners") or []
+                if (
+                    isinstance(owner, dict)
+                    and safe_key(owner.get("status"))
+                    in {
+                        "exact_serialized_control_path",
+                        "exact_serialized_control_path_equivalent_duplicates",
+                    }
+                    and action_local_id
+                    in {
+                        step.get("localId")
+                        for step in owner.get("path") or []
+                        if isinstance(step, dict)
+                    }
+                )
+            ]
+            if not exact_owners:
+                valid = False
+                break
+            native_paths.extend({
+                "levelId": safe_key(occurrence.get("levelId")),
+                "scriptId": safe_key(occurrence.get("scriptId")),
+                "sourceFile": safe_key(occurrence.get("sourceFile")),
+                "headerName": safe_key(owner.get("headerName")),
+                "headerLocalId": owner.get("headerLocalId"),
+                "actionName": safe_key(occurrence.get("actionName")),
+                "actionLocalId": action_local_id,
+            } for owner in exact_owners)
+        if not valid:
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_native_timeline_embedded_playback_context_"
+                "no_file_order",
+            "relation": "timeline_dialog_contains_black",
+            "parentStoryKey": parent_story_key,
+            "timelineIds": sorted(timeline_ids, key=natural_key),
+            "textIds": sorted(text_ids, key=natural_key),
+            "nativeEventPaths": native_paths,
+            "placementBoundary": (
+                "the exact parent playback path and Timeline clips establish "
+                "embedded playback; parent dialog content occurs on both "
+                "sides, so no scene-file edge is created"
+            ),
+            "graphEffect": "none",
         })
     return sorted(closed, key=lambda row: natural_key(row["sceneKey"]))
 
@@ -2195,7 +2515,10 @@ def build_gap_row(
         for row in timeline.get("quests") or []
         if isinstance(row, dict) and safe_key(row.get("questId"))
     }
-    strict_quest_ids, strict_quest_scenes = _strict_quest_attachments(partial_row)
+    strict_quest_ids, strict_quest_scenes = _strict_quest_attachments(
+        partial_row,
+        flow,
+    )
     diagnostic_quest_ids, diagnostic_quest_scenes, diagnostic_source_counts = (
         _diagnostic_quest_attachments(timeline, candidate_scene_keys)
     )
@@ -2267,6 +2590,15 @@ def build_gap_row(
             row,
         )
     for row in _closed_exact_dialog_tree_embedded_context_isolated_scenes(
+        flow,
+        set(isolated_scene_keys),
+        safe_key(partial_row.get("mission")),
+    ):
+        closed_exact_native_isolated_by_key.setdefault(
+            row["sceneKey"],
+            row,
+        )
+    for row in _closed_exact_timeline_dialog_embedded_isolated_scenes(
         flow,
         set(isolated_scene_keys),
         safe_key(partial_row.get("mission")),
@@ -2803,8 +3135,10 @@ def main(argv: list[str] | None = None) -> int:
         path = mission_dir / f"{mission}.json"
         if not path.is_file():
             continue
-        payload = read_json(path, {})
-        mission_payloads[mission] = payload if isinstance(payload, dict) else {}
+        mission_payloads[mission] = load_mission_payload_with_variants(
+            mission_dir,
+            mission,
+        )
         mission_bundle_presence.add(mission)
 
     offline_exhaustion_index, offline_exhaustion_status = (

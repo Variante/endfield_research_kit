@@ -152,7 +152,7 @@ Endpoint action metadata also separates preload definitions from playback.
 visible under `definitionOnlySourceNodes` rather than appearing as missing
 playback cards. A global exact playback occurrence overrides that closure;
 this keeps `cutscene_e2m7_010` actionable/contextual despite one separate
-preload edge. Current schema `sourceStoryPartialOrder.v18` therefore has zero
+preload edge. Current schema `sourceStoryPartialOrder.v19` therefore has zero
 unresolved source nodes and two definition-only preload nodes.
 The source graph mirrors both classes without adding direct mission-to-Story
 ownership: playback placements pass through
@@ -4143,14 +4143,14 @@ Current main-story priorities:
    1,218,871 objects / 1,018 MonoScripts / 883 schemas and Persistent has
    116,579 objects / 1,018 MonoScripts / 271 schemas. After rebuilding the CN
    Story gap queue, the synchronized audit scanned all 1,335,450 object rows
-   for 3,128 core-isolated keys. It found 239 objects with exact target values
+   for 3,127 core-isolated keys. It found 239 objects with exact target values
    but zero typed same-object Story plus owner/runtime candidates. Exact
    `TimelineAsset.m_Name` and `CutsceneRootComponent._timelineName` occurrences
    remain rejected name/timeline clues, not ownership or order evidence. The
    v2 report preserves the complete target key-to-mission map, the stable
    target-field name, and target-set SHA-256
-   `54268b7c70d03335a4de8d1156f08cdbff61844d6d3ae0b8d825512c018aab2e`;
-   all 3,128 keys are explicitly listed as having no typed candidate. The
+   `cb51f2131925ea741ab86e1732bd14a6533d0a7b822a5b86c2c7fb3e06492be2`;
+   all 3,127 keys are explicitly listed as having no typed candidate. The
    current result is preserved in
    `reports/story/recovery/animestudio_story_carrier_audit.{json,md}` and adds
    zero bindings or edges. This closes the stale-provenance work item: do not
@@ -4306,7 +4306,7 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v20`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v21`
    now turns the completed exact `e11m4` negative boundary into a fail-closed
    operational deferral. It activates only while the exact current
    `GameAssembly.dll`, RadioTable, AudioDialog, NumIdStrTable, and
@@ -4316,9 +4316,13 @@ Current main-story priorities:
    registry/root gates remain exact; and no new route exists. The rows stay
    visible as `deferred_current_build_offline_surface_exhausted`, create no
    graph edge, and reopen automatically if any gate changes. `e11m4` therefore
-   scores 0 with 35 deferred rows. The genuine offline queue now ranks
-   `e10m4` first (160/32), followed by `e11m1` (145/29) and `e11m6`
-   (125/25). Continue
+   scores 0 with 35 deferred rows. The same exact mechanism now defers 21
+   e10m4 RadioTable-only rows after their current row schemas, AudioDialog
+   membership (including the two exact partial-membership exceptions), Lua
+   negative, object-index negative, and native caller boundary were verified.
+   There are 56 deferred rows across e10m4/e11m4, all with graph effect
+   `none`. The genuine offline queue now ranks `e11m1` first (145/29),
+   followed by `e11m6` (125/25) and `e11m2` (75/15). Continue
    offline from those exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
    runtime capture later becomes possible, start with `e11m1`: use the
@@ -4446,8 +4450,32 @@ Current main-story priorities:
    combined two-leaf `e6m1` mission-state lock (targets `3` and `2`), while
    final `dlg_e10m4_22` carries a direct `e5m3_q#3` quest-state target `3`.
    Those referenced state owners are not promoted to Story ownership or
-   chronology. The e10m4 queue is therefore 32 actionable rows; its seven
-   runtime-configuration closures add no order edge.
+   chronology. The declared `sceneGraphVariantMissions=["e10m4d5"]` evidence
+   is now loaded by the partial-order and gap builders instead of being dropped
+   behind the base `e10m4.json` filename. This recovers three strict native
+   path-prefix edges that the combined scene graph had retained only as weak
+   file order:
+   `cutscene_e10m4_2 -> dlg_e10m4_6`,
+   `radio_e10m4_41 -> radio_e10m4_67`, and
+   `radio_e10m4_47 -> radio_e10m4_48`. It also closes exact isolated playback
+   for `dlg_e10m4_8`, `radio_e10m4_39`, `_54`, and `_64`.
+   The registered `dlg_e10m4_3` DialogTree provides one further strict edge:
+   its directed chain contains all 15 parent lines before the complete
+   five-line `dlg_e10m4_14` continuation, proving
+   `dlg_e10m4_3 -> dlg_e10m4_14`. Conversely, `black_e10m4_1` is exact
+   Timeline-embedded playback inside the native-reached `dlg_e10m4_5`, but
+   parent dialog lines occur on both sides of its two clips; it is closed as
+   playback context with no scene edge.
+   Of the remaining RadioTable-only rows, 21 have no recovered consumer across
+   the exact structured, Lua, object-index, and native-caller surfaces and are
+   now current-build offline-exhausted deferrals. The exact
+   `24400000015` objective-script owner also strictly attaches
+   `e10m4d5_q#23` to
+   `cutscene_dung02_rdg002_roomA_camera`; it does not order the cutscene.
+   e10m4 now scores 34: five actionable isolated keys
+   (`dlg_e10m4_16`, `_17`, `_21`, `sns_e10m4_1`, and `text_e10m4_1`) plus
+   three narrower quest-attachment questions (`q#31`, `q#34`, and `q#35`).
+   Its seven runtime-configuration closures add no order edge.
    The current `e11m4` queue has 49 core isolated scenes split into 35
    current-build offline-exhausted deferred rows, three exact-native closed
    rows, and eleven exact

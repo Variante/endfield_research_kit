@@ -790,6 +790,50 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(row["metrics"]["strictQuestIdsWithStoryAttachment"], 1)
         self.assertEqual(row["questIdsWithoutStrictStoryAttachment"], ["e1m1_q#2"])
 
+    def test_unique_objective_script_owner_is_strict_quest_attachment(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "e1m1",
+            scenes=["cutscene_a"],
+            isolated=["cutscene_a"],
+        )
+        payload = mission_payload(
+            quest_ids=["e1m1_q#1"],
+            placements={
+                "cutscene_a": {
+                    "sceneKey": "cutscene_a",
+                    "questIds": ["e1m1_q#1"],
+                    "questAttachSources": [{"source": "scriptCondition"}],
+                },
+            },
+            connections=[{
+                "key": "cutscene_a",
+                "relation": "levelscript_mission_context",
+                "confidence": "scoped_script",
+                "hasUnscopedOrOtherMissionOccurrences": False,
+                "scopeEvidenceKinds": ["mission_condition_checks_script"],
+                "levelScriptOccurrences": [{
+                    "scopeEvidenceKinds": [
+                        "mission_condition_checks_script",
+                    ],
+                    "missionConditions": [{
+                        "missionId": "e1m1",
+                        "questId": "e1m1_q#1",
+                    }],
+                }],
+            }],
+        )
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["strictQuestIdsWithStoryAttachment"], 1)
+        self.assertEqual(row["questIdsWithoutStrictStoryAttachment"], [])
+
     def test_missing_bundle_is_explicit_high_priority_gap(self) -> None:
         partial = partial_mission("e1m1", scenes=["dlg_a"])
 
@@ -865,6 +909,117 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             row["scoreContributions"]["actionableCoreIsolatedScenes"],
             0,
         )
+
+    def test_compact_top_level_native_path_closes_exact_isolated_scene(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "e1m1",
+            scenes=["dlg_a"],
+            isolated=["dlg_a"],
+        )
+        payload = mission_payload(connections=[{
+            "key": "dlg_a",
+            "levelIds": ["lv1"],
+            "scriptIds": ["1001"],
+            "sourceFiles": [
+                "MissionRuntimeAsset/e1m1.json",
+                "LevelScriptData/lv1/1001.json",
+            ],
+            "nativeEventOwners": [{
+                "status": "exact_serialized_control_path",
+                "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                "headerLocalId": 4,
+                "path": [{
+                    "localId": 5,
+                    "actionName": "StartDialogAndTeleportAction",
+                    "recordClass": "play_dialog",
+                    "texts": ["teleport_id", "dlg_a"],
+                }],
+            }],
+        }])
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(row["metrics"]["closedExactNativeIsolatedScenes"], 1)
+        self.assertEqual(
+            row["closedExactNativeIsolatedScenes"][0]["nativeEventPaths"][0][
+                "actionName"
+            ],
+            "StartDialogAndTeleportAction",
+        )
+
+    def test_timeline_embedded_black_with_exact_parent_path_is_closed(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "e10m4",
+            scenes=["black_e10m4_1"],
+            isolated=["black_e10m4_1"],
+        )
+        payload = mission_payload(connections=[{
+            "key": "black_e10m4_1",
+            "relation": "timeline_dialog_contains_black",
+            "confidence": "native_exact_host",
+            "storyOwnerMission": "e10m4",
+            "parentStoryKey": "dlg_e10m4_5",
+            "occurrenceCount": 1,
+            "textIds": ["black_e10m4_1_001"],
+            "timelines": ["dlgtl_e10m4_5_sub_1"],
+            "sourceFiles": ["CAB-story"],
+            "timelineAttachments": [{
+                "key": "black_e10m4_1",
+                "textId": "black_e10m4_1_001",
+                "dialogKey": "dlg_e10m4_5",
+                "timeline": "dlgtl_e10m4_5_sub_1",
+                "sourceFile": "CAB-story",
+                "dialogJoin": "dialog_id_table_used_timeline",
+                "assetPath": "center_text.json",
+                "trackPath": "trunk_track.json",
+                "rootPath": "timeline_root.json",
+            }],
+            "parentDialogNativeOccurrences": [{
+                "levelId": "dungeon",
+                "scriptId": "1001",
+                "sourceFile": "LevelScriptData/dungeon/1001.json",
+                "actionName": "StartDialogAndTeleportAction",
+                "recordClass": "play_dialog",
+                "localId": 8,
+                "allStoryKeysInRecord": ["dlg_e10m4_5"],
+                "levelDataHosts": [{
+                    "missionId": "e10m4d5",
+                    "levelDataFile": "LevelData/dungeon/e10m4d5.json",
+                }],
+                "nativeEventOwners": [{
+                    "status": "exact_serialized_control_path",
+                    "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    "headerLocalId": 6,
+                    "path": [{"localId": 7}, {"localId": 8}],
+                }],
+            }],
+        }])
+        payload["flow"]["_sourceVariantMissionIds"] = ["e10m4d5"]
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(row["metrics"]["closedExactNativeIsolatedScenes"], 1)
+        closure = row["closedExactNativeIsolatedScenes"][0]
+        self.assertEqual(
+            closure["recoveryStatus"],
+            "closed_exact_native_timeline_embedded_playback_context_"
+            "no_file_order",
+        )
+        self.assertEqual(closure["graphEffect"], "none")
 
     def test_exact_npc_proxy_runtime_config_is_closed_without_order(self) -> None:
         partial = partial_mission(

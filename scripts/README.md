@@ -1789,8 +1789,18 @@ gameplay-video OCR/audio workflow.
   `preload_cutscene` is reported separately under
   `definitionOnlySourceNodes`, unless another exact final-playback occurrence
   for that Story key exists anywhere in the installed corpus. Current schema
-  `sourceStoryPartialOrder.v18` has zero unresolved source nodes and preserves
+  `sourceStoryPartialOrder.v19` has zero unresolved source nodes and preserves
   two `e9m2` preload-only definitions.
+  When a base mission bundle explicitly lists
+  `flow.sceneGraphVariantMissions`, the audit also loads those exact generated
+  variant bundles and merges only the route/quest evidence collections it
+  consumes. Undeclared, missing, or identity-mismatched files fail closed.
+  This restores e10m4d5's exact route evidence to the base e10m4 graph,
+  including three native path-prefix edges that had appeared only as weak file
+  order. A cross-Story DialogTree trunk continuation is additionally strong
+  only when one exact registered carrier chain covers every child line and its
+  current-parent closure covers every parent line; the first recovered edge is
+  `dlg_e10m4_3 -> dlg_e10m4_14`.
   Source-graph ingestion preserves the same boundary through explicit
   `mission_story_context` nodes for exact playback context and
   `mission_story_definition` nodes for preload-only references. It never emits
@@ -1956,7 +1966,8 @@ gameplay-video OCR/audio workflow.
   Timeline consumer search.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact. The initial mapping
-  covers the 34 residual `e11m4` radio definitions and
+  covers the 34 residual `e11m4` radio definitions, the 21 residual `e10m4`
+  radio definitions, and
   `cutscene_e11m4_rift_camera_state1to2`: it requires the expected
   `GameAssembly.dll`, RadioTable, AudioDialog, NumIdStrTable, and cutscene
   definition hashes; the complete provenance-valid carrier audit and its
@@ -1966,6 +1977,13 @@ gameplay-video OCR/audio workflow.
   `deferred_current_build_offline_surface_exhausted`, add no graph edge, and
   automatically become actionable again if a hash, target set, mission
   assignment, route, or audit gate changes.
+  Exact Timeline-contained black-screen playback is separately closed as
+  native context only when every clip, parent dialog, registered Timeline,
+  variant LevelData host, and parent event-to-dialog path agrees. It adds no
+  scene edge when the parent dialog has content on both sides. Unique
+  `levelscript_mission_context` rows whose every occurrence names one exact
+  MissionRuntime objective-script owner also count as strict quest attachment,
+  without implying relative Story order.
   Authored non-mission isolation is also closed without an edge. Speaker radio
   continuation and character SNS topics come only from their keyed tables.
   `radio_blackbox_common_1` comes from the separately freshness-checked

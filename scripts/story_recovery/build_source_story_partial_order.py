@@ -48,7 +48,23 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v18"
+SCHEMA = "sourceStoryPartialOrder.v19"
+VARIANT_FLOW_LIST_FIELDS = (
+    "missionStoryConnections",
+    "quests",
+    "unlinkedNativePlayback",
+    "unlinkedDefinitionOnly",
+)
+VARIANT_TIMELINE_LIST_FIELDS = (
+    "branchPoints",
+    "questEdges",
+    "quests",
+    "sourceBackedStoryCallContexts",
+    "unresolved",
+)
+VARIANT_TIMELINE_DICT_FIELDS = (
+    "scenePlacement",
+)
 SPAWNER_CONFIG_ROOTS = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Data" / "Json" / "SpawnerConfig",
@@ -87,6 +103,7 @@ SUPPORTED_ORDER_EDGE_KINDS = frozenset({
 PROVEN_ORDER_EDGE_KINDS = (
     frozenset(STRONG_ORDER_EDGE_KINDS) - SUPPORTED_ORDER_EDGE_KINDS
 ) | frozenset({
+    "dialogTreeCrossStoryTrunkContinuation",
     "levelscriptNativeControlPath",
     "levelscriptQuestStateActionPath",
     "spawnerWaveGroupPartKilled",
@@ -131,6 +148,84 @@ EDGE_EVIDENCE_FIELDS = (
     "fromActionClasses",
     "toActionClasses",
 )
+
+
+def load_mission_payload_with_variants(
+    mission_dir: Path,
+    mission: str,
+) -> dict[str, Any]:
+    """Load one generated mission bundle plus its declared graph variants.
+
+    The Story index groups variant-prefixed Story keys under the base mission,
+    and the base bundle's ``sceneGraph`` already records which exact variant
+    mission bundles contributed to that combined graph. Preserve the base
+    graph, but merge only the evidence collections consumed by this audit so
+    native routes and quest diagnostics from those declared variants are not
+    silently dropped.
+    """
+    mission_path = mission_dir / f"{mission}.json"
+    payload = read_json(mission_path, {}) if mission_path.is_file() else {}
+    if not isinstance(payload, dict):
+        return {}
+    base_flow = payload.get("flow")
+    base_flow = base_flow if isinstance(base_flow, dict) else {}
+    variant_ids = sorted({
+        safe_key(value)
+        for value in base_flow.get("sceneGraphVariantMissions") or []
+        if safe_key(value) and safe_key(value) != mission
+    }, key=natural_key)
+    if not variant_ids:
+        return payload
+
+    merged_payload = dict(payload)
+    merged_flow = dict(base_flow)
+    for field in VARIANT_FLOW_LIST_FIELDS:
+        merged_flow[field] = list(base_flow.get(field) or [])
+    base_timeline = payload.get("timelineRecovery")
+    base_timeline = base_timeline if isinstance(base_timeline, dict) else {}
+    merged_timeline = dict(base_timeline)
+    for field in VARIANT_TIMELINE_LIST_FIELDS:
+        merged_timeline[field] = list(base_timeline.get(field) or [])
+    for field in VARIANT_TIMELINE_DICT_FIELDS:
+        value = base_timeline.get(field)
+        merged_timeline[field] = dict(value) if isinstance(value, dict) else {}
+
+    accepted_variants: list[str] = []
+    accepted_files: list[str] = []
+    for variant_id in variant_ids:
+        variant_path = mission_dir / f"{variant_id}.json"
+        variant_payload = (
+            read_json(variant_path, {}) if variant_path.is_file() else {}
+        )
+        if (
+            not isinstance(variant_payload, dict)
+            or safe_key(variant_payload.get("mission")) != variant_id
+        ):
+            continue
+        variant_flow = variant_payload.get("flow")
+        variant_flow = variant_flow if isinstance(variant_flow, dict) else {}
+        for field in VARIANT_FLOW_LIST_FIELDS:
+            merged_flow[field].extend(variant_flow.get(field) or [])
+        variant_timeline = variant_payload.get("timelineRecovery")
+        variant_timeline = (
+            variant_timeline if isinstance(variant_timeline, dict) else {}
+        )
+        for field in VARIANT_TIMELINE_LIST_FIELDS:
+            merged_timeline[field].extend(variant_timeline.get(field) or [])
+        for field in VARIANT_TIMELINE_DICT_FIELDS:
+            value = variant_timeline.get(field)
+            if isinstance(value, dict):
+                merged_timeline[field].update(value)
+        accepted_variants.append(variant_id)
+        accepted_files.append(variant_path.as_posix())
+
+    if not accepted_variants:
+        return payload
+    merged_flow["_sourceVariantMissionIds"] = accepted_variants
+    merged_payload["flow"] = merged_flow
+    merged_payload["timelineRecovery"] = merged_timeline
+    merged_payload["_sourceMissionVariantFiles"] = accepted_files
+    return merged_payload
 
 DEFINITION_ONLY_SOURCE_RECORD_CLASSES = frozenset({
     "preload_cutscene",
@@ -1143,6 +1238,130 @@ def _story_connection_rows(flow: dict[str, Any]) -> Iterable[dict[str, Any]]:
         for row in flow.get(field) or []:
             if isinstance(row, dict):
                 yield row
+
+
+def _dialog_tree_cross_story_trunk_edges(
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+    dialog_payloads: list[tuple[str, dict[str, Any]]] | None,
+) -> list[dict[str, Any]]:
+    """Recover a scene edge when one complete dialog continues as another.
+
+    A different Story prefix inside one DialogTree is not enough. The exact
+    carrier chain must directly follow a parent trunk, cover every line of the
+    child Story file, and its current-parent closure must cover every line of
+    the parent Story file. This rejects embedded files when the parent has
+    content on both sides.
+    """
+    line_ids_by_story = {
+        safe_key(payload.get("key")): {
+            safe_key(line.get("id"))
+            for line in payload.get("lines") or []
+            if isinstance(line, dict) and safe_key(line.get("id"))
+        }
+        for _path, payload in dialog_payloads or []
+        if isinstance(payload, dict) and safe_key(payload.get("key"))
+    }
+    edges: list[dict[str, Any]] = []
+    for row in _story_connection_rows(flow):
+        child_key = safe_key(row.get("key"))
+        parent_key = safe_key(row.get("parentStoryKey"))
+        carriers = [
+            carrier
+            for carrier in row.get("dialogTreeStoryPlaybackCarriers") or []
+            if isinstance(carrier, dict)
+        ]
+        if (
+            child_key not in candidate_keys
+            or parent_key not in candidate_keys
+            or child_key == parent_key
+            or safe_key(row.get("relation"))
+            != "dialog_tree_reachable_story_playback"
+            or safe_key(row.get("confidence"))
+            != "native_derived_exact_parent_shell"
+            or safe_key(row.get("nativeMappingId"))
+            != "dialog-tree-reachable-story-playback-native-v1"
+            or safe_key(row.get("certainty")) != "authored_reachable"
+            or not carriers
+        ):
+            continue
+        parent_line_ids = line_ids_by_story.get(parent_key) or set()
+        child_line_ids = line_ids_by_story.get(child_key) or set()
+        carrier_line_ids = {
+            safe_key(carrier.get("carrierValue"))
+            for carrier in carriers
+            if (
+                safe_key(carrier.get("carrierKind")) == "trunk"
+                and safe_key(carrier.get("storyKey")) == child_key
+                and carrier.get("reachableFromCurrentParentTrunk") is True
+                and safe_key(carrier.get("entryProof"))
+                == "exact_registered_dialog_tree_current_parent_anchor"
+            )
+        }
+        current_parent_line_ids = {
+            safe_key(value)
+            for carrier in carriers
+            for value in carrier.get("currentParentTrunkIds") or []
+            if safe_key(value)
+        }
+        if (
+            not parent_line_ids
+            or not child_line_ids
+            or carrier_line_ids != child_line_ids
+            or current_parent_line_ids != parent_line_ids
+            or set(_string_list(row.get("trunkIds"))) != child_line_ids
+        ):
+            continue
+        ordered_carriers = sorted(
+            carriers,
+            key=lambda carrier: (
+                len(carrier.get("nodePath") or []),
+                natural_key(safe_key(carrier.get("carrierValue"))),
+            ),
+        )
+        first = ordered_carriers[0]
+        first_path = _string_list(first.get("nodePath"))
+        if (
+            len(first_path) != 2
+            or safe_key(first.get("parentTrunkId")) not in parent_line_ids
+            or len(first.get("connectionPath") or []) != 1
+        ):
+            continue
+        chain_valid = True
+        for index, carrier in enumerate(ordered_carriers, start=1):
+            node_path = _string_list(carrier.get("nodePath"))
+            connection_path = [
+                connection
+                for connection in carrier.get("connectionPath") or []
+                if isinstance(connection, dict)
+            ]
+            if (
+                len(node_path) != index + 1
+                or node_path[:len(first_path)] != first_path
+                or len(connection_path) != len(node_path) - 1
+                or safe_key(carrier.get("nodeId")) != node_path[-1]
+            ):
+                chain_valid = False
+                break
+        if not chain_valid:
+            continue
+        edges.append({
+            "from": parent_key,
+            "to": child_key,
+            "kind": "dialogTreeCrossStoryTrunkContinuation",
+            "tier": "strong",
+            "source":
+                "complete exact registered DialogTree parent-to-child trunk continuation",
+            "sourceFiles": _string_list(row.get("sourceFiles")),
+            "nativeMappingId": safe_key(row.get("nativeMappingId")),
+            "parentLastLineId": safe_key(first.get("parentTrunkId")),
+            "childFirstLineId": safe_key(first.get("carrierValue")),
+            "childLineIds": sorted(child_line_ids, key=natural_key),
+            "runtimeReplacementPossible": bool(
+                row.get("runtimeReplacementPossible")
+            ),
+        })
+    return edges
 
 
 def _connection_native_occurrences(row: dict[str, Any]) -> list[dict[str, Any]]:
@@ -2309,6 +2528,13 @@ def build_mission_partial_order(
     direct_edges.extend(
         _spawner_wave_group_part_killed_story_edges(flow, candidate_keys)
     )
+    direct_edges.extend(
+        _dialog_tree_cross_story_trunk_edges(
+            flow,
+            candidate_keys,
+            dialog_payloads,
+        )
+    )
     _demote_reciprocal_quest_projections(direct_edges)
 
     direct_edges.sort(key=_edge_sort_key)
@@ -2792,7 +3018,10 @@ def build_report(
         if not candidate_kinds:
             continue
         mission_path = mission_dir / f"{mission}.json"
-        mission_payload = read_json(mission_path, {}) if mission_path.is_file() else {}
+        mission_payload = load_mission_payload_with_variants(
+            mission_dir,
+            mission,
+        )
         mission_flow = (
             mission_payload.get("flow")
             if isinstance(mission_payload.get("flow"), dict)
@@ -2834,6 +3063,14 @@ def build_report(
         row["missionData"] = (
             mission_path.relative_to(ROOT).as_posix() if mission_path.is_file() else ""
         )
+        row["missionDataVariants"] = [
+            (
+                Path(path).relative_to(ROOT).as_posix()
+                if Path(path).is_relative_to(ROOT)
+                else Path(path).as_posix()
+            )
+            for path in mission_payload.get("_sourceMissionVariantFiles") or []
+        ]
         rows.append(row)
         summary = row["summary"]
         totals["missions"] += 1
