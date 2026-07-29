@@ -4306,8 +4306,8 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v64`
-   turns the completed exact `e0m0`, `e1m1`, `e1m2`, `e1m3`, `e1m4`,
+   block metadata or the installed build changes. `sourceStoryGapQueue.v65`
+   turns the completed exact `e0m0`, `e0m2`, `e1m1`, `e1m2`, `e1m3`, `e1m4`,
    `e1m10`, `e2m2`, `e2m3`, `e2m4`,
    `e2m5`, `e2m6`, `e2m7`, `e3m2`, `e3m3`, `e3m4`, `e4m1`, `e5m1`,
    `e5m2`, `e5m4`,
@@ -4765,6 +4765,19 @@ Current main-story priorities:
    The main-story bucket is score 182 with 31 actionable core isolated rows,
    106 exact-native isolated closures, 95 exact-runtime-config closures, and
    9 strict-attachment diagnostics. e0m2 is next at score 10.
+   The e0m2 pass closes two physical Timeline roots without manufacturing an
+   activation or ordering edge. `cutscene_e0m2_3_3` is NumIdStrTable id 262
+   with one exact `cutscene_e0m2_3_3` definition, while
+   `cutscene_e0m2_99` is id 237 and its one physical definition/root is
+   authored as `m_cutscene_e0m2_99`. Each key has exactly one typed
+   `CutsceneRootComponent` row and one unique PlayableDirector
+   `$.m_PlayableAsset` reverse host. The forward hierarchy scans find no typed
+   owner/runtime candidate, the carrier audit has no candidate, and both Story
+   coverage route arrays remain empty. Same-file `m_Parent` references are
+   Timeline composition only. v65/v44 has 327 declarations and 327 active
+   deferrals. The main-story bucket is score 172 with 29 actionable core
+   isolated rows, 106 exact-native isolated closures, 95 exact-runtime-config
+   closures, and 9 strict-attachment diagnostics. e8m3 is next at score 10.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
