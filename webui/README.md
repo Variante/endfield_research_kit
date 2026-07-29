@@ -171,8 +171,11 @@ available through expandable guidance.
   playback keeps an explicit ownership gap, while definition-only files remain
   visibly distinct. Exact, build-pinned CutsceneRoot playback aliases render as
   `Story root -> native playback action -> Story file` debug routes with their
-  own corpus count; they do not attach the target to a mission/quest or imply
-  relative Story order. Build-pinned candidates rejected by native resolution remain
+  own corpus count. An alias remains non-owning unless an independently
+  connected route terminates at that exact root through a native playback
+  action; when it does, the UI renders the complete composed owner route and
+  removes the target from that mission's unassigned queue. The composition
+  never implies relative Story order. Build-pinned candidates rejected by native resolution remain
   route-free and, with `Show debug info` enabled, render on the unassigned Story
   card as recovery boundaries rather than graph edges. Every recovered
   serialized event occurrence renders in its own causal lane with its event

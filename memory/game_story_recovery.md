@@ -3389,24 +3389,35 @@ Therefore do not add `last_01 -> last_02 -> last_03`,
 `f1m9d3 -> f1m9d4`, or
 `cutscene_gm02m4_3 -> cutscene_gm02m4_1` Story-order edges.
 
-Mission Pipeline schema 15 consumes these rows only when the audit schema,
+Mission Pipeline schema 16 consumes these rows only when the audit schema,
 native mapping, GameAssembly/metadata hashes, object-index stage signature,
 and latest export source fingerprints all match. It publishes four exact
 `cutscene_root_playback_alias` debug routes and a corpus count, but deliberately
-does not create a mission attachment, quest attachment, or Story-order edge.
-The four target files remain `trigger_known_owner_unresolved`; consequently the
-core coverage remains 4,071 connected and 1,211 unlinked. A fresh WebUI
-verification expanded `gm02m4`'s unassigned queue and rendered
-`cutscene_gm02m4_3 -> CutsceneRoot._director -> TimelineHandle.Play ->
-cutscene_gm02m4_1` as `root playback alias / ownership unresolved`.
+does not create a mission attachment, quest attachment, or Story-order edge
+from the alias alone.
+
+One alias now composes with an independently proven upstream selector.
+`cutscene_gm02m4_3` already has the exact connected route
+`gm02m4 -> MissionEvent_OnClientGlobalVarChanged ->
+map02_lv001/10100360002 header 31 -> PlayCutsceneAction local 23 ->
+cutscene_gm02m4_3`. Because that route terminates in native playback of the
+exact root key, the `_director` alias extends the same mission context to
+`cutscene_gm02m4_1`. The composition is not a Story-order edge and does not
+identify one quest. Coverage is therefore 4,072 connected and 1,210 unlinked;
+the other three alias targets remain `trigger_known_owner_unresolved`.
+Fresh-browser verification shows `cutscene_gm02m4_1` in the mission attachment
+section, removes it from `gm02m4`'s unassigned queue, and renders the complete
+mission/event/LevelScript/root/director/TimelineAsset chain.
 
 The reproducible outputs are
 `reports/story/recovery/animestudio_story_reverse_pptr_audit.{json,md}`.
-The next bounded offline question is no longer director activation. It is the
-upstream selector: find an exact mission/quest/LevelScript/runtime consumer
-that chooses one of these root Story keys. The alias can provide playback
-context for the TimelineAsset, but mission ownership and relative order remain
-unresolved until a separate source trigger or control relation supplies them.
+The remaining bounded offline question is no longer director activation. It is
+the upstream selector for `cutscene_e11m2_liexi_xs_m_01_last_01`,
+`cutscene_e11m2_liexi_xs_m_01_last_02`, and `cutscene_f1m9d3_1`. The source
+graph currently exposes no LevelScript or other runtime consumer for those
+roots. Their aliases provide playback context for the TimelineAssets, but
+mission ownership remains unresolved until a separate source trigger or
+control relation supplies it.
 
 ### The cinematic queue: a deterministic cross-type order rule
 
