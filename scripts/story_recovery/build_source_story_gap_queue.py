@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v30"
+SCHEMA = "sourceStoryGapQueue.v31"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v9"
+    "current-build-offline-story-carrier-exhaustion-v10"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -195,6 +195,7 @@ OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES = frozenset({
 OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
     "e1m3": frozenset({"cutscene_e1m3_1"}),
     "e6m3": frozenset({"cutscene_e6m3_2"}),
+    "e7m2": frozenset({"cutscene_e7m2_designer_QingBoZhai"}),
     "e9m2": frozenset({
         "cutscene_dung02_dg002_e9m2_lightthewall",
         "cutscene_dung02_dg002_e9m2_zipline01",
@@ -220,6 +221,7 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
 }
 OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e1m3_1": 1,
+    "cutscene_e7m2_designer_QingBoZhai": 1,
     "cutscene_dung02_dg002_e9m2_lightthewall": 1,
     "cutscene_dung02_dg002_e9m2_zipline01": 1,
     "cutscene_dung02_dg002_e9m2_zipline02": 1,
@@ -245,6 +247,16 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
                 "cutscene_e1m3_1_p08A501CA1E17069D.json",
                 "21F8CFA0B384573D011677A68F2D45C0A9E521CAB35AAB392F22405E3E428BB6",
                 "cutscene_e1m3_1",
+            ),
+        ),
+    },
+    "cutscene_e7m2_designer_QingBoZhai": {
+        "timelineRegistryId": 406,
+        "files": (
+            (
+                "cutscene_e7m2_designer_QingBoZhai_p2FD121DA4B9E08A2.json",
+                "F2FF234312A17C0E78854C5287236035790AB95113E1F6F0DC7EF02823B73063",
+                "cutscene_e7m2_designer_QingBoZhai",
             ),
         ),
     },
@@ -426,6 +438,7 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
 }
 OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS = {
     "cutscene_e1m3_1": 1,
+    "cutscene_e7m2_designer_QingBoZhai": 1,
     "cutscene_dung02_dg002_e9m2_lightthewall": 1,
     "cutscene_dung02_dg002_e9m2_zipline01": 1,
     "cutscene_dung02_dg002_e9m2_zipline02": 1,
@@ -467,6 +480,33 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
             "dlg_e1m3_5d5_003",
         ),
         "optionIds": (),
+    },
+    "dlg_e7m2_11": {
+        "missionId": "e7m2",
+        "filename": "dlg_e7m2_11_p1D1D1CB6DCE33F66.json",
+        "sha256":
+            "E60981C01179E2FDE65F3A76D10128330CAFAFF4F451EDD57FBE3B843299F41C",
+        "lineIds": (
+            "dlg_e7m2_11_001",
+            "dlg_e7m2_11_002",
+            "dlg_e7m2_11_003",
+        ),
+        "optionIds": (),
+    },
+    "dlg_e7m2_13": {
+        "missionId": "e7m2",
+        "filename": "dlg_e7m2_13_p8219B1D5393A3051.json",
+        "sha256":
+            "EF0C416CD15649F3A9BD911C87EB97CF4A71F6715878090125F947518B570A27",
+        "lineIds": (
+            "dlg_e7m2_13_001",
+            "dlg_e7m2_13_002",
+        ),
+        "optionIds": (),
+        "missingAudioIds": (
+            "au_dlg_e7m2_13_001",
+            "au_dlg_e7m2_13_002",
+        ),
     },
     "dlg_e6m3_6": {
         "missionId": "e6m3",
@@ -798,9 +838,17 @@ OFFLINE_EXHAUSTION_E1M3_RADIOS = frozenset({
     "radio_e1m3_32",
     "radio_e1m3_34",
 })
+OFFLINE_EXHAUSTION_E7M2_RADIOS = frozenset({
+    "radio_e7m2_2",
+    "radio_e7m2_9",
+    "radio_e7m2_12",
+    "radio_e7m2_14",
+    "radio_e7m2_18",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
+    "e7m2": OFFLINE_EXHAUSTION_E7M2_RADIOS,
     "e9m2": OFFLINE_EXHAUSTION_E9M2_RADIOS,
     "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
     "e11m1": OFFLINE_EXHAUSTION_E11M1_RADIOS,
@@ -843,6 +891,33 @@ OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
         "contentTextIds": (
             -1462227912355393055,
             3546372858747322539,
+        ),
+    },
+    "text_e7m2_2": {
+        "missionId": "e7m2",
+        "readingPopupRowId": "rp_text_e7m2_2",
+        "bgType": 0,
+        "iconType": 0,
+        "titleId": -7588282709172754827,
+        "contentTextIds": (
+            -9023359770995415827,
+            7212521158429018502,
+            8882406176969361569,
+            -8265050631721938907,
+            -3110117479021689552,
+        ),
+    },
+    "text_e7m2_3": {
+        "missionId": "e7m2",
+        "readingPopupRowId": "rp_text_e7m2_3",
+        "bgType": 0,
+        "iconType": 0,
+        "titleId": 2962665067992199025,
+        "contentTextIds": (
+            -5609198168520236941,
+            4817078487535843049,
+            -7532010202595511572,
+            -5193057068623944858,
         ),
     },
 }
