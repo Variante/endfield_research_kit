@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v48"
+SCHEMA = "sourceStoryGapQueue.v49"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -128,7 +128,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v27"
+    "current-build-offline-story-carrier-exhaustion-v28"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -213,6 +213,17 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
     },
 }
 OFFLINE_EXHAUSTION_SNS_DEFINITIONS = {
+    "sns_e7m4_1": {
+        "missionId": "e7m4",
+        "chatId": "sns_npc_yanning_e7m4",
+        "contentIds": (-1, *range(1, 8)),
+        "optionIdsByContentId": {},
+        "optionNextContentIds": {},
+        "optionDescriptionIds": {},
+        "contentParamsByContentId": {
+            4: ("sns_image_e7m4_1",),
+        },
+    },
     "sns_e10m4_1": {
         "missionId": "e10m4",
         "chatId": "sns_chr_0030_zhuangfy",
@@ -993,6 +1004,27 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
         ),
         "optionIds": (),
     },
+    "dlg_e7m4_7": {
+        "missionId": "e7m4",
+        "filename": "dlg_e7m4_7_p2D060CEE2EAD8EDA.json",
+        "sha256":
+            "849E5337AE53789BABF0F032BC91F6D78A9AEEEC39A04AF0C7607BDCDF221794",
+        "extraConfigFilename":
+            "dlg_e7m4_7_extra_config_pD963D3DAC28A8950.json",
+        "extraConfigSha256":
+            "CDF50562A00FA606836690E37B5BC2F9C69F9D16246FEE21528E7026919DA2E0",
+        "lineIds": (
+            "dlg_e7m4_7_001",
+            "dlg_e7m4_7_002",
+            "dlg_e7m4_7_003",
+        ),
+        "optionIds": (),
+        "missingAudioIds": (
+            "au_dlg_e7m4_7_001",
+            "au_dlg_e7m4_7_002",
+            "au_dlg_e7m4_7_003",
+        ),
+    },
     "dlg_e7m2_11": {
         "missionId": "e7m2",
         "filename": "dlg_e7m2_11_p1D1D1CB6DCE33F66.json",
@@ -1600,6 +1632,7 @@ OFFLINE_EXHAUSTION_E2M6_RADIOS = frozenset({
     "radio_e2m6_7d4",
 })
 OFFLINE_EXHAUSTION_E5M2_RADIOS = frozenset({"radio_e5m2_3"})
+OFFLINE_EXHAUSTION_E7M4_RADIOS = frozenset({"radio_e7m4_3"})
 OFFLINE_EXHAUSTION_E10M1_RADIOS = frozenset({
     "radio_e10m1_6",
     "radio_e10m1_9",
@@ -1618,6 +1651,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e6m4": OFFLINE_EXHAUSTION_E6M4_RADIOS,
     "e7m2": OFFLINE_EXHAUSTION_E7M2_RADIOS,
     "e7m3": OFFLINE_EXHAUSTION_E7M3_RADIOS,
+    "e7m4": OFFLINE_EXHAUSTION_E7M4_RADIOS,
     "e9m2": OFFLINE_EXHAUSTION_E9M2_RADIOS,
     "e9m3": OFFLINE_EXHAUSTION_E9M3_RADIOS,
     "e10m1": OFFLINE_EXHAUSTION_E10M1_RADIOS,
@@ -1795,6 +1829,17 @@ OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
             -6240633693489330108,
             -2308406107308525111,
             -587549745278413952,
+        ),
+    },
+    "text_e7m4_1": {
+        "missionId": "e7m4",
+        "readingPopupRowId": "text_e7m4_1",
+        "bgType": 2,
+        "iconType": 0,
+        "titleId": -9107143714236678642,
+        "contentTextIds": (
+            -11413322245013826,
+            -7389517897749196338,
         ),
     },
 }
@@ -2349,7 +2394,18 @@ def build_offline_exhaustion_index(
             str(content_id) for content_id in expected_content_ids
         }
         option_ids_by_content_id = definition["optionIdsByContentId"]
+        content_params_by_content_id = (
+            definition.get("contentParamsByContentId") or {}
+        )
         expected_option_ids = set(definition["optionNextContentIds"])
+        terminal_content_id = max(
+            (
+                content_id
+                for content_id in expected_content_ids
+                if content_id >= 0
+            ),
+            default=0,
+        )
         actual_prefixed_option_ids = {
             option_id
             for option_id in sns_option_table
@@ -2374,13 +2430,13 @@ def build_offline_exhaustion_index(
         for content_id in expected_content_ids:
             node = content.get(str(content_id))
             expected_pre = (
-                26 if content_id == -1
+                terminal_content_id if content_id == -1
                 else 0 if content_id == 1
                 else content_id - 1
             )
             expected_next = (
                 0 if content_id == -1
-                else -1 if content_id == 26
+                else -1 if content_id == terminal_content_id
                 else 0 if content_id in option_ids_by_content_id
                 else content_id + 1
             )
@@ -2395,7 +2451,8 @@ def build_offline_exhaustion_index(
                 != tuple(option_ids_by_content_id.get(content_id) or ())
                 or node.get("linkMissionId") != ""
                 or node.get("linkRewardId") != ""
-                or node.get("contentParam") != []
+                or tuple(node.get("contentParam") or ())
+                != tuple(content_params_by_content_id.get(content_id) or ())
                 or node.get("contentParams") != ""
                 or not isinstance(node.get("contentType"), int)
                 or isinstance(node.get("contentType"), bool)
@@ -2436,6 +2493,11 @@ def build_offline_exhaustion_index(
             "chatId": definition["chatId"],
             "contentIds": list(expected_content_ids),
             "optionIds": sorted(expected_option_ids, key=natural_key),
+            "contentParamsByContentId": {
+                str(content_id): list(content_params)
+                for content_id, content_params
+                in content_params_by_content_id.items()
+            },
         }
     if not sns_definitions_valid:
         status["status"] = "inactive_sns_definition_validation_failed"
@@ -3279,6 +3341,8 @@ def build_offline_exhaustion_index(
             "chatId": validation["chatId"],
             "contentIds": validation["contentIds"],
             "optionIds": validation["optionIds"],
+            "contentParamsByContentId":
+                validation["contentParamsByContentId"],
             "relatedMissionId": "",
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
