@@ -494,6 +494,21 @@ consumer chain. The result is a mission-state FX/playback dependency, not an
 interactive's mission owner. Other framed ReadingPopUp consumers without a
 mission key remain consumer-only evidence.
 
+Top-level `LevelScriptData` itself is a current 27-member MemoryPack object,
+not the older 26-member working model; the omitted current field was
+`enablePreload`. The newly decoded `interactives` member
+is a counted map of fully bounded 25-member `LevelInteractiveData` values.
+The maintained parser consumes each complete record, validates the
+script-id/trigger-volume tail, requires a narrative InteractiveTable template,
+and decodes component key `94` as an exact PropertyKey-to-ParamValue map.
+`type_id` may name a Story key directly or a `ReadingPopUpTable` row whose
+`contentId` names the Story key. This recovered 145 exact placements for 131
+unique Story keys across 50 mission files. It is exact authored source
+configuration and local narrative-consumer identity; it does not establish
+script activation, player interaction timing, quest causality, ownership, or
+relative Story order. Same-script MissionRuntime conditions are retained only
+as explicit context.
+
 The remaining native-playback audit also closes three tempting but invalid
 ownership shortcuts. All 174 distinct residual `(levelId, scriptId)` pairs
 have valid member-22 BriefData entries, but every residual

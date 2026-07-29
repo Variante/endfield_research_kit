@@ -360,6 +360,32 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(route["controlPathCount"], 1)
         self.assertEqual(route["nativePaths"][0]["headerLocalId"], 6)
 
+    def test_trigger_route_preserves_exact_narrative_interactive(self):
+        row = {
+            "key": "text_testm1_1",
+            "relation": "levelscript_interactive_narrative_config",
+            "direction": "context",
+            "scriptIds": ["70000000001"],
+            "localInteractiveId": 40001,
+            "rawTypeId": "rp_text_testm1_1",
+            "entityDetailIds": ["int_narrative_book"],
+            "entityTemplateIds": ["int_narrative_mission"],
+        }
+
+        route = pipeline.build_story_trigger_route(row, mission_id="testm1")
+
+        self.assertEqual(
+            [step["kind"] for step in route["steps"]],
+            ["mission", "levelscript", "narrative_interactive", "story"],
+        )
+        self.assertEqual(route["steps"][2]["id"], "40001")
+        self.assertEqual(
+            route["steps"][2]["summaries"],
+            ["rp_text_testm1_1", "int_narrative_mission"],
+        )
+        self.assertEqual(route["localInteractiveId"], 40001)
+        self.assertEqual(route["entityDetailIds"], ["int_narrative_book"])
+
     def test_publish_source_story_partial_order_embeds_lazy_mission_graph(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -2022,6 +2048,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 {"k": "sns_testm2_1", "d": "sns", "m": "testm2", "p": "three"},
                 {"k": "cutscene_map_test_1", "d": "cutscene", "m": "map_test", "p": "cross owner"},
                 {"k": "black_map_external_1", "d": "black", "m": "map_external", "p": "dependency only"},
+                {"k": "text_testm1_1", "d": "text", "m": "testm1", "p": "reading"},
                 {"k": "env_testm1_1", "d": "env", "m": "testm1", "p": "excluded"},
             ]}), encoding="utf-8")
             (mission_root / "testm1.json").write_text(json.dumps({"flow": {
@@ -2037,6 +2064,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 }]}],
                 "missionStoryConnections": [{
                     "key": "sns_testm2_1", "relation": "sns_authored_mission_link",
+                }, {
+                    "key": "text_testm1_1",
+                    "relation": "levelscript_interactive_narrative_config",
+                    "scriptIds": ["70000000002"],
+                    "localInteractiveId": 40001,
+                    "rawTypeId": "rp_text_testm1_1",
+                    "entityTemplateIds": ["int_narrative_mission"],
                 }],
                 "unlinkedNativePlayback": [{
                     "key": "radio_testm1_1",
@@ -2178,7 +2212,21 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             self.assertEqual(report["counts"]["storyFilesWithTriggerRoutes"], 4)
             self.assertEqual(report["counts"]["unlinkedStoryFilesWithTriggerRoutes"], 1)
             self.assertGreaterEqual(report["counts"]["storyTriggerRoutes"], 7)
+            self.assertEqual(
+                report["counts"]["contextOnlyTriggerRouteFiles"],
+                1,
+            )
+            self.assertEqual(report["counts"]["contextOnlyTriggerRoutes"], 1)
             trigger_manifest = report["storyTriggerManifest"]
+            text_route = trigger_manifest["text_testm1_1"]
+            self.assertEqual(
+                text_route["attachmentStatus"],
+                "context_only_outside_pipeline_coverage_denominator",
+            )
+            self.assertEqual(
+                [step["kind"] for step in text_route["routes"][0]["steps"]],
+                ["mission", "levelscript", "narrative_interactive", "story"],
+            )
             connected_route = trigger_manifest["dlg_testm1_1"]["routes"][0]
             self.assertEqual(connected_route["questId"], "testm1_q#1")
             self.assertEqual(connected_route["causality"], "playback")

@@ -29,6 +29,10 @@ _LEVELTIMELINE_MARKER_CACHE: dict[tuple[tuple[str, ...], tuple[str, ...]], list[
 _LEVELSCRIPT_DIALOG_EXIT_TEXT_PAIR_CACHE: dict[str, list[dict]] = {}
 _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE: dict[str, list[dict]] | None = None
 _LEVELSCRIPT_NATIVE_STORY_PLAYBACK_CACHE: dict[str, list[dict]] | None = None
+_LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE: dict[
+    frozenset[str],
+    list[dict],
+] = {}
 _WORLD_ENTITY_REGISTRY_CACHE: dict[str, dict[tuple[int, int], list[dict]]] = {}
 _WORLD_ENTITY_REGISTRY_GLOBAL_SCRIPT_CACHE: dict[str, dict[int, list[dict]]] = {}
 _LEVELSCRIPT_BINARY_SUMMARY_CACHE: dict[tuple[str, str], dict] = {}
@@ -5114,6 +5118,388 @@ def parse_level_interactive_narrative_mission_context(
         "missionStateId": prop_map["entries"]["fx_change_mission_id"],
         "readingPopupId": prop_map["entries"]["type_id"],
     }
+
+
+def _parse_levelscript_interactive_narrative_record(
+    data: bytes,
+    offset: int,
+    end_limit: int,
+) -> dict | None:
+    """Decode one complete LevelScript ``LevelInteractiveData`` narrative row.
+
+    The current installed formatter writes 25 members.  The inherited prefix
+    and ``componentProperties`` layout are shared with LevelData, while the
+    derived suffix is accepted only when its collection fields are null/empty,
+    its progress lock is null, and its final ``properties`` ParamValue map is
+    consumed completely.  This deliberately narrow shape covers the authored
+    LevelScript narrative interactives without turning nearby strings into
+    Story evidence.
+    """
+    if (
+        offset < 0
+        or end_limit <= offset + 29
+        or end_limit > len(data)
+        or data[offset] != 25
+    ):
+        return None
+    entity_decoded = _read_leveldata_memorypack_string(
+        data,
+        offset + 1 + (3 * 8),
+        max_length=256,
+    )
+    if entity_decoded is None:
+        return None
+    entity_detail_id, prefix_end = entity_decoded
+    component_offset = prefix_end + 52
+    if (
+        not entity_detail_id.startswith("int_")
+        or component_offset + 4 > end_limit
+    ):
+        return None
+
+    component_count_decoded = _read_leveldata_count(
+        data,
+        component_offset,
+        max_count=256,
+    )
+    if component_count_decoded is None or component_count_decoded[0] <= 0:
+        return None
+    component_count, cursor = component_count_decoded
+    components: dict[int, dict] = {}
+    component_entry_offsets: dict[int, int] = {}
+    for _ in range(component_count):
+        component_entry_offset = cursor
+        key_decoded = _read_leveldata_i32(data, cursor)
+        if key_decoded is None:
+            return None
+        component_key, cursor = key_decoded
+        if component_key < 0 or component_key in components:
+            return None
+        prop_map = _parse_level_interactive_param_map(data, cursor, end_limit)
+        if prop_map is None:
+            return None
+        components[component_key] = prop_map
+        component_entry_offsets[component_key] = component_entry_offset
+        cursor = int(prop_map["endOffset"])
+    component_end = cursor
+
+    null_collection_offsets: dict[str, int] = {}
+    for field_name in ("globalIntKeyList", "globalProperties"):
+        decoded = _read_leveldata_count(data, cursor, max_count=256)
+        if decoded is None or decoded[0] not in (-1, 0):
+            return None
+        null_collection_offsets[field_name] = cursor
+        _, cursor = decoded
+    bool_values: dict[str, bool] = {}
+    for field_name in ("hideInDialog", "isClientOnly", "isLocked"):
+        if cursor >= end_limit or data[cursor] not in (0, 1):
+            return None
+        bool_values[field_name] = bool(data[cursor])
+        cursor += 1
+    for field_name in ("mapIntKeyList", "mapProperties"):
+        decoded = _read_leveldata_count(data, cursor, max_count=256)
+        if decoded is None or decoded[0] not in (-1, 0):
+            return None
+        null_collection_offsets[field_name] = cursor
+        _, cursor = decoded
+    if cursor + 5 > end_limit:
+        return None
+    model_scale_offset = cursor
+    model_scale = struct.unpack_from("<f", data, cursor)[0]
+    cursor += 4
+    if not math.isfinite(model_scale) or data[cursor] != 0xFF:
+        return None
+    progress_lock_offset = cursor
+    cursor += 1
+    properties = _parse_level_interactive_param_map(data, cursor, end_limit)
+    if properties is None:
+        return None
+    cursor = int(properties["endOffset"])
+
+    narrative_map = components.get(94)
+    if not isinstance(narrative_map, dict):
+        return None
+    type_id_value = (narrative_map.get("entries") or {}).get("type_id")
+    atoms = type_id_value.get("atoms") if isinstance(type_id_value, dict) else None
+    if (
+        not isinstance(type_id_value, dict)
+        or type_id_value.get("valueType") != 7
+        or type_id_value.get("atomCount") != 1
+        or not isinstance(atoms, list)
+        or len(atoms) != 1
+        or atoms[0].get("valueBits") != 0
+        or not str(atoms[0].get("stringValue") or "").strip()
+    ):
+        return None
+    entity_type_decoded = _read_leveldata_i32(data, prefix_end)
+    local_logic_id_decoded = _read_leveldata_u64(data, prefix_end + 6)
+    if entity_type_decoded is None or local_logic_id_decoded is None:
+        return None
+    entity_type, _ = entity_type_decoded
+    local_logic_id, _ = local_logic_id_decoded
+    return {
+        "recordOffset": offset,
+        "recordEndOffset": cursor,
+        "serializedMemberCount": 25,
+        "entityDetailId": entity_detail_id,
+        "entityType": entity_type,
+        "embeddedLogicId": local_logic_id,
+        "componentPropertiesOffset": component_offset,
+        "componentPropertiesEndOffset": component_end,
+        "componentPropertiesCount": component_count,
+        "componentPropertyKeys": sorted(components),
+        "componentEntryOffsets": component_entry_offsets,
+        "narrativeComponentKey": 94,
+        "narrativeParamMapOffset": narrative_map.get("offset"),
+        "narrativeParamMapEndOffset": narrative_map.get("endOffset"),
+        "narrativeParamMapEntryCount": narrative_map.get("entryCount"),
+        "typeIdEntryOffset": (narrative_map.get("entryOffsets") or {}).get(
+            "type_id"
+        ),
+        "typeId": str(atoms[0]["stringValue"]),
+        "nullCollectionOffsets": null_collection_offsets,
+        **bool_values,
+        "modelScale": model_scale,
+        "modelScaleOffset": model_scale_offset,
+        "progressLockConditionOffset": progress_lock_offset,
+        "progressLockConditionStatus": "null",
+        "propertiesOffset": properties.get("offset"),
+        "propertiesEndOffset": properties.get("endOffset"),
+        "propertiesCount": properties.get("entryCount"),
+        "properties": properties.get("entries") or {},
+    }
+
+
+def parse_levelscript_interactive_narrative_maps(
+    data: bytes,
+    script_id_offset: int,
+) -> list[dict]:
+    """Recover exact counted narrative-interactive maps before top-level scriptId.
+
+    A map entry is ``uint32 local id`` followed by a 25-member
+    ``LevelInteractiveData``.  The first key is preceded by the authored map
+    count. Every non-final record must consume exactly to the next key, and the
+    final record is decoded completely before the separately verified
+    top-level ``scriptId`` field. These guards distinguish the map from
+    unrelated action/header strings.
+    """
+    if (
+        not data
+        or script_id_offset <= 0
+        or script_id_offset > len(data) - 8
+    ):
+        return []
+    candidates: list[tuple[int, str]] = []
+    for offset, value in enumerate(data[:script_id_offset]):
+        if value != 25 or offset < 8 or offset + 29 > script_id_offset:
+            continue
+        decoded = _read_leveldata_memorypack_string(
+            data,
+            offset + 1 + (3 * 8),
+            max_length=256,
+        )
+        if decoded is not None and decoded[0].startswith("int_"):
+            candidates.append((offset, decoded[0]))
+
+    maps: list[dict] = []
+    consumed_candidate_indexes: set[int] = set()
+    for index, (first_offset, _entity_id) in enumerate(candidates):
+        if index in consumed_candidate_indexes:
+            continue
+        count = int.from_bytes(
+            data[first_offset - 8 : first_offset - 4],
+            "little",
+            signed=True,
+        )
+        if count <= 0 or count > 4096 or index + count > len(candidates):
+            continue
+        record_candidates = candidates[index : index + count]
+        local_ids: list[int] = []
+        records: list[dict] = []
+        valid = True
+        for record_index, (record_offset, _detail_id) in enumerate(
+            record_candidates
+        ):
+            local_id = int.from_bytes(
+                data[record_offset - 4 : record_offset],
+                "little",
+                signed=False,
+            )
+            if local_id <= 0 or local_id in local_ids:
+                valid = False
+                break
+            end_limit = (
+                record_candidates[record_index + 1][0] - 4
+                if record_index + 1 < len(record_candidates)
+                else script_id_offset
+            )
+            parsed = _parse_levelscript_interactive_narrative_record(
+                data,
+                record_offset,
+                end_limit,
+            )
+            if parsed is None or (
+                record_index + 1 < len(record_candidates)
+                and parsed.get("recordEndOffset") != end_limit
+            ):
+                valid = False
+                break
+            local_ids.append(local_id)
+            records.append({
+                **parsed,
+                "recordIndex": record_index,
+                "localInteractiveId": local_id,
+                "recordKeyOffset": record_offset - 4,
+            })
+        if not valid or len(records) != count:
+            continue
+        maps.append({
+            "mapCountOffset": first_offset - 8,
+            "mapCount": count,
+            "mapEndOffset": records[-1]["recordEndOffset"],
+            "records": records,
+        })
+        consumed_candidate_indexes.update(range(index, index + count))
+    return maps
+
+
+def build_levelscript_interactive_narrative_story_contexts(
+    available_story_keys: set[str],
+    *,
+    levelscript_root: Path = LEVELSCRIPT_DIR,
+    reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
+) -> list[dict]:
+    """Bind Story files to exact typed LevelScript interactive configuration.
+
+    This recovers source/configuration ownership only. Interactive availability,
+    mission activation, quest causality, and relative Story order remain
+    unresolved unless another typed source supplies them.
+    """
+    use_default_cache = (
+        levelscript_root == LEVELSCRIPT_DIR
+        and reading_popup_path
+        == STREAMING_TABLE_DIR / "ReadingPopUpTable.json"
+    )
+    cache_key = frozenset(available_story_keys)
+    if (
+        use_default_cache
+        and cache_key in _LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE
+    ):
+        return list(_LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE[cache_key])
+    try:
+        reading_rows = json.loads(reading_popup_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        reading_rows = {}
+    if not isinstance(reading_rows, dict):
+        reading_rows = {}
+    interactive_index = _load_interactive_object_template_index()
+    object_to_template = interactive_index.get("objectToTemplate") or {}
+    core_paths = interactive_index.get("coreTemplatePaths") or {}
+    rows: list[dict] = []
+    if levelscript_root.is_dir():
+        for level_dir in sorted(path for path in levelscript_root.iterdir() if path.is_dir()):
+            for path in sorted(level_dir.glob("*.json")):
+                try:
+                    script_id = int(path.stem)
+                    data = read_bytes_cached(path)
+                except (OSError, ValueError):
+                    continue
+                if b"type_id" not in data or b"int_narrative" not in data:
+                    continue
+                summary = decode_levelscript_binary_file(path, script_id)
+                script_id_offset = summary.get("probableScriptIdOffset")
+                if (
+                    summary.get("serializedMemberCount") != 27
+                    or summary.get("scriptId") != str(script_id)
+                    or not summary.get("scriptIdVerified")
+                    or not isinstance(script_id_offset, int)
+                    or summary.get("triggerVolumesStatus") not in {
+                        "null",
+                        "present",
+                    }
+                ):
+                    continue
+                for interactive_map in parse_levelscript_interactive_narrative_maps(
+                    data,
+                    script_id_offset,
+                ):
+                    for record in interactive_map.get("records") or []:
+                        raw_type_id = str(record.get("typeId") or "")
+                        popup_row = reading_rows.get(raw_type_id)
+                        popup_content_id = str(
+                            popup_row.get("contentId")
+                            if isinstance(popup_row, dict)
+                            else ""
+                        ).strip()
+                        if raw_type_id in available_story_keys:
+                            story_key = raw_type_id
+                            resolution = "direct_story_key"
+                        elif popup_content_id in available_story_keys:
+                            story_key = popup_content_id
+                            resolution = "reading_popup_content_id"
+                        else:
+                            continue
+                        entity_detail_id = str(record.get("entityDetailId") or "")
+                        template_id = str(object_to_template.get(entity_detail_id) or "")
+                        if not template_id.startswith("int_narrative"):
+                            continue
+                        rows.append({
+                            **record,
+                            "storyKey": story_key,
+                            "rawTypeId": raw_type_id,
+                            "storyKeyResolution": resolution,
+                            "readingPopupId": (
+                                raw_type_id
+                                if resolution == "reading_popup_content_id"
+                                else ""
+                            ),
+                            "levelId": level_dir.name,
+                            "scriptId": str(script_id),
+                            "sourceFile": repo_rel(path),
+                            "sourcePath": str(path),
+                            "interactiveMapCountOffset":
+                                interactive_map.get("mapCountOffset"),
+                            "interactiveMapCount": interactive_map.get("mapCount"),
+                            "interactiveMapEndOffset":
+                                interactive_map.get("mapEndOffset"),
+                            "entityTemplateId": template_id,
+                            "entityTemplatePath": str(
+                                core_paths.get(template_id) or ""
+                            ),
+                            "interactiveTableSourceFile": str(
+                                interactive_index.get("sourceFile") or ""
+                            ),
+                            "interactiveTableVerifiedMirrorFile": str(
+                                interactive_index.get("verifiedMirrorFile") or ""
+                            ),
+                            "readingPopupTableSourceFile": repo_rel(
+                                reading_popup_path
+                            ),
+                            "nativeConsumer": (
+                                "NarrativeComponent.ClientCollectNarrative -> "
+                                "_CollectNarrative -> dialog/reading-popup dispatch"
+                            ),
+                            "nativeMappingId":
+                                "levelscript-interactive-narrative-config-v1",
+                            "storyBinding": True,
+                            "ownership": False,
+                            "questActivation": False,
+                            "questPlayback": False,
+                            "questCompletion": False,
+                            "executionSide": "client",
+                            "serverExchange": False,
+                        })
+    rows.sort(key=lambda row: (
+        str(row.get("levelId") or ""),
+        str(row.get("scriptId") or ""),
+        int(row.get("localInteractiveId") or 0),
+        str(row.get("storyKey") or ""),
+    ))
+    if use_default_cache:
+        _LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE[cache_key] = rows
+    return [
+        row for row in rows if row.get("storyKey") in available_story_keys
+    ]
 
 
 def _level_interactive_data_list_frames(data: bytes) -> list[dict]:

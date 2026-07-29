@@ -913,6 +913,67 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             0,
         )
 
+    def test_exact_levelscript_interactive_config_is_closed_without_order(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "e1m1",
+            scenes=["text_e1m1_1"],
+            isolated=["text_e1m1_1"],
+        )
+        payload = mission_payload(connections=[{
+            "key": "text_e1m1_1",
+            "relation": "levelscript_interactive_narrative_config",
+            "confidence": "native_exact_serialized_config",
+            "source": (
+                "exact counted LevelScriptData interactive map -> 25-member "
+                "LevelInteractiveData -> componentProperties[94].type_id; "
+                "ReadingPopUpTable is joined only when TYPE_ID names a popup row"
+            ),
+            "storyOwnerMission": "e1m1",
+            "storyBinding": True,
+            "ownership": False,
+            "nativeMappingId":
+                "levelscript-interactive-narrative-config-v1",
+            "orderBoundary": (
+                "interactive-map order, local interactive id, object position, "
+                "and Story suffix do not establish relative Story chronology"
+            ),
+            "levelIds": ["map_test"],
+            "scriptIds": ["1001"],
+            "localInteractiveId": 40001,
+            "entityDetailIds": ["int_narrative_scene_book"],
+            "entityTemplateIds": ["int_narrative_scene"],
+            "narrativeComponentKey": 94,
+            "interactiveMapCount": 1,
+            "rawTypeId": "rp_text_e1m1_1",
+            "storyKeyResolution": "reading_popup_content_id",
+            "questContextIds": ["e1m1_q#2"],
+            "sourceFiles": [
+                "export_full/structured/StreamingAssets/Data/Json/"
+                "LevelScriptData/map_test/1001.json",
+            ],
+        }])
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(
+            row["metrics"]["closedExactRuntimeConfigIsolatedScenes"],
+            1,
+        )
+        closure = row["closedExactRuntimeConfigIsolatedScenes"][0]
+        self.assertEqual(
+            "levelscript_interactive_narrative_config",
+            closure["relation"],
+        )
+        self.assertEqual([40001], closure["localInteractiveIds"])
+        self.assertEqual(["e1m1_q#2"], closure["questContextIds"])
+
     def test_exact_embedded_dialog_tree_line_context_closes_without_file_edge(
         self,
     ) -> None:

@@ -37,7 +37,10 @@ from build_source_story_partial_order import build_report as build_partial_order
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v12"
+SCHEMA = "sourceStoryGapQueue.v13"
+LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
+    "levelscript-interactive-narrative-config-v1"
+)
 BUCKET_ORDER = ("main", "event", "major", "character", "other")
 
 # The score is a triage aid, not recovered chronology. Every contribution is
@@ -1072,7 +1075,7 @@ def _closed_exact_runtime_config_isolated_scenes(
     isolated_scene_keys: set[str],
     owner_mission: str,
 ) -> list[dict[str, Any]]:
-    """Close exact NPC interaction-dialog configs that encode no chronology.
+    """Close exact executable Story configs that encode no chronology.
 
     ``NpcProxyEx`` rows are executable configuration, not loose name matches:
     the installed client selects ``exDatas[activeCondIndex - 1]`` and
@@ -1081,6 +1084,12 @@ def _closed_exact_runtime_config_isolated_scenes(
     guard.  This establishes a mission-scoped, selectable interaction dialog,
     but the server-selected row index and proxy/table ordering do not establish
     relative Story order.
+
+    Counted LevelScript interactive maps are similarly exact: a typed
+    ``LevelInteractiveData`` record's component-94 ``type_id`` selects one
+    dialog or ReadingPopUp Story file. This recovers the source script and
+    interactive identity, but neither map/local-id order nor object placement
+    establishes activation timing or relative Story order.
     """
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in _flow_story_connections(flow):
@@ -1173,6 +1182,118 @@ def _closed_exact_runtime_config_isolated_scenes(
             }],
             "nativeMappingId": next(iter(mapping_ids)),
             "gameAssemblySha256": next(iter(hashes)),
+        })
+    already_closed = {row["sceneKey"] for row in closed}
+    interactive_grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    expected_source = (
+        "exact counted LevelScriptData interactive map -> 25-member "
+        "LevelInteractiveData -> componentProperties[94].type_id; "
+        "ReadingPopUpTable is joined only when TYPE_ID names a popup row"
+    )
+    expected_order_boundary = (
+        "interactive-map order, local interactive id, object position, "
+        "and Story suffix do not establish relative Story chronology"
+    )
+    for row in _flow_story_connections(flow):
+        scene_key = safe_key(row.get("key"))
+        level_ids = _string_list(row.get("levelIds"))
+        script_ids = _string_list(row.get("scriptIds"))
+        entity_details = _string_list(row.get("entityDetailIds"))
+        template_ids = _string_list(row.get("entityTemplateIds"))
+        local_id = row.get("localInteractiveId")
+        if (
+            scene_key in already_closed
+            or scene_key not in isolated_scene_keys
+            or safe_key(row.get("relation"))
+            != "levelscript_interactive_narrative_config"
+            or safe_key(row.get("confidence"))
+            != "native_exact_serialized_config"
+            or safe_key(row.get("source")) != expected_source
+            or safe_key(row.get("storyOwnerMission")) != owner_mission
+            or row.get("storyBinding") is not True
+            or row.get("ownership") is not False
+            or safe_key(row.get("nativeMappingId"))
+            != LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID
+            or safe_key(row.get("orderBoundary"))
+            != expected_order_boundary
+            or len(level_ids) != 1
+            or len(script_ids) != 1
+            or len(entity_details) != 1
+            or len(template_ids) != 1
+            or not template_ids[0].startswith("int_narrative")
+            or not isinstance(local_id, int)
+            or isinstance(local_id, bool)
+            or local_id <= 0
+            or row.get("narrativeComponentKey") != 94
+            or not isinstance(row.get("interactiveMapCount"), int)
+            or int(row.get("interactiveMapCount") or 0) <= 0
+        ):
+            continue
+        interactive_grouped[scene_key].append(row)
+
+    for scene_key, rows in interactive_grouped.items():
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_runtime_config_no_relative_order",
+            "relation": "levelscript_interactive_narrative_config",
+            "missionId": owner_mission,
+            "levelIds": sorted({
+                level_id
+                for row in rows
+                for level_id in _string_list(row.get("levelIds"))
+            }, key=natural_key),
+            "scriptIds": sorted({
+                script_id
+                for row in rows
+                for script_id in _string_list(row.get("scriptIds"))
+            }, key=natural_key),
+            "localInteractiveIds": sorted({
+                int(row["localInteractiveId"])
+                for row in rows
+            }),
+            "entityDetailIds": sorted({
+                detail
+                for row in rows
+                for detail in _string_list(row.get("entityDetailIds"))
+            }, key=natural_key),
+            "entityTemplateIds": sorted({
+                template
+                for row in rows
+                for template in _string_list(row.get("entityTemplateIds"))
+            }, key=natural_key),
+            "rawTypeIds": sorted({
+                safe_key(row.get("rawTypeId"))
+                for row in rows
+                if safe_key(row.get("rawTypeId"))
+            }, key=natural_key),
+            "storyKeyResolutions": sorted({
+                safe_key(row.get("storyKeyResolution"))
+                for row in rows
+                if safe_key(row.get("storyKeyResolution"))
+            }),
+            "questContextIds": sorted({
+                quest_id
+                for row in rows
+                for quest_id in _string_list(row.get("questContextIds"))
+            }, key=natural_key),
+            "sourceFiles": sorted({
+                source_file
+                for row in rows
+                for source_file in _string_list(row.get("sourceFiles"))
+            }),
+            "nativeConsumer": (
+                "NarrativeComponent.ClientCollectNarrative -> "
+                "_CollectNarrative -> dialog/reading-popup dispatch"
+            ),
+            "nativeMappingId":
+                LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID,
+            "activationBoundary": (
+                "the source LevelScript and local interactive are exact; "
+                "serialized data does not establish when the script becomes "
+                "active or when the player performs the interaction"
+            ),
+            "orderBoundary": expected_order_boundary,
         })
     return sorted(closed, key=lambda row: natural_key(row["sceneKey"]))
 

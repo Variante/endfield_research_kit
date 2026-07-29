@@ -676,6 +676,19 @@ Mission Pipeline:
   offset. They distinguish the local synchronized-state read from the separate
   optional `_RequestInteract` path and do not invent a protocol reply. The
   combined dependency section now covers 15 Story files across 19 placements.
+- Mission Pipeline schema 19 adds the independent top-level LevelScript
+  interactive-configuration family. Generated sidecars now contain 145 exact
+  placements for 131 unique Story keys across 50 mission files, and the
+  coverage build moves 52 previously unlinked Story files into connected
+  context. Debug routes render
+  `mission -> LevelScript -> narrative interactive -> Story`, including the
+  local interactive id and authored `type_id`. The label and route explicitly
+  keep activation, player interaction, quest causality, ownership, and order
+  unresolved. `text_*` rows remain outside the historical Mission Pipeline
+  coverage denominator, but schema-4 coverage now publishes their exact routes
+  as context-only manifest rows so the card is not visually lossy. The
+  source-gap queue closes 106 isolated source-link rows across 43 missions from
+  this exact configuration without adding an order edge.
 - Exact EOF-bounded `Play3DRadio` records can connect a radio to a same-scene
   tracked NPC emitter only when `useNpcProxy` is true and all typed consumers
   agree on one mission. A complete typed TravelPole/entity-compare/custom-event

@@ -185,7 +185,13 @@ available through expandable guidance.
   manifest renders the proven chain as quest/mission ownership, server message,
   native event, LevelScript, native action, and Story terminal steps. Unresolved
   playback keeps an explicit ownership gap, while definition-only files remain
-  visibly distinct. Exact, build-pinned CutsceneRoot playback aliases render as
+  visibly distinct. Exact top-level LevelScript narrative configurations render
+  a separate `mission -> LevelScript -> narrative interactive -> Story` context
+  route with local interactive id and `type_id`; they do not claim activation,
+  interaction timing, ownership, quest causality, or order. Reading `text_*`
+  routes are published as context-only manifest rows without adding that kind
+  to the Mission Pipeline coverage denominator. Exact, build-pinned
+  CutsceneRoot playback aliases render as
   `Story root -> native playback action -> Story file` debug routes with their
   own corpus count. An alias remains non-owning unless an independently
   connected route terminates at that exact root through a native playback

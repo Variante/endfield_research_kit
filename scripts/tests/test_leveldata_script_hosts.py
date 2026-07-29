@@ -13,6 +13,7 @@ from scripts.story_builder.level_bindings import (
     build_leveldata_airwall_mission_radio_contexts,
     build_level_function_area_radio_trigger_story_contexts,
     build_level_interactive_narrative_mission_story_contexts,
+    build_levelscript_interactive_narrative_story_contexts,
     build_leveldata_authoritative_scope_script_host_index,
     build_leveldata_mission_area_script_host_index,
     build_leveldata_world_entity_quest_script_context,
@@ -23,6 +24,7 @@ from scripts.story_builder.level_bindings import (
     parse_leveldata_airwall_groups,
     parse_level_function_area_radio_trigger_zone_entry,
     parse_level_interactive_narrative_mission_context,
+    parse_levelscript_interactive_narrative_maps,
     parse_levelscript_brief_data_entry,
 )
 
@@ -190,6 +192,37 @@ class LevelDataScriptHostTests(unittest.TestCase):
                 + cls._param_string_entry("type_id", popup_id)
             )
         return payload + b"\xff\x00\x00\x00"
+
+    @classmethod
+    def _levelscript_narrative_interactive_record(
+        cls,
+        entity_detail_id: str,
+        type_id: str,
+    ) -> bytes:
+        component_map = (
+            (1).to_bytes(4, "little", signed=True)
+            + (94).to_bytes(4, "little", signed=True)
+            + (1).to_bytes(4, "little", signed=True)
+            + cls._param_string_entry("type_id", type_id)
+        )
+        derived_suffix = (
+            (-1).to_bytes(4, "little", signed=True)
+            + (-1).to_bytes(4, "little", signed=True)
+            + b"\x00\x00\x00"
+            + (-1).to_bytes(4, "little", signed=True)
+            + (-1).to_bytes(4, "little", signed=True)
+            + b"\x00\x00\x00\x00"
+            + b"\xff"
+            + (0).to_bytes(4, "little", signed=True)
+        )
+        return (
+            b"\x19"
+            + (b"\x00" * 24)
+            + cls._mp_string(entity_detail_id)
+            + (b"\x00" * 52)
+            + component_map
+            + derived_suffix
+        )
 
     @staticmethod
     def _brief_entry(
@@ -608,6 +641,127 @@ class LevelDataScriptHostTests(unittest.TestCase):
             self.assertEqual("radio_c16m4_51", rows[0]["storyKey"])
             self.assertEqual("int_narrative_common", rows[0]["entityTemplateId"])
             self.assertEqual(2, rows[0]["interactiveListCount"])
+
+    def test_levelscript_interactive_narrative_map_is_counted_and_typed(
+        self,
+    ) -> None:
+        first = self._levelscript_narrative_interactive_record(
+            "int_narrative_scene_notebook",
+            "text_test_1",
+        )
+        second = self._levelscript_narrative_interactive_record(
+            "int_narrative_chip",
+            "rp_text_test_2",
+        )
+        payload = (
+            (2).to_bytes(4, "little", signed=True)
+            + (40001).to_bytes(4, "little", signed=False)
+            + first
+            + (40002).to_bytes(4, "little", signed=False)
+            + second
+        )
+        script_id_offset = len(payload)
+        data = payload + (123).to_bytes(8, "little", signed=False)
+
+        maps = parse_levelscript_interactive_narrative_maps(
+            data,
+            script_id_offset,
+        )
+        self.assertEqual(1, len(maps))
+        self.assertEqual(2, maps[0]["mapCount"])
+        self.assertEqual(
+            [40001, 40002],
+            [
+                row["localInteractiveId"]
+                for row in maps[0]["records"]
+            ],
+        )
+        self.assertEqual(
+            ["text_test_1", "rp_text_test_2"],
+            [row["typeId"] for row in maps[0]["records"]],
+        )
+
+        wrong_count = (
+            (3).to_bytes(4, "little", signed=True)
+            + data[4:]
+        )
+        self.assertEqual(
+            [],
+            parse_levelscript_interactive_narrative_maps(
+                wrong_count,
+                script_id_offset,
+            ),
+        )
+
+    def test_levelscript_interactive_narrative_context_resolves_popup(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            level_dir = root / "LevelScriptData" / "map_test"
+            level_dir.mkdir(parents=True)
+            record = self._levelscript_narrative_interactive_record(
+                "int_narrative_chip",
+                "rp_text_test_2",
+            )
+            payload = (
+                (1).to_bytes(4, "little", signed=True)
+                + (40002).to_bytes(4, "little", signed=False)
+                + record
+            )
+            script_id_offset = len(payload)
+            (level_dir / "123.json").write_bytes(
+                payload + (123).to_bytes(8, "little", signed=False)
+            )
+            popup_path = root / "ReadingPopUpTable.json"
+            popup_path.write_text(
+                json.dumps({
+                    "rp_text_test_2": {"contentId": "text_test_2"},
+                }),
+                encoding="utf-8",
+            )
+            summary = {
+                "serializedMemberCount": 27,
+                "scriptId": "123",
+                "scriptIdVerified": True,
+                "probableScriptIdOffset": script_id_offset,
+                "triggerVolumesStatus": "null",
+            }
+            interactive_index = {
+                "objectToTemplate": {
+                    "int_narrative_chip": "int_narrative_mission",
+                },
+                "coreTemplatePaths": {
+                    "int_narrative_mission": "data_int_narrative_mission.json",
+                },
+                "sourceFile": "InteractiveTable.json",
+                "verifiedMirrorFile": "",
+            }
+            with (
+                patch.object(
+                    level_bindings,
+                    "decode_levelscript_binary_file",
+                    return_value=summary,
+                ),
+                patch.object(
+                    level_bindings,
+                    "_load_interactive_object_template_index",
+                    return_value=interactive_index,
+                ),
+            ):
+                rows = build_levelscript_interactive_narrative_story_contexts(
+                    {"text_test_2"},
+                    levelscript_root=root / "LevelScriptData",
+                    reading_popup_path=popup_path,
+                )
+            self.assertEqual(1, len(rows))
+            self.assertEqual("text_test_2", rows[0]["storyKey"])
+            self.assertEqual(
+                "reading_popup_content_id",
+                rows[0]["storyKeyResolution"],
+            )
+            self.assertEqual(40002, rows[0]["localInteractiveId"])
+            self.assertEqual("123", rows[0]["scriptId"])
 
     def test_mission_area_parent_root_scopes_file_without_filename_inference(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
