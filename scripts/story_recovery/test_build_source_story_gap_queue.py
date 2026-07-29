@@ -2690,6 +2690,47 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_e6m2_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E6M2_RADIOS,
+            {"radio_e6m2_3", "radio_e6m2_7"},
+        )
+        expected_dialogs = {
+            "dlg_e6m2_1": (
+                "zhuangfy_indie_dg005_e6m1Final",
+                0,
+                17,
+                5,
+                True,
+            ),
+            "dlg_e6m2_2": (
+                "mifu_indie_dg005_e6m1DianTiKou",
+                2,
+                6,
+                2,
+                False,
+            ),
+        }
+        for story_key, (
+            proxy_id,
+            entry_index,
+            line_count,
+            option_count,
+            has_mission_id,
+        ) in expected_dialogs.items():
+            definition = (
+                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]
+            )
+            consumer = definition["npcProxyConsumer"]
+            self.assertEqual(consumer["proxyId"], proxy_id)
+            self.assertEqual(consumer["entryIndex"], entry_index)
+            self.assertEqual(
+                "missionId" in consumer["entry"],
+                has_mission_id,
+            )
+            self.assertEqual(len(definition["lineIds"]), line_count)
+            self.assertEqual(len(definition["optionIds"]), option_count)
+
     def test_declared_dialog_definitions_preserve_shared_timeline_boundary(
         self,
     ) -> None:
@@ -2713,6 +2754,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "misc_dlg_e5m2_3d5",
                 "dlg_e6m1_14",
                 "dlg_e6m1_15",
+                "dlg_e6m2_1",
+                "dlg_e6m2_2",
                 "dlg_e6m3_6",
                 "dlg_e6m3_12",
                 "misc_dlg_e6m3_3d5",

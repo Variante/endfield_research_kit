@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v55"
+SCHEMA = "sourceStoryGapQueue.v56"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -128,7 +128,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v34"
+    "current-build-offline-story-carrier-exhaustion-v35"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -731,6 +731,66 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
                 "dialogExOptionData": [],
                 "dialogId": "dlg_e1m1_6",
                 "missionId": "",
+            },
+        },
+    },
+    "dlg_e6m2_1": {
+        "missionId": "e6m2",
+        "filename": "dlg_e6m2_1_p333D254D69A4BEB6.json",
+        "sha256":
+            "7B698B34BADDCAB684F63B4AF04B5DBE10287D1C1BABF481CB43991D4B845CF0",
+        "extraConfigFilename":
+            "dlg_e6m2_1_extra_config_pC9185BD9CBF1B1E1.json",
+        "extraConfigSha256":
+            "28FEA34339E89F33DC929B7E5F24D961BF20577EB53A3A18F41FDB8C9194B795",
+        "lineIds": tuple(
+            f"dlg_e6m2_1_{number:03d}" for number in range(1, 18)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_e6m2_1_1_{number:03d}"
+            for number in range(1, 6)
+        ),
+        "npcProxyConsumer": {
+            "proxyId": "zhuangfy_indie_dg005_e6m1Final",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e6m2_1",
+                "missionId": "",
+            },
+        },
+    },
+    "dlg_e6m2_2": {
+        "missionId": "e6m2",
+        "filename": "dlg_e6m2_2_pFACA10BA2A38E87A.json",
+        "sha256":
+            "F64F6C648C9FAD2ADD45BF9957D3F1DE351DA2494092BBAE6BFA3258EFFEB916",
+        "extraConfigFilename":
+            "dlg_e6m2_2_extra_config_p2D93C81BDF39CE10.json",
+        "extraConfigSha256":
+            "840A16AFEC6D09C25976CF00AE335BE4D1A0024CC7EF74CCDF2FE08A6B5FD039",
+        "lineIds": (
+            "dlg_e6m2_2_001",
+            "dlg_e6m2_2_003",
+            "dlg_e6m2_2_004",
+            "dlg_e6m2_2_005",
+            "dlg_e6m2_2_006",
+            "dlg_e6m2_2_007",
+        ),
+        "optionIds": (
+            "option_dlg_e6m2_2_2_001",
+            "option_dlg_e6m2_2_2_002",
+        ),
+        "npcProxyConsumer": {
+            "proxyId": "mifu_indie_dg005_e6m1DianTiKou",
+            "entryIndex": 2,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e6m2_2",
             },
         },
     },
@@ -1895,6 +1955,10 @@ OFFLINE_EXHAUSTION_E5M1_RADIOS = frozenset({
 OFFLINE_EXHAUSTION_E6M1_RADIOS = frozenset({
     "radio_e6m1_19",
 })
+OFFLINE_EXHAUSTION_E6M2_RADIOS = frozenset({
+    "radio_e6m2_3",
+    "radio_e6m2_7",
+})
 OFFLINE_EXHAUSTION_E7M4_RADIOS = frozenset({"radio_e7m4_3"})
 OFFLINE_EXHAUSTION_E8M2_RADIOS = frozenset({
     "radio_e8m2_1",
@@ -1919,6 +1983,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e5m1": OFFLINE_EXHAUSTION_E5M1_RADIOS,
     "e5m2": OFFLINE_EXHAUSTION_E5M2_RADIOS,
     "e6m1": OFFLINE_EXHAUSTION_E6M1_RADIOS,
+    "e6m2": OFFLINE_EXHAUSTION_E6M2_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e6m4": OFFLINE_EXHAUSTION_E6M4_RADIOS,
     "e7m2": OFFLINE_EXHAUSTION_E7M2_RADIOS,
