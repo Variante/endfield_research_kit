@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "scope": {
     "targets": [
       "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -25,6 +25,42 @@
     "stringRecordLayout": "byteLength:uint32 + UTF-16LE bytes + null:uint16",
     "validated": true
   },
+  "stringPathHashTables": {
+    "main": {
+      "file": "tmp/story/root_selector_string_path_hash/Data/ExtendData/Main/StringPathHash.bin",
+      "size": 118687426,
+      "sha256": "680140a7c4d2167fe5bb29e04f352334b664bcb69d6f73c067df10efd12bfa96",
+      "entryCount": 538806,
+      "stringPoolOffset": 12931352,
+      "bucketTableOffset": 8,
+      "bucketTableBytes": 4310448,
+      "entryTableOffset": 4310456,
+      "entryTableBytes": 8620896,
+      "entryLayout": [
+        "hash:int64",
+        "stringPoolOffset:uint64"
+      ],
+      "stringRecordLayout": "byteLength:uint32 + UTF-16LE bytes + null:uint16",
+      "validated": true
+    },
+    "initial": {
+      "file": "tmp/story/root_selector_string_path_hash/Data/ExtendData/Initial/InitStringPathHash.bin",
+      "size": 305796,
+      "sha256": "ea083af2b707bf30cf256bc44892af9d90458b5589d944b0be0abc51428dbc17",
+      "entryCount": 1659,
+      "stringPoolOffset": 39824,
+      "bucketTableOffset": 8,
+      "bucketTableBytes": 13272,
+      "entryTableOffset": 13280,
+      "entryTableBytes": 26544,
+      "entryLayout": [
+        "hash:int64",
+        "stringPoolOffset:uint64"
+      ],
+      "stringRecordLayout": "byteLength:uint32 + UTF-16LE bytes + null:uint16",
+      "validated": true
+    }
+  },
   "targetHashPaths": [
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -33,7 +69,8 @@
       "hashUnsigned": 767951080092054832,
       "hashHex": "0x0aa84f7045c3b530",
       "entryIndex": 64807,
-      "stringPoolOffset": 10232354
+      "stringPoolOffset": 10232354,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -42,7 +79,8 @@
       "hashUnsigned": 761095885618837427,
       "hashHex": "0x0a8ff4acee5277b3",
       "entryIndex": 70192,
-      "stringPoolOffset": 11074498
+      "stringPoolOffset": 11074498,
+      "registry": "main"
     },
     {
       "target": "cutscene_f1m9d3_1",
@@ -51,7 +89,8 @@
       "hashUnsigned": 539733355648806700,
       "hashHex": "0x077d84a098e06f2c",
       "entryIndex": 83174,
-      "stringPoolOffset": 13039496
+      "stringPoolOffset": 13039496,
+      "registry": "main"
     },
     {
       "target": "cutscene_f1m9d3_1",
@@ -60,7 +99,8 @@
       "hashUnsigned": 1036695983594577911,
       "hashHex": "0x0e631581223a9ff7",
       "entryIndex": 84832,
-      "stringPoolOffset": 13294648
+      "stringPoolOffset": 13294648,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -69,7 +109,8 @@
       "hashUnsigned": 742831156694644467,
       "hashHex": "0x0a4f110056e076f3",
       "entryIndex": 94788,
-      "stringPoolOffset": 14885196
+      "stringPoolOffset": 14885196,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -78,7 +119,8 @@
       "hashUnsigned": 374429178630724403,
       "hashHex": "0x05323d5aa9d35b33",
       "entryIndex": 220378,
-      "stringPoolOffset": 36174036
+      "stringPoolOffset": 36174036,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -87,7 +129,8 @@
       "hashUnsigned": 121200708830066278,
       "hashHex": "0x01ae97670c577666",
       "entryIndex": 278161,
-      "stringPoolOffset": 45642952
+      "stringPoolOffset": 45642952,
+      "registry": "main"
     },
     {
       "target": "cutscene_f1m9d3_1",
@@ -96,7 +139,8 @@
       "hashUnsigned": 1033154519299686825,
       "hashHex": "0x0e56808fb8f281a9",
       "entryIndex": 285711,
-      "stringPoolOffset": 46772808
+      "stringPoolOffset": 46772808,
+      "registry": "main"
     },
     {
       "target": "cutscene_f1m9d3_1",
@@ -105,7 +149,8 @@
       "hashUnsigned": 59929244976732163,
       "hashHex": "0x00d4e954ae7ed803",
       "entryIndex": 288081,
-      "stringPoolOffset": 47126902
+      "stringPoolOffset": 47126902,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -114,7 +159,8 @@
       "hashUnsigned": 697939169788154310,
       "hashHex": "0x09af93fa220dd1c6",
       "entryIndex": 291739,
-      "stringPoolOffset": 47674972
+      "stringPoolOffset": 47674972,
+      "registry": "main"
     },
     {
       "target": "cutscene_f1m9d3_1",
@@ -123,7 +169,8 @@
       "hashUnsigned": 673447422264690308,
       "hashHex": "0x095890dccafd4684",
       "entryIndex": 293322,
-      "stringPoolOffset": 47911602
+      "stringPoolOffset": 47911602,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -132,7 +179,8 @@
       "hashUnsigned": 789642436577048638,
       "hashHex": "0x0af55f9cc3bfb83e",
       "entryIndex": 300542,
-      "stringPoolOffset": 48997658
+      "stringPoolOffset": 48997658,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -141,7 +189,8 @@
       "hashUnsigned": 530918815996745254,
       "hashHex": "0x075e33d9a80e9626",
       "entryIndex": 321451,
-      "stringPoolOffset": 52514048
+      "stringPoolOffset": 52514048,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -150,7 +199,8 @@
       "hashUnsigned": 832006582565991236,
       "hashHex": "0x0b8be19424a1f344",
       "entryIndex": 325856,
-      "stringPoolOffset": 53548244
+      "stringPoolOffset": 53548244,
+      "registry": "main"
     },
     {
       "target": "cutscene_f1m9d3_1",
@@ -159,7 +209,8 @@
       "hashUnsigned": 271111324529807610,
       "hashHex": "0x03c32e50312f50fa",
       "entryIndex": 333096,
-      "stringPoolOffset": 55246788
+      "stringPoolOffset": 55246788,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -168,7 +219,8 @@
       "hashUnsigned": 191469798988040377,
       "hashHex": "0x02a83cc489e5c8b9",
       "entryIndex": 333557,
-      "stringPoolOffset": 55353690
+      "stringPoolOffset": 55353690,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -177,7 +229,8 @@
       "hashUnsigned": 577261176551165204,
       "hashHex": "0x0802d7fb4af4cd14",
       "entryIndex": 363667,
-      "stringPoolOffset": 62412222
+      "stringPoolOffset": 62412222,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -186,7 +239,8 @@
       "hashUnsigned": 557565883185112614,
       "hashHex": "0x07bcdf3776202626",
       "entryIndex": 369645,
-      "stringPoolOffset": 63809298
+      "stringPoolOffset": 63809298,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -195,7 +249,8 @@
       "hashUnsigned": 619022466905061972,
       "hashHex": "0x089735a767dcba54",
       "entryIndex": 372035,
-      "stringPoolOffset": 64367572
+      "stringPoolOffset": 64367572,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -204,7 +259,8 @@
       "hashUnsigned": 738977742821993623,
       "hashHex": "0x0a41605781d32c97",
       "entryIndex": 383117,
-      "stringPoolOffset": 66978940
+      "stringPoolOffset": 66978940,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -213,7 +269,8 @@
       "hashUnsigned": 563957526647156910,
       "hashHex": "0x07d39461ec3630ae",
       "entryIndex": 393218,
-      "stringPoolOffset": 69354410
+      "stringPoolOffset": 69354410,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -222,7 +279,8 @@
       "hashUnsigned": 1043153728202419568,
       "hashHex": "0x0e7a06c9f7a12d70",
       "entryIndex": 396826,
-      "stringPoolOffset": 70204352
+      "stringPoolOffset": 70204352,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -231,7 +289,8 @@
       "hashUnsigned": 473309425891239152,
       "hashHex": "0x0691886a471764f0",
       "entryIndex": 406206,
-      "stringPoolOffset": 72409790
+      "stringPoolOffset": 72409790,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -240,7 +299,8 @@
       "hashUnsigned": 16282992287699664,
       "hashHex": "0x0039d94b933052d0",
       "entryIndex": 409980,
-      "stringPoolOffset": 73300904
+      "stringPoolOffset": 73300904,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -249,7 +309,8 @@
       "hashUnsigned": 974072407275285246,
       "hashHex": "0x0d8499b18d272afe",
       "entryIndex": 412349,
-      "stringPoolOffset": 73856794
+      "stringPoolOffset": 73856794,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -258,7 +319,8 @@
       "hashUnsigned": 444772286849096791,
       "hashHex": "0x062c2609d3941c57",
       "entryIndex": 413821,
-      "stringPoolOffset": 74206044
+      "stringPoolOffset": 74206044,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -267,7 +329,8 @@
       "hashUnsigned": 674507980324356435,
       "hashHex": "0x095c556f35664153",
       "entryIndex": 415164,
-      "stringPoolOffset": 74523338
+      "stringPoolOffset": 74523338,
+      "registry": "main"
     },
     {
       "target": "cutscene_f1m9d3_1",
@@ -276,7 +339,8 @@
       "hashUnsigned": 604088444468064417,
       "hashHex": "0x0862273d596ff0a1",
       "entryIndex": 432201,
-      "stringPoolOffset": 78531034
+      "stringPoolOffset": 78531034,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -285,7 +349,8 @@
       "hashUnsigned": 71698313901150647,
       "hashHex": "0x00feb93c931291b7",
       "entryIndex": 437404,
-      "stringPoolOffset": 79765128
+      "stringPoolOffset": 79765128,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -294,7 +359,8 @@
       "hashUnsigned": 1014652729195947177,
       "hashHex": "0x0e14c548061ae4a9",
       "entryIndex": 445303,
-      "stringPoolOffset": 81627842
+      "stringPoolOffset": 81627842,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_02",
@@ -303,7 +369,8 @@
       "hashUnsigned": 131095629316966564,
       "hashHex": "0x01d1bec7c10b48a4",
       "entryIndex": 458642,
-      "stringPoolOffset": 84773344
+      "stringPoolOffset": 84773344,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -312,7 +379,8 @@
       "hashUnsigned": 310211945648716238,
       "hashHex": "0x044e181ef97979ce",
       "entryIndex": 481272,
-      "stringPoolOffset": 90117182
+      "stringPoolOffset": 90117182,
+      "registry": "main"
     },
     {
       "target": "cutscene_f1m9d3_1",
@@ -321,7 +389,8 @@
       "hashUnsigned": 35424457324356918,
       "hashHex": "0x007dda5b332de536",
       "entryIndex": 504638,
-      "stringPoolOffset": 95652626
+      "stringPoolOffset": 95652626,
+      "registry": "main"
     },
     {
       "target": "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -330,12 +399,15 @@
       "hashUnsigned": 197749082593277719,
       "hashHex": "0x02be8bbe2ea1b717",
       "entryIndex": 508314,
-      "stringPoolOffset": 96526620
+      "stringPoolOffset": 96526620,
+      "registry": "main"
     }
   ],
   "counts": {
     "targets": 3,
     "targetResourcePaths": 34,
+    "mainTargetResourcePaths": 34,
+    "initialTargetResourcePaths": 0,
     "structuredFilesScanned": 91231,
     "structuredBytesScanned": 7241491260,
     "objectIndexFilesScanned": 2,

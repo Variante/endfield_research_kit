@@ -285,7 +285,19 @@ representing deliberate deduplication; one small control asset retains inline
 JSON. The pool is therefore AI behavior configuration, not a general opaque
 registry. See
 `reports/story/recovery/compress_data_story_audit.{json,md}` for the exact
-record/object map. Other ExtendData files remain separate evidence surfaces.
+record/object map.
+
+Two other current ExtendData-family files are the resource reverse
+registries `Main/StringPathHash.bin` and
+`Initial/InitStringPathHash.bin`. Both use the same validated
+`bucket bytes + (hash:int64, stringPoolOffset:uint64) entries + length-prefixed
+UTF-16LE pool` layout. The main registry contains 538,806 entries; the initial
+registry contains 1,659. The initial registry contributes zero paths for the
+three unresolved CutsceneRoot selector keys, while the main registry
+contributes all 34. The current inventory also contains the separate
+17,909,576-byte `Main/FacBone/FacBoneTRS.bin`; it remains a distinct format
+surface until independently classified. These conclusions are build-specific
+and do not cover runtime-added data, server state, or future files.
 
 Do not infer that a VFS block is irrelevant merely because the normal WebUI
 export skips it. Promote it only when a bounded decoder or query need justifies
