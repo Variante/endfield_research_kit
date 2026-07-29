@@ -78,11 +78,12 @@ Native metadata identifies `StringPathHash` as an eight-byte hash value and `Str
 - structured export: 91,231 files / 7,241,491,260 bytes; 0 hits
 - AnimeStudio object indexes: 1,337,486 rows; 0 hits
 - adjacent supplied binaries: 1 files / 789,844 bytes; 0 hits
+- current native binaries: 1 files / 280,436,712 bytes; 0 hits
 
 Both little- and big-endian 64-bit byte forms were searched in binary sources; signed, unsigned, and hexadecimal text forms were searched in the object indexes.
 
 ## Conclusion
 
-The validated binary is a hash-to-resource-path diagnostic dictionary. The selected paths are registered, but no exact 64-bit hash consumer occurs in the scanned structured data, AnimeStudio object indexes, or supplied adjacent binaries.
+The validated binary is a hash-to-resource-path diagnostic dictionary. The selected paths are registered, but no exact 64-bit hash consumer occurs in the scanned structured data, AnimeStudio object indexes, supplied adjacent binaries, or current native binaries.
 
 Registration in StringPathHash.bin proves that a resource can be resolved by its opaque hash. It does not identify who requests that resource, when it plays, or which mission/quest owns it. A dynamically computed hash, a runtime-only/server selector, or an unscanned encoded source remains outside this exact-consumer census.

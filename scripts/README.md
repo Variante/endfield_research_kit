@@ -2345,8 +2345,9 @@ gameplay-video OCR/audio workflow.
   UTF-16 path pool. It reports target paths by registry, recovers every
   resource path/hash containing the three unresolved CutsceneRoot selector
   keys, then searches the complete structured export, both AnimeStudio object
-  indexes, and an optional adjacent `CompressData.bin` dump for exact
-  binary/text consumers. It writes
+  indexes, an optional adjacent `CompressData.bin` dump, and the current
+  `GameAssembly.dll` for exact binary/text consumers. Repeat
+  `--native-binary PATH` to replace the default native-binary input. It writes
   `reports/story/recovery/string_path_hash_story_audit.{json,md}` and treats
   hash registration as resource availability only: the reverse lookup does not
   prove playback, chronology, or mission/quest ownership. The normal WebUI
@@ -2360,8 +2361,8 @@ gameplay-video OCR/audio workflow.
   python scripts\story_recovery\build_string_path_hash_story_audit.py
   ```
 
-  The current 7.24 GB exact-consumer census takes about nine minutes on this
-  checkout and is not part of `export.bat`.
+  The current 7.24 GB structured/object census plus the 280 MB native scan
+  takes about nine minutes on this checkout and is not part of `export.bat`.
 - `story_recovery/build_compress_data_story_audit.py`: replaces the raw-byte
   `CompressData.bin` probe with a full logical decode. It hash-gates the current
   `DataCompressManager` native mapping, validates the count/absolute-offset

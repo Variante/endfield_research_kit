@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "scope": {
     "targets": [
       "cutscene_e11m2_liexi_xs_m_01_last_01",
@@ -414,6 +414,8 @@
     "objectIndexLinesScanned": 1337486,
     "extraBinaryFilesScanned": 1,
     "extraBinaryBytesScanned": 789844,
+    "nativeBinaryFilesScanned": 1,
+    "nativeBinaryBytesScanned": 280436712,
     "exactConsumerHits": 0
   },
   "consumerCensus": {
@@ -477,6 +479,16 @@
       "sourceSampleTruncated": false,
       "hitCount": 0,
       "hits": []
+    },
+    "nativeBinary": {
+      "filesRead": 1,
+      "bytesRead": 280436712,
+      "sourceSample": [
+        "D:\\Program Files\\Endfield Game\\GameAssembly.dll"
+      ],
+      "sourceSampleTruncated": false,
+      "hitCount": 0,
+      "hits": []
     }
   },
   "nativeSemantics": {
@@ -493,7 +505,7 @@
     "classification": "resource_availability_only",
     "missionGraphAction": "none",
     "ownerRecovered": false,
-    "reason": "The validated binary is a hash-to-resource-path diagnostic dictionary. The selected paths are registered, but no exact 64-bit hash consumer occurs in the scanned structured data, AnimeStudio object indexes, or supplied adjacent binaries."
+    "reason": "The validated binary is a hash-to-resource-path diagnostic dictionary. The selected paths are registered, but no exact 64-bit hash consumer occurs in the scanned structured data, AnimeStudio object indexes, supplied adjacent binaries, or current native binaries."
   },
   "boundary": "Registration in StringPathHash.bin proves that a resource can be resolved by its opaque hash. It does not identify who requests that resource, when it plays, or which mission/quest owns it. A dynamically computed hash, a runtime-only/server selector, or an unscanned encoded source remains outside this exact-consumer census."
 }

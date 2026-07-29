@@ -3450,8 +3450,9 @@ contains zero target paths. The audit searched both endian byte forms of every
 hash through all 91,231 structured files (7,241,491,260 bytes), and the signed,
 unsigned, and hexadecimal text forms through all 1,337,486 current
 StreamingAssets/Persistent AnimeStudio object rows. A separately dumped
-789,844-byte `CompressData.bin` was also searched. All three consumer surfaces
-return **zero exact consumers**.
+789,844-byte `CompressData.bin` was also searched. The current
+280,436,712-byte `GameAssembly.dll` was then scanned for both endian byte forms
+of all 34 hashes. All four consumer surfaces return **zero exact consumers**.
 
 This is useful negative evidence, not a recovered attachment. Presence in
 `StringPathHash.bin` proves that the root's JSON/prefab/playable resources are
@@ -3463,11 +3464,11 @@ the exact census. Reproduce and inspect the bounded result in
 `reports/story/recovery/string_path_hash_story_audit.{json,md}`.
 
 The upstream-selector queue is therefore narrower: do not revisit either
-StringPathHash registry, raw 64-bit hash literals in exported data, or
-CutsceneRoot child/director activation for these three roots. Further offline
-progress needs a genuinely different producer surface that co-carries one of
-the root identities with a mission, quest, level event, phase, or runtime
-control owner.
+StringPathHash registry, raw 64-bit hash literals in exported data or the
+current native binary, or CutsceneRoot child/director activation for these
+three roots. Further offline progress needs a genuinely different producer
+surface that co-carries one of the root identities with a mission, quest,
+level event, phase, or runtime control owner.
 
 #### CompressData is a deduplicated AI BehaviourTree pool, not a selector
 
