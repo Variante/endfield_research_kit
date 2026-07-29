@@ -4306,7 +4306,7 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v43`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v44`
    turns the completed exact `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e9m3`, `e10m4`, `e11m1`, `e11m2`,
    `e11m3`, `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
    operational deferrals.
@@ -4331,11 +4331,12 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 257 actual
-   isolated-scene deferrals: 184 radios, 27 cutscene roots, 26 registered
-   dialogs, ten ReadingPopUp definitions, six DialogTextTable-only groups, two
-   text-only cutscenes, and two TextTable-only black definitions. The
-   hash-validated declaration set contains 260 rows because three declared
+   and reopen automatically if any gate changes. There are now 262 actual
+   isolated-scene deferrals: 184 radios, 27 cutscene roots, 27 registered
+   dialogs, eleven ReadingPopUp definitions, eight DialogTextTable-only groups,
+   one SNS dialog definition, two text-only cutscenes, and two TextTable-only
+   black definitions. The hash-validated declaration set contains 265 rows
+   because three declared
    radios close through stronger exact native/runtime contexts instead of
    using the deferral. Every
    deferred row has graph effect `none` and contributes
@@ -4391,7 +4392,10 @@ Current main-story priorities:
    collisions with the independently typed `_30` and `_31` playback actions,
    not consumers of `_3`. All seven rows therefore remain definition-only
    fail-closed deferrals with graph effect `none`; e9m3 now scores zero.
-   The next main-story source-link frontier is e10m4.
+   e10m4's five residual source-link rows are likewise closed under the exact
+   definition boundaries detailed below. Its only remaining score comes from
+   three context-only variant-quest attachments, so the next main-story
+   source-link frontier is e2m5.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
@@ -4682,10 +4686,20 @@ Current main-story priorities:
    `24400000015` objective-script owner also strictly attaches
    `e10m4d5_q#23` to
    `cutscene_dung02_rdg002_roomA_camera`; it does not order the cutscene.
-   e10m4 now scores 34: five actionable isolated keys
-   (`dlg_e10m4_16`, `_17`, `_21`, `sns_e10m4_1`, and `text_e10m4_1`) plus
-   three narrower quest-attachment questions (`q#31`, `q#34`, and `q#35`).
-   Its seven runtime-configuration closures add no order edge.
+   The final five source-link rows are now exact fail-closed definitions.
+   `dlg_e10m4_16` and `_17` are two-line DialogTextTable groups with no
+   DialogId registration, DialogTree asset, or Timeline; `_16` has its second
+   audio plus explicit female/male variants for its first audio, while both
+   `_17` audio ids are absent. `dlg_e10m4_21` is a registered three-node
+   DialogTree with a hash-locked empty extra config and three absent audio ids,
+   but no activator. `text_e10m4_1` is an exact
+   `rp_text_e10m4_1 -> RichContentTable` definition. `sns_e10m4_1` is an exact
+   26-message/four-option SNSDialogTable graph with empty `relatedMissionId`;
+   its internal message and option edges do not establish mission placement.
+   All five are carrier-audit negative and create no graph edge. e10m4 now has
+   zero actionable isolated scenes and scores 9 solely from three narrower
+   context-only variant-quest attachments (`e10m4d5_q#31`, `q#34`, and
+   `q#35`). Its seven runtime-configuration closures add no order edge.
    The current `e11m4` queue has 49 core isolated scenes split into 35
    current-build offline-exhausted deferred rows, three exact-native closed
    rows, and eleven exact
