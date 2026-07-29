@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v24"
+SCHEMA = "sourceStoryGapQueue.v25"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v4"
+    "current-build-offline-story-carrier-exhaustion-v5"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -147,6 +147,18 @@ OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256 = (
 )
 OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256 = (
     "78CECB42561D80255AB2C38DD24F6699DDC6226D2DFF058FABC5E1EE50223CF3"
+)
+OFFLINE_EXHAUSTION_DIALOG_TEXT_TABLE_SHA256 = (
+    "1C1BB59ACEA89212C9F2E34FE86457672FE5C8783FCD199F161D3F0DC9DEAD72"
+)
+OFFLINE_EXHAUSTION_DIALOG_ID_SOURCE_SHA256 = (
+    "AE2E68E93DCDE3C2AC792541A7456E5CE6B7AF4F2AE10887D178EBFBDC080F79"
+)
+OFFLINE_EXHAUSTION_DIALOG_ID_INDEX_SHA256 = (
+    "3FC412F637063386E7BE4934099A546E24858836FD6C221AA1C2F6BC4092B083"
+)
+OFFLINE_EXHAUSTION_TIMELINE_LINE_ORDERS_SHA256 = (
+    "C8408C67D8E6AD07CECF2007795C8E388B7F9BCE117B11DAADE8A7EFAD4EAEF2"
 )
 OFFLINE_EXHAUSTION_E11M4_CUTSCENE = (
     "cutscene_e11m4_rift_camera_state1to2"
@@ -333,6 +345,74 @@ OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES = {
         "cutscene_e11m2_liexi_xs_m_01_last_03",
     ),
 }
+OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
+    "dlg_e11m2_17": {
+        "missionId": "e11m2",
+        "filename": "dlg_e11m2_17_pFD065A1EEEB7D282.json",
+        "sha256":
+            "3B88159A1EAAFE08D7E933592D087E239BA60B49FD0D4B14E20D7E306A5B2F41",
+        "lineIds": ("dlg_e11m2_17_001",),
+        "optionIds": (),
+    },
+    "dlg_e11m2_18": {
+        "missionId": "e11m2",
+        "filename": "dlg_e11m2_18_pE605FDA82B1E2E4A.json",
+        "sha256":
+            "B6352DAA05B09772DBC31922F9CA27C173025641D4C20D949CD9DF8079543A2C",
+        "lineIds": (
+            "dlg_e11m2_18_001",
+            "dlg_e11m2_18_002",
+            "dlg_e11m2_18_003",
+            "dlg_e11m2_18_004",
+        ),
+        "optionIds": (),
+    },
+    "dlg_e11m6_9": {
+        "missionId": "e11m6",
+        "filename": "dlg_e11m6_9_p23FC2E711EB7DE5B.json",
+        "sha256":
+            "680FCF761BC0239B626C6441296A653E19549EE9E2510C5EB22FE8AAA27061CF",
+        "lineIds": (
+            "dlg_e11m6_9_001",
+            "dlg_e11m6_9_003",
+            "dlg_e11m6_9_004",
+            "dlg_e11m6_9_005",
+            "dlg_e11m6_9_006",
+            "dlg_e11m6_9_007",
+            "dlg_e11m6_9_008",
+        ),
+        "optionIds": (
+            "option_dlg_e11m6_9_1_001",
+            "option_dlg_e11m6_9_1_002",
+        ),
+        "sharedTimeline": {
+            "ownerDialogKey": "dlg_e11m5_9",
+            "timeline": "dlgtl_e11m5_9_sub_1",
+            "sourceFile": "CAB-97f6deec242463684933cb9d8b65c753",
+            "trackPathId": 5795311945645305682,
+            "beforeLineId": "dlg_e11m5_9_009",
+            "embeddedLineIds": (
+                "dlg_e11m6_9_005",
+                "dlg_e11m6_9_006",
+                "dlg_e11m6_9_007",
+                "dlg_e11m6_9_003",
+                "dlg_e11m6_9_008",
+                "dlg_e11m6_9_004",
+            ),
+            "afterLineId": "dlg_e11m5_9_010",
+        },
+    },
+}
+OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS = frozenset({
+    "actorName",
+    "actorNameId",
+    "audioEffect",
+    "audioOverride",
+    "dialogText",
+    "emotionType",
+    "hideHint",
+    "hint",
+})
 OFFLINE_EXHAUSTION_E11M4_RADIOS = frozenset({
     "radio_e11m4_7",
     "radio_e11m4_8",
@@ -578,6 +658,30 @@ def build_offline_exhaustion_index(
         "audioDialog": table_root / "AudioDialog.json",
         "numIdStrTable": table_root / "NumIdStrTable.json",
         "textTable": table_root / "TextTable.json",
+        "dialogTextTable": table_root / "DialogTextTable.json",
+        "dialogIdSource": (
+            ROOT
+            / "export_full"
+            / "structured"
+            / "StreamingAssets"
+            / "Data"
+            / "Json"
+            / "GameplayConfig"
+            / "DialogIdTable.json"
+        ),
+        "dialogIdIndex": (
+            ROOT
+            / "export_full"
+            / "recovered"
+            / "dialog_id_table_index.json"
+        ),
+        "timelineLineOrders": (
+            ROOT
+            / "export_full"
+            / "recovered"
+            / "AnimeStudio-cli"
+            / "timeline_line_orders.json"
+        ),
         "gameAssembly": game_assembly_path,
         "carrierAudit": carrier_audit_path,
         "gameObjectAudit": gameobject_audit_path,
@@ -593,6 +697,12 @@ def build_offline_exhaustion_index(
         / "TextAsset"
     )
     for story_key, definition in (
+        OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
+    ):
+        source_paths[
+            f"dialogDefinition:{story_key}"
+        ] = cutscene_definition_root / definition["filename"]
+    for story_key, definition in (
         OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS.items()
     ):
         for index, (filename, _sha256, _root_name) in enumerate(
@@ -607,8 +717,19 @@ def build_offline_exhaustion_index(
         "audioDialog": OFFLINE_EXHAUSTION_AUDIO_DIALOG_SHA256,
         "numIdStrTable": OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256,
         "textTable": OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256,
+        "dialogTextTable": OFFLINE_EXHAUSTION_DIALOG_TEXT_TABLE_SHA256,
+        "dialogIdSource": OFFLINE_EXHAUSTION_DIALOG_ID_SOURCE_SHA256,
+        "dialogIdIndex": OFFLINE_EXHAUSTION_DIALOG_ID_INDEX_SHA256,
+        "timelineLineOrders":
+            OFFLINE_EXHAUSTION_TIMELINE_LINE_ORDERS_SHA256,
         "gameAssembly": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
     }
+    for story_key, definition in (
+        OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
+    ):
+        expected_hashes[
+            f"dialogDefinition:{story_key}"
+        ] = definition["sha256"]
     for story_key, definition in (
         OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS.items()
     ):
@@ -662,9 +783,16 @@ def build_offline_exhaustion_index(
         for story_key in story_keys
     }
     all_cutscene_keys = set(cutscene_mission_by_key)
+    dialog_mission_by_key = {
+        story_key: safe_key(definition.get("missionId"))
+        for story_key, definition
+        in OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
+    }
+    all_dialog_keys = set(dialog_mission_by_key)
     required_key_missions = {
         **radio_mission_by_key,
         **cutscene_mission_by_key,
+        **dialog_mission_by_key,
     }
     required_keys = set(required_key_missions)
     if (
@@ -746,6 +874,160 @@ def build_offline_exhaustion_index(
         ) <= audio_stems
     ):
         status["status"] = "inactive_radio_definition_validation_failed"
+        return {}, status
+
+    dialog_text_table = read_json(source_paths["dialogTextTable"], {})
+    dialog_id_index = read_json(source_paths["dialogIdIndex"], {})
+    timeline_line_orders = read_json(source_paths["timelineLineOrders"], {})
+    dialog_validation_by_key: dict[str, dict[str, Any]] = {}
+    dialog_definitions_valid = (
+        isinstance(dialog_text_table, dict)
+        and isinstance(dialog_id_index, dict)
+        and isinstance(timeline_line_orders, dict)
+    )
+    for story_key, definition in (
+        OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
+    ):
+        if not dialog_definitions_valid:
+            break
+        tree = read_json(
+            source_paths[f"dialogDefinition:{story_key}"],
+            {},
+        )
+        registry = dialog_id_index.get(story_key)
+        expected_line_ids = tuple(definition["lineIds"])
+        actual_line_ids = tuple(sorted(
+            key
+            for key in dialog_text_table
+            if key.startswith(f"{story_key}_")
+        ))
+        expected_option_ids = tuple(definition["optionIds"])
+        registered_option_ids = tuple(sorted(
+            option_id
+            for option_ids in (
+                (registry.get("optionsByGroup") or {}).values()
+                if isinstance(registry, dict)
+                else []
+            )
+            for option_id in option_ids
+            if isinstance(option_id, str)
+        ))
+        line_audio_ids = tuple(
+            safe_key(dialog_text_table[line_id].get("audioOverride"))
+            for line_id in expected_line_ids
+            if isinstance(dialog_text_table.get(line_id), dict)
+        )
+        shared_timeline = definition.get("sharedTimeline")
+        timeline_context: dict[str, Any] | None = None
+        if isinstance(shared_timeline, dict):
+            owner_dialog_key = safe_key(
+                shared_timeline.get("ownerDialogKey")
+            )
+            timeline_entry = timeline_line_orders.get(owner_dialog_key)
+            embedded_line_ids = tuple(
+                shared_timeline["embeddedLineIds"]
+            )
+            timeline_line_ids = tuple(
+                timeline_entry.get("lineIds") or []
+                if isinstance(timeline_entry, dict)
+                else []
+            )
+            try:
+                start = timeline_line_ids.index(embedded_line_ids[0])
+            except (ValueError, IndexError):
+                start = -1
+            end = start + len(embedded_line_ids)
+            timeline_lines = [
+                row
+                for row in (
+                    timeline_entry.get("lines") or []
+                    if isinstance(timeline_entry, dict)
+                    else []
+                )
+                if (
+                    isinstance(row, dict)
+                    and safe_key(row.get("id")) in embedded_line_ids
+                )
+            ]
+            timeline_context_valid = (
+                start > 0
+                and tuple(timeline_line_ids[start:end])
+                == embedded_line_ids
+                and timeline_line_ids[start - 1]
+                == shared_timeline["beforeLineId"]
+                and end < len(timeline_line_ids)
+                and timeline_line_ids[end]
+                == shared_timeline["afterLineId"]
+                and {
+                    line_id
+                    for line_id in timeline_line_ids
+                    if line_id.startswith(f"{story_key}_")
+                }
+                == set(embedded_line_ids)
+                and len(timeline_lines) == len(embedded_line_ids)
+                and all(
+                    safe_key(row.get("timeline"))
+                    == shared_timeline["timeline"]
+                    and safe_key(row.get("sourceFile"))
+                    == shared_timeline["sourceFile"]
+                    and row.get("trackPathId")
+                    == shared_timeline["trackPathId"]
+                    and safe_key(row.get("lineIdSource"))
+                    == "assetTrunkId"
+                    for row in timeline_lines
+                )
+            )
+            timeline_context = {
+                "ownerDialogKey": owner_dialog_key,
+                "timeline": shared_timeline["timeline"],
+                "sourceFile": shared_timeline["sourceFile"],
+                "trackPathId": shared_timeline["trackPathId"],
+                "beforeLineId": shared_timeline["beforeLineId"],
+                "embeddedLineIds": list(embedded_line_ids),
+                "afterLineId": shared_timeline["afterLineId"],
+                "relation":
+                    "shared_dialog_timeline_embedded_line_context",
+                "graphEffect": "none",
+            }
+        else:
+            timeline_context_valid = story_key not in timeline_line_orders
+        if (
+            not isinstance(tree, dict)
+            or safe_key(tree.get("m_Name")) != story_key
+            or safe_key(tree.get("Name")) != story_key
+            or not isinstance(tree.get("m_Script"), str)
+            or not tree["m_Script"]
+            or not isinstance(registry, dict)
+            or registry.get("registered") is not True
+            or registry.get("memoryPackRecordKey") is not True
+            or registry.get("hasRootKey") is not True
+            or set(registry.get("registrationEvidence") or [])
+            != {"memorypack_record_key", "printable_root_token"}
+            or int(registry.get("trunkCount") or 0) != 0
+            or int(registry.get("lineCount") or 0) != 0
+            or int(registry.get("usedDialogTimelineCount") or 0) != 0
+            or actual_line_ids != expected_line_ids
+            or registered_option_ids != expected_option_ids
+            or len(line_audio_ids) != len(expected_line_ids)
+            or not all(line_audio_ids)
+            or not set(line_audio_ids) <= audio_stems
+            or any(
+                set(dialog_text_table[line_id])
+                != OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS
+                for line_id in expected_line_ids
+            )
+            or not timeline_context_valid
+        ):
+            dialog_definitions_valid = False
+            break
+        dialog_validation_by_key[story_key] = {
+            "lineIds": list(expected_line_ids),
+            "audioIds": list(line_audio_ids),
+            "optionIds": list(expected_option_ids),
+            "timelineContext": timeline_context,
+        }
+    if not dialog_definitions_valid:
+        status["status"] = "inactive_dialog_definition_validation_failed"
         return {}, status
 
     num_id_table = read_json(source_paths["numIdStrTable"], {})
@@ -1006,6 +1288,49 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
+    for story_key in sorted(all_dialog_keys, key=natural_key):
+        validation = dialog_validation_by_key[story_key]
+        index[story_key] = {
+            "sceneKey": story_key,
+            "missionId": dialog_mission_by_key[story_key],
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "evidenceKind":
+                "registered_dialog_definition_without_recovered_activator",
+            "definitionAsset":
+                OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]["filename"],
+            "definitionTable": "DialogTextTable",
+            "runtimeRegistry": "Beyond.Gameplay.DialogIdTable",
+            "runtimeRegistrationEvidence": [
+                "memorypack_record_key",
+                "printable_root_token",
+            ],
+            "lineIds": validation["lineIds"],
+            "audioIds": validation["audioIds"],
+            "optionIds": validation["optionIds"],
+            "sharedTimelineContext": validation["timelineContext"],
+            "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+            "gameAssemblySha256":
+                OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+            "consumerBoundary": (
+                "the exact DialogTree, MemoryPack DialogId registration, "
+                "DialogTextTable rows, and AudioDialog membership establish "
+                "a current runtime-loadable definition; no exact "
+                "MissionRuntime, LevelScript, NpcProxyEx, Lua, object-index, "
+                "or direct native playback caller exposes its activator"
+            ),
+            "orderBoundary": (
+                "DialogId registration, DialogTree node order, line ids, "
+                "shared Timeline context, and filename suffixes do not order "
+                "the Story file relative to mission playback"
+            ),
+            "reopenWhen": (
+                "installed binary, DialogId source/index, DialogTree, "
+                "DialogTextTable, AudioDialog, object index, shared Timeline, "
+                "or another typed producer/consumer registry changes"
+            ),
+            "graphEffect": "none",
+        }
     for story_key in sorted(
         OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS,
         key=natural_key,
@@ -1114,6 +1439,21 @@ def build_offline_exhaustion_index(
         "deferredRadioStoryKeysByMission": {
             mission: sorted(story_keys, key=natural_key)
             for mission, story_keys in OFFLINE_EXHAUSTION_RADIOS_BY_MISSION.items()
+        },
+        "deferredDialogStoryKeysByMission": {
+            mission: sorted(
+                (
+                    story_key
+                    for story_key, story_mission
+                    in dialog_mission_by_key.items()
+                    if story_mission == mission
+                ),
+                key=natural_key,
+            )
+            for mission in sorted(
+                set(dialog_mission_by_key.values()),
+                key=natural_key,
+            )
         },
         "deferredCutsceneStoryKeysByMission": {
             mission: sorted(story_keys, key=natural_key)
