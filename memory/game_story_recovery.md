@@ -62,9 +62,27 @@ three exact `map02_lv008` positions, each visible only under its corresponding
 mission-variable filter. These are HUD/map visibility rules around the
 server-placeholder objective, not completion, ownership, playback, or order.
 Mission Pipeline schema 17 preserves all exact tracking rows, filters, and
-mission-variable defaults behind `Show debug info`. The current corpus has
-3,496 tracking rows on 3,241 objectives and 217 mission-property rows across
-71 missions; none is converted into an edge.
+mission-variable defaults behind `Show debug info`; schema 18 adds their
+current-build runtime semantics. The current corpus has 3,496 tracking rows on
+3,241 objectives and 217 mission-property rows across 71 missions. Of those,
+204 tracking rows across 46 missions use 110 distinct
+`(missionId, missionVarName)` filters.
+
+The installed client evaluates those filters locally.
+`SimpleConditionCheckMissionVariableInt.GetResultWithoutListening`
+(`0x06004b72`, `0x18736e6b0`) calls
+`MissionSystem.TryGetSaveProperty(missionId, missionVarName)` and
+`TableUtils.DoCompare(value, compareOperator, compareTarget)`.
+`InnerStartListening`/`InnerEndListening` bind and unbind the mission-property
+global event, and `_OnMissionVarChange` reevaluates after the matching identity
+changes. `SC_UPDATE_MISSION_PROPERTY (124)` carries `missionId` plus a map from
+numeric property id to `DYNAMIC_PARAMETER`; the handler resolves ids through
+`MissionPropertyKeyIdTable`, converts values, updates
+`MissionData.propertyDict`, and broadcasts the event. This proves that the
+three `sm2l8m1_q#18` markers are server-synchronized visibility alternatives,
+but the server-side producer and timing rule are absent from the client.
+Therefore no property filter is converted into a quest, playback, completion,
+or order edge.
 
 Unknown relationships must stay unknown. Filename suffixes, file order,
 generated rank, OCR, gameplay calibration, and manual WebUI overrides can be

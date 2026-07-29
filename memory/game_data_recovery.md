@@ -56,6 +56,14 @@ different versions of the same five files. The effective corpus contains
 across 71 missions. Tracking filters and initial property values are authored
 configuration; without a decoded consumer/writer bridge they remain context
 and do not create mission, quest, playback, completion, or ordering edges.
+The current client does expose the read/update half of that bridge:
+`SimpleConditionCheckMissionVariableInt` reads
+`MissionData.propertyDict(missionId, missionVarName)`, compares it with the
+authored operator/target, and listens for the global change event.
+`SC_UPDATE_MISSION_PROPERTY (124)` resolves numeric property ids through
+`MissionPropertyKeyIdTable`, converts each `DYNAMIC_PARAMETER`, updates the
+dictionary, and broadcasts the event. This proves server-synchronized
+tracking visibility, not the missing server-side producer or change timing.
 
 The current binary-first system-carrier audit demonstrates the intended
 cross-layer standard. Three typed DomainDepot tables plus native request/reply

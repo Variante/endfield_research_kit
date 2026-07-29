@@ -157,7 +157,11 @@ available through expandable guidance.
   initial mission-property values. The current schema retains 3,496 tracking
   rows on 3,241 objectives and 217 property rows across 71 missions. These
   displays do not infer property writers, completion sources, playback,
-  ownership, or order. Selecting a quest shows the native asynchronous protocol sequence:
+  ownership, or order. For the 204 property-filtered tracking rows, the debug
+  boundary also shows the exact local `TryGetSaveProperty -> DoCompare`
+  evaluator and inbound `SC_UPDATE_MISSION_PROPERTY` dictionary update. The
+  server-side producer and timing remain unknown. Selecting a quest shows the
+  native asynchronous protocol sequence:
   `SC_QUEST_STATE_UPDATE` activation, local condition callbacks,
   `CS_UPDATE_QUEST_OBJECTIVE` / `SC_QUEST_OBJECTIVES_UPDATE`, optional
   `CS_FINISH_DIALOG` / `SC_FINISH_DIALOG`, authoritative completion/failure,
