@@ -4306,8 +4306,8 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v57`
-   turns the completed exact `e0m0`, `e1m1`, `e1m2`, `e1m3`, `e2m2`, `e2m4`,
+   block metadata or the installed build changes. `sourceStoryGapQueue.v58`
+    turns the completed exact `e0m0`, `e1m1`, `e1m2`, `e1m3`, `e1m10`, `e2m2`, `e2m4`,
    `e2m5`, `e2m6`, `e2m7`, `e3m3`, `e3m4`, `e5m1`, `e5m2`, `e6m1`, `e6m2`, `e6m3`,
    `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e8m2`, `e9m2`, `e9m3`,
    `e10m1`, `e10m3`, `e10m4`, `e11m1`, `e11m2`, `e11m3`, `e11m4`,
@@ -4335,12 +4335,12 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-    and reopen automatically if any gate changes. There are now 305 actual
-    isolated-scene deferrals: 207 radios, 29 cutscene roots, 40 registered
+    and reopen automatically if any gate changes. There are now 307 actual
+    isolated-scene deferrals: 208 radios, 29 cutscene roots, 41 registered
     dialogs (fourteen dialogs carry fifteen exact NpcProxy consumers without a
     mission owner), ten ReadingPopUp definitions, nine DialogTextTable-only groups, two
     SNS dialog definitions, six text-only cutscenes, and two TextTable-only
-    black definitions. The hash-validated declaration set contains the same 305
+    black definitions. The hash-validated declaration set contains the same 307
    rows; already-positive native/runtime contexts are excluded. Every
    deferred row has graph effect `none` and contributes
    zero actionable-isolation score while its exact gates remain valid.
@@ -4661,6 +4661,29 @@ Current main-story priorities:
    isolated closures, 95 exact-runtime-config closures, and 9
    strict-attachment diagnostics. e1m10 is next at score 18: three isolated
    carrier rows plus the separate q10 attachment diagnostic.
+   The e1m10 pass closes all three isolated rows while preserving q10 as a
+   real diagnostic. `radio_e1m10_0d2` has two authored lines with complete
+   audio. Canonical registered `dlg_e1m10_2d7`, surfaced as
+   `misc_dlg_e1m10_2d7`, has six exact lines, zero options, complete audio,
+   and exact primary/extra DialogTree hashes but no recovered consumer.
+   `cutscene_e1m10_1` closes positively rather than as an offline definition:
+   Story binding coverage schema 10 supplies one exact
+   `lua_controller_playback` route from shipped
+   `Lua/Data/LuaScripts/Phase/GenderChange/PhaseGenderChange.lua`
+   `CUT_SCENE_ID` through
+   `Beyond.Gameplay.Actions.GameAction::PlayCutscene`. The fail-closed
+   classifier requires the exact direct-evidence route shape, phase, symbol,
+   native entry, source file, and two-step chain. This proves playback by the
+   gender-change phase controller, but the route serializes no mission or
+   quest identity and creates no ownership or relative-order edge. q10
+   remains score 3 because its objective combines
+   `GameConditionServerPlaceHolder` id `6f3c01dc` with exact
+   `SnsTrackingInfo.snsDialogId=sns_e1m10_1`; this is authored tracking
+   context, not the server condition's semantics or SNS playback ownership.
+   v58/v37 has 307 declarations and 307 active deferrals. The main-story
+   bucket is score 272 with 49 actionable core isolated rows, 106 exact-native
+   isolated closures, 95 exact-runtime-config closures, and 9
+   strict-attachment diagnostics. e9m4 is next at score 15.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
