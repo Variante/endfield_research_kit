@@ -2071,6 +2071,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS),
             {
+                "misc_dlg_e1m3_5d5",
                 "dlg_e6m3_6",
                 "dlg_e6m3_12",
                 "misc_dlg_e6m3_3d5",
@@ -2101,6 +2102,40 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m6_9_008",
                 "dlg_e11m6_9_004",
             ),
+        )
+
+    def test_declared_e1m3_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E1M3_RADIOS,
+            {
+                "radio_e1m3_3",
+                "radio_e1m3_4",
+                "radio_e1m3_7",
+                "radio_e1m3_13",
+                "radio_e1m3_13d5",
+                "radio_e1m3_13d7",
+                "radio_e1m3_18",
+                "radio_e1m3_32",
+                "radio_e1m3_34",
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
+                "cutscene_e1m3_1"
+            ]["timelineRegistryId"],
+            89,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS[
+                "cutscene_e1m3_1"
+            ],
+            1,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                "misc_dlg_e1m3_5d5"
+            ]["registryKey"],
+            "dlg_e1m3_5d5",
         )
 
     def test_declared_e6m3_definition_frontier_is_exact(self) -> None:

@@ -1990,11 +1990,13 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v28` covers 129 residual radio definitions, 16 root
-  Timeline cutscenes, 13 registered dialog definitions, two exact
+  `sourceStoryGapQueue.v29` covers 138 residual radio definitions, 17 root
+  Timeline cutscenes, 14 registered dialog definitions, two exact
   ReadingPopUp/RichContent definitions, and two text-only cutscenes across
-  `e6m3`, `e9m2`, `e10m4`, `e11m1`, `e11m2`, `e11m4`, `e11m5`, and `e11m6`.
-  This includes all five bounded `e6m3` radios, its three dialogs, two text
+  `e1m3`, `e6m3`, `e9m2`, `e10m4`, `e11m1`, `e11m2`, `e11m4`, `e11m5`, and
+  `e11m6`. This includes all nine bounded `e1m3` radios, its canonical
+  misc-dialog definition and one-host Timeline root; all five bounded
+  `e6m3` radios, its three dialogs, two text
   definitions, and 14-row text-only cutscene; all eight residual `e9m2` radios and five
   root cutscenes, all 23 residual `e11m1` radios, all nine residual `e11m2`
   radios, all seven residual `e11m5` radios and seven dialogs, and all 22
