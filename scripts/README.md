@@ -1990,10 +1990,11 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v38` evaluates 165 residual radio definitions, 25 root
+  `sourceStoryGapQueue.v39` evaluates 165 residual radio definitions, 25 root
   cutscene carriers, 24 registered dialog definitions, five exact
   DialogTextTable-only/no-registry groups, ten exact
-  ReadingPopUp/RichContent definitions, and two text-only cutscenes across
+  ReadingPopUp/RichContent definitions, two text-only cutscenes, and two
+  TextTable-only black narrative definitions across
   `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e10m3`, `e10m4`,
   `e11m1`, `e11m2`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 162 radio definitions;
   two close through strict exact native mission context, and one through
@@ -2023,6 +2024,9 @@ gameplay-video OCR/audio workflow.
   retaining their option groups without treating option presence as a route.
   e11m8 adds one radio, one registered owned-Timeline dialog, and two
   no-registry one-line dialogs with exact present AudioDialog membership.
+  Its two bare black files use the generic TextTable-only absence gates; a
+  third black file closes as an exact parent DialogTree action disconnected
+  from the prime-node path, without asserting playback or order.
   The class also includes all five bounded
   `e6m3` radios, its three dialogs, two text
   definitions, and 14-row text-only cutscene; all eight residual `e9m2` radios and five

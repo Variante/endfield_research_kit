@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v38"
+SCHEMA = "sourceStoryGapQueue.v39"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v17"
+    "current-build-offline-story-carrier-exhaustion-v18"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -184,6 +184,18 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
             f"{OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE}_{number:02d}"
             for number in range(1, 5)
         ),
+    },
+}
+OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES = {
+    "black_e11m8_12": {
+        "missionId": "e11m8",
+        "storyKind": "black",
+        "definitionRowKeys": ("black_e11m8_12_001",),
+    },
+    "black_e11m8_39": {
+        "missionId": "e11m8",
+        "storyKind": "black",
+        "definitionRowKeys": ("black_e11m8_39_001",),
     },
 }
 OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES = frozenset({
@@ -1644,12 +1656,21 @@ def build_offline_exhaustion_index(
         in OFFLINE_EXHAUSTION_TEXT_DEFINITIONS.items()
     }
     all_text_keys = set(text_mission_by_key)
+    text_table_only_story_mission_by_key = {
+        story_key: safe_key(definition.get("missionId"))
+        for story_key, definition
+        in OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES.items()
+    }
+    all_text_table_only_story_keys = set(
+        text_table_only_story_mission_by_key
+    )
     required_key_missions = {
         **radio_mission_by_key,
         **cutscene_mission_by_key,
         **dialog_mission_by_key,
         **text_only_dialog_mission_by_key,
         **text_mission_by_key,
+        **text_table_only_story_mission_by_key,
     }
     required_keys = set(required_key_missions)
     if (
@@ -2264,9 +2285,13 @@ def build_offline_exhaustion_index(
             else []
         )
     }
-    text_only_cutscene_valid = True
+    text_table_only_story_valid = True
+    text_table_only_definitions = {
+        **OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES,
+        **OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES,
+    }
     for text_only_key, definition in (
-        OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES.items()
+        text_table_only_definitions.items()
     ):
         expected_text_only_row_keys = set(
             definition["definitionRowKeys"]
@@ -2306,7 +2331,7 @@ def build_offline_exhaustion_index(
                 if isinstance(row, dict)
             )
         ):
-            text_only_cutscene_valid = False
+            text_table_only_story_valid = False
             break
     cutscene_definitions_valid = (
         set(OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS)
@@ -2352,7 +2377,7 @@ def build_offline_exhaustion_index(
     if (
         not presentation_cutscene_valid
         or not cutscene_definitions_valid
-        or not text_only_cutscene_valid
+        or not text_table_only_story_valid
     ):
         status["status"] = "inactive_cutscene_definition_validation_failed"
         return {}, status
@@ -2631,6 +2656,35 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
+    for story_key, definition in (
+        OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES.items()
+    ):
+        index[story_key] = {
+            "sceneKey": story_key,
+            "missionId": definition["missionId"],
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "evidenceKind":
+                "text_table_only_story_without_recovered_asset_or_consumer",
+            "storyKind": definition["storyKind"],
+            "definitionTable": "TextTable",
+            "definitionRowKeys": list(definition["definitionRowKeys"]),
+            "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+            "gameAssemblySha256":
+                OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+            "consumerBoundary": (
+                "the exact TextTable group has no Timeline registration, "
+                "DialogTree/TextAsset carrier, object-index relation, "
+                "structured action, Lua consumer, or direct native caller "
+                "in the audited build"
+            ),
+            "reopenWhen": (
+                "installed binary, TextTable, Timeline or DialogId registry, "
+                "TextAsset/object index, Lua corpus, or another typed "
+                "producer/consumer registry changes"
+            ),
+            "graphEffect": "none",
+        }
     status.update({
         "status": "active",
         "coreTargetSetSha256": core_target_digest,
@@ -2670,6 +2724,21 @@ def build_offline_exhaustion_index(
             )
             for mission in sorted(
                 set(text_mission_by_key.values()),
+                key=natural_key,
+            )
+        },
+        "deferredTextTableOnlyStoryKeysByMission": {
+            mission: sorted(
+                (
+                    story_key
+                    for story_key, story_mission
+                    in text_table_only_story_mission_by_key.items()
+                    if story_mission == mission
+                ),
+                key=natural_key,
+            )
+            for mission in sorted(
+                set(text_table_only_story_mission_by_key.values()),
                 key=natural_key,
             )
         },
@@ -3943,6 +4012,112 @@ def _closed_exact_dialog_tree_embedded_context_isolated_scenes(
     return sorted(closed, key=lambda row: natural_key(row["sceneKey"]))
 
 
+def _closed_exact_disconnected_dialog_tree_context_isolated_scenes(
+    flow: dict[str, Any],
+    isolated_scene_keys: set[str],
+    owner_mission: str,
+) -> list[dict[str, Any]]:
+    """Close exact authored DialogTree actions disconnected from the prime path."""
+    allowed_confidences = {
+        "native_exact_parent_quest",
+        "native_derived_exact_parent_quest",
+        "native_derived_exact_parent_mission_area_shell",
+        "native_derived_exact_parent_shell",
+        "native_exact_parent_context",
+    }
+    allowed_evidence_tiers = {
+        "native_direct",
+        "derived_exact_quest",
+        "derived_exact_shell",
+        "native_direct_mission_context",
+    }
+    allowed_action_types = {
+        "Beyond.Gameplay.DialogComplexNarrativeMaskActionData",
+        "Beyond.Gameplay.DialogNarrativeMaskActionData",
+    }
+    closed: list[dict[str, Any]] = []
+    for row in _flow_story_connections(flow):
+        scene_key = safe_key(row.get("key"))
+        parent_story_key = safe_key(row.get("parentStoryKey"))
+        occurrences = [
+            occurrence
+            for occurrence in row.get("dialogTreeNarrativeActions") or []
+            if isinstance(occurrence, dict)
+        ]
+        if (
+            scene_key not in isolated_scene_keys
+            or safe_key(row.get("relation"))
+            != "dialog_tree_narrative_action"
+            or safe_key(row.get("storyOwnerMission")) != owner_mission
+            or not parent_story_key
+            or safe_key(row.get("confidence")) not in allowed_confidences
+            or safe_key(row.get("evidenceTier"))
+            not in allowed_evidence_tiers
+            or safe_key(row.get("scopeCompleteness")) != "complete"
+            or row.get("unscopedParentStoryKeys")
+            or parent_story_key
+            not in set(_string_list(row.get("allParentStoryKeys")))
+            or safe_key(row.get("nativeMappingId"))
+            != DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID
+            or not _string_list(row.get("sourceFiles"))
+            or not _string_list(row.get("sourcePathIds"))
+            or not occurrences
+            or int(row.get("occurrenceCount") or 0) != len(occurrences)
+            or any(
+                safe_key(occurrence.get("dialogKey"))
+                != parent_story_key
+                or safe_key(occurrence.get("actionType"))
+                not in allowed_action_types
+                or safe_key(occurrence.get("nativeMappingId"))
+                != DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID
+                or occurrence.get("reachableFromPrimeNode") is not False
+                or _string_list(occurrence.get("primeToActionNodePath"))
+                or _string_list(
+                    occurrence.get("primeToActionConnectionPath")
+                )
+                or not _string_list(occurrence.get("incomingNodeIds"))
+                or not _string_list(occurrence.get("outgoingNodeIds"))
+                or not safe_key(occurrence.get("textId"))
+                or not safe_key(occurrence.get("actionPath"))
+                or not safe_key(occurrence.get("nodeId"))
+                or not safe_key(occurrence.get("sourceFile"))
+                or not safe_key(occurrence.get("sourcePathId"))
+                for occurrence in occurrences
+            )
+        ):
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_native_disconnected_dialog_tree_context_no_file_order",
+            "relation": "dialog_tree_narrative_action",
+            "parentStoryKey": parent_story_key,
+            "textIds": sorted({
+                safe_key(occurrence.get("textId"))
+                for occurrence in occurrences
+            }, key=natural_key),
+            "nodeIds": sorted({
+                safe_key(occurrence.get("nodeId"))
+                for occurrence in occurrences
+            }, key=natural_key),
+            "sourceFiles": _string_list(row.get("sourceFiles")),
+            "sourcePathIds": _string_list(row.get("sourcePathIds")),
+            "nativeMappingId":
+                DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID,
+            "activationBoundary": (
+                "the exact narrative action and parent DialogTree are "
+                "authored, but the action node has no serialized path from "
+                "the tree's prime node; an unknown external activation "
+                "mechanism is not inferred"
+            ),
+            "orderBoundary": (
+                "disconnected local node adjacency supplies neither runtime "
+                "playback nor a Story-file order edge"
+            ),
+        })
+    return sorted(closed, key=lambda row: natural_key(row["sceneKey"]))
+
+
 def _closed_exact_timeline_dialog_embedded_isolated_scenes(
     flow: dict[str, Any],
     isolated_scene_keys: set[str],
@@ -5094,6 +5269,17 @@ def build_gap_row(
         flow,
         set(isolated_scene_keys),
         safe_key(partial_row.get("mission")),
+    ):
+        closed_exact_native_isolated_by_key.setdefault(
+            row["sceneKey"],
+            row,
+        )
+    for row in (
+        _closed_exact_disconnected_dialog_tree_context_isolated_scenes(
+            flow,
+            set(isolated_scene_keys),
+            safe_key(partial_row.get("mission")),
+        )
     ):
         closed_exact_native_isolated_by_key.setdefault(
             row["sceneKey"],

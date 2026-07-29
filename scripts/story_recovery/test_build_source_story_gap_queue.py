@@ -2544,6 +2544,66 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ]["missingAudioIds"],
             (),
         )
+        self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES),
+            {"black_e11m8_12", "black_e11m8_39"},
+        )
+        disconnected = {
+            "key": "black_e11m8_27",
+            "relation": "dialog_tree_narrative_action",
+            "storyOwnerMission": "e11m8",
+            "parentStoryKey": "dlg_e11m8_3",
+            "confidence": "native_exact_parent_quest",
+            "evidenceTier": "native_direct",
+            "scopeCompleteness": "complete",
+            "allParentStoryKeys": ["dlg_e11m8_3"],
+            "nativeMappingId":
+                gap_queue.DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID,
+            "sourceFiles": ["dlg_e11m8_3.json"],
+            "sourcePathIds": ["90FF60230D4F7FDA"],
+            "occurrenceCount": 1,
+            "dialogTreeNarrativeActions": [{
+                "dialogKey": "dlg_e11m8_3",
+                "actionType":
+                    "Beyond.Gameplay.DialogNarrativeMaskActionData",
+                "nativeMappingId":
+                    gap_queue.DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID,
+                "reachableFromPrimeNode": False,
+                "primeToActionNodePath": [],
+                "primeToActionConnectionPath": [],
+                "incomingNodeIds": ["12"],
+                "outgoingNodeIds": ["14"],
+                "textId": "black_e11m8_27_001",
+                "actionPath": "nodes[13].actions[0]",
+                "nodeId": "13",
+                "sourceFile": "dlg_e11m8_3.json",
+                "sourcePathId": "90FF60230D4F7FDA",
+            }],
+        }
+        rows = (
+            gap_queue
+            ._closed_exact_disconnected_dialog_tree_context_isolated_scenes(
+                {"missionStoryConnections": [disconnected]},
+                {"black_e11m8_27"},
+                "e11m8",
+            )
+        )
+        self.assertEqual(
+            [row["sceneKey"] for row in rows],
+            ["black_e11m8_27"],
+        )
+        disconnected["dialogTreeNarrativeActions"][0][
+            "reachableFromPrimeNode"
+        ] = True
+        self.assertEqual(
+            gap_queue
+            ._closed_exact_disconnected_dialog_tree_context_isolated_scenes(
+                {"missionStoryConnections": [disconnected]},
+                {"black_e11m8_27"},
+                "e11m8",
+            ),
+            [],
+        )
 
     def test_declared_e11m5_frontier_preserves_owned_mixed_timeline(
         self,
