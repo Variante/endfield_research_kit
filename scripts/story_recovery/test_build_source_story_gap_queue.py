@@ -3059,6 +3059,33 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_e3m1_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E3M1_RADIOS,
+            {"radio_e3m1_3"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION["e3m1"],
+            {"cutscene_e3m1_1"},
+        )
+        definition = gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
+            "cutscene_e3m1_1"
+        ]
+        self.assertEqual(definition["timelineRegistryId"], 191)
+        self.assertEqual(len(definition["files"]), 2)
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS[
+                "cutscene_e3m1_1"
+            ],
+            2,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS[
+                "cutscene_e3m1_1"
+            ],
+            2,
+        )
+
     def test_exact_lua_controller_playback_closes_isolated_cutscene(
         self,
     ) -> None:
