@@ -387,6 +387,20 @@ GUIDE_RUNTIME_NON_MISSION_REPORT = (
 )
 EXPORT_FULL_SUMMARY = EXPORT_REPORTS_DIR / "export_full_summary.json"
 GUIDE_RUNTIME_NON_MISSION_SCHEMA = "animestudioStoryGuideConsumerAudit.v1"
+STORY_ROOT_PLAYBACK_ALIAS_REPORT = (
+    STORY_RECOVERY_REPORTS_DIR
+    / "animestudio_story_reverse_pptr_audit.json"
+)
+STORY_ROOT_PLAYBACK_ALIAS_SCHEMA = "animestudioStoryReversePPtrAudit.v2"
+STORY_ROOT_PLAYBACK_ALIAS_MAPPING_ID = (
+    "gameassembly-2026-07-28-cutscene-root-director-playback-v1"
+)
+STORY_ROOT_PLAYBACK_ALIAS_GAMEASSEMBLY_SHA256 = (
+    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+)
+STORY_ROOT_PLAYBACK_ALIAS_METADATA_SHA256 = (
+    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+)
 
 
 def non_mission_content_keys(table_root: Path) -> dict[str, dict[str, str]]:
@@ -545,6 +559,160 @@ def guide_runtime_non_mission_content_keys(
             "evidenceReport": evidence_report,
         }
     return found
+
+
+def story_root_playback_aliases(
+    report_path: Path = STORY_ROOT_PLAYBACK_ALIAS_REPORT,
+    *,
+    export_summary_path: Path = EXPORT_FULL_SUMMARY,
+    output_root: Path = EXPORT_ROOT,
+) -> list[dict[str, Any]]:
+    """Load current exact CutsceneRoot-to-TimelineAsset playback aliases.
+
+    Missing or stale evidence yields no rows. The aliases are playback context
+    only: callers must not turn them into mission ownership or Story order.
+    """
+    report = read_json(Path(report_path), {})
+    export_summary = read_json(Path(export_summary_path), {})
+    native = report.get("nativeEvidence") if isinstance(report, dict) else {}
+    if (
+        not isinstance(report, dict)
+        or report.get("_schema") != STORY_ROOT_PLAYBACK_ALIAS_SCHEMA
+        or not isinstance(export_summary, dict)
+        or not isinstance(native, dict)
+        or safe_key(native.get("mappingId"))
+        != STORY_ROOT_PLAYBACK_ALIAS_MAPPING_ID
+        or safe_key(native.get("gameAssemblySha256")).upper()
+        != STORY_ROOT_PLAYBACK_ALIAS_GAMEASSEMBLY_SHA256
+        or safe_key(native.get("metadataSha256")).upper()
+        != STORY_ROOT_PLAYBACK_ALIAS_METADATA_SHA256
+    ):
+        return []
+    source_sizes = export_summary.get("source_sizes")
+    sources = report.get("sources")
+    if (
+        not isinstance(source_sizes, dict)
+        or not isinstance(sources, list)
+        or not sources
+    ):
+        return []
+    for source_row in sources:
+        if not isinstance(source_row, dict):
+            return []
+        source = safe_key(source_row.get("source"))
+        stage_signature = safe_key(
+            source_row.get("stageSignatureSha256")
+        )
+        source_fingerprint = source_row.get("sourceFingerprint")
+        export_fingerprint = source_sizes.get(source)
+        summary_path = (
+            Path(output_root)
+            / "recovered"
+            / "AnimeStudio-cli"
+            / source
+            / "object_index"
+            / "summary.json"
+        )
+        current_summary = read_json(summary_path, {})
+        current_stage = current_summary.get("stageSignature")
+        if (
+            not source
+            or len(stage_signature) != 64
+            or not isinstance(source_fingerprint, dict)
+            or not isinstance(export_fingerprint, dict)
+            or not isinstance(current_summary, dict)
+            or current_summary.get("complete") is not True
+            or not isinstance(current_stage, dict)
+            or safe_key(current_stage.get("sha256")) != stage_signature
+        ):
+            return []
+        normalized_report_fingerprint = {
+            "files": source_fingerprint.get("files"),
+            "bytes": source_fingerprint.get("bytes"),
+            "fingerprint":
+                safe_key(source_fingerprint.get("fingerprint")).lower(),
+        }
+        normalized_export_fingerprint = {
+            "files": export_fingerprint.get("files"),
+            "bytes": export_fingerprint.get("bytes"),
+            "fingerprint":
+                safe_key(export_fingerprint.get("fingerprint")).lower(),
+        }
+        current_payload = current_stage.get("payload")
+        normalized_current_fingerprint = (
+            current_payload.get("source_fingerprint")
+            if isinstance(current_payload, dict)
+            else None
+        )
+        if (
+            normalized_report_fingerprint != normalized_export_fingerprint
+            or normalized_report_fingerprint != normalized_current_fingerprint
+        ):
+            return []
+
+    evidence_path = Path(report_path)
+    try:
+        evidence_report = evidence_path.resolve().relative_to(
+            ROOT.resolve()
+        ).as_posix()
+    except ValueError:
+        evidence_report = str(evidence_path)
+    found: dict[tuple[str, str], dict[str, Any]] = {}
+    for host in report.get("directorHosts") or []:
+        if not isinstance(host, dict):
+            continue
+        for row in host.get("crossStoryPlaybackAliases") or []:
+            if not isinstance(row, dict):
+                continue
+            root_key = safe_key(row.get("rootStoryKey"))
+            playable_key = safe_key(row.get("playableAssetStoryKey"))
+            director = row.get("directorObject")
+            if (
+                not root_key
+                or not playable_key
+                or root_key == playable_key
+                or safe_key(row.get("relation"))
+                != "cutscene_root_director_playable_asset"
+                or safe_key(row.get("edgeStatus"))
+                != (
+                    "exact_root_playback_alias_no_chronology_or_"
+                    "mission_owner"
+                )
+                or not isinstance(
+                    row.get("cutsceneRootComponentPathId"),
+                    int,
+                )
+                or not isinstance(director, dict)
+                or not safe_key(director.get("serializedFile"))
+                or not isinstance(director.get("pathId"), int)
+            ):
+                continue
+            found[(root_key, playable_key)] = {
+                "rootStoryKey": root_key,
+                "playableAssetStoryKey": playable_key,
+                "relation": "cutscene_root_director_playable_asset",
+                "edgeStatus": safe_key(row.get("edgeStatus")),
+                "cutsceneRootGameObjectPathId":
+                    row.get("cutsceneRootGameObjectPathId"),
+                "cutsceneRootComponentPathId":
+                    row["cutsceneRootComponentPathId"],
+                "directorObject": {
+                    "serializedFile":
+                        safe_key(director.get("serializedFile")),
+                    "pathId": director["pathId"],
+                    "source": safe_key(director.get("source")),
+                    "sourceOffset": director.get("sourceOffset"),
+                },
+                "nativeMappingId":
+                    STORY_ROOT_PLAYBACK_ALIAS_MAPPING_ID,
+                "evidenceReport": evidence_report,
+                "ownership": False,
+                "chronology": False,
+            }
+    return [
+        found[key]
+        for key in sorted(found)
+    ]
 
 
 def combined_non_mission_content_keys(

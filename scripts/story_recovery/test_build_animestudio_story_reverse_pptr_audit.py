@@ -9,8 +9,12 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
+SCRIPTS_DIR = SCRIPT_DIR.parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 import build_animestudio_story_reverse_pptr_audit as audit  # noqa: E402
+from common import story_root_playback_aliases  # noqa: E402
 
 
 def object_row(
@@ -224,6 +228,110 @@ class AnimeStudioStoryReversePPtrAuditTests(unittest.TestCase):
             self.assertEqual(
                 audit.story_index_keys(path),
                 {"cutscene_a", "dlg_b"},
+            )
+
+    def test_fresh_playback_alias_loader_fails_closed_on_stage_drift(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            output_root = root / "export"
+            summary_path = (
+                output_root
+                / "recovered"
+                / "AnimeStudio-cli"
+                / "StreamingAssets"
+                / "object_index"
+                / "summary.json"
+            )
+            summary_path.parent.mkdir(parents=True)
+            fingerprint = {
+                "files": 2,
+                "bytes": 3,
+                "fingerprint": "f" * 64,
+            }
+            summary_path.write_text(
+                json.dumps({
+                    "complete": True,
+                    "stageSignature": {
+                        "sha256": "a" * 64,
+                        "payload": {
+                            "source_fingerprint": fingerprint,
+                        },
+                    },
+                }),
+                encoding="utf-8",
+            )
+            export_summary = root / "export_summary.json"
+            export_summary.write_text(
+                json.dumps({
+                    "source_sizes": {
+                        "StreamingAssets": fingerprint,
+                    },
+                }),
+                encoding="utf-8",
+            )
+            report_path = root / "report.json"
+            report_path.write_text(
+                json.dumps({
+                    "_schema": audit.SCHEMA,
+                    "nativeEvidence": {
+                        "mappingId": audit.NATIVE_MAPPING_ID,
+                        "gameAssemblySha256":
+                            audit.EXPECTED_GAMEASSEMBLY_SHA256,
+                        "metadataSha256":
+                            audit.EXPECTED_METADATA_SHA256,
+                    },
+                    "sources": [{
+                        "source": "StreamingAssets",
+                        "stageSignatureSha256": "a" * 64,
+                        "sourceFingerprint": fingerprint,
+                    }],
+                    "directorHosts": [{
+                        "crossStoryPlaybackAliases": [{
+                            "rootStoryKey": "cutscene_root",
+                            "playableAssetStoryKey": "cutscene_asset",
+                            "relation":
+                                "cutscene_root_director_playable_asset",
+                            "edgeStatus": (
+                                "exact_root_playback_alias_no_chronology_"
+                                "or_mission_owner"
+                            ),
+                            "cutsceneRootGameObjectPathId": 7,
+                            "cutsceneRootComponentPathId": 8,
+                            "directorObject": {
+                                "serializedFile": "CAB-host",
+                                "pathId": 9,
+                            },
+                        }],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            loaded = story_root_playback_aliases(
+                report_path,
+                export_summary_path=export_summary,
+                output_root=output_root,
+            )
+            self.assertEqual(len(loaded), 1)
+            self.assertEqual(
+                loaded[0]["playableAssetStoryKey"],
+                "cutscene_asset",
+            )
+
+            current = json.loads(summary_path.read_text(encoding="utf-8"))
+            current["stageSignature"]["sha256"] = "b" * 64
+            summary_path.write_text(
+                json.dumps(current),
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                story_root_playback_aliases(
+                    report_path,
+                    export_summary_path=export_summary,
+                    output_root=output_root,
+                ),
+                [],
             )
 
 
