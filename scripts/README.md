@@ -1983,12 +1983,19 @@ gameplay-video OCR/audio workflow.
   proves that the quest reads the dialog's synchronized finish state; it does
   not identify the dialog activator, transfer Story ownership, or add a
   Story-to-Story chronology edge.
+  Exact typed MissionRuntime `client_action_start`, `_succeed`, and `_failed`
+  rows likewise count as strict quest attachment when their lifecycle slot,
+  phase, action id/type, and serialized Story-id source all agree. An isolated
+  Story file reached by such an action is closed as exact quest-lifecycle
+  playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v27` covers 124 residual radio definitions, 16 root
-  Timeline cutscenes, and ten registered dialog definitions across `e9m2`,
-  `e10m4`, `e11m1`, `e11m2`, `e11m4`, `e11m5`, and `e11m6`, plus the text-only
-  `cutscene_e11m1_2`. This includes all eight residual `e9m2` radios and five
+  `sourceStoryGapQueue.v28` covers 129 residual radio definitions, 16 root
+  Timeline cutscenes, 13 registered dialog definitions, two exact
+  ReadingPopUp/RichContent definitions, and two text-only cutscenes across
+  `e6m3`, `e9m2`, `e10m4`, `e11m1`, `e11m2`, `e11m4`, `e11m5`, and `e11m6`.
+  This includes all five bounded `e6m3` radios, its three dialogs, two text
+  definitions, and 14-row text-only cutscene; all eight residual `e9m2` radios and five
   root cutscenes, all 23 residual `e11m1` radios, all nine residual `e11m2`
   radios, all seven residual `e11m5` radios and seven dialogs, and all 22
   residual `e11m6` radios. It requires the
@@ -2011,9 +2018,11 @@ gameplay-video OCR/audio workflow.
   not activation or whole-file order. The owning `dlg_e11m5_9` dialog
   independently requires the exact registered Timeline id, full 17-line mixed
   e11m5/e11m6 clip sequence, source file, track PathID, and terminal option ids.
-  This owned-Timeline context may defer an isolated scene even though the Story
-  builder does not label it unlinked, but only while it has no accepted route;
-  it remains composition rather than activation or whole-file chronology.
+  A hash-locked definition may defer an isolated scene even when the Story
+  builder omits it from the narrower `unlinked` denominator, but only while
+  the complete carrier audit remains negative and no accepted mission/quest,
+  native, or definition route exists. The owned Timeline remains composition
+  rather than activation or whole-file chronology.
   Declared missing AudioDialog ids are also fail-closed per dialog rather than
   treated as present membership. A text-only group
   is admitted only when its complete TextTable rows remain exact and no
