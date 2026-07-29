@@ -2339,12 +2339,14 @@ gameplay-video OCR/audio workflow.
   spelling as playback evidence for lowercase `cutscene_e0m0_1` on the reviewed
   build. Binary, metadata, or IFix fingerprint drift fails closed.
 - `story_recovery/build_string_path_hash_story_audit.py`: validates the skipped
-  `StringPathHash.bin` layout as an 8-byte bucket table, a
+  main `StringPathHash.bin` and initial `InitStringPathHash.bin` registries
+  with the same layout: an 8-byte bucket table, a
   `hash:int64 + stringPoolOffset:uint64` entry table, and a length-prefixed
-  UTF-16 path pool. It recovers every resource path/hash containing the three
-  unresolved CutsceneRoot selector keys, then searches the complete structured
-  export, both AnimeStudio object indexes, and an optional adjacent
-  `CompressData.bin` dump for exact binary/text consumers. It writes
+  UTF-16 path pool. It reports target paths by registry, recovers every
+  resource path/hash containing the three unresolved CutsceneRoot selector
+  keys, then searches the complete structured export, both AnimeStudio object
+  indexes, and an optional adjacent `CompressData.bin` dump for exact
+  binary/text consumers. It writes
   `reports/story/recovery/string_path_hash_story_audit.{json,md}` and treats
   hash registration as resource availability only: the reverse lookup does not
   prove playback, chronology, or mission/quest ownership. The normal WebUI

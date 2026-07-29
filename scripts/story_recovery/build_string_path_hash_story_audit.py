@@ -36,6 +36,16 @@ DEFAULT_HASH_BIN = (
     / "Main"
     / "StringPathHash.bin"
 )
+DEFAULT_INITIAL_HASH_BIN = (
+    ROOT
+    / "tmp"
+    / "story"
+    / "root_selector_string_path_hash"
+    / "Data"
+    / "ExtendData"
+    / "Initial"
+    / "InitStringPathHash.bin"
+)
 DEFAULT_STRUCTURED_ROOT = ROOT / "export_full" / "structured" / "StreamingAssets"
 DEFAULT_OBJECT_INDEXES = (
     ROOT
@@ -374,7 +384,17 @@ def scan_object_indexes(
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     started = time.perf_counter()
     table, all_rows = parse_string_path_hash(args.string_path_hash)
-    selected = selected_hash_paths(all_rows, args.target)
+    initial_table, initial_rows = parse_string_path_hash(
+        args.initial_string_path_hash
+    )
+    selected = [
+        {**row, "registry": "main"}
+        for row in selected_hash_paths(all_rows, args.target)
+    ]
+    selected.extend(
+        {**row, "registry": "initial"}
+        for row in selected_hash_paths(initial_rows, args.target)
+    )
     missing_targets = [
         target
         for target in args.target
@@ -387,7 +407,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         )
 
     print(
-        f"validated {table['entryCount']:,} StringPathHash entries; "
+        f"validated {table['entryCount']:,} main + "
+        f"{initial_table['entryCount']:,} initial StringPathHash entries; "
         f"selected {len(selected)} target paths",
         flush=True,
     )
@@ -422,7 +443,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         + extra_binaries["hitCount"]
     )
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "scope": {
             "targets": list(args.target),
             "purpose": (
@@ -432,10 +453,20 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             ),
         },
         "stringPathHashTable": table,
+        "stringPathHashTables": {
+            "main": table,
+            "initial": initial_table,
+        },
         "targetHashPaths": selected,
         "counts": {
             "targets": len(args.target),
             "targetResourcePaths": len(selected),
+            "mainTargetResourcePaths": sum(
+                row["registry"] == "main" for row in selected
+            ),
+            "initialTargetResourcePaths": sum(
+                row["registry"] == "initial" for row in selected
+            ),
             "structuredFilesScanned": structured["filesRead"],
             "structuredBytesScanned": structured["bytesRead"],
             "objectIndexFilesScanned": object_indexes["filesRead"],
@@ -489,7 +520,10 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 def write_markdown(path: Path, report: dict[str, Any]) -> None:
     counts = report["counts"]
     conclusion = report["conclusion"]
-    table = report["stringPathHashTable"]
+    tables = report.get(
+        "stringPathHashTables",
+        {"main": report["stringPathHashTable"]},
+    )
     lines = [
         "# StringPathHash Story audit",
         "",
@@ -501,21 +535,34 @@ def write_markdown(path: Path, report: dict[str, Any]) -> None:
         "",
         "## Validated format",
         "",
-        f"- source: `{table['file']}`",
-        f"- SHA-256: `{table['sha256']}`",
-        f"- entries / strings: {table['entryCount']:,}",
-        f"- bucket table: {table['bucketTableBytes']:,} bytes",
-        f"- entry table: {table['entryTableBytes']:,} bytes as "
-        "`hash:int64 + stringPoolOffset:uint64`",
-        "- string pool: `byteLength:uint32 + UTF-16LE bytes + null:uint16`",
-        "",
-        "Native metadata identifies `StringPathHash` as an eight-byte hash value "
-        "and `StringPathHashBinary` as the owner of the main/init mapping "
-        "dictionaries. Its public lookup direction is hash to original path.",
-        "",
-        "## Selected roots",
-        "",
     ]
+    for name, table in tables.items():
+        lines.extend(
+            [
+                f"### `{name}` registry",
+                "",
+                f"- source: `{table['file']}`",
+                f"- SHA-256: `{table['sha256']}`",
+                f"- entries / strings: {table['entryCount']:,}",
+                f"- bucket table: {table['bucketTableBytes']:,} bytes",
+                f"- entry table: {table['entryTableBytes']:,} bytes as "
+                "`hash:int64 + stringPoolOffset:uint64`",
+                "- string pool: "
+                "`byteLength:uint32 + UTF-16LE bytes + null:uint16`",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "Native metadata identifies `StringPathHash` as an eight-byte hash "
+            "value and `StringPathHashBinary` as the owner of the main/init "
+            "mapping dictionaries. Its public lookup direction is hash to "
+            "original path.",
+            "",
+            "## Selected roots",
+            "",
+        ]
+    )
     grouped: dict[str, list[dict[str, Any]]] = {}
     for row in report["targetHashPaths"]:
         grouped.setdefault(row["target"], []).append(row)
@@ -523,7 +570,10 @@ def write_markdown(path: Path, report: dict[str, Any]) -> None:
         lines.append(f"### `{target}`")
         lines.append("")
         for row in rows:
-            lines.append(f"- `{row['hashHex']}` -> `{row['path']}`")
+            lines.append(
+                f"- `{row.get('registry', 'main')}` "
+                f"`{row['hashHex']}` -> `{row['path']}`"
+            )
         lines.append("")
     lines.extend(
         [
@@ -569,6 +619,15 @@ def parse_args() -> argparse.Namespace:
         "--structured-root",
         type=Path,
         default=DEFAULT_STRUCTURED_ROOT,
+    )
+    parser.add_argument(
+        "--initial-string-path-hash",
+        type=Path,
+        default=DEFAULT_INITIAL_HASH_BIN,
+        help=(
+            "Targeted VFS dump of "
+            "Data/ExtendData/Initial/InitStringPathHash.bin."
+        ),
     )
     parser.add_argument(
         "--object-index",
