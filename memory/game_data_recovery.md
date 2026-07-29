@@ -294,7 +294,10 @@ registries `Main/StringPathHash.bin` and
 UTF-16LE pool` layout. The main registry contains 538,806 entries; the initial
 registry contains 1,659. The initial registry contributes zero paths for the
 three unresolved CutsceneRoot selector keys, while the main registry
-contributes all 34.
+contributes all 34. The exact-consumer census also searches both endian forms
+of those 34 hashes through the current 280,436,712-byte `GameAssembly.dll` and
+finds zero literal occurrences. This closes hard-coded native hash consumers,
+but not dynamically computed hashes or runtime/server-provided selectors.
 
 The final current file,
 `Main/FacBone/FacBoneTRS.bin`, is also decoded completely. Its 2,020-byte

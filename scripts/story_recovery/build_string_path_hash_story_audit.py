@@ -47,6 +47,9 @@ DEFAULT_INITIAL_HASH_BIN = (
     / "InitStringPathHash.bin"
 )
 DEFAULT_STRUCTURED_ROOT = ROOT / "export_full" / "structured" / "StreamingAssets"
+DEFAULT_NATIVE_BINARIES = (
+    Path(r"D:\Program Files\Endfield Game\GameAssembly.dll"),
+)
 DEFAULT_OBJECT_INDEXES = (
     ROOT
     / "export_full"
@@ -433,6 +436,15 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     print(
         f"adjacent-binary scan: {extra_binaries['filesRead']:,} files / "
         f"{extra_binaries['hitCount']} hits in "
+        f"{time.perf_counter() - phase:.1f}s",
+        flush=True,
+    )
+    phase = time.perf_counter()
+    native_binaries = scan_binary_paths(args.native_binary, selected)
+    print(
+        f"native-binary scan: {native_binaries['filesRead']:,} files / "
+        f"{native_binaries['bytesRead']:,} bytes / "
+        f"{native_binaries['hitCount']} hits in "
         f"{time.perf_counter() - phase:.1f}s; "
         f"total {time.perf_counter() - started:.1f}s",
         flush=True,
@@ -441,9 +453,10 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         structured["hitCount"]
         + object_indexes["hitCount"]
         + extra_binaries["hitCount"]
+        + native_binaries["hitCount"]
     )
     return {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "scope": {
             "targets": list(args.target),
             "purpose": (
@@ -473,12 +486,15 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "objectIndexLinesScanned": object_indexes["linesRead"],
             "extraBinaryFilesScanned": extra_binaries["filesRead"],
             "extraBinaryBytesScanned": extra_binaries["bytesRead"],
+            "nativeBinaryFilesScanned": native_binaries["filesRead"],
+            "nativeBinaryBytesScanned": native_binaries["bytesRead"],
             "exactConsumerHits": total_hits,
         },
         "consumerCensus": {
             "structuredBinary": structured,
             "objectIndexText": object_indexes,
             "extraBinary": extra_binaries,
+            "nativeBinary": native_binaries,
         },
         "nativeSemantics": {
             "valueType": "Beyond.Resource.StringPathHash",
@@ -502,7 +518,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 "The validated binary is a hash-to-resource-path diagnostic "
                 "dictionary. The selected paths are registered, but no exact "
                 "64-bit hash consumer occurs in the scanned structured data, "
-                "AnimeStudio object indexes, or supplied adjacent binaries."
+                "AnimeStudio object indexes, supplied adjacent binaries, or "
+                "current native binaries."
                 if total_hits == 0
                 else "At least one exact hash occurrence requires typed review."
             ),
@@ -587,6 +604,10 @@ def write_markdown(path: Path, report: dict[str, Any]) -> None:
             f"- adjacent supplied binaries: {counts['extraBinaryFilesScanned']:,} "
             f"files / {counts['extraBinaryBytesScanned']:,} bytes; "
             f"{report['consumerCensus']['extraBinary']['hitCount']} hits",
+            f"- current native binaries: "
+            f"{counts['nativeBinaryFilesScanned']:,} files / "
+            f"{counts['nativeBinaryBytesScanned']:,} bytes; "
+            f"{report['consumerCensus']['nativeBinary']['hitCount']} hits",
             "",
             "Both little- and big-endian 64-bit byte forms were searched in binary "
             "sources; signed, unsigned, and hexadecimal text forms were searched "
@@ -644,6 +665,13 @@ def parse_args() -> argparse.Namespace:
         help="Adjacent decoded binary to search; may be repeated.",
     )
     parser.add_argument(
+        "--native-binary",
+        type=Path,
+        action="append",
+        default=None,
+        help="Current native binary to search; may be repeated.",
+    )
+    parser.add_argument(
         "--target",
         action="append",
         default=None,
@@ -657,6 +685,11 @@ def parse_args() -> argparse.Namespace:
     )
     args.extra_binary = (
         tuple(args.extra_binary) if args.extra_binary else DEFAULT_EXTRA_BINARIES
+    )
+    args.native_binary = (
+        tuple(args.native_binary)
+        if args.native_binary
+        else DEFAULT_NATIVE_BINARIES
     )
     args.target = tuple(args.target) if args.target else DEFAULT_TARGETS
     return args
