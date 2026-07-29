@@ -4306,9 +4306,10 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v52`
-   turns the completed exact `e0m0`, `e1m2`, `e1m3`, `e2m4`, `e2m5`,
-   `e2m6`, `e2m7`, `e3m3`, `e5m1`, `e5m2`, `e6m1`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e9m2`, `e9m3`,
+   block metadata or the installed build changes. `sourceStoryGapQueue.v53`
+   turns the completed exact `e0m0`, `e1m2`, `e1m3`, `e2m2`, `e2m4`,
+   `e2m5`, `e2m6`, `e2m7`, `e3m3`, `e5m1`, `e5m2`, `e6m1`, `e6m3`,
+   `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e9m2`, `e9m3`,
    `e10m1`, `e10m3`, `e10m4`, `e11m1`, `e11m2`, `e11m3`, `e11m4`,
    `e11m5`, `e11m6`, and `e11m8` negative boundaries into fail-closed
    operational deferrals.
@@ -4334,12 +4335,12 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 286 actual
-   isolated-scene deferrals: 199 radios, 27 cutscene roots, 34 registered
-   dialogs (eight dialogs carry nine exact NpcProxy consumers without a mission
-   owner), ten ReadingPopUp definitions, eight DialogTextTable-only groups, two
+   and reopen automatically if any gate changes. There are now 289 actual
+   isolated-scene deferrals: 199 radios, 27 cutscene roots, 37 registered
+   dialogs (eleven dialogs carry twelve exact NpcProxy consumers without a
+   mission owner), ten ReadingPopUp definitions, eight DialogTextTable-only groups, two
    SNS dialog definitions, four text-only cutscenes, and two TextTable-only
-   black definitions. The hash-validated declaration set contains the same 286
+   black definitions. The hash-validated declaration set contains the same 289
    rows; already-positive native/runtime contexts are excluded. Every
    deferred row has graph effect `none` and contributes
    zero actionable-isolation score while its exact gates remain valid.
@@ -4576,10 +4577,28 @@ Current main-story priorities:
    `dlg_e11m8_9`, `radio_e1m3_34`, and `radio_e7m2_14`, because each has an
    exact foreign mission-shell playback route. Dormant declarations for other
    already-positive runtime/source contexts were removed at the same boundary.
-   v52/v31 now has exactly 286 declarations and 286 active deferrals. The
-   main-story bucket is score 397 with 74 actionable core isolated rows, 105
+   v52/v31 had exactly 286 declarations and 286 active deferrals. The
+   main-story bucket was score 397 with 74 actionable core isolated rows, 105
    exact-native isolated closures, 92 exact-runtime-config closures, and 9
-   strict-attachment diagnostics. e2m2 is next at score 25.
+   strict-attachment diagnostics. e2m2 was next at score 25.
+   The e2m2 pass adds a second reusable cross-owner class. Exact typed
+   MissionRuntime quest client actions are imported across mission bundles
+   only when relation, lifecycle phase, action slot/id/type, serialized
+   Story-id source, and a unique nominal Story owner all agree.
+   `radio_e2m2_1` closes through e2m1 `e2m1_q#3` succeed-slot
+   `PlayRadio`; the generalized corpus pass also closes `radio_e2m3_3`
+   through e2m2 q3 and `radio_e6m3_1` through e6m2 q25. These rows prove
+   foreign mission/quest playback context, not ownership transfer or relative
+   Story order. The remaining e2m2 keys are exact negative boundaries:
+   audio-complete `radio_e2m2_7`; registered 12-line/three-option
+   `dlg_e2m2_7`; registered 11-line/one-option `dlg_e2m2_1d5`; and registered
+   seven-line/two-option `dlg_e2m2_4d5`. Their exact NpcProxyEx consumers are
+   `tata_map01_i002[1]`, `fabian_map01_lv005[0]`, and
+   `ailaizha_map01_lv005[0]`, all with empty mission ids. v53/v32 therefore
+   has 289 declarations and 289 active deferrals. The main-story bucket is
+   score 367 with 68 actionable core isolated rows, 105 exact-native isolated
+   closures, 95 exact-runtime-config closures, and 9 strict-attachment
+   diagnostics. e1m1 is next at score 20.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,

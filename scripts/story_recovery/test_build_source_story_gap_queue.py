@@ -2271,6 +2271,107 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(closure["questIds"], ["e6m3_q#16"])
         self.assertEqual(closure["actionTypes"], ["PlayRadio"])
 
+    def test_exact_cross_mission_client_action_closes_story_gap(
+        self,
+    ) -> None:
+        story_key = "radio_e2m2_1"
+        partial = partial_mission(
+            "e2m2",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        partial["nodes"][0]["kind"] = "radio"
+        dependent = mission_payload()
+        dependent["flow"]["quests"] = [{
+            "id": "e2m1_q#3",
+            "storyConnections": [{
+                "key": story_key,
+                "kind": "radio",
+                "relation": "client_action_succeed",
+                "direction": "quest_to_story",
+                "phase": "succeed",
+                "confidence": "native_typed_direct",
+                "source": (
+                    "MissionRuntimeAsset.clientActionMapKey[1] -> "
+                    "actionMapRaw.actionList[16]._radioId"
+                ),
+                "actionSlot": 2,
+                "actionId": 16,
+                "actionType": "PlayRadio",
+            }],
+        }]
+        report = gap_queue.build_gap_report(
+            {
+                "_schema": "partial",
+                "language": "CN",
+                "missions": [partial],
+            },
+            {
+                "e2m1": dependent,
+                "e2m2": mission_payload(),
+            },
+            {"e2m1", "e2m2"},
+        )
+
+        row = report["missions"][0]
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        closure = row["closedExactRuntimeConfigIsolatedScenes"][0]
+        self.assertEqual(closure["sceneKey"], story_key)
+        self.assertEqual(closure["contextMissionIds"], ["e2m1"])
+        self.assertTrue(closure["contextMissionMismatch"])
+        self.assertEqual(closure["questIds"], ["e2m1_q#3"])
+        self.assertEqual(
+            closure["sourceFiles"],
+            [
+                "export_full/structured/Persistent/Data/Json/"
+                "MissionRuntimeAsset/e2m1.json"
+            ],
+        )
+
+    def test_cross_mission_client_action_requires_exact_native_shape(
+        self,
+    ) -> None:
+        story_key = "radio_e2m2_1"
+        partial = partial_mission(
+            "e2m2",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        dependent = mission_payload()
+        dependent["flow"]["quests"] = [{
+            "id": "e2m1_q#3",
+            "storyConnections": [{
+                "key": story_key,
+                "relation": "client_action_succeed",
+                "direction": "quest_to_story",
+                "phase": "succeed",
+                "confidence": "native_typed_direct",
+                "source": "derived client action",
+                "actionSlot": 1,
+                "actionId": 16,
+                "actionType": "PlayRadio",
+            }],
+        }]
+        report = gap_queue.build_gap_report(
+            {
+                "_schema": "partial",
+                "language": "CN",
+                "missions": [partial],
+            },
+            {
+                "e2m1": dependent,
+                "e2m2": mission_payload(),
+            },
+            {"e2m1", "e2m2"},
+        )
+
+        row = report["missions"][0]
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 1)
+        self.assertEqual(
+            row["metrics"]["closedExactRuntimeConfigIsolatedScenes"],
+            0,
+        )
+
     def test_mission_client_action_requires_exact_slot_and_source(self) -> None:
         story_key = "radio_e6m3_10d3"
         partial = partial_mission(
@@ -2408,6 +2509,63 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_e2m2_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E2M2_RADIOS,
+            {"radio_e2m2_7"},
+        )
+        expected_dialogs = {
+            "dlg_e2m2_7": (
+                "dlg_e2m2_7",
+                "tata_map01_i002",
+                1,
+                12,
+                3,
+            ),
+            "misc_dlg_e2m2_1d5": (
+                "dlg_e2m2_1d5",
+                "fabian_map01_lv005",
+                0,
+                11,
+                1,
+            ),
+            "misc_dlg_e2m2_4d5": (
+                "dlg_e2m2_4d5",
+                "ailaizha_map01_lv005",
+                0,
+                7,
+                2,
+            ),
+        }
+        for story_key, (
+            registry_key,
+            proxy_id,
+            entry_index,
+            line_count,
+            option_count,
+        ) in expected_dialogs.items():
+            definition = (
+                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]
+            )
+            self.assertEqual(
+                definition.get("registryKey", story_key),
+                registry_key,
+            )
+            self.assertEqual(
+                definition["npcProxyConsumer"]["proxyId"],
+                proxy_id,
+            )
+            self.assertEqual(
+                definition["npcProxyConsumer"]["entryIndex"],
+                entry_index,
+            )
+            self.assertEqual(
+                definition["npcProxyConsumer"]["entry"]["missionId"],
+                "",
+            )
+            self.assertEqual(len(definition["lineIds"]), line_count)
+            self.assertEqual(len(definition["optionIds"]), option_count)
+
     def test_declared_e9m2_offline_frontier_is_exact(self) -> None:
         cutscenes = {
             "cutscene_dung02_dg002_e9m2_lightthewall": 327,
@@ -2471,6 +2629,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             {
                 "dlg_e1m2_6",
                 "misc_dlg_e1m3_5d5",
+                "dlg_e2m2_7",
+                "misc_dlg_e2m2_1d5",
+                "misc_dlg_e2m2_4d5",
                 "dlg_e2m4_10",
                 "dlg_e2m5_6",
                 "dlg_e2m6_12",
@@ -3077,7 +3238,6 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E6M3_RADIOS,
             {
-                "radio_e6m3_1",
                 "radio_e6m3_10d6",
                 "radio_e6m3_21",
                 "radio_e6m3_22",
