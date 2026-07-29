@@ -4306,14 +4306,14 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v68`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v69`
    turns the completed exact `e0m0`, `e0m2`, `e1m1`, `e1m2`, `e1m3`, `e1m4`,
    `e1m10`, `e2m2`, `e2m3`, `e2m4`,
    `e2m5`, `e2m6`, `e2m7`, `e3m2`, `e3m3`, `e3m4`, `e4m1`, `e5m1`,
    `e5m2`, `e5m4`,
    `e6m1`, `e6m2`, `e6m3`,
-   `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e8m1`, `e8m2`, `e8m3`, `e9m2`, `e9m3`,
-   `e9m4`,
+   `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e8m1`, `e8m2`, `e8m3`, `e8m5`,
+   `e9m2`, `e9m3`, `e9m4`,
    `e10m1`, `e10m2`, `e10m3`, `e10m4`, `e11m1`, `e11m2`, `e11m3`, `e11m4`,
    `e11m5`, `e11m6`, and `e11m8` negative boundaries into fail-closed
    operational deferrals.
@@ -4821,6 +4821,17 @@ Current main-story priorities:
    with 23 actionable core isolated rows, 108 exact-native isolated closures,
    95 exact-runtime-config closures, and 9 strict-attachment diagnostics.
    e8m5 is next at score 10.
+   The e8m5 pass closes two audio-complete definitions. Registered
+   `dlg_e8m5_6` has two lines, zero options, exact primary/extra DialogTree
+   hashes, and an exact owned `dlgtl_e8m5_6_sub_1` Timeline whose single trunk
+   track contains both lines. The Timeline establishes internal line order,
+   not activation or mission order; no NpcProxyEx or other typed consumer is
+   recovered. `radio_e8m5_4` is a one-line RadioTable definition with no
+   consumer. Both Story route arrays are empty and the carrier audit has no
+   typed candidate. v69/v48 has 333 declarations and 333 active deferrals.
+   The main-story bucket is score 132 with 21 actionable core isolated rows,
+   108 exact-native isolated closures, 95 exact-runtime-config closures, and
+   9 strict-attachment diagnostics. e3m1 is next at score 10.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
