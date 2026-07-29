@@ -2401,7 +2401,10 @@ gameplay-video OCR/audio workflow.
   The audit is deliberately standalone and never adds mission ownership or
   Story order. Use `--input` only to replay a prepared AnimeStudio stream
   JSONL; the default reads the installed Persistent overlay with
-  StreamingAssets fallback.
+  StreamingAssets fallback. It also fingerprints current IL2CPP metadata and
+  closes the adjacent `FBDynamicSceneScriptControlComp` lead: that struct has
+  only `DefaultLoad:int32`, and zero current mission-controlled root co-carries
+  it.
 - `story_recovery/build_compress_data_story_audit.py`: replaces the raw-byte
   `CompressData.bin` probe with a full logical decode. It hash-gates the current
   `DataCompressManager` native mapping, validates the count/absolute-offset

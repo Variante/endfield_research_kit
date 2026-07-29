@@ -53,6 +53,12 @@ DEFAULT_LEVEL_SCRIPT_ROOT = (
     / "Json"
     / "LevelScriptData"
 )
+DEFAULT_METADATA = (
+    DEFAULT_GAME_ROOT
+    / "il2cpp_data"
+    / "Metadata"
+    / "global-metadata.dat"
+)
 DEFAULT_OUT = (
     ROOT
     / "reports"
@@ -173,6 +179,11 @@ def _data_group(data: bytes, offset: int) -> dict[str, int | bool | str]:
     _check(data, offset + 16, 8)
     result["num"], result["totalInGrid"] = struct.unpack_from("<ii", data, offset + 16)
     return result
+
+
+def _script_control(data: bytes, offset: int) -> dict[str, int]:
+    _check(data, offset, 4)
+    return {"defaultLoad": _i32(data, offset)}
 
 
 def _scene_name(file_name: str) -> str:
@@ -303,6 +314,7 @@ def build_mission_roots(chunks: list[dict[str, Any]]) -> tuple[list[dict[str, An
                     )
                 mission_refs = [ref for ref in refs if ref["type"] == 25]
                 id_refs = [ref for ref in refs if ref["type"] == 15]
+                script_refs = [ref for ref in refs if ref["type"] == 29]
                 if not mission_refs or len(id_refs) != 1:
                     continue
 
@@ -397,21 +409,48 @@ def build_mission_roots(chunks: list[dict[str, Any]]) -> tuple[list[dict[str, An
                         }
                     )
 
-                if mission_controls:
-                    roots.append(
-                        {
-                            "scene": owner_grid["scene"],
-                            "sourceFile": owner_grid["fileName"],
-                            "gridId": owner_grid["uniqueId"],
-                            "gridIndex": owner_grid["gridIndex"],
-                            "rootIndex": root_index,
-                            "rootType": root_type,
-                            "state": state,
-                            "logicId": str(logic_id),
-                            "componentRefs": refs,
-                            "missionControls": mission_controls,
-                        }
+                script_controls: list[dict[str, Any]] = []
+                for script_ref in script_refs:
+                    script_targets = grid_candidates.get(
+                        (owner_grid["scene"], int(script_ref["gridId"])), []
                     )
+                    if len(script_targets) != 1:
+                        continue
+                    script_grid = script_targets[0]
+                    script_vector = _grid_vector(
+                        script_grid, GRID_FIELD_SCRIPT_CONTROL_COMP
+                    )
+                    script_index = int(script_ref["index"])
+                    if (
+                        not script_vector
+                        or script_index < 0
+                        or script_index >= script_vector[1]
+                    ):
+                        continue
+                    script_controls.append({
+                        "componentIndex": script_index,
+                        **_script_control(
+                            script_grid["data"],
+                            script_vector[0] + script_index * 4,
+                        ),
+                    })
+
+                if mission_controls:
+                    row = {
+                        "scene": owner_grid["scene"],
+                        "sourceFile": owner_grid["fileName"],
+                        "gridId": owner_grid["uniqueId"],
+                        "gridIndex": owner_grid["gridIndex"],
+                        "rootIndex": root_index,
+                        "rootType": root_type,
+                        "state": state,
+                        "logicId": str(logic_id),
+                        "componentRefs": refs,
+                        "missionControls": mission_controls,
+                    }
+                    if script_controls:
+                        row["scriptControls"] = script_controls
+                    roots.append(row)
     return roots, duplicate_grids
 
 
@@ -476,6 +515,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- roots whose IdComp.logicId equals an exported LevelScript id: {counts['levelScriptIdentityRoots']}",
         f"- identity-matched roots with Story playback: {counts['storyIdentityRoots']}",
         f"- matching Story playback occurrences: {counts['storyOccurrences']}",
+        f"- mission-controlled roots with ScriptControlComp: {counts['missionControlledRootsWithScriptControl']}",
+        f"- LevelScript-id matches with ScriptControlComp: {counts['levelScriptIdentityRootsWithScriptControl']}",
+        f"- Story-bearing id matches with ScriptControlComp: {counts['storyIdentityRootsWithScriptControl']}",
         f"- decode errors: {counts['decodeErrors']}",
         f"- duplicate scene/grid ids: {counts['duplicateSceneGridIds']}",
         "",
@@ -514,6 +556,15 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Classification: `{report['nativeIdentityBoundary']['classification']}`",
             f"- Mission graph action: `{report['nativeIdentityBoundary']['missionGraphAction']}`",
             f"- Direct runtime bridge found: `{str(report['nativeIdentityBoundary']['directBridgeFound']).lower()}`",
+            "",
+            "### ScriptControlComp closure",
+            "",
+            "`FBDynamicSceneScriptControlComp` serializes only "
+            "`DefaultLoad:int32`. `DynamicSceneScriptControlSystem` indexes "
+            "component/entity and DynamicScene logic identities for local "
+            "decoration, animation, audio, view-state, and attachment control. "
+            "It has no LevelScript pointer, mission/quest identity, or Story "
+            "field and therefore does not close the namespace bridge.",
             "",
         ]
     )
@@ -572,6 +623,20 @@ def load_stream_lines(
     }
 
 
+def fingerprint_file(path: Path) -> dict[str, Any]:
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("rb") as stream:
+        while chunk := stream.read(1024 * 1024):
+            digest.update(chunk)
+            size += len(chunk)
+    return {
+        "path": str(path),
+        "bytes": size,
+        "sha256": digest.hexdigest(),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -582,6 +647,7 @@ def main() -> int:
     )
     parser.add_argument("--cli", type=Path, default=DEFAULT_CLI)
     parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
+    parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
     parser.add_argument(
         "--level-script-root",
         type=Path,
@@ -604,6 +670,11 @@ def main() -> int:
     roots, duplicate_grids = build_mission_roots(chunks)
     scripts = exported_level_scripts(args.level_script_root)
     occurrences = story_occurrences()
+    metadata_source = (
+        fingerprint_file(args.metadata)
+        if args.metadata.is_file()
+        else {"path": str(args.metadata), "missing": True}
+    )
 
     identity_roots: list[dict[str, Any]] = []
     story_candidates: list[dict[str, Any]] = []
@@ -641,6 +712,7 @@ def main() -> int:
         "sources": {
             "dynamicStreaming": dynamic_source,
             "levelScriptRoot": str(args.level_script_root),
+            "il2cppMetadata": metadata_source,
         },
         "counts": {
             "filesDecoded": len(chunks),
@@ -650,6 +722,15 @@ def main() -> int:
             "storyIdentityRoots": len(story_candidates),
             "storyOccurrences": sum(
                 len(row["storyOccurrences"]) for row in story_candidates
+            ),
+            "missionControlledRootsWithScriptControl": sum(
+                bool(row.get("scriptControls")) for row in roots
+            ),
+            "levelScriptIdentityRootsWithScriptControl": sum(
+                bool(row.get("scriptControls")) for row in identity_roots
+            ),
+            "storyIdentityRootsWithScriptControl": sum(
+                bool(row.get("scriptControls")) for row in story_candidates
             ),
             "decodeErrors": len(errors),
             "duplicateSceneGridIds": len(duplicate_grids),
@@ -675,6 +756,24 @@ def main() -> int:
                 "a typed serialized carrier or runtime path must pass one "
                 "identity into the other subsystem without an unproven remap"
             ),
+            "scriptControlBoundary": {
+                "serializedType":
+                    "Beyond.Gameplay.Core.DynamicScene."
+                    "FBDynamicSceneScriptControlComp",
+                "serializedFields": ["DefaultLoad:int32"],
+                "runtimeSystem":
+                    "Beyond.Gameplay.Core.DynamicScene."
+                    "DynamicSceneScriptControlSystem",
+                "runtimeIdentityMaps": [
+                    "m_compIdToScriptRuntimeIndexMap",
+                    "m_logicIdToScriptRuntimeIndexMap",
+                ],
+                "levelScriptPointerFieldFound": False,
+                "missionOrQuestFieldFound": False,
+                "storyFieldFound": False,
+                "classification":
+                    "dynamic_scene_entity_control_not_levelscript_bridge",
+            },
         },
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)

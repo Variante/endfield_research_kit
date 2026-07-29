@@ -22,7 +22,12 @@
       "stdoutSha256": "1702e7f78d19e43f30208bc8a5ce1caedc16994da9a7360fefdd5f404e900320",
       "stderr": "Streamed 457 files"
     },
-    "levelScriptRoot": "D:\\fluffy-dump\\export_full\\structured\\Persistent\\Data\\Json\\LevelScriptData"
+    "levelScriptRoot": "D:\\fluffy-dump\\export_full\\structured\\Persistent\\Data\\Json\\LevelScriptData",
+    "il2cppMetadata": {
+      "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+      "bytes": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
   },
   "counts": {
     "filesDecoded": 457,
@@ -31,6 +36,9 @@
     "levelScriptIdentityRoots": 125,
     "storyIdentityRoots": 72,
     "storyOccurrences": 216,
+    "missionControlledRootsWithScriptControl": 0,
+    "levelScriptIdentityRootsWithScriptControl": 0,
+    "storyIdentityRootsWithScriptControl": 0,
     "decodeErrors": 0,
     "duplicateSceneGridIds": 5
   },
@@ -39969,6 +39977,21 @@
     "levelScriptIdentity": "LevelScriptBriefData.scriptId is resolved through a LevelScriptContainer selected by LevelScriptPtr",
     "directBridgeFound": false,
     "missionGraphAction": "none",
-    "promotionRequirement": "a typed serialized carrier or runtime path must pass one identity into the other subsystem without an unproven remap"
+    "promotionRequirement": "a typed serialized carrier or runtime path must pass one identity into the other subsystem without an unproven remap",
+    "scriptControlBoundary": {
+      "serializedType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneScriptControlComp",
+      "serializedFields": [
+        "DefaultLoad:int32"
+      ],
+      "runtimeSystem": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneScriptControlSystem",
+      "runtimeIdentityMaps": [
+        "m_compIdToScriptRuntimeIndexMap",
+        "m_logicIdToScriptRuntimeIndexMap"
+      ],
+      "levelScriptPointerFieldFound": false,
+      "missionOrQuestFieldFound": false,
+      "storyFieldFound": false,
+      "classification": "dynamic_scene_entity_control_not_levelscript_bridge"
+    }
   }
 }
