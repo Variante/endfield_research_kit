@@ -3511,6 +3511,46 @@ state, or future builds. Reproduce the result in
 requires the Python `brotli` module and remains outside normal stdlib-only
 export paths.
 
+#### FacBoneTRS is factory animation data, not a Story carrier
+
+The no-regex current VFS inventory revealed one additional ExtendData file
+that the earlier name-filtered probes did not enumerate:
+`Data/ExtendData/Main/FacBone/FacBoneTRS.bin`. The maintained
+`build_facbone_trs_story_audit.py` now replaces the filename-only
+classification with a complete, hash-gated decode of the 17,909,576-byte file
+(SHA-256
+`D0882963C6A90C9F19EF41EB5F0983B83B925B075E7EA7D1F2FFC9EF2640C5A4`).
+
+The first word gives a 2,020-byte unit-table span. At file offset 4, 84
+serialized hash buckets contain 84 unique sign-extended `int32` unit GUID
+entries. Each 16-byte unit entry carries the key, a bone count, and an
+absolute bone-table offset. Those unit ranges partition 762 16-byte bone
+entries exactly from byte 2,024 to 14,216. Each bone entry carries a 64-bit
+bone-name hash, frame count, and absolute matrix offset. The resulting 279,615
+64-byte matrices form a gap-free partition from byte 14,216 to exact EOF; all
+4,473,840 decoded `float32` values are finite.
+
+Current native evidence supplies the semantics, not the filename:
+
+- `FacBoneTRSBinary._InitTable` (token `0x060004c6`, VA `0x18449bb30`)
+  initializes the unit lookup from file base + 4;
+- `FacBoneTRSBinary.TryGetBoneTRS` (token `0x060004c7`, VA
+  `0x1869bf644`) looks up signed `guid`, scans the unit's bone entries for
+  `boneNameHash`, bounds-checks `frame`, and copies one 64-byte matrix;
+- `STATICVATDATA.GetBoneTRS` (token `0x060069bd`, VA `0x1874e4ae0`) obtains
+  the entity's current VAT frame, hashes `boneName` through `StringHash64`,
+  and calls that reader.
+
+The logical schema and its only reviewed public caller expose no Story key,
+mission, quest, LevelScript, phase, playback root, or owner field. None of the
+three unresolved CutsceneRoot keys occurs in ASCII or UTF-16LE form. Therefore
+`FacBoneTRS.bin` adds no mission-graph edge. Together with main/initial
+StringPathHash and CompressData, this exhausts all four files in the current
+ExtendData and InitialExtendData blocks as bounded offline formats. Runtime or
+server state, a future build, or a future new file remains outside that
+conclusion. Reproduce the result in
+`reports/story/recovery/facbone_trs_story_audit.{json,md}`.
+
 #### Transition-manager and played-Timeline event surfaces are not owners
 
 The remaining native transition-manager surface is now bounded. Current

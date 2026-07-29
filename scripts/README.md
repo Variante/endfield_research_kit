@@ -2383,6 +2383,24 @@ gameplay-video OCR/audio workflow.
   audit fails closed on missing pool indexes, malformed records, decode/length
   mismatch, non-BehaviourTree logical roots, incomplete typed objects, or
   native binary/metadata hash drift.
+- `story_recovery/build_facbone_trs_story_audit.py`: validates the final
+  current ExtendData-family file as a serialized unit-guid hash table followed
+  by bone-name-hash records and contiguous 64-byte frame matrices. It
+  hash-gates the file plus current `GameAssembly.dll`/metadata, validates every
+  bucket and the gap-free unit/bone/matrix partitions, and records the native
+  `FacBoneTRSBinary.TryGetBoneTRS` and `STATICVATDATA.GetBoneTRS` reader path.
+  The report at
+  `reports/story/recovery/facbone_trs_story_audit.{json,md}` closes the file as
+  factory VAT animation data with no mission-graph action. Prepare and run the
+  bounded audit with:
+
+  ```bat
+  call endfield_paths.bat
+  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index --streaming-assets "%ENDFIELD_GAME_ROOT%\Endfield_Data\StreamingAssets" --output tmp\story\extend_data_inventory\current.json --block-type initial-extend-data --block-type extend-data
+  tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump --streaming-assets "%ENDFIELD_GAME_ROOT%\Endfield_Data\StreamingAssets" --output tmp\story\facbone_trs --block-type extend-data --file-regex "(?i)FacBoneTRS\.bin$"
+  python scripts\story_recovery\build_facbone_trs_story_audit.py
+  ```
+
 - `story_recovery/build_skipped_vfs_block_audit.py`: summarizes an
   AnimeStudio/fluffy-dumper `vfs-index` JSON for WebUI-skipped VFS blocks such
   as Lua, ExtendData, Streaming, DynamicStreaming, and BundleManifest. It
