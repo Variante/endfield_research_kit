@@ -107,6 +107,27 @@ class LevelScriptTriggerVolumeTests(unittest.TestCase):
         self.assertEqual(len(wrapped), cursor)
         self.assertEqual([80001], tail["slotIds"])
 
+    def test_finds_exact_empty_or_null_map_at_eof(self) -> None:
+        for encoded_count, expected_status, expected_count in (
+            (0, "present", 0),
+            (-1, "null", None),
+        ):
+            with self.subTest(encoded_count=encoded_count):
+                payload = (
+                    b"task-prefix"
+                    + encoded_count.to_bytes(4, "little", signed=True)
+                )
+                offset, tail, cursor = _find_final_trigger_volume_map(
+                    payload,
+                    search_start=0,
+                )
+                self.assertEqual(len(b"task-prefix"), offset)
+                self.assertEqual(len(payload), cursor)
+                self.assertEqual(expected_status, tail["status"])
+                self.assertEqual(expected_count, tail.get("count"))
+                self.assertEqual("decoded", tail["parseStatus"])
+                self.assertNotIn("volumes", tail)
+
     def test_rejects_missing_union_tag_and_key_slot_mismatch(self) -> None:
         valid = self._leader_volume(80001)
         missing_tag = valid[:4] + valid[5:]
