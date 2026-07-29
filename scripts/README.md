@@ -1977,13 +1977,20 @@ gameplay-video OCR/audio workflow.
   `original_text_definition_without_consumer` classification are also excluded
   from actionable isolation after the bounded LevelScript, DialogTree, and
   Timeline consumer search.
+  An exact `CheckTalkOptionFinish._dialogId` objective condition is likewise
+  closed as a Story-to-quest completion dependency, including when the
+  consuming mission has no Story partial-order row of its own. The condition
+  proves that the quest reads the dialog's synchronized finish state; it does
+  not identify the dialog activator, transfer Story ownership, or add a
+  Story-to-Story chronology edge.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v25` covers 109 residual radio definitions, 11 root
-  Timeline cutscenes, and three registered dialog definitions across `e10m4`,
-  `e11m1`, `e11m2`, `e11m4`, and `e11m6`, plus the text-only
-  `cutscene_e11m1_2`. This includes all 23 residual `e11m1` radios, all nine
-  residual `e11m2` radios, and all 22 residual `e11m6` radios. It requires the
+  `sourceStoryGapQueue.v26` covers 117 residual radio definitions, 16 root
+  Timeline cutscenes, and three registered dialog definitions across `e9m2`,
+  `e10m4`, `e11m1`, `e11m2`, `e11m4`, and `e11m6`, plus the text-only
+  `cutscene_e11m1_2`. This includes all eight residual `e9m2` radios and five
+  root cutscenes, all 23 residual `e11m1` radios, all nine residual `e11m2`
+  radios, and all 22 residual `e11m6` radios. It requires the
   expected
   `GameAssembly.dll`,
   RadioTable, AudioDialog, TextTable, NumIdStrTable, and cutscene-definition

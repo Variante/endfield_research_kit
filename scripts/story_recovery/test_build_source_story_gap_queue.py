@@ -1754,6 +1754,92 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertTrue(closure["contextMissionMismatch"])
         self.assertEqual(closure["contextMissionBundles"], ["e11m2"])
 
+    def test_exact_cross_mission_dialog_finish_dependency_closes_story_gap(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "e9m2",
+            scenes=["dlg_e9m2_14"],
+            isolated=["dlg_e9m2_14"],
+        )
+        dependent = mission_payload()
+        dependent["flow"]["quests"] = [{
+            "id": "e9m9_q#1",
+            "storyConnections": [{
+                "key": "dlg_e9m2_14",
+                "kind": "dialog",
+                "relation": "objective_condition",
+                "direction": "story_to_quest",
+                "phase": "progress",
+                "confidence": "direct",
+                "source": (
+                    "MissionRuntimeAsset.questDic[*].objectiveList[0]"
+                    ".condition._dialogId"
+                ),
+                "objectiveIndex": 1,
+                "conditionType": "CheckTalkOptionFinish",
+                "finishId": -1,
+            }],
+        }]
+        report = gap_queue.build_gap_report(
+            {
+                "_schema": "partial",
+                "language": "CN",
+                "missions": [partial],
+            },
+            {
+                "e9m2": mission_payload(),
+                "e9m9": dependent,
+            },
+            {"e9m2", "e9m9"},
+        )
+
+        row = report["missions"][0]
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        closure = row["closedExactRuntimeConfigIsolatedScenes"][0]
+        self.assertEqual(
+            closure["recoveryStatus"],
+            (
+                "closed_exact_mission_dialog_finish_dependency_"
+                "no_relative_order"
+            ),
+        )
+        self.assertEqual(closure["dependentMissionIds"], ["e9m9"])
+        self.assertEqual(closure["dependentQuestIds"], ["e9m9_q#1"])
+        self.assertEqual(closure["finishIds"], [-1])
+
+    def test_dialog_finish_dependency_requires_exact_typed_source(self) -> None:
+        partial = partial_mission(
+            "e9m2",
+            scenes=["dlg_e9m2_14"],
+            isolated=["dlg_e9m2_14"],
+        )
+        payload = mission_payload(connections=[{
+            "key": "dlg_e9m2_14",
+            "relation": "objective_condition",
+            "direction": "story_to_quest",
+            "phase": "progress",
+            "confidence": "direct",
+            "source": "derived dialog completion",
+            "objectiveIndex": 1,
+            "conditionType": "CheckTalkOptionFinish",
+            "finishId": -1,
+            "contextMissionBundle": "e9m9",
+            "contextQuestId": "e9m9_q#1",
+        }])
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 1)
+        self.assertEqual(
+            row["metrics"]["closedExactRuntimeConfigIsolatedScenes"],
+            0,
+        )
+
     def test_exact_definition_only_isolated_scene_is_closed(self) -> None:
         partial = partial_mission(
             "e1m1",
@@ -1855,6 +1941,47 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "radio_e11m2_35",
                 "radio_e11m2_36",
                 "radio_e11m2_37",
+            },
+        )
+
+    def test_declared_e9m2_offline_frontier_is_exact(self) -> None:
+        cutscenes = {
+            "cutscene_dung02_dg002_e9m2_lightthewall": 327,
+            "cutscene_dung02_dg002_e9m2_zipline01": 325,
+            "cutscene_dung02_dg002_e9m2_zipline02": 334,
+            "cutscene_dung02_dg002_e9m2_zipline03": 333,
+            "cutscene_dung02_dg002_e9m2_zipline06": 326,
+        }
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION["e9m2"],
+            set(cutscenes),
+        )
+        for story_key, registry_id in cutscenes.items():
+            self.assertEqual(
+                gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
+                    story_key
+                ]["timelineRegistryId"],
+                registry_id,
+            )
+            self.assertEqual(
+                gap_queue.OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS[story_key],
+                1,
+            )
+            self.assertEqual(
+                gap_queue.OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS[story_key],
+                1,
+            )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E9M2_RADIOS,
+            {
+                "radio_e9m2_12",
+                "radio_e9m2_33",
+                "radio_e9m2_34",
+                "radio_e9m2_41",
+                "radio_e9m2_44",
+                "radio_e9m2_49",
+                "radio_e9m2_50",
+                "radio_e9m2_51",
             },
         )
 

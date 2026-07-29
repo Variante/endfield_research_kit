@@ -4306,9 +4306,9 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v25`
-   turns the completed exact `e10m4`, most of `e11m2`, `e11m1`, `e11m4`, and
-   most of `e11m6` negative boundaries into fail-closed operational deferrals.
+   block metadata or the installed build changes. `sourceStoryGapQueue.v26`
+   turns the completed exact `e9m2`, `e10m4`, `e11m1`, `e11m2`, `e11m4`, and
+   `e11m6` negative boundaries into fail-closed operational deferrals.
    It activates only while the exact
    current `GameAssembly.dll`, RadioTable, AudioDialog, TextTable,
    NumIdStrTable, and cutscene-definition hashes match; the carrier-audit
@@ -4330,11 +4330,13 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 124 deferred
-   rows: 21 `e10m4` radios; 23 `e11m1` radios plus five cutscenes; nine `e11m2`
+   and reopen automatically if any gate changes. There are now 137 deferred
+   rows: eight `e9m2` radios plus five cutscenes; 21 `e10m4` radios;
+   23 `e11m1` radios plus five cutscenes; nine `e11m2`
    radios, four cutscenes, and two dialogs; 34 `e11m4` radios plus its
    rift-camera cutscene; and 22 `e11m6` radios, two exact one-host cutscenes,
-   and one dialog. All have graph effect `none`; all five missions score zero.
+   and one dialog. Every deferred row has graph effect `none` and contributes
+   zero actionable-isolation score while its exact gates remain valid.
    The three dialog rows are admitted only while their exact MemoryPack
    DialogId source/index hashes and registration records, DialogTree hashes,
    complete DialogTextTable row sets/schemas, AudioDialog membership,
@@ -4358,9 +4360,26 @@ Current main-story priorities:
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
    and alias tuples are fail-closed. With its two exact registered-dialog
-   definition boundaries included, e11m2 drops from 75/15 to score zero. The
-   genuine offline queue now ranks `e9m2` first (73/14). Continue
-   offline from those exact isolated-scene source-link rows and require a new
+   definition boundaries included, e11m2 drops from 75/15 to score zero.
+   The `e9m2` pass then closes its remaining Story-carrier frontier without
+   inventing chronology. `e9m9_q#1` has an exact
+   `CheckTalkOptionFinish._dialogId=dlg_e9m2_14` objective condition with
+   `finishId=-1`; this proves that e9m9 consumes that dialog's synchronized
+   completion state, but not which mission, quest, NPC interaction, or other
+   path activates it. The WebUI already retained the exact Story-to-quest
+   dependency, while the v26 gap classifier now recognizes consumer-only
+   missions that have no Story partial-order row and closes the nominal e9m2
+   isolation with no Story edge. Five exact Timeline roots
+   (`lightthewall`, `zipline01`, `zipline02`, `zipline03`, and `zipline06`)
+   each retain one registry row, one hash-locked root definition, one forward
+   GameObject row, one reverse PlayableDirector host, and zero cross-Story
+   alias/containment or typed owner candidates. Eight exact RadioTable
+   definitions (`12`, `33`, `34`, `41`, `44`, `49`, `50`, and `51`) have
+   complete AudioDialog membership and no recovered consumer. These 13 rows
+   are operational deferrals with graph effect `none`; e9m2 now has zero
+   actionable core-isolated Story rows and only a narrower quest-attachment
+   diagnostic. The genuine offline queue now ranks `e11m5` first. Continue
+   offline from its exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
    runtime capture later becomes possible, the existing `e11m1` probe remains
    a useful first target for validating the static boundary: use the

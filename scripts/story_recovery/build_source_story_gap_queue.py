@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v25"
+SCHEMA = "sourceStoryGapQueue.v26"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v5"
+    "current-build-offline-story-carrier-exhaustion-v6"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -171,6 +171,13 @@ OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES = frozenset({
     "cutscene_e11m1_shenjiaoe",
 })
 OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
+    "e9m2": frozenset({
+        "cutscene_dung02_dg002_e9m2_lightthewall",
+        "cutscene_dung02_dg002_e9m2_zipline01",
+        "cutscene_dung02_dg002_e9m2_zipline02",
+        "cutscene_dung02_dg002_e9m2_zipline03",
+        "cutscene_dung02_dg002_e9m2_zipline06",
+    }),
     "e11m1": frozenset({
         OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE,
         *OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES,
@@ -188,6 +195,11 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
     }),
 }
 OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
+    "cutscene_dung02_dg002_e9m2_lightthewall": 1,
+    "cutscene_dung02_dg002_e9m2_zipline01": 1,
+    "cutscene_dung02_dg002_e9m2_zipline02": 1,
+    "cutscene_dung02_dg002_e9m2_zipline03": 1,
+    "cutscene_dung02_dg002_e9m2_zipline06": 1,
     "cutscene_e11m1_fire_end": 2,
     "cutscene_e11m1_gatebattleend": 1,
     "cutscene_e11m1_jsspsi_ground_cast": 1,
@@ -201,6 +213,61 @@ OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e11m6_zhuangcomein": 1,
 }
 OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
+    "cutscene_dung02_dg002_e9m2_lightthewall": {
+        "timelineRegistryId": 327,
+        "files": (
+            (
+                "cutscene_dung02_dg002_e9m2_lightthewall_"
+                "pDC3E873CBC4A0AF3.json",
+                "51492BC69BB7859C3E54B3C7028FF5E7999ED5F24AD28E09396948F7EDAE56D4",
+                "cutscene_dung02_dg002_e9m2_lightthewall",
+            ),
+        ),
+    },
+    "cutscene_dung02_dg002_e9m2_zipline01": {
+        "timelineRegistryId": 325,
+        "files": (
+            (
+                "cutscene_dung02_dg002_e9m2_zipline01_"
+                "p9FC50793C47BFF30.json",
+                "50EC447D25DD5781C65CCCC3F1036CCD50AF88EF771B7A81C3286409F0AE9483",
+                "cutscene_dung02_dg002_e9m2_zipline01",
+            ),
+        ),
+    },
+    "cutscene_dung02_dg002_e9m2_zipline02": {
+        "timelineRegistryId": 334,
+        "files": (
+            (
+                "cutscene_dung02_dg002_e9m2_zipline02_"
+                "p4B6883C99A6D2D4D.json",
+                "CFD426B2A75A1A124E7A9486D61DBDBDEE7D4E1E21E163263D47762DA9E21A51",
+                "cutscene_dung02_dg002_e9m2_zipline02",
+            ),
+        ),
+    },
+    "cutscene_dung02_dg002_e9m2_zipline03": {
+        "timelineRegistryId": 333,
+        "files": (
+            (
+                "cutscene_dung02_dg002_e9m2_zipline03_"
+                "p5B5782E97A94C0D0.json",
+                "B738BB60C02B57812E031A7B452AA3F70D13446ACD4ABFF787C4A840F928C3B6",
+                "cutscene_dung02_dg002_e9m2_zipline03",
+            ),
+        ),
+    },
+    "cutscene_dung02_dg002_e9m2_zipline06": {
+        "timelineRegistryId": 326,
+        "files": (
+            (
+                "cutscene_dung02_dg002_e9m2_zipline06_"
+                "p97F0C0478EBE00B0.json",
+                "572ECDDA73CEA155043FA045914AA78BA713A8ED63724D31152F30D79FF89B2B",
+                "cutscene_dung02_dg002_e9m2_zipline06",
+            ),
+        ),
+    },
     "cutscene_e11m1_fire_end": {
         "timelineRegistryId": 458,
         "files": (
@@ -323,6 +390,11 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
     },
 }
 OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS = {
+    "cutscene_dung02_dg002_e9m2_lightthewall": 1,
+    "cutscene_dung02_dg002_e9m2_zipline01": 1,
+    "cutscene_dung02_dg002_e9m2_zipline02": 1,
+    "cutscene_dung02_dg002_e9m2_zipline03": 1,
+    "cutscene_dung02_dg002_e9m2_zipline06": 1,
     "cutscene_e11m1_fire_end": 4,
     "cutscene_e11m1_gatebattleend": 1,
     "cutscene_e11m1_jsspsi_ground_cast": 1,
@@ -492,7 +564,18 @@ OFFLINE_EXHAUSTION_E11M2_RADIOS = frozenset({
     "radio_e11m2_36",
     "radio_e11m2_37",
 })
+OFFLINE_EXHAUSTION_E9M2_RADIOS = frozenset({
+    "radio_e9m2_12",
+    "radio_e9m2_33",
+    "radio_e9m2_34",
+    "radio_e9m2_41",
+    "radio_e9m2_44",
+    "radio_e9m2_49",
+    "radio_e9m2_50",
+    "radio_e9m2_51",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
+    "e9m2": OFFLINE_EXHAUSTION_E9M2_RADIOS,
     "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
     "e11m1": OFFLINE_EXHAUSTION_E11M1_RADIOS,
     "e11m2": OFFLINE_EXHAUSTION_E11M2_RADIOS,
@@ -2695,12 +2778,108 @@ def _closed_exact_runtime_config_isolated_scenes(
     but the server-selected row index and proxy/table ordering do not establish
     relative Story order.
 
+    ``CheckTalkOptionFinish`` objective conditions are exact Story-to-quest
+    completion dependencies. They prove that one quest consumes the dialog's
+    synchronized finish state, but not which mission or quest starts playback.
+
     Counted LevelScript interactive maps are similarly exact: a typed
     ``LevelInteractiveData`` record's component-94 ``type_id`` selects one
     dialog or ReadingPopUp Story file. This recovers the source script and
     interactive identity, but neither map/local-id order nor object placement
     establishes activation timing or relative Story order.
     """
+    closed: list[dict[str, Any]] = []
+    completion_grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in _flow_story_connections(flow):
+        scene_key = safe_key(row.get("key"))
+        context_mission = safe_key(row.get("contextMissionBundle"))
+        context_quest = safe_key(row.get("contextQuestId"))
+        source = safe_key(row.get("source"))
+        objective_index = row.get("objectiveIndex")
+        finish_id = row.get("finishId")
+        if (
+            scene_key not in isolated_scene_keys
+            or safe_key(row.get("relation")) != "objective_condition"
+            or safe_key(row.get("direction")) != "story_to_quest"
+            or safe_key(row.get("phase")) != "progress"
+            or safe_key(row.get("confidence")) != "direct"
+            or safe_key(row.get("conditionType"))
+            != "CheckTalkOptionFinish"
+            or not re.fullmatch(
+                r"MissionRuntimeAsset\.questDic\[\*\]\.objectiveList"
+                r"\[\d+\]\.condition\._dialogId",
+                source,
+            )
+            or not context_mission
+            or not context_quest
+            or not isinstance(objective_index, int)
+            or isinstance(objective_index, bool)
+            or objective_index <= 0
+            or not isinstance(finish_id, int)
+            or isinstance(finish_id, bool)
+        ):
+            continue
+        completion_grouped[scene_key].append(row)
+
+    for scene_key, rows in completion_grouped.items():
+        targets = {
+            (
+                safe_key(row.get("contextMissionBundle")),
+                safe_key(row.get("contextQuestId")),
+                int(row["objectiveIndex"]),
+                int(row["finishId"]),
+            )
+            for row in rows
+        }
+        if not targets:
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_mission_dialog_finish_dependency_no_relative_order",
+            "relation": "objective_condition",
+            "nominalStoryMissionId": owner_mission,
+            "dependentMissionIds": sorted({
+                mission_id
+                for mission_id, _quest_id, _objective_index, _finish_id
+                in targets
+            }, key=natural_key),
+            "dependentQuestIds": sorted({
+                quest_id
+                for _mission_id, quest_id, _objective_index, _finish_id
+                in targets
+            }, key=natural_key),
+            "objectiveIndexes": sorted({
+                objective_index
+                for _mission_id, _quest_id, objective_index, _finish_id
+                in targets
+            }),
+            "finishIds": sorted({
+                finish_id
+                for _mission_id, _quest_id, _objective_index, finish_id
+                in targets
+            }),
+            "dependencySemantics": (
+                "the quest objective reads the exact dialog's synchronized "
+                "completion state through CheckTalkOptionFinish"
+            ),
+            "activationBoundary": (
+                "the objective observes completion only; it does not prove "
+                "which mission, quest, NPC interaction, or other runtime path "
+                "starts the dialog"
+            ),
+            "orderBoundary": (
+                "the dependency places quest completion after dialog finish "
+                "but creates no relative edge between Story files"
+            ),
+            "sourceFiles": sorted({
+                safe_key(row.get("sourceFile"))
+                for row in rows
+                if safe_key(row.get("sourceFile"))
+            }),
+        })
+
+    already_closed = {row["sceneKey"] for row in closed}
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in _flow_story_connections(flow):
         scene_key = safe_key(row.get("key"))
@@ -2709,7 +2888,8 @@ def _closed_exact_runtime_config_isolated_scenes(
             row.get("contextMissionBundle")
         )
         if (
-            scene_key not in isolated_scene_keys
+            scene_key in already_closed
+            or scene_key not in isolated_scene_keys
             or safe_key(row.get("relation"))
             != "npc_proxy_ex_mission_context"
             or safe_key(row.get("confidence")) != "direct_mission_scope"
@@ -2735,7 +2915,6 @@ def _closed_exact_runtime_config_isolated_scenes(
             continue
         grouped[scene_key].append(row)
 
-    closed: list[dict[str, Any]] = []
     for scene_key, rows in grouped.items():
         mission_ids = {
             safe_key(row.get("npcProxyMissionId"))
@@ -3779,6 +3958,19 @@ def build_gap_report(
     cross_owner_connections: dict[str, list[dict[str, Any]]] = defaultdict(
         list
     )
+    story_owners: dict[str, set[str]] = defaultdict(set)
+    for partial_row in partial_report.get("missions") or []:
+        if not isinstance(partial_row, dict):
+            continue
+        owner_mission = safe_key(partial_row.get("mission"))
+        if not owner_mission:
+            continue
+        for node in partial_row.get("nodes") or []:
+            if not isinstance(node, dict):
+                continue
+            story_key = safe_key(node.get("key"))
+            if story_key:
+                story_owners[story_key].add(owner_mission)
     for context_mission, payload in mission_payloads.items():
         flow = _flow(payload)
         for connection in _flow_story_connections(flow):
@@ -3797,6 +3989,40 @@ def build_gap_report(
                 **connection,
                 "contextMissionBundle": context_mission,
             })
+        for quest in flow.get("quests") or []:
+            if not isinstance(quest, dict):
+                continue
+            context_quest = safe_key(quest.get("id"))
+            if not context_quest:
+                continue
+            for connection in quest.get("storyConnections") or []:
+                if not isinstance(connection, dict):
+                    continue
+                story_key = safe_key(connection.get("key"))
+                owners = story_owners.get(story_key) or set()
+                if (
+                    len(owners) != 1
+                    or safe_key(connection.get("relation"))
+                    != "objective_condition"
+                    or safe_key(connection.get("conditionType"))
+                    != "CheckTalkOptionFinish"
+                    or safe_key(connection.get("direction"))
+                    != "story_to_quest"
+                    or safe_key(connection.get("confidence")) != "direct"
+                ):
+                    continue
+                owner_mission = next(iter(owners))
+                if owner_mission not in mission_payloads:
+                    continue
+                cross_owner_connections[owner_mission].append({
+                    **connection,
+                    "contextMissionBundle": context_mission,
+                    "contextQuestId": context_quest,
+                    "sourceFile": (
+                        "export_full/structured/Persistent/Data/Json/"
+                        f"MissionRuntimeAsset/{context_mission}.json"
+                    ),
+                })
     for mission in cross_owner_connections:
         cross_owner_connections[mission].sort(key=lambda row: (
             natural_key(safe_key(row.get("key"))),
@@ -4062,6 +4288,18 @@ def main(argv: list[str] | None = None) -> int:
             mission,
         )
         mission_bundle_presence.add(mission)
+    # Completion observers can live in a mission that owns no Story file and
+    # therefore has no partial-order row (for example e9m9 consuming
+    # dlg_e9m2_14). Load the remaining generated sidecars as context only so
+    # exact cross-mission dependencies cannot disappear from gap
+    # classification merely because the consumer has no narrative graph.
+    for path in sorted(mission_dir.glob("*.json")):
+        mission = path.stem
+        if mission in mission_payloads:
+            continue
+        payload = read_json(path, {})
+        if isinstance(payload, dict):
+            mission_payloads[mission] = payload
 
     offline_exhaustion_index, offline_exhaustion_status = (
         build_offline_exhaustion_index(
