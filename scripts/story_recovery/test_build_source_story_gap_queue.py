@@ -2318,6 +2318,44 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ),
         )
 
+    def test_declared_e0m0_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E0M0_RADIOS,
+            {"radio_e0m0_9d5", "radio_e0m0_10", "radio_e0m0_21"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_MISSING_AUDIO_IDS[
+                "radio_e0m0_10"
+            ],
+            {
+                "au_radio_e0m0_10_001",
+                "au_radio_e0m0_10_002",
+                "au_radio_e0m0_10_003",
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
+                "cutscene_e0m0_11111"
+            ],
+            {"timelineRegistryId": None, "files": ()},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
+                "cutscene_e0m0_1"
+            ]["timelineRegistryId"],
+            158,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+                "text_e0m0_1"
+            ]["contentTextIds"],
+            (
+                2511221695470576053,
+                5177474080784617714,
+                8007409330529367903,
+            ),
+        )
+
     def test_declared_e6m3_definition_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E6M3_RADIOS,
@@ -2346,6 +2384,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS),
             {
+                "text_e0m0_1",
                 "text_e6m3_1",
                 "text_e6m3_4",
                 "text_e7m2_2",

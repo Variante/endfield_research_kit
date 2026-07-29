@@ -1990,11 +1990,11 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v32` evaluates 151 residual radio definitions, 18 root
-  Timeline cutscenes, 18 registered dialog definitions, four exact
+  `sourceStoryGapQueue.v33` evaluates 154 residual radio definitions, 23 root
+  cutscene carriers, 18 registered dialog definitions, five exact
   ReadingPopUp/RichContent definitions, and two text-only cutscenes across
-  `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e10m4`, `e11m1`, `e11m2`,
-  `e11m4`, `e11m5`, and `e11m6`. It defers 149 of the radio definitions; the other two close through
+  `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e10m4`, `e11m1`,
+  `e11m2`, `e11m4`, `e11m5`, and `e11m6`. It defers 152 of the radio definitions; the other two close through
   strict exact native mission context. This includes seven bounded `e1m3`
   radio definitions, its canonical misc-dialog definition and one-host
   Timeline root; `radio_e1m3_13` instead closes through an exact mission-state
@@ -2004,7 +2004,11 @@ gameplay-video OCR/audio workflow.
   all five e7m2 radios, two registered dialogs, two ReadingPopUp/RichContent
   definitions, and the one-host registry-id-406 designer cutscene; all eight
   e3m3 radios plus two registered dialogs, preserving the 18-line/four-option
-  `dlg_e3m3_12` definition without inventing an option route; all five bounded
+  `dlg_e3m3_12` definition without inventing an option route; three e0m0
+  radios, four registered Timeline roots, one explicit unregistered
+  root/PlayableDirector carrier, and one ReadingPopUp/RichContent definition.
+  The remaining e0m0 quest gap stays active because same-script scope is not a
+  strict quest attachment. The class also includes all five bounded
   `e6m3` radios, its three dialogs, two text
   definitions, and 14-row text-only cutscene; all eight residual `e9m2` radios and five
   root cutscenes, all 23 residual `e11m1` radios, all nine residual `e11m2`

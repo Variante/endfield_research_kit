@@ -4306,8 +4306,8 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v32`
-   turns the completed exact `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e10m4`, `e11m1`, `e11m2`,
+   block metadata or the installed build changes. `sourceStoryGapQueue.v33`
+   turns the completed exact `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e10m4`, `e11m1`, `e11m2`,
    `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
    operational deferrals.
    It activates only while the exact
@@ -4331,8 +4331,9 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 191 deferred
-   rows: seven `e1m3` radios, one dialog, and one Timeline root; eight
+   and reopen automatically if any gate changes. There are now 200 deferred
+   rows: three `e0m0` radios, five cutscene roots, and one ReadingPopUp
+   definition; seven `e1m3` radios, one dialog, and one Timeline root; eight
    `e3m3` radios and two dialogs; five `e6m3`
    radios, three dialogs, two ReadingPopUp definitions, and
    one text-only cutscene; eight `e9m2` radios plus five cutscenes;
@@ -4438,7 +4439,14 @@ Current main-story priorities:
    and its four exact option IDs; those options prove authored branching
    content but no activator, selected route, or relative Story order.
    `dlg_e3m3_13` retains its four rows. e3m3 drops from score 50/10 to zero.
-   The genuine offline queue now ranks `e0m0` first. Continue
+   e0m0 then closes three RadioTable definitions (four exact missing
+   AudioDialog ids remain explicit), four registry/hash-locked Timeline roots,
+   the unregistered `cutscene_e0m0_11111` root with one exact GameObject and
+   PlayableDirector host, and the `text_e0m0_1` ReadingPopUp/RichContent pair.
+   e0m0 intentionally remains score 3: `e0m0_q#7` checks LevelScript property
+   `battle_field_clear`, but its four same-script Story rows are only scoped
+   context, not a recovered setter/control path or strict quest attachment.
+   The genuine offline queue now ranks `e10m3` first. Continue
    offline from its exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
    runtime capture later becomes possible, the existing `e11m1` probe remains
