@@ -239,7 +239,10 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # next-record-bounded LevelData narrative-interactive configuration routes.
 # v21 admits final records only through the exact LevelData member-21/member-22
 # boundary and retains that boundary provenance in trigger routes.
-SCHEMA_VERSION = 21
+# v22 retains exact decoded mission/quest-state progress locks on LevelData
+# narrative-interactive routes without treating their owner ids as Story
+# ownership or chronology.
+SCHEMA_VERSION = 22
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -3502,6 +3505,39 @@ def build_story_trigger_route(
                 "kind": "leveldata",
                 "ids": leveldata_assets,
             })
+        progress_conditions = [
+            dict(condition)
+            for condition in row.get("progressLockConditions") or []
+            if isinstance(condition, dict)
+        ]
+        if (
+            row.get("progressLockConditionStatus") == "decoded"
+            and progress_conditions
+        ):
+            condition_summaries = [
+                (
+                    f"{condition.get('ownerKind')} "
+                    f"{condition.get('ownerId')} state "
+                    f"{condition.get('compareTarget')} "
+                    f"(compare {condition.get('compareOperator')})"
+                )
+                for condition in progress_conditions
+            ]
+            if row.get("progressLockConditionType") == "CombinedConditionRuntime":
+                condition_summaries.insert(
+                    0,
+                    (
+                        "combined operator "
+                        f"{row.get('progressLockConditionOperator')} "
+                        "runtime flag "
+                        f"{str(row.get('progressLockSerializedRuntimeFlag')).lower()}"
+                    ),
+                )
+            middle_steps.append({
+                "kind": "availability_condition",
+                "id": str(row.get("progressLockConditionType") or ""),
+                "summaries": condition_summaries,
+            })
     if (
         relation in {
             "levelscript_interactive_narrative_config",
@@ -3561,6 +3597,23 @@ def build_story_trigger_route(
             row.get("levelScriptBriefDictionaryCountOffset"),
         "levelScriptBriefDictionaryCount":
             row.get("levelScriptBriefDictionaryCount"),
+        "progressLockConditionStatus":
+            str(row.get("progressLockConditionStatus") or ""),
+        "progressLockConditionUnionTag":
+            row.get("progressLockConditionUnionTag"),
+        "progressLockConditionSerializedMemberCount":
+            row.get("progressLockConditionSerializedMemberCount"),
+        "progressLockConditionType":
+            str(row.get("progressLockConditionType") or ""),
+        "progressLockConditionOperator":
+            row.get("progressLockConditionOperator"),
+        "progressLockSerializedRuntimeFlag":
+            row.get("progressLockSerializedRuntimeFlag"),
+        "progressLockConditions": [
+            dict(condition)
+            for condition in row.get("progressLockConditions") or []
+            if isinstance(condition, dict)
+        ],
         "rawTypeId": str(row.get("rawTypeId") or ""),
         "entityDetailIds": _unique_route_strings(row.get("entityDetailIds")),
         "entityTemplateIds": _unique_route_strings(row.get("entityTemplateIds")),
@@ -5182,7 +5235,7 @@ def build_story_binding_coverage(
 
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 6,
+        "schemaVersion": 7,
         "generated": int(time.time()),
         "language": language,
         "policy": (

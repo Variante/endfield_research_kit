@@ -399,21 +399,54 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "rawTypeId": "rp_text_testm1_2",
             "entityDetailIds": ["int_narrative_book"],
             "entityTemplateIds": ["int_narrative_scene"],
+            "progressLockConditionStatus": "decoded",
+            "progressLockConditionUnionTag": 0,
+            "progressLockConditionSerializedMemberCount": 3,
+            "progressLockConditionType": "CombinedConditionRuntime",
+            "progressLockConditionOperator": 1,
+            "progressLockSerializedRuntimeFlag": False,
+            "progressLockConditions": [{
+                "unionTag": 12,
+                "serializedMemberCount": 3,
+                "conditionType": "SimpleConditionCheckMissionState",
+                "ownerKind": "mission",
+                "ownerId": "testm0",
+                "compareOperator": 0,
+                "compareTarget": 3,
+            }],
         }
 
         route = pipeline.build_story_trigger_route(row, mission_id="testm1")
 
         self.assertEqual(
             [step["kind"] for step in route["steps"]],
-            ["mission", "leveldata", "narrative_interactive", "story"],
+            [
+                "mission",
+                "leveldata",
+                "availability_condition",
+                "narrative_interactive",
+                "story",
+            ],
         )
         self.assertEqual(
             route["steps"][1]["ids"],
             ["map_test_lv_data_sub_testm1"],
         )
-        self.assertEqual(route["steps"][2]["id"], "10002")
+        self.assertEqual(
+            route["steps"][2]["id"],
+            "CombinedConditionRuntime",
+        )
+        self.assertIn(
+            "mission testm0 state 3",
+            route["steps"][2]["summaries"][1],
+        )
+        self.assertEqual(route["steps"][3]["id"], "10002")
         self.assertEqual(route["entityLogicId"], 10002)
         self.assertEqual(route["interactiveRecordIndex"], 1)
+        self.assertEqual(
+            route["progressLockConditions"][0]["ownerId"],
+            "testm0",
+        )
 
     def test_publish_source_story_partial_order_embeds_lazy_mission_graph(self):
         with tempfile.TemporaryDirectory() as temporary:

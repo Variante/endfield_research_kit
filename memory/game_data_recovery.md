@@ -499,18 +499,30 @@ mission-state PropertyKey shares the record. StreamingAssets and Persistent
 LevelData bytes must match exactly, the record must end at the next typed list
 item, component key `94` must contain the complete `type_id` ParamValue map,
 and the entity must resolve through byte-identical InteractiveTable mirrors to
-an `int_narrative*` template. A direct Story id or exact
-`ReadingPopUpTable.contentId` join then supplies source-configuration context.
-The current corpus has 22 placements for 21 unique Story keys in four
-LevelData assets. Non-final records end at the next typed item. A final record
-is accepted only when its complete 25-member decoder lands exactly at member
-21 (`levelIdNum`) and the adjacent member-22
-`Dictionary<ulong, LevelScriptBriefData/8>` independently validates. This
-admits exactly `text_e10m4_3` and `text_e11m5_4`; all other final candidates
-still fail closed.
+an `int_narrative*` template. The complete suffix now accepts either a null
+progress lock or exact current-build state conditions: union tag `12` /
+three members is `SimpleConditionCheckMissionState`, tag `16` / three members
+is `SimpleConditionCheckQuestState`, and tag `0` / three members is
+`CombinedConditionRuntime` containing only those two leaf forms. Leaf compare
+operator `0`, target state `0..5`, and the exact mission/quest id are retained;
+the combined operator and serialized runtime flag remain raw evidence rather
+than guessed enum names.
+
+A direct Story id or exact `ReadingPopUpTable.contentId` join then supplies
+source-configuration context. The current corpus has **222 placements for 217
+unique Story keys across 45 LevelData assets**: 22 null locks, 123 direct
+quest-state locks, 65 direct mission-state locks, and 12 combined locks.
+Non-final records end at the next typed item. A final record is accepted only
+when its complete 25-member decoder lands exactly at member 21 (`levelIdNum`)
+and the adjacent member-22
+`Dictionary<ulong, LevelScriptBriefData/8>` independently validates. Twenty-two
+final placements pass: the two null-lock rows remain `text_e10m4_3` and
+`text_e11m5_4`, while 20 more have fully decoded state locks.
 These rows establish the LevelData asset, narrative entity, and configured
-Story consumer; they do not establish availability, player interaction
-timing, mission/quest activation, ownership, or relative Story order.
+Story consumer. A decoded lock constrains interactive availability, but its
+referenced mission/quest is not thereby the Story owner; object instantiation,
+player interaction timing, playback causality, and relative Story order remain
+unresolved.
 
 Top-level `LevelScriptData` itself is a current 27-member MemoryPack object,
 not the older 26-member working model; the omitted current field was

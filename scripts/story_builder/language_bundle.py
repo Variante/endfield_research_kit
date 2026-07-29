@@ -15453,8 +15453,9 @@ def build_language_bundle(
     # LevelData also owns a counted LevelInteractiveData list. Accept records
     # whose end is supplied by the next typed list item; accept the final item
     # only when the adjacent member-21/member-22 boundary and complete
-    # LevelScriptBriefData dictionary validate. StreamingAssets/Persistent
-    # bytes must agree.
+    # LevelScriptBriefData dictionary validate. Null progress locks and the
+    # exact current-build mission/quest-state condition forms are accepted.
+    # StreamingAssets/Persistent bytes must agree.
     leveldata_interactive_narrative_contexts = (
         build_leveldata_interactive_narrative_story_contexts(
             set(all_story_entry_keys)
@@ -15485,19 +15486,25 @@ def build_language_bundle(
             "source": (
                 "exact counted LevelData interactive list -> 25-member "
                 "LevelInteractiveData bounded by the next record or validated "
-                "member-21/member-22 boundary -> "
+                "member-21/member-22 boundary, including an exact null or "
+                "decoded mission/quest-state progress lock -> "
                 "componentProperties[94].type_id"
             ),
             "storyOwnerMission": target_mission,
             "storyBinding": True,
             "ownership": False,
             "dependencyOnly": False,
-            "questTriggerStatus":
-                "source_config_only_activation_and_quest_unresolved",
+            "questTriggerStatus": (
+                "exact_progress_lock_condition_without_story_ownership_"
+                "or_chronology"
+                if context.get("progressLockConditionStatus") == "decoded"
+                else "source_config_only_activation_and_quest_unresolved"
+            ),
             "activationBoundary": (
                 "the LevelData asset and narrative interactive are exact; "
-                "serialized data does not establish availability, player "
-                "interaction timing, or mission/quest activation"
+                "an exact progress lock constrains interactive availability "
+                "when present, but does not establish object instantiation, "
+                "player interaction timing, Story ownership, or chronology"
             ),
             "orderBoundary": (
                 "interactive-list order, record index, entity logic id, "
@@ -15552,6 +15559,20 @@ def build_language_bundle(
             ),
             "typeIdEntryOffset": context.get("typeIdEntryOffset"),
             "propertiesCount": context.get("propertiesCount"),
+            "progressLockConditionStatus":
+                context.get("progressLockConditionStatus"),
+            "progressLockConditionUnionTag":
+                context.get("progressLockConditionUnionTag"),
+            "progressLockConditionSerializedMemberCount":
+                context.get("progressLockConditionSerializedMemberCount"),
+            "progressLockConditionType":
+                context.get("progressLockConditionType"),
+            "progressLockConditionOperator":
+                context.get("progressLockConditionOperator"),
+            "progressLockSerializedRuntimeFlag":
+                context.get("progressLockSerializedRuntimeFlag"),
+            "progressLockConditions":
+                context.get("progressLockConditions") or [],
         }
         connections = mission_flows_payload[target_mission].setdefault(
             "missionStoryConnections",

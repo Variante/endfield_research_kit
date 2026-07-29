@@ -3387,13 +3387,15 @@ while the report, latest export source fingerprint, and current object-index
 stage signature agree. `export.bat --export-from-game
 --animestudio-object-index` refreshes it automatically.
 
-The source-gap queue schema is now `sourceStoryGapQueue.v15`.
+The source-gap queue schema is now `sourceStoryGapQueue.v16`.
 `blackbox_common` falls from score 5 to 0 and
 `radio_blackbox_common_1` moves from actionable isolation to
 `closed_exact_guide_runtime_non_mission_content`. Current non-mission closures
 are **234** (233 authored-table rows plus this guide-runtime row), and current
-actionable core-isolated scenes total **2,331** after the later exact
-LevelScript and LevelData interactive-configuration passes. The WebUI reflects
+actionable core-isolated scenes total **2,164** after the later exact
+LevelScript and expanded LevelData interactive-configuration passes. The
+LevelData family now closes 188 isolated source-link rows, 167 more than the
+null-lock-only pass, while preserving all chronology gaps. The WebUI reflects
 the result:
 Mission Pipeline
 reports one non-mission file, while the Storyline debug view labels the radio
@@ -4271,8 +4273,8 @@ Current main-story priorities:
    The current hash-validated merged object-index carrier census produced no
    typed carrier across all 1,335,450 indexed objects, so another loose-object
    or same-object scan is not an actionable offline frontier. The refreshed
-   source-only queue ranks `e10m4` and `e11m4` jointly first (175/35
-   actionable isolated core scenes each), followed by `e11m1` (145/29).
+   source-only queue ranks `e11m4` first (175/35 actionable isolated core
+   scenes), followed by `e10m4` (160/32) and `e11m1` (145/29).
    Continue
    offline from those exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
@@ -4395,10 +4397,14 @@ Current main-story priorities:
    `24400020010` is now exact as well: its complete decoder ends at byte
    `4039`, member 21 is `levelIdNum=244`, and the independently validated
    32-entry member-22 dictionary begins with its count at byte `4043`. It binds
-   `rp_text_e10m4_3 -> text_e10m4_3`. A final-only `dlg_e10m4_22` carrier and
-   condition-bearing
-   `dlg_e10m4_19` candidate are not promoted. The e10m4 queue is therefore
-   35 actionable rows; the three closures add no activation or order.
+   `rp_text_e10m4_3 -> text_e10m4_3`. Exact progress-lock decoding now admits
+   three formerly bounded-but-rejected configurations as availability context:
+   final `dlg_e10m4_18` and next-record-bounded `dlg_e10m4_19` each carry a
+   combined two-leaf `e6m1` mission-state lock (targets `3` and `2`), while
+   final `dlg_e10m4_22` carries a direct `e5m3_q#3` quest-state target `3`.
+   Those referenced state owners are not promoted to Story ownership or
+   chronology. The e10m4 queue is therefore 32 actionable rows; its seven
+   runtime-configuration closures add no order edge.
    The current `e11m4` queue score is 175: 49 core isolated scenes split into
    35 actionable rows, three exact-native closed rows, and eleven exact
    runtime-configuration closures. Five are

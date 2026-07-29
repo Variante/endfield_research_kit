@@ -989,14 +989,15 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "source": (
                 "exact counted LevelData interactive list -> 25-member "
                 "LevelInteractiveData bounded by the next record or validated "
-                "member-21/member-22 boundary -> "
+                "member-21/member-22 boundary, including an exact null or "
+                "decoded mission/quest-state progress lock -> "
                 "componentProperties[94].type_id"
             ),
             "storyOwnerMission": "e1m1",
             "storyBinding": True,
             "ownership": False,
             "nativeMappingId":
-                "leveldata-interactive-narrative-config-v2",
+                "leveldata-interactive-narrative-config-v3",
             "orderBoundary": (
                 "interactive-list order, record index, entity logic id, "
                 "object position, and Story suffix do not establish relative "
@@ -1013,6 +1014,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "entityDetailIds": ["int_narrative_scene_book"],
             "entityTemplateIds": ["int_narrative_scene"],
             "narrativeComponentKey": 94,
+            "progressLockConditionStatus": "null",
             "rawTypeId": "rp_text_e1m1_2",
             "storyKeyResolution": "reading_popup_content_id",
             "sourceFiles": [
@@ -1040,10 +1042,52 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual([1], closure["interactiveRecordIndexes"])
         self.assertEqual([10002], closure["entityLogicIds"])
 
-        payload["flow"]["missionStoryConnections"][0][
+        connection = payload["flow"]["missionStoryConnections"][0]
+        connection.update({
+            "progressLockConditionStatus": "decoded",
+            "progressLockConditionUnionTag": 16,
+            "progressLockConditionSerializedMemberCount": 3,
+            "progressLockConditionType":
+                "SimpleConditionCheckQuestState",
+            "progressLockConditions": [{
+                "unionTag": 16,
+                "serializedMemberCount": 3,
+                "conditionType": "SimpleConditionCheckQuestState",
+                "ownerKind": "quest",
+                "ownerId": "e1m1_q#2",
+                "compareOperator": 0,
+                "compareTarget": 3,
+            }],
+        })
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(
+            row["metrics"]["closedExactRuntimeConfigIsolatedScenes"],
+            1,
+        )
+        closure = row["closedExactRuntimeConfigIsolatedScenes"][0]
+        self.assertEqual(
+            closure["progressLocks"][0]["conditionType"],
+            "SimpleConditionCheckQuestState",
+        )
+        self.assertEqual(
+            closure["progressLocks"][0]["conditions"][0]["ownerId"],
+            "e1m1_q#2",
+        )
+
+        connection["progressLockConditionStatus"] = "null"
+        connection["progressLockConditions"] = []
+        connection.pop("progressLockConditionUnionTag")
+        connection.pop("progressLockConditionSerializedMemberCount")
+        connection.pop("progressLockConditionType")
+        connection[
             "interactiveRecordIndex"
         ] = 2
-        payload["flow"]["missionStoryConnections"][0][
+        connection[
             "interactiveRecordBoundarySource"
         ] = "leveldata_member21_start"
         row = gap_queue.build_gap_row(
@@ -1057,7 +1101,6 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             0,
         )
 
-        connection = payload["flow"]["missionStoryConnections"][0]
         connection["levelDataMember21Offset"] = 200
         connection["levelScriptBriefDictionaryCountOffset"] = 204
         connection["levelScriptBriefDictionaryCount"] = 1

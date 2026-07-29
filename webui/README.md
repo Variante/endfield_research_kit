@@ -192,10 +192,13 @@ available through expandable guidance.
   routes are published as context-only manifest rows without adding that kind
   to the Mission Pipeline coverage denominator. Exact, build-pinned
   exactly bounded LevelData narrative configurations render the parallel
-  `mission -> LevelData -> narrative interactive -> Story` context route with
-  the LevelData asset and entity logic id. Final records require the validated
-  member-21/member-22 boundary and retain that provenance; these routes do not
-  claim availability, activation, ownership, quest causality, or order.
+  `mission -> LevelData -> interactive availability condition -> narrative
+  interactive -> Story` context route when an exact progress lock exists.
+  The route retains the LevelData asset, entity logic id, exact mission/quest
+  state leaves, and raw combined-condition fields. Final records require the
+  validated member-21/member-22 boundary and retain that provenance. A
+  progress-lock owner is availability evidence, not Story ownership,
+  activation causality, or order.
   Exact, build-pinned
   CutsceneRoot playback aliases render as
   `Story root -> native playback action -> Story file` debug routes with their
