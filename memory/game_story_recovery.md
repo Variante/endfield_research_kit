@@ -3331,6 +3331,53 @@ ownership, or chronology. Both cutscenes remain genuine source-ownership gaps;
 the registry rows are not promoted and do not close them as non-mission
 content.
 
+### Exact reverse Timeline references prove containment, not activation
+
+`build_animestudio_story_reverse_pptr_audit.py` performs the complementary
+reverse join over the current provenance-valid object indexes. It first
+identifies the 180 exact objects carrying one of the 2,458 actionable Story
+keys, then scans all 1,335,450 objects again for resolved PPtrs into those
+identities. Source, serialized-file name, and PathID are all part of the
+identity; cross-source or unresolved references are rejected.
+
+The current report contains 599 exact reverse relations: 509 same-file
+Timeline composition links and 90 cross-file
+`PlayableDirector.m_PlayableAsset` bindings. Following those 90 directors to
+their exact GameObjects, Transform ancestors and descendants resolves 14,207
+host-hierarchy GameObjects and 2,754 typed components. No referring object or
+host component carries a typed mission, quest, scene, or runtime owner
+candidate.
+
+Four exact cross-Story containment pairs survive the complete join:
+
+- `cutscene_e11m2_liexi_xs_m_01_last_01` contains a director whose playable
+  asset is `cutscene_e11m2_liexi_xs_m_01_last_02`;
+- `cutscene_e11m2_liexi_xs_m_01_last_02` similarly contains
+  `cutscene_e11m2_liexi_xs_m_01_last_03`;
+- `cutscene_f1m9d3_1` contains `cutscene_f1m9d4_1`;
+- `cutscene_gm02m4_3` contains `cutscene_gm02m4_1`.
+
+This is stronger than filename or bundle proximity: the PlayableDirector
+component, its `m_PlayableAsset` target, its host GameObject hierarchy, and the
+host CutsceneRoot `_timelineName` are all resolved exactly. It is still not an
+activation or ordering relation. A child PlayableDirector can exist in a host
+hierarchy without being invoked, and the serialized binding does not say when
+or whether it runs. Therefore these rows remain
+`exact_containment_no_chronology_or_mission_owner`; in particular, do not add
+`last_01 -> last_02 -> last_03`, `f1m9d3 -> f1m9d4`, or
+`cutscene_gm02m4_3 -> cutscene_gm02m4_1` Story-order edges from this evidence
+alone.
+
+The reproducible outputs are
+`reports/story/recovery/animestudio_story_reverse_pptr_audit.{json,md}`.
+The next bounded offline question is activation: test whether the containing
+Timeline or another exact serialized control object targets each nested
+PlayableDirector, and whether `m_PlayOnAwake`, ControlTrack bindings, exposed
+references, or recovered native setup semantics establish actual execution.
+Only such an independent control relation can promote containment into
+playback context, and even playback context would still not establish mission
+ownership or relative order without additional evidence.
+
 ### The cinematic queue: a deterministic cross-type order rule
 
 The same lane exposes the runtime **sequencer** for Story playback, and it is
@@ -3717,6 +3764,17 @@ Current main-story priorities:
    for these current cutscene carriers, not neighboring unrelated objects,
    bundle-proximity, external-registry, or server-selected activation
    hypotheses.
+   The maintained reverse-PPtr audit now closes the next serialized-reference
+   layer as well. Across the same 2,458-key frontier it finds 599 exact reverse
+   relations, including 90 cross-file PlayableDirector bindings. Their complete
+   host hierarchies expose zero typed owner/runtime candidates and four exact
+   cross-Story containment pairs: the three-step e11m2 `last_01`/`last_02`/
+   `last_03` chain, `cutscene_f1m9d3_1` containing
+   `cutscene_f1m9d4_1`, and `cutscene_gm02m4_3` containing
+   `cutscene_gm02m4_1`. Preserve these as containment only. The next recovery
+   slice is to seek an independent serialized or native activation relation to
+   the nested PlayableDirector; no containment row currently changes the gap
+   queue, mission ownership, or Story order.
    The generated coverage report now inventories 155 files across 25 decoded
    event families; the largest unique-file groups are Leader trigger volume
    (67), BattleSignal (16), Script custom event (13), and ScriptStageChanged
