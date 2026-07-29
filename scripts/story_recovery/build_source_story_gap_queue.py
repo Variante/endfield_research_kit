@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v43"
+SCHEMA = "sourceStoryGapQueue.v44"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v22"
+    "current-build-offline-story-carrier-exhaustion-v23"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -157,6 +157,12 @@ OFFLINE_EXHAUSTION_READING_POPUP_TABLE_SHA256 = (
 OFFLINE_EXHAUSTION_RICH_CONTENT_TABLE_SHA256 = (
     "1AB726FC15EA75A8212DB10D24630F75C565196A2EDCCCCCF5D57BC4D40B3301"
 )
+OFFLINE_EXHAUSTION_SNS_DIALOG_TABLE_SHA256 = (
+    "6DA0BCAB64EB0ECFCFF8D21A446D8AA637669D6DAE3E2A66D43FC2721098A0BF"
+)
+OFFLINE_EXHAUSTION_SNS_OPTION_TABLE_SHA256 = (
+    "CB0DF9E75EC049B404D73F5A65502D043BE951072A7AF215C80D2FC078319C11"
+)
 OFFLINE_EXHAUSTION_DIALOG_ID_SOURCE_SHA256 = (
     "AE2E68E93DCDE3C2AC792541A7456E5CE6B7AF4F2AE10887D178EBFBDC080F79"
 )
@@ -184,6 +190,31 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
             f"{OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE}_{number:02d}"
             for number in range(1, 5)
         ),
+    },
+}
+OFFLINE_EXHAUSTION_SNS_DEFINITIONS = {
+    "sns_e10m4_1": {
+        "missionId": "e10m4",
+        "chatId": "sns_chr_0030_zhuangfy",
+        "contentIds": (-1, *range(1, 27)),
+        "optionIdsByContentId": {
+            1: ("option_sns_e10m4_1_1_001",),
+            9: ("option_sns_e10m4_1_2_001",),
+            13: ("option_sns_e10m4_1_3_001",),
+            20: ("option_sns_e10m4_1_5_001",),
+        },
+        "optionNextContentIds": {
+            "option_sns_e10m4_1_1_001": 2,
+            "option_sns_e10m4_1_2_001": 10,
+            "option_sns_e10m4_1_3_001": 14,
+            "option_sns_e10m4_1_5_001": 21,
+        },
+        "optionDescriptionIds": {
+            "option_sns_e10m4_1_1_001": -4875347938820133196,
+            "option_sns_e10m4_1_2_001": 2580651301956064440,
+            "option_sns_e10m4_1_3_001": 6992366624230327000,
+            "option_sns_e10m4_1_5_001": 7374390088086658274,
+        },
     },
 }
 OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES = {
@@ -668,6 +699,27 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
             ),
         },
     },
+    "dlg_e10m4_21": {
+        "missionId": "e10m4",
+        "filename": "dlg_e10m4_21_pE22DEC2EC32D6B16.json",
+        "sha256":
+            "E18C531CAD71317B99AD161E58B596BFFC8AD7E6B4F450EB7401680BF5894E2A",
+        "extraConfigFilename":
+            "dlg_e10m4_21_extra_config_pB7B941BA25FCA30C.json",
+        "extraConfigSha256":
+            "BBA7D588A2B3D0B9A44D8D4D9D58A14246096C41E85ABA330357BAFC32140B94",
+        "lineIds": (
+            "dlg_e10m4_21_001",
+            "dlg_e10m4_21_002",
+            "dlg_e10m4_21_003",
+        ),
+        "optionIds": (),
+        "missingAudioIds": (
+            "au_dlg_e10m4_21_001",
+            "au_dlg_e10m4_21_002",
+            "au_dlg_e10m4_21_003",
+        ),
+    },
     "dlg_e3m3_12": {
         "missionId": "e3m3",
         "filename": "dlg_e3m3_12_p689304794B0379C8.json",
@@ -1016,6 +1068,31 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
     },
 }
 OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
+    "dlg_e10m4_16": {
+        "missionId": "e10m4",
+        "lineIds": (
+            "dlg_e10m4_16_001",
+            "dlg_e10m4_16_002",
+        ),
+        "audioVariants": {
+            "au_dlg_e10m4_16_001": (
+                "au_dlg_e10m4_16_001_f",
+                "au_dlg_e10m4_16_001_m",
+            ),
+        },
+        "missingAudioIds": (),
+    },
+    "dlg_e10m4_17": {
+        "missionId": "e10m4",
+        "lineIds": (
+            "dlg_e10m4_17_001",
+            "dlg_e10m4_17_002",
+        ),
+        "missingAudioIds": (
+            "au_dlg_e10m4_17_001",
+            "au_dlg_e10m4_17_002",
+        ),
+    },
     "dlg_e10m3_10": {
         "missionId": "e10m3",
         "lineIds": (
@@ -1369,6 +1446,17 @@ OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
             -3160792100437463961,
         ),
     },
+    "text_e10m4_1": {
+        "missionId": "e10m4",
+        "readingPopupRowId": "rp_text_e10m4_1",
+        "bgType": 0,
+        "iconType": 3,
+        "titleId": -3224153425811396292,
+        "contentTextIds": (
+            6210860659101700604,
+            -4533903028538338649,
+        ),
+    },
     "text_e6m3_1": {
         "missionId": "e6m3",
         "readingPopupRowId": "text_e6m3_1",
@@ -1597,6 +1685,8 @@ def build_offline_exhaustion_index(
         "dialogTextTable": table_root / "DialogTextTable.json",
         "readingPopupTable": table_root / "ReadingPopUpTable.json",
         "richContentTable": table_root / "RichContentTable.json",
+        "snsDialogTable": table_root / "SNSDialogTable.json",
+        "snsOptionTable": table_root / "SNSDialogOptionTable.json",
         "dialogIdSource": (
             ROOT
             / "export_full"
@@ -1640,6 +1730,13 @@ def build_offline_exhaustion_index(
         source_paths[
             f"dialogDefinition:{story_key}"
         ] = cutscene_definition_root / definition["filename"]
+        if definition.get("extraConfigFilename"):
+            source_paths[
+                f"dialogExtraConfig:{story_key}"
+            ] = (
+                cutscene_definition_root
+                / definition["extraConfigFilename"]
+            )
     for story_key, definition in (
         OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS.items()
     ):
@@ -1660,6 +1757,8 @@ def build_offline_exhaustion_index(
             OFFLINE_EXHAUSTION_READING_POPUP_TABLE_SHA256,
         "richContentTable":
             OFFLINE_EXHAUSTION_RICH_CONTENT_TABLE_SHA256,
+        "snsDialogTable": OFFLINE_EXHAUSTION_SNS_DIALOG_TABLE_SHA256,
+        "snsOptionTable": OFFLINE_EXHAUSTION_SNS_OPTION_TABLE_SHA256,
         "dialogIdSource": OFFLINE_EXHAUSTION_DIALOG_ID_SOURCE_SHA256,
         "dialogIdIndex": OFFLINE_EXHAUSTION_DIALOG_ID_INDEX_SHA256,
         "timelineLineOrders":
@@ -1672,6 +1771,10 @@ def build_offline_exhaustion_index(
         expected_hashes[
             f"dialogDefinition:{story_key}"
         ] = definition["sha256"]
+        if definition.get("extraConfigFilename"):
+            expected_hashes[
+                f"dialogExtraConfig:{story_key}"
+            ] = definition["extraConfigSha256"]
     for story_key, definition in (
         OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS.items()
     ):
@@ -1741,6 +1844,12 @@ def build_offline_exhaustion_index(
         **dialog_mission_by_key,
         **text_only_dialog_mission_by_key,
     }
+    sns_mission_by_key = {
+        story_key: safe_key(definition.get("missionId"))
+        for story_key, definition
+        in OFFLINE_EXHAUSTION_SNS_DEFINITIONS.items()
+    }
+    all_sns_keys = set(sns_mission_by_key)
     text_mission_by_key = {
         story_key: safe_key(definition.get("missionId"))
         for story_key, definition
@@ -1760,6 +1869,7 @@ def build_offline_exhaustion_index(
         **cutscene_mission_by_key,
         **dialog_mission_by_key,
         **text_only_dialog_mission_by_key,
+        **sns_mission_by_key,
         **text_mission_by_key,
         **text_table_only_story_mission_by_key,
     }
@@ -1905,6 +2015,154 @@ def build_offline_exhaustion_index(
             break
     if not text_definitions_valid:
         status["status"] = "inactive_text_definition_validation_failed"
+        return {}, status
+
+    sns_dialog_table = read_json(source_paths["snsDialogTable"], {})
+    sns_option_table = read_json(source_paths["snsOptionTable"], {})
+    sns_validation_by_key: dict[str, dict[str, Any]] = {}
+    sns_definitions_valid = (
+        isinstance(sns_dialog_table, dict)
+        and isinstance(sns_option_table, dict)
+    )
+    sns_dialog_fields = {
+        "chatId",
+        "dialogContentData",
+        "dialogId",
+        "dialogType",
+        "noticeType",
+        "relatedMissionId",
+        "skipToFirstOption",
+        "topicId",
+    }
+    sns_content_fields = {
+        "content",
+        "contentId",
+        "contentParam",
+        "contentParams",
+        "contentType",
+        "dialogOptionIds",
+        "isEnd",
+        "linkMissionId",
+        "linkRewardId",
+        "nextContentId",
+        "optionType",
+        "preContentId",
+        "speaker",
+    }
+    sns_option_fields = {
+        "optionDesc",
+        "optionId",
+        "optionNPCCount",
+        "optionNPCIds",
+        "optionNextContentId",
+        "optionResPath",
+    }
+    for story_key, definition in (
+        OFFLINE_EXHAUSTION_SNS_DEFINITIONS.items()
+    ):
+        if not sns_definitions_valid:
+            break
+        dialog = sns_dialog_table.get(story_key)
+        content = (
+            dialog.get("dialogContentData")
+            if isinstance(dialog, dict)
+            else None
+        )
+        expected_content_ids = tuple(definition["contentIds"])
+        expected_content_keys = {
+            str(content_id) for content_id in expected_content_ids
+        }
+        option_ids_by_content_id = definition["optionIdsByContentId"]
+        expected_option_ids = set(definition["optionNextContentIds"])
+        actual_prefixed_option_ids = {
+            option_id
+            for option_id in sns_option_table
+            if option_id.startswith(f"option_{story_key}_")
+        }
+        if (
+            not isinstance(dialog, dict)
+            or set(dialog) != sns_dialog_fields
+            or dialog.get("dialogId") != story_key
+            or dialog.get("chatId") != definition["chatId"]
+            or dialog.get("dialogType") != 1
+            or dialog.get("noticeType") != 1
+            or dialog.get("relatedMissionId") != ""
+            or dialog.get("topicId") != ""
+            or dialog.get("skipToFirstOption") is not False
+            or not isinstance(content, dict)
+            or set(content) != expected_content_keys
+            or actual_prefixed_option_ids != expected_option_ids
+        ):
+            sns_definitions_valid = False
+            break
+        for content_id in expected_content_ids:
+            node = content.get(str(content_id))
+            expected_pre = (
+                26 if content_id == -1
+                else 0 if content_id == 1
+                else content_id - 1
+            )
+            expected_next = (
+                0 if content_id == -1
+                else -1 if content_id == 26
+                else 0 if content_id in option_ids_by_content_id
+                else content_id + 1
+            )
+            if (
+                not isinstance(node, dict)
+                or set(node) != sns_content_fields
+                or node.get("contentId") != content_id
+                or node.get("preContentId") != expected_pre
+                or node.get("nextContentId") != expected_next
+                or node.get("isEnd") is not (content_id == -1)
+                or tuple(node.get("dialogOptionIds") or ())
+                != tuple(option_ids_by_content_id.get(content_id) or ())
+                or node.get("linkMissionId") != ""
+                or node.get("linkRewardId") != ""
+                or node.get("contentParam") != []
+                or node.get("contentParams") != ""
+                or not isinstance(node.get("contentType"), int)
+                or isinstance(node.get("contentType"), bool)
+                or not isinstance(node.get("optionType"), int)
+                or isinstance(node.get("optionType"), bool)
+                or not isinstance(node.get("speaker"), str)
+                or not isinstance(node.get("content"), dict)
+                or set(node["content"]) != {"id", "text"}
+                or not isinstance(node["content"].get("id"), int)
+                or isinstance(node["content"].get("id"), bool)
+                or node["content"].get("text") != ""
+            ):
+                sns_definitions_valid = False
+                break
+        if not sns_definitions_valid:
+            break
+        for option_id in sorted(expected_option_ids, key=natural_key):
+            option = sns_option_table.get(option_id)
+            if (
+                not isinstance(option, dict)
+                or set(option) != sns_option_fields
+                or option.get("optionId") != option_id
+                or option.get("optionNextContentId")
+                != definition["optionNextContentIds"][option_id]
+                or option.get("optionDesc") != {
+                    "id": definition["optionDescriptionIds"][option_id],
+                    "text": "",
+                }
+                or option.get("optionNPCCount") != 0
+                or option.get("optionNPCIds") != []
+                or option.get("optionResPath") != ""
+            ):
+                sns_definitions_valid = False
+                break
+        if not sns_definitions_valid:
+            break
+        sns_validation_by_key[story_key] = {
+            "chatId": definition["chatId"],
+            "contentIds": list(expected_content_ids),
+            "optionIds": sorted(expected_option_ids, key=natural_key),
+        }
+    if not sns_definitions_valid:
+        status["status"] = "inactive_sns_definition_validation_failed"
         return {}, status
 
     dialog_text_table = read_json(source_paths["dialogTextTable"], {})
@@ -2196,16 +2454,48 @@ def build_offline_exhaustion_index(
         expected_missing_audio_ids = set(
             definition["missingAudioIds"]
         )
-        actual_missing_audio_ids = set(line_audio_ids) - audio_stems
+        expected_audio_variants = {
+            safe_key(audio_id): tuple(
+                safe_key(variant)
+                for variant in variants
+                if safe_key(variant)
+            )
+            for audio_id, variants
+            in (definition.get("audioVariants") or {}).items()
+            if isinstance(variants, (list, tuple))
+        }
+        actual_missing_audio_ids = {
+            audio_id
+            for audio_id in line_audio_ids
+            if (
+                audio_id not in audio_stems
+                and not (
+                    audio_id in expected_audio_variants
+                    and set(expected_audio_variants[audio_id]) <= audio_stems
+                )
+            )
+        }
         if (
             actual_line_ids != expected_line_ids
             or len(line_audio_ids) != len(expected_line_ids)
             or not all(line_audio_ids)
             or line_audio_ids != expected_audio_ids
+            or not set(expected_audio_variants) <= set(line_audio_ids)
+            or any(
+                not variants
+                or any(
+                    not variant.startswith(f"{audio_id}_")
+                    for variant in variants
+                )
+                for audio_id, variants in expected_audio_variants.items()
+            )
             or actual_missing_audio_ids != expected_missing_audio_ids
             or not (
                 set(line_audio_ids) - expected_missing_audio_ids
-            ) <= audio_stems
+            ) <= (
+                audio_stems
+                | set(expected_audio_variants)
+            )
             or any(
                 set(dialog_text_table[line_id])
                 != OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS
@@ -2226,6 +2516,11 @@ def build_offline_exhaustion_index(
                 actual_missing_audio_ids,
                 key=natural_key,
             ),
+            "audioVariants": {
+                audio_id: list(variants)
+                for audio_id, variants
+                in expected_audio_variants.items()
+            },
         }
     if not text_only_dialog_definitions_valid:
         status["status"] = (
@@ -2522,6 +2817,18 @@ def build_offline_exhaustion_index(
                 "registered_dialog_definition_without_recovered_activator",
             "definitionAsset":
                 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]["filename"],
+            "definitionAssets": [
+                filename
+                for filename in (
+                    OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key][
+                        "filename"
+                    ],
+                    OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key].get(
+                        "extraConfigFilename"
+                    ),
+                )
+                if filename
+            ],
             "definitionTable": "DialogTextTable",
             "runtimeRegistry": "Beyond.Gameplay.DialogIdTable",
             "runtimeRegistryKey": validation["registryKey"],
@@ -2534,9 +2841,14 @@ def build_offline_exhaustion_index(
             "audioIds": validation["audioIds"],
             "missingAudioIds": validation["missingAudioIds"],
             "audioMembershipStatus": (
-                "partial_current_audio_dialog_missing_ids"
-                if validation["missingAudioIds"]
-                else "present_current_audio_dialog"
+                "all_current_audio_dialog_ids_missing"
+                if len(validation["missingAudioIds"])
+                == len(validation["audioIds"])
+                else (
+                    "partial_current_audio_dialog_missing_ids"
+                    if validation["missingAudioIds"]
+                    else "present_current_audio_dialog"
+                )
             ),
             "optionIds": validation["optionIds"],
             "sharedTimelineContext": validation["timelineContext"],
@@ -2545,7 +2857,8 @@ def build_offline_exhaustion_index(
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
             "consumerBoundary": (
                 "the exact DialogTree, MemoryPack DialogId registration, "
-                "DialogTextTable rows, and AudioDialog membership establish "
+                "DialogTextTable rows, and AudioDialog membership where "
+                "present establish "
                 "a current runtime-loadable definition; no exact "
                 "MissionRuntime, LevelScript, NpcProxyEx, Lua, object-index, "
                 "or direct native playback caller exposes its activator"
@@ -2577,6 +2890,7 @@ def build_offline_exhaustion_index(
             "definitionTable": "DialogTextTable",
             "lineIds": validation["lineIds"],
             "audioIds": validation["audioIds"],
+            "audioVariants": validation["audioVariants"],
             "missingAudioIds": validation["missingAudioIds"],
             "audioMembershipStatus": (
                 "all_current_audio_dialog_ids_missing"
@@ -2608,6 +2922,45 @@ def build_offline_exhaustion_index(
                 "installed binary, DialogTextTable, AudioDialog, DialogId "
                 "index, TextAsset inventory, Timeline index, object index, "
                 "Lua corpus, or another typed producer/consumer changes"
+            ),
+            "graphEffect": "none",
+        }
+    for story_key in sorted(all_sns_keys, key=natural_key):
+        validation = sns_validation_by_key[story_key]
+        index[story_key] = {
+            "sceneKey": story_key,
+            "missionId": sns_mission_by_key[story_key],
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "evidenceKind":
+                "sns_dialog_definition_without_recovered_activator",
+            "definitionTables": [
+                "SNSDialogTable",
+                "SNSDialogOptionTable",
+            ],
+            "chatId": validation["chatId"],
+            "contentIds": validation["contentIds"],
+            "optionIds": validation["optionIds"],
+            "relatedMissionId": "",
+            "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+            "gameAssemblySha256":
+                OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+            "consumerBoundary": (
+                "the exact SNSDialogTable content graph and "
+                "SNSDialogOptionTable routes define this current Story file; "
+                "relatedMissionId is empty, and no exact MissionRuntime, "
+                "LevelScript/LevelData, Lua, object-index, or accepted native "
+                "playback dispatch exposes its activator"
+            ),
+            "orderBoundary": (
+                "the internal SNS content graph orders messages only; table "
+                "order, dialog suffixes, and character chat membership do not "
+                "place the Story file in mission chronology"
+            ),
+            "reopenWhen": (
+                "installed binary, SNSDialogTable, SNSDialogOptionTable, "
+                "object index, Lua corpus, or another typed "
+                "producer/consumer registry changes"
             ),
             "graphEffect": "none",
         }
@@ -2800,6 +3153,21 @@ def build_offline_exhaustion_index(
             )
             for mission in sorted(
                 set(all_dialog_mission_by_key.values()),
+                key=natural_key,
+            )
+        },
+        "deferredSnsStoryKeysByMission": {
+            mission: sorted(
+                (
+                    story_key
+                    for story_key, story_mission
+                    in sns_mission_by_key.items()
+                    if story_mission == mission
+                ),
+                key=natural_key,
+            )
+            for mission in sorted(
+                set(sns_mission_by_key.values()),
                 key=natural_key,
             )
         },

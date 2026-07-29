@@ -1998,11 +1998,11 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v43` evaluates 187 residual radio definitions, 27 root
-  cutscene carriers, 26 registered dialog definitions, six exact
-  DialogTextTable-only/no-registry groups, ten exact
-  ReadingPopUp/RichContent definitions, two text-only cutscenes, and two
-  TextTable-only black narrative definitions across
+  `sourceStoryGapQueue.v44` evaluates 187 residual radio definitions, 27 root
+  cutscene carriers, 27 registered dialog definitions, eight exact
+  DialogTextTable-only/no-registry groups, eleven exact
+  ReadingPopUp/RichContent definitions, one exact SNS dialog definition, two
+  text-only cutscenes, and two TextTable-only black narrative definitions across
   `e0m0`, `e1m3`, `e2m4`, `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e9m3`, `e10m3`, `e10m4`,
   `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 184 radio definitions;
   two close through strict exact native mission context, and one through
@@ -2029,6 +2029,14 @@ gameplay-video OCR/audio workflow.
   groups use a separate fail-closed schema requiring exact line/audio sets,
   absent AudioDialog membership, absent DialogId registration, absent
   DialogTree assets and Timeline rows, and the carrier-audit negative.
+  e10m4 adds two more no-registry dialog groups, one registered three-node
+  DialogTree plus its empty extra config, one ReadingPopUp/RichContent
+  definition, and one complete 26-message/four-option SNSDialogTable graph.
+  The SNS row is admitted only while both source-table hashes, the exact
+  content/option graph, its empty `relatedMissionId`, and the carrier-audit
+  negative agree. Internal SNS order is not mission chronology. e10m4 retains
+  three diagnostic-only variant-quest attachments, but has no actionable
+  isolated Story file.
   e6m4 adds seven audio-complete radios and two one-host, registry/hash-locked
   Timeline roots.
   e7m3 adds two radios, two readings, and three registered dialogs while

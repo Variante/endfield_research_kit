@@ -2191,6 +2191,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e7m3_16",
                 "dlg_e10m3_3",
                 "dlg_e10m3_9",
+                "dlg_e10m4_21",
                 "dlg_e11m2_17",
                 "dlg_e11m2_18",
                 "dlg_e11m5_9",
@@ -2566,6 +2567,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(text_only),
             {
+                "dlg_e10m4_16",
+                "dlg_e10m4_17",
                 "dlg_e10m3_10",
                 "dlg_e10m3_11",
                 "dlg_e10m3_12",
@@ -2616,7 +2619,77 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e10m3_4",
                 "text_e10m3_6",
                 "text_e10m3_8",
+                "text_e10m4_1",
             },
+        )
+
+    def test_declared_e10m4_definition_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS)
+            & {"dlg_e10m4_16", "dlg_e10m4_17", "dlg_e10m4_21"},
+            {"dlg_e10m4_21"},
+        )
+        self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS)
+            & {"dlg_e10m4_16", "dlg_e10m4_17", "dlg_e10m4_21"},
+            {"dlg_e10m4_16", "dlg_e10m4_17"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                "dlg_e10m4_21"
+            ]["missingAudioIds"],
+            (
+                "au_dlg_e10m4_21_001",
+                "au_dlg_e10m4_21_002",
+                "au_dlg_e10m4_21_003",
+            ),
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                "dlg_e10m4_21"
+            ]["extraConfigSha256"],
+            "BBA7D588A2B3D0B9A44D8D4D9D58A14246096C41E85ABA330357BAFC32140B94",
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+                "dlg_e10m4_16"
+            ]["audioVariants"],
+            {
+                "au_dlg_e10m4_16_001": (
+                    "au_dlg_e10m4_16_001_f",
+                    "au_dlg_e10m4_16_001_m",
+                ),
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+                "dlg_e10m4_17"
+            ]["missingAudioIds"],
+            (
+                "au_dlg_e10m4_17_001",
+                "au_dlg_e10m4_17_002",
+            ),
+        )
+        self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS),
+            {"sns_e10m4_1"},
+        )
+        self.assertEqual(
+            set(
+                gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS[
+                    "sns_e10m4_1"
+                ]["optionNextContentIds"]
+            ),
+            {
+                "option_sns_e10m4_1_1_001",
+                "option_sns_e10m4_1_2_001",
+                "option_sns_e10m4_1_3_001",
+                "option_sns_e10m4_1_5_001",
+            },
+        )
+        self.assertIn(
+            "text_e10m4_1",
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS,
         )
 
     def test_declared_e6m4_offline_frontier_is_exact(self) -> None:
