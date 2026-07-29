@@ -3464,6 +3464,56 @@ progress needs a genuinely different producer surface that co-carries one of
 the root identities with a mission, quest, level event, phase, or runtime
 control owner.
 
+#### Transition-manager and played-Timeline event surfaces are not owners
+
+The remaining native transition-manager surface is now bounded. Current
+metadata contains no separate CutsceneTransition owner class. The only method
+whose name carries both concepts is
+`CinematicTimelineManagerBase.GetCutsceneTransitionDataPath` (token
+`0x0600ed6e`, method index `60781`, VA `0x184495fc0`). It takes no parameters
+and returns the static CutsceneTransition resource directory; it does not read
+or return a cutscene id, mission, quest, LevelScript, phase, or owner. Its
+adjacent `_TryLoadCutsceneDataByName` path is the generic name-based resource
+loader already bounded by the case-resolution audit. The only
+`PlayTransitionCutscene` metadata member is a predefined gameplay tag, not a
+playback method or serialized identity pair. The current IFix payload replaces
+none of this path.
+
+A complete split-token follow-up likewise finds no hidden composed selector.
+The current object index contains 239 rows matching the distinctive
+`liexi_xs_m_01` or `cutscene_f1m9d3` stems. Outside their exact resource,
+track, root, and one audio-event names, none separates a stem and suffix into
+typed fields or co-carries an owner identity. The related
+`m_cutscene_map02_lv008_liexi_xs_m_01` resource family and connected
+`cutscene_map02_lv008_liexi_xs_m_01` Story key do not PPtr-reference either
+`last_01` or `last_02`; the complete reverse-PPtr audit would have retained
+such a relation.
+
+The tempting reverse-direction event lead is closed reproducibly by
+`build_cutscene_timeline_event_surface_audit.py`. It consumes the four exact
+root/director/playable aliases and scans all 1,337,486 current
+StreamingAssets/Persistent object-index rows by exact source, CAB, offset, and
+PathID. Every played asset validates as a fully decoded typed
+`UnityEngine.Timeline.TimelineAsset`. Each complete CAB contains exactly 11
+objects: one TimelineAsset, five `ControlTrack`s, and five
+`ControlPlayableAsset`s. Across the played `last_02`, `last_03`,
+`cutscene_f1m9d4_1`, and connected control `cutscene_gm02m4_1` assets there are
+zero event, signal, marker, mission, quest, level, global, raise, or send track
+classes/scalars and zero non-null marker references.
+
+The nearby wrapper comparison reaches the same boundary:
+`cutscene_f1m9d3_1` has only the standard 11 control objects, while `_2` and
+the independently connected `_3` each add only an `AudioTrack` and
+`AudioMusicPlayable`. They contain no emitted LevelScript/global event or
+mission field. Therefore a Timeline consequence/context edge cannot recover
+the missing upstream selector. This negative does not prove that the roots are
+unused or definition-only; an external registry, server/runtime-selected id,
+or indirect native state may still activate them. Preserve all three
+ownership gaps and do not infer a mission from their names, numeric registry
+neighbors, suffixes, resource-family proximity, or the connected control.
+The reproducible result is
+`reports/story/recovery/cutscene_timeline_event_surface_audit.{json,md}`.
+
 ### The cinematic queue: a deterministic cross-type order rule
 
 The same lane exposes the runtime **sequencer** for Story playback, and it is

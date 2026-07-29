@@ -304,6 +304,7 @@ that index, run:
 python scripts\story_recovery\build_animestudio_story_carrier_audit.py
 python scripts\story_recovery\build_animestudio_story_gameobject_audit.py
 python scripts\story_recovery\build_animestudio_story_reverse_pptr_audit.py
+python scripts\story_recovery\build_cutscene_timeline_event_surface_audit.py
 python scripts\story_recovery\build_animestudio_story_guide_consumer_audit.py
 ```
 
@@ -363,6 +364,17 @@ and contains a native playback action. That composition extends owner context
 to the played TimelineAsset without creating Story chronology. On the current
 export this recovers only `cutscene_gm02m4_1`; condition/dependency routes and
 the other three aliases remain non-owning.
+
+The cutscene Timeline event-surface audit consumes those exact root playback
+aliases and scans the complete CAB identity of every played TimelineAsset in
+the published object indexes. It validates the exact target object as a fully
+decoded typed `UnityEngine.Timeline.TimelineAsset`, inventories every script
+class in the CAB, and reports any event/signal/marker/mission/quest/level/global
+track or scalar surface for manual semantic review. Output goes to
+`reports/story/recovery/cutscene_timeline_event_surface_audit.{json,md}`.
+A clean negative closes only Timeline-emitted event context for those exact
+played assets; it does not prove that a root is unused or definition-only and
+does not create mission ownership, activation, or Story order.
 
 The guide-consumer audit scans the same current, source-fingerprint-validated
 merged index for exact typed `GuideRuntimeAsset` managed references. It accepts
