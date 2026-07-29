@@ -2094,6 +2094,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m5_18",
                 "dlg_e11m5_19",
                 "dlg_e11m6_9",
+                "dlg_e11m8_9",
             },
         )
         shared = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
@@ -2407,7 +2408,13 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         text_only = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS
         self.assertEqual(
             set(text_only),
-            {"dlg_e10m3_10", "dlg_e10m3_11", "dlg_e10m3_12"},
+            {
+                "dlg_e10m3_10",
+                "dlg_e10m3_11",
+                "dlg_e10m3_12",
+                "dlg_e11m8_13",
+                "dlg_e11m8_14",
+            },
         )
         self.assertEqual(len(text_only["dlg_e10m3_10"]["lineIds"]), 8)
         self.assertEqual(len(text_only["dlg_e10m3_11"]["lineIds"]), 4)
@@ -2512,6 +2519,30 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e7m3_16"
             ]["optionIds"],
             ("option_dlg_e7m3_16_1_001",),
+        )
+
+    def test_declared_e11m8_partial_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E11M8_RADIOS,
+            {"radio_e11m8_5"},
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e11m8_9"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 30)
+        self.assertEqual(len(dialog["ownedTimeline"]["fullLineIds"]), 30)
+        self.assertEqual(
+            dialog["optionIds"],
+            (
+                "option_dlg_e11m8_9_1_001",
+                "option_dlg_e11m8_9_1_002",
+            ),
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+                "dlg_e11m8_13"
+            ]["missingAudioIds"],
+            (),
         )
 
     def test_declared_e11m5_frontier_preserves_owned_mixed_timeline(
