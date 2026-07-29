@@ -3086,6 +3086,41 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             2,
         )
 
+    def test_declared_e2m5d5_offline_frontier_is_exact(self) -> None:
+        expected = {
+            "misc_dlg_e2m5d5_1d5": {
+                "registryKey": "dlg_e2m5d5_1d5",
+                "lineCount": 3,
+                "proxyId": "pelica_map01_e2m5d5",
+                "missionIdPresent": False,
+            },
+            "misc_dlg_e2m5d5_1d7": {
+                "registryKey": "dlg_e2m5d5_1d7",
+                "lineCount": 5,
+                "proxyId": "chen_map01_e2m5d5",
+                "missionIdPresent": True,
+            },
+        }
+        for story_key, facts in expected.items():
+            definition = (
+                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]
+            )
+            self.assertEqual(definition["missionId"], "e2m5d5")
+            self.assertEqual(
+                definition["registryKey"],
+                facts["registryKey"],
+            )
+            self.assertEqual(len(definition["lineIds"]), facts["lineCount"])
+            self.assertEqual(definition["optionIds"], ())
+            consumer = definition["npcProxyConsumer"]
+            self.assertEqual(consumer["proxyId"], facts["proxyId"])
+            self.assertEqual(consumer["entryIndex"], 0)
+            self.assertEqual(
+                "missionId" in consumer["entry"],
+                facts["missionIdPresent"],
+            )
+            self.assertFalse(consumer["entry"].get("missionId"))
+
     def test_exact_lua_controller_playback_closes_isolated_cutscene(
         self,
     ) -> None:
@@ -3221,6 +3256,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "misc_dlg_e2m2_4d5",
                 "dlg_e2m4_10",
                 "dlg_e2m5_6",
+                "misc_dlg_e2m5d5_1d5",
+                "misc_dlg_e2m5d5_1d7",
                 "dlg_e2m6_12",
                 "dlg_e3m2_3",
                 "dlg_e3m3_12",
