@@ -264,7 +264,8 @@ Story:
   that a playback trigger was not recovered or proven.
 - The debug-only compact file-row line shows the first strongest route in evidence order:
   exact native playback, unresolved-owner exact playback, direct playback,
-  condition, context, dependency, definition-only, then unknown. The selected
+  condition, context, dependency, definition-only, exact offline-exhaustion
+  boundary, then unknown. The selected
   panel retains every normalized route and expands exact event name, selector,
   action chain, and original source path.
 
@@ -283,6 +284,18 @@ Mission Pipeline:
   example, the live `e6m4` card for `radio_e6m4_18` shows Leader slot `80001`
   at script `22800110022` header `6`, then `Split.actions[0]` local `8` and
   `PlayRadio`.
+- The same manifest now carries fail-closed `offlineRecovery` annotations from
+  `reports/mission_order/source_story_gap_queue_CN.json` only while the queue is
+  schema `sourceStoryGapQueue.v44`, its current-build evidence is active, all
+  source hashes match, and `graphEffect=none`. Existing attachment statuses and
+  route arrays are left unchanged. The 11 ReadingPopup `text_*` keys outside
+  the historical coverage denominator are exposed through
+  `offlineRecoveryEvidence.storyTriggerManifestOverlay`, with zero routes and
+  an explicit denominator-neutral status. The current live projection covers
+  251 manifest keys plus those 11 overlay keys. Mission cards display the
+  evidence kind, consumer boundary, order boundary, and reopen condition; the
+  Story debug row labels them as an exhausted current-build offline carrier
+  search rather than an inferred trigger.
 - Exact foreign-dialog Timeline containment uses dedicated parent-Story and
   dialog-Timeline chips in the same route. The live e11m3
   `dlg_e11m3_16` card retains the parent `dlg_e11m3_7`, Timeline

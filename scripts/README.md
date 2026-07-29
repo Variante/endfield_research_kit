@@ -683,6 +683,14 @@ Expected active inputs and outputs:
   `nativeOccurrences`, native black actions, parent-dialog occurrences, and
   preload occurrences). This projection explains existing evidence; it does not infer
   mission ownership or Story order from binary address order.
+  The builder also projects the active exact negative-evidence boundary from
+  `reports/mission_order/source_story_gap_queue_CN.json` into
+  `storyTriggerManifest[*].offlineRecovery`. It accepts only
+  `sourceStoryGapQueue.v44` with matching source hashes and `graphEffect=none`,
+  never changes an existing attachment status, and never adds a route. The 11
+  ReadingPopup `text_*` keys outside the coverage denominator are published in
+  the separate `offlineRecoveryEvidence.storyTriggerManifestOverlay`, each with
+  an explicit denominator-neutral status and an empty route list.
   Per-mission
   payloads also retain typed `SubGameInstanceData` rows that carry both
   `dungeonMissionId` and `bindScriptId` as mission-shell runtime evidence. They

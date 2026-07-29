@@ -80,6 +80,11 @@ const manifest = {{
   context: {{routes: [{{storyKey: "context", causality: "context"}}]}},
   dependency: {{routes: [{{storyKey: "dependency", causality: "dependency"}}]}},
   definition: {{attachmentStatus: "definition_only_no_consumer", routes: []}},
+  exhausted: {{
+    attachmentStatus: "unlinked_no_trigger_route",
+    offlineRecovery: {{graphEffect: "none", evidenceKind: "fixture_boundary"}},
+    routes: [],
+  }},
   mismatch: {{routes: [{{storyKey: "somewhere_else", causality: "playback"}}]}},
 }};
 for (const [key, category] of [
@@ -87,6 +92,7 @@ for (const [key, category] of [
   ["context", "context"],
   ["dependency", "dependency"],
   ["definition", "definition_only"],
+  ["exhausted", "offline_exhausted"],
   ["mismatch", "unknown"],
   ["missing", "unknown"],
 ]) {{
@@ -109,6 +115,10 @@ for (const [key, category] of [
         self.assertNotIn(
             "ensureStoryTriggerManifestForDebug(",
             language_switch,
+        )
+        self.assertIn(
+            "coverage.offlineRecoveryEvidence.storyTriggerManifestOverlay",
+            app_source,
         )
         self.assertIn(
             "const triggerSummary = STATE.showDebug "

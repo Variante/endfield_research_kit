@@ -15,11 +15,12 @@
     dependency: 6,
     definition_only: 7,
     non_mission_content: 8,
+    offline_exhausted: 9,
     // Ambient world content: a consumer table names the file, but nothing in
-    // the shipped data proves what triggers it. Ranked below every attached
-    // class and above only "unknown".
-    ambient_world_content: 9,
-    unknown: 10,
+    // the shipped data proves what triggers it. Ranked below attached and
+    // exact offline-boundary classes and above only "unknown".
+    ambient_world_content: 10,
+    unknown: 11,
   };
 
   function array(value) {
@@ -57,6 +58,7 @@
 
   function fallbackCategory(record) {
     const status = String(record && record.attachmentStatus || "");
+    if (record && record.offlineRecovery) return "offline_exhausted";
     if (status === "definition_only_no_consumer") return "definition_only";
     if (status === "non_mission_content") return "non_mission_content";
     if (status === "ambient_world_content") return "ambient_world_content";

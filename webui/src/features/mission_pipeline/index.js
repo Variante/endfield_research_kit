@@ -445,6 +445,11 @@
       triggerPlaybackAlias: "root playback alias · owner unresolved",
       triggerPlaybackAliasConnected: "root playback alias · owner connected",
       triggerDefinition: "definition only · no consumer",
+      offlineRecoveryBoundary: "Offline recovery boundary",
+      offlineRecoveryNoGraphEdge: "no ownership or order edge",
+      offlineRecoveryConsumer: "Consumer boundary",
+      offlineRecoveryOrder: "Order boundary",
+      offlineRecoveryReopen: "Reopen when",
       rejectedPlaybackCandidate: "Rejected playback candidate",
       rejectedPlaybackBoundary: "binary-proven boundary · no graph edge",
       rejectedPlaybackLiteral: "Lua literal",
@@ -860,6 +865,11 @@
       triggerPlaybackAlias: "\u6839\u64ad\u653e\u522b\u540d \u00b7 \u5f52\u5c5e\u672a\u89e3\u6790",
       triggerPlaybackAliasConnected: "\u6839\u64ad\u653e\u522b\u540d \u00b7 \u5f52\u5c5e\u5df2\u8fde\u63a5",
       triggerDefinition: "\u4ec5\u5b9a\u4e49 \u00b7 \u65e0\u6d88\u8d39\u8005",
+      offlineRecoveryBoundary: "\u79bb\u7ebf\u6062\u590d\u8fb9\u754c",
+      offlineRecoveryNoGraphEdge: "\u4e0d\u751f\u6210\u5f52\u5c5e\u6216\u987a\u5e8f\u8fb9",
+      offlineRecoveryConsumer: "\u6d88\u8d39\u8005\u8fb9\u754c",
+      offlineRecoveryOrder: "\u987a\u5e8f\u8fb9\u754c",
+      offlineRecoveryReopen: "\u91cd\u65b0\u8c03\u67e5\u6761\u4ef6",
       rejectedPlaybackCandidate: "\u5df2\u62d2\u7edd\u7684\u64ad\u653e\u5019\u9009",
       rejectedPlaybackBoundary: "\u4e8c\u8fdb\u5236\u5df2\u8bc1\u8fb9\u754c \u00b7 \u4e0d\u751f\u6210\u56fe\u8fb9",
       rejectedPlaybackLiteral: "Lua \u5b57\u9762\u91cf",
@@ -1909,6 +1919,34 @@
       .filter((candidate) => candidate && candidate.storyKey === row?.key);
   }
 
+  function offlineRecoveryHtml(row) {
+    const coverage = state.index?.storyCoverage || {};
+    const manifest = coverage.storyTriggerManifest || {};
+    const overlay = coverage.offlineRecoveryEvidence?.storyTriggerManifestOverlay || {};
+    const recovery = (
+      manifest[row?.key]?.offlineRecovery
+      || overlay[row?.key]?.offlineRecovery
+    );
+    if (!recovery || recovery.graphEffect !== "none") return "";
+    const boundaries = [
+      recovery.consumerBoundary
+        ? `<small><strong>${esc(t("offlineRecoveryConsumer"))}:</strong> ${esc(recovery.consumerBoundary)}</small>`
+        : "",
+      recovery.orderBoundary
+        ? `<small><strong>${esc(t("offlineRecoveryOrder"))}:</strong> ${esc(recovery.orderBoundary)}</small>`
+        : "",
+      recovery.reopenWhen
+        ? `<small><strong>${esc(t("offlineRecoveryReopen"))}:</strong> ${esc(recovery.reopenWhen)}</small>`
+        : "",
+    ].filter(Boolean).join("");
+    return `<div class="mp-playback-rejection mp-offline-recovery">
+      <header><strong>${esc(t("offlineRecoveryBoundary"))}</strong><span>${esc(t("offlineRecoveryNoGraphEdge"))}</span></header>
+      <b>${esc(recovery.evidenceKind || recovery.recoveryStatus || "")}</b>
+      ${boundaries}
+      ${recovery.nativeMappingId ? `<em><code>${esc(recovery.nativeMappingId)}</code></em>` : ""}
+    </div>`;
+  }
+
   function playbackRejectionHtml(candidate) {
     const reason = candidate.reason === "case_sensitive_native_resource_lookup"
       ? t("rejectedPlaybackCaseReason")
@@ -2055,12 +2093,14 @@
     const details = storyConnectionDetails(row);
     const routeHtml = storyTriggerRoutes(row, questId).map(triggerRouteHtml).join("");
     const rejectionHtml = storyPlaybackRejections(row).map(playbackRejectionHtml).join("");
+    const offlineHtml = offlineRecoveryHtml(row);
     const evidence = [row.confidence, row.source || row.evidence].filter(Boolean).join(" · ");
     return `<a class="is-${className}" href="${esc(storyHref(row.key))}" title="${esc(`${t("openInStory")} · ${evidence}`)}">
       <span>${esc(storyDisplayKind(row))}</span><code>${esc(row.key)}</code><b aria-hidden="true">→</b>
       <em>${esc(details.join(" · "))}</em>${evidence ? `<small>${esc(evidence)}</small>` : ""}
       ${routeHtml}
       ${rejectionHtml}
+      ${offlineHtml}
     </a>`;
   }
 
