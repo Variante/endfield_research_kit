@@ -3900,6 +3900,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e0m0_1",
                 "text_e6m3_1",
                 "text_e6m3_4",
+                "text_e6m5_1",
                 "text_e7m2_2",
                 "text_e7m3_1",
                 "text_e7m4_1",
@@ -3907,6 +3908,35 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e10m3_6",
                 "text_e10m3_8",
                 "text_e10m4_1",
+            },
+        )
+
+    def test_declared_e6m5_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E6M5_RADIOS,
+            {"radio_e6m5_4"},
+        )
+        definition = gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+            "text_e6m5_1"
+        ]
+        self.assertEqual(
+            definition["contentTextIds"],
+            (2915169207318156019, -3317420327824307745),
+        )
+        self.assertEqual(
+            definition["prtsDefinition"],
+            {
+                "rowId": "nar_collection_map02_69_1",
+                "row": {
+                    "contentId": "text_e6m5_1",
+                    "desc": {"id": 0, "text": ""},
+                    "firstLvId": "collection_map02_69",
+                    "id": "nar_collection_map02_69_1",
+                    "name": {"id": 6370990046482612204, "text": ""},
+                    "order": 1,
+                    "overrideRadioId": "",
+                    "type": "text",
+                },
             },
         )
 
