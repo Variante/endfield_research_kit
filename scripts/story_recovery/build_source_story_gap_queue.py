@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v31"
+SCHEMA = "sourceStoryGapQueue.v32"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v10"
+    "current-build-offline-story-carrier-exhaustion-v11"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -478,6 +478,35 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
         "lineIds": (
             "dlg_e1m3_5d5_002",
             "dlg_e1m3_5d5_003",
+        ),
+        "optionIds": (),
+    },
+    "dlg_e3m3_12": {
+        "missionId": "e3m3",
+        "filename": "dlg_e3m3_12_p689304794B0379C8.json",
+        "sha256":
+            "4740A3B03F953F51E9D29514C374DC2A1D0ABA6C140CB861540594AB594553CA",
+        "lineIds": tuple(
+            f"dlg_e3m3_12_{number:03d}"
+            for number in range(1, 19)
+        ),
+        "optionIds": (
+            "option_dlg_e3m3_12_1_001",
+            "option_dlg_e3m3_12_1_002",
+            "option_dlg_e3m3_12_1_003",
+            "option_dlg_e3m3_12_1_004",
+        ),
+    },
+    "dlg_e3m3_13": {
+        "missionId": "e3m3",
+        "filename": "dlg_e3m3_13_p385E5A04C27D079C.json",
+        "sha256":
+            "4E0B8DACC721093A2C165A49A9E8572F7415BF3CBF28982359757D174EA3569C",
+        "lineIds": (
+            "dlg_e3m3_13_001",
+            "dlg_e3m3_13_002",
+            "dlg_e3m3_13_003",
+            "dlg_e3m3_13_004",
         ),
         "optionIds": (),
     },
@@ -845,8 +874,19 @@ OFFLINE_EXHAUSTION_E7M2_RADIOS = frozenset({
     "radio_e7m2_14",
     "radio_e7m2_18",
 })
+OFFLINE_EXHAUSTION_E3M3_RADIOS = frozenset({
+    "radio_e3m3_1d5",
+    "radio_e3m3_1d7",
+    "radio_e3m3_2",
+    "radio_e3m3_2d5",
+    "radio_e3m3_3",
+    "radio_e3m3_4d5",
+    "radio_e3m3_5",
+    "radio_e3m3_6",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
+    "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e7m2": OFFLINE_EXHAUSTION_E7M2_RADIOS,
     "e9m2": OFFLINE_EXHAUSTION_E9M2_RADIOS,
