@@ -12,6 +12,144 @@ from tools import endfield_source_graph
 
 
 class SourceGraphAssetMapScopeTests(unittest.TestCase):
+    def test_timeline_dialog_context_is_queryable_without_order_edge(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            mission_root = root / "mission_pipeline"
+            mission_root.mkdir(parents=True)
+            (mission_root / "index.json").write_text(
+                json.dumps({
+                    "storyCoverage": {
+                        "storyTriggerManifest": {
+                            "dlg_testm1_16": {
+                                "routes": [{
+                                    "storyKey": "dlg_testm1_16",
+                                    "missionId": "testm1",
+                                    "relation":
+                                        "timeline_dialog_contains_"
+                                        "foreign_dialog",
+                                    "causality": "context",
+                                    "ownerStatus": "connected",
+                                    "graphEffect": "none",
+                                    "parentStoryKey": "dlg_testm1_7",
+                                    "timelineIds": [
+                                        "dlgtl_testm1_7_sub_1",
+                                    ],
+                                    "embeddedLineIds": [
+                                        "dlg_testm1_16_001",
+                                        "dlg_testm1_16_002",
+                                    ],
+                                    "embeddedOptionIds": [
+                                        "option_dlg_testm1_16_1_001",
+                                    ],
+                                    "beforeParentLineIds": [
+                                        "dlg_testm1_7_009",
+                                    ],
+                                    "afterParentLineIds": [
+                                        "dlg_testm1_7_005",
+                                    ],
+                                    "scriptIds": ["70000000001"],
+                                    "eventNames": [
+                                        "ScriptEvent_OnLeaderEnterTriggerVolume",
+                                    ],
+                                    "actionNames": [
+                                        "StartDialogAndTeleportAction",
+                                    ],
+                                    "steps": [
+                                        {
+                                            "kind": "mission",
+                                            "id": "testm1",
+                                        },
+                                        {
+                                            "kind": "parent_story",
+                                            "id": "dlg_testm1_7",
+                                        },
+                                        {
+                                            "kind": "dialog_timeline",
+                                            "ids": [
+                                                "dlgtl_testm1_7_sub_1",
+                                            ],
+                                        },
+                                        {
+                                            "kind": "story",
+                                            "id": "dlg_testm1_16",
+                                        },
+                                    ],
+                                }],
+                            },
+                        },
+                    },
+                }),
+                encoding="utf-8",
+            )
+            builder = endfield_source_graph.SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                include_asset_maps=False,
+            )
+            builder.open()
+            try:
+                with patch.object(
+                    endfield_source_graph,
+                    "MISSION_PIPELINE_ROOT",
+                    mission_root,
+                ):
+                    builder.ingest_mission_pipeline_timeline_dialog_context()
+
+                edges = {
+                    (row[0], row[1], row[2]): json.loads(row[3])
+                    for row in builder.db.execute(
+                        "SELECT src, dst, kind, data FROM edges"
+                    ).fetchall()
+                }
+                context_ids = {
+                    row[0]
+                    for row in builder.db.execute(
+                        """
+                        SELECT id FROM nodes
+                        WHERE kind = 'mission_story_context'
+                        """
+                    ).fetchall()
+                }
+                self.assertEqual(1, len(context_ids))
+                context_id = next(iter(context_ids))
+                expected = {
+                    (
+                        "mission:testm1",
+                        context_id,
+                        "mission_has_timeline_dialog_playback_context",
+                    ),
+                    (
+                        "story:dlg_testm1_7",
+                        context_id,
+                        "parent_story_supplies_timeline_dialog_context",
+                    ),
+                    (
+                        "timeline:dlgtl_testm1_7_sub_1",
+                        context_id,
+                        "dialog_timeline_supplies_foreign_story_context",
+                    ),
+                    (
+                        context_id,
+                        "story:dlg_testm1_16",
+                        "timeline_dialog_playback_context_targets_story",
+                    ),
+                }
+                self.assertTrue(expected <= set(edges))
+                for signature in expected:
+                    self.assertFalse(edges[signature]["orderEvidence"])
+                    self.assertFalse(edges[signature]["missionOwnership"])
+                    self.assertEqual(edges[signature]["graphEffect"], "none")
+                self.assertEqual(
+                    builder.ingest_counts[
+                        "missionPipelineTimelineDialogContext.rows"
+                    ],
+                    1,
+                )
+            finally:
+                builder.close()
+
     def test_mission_submission_context_preserves_non_ownership_boundaries(
         self,
     ) -> None:

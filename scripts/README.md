@@ -86,6 +86,14 @@ Story chain through explicit context nodes. Every edge is marked non-owning
 context with playback and order evidence disabled; no direct mission-to-Story
 edge is emitted.
 
+It also consumes fail-closed
+`timeline_dialog_contains_foreign_dialog` routes from
+`storyCoverage.storyTriggerManifest`. The graph retains the mission, exact
+parent Story, registered dialog Timeline, source LevelScript, surrounding
+parent lines, embedded line/option ids, and target Story through an explicit
+context node. It emits no direct mission-to-Story or parent-to-target edge, and
+every relation keeps mission/quest ownership and order evidence disabled.
+
 The same graph build indexes Mission Pipeline's exact unowned native runtime
 receivers. Each receiver must retain one unique level/script/header identity,
 the current-build MemoryPack mapping, and a Story source path agreeing with that

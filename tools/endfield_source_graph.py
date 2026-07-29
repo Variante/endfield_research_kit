@@ -11,6 +11,7 @@ derived follow-up indexes into one SQLite database.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -3272,6 +3273,8 @@ class SourceGraphBuilder:
             self.commit_step("story")
             self.ingest_mission_pipeline_story_scope()
             self.commit_step("missionPipelineStoryScope")
+            self.ingest_mission_pipeline_timeline_dialog_context()
+            self.commit_step("missionPipelineTimelineDialogContext")
             self.ingest_mission_pipeline_env_talk_context()
             self.commit_step("missionPipelineEnvTalkContext")
             self.ingest_mission_pipeline_native_runtime_receivers()
@@ -10321,6 +10324,268 @@ class SourceGraphBuilder:
                             evidence=f"{evidence}.scriptIds[{script_index}]",
                             data=boundary,
                         )
+
+    def ingest_mission_pipeline_timeline_dialog_context(self) -> None:
+        """Add exact foreign-dialog Timeline context without an order edge."""
+        index_path = MISSION_PIPELINE_ROOT / "index.json"
+        if not index_path.is_file():
+            return
+        payload = read_json(index_path, {})
+        coverage = (
+            payload.get("storyCoverage")
+            if isinstance(payload, dict)
+            and isinstance(payload.get("storyCoverage"), dict)
+            else {}
+        )
+        manifest = coverage.get("storyTriggerManifest")
+        if not isinstance(manifest, dict):
+            return
+        source = "webui/mission_pipeline/timeline_dialog_context"
+        file_rel = slash(index_path)
+        file_node = self.add_file(
+            file_rel,
+            kind="mission_pipeline",
+            source=source,
+        )
+        row_count = 0
+        mission_ids: set[str] = set()
+        story_keys: set[str] = set()
+        for manifest_key, entry in sorted(manifest.items()):
+            if not isinstance(entry, dict):
+                continue
+            for route_index, route in enumerate(entry.get("routes") or []):
+                if not isinstance(route, dict):
+                    continue
+                story_key = safe_key(route.get("storyKey"))
+                mission_id = safe_key(route.get("missionId"))
+                parent_story_key = safe_key(route.get("parentStoryKey"))
+                timeline_ids = sorted({
+                    safe_key(value)
+                    for value in route.get("timelineIds") or []
+                    if safe_key(value)
+                })
+                embedded_line_ids = sorted({
+                    safe_key(value)
+                    for value in route.get("embeddedLineIds") or []
+                    if safe_key(value)
+                })
+                before_parent_line_ids = sorted({
+                    safe_key(value)
+                    for value in route.get("beforeParentLineIds") or []
+                    if safe_key(value)
+                })
+                after_parent_line_ids = sorted({
+                    safe_key(value)
+                    for value in route.get("afterParentLineIds") or []
+                    if safe_key(value)
+                })
+                if (
+                    safe_key(manifest_key) != story_key
+                    or safe_key(route.get("relation"))
+                    != "timeline_dialog_contains_foreign_dialog"
+                    or safe_key(route.get("causality")) != "context"
+                    or safe_key(route.get("ownerStatus")) != "connected"
+                    or safe_key(route.get("graphEffect")) != "none"
+                    or not story_key
+                    or not mission_id
+                    or not parent_story_key
+                    or not timeline_ids
+                    or not embedded_line_ids
+                    or not before_parent_line_ids
+                    or not after_parent_line_ids
+                ):
+                    continue
+                steps = [
+                    step
+                    for step in route.get("steps") or []
+                    if isinstance(step, dict)
+                ]
+                step_kinds = [
+                    safe_key(step.get("kind"))
+                    for step in steps
+                ]
+                if (
+                    "parent_story" not in step_kinds
+                    or "dialog_timeline" not in step_kinds
+                    or not any(
+                        safe_key(step.get("kind")) == "parent_story"
+                        and safe_key(step.get("id"))
+                        == parent_story_key
+                        for step in steps
+                    )
+                    or not any(
+                        safe_key(step.get("kind")) == "dialog_timeline"
+                        and set(
+                            safe_key(value)
+                            for value in step.get("ids") or []
+                            if safe_key(value)
+                        )
+                        == set(timeline_ids)
+                        for step in steps
+                    )
+                ):
+                    continue
+                boundary = {
+                    "relation":
+                        "timeline_dialog_contains_foreign_dialog",
+                    "causality": "context",
+                    "ownerStatus": "connected",
+                    "graphEffect": "none",
+                    "missionId": mission_id,
+                    "storyKey": story_key,
+                    "parentStoryKey": parent_story_key,
+                    "timelineIds": timeline_ids,
+                    "embeddedLineIds": embedded_line_ids,
+                    "embeddedOptionIds": sorted({
+                        safe_key(value)
+                        for value in route.get("embeddedOptionIds") or []
+                        if safe_key(value)
+                    }),
+                    "beforeParentLineIds": before_parent_line_ids,
+                    "afterParentLineIds": after_parent_line_ids,
+                    "eventNames": [
+                        safe_key(value)
+                        for value in route.get("eventNames") or []
+                        if safe_key(value)
+                    ],
+                    "scriptIds": [
+                        safe_key(value)
+                        for value in route.get("scriptIds") or []
+                        if safe_key(value)
+                    ],
+                    "actionNames": [
+                        safe_key(value)
+                        for value in route.get("actionNames") or []
+                        if safe_key(value)
+                    ],
+                    "nativePaths": route.get("nativePaths") or [],
+                    "placementBoundary":
+                        safe_key(route.get("placementBoundary")),
+                    "playbackContext": True,
+                    "missionOwnership": False,
+                    "questOwnership": False,
+                    "orderEvidence": False,
+                }
+                signature = hashlib.sha256(
+                    dump_json(boundary).encode("utf-8")
+                ).hexdigest()[:16]
+                context_node = self.add_node(
+                    "mission_story_context",
+                    (
+                        f"{mission_id}:timeline_dialog_context:"
+                        f"{story_key}:{signature}"
+                    ),
+                    name=(
+                        f"{mission_id} {parent_story_key} Timeline context "
+                        f"{story_key}"
+                    ),
+                    source=source,
+                    data=boundary,
+                )
+                mission_node = self.add_node(
+                    "mission",
+                    mission_id,
+                    name=mission_id,
+                    source=source,
+                )
+                story_node = self.add_node(
+                    "story",
+                    story_key,
+                    name=story_key,
+                    source=source,
+                )
+                parent_story_node = self.add_node(
+                    "story",
+                    parent_story_key,
+                    name=parent_story_key,
+                    source=source,
+                )
+                evidence = (
+                    f"storyCoverage.storyTriggerManifest.{manifest_key}"
+                    f".routes[{route_index}]"
+                )
+                self.add_edge(
+                    file_node,
+                    context_node,
+                    "mission_pipeline_index_has_timeline_dialog_context",
+                    source=source,
+                    evidence=evidence,
+                    data=boundary,
+                )
+                self.add_edge(
+                    mission_node,
+                    context_node,
+                    "mission_has_timeline_dialog_playback_context",
+                    source=source,
+                    evidence=evidence,
+                    data=boundary,
+                )
+                self.add_edge(
+                    parent_story_node,
+                    context_node,
+                    "parent_story_supplies_timeline_dialog_context",
+                    source=source,
+                    evidence=evidence,
+                    data=boundary,
+                )
+                self.add_edge(
+                    context_node,
+                    story_node,
+                    "timeline_dialog_playback_context_targets_story",
+                    source=source,
+                    evidence=evidence,
+                    data=boundary,
+                )
+                self.add_edge(
+                    story_node,
+                    context_node,
+                    "story_has_timeline_dialog_playback_context",
+                    source=source,
+                    evidence=evidence,
+                    data=boundary,
+                )
+                for timeline_id in timeline_ids:
+                    timeline_node = self.add_node(
+                        "timeline",
+                        timeline_id,
+                        name=timeline_id,
+                        source=source,
+                    )
+                    self.add_edge(
+                        timeline_node,
+                        context_node,
+                        "dialog_timeline_supplies_foreign_story_context",
+                        source=source,
+                        evidence=evidence,
+                        data=boundary,
+                    )
+                for script_id in boundary["scriptIds"]:
+                    script_node = self.add_node(
+                        "level_script",
+                        script_id,
+                        name=script_id,
+                        source=source,
+                    )
+                    self.add_edge(
+                        script_node,
+                        context_node,
+                        "level_script_reaches_parent_timeline_dialog_context",
+                        source=source,
+                        evidence=evidence,
+                        data=boundary,
+                    )
+                row_count += 1
+                mission_ids.add(mission_id)
+                story_keys.add(story_key)
+        self.ingest_counts[
+            "missionPipelineTimelineDialogContext.rows"
+        ] = row_count
+        self.ingest_counts[
+            "missionPipelineTimelineDialogContext.missions"
+        ] = len(mission_ids)
+        self.ingest_counts[
+            "missionPipelineTimelineDialogContext.storyFiles"
+        ] = len(story_keys)
 
     def ingest_mission_pipeline_env_talk_context(self) -> None:
         """Add exact atmospheric-switcher envTalk context without ownership.

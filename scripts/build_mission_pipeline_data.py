@@ -3481,6 +3481,43 @@ def build_story_trigger_route(
         row.get("sourceFiles"),
         [path.get("sourceFile") for path in native_paths],
     )
+    timeline_dialog_containments = [
+        containment
+        for containment in row.get("timelineDialogContainments") or []
+        if isinstance(containment, dict)
+    ]
+    parent_story_key = str(row.get("parentStoryKey") or "")
+    timeline_ids = _unique_route_strings(
+        row.get("timelines"),
+        [
+            containment.get("timeline")
+            for containment in timeline_dialog_containments
+        ],
+    )
+    embedded_line_ids = _unique_route_strings(
+        row.get("textIds"),
+        [
+            line_id
+            for containment in timeline_dialog_containments
+            for line_id in containment.get("lineIds") or []
+        ],
+    )
+    embedded_option_ids = _unique_route_strings(
+        row.get("optionIds"),
+        [
+            option_id
+            for containment in timeline_dialog_containments
+            for option_id in containment.get("optionIds") or []
+        ],
+    )
+    before_parent_line_ids = _unique_route_strings([
+        containment.get("beforeParentLineId")
+        for containment in timeline_dialog_containments
+    ])
+    after_parent_line_ids = _unique_route_strings([
+        containment.get("afterParentLineId")
+        for containment in timeline_dialog_containments
+    ])
 
     owner_step = {
         "kind": "ownership_gap" if owner_status == "unresolved" else scope,
@@ -3587,6 +3624,19 @@ def build_story_trigger_route(
         })
     if action_names:
         middle_steps.append({"kind": "native_action", "ids": action_names})
+    if relation == "timeline_dialog_contains_foreign_dialog":
+        if parent_story_key:
+            middle_steps.append({
+                "kind": "parent_story",
+                "id": parent_story_key,
+            })
+        if timeline_ids:
+            middle_steps.append({
+                "kind": "dialog_timeline",
+                "ids": timeline_ids,
+                "beforeParentLineIds": before_parent_line_ids,
+                "afterParentLineIds": after_parent_line_ids,
+            })
     if direction == "story_to_quest":
         steps = [story_step, *middle_steps, owner_step]
     else:
@@ -3670,6 +3720,14 @@ def build_story_trigger_route(
         "rawTypeId": str(row.get("rawTypeId") or ""),
         "entityDetailIds": _unique_route_strings(row.get("entityDetailIds")),
         "entityTemplateIds": _unique_route_strings(row.get("entityTemplateIds")),
+        "parentStoryKey": parent_story_key,
+        "timelineIds": timeline_ids,
+        "embeddedLineIds": embedded_line_ids,
+        "embeddedOptionIds": embedded_option_ids,
+        "beforeParentLineIds": before_parent_line_ids,
+        "afterParentLineIds": after_parent_line_ids,
+        "placementBoundary": str(row.get("placementBoundary") or ""),
+        "graphEffect": str(row.get("graphEffect") or ""),
         "controlPathCount": int(row.get("nativeControlPathCount") or len(native_paths)),
         "nativePaths": native_paths,
         "sourceFiles": source_files,
