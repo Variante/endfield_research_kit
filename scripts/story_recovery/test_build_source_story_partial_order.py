@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import struct
 import sys
 import tempfile
@@ -115,6 +116,175 @@ def mission_payload(
 
 
 class SourceStoryPartialOrderTests(unittest.TestCase):
+    def test_declared_variant_mission_evidence_is_merged_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            mission_dir = Path(tmp)
+            base_payload = {
+                "mission": "e10m4",
+                "flow": {
+                    "sceneGraph": {"nodes": [{"key": "dlg_base"}], "edges": []},
+                    "sceneGraphVariantMissions": ["e10m4d5", "wrong"],
+                    "missionStoryConnections": [{"key": "dlg_base"}],
+                    "quests": [{"id": "e10m4_q#1"}],
+                },
+                "timelineRecovery": {
+                    "questEdges": [{"from": "base_a", "to": "base_b"}],
+                    "scenePlacement": {"dlg_base": {"sceneKey": "dlg_base"}},
+                },
+            }
+            variant_payload = {
+                "mission": "e10m4d5",
+                "flow": {
+                    "missionStoryConnections": [{"key": "radio_variant"}],
+                    "quests": [{"id": "e10m4d5_q#1"}],
+                },
+                "timelineRecovery": {
+                    "questEdges": [{"from": "variant_a", "to": "variant_b"}],
+                    "scenePlacement": {
+                        "radio_variant": {"sceneKey": "radio_variant"},
+                    },
+                },
+            }
+            wrong_payload = {
+                "mission": "another_mission",
+                "flow": {
+                    "missionStoryConnections": [{"key": "must_not_merge"}],
+                },
+            }
+            (mission_dir / "e10m4.json").write_text(
+                json.dumps(base_payload),
+                encoding="utf-8",
+            )
+            (mission_dir / "e10m4d5.json").write_text(
+                json.dumps(variant_payload),
+                encoding="utf-8",
+            )
+            (mission_dir / "wrong.json").write_text(
+                json.dumps(wrong_payload),
+                encoding="utf-8",
+            )
+
+            merged = partial_order.load_mission_payload_with_variants(
+                mission_dir,
+                "e10m4",
+            )
+
+        self.assertEqual(
+            [
+                row["key"]
+                for row in merged["flow"]["missionStoryConnections"]
+            ],
+            ["dlg_base", "radio_variant"],
+        )
+        self.assertEqual(
+            [row["id"] for row in merged["flow"]["quests"]],
+            ["e10m4_q#1", "e10m4d5_q#1"],
+        )
+        self.assertEqual(
+            merged["flow"]["_sourceVariantMissionIds"],
+            ["e10m4d5"],
+        )
+        self.assertEqual(
+            set(merged["timelineRecovery"]["scenePlacement"]),
+            {"dlg_base", "radio_variant"},
+        )
+        self.assertEqual(
+            merged["flow"]["sceneGraph"],
+            base_payload["flow"]["sceneGraph"],
+        )
+
+    def test_complete_cross_story_dialog_trunk_continuation_is_strong(
+        self,
+    ) -> None:
+        payload = mission_payload([])
+        payload["flow"]["missionStoryConnections"] = [{
+            "key": "dlg_m1_2",
+            "parentStoryKey": "dlg_m1_1",
+            "relation": "dialog_tree_reachable_story_playback",
+            "confidence": "native_derived_exact_parent_shell",
+            "certainty": "authored_reachable",
+            "nativeMappingId": "dialog-tree-reachable-story-playback-native-v1",
+            "trunkIds": ["dlg_m1_2_001", "dlg_m1_2_002"],
+            "sourceFiles": ["dialog_tree.json"],
+            "dialogTreeStoryPlaybackCarriers": [{
+                "storyKey": "dlg_m1_2",
+                "carrierKind": "trunk",
+                "carrierValue": "dlg_m1_2_001",
+                "nodeId": "22",
+                "parentTrunkId": "dlg_m1_1_002",
+                "currentParentTrunkIds": [
+                    "dlg_m1_1_001",
+                    "dlg_m1_1_002",
+                ],
+                "reachableFromCurrentParentTrunk": True,
+                "entryProof":
+                    "exact_registered_dialog_tree_current_parent_anchor",
+                "nodePath": ["21", "22"],
+                "connectionPath": [{"sourceNodeId": "21", "targetNodeId": "22"}],
+            }, {
+                "storyKey": "dlg_m1_2",
+                "carrierKind": "trunk",
+                "carrierValue": "dlg_m1_2_002",
+                "nodeId": "23",
+                "parentTrunkId": "dlg_m1_1_002",
+                "currentParentTrunkIds": [
+                    "dlg_m1_1_001",
+                    "dlg_m1_1_002",
+                ],
+                "reachableFromCurrentParentTrunk": True,
+                "entryProof":
+                    "exact_registered_dialog_tree_current_parent_anchor",
+                "nodePath": ["21", "22", "23"],
+                "connectionPath": [
+                    {"sourceNodeId": "21", "targetNodeId": "22"},
+                    {"sourceNodeId": "22", "targetNodeId": "23"},
+                ],
+            }],
+        }]
+        conversations = [
+            ("conv/dlg_m1_1.json", {
+                "key": "dlg_m1_1",
+                "lines": [{"id": "dlg_m1_1_001"}, {"id": "dlg_m1_1_002"}],
+            }),
+            ("conv/dlg_m1_2.json", {
+                "key": "dlg_m1_2",
+                "lines": [{"id": "dlg_m1_2_001"}, {"id": "dlg_m1_2_002"}],
+            }),
+        ]
+
+        row = partial_order.build_mission_partial_order(
+            "m1",
+            {"dlg_m1_1": "dlg", "dlg_m1_2": "dlg"},
+            payload,
+            conversations,
+        )
+
+        edge = next(
+            edge
+            for edge in row["directEdges"]
+            if edge["kind"] == "dialogTreeCrossStoryTrunkContinuation"
+        )
+        self.assertEqual((edge["from"], edge["to"]), ("dlg_m1_1", "dlg_m1_2"))
+        self.assertEqual(edge["tier"], "strong")
+
+        incomplete = copy.deepcopy(payload)
+        incomplete["flow"]["missionStoryConnections"][0][
+            "dialogTreeStoryPlaybackCarriers"
+        ][0]["currentParentTrunkIds"] = ["dlg_m1_1_002"]
+        incomplete["flow"]["missionStoryConnections"][0][
+            "dialogTreeStoryPlaybackCarriers"
+        ][1]["currentParentTrunkIds"] = ["dlg_m1_1_002"]
+        rejected = partial_order.build_mission_partial_order(
+            "m1",
+            {"dlg_m1_1": "dlg", "dlg_m1_2": "dlg"},
+            incomplete,
+            conversations,
+        )
+        self.assertFalse(any(
+            edge["kind"] == "dialogTreeCrossStoryTrunkContinuation"
+            for edge in rejected["directEdges"]
+        ))
+
     def test_spawner_part_killed_target_recovers_wave_begin_order(self) -> None:
         candidates = {
             "radio_m1_wave4": "radio",
