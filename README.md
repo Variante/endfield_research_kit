@@ -10,9 +10,6 @@ The project is built around reproducible local exports:
 
 - `Story` reconstructs dialog, cutscenes, branches, inline media, audio links,
   story order, and recovery evidence from generated game-data JSON.
-- `人物` / `Characters` gathers character and NPC names from localized text,
-  authored character/NPC rows, Story actor resolution, and exported asset
-  filename evidence, with the source of every name and identifier kept visible.
 - `Gameplay` surfaces curated weapon, character, skill, talent, progression,
   and numeric table records from structured game-data tables.
 - `Mission Pipeline` is an experimental quest DAG available from the normal
@@ -30,24 +27,6 @@ The project is built around reproducible local exports:
   explicit control topology rather than sibling file order. Conditional arms
   also retain the exact event selector and decoded getter/inline predicate
   operands when the current binary shape proves them.
-- `Progression` traverses direct authored links across character and weapon
-  upgrades, equipment stages, item costs/use/obtain paths, reward bundles, and
-  drop pools while retaining table/row/path provenance.
-- `Projectiles` inspects byte-complete authored projectile payloads, including
-  collision, movement, effects, alerts, and sound references with semantic
-  confidence labels.
-- `Combat` browses evidence-labelled relationships between characters,
-  enemies, abilities, exact AbilityEntity inherited-prefix/component records,
-  exact 92-byte surrounding configurations, reachable TargetSettings/selectors,
-  buffs, projectiles, effects, audio, and assets.
-- `Factory` covers recipes, machines, technology, logistics, utilities, shops,
-  rewards, and activities from static authored configuration.
-- `World` browses deduplicated authored placements, interactives, NPC proxies,
-  spawners, enemies, levels, scripts, models, and audio references without
-  claiming live world state or simulation.
-- `Presentation` follows curated model, prefab, controller, material, shader,
-  animation, effect, and representative exported-asset evidence while keeping
-  inferred name matches separate from direct source references.
 - `Assets` indexes exported images, models, videos, materials, metadata, and
   related files.
 - `Text Tables` exposes localized table rows and source data in a searchable
@@ -108,10 +87,9 @@ Set `ENDFIELD_GAME_ROOT` to the installed `Endfield_Data` folder. The same file
 also stores the saved previous export folder used by Updates tracking.
 
 The script initializes the AnimeStudio submodule, builds AnimeStudio, verifies
-AnimeStudio's integrated VFS/audio commands, exports Story/Characters/Gameplay/Text Tables
-plus Mission Pipeline/Progression/Projectile/Combat/Factory/World/Presentation data
-into `export_full/` and `webui/data/`, then starts or reuses the WebUI server
-at `http://127.0.0.1:8765/`.
+AnimeStudio's integrated VFS/audio commands, exports Story, Gameplay, Mission
+Pipeline, and Text Tables data into `export_full/` and `webui/data/`, then
+starts or reuses the WebUI server at `http://127.0.0.1:8765/`.
 
 It intentionally skips the heavier optional passes. Run `export_assets.bat`
 later when you want Assets tab media and playable CN audio, and run
@@ -124,7 +102,7 @@ and [EIHRTeam/EndfieldStudio](https://github.com/EIHRTeam/EndfieldStudio).
 Many thanks to those projects and their maintainers for the groundwork.
 
 First-time setup still does real work. Building AnimeStudio and exporting
-Story/Gameplay/Text Tables and the related semantic views can take a while; the optional installed-game asset/media and
+Story, Gameplay, Mission Pipeline, and Text Tables can take a while; the optional installed-game asset/media and
 CN audio refresh can take several hours. The full asset path has been observed
 around 27 GiB of process-tree RAM on a 64 GiB workstation, so 64 GiB system RAM
 is the comfortable target for full media refreshes. On lower-RAM systems, start
@@ -168,14 +146,14 @@ the faster rebuild commands:
 python serve.py
 ```
 
-Plain `export.bat` rebuilds Story, Characters, Gameplay, Mission Pipeline, Progression, Projectiles, Combat, Factory, World, Presentation, and
-Text Tables browser data from
-the existing `export_full/` and verifies freshness first. It rebuilds the local
-source graph after the authored semantic views (and optional assets/audio), using
+Plain `export.bat` rebuilds Story, Gameplay, Mission Pipeline, and Text Tables
+browser data from the existing `export_full/` and verifies freshness first. It
+also refreshes supporting generated data and rebuilds the local source graph
+after the authored semantic data (and optional assets/audio), using
 only the exact original AssetMap rows required by material, shader, texture, and
-FMV WebUI edges. Then it
-builds Presentation and Combat only from that fresh graph; stale graph evidence degrades visibly
-instead of being emitted as direct. Use `export.bat --full-source-graph` when an
+FMV WebUI edges. Graph-backed output uses only that fresh graph; stale graph
+evidence degrades visibly instead of being emitted as direct. Use
+`export.bat --full-source-graph` when an
 exhaustive Unity-object/PathID investigation needs every AssetMap row and the
 generated graph follow-up reports.
 
