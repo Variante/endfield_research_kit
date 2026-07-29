@@ -349,7 +349,9 @@ Mission Pipeline:
   The builder prefers the complete Persistent MissionRuntime override only
   when it covers every StreamingAssets mission filename; otherwise it falls
   back to the coherent StreamingAssets corpus. The index publishes the
-  selected root and decision. The current 980/980 override exposes
+  selected root, decision, completeness counts, and exact changed filenames.
+  `Show debug info` renders that provenance as a compact source strip; normal
+  mode hides it. The current 980/980 override exposes
   `f1m32_q#3` as the exact `dlg_f1m32_2` option-finish objective and adds
   `hidden62_q#19` plus its two non-precedence state relations.
 - Routes authored predecessor edges through a visible server-authority gateway.

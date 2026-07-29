@@ -35,6 +35,12 @@
       title: "Mission Pipeline",
       scope: "Authored quest structure with an explicit native client/server boundary.",
       warning: "Predecessor arrows are client-visible prerequisites. The server still decides which quest state to synchronize next.",
+      missionSource: "MissionRuntime source",
+      sourceCompletePersistent: "complete Persistent override",
+      sourceStreamingFallback: "StreamingAssets fallback",
+      sourceExplicitRoot: "explicit mission root",
+      sourceChangedFiles: "changed base files",
+      sourceMissingFiles: "missing base files",
       missions: "missions",
       quests: "quests",
       connectedStory: "Story connected",
@@ -497,6 +503,12 @@
       title: "任务流程",
       scope: "展示任务节点结构，并明确标出原生客户端与服务器之间的边界。",
       warning: "前置箭头只表示客户端可见的条件关系；下一个同步到客户端的任务状态仍由服务器决定。",
+      missionSource: "MissionRuntime 来源",
+      sourceCompletePersistent: "完整 Persistent 覆盖",
+      sourceStreamingFallback: "StreamingAssets 回退",
+      sourceExplicitRoot: "显式任务根目录",
+      sourceChangedFiles: "已变更基础文件",
+      sourceMissingFiles: "缺少基础文件",
       missions: "个任务",
       quests: "个任务节点",
       connectedStory: "已连接剧情",
@@ -1050,6 +1062,7 @@
           <div id="mp-corpus" class="mp-corpus" role="status" aria-live="polite"></div>
         </header>
         <div id="mp-warning" class="mp-boundary-warning" role="note"></div>
+        <div id="mp-source-provenance" class="mp-source-provenance" role="note" hidden></div>
         <div class="mp-layout">
           <aside class="mp-browser" aria-label="Mission browser">
             <div class="mp-browser-controls">
@@ -1285,6 +1298,34 @@
     ];
     if (state.index?.runtimeTrace) stats.push([runtimeCounts.storyPlaybacks, t("runtimeObserved")]);
     node.innerHTML = stats.map(([value, label]) => `<strong>${Number(value || 0).toLocaleString()}</strong><span>${esc(label)}</span>`).join("");
+
+    const sourceNode = byId("mp-source-provenance");
+    const source = state.index?.missionRuntimeSource;
+    if (!sourceNode) return;
+    if (!source?.selectedRoot) {
+      sourceNode.hidden = true;
+      sourceNode.innerHTML = "";
+      return;
+    }
+    const selectionLabels = {
+      complete_persistent_override: t("sourceCompletePersistent"),
+      streaming_assets_fallback: t("sourceStreamingFallback"),
+      explicit_mission_root: t("sourceExplicitRoot"),
+    };
+    const changedFiles = Array.isArray(source.persistentChangedBaseFiles)
+      ? source.persistentChangedBaseFiles
+      : [];
+    const missingFiles = Array.isArray(source.persistentMissingBaseFiles)
+      ? source.persistentMissingBaseFiles
+      : [];
+    sourceNode.hidden = false;
+    sourceNode.innerHTML = `
+      <strong>${esc(t("missionSource"))}: ${esc(selectionLabels[source.selection] || source.selection || "?")}</strong>
+      <code>${esc(source.selectedRoot)}</code>
+      <span>${esc(t("sourceChangedFiles"))}: ${Number(source.persistentChangedBaseFileCount || changedFiles.length).toLocaleString()} / ${Number(source.streamingFileCount || 0).toLocaleString()}</span>
+      ${changedFiles.length ? `<code>${esc(changedFiles.join(", "))}</code>` : ""}
+      <span>${esc(t("sourceMissingFiles"))}: ${Number(missingFiles.length).toLocaleString()}</span>
+    `;
   }
 
   function missionName(id) {

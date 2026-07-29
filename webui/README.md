@@ -148,10 +148,11 @@ available through expandable guidance.
   gateway. The builder uses the complete Persistent MissionRuntime override
   only when it covers every StreamingAssets mission filename; otherwise it
   falls back to the coherent StreamingAssets corpus. The generated index
-  exposes that source decision. The current 980/980 override yields 490
-  missions and 4,462 quests, including the exact `f1m32_q#3` dialog-option
-  gate and `hidden62_q#19` state window. Selecting a quest shows the native
-  asynchronous protocol sequence:
+  exposes that source decision and the exact changed filenames. `Show debug
+  info` renders the current five-file override list; normal mode keeps it
+  hidden. The current 980/980 override yields 490 missions and 4,462 quests,
+  including the exact `f1m32_q#3` dialog-option gate and `hidden62_q#19` state
+  window. Selecting a quest shows the native asynchronous protocol sequence:
   `SC_QUEST_STATE_UPDATE` activation, local condition callbacks,
   `CS_UPDATE_QUEST_OBJECTIVE` / `SC_QUEST_OBJECTIVES_UPDATE`, optional
   `CS_FINISH_DIALOG` / `SC_FINISH_DIALOG`, authoritative completion/failure,

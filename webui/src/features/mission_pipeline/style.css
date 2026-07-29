@@ -134,6 +134,29 @@
 
 .mp-boundary-warning::first-letter { font-weight: 700; }
 
+.mp-source-provenance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 10px clamp(22px, 4vw, 56px) 0;
+  padding: 9px 12px;
+  border: 1px dashed rgba(54, 127, 132, 0.28);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mp-source-provenance strong { color: var(--text); }
+
+.mp-source-provenance code {
+  overflow-wrap: anywhere;
+  color: var(--mp-client);
+}
+
+.mp-source-provenance[hidden],
+body:not(.show-debug) .mp-source-provenance { display: none; }
+
 .mp-layout {
   display: grid;
   grid-template-columns: minmax(260px, 310px) minmax(0, 1fr);

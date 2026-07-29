@@ -43,8 +43,9 @@ authored overrides. Active consumers now use it only when its filename set
 covers the complete StreamingAssets base set; an incomplete Persistent tree
 causes a whole-corpus StreamingAssets fallback instead of a per-file hybrid.
 Generated Mission Pipeline provenance records the selected root, decision,
-base/override counts, missing base files, and extra override files. Explicit
-`--mission-root` builds are labeled separately.
+base/override counts, missing base files, extra override files, and the exact
+common filenames whose bytes differ. Explicit `--mission-root` builds are
+labeled separately.
 
 The current binary-first system-carrier audit demonstrates the intended
 cross-layer standard. Three typed DomainDepot tables plus native request/reply

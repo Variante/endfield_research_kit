@@ -20,6 +20,23 @@ def mission_runtime_file_names(root: Path) -> set[str]:
     return {path.name for path in root.glob("*.json")}
 
 
+def mission_runtime_changed_file_names(
+    streaming_root: Path,
+    persistent_root: Path,
+) -> list[str]:
+    """Return common mission filenames whose override bytes differ."""
+    common_names = (
+        mission_runtime_file_names(streaming_root)
+        & mission_runtime_file_names(persistent_root)
+    )
+    return sorted(
+        name
+        for name in common_names
+        if (streaming_root / name).read_bytes()
+        != (persistent_root / name).read_bytes()
+    )
+
+
 def select_complete_mission_runtime_root(
     streaming_root: Path,
     persistent_root: Path,
@@ -42,6 +59,10 @@ def mission_runtime_source_summary(
         streaming_root,
         persistent_root,
     )
+    changed_names = mission_runtime_changed_file_names(
+        streaming_root,
+        persistent_root,
+    )
     return {
         "selectedRoot": selected.as_posix(),
         "selection": (
@@ -57,4 +78,6 @@ def mission_runtime_source_summary(
         "persistentExtraFiles": sorted(
             persistent_names - streaming_names
         ),
+        "persistentChangedBaseFileCount": len(changed_names),
+        "persistentChangedBaseFiles": changed_names,
     }
