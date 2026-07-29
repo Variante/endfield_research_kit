@@ -2248,6 +2248,130 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
         self.assertEqual(report["counts"]["rootPlaybackAliasFiles"], 1)
         self.assertEqual(report["rootPlaybackAliases"], [alias])
 
+    def test_owned_root_playback_route_composes_alias_owner_context(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            story_root = root / "lang"
+            language_root = story_root / "CN"
+            mission_root = language_root / "mission"
+            report_root = root / "reports"
+            mission_root.mkdir(parents=True)
+            (language_root / "index.json").write_text(json.dumps({
+                "entries": [
+                    {
+                        "k": "cutscene_fixture_root",
+                        "d": "cutscene",
+                        "m": "fixture",
+                        "p": "fixture",
+                    },
+                    {
+                        "k": "cutscene_fixture_asset",
+                        "d": "cutscene",
+                        "m": "fixture",
+                        "p": "fixture",
+                    },
+                ],
+            }), encoding="utf-8")
+            (mission_root / "fixture.json").write_text(json.dumps({
+                "flow": {
+                    "missionStoryConnections": [{
+                        "key": "cutscene_fixture_root",
+                        "relation":
+                            "mission_global_var_native_playback_context",
+                        "direction": "context",
+                        "nativeActions": ["PlayCutsceneAction"],
+                        "confidence":
+                            "native_exact_unique_mission_global_var_context",
+                        "evidenceTier": "native_exact_context",
+                        "sourceFiles": ["fixture_levelscript.json"],
+                    }],
+                },
+            }), encoding="utf-8")
+            table_paths = [
+                root / "SubGameInstanceDataTable.json",
+                root / "ActivityConditionalMultiStageTable.json",
+                root / "GameMechanicConditionTable.json",
+                root / "DungeonTable.json",
+                root / "TextVoIdTable.json",
+            ]
+            for path in table_paths:
+                path.write_text("{}", encoding="utf-8")
+            alias = {
+                "rootStoryKey": "cutscene_fixture_root",
+                "playableAssetStoryKey": "cutscene_fixture_asset",
+                "relation": "cutscene_root_director_playable_asset",
+                "edgeStatus": (
+                    "exact_root_playback_alias_no_chronology_or_mission_owner"
+                ),
+                "cutsceneRootGameObjectPathId": 7,
+                "cutsceneRootComponentPathId": 8,
+                "directorObject": {
+                    "serializedFile": "CAB-host",
+                    "pathId": 9,
+                    "source": "VFS/hash/chunk.chk",
+                },
+                "nativeMappingId": (
+                    "gameassembly-2026-07-28-"
+                    "cutscene-root-director-playback-v1"
+                ),
+                "evidenceReport": (
+                    "reports/story/recovery/"
+                    "animestudio_story_reverse_pptr_audit.json"
+                ),
+                "ownership": False,
+                "chronology": False,
+            }
+            with patch.object(
+                pipeline,
+                "story_root_playback_aliases",
+                return_value=[alias],
+            ):
+                report = pipeline.build_story_binding_coverage(
+                    {"missions": [{"id": "fixture"}]},
+                    root / "pipeline" / "index.json",
+                    story_root,
+                    "CN",
+                    report_root,
+                    *table_paths,
+                )
+
+        manifest = report["storyTriggerManifest"][
+            "cutscene_fixture_asset"
+        ]
+        self.assertEqual(manifest["attachmentStatus"], "connected")
+        composed = next(
+            route
+            for route in manifest["routes"]
+            if route["causality"] == "playback_alias_owner_connected"
+        )
+        self.assertEqual(composed["missionId"], "fixture")
+        self.assertEqual(
+            [step["kind"] for step in composed["steps"]],
+            [
+                "mission",
+                "native_action",
+                "story_root",
+                "native_action",
+                "story",
+            ],
+        )
+        self.assertEqual(report["counts"]["connectedUniqueStoryFiles"], 2)
+        self.assertEqual(report["counts"]["unlinkedUniqueStoryFiles"], 0)
+        self.assertEqual(
+            report["counts"]["composedRootPlaybackAliasRows"],
+            1,
+        )
+        self.assertEqual(
+            report["counts"]["composedRootPlaybackAliasFiles"],
+            1,
+        )
+        self.assertEqual(
+            report["composedRootPlaybackAliases"][0]["missionId"],
+            "fixture",
+        )
+
     def test_pinned_story_keys_are_lowercase_exact(self) -> None:
         for row in pipeline.LUA_STORY_PLAYBACK_CALL_SITES:
             self.assertEqual(row["storyKey"], row["storyKey"].lower())

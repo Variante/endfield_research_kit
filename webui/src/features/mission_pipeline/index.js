@@ -359,6 +359,7 @@
       relationSpawnerConfigMission: "an exact server spawner-completion event reaches this Story file and the sole same-level SpawnerConfig names one MissionRuntime (mission context, not one quest)",
       relationHpSpawnerConfigMission: "an exact spawner spawn → entity-list writer → local HP-threshold playback chain and the sole same-level SpawnerConfig name one MissionRuntime (mission context, not one quest)",
       relationMissionGlobalVarPlayback: "a client-global-variable event reaches this Story playback and the exact variable key belongs to one mission (mission context, not one quest)",
+      relationRootPlaybackAliasComposed: "an independently connected native root playback executes this exact TimelineAsset through the CutsceneRoot director (owner context, not Story order)",
       relationNpcReadyPlayback: "an exact WaitForNpcProxyReady path reaches this Story playback and the tracked proxy belongs to one mission (mission context, not one quest)",
       relationNpcTargetPlayback: "Play3DRadio explicitly targets this tracked NPC proxy in the same scene (mission context, not proof that the quest starts playback)",
       relationNpcProxySegmentShell: "the tracked NPC proxy occupies the exact authored registry segment whose global id is this Story playback script (mission shell only, not NPC activation)",
@@ -411,6 +412,7 @@
       triggerDependency: "dependency only",
       triggerUnresolved: "trigger known · owner unresolved",
       triggerPlaybackAlias: "root playback alias · owner unresolved",
+      triggerPlaybackAliasConnected: "root playback alias · owner connected",
       triggerDefinition: "definition only · no consumer",
       rejectedPlaybackCandidate: "Rejected playback candidate",
       rejectedPlaybackBoundary: "binary-proven boundary · no graph edge",
@@ -455,6 +457,7 @@
     },
     zh: {
       rootPlaybackAliases: "\u6839\u64ad\u653e\u522b\u540d",
+      relationRootPlaybackAliasComposed: "\u72ec\u7acb\u5df2\u8fde\u63a5\u7684\u539f\u751f\u6839\u64ad\u653e\u901a\u8fc7 CutsceneRoot director \u6267\u884c\u8be5\u7cbe\u786e TimelineAsset\uff08\u5f52\u5c5e\u4e0a\u4e0b\u6587\uff0c\u975e\u5267\u60c5\u987a\u5e8f\uff09",
       relationMissionTrackedWorldEntityLevelScript: "精确的本地队长触发器播放脚本引用了仅由一个任务跟踪的世界实体（仅共享的脚本/实体创作上下文；候选任务节点不证明触发门、激活、播放、完成或所有权）",
       relationMissionTrackedWorldEntityLevelScriptStage: "服务器先同步该 LevelScript 阶段，再进入精确的本地 StageChanged 播放路径；类型化世界实体跟踪只确定唯一任务上下文，不证明任何候选任务节点写入了该阶段",
       relationQuestProgressLockedInteractive: "每个播放实例都由精确的交互实体事件路径触发；该实体的强类型进度锁等待此任务达到已完成状态（仅为本地上下文，不证明剧情归属，也不证明任务激活、播放或完成因果）",
@@ -787,6 +790,7 @@
       triggerDependency: "\u4ec5\u4f9d\u8d56",
       triggerUnresolved: "\u89e6\u53d1\u5df2\u77e5 \u00b7 \u5f52\u5c5e\u672a\u89e3\u6790",
       triggerPlaybackAlias: "\u6839\u64ad\u653e\u522b\u540d \u00b7 \u5f52\u5c5e\u672a\u89e3\u6790",
+      triggerPlaybackAliasConnected: "\u6839\u64ad\u653e\u522b\u540d \u00b7 \u5f52\u5c5e\u5df2\u8fde\u63a5",
       triggerDefinition: "\u4ec5\u5b9a\u4e49 \u00b7 \u65e0\u6d88\u8d39\u8005",
       rejectedPlaybackCandidate: "\u5df2\u62d2\u7edd\u7684\u64ad\u653e\u5019\u9009",
       rejectedPlaybackBoundary: "\u4e8c\u8fdb\u5236\u5df2\u8bc1\u8fb9\u754c \u00b7 \u4e0d\u751f\u6210\u56fe\u8fb9",
@@ -1496,6 +1500,7 @@
       spawner_config_authored_mission_context: "relationSpawnerConfigMission",
       hp_spawner_config_authored_mission_context: "relationHpSpawnerConfigMission",
       mission_global_var_native_playback_context: "relationMissionGlobalVarPlayback",
+      cutscene_root_playback_alias_composed: "relationRootPlaybackAliasComposed",
       npc_proxy_wait_native_playback_context: "relationNpcReadyPlayback",
       npc_proxy_target_native_playback_context: "relationNpcTargetPlayback",
       npc_proxy_segment_levelscript_mission_context: "relationNpcProxySegmentShell",
@@ -1829,6 +1834,7 @@
       dependency: "triggerDependency",
       playback_owner_unresolved: "triggerUnresolved",
       playback_alias_owner_unresolved: "triggerPlaybackAlias",
+      playback_alias_owner_connected: "triggerPlaybackAliasConnected",
       definition_only: "triggerDefinition",
     })[causality] || "triggerContext");
   }
@@ -1947,8 +1953,52 @@
     </a>`;
   }
 
+  function composedRootPlaybackAliasRowsForMission() {
+    const missionId = String(
+      state.missionId || state.mission?.mission?.id || "",
+    );
+    const manifest = state.index?.storyCoverage?.storyTriggerManifest || {};
+    const rows = [];
+    Object.values(manifest).forEach((entry) => {
+      (entry?.routes || []).forEach((route) => {
+        if (
+          route?.causality !== "playback_alias_owner_connected"
+          || route.ownerStatus !== "connected"
+          || route.missionId !== missionId
+        ) return;
+        rows.push({
+          key: route.storyKey,
+          relation: route.relation,
+          direction: route.direction,
+          confidence: route.confidence,
+          nativeActions: route.actionNames || [],
+          nativeEventNames: route.eventNames || [],
+          scriptIds: route.scriptIds || [],
+          source: (route.sourceFiles || []).join("; "),
+        });
+      });
+    });
+    return rows;
+  }
+
+  function missionUnassignedStoryKeys() {
+    const connectedAliasKeys = new Set(
+      composedRootPlaybackAliasRowsForMission().map((row) => row.key),
+    );
+    return (state.localized?.flow?.unlinked || [])
+      .filter((key) => key && !connectedAliasKeys.has(key));
+  }
+
   function missionStoryConnectionsHtml() {
-    const rows = (state.localized?.flow?.missionStoryConnections || []).filter((row) => row && row.key);
+    const unique = new Map();
+    [
+      ...(state.localized?.flow?.missionStoryConnections || []),
+      ...composedRootPlaybackAliasRowsForMission(),
+    ].filter((row) => row && row.key).forEach((row) => {
+      const signature = `${row.key}\u0000${row.relation || ""}`;
+      if (!unique.has(signature)) unique.set(signature, row);
+    });
+    const rows = [...unique.values()];
     if (!rows.length) return "";
     const acceptRows = rows.filter((row) => row.relation === "mission_accept_dialog");
     const contextRows = rows.filter((row) => row.relation !== "mission_accept_dialog");
@@ -2140,7 +2190,7 @@
 
   function unassignedStoryHtml() {
     const nonMissionContent = nonMissionContentByKey();
-    const allKeys = (state.localized?.flow?.unlinked || []).filter(Boolean);
+    const allKeys = missionUnassignedStoryKeys();
     // Table-proven non-mission content is reported as its own class rather than
     // sitting in the unassigned queue: no mission can ever own those rows.
     const nonMissionRows = allKeys
@@ -2349,7 +2399,7 @@
       [row.fanoutCount || 0, t("branches")],
       [(row.multiPrevJoinCount || 0) + (row.activeJoinCount || 0), t("join")],
       [row.exactFinishCount || 0, t("exactFinishes")],
-      [state.localized?.flow?.unlinked?.length || 0, t("unassignedStory")],
+      [missionUnassignedStoryKeys().length, t("unassignedStory")],
     ];
     if (state.mission.runtimeTrace) metrics.push([
       state.mission.runtimeTrace.storyObservationCount || 0,

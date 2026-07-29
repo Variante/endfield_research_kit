@@ -357,7 +357,12 @@ Mission Pipeline consumes the compact alias rows only when the report schema,
 native mapping and binary hashes, object-index stage signature, and latest
 export source fingerprints all remain current. It publishes the exact
 CutsceneRoot-to-native-action-to-Story chain as an ownership-unresolved debug
-route and corpus count without changing connected/unlinked coverage.
+route and corpus count. A second, narrower composition is admitted only when
+an independently connected owner route already terminates at that exact root
+and contains a native playback action. That composition extends owner context
+to the played TimelineAsset without creating Story chronology. On the current
+export this recovers only `cutscene_gm02m4_1`; condition/dependency routes and
+the other three aliases remain non-owning.
 
 The guide-consumer audit scans the same current, source-fingerprint-validated
 merged index for exact typed `GuideRuntimeAsset` managed references. It accepts

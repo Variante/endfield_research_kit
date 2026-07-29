@@ -198,7 +198,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # preserves their dialog playback context as non-owning evidence.
 # v15 adds freshness-checked CutsceneRoot playback-alias routes while
 # preserving their explicit mission-owner and chronology gaps.
-SCHEMA_VERSION = 15
+# v16 composes an alias with an independently connected root playback route;
+# the composition recovers owner context without creating Story chronology.
+SCHEMA_VERSION = 16
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -3403,6 +3405,87 @@ def build_story_trigger_route(
     }
 
 
+def build_composed_root_playback_alias_route(
+    alias: dict[str, Any],
+    root_route: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Compose an owned root playback route with one exact playback alias.
+
+    The root route must already terminate at the alias's root Story key and
+    contain a native playback action. This excludes condition/dependency-only
+    attachments and keeps a standalone alias non-owning.
+    """
+    root_key = str(alias.get("rootStoryKey") or "")
+    playable_key = str(alias.get("playableAssetStoryKey") or "")
+    steps = root_route.get("steps")
+    if (
+        not root_key
+        or not playable_key
+        or root_key == playable_key
+        or root_route.get("ownerStatus") != "connected"
+        or not root_route.get("missionId")
+        or not isinstance(steps, list)
+        or not steps
+        or not any(
+            isinstance(step, dict) and step.get("kind") == "native_action"
+            for step in steps
+        )
+        or not isinstance(steps[-1], dict)
+        or steps[-1].get("kind") != "story"
+        or steps[-1].get("id") != root_key
+    ):
+        return None
+
+    composed_steps = [
+        dict(step)
+        for step in steps
+        if isinstance(step, dict)
+    ]
+    composed_steps[-1]["kind"] = "story_root"
+    composed_steps.extend([
+        {
+            "kind": "native_action",
+            "id": "CutsceneRoot._director -> TimelineHandle.Play",
+        },
+        {
+            "kind": "story",
+            "id": playable_key,
+        },
+    ])
+    return {
+        **root_route,
+        "storyKey": playable_key,
+        "relation": "cutscene_root_playback_alias_composed",
+        "causality": "playback_alias_owner_connected",
+        "confidence": (
+            "exact_connected_root_playback_plus_serialized_director_alias"
+        ),
+        "evidenceTier": "native_serialized_composed_exact",
+        "rootStoryKey": root_key,
+        "rootBaseRelation": str(root_route.get("relation") or ""),
+        "rootBaseCausality": str(root_route.get("causality") or ""),
+        "aliasRelation": str(alias.get("relation") or ""),
+        "nativeMappingId": str(alias.get("nativeMappingId") or ""),
+        "auditReport": str(alias.get("evidenceReport") or ""),
+        "sourceFiles": _unique_route_strings(
+            root_route.get("sourceFiles"),
+            (alias.get("directorObject") or {}).get("source"),
+            alias.get("evidenceReport"),
+        ),
+        "questTriggerStatus": (
+            "connected_root_native_playback_composed_with_exact_alias"
+        ),
+        "note": (
+            "An independently connected native playback route terminates at "
+            "this exact CutsceneRoot Story key. Its resolved _director PPtr "
+            "and the current TimelineHandle.Play path execute the target "
+            "TimelineAsset. This composes owner context, not relative Story "
+            "order."
+        ),
+        "steps": composed_steps,
+    }
+
+
 def load_missionless_subgames_by_script(
     table_path: Path | None,
 ) -> dict[str, list[dict[str, Any]]]:
@@ -4287,6 +4370,50 @@ def build_story_binding_coverage(
                     owner_status="unresolved",
                 ))
 
+    composed_root_playback_alias_rows: list[dict[str, Any]] = []
+    composed_route_signatures: set[str] = set()
+    for alias in root_playback_alias_rows:
+        root_key = alias["rootStoryKey"]
+        playable_key = alias["playableAssetStoryKey"]
+        for root_route in list(
+            story_trigger_routes.get(root_key, {}).values()
+        ):
+            composed_route = build_composed_root_playback_alias_route(
+                alias,
+                root_route,
+            )
+            if composed_route is None:
+                continue
+            signature = json.dumps(
+                composed_route,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            if signature in composed_route_signatures:
+                continue
+            composed_route_signatures.add(signature)
+            add_trigger_route(composed_route)
+            connected_keys.add(playable_key)
+            mission_id = str(composed_route["missionId"])
+            connected_by_mission[mission_id].add(playable_key)
+            relation_counts[composed_route["relation"]] += 1
+            evidence_tier = str(composed_route["evidenceTier"])
+            evidence_tier_counts[evidence_tier] += 1
+            connected_keys_by_evidence_tier[evidence_tier].add(
+                playable_key
+            )
+            evidence_row_count += 1
+            composed_root_playback_alias_rows.append({
+                "rootStoryKey": root_key,
+                "playableAssetStoryKey": playable_key,
+                "missionId": mission_id,
+                "questId": composed_route.get("questId"),
+                "rootBaseRelation": composed_route["rootBaseRelation"],
+                "rootBaseCausality": composed_route["rootBaseCausality"],
+                "nativeMappingId": composed_route["nativeMappingId"],
+            })
+
     unlinked = [row for key, row in story_rows.items() if key not in connected_keys]
     unlinked.sort(key=lambda row: (natural_quest_key(row["missionId"]), row["kind"], natural_quest_key(row["key"])))
     definition_only_classification = classify_definition_only_current_build_consumers(
@@ -4450,6 +4577,12 @@ def build_story_binding_coverage(
                 for row in root_playback_alias_rows
             }),
             "rootPlaybackAliasRows": len(root_playback_alias_rows),
+            "composedRootPlaybackAliasFiles": len({
+                row["playableAssetStoryKey"]
+                for row in composed_root_playback_alias_rows
+            }),
+            "composedRootPlaybackAliasRows":
+                len(composed_root_playback_alias_rows),
             "rejectedStoryPlaybackCandidates": sum(
                 len(rows)
                 for key, rows in rejected_playback_by_key.items()
@@ -4522,6 +4655,8 @@ def build_story_binding_coverage(
         ),
         "storyTriggerManifest": story_trigger_manifest,
         "rootPlaybackAliases": root_playback_alias_rows,
+        "composedRootPlaybackAliases":
+            composed_root_playback_alias_rows,
         "missionStateDependencyCrossOwnerStoryKeys": sorted(
             mission_state_dependency_cross_owner_keys,
             key=natural_quest_key,
@@ -4604,6 +4739,8 @@ def build_story_binding_coverage(
         f"- Unlinked Story files with a known trigger/context route: `{counts['unlinkedStoryFilesWithTriggerRoutes']}`",
         f"- Exact root playback alias rows: `{counts['rootPlaybackAliasRows']}`",
         f"- TimelineAsset Story files reached by those aliases: `{counts['rootPlaybackAliasFiles']}`",
+        f"- Alias rows composed with an independently connected root playback route: `{counts['composedRootPlaybackAliasRows']}`",
+        f"- Story files connected by that composition: `{counts['composedRootPlaybackAliasFiles']}`",
         f"- Non-owning mission-state dependency Story files: `{counts['missionStateDependencyStoryFiles']}`",
         f"- Dependency-only Story files whose nominal owner is outside the pipeline: `{counts['missionStateDependencyCrossOwnerStoryFiles']}`",
         f"- Non-owning mission-state dependency placements: `{counts['missionStateDependencyPlacements']}`",
@@ -6121,6 +6258,8 @@ def main() -> int:
             "storyTriggerManifest": coverage["storyTriggerManifest"],
             "rootPlaybackAliases":
                 coverage.get("rootPlaybackAliases") or [],
+            "composedRootPlaybackAliases":
+                coverage.get("composedRootPlaybackAliases") or [],
             "nonMissionContentKeys": coverage.get("nonMissionContentKeys") or [],
             "missionlessSubGamePlaybackNodes": coverage["missionlessSubGamePlaybackNodes"],
             "missionlessNativeRuntimeNodes": coverage["missionlessNativeRuntimeNodes"],
