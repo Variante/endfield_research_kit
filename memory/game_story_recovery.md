@@ -3464,6 +3464,48 @@ progress needs a genuinely different producer surface that co-carries one of
 the root identities with a mission, quest, level event, phase, or runtime
 control owner.
 
+#### CompressData is a deduplicated AI BehaviourTree pool, not a selector
+
+The adjacent `CompressData.bin` raw-byte negative has now been replaced by a
+complete logical decode. On the hash-gated current binary,
+`Beyond.DataCompressManager._GetSpanByIndex` (token `0x06000c54`, method index
+`295609`, VA `0x183115640`) bounds-checks the supplied index, reads the
+record's absolute offset, then reads `compressedLength` and `originalLength`
+before returning the payload at `+8`. `GetCompressBinary` (token
+`0x06000c4f`, VA `0x186893790`) calls `BrotliDecoder.Decompress`, and
+`Compress` (token `0x06000c58`, VA `0x186893468`) calls
+`BrotliEncoder.Compress`.
+
+The maintained `build_compress_data_story_audit.py` validates all 290 records
+in the 789,844-byte file (SHA-256
+`64CF8201577FA24E4B462CB6794A95574E3AC22DA8EC7B33F443593A1FBDA141`).
+Every compressed length matches its physical record, every Brotli result
+matches its original length, and all 15,960,452 decoded bytes form valid
+UTF-16LE JSON. Every logical root is exactly
+`NodeCanvas.BehaviourTrees.BehaviourTree`; the dominant class namespaces are
+NodeCanvas and `Beyond.Gameplay.AI`.
+
+The consumer side is equally complete. Across 1,337,486 published object-index
+rows, 570 typed BehaviourTree assets exist. Their exact AnimeStudio JSON proves
+that 569 enable `_enableGraphStringCompress` and select records through
+`_serializedGraphStringIndex`; one small control asset keeps inline JSON.
+Those 569 assets consume all `0..289` pool indexes with zero missing indexes.
+Two hundred sixty-nine indexes are intentionally shared by multiple assets,
+so this is a deduplicated immutable graph pool rather than a one-object/one-row
+table.
+
+The decompressed logical corpus contains zero Story-prefix tokens and zero
+mission, quest, LevelScript, or Story terms. None of the 570 carrier asset
+names equals any of the current actionable source-gap Story keys. Thus
+`CompressData.bin` adds no upstream selector, mission owner, or Story-order
+edge. This closes the current file as an encoded Story-carrier lead rather
+than merely as a raw-byte search. It does not classify other ExtendData files,
+runtime-added compression records, server state, or future builds. Reproduce
+the result in
+`reports/story/recovery/compress_data_story_audit.{json,md}`; its decoder
+requires the Python `brotli` module and remains outside normal stdlib-only
+export paths.
+
 #### Transition-manager and played-Timeline event surfaces are not owners
 
 The remaining native transition-manager surface is now bounded. Current

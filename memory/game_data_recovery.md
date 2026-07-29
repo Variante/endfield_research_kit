@@ -260,6 +260,33 @@ supplies no mission/quest identity. Selected world-streaming chunks and
 `ExtendData/CompressData.bin` likewise contain no exact cold black Story ids;
 these negative probes must not be promoted into ownership.
 
+`CompressData.bin` is no longer an opaque/raw-byte negative. The current
+789,844-byte file (SHA-256
+`64CF8201577FA24E4B462CB6794A95574E3AC22DA8EC7B33F443593A1FBDA141`)
+has an exact validated layout:
+
+```text
+recordCount:uint32
+absoluteOffsets:uint32[recordCount]
+record[recordCount]:
+    compressedLength:uint32
+    originalLength:uint32
+    brotliPayload:byte[compressedLength]
+```
+
+`DataCompressManager._GetSpanByIndex` reads this exact offset plus
+length-pair shape, `GetCompressBinary` calls `BrotliDecoder.Decompress`, and
+the runtime writer calls `BrotliEncoder.Compress`. All 290 current records
+decode to valid UTF-16LE JSON totaling 15,960,452 bytes, and every root object
+is `NodeCanvas.BehaviourTrees.BehaviourTree`. The serialized join is
+`_enableGraphStringCompress` plus `_serializedGraphStringIndex`: 569 typed
+BehaviourTree assets consume all 290 pool indexes, with shared indexes
+representing deliberate deduplication; one small control asset retains inline
+JSON. The pool is therefore AI behavior configuration, not a general opaque
+registry. See
+`reports/story/recovery/compress_data_story_audit.{json,md}` for the exact
+record/object map. Other ExtendData files remain separate evidence surfaces.
+
 Do not infer that a VFS block is irrelevant merely because the normal WebUI
 export skips it. Promote it only when a bounded decoder or query need justifies
 the cost.
