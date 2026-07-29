@@ -2834,6 +2834,29 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             dialog["npcProxyConsumer"]["entry"],
         )
 
+    def test_declared_e5m4_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E5M4_RADIOS,
+            {"radio_e5m4_1", "radio_e5m4_1d5", "radio_e5m4_2"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS,
+            {
+                "radio_e5m4_1": {
+                    f"au_radio_e5m4_1_{number:03d}"
+                    for number in range(1, 5)
+                },
+                "radio_e5m4_1d5": {
+                    f"au_radio_e5m4_1d5_{number:03d}"
+                    for number in range(1, 4)
+                },
+                "radio_e5m4_2": {
+                    f"au_radio_e5m4_2_{number:03d}"
+                    for number in range(1, 4)
+                },
+            },
+        )
+
     def test_exact_lua_controller_playback_closes_isolated_cutscene(
         self,
     ) -> None:

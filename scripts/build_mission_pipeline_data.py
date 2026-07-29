@@ -198,7 +198,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v63"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v64"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3010,6 +3010,21 @@ def repo_path(path: Path) -> str:
     return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
 
 
+def offline_story_kind(story_key: str) -> str:
+    """Preserve the Story kind for denominator-neutral recovery overlays."""
+    if story_key.startswith("radio_"):
+        return "radio"
+    if story_key.startswith("cutscene_"):
+        return "cutscene"
+    if story_key.startswith("sns_"):
+        return "sns"
+    if story_key.startswith("black_"):
+        return "black"
+    if story_key.startswith(("dlg_", "misc_dlg_")):
+        return "dlg"
+    return "text"
+
+
 def publish_offline_story_recovery(
     story_trigger_manifest: dict[str, dict[str, Any]],
     gap_queue_path: Path | None,
@@ -3080,7 +3095,7 @@ def publish_offline_story_recovery(
             else:
                 manifest_overlay[story_key] = {
                     "key": story_key,
-                    "kind": "text",
+                    "kind": offline_story_kind(story_key),
                     "nominalMissionId": str(row.get("missionId") or ""),
                     "attachmentStatus":
                         "offline_exhausted_outside_pipeline_coverage_denominator",

@@ -18,7 +18,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v63",
+            "sourceStoryGapQueue.v64",
         )
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
@@ -59,6 +59,18 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         "reopenWhen": "source changes",
                         "graphEffect": "none",
                         "gameAssemblySha256": "fixture",
+                    }, {
+                        "sceneKey": "radio_testm1_1",
+                        "missionId": "testm1",
+                        "recoveryStatus":
+                            "deferred_current_build_offline_surface_exhausted",
+                        "evidenceKind":
+                            "radio_definition_without_recovered_consumer",
+                        "consumerBoundary": "no exact activator",
+                        "orderBoundary": "definition order is not chronology",
+                        "reopenWhen": "source changes",
+                        "graphEffect": "none",
+                        "gameAssemblySha256": "fixture",
                         }],
                     }],
                 }),
@@ -78,7 +90,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
-        self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 1)
+        self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 2)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
             "definition_only_no_consumer",
@@ -93,6 +105,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             overlay["attachmentStatus"],
             "offline_exhausted_outside_pipeline_coverage_denominator",
         )
+        radio_overlay = result["storyTriggerManifestOverlay"][
+            "radio_testm1_1"
+        ]
+        self.assertEqual(radio_overlay["kind"], "radio")
+        self.assertEqual(radio_overlay["routes"], [])
 
     def test_offline_story_recovery_fails_closed_on_schema_mismatch(self):
         with tempfile.TemporaryDirectory() as temporary:
