@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v37"
+SCHEMA = "sourceStoryGapQueue.v38"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v16"
+    "current-build-offline-story-carrier-exhaustion-v17"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -702,6 +702,53 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
         ),
         "optionIds": ("option_dlg_e7m3_16_1_001",),
     },
+    "dlg_e11m8_9": {
+        "missionId": "e11m8",
+        "filename": "dlg_e11m8_9_p2B015B8998EBB34F.json",
+        "sha256":
+            "AD30F62C0FCC7C8412EF56AF9B765B3209444D2B7DAB6C39D98BBE28D48916D2",
+        "lineIds": tuple(
+            f"dlg_e11m8_9_{number:03d}"
+            for number in range(1, 33)
+            if number not in {10, 19}
+        ),
+        "optionIds": (
+            "option_dlg_e11m8_9_1_001",
+            "option_dlg_e11m8_9_1_002",
+        ),
+        "missingAudioIds": (
+            "au_dlg_e11m8_9_004",
+            "au_dlg_e11m8_9_007",
+            "au_dlg_e11m8_9_009",
+            "au_dlg_e11m8_9_012",
+            "au_dlg_e11m8_9_015",
+            "au_dlg_e11m8_9_024",
+            "au_dlg_e11m8_9_026",
+            "au_dlg_e11m8_9_029",
+        ),
+        "ownedTimeline": {
+            "timeline": "dlgtl_e11m8_9_sub_1",
+            "sourceFile": "CAB-d4eda23280ba987e1fdf52eb15872d23",
+            "trackPathId": -1012842435443729704,
+            "fullLineIds": (
+                "dlg_e11m8_9_001", "dlg_e11m8_9_014",
+                "dlg_e11m8_9_002", "dlg_e11m8_9_003",
+                "dlg_e11m8_9_004", "dlg_e11m8_9_005",
+                "dlg_e11m8_9_015", "dlg_e11m8_9_016",
+                "dlg_e11m8_9_017", "dlg_e11m8_9_032",
+                "dlg_e11m8_9_006", "dlg_e11m8_9_029",
+                "dlg_e11m8_9_018", "dlg_e11m8_9_007",
+                "dlg_e11m8_9_020", "dlg_e11m8_9_021",
+                "dlg_e11m8_9_030", "dlg_e11m8_9_022",
+                "dlg_e11m8_9_008", "dlg_e11m8_9_023",
+                "dlg_e11m8_9_012", "dlg_e11m8_9_024",
+                "dlg_e11m8_9_013", "dlg_e11m8_9_025",
+                "dlg_e11m8_9_009", "dlg_e11m8_9_026",
+                "dlg_e11m8_9_011", "dlg_e11m8_9_027",
+                "dlg_e11m8_9_028", "dlg_e11m8_9_031",
+            ),
+        },
+    },
     "dlg_e6m3_6": {
         "missionId": "e6m3",
         "filename": "dlg_e6m3_6_p5CAF49EFDB182127.json",
@@ -948,6 +995,16 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
             f"au_dlg_e10m3_12_{number:03d}" for number in range(1, 17)
         ),
     },
+    "dlg_e11m8_13": {
+        "missionId": "e11m8",
+        "lineIds": ("dlg_e11m8_13_001",),
+        "missingAudioIds": (),
+    },
+    "dlg_e11m8_14": {
+        "missionId": "e11m8",
+        "lineIds": ("dlg_e11m8_14_001",),
+        "missingAudioIds": (),
+    },
 }
 OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS = frozenset({
     "actorName",
@@ -1095,6 +1152,7 @@ OFFLINE_EXHAUSTION_E7M3_RADIOS = frozenset({
     "radio_e7m3_16",
     "radio_e7m3_26",
 })
+OFFLINE_EXHAUSTION_E11M8_RADIOS = frozenset({"radio_e11m8_5"})
 OFFLINE_EXHAUSTION_E3M3_RADIOS = frozenset({
     "radio_e3m3_1d5",
     "radio_e3m3_1d7",
@@ -1127,6 +1185,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e11m4": OFFLINE_EXHAUSTION_E11M4_RADIOS,
     "e11m5": OFFLINE_EXHAUSTION_E11M5_RADIOS,
     "e11m6": OFFLINE_EXHAUSTION_E11M6_RADIOS,
+    "e11m8": OFFLINE_EXHAUSTION_E11M8_RADIOS,
 }
 OFFLINE_EXHAUSTION_MISSING_AUDIO_IDS = {
     "radio_e0m0_10": frozenset({
@@ -2018,15 +2077,23 @@ def build_offline_exhaustion_index(
             for line_id in expected_line_ids
             if isinstance(dialog_text_table.get(line_id), dict)
         )
-        expected_missing_audio_ids = tuple(
+        expected_audio_ids = tuple(
+            definition.get("audioIds")
+            or tuple(f"au_{line_id}" for line_id in expected_line_ids)
+        )
+        expected_missing_audio_ids = set(
             definition["missingAudioIds"]
         )
+        actual_missing_audio_ids = set(line_audio_ids) - audio_stems
         if (
             actual_line_ids != expected_line_ids
             or len(line_audio_ids) != len(expected_line_ids)
             or not all(line_audio_ids)
-            or line_audio_ids != expected_missing_audio_ids
-            or set(line_audio_ids) & audio_stems
+            or line_audio_ids != expected_audio_ids
+            or actual_missing_audio_ids != expected_missing_audio_ids
+            or not (
+                set(line_audio_ids) - expected_missing_audio_ids
+            ) <= audio_stems
             or any(
                 set(dialog_text_table[line_id])
                 != OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS
@@ -2043,6 +2110,10 @@ def build_offline_exhaustion_index(
         text_only_dialog_validation_by_key[story_key] = {
             "lineIds": list(expected_line_ids),
             "audioIds": list(line_audio_ids),
+            "missingAudioIds": sorted(
+                actual_missing_audio_ids,
+                key=natural_key,
+            ),
         }
     if not text_only_dialog_definitions_valid:
         status["status"] = (
@@ -2390,8 +2461,17 @@ def build_offline_exhaustion_index(
             "definitionTable": "DialogTextTable",
             "lineIds": validation["lineIds"],
             "audioIds": validation["audioIds"],
-            "audioMembershipStatus":
-                "all_current_audio_dialog_ids_missing",
+            "missingAudioIds": validation["missingAudioIds"],
+            "audioMembershipStatus": (
+                "all_current_audio_dialog_ids_missing"
+                if len(validation["missingAudioIds"])
+                == len(validation["audioIds"])
+                else (
+                    "partial_current_audio_dialog_missing_ids"
+                    if validation["missingAudioIds"]
+                    else "present_current_audio_dialog"
+                )
+            ),
             "dialogIdRegistrationStatus": "absent",
             "dialogTreeAssetStatus": "absent",
             "timelineStatus": "absent",
