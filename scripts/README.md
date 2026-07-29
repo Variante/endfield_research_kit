@@ -2384,6 +2384,24 @@ gameplay-video OCR/audio workflow.
   does not rule out transformed nested identities, runtime/server construction,
   or future data, and never creates ownership or order from world-file
   co-location.
+- `story_recovery/build_dynamic_scene_mission_control_audit.py`: streams the
+  current effective `DynamicStreaming` `fb_main` files and decodes the typed
+  `RootComp -> IdComp / MissionControlComp -> MissionCondition` spine. It joins
+  an exact numeric `IdComp.logicId` to exported LevelScript file ids and lists
+  matching Story playback occurrences, but classifies the result as a
+  cross-system candidate rather than a runtime owner: native DynamicScene and
+  LevelScript lookups use separate registries, and no direct bridge has been
+  recovered. Results go to
+  `reports/story/recovery/dynamic_scene_mission_control_audit.{json,md}`:
+
+  ```bat
+  python scripts\story_recovery\build_dynamic_scene_mission_control_audit.py
+  ```
+
+  The audit is deliberately standalone and never adds mission ownership or
+  Story order. Use `--input` only to replay a prepared AnimeStudio stream
+  JSONL; the default reads the installed Persistent overlay with
+  StreamingAssets fallback.
 - `story_recovery/build_compress_data_story_audit.py`: replaces the raw-byte
   `CompressData.bin` probe with a full logical decode. It hash-gates the current
   `DataCompressManager` native mapping, validates the count/absolute-offset
