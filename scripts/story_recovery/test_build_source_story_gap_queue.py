@@ -2078,6 +2078,120 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_exact_cross_mission_leveldata_playback_closes_story_gap(
+        self,
+    ) -> None:
+        story_key = "radio_e2m7_11"
+        occurrence = {
+            "levelId": "dung02_dg003",
+            "scriptId": "29800030004",
+            "sourceFile": "LevelScriptData/dung02_dg003/29800030004.json",
+            "actionMapRole": "actionList#45 linked",
+            "actionCode": "0x0363",
+            "actionKind": "0x0d",
+            "localId": 60,
+            "actionName": "PlayRadio",
+            "recordClass": "play_radio",
+            "nativeMappingId": "gameassembly-test-actionbase",
+            "allStoryKeysInRecord": [story_key],
+            "nativeEventOwnerStatus": "exact_serialized_control_path",
+            "nativeEventOwners": [{
+                "status": "exact_serialized_control_path",
+                "headerName": "LevelEvent_OnBattleSignal",
+                "headerLocalId": 57,
+                "eventDetail": {
+                    "summary": "battle signal radio_0079_07_boss_4",
+                },
+                "path": [
+                    {"localId": 58},
+                    {
+                        "localId": 60,
+                        "actionName": "PlayRadio",
+                        "recordClass": "play_radio",
+                    },
+                ],
+            }],
+            "levelDataHosts": [{
+                "missionId": "e9m3",
+                "levelId": "dung02_dg003",
+                "scriptId": "29800030004",
+                "levelDataFile": "LevelData/dung02_dg003/e9m3.json",
+                "encoding": "leveldata_member22_levelscriptbriefdata",
+                "nativeSchema": (
+                    "LevelData/43.member22:"
+                    "Dictionary<u64,LevelScriptBriefData/8>"
+                ),
+                "briefData": [{"scriptId": "29800030004"}],
+            }],
+            "scopeEvidenceKinds": [
+                "mission_leveldata_member22_contains_validated_"
+                "levelscript_brief",
+            ],
+        }
+        connection = {
+            "key": story_key,
+            "kind": "radio",
+            "relation": "leveldata_levelscript_mission_context",
+            "direction": "context",
+            "phase": "context",
+            "confidence": "native_exact_host",
+            "storyOwnerMission": "e2m7",
+            "levelDataHostMissionId": "e9m3",
+            "questTriggerStatus": "unresolved",
+            "occurrenceCount": 1,
+            "allOccurrenceCount": 1,
+            "hasUnscopedOrOtherMissionOccurrences": False,
+            "nativeActions": ["PlayRadio"],
+            "opcodes": ["0x0363/0x0d"],
+            "levelIds": ["dung02_dg003"],
+            "scriptIds": ["29800030004"],
+            "sourceFiles": [
+                "LevelScriptData/dung02_dg003/29800030004.json",
+            ],
+            "levelDataFiles": ["LevelData/dung02_dg003/e9m3.json"],
+            "levelScriptOccurrences": [occurrence],
+        }
+        partial = partial_mission(
+            "e2m7",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        report = gap_queue.build_gap_report(
+            {
+                "_schema": "partial",
+                "language": "CN",
+                "missions": [partial],
+            },
+            {
+                "e2m7": mission_payload(),
+                "e9m3": mission_payload(connections=[connection]),
+            },
+            {"e2m7", "e9m3"},
+        )
+
+        row = report["missions"][0]
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        closure = row["closedExactNativeIsolatedScenes"][0]
+        self.assertEqual(closure["sceneKey"], story_key)
+        self.assertEqual(
+            closure["recoveryStatus"],
+            "closed_exact_native_event_path_no_relative_order",
+        )
+        self.assertEqual(
+            closure["nativeEventPaths"][0]["headerName"],
+            "LevelEvent_OnBattleSignal",
+        )
+
+        invalid = dict(connection)
+        invalid["confidence"] = "derived"
+        self.assertFalse(
+            gap_queue._exact_cross_owner_leveldata_story_context(
+                invalid,
+                "e2m7",
+                "e9m3",
+            )
+        )
+
     def test_dialog_finish_dependency_requires_exact_typed_source(self) -> None:
         partial = partial_mission(
             "e9m2",
@@ -2349,7 +2463,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
-    def test_declared_dialog_deferrals_preserve_shared_timeline_boundary(
+    def test_declared_dialog_definitions_preserve_shared_timeline_boundary(
         self,
     ) -> None:
         self.assertEqual(
@@ -2394,6 +2508,14 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m8_9",
             },
         )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS,
+            {
+                "dlg_e10m3_9",
+                "dlg_e11m5_9",
+                "dlg_e11m8_9",
+            },
+        )
         shared = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
             "dlg_e11m6_9"
         ]["sharedTimeline"]
@@ -2418,12 +2540,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "radio_e1m3_3",
                 "radio_e1m3_4",
                 "radio_e1m3_7",
-                "radio_e1m3_13",
-                "radio_e1m3_13d5",
-                "radio_e1m3_13d7",
                 "radio_e1m3_18",
-                "radio_e1m3_32",
-                "radio_e1m3_34",
             },
         )
         self.assertEqual(
@@ -2623,6 +2740,16 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             7,
         )
 
+    def test_declared_e2m7_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E2M7_RADIOS,
+            {
+                "radio_e2m7_9",
+                "radio_e2m7_10",
+                "radio_e2m7_16",
+            },
+        )
+
     def test_declared_e2m5_offline_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E2M5_RADIOS,
@@ -2780,7 +2907,6 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "radio_e7m2_2",
                 "radio_e7m2_9",
                 "radio_e7m2_12",
-                "radio_e7m2_14",
                 "radio_e7m2_18",
             },
         )
@@ -2806,7 +2932,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS)
             & {"text_e7m2_2", "text_e7m2_3"},
-            {"text_e7m2_2", "text_e7m2_3"},
+            {"text_e7m2_2"},
         )
 
     def test_declared_e3m3_offline_frontier_is_exact(self) -> None:
@@ -2887,9 +3013,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
 
     def test_declared_e10m3_partial_frontier_is_exact(self) -> None:
-        self.assertEqual(
-            gap_queue.OFFLINE_EXHAUSTION_E10M3_RADIOS,
-            {"radio_e10m3_10"},
+        self.assertNotIn(
+            "e10m3",
+            gap_queue.OFFLINE_EXHAUSTION_RADIOS_BY_MISSION,
         )
         owned = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
             "dlg_e10m3_9"
@@ -2979,9 +3105,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e6m3_1",
                 "text_e6m3_4",
                 "text_e7m2_2",
-                "text_e7m2_3",
                 "text_e7m3_1",
-                "text_e7m3_2",
                 "text_e7m4_1",
                 "text_e10m3_4",
                 "text_e10m3_6",

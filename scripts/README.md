@@ -686,7 +686,7 @@ Expected active inputs and outputs:
   The builder also projects the active exact negative-evidence boundary from
   `reports/mission_order/source_story_gap_queue_CN.json` into
   `storyTriggerManifest[*].offlineRecovery`. It accepts only
-  `sourceStoryGapQueue.v51` with matching source hashes and `graphEffect=none`,
+  `sourceStoryGapQueue.v52` with matching source hashes and `graphEffect=none`,
   never changes an existing attachment status, and never adds a route. The nine
   ReadingPopup `text_*` keys outside the coverage denominator are published in
   the separate `offlineRecoveryEvidence.storyTriggerManifestOverlay`, each with
@@ -2011,17 +2011,20 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v51` evaluates 203 residual radio definitions, 27 root
-  cutscene carriers, 35 registered dialog definitions, nine exact NpcProxy
+  `sourceStoryGapQueue.v52` evaluates 286 active declarations: 199 residual
+  radio definitions, 27 root cutscene carriers, 34 registered dialog
+  definitions, nine exact NpcProxy
   dialog consumers without a mission owner, eight exact
-  DialogTextTable-only/no-registry groups, twelve exact
+  DialogTextTable-only/no-registry groups, ten exact
   ReadingPopUp/RichContent definitions, two exact SNS dialog definitions, four
   text-only cutscenes (including two e2m5 rows), and two TextTable-only black narrative
   definitions across
-  `e0m0`, `e1m2`, `e1m3`, `e2m4`, `e2m5`, `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e9m3`, `e10m1`, `e10m3`, `e10m4`,
-  `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 191 radio definitions;
-  two close through strict exact native mission/playback context, and three
-  through strict exact runtime configuration. This includes seven bounded `e1m3`
+  `e0m0`, `e1m2`, `e1m3`, `e2m4`, `e2m5`, `e2m6`, `e2m7`,
+  `e3m3`, `e5m1`, `e5m2`, `e6m1`, `e6m3`, `e6m4`, `e7m2`,
+  `e7m3`, `e7m4`, `e9m2`, `e9m3`, `e10m1`, `e10m3`, `e10m4`,
+  `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`.
+  Positive native/runtime contexts are excluded from these declarations.
+  This includes four bounded `e1m3`
   radio definitions, its canonical misc-dialog definition and one-host
   Timeline root; `radio_e1m3_13` instead closes through an exact mission-state
   radio-trigger-zone carrier, and `radio_e1m3_32` through an exact local
@@ -2029,8 +2032,8 @@ gameplay-video OCR/audio workflow.
   tracking. Neither context supplies relative Story order. It includes all
   seven residual e9m3 radios; exact-prefix collisions with the typed
   `_30` and `_31` playback actions do not count as consumers of
-  `radio_e9m3_3`. It also includes all five e7m2 radios, two registered
-  dialogs, two ReadingPopUp/RichContent
+  `radio_e9m3_3`. It also includes four e7m2 radios, two registered
+  dialogs, one ReadingPopUp/RichContent
   definitions, and the one-host registry-id-406 designer cutscene; all eight
   e3m3 radios plus two registered dialogs, preserving the 18-line/four-option
   `dlg_e3m3_12` definition without inventing an option route; three e0m0
@@ -2123,6 +2126,17 @@ gameplay-video OCR/audio workflow.
   its later pushback `GameAction.PlayRadio` callback, and `_21` through
   `FocusModeInstanceTable.radioIdInteractLocked`. These remain context, not
   ownership or relative Story order.
+  e2m7 adds three audio-complete RadioTable definitions (`_9`, `_10`, and
+  `_16`) with no exact typed carrier. Its other two residual files close
+  positively through exact foreign mission-shell playback paths:
+  `cutscene_e2m7_1` is played by e2m6 LevelScript `3500010027` from Leader
+  trigger slot `80001`, and `radio_e2m7_11` by e9m3 LevelScript
+  `29800030004` from battle signal `radio_0079_07_boss_4`.
+  The queue imports this `leveldata_levelscript_mission_context` class only
+  when the complete current-build LevelData host, action record, Story key,
+  native mapping, event-to-action path, and foreign mission shell all agree.
+  It proves playback context but neither transfers nominal Story ownership
+  nor orders the file inside its filename-named mission.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
   e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`

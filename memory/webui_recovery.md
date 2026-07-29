@@ -286,13 +286,13 @@ Mission Pipeline:
   `PlayRadio`.
 - The same manifest now carries fail-closed `offlineRecovery` annotations from
   `reports/mission_order/source_story_gap_queue_CN.json` only while the queue is
-  schema `sourceStoryGapQueue.v51`, its current-build evidence is active, all
+  schema `sourceStoryGapQueue.v52`, its current-build evidence is active, all
   source hashes match, and `graphEffect=none`. Existing attachment statuses and
   route arrays are left unchanged. The nine ReadingPopup `text_*` keys outside
   the historical coverage denominator are exposed through
   `offlineRecoveryEvidence.storyTriggerManifestOverlay`, with zero routes and
   an explicit denominator-neutral status. The current live projection covers
-  278 manifest keys plus ten overlay keys. The four e5m2 rows retain empty
+  276 manifest keys plus ten overlay keys. The four e5m2 rows retain empty
   route arrays: three exact blank-owner NpcProxy dialog consumers and one
   consumerless RadioTable definition. e7m4 adds three manifest annotations
   plus one denominator-neutral ReadingPopup overlay; its SNS annotation
@@ -304,6 +304,12 @@ Mission Pipeline:
   Its other two residual radios remain connected without `offlineRecovery`:
   `_20` retains exact e6m1d5 AirWall mission-state/playback context and `_21`
   exact e6m1d5 focus-mode locked-interaction context.
+  e2m7 adds three zero-route annotations for `_9`, `_10`, and `_16`.
+  `cutscene_e2m7_1` and `radio_e2m7_11` remain connected without an offline
+  badge through exact e2m6/e9m3 foreign mission-shell playback paths. The same
+  supersession removes old badges from `dlg_e10m3_9`, `dlg_e11m5_9`,
+  `dlg_e11m8_9`, `radio_e1m3_34`, and `radio_e7m2_14`; their route arrays and
+  connected statuses remain unchanged.
   Mission cards display the
   evidence kind, consumer boundary, order boundary, and reopen condition; the
   Story debug row labels them as an exhausted current-build offline carrier

@@ -4306,9 +4306,9 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v51`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v52`
    turns the completed exact `e0m0`, `e1m2`, `e1m3`, `e2m4`, `e2m5`,
-   `e2m6`, `e3m3`, `e5m1`, `e5m2`, `e6m1`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e9m2`, `e9m3`,
+   `e2m6`, `e2m7`, `e3m3`, `e5m1`, `e5m2`, `e6m1`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e9m2`, `e9m3`,
    `e10m1`, `e10m3`, `e10m4`, `e11m1`, `e11m2`, `e11m3`, `e11m4`,
    `e11m5`, `e11m6`, and `e11m8` negative boundaries into fail-closed
    operational deferrals.
@@ -4334,14 +4334,13 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 272 actual
-   isolated-scene deferrals: 191 radios, 27 cutscene roots, 28 registered
-   dialogs, two exact NpcProxy dialog consumers without a mission owner, nine
-   ReadingPopUp definitions, eight DialogTextTable-only groups, one SNS dialog
-   definition, four text-only cutscenes, and two TextTable-only black
-   definitions. The hash-validated declaration set contains 279 rows. Seven
-   declared rows close through stronger exact native/runtime contexts instead:
-   five radios and two ReadingPopup files. Every
+   and reopen automatically if any gate changes. There are now 286 actual
+   isolated-scene deferrals: 199 radios, 27 cutscene roots, 34 registered
+   dialogs (eight dialogs carry nine exact NpcProxy consumers without a mission
+   owner), ten ReadingPopUp definitions, eight DialogTextTable-only groups, two
+   SNS dialog definitions, four text-only cutscenes, and two TextTable-only
+   black definitions. The hash-validated declaration set contains the same 286
+   rows; already-positive native/runtime contexts are excluded. Every
    deferred row has graph effect `none` and contributes
    zero actionable-isolation score while its exact gates remain valid.
    The registered-dialog rows are admitted only while their exact MemoryPack
@@ -4479,7 +4478,7 @@ Current main-story priorities:
    AudioDialog ids while current suffixed voice variants remain present.
    `radio_e5m2_3` is an exact three-line RadioTable definition with complete
    AudioDialog membership. The current carrier audit reports no typed
-   candidate for any of the four keys, so current v51/v30 defers them with graph
+   candidate for any of the four keys, so current v52/v31 defers them with graph
    effect `none`.
    Two narrower quest-attachment diagnostics remain and are not promoted.
    e5m2 q33 checks local LevelScript `10100070004` property `bridge`, but that
@@ -4517,7 +4516,7 @@ Current main-story priorities:
    ReadingPopUp/RichContent definition with two content rows. The generic SNS
    validator is now terminal-id-relative instead of assuming 26 nodes and
    validates per-node media params explicitly. All four keys remain in the
-   current carrier audit's exact no-candidate set, so v51/v30 records
+   current carrier audit's exact no-candidate set, so v52/v31 records
    graph-neutral operational deferrals rather than inferred mission routes.
    e7m4 now scores zero. The main-story bucket is score 492 with 93 actionable
    core isolated rows and 9 strict-attachment diagnostics; e5m1 is the next
@@ -4530,7 +4529,7 @@ Current main-story priorities:
    membership. `NpcProxyExDataTable.data.pelica_base01_lv001_e5m1back[1]`
    selects it, but that exact row's `missionId` is empty. The dialog therefore
    retains NPC-interaction selection with no mission owner, activation time,
-   or order edge. v51/v30 defers all five with `graphEffect=none`; e5m1 now
+   or order edge. v52/v31 defers all five with `graphEffect=none`; e5m1 now
    scores zero. The main-story bucket is score 467 with 88 actionable core
    isolated rows, 285 active offline deferrals, and 9 strict-attachment
    diagnostics. e6m1 is next at score 25.
@@ -4545,7 +4544,7 @@ Current main-story priorities:
    dialog validator now accepts either one exact consumer or an explicit
    non-empty list, validates every indexed source row, and publishes the full
    consumer list; it never treats multiple selectable NPC contexts as order.
-   Those two dialogs and `_19` are graph-neutral v51/v30 deferrals.
+   Those two dialogs and `_19` are graph-neutral v52/v31 deferrals.
    `radio_e6m1_20` instead has an exact e6m1d5 AirWall carrier: synchronized
    mission state changes the wall and a later pushback callback calls
    `GameAction.PlayRadio`. `radio_e6m1_21` has an exact e6m1d5
@@ -4553,9 +4552,34 @@ Current main-story priorities:
    imports these two exact cross-owner runtime relations and validates the
    complete AirWall row before closing isolation; neither relation transfers
    Story ownership or supplies relative order. e6m1 scores zero.
-   The main-story bucket is score 442 with 83 actionable core isolated rows,
-   288 active offline deferrals, and 9 strict-attachment diagnostics. e2m7 is
+   The main-story bucket was score 442 with 83 actionable core isolated rows,
+   288 active offline deferrals, and 9 strict-attachment diagnostics. e2m7 was
    next at score 25.
+   The e2m7 pass then exposed a reusable cross-owner recovery class rather
+   than five negative carriers. `cutscene_e2m7_1` has two complete exact paths
+   in the e2m6 LevelData shell: Leader trigger slot `80001` in LevelScript
+   `3500010027` reaches both `PreloadCutsceneAction` and
+   `PlayCutsceneAction`. `radio_e2m7_11` has one complete exact e9m3 path:
+   battle signal `radio_0079_07_boss_4` in LevelScript `29800030004` reaches
+   `PlayRadio`. The queue now imports foreign
+   `leveldata_levelscript_mission_context` rows only when mission-shell id,
+   typed LevelData member-22 host, source/script/level sets, exact Story key,
+   ActionBase class/mapping, and complete event-to-action path all agree.
+   This closes an isolated source-link gap but does not transfer nominal Story
+   ownership or place the file chronologically inside its filename-named
+   mission. The same fail-closed rule currently recognizes 78 isolated files
+   corpus-wide, including 15 main-story files.
+   The three remaining e2m7 rows (`radio_e2m7_9`, `_10`, and `_16`) are exact
+   audio-complete RadioTable definitions with no typed carrier and become
+   graph-neutral v52/v31 deferrals. The generalized pass also supersedes stale
+   negative declarations for `dlg_e10m3_9`, `dlg_e11m5_9`,
+   `dlg_e11m8_9`, `radio_e1m3_34`, and `radio_e7m2_14`, because each has an
+   exact foreign mission-shell playback route. Dormant declarations for other
+   already-positive runtime/source contexts were removed at the same boundary.
+   v52/v31 now has exactly 286 declarations and 286 active deferrals. The
+   main-story bucket is score 397 with 74 actionable core isolated rows, 105
+   exact-native isolated closures, 92 exact-runtime-config closures, and 9
+   strict-attachment diagnostics. e2m2 is next at score 25.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
