@@ -2360,6 +2360,27 @@ gameplay-video OCR/audio workflow.
 
   The current 7.24 GB exact-consumer census takes about nine minutes on this
   checkout and is not part of `export.bat`.
+- `story_recovery/build_compress_data_story_audit.py`: replaces the raw-byte
+  `CompressData.bin` probe with a full logical decode. It hash-gates the current
+  `DataCompressManager` native mapping, validates the count/absolute-offset
+  table and each
+  `compressedLength + originalLength + Brotli payload` record, parses every
+  result as UTF-16LE NodeCanvas JSON, and joins all pool indexes back to exact
+  typed BehaviourTree assets through `_enableGraphStringCompress` and
+  `_serializedGraphStringIndex`. It writes
+  `reports/story/recovery/compress_data_story_audit.{json,md}`. This standalone
+  audit requires the Python `brotli` module; normal export/build tooling remains
+  stdlib-only. After preparing `CompressData.bin` with the targeted dump above,
+  run:
+
+  ```bat
+  python scripts\story_recovery\build_compress_data_story_audit.py
+  ```
+
+  Shared indexes are valid deduplication, not duplicate-owner evidence. The
+  audit fails closed on missing pool indexes, malformed records, decode/length
+  mismatch, non-BehaviourTree logical roots, incomplete typed objects, or
+  native binary/metadata hash drift.
 - `story_recovery/build_skipped_vfs_block_audit.py`: summarizes an
   AnimeStudio/fluffy-dumper `vfs-index` JSON for WebUI-skipped VFS blocks such
   as Lua, ExtendData, Streaming, DynamicStreaming, and BundleManifest. It
