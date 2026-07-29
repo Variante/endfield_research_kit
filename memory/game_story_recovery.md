@@ -4284,8 +4284,25 @@ Current main-story priorities:
    chains; do not reuse raw task-map proximity.
    The current hash-validated merged object-index carrier census produced no
    typed carrier across all 1,335,450 indexed objects, so another loose-object
-   or same-object scan is not an actionable offline frontier. The refreshed
-   source-only queue ranks `e11m4` first (175/35 actionable isolated core
+   or same-object scan is not an actionable offline frontier. A follow-up
+   installed-VFS metadata census closes the filename-discovery variant of the
+   same search. Indexing `Streaming`, `DynamicStreaming`, `ExtendData`,
+   `BundleManifest`, and `IFixPatchOut` without reading the game process finds
+   53,210 logical files: 51,095 `Streaming` `.bytes` rows, 2,111
+   `DynamicStreaming` `.bytes` rows, the three known ExtendData binaries
+   (`CompressData.bin`, `FacBoneTRS.bin`, and `StringPathHash.bin`), and one
+   bundle-manifest hash map. `IFixPatchOut` contributes no logical file.
+   Filtering mission/quest/Story/dialog/runtime/config names produces only
+   DynamicStreaming paths selected by their generic `/Scene/` directory; it
+   exposes no separately named activation or ownership registry.
+   `AuditStreaming`/`AuditDynamicStreaming` metadata is not installed in this
+   build, so there is no older audit layer to mine locally. `StringPathHash.bin`
+   is a 118,687,426-byte binary hash table rather than a reverse semantic-name
+   corpus. This result does not prove that opaque world bytes or server state
+   contain no owner, but the current typed Streaming/object scans already cover
+   their available decoded contents. Do not repeat VFS filename sampling until
+   block metadata or the installed build changes. The refreshed source-only
+   queue ranks `e11m4` first (175/35 actionable isolated core
    scenes), followed by `e10m4` (160/32) and `e11m1` (145/29).
    Continue
    offline from those exact isolated-scene source-link rows and require a new
