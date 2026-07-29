@@ -680,7 +680,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines = [
         "# AnimeStudio Story GameObject Audit",
         "",
-        f"- Actionable Story keys: `{report['targetStoryKeys']}`",
+        f"- Core-isolated Story keys: `{report['targetStoryKeys']}`",
         f"- Object rows scanned: `{summary['objectsScanned']}`",
         "- Exact Story-value objects with resolved GameObject: "
         f"`{summary['objectsWithResolvedGameObject']}`",

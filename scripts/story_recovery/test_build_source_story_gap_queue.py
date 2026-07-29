@@ -1600,6 +1600,85 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "closed_current_build_definition_without_consumer",
         )
 
+    def test_exact_build_offline_exhausted_scene_is_deferred_only(self) -> None:
+        story_key = "radio_e11m4_29"
+        partial = partial_mission(
+            "e11m4",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        partial["nodes"][0]["kind"] = "radio"
+        payload = mission_payload()
+        payload["flow"]["unlinked"] = [story_key]
+        evidence = {
+            story_key: {
+                "sceneKey": story_key,
+                "missionId": "e11m4",
+                "recoveryStatus":
+                    "deferred_current_build_offline_surface_exhausted",
+                "evidenceKind":
+                    "radio_definition_without_recovered_consumer",
+                "graphEffect": "none",
+            },
+        }
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+            offline_exhaustion_index=evidence,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(
+            row["metrics"]["deferredOfflineExhaustedIsolatedScenes"],
+            1,
+        )
+        self.assertEqual(
+            row["deferredOfflineExhaustedIsolatedScenes"][0][
+                "evidenceKind"
+            ],
+            "radio_definition_without_recovered_consumer",
+        )
+        self.assertEqual(row["score"], 0)
+
+    def test_offline_exhausted_scene_with_runtime_route_reopens(self) -> None:
+        story_key = "radio_e11m4_29"
+        partial = partial_mission(
+            "e11m4",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        partial["nodes"][0]["kind"] = "radio"
+        payload = mission_payload()
+        payload["flow"]["unlinked"] = [story_key]
+        payload["flow"]["unlinkedNativePlayback"] = [{
+            "key": story_key,
+            "relation": "native_story_playback_unscoped",
+        }]
+        evidence = {
+            story_key: {
+                "sceneKey": story_key,
+                "missionId": "e11m4",
+                "recoveryStatus":
+                    "deferred_current_build_offline_surface_exhausted",
+                "graphEffect": "none",
+            },
+        }
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+            offline_exhaustion_index=evidence,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 1)
+        self.assertEqual(
+            row["metrics"]["deferredOfflineExhaustedIsolatedScenes"],
+            0,
+        )
+
 
 class NonMissionContentClosureTests(unittest.TestCase):
     """Table-proven non-mission content must leave the narrative queue.

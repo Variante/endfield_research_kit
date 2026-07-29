@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
 import gzip
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -36,7 +37,7 @@ from export_full_from_game import (  # noqa: E402
 )
 
 
-SCHEMA = "animestudioStoryCarrierAudit.v1"
+SCHEMA = "animestudioStoryCarrierAudit.v2"
 DEFAULT_OUTPUT_ROOT = ROOT / "export_full"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"
@@ -116,13 +117,28 @@ def load_gap_targets(path: Path) -> dict[str, set[str]]:
         mission = str(row.get("mission") or "").strip()
         if not mission:
             continue
-        for key in row.get("actionableCoreIsolatedSceneKeys") or []:
+        for key in row.get("coreIsolatedSceneKeys") or []:
             story_key = str(key or "").strip()
             if story_key:
                 targets[story_key].add(mission)
     if not targets:
-        raise AuditError(f"{path}: no actionable Story keys")
+        raise AuditError(f"{path}: no core-isolated Story keys")
     return dict(targets)
+
+
+def target_set_sha256(target_missions: dict[str, set[str]]) -> str:
+    """Hash the exact key/mission target set independently of queue scoring."""
+    canonical = {
+        key: sorted(target_missions[key])
+        for key in sorted(target_missions)
+    }
+    encoded = json.dumps(
+        canonical,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def scalar_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
@@ -431,18 +447,34 @@ def build_report(
         row["object"]["serializedFile"],
         row["object"]["pathId"],
     ))
+    candidate_story_keys = sorted({
+        row["storyKey"]
+        for row in candidates
+    })
+    target_story_key_missions = {
+        key: sorted(target_missions[key])
+        for key in sorted(target_missions)
+    }
     return {
         "_schema": SCHEMA,
         "gapQueue": str(gap_queue),
+        "targetField": "coreIsolatedSceneKeys",
+        "targetSetSha256": target_set_sha256(target_missions),
         "targetStoryKeys": len(target_missions),
+        "targetStoryKeyMissions": target_story_key_missions,
         "sources": [result["index"] for result in source_results],
         "summary": {
             **dict(sorted(totals.items())),
             "typedCarrierCandidates": len(candidates),
-            "candidateStoryKeys": len({
-                row["storyKey"] for row in candidates
-            }),
+            "candidateStoryKeys": len(candidate_story_keys),
+            "noCandidateStoryKeys": (
+                len(target_missions) - len(candidate_story_keys)
+            ),
         },
+        "candidateStoryKeys": candidate_story_keys,
+        "noCandidateStoryKeys": sorted(
+            set(target_missions) - set(candidate_story_keys)
+        ),
         "candidates": candidates,
         "rejectedExactValueMatchSamples": rejected[:100],
         "evidencePolicy": {
@@ -471,7 +503,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "# AnimeStudio Story Carrier Audit",
         "",
         (
-            f"- Target actionable Story keys: `{report['targetStoryKeys']}`"
+            f"- Target core-isolated Story keys: `{report['targetStoryKeys']}`"
         ),
         (
             f"- Object rows scanned: "
@@ -481,6 +513,10 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Typed same-object carrier candidates: "
             f"`{summary.get('typedCarrierCandidates', 0)}` across "
             f"`{summary.get('candidateStoryKeys', 0)}` Story keys"
+        ),
+        (
+            f"- Keys with no typed same-object candidate: "
+            f"`{summary.get('noCandidateStoryKeys', 0)}`"
         ),
         "",
         "This is a candidate audit, not an ownership or ordering graph. "

@@ -10,6 +10,9 @@ attachment, unresolved source nodes, and unverified option groups.  Main-story
 from __future__ import annotations
 
 import argparse
+import hashlib
+import os
+import re
 import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -34,10 +37,13 @@ from common import (  # noqa: E402
 )
 from build_priority_story_order_audit import priority_bucket  # noqa: E402
 from build_source_story_partial_order import build_report as build_partial_order_report  # noqa: E402
+from build_animestudio_story_carrier_audit import (  # noqa: E402
+    target_set_sha256,
+)
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v19"
+SCHEMA = "sourceStoryGapQueue.v20"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -115,6 +121,46 @@ NPC_PROXY_DIALOG_SELECTION_GAMEASSEMBLY_SHA256 = (
 DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
+OFFLINE_EXHAUSTION_MAPPING_ID = (
+    "current-build-offline-story-carrier-exhaustion-v1"
+)
+OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
+    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+)
+OFFLINE_EXHAUSTION_RADIO_TABLE_SHA256 = (
+    "78E0974495915D1F126EA9FE2923DC44DFD260D8358702A01504147BFABBD1D1"
+)
+OFFLINE_EXHAUSTION_AUDIO_DIALOG_SHA256 = (
+    "1433BCAFCD12A30ABCC22A0D5754ABA3D0F2C403789F27C6E7250B5491ED074D"
+)
+OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256 = (
+    "13FE790D69B0B3CDD4B64CCA53BB41DA8BD0D45D31975004FA074B0EDBB73BDE"
+)
+OFFLINE_EXHAUSTION_E11M4_CUTSCENE_SHA256 = (
+    "EF073ADA194D047E28500ECEF71E2B370587905C83DFEFA1CAE5E9E591A0EA99"
+)
+OFFLINE_EXHAUSTION_E11M4_CUTSCENE = (
+    "cutscene_e11m4_rift_camera_state1to2"
+)
+OFFLINE_EXHAUSTION_E11M4_RADIOS = frozenset({
+    "radio_e11m4_7",
+    "radio_e11m4_8",
+    *{
+        f"radio_e11m4_{number}"
+        for number in range(29, 56)
+    },
+    *{
+        f"radio_e11m4_{number}"
+        for number in range(57, 62)
+    },
+})
+OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS = frozenset({
+    "continueAfterDialog",
+    "continueAfterRadio",
+    "priority",
+    "radioSingleDataList",
+    "radioType",
+})
 
 
 def _bucket(mission: str) -> str:
@@ -130,6 +176,354 @@ def _string_list(values: Any) -> list[str]:
         if text and text not in out:
             out.append(text)
     return out
+
+
+def _sha256_file(path: Path) -> str:
+    if not path.is_file():
+        return ""
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest().upper()
+
+
+def _configured_game_assembly_path() -> Path | None:
+    game_root = os.environ.get("ENDFIELD_GAME_ROOT", "").strip()
+    if not game_root:
+        config_path = ROOT / "endfield_paths.bat"
+        if config_path.is_file():
+            match = re.search(
+                r'(?im)^\s*set\s+"ENDFIELD_GAME_ROOT=([^"]+)"\s*$',
+                config_path.read_text(encoding="utf-8", errors="replace"),
+            )
+            if match:
+                game_root = match.group(1).strip()
+    if not game_root:
+        return None
+    root = Path(game_root)
+    return root.parent / "GameAssembly.dll" if root.name == "Endfield_Data" else root / "GameAssembly.dll"
+
+
+def _core_isolated_target_missions(
+    partial_report: dict[str, Any],
+) -> dict[str, set[str]]:
+    targets: dict[str, set[str]] = defaultdict(set)
+    for row in partial_report.get("missions") or []:
+        if not isinstance(row, dict):
+            continue
+        mission = safe_key(row.get("mission"))
+        if not mission:
+            continue
+        node_kind_by_key = {
+            safe_key(node.get("key")): safe_key(node.get("kind"))
+            for node in row.get("nodes") or []
+            if isinstance(node, dict) and safe_key(node.get("key"))
+        }
+        isolated_keys = _string_list(row.get("isolatedSceneKeys"))
+        if not isolated_keys:
+            isolated_keys = [
+                safe_key(node.get("key"))
+                for node in row.get("nodes") or []
+                if (
+                    isinstance(node, dict)
+                    and safe_key(node.get("key"))
+                    and safe_key(node.get("relationStatus")) == "isolated"
+                )
+            ]
+        for story_key in isolated_keys:
+            if node_kind_by_key.get(story_key) not in CORE_STORY_NODE_KINDS:
+                continue
+            targets[story_key].add(mission)
+    return dict(targets)
+
+
+def _audit_sources_match_current_indexes(report: dict[str, Any]) -> bool:
+    reported = {
+        safe_key(row.get("source")): safe_key(
+            row.get("stageSignatureSha256")
+        ).lower()
+        for row in report.get("sources") or []
+        if isinstance(row, dict) and safe_key(row.get("source"))
+    }
+    for source in ("StreamingAssets", "Persistent"):
+        summary_path = (
+            ROOT
+            / "export_full"
+            / "recovered"
+            / "AnimeStudio-cli"
+            / source
+            / "object_index"
+            / "summary.json"
+        )
+        summary = read_json(summary_path, {})
+        if not isinstance(summary, dict) or summary.get("complete") is not True:
+            return False
+        signature = safe_key(
+            (summary.get("stageSignature") or {}).get("sha256")
+        ).lower()
+        if not signature or reported.get(source) != signature:
+            return False
+    return True
+
+
+def build_offline_exhaustion_index(
+    partial_report: dict[str, Any],
+    table_root: Path,
+    *,
+    game_assembly_path: Path | None = None,
+    carrier_audit_path: Path | None = None,
+    gameobject_audit_path: Path | None = None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    """Build hash-locked current-build deferrals for exhausted offline rows.
+
+    A deferral changes queue priority only. It never creates Story ownership,
+    playback, or chronology. Every source gate must match the audited build;
+    otherwise the complete set reopens automatically.
+    """
+    carrier_audit_path = carrier_audit_path or (
+        ROOT
+        / "reports"
+        / "story"
+        / "recovery"
+        / "animestudio_story_carrier_audit.json"
+    )
+    gameobject_audit_path = gameobject_audit_path or (
+        ROOT
+        / "reports"
+        / "story"
+        / "recovery"
+        / "animestudio_story_gameobject_audit.json"
+    )
+    game_assembly_path = game_assembly_path or _configured_game_assembly_path()
+    source_paths = {
+        "radioTable": table_root / "RadioTable.json",
+        "audioDialog": table_root / "AudioDialog.json",
+        "numIdStrTable": table_root / "NumIdStrTable.json",
+        "cutsceneDefinition": (
+            ROOT
+            / "export_full"
+            / "recovered"
+            / "AnimeStudio-cli"
+            / "StreamingAssets"
+            / "json_by_type"
+            / "TextAsset"
+            / (
+                "cutscene_e11m4_rift_camera_state1to2_"
+                "p86E71A990775EC2D.json"
+            )
+        ),
+        "gameAssembly": game_assembly_path,
+        "carrierAudit": carrier_audit_path,
+        "gameObjectAudit": gameobject_audit_path,
+    }
+    expected_hashes = {
+        "radioTable": OFFLINE_EXHAUSTION_RADIO_TABLE_SHA256,
+        "audioDialog": OFFLINE_EXHAUSTION_AUDIO_DIALOG_SHA256,
+        "numIdStrTable": OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256,
+        "cutsceneDefinition":
+            OFFLINE_EXHAUSTION_E11M4_CUTSCENE_SHA256,
+        "gameAssembly": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+    }
+    actual_hashes = {
+        name: _sha256_file(path) if isinstance(path, Path) else ""
+        for name, path in source_paths.items()
+        if name in expected_hashes
+    }
+    mismatches = sorted(
+        name
+        for name, expected in expected_hashes.items()
+        if actual_hashes.get(name) != expected
+    )
+    status: dict[str, Any] = {
+        "mappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+        "status": "inactive_source_validation_failed" if mismatches else "validating",
+        "sourceHashes": actual_hashes,
+        "expectedSourceHashes": expected_hashes,
+        "sourceHashMismatches": mismatches,
+        "graphEffect": "none",
+        "queueEffect": "defer only while every exact current-build gate matches",
+    }
+    if mismatches:
+        return {}, status
+
+    carrier_audit = read_json(carrier_audit_path, {})
+    core_targets = _core_isolated_target_missions(partial_report)
+    core_target_digest = target_set_sha256(core_targets)
+    no_candidate_keys = set(_string_list(
+        carrier_audit.get("noCandidateStoryKeys")
+        if isinstance(carrier_audit, dict)
+        else []
+    ))
+    required_keys = (
+        set(OFFLINE_EXHAUSTION_E11M4_RADIOS)
+        | {OFFLINE_EXHAUSTION_E11M4_CUTSCENE}
+    )
+    if (
+        not isinstance(carrier_audit, dict)
+        or carrier_audit.get("_schema") != "animestudioStoryCarrierAudit.v2"
+        or safe_key(carrier_audit.get("targetField"))
+        != "coreIsolatedSceneKeys"
+        or safe_key(carrier_audit.get("targetSetSha256")).lower()
+        != core_target_digest.lower()
+        or not required_keys <= no_candidate_keys
+        or not _audit_sources_match_current_indexes(carrier_audit)
+    ):
+        status.update({
+            "status": "inactive_carrier_audit_stale_or_incomplete",
+            "coreTargetSetSha256": core_target_digest,
+        })
+        return {}, status
+
+    radio_table = read_json(source_paths["radioTable"], {})
+    audio_dialog = read_json(source_paths["audioDialog"], {})
+    audio_stems = {
+        Path(safe_key(row.get("path"))).stem
+        for row in (
+            audio_dialog.values()
+            if isinstance(audio_dialog, dict)
+            else []
+        )
+        if isinstance(row, dict) and safe_key(row.get("path"))
+    }
+    radio_audio_ids: set[str] = set()
+    radio_rows_valid = isinstance(radio_table, dict)
+    for story_key in OFFLINE_EXHAUSTION_E11M4_RADIOS:
+        row = radio_table.get(story_key) if isinstance(radio_table, dict) else None
+        if (
+            not isinstance(row, dict)
+            or set(row) != OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS
+            or not isinstance(row.get("radioSingleDataList"), list)
+            or not row["radioSingleDataList"]
+        ):
+            radio_rows_valid = False
+            break
+        for line in row["radioSingleDataList"]:
+            audio_id = (
+                safe_key(line.get("audioOverride"))
+                if isinstance(line, dict)
+                else ""
+            )
+            if not audio_id:
+                radio_rows_valid = False
+                break
+            radio_audio_ids.add(audio_id)
+        if not radio_rows_valid:
+            break
+    if not radio_rows_valid or not radio_audio_ids <= audio_stems:
+        status["status"] = "inactive_radio_definition_validation_failed"
+        return {}, status
+
+    num_id_table = read_json(source_paths["numIdStrTable"], {})
+    timeline_ids = (
+        ((num_id_table.get("timelines_id") or {}).get("dic") or {})
+        if isinstance(num_id_table, dict)
+        else {}
+    )
+    cutscene_definition = read_json(source_paths["cutsceneDefinition"], {})
+    gameobject_audit = read_json(gameobject_audit_path, {})
+    cutscene_object_rows = [
+        row
+        for row in (
+            gameobject_audit.get("gameObjects") or []
+            if isinstance(gameobject_audit, dict)
+            else []
+        )
+        if (
+            isinstance(row, dict)
+            and OFFLINE_EXHAUSTION_E11M4_CUTSCENE
+            in _string_list(row.get("storyKeys"))
+        )
+    ]
+    cutscene_object_valid = (
+        isinstance(gameobject_audit, dict)
+        and gameobject_audit.get("_schema")
+        == "animestudioStoryGameObjectAudit.v2"
+        and _audit_sources_match_current_indexes(gameobject_audit)
+        and len(cutscene_object_rows) == 1
+        and cutscene_object_rows[0].get("candidateStatus")
+        == "no_typed_owner_or_runtime_sibling_or_descendant"
+        and cutscene_object_rows[0].get("edgeStatus")
+        == "no_edge_candidate_only"
+        and not cutscene_object_rows[0].get("candidateSiblingComponents")
+        and not cutscene_object_rows[0].get(
+            "candidateDescendantComponents"
+        )
+    )
+    if (
+        safe_key(timeline_ids.get("484"))
+        != OFFLINE_EXHAUSTION_E11M4_CUTSCENE
+        or not isinstance(cutscene_definition, dict)
+        or safe_key(cutscene_definition.get("m_Name"))
+        != OFFLINE_EXHAUSTION_E11M4_CUTSCENE
+        or safe_key(cutscene_definition.get("Name"))
+        != OFFLINE_EXHAUSTION_E11M4_CUTSCENE
+        or not cutscene_object_valid
+    ):
+        status["status"] = "inactive_cutscene_definition_validation_failed"
+        return {}, status
+
+    index: dict[str, dict[str, Any]] = {}
+    for story_key in sorted(
+        OFFLINE_EXHAUSTION_E11M4_RADIOS,
+        key=natural_key,
+    ):
+        index[story_key] = {
+            "sceneKey": story_key,
+            "missionId": "e11m4",
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "evidenceKind": "radio_definition_without_recovered_consumer",
+            "definitionTable": "RadioTable",
+            "audioMembershipTable": "AudioDialog",
+            "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+            "gameAssemblySha256":
+                OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+            "consumerBoundary": (
+                "exact ids occur only in current RadioTable/AudioDialog "
+                "definitions across the audited MissionRuntime, LevelScript, "
+                "GameplayConfig, Table, Lua, object-index, and direct native "
+                "playback-caller surfaces"
+            ),
+            "reopenWhen": (
+                "installed binary, exported tables, object index, Lua corpus, "
+                "or another typed producer/consumer registry changes"
+            ),
+            "graphEffect": "none",
+        }
+    index[OFFLINE_EXHAUSTION_E11M4_CUTSCENE] = {
+        "sceneKey": OFFLINE_EXHAUSTION_E11M4_CUTSCENE,
+        "missionId": "e11m4",
+        "recoveryStatus":
+            "deferred_current_build_offline_surface_exhausted",
+        "evidenceKind": "cutscene_root_without_recovered_activator",
+        "timelineRegistryId": 484,
+        "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+        "gameAssemblySha256": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+        "logicalBundle": (
+            cutscene_object_rows[0].get("logicalBundle") or {}
+        ),
+        "candidateStatus":
+            cutscene_object_rows[0].get("candidateStatus"),
+        "consumerBoundary": (
+            "the exact Timeline registry, TextAsset definition, root object, "
+            "same-object components, and full descendant hierarchy expose no "
+            "typed owner/runtime carrier; structured actions, Lua, and direct "
+            "native cutscene callers expose no exact activator"
+        ),
+        "reopenWhen": (
+            "installed binary, Timeline registry, object index, Lua corpus, "
+            "or another typed producer/consumer registry changes"
+        ),
+        "graphEffect": "none",
+    }
+    status.update({
+        "status": "active",
+        "coreTargetSetSha256": core_target_digest,
+        "deferredStoryKeys": len(index),
+        "deferredMissions": ["e11m4"],
+    })
+    return index, status
 
 
 def _timeline(mission_payload: dict[str, Any] | None) -> dict[str, Any]:
@@ -722,6 +1116,36 @@ def _closed_definition_only_isolated_scenes(
             ),
         })
     return sorted(closed, key=lambda row: natural_key(row["sceneKey"]))
+
+
+def _deferred_offline_exhausted_isolated_scenes(
+    flow: dict[str, Any],
+    isolated_scene_keys: set[str],
+    owner_mission: str,
+    offline_exhaustion_index: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Defer exact-build exhausted rows without asserting a graph fact."""
+    unlinked_keys = set(_string_list(flow.get("unlinked")))
+    routed_keys = {
+        safe_key(row.get("key"))
+        for row in _flow_story_connections(flow)
+        if isinstance(row, dict) and safe_key(row.get("key"))
+    }
+    deferred: list[dict[str, Any]] = []
+    for scene_key in sorted(isolated_scene_keys, key=natural_key):
+        evidence = offline_exhaustion_index.get(scene_key)
+        if (
+            not isinstance(evidence, dict)
+            or safe_key(evidence.get("missionId")) != owner_mission
+            or scene_key not in unlinked_keys
+            or scene_key in routed_keys
+            or evidence.get("graphEffect") != "none"
+            or evidence.get("recoveryStatus")
+            != "deferred_current_build_offline_surface_exhausted"
+        ):
+            continue
+        deferred.append(dict(evidence))
+    return deferred
 
 
 def _closed_exact_dialog_tree_embedded_isolated_scenes(
@@ -1752,8 +2176,10 @@ def build_gap_row(
     native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
     action_story_occurrences: dict[str, list[dict[str, Any]]] | None = None,
     non_mission_content: dict[str, dict[str, Any]] | None = None,
+    offline_exhaustion_index: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     non_mission_content = non_mission_content or {}
+    offline_exhaustion_index = offline_exhaustion_index or {}
     mission = safe_key(partial_row.get("mission"))
     summary = partial_row.get("summary") if isinstance(partial_row.get("summary"), dict) else {}
     timeline = _timeline(mission_payload)
@@ -1888,6 +2314,18 @@ def build_gap_row(
         row["sceneKey"]
         for row in closed_non_mission_content_isolated
     }
+    deferred_offline_exhausted_isolated = (
+        _deferred_offline_exhausted_isolated_scenes(
+            flow,
+            set(isolated_scene_keys),
+            safe_key(partial_row.get("mission")),
+            offline_exhaustion_index,
+        )
+    )
+    deferred_offline_exhausted_isolated_keys = {
+        row["sceneKey"]
+        for row in deferred_offline_exhausted_isolated
+    }
     actionable_core_isolated_scene_keys = [
         key
         for key in core_isolated_scene_keys
@@ -1895,6 +2333,7 @@ def build_gap_row(
         and key not in closed_exact_runtime_config_isolated_keys
         and key not in closed_definition_only_isolated_keys
         and key not in closed_non_mission_content_isolated_keys
+        and key not in deferred_offline_exhausted_isolated_keys
     ]
     weak_only_scene_keys = set(
         _string_list(partial_row.get("weakOnlySceneKeys"))
@@ -1987,6 +2426,9 @@ def build_gap_row(
         "closedNonMissionContentIsolatedScenes": len(
             closed_non_mission_content_isolated_keys
         ),
+        "deferredOfflineExhaustedIsolatedScenes": len(
+            deferred_offline_exhausted_isolated_keys
+        ),
         "weakOnlyScenes": int(summary.get("weakOnlySceneCount") or 0),
         "actionableWeakOnlyScenes": len(actionable_weak_only_scene_keys),
         "closedExactNativeWeakOnlyScenes": len(
@@ -2078,6 +2520,8 @@ def build_gap_row(
             closed_definition_only_isolated,
         "closedNonMissionContentIsolatedScenes":
             closed_non_mission_content_isolated,
+        "deferredOfflineExhaustedIsolatedScenes":
+            deferred_offline_exhausted_isolated,
         "actionableWeakOnlySceneKeys": actionable_weak_only_scene_keys,
         "closedExactNativeWeakOnlyScenes": closed_exact_native_weak_only,
         "nonActionableWeakOnlySceneKeys":
@@ -2100,6 +2544,8 @@ def build_gap_report(
     native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
     action_story_occurrences: dict[str, list[dict[str, Any]]] | None = None,
     table_root: Path | None = None,
+    offline_exhaustion_index: dict[str, dict[str, Any]] | None = None,
+    offline_exhaustion_status: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     non_mission_content = (
         combined_non_mission_content_keys(table_root)
@@ -2114,6 +2560,7 @@ def build_gap_report(
             native_playback_index=native_playback_index,
             action_story_occurrences=action_story_occurrences,
             non_mission_content=non_mission_content,
+            offline_exhaustion_index=offline_exhaustion_index,
         )
         for row in partial_report.get("missions") or []
         if isinstance(row, dict)
@@ -2151,6 +2598,10 @@ def build_gap_report(
             "frontierOrder": list(FRONTIER_ORDER),
             "note": "Triage score only; it does not assert scene chronology or evidence strength.",
         },
+        "offlineExhaustionEvidence": offline_exhaustion_status or {
+            "status": "not_supplied",
+            "graphEffect": "none",
+        },
         "summary": {
             "missions": len(rows),
             "buckets": [
@@ -2183,9 +2634,16 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"`{key}` x {weight}" for key, weight in SCORE_WEIGHTS.items()
         ) + ".",
         "",
+        (
+            "Current-build offline-exhaustion evidence: "
+            f"`{safe_key((report.get('offlineExhaustionEvidence') or {}).get('status')) or 'unknown'}`. "
+            "These rows are deferred from triage only; they create no graph edge "
+            "and reopen when a hash or audit target set changes."
+        ),
+        "",
         "## Bucket Summary",
         "",
-        "| bucket | missions | score | scenes | isolated (core: actionable / native-closed / runtime-config-closed / definition-closed / non-mission-closed) | weak-only (actionable / exact-closed) | cycles | actionable LS gaps | closed LS negatives | actionable quest gaps | option gaps |",
+        "| bucket | missions | score | scenes | isolated (core: actionable / native-closed / runtime-config-closed / definition-closed / non-mission-closed / offline-exhausted) | weak-only (actionable / exact-closed) | cycles | actionable LS gaps | closed LS negatives | actionable quest gaps | option gaps |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in report["summary"]["buckets"]:
@@ -2201,7 +2659,8 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"{row.get('closedExactNativeIsolatedScenes', 0)} / "
             f"{row.get('closedExactRuntimeConfigIsolatedScenes', 0)} / "
             f"{row.get('closedDefinitionOnlyIsolatedScenes', 0)} / "
-            f"{row.get('closedNonMissionContentIsolatedScenes', 0)}) | "
+            f"{row.get('closedNonMissionContentIsolatedScenes', 0)} / "
+            f"{row.get('deferredOfflineExhaustedIsolatedScenes', 0)}) | "
             f"{row.get('weakOnlyScenes', 0)} "
             f"({row.get('actionableWeakOnlyScenes', 0)} / "
             f"{row.get('closedExactNativeWeakOnlyScenes', 0)}) | "
@@ -2215,7 +2674,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "## Ranked Missions",
         "",
-        "| rank | mission | bucket rank | score | scenes | isolated (core: actionable / native-closed / runtime-config-closed / definition-closed / non-mission-closed) | weak-only (actionable / exact-closed) | cycles | LS gaps | quest gaps | option gaps | primary frontier |",
+        "| rank | mission | bucket rank | score | scenes | isolated (core: actionable / native-closed / runtime-config-closed / definition-closed / non-mission-closed / offline-exhausted) | weak-only (actionable / exact-closed) | cycles | LS gaps | quest gaps | option gaps | primary frontier |",
         "| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ])
     for row in report["missions"][:100]:
@@ -2231,7 +2690,8 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"{metrics['closedExactNativeIsolatedScenes']} / "
             f"{metrics['closedExactRuntimeConfigIsolatedScenes']} / "
             f"{metrics['closedDefinitionOnlyIsolatedScenes']} / "
-            f"{metrics['closedNonMissionContentIsolatedScenes']}) | "
+            f"{metrics['closedNonMissionContentIsolatedScenes']} / "
+            f"{metrics['deferredOfflineExhaustedIsolatedScenes']}) | "
             f"{metrics['weakOnlyScenes']} "
             f"({metrics['actionableWeakOnlyScenes']} / "
             f"{metrics['closedExactNativeWeakOnlyScenes']}) | "
@@ -2258,7 +2718,8 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"`{metrics['closedExactRuntimeConfigIsolatedScenes']}` "
             "exact runtime-config closed, "
             f"`{metrics['closedDefinitionOnlyIsolatedScenes']}` definition-only closed, "
-            f"`{metrics['closedNonMissionContentIsolatedScenes']}` non-mission content closed), "
+            f"`{metrics['closedNonMissionContentIsolatedScenes']}` non-mission content closed, "
+            f"`{metrics['deferredOfflineExhaustedIsolatedScenes']}` current-build offline-exhausted), "
             f"weak-only `{metrics['weakOnlyScenes']}` "
             f"(`{metrics['actionableWeakOnlyScenes']}` actionable, "
             f"`{metrics['closedExactNativeWeakOnlyScenes']}` exact-native closed), "
@@ -2312,6 +2773,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Authored table directory used to classify non-mission content "
              "keys out of the narrative queue.",
     )
+    parser.add_argument(
+        "--game-assembly",
+        type=Path,
+        default=None,
+        help=(
+            "Optional current GameAssembly.dll used to validate build-locked "
+            "offline-exhaustion evidence. Defaults to endfield_paths.bat."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -2337,6 +2807,13 @@ def main(argv: list[str] | None = None) -> int:
         mission_payloads[mission] = payload if isinstance(payload, dict) else {}
         mission_bundle_presence.add(mission)
 
+    offline_exhaustion_index, offline_exhaustion_status = (
+        build_offline_exhaustion_index(
+            partial_report,
+            args.table_root,
+            game_assembly_path=args.game_assembly,
+        )
+    )
     report = build_gap_report(
         partial_report,
         mission_payloads,
@@ -2344,6 +2821,8 @@ def main(argv: list[str] | None = None) -> int:
         native_playback_index,
         action_story_occurrences,
         table_root=args.table_root,
+        offline_exhaustion_index=offline_exhaustion_index,
+        offline_exhaustion_status=offline_exhaustion_status,
     )
     out_json = args.reports_dir / f"source_story_gap_queue_{args.language}.json"
     out_md = args.reports_dir / f"source_story_gap_queue_{args.language}.md"

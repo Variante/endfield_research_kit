@@ -183,6 +183,42 @@ class AnimeStudioStoryCarrierAuditTests(unittest.TestCase):
         self.assertEqual(audit.mission_from_quest_id("e11m10_q#17"), "e11m10")
         self.assertEqual(audit.mission_from_quest_id("e11m1"), "")
 
+    def test_gap_targets_use_stable_core_isolated_set(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "gap.json"
+            path.write_text(
+                json.dumps({
+                    "missions": [{
+                        "mission": "e11m4",
+                        "coreIsolatedSceneKeys": [
+                            "radio_e11m4_29",
+                            "radio_e11m4_30",
+                        ],
+                        "actionableCoreIsolatedSceneKeys": [
+                            "radio_e11m4_30",
+                        ],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+
+            targets = audit.load_gap_targets(path)
+
+        self.assertEqual(
+            targets,
+            {
+                "radio_e11m4_29": {"e11m4"},
+                "radio_e11m4_30": {"e11m4"},
+            },
+        )
+        self.assertEqual(
+            audit.target_set_sha256(targets),
+            audit.target_set_sha256({
+                "radio_e11m4_30": {"e11m4"},
+                "radio_e11m4_29": {"e11m4"},
+            }),
+        )
+
     def test_published_scan_uses_the_export_root_contract(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             export_root = Path(temporary) / "export_full"
