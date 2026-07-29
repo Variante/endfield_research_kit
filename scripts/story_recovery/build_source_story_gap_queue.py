@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v63"
+SCHEMA = "sourceStoryGapQueue.v64"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -129,7 +129,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v42"
+    "current-build-offline-story-carrier-exhaustion-v43"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -2078,6 +2078,11 @@ OFFLINE_EXHAUSTION_E2M3_RADIOS = frozenset({
     "radio_e2m3_15",
 })
 OFFLINE_EXHAUSTION_E5M2_RADIOS = frozenset({"radio_e5m2_3"})
+OFFLINE_EXHAUSTION_E5M4_RADIOS = frozenset({
+    "radio_e5m4_1",
+    "radio_e5m4_1d5",
+    "radio_e5m4_2",
+})
 OFFLINE_EXHAUSTION_E5M1_RADIOS = frozenset({
     "radio_e5m1_7",
     "radio_e5m1_10d8",
@@ -2128,6 +2133,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e4m1": OFFLINE_EXHAUSTION_E4M1_RADIOS,
     "e5m1": OFFLINE_EXHAUSTION_E5M1_RADIOS,
     "e5m2": OFFLINE_EXHAUSTION_E5M2_RADIOS,
+    "e5m4": OFFLINE_EXHAUSTION_E5M4_RADIOS,
     "e6m1": OFFLINE_EXHAUSTION_E6M1_RADIOS,
     "e6m2": OFFLINE_EXHAUSTION_E6M2_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
@@ -2181,6 +2187,20 @@ OFFLINE_EXHAUSTION_RADIO_AUDIO_VARIANTS = {
             "au_radio_e10m4_38_001_m",
         ),
     },
+}
+OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
+    "radio_e5m4_1": frozenset(
+        f"au_radio_e5m4_1_{number:03d}"
+        for number in range(1, 5)
+    ),
+    "radio_e5m4_1d5": frozenset(
+        f"au_radio_e5m4_1d5_{number:03d}"
+        for number in range(1, 4)
+    ),
+    "radio_e5m4_2": frozenset(
+        f"au_radio_e5m4_2_{number:03d}"
+        for number in range(1, 4)
+    ),
 }
 OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS = frozenset({
     "continueAfterDialog",
@@ -2708,11 +2728,13 @@ def build_offline_exhaustion_index(
         if isinstance(row, dict) and safe_key(row.get("path"))
     }
     radio_audio_ids: set[str] = set()
+    radio_audio_ids_by_story: dict[str, set[str]] = {}
     base_absent_audio_ids_by_story: dict[str, set[str]] = {}
     radio_audio_variants_by_story: dict[
         str,
         dict[str, tuple[str, ...]],
     ] = {}
+    missing_audio_ids_by_story: dict[str, set[str]] = {}
     radio_rows_valid = isinstance(radio_table, dict)
     for story_key in all_radio_keys:
         row = radio_table.get(story_key) if isinstance(radio_table, dict) else None
@@ -2738,6 +2760,7 @@ def build_offline_exhaustion_index(
             row_audio_ids.add(audio_id)
         if not radio_rows_valid:
             break
+        radio_audio_ids_by_story[story_key] = row_audio_ids
         base_absent_audio_ids = row_audio_ids - audio_stems
         expected_audio_variants = {
             safe_key(audio_id): tuple(
@@ -2753,8 +2776,16 @@ def build_offline_exhaustion_index(
             ).items()
             if isinstance(variants, (list, tuple))
         }
+        expected_missing_audio_ids = set(
+            OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS.get(
+                story_key,
+                (),
+            )
+        )
         if (
-            base_absent_audio_ids != set(expected_audio_variants)
+            set(expected_audio_variants) & expected_missing_audio_ids
+            or base_absent_audio_ids
+            != set(expected_audio_variants) | expected_missing_audio_ids
             or any(
                 not variants
                 or any(
@@ -2769,6 +2800,13 @@ def build_offline_exhaustion_index(
                 for audio_id, variants
                 in expected_audio_variants.items()
             )
+            or any(
+                any(
+                    stem.startswith(f"{audio_id}_")
+                    for stem in audio_stems
+                )
+                for audio_id in expected_missing_audio_ids
+            )
         ):
             radio_rows_valid = False
             break
@@ -2779,10 +2817,18 @@ def build_offline_exhaustion_index(
             radio_audio_variants_by_story[story_key] = (
                 expected_audio_variants
             )
+        if expected_missing_audio_ids:
+            missing_audio_ids_by_story[story_key] = (
+                expected_missing_audio_ids
+            )
     if (
         not radio_rows_valid
         or not (
             set(OFFLINE_EXHAUSTION_RADIO_AUDIO_VARIANTS)
+            <= all_radio_keys
+        )
+        or not (
+            set(OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS)
             <= all_radio_keys
         )
         or not (
@@ -3721,9 +3767,20 @@ def build_offline_exhaustion_index(
             "definitionTable": "RadioTable",
             "audioMembershipTable": "AudioDialog",
             "audioMembershipStatus": (
-                "present_current_audio_dialog_variants"
-                if story_key in radio_audio_variants_by_story
-                else "present_current_audio_dialog"
+                (
+                    "all_current_audio_dialog_ids_missing"
+                    if set(missing_audio_ids_by_story.get(
+                        story_key,
+                        (),
+                    )) == radio_audio_ids_by_story[story_key]
+                    else "partial_current_audio_dialog_missing_ids"
+                )
+                if story_key in missing_audio_ids_by_story
+                else (
+                    "present_current_audio_dialog_variants"
+                    if story_key in radio_audio_variants_by_story
+                    else "present_current_audio_dialog"
+                )
             ),
             "audioVariants": {
                 audio_id: list(variants)
@@ -3734,7 +3791,10 @@ def build_offline_exhaustion_index(
                     )
                 ).items()
             },
-            "missingAudioIds": [],
+            "missingAudioIds": sorted(
+                missing_audio_ids_by_story.get(story_key) or set(),
+                key=natural_key,
+            ),
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
