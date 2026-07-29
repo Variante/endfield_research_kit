@@ -231,7 +231,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # preserving their explicit mission-owner and chronology gaps.
 # v16 composes an alias with an independently connected root playback route;
 # the composition recovers owner context without creating Story chronology.
-SCHEMA_VERSION = 16
+# v17 preserves authored quest tracking markers, visibility filters, and
+# mission-variable defaults as debug context without creating graph edges.
+SCHEMA_VERSION = 17
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -5378,6 +5380,9 @@ FACT_KEYS = (
     "levelId",
     "_scriptId",
     "scriptId",
+    "missionId",
+    "missionVarName",
+    "compareOperator",
     "_propertyKey",
     "_key",
     "_guideGroupId",
@@ -5562,6 +5567,81 @@ def condition_tree(condition: Any) -> dict[str, Any] | None:
     return row
 
 
+def vector3_row(value: Any) -> dict[str, float] | None:
+    if not isinstance(value, dict):
+        return None
+    try:
+        return {
+            "x": float(value.get("x", 0.0)),
+            "y": float(value.get("y", 0.0)),
+            "z": float(value.get("z", 0.0)),
+        }
+    except (TypeError, ValueError):
+        return None
+
+
+def tracking_info_row(info: Any, index: int) -> dict[str, Any] | None:
+    """Keep exact quest-marker configuration without creating graph edges."""
+    if not isinstance(info, dict):
+        return None
+    row: dict[str, Any] = {
+        "index": index,
+        "type": type_name(info.get("$type")) or "TrackingInfo",
+    }
+    for key in (
+        "sceneId",
+        "npcProxyId",
+        "missionAreaId",
+        "jumpId",
+        "trackScriptEntity",
+        "entityLogicId",
+        "scriptId",
+        "entitySlotId",
+        "guidingArea",
+        "shapeType",
+        "radius",
+        "routePointCount",
+        "snsDialogId",
+        "useFilterCondition",
+    ):
+        if key in info and info[key] not in (None, "", [], {}):
+            row[key] = compact_scalar(info[key])
+        elif key in {"trackScriptEntity", "useFilterCondition"} and key in info:
+            row[key] = bool(info[key])
+    for key in ("trackingPos", "position", "rotation"):
+        vector = vector3_row(info.get(key))
+        if vector is not None:
+            row[key] = vector
+    filter_condition = condition_tree(info.get("filterCondition"))
+    if filter_condition:
+        row["filterCondition"] = filter_condition
+    return row
+
+
+def mission_property_rows(mission: dict[str, Any]) -> list[dict[str, Any]]:
+    """Normalize authored mission-variable defaults without assigning writers."""
+    output: list[dict[str, Any]] = []
+    for raw in mission.get("properties") or []:
+        if not isinstance(raw, dict) or raw.get("key") in (None, ""):
+            continue
+        value = raw.get("value") or {}
+        values: list[dict[str, Any]] = []
+        for item in value.get("valueArray") or []:
+            if not isinstance(item, dict):
+                continue
+            values.append({
+                key: item[key]
+                for key in ("valueBit64", "valueString")
+                if key in item
+            })
+        output.append({
+            "key": str(raw["key"]),
+            "type": value.get("type"),
+            "values": values,
+        })
+    return output
+
+
 def condition_objects(condition: Any) -> list[dict[str, Any]]:
     if not isinstance(condition, dict):
         return []
@@ -5643,6 +5723,15 @@ def objective_row(objective: dict[str, Any], index: int) -> dict[str, Any]:
         if isinstance(prop, str):
             properties.add(prop)
     description = objective.get("description") or {}
+    tracking = [
+        normalized
+        for tracking_index, info in enumerate(
+            objective.get("trackingInfoList") or []
+        )
+        if (
+            normalized := tracking_info_row(info, tracking_index)
+        ) is not None
+    ]
     return {
         "index": index,
         "conditionId": condition.get("uniqueId") if isinstance(condition, dict) else "",
@@ -5661,6 +5750,7 @@ def objective_row(objective: dict[str, Any], index: int) -> dict[str, Any]:
         "questStateRefs": quest_state_refs,
         "levelScriptIds": sorted(level_scripts),
         "propertyKeys": sorted(properties),
+        "tracking": tracking,
     }
 
 
@@ -5905,6 +5995,9 @@ def build_mission(
             key=lambda row: (natural_quest_key(row.get("questId") or ""), row.get("storyKey") or ""),
         ),
     }
+    properties = mission_property_rows(mission)
+    if properties:
+        payload["mission"]["properties"] = properties
     summary = {
         "id": mission_id,
         "nameKey": payload["mission"]["nameKey"],
@@ -5933,6 +6026,18 @@ def build_mission(
         "activityStageHostedQuestCount": sum(
             1 for node in nodes if node.get("activityStageHosts")
         ),
+        "trackingInfoCount": sum(
+            len(objective.get("tracking") or [])
+            for node in nodes
+            for objective in node.get("objectives") or []
+        ),
+        "trackingObjectiveCount": sum(
+            1
+            for node in nodes
+            for objective in node.get("objectives") or []
+            if objective.get("tracking")
+        ),
+        "missionPropertyCount": len(properties),
         "conditionTypes": sorted(condition_counts),
         "caseStudy": mission_id in CASE_STUDIES,
         "file": f"missions/{mission_id}.json",
@@ -6213,6 +6318,18 @@ def build_all(
             "activityQuestLevelQuests": activity_host_registry["questCount"],
             "activityQuestLevelMissions": sum(
                 1 for row in summaries if row["activityStageHostCount"]
+            ),
+            "trackingInfoRows": sum(
+                row["trackingInfoCount"] for row in summaries
+            ),
+            "trackingObjectives": sum(
+                row["trackingObjectiveCount"] for row in summaries
+            ),
+            "missionPropertyRows": sum(
+                row["missionPropertyCount"] for row in summaries
+            ),
+            "missionsWithProperties": sum(
+                1 for row in summaries if row["missionPropertyCount"]
             ),
         },
         "conditionTypeMissionCounts": dict(sorted(condition_counts.items())),

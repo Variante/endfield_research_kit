@@ -729,6 +729,72 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual("guide_group_team", row["facts"]["guideGroupId"])
         self.assertEqual(2, row["facts"]["completeType"])
 
+    def test_objective_retains_tracking_filter_without_creating_condition_edge(self):
+        row = pipeline.objective_row({
+            "description": {"key": "objective_tracking"},
+            "condition": condition("GameConditionServerPlaceHolder"),
+            "trackingInfoList": [{
+                "$type": (
+                    "Beyond.Gameplay.PosTrackingInfo, Gameplay.Beyond"
+                ),
+                "sceneId": "map_fixture",
+                "useFilterCondition": True,
+                "filterCondition": {
+                    "$type": (
+                        "Beyond.Gameplay.SimpleConditionCheckMissionVariableInt, "
+                        "Gameplay.Beyond"
+                    ),
+                    "missionId": "testm1",
+                    "missionVarName": "track_1",
+                    "compareOperator": 0,
+                    "compareTarget": 1,
+                },
+                "trackingPos": {"x": 1, "y": 2, "z": 3},
+            }],
+        }, 1)
+        self.assertEqual(row["tracking"], [{
+            "index": 0,
+            "type": "PosTrackingInfo",
+            "sceneId": "map_fixture",
+            "useFilterCondition": True,
+            "trackingPos": {"x": 1.0, "y": 2.0, "z": 3.0},
+            "filterCondition": {
+                "type": "SimpleConditionCheckMissionVariableInt",
+                "facts": {
+                    "compareTarget": 1,
+                    "missionId": "testm1",
+                    "missionVarName": "track_1",
+                    "compareOperator": 0,
+                },
+            },
+        }])
+        self.assertEqual(row["questStateRefs"], [])
+
+    def test_build_mission_retains_property_defaults_without_writer_claim(self):
+        fixture = self.fixture()
+        fixture["properties"] = [{
+            "key": "track_1",
+            "value": {
+                "type": 3,
+                "valueArray": [{
+                    "valueBit64": 1,
+                    "valueString": "",
+                }],
+            },
+        }]
+        payload, _ = pipeline.build_mission(
+            fixture,
+            pipeline.ROOT / "fixture" / "testm1.json",
+        )
+        self.assertEqual(payload["mission"]["properties"], [{
+            "key": "track_1",
+            "type": 3,
+            "values": [{
+                "valueBit64": 1,
+                "valueString": "",
+            }],
+        }])
+
     def fixture(self):
         return {
             "missionId": "testm1",
@@ -921,6 +987,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "activityQuestLevelRows": 0,
                 "activityQuestLevelQuests": 0,
                 "activityQuestLevelMissions": 0,
+                "trackingInfoRows": 0,
+                "trackingObjectives": 0,
+                "missionPropertyRows": 0,
+                "missionsWithProperties": 0,
                 # The fixture has one mission with no cross-mission state
                 # condition and no envTalk consumer table, so both new lanes
                 # are legitimately empty rather than absent.
