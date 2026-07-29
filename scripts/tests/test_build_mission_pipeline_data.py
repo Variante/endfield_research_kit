@@ -935,6 +935,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             })
             self.assertTrue((output_root / "index.json").is_file())
             self.assertTrue((output_root / "missions" / "testm1.json").is_file())
+            self.assertEqual(
+                index["missionRuntimeSource"],
+                {
+                    "selectedRoot": mission_root.as_posix(),
+                    "selection": "explicit_mission_root",
+                },
+            )
             self.assertEqual(index["runtimeContract"]["outbound"][1]["message"], "CS_UPDATE_QUEST_OBJECTIVE")
             payload = json.loads((output_root / "missions" / "testm1.json").read_text(encoding="utf-8"))
             self.assertEqual(payload["missionGraph"], {"upstream": {}, "downstream": {}})

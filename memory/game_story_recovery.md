@@ -13,13 +13,32 @@ authoritative total scene list for every mission. The current strict CN audit
 contains:
 
 - 487 missions and 8,872 candidate Story scene placements;
-- 1,428 accepted strong scene edges and 834 retained supported-topology edges;
+- 1,429 accepted strong scene edges and 834 retained supported-topology edges;
 - 1,322 transitively reduced component edges;
-- 3,640 comparable pairs out of 249,479 within-mission pairs (1.46%);
+- 3,655 comparable pairs out of 249,479 within-mission pairs (1.47%);
 - 5,097 isolated scenes and 2,077 scenes with weak/supported evidence only;
 - zero cyclic strongly connected components;
 - 250 explicit quest forks, 53 quest merges, and 59 authored cross-scene
   option groups.
+
+The effective authored mission corpus is the complete
+`structured/Persistent/Data/Json/MissionRuntimeAsset` override, not the older
+StreamingAssets mirror. Both directories currently contain the same 980
+filenames, but five payloads differ: `f1m19d3`, `f1m32`, `hidden59`,
+`hidden62`, and `sm2l8m1`. Active builders now select Persistent only when it
+contains every StreamingAssets mission filename; otherwise they fall back to
+StreamingAssets as one coherent corpus rather than silently mixing a partial
+patch with the base. The generated Mission Pipeline index records that
+selection and both corpus counts.
+
+This precedence recovers one additional authored quest in `f1m32` and two
+non-precedence mission-state relations in `hidden62`. In particular,
+`f1m32_q#3` is an exact `CheckTalkOptionFinish(dlg_f1m32_2, -1)` objective.
+Together with the existing predecessor topology it adds the strong
+`dlg_f1m32_1 -> dlg_f1m32_2` Story edge. `hidden62_q#19` requires
+`f1m3d1_q#20` to be Processing and fails when that quest becomes Completed,
+yielding `requiresProcessing` and `abortsOnCompleted` relations without
+inventing precedence.
 
 Unknown relationships must stay unknown. Filename suffixes, file order,
 generated rank, OCR, gameplay calibration, and manual WebUI overrides can be
@@ -122,9 +141,9 @@ neither agreement nor disagreement changes the source graph.
 The Mission Pipeline attachment audit is a separate, changing coverage metric
 over 490 exported MissionRuntime graphs. The current generated report at
 `reports/story/build/mission_pipeline_story_binding_coverage_CN.md` records
-5,273 unique pipeline-relevant or exactly connected cross-owner
-`dlg`/`sns`/`cutscene`/`black`/`remotecomm`/`radio` files: 4,065 have at least
-one original-data connection across 4,361 mission placements and 1,208 remain
+5,282 unique pipeline-relevant or exactly connected cross-owner
+`dlg`/`sns`/`cutscene`/`black`/`remotecomm`/`radio` files: 4,072 have at least
+one original-data connection across 4,368 mission placements and 1,210 remain
 unassigned. The denominator now admits 106 Story files whose nominal Story
 owner is not one of the 490 MissionRuntime ids only because accepted generated
 pipeline edges connect them; this repairs an accounting blind spot and does not
@@ -281,7 +300,7 @@ place observations on the corresponding node, while mission-only rows stay at
 mission scope. Both placement types remain observed temporal context, add no
 authored graph edge, and are excluded from the source partial order. No real
 gameplay capture has been ingested yet, so this path currently improves the
-measurement contract rather than the 4,065/1,208 ownership counts.
+measurement contract rather than the 4,072/1,210 ownership counts.
 
 The current-build protobuf metadata audit now gives the runtime capture a
 complete message-ID inventory: 515 client-to-server and 671 server-to-client
@@ -1111,8 +1130,8 @@ joins:
   in `map02_lv004/23400083014` reaches `radio_e8m1_12` through its serialized
   control path. This is exact tracked-entity/property context, not proof that
   the property change completes the server-placeholder objective;
-- the full current MissionRuntime corpus contains 1,933 direct
-  `GameConditionServerPlaceHolder` objectives across 1,931 quests and 377
+- the full current MissionRuntime corpus contains 1,932 direct
+  `GameConditionServerPlaceHolder` objectives across 1,930 quests and 377
   missions. Native `StartQuest` binds client progress callbacks only for
   `ConditionType.ClientOnly=9999`, while the installed placeholder fallback
   returns `int.MaxValue`; therefore the placeholder sends no
@@ -2264,23 +2283,23 @@ exactly those, from `CheckMissionState`/`SimpleConditionCheckMissionState`
 (`_questId`, whose owner is the literal `<mission>_q#` prefix). Nested
 `CombineCondition.subConditions` trees are reached by the ordinary walk.
 
-Current CN corpus: 522 state-condition rows, of which 327 are same-mission
-(intra-mission quest flow, already covered by `prevQuestIdList`) and 195 are
-cross-mission. Those collapse to **153 edges over 153 missions**. Every target
+Current CN corpus: 524 state-condition rows, of which 327 are same-mission
+(intra-mission quest flow, already covered by `prevQuestIdList`) and 197 are
+cross-mission. Those collapse to **155 edges over 154 missions**. Every target
 mission resolves to a real MissionRuntimeAsset; zero dangle.
 
 The operands are never collapsed into one "precedes" relation:
 
 - `requiresCompleted` (141 edges) -- objective waits on `Equal Completed`. This
   is the only class carrying authored precedence.
-- `requiresProcessing` (9) -- objective waits on `Equal Processing`. A
-  co-active window, not precedence. Eight of the nine declarers are `hidden*`
+- `requiresProcessing` (10) -- objective waits on `Equal Processing`. A
+  co-active window, not precedence. Nine of the ten declarers are `hidden*`
   missions gated to run *during* a main mission.
-- `abortsOnCompleted` (3) -- the reference sits in `failedCondition`, so the
+- `abortsOnCompleted` (4) -- the reference sits in `failedCondition`, so the
   declaring quest fails when the target completes. Mutual exclusion, the
   opposite of precedence.
 
-The comparer is `Equal` in all 195 rows. Enum numerals are the installed
+The comparer is `Equal` in all 197 rows. Enum numerals are the installed
 build's, already pinned above by the native `CheckMissionState` union tag
 `0x67` whose decoded predicate reads `e7m4 Equal Completed`: comparer `0` =
 `Equal`, state `3` = `Completed`, `2` = `Processing`. Any unrecognized
@@ -2436,10 +2455,10 @@ graph draws *quests*, so the operational question is "does this file reach a
 node". `scripts/story_recovery/build_node_attachment_coverage.py` measures the
 difference. Current CN corpus:
 
-- 4,461 quest nodes, of which **1,331 (29.8%)** carry at least one Story file;
-- **1,705** Story keys reach a quest node;
-- **2,363** reach only the mission shell;
-- **1,208** reach no mission at all.
+- 4,462 quest nodes, of which **1,332 (29.9%)** carry at least one Story file;
+- **1,707** Story keys reach a quest node;
+- **2,367** reach only the mission shell;
+- **1,210** reach no mission at all.
 
 The shell-only bucket is therefore twice the fully-unlinked bucket, and it is
 the larger real gap. It is dominated by evidence classes that have no quest
@@ -2449,10 +2468,10 @@ granularity to give: 1,703 `leveldata_levelscript_mission_context` rows plus
 mission-scoped registries; they identify a mission shell by construction and
 cannot select a quest no matter how they are re-read.
 
-Only 178 shell-only rows name a candidate quest at all, 114 name exactly one,
-and 59 of those 114 are `pos_tracking_trigger_center_story_context` — spatial
+Only 179 shell-only rows name a candidate quest at all, 115 name exactly one,
+and 59 of those 115 are `pos_tracking_trigger_center_story_context` — spatial
 proximity, which the evidence policy keeps diagnostic and never promotes. That
-leaves **55 rows over 49 Story files** as the entire realistically-placeable
+leaves **56 rows over 50 Story files** as the entire realistically-placeable
 remainder, and every one carries an explicit self-limiting status
 (`same_tracked_npc_is_play3d_emitter_not_quest_trigger`,
 `shared_tracked_npc_readiness_context_not_quest_trigger`,
@@ -2487,7 +2506,7 @@ mission-level `levelscript_condition_scope` rows already carry, refined from
 mission to quest by the uniqueness of the script-to-quest mapping.
 
 So the realistically placeable remainder is 40 files by this lane plus at most
-49 by the single-candidate lane — under 4% of the 2,363 shell-only files. The
+50 by the single-candidate lane — under 4% of the 2,367 shell-only files. The
 rest are shell-only for structural reasons and no re-reading will move them.
 
 ### Closed: conversation-payload cross-references
@@ -2495,8 +2514,9 @@ rest are shell-only for structural reasons and no re-reading will move them.
 A complete superset sweep of all connected
 `webui/data/lang/CN/conv/*.json` payloads against the prior 1,213-key unlinked
 queue returned 107 keys across 110 pairs, and **every one was inadmissible**.
-The current 1,208-key queue is a subset after accepted edges moved five files
-out, so the negative conclusion still covers it. Of those rows, 102 sit in
+That 1,213-key input is a historical superset of the then-current queue. Its
+negative conclusion remains evidence for overlapping keys, not a blanket claim
+about later additions to the current 1,210-key queue. Of those rows, 102 sit in
 `_debug.attachedTo.source.key`, which
 `language_bundle.attach_target` builds by pure filename construction
 (`f"dlg_{mission}_{scene}"`) for UI grouping; the rest are
@@ -4559,7 +4579,7 @@ Current main-story priorities:
    graph preserve their exact tracks, clip timing, subtitle ids, audio events,
    config files, and PathIDs without inventing content or mission placement.
 9. The inter-mission graph is now recovered from cross-mission state
-   conditions and is complete with respect to that evidence class: 153 edges,
+   conditions and is complete with respect to that evidence class: 155 edges,
    zero dangling targets, zero unclassified operands, and the one mission-level
    cycle explained by an acyclic quest graph. Do not re-derive it from
    filenames, chapter tables, or mission-id numbering. The next real

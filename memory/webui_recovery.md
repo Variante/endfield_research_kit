@@ -107,7 +107,9 @@ scene script set reduced the current fast CN command from 129.055 to 106.275
 seconds wall time (17.7%). Aggregate SHA-256 values remained identical for all
 10,887 conversation payloads, all 702 mission sidecars, and the reused
 reference bundle. The following direct Mission Pipeline pass completed in
-2.202 seconds with 490 missions and 4,461 quests.
+2.202 seconds with 490 missions and 4,461 quests at that checkpoint. The
+current complete Persistent MissionRuntime override adds `hidden62_q#19`, so
+the live payload now has 490 missions and 4,462 quests.
 
 The next exact-equivalence optimization moves native LevelScript control-graph
 preparation out of the per-Story-action lookup. Each file now validates its
@@ -344,6 +346,12 @@ Mission Pipeline:
   playlist; isolated and weak-context-only files stay visible.
 - Displays `MissionRuntimeAsset` predecessor topology and quest-state condition
   dependencies without treating `flowIndex` as an exclusive route selector.
+  The builder prefers the complete Persistent MissionRuntime override only
+  when it covers every StreamingAssets mission filename; otherwise it falls
+  back to the coherent StreamingAssets corpus. The index publishes the
+  selected root and decision. The current 980/980 override exposes
+  `f1m32_q#3` as the exact `dlg_f1m32_2` option-finish objective and adds
+  `hidden62_q#19` plus its two non-precedence state relations.
 - Routes authored predecessor edges through a visible server-authority gateway.
   The selected-quest trace distinguishes native-proven objective/dialog
   messages and state pushes from the unavailable server successor policy.
@@ -496,7 +504,7 @@ Mission Pipeline:
 - Keeps exact native playback visible even when no mission owner exists. The
   global native-boundary panel now renders ten missionless SubGame nodes as
   `SubGame -> bindScriptId -> native playback -> Story`, covering nine unique
-  Story files and fourteen placements. They remain included in the 1,208
+  Story files and fourteen placements. They remain included in the 1,210
   unlinked-mission files and are not counted as connected Story. Exact original-
   data prerequisites/associations are shown as dashed non-owning edges: the
   boss-rush quest/prior-challenge unlock chain and activity stage 6's explicit
@@ -548,8 +556,8 @@ Mission Pipeline:
 - Story files are attached per quest only from authored runtime references or
   bounded LevelData, LevelScript, variant-runtime, and unique NPC-proxy
   evidence, never from mission-id co-membership or spatial proximity alone.
-- The generated CN coverage is currently 4,065 of 5,273 unique Story files
-  across 4,361 mission placements; 1,208 remain unlinked. Of the connected
+- The generated CN coverage is currently 4,072 of 5,282 unique Story files
+  across 4,368 mission placements; 1,210 remain unlinked. Of the connected
   total, 106 have non-MissionRuntime nominal Story owners and enter the metric
   only because accepted generated pipeline edges connect them. This is an
   accounting repair; the unlinked denominator is not widened with unrelated

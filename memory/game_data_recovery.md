@@ -35,13 +35,24 @@ The current checkout has three complementary evidence layers:
    consumers, decoded audio, and selected exported assets into an evidence-first
    SQLite graph.
 
+MissionRuntime is one case where VFS-root precedence is semantically material.
+StreamingAssets and Persistent currently expose the same 980
+`MissionRuntimeAsset` filenames, but five payloads differ (`f1m19d3`, `f1m32`,
+`hidden59`, `hidden62`, and `sm2l8m1`). Persistent contains the current
+authored overrides. Active consumers now use it only when its filename set
+covers the complete StreamingAssets base set; an incomplete Persistent tree
+causes a whole-corpus StreamingAssets fallback instead of a per-file hybrid.
+Generated Mission Pipeline provenance records the selected root, decision,
+base/override counts, missing base files, and extra override files. Explicit
+`--mission-root` builds are labeled separately.
+
 The current binary-first system-carrier audit demonstrates the intended
 cross-layer standard. Three typed DomainDepot tables plus native request/reply
 handlers prove 24 residual f1m25 dialog bindings; one SkipChapter row plus its
 native sender/handler proves one e5m1 dialog binding. A
 FactoryBuildingPanelLock row proves only a local two-quest-state radio
 dependency and creates no owner. The strict Mission Pipeline result is now
-4,058 connected of 5,273 unique Story files, leaving 1,215 unlinked.
+4,072 connected of 5,282 unique Story files, leaving 1,210 unlinked.
 
 The current DialogTree pass adds four exact non-owning dependencies without
 changing those ownership counts. It requires exact sequential MemoryPack
@@ -1042,8 +1053,8 @@ Server objective progress arrives through `SC_QUEST_OBJECTIVES_UPDATE`
 descriptionIndex}]`. `MissionSystem.Handle_QuestObjectiveUpdate` at
 `0x183a882e0` first resolves the exact quest and then refreshes its objective;
 the safe identity is therefore `(questId, conditionId)`, never `conditionId`
-alone. This matters in the current original corpus: 1,933 direct placeholders
-cover 1,931 quests in 377 missions but only 1,844 distinct condition ids; 17
+alone. This matters in the current original corpus: 1,932 direct placeholders
+cover 1,930 quests in 377 missions but only 1,843 distinct condition ids; 17
 ids are reused across 106 rows, with one value appearing 59 times. There are no
 nested placeholder instances, and only `sm2l4m1_q#4` contains more than one
 (three). The packet contains no scene, LevelScript, entity, trigger, spawner,

@@ -145,7 +145,13 @@ available through expandable guidance.
   `MissionRuntimeAsset` graphs as deterministic ranked
   DAGs. Predecessor and quest-state-condition edges remain authored evidence,
   while every predecessor transition passes through a visible server-authority
-  gateway. Selecting a quest shows the native asynchronous protocol sequence:
+  gateway. The builder uses the complete Persistent MissionRuntime override
+  only when it covers every StreamingAssets mission filename; otherwise it
+  falls back to the coherent StreamingAssets corpus. The generated index
+  exposes that source decision. The current 980/980 override yields 490
+  missions and 4,462 quests, including the exact `f1m32_q#3` dialog-option
+  gate and `hidden62_q#19` state window. Selecting a quest shows the native
+  asynchronous protocol sequence:
   `SC_QUEST_STATE_UPDATE` activation, local condition callbacks,
   `CS_UPDATE_QUEST_OBJECTIVE` / `SC_QUEST_OBJECTIVES_UPDATE`, optional
   `CS_FINISH_DIALOG` / `SC_FINISH_DIALOG`, authoritative completion/failure,
@@ -337,8 +343,8 @@ available through expandable guidance.
   variants without a standalone Story group, and client-action inspection
   follows the authored `_nextID` chain. Native addresses describe the installed
   build's fallback implementation; IFix-dispatched hotfix behavior may differ.
-  The current CN coverage audit connects 4,065 of 5,273 unique Story files
-  across 4,361 mission placements; 1,208 remain unlinked, including 153 with
+  The current CN coverage audit connects 4,072 of 5,282 unique Story files
+  across 4,368 mission placements; 1,210 remain unlinked, including 155 with
   exact native playback but no decoded mission/quest trigger. OCR, manual
   overrides, and observed gameplay do not change these counts.
 

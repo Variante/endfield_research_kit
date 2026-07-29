@@ -22,14 +22,21 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from common import EXPORT_ROOT, ROOT, STORY_REPORTS_DIR, rel_path as slash
+from story_builder.mission_assets import select_complete_mission_runtime_root
 
 DATA_JSON_DIR = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"
+PERSISTENT_DATA_JSON_DIR = (
+    EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Json"
+)
 DEFAULT_OUTPUT = EXPORT_ROOT / "recovered" / "story_source_links.json"
 DEFAULT_REPORT_JSON = STORY_REPORTS_DIR / "story_source_links.json"
 DEFAULT_REPORT_MD = STORY_REPORTS_DIR / "story_source_links.md"
 
 DEFAULT_SCAN_ROOTS = (
-    DATA_JSON_DIR / "MissionRuntimeAsset",
+    select_complete_mission_runtime_root(
+        DATA_JSON_DIR / "MissionRuntimeAsset",
+        PERSISTENT_DATA_JSON_DIR / "MissionRuntimeAsset",
+    ),
     DATA_JSON_DIR / "LevelScriptData",
     DATA_JSON_DIR / "LevelScriptTemplateData",
 )

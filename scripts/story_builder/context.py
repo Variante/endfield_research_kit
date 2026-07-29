@@ -84,6 +84,7 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from source_paths import _existing_unique_paths, _resolve_recovered_dir, _resolve_structured_source_dir
+from story_builder.mission_assets import select_complete_mission_runtime_root
 from .reports import (
     inferred_option_anchor_row as shared_inferred_option_anchor_row,
     write_inferred_option_anchors_report as shared_write_inferred_option_anchors_report,
@@ -134,11 +135,15 @@ STREAMING_TABLE_DIR = STREAMING_ASSETS_DIR / "Table"
 PERSISTENT_TABLE_DIR = PERSISTENT_ASSETS_DIR / "Table"
 TABLE_DIR = STREAMING_TABLE_DIR
 DATA_JSON_DIR = STREAMING_ASSETS_DIR / "Data" / "Json"
+PERSISTENT_DATA_JSON_DIR = PERSISTENT_ASSETS_DIR / "Data" / "Json"
 LEVELDATA_DIR = DATA_JSON_DIR / "LevelData"
 LEVELSCRIPT_DIR = DATA_JSON_DIR / "LevelScriptData"
 SPAWNER_CONFIG_DIR = DATA_JSON_DIR / "SpawnerConfig"
 GAMEPLAY_CONFIG_DIR = DATA_JSON_DIR / "GameplayConfig"
-MRA_DIR = DATA_JSON_DIR / "MissionRuntimeAsset"
+MRA_DIR = select_complete_mission_runtime_root(
+    DATA_JSON_DIR / "MissionRuntimeAsset",
+    PERSISTENT_DATA_JSON_DIR / "MissionRuntimeAsset",
+)
 NPC_PROXY_EX_PATH = GAMEPLAY_CONFIG_DIR / "NpcProxyExDataTable.json"
 NPC_PROXY_TABLE_PATH = GAMEPLAY_CONFIG_DIR / "NpcProxyTable.json"
 ATMOS_CLUSTER_TABLE_PATH = GAMEPLAY_CONFIG_DIR / "AtmosphericNpcClusterDataTable.json"
