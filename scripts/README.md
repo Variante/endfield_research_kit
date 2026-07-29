@@ -2014,7 +2014,7 @@ gameplay-video OCR/audio workflow.
   explicit context and does not transfer ownership.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v54` evaluates 293 active declarations: 199 residual
+  `sourceStoryGapQueue.v55` evaluates 297 active declarations: 203 residual
   radio definitions, 29 root cutscene carriers, 38 registered dialog
   definitions, thirteen exact NpcProxy rows across twelve dialogs without a
   mission owner, eight exact
@@ -2024,7 +2024,7 @@ gameplay-video OCR/audio workflow.
   definitions across
   `e0m0`, `e1m1`, `e1m2`, `e1m3`, `e2m2`, `e2m4`, `e2m5`, `e2m6`, `e2m7`,
   `e3m3`, `e5m1`, `e5m2`, `e6m1`, `e6m3`, `e6m4`, `e7m2`,
-  `e7m3`, `e7m4`, `e9m2`, `e9m3`, `e10m1`, `e10m3`, `e10m4`,
+  `e7m3`, `e7m4`, `e8m2`, `e9m2`, `e9m3`, `e10m1`, `e10m3`, `e10m4`,
   `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`.
   Positive native/runtime contexts are excluded from these declarations.
   This includes four bounded `e1m3`
@@ -2164,6 +2164,10 @@ gameplay-video OCR/audio workflow.
   manual WebUI presentation override: the exact LevelScript `PlayFmvAction`
   authoritatively targets `cutscene_e1m1_1`, so that media attachment is not
   promoted into a route for `_6`.
+  e8m2 adds four audio-complete residual RadioTable definitions:
+  `radio_e8m2_1` has seven authored lines, while `_9`, `_15`, and `_16`
+  each have two. All four have zero exact routes and no typed carrier; their
+  low-confidence scene-entry fallback is not activation or chronology.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
   e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`
