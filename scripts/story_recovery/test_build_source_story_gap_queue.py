@@ -1799,6 +1799,37 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "closed_current_build_definition_without_consumer",
         )
 
+    def test_declared_cutscene_definitions_cover_every_host_gate(self) -> None:
+        self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS),
+            set(gap_queue.OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS),
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
+                "cutscene_e11m6_rift_camera_state1to2"
+            ]["timelineRegistryId"],
+            483,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
+                "cutscene_e11m6_zhuangcomein"
+            ]["timelineRegistryId"],
+            547,
+        )
+
+    def test_declared_e11m6_radio_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E11M6_RADIOS,
+            {
+                "radio_e11m6_10",
+                "radio_e11m6_13",
+                *{
+                    f"radio_e11m6_{number}"
+                    for number in range(19, 39)
+                },
+            },
+        )
+
     def test_exact_build_offline_exhausted_scene_is_deferred_only(self) -> None:
         story_key = "radio_e11m4_29"
         partial = partial_mission(
