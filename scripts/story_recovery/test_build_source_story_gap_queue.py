@@ -2138,6 +2138,107 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "dlg_e1m3_5d5",
         )
 
+    def test_exact_native_context_isolated_scenes_are_fail_closed(
+        self,
+    ) -> None:
+        trigger_zone = {
+            "key": "radio_e1m3_13",
+            "relation":
+                "radio_trigger_zone_mission_state_playback_context",
+            "direction": "context",
+            "phase": "mission_state_trigger_zone",
+            "confidence": "native_exact_serialized_co_carrier",
+            "evidenceTier": "direct",
+            "storyOwnerMission": "e1m3",
+            "storyBinding": True,
+            "ownership": False,
+            "missionStateId": "e1m3",
+            "missionStateGateRoles": [
+                "hideBeforeMissionId",
+                "hideCompleteMissionId",
+            ],
+            "nativeMappingId": "radio-zone-test",
+            "nativeConsumer": "OnEnter -> GameAction.PlayRadio",
+            "unionTag": 9,
+            "serializedMemberCount": 7,
+            "specificDataListCount": 1,
+            "levelIds": ["map01_lv001"],
+            "sourceFiles": ["level-data.json"],
+            "recordOffset": 10,
+            "recordEndOffset": 20,
+        }
+        tracked_world_entity = {
+            "key": "radio_e1m3_32",
+            "relation":
+                "mission_tracked_world_entity_levelscript_context",
+            "direction": "context",
+            "phase": "local_leader_trigger_world_entity_context",
+            "confidence": "native_exact_mission_navigation_context",
+            "evidenceTier": "derived_exact_foreign_key",
+            "storyOwnerMission": "e1m3",
+            "storyBinding": True,
+            "ownership": False,
+            "questActivation": False,
+            "questPlayback": False,
+            "questCompletion": False,
+            "candidateQuestIds": ["e1m3_q#44"],
+            "trackingRows": [{
+                "missionId": "e1m3",
+                "questId": "e1m3_q#44",
+            }],
+            "worldEntityIds": ["2100130040"],
+            "levelIds": ["map01_lv001"],
+            "scriptIds": ["2100130014"],
+            "sourceFiles": ["level-script.json"],
+            "worldEntityLevelScriptEvidence": [{
+                "nativeAction": "PlayRadio",
+                "playbackRecordOffset": 711,
+                "listener": {
+                    "status": "exact_serialized_control_path",
+                    "path": [{
+                        "actionName": "PlayRadio",
+                        "recordClass": "play_radio",
+                        "texts": ["radio_e1m3_32"],
+                    }],
+                },
+            }],
+        }
+        rows = gap_queue._closed_exact_native_context_isolated_scenes(
+            {
+                "missionStoryConnections": [
+                    trigger_zone,
+                    tracked_world_entity,
+                ],
+            },
+            {"radio_e1m3_13", "radio_e1m3_32"},
+            "e1m3",
+        )
+        self.assertEqual(
+            [row["sceneKey"] for row in rows],
+            ["radio_e1m3_13", "radio_e1m3_32"],
+        )
+        invalid_tracked = dict(tracked_world_entity)
+        invalid_tracked["questPlayback"] = True
+        self.assertEqual(
+            [
+                row["sceneKey"]
+                for row in (
+                    gap_queue
+                    ._closed_exact_native_context_isolated_scenes(
+                        {
+                            "missionStoryConnections": [
+                                trigger_zone,
+                                invalid_tracked,
+                            ],
+                        },
+                        {"radio_e1m3_13", "radio_e1m3_32"},
+                        "e1m3",
+                    )
+                )
+            ],
+            ["radio_e1m3_13"],
+        )
+
     def test_declared_e6m3_definition_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E6M3_RADIOS,
