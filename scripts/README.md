@@ -311,6 +311,11 @@ python scripts\story_recovery\build_animestudio_story_guide_consumer_audit.py
 The carrier audit reads the current source-gap queue and reports only exact
 core-isolated Story values that occur in typed Story-id fields on the same
 completely decoded object as typed mission/quest or scene/script identifiers.
+Exact Timeline roots whose serialized names begin with `f_`, `m_`, or `fm_`
+are matched to the canonical `cutscene_*` Story key while preserving the
+physical source value and normalization in the report. This normalization is
+limited to the complete gender-prefixed root name: component suffixes,
+locale/hash suffixes, substrings, and fuzzy variants remain rejected.
 The stable `coreIsolatedSceneKeys` target prevents queue-only classification
 changes from invalidating the audit that helps classify that queue. The report
 records the complete target key-to-mission map plus a deterministic target-set
@@ -335,7 +340,9 @@ original logical AssetBundles, exports their GameObjects in a temporary
 the complete recursive Transform child hierarchy back through the typed object
 index. Child traversal is accepted only when each parent `m_Children` relation
 agrees with the child's `m_Father`; unresolved or inconsistent hierarchies fail
-closed. Output goes to
+closed. Targeted bundle dumps are split into batches of at most 64 logical
+names so the exact scan remains below Windows command-line length limits.
+Output goes to
 `reports/story/recovery/animestudio_story_gameobject_audit.{json,md}`.
 GameObject co-membership and Transform ancestry are exact serialized evidence,
 but a typed mission/runtime sibling or descendant is still only a candidate
@@ -349,7 +356,9 @@ for exact resolved references into the current actionable Story-bearing
 objects. It separates same-file Timeline composition from cross-file
 `PlayableDirector.m_PlayableAsset` bindings, then exports only the director
 host bundles and resolves their exact Transform ancestry, descendants, typed
-components, and `CutsceneRootComponent._timelineName` values. Output goes to
+components, and `CutsceneRootComponent._timelineName` values. It uses the same
+strict complete-name gender-root normalization as the forward audits; component
+or fuzzy aliases are not admitted. Output goes to
 `reports/story/recovery/animestudio_story_reverse_pptr_audit.{json,md}`.
 The current hash-gated native mapping additionally promotes a cross-Story row
 to a root playback alias only when that exact CutsceneRoot's resolved
@@ -1960,20 +1969,29 @@ gameplay-video OCR/audio workflow.
   current native mapping/hash and the proved one-based
   `exDatas[activeCondIndex - 1].dialogId` selector boundary. This establishes
   selectable mission-scoped configuration, not a quest trigger or relative
-  order, and adds no edge. Current-build `black_*` rows carrying the full
+  order, and adds no edge. A proxy may live in another mission bundle only when
+  its exact `storyOwnerMission` names the Story file's nominal mission and its
+  `npcProxyMissionId` equals that context bundle; this is recorded as an exact
+  cross-mission runtime context and does not move the Story file into the
+  context mission chronology. Current-build `black_*` rows carrying the full
   `original_text_definition_without_consumer` classification are also excluded
   from actionable isolation after the bounded LevelScript, DialogTree, and
   Timeline consumer search.
   A narrower current-build-only deferral class removes a row from scoring only
-  when every named offline evidence gate remains exact. The initial mapping
-  covers the 34 residual `e11m4` radio definitions, the 21 residual `e10m4`
-  radio definitions, and
-  `cutscene_e11m4_rift_camera_state1to2`: it requires the expected
-  `GameAssembly.dll`, RadioTable, AudioDialog, NumIdStrTable, and cutscene
-  definition hashes; the complete provenance-valid carrier audit and its
-  current core-target digest; exact RadioTable schema and AudioDialog
-  membership; the exact Timeline registry id; and the current GameObject audit
-  negative for the cutscene root. Deferred rows remain visible as
+  when every named offline evidence gate remains exact.
+  `sourceStoryGapQueue.v22` covers 78 residual radio definitions and six
+  cutscenes across `e10m4`, `e11m1`, and `e11m4`, including all 23 residual
+  `e11m1` radios, four exact gendered/director-host Timeline roots, and the
+  text-only `cutscene_e11m1_2`. It requires the expected `GameAssembly.dll`,
+  RadioTable, AudioDialog, TextTable, NumIdStrTable, and cutscene-definition
+  hashes; the complete provenance-valid carrier audit and current core-target
+  digest; exact RadioTable schema and AudioDialog membership; exact Timeline
+  registry ids or the complete text-only definition group; and current
+  GameObject plus reverse-PPtr audit negatives. Timeline roots additionally
+  require the expected exact `PlayableDirector` host counts. A text-only group
+  is admitted only when its complete TextTable rows remain exact and no
+  Timeline registry row, GameObject target, reverse relation, director host, or
+  route exists. Deferred rows remain visible as
   `deferred_current_build_offline_surface_exhausted`, add no graph edge, and
   automatically become actionable again if a hash, target set, mission
   assignment, route, or audit gate changes.

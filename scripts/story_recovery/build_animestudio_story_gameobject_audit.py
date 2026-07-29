@@ -39,7 +39,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import build_animestudio_story_carrier_audit as carrier  # noqa: E402
 
-SCHEMA = "animestudioStoryGameObjectAudit.v2"
+SCHEMA = "animestudioStoryGameObjectAudit.v3"
 DEFAULT_OUTPUT_ROOT = ROOT / "export_full"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"
@@ -62,6 +62,7 @@ DEFAULT_GAME_ROOT = Path(
     )
 )
 SOURCES = ("StreamingAssets", "Persistent")
+TARGETED_DUMP_BATCH_SIZE = 64
 
 
 class AuditError(RuntimeError):
@@ -102,10 +103,14 @@ def collect_story_game_objects(
             continue
         counts["objectsScanned"] += 1
         matches = sorted({
-            str(field["value"])
+            story_key
             for field in carrier.scalar_rows(row)
-            if isinstance(field["value"], str)
-            and field["value"] in target_missions
+            if (
+                story_key := carrier.canonical_target_story_key(
+                    field["value"],
+                    target_missions,
+                )
+            )
         })
         if not matches:
             continue
@@ -289,6 +294,19 @@ def run_checked(command: list[str], *, label: str) -> None:
         )
 
 
+def batched_logical_names(
+    logical_names: list[str],
+    batch_size: int = TARGETED_DUMP_BATCH_SIZE,
+) -> list[list[str]]:
+    """Keep repeated ``--file-regex`` arguments below Windows CLI limits."""
+    if batch_size <= 0:
+        raise ValueError("batch_size must be positive")
+    return [
+        logical_names[index:index + batch_size]
+        for index in range(0, len(logical_names), batch_size)
+    ]
+
+
 def extract_game_objects(
     cli: Path,
     game_root: Path,
@@ -306,22 +324,32 @@ def extract_game_objects(
         json_root = work_root / source / "json"
         raw_root.mkdir(parents=True, exist_ok=True)
         json_root.mkdir(parents=True, exist_ok=True)
-        dump_command = [
-            str(cli),
-            "dump",
-            "--streaming-assets",
-            str(source_root),
-            "--output",
-            str(raw_root),
-            "--block-type",
-            "bundle",
-        ]
-        for logical_name in logical_names:
-            dump_command.extend([
-                "--file-regex",
-                re.escape(logical_name) + "$",
-            ])
-        run_checked(dump_command, label=f"{source} targeted VFS dump")
+        for batch_index, logical_batch in enumerate(
+            batched_logical_names(logical_names),
+            start=1,
+        ):
+            dump_command = [
+                str(cli),
+                "dump",
+                "--streaming-assets",
+                str(source_root),
+                "--output",
+                str(raw_root),
+                "--block-type",
+                "bundle",
+            ]
+            for logical_name in logical_batch:
+                dump_command.extend([
+                    "--file-regex",
+                    re.escape(logical_name) + "$",
+                ])
+            run_checked(
+                dump_command,
+                label=(
+                    f"{source} targeted VFS dump batch "
+                    f"{batch_index}"
+                ),
+            )
         extracted = list(raw_root.rglob("*.ab"))
         if len(extracted) != len(logical_names):
             raise AuditError(

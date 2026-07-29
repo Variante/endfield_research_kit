@@ -98,6 +98,44 @@ class AnimeStudioStoryCarrierAuditTests(unittest.TestCase):
         self.assertEqual(result["counts"].get("objectsWithExactTargetValue", 0), 0)
         self.assertEqual(result["candidates"], [])
 
+    def test_gendered_cutscene_variant_matches_only_canonical_target(self) -> None:
+        targets = {"cutscene_e11m1_fire_end": {"e11m1"}}
+        row = object_row([
+            ["$.cutsceneId", "s", "f_cutscene_e11m1_fire_end"],
+            ["$.missionId", "s", "e11m1"],
+        ])
+
+        result = audit.audit_object_rows(
+            [row],
+            targets,
+            "StreamingAssets",
+        )
+
+        candidate = result["candidates"][0]
+        self.assertEqual(candidate["storyKey"], "cutscene_e11m1_fire_end")
+        self.assertEqual(
+            candidate["sourceStoryValue"],
+            "f_cutscene_e11m1_fire_end",
+        )
+        self.assertEqual(
+            candidate["storyValueNormalization"],
+            "canonical_cutscene_variant",
+        )
+        self.assertEqual(
+            audit.canonical_target_story_key(
+                "prefix_cutscene_e11m1_fire_end",
+                targets,
+            ),
+            "",
+        )
+        self.assertEqual(
+            audit.canonical_target_story_key(
+                "f_cutscene_e11m1_fire_end_Actor",
+                targets,
+            ),
+            "",
+        )
+
     def test_empty_or_zero_owner_runtime_fields_do_not_qualify(self) -> None:
         row = object_row([
             ["$.dialogId", "s", "dlg_e11m1_30"],

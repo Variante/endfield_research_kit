@@ -4306,26 +4306,34 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v21`
-   now turns the completed exact `e11m4` negative boundary into a fail-closed
-   operational deferral. It activates only while the exact current
-   `GameAssembly.dll`, RadioTable, AudioDialog, NumIdStrTable, and
-   cutscene-definition hashes match; the carrier-audit target digest matches
-   the freshly derived core-isolated set; all 35 keys remain negative in the
-   provenance-valid carrier audit; the radio schema/audio and cutscene
-   registry/root gates remain exact; and no new route exists. The rows stay
-   visible as `deferred_current_build_offline_surface_exhausted`, create no
-   graph edge, and reopen automatically if any gate changes. `e11m4` therefore
-   scores 0 with 35 deferred rows. The same exact mechanism now defers 21
-   e10m4 RadioTable-only rows after their current row schemas, AudioDialog
-   membership (including the two exact partial-membership exceptions), Lua
-   negative, object-index negative, and native caller boundary were verified.
-   There are 56 deferred rows across e10m4/e11m4, all with graph effect
-   `none`. The genuine offline queue now ranks `e11m1` first (145/29),
-   followed by `e11m6` (125/25) and `e11m2` (75/15). Continue
+   block metadata or the installed build changes. `sourceStoryGapQueue.v22`
+   turns the completed exact `e10m4`, `e11m1`, and `e11m4` negative boundaries
+   into fail-closed operational deferrals. It activates only while the exact
+   current `GameAssembly.dll`, RadioTable, AudioDialog, TextTable,
+   NumIdStrTable, and cutscene-definition hashes match; the carrier-audit
+   target digest matches the freshly derived core-isolated set; the radio
+   schema/audio and Timeline/text-definition gates remain exact; the forward
+   GameObject and reverse-PPtr results stay negative; and no new route exists.
+   The v3 carrier pass matched 294 exact targets, rejected 319 component/fuzzy
+   lookalikes, found zero typed candidates, and left 3,127 target keys
+   negative. The v3 reverse pass resolved 883 references into 294 targets and
+   134 exact director hosts, then traversed 51,462 host GameObjects and 5,918
+   typed components without finding a candidate. The v3 GameObject pass
+   resolved 137 target roots and traversed 58,145 descendants containing 5,959
+   typed components, again with zero candidates. Exact gender-prefixed
+   `f_`/`m_`/`fm_` Timeline roots are canonicalized only when the complete root
+   name matches; component and fuzzy aliases stay rejected.
+   The rows remain visible as
+   `deferred_current_build_offline_surface_exhausted`, create no graph edge,
+   and reopen automatically if any gate changes. There are now 84 deferred
+   rows: 21 `e10m4` radios, 23 `e11m1` radios plus five cutscenes, and 34
+   `e11m4` radios plus its rift-camera cutscene. All have graph effect `none`;
+   all three missions score zero. The genuine offline queue now ranks `e11m6`
+   first (125/25), followed by `e11m2` (75/15) and `e9m2` (73/14). Continue
    offline from those exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
-   runtime capture later becomes possible, start with `e11m1`: use the
+   runtime capture later becomes possible, the existing `e11m1` probe remains
+   a useful first target for validating the static boundary: use the
    existing hash-locked recorder around
    `LevelScriptRuntime._RaiseOnScriptEvent` (current token `0x060121a3`, method
    index `74146`), propagate one unique chain id through ActionHeader/ActionBase
@@ -4382,12 +4390,29 @@ Current main-story priorities:
    id and therefore does not supply that missing consumer.
    Timeline containment itself is fully resolved for its current recovered
    clip set.
-3. `e11m1` remains a high main-story source-link gap, but no longer appears to
-   have a large LevelScript control-flow backlog. Of its 67 weak-only rows, 64
-   have complete exact native event paths and three retain only non-ordering
-   topology; zero remains an actionable control-flow decoder row. Its current
-   queue has 29 actionable core-isolated source-link candidates after exact
-   native and runtime-configuration closures. The full current-build
+3. `e11m1` no longer has an actionable current-build static offline frontier.
+   Of its 67 weak-only rows, 64 have complete exact native event paths and three
+   retain only non-ordering topology; zero remains an actionable control-flow
+   decoder row. Its former 29 core-isolated source-link candidates now classify
+   as three exact-native closures, four exact runtime-configuration closures,
+   and 28 fail-closed offline deferrals, producing score zero without adding an
+   ownership or chronology edge. The runtime group includes
+   `dlg_e11m1_30`: its exact `NpcProxyEx`
+   `shenjiaoe_map02_v1d40_002` lives in the `e11m2` payload, but
+   `storyOwnerMission=e11m1` and `npcProxyMissionId=e11m2` prove selectable
+   cross-mission context only; the dialog remains nominally `e11m1` and is not
+   moved into `e11m2` chronology.
+   The 28 deferrals comprise 23 exact RadioTable definitions and five
+   cutscenes. `cutscene_e11m1_fire_end`, `_gatebattleend`,
+   `_jsspsi_ground_cast`, and `_shenjiaoe` retain respectively 2, 1, 1, and 2
+   exact `PlayableDirector` hosts, including the gendered roots where present,
+   but their complete reverse-PPtr and GameObject hierarchies contain no typed
+   mission/runtime carrier. `cutscene_e11m1_2` is instead a complete four-row
+   TextTable-only group with no Timeline registration, GameObject target,
+   reverse relation, director host, or route. These negative classifications
+   are hash- and target-digest-gated and reopen if the installed/exported
+   evidence changes.
+   The full current-build
    custom-event producer scan
    finds only the already recovered `TigerStart` same-script producer/listener
    route. `TLCall_radio_e11m1_1`, `TLCall_PlayRadio`, and the six hashed

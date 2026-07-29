@@ -391,7 +391,7 @@ STORY_ROOT_PLAYBACK_ALIAS_REPORT = (
     STORY_RECOVERY_REPORTS_DIR
     / "animestudio_story_reverse_pptr_audit.json"
 )
-STORY_ROOT_PLAYBACK_ALIAS_SCHEMA = "animestudioStoryReversePPtrAudit.v2"
+STORY_ROOT_PLAYBACK_ALIAS_SCHEMA = "animestudioStoryReversePPtrAudit.v3"
 STORY_ROOT_PLAYBACK_ALIAS_MAPPING_ID = (
     "gameassembly-2026-07-28-cutscene-root-director-playback-v1"
 )

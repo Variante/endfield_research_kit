@@ -29,7 +29,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import build_animestudio_story_carrier_audit as carrier  # noqa: E402
 import build_animestudio_story_gameobject_audit as gameobjects  # noqa: E402
 
-SCHEMA = "animestudioStoryReversePPtrAudit.v2"
+SCHEMA = "animestudioStoryReversePPtrAudit.v3"
 DEFAULT_OUTPUT_ROOT = ROOT / "export_full"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"
@@ -158,10 +158,14 @@ def collect_targets(
             continue
         parsed += 1
         matches = sorted({
-            str(field["value"])
+            story_key
             for field in carrier.scalar_rows(row)
-            if isinstance(field["value"], str)
-            and field["value"] in target_missions
+            if (
+                story_key := carrier.canonical_target_story_key(
+                    field["value"],
+                    target_missions,
+                )
+            )
         })
         if not matches:
             continue
