@@ -3021,6 +3021,18 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_e10m2_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E10M2_RADIOS,
+            {"radio_e10m2_1"},
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e10m2_8"
+        ]
+        self.assertEqual(dialog["lineIds"], ("dlg_e10m2_8_001",))
+        self.assertEqual(dialog["optionIds"], ())
+        self.assertNotIn("npcProxyConsumer", dialog)
+
     def test_exact_lua_controller_playback_closes_isolated_cutscene(
         self,
     ) -> None:
@@ -3180,6 +3192,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e7m4_7",
                 "dlg_e8m1_10",
                 "dlg_e10m1_7",
+                "dlg_e10m2_8",
                 "dlg_e10m3_3",
                 "dlg_e10m3_9",
                 "dlg_e10m4_21",
