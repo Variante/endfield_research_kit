@@ -4306,10 +4306,10 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v70`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v71`
    turns the completed exact `e0m0`, `e0m2`, `e1m1`, `e1m2`, `e1m3`, `e1m4`,
    `e1m10`, `e2m2`, `e2m3`, `e2m4`,
-   `e2m5`, `e2m6`, `e2m7`, `e3m1`, `e3m2`, `e3m3`, `e3m4`, `e4m1`, `e5m1`,
+   `e2m5`, `e2m5d5`, `e2m6`, `e2m7`, `e3m1`, `e3m2`, `e3m3`, `e3m4`, `e4m1`, `e5m1`,
    `e5m2`, `e5m4`,
    `e6m1`, `e6m2`, `e6m3`,
    `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e8m1`, `e8m2`, `e8m3`, `e8m5`,
@@ -4339,9 +4339,9 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 335 actual
-   isolated-scene deferrals: 228 radios, 31 cutscene roots, 46 registered
-   dialogs (seventeen dialogs carry eighteen exact NpcProxy consumers without a
+   and reopen automatically if any gate changes. There are now 337 actual
+   isolated-scene deferrals: 228 radios, 31 cutscene roots, 48 registered
+   dialogs (nineteen dialogs carry twenty exact NpcProxy consumers without a
    mission owner), ten ReadingPopUp definitions, nine DialogTextTable-only
    groups, two SNS dialog definitions, seven text-only cutscenes, and two
    TextTable-only black definitions. The hash-validated declaration set
@@ -4846,6 +4846,22 @@ Current main-story priorities:
    actionable core isolated rows, 108 exact-native isolated closures, 95
    exact-runtime-config closures, and 9 strict-attachment diagnostics.
    e2m5d5 is next at score 10.
+   The e2m5d5 pass closes two canonicalized miscellaneous-dialog rows.
+   `misc_dlg_e2m5d5_1d5` resolves to the registered three-line
+   `dlg_e2m5d5_1d5` DialogTree and exact
+   `pelica_map01_e2m5d5[0]` NpcProxy consumer; that consumer omits
+   `missionId`. `misc_dlg_e2m5d5_1d7` similarly resolves to the registered
+   five-line `dlg_e2m5d5_1d7` tree and
+   `chen_map01_e2m5d5[0]`, whose `missionId` is explicitly empty. Both trees
+   have exact primary/extra-config hashes, zero options, complete AudioDialog
+   membership, no Timeline, empty Story route arrays, and no carrier
+   candidate. The mission-shaped proxy names are diagnostic only: the
+   serialized rows prove NPC interaction selection but not mission ownership,
+   activation, or Story order. v71/v50 has 337 declarations and 337 active
+   deferrals. The main-story bucket is score 112 with 17 actionable core
+   isolated rows, 108 exact-native isolated closures, 95
+   exact-runtime-config closures, and 9 strict-attachment diagnostics. e6m5
+   is next at score 10.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
