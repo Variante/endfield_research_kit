@@ -1990,18 +1990,19 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v30` evaluates 138 residual radio definitions, 17 root
-  Timeline cutscenes, 14 registered dialog definitions, two exact
+  `sourceStoryGapQueue.v31` evaluates 143 residual radio definitions, 18 root
+  Timeline cutscenes, 16 registered dialog definitions, four exact
   ReadingPopUp/RichContent definitions, and two text-only cutscenes across
-  `e1m3`, `e6m3`, `e9m2`, `e10m4`, `e11m1`, `e11m2`, `e11m4`, `e11m5`, and
-  `e11m6`. It defers 136 of the radio definitions; the other two close through
+  `e1m3`, `e6m3`, `e7m2`, `e9m2`, `e10m4`, `e11m1`, `e11m2`, `e11m4`,
+  `e11m5`, and `e11m6`. It defers 141 of the radio definitions; the other two close through
   strict exact native mission context. This includes seven bounded `e1m3`
   radio definitions, its canonical misc-dialog definition and one-host
   Timeline root; `radio_e1m3_13` instead closes through an exact mission-state
   radio-trigger-zone carrier, and `radio_e1m3_32` through an exact local
   leader-trigger playback path joined to e1m3 MissionRuntime world-entity
   tracking. Neither context supplies relative Story order. It also includes
-  all five bounded
+  all five e7m2 radios, two registered dialogs, two ReadingPopUp/RichContent
+  definitions, and the one-host registry-id-406 designer cutscene; all five bounded
   `e6m3` radios, its three dialogs, two text
   definitions, and 14-row text-only cutscene; all eight residual `e9m2` radios and five
   root cutscenes, all 23 residual `e11m1` radios, all nine residual `e11m2`

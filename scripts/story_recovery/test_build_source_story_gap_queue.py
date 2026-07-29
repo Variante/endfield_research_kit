@@ -2075,6 +2075,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e6m3_6",
                 "dlg_e6m3_12",
                 "misc_dlg_e6m3_3d5",
+                "dlg_e7m2_11",
+                "dlg_e7m2_13",
                 "dlg_e11m2_17",
                 "dlg_e11m2_18",
                 "dlg_e11m5_9",
@@ -2239,6 +2241,42 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ["radio_e1m3_13"],
         )
 
+    def test_declared_e7m2_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E7M2_RADIOS,
+            {
+                "radio_e7m2_2",
+                "radio_e7m2_9",
+                "radio_e7m2_12",
+                "radio_e7m2_14",
+                "radio_e7m2_18",
+            },
+        )
+        cutscene = gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
+            "cutscene_e7m2_designer_QingBoZhai"
+        ]
+        self.assertEqual(cutscene["timelineRegistryId"], 406)
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS[
+                "cutscene_e7m2_designer_QingBoZhai"
+            ],
+            1,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                "dlg_e7m2_13"
+            ]["missingAudioIds"],
+            (
+                "au_dlg_e7m2_13_001",
+                "au_dlg_e7m2_13_002",
+            ),
+        )
+        self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS)
+            & {"text_e7m2_2", "text_e7m2_3"},
+            {"text_e7m2_2", "text_e7m2_3"},
+        )
+
     def test_declared_e6m3_definition_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E6M3_RADIOS,
@@ -2266,7 +2304,12 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(misc["definitionName"], "dlg_e6m3_3d5")
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS),
-            {"text_e6m3_1", "text_e6m3_4"},
+            {
+                "text_e6m3_1",
+                "text_e6m3_4",
+                "text_e7m2_2",
+                "text_e7m2_3",
+            },
         )
 
     def test_declared_e11m5_frontier_preserves_owned_mixed_timeline(
