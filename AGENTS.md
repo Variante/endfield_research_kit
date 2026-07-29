@@ -106,6 +106,41 @@ Table inputs, use `--mission-pipeline-only --reuse-timeline-orders
 index/files and is rejected with `--export-from-game`; omit both reuse flags
 after any installed-game refresh.
 
+### Mission Recovery Edit-Loop Policy
+
+Do not run a canonical Story/Mission Pipeline rebuild after every individual
+recovery edit. Work in small validated batches:
+
+- accumulate at least three independently validated recovery changes before
+  running `export.bat --mission-pipeline-only`, or run it at the end of a
+  coherent 30-60 minute recovery batch;
+- during the batch, use focused unit tests, direct parser/builder probes, and
+  `--mission-pipeline-data-only` when generated Story bundles and evidence are
+  already current;
+- focused commits may be made after targeted validation; run the canonical
+  rebuild once at the batch boundary before publishing generated WebUI data,
+  documenting final counts, or declaring the batch complete;
+- run an earlier canonical rebuild only when one cross-cutting parser/schema
+  change cannot be validated safely with focused tests, installed-game inputs
+  changed, generated Story/evidence is known stale, or the user explicitly
+  requests it.
+
+Treat generic validator failures as tooling gaps instead of repeatedly running
+the expensive pipeline. Validators used by Story recovery must fail closed and
+report actionable diagnostics:
+
+- identify the validator, failed gate/check, affected mission or Story key, and
+  source path;
+- include bounded expected-versus-actual values and relevant source hashes;
+- report at least the first failure deterministically, and preferably all
+  independent bounded failures;
+- expose the diagnostic in both structured report data and the CLI summary;
+- add tests for the successful gate and for representative failure
+  diagnostics whenever validator behavior changes.
+
+Improve a validator's diagnostics before another full rebuild when its current
+result is only a generic status such as `validation_failed`.
+
 Useful direct commands:
 
 ```bat
