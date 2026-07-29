@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v23"
+SCHEMA = "sourceStoryGapQueue.v24"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v3"
+    "current-build-offline-story-carrier-exhaustion-v4"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -163,6 +163,12 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
         OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE,
         *OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES,
     }),
+    "e11m2": frozenset({
+        "cutscene_e11m2_liexi_xs_m_01_last_01",
+        "cutscene_e11m2_liexi_xs_m_01_last_02",
+        "cutscene_e11m2_liexi_xs_m_01_last_03",
+        "cutscene_e11m2_rift_camera_state1to2",
+    }),
     "e11m4": frozenset({OFFLINE_EXHAUSTION_E11M4_CUTSCENE}),
     "e11m6": frozenset({
         "cutscene_e11m6_rift_camera_state1to2",
@@ -174,6 +180,10 @@ OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e11m1_gatebattleend": 1,
     "cutscene_e11m1_jsspsi_ground_cast": 1,
     "cutscene_e11m1_shenjiaoe": 2,
+    "cutscene_e11m2_liexi_xs_m_01_last_01": 1,
+    "cutscene_e11m2_liexi_xs_m_01_last_02": 1,
+    "cutscene_e11m2_liexi_xs_m_01_last_03": 1,
+    "cutscene_e11m2_rift_camera_state1to2": 1,
     OFFLINE_EXHAUSTION_E11M4_CUTSCENE: 1,
     "cutscene_e11m6_rift_camera_state1to2": 1,
     "cutscene_e11m6_zhuangcomein": 1,
@@ -229,6 +239,46 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
             ),
         ),
     },
+    "cutscene_e11m2_liexi_xs_m_01_last_01": {
+        "timelineRegistryId": 540,
+        "files": (
+            (
+                "cutscene_e11m2_liexi_xs_m_01_last_01_p1062615A5F282A62.json",
+                "77B3BF24826C0E640517506D4B8008BF602037FA5847E34007A97EA8CD56AE36",
+                "cutscene_e11m2_liexi_xs_m_01_last_01",
+            ),
+        ),
+    },
+    "cutscene_e11m2_liexi_xs_m_01_last_02": {
+        "timelineRegistryId": 541,
+        "files": (
+            (
+                "cutscene_e11m2_liexi_xs_m_01_last_02_pD1933E2EC8EE84E6.json",
+                "751B1869BB3DEC25E9E9843CA702C9511F66221E3D0C336EC317A5DAD2FDDE43",
+                "cutscene_e11m2_liexi_xs_m_01_last_02",
+            ),
+        ),
+    },
+    "cutscene_e11m2_liexi_xs_m_01_last_03": {
+        "timelineRegistryId": 539,
+        "files": (
+            (
+                "cutscene_e11m2_liexi_xs_m_01_last_03_p0FB7F5823DFDB681.json",
+                "0110DCA894B243A50E6BF869AA0E8177449398432095C688A2E528269F21ECD3",
+                "cutscene_e11m2_liexi_xs_m_01_last_03",
+            ),
+        ),
+    },
+    "cutscene_e11m2_rift_camera_state1to2": {
+        "timelineRegistryId": 485,
+        "files": (
+            (
+                "cutscene_e11m2_rift_camera_state1to2_pA751B325BC1816CA.json",
+                "6887771164CCD875EFFF2920869E1F64614EF44AF710030201E77C9FD2FB0DA4",
+                "cutscene_e11m2_rift_camera_state1to2",
+            ),
+        ),
+    },
     OFFLINE_EXHAUSTION_E11M4_CUTSCENE: {
         "timelineRegistryId": 484,
         "files": (
@@ -259,6 +309,29 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
             ),
         ),
     },
+}
+OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS = {
+    "cutscene_e11m1_fire_end": 4,
+    "cutscene_e11m1_gatebattleend": 1,
+    "cutscene_e11m1_jsspsi_ground_cast": 1,
+    "cutscene_e11m1_shenjiaoe": 2,
+    "cutscene_e11m2_liexi_xs_m_01_last_01": 1,
+    "cutscene_e11m2_liexi_xs_m_01_last_02": 1,
+    "cutscene_e11m2_liexi_xs_m_01_last_03": 0,
+    "cutscene_e11m2_rift_camera_state1to2": 1,
+    OFFLINE_EXHAUSTION_E11M4_CUTSCENE: 1,
+    "cutscene_e11m6_rift_camera_state1to2": 1,
+    "cutscene_e11m6_zhuangcomein": 1,
+}
+OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES = {
+    "cutscene_e11m2_liexi_xs_m_01_last_02": (
+        "cutscene_e11m2_liexi_xs_m_01_last_01",
+        "cutscene_e11m2_liexi_xs_m_01_last_02",
+    ),
+    "cutscene_e11m2_liexi_xs_m_01_last_03": (
+        "cutscene_e11m2_liexi_xs_m_01_last_02",
+        "cutscene_e11m2_liexi_xs_m_01_last_03",
+    ),
 }
 OFFLINE_EXHAUSTION_E11M4_RADIOS = frozenset({
     "radio_e11m4_7",
@@ -328,9 +401,21 @@ OFFLINE_EXHAUSTION_E11M6_RADIOS = frozenset({
         for number in range(19, 39)
     },
 })
+OFFLINE_EXHAUSTION_E11M2_RADIOS = frozenset({
+    "radio_e11m2_22",
+    "radio_e11m2_25",
+    "radio_e11m2_27",
+    "radio_e11m2_30",
+    "radio_e11m2_33",
+    "radio_e11m2_34",
+    "radio_e11m2_35",
+    "radio_e11m2_36",
+    "radio_e11m2_37",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
     "e11m1": OFFLINE_EXHAUSTION_E11M1_RADIOS,
+    "e11m2": OFFLINE_EXHAUSTION_E11M2_RADIOS,
     "e11m4": OFFLINE_EXHAUSTION_E11M4_RADIOS,
     "e11m6": OFFLINE_EXHAUSTION_E11M6_RADIOS,
 }
@@ -704,7 +789,11 @@ def build_offline_exhaustion_index(
 
     gameobject_rows_by_key: dict[str, list[dict[str, Any]]] = {}
     reverse_hosts_by_key: dict[str, list[dict[str, Any]]] = {}
-    presentation_cutscene_valid = True
+    presentation_cutscene_valid = (
+        set(OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS)
+        == set(OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS)
+        == set(OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS)
+    )
     for story_key, expected_host_count in (
         OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS.items()
     ):
@@ -727,8 +816,49 @@ def build_offline_exhaustion_index(
         gameobject_rows_by_key[story_key] = object_rows
         reverse_hosts_by_key[story_key] = director_hosts
         expected_mission = cutscene_mission_by_key[story_key]
+        expected_alias = OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES.get(
+            story_key
+        )
+        aliases = [
+            alias
+            for row in director_hosts
+            for alias in row.get("crossStoryPlaybackAliases") or []
+            if isinstance(alias, dict)
+        ]
+        containments = [
+            containment
+            for row in director_hosts
+            for containment in row.get("crossStoryContainments") or []
+            if isinstance(containment, dict)
+        ]
+        if expected_alias:
+            root_story_key, playable_story_key = expected_alias
+            alias_valid = (
+                len(aliases) == 1
+                and len(containments) == 1
+                and safe_key(aliases[0].get("rootStoryKey"))
+                == root_story_key
+                and safe_key(aliases[0].get("playableAssetStoryKey"))
+                == playable_story_key
+                and safe_key(aliases[0].get("relation"))
+                == "cutscene_root_director_playable_asset"
+                and safe_key(aliases[0].get("edgeStatus"))
+                == "exact_root_playback_alias_no_chronology_or_mission_owner"
+                and safe_key(containments[0].get("hostStoryKey"))
+                == root_story_key
+                and safe_key(containments[0].get("embeddedStoryKey"))
+                == playable_story_key
+                and safe_key(containments[0].get("relation"))
+                == "cutscene_root_embedded_timeline_asset"
+                and safe_key(containments[0].get("edgeStatus"))
+                == "exact_containment_no_chronology_or_mission_owner"
+            )
+        else:
+            alias_valid = not aliases and not containments
         if (
-            not object_rows
+            not presentation_cutscene_valid
+            or len(object_rows)
+            != OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS[story_key]
             or any(
                 set(_string_list(row.get("storyKeys"))) != {story_key}
                 or row.get("candidateStatus")
@@ -746,9 +876,9 @@ def build_offline_exhaustion_index(
                 or safe_key(row.get("pointerPath"))
                 != "$.m_PlayableAsset"
                 or row.get("candidateComponents")
-                or row.get("crossStoryContainments")
                 for row in director_hosts
             )
+            or not alias_valid
         ):
             presentation_cutscene_valid = False
             break
@@ -901,6 +1031,22 @@ def build_offline_exhaustion_index(
                 ]
             ],
             "directorHostCount": len(director_hosts),
+            "gameObjectRowCount": len(object_rows),
+            "rootPlaybackAlias": (
+                {
+                    "rootStoryKey": (
+                        OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES[story_key][0]
+                    ),
+                    "playableAssetStoryKey": (
+                        OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES[story_key][1]
+                    ),
+                    "relation": "cutscene_root_director_playable_asset",
+                    "edgeStatus":
+                        "exact_root_playback_alias_no_chronology_or_mission_owner",
+                }
+                if story_key in OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES
+                else None
+            ),
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "playbackMappingId":
                 OFFLINE_EXHAUSTION_REVERSE_PPTR_MAPPING_ID,
@@ -910,11 +1056,17 @@ def build_offline_exhaustion_index(
                 row.get("logicalBundle") or {}
                 for row in object_rows
             ],
-            "candidateStatus":
-                "no_typed_owner_or_runtime_sibling_or_descendant",
+            "candidateStatus": (
+                "no_typed_owner_or_runtime_sibling_or_descendant"
+                if object_rows
+                else "no_forward_gameobject_row_or_typed_owner_runtime_candidate"
+            ),
             "consumerBoundary": (
                 "exact root Timeline assets resolve through PlayableDirector "
-                "hosts and complete GameObject descendant hierarchies, but "
+                "hosts and complete GameObject descendant hierarchies where "
+                "a separate root object exists; exact cross-Story director "
+                "aliases are composition only, not chronology or ownership; "
+                "and "
                 "no typed owner/runtime component, structured action, Lua "
                 "consumer, or direct native cutscene caller exposes an exact "
                 "activator"
