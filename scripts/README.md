@@ -1998,21 +1998,24 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v42` evaluates 180 residual radio definitions, 27 root
+  `sourceStoryGapQueue.v43` evaluates 187 residual radio definitions, 27 root
   cutscene carriers, 26 registered dialog definitions, six exact
   DialogTextTable-only/no-registry groups, ten exact
   ReadingPopUp/RichContent definitions, two text-only cutscenes, and two
   TextTable-only black narrative definitions across
-  `e0m0`, `e1m3`, `e2m4`, `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e10m3`, `e10m4`,
-  `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 177 radio definitions;
+  `e0m0`, `e1m3`, `e2m4`, `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e9m3`, `e10m3`, `e10m4`,
+  `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 184 radio definitions;
   two close through strict exact native mission context, and one through
   strict exact runtime configuration. This includes seven bounded `e1m3`
   radio definitions, its canonical misc-dialog definition and one-host
   Timeline root; `radio_e1m3_13` instead closes through an exact mission-state
   radio-trigger-zone carrier, and `radio_e1m3_32` through an exact local
   leader-trigger playback path joined to e1m3 MissionRuntime world-entity
-  tracking. Neither context supplies relative Story order. It also includes
-  all five e7m2 radios, two registered dialogs, two ReadingPopUp/RichContent
+  tracking. Neither context supplies relative Story order. It includes all
+  seven residual e9m3 radios; exact-prefix collisions with the typed
+  `_30` and `_31` playback actions do not count as consumers of
+  `radio_e9m3_3`. It also includes all five e7m2 radios, two registered
+  dialogs, two ReadingPopUp/RichContent
   definitions, and the one-host registry-id-406 designer cutscene; all eight
   e3m3 radios plus two registered dialogs, preserving the 18-line/four-option
   `dlg_e3m3_12` definition without inventing an option route; three e0m0

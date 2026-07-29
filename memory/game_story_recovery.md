@@ -4306,8 +4306,8 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v42`
-   turns the completed exact `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e10m4`, `e11m1`, `e11m2`,
+   block metadata or the installed build changes. `sourceStoryGapQueue.v43`
+   turns the completed exact `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e9m3`, `e10m4`, `e11m1`, `e11m2`,
    `e11m3`, `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
    operational deferrals.
    It activates only while the exact
@@ -4331,11 +4331,11 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 250 actual
-   isolated-scene deferrals: 177 radios, 27 cutscene roots, 26 registered
+   and reopen automatically if any gate changes. There are now 257 actual
+   isolated-scene deferrals: 184 radios, 27 cutscene roots, 26 registered
    dialogs, ten ReadingPopUp definitions, six DialogTextTable-only groups, two
    text-only cutscenes, and two TextTable-only black definitions. The
-   hash-validated declaration set contains 253 rows because three declared
+   hash-validated declaration set contains 260 rows because three declared
    radios close through stronger exact native/runtime contexts instead of
    using the deferral. Every
    deferred row has graph effect `none` and contributes
@@ -4382,7 +4382,16 @@ Current main-story priorities:
    playback step: the actual typed actions on those paths play `_17`, `_19`,
    and `_30`. e11m3 therefore has zero actionable core-isolated rows, four
    exact native closures, and five fail-closed deferrals, with no invented
-   chronology. The next main-story source-link frontier is e9m3.
+   chronology.
+   The e9m3 pass then closes its exact seven-row residual frontier:
+   `radio_e9m3_3`, `_7`, `_8`, `_9`, `_13`, `_20`, and `_22` are ordinary
+   one-line RadioTable definitions with complete AudioDialog membership and no
+   candidate Story carrier across the same bounded current-build surfaces.
+   Apparent string hits for `_3` in two connection records are prefix
+   collisions with the independently typed `_30` and `_31` playback actions,
+   not consumers of `_3`. All seven rows therefore remain definition-only
+   fail-closed deferrals with graph effect `none`; e9m3 now scores zero.
+   The next main-story source-link frontier is e10m4.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
