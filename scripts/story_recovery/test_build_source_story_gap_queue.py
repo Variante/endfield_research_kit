@@ -2219,6 +2219,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e2m6_12",
                 "dlg_e3m3_12",
                 "dlg_e3m3_13",
+                "dlg_e5m2_2",
+                "dlg_e5m2_8",
+                "misc_dlg_e5m2_3d5",
                 "dlg_e6m3_6",
                 "dlg_e6m3_12",
                 "misc_dlg_e6m3_3d5",
@@ -2347,6 +2350,51 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             dialog["extraConfigSha256"],
             "95BB5B09DEA22F63EFBB5506FBF1900AFC43D7DC3C6411F8281E33216DA7E5FA",
         )
+
+    def test_declared_e5m2_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E5M2_RADIOS,
+            {"radio_e5m2_3"},
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e5m2_2"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 29)
+        self.assertEqual(
+            dialog["ownedTimeline"]["timeline"],
+            "dlgtl_e5m2_2_sub_1",
+        )
+        self.assertEqual(
+            dialog["ownedTimeline"]["trackPathId"],
+            -6721394561739517947,
+        )
+        self.assertEqual(
+            len(dialog["ownedTimeline"]["fullLineIds"]),
+            29,
+        )
+        self.assertEqual(
+            dialog["missingAudioIds"],
+            ("au_dlg_e5m2_2_003",),
+        )
+        self.assertEqual(
+            dialog["npcProxyConsumer"]["entryIndex"],
+            1,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                "dlg_e5m2_8"
+            ]["optionIds"],
+            (
+                "option_dlg_e5m2_8_1_001",
+                "option_dlg_e5m2_8_1_002",
+            ),
+        )
+        misc = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "misc_dlg_e5m2_3d5"
+        ]
+        self.assertEqual(misc["registryKey"], "dlg_e5m2_3d5")
+        self.assertEqual(misc["npcProxyConsumer"]["entryIndex"], 1)
+        self.assertNotIn("missionId", misc["npcProxyConsumer"]["entry"])
 
     def test_declared_e2m4_offline_frontier_is_exact(self) -> None:
         self.assertEqual(

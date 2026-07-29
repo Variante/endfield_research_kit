@@ -4466,9 +4466,35 @@ Current main-story priorities:
    AudioDialog entry; `radio_e10m1_6` and `_9` are exact one-line
    RadioTable/AudioDialog definitions. All three have zero typed carrier
    candidates and are graph-neutral v47 deferrals. e10m1 now scores zero.
-   The main-story bucket is score 589 with 104 actionable core isolated rows
-   and 23 actionable quest gaps; the current top main-story item is e5m2 at
-   score 26.
+   The following e5m2 pass closes its four actionable isolated Story
+   definitions without inventing quest placement. `dlg_e5m2_2` is a
+   hash-locked registered 29-line/two-option DialogTree with an exact
+   29-clip owned Timeline on one track. `dlg_e5m2_8` is a registered
+   two-line/two-option tree, and `misc_dlg_e5m2_3d5` resolves to the
+   registered five-line `dlg_e5m2_3d5` definition. All three have exact
+   extra-config assets and exact `NpcProxyExDataTable` consumers at entry
+   index 1, but every consumer omits or empties `missionId`; those rows prove
+   NPC interaction selection, not quest ownership, activation, or order.
+   `au_dlg_e5m2_2_003` and `au_dlg_e5m2_3d5_003` are absent as base
+   AudioDialog ids while current suffixed voice variants remain present.
+   `radio_e5m2_3` is an exact three-line RadioTable definition with complete
+   AudioDialog membership. The current carrier audit reports no typed
+   candidate for any of the four keys, so v48/v27 defers them with graph
+   effect `none`.
+   Two narrower quest-attachment diagnostics remain and are not promoted.
+   e5m2 q33 checks local LevelScript `10100070004` property `bridge`, but that
+   script is also checked by q11 and q9, and its two exact Story paths are
+   independent Leader-trigger routes (`radio_e5m2_10` at slot 80001 and
+   `dlg_e5m2_10` at slot 80002). The raw `bridge` substrings occur only inside
+   guide ids, not as a decoded property predicate on either playback path.
+   e5m2d5 q12 has weak LevelData quest/story adjacency to
+   `radio_e5m2_18`; an exact AirWall row also co-carries q11/q12 state checks
+   and that radio id, but the native consumer proves only later wall-pushback
+   playback and explicitly carries no quest activation, playback, or
+   completion role. The e5m2 isolated frontier is therefore closed while its
+   honest quest-ownership score remains 6. The main-story bucket is now score
+   554 with 97 actionable core isolated rows and 23 actionable quest gaps;
+   the current top main-story item is e7m4 at score 26.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
