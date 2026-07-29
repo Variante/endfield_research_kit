@@ -4306,9 +4306,9 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v47`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v48`
    turns the completed exact `e0m0`, `e1m2`, `e1m3`, `e2m4`, `e2m5`,
-   `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e9m3`,
+   `e2m6`, `e3m3`, `e5m2`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e9m3`,
    `e10m1`, `e10m3`, `e10m4`, `e11m1`, `e11m2`, `e11m3`, `e11m4`,
    `e11m5`, `e11m6`, and `e11m8` negative boundaries into fail-closed
    operational deferrals.

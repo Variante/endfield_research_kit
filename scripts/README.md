@@ -686,7 +686,7 @@ Expected active inputs and outputs:
   The builder also projects the active exact negative-evidence boundary from
   `reports/mission_order/source_story_gap_queue_CN.json` into
   `storyTriggerManifest[*].offlineRecovery`. It accepts only
-  `sourceStoryGapQueue.v47` with matching source hashes and `graphEffect=none`,
+  `sourceStoryGapQueue.v48` with matching source hashes and `graphEffect=none`,
   never changes an existing attachment status, and never adds a route. The nine
   ReadingPopup `text_*` keys outside the coverage denominator are published in
   the separate `offlineRecoveryEvidence.storyTriggerManifestOverlay`, each with
