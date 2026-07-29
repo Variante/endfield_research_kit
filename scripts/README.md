@@ -303,6 +303,7 @@ that index, run:
 ```bat
 python scripts\story_recovery\build_animestudio_story_carrier_audit.py
 python scripts\story_recovery\build_animestudio_story_gameobject_audit.py
+python scripts\story_recovery\build_animestudio_story_reverse_pptr_audit.py
 python scripts\story_recovery\build_animestudio_story_guide_consumer_audit.py
 ```
 
@@ -336,6 +337,17 @@ until native consumer semantics prove playback or ownership; neither supplies
 order by itself.
 Pass `--game-root PATH` or set `ENDFIELD_GAME_ROOT` when the installed
 `Endfield_Data` root is not at the repository default.
+
+The reverse-PPtr audit scans the complete validated object index a second time
+for exact resolved references into the current actionable Story-bearing
+objects. It separates same-file Timeline composition from cross-file
+`PlayableDirector.m_PlayableAsset` bindings, then exports only the director
+host bundles and resolves their exact Transform ancestry, descendants, typed
+components, and `CutsceneRootComponent._timelineName` values. Output goes to
+`reports/story/recovery/animestudio_story_reverse_pptr_audit.{json,md}`.
+Cross-Story rows prove serialized containment only. They do not prove that a
+child director is activated, and must not be converted into mission ownership
+or relative Story order without an independent control relation.
 
 The guide-consumer audit scans the same current, source-fingerprint-validated
 merged index for exact typed `GuideRuntimeAsset` managed references. It accepts
