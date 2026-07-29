@@ -480,6 +480,12 @@ available through expandable guidance.
   `IdComp.logicId == LevelScript scriptId` equality can expose a mission/quest
   state condition beside a Story-playing LevelScript, but the two current
   native systems resolve those identities through separate registries.
+  One current row has stronger local evidence:
+  `map02_lv001/10100282001` explicitly targets the same DynamicScene id with
+  `ShowSceneDecorationNew(..., false)` immediately after `dlg_c27m3_6` on the
+  same serialized slot-80001 trigger chain. The card shows that typed target
+  and shared local path, while separately stating that the mission condition
+  to trigger-header activation edge remains missing.
   Accordingly these rows retain `storyBinding: false`,
   `orderEvidence: false`, unresolved ownership, and zero graph edges.
   An optional `missionRuntimeTrace.v1` bundle can be published with

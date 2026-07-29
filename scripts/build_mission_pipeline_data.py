@@ -10,6 +10,7 @@ Run from the repository root:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import time
 from collections import Counter, defaultdict
@@ -184,6 +185,13 @@ DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     / "story"
     / "recovery"
     / "dynamic_scene_mission_control_audit.json"
+)
+DEFAULT_DYNAMIC_SCENE_LEVELSCRIPT_ACTION_BRIDGE_AUDIT = (
+    ROOT
+    / "reports"
+    / "story"
+    / "recovery"
+    / "dynamic_scene_levelscript_action_bridge_audit.json"
 )
 MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v3 added per-mission ``missionGraph`` and quest-tracked ambient lines. v4
@@ -3850,6 +3858,7 @@ def is_exact_battle_signal_producer_route(
 
 def load_dynamic_scene_identity_cross_references(
     audit_path: Path = DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT,
+    action_bridge_path: Path | None = None,
 ) -> dict[str, Any] | None:
     """Publish compact candidate-only DynamicScene/LevelScript cross-references.
 
@@ -3867,9 +3876,141 @@ def load_dynamic_scene_identity_cross_references(
         or boundary.get("classification")
         != "exact_cross_reference_not_runtime_owner"
         or boundary.get("directBridgeFound") is not False
+        or boundary.get("missionActivationBridgeFound") not in (None, False)
         or boundary.get("missionGraphAction") != "none"
     ):
         return None
+
+    if action_bridge_path is None and audit_path == DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT:
+        action_bridge_path = DEFAULT_DYNAMIC_SCENE_LEVELSCRIPT_ACTION_BRIDGE_AUDIT
+    bridge_report: dict[str, Any] = {}
+    bridges_by_logic_id: dict[str, dict[str, Any]] = {}
+    if action_bridge_path is not None and action_bridge_path.is_file():
+        candidate_bridge_report = read_json(action_bridge_path)
+        bridge_boundary = (
+            candidate_bridge_report.get("boundary")
+            if isinstance(candidate_bridge_report, dict)
+            else None
+        )
+        identity_source = (
+            (candidate_bridge_report.get("sources") or {}).get("identityAudit")
+            if isinstance(candidate_bridge_report, dict)
+            else None
+        )
+        current_audit_sha = hashlib.sha256(audit_path.read_bytes()).hexdigest()
+        if (
+            not isinstance(candidate_bridge_report, dict)
+            or candidate_bridge_report.get("schemaVersion") != 1
+            or not isinstance(bridge_boundary, dict)
+            or bridge_boundary.get("classification")
+            != "exact_local_context_without_mission_activation_edge"
+            or bridge_boundary.get("missionActivationBridgeFound") is not False
+            or bridge_boundary.get("missionGraphAction") != "none"
+            or not isinstance(identity_source, dict)
+            or identity_source.get("sha256") != current_audit_sha
+        ):
+            return None
+        bridge_report = candidate_bridge_report
+        for bridge_row in bridge_report.get("bridgeRows") or []:
+            if (
+                not isinstance(bridge_row, dict)
+                or bridge_row.get("missionOwnerStatus") != "unresolved"
+                or bridge_row.get("storyBinding") is not False
+                or bridge_row.get("orderEvidence") is not False
+                or bridge_row.get("missionGraphAction") != "none"
+            ):
+                continue
+            logic_id = str(bridge_row.get("logicId") or "")
+            exact_actions: list[dict[str, Any]] = []
+            shared_story_keys: set[str] = set()
+            for action in bridge_row.get("exactTargetActions") or []:
+                target = action.get("targetParam") if isinstance(action, dict) else None
+                visible = action.get("visibleParam") if isinstance(action, dict) else None
+                if (
+                    not isinstance(action, dict)
+                    or action.get("actionName")
+                    not in {
+                        "ShowSceneDecorationNew",
+                        "ShowSceneDecorationWithHandle",
+                    }
+                    or action.get("serializedMemberCount") != 10
+                    or action.get("payloadFullyConsumed") is not True
+                    or str(action.get("targetDynamicEntityLogicId") or "")
+                    != logic_id
+                    or not isinstance(target, dict)
+                    or target.get("idRef") != -1
+                    or target.get("paramSource") != 0
+                    or target.get("path") is not None
+                    or not isinstance(visible, dict)
+                    or visible.get("idRef") != -1
+                    or visible.get("paramSource") != 0
+                    or visible.get("path") is not None
+                ):
+                    continue
+                story_links: list[dict[str, Any]] = []
+                for link in action.get("storyControlPathLinks") or []:
+                    if not isinstance(link, dict):
+                        continue
+                    story_key = str(link.get("storyKey") or "")
+                    shared_paths: list[dict[str, Any]] = []
+                    for shared in link.get("sharedControlPaths") or []:
+                        if (
+                            not isinstance(shared, dict)
+                            or shared.get("status")
+                            != "exact_serialized_shared_control_path"
+                        ):
+                            continue
+                        event_detail = shared.get("eventDetail") or {}
+                        shared_paths.append(compact_dict({
+                            "relation": str(shared.get("relation") or ""),
+                            "headerName": str(shared.get("headerName") or ""),
+                            "headerLocalId": shared.get("headerLocalId"),
+                            "eventSummary": str(event_detail.get("summary") or ""),
+                            "triggerSlotId": event_detail.get(
+                                "triggerSlotIdFilter"
+                            ),
+                            "storyPathLocalIds":
+                                shared.get("storyPathLocalIds") or [],
+                            "decorationPathLocalIds":
+                                shared.get("decorationPathLocalIds") or [],
+                        }))
+                    if story_key and shared_paths:
+                        shared_story_keys.add(story_key)
+                        story_links.append({
+                            "storyKey": story_key,
+                            "storyRecordOffset": link.get("storyRecordOffset"),
+                            "storyActionName": str(
+                                link.get("storyActionName") or ""
+                            ),
+                            "sharedControlPaths": shared_paths,
+                        })
+                exact_actions.append(compact_dict({
+                    "actionName": action.get("actionName"),
+                    "unionTag": action.get("unionTag"),
+                    "serializedMemberCount":
+                        action.get("serializedMemberCount"),
+                    "recordOffset": action.get("recordOffset"),
+                    "actionMapRole": action.get("actionMapRole"),
+                    "localId": action.get("localId"),
+                    "nextId": action.get("nextId"),
+                    "targetDynamicEntityLogicId":
+                        action.get("targetDynamicEntityLogicId"),
+                    "visible": action.get("visible"),
+                    "sourceFile": action.get("sourceFile"),
+                    "storyControlPathLinks": story_links,
+                }))
+            if logic_id and exact_actions:
+                bridges_by_logic_id[logic_id] = {
+                    "classification": str(
+                        bridge_row.get("classification") or ""
+                    ),
+                    "exactTargetActions": exact_actions,
+                    "sharedStoryKeys": sorted(shared_story_keys),
+                    "missionOwnerStatus": "unresolved",
+                    "storyBinding": False,
+                    "orderEvidence": False,
+                    "missionGraphAction": "none",
+                }
 
     rows: list[dict[str, Any]] = []
     for candidate in audit.get("storyIdentityCandidates") or []:
@@ -3927,7 +4068,7 @@ def load_dynamic_scene_identity_cross_references(
                 story_occurrences.append(row)
         if not logic_id or not scene or not conditions or not story_occurrences:
             continue
-        rows.append({
+        published_row = {
             "scene": scene,
             "logicId": logic_id,
             "scriptId": logic_id,
@@ -3939,7 +4080,15 @@ def load_dynamic_scene_identity_cross_references(
             "storyBinding": False,
             "orderEvidence": False,
             "missionGraphAction": "none",
-        })
+        }
+        bridge = bridges_by_logic_id.get(logic_id)
+        if bridge:
+            occurrence_keys = {
+                occurrence["storyKey"] for occurrence in story_occurrences
+            }
+            if set(bridge.get("sharedStoryKeys") or []).issubset(occurrence_keys):
+                published_row["localContextBridge"] = bridge
+        rows.append(published_row)
 
     rows.sort(key=lambda row: (
         row["scene"],
@@ -3950,18 +4099,37 @@ def load_dynamic_scene_identity_cross_references(
         "classification": boundary["classification"],
         "finding": (
             "Exact authored DynamicScene logic ids equal exported LevelScript "
-            "script ids and co-carry mission/quest state conditions, but the "
-            "current native systems resolve those identities through separate "
-            "registries. These rows are candidate context only."
+            "script ids and co-carry mission/quest state conditions. One current "
+            "LevelScript also targets its matching DynamicScene root on the "
+            "same local control path as Story playback. No evidence shows that "
+            "the DynamicScene mission condition activates that LevelScript "
+            "header, so every row remains non-owning context."
         ),
         "boundary": boundary.get("promotionRequirement"),
         "directBridgeFound": False,
+        "missionActivationBridgeFound": False,
         "missionGraphAction": "none",
         "reportJson": repo_path(audit_path),
+        "actionBridgeReportJson": (
+            repo_path(action_bridge_path)
+            if bridge_report and action_bridge_path is not None
+            else ""
+        ),
         "counts": {
             "candidateRoots": len(rows),
             "storyOccurrences": sum(
                 len(row["storyOccurrences"]) for row in rows
+            ),
+            "exactTargetBridgeRoots": sum(
+                bool(row.get("localContextBridge")) for row in rows
+            ),
+            "sharedControlPathStoryOccurrences": sum(
+                len(
+                    (row.get("localContextBridge") or {}).get(
+                        "sharedStoryKeys"
+                    ) or []
+                )
+                for row in rows
             ),
         },
         "rows": rows,

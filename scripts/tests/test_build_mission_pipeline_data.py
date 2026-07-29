@@ -1,3 +1,4 @@
+import hashlib
 import json
 import tempfile
 import unittest
@@ -93,6 +94,137 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             )
 
         self.assertIsNone(published)
+
+    def test_dynamic_scene_typed_target_bridge_stays_local_context(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            audit_path = root / "dynamic_scene.json"
+            bridge_path = root / "dynamic_scene_bridge.json"
+            audit = {
+                "schemaVersion": 1,
+                "nativeIdentityBoundary": {
+                    "classification":
+                        "exact_cross_reference_not_runtime_owner",
+                    "directBridgeFound": False,
+                    "missionActivationBridgeFound": False,
+                    "missionGraphAction": "none",
+                    "promotionRequirement":
+                        "mission condition activation edge required",
+                },
+                "storyIdentityCandidates": [{
+                    "scene": "map02",
+                    "logicId": "10100282001",
+                    "sourceFile": "DynamicStreaming/map02/fb_main.bytes",
+                    "missionControls": [{
+                        "conditions": [{
+                            "identifier": "c27m3_q#3",
+                            "isQuest": True,
+                            "state": 3,
+                            "isSame": True,
+                        }],
+                    }],
+                    "storyOccurrences": [{
+                        "storyKey": "dlg_c27m3_6",
+                        "levelId": "map02_lv001",
+                        "scriptId": "10100282001",
+                        "recordOffset": 7,
+                        "actionName": "StartDialogAndTeleportAction",
+                    }],
+                }],
+            }
+            audit_path.write_text(json.dumps(audit), encoding="utf-8")
+            bridge_path.write_text(
+                json.dumps({
+                    "schemaVersion": 1,
+                    "sources": {
+                        "identityAudit": {
+                            "sha256": hashlib.sha256(
+                                audit_path.read_bytes()
+                            ).hexdigest(),
+                        },
+                    },
+                    "boundary": {
+                        "classification":
+                            "exact_local_context_without_mission_activation_edge",
+                        "missionActivationBridgeFound": False,
+                        "missionGraphAction": "none",
+                    },
+                    "bridgeRows": [{
+                        "logicId": "10100282001",
+                        "missionOwnerStatus": "unresolved",
+                        "storyBinding": False,
+                        "orderEvidence": False,
+                        "missionGraphAction": "none",
+                        "classification":
+                            "exact_dynamic_scene_target_and_shared_levelscript_control_path",
+                        "exactTargetActions": [{
+                            "actionName": "ShowSceneDecorationNew",
+                            "unionTag": "0x0485",
+                            "serializedMemberCount": 10,
+                            "recordOffset": 284,
+                            "localId": 6,
+                            "targetDynamicEntityLogicId": "10100282001",
+                            "visible": False,
+                            "payloadFullyConsumed": True,
+                            "targetParam": {
+                                "idRef": -1,
+                                "paramSource": 0,
+                                "path": None,
+                            },
+                            "visibleParam": {
+                                "idRef": -1,
+                                "paramSource": 0,
+                                "path": None,
+                            },
+                            "storyControlPathLinks": [{
+                                "storyKey": "dlg_c27m3_6",
+                                "storyRecordOffset": 7,
+                                "storyActionName":
+                                    "StartDialogAndTeleportAction",
+                                "sharedControlPaths": [{
+                                    "status":
+                                        "exact_serialized_shared_control_path",
+                                    "relation":
+                                        "decoration_follows_story_on_same_path",
+                                    "headerName":
+                                        "ScriptEvent_OnLeaderEnterTriggerVolume",
+                                    "headerLocalId": 4,
+                                    "eventDetail": {
+                                        "summary":
+                                            "leader enters trigger slot 80001",
+                                        "triggerSlotIdFilter": 80001,
+                                    },
+                                    "storyPathLocalIds": [5],
+                                    "decorationPathLocalIds": [5, 6],
+                                }],
+                            }],
+                        }],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+
+            published = pipeline.load_dynamic_scene_identity_cross_references(
+                audit_path,
+                bridge_path,
+            )
+
+        self.assertIsNotNone(published)
+        self.assertEqual(published["counts"]["exactTargetBridgeRoots"], 1)
+        self.assertEqual(
+            published["counts"]["sharedControlPathStoryOccurrences"],
+            1,
+        )
+        row = published["rows"][0]
+        bridge = row["localContextBridge"]
+        self.assertFalse(bridge["storyBinding"])
+        self.assertFalse(bridge["orderEvidence"])
+        self.assertEqual(bridge["missionGraphAction"], "none")
+        path = bridge["exactTargetActions"][0][
+            "storyControlPathLinks"
+        ][0]["sharedControlPaths"][0]
+        self.assertEqual(path["triggerSlotId"], 80001)
+        self.assertEqual(path["decorationPathLocalIds"], [5, 6])
 
     def test_trigger_route_reads_exact_levelscript_occurrence_paths(self):
         row = {

@@ -118,11 +118,15 @@
       carrierAudit: "Closed managed-carrier candidates",
       noGraphEdges: "zero mission graph edges",
       dynamicSceneCrossReferences: "DynamicScene identity cross-references",
-      dynamicSceneCrossReferencesHint: "A DynamicScene object co-carries mission/quest state conditions, and its exact numeric logic id equals an exported LevelScript script id containing Story playback. The current native systems resolve those ids through separate registries, so this is candidate context—not mission ownership, playback causality, or order.",
+      dynamicSceneCrossReferencesHint: "A DynamicScene object co-carries mission/quest state conditions, and its exact numeric logic id equals an exported LevelScript script id containing Story playback. One current row also has a typed LevelScript target and shared local Story path; the mission-condition-to-trigger activation edge is still missing, so no row gains mission ownership, playback causality, or order.",
       dynamicSceneLogicId: "DynamicScene logic id",
       levelScriptId: "LevelScript script id",
       missionStateConditions: "co-carried state conditions",
       candidateContextOnly: "candidate context only",
+      exactDynamicSceneLocalContext: "exact local control context",
+      typedDynamicSceneTargetAction: "typed DynamicScene target action",
+      sameSerializedControlPath: "same serialized control path",
+      missionActivationGap: "mission condition to trigger activation remains unresolved",
       alternateActions: "mutually exclusive actions",
       currentAuthoredInstances: "current authored instances",
       runtimeContextOnly: "runtime subscription context only",
@@ -556,11 +560,15 @@
       carrierAudit: "已关闭的托管载体候选",
       noGraphEdges: "使命图边为零",
       dynamicSceneCrossReferences: "DynamicScene 身份交叉引用",
-      dynamicSceneCrossReferencesHint: "DynamicScene 对象携带任务状态条件，其精确数字逻辑 ID 与包含剧情播放的 LevelScript 脚本 ID 相同。当前原生系统通过不同注册表解析这两个 ID，因此这里只显示候选上下文，不表示任务所有权、播放因果或顺序。",
+      dynamicSceneCrossReferencesHint: "DynamicScene 对象携带任务状态条件，其精确数字逻辑 ID 与包含剧情播放的 LevelScript 脚本 ID 相同。当前一行还具有类型化 LevelScript 目标和共享的本地剧情路径；任务条件到触发器激活的链路仍缺失，因此所有行都不表示任务所有权、播放因果或顺序。",
       dynamicSceneLogicId: "DynamicScene 逻辑 ID",
       levelScriptId: "LevelScript 脚本 ID",
       missionStateConditions: "同对象携带的状态条件",
       candidateContextOnly: "仅候选上下文",
+      exactDynamicSceneLocalContext: "精确本地控制上下文",
+      typedDynamicSceneTargetAction: "类型化 DynamicScene 目标动作",
+      sameSerializedControlPath: "相同序列化控制路径",
+      missionActivationGap: "任务条件到触发器激活的链路仍未解析",
       alternateActions: "互斥动作分支",
       currentAuthoredInstances: "当前原始实例",
       runtimeContextOnly: "仅运行时订阅上下文",
@@ -2583,11 +2591,18 @@
         <div class="mp-missionless-runtime-grid">${dynamicSceneRows.map((row) => {
           const conditions = (row.conditions || []).filter((condition) => condition?.identifier);
           const stories = (row.storyOccurrences || []).filter((story) => story?.storyKey);
+          const bridge = row.localContextBridge || null;
+          const bridgeDetails = (bridge?.exactTargetActions || []).flatMap((action) => (
+            (action.storyControlPathLinks || []).flatMap((link) => (
+              (link.sharedControlPaths || []).map((path) => ({action, link, path}))
+            ))
+          ));
           return `<article>
-            <header><code>${esc(row.scene || "?")}</code><b>${esc(t("candidateContextOnly"))}</b></header>
+            <header><code>${esc(row.scene || "?")}</code><b>${esc(t(bridgeDetails.length ? "exactDynamicSceneLocalContext" : "candidateContextOnly"))}</b></header>
             <div class="mp-runtime-chain"><span>${esc(t("dynamicSceneLogicId"))}</span><code>${esc(row.logicId || "?")}</code><i aria-hidden="true">=</i><span>${esc(t("levelScriptId"))}</span><code>${esc(row.scriptId || "?")}</code><i aria-hidden="true">⇢</i><b>Story</b></div>
             <p><span>${esc(t("missionStateConditions"))}</span><code>${esc(conditions.map((condition) => `${condition.identifier} ${condition.isSame ? "=" : "!="} ${condition.state ?? "?"}`).join(" · "))}</code></p>
             <div class="mp-missionless-story-links">${stories.map((story) => `<a href="${esc(storyHref(story.storyKey))}" title="${esc(story.sourceFile || "")}"><span>${esc(story.actionName || "Story")}</span><code>${esc(story.storyKey)}</code><b aria-hidden="true">→</b><small>${esc(`${story.levelId || "?"}/${story.scriptId || "?"} @ ${story.recordOffset ?? "?"}`)}</small></a>`).join("")}</div>
+            ${bridgeDetails.length ? `<div class="mp-runtime-associations"><strong>${esc(t("typedDynamicSceneTargetAction"))}</strong>${bridgeDetails.map(({action, link, path}) => `<div><span>${esc(path.eventSummary || path.headerName || t("sameSerializedControlPath"))}</span><code>${esc(`${path.headerName || "header"} #${path.headerLocalId ?? "?"}${path.triggerSlotId != null ? ` · slot ${path.triggerSlotId}` : ""}`)}</code><i aria-hidden="true">→</i><a href="${esc(storyHref(link.storyKey))}"><code>${esc(link.storyKey || "?")}</code></a><i aria-hidden="true">→</i><code>${esc(`${action.actionName || "action"}(${action.targetDynamicEntityLogicId || "?"}, visible=${String(Boolean(action.visible))})`)}</code><small>${esc(`${t("sameSerializedControlPath")}: ${(path.decorationPathLocalIds || []).map((id) => `#${id}`).join(" → ")}`)}</small></div>`).join("")}<small>${esc(t("missionActivationGap"))}</small></div>` : ""}
             <div class="mp-runtime-associations"><strong>${esc(t("noMissionOwner"))}</strong><div><span>${esc(dynamicSceneAudit.classification || row.classification || "")}</span><b>${esc(t("noGraphEdges"))}</b><small>${esc(dynamicSceneAudit.boundary || dynamicSceneAudit.finding || "")}</small></div></div>
           </article>`;
         }).join("")}</div>

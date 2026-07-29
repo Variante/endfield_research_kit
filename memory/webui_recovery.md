@@ -288,7 +288,14 @@ Mission Pipeline:
   condition operands, LevelScript playback action, and linked Story key. The
   builder fails closed unless the maintained audit still reports
   `directBridgeFound=false` and `missionGraphAction=none`; the cards say
-  candidate context, no mission owner, and zero graph edges. Current live
+  candidate context, no mission owner, and zero graph edges. The builder also
+  freshness-checks the focused action-bridge audit against the identity audit.
+  Its one admitted self-target row is rendered with a stronger local-context
+  badge and the exact chain
+  `slot 80001 -> dlg_c27m3_6 -> ShowSceneDecorationNew(10100282001, false)`.
+  The same card still states that mission-condition-to-trigger activation is
+  unresolved and retains `storyBinding=false`, `orderEvidence=false`, and
+  `missionGraphAction=none`. Current live
   checks show `2100060003` with `e1m2_q#5 = 3`, `e1m2_q#7 != 3`, and
   `cutscene_e1m3_1`, plus `23300000023` with `e7m4 = 3` and
   `cutscene_e7m4_2`.
