@@ -2690,6 +2690,32 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_e3m4_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E3M4_RADIOS,
+            {"radio_e3m4_1", "radio_e3m4_2"},
+        )
+        cutscene = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES[
+            "cutscene_e3m4_1"
+        ]
+        self.assertEqual(
+            cutscene["definitionRowKeys"],
+            tuple(
+                f"cutscene_e3m4_1_{number:02d}"
+                for number in range(1, 12)
+            ),
+        )
+        self.assertIn("cs_video_e3m5_4", cutscene["consumerBoundary"])
+        self.assertIn("cutscene_e3m5_4", cutscene["consumerBoundary"])
+        dialog = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+            "dlg_e3m4_9"
+        ]
+        self.assertEqual(dialog["lineIds"], ("dlg_e3m4_9_001",))
+        self.assertEqual(
+            dialog["missingAudioIds"],
+            ("au_dlg_e3m4_9_001",),
+        )
+
     def test_declared_e6m2_offline_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E6M2_RADIOS,
@@ -3333,6 +3359,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(text_only),
             {
+                "dlg_e3m4_9",
                 "dlg_e10m4_16",
                 "dlg_e10m4_17",
                 "dlg_e10m3_10",

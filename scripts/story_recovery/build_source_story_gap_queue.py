@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v56"
+SCHEMA = "sourceStoryGapQueue.v57"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -128,7 +128,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v35"
+    "current-build-offline-story-carrier-exhaustion-v36"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -201,6 +201,22 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
         "definitionRowKeys": (
             "cutscene_e2m5_3_01",
             "cutscene_e2m5_3_11",
+        ),
+    },
+    "cutscene_e3m4_1": {
+        "missionId": "e3m4",
+        "definitionRowKeys": tuple(
+            f"cutscene_e3m4_1_{number:02d}" for number in range(1, 12)
+        ),
+        "consumerBoundary": (
+            "the exact TextTable group has no recovered original Story "
+            "consumer; the displayed cs_video_e3m5_4 media is a manual "
+            "presentation override, while its authoritative LevelScript/FMV "
+            "binding targets cutscene_e3m5_4"
+        ),
+        "orderBoundary": (
+            "the manual video attachment and TextTable row order do not "
+            "establish e3m4 activation, ownership, or relative Story order"
         ),
     },
     "cutscene_e6m3_2": {
@@ -294,6 +310,7 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
         "cutscene_e2m6_designer_AngelSurrounding",
         "cutscene_e2m6_designer_anchorperish_001",
     }),
+    "e3m4": frozenset({"cutscene_e3m4_1"}),
     "e6m3": frozenset({"cutscene_e6m3_2"}),
     "e6m4": frozenset({
         "cutscene_e6m4_1",
@@ -1659,6 +1676,11 @@ OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e11m8_9",
 })
 OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
+    "dlg_e3m4_9": {
+        "missionId": "e3m4",
+        "lineIds": ("dlg_e3m4_9_001",),
+        "missingAudioIds": ("au_dlg_e3m4_9_001",),
+    },
     "dlg_e10m4_16": {
         "missionId": "e10m4",
         "lineIds": (
@@ -1959,6 +1981,10 @@ OFFLINE_EXHAUSTION_E6M2_RADIOS = frozenset({
     "radio_e6m2_3",
     "radio_e6m2_7",
 })
+OFFLINE_EXHAUSTION_E3M4_RADIOS = frozenset({
+    "radio_e3m4_1",
+    "radio_e3m4_2",
+})
 OFFLINE_EXHAUSTION_E7M4_RADIOS = frozenset({"radio_e7m4_3"})
 OFFLINE_EXHAUSTION_E8M2_RADIOS = frozenset({
     "radio_e8m2_1",
@@ -1979,6 +2005,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e2m5": OFFLINE_EXHAUSTION_E2M5_RADIOS,
     "e2m6": OFFLINE_EXHAUSTION_E2M6_RADIOS,
     "e2m7": OFFLINE_EXHAUSTION_E2M7_RADIOS,
+    "e3m4": OFFLINE_EXHAUSTION_E3M4_RADIOS,
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
     "e5m1": OFFLINE_EXHAUSTION_E5M1_RADIOS,
     "e5m2": OFFLINE_EXHAUSTION_E5M2_RADIOS,
@@ -3834,11 +3861,15 @@ def build_offline_exhaustion_index(
             ),
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
-            "consumerBoundary": (
+            "consumerBoundary": definition.get("consumerBoundary") or (
                 "the exact TextTable group has no Timeline registry entry, "
                 "indexed cutscene root, reverse PPtr relation, "
                 "PlayableDirector host, structured action, Lua consumer, or "
                 "direct native cutscene caller in the audited build"
+            ),
+            "orderBoundary": definition.get("orderBoundary") or (
+                "TextTable row order and fallback/manual display positions "
+                "do not establish playback, ownership, or mission chronology"
             ),
             "reopenWhen": (
                 "installed binary, TextTable, Timeline registry, object "

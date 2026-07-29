@@ -2014,16 +2014,16 @@ gameplay-video OCR/audio workflow.
   explicit context and does not transfer ownership.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v56` evaluates 301 active declarations: 205 residual
+  `sourceStoryGapQueue.v57` evaluates 305 active declarations: 207 residual
   radio definitions, 29 root cutscene carriers, 40 registered dialog
   definitions, fifteen exact NpcProxy rows across fourteen dialogs without a
   mission owner, eight exact
   DialogTextTable-only/no-registry groups, ten exact
-  ReadingPopUp/RichContent definitions, two exact SNS dialog definitions, five
+  ReadingPopUp/RichContent definitions, two exact SNS dialog definitions, six
   text-only cutscenes (including two e2m5 rows), and two TextTable-only black narrative
   definitions across
   `e0m0`, `e1m1`, `e1m2`, `e1m3`, `e2m2`, `e2m4`, `e2m5`, `e2m6`, `e2m7`,
-  `e3m3`, `e5m1`, `e5m2`, `e6m1`, `e6m2`, `e6m3`, `e6m4`, `e7m2`,
+  `e3m3`, `e3m4`, `e5m1`, `e5m2`, `e6m1`, `e6m2`, `e6m3`, `e6m4`, `e7m2`,
   `e7m3`, `e7m4`, `e8m2`, `e9m2`, `e9m3`, `e10m1`, `e10m3`, `e10m4`,
   `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`.
   Positive native/runtime contexts are excluded from these declarations.
@@ -2177,6 +2177,13 @@ gameplay-video OCR/audio workflow.
   `missionId`; the second has no `missionId` field. Both are selectable
   interaction definitions without recovered mission ownership, activation,
   or relative order, and all four e6m2 rows retain zero exact routes.
+  e3m4 adds audio-complete one-line `radio_e3m4_1` and `radio_e3m4_2`,
+  one-line DialogTextTable-only `dlg_e3m4_9`, and 11-row TextTable-only
+  `cutscene_e3m4_1`. The dialog has no DialogId registration, DialogTree, or
+  Timeline, and its exact audio id is absent from AudioDialog. The cutscene's
+  displayed `cs_video_e3m5_4` media is a manual presentation override; the
+  authoritative LevelScript/FMV binding targets `cutscene_e3m5_4`, so it
+  supplies neither an e3m4 activator nor a relative Story edge.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
   e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`
