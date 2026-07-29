@@ -686,7 +686,7 @@ Expected active inputs and outputs:
   The builder also projects the active exact negative-evidence boundary from
   `reports/mission_order/source_story_gap_queue_CN.json` into
   `storyTriggerManifest[*].offlineRecovery`. It accepts only
-  `sourceStoryGapQueue.v49` with matching source hashes and `graphEffect=none`,
+  `sourceStoryGapQueue.v50` with matching source hashes and `graphEffect=none`,
   never changes an existing attachment status, and never adds a route. The nine
   ReadingPopup `text_*` keys outside the coverage denominator are published in
   the separate `offlineRecoveryEvidence.storyTriggerManifestOverlay`, each with
@@ -2011,8 +2011,8 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v49` evaluates 198 residual radio definitions, 27 root
-  cutscene carriers, 32 registered dialog definitions, five exact NpcProxy
+  `sourceStoryGapQueue.v50` evaluates 202 residual radio definitions, 27 root
+  cutscene carriers, 33 registered dialog definitions, six exact NpcProxy
   dialog consumers without a mission owner, eight exact
   DialogTextTable-only/no-registry groups, twelve exact
   ReadingPopUp/RichContent definitions, two exact SNS dialog definitions, four
@@ -2108,6 +2108,11 @@ gameplay-video OCR/audio workflow.
   from each definition and validates exact media params instead of assuming
   the historical 26-node SNS shape. Its empty `relatedMissionId` and the
   carrier-audit negative preserve the no-activator/no-mission-order boundary.
+  e5m1 adds four audio-complete radio definitions plus registered
+  two-line/two-option `dlg_e5m1_3`. The dialog has exact primary and extra
+  config assets and an exact NpcProxyEx consumer at
+  `pelica_base01_lv001_e5m1back[1]`; the consumer's empty `missionId` keeps
+  mission ownership, activation, and order explicitly unresolved.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
   e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`

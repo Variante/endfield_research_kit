@@ -2272,6 +2272,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e2m6_12",
                 "dlg_e3m3_12",
                 "dlg_e3m3_13",
+                "dlg_e5m1_3",
                 "dlg_e5m2_2",
                 "dlg_e5m2_8",
                 "misc_dlg_e5m2_3d5",
@@ -2449,6 +2450,36 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(misc["registryKey"], "dlg_e5m2_3d5")
         self.assertEqual(misc["npcProxyConsumer"]["entryIndex"], 1)
         self.assertNotIn("missionId", misc["npcProxyConsumer"]["entry"])
+
+    def test_declared_e5m1_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E5M1_RADIOS,
+            {
+                "radio_e5m1_7",
+                "radio_e5m1_10d8",
+                "radio_e5m1_12",
+                "radio_e5m1_15",
+            },
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e5m1_3"
+        ]
+        self.assertEqual(
+            dialog["lineIds"],
+            ("dlg_e5m1_3_001", "dlg_e5m1_3_002"),
+        )
+        self.assertEqual(
+            dialog["optionIds"],
+            (
+                "option_dlg_e5m1_3_1_001",
+                "option_dlg_e5m1_3_1_002",
+            ),
+        )
+        self.assertEqual(dialog["npcProxyConsumer"]["entryIndex"], 1)
+        self.assertEqual(
+            dialog["npcProxyConsumer"]["proxyId"],
+            "pelica_base01_lv001_e5m1back",
+        )
 
     def test_declared_e2m4_offline_frontier_is_exact(self) -> None:
         self.assertEqual(

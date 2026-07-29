@@ -4306,9 +4306,9 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v49`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v50`
    turns the completed exact `e0m0`, `e1m2`, `e1m3`, `e2m4`, `e2m5`,
-   `e2m6`, `e3m3`, `e5m2`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e9m2`, `e9m3`,
+   `e2m6`, `e3m3`, `e5m1`, `e5m2`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e9m2`, `e9m3`,
    `e10m1`, `e10m3`, `e10m4`, `e11m1`, `e11m2`, `e11m3`, `e11m4`,
    `e11m5`, `e11m6`, and `e11m8` negative boundaries into fail-closed
    operational deferrals.
@@ -4479,7 +4479,7 @@ Current main-story priorities:
    AudioDialog ids while current suffixed voice variants remain present.
    `radio_e5m2_3` is an exact three-line RadioTable definition with complete
    AudioDialog membership. The current carrier audit reports no typed
-   candidate for any of the four keys, so v49/v28 defers them with graph
+   candidate for any of the four keys, so v50/v29 defers them with graph
    effect `none`.
    Two narrower quest-attachment diagnostics remain and are not promoted.
    e5m2 q33 checks local LevelScript `10100070004` property `bridge`, but that
@@ -4517,11 +4517,23 @@ Current main-story priorities:
    ReadingPopUp/RichContent definition with two content rows. The generic SNS
    validator is now terminal-id-relative instead of assuming 26 nodes and
    validates per-node media params explicitly. All four keys remain in the
-   current carrier audit's exact no-candidate set, so v49/v28 records
+   current carrier audit's exact no-candidate set, so v50/v29 records
    graph-neutral operational deferrals rather than inferred mission routes.
    e7m4 now scores zero. The main-story bucket is score 492 with 93 actionable
    core isolated rows and 9 strict-attachment diagnostics; e5m1 is the next
    main-story frontier at score 25.
+   The e5m1 pass closes that frontier with the same exact gates. Four
+   RadioTable definitions remain: `radio_e5m1_7` has three audio-complete
+   lines, while `_10d8`, `_12`, and `_15` each have one; none has a typed
+   carrier candidate. `dlg_e5m1_3` is a registered two-line/two-option
+   DialogTree with exact primary/extra-config hashes and complete AudioDialog
+   membership. `NpcProxyExDataTable.data.pelica_base01_lv001_e5m1back[1]`
+   selects it, but that exact row's `missionId` is empty. The dialog therefore
+   retains NPC-interaction selection with no mission owner, activation time,
+   or order edge. v50/v29 defers all five with `graphEffect=none`; e5m1 now
+   scores zero. The main-story bucket is score 467 with 88 actionable core
+   isolated rows, 285 active offline deferrals, and 9 strict-attachment
+   diagnostics. e6m1 is next at score 25.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
