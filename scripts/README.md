@@ -1979,14 +1979,16 @@ gameplay-video OCR/audio workflow.
   Timeline consumer search.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v22` covers 78 residual radio definitions and six
-  cutscenes across `e10m4`, `e11m1`, and `e11m4`, including all 23 residual
-  `e11m1` radios, four exact gendered/director-host Timeline roots, and the
-  text-only `cutscene_e11m1_2`. It requires the expected `GameAssembly.dll`,
+  `sourceStoryGapQueue.v23` covers 100 residual radio definitions and eight
+  root Timeline cutscenes across `e10m4`, `e11m1`, `e11m4`, and `e11m6`, plus
+  the text-only `cutscene_e11m1_2`. This includes all 23 residual `e11m1`
+  radios and all 22 residual `e11m6` radios. It requires the expected
+  `GameAssembly.dll`,
   RadioTable, AudioDialog, TextTable, NumIdStrTable, and cutscene-definition
   hashes; the complete provenance-valid carrier audit and current core-target
   digest; exact RadioTable schema and AudioDialog membership; exact Timeline
-  registry ids or the complete text-only definition group; and current
+  registry ids and every physical root definition variant, or the complete
+  text-only definition group; and current
   GameObject plus reverse-PPtr audit negatives. Timeline roots additionally
   require the expected exact `PlayableDirector` host counts. A text-only group
   is admitted only when its complete TextTable rows remain exact and no

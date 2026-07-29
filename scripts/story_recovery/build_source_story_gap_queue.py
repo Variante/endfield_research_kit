@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v22"
+SCHEMA = "sourceStoryGapQueue.v23"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v2"
+    "current-build-offline-story-carrier-exhaustion-v3"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -148,9 +148,6 @@ OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256 = (
 OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256 = (
     "78CECB42561D80255AB2C38DD24F6699DDC6226D2DFF058FABC5E1EE50223CF3"
 )
-OFFLINE_EXHAUSTION_E11M4_CUTSCENE_SHA256 = (
-    "EF073ADA194D047E28500ECEF71E2B370587905C83DFEFA1CAE5E9E591A0EA99"
-)
 OFFLINE_EXHAUSTION_E11M4_CUTSCENE = (
     "cutscene_e11m4_rift_camera_state1to2"
 )
@@ -167,6 +164,10 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
         *OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES,
     }),
     "e11m4": frozenset({OFFLINE_EXHAUSTION_E11M4_CUTSCENE}),
+    "e11m6": frozenset({
+        "cutscene_e11m6_rift_camera_state1to2",
+        "cutscene_e11m6_zhuangcomein",
+    }),
 }
 OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e11m1_fire_end": 2,
@@ -174,6 +175,90 @@ OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e11m1_jsspsi_ground_cast": 1,
     "cutscene_e11m1_shenjiaoe": 2,
     OFFLINE_EXHAUSTION_E11M4_CUTSCENE: 1,
+    "cutscene_e11m6_rift_camera_state1to2": 1,
+    "cutscene_e11m6_zhuangcomein": 1,
+}
+OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
+    "cutscene_e11m1_fire_end": {
+        "timelineRegistryId": 458,
+        "files": (
+            (
+                "f_cutscene_e11m1_fire_end_pD7686B40F0A16B92.json",
+                "2886C9B0440702DC416E54338BDA0F2A84F4268F9C0B951D3D96B9DFA6D63EF5",
+                "f_cutscene_e11m1_fire_end",
+            ),
+            (
+                "m_cutscene_e11m1_fire_end_pCC43771AC811B454.json",
+                "8690B570AFEEA02F4C5C446F150090E90B67F7C70759A3B637D712238D78AE53",
+                "m_cutscene_e11m1_fire_end",
+            ),
+        ),
+    },
+    "cutscene_e11m1_gatebattleend": {
+        "timelineRegistryId": 488,
+        "files": (
+            (
+                "cutscene_e11m1_gatebattleend_pE2667486BB094752.json",
+                "0F14260AA21D4BA3B75373E03A66661B625A7789970F23A509CDEA7740900D64",
+                "cutscene_e11m1_gatebattleend",
+            ),
+        ),
+    },
+    "cutscene_e11m1_jsspsi_ground_cast": {
+        "timelineRegistryId": 481,
+        "files": (
+            (
+                "cutscene_e11m1_jsspsi_ground_cast_p6540AA2BB4C80312.json",
+                "10A09BFD2F689BB0E6A51C5022022C36CA9BF838866723D90C152EA82A537BEC",
+                "cutscene_e11m1_jsspsi_ground_cast",
+            ),
+        ),
+    },
+    "cutscene_e11m1_shenjiaoe": {
+        "timelineRegistryId": 454,
+        "files": (
+            (
+                "f_cutscene_e11m1_shenjiaoe_p5B823ED46AD8814D.json",
+                "ABF4FC8671603D1C47C10CA3A659EFA079A18B13431632FB6D86F5BF73D023CC",
+                "f_cutscene_e11m1_shenjiaoe",
+            ),
+            (
+                "m_cutscene_e11m1_shenjiaoe_p51A93B02AA4BE50A.json",
+                "0E2AB3EBB31F633DFD672C4FB7F1977207019C14AC0FCE35BFDCBD6793AB9693",
+                "m_cutscene_e11m1_shenjiaoe",
+            ),
+        ),
+    },
+    OFFLINE_EXHAUSTION_E11M4_CUTSCENE: {
+        "timelineRegistryId": 484,
+        "files": (
+            (
+                "cutscene_e11m4_rift_camera_state1to2_p86E71A990775EC2D.json",
+                "EF073ADA194D047E28500ECEF71E2B370587905C83DFEFA1CAE5E9E591A0EA99",
+                OFFLINE_EXHAUSTION_E11M4_CUTSCENE,
+            ),
+        ),
+    },
+    "cutscene_e11m6_rift_camera_state1to2": {
+        "timelineRegistryId": 483,
+        "files": (
+            (
+                "cutscene_e11m6_rift_camera_state1to2_pA96D959869136A8C.json",
+                "3DF5E0A78B69EE7A512E30A84F1AE351D7BA04FEB3C1B687DED33ABB3318170A",
+                "cutscene_e11m6_rift_camera_state1to2",
+            ),
+        ),
+    },
+    "cutscene_e11m6_zhuangcomein": {
+        "timelineRegistryId": 547,
+        "files": (
+            (
+                "cutscene_e11m6_zhuangcomein_pE9B3097117A5932B.json",
+                "99420E962A10B4B202390D372F30F9DF1C3D51058F84094279B3126A1206678F",
+                "cutscene_e11m6_zhuangcomein",
+            ),
+        ),
+    },
 }
 OFFLINE_EXHAUSTION_E11M4_RADIOS = frozenset({
     "radio_e11m4_7",
@@ -235,10 +320,19 @@ OFFLINE_EXHAUSTION_E11M1_RADIOS = frozenset({
     "radio_e11m1_101",
     "radio_e11m1_104",
 })
+OFFLINE_EXHAUSTION_E11M6_RADIOS = frozenset({
+    "radio_e11m6_10",
+    "radio_e11m6_13",
+    *{
+        f"radio_e11m6_{number}"
+        for number in range(19, 39)
+    },
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
     "e11m1": OFFLINE_EXHAUSTION_E11M1_RADIOS,
     "e11m4": OFFLINE_EXHAUSTION_E11M4_RADIOS,
+    "e11m6": OFFLINE_EXHAUSTION_E11M6_RADIOS,
 }
 OFFLINE_EXHAUSTION_MISSING_AUDIO_IDS = {
     "radio_e10m4_11": frozenset({"au_radio_e10m4_11_001"}),
@@ -399,33 +493,47 @@ def build_offline_exhaustion_index(
         "audioDialog": table_root / "AudioDialog.json",
         "numIdStrTable": table_root / "NumIdStrTable.json",
         "textTable": table_root / "TextTable.json",
-        "cutsceneDefinition": (
-            ROOT
-            / "export_full"
-            / "recovered"
-            / "AnimeStudio-cli"
-            / "StreamingAssets"
-            / "json_by_type"
-            / "TextAsset"
-            / (
-                "cutscene_e11m4_rift_camera_state1to2_"
-                "p86E71A990775EC2D.json"
-            )
-        ),
         "gameAssembly": game_assembly_path,
         "carrierAudit": carrier_audit_path,
         "gameObjectAudit": gameobject_audit_path,
         "reversePptrAudit": reverse_pptr_audit_path,
     }
+    cutscene_definition_root = (
+        ROOT
+        / "export_full"
+        / "recovered"
+        / "AnimeStudio-cli"
+        / "StreamingAssets"
+        / "json_by_type"
+        / "TextAsset"
+    )
+    for story_key, definition in (
+        OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS.items()
+    ):
+        for index, (filename, _sha256, _root_name) in enumerate(
+            definition["files"],
+            start=1,
+        ):
+            source_paths[
+                f"cutsceneDefinition:{story_key}:{index}"
+            ] = cutscene_definition_root / filename
     expected_hashes = {
         "radioTable": OFFLINE_EXHAUSTION_RADIO_TABLE_SHA256,
         "audioDialog": OFFLINE_EXHAUSTION_AUDIO_DIALOG_SHA256,
         "numIdStrTable": OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256,
         "textTable": OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256,
-        "cutsceneDefinition":
-            OFFLINE_EXHAUSTION_E11M4_CUTSCENE_SHA256,
         "gameAssembly": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
     }
+    for story_key, definition in (
+        OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS.items()
+    ):
+        for index, (_filename, sha256, _root_name) in enumerate(
+            definition["files"],
+            start=1,
+        ):
+            expected_hashes[
+                f"cutsceneDefinition:{story_key}:{index}"
+            ] = sha256
     actual_hashes = {
         name: _sha256_file(path) if isinstance(path, Path) else ""
         for name, path in source_paths.items()
@@ -562,7 +670,6 @@ def build_offline_exhaustion_index(
         else {}
     )
     text_table = read_json(source_paths["textTable"], {})
-    cutscene_definition = read_json(source_paths["cutsceneDefinition"], {})
     gameobject_audit = read_json(gameobject_audit_path, {})
     reverse_pptr_audit = read_json(reverse_pptr_audit_path, {})
     gameobject_audit_valid = (
@@ -693,15 +800,39 @@ def build_offline_exhaustion_index(
             if isinstance(row, dict)
         )
     )
+    cutscene_definitions_valid = (
+        set(OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS)
+        == set(OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS)
+        and all(
+            safe_key(timeline_ids.get(str(definition["timelineRegistryId"])))
+            == story_key
+            and all(
+                (
+                    isinstance(
+                        payload := read_json(
+                            source_paths[
+                                f"cutsceneDefinition:{story_key}:{index}"
+                            ],
+                            {},
+                        ),
+                        dict,
+                    )
+                    and safe_key(payload.get("m_Name")) == root_name
+                    and safe_key(payload.get("Name")) == root_name
+                )
+                for index, (_filename, _sha256, root_name) in enumerate(
+                    definition["files"],
+                    start=1,
+                )
+            )
+            for story_key, definition in (
+                OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS.items()
+            )
+        )
+    )
     if (
-        safe_key(timeline_ids.get("484"))
-        != OFFLINE_EXHAUSTION_E11M4_CUTSCENE
-        or not isinstance(cutscene_definition, dict)
-        or safe_key(cutscene_definition.get("m_Name"))
-        != OFFLINE_EXHAUSTION_E11M4_CUTSCENE
-        or safe_key(cutscene_definition.get("Name"))
-        != OFFLINE_EXHAUSTION_E11M4_CUTSCENE
-        or not presentation_cutscene_valid
+        not presentation_cutscene_valid
+        or not cutscene_definitions_valid
         or not text_only_cutscene_valid
     ):
         status["status"] = "inactive_cutscene_definition_validation_failed"
@@ -758,10 +889,17 @@ def build_offline_exhaustion_index(
                 "deferred_current_build_offline_surface_exhausted",
             "evidenceKind": "cutscene_root_without_recovered_activator",
             "timelineRegistryId": (
-                484
-                if story_key == OFFLINE_EXHAUSTION_E11M4_CUTSCENE
-                else None
+                OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[story_key][
+                    "timelineRegistryId"
+                ]
             ),
+            "definitionRootNames": [
+                root_name
+                for _filename, _sha256, root_name
+                in OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[story_key][
+                    "files"
+                ]
+            ],
             "directorHostCount": len(director_hosts),
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "playbackMappingId":

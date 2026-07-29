@@ -4306,9 +4306,10 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v22`
-   turns the completed exact `e10m4`, `e11m1`, and `e11m4` negative boundaries
-   into fail-closed operational deferrals. It activates only while the exact
+   block metadata or the installed build changes. `sourceStoryGapQueue.v23`
+   turns the completed exact `e10m4`, `e11m1`, `e11m4`, and most of `e11m6`
+   negative boundaries into fail-closed operational deferrals. It activates
+   only while the exact
    current `GameAssembly.dll`, RadioTable, AudioDialog, TextTable,
    NumIdStrTable, and cutscene-definition hashes match; the carrier-audit
    target digest matches the freshly derived core-isolated set; the radio
@@ -4322,14 +4323,26 @@ Current main-story priorities:
    resolved 137 target roots and traversed 58,145 descendants containing 5,959
    typed components, again with zero candidates. Exact gender-prefixed
    `f_`/`m_`/`fm_` Timeline roots are canonicalized only when the complete root
-   name matches; component and fuzzy aliases stay rejected.
-   The rows remain visible as
+   name matches; component and fuzzy aliases stay rejected. Every
+   Timeline-root deferral now also validates its exact NumIdStrTable registry
+   id and every physical root definition file, including both gendered
+   variants where present; this closes the weaker definition gate in the
+   initial e11m1 classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 84 deferred
+   and reopen automatically if any gate changes. There are now 108 deferred
    rows: 21 `e10m4` radios, 23 `e11m1` radios plus five cutscenes, and 34
-   `e11m4` radios plus its rift-camera cutscene. All have graph effect `none`;
-   all three missions score zero. The genuine offline queue now ranks `e11m6`
-   first (125/25), followed by `e11m2` (75/15) and `e9m2` (73/14). Continue
+   `e11m4` radios plus its rift-camera cutscene, plus 22 `e11m6` radios and
+   two exact one-host cutscenes. All have graph effect `none`; the first three
+   missions score zero. `e11m6` drops from 125/25 to score 5 with only
+   `dlg_e11m6_9` actionable. That dialog is not folded into the deferral:
+   six of its lines are exact clips inside `dlgtl_e11m5_9_sub_1`, between
+   `dlg_e11m5_9_009` and `_010`, while its own DialogTree begins with
+   `dlg_e11m6_9_001` and converges both choices on the embedded six-line trunk.
+   This is real cross-mission authored Timeline context, but the parent dialog
+   itself lacks a recovered playback owner and contains content on both sides,
+   so it proves neither whole-file chronology nor e11m6 activation. The genuine
+   offline queue now ranks `e11m2` first (75/15), followed by `e9m2` (73/14).
+   Continue
    offline from those exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
    runtime capture later becomes possible, the existing `e11m1` probe remains
