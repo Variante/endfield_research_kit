@@ -2449,6 +2449,38 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_e6m4_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E6M4_RADIOS,
+            {
+                "radio_e6m4_5",
+                "radio_e6m4_9",
+                "radio_e6m4_15",
+                "radio_e6m4_25",
+                "radio_e6m4_35",
+                "radio_e6m4_36",
+                "radio_e6m4_37",
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
+                "cutscene_e6m4_1"
+            ]["timelineRegistryId"],
+            400,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS[
+                "cutscene_e6m4_hydrantStart"
+            ]["timelineRegistryId"],
+            324,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS[
+                "cutscene_e6m4_hydrantStart"
+            ],
+            1,
+        )
+
     def test_declared_e11m5_frontier_preserves_owned_mixed_timeline(
         self,
     ) -> None:

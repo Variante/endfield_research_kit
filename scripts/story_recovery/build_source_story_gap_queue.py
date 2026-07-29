@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v35"
+SCHEMA = "sourceStoryGapQueue.v36"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v14"
+    "current-build-offline-story-carrier-exhaustion-v15"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -202,6 +202,10 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
     }),
     "e1m3": frozenset({"cutscene_e1m3_1"}),
     "e6m3": frozenset({"cutscene_e6m3_2"}),
+    "e6m4": frozenset({
+        "cutscene_e6m4_1",
+        "cutscene_e6m4_hydrantStart",
+    }),
     "e7m2": frozenset({"cutscene_e7m2_designer_QingBoZhai"}),
     "e9m2": frozenset({
         "cutscene_dung02_dg002_e9m2_lightthewall",
@@ -233,6 +237,8 @@ OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e0m0_12": 1,
     "cutscene_e0m0_11111": 1,
     "cutscene_e1m3_1": 1,
+    "cutscene_e6m4_1": 1,
+    "cutscene_e6m4_hydrantStart": 1,
     "cutscene_e7m2_designer_QingBoZhai": 1,
     "cutscene_dung02_dg002_e9m2_lightthewall": 1,
     "cutscene_dung02_dg002_e9m2_zipline01": 1,
@@ -297,6 +303,22 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
                 "cutscene_e1m3_1",
             ),
         ),
+    },
+    "cutscene_e6m4_1": {
+        "timelineRegistryId": 400,
+        "files": ((
+            "cutscene_e6m4_1_pB347CD3C7DD041A4.json",
+            "A3EDEC8195ED17AFFC57FA2447057FB7BF19D011255052015D3930AA74356B35",
+            "cutscene_e6m4_1",
+        ),),
+    },
+    "cutscene_e6m4_hydrantStart": {
+        "timelineRegistryId": 324,
+        "files": ((
+            "cutscene_e6m4_hydrantStart_pD2D24003F92DFB3F.json",
+            "7AB80057A5325DB17BAC4C2563E8163E0FC7F7CD242B2A10D9C67B03AA1DB042",
+            "cutscene_e6m4_hydrantStart",
+        ),),
     },
     "cutscene_e7m2_designer_QingBoZhai": {
         "timelineRegistryId": 406,
@@ -491,6 +513,8 @@ OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS = {
     "cutscene_e0m0_12": 1,
     "cutscene_e0m0_11111": 1,
     "cutscene_e1m3_1": 1,
+    "cutscene_e6m4_1": 1,
+    "cutscene_e6m4_hydrantStart": 1,
     "cutscene_e7m2_designer_QingBoZhai": 1,
     "cutscene_dung02_dg002_e9m2_lightthewall": 1,
     "cutscene_dung02_dg002_e9m2_zipline01": 1,
@@ -1018,6 +1042,15 @@ OFFLINE_EXHAUSTION_E7M2_RADIOS = frozenset({
     "radio_e7m2_14",
     "radio_e7m2_18",
 })
+OFFLINE_EXHAUSTION_E6M4_RADIOS = frozenset({
+    "radio_e6m4_5",
+    "radio_e6m4_9",
+    "radio_e6m4_15",
+    "radio_e6m4_25",
+    "radio_e6m4_35",
+    "radio_e6m4_36",
+    "radio_e6m4_37",
+})
 OFFLINE_EXHAUSTION_E3M3_RADIOS = frozenset({
     "radio_e3m3_1d5",
     "radio_e3m3_1d7",
@@ -1039,6 +1072,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
+    "e6m4": OFFLINE_EXHAUSTION_E6M4_RADIOS,
     "e7m2": OFFLINE_EXHAUSTION_E7M2_RADIOS,
     "e9m2": OFFLINE_EXHAUSTION_E9M2_RADIOS,
     "e10m3": OFFLINE_EXHAUSTION_E10M3_RADIOS,
