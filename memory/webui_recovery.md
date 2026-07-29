@@ -286,13 +286,13 @@ Mission Pipeline:
   `PlayRadio`.
 - The same manifest now carries fail-closed `offlineRecovery` annotations from
   `reports/mission_order/source_story_gap_queue_CN.json` only while the queue is
-  schema `sourceStoryGapQueue.v56`, its current-build evidence is active, all
+  schema `sourceStoryGapQueue.v57`, its current-build evidence is active, all
   source hashes match, and `graphEffect=none`. Existing attachment statuses and
   route arrays are left unchanged. The nine ReadingPopup `text_*` keys outside
   the historical coverage denominator are exposed through
   `offlineRecoveryEvidence.storyTriggerManifestOverlay`, with zero routes and
   an explicit denominator-neutral status. The current live projection covers
-  291 manifest keys plus ten overlay keys. The four e5m2 rows retain empty
+  295 manifest keys plus ten overlay keys. The four e5m2 rows retain empty
   route arrays: three exact blank-owner NpcProxy dialog consumers and one
   consumerless RadioTable definition. e7m4 adds three manifest annotations
   plus one denominator-neutral ReadingPopup overlay; its SNS annotation
@@ -327,6 +327,11 @@ Mission Pipeline:
   `radio_e6m2_7`, `dlg_e6m2_1`, and `dlg_e6m2_2`. The two dialog cards expose
   their exact missionless NpcProxyEx consumers and authored option groups
   while retaining the explicit ownership, activation, and order gap.
+  e3m4 adds four more zero-route annotations for `radio_e3m4_1`,
+  `radio_e3m4_2`, `dlg_e3m4_9`, and `cutscene_e3m4_1`. The cutscene card
+  explicitly distinguishes its manually attached e3m5 video from original
+  e3m4 trigger evidence; the authoritative FMV binding remains on
+  `cutscene_e3m5_4`.
   Mission cards display the
   evidence kind, consumer boundary, order boundary, and reopen condition; the
   Story debug row labels them as an exhausted current-build offline carrier
