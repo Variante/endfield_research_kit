@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v21"
+SCHEMA = "sourceStoryGapQueue.v22"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,10 +125,16 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v1"
+    "current-build-offline-story-carrier-exhaustion-v2"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+)
+OFFLINE_EXHAUSTION_REVERSE_PPTR_MAPPING_ID = (
+    "gameassembly-2026-07-28-cutscene-root-director-playback-v1"
+)
+OFFLINE_EXHAUSTION_METADATA_SHA256 = (
+    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
 )
 OFFLINE_EXHAUSTION_RADIO_TABLE_SHA256 = (
     "78E0974495915D1F126EA9FE2923DC44DFD260D8358702A01504147BFABBD1D1"
@@ -139,12 +145,36 @@ OFFLINE_EXHAUSTION_AUDIO_DIALOG_SHA256 = (
 OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256 = (
     "13FE790D69B0B3CDD4B64CCA53BB41DA8BD0D45D31975004FA074B0EDBB73BDE"
 )
+OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256 = (
+    "78CECB42561D80255AB2C38DD24F6699DDC6226D2DFF058FABC5E1EE50223CF3"
+)
 OFFLINE_EXHAUSTION_E11M4_CUTSCENE_SHA256 = (
     "EF073ADA194D047E28500ECEF71E2B370587905C83DFEFA1CAE5E9E591A0EA99"
 )
 OFFLINE_EXHAUSTION_E11M4_CUTSCENE = (
     "cutscene_e11m4_rift_camera_state1to2"
 )
+OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE = "cutscene_e11m1_2"
+OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES = frozenset({
+    "cutscene_e11m1_fire_end",
+    "cutscene_e11m1_gatebattleend",
+    "cutscene_e11m1_jsspsi_ground_cast",
+    "cutscene_e11m1_shenjiaoe",
+})
+OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
+    "e11m1": frozenset({
+        OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE,
+        *OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES,
+    }),
+    "e11m4": frozenset({OFFLINE_EXHAUSTION_E11M4_CUTSCENE}),
+}
+OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
+    "cutscene_e11m1_fire_end": 2,
+    "cutscene_e11m1_gatebattleend": 1,
+    "cutscene_e11m1_jsspsi_ground_cast": 1,
+    "cutscene_e11m1_shenjiaoe": 2,
+    OFFLINE_EXHAUSTION_E11M4_CUTSCENE: 1,
+}
 OFFLINE_EXHAUSTION_E11M4_RADIOS = frozenset({
     "radio_e11m4_7",
     "radio_e11m4_8",
@@ -180,8 +210,34 @@ OFFLINE_EXHAUSTION_E10M4_RADIOS = frozenset({
     "radio_e10m4_65",
     "radio_e10m4_66",
 })
+OFFLINE_EXHAUSTION_E11M1_RADIOS = frozenset({
+    "radio_e11m1_7",
+    "radio_e11m1_15",
+    "radio_e11m1_16",
+    "radio_e11m1_18",
+    "radio_e11m1_28",
+    "radio_e11m1_37",
+    "radio_e11m1_48",
+    "radio_e11m1_61",
+    "radio_e11m1_71",
+    "radio_e11m1_74",
+    "radio_e11m1_79",
+    "radio_e11m1_87",
+    "radio_e11m1_89",
+    "radio_e11m1_93",
+    "radio_e11m1_94",
+    "radio_e11m1_95",
+    "radio_e11m1_96",
+    "radio_e11m1_97",
+    "radio_e11m1_98",
+    "radio_e11m1_99",
+    "radio_e11m1_100",
+    "radio_e11m1_101",
+    "radio_e11m1_104",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
+    "e11m1": OFFLINE_EXHAUSTION_E11M1_RADIOS,
     "e11m4": OFFLINE_EXHAUSTION_E11M4_RADIOS,
 }
 OFFLINE_EXHAUSTION_MISSING_AUDIO_IDS = {
@@ -308,6 +364,7 @@ def build_offline_exhaustion_index(
     game_assembly_path: Path | None = None,
     carrier_audit_path: Path | None = None,
     gameobject_audit_path: Path | None = None,
+    reverse_pptr_audit_path: Path | None = None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     """Build hash-locked current-build deferrals for exhausted offline rows.
 
@@ -329,11 +386,19 @@ def build_offline_exhaustion_index(
         / "recovery"
         / "animestudio_story_gameobject_audit.json"
     )
+    reverse_pptr_audit_path = reverse_pptr_audit_path or (
+        ROOT
+        / "reports"
+        / "story"
+        / "recovery"
+        / "animestudio_story_reverse_pptr_audit.json"
+    )
     game_assembly_path = game_assembly_path or _configured_game_assembly_path()
     source_paths = {
         "radioTable": table_root / "RadioTable.json",
         "audioDialog": table_root / "AudioDialog.json",
         "numIdStrTable": table_root / "NumIdStrTable.json",
+        "textTable": table_root / "TextTable.json",
         "cutsceneDefinition": (
             ROOT
             / "export_full"
@@ -350,11 +415,13 @@ def build_offline_exhaustion_index(
         "gameAssembly": game_assembly_path,
         "carrierAudit": carrier_audit_path,
         "gameObjectAudit": gameobject_audit_path,
+        "reversePptrAudit": reverse_pptr_audit_path,
     }
     expected_hashes = {
         "radioTable": OFFLINE_EXHAUSTION_RADIO_TABLE_SHA256,
         "audioDialog": OFFLINE_EXHAUSTION_AUDIO_DIALOG_SHA256,
         "numIdStrTable": OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256,
+        "textTable": OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256,
         "cutsceneDefinition":
             OFFLINE_EXHAUSTION_E11M4_CUTSCENE_SHA256,
         "gameAssembly": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
@@ -395,14 +462,21 @@ def build_offline_exhaustion_index(
         for story_key in story_keys
     }
     all_radio_keys = set(radio_mission_by_key)
+    cutscene_mission_by_key = {
+        story_key: mission
+        for mission, story_keys
+        in OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION.items()
+        for story_key in story_keys
+    }
+    all_cutscene_keys = set(cutscene_mission_by_key)
     required_key_missions = {
         **radio_mission_by_key,
-        OFFLINE_EXHAUSTION_E11M4_CUTSCENE: "e11m4",
+        **cutscene_mission_by_key,
     }
     required_keys = set(required_key_missions)
     if (
         not isinstance(carrier_audit, dict)
-        or carrier_audit.get("_schema") != "animestudioStoryCarrierAudit.v2"
+        or carrier_audit.get("_schema") != "animestudioStoryCarrierAudit.v3"
         or safe_key(carrier_audit.get("targetField"))
         != "coreIsolatedSceneKeys"
         or safe_key(carrier_audit.get("targetSetSha256")).lower()
@@ -487,34 +561,136 @@ def build_offline_exhaustion_index(
         if isinstance(num_id_table, dict)
         else {}
     )
+    text_table = read_json(source_paths["textTable"], {})
     cutscene_definition = read_json(source_paths["cutsceneDefinition"], {})
     gameobject_audit = read_json(gameobject_audit_path, {})
-    cutscene_object_rows = [
-        row
-        for row in (
-            gameobject_audit.get("gameObjects") or []
-            if isinstance(gameobject_audit, dict)
-            else []
-        )
-        if (
-            isinstance(row, dict)
-            and OFFLINE_EXHAUSTION_E11M4_CUTSCENE
-            in _string_list(row.get("storyKeys"))
-        )
-    ]
-    cutscene_object_valid = (
+    reverse_pptr_audit = read_json(reverse_pptr_audit_path, {})
+    gameobject_audit_valid = (
         isinstance(gameobject_audit, dict)
         and gameobject_audit.get("_schema")
-        == "animestudioStoryGameObjectAudit.v2"
+        == "animestudioStoryGameObjectAudit.v3"
         and _audit_sources_match_current_indexes(gameobject_audit)
-        and len(cutscene_object_rows) == 1
-        and cutscene_object_rows[0].get("candidateStatus")
-        == "no_typed_owner_or_runtime_sibling_or_descendant"
-        and cutscene_object_rows[0].get("edgeStatus")
-        == "no_edge_candidate_only"
-        and not cutscene_object_rows[0].get("candidateSiblingComponents")
-        and not cutscene_object_rows[0].get(
-            "candidateDescendantComponents"
+    )
+    reverse_native = (
+        reverse_pptr_audit.get("nativeEvidence")
+        if isinstance(reverse_pptr_audit, dict)
+        else {}
+    )
+    reverse_pptr_audit_valid = (
+        isinstance(reverse_pptr_audit, dict)
+        and reverse_pptr_audit.get("_schema")
+        == "animestudioStoryReversePPtrAudit.v3"
+        and _audit_sources_match_current_indexes(reverse_pptr_audit)
+        and safe_key(reverse_native.get("mappingId"))
+        == OFFLINE_EXHAUSTION_REVERSE_PPTR_MAPPING_ID
+        and safe_key(reverse_native.get("gameAssemblySha256"))
+        == OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256
+        and safe_key(reverse_native.get("metadataSha256"))
+        == OFFLINE_EXHAUSTION_METADATA_SHA256
+    )
+    if (
+        not gameobject_audit_valid
+        or not reverse_pptr_audit_valid
+    ):
+        status["status"] = "inactive_cutscene_audit_stale_or_incomplete"
+        return {}, status
+
+    gameobject_rows_by_key: dict[str, list[dict[str, Any]]] = {}
+    reverse_hosts_by_key: dict[str, list[dict[str, Any]]] = {}
+    presentation_cutscene_valid = True
+    for story_key, expected_host_count in (
+        OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS.items()
+    ):
+        object_rows = [
+            row
+            for row in gameobject_audit.get("gameObjects") or []
+            if (
+                isinstance(row, dict)
+                and story_key in _string_list(row.get("storyKeys"))
+            )
+        ]
+        director_hosts = [
+            row
+            for row in reverse_pptr_audit.get("directorHosts") or []
+            if (
+                isinstance(row, dict)
+                and story_key in _string_list(row.get("storyKeys"))
+            )
+        ]
+        gameobject_rows_by_key[story_key] = object_rows
+        reverse_hosts_by_key[story_key] = director_hosts
+        expected_mission = cutscene_mission_by_key[story_key]
+        if (
+            not object_rows
+            or any(
+                set(_string_list(row.get("storyKeys"))) != {story_key}
+                or row.get("candidateStatus")
+                != "no_typed_owner_or_runtime_sibling_or_descendant"
+                or row.get("edgeStatus") != "no_edge_candidate_only"
+                or row.get("candidateSiblingComponents")
+                or row.get("candidateDescendantComponents")
+                for row in object_rows
+            )
+            or len(director_hosts) != expected_host_count
+            or any(
+                set(_string_list(row.get("storyKeys"))) != {story_key}
+                or set(_string_list(row.get("expectedGapMissions")))
+                != {expected_mission}
+                or safe_key(row.get("pointerPath"))
+                != "$.m_PlayableAsset"
+                or row.get("candidateComponents")
+                or row.get("crossStoryContainments")
+                for row in director_hosts
+            )
+        ):
+            presentation_cutscene_valid = False
+            break
+
+    text_only_key = OFFLINE_EXHAUSTION_E11M1_TEXT_ONLY_CUTSCENE
+    text_only_row_keys = {
+        key
+        for key in (
+            text_table
+            if isinstance(text_table, dict)
+            else {}
+        )
+        if key.startswith(f"{text_only_key}_")
+    }
+    expected_text_only_row_keys = {
+        f"{text_only_key}_{number:02d}"
+        for number in range(1, 5)
+    }
+    text_only_cutscene_valid = (
+        text_only_row_keys == expected_text_only_row_keys
+        and all(
+            isinstance(text_table.get(key), dict)
+            and set(text_table[key]) == {"id", "text"}
+            and isinstance(text_table[key].get("id"), int)
+            and not isinstance(text_table[key].get("id"), bool)
+            for key in expected_text_only_row_keys
+        )
+        and text_only_key not in {
+            safe_key(value)
+            for value in (
+                timeline_ids.values()
+                if isinstance(timeline_ids, dict)
+                else []
+            )
+        }
+        and not any(
+            text_only_key in _string_list(row.get("storyKeys"))
+            for row in gameobject_audit.get("gameObjects") or []
+            if isinstance(row, dict)
+        )
+        and not any(
+            text_only_key in _string_list(row.get("targetStoryKeys"))
+            for row in reverse_pptr_audit.get("relations") or []
+            if isinstance(row, dict)
+        )
+        and not any(
+            text_only_key in _string_list(row.get("storyKeys"))
+            for row in reverse_pptr_audit.get("directorHosts") or []
+            if isinstance(row, dict)
         )
     )
     if (
@@ -525,7 +701,8 @@ def build_offline_exhaustion_index(
         != OFFLINE_EXHAUSTION_E11M4_CUTSCENE
         or safe_key(cutscene_definition.get("Name"))
         != OFFLINE_EXHAUSTION_E11M4_CUTSCENE
-        or not cutscene_object_valid
+        or not presentation_cutscene_valid
+        or not text_only_cutscene_valid
     ):
         status["status"] = "inactive_cutscene_definition_validation_failed"
         return {}, status
@@ -568,29 +745,71 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
-    index[OFFLINE_EXHAUSTION_E11M4_CUTSCENE] = {
-        "sceneKey": OFFLINE_EXHAUSTION_E11M4_CUTSCENE,
-        "missionId": "e11m4",
+    for story_key in sorted(
+        OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS,
+        key=natural_key,
+    ):
+        object_rows = gameobject_rows_by_key[story_key]
+        director_hosts = reverse_hosts_by_key[story_key]
+        index[story_key] = {
+            "sceneKey": story_key,
+            "missionId": cutscene_mission_by_key[story_key],
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "evidenceKind": "cutscene_root_without_recovered_activator",
+            "timelineRegistryId": (
+                484
+                if story_key == OFFLINE_EXHAUSTION_E11M4_CUTSCENE
+                else None
+            ),
+            "directorHostCount": len(director_hosts),
+            "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+            "playbackMappingId":
+                OFFLINE_EXHAUSTION_REVERSE_PPTR_MAPPING_ID,
+            "gameAssemblySha256":
+                OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+            "logicalBundles": [
+                row.get("logicalBundle") or {}
+                for row in object_rows
+            ],
+            "candidateStatus":
+                "no_typed_owner_or_runtime_sibling_or_descendant",
+            "consumerBoundary": (
+                "exact root Timeline assets resolve through PlayableDirector "
+                "hosts and complete GameObject descendant hierarchies, but "
+                "no typed owner/runtime component, structured action, Lua "
+                "consumer, or direct native cutscene caller exposes an exact "
+                "activator"
+            ),
+            "reopenWhen": (
+                "installed binary, Timeline registry, object index, Lua "
+                "corpus, or another typed producer/consumer registry changes"
+            ),
+            "graphEffect": "none",
+        }
+    index[text_only_key] = {
+        "sceneKey": text_only_key,
+        "missionId": "e11m1",
         "recoveryStatus":
             "deferred_current_build_offline_surface_exhausted",
-        "evidenceKind": "cutscene_root_without_recovered_activator",
-        "timelineRegistryId": 484,
+        "evidenceKind":
+            "text_table_only_cutscene_without_recovered_asset_or_consumer",
+        "definitionTable": "TextTable",
+        "definitionRowKeys": sorted(
+            expected_text_only_row_keys,
+            key=natural_key,
+        ),
         "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
         "gameAssemblySha256": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
-        "logicalBundle": (
-            cutscene_object_rows[0].get("logicalBundle") or {}
-        ),
-        "candidateStatus":
-            cutscene_object_rows[0].get("candidateStatus"),
         "consumerBoundary": (
-            "the exact Timeline registry, TextAsset definition, root object, "
-            "same-object components, and full descendant hierarchy expose no "
-            "typed owner/runtime carrier; structured actions, Lua, and direct "
-            "native cutscene callers expose no exact activator"
+            "the exact four-row TextTable group has no Timeline registry "
+            "entry, indexed cutscene root, reverse PPtr relation, "
+            "PlayableDirector host, structured action, Lua consumer, or "
+            "direct native cutscene caller in the audited build"
         ),
         "reopenWhen": (
-            "installed binary, Timeline registry, object index, Lua corpus, "
-            "or another typed producer/consumer registry changes"
+            "installed binary, TextTable, Timeline registry, object index, "
+            "Lua corpus, or another typed producer/consumer registry changes"
         ),
         "graphEffect": "none",
     }
@@ -605,6 +824,11 @@ def build_offline_exhaustion_index(
         "deferredRadioStoryKeysByMission": {
             mission: sorted(story_keys, key=natural_key)
             for mission, story_keys in OFFLINE_EXHAUSTION_RADIOS_BY_MISSION.items()
+        },
+        "deferredCutsceneStoryKeysByMission": {
+            mission: sorted(story_keys, key=natural_key)
+            for mission, story_keys
+            in OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION.items()
         },
     })
     return index, status
@@ -1851,6 +2075,9 @@ def _closed_exact_runtime_config_isolated_scenes(
     for row in _flow_story_connections(flow):
         scene_key = safe_key(row.get("key"))
         mission_id = safe_key(row.get("npcProxyMissionId"))
+        context_mission_bundle = safe_key(
+            row.get("contextMissionBundle")
+        )
         if (
             scene_key not in isolated_scene_keys
             or safe_key(row.get("relation"))
@@ -1860,8 +2087,11 @@ def _closed_exact_runtime_config_isolated_scenes(
             != "NpcProxyExDataTable.data[*].missionId + dialogId"
             or not safe_key(row.get("npcProxyId"))
             or not mission_id
-            or mission_id != owner_mission
-            or safe_key(row.get("storyOwnerMission")) != mission_id
+            or safe_key(row.get("storyOwnerMission")) != owner_mission
+            or (
+                mission_id != owner_mission
+                and context_mission_bundle != mission_id
+            )
             or safe_key(row.get("nativeMappingId"))
             != NPC_PROXY_DIALOG_SELECTION_MAPPING_ID
             or safe_key(row.get("gameAssemblySha256"))
@@ -1899,12 +2129,26 @@ def _closed_exact_runtime_config_isolated_scenes(
             != {NPC_PROXY_DIALOG_SELECTION_GAMEASSEMBLY_SHA256}
         ):
             continue
+        context_mission = next(iter(mission_ids))
+        cross_mission_context = context_mission != owner_mission
         closed.append({
             "sceneKey": scene_key,
             "recoveryStatus":
-                "closed_exact_runtime_config_no_relative_order",
+                (
+                    "closed_exact_cross_mission_runtime_config_"
+                    "no_relative_order"
+                    if cross_mission_context
+                    else "closed_exact_runtime_config_no_relative_order"
+                ),
             "relation": "npc_proxy_ex_mission_context",
-            "missionId": next(iter(mission_ids)),
+            "missionId": context_mission,
+            "nominalStoryMissionId": owner_mission,
+            "contextMissionMismatch": cross_mission_context,
+            "contextMissionBundles": sorted({
+                safe_key(row.get("contextMissionBundle"))
+                for row in rows
+                if safe_key(row.get("contextMissionBundle"))
+            }, key=natural_key),
             "npcProxyIds": sorted({
                 safe_key(row.get("npcProxyId"))
                 for row in rows
@@ -1916,6 +2160,12 @@ def _closed_exact_runtime_config_isolated_scenes(
                 "activeCondIndex selects one proxy row; neither row index, "
                 "proxy suffix, table order, nor adjacent missionId orders "
                 "Story files"
+            ),
+            "contextBoundary": (
+                "the exact proxy row makes this nominal Story file selectable "
+                f"while mission {context_mission} is active; it does not move "
+                "the file into that mission's chronology or establish a "
+                "relative Story edge"
             ),
             "upstreamServerStateSources": [
                 "SC_NPC_ENTER_MAP_RESYNC",
@@ -2497,6 +2747,7 @@ def build_gap_row(
     action_story_occurrences: dict[str, list[dict[str, Any]]] | None = None,
     non_mission_content: dict[str, dict[str, Any]] | None = None,
     offline_exhaustion_index: dict[str, dict[str, Any]] | None = None,
+    cross_owner_story_connections: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     non_mission_content = non_mission_content or {}
     offline_exhaustion_index = offline_exhaustion_index or {}
@@ -2615,9 +2866,20 @@ def build_gap_row(
         row["sceneKey"]
         for row in closed_exact_native_isolated
     }
+    runtime_config_flow = flow
+    if cross_owner_story_connections:
+        runtime_config_flow = dict(flow)
+        runtime_config_flow["missionStoryConnections"] = [
+            *(
+                flow.get("missionStoryConnections")
+                if isinstance(flow.get("missionStoryConnections"), list)
+                else []
+            ),
+            *cross_owner_story_connections,
+        ]
     closed_exact_runtime_config_isolated = (
         _closed_exact_runtime_config_isolated_scenes(
-            flow,
+            runtime_config_flow,
             set(isolated_scene_keys),
             safe_key(partial_row.get("mission")),
         )
@@ -2884,6 +3146,33 @@ def build_gap_report(
         if table_root is not None
         else {}
     )
+    cross_owner_connections: dict[str, list[dict[str, Any]]] = defaultdict(
+        list
+    )
+    for context_mission, payload in mission_payloads.items():
+        flow = _flow(payload)
+        for connection in _flow_story_connections(flow):
+            owner_mission = safe_key(connection.get("storyOwnerMission"))
+            proxy_mission = safe_key(connection.get("npcProxyMissionId"))
+            if (
+                safe_key(connection.get("relation"))
+                != "npc_proxy_ex_mission_context"
+                or not owner_mission
+                or owner_mission == context_mission
+                or proxy_mission != context_mission
+                or owner_mission not in mission_payloads
+            ):
+                continue
+            cross_owner_connections[owner_mission].append({
+                **connection,
+                "contextMissionBundle": context_mission,
+            })
+    for mission in cross_owner_connections:
+        cross_owner_connections[mission].sort(key=lambda row: (
+            natural_key(safe_key(row.get("key"))),
+            natural_key(safe_key(row.get("npcProxyMissionId"))),
+            natural_key(safe_key(row.get("npcProxyId"))),
+        ))
     rows = [
         build_gap_row(
             row,
@@ -2893,6 +3182,9 @@ def build_gap_report(
             action_story_occurrences=action_story_occurrences,
             non_mission_content=non_mission_content,
             offline_exhaustion_index=offline_exhaustion_index,
+            cross_owner_story_connections=cross_owner_connections.get(
+                safe_key(row.get("mission"))
+            ),
         )
         for row in partial_report.get("missions") or []
         if isinstance(row, dict)

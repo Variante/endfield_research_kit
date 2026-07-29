@@ -1710,6 +1710,50 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
         self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 1)
 
+    def test_npc_proxy_cross_mission_context_closes_nominal_story_gap(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "e11m1",
+            scenes=["dlg_e11m1_30"],
+            isolated=["dlg_e11m1_30"],
+        )
+        payload = mission_payload(connections=[{
+            "key": "dlg_e11m1_30",
+            "relation": "npc_proxy_ex_mission_context",
+            "confidence": "direct_mission_scope",
+            "source": "NpcProxyExDataTable.data[*].missionId + dialogId",
+            "npcProxyId": "shenjiaoe_map02_v1d40_002",
+            "npcProxyMissionId": "e11m2",
+            "storyOwnerMission": "e11m1",
+            "contextMissionBundle": "e11m2",
+            "selectionOrderStatus": (
+                "one_based_active_row_selection_only_no_cross_row_chronology"
+            ),
+            "nativeMappingId": "npc-proxy-dialog-selection-native-v1",
+            "gameAssemblySha256": (
+                "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2"
+                "B983FB9D45677D80FFCE"
+            ),
+        }])
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        closure = row["closedExactRuntimeConfigIsolatedScenes"][0]
+        self.assertEqual(
+            closure["recoveryStatus"],
+            "closed_exact_cross_mission_runtime_config_no_relative_order",
+        )
+        self.assertEqual(closure["missionId"], "e11m2")
+        self.assertEqual(closure["nominalStoryMissionId"], "e11m1")
+        self.assertTrue(closure["contextMissionMismatch"])
+        self.assertEqual(closure["contextMissionBundles"], ["e11m2"])
+
     def test_exact_definition_only_isolated_scene_is_closed(self) -> None:
         partial = partial_mission(
             "e1m1",

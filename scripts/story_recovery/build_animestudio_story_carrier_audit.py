@@ -35,9 +35,7 @@ from export_full_from_game import (  # noqa: E402
     animestudio_object_index_dir,
     load_animestudio_object_index_summary,
 )
-
-
-SCHEMA = "animestudioStoryCarrierAudit.v2"
+SCHEMA = "animestudioStoryCarrierAudit.v3"
 DEFAULT_OUTPUT_ROOT = ROOT / "export_full"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"
@@ -71,6 +69,10 @@ RUNTIME_ID_FIELDS = frozenset({
     "scriptid",
 })
 ARRAY_SUFFIX_RE = re.compile(r"\[[0-9]+\]$")
+GENDERED_CUTSCENE_TARGET_RE = re.compile(
+    r"^(?:f|m|fm)_(cutscene_.+)$",
+    re.IGNORECASE,
+)
 
 
 class AuditError(RuntimeError):
@@ -162,6 +164,28 @@ def scalar_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
     return values
 
 
+def canonical_target_story_key(
+    value: Any,
+    target_missions: dict[str, set[str]],
+) -> str:
+    """Resolve an exact scalar value to the audited canonical Story key.
+
+    Gendered root Timeline assets serialize ``f_cutscene_*``,
+    ``m_cutscene_*``, or ``fm_cutscene_*`` while the Story builder
+    intentionally groups them under the canonical ``cutscene_*`` key. This
+    matcher strips only that exact gender prefix; component suffixes, locale
+    suffixes, hashes, and fuzzy spellings are deliberately not normalized.
+    """
+    if not isinstance(value, str):
+        return ""
+    story_value = value.strip()
+    if story_value in target_missions:
+        return story_value
+    match = GENDERED_CUTSCENE_TARGET_RE.fullmatch(story_value)
+    canonical = match.group(1) if match else ""
+    return canonical if canonical in target_missions else ""
+
+
 def mission_from_quest_id(value: str) -> str:
     text = str(value or "").strip()
     if "_q#" in text:
@@ -218,10 +242,14 @@ def audit_object_row(
         raise AuditError(str(exc)) from exc
     scalars = scalar_rows(row)
     matches = [
-        field
+        (field, story_key)
         for field in scalars
-        if isinstance(field["value"], str)
-        and field["value"] in target_missions
+        if (
+            story_key := canonical_target_story_key(
+                field["value"],
+                target_missions,
+            )
+        )
     ]
     if not matches:
         return [], [], counts
@@ -246,8 +274,7 @@ def audit_object_row(
     )
     accepted: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
-    for match in matches:
-        story_key = str(match["value"])
+    for match, story_key in matches:
         expected_missions = set(target_missions[story_key])
         recovered_owner_missions = owner_missions(owner_fields)
         if not recovered_owner_missions:
@@ -273,6 +300,12 @@ def audit_object_row(
 
         candidate = {
             "storyKey": story_key,
+            "sourceStoryValue": str(match["value"]),
+            "storyValueNormalization": (
+                "exact"
+                if str(match["value"]) == story_key
+                else "canonical_cutscene_variant"
+            ),
             "expectedGapMissions": sorted(expected_missions),
             "source": source,
             "object": identity,
@@ -479,9 +512,11 @@ def build_report(
         "rejectedExactValueMatchSamples": rejected[:100],
         "evidencePolicy": {
             "accepted": (
-                "exact target Story value in a typed Story-id field, complete "
-                "decoded schema row, resolved object/script type, and a typed "
-                "owner or runtime id in the same serialized object"
+                "exact target Story value, or an exact f_/m_/fm_ root "
+                "cutscene variant canonicalized by the Story builder, in a typed "
+                "Story-id field; complete decoded schema row; resolved "
+                "object/script type; and a typed owner or runtime id in the "
+                "same serialized object"
             ),
             "notAccepted": (
                 "partial/truncated objects, unresolved MonoScript identity, "

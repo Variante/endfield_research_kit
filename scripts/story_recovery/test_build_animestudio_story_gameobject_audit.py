@@ -43,6 +43,17 @@ def object_row(
 
 
 class AnimeStudioStoryGameObjectAuditTests(unittest.TestCase):
+    def test_targeted_dump_batches_bound_command_growth(self) -> None:
+        logical_names = [f"Data/Bundles/{index}.ab" for index in range(130)]
+
+        batches = audit.batched_logical_names(logical_names)
+
+        self.assertEqual([len(batch) for batch in batches], [64, 64, 2])
+        self.assertEqual(
+            [name for batch in batches for name in batch],
+            logical_names,
+        )
+
     def test_collects_exact_resolved_gameobject_carrier(self) -> None:
         rows = [
             object_row(

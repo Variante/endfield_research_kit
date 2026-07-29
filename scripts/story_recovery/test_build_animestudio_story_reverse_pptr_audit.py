@@ -46,6 +46,32 @@ def object_row(
 
 
 class AnimeStudioStoryReversePPtrAuditTests(unittest.TestCase):
+    def test_collects_gendered_cutscene_variant_as_canonical_target(
+        self,
+    ) -> None:
+        target = object_row(
+            path_id=10,
+            serialized_file="CAB-timeline",
+            scalars=[[
+                "$.m_Name",
+                "s",
+                "m_cutscene_e11m1_fire_end",
+            ]],
+            script="UnityEngine.Timeline.TimelineAsset",
+        )
+
+        targets, parsed = audit.collect_targets(
+            [target],
+            {"cutscene_e11m1_fire_end": {"e11m1"}},
+            "StreamingAssets",
+        )
+
+        self.assertEqual(parsed, 1)
+        self.assertEqual(
+            next(iter(targets.values()))["storyKeys"],
+            ["cutscene_e11m1_fire_end"],
+        )
+
     def test_collects_exact_target_and_cross_file_director_relation(
         self,
     ) -> None:
