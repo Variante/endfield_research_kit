@@ -2156,6 +2156,20 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_e9m3_radio_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E9M3_RADIOS,
+            {
+                "radio_e9m3_3",
+                "radio_e9m3_7",
+                "radio_e9m3_8",
+                "radio_e9m3_9",
+                "radio_e9m3_13",
+                "radio_e9m3_20",
+                "radio_e9m3_22",
+            },
+        )
+
     def test_declared_dialog_deferrals_preserve_shared_timeline_boundary(
         self,
     ) -> None:
