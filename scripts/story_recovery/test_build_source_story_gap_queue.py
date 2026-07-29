@@ -2072,6 +2072,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS),
             {
                 "misc_dlg_e1m3_5d5",
+                "dlg_e3m3_12",
+                "dlg_e3m3_13",
                 "dlg_e6m3_6",
                 "dlg_e6m3_12",
                 "misc_dlg_e6m3_3d5",
@@ -2275,6 +2277,45 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             set(gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS)
             & {"text_e7m2_2", "text_e7m2_3"},
             {"text_e7m2_2", "text_e7m2_3"},
+        )
+
+    def test_declared_e3m3_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E3M3_RADIOS,
+            {
+                "radio_e3m3_1d5",
+                "radio_e3m3_1d7",
+                "radio_e3m3_2",
+                "radio_e3m3_2d5",
+                "radio_e3m3_3",
+                "radio_e3m3_4d5",
+                "radio_e3m3_5",
+                "radio_e3m3_6",
+            },
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e3m3_12"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 18)
+        self.assertEqual(
+            dialog["optionIds"],
+            (
+                "option_dlg_e3m3_12_1_001",
+                "option_dlg_e3m3_12_1_002",
+                "option_dlg_e3m3_12_1_003",
+                "option_dlg_e3m3_12_1_004",
+            ),
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                "dlg_e3m3_13"
+            ]["lineIds"],
+            (
+                "dlg_e3m3_13_001",
+                "dlg_e3m3_13_002",
+                "dlg_e3m3_13_003",
+                "dlg_e3m3_13_004",
+            ),
         )
 
     def test_declared_e6m3_definition_frontier_is_exact(self) -> None:
