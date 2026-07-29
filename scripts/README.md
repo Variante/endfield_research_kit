@@ -2129,6 +2129,16 @@ gameplay-video OCR/audio workflow.
   `c6m3` shell vs. `c6m1` Story and `c13m2d5` shell vs. `c13m2` Story prove
   that this mission id is non-owning scene/runtime context rather than a
   playback attachment.
+  The v8 nominal-host comparison now checks every filename/index-derived
+  mission candidate against the complete same-level mission-named LevelData
+  dictionary. It finds `49` receiver scripts whose candidate mission host is
+  present and validated but excludes that receiver. For the five unresolved
+  exact-playback black keys, three are on excluded generic hosts
+  (`black_e9m2_1`, `black_sm2l6m1_4`, and `black_e11m1_2`); the other two
+  (`black_a1m6d3_1` and `black_a1m6d4_1`) have exact
+  `activity_qingxi_qiangti_3/_4` SubGame bind carriers and no same-level
+  nominal-mission host. This closes the current static nominal-owner route for
+  all five without turning filename identity into ownership evidence.
   Exact level/script/task joins add
   display/tracking metadata for `13` tasks and SubGame main-task bindings for
   `10`; all ten SubGame rows have null `dungeonMissionId`. The `82` distinct

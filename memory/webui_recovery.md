@@ -505,14 +505,19 @@ Mission Pipeline:
   census boundary: task ids add zero MissionRuntime consumers and all audited
   rows add zero Story bindings.
 - Renders a second missionless original-binary layer for exact serialized
-  runtime receivers. The current payload has 158 receiver nodes covering all
-  153 exact-native unlinked Story files and 182 placements; no exact-native
+  runtime receivers. The current payload has 161 receiver nodes covering all
+  155 exact-native unlinked Story files and 185 placements; no exact-native
   playback row is missing a runtime selector. Cards show the exact event family,
   listener LevelScript, selector fields, local/server transport, and Story
   links while retaining a visible `no mission owner` badge. Entity pointer
   paths, authored slots, spawner/group ids, HP thresholds, patrol/checkpoint
   ids, signals, guide ids, and stage filters come from current-build
   MemoryPack fields; filenames and OCR never create these nodes.
+  Debug cards now also show the v8 nominal-mission LevelData comparison. A
+  filename/index-derived mission candidate is visibly labeled non-owning; the
+  card either names the validated same-level mission host that excludes the
+  receiver script or states that no such host exists beside an exact SubGame
+  carrier. This closes the static naming route without adding graph edges.
   The 13 BattleSignal receiver nodes additionally show 21 exact local producer
   routes for 20 unique SkillData/BuffData actions. The route is explicitly
   `LOCAL`, with no request/return, and its signal-only receiver boundary is

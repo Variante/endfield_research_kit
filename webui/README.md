@@ -466,12 +466,15 @@ available through expandable guidance.
   owning cross-references from the activity-stage and GameMechanic condition
   tables; naming and blank association fields remain invisible.
   The same boundary panel separately renders exact serialized runtime-receiver
-  nodes for unlinked native playback. The current CN payload has 158 nodes
-  organizing all 153 exact-native unlinked Story files across 182 placements.
+  nodes for unlinked native playback. The current CN payload has 161 nodes
+  organizing all 155 exact-native unlinked Story files across 185 placements.
   Each card shows the
   listener script, exact selector fields, transport boundary, and linked Story
   files with `no mission owner`; these are not added to mission-connected
-  coverage. A narrow original-data HP chain promotes only
+  coverage. Debug cards also expose the v8 nominal-mission LevelData check:
+  filename/index-derived candidates remain non-owning, and validated
+  same-level mission hosts can visibly exclude the receiver script. A narrow
+  original-data HP chain promotes only
   `radio_gm02m20_9/_18` to the `gm02m20` mission shell through a unique
   same-level SpawnerConfig, while explicitly retaining local/no-server and
   no-quest semantics.

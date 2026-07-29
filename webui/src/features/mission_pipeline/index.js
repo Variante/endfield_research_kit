@@ -74,6 +74,10 @@
       exactReceiverNodes: "Exact serialized runtime receivers",
       exactReceiverNodesHint: "Each node is an original LevelScript event selector with an exact control path to Story playback. It organizes more recovered files without claiming a mission or quest owner.",
       activationFrontier: "offline activation frontier",
+      nominalMissionHostCheck: "nominal-mission LevelData check",
+      nominalMissionHostExcludes: "validated host excludes receiver script",
+      noSameLevelNominalMissionHost: "no same-level nominal-mission host",
+      nominalMissionCandidateBoundary: "filename/index candidate only; no mission owner or graph edge",
       activationClass: "static activation class",
       startPolicy: "LevelScript start policy",
       levelDataContainer: "validated LevelData container",
@@ -531,6 +535,10 @@
       exactReceiverNodes: "精确序列化运行时接收器",
       exactReceiverNodesHint: "每个节点都来自原始 LevelScript 事件选择器，并有到剧情播放的精确控制路径；它能组织更多恢复文件，但不声明使命或任务所有者。",
       activationFrontier: "离线激活边界",
+      nominalMissionHostCheck: "名义使命 LevelData 检查",
+      nominalMissionHostExcludes: "已验证宿主不包含接收脚本",
+      noSameLevelNominalMissionHost: "同关卡不存在名义使命宿主",
+      nominalMissionCandidateBoundary: "仅文件名/索引候选；不表示使命所有者或图边",
       activationClass: "静态激活分类",
       startPolicy: "LevelScript 启动策略",
       levelDataContainer: "已验证的 LevelData 容器",
@@ -2656,6 +2664,11 @@
           const activation = row.activationFrontier || {};
           const activationHosts = (activation.levelDataHosts || [])
             .filter((host) => host && host.fileName);
+          const nominalHostComparison = activation.nominalMissionHostComparison || {};
+          const nominalStoryCandidates = (nominalHostComparison.storyCandidates || [])
+            .filter((candidate) => candidate && candidate.nominalMissionId);
+          const nominalMissionHosts = (nominalHostComparison.sameLevelMissionNamedHosts || [])
+            .filter((host) => host && host.fileName && host.missionId);
           const activationDungeonContexts = (activation.dungeonSceneContexts || [])
             .filter((context) => context && context.subGameId && context.sceneId);
           const activationAssociationLabel = (relation) => ({
@@ -2758,6 +2771,16 @@
               <div><span>${esc(t("activationClass"))}</span><i aria-hidden="true">→</i><code>${esc(String(activation.activationClass).replaceAll("_", " "))}</code><b>${esc(t("noMissionOwner"))}</b></div>
               <div><span>${esc(t("startPolicy"))}</span><i aria-hidden="true">→</i><code>${esc(`${activation.startTypeName || "unresolved"} · shapes ${activation.startShapeListStatus || "unresolved"}/${activation.startShapeListCount ?? 0} · taskMap ${activation.taskMapStatus || "unresolved"}/${activation.taskMapCount ?? 0}`)}</code></div>
               ${activationHosts.map((host) => `<div><span>${esc(t("levelDataContainer"))}</span><i aria-hidden="true">→</i><code>${esc(host.fileName)}</code><b>${esc(host.hostMissionId || "generic")}</b><small>${esc(`${host.dictionaryEntryCount ?? "?"} LevelScripts`)}</small></div>`).join("")}
+              ${nominalStoryCandidates.map((candidate) => {
+                const matchingHosts = nominalMissionHosts.filter((host) => host.missionId === candidate.nominalMissionId);
+                const excludedHosts = matchingHosts.filter((host) => host.dictionaryValidated && !host.receiverScriptPresent);
+                const label = excludedHosts.length ? t("nominalMissionHostExcludes") : t("noSameLevelNominalMissionHost");
+                const detail = excludedHosts.length
+                  ? excludedHosts.map((host) => `${host.fileName} · ${host.dictionaryEntryCount ?? "?"} LevelScripts`).join(" · ")
+                  : t("nominalMissionCandidateBoundary");
+                return `<div class="is-boundary"><span>${esc(t("nominalMissionHostCheck"))}</span><i aria-hidden="true">→</i><code>${esc(`${candidate.storyKey || "Story"} → ${candidate.nominalMissionId}`)}</code><b>${esc(label)}</b><small>${esc(detail)}</small></div>`;
+              }).join("")}
+              ${nominalStoryCandidates.length ? `<small>${esc(t("nominalMissionCandidateBoundary"))}</small>` : ""}
               ${(activation.subGameIds || []).map((subGameId) => `<div><span>SubGame bindScriptId</span><i aria-hidden="true">→</i><code>${esc(subGameId)}</code><b>${esc(t("noMissionOwner"))}</b></div>`).join("")}
               ${activationDungeonContexts.flatMap((context) => [
                 `<div><span>${esc(t("dungeonSceneContext"))}</span><i aria-hidden="true">→</i><code>${esc(`${context.subGameId} · ${context.sceneId}`)}</code><b>${esc(context.receiverIsBoundScript ? t("boundReceiverScript") : t("siblingReceiverScript"))}</b><small>${esc([context.dungeonSeriesId, `bindScriptId ${context.bindScriptId}`].filter(Boolean).join(" · "))}</small></div>`,

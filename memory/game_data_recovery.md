@@ -474,6 +474,17 @@ zero in all 665 nonempty parsed LevelData blobs. `LevelConfig.m_levelDataPaths`,
 `LevelScriptManager.OnLevelLoaded` prove level loading/registration only; they
 do not introduce a mission or quest owner.
 
+The same complete dictionary now supports a fail-closed exclusion check for
+unresolved native receivers. `storyTriggerManifest.nominalMissionId` remains a
+filename/index candidate only, but if a same-level mission-named LevelData file
+exists, its validated member-22 dictionary can prove that the candidate
+receiver script is absent. The current v8 activation-frontier report finds 49
+such receiver scripts. This closes the static nominal-mission host route
+without treating absence as proof of some different owner. For the five
+unresolved exact-playback black keys, three are excluded by their candidate
+mission hosts; the other two have exact activity SubGame `bindScriptId`
+carriers and no same-level nominal-mission host. No graph edge is emitted.
+
 An independent exact asset-shell join is available through mission areas.
 Typed `MissionAreaTrackingInfo.missionAreaId` values in MissionRuntime resolve
 through `MissionAreaTable.subDataParentId`; when that exact u64 is a root key in

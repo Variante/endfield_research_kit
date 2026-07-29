@@ -60,7 +60,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v7"
+SCHEMA = "nativeReceiverActivationFrontier.v8"
 DEFAULT_PIPELINE_INDEX = ROOT / "webui" / "data" / "mission_pipeline" / "index.json"
 DEFAULT_PIPELINE_MISSION_ROOT = (
     ROOT / "webui" / "data" / "mission_pipeline" / "missions"
@@ -1069,6 +1069,122 @@ def validated_leveldata_hosts(
     return hosts
 
 
+def nominal_story_mission_candidates(
+    index_payload: dict[str, Any],
+    story_keys: list[str],
+) -> list[dict[str, str]]:
+    """Read filename-derived mission candidates already labeled by the index."""
+    manifest = (
+        (index_payload.get("storyCoverage") or {}).get(
+            "storyTriggerManifest"
+        )
+        or {}
+    )
+    rows: list[dict[str, str]] = []
+    for story_key in story_keys:
+        entry = manifest.get(story_key)
+        if not isinstance(entry, dict):
+            continue
+        mission_id = safe_text(entry.get("nominalMissionId"))
+        if not mission_id:
+            continue
+        rows.append({
+            "storyKey": story_key,
+            "storyKind": safe_text(entry.get("kind")),
+            "nominalMissionId": mission_id,
+        })
+    return rows
+
+
+def nominal_mission_host_comparison(
+    level_id: str,
+    target_script_id: str,
+    story_candidates: list[dict[str, str]],
+    *,
+    leveldata_root: Path,
+    levelscript_root: Path,
+) -> dict[str, Any]:
+    """Test whether same-level nominal-mission hosts contain the receiver.
+
+    The nominal mission id remains a filename/index candidate only. The exact
+    result is limited to LevelData container membership or exclusion.
+    """
+    mission_ids = {
+        safe_text(row.get("nominalMissionId"))
+        for row in story_candidates
+        if safe_text(row.get("nominalMissionId"))
+    }
+    leveldata_dir = leveldata_root / level_id
+    levelscript_dir = levelscript_root / level_id
+    comparisons: list[dict[str, Any]] = []
+    if leveldata_dir.is_dir() and levelscript_dir.is_dir() and mission_ids:
+        candidate_script_ids = {
+            int(path.stem)
+            for path in levelscript_dir.glob("*.json")
+            if path.stem.isdigit()
+        }
+        numeric_target = int(target_script_id)
+        for path in sorted(leveldata_dir.glob("*.json")):
+            mission_id = _parse_leveldata_mission_host_name(
+                path.name,
+                level_id,
+                mission_ids,
+            )
+            if not mission_id:
+                continue
+            try:
+                data = read_bytes_cached(path)
+            except OSError:
+                continue
+            dictionary = parse_leveldata_levelscript_brief_dictionary(
+                data,
+                candidate_script_ids,
+            )
+            comparisons.append({
+                "missionId": mission_id,
+                "sourceFile": rel_path(path),
+                "fileName": path.name,
+                "dictionaryValidated": bool(dictionary),
+                "dictionaryEntryCount": len(dictionary),
+                "receiverScriptPresent": numeric_target in dictionary,
+            })
+
+    classification = classify_nominal_mission_host_comparisons(comparisons)
+    return {
+        "classification": classification,
+        "storyCandidates": story_candidates,
+        "sameLevelMissionNamedHosts": comparisons,
+        "missionOwnerStatus": "unresolved",
+        "storyBinding": False,
+        "orderEvidence": False,
+        "missionGraphAction": "none",
+        "evidenceBoundary": (
+            "The nominal mission id is a Story filename/index candidate, not "
+            "ownership evidence. A validated same-level mission-named "
+            "LevelData dictionary can prove only whether it contains or "
+            "excludes this receiver script."
+        ),
+    }
+
+
+def classify_nominal_mission_host_comparisons(
+    comparisons: list[dict[str, Any]],
+) -> str:
+    """Classify only validated dictionary membership or exclusion."""
+    validated = [
+        row for row in comparisons if row.get("dictionaryValidated")
+    ]
+    if any(row.get("receiverScriptPresent") for row in validated):
+        return "nominal_mission_host_contains_receiver_script"
+    if validated:
+        return (
+            "validated_nominal_mission_hosts_exclude_receiver_script"
+        )
+    if comparisons:
+        return "nominal_mission_host_dictionary_unresolved"
+    return "no_same_level_nominal_mission_host"
+
+
 def activation_class(
     levelscript: dict[str, Any],
     hosts: list[dict[str, Any]],
@@ -1180,6 +1296,17 @@ def build_report(
             level_id,
             script_id,
             mission_ids,
+            leveldata_root=leveldata_root,
+            levelscript_root=levelscript_root,
+        )
+        story_candidates = nominal_story_mission_candidates(
+            index_payload,
+            receiver["storyKeys"],
+        )
+        nominal_host_comparison = nominal_mission_host_comparison(
+            level_id,
+            script_id,
+            story_candidates,
             leveldata_root=leveldata_root,
             levelscript_root=levelscript_root,
         )
@@ -1303,6 +1430,7 @@ def build_report(
                     or [],
                 },
                 "levelDataHosts": hosts,
+                "nominalMissionHostComparison": nominal_host_comparison,
                 "incomingLiteralManualControls": incoming,
                 "subGameBindings": subgames,
                 "dungeonSceneContexts": dungeon_contexts,
@@ -1404,6 +1532,13 @@ def build_report(
                 "mission-side completion dependency, not proof that the task "
                 "activates or owns any Story playback in the receiver script."
             ),
+            "nominalMissionHostBoundary": (
+                "Story filename-derived nominalMissionId values are candidate "
+                "labels only. A validated mission-named LevelData member-22 "
+                "dictionary can close container membership for that candidate, "
+                "but same-level exclusion or inclusion alone is not runtime "
+                "activation, Story ownership, or chronology."
+            ),
         },
         "counts": {
             "receiverNodes": sum(row["receiverNodeCount"] for row in rows),
@@ -1421,6 +1556,65 @@ def build_report(
                 any(host.get("missionNamedHost") for host in row["levelDataHosts"])
                 for row in rows
             ),
+            "scriptsWithValidatedNominalMissionHostExclusion": sum(
+                (
+                    row.get("nominalMissionHostComparison") or {}
+                ).get("classification")
+                == "validated_nominal_mission_hosts_exclude_receiver_script"
+                for row in rows
+            ),
+            "blackStoryKeysWithValidatedNominalMissionHostExclusion": len({
+                candidate.get("storyKey")
+                for row in rows
+                if (
+                    row.get("nominalMissionHostComparison") or {}
+                ).get("classification")
+                == "validated_nominal_mission_hosts_exclude_receiver_script"
+                for candidate in (
+                    row.get("nominalMissionHostComparison") or {}
+                ).get("storyCandidates") or []
+                if candidate.get("storyKind") == "black"
+                and candidate.get("storyKey")
+            }),
+            "blackStoryKeysWithSubGameBindingAndNoNominalMissionHost": len({
+                candidate.get("storyKey")
+                for row in rows
+                if row.get("subGameBindings")
+                and (
+                    row.get("nominalMissionHostComparison") or {}
+                ).get("classification")
+                == "no_same_level_nominal_mission_host"
+                for candidate in (
+                    row.get("nominalMissionHostComparison") or {}
+                ).get("storyCandidates") or []
+                if candidate.get("storyKind") == "black"
+                and candidate.get("storyKey")
+            }),
+            "blackStoryKeysWithClosedStaticNominalMissionRoute": len({
+                candidate.get("storyKey")
+                for row in rows
+                if (
+                    (
+                        row.get("nominalMissionHostComparison") or {}
+                    ).get("classification")
+                    == (
+                        "validated_nominal_mission_hosts_exclude_"
+                        "receiver_script"
+                    )
+                    or (
+                        row.get("subGameBindings")
+                        and (
+                            row.get("nominalMissionHostComparison") or {}
+                        ).get("classification")
+                        == "no_same_level_nominal_mission_host"
+                    )
+                )
+                for candidate in (
+                    row.get("nominalMissionHostComparison") or {}
+                ).get("storyCandidates") or []
+                if candidate.get("storyKind") == "black"
+                and candidate.get("storyKey")
+            }),
             "scriptsWithIncomingLiteralCrossControl": sum(
                 any(
                     not control.get("selfTarget")
@@ -1610,6 +1804,38 @@ def publish_to_pipeline_index(
                 for host in row.get("levelDataHosts") or []
                 if isinstance(host, dict)
             ],
+            "nominalMissionHostComparison": {
+                "classification": safe_text(
+                    (
+                        row.get("nominalMissionHostComparison") or {}
+                    ).get("classification")
+                ),
+                "storyCandidates": (
+                    row.get("nominalMissionHostComparison") or {}
+                ).get("storyCandidates") or [],
+                "sameLevelMissionNamedHosts": [
+                    {
+                        "missionId": safe_text(host.get("missionId")),
+                        "fileName": safe_text(host.get("fileName")),
+                        "dictionaryValidated": bool(
+                            host.get("dictionaryValidated")
+                        ),
+                        "dictionaryEntryCount":
+                            host.get("dictionaryEntryCount"),
+                        "receiverScriptPresent": bool(
+                            host.get("receiverScriptPresent")
+                        ),
+                    }
+                    for host in (
+                        row.get("nominalMissionHostComparison") or {}
+                    ).get("sameLevelMissionNamedHosts") or []
+                    if isinstance(host, dict)
+                ],
+                "missionOwnerStatus": "unresolved",
+                "storyBinding": False,
+                "orderEvidence": False,
+                "missionGraphAction": "none",
+            },
             "subGameIds": [
                 safe_text(binding.get("subGameId"))
                 for binding in row.get("subGameBindings") or []
@@ -1758,6 +1984,23 @@ def markdown_report(payload: dict[str, Any]) -> str:
             f"`{counts.get('scriptsWithMissionNamedHost')}`"
         ),
         (
+            "- Scripts excluded by validated same-level nominal-mission hosts: "
+            f"`{counts.get('scriptsWithValidatedNominalMissionHostExclusion')}`"
+        ),
+        (
+            "- Black Story keys on those excluded scripts: "
+            f"`{counts.get('blackStoryKeysWithValidatedNominalMissionHostExclusion')}`"
+        ),
+        (
+            "- Black Story keys with an exact SubGame carrier and no "
+            "same-level nominal-mission host: "
+            f"`{counts.get('blackStoryKeysWithSubGameBindingAndNoNominalMissionHost')}`"
+        ),
+        (
+            "- Black Story keys with the static nominal-mission route closed: "
+            f"`{counts.get('blackStoryKeysWithClosedStaticNominalMissionRoute')}`"
+        ),
+        (
             "- Scripts with an incoming literal cross-script manual control: "
             f"`{counts.get('scriptsWithIncomingLiteralCrossControl')}`"
         ),
@@ -1882,6 +2125,85 @@ def markdown_report(payload: dict[str, Any]) -> str:
             )
             + " |"
         )
+    checked_black_rows = [
+        row
+        for row in payload.get("rows") or []
+        if (
+            (
+                row.get("nominalMissionHostComparison") or {}
+            ).get("classification")
+            == "validated_nominal_mission_hosts_exclude_receiver_script"
+            or (
+                row.get("subGameBindings")
+                and (
+                    row.get("nominalMissionHostComparison") or {}
+                ).get("classification")
+                == "no_same_level_nominal_mission_host"
+            )
+        )
+        and any(
+            candidate.get("storyKind") == "black"
+            for candidate in (
+                row.get("nominalMissionHostComparison") or {}
+            ).get("storyCandidates") or []
+        )
+    ]
+    lines.extend([
+        "",
+        "## Black playback static nominal-owner checks",
+        "",
+        (
+            "These are exact static-carrier checks for filename-derived mission "
+            "candidates, not ownership claims. Three keys have validated "
+            "same-level nominal-mission hosts that exclude their receiver "
+            "scripts; two instead have exact activity SubGame bind carriers and "
+            "no same-level nominal-mission host."
+        ),
+        "",
+        "| LevelScript | Black Story key | Nominal mission | Excluding host | Actual carrier |",
+        "| --- | --- | --- | --- | --- |",
+    ])
+    for row in checked_black_rows:
+        comparison = row.get("nominalMissionHostComparison") or {}
+        black_candidates = [
+            candidate
+            for candidate in comparison.get("storyCandidates") or []
+            if candidate.get("storyKind") == "black"
+        ]
+        actual_carrier = ", ".join(
+            safe_text(binding.get("subGameId"))
+            for binding in row.get("subGameBindings") or []
+            if safe_text(binding.get("subGameId"))
+        )
+        if not actual_carrier:
+            actual_carrier = ", ".join(
+                safe_text(host.get("fileName"))
+                for host in row.get("levelDataHosts") or []
+                if safe_text(host.get("fileName"))
+            )
+        for candidate in black_candidates:
+            excluding_hosts = ", ".join(
+                safe_text(host.get("fileName"))
+                for host in comparison.get("sameLevelMissionNamedHosts") or []
+                if host.get("dictionaryValidated")
+                and not host.get("receiverScriptPresent")
+                and safe_text(host.get("missionId"))
+                == safe_text(candidate.get("nominalMissionId"))
+            )
+            lines.append(
+                "| "
+                + " | ".join(
+                    md_escape(value)
+                    for value in (
+                        f"{row.get('levelId')}/{row.get('scriptId')}",
+                        candidate.get("storyKey"),
+                        candidate.get("nominalMissionId"),
+                        excluding_hosts or "[none]",
+                        actual_carrier or "[no static carrier]",
+                    )
+                )
+                + " |"
+            )
     return "\n".join(lines).rstrip() + "\n"
 
 
