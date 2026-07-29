@@ -118,6 +118,9 @@ KNOWN_NON_PLAYBACK_MAPPING_ID = (
 NPC_PROXY_DIALOG_SELECTION_MAPPING_ID = (
     "npc-proxy-dialog-selection-native-v1"
 )
+NON_OWNING_DIAGNOSTIC_QUEST_ATTACH_SOURCES = frozenset({
+    "npcProxyDialog",
+})
 NPC_PROXY_DIALOG_SELECTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )
@@ -3498,14 +3501,45 @@ def _diagnostic_quest_attachments(
         scene_key = safe_key(placement.get("sceneKey"))
         if scene_key not in candidate_scene_keys:
             continue
-        attached_ids = _string_list(placement.get("questIds"))
+        attach_sources = [
+            source
+            for source in placement.get("questAttachSources") or []
+            if isinstance(source, dict)
+        ]
+        non_owning_ids = {
+            safe_key(source.get("questId"))
+            for source in attach_sources
+            if (
+                safe_key(source.get("source"))
+                in NON_OWNING_DIAGNOSTIC_QUEST_ATTACH_SOURCES
+                and safe_key(source.get("questId"))
+            )
+        }
+        owning_or_unclassified_ids = {
+            safe_key(source.get("questId"))
+            for source in attach_sources
+            if (
+                safe_key(source.get("source"))
+                not in NON_OWNING_DIAGNOSTIC_QUEST_ATTACH_SOURCES
+                and safe_key(source.get("questId"))
+            )
+        }
+        attached_ids = [
+            quest_id
+            for quest_id in _string_list(placement.get("questIds"))
+            if (
+                quest_id not in non_owning_ids
+                or quest_id in owning_or_unclassified_ids
+            )
+        ]
         if not attached_ids:
             continue
         quest_ids.update(attached_ids)
         scene_keys.add(scene_key)
-        for source in placement.get("questAttachSources") or []:
-            if isinstance(source, dict):
-                source_counts[safe_key(source.get("source")) or "unknown"] += 1
+        for source in attach_sources:
+            if safe_key(source.get("questId")) not in attached_ids:
+                continue
+            source_counts[safe_key(source.get("source")) or "unknown"] += 1
     return quest_ids, scene_keys, source_counts
 
 
