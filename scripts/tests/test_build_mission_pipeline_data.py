@@ -14,6 +14,86 @@ def condition(kind, **values):
 
 
 class MissionPipelineBuilderTests(unittest.TestCase):
+    def test_dynamic_scene_cross_references_remain_non_owning(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "dynamic_scene.json"
+            audit_path.write_text(
+                json.dumps({
+                    "schemaVersion": 1,
+                    "nativeIdentityBoundary": {
+                        "classification":
+                            "exact_cross_reference_not_runtime_owner",
+                        "directBridgeFound": False,
+                        "missionGraphAction": "none",
+                        "promotionRequirement": "typed runtime bridge required",
+                    },
+                    "storyIdentityCandidates": [{
+                        "scene": "map01",
+                        "logicId": "2100060003",
+                        "sourceFile": "DynamicStreaming/map01/fb_main.bytes",
+                        "missionControls": [{
+                            "compareType": 0,
+                            "toBeTrue": True,
+                            "conditions": [{
+                                "identifier": "e1m2_q#5",
+                                "isQuest": True,
+                                "state": 3,
+                                "isSame": True,
+                            }],
+                        }],
+                        "storyOccurrences": [{
+                            "storyKey": "cutscene_e1m3_1",
+                            "levelId": "map01_lv001",
+                            "scriptId": "2100060003",
+                            "recordOffset": 368,
+                            "actionName": "PlayFmvAction",
+                            "sourceFile":
+                                "LevelScriptData/map01_lv001/2100060003.json",
+                            "nativeEventOwnerStatus":
+                                "exact_serialized_control_path",
+                        }],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+
+            published = pipeline.load_dynamic_scene_identity_cross_references(
+                audit_path
+            )
+
+        self.assertIsNotNone(published)
+        self.assertEqual(published["missionGraphAction"], "none")
+        self.assertFalse(published["directBridgeFound"])
+        self.assertEqual(published["counts"]["candidateRoots"], 1)
+        row = published["rows"][0]
+        self.assertEqual(row["logicId"], row["scriptId"])
+        self.assertEqual(row["missionOwnerStatus"], "unresolved")
+        self.assertFalse(row["storyBinding"])
+        self.assertFalse(row["orderEvidence"])
+
+    def test_dynamic_scene_cross_references_fail_closed_on_positive_bridge(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "dynamic_scene.json"
+            audit_path.write_text(
+                json.dumps({
+                    "schemaVersion": 1,
+                    "nativeIdentityBoundary": {
+                        "classification":
+                            "exact_cross_reference_not_runtime_owner",
+                        "directBridgeFound": True,
+                        "missionGraphAction": "none",
+                    },
+                    "storyIdentityCandidates": [],
+                }),
+                encoding="utf-8",
+            )
+
+            published = pipeline.load_dynamic_scene_identity_cross_references(
+                audit_path
+            )
+
+        self.assertIsNone(published)
+
     def test_trigger_route_reads_exact_levelscript_occurrence_paths(self):
         row = {
             "key": "radio_testm1_1",

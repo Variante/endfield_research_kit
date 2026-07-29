@@ -281,6 +281,17 @@ Mission Pipeline:
   example, the live `e6m4` card for `radio_e6m4_18` shows Leader slot `80001`
   at script `22800110022` header `6`, then `Split.actions[0]` local `8` and
   `PlayRadio`.
+- The mission-level native-boundary section also consumes
+  `storyCoverage.dynamicSceneIdentityCrossReferences`. It renders only rows
+  whose typed DynamicScene mission/quest condition belongs to the selected
+  mission and shows the exact `IdComp.logicId == LevelScript scriptId`,
+  condition operands, LevelScript playback action, and linked Story key. The
+  builder fails closed unless the maintained audit still reports
+  `directBridgeFound=false` and `missionGraphAction=none`; the cards say
+  candidate context, no mission owner, and zero graph edges. Current live
+  checks show `2100060003` with `e1m2_q#5 = 3`, `e1m2_q#7 != 3`, and
+  `cutscene_e1m3_1`, plus `23300000023` with `e7m4 = 3` and
+  `cutscene_e7m4_2`.
 - The generated trigger manifest and live Mission Pipeline now expose the
   recovered `WhileAction.doAction` control edge. A verified e6m1 card for
   `radio_e6m1_10` displays Leader slot `80003`, script `22800080005`, header
