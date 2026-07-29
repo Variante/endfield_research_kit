@@ -1998,7 +1998,12 @@ gameplay-video OCR/audio workflow.
   consuming mission has no Story partial-order row of its own. The condition
   proves that the quest reads the dialog's synchronized finish state; it does
   not identify the dialog activator, transfer Story ownership, or add a
-  Story-to-Story chronology edge.
+  Story-to-Story chronology edge. The source-only queue also counts this as a
+  strict quest attachment only when relation, direction, phase, confidence,
+  objective index, integer finish id, condition type, and the exact authored
+  `MissionRuntimeAsset.questDic[*].objectiveList[*].condition._dialogId`
+  source all agree. e7m4 q2/q9 consume `dlg_e7m4_4` finish ids 1/0 under this
+  rule; it is completion-state scope, not dialog activation evidence.
   Exact typed MissionRuntime `client_action_start`, `_succeed`, and `_failed`
   rows likewise count as strict quest attachment when their lifecycle slot,
   phase, action id/type, and serialized Story-id source all agree. An isolated

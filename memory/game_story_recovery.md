@@ -4495,6 +4495,18 @@ Current main-story priorities:
    honest quest-ownership score remains 6. The main-story bucket is now score
    554 with 97 actionable core isolated rows and 23 actionable quest gaps;
    the current top main-story item is e7m4 at score 26.
+   The first e7m4 follow-up recovers a broader exact quest-attachment class.
+   q2 and q9 each carry an authored `CheckTalkOptionFinish` objective condition
+   for `dlg_e7m4_4`, with finish ids 1 and 0 respectively. The exact
+   `MissionRuntimeAsset.questDic[*].objectiveList[*].condition._dialogId`
+   source proves a typed Story-to-quest completion dependency, so these rows
+   now count as strict quest attachments just like exact typed client-action
+   playback and complete unique objective-script scope. This does not prove
+   which quest or runtime path activates the dialog and adds no Story order.
+   Applying the same fail-closed field/type/source checks corpus-wide reduces
+   the main-story diagnostic strict-attachment gaps from 23 to 9 and increases
+   strict attached quest ids from 426 to 443. e7m4 now has only its four
+   isolated definition carriers active, at score 20.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,

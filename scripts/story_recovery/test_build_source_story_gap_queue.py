@@ -870,6 +870,59 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(row["metrics"]["strictQuestIdsWithStoryAttachment"], 1)
         self.assertEqual(row["questIdsWithoutStrictStoryAttachment"], [])
 
+    def test_exact_dialog_finish_dependency_is_strict_quest_attachment(
+        self,
+    ) -> None:
+        partial = partial_mission("e7m4", scenes=["dlg_e7m4_4"])
+        payload = mission_payload(quest_ids=["e7m4_q#2"])
+        payload["flow"]["quests"] = [{
+            "id": "e7m4_q#2",
+            "storyConnections": [{
+                "key": "dlg_e7m4_4",
+                "kind": "dialog",
+                "relation": "objective_condition",
+                "direction": "story_to_quest",
+                "phase": "progress",
+                "confidence": "direct",
+                "source": (
+                    "MissionRuntimeAsset.questDic[*].objectiveList[0]"
+                    ".condition._dialogId"
+                ),
+                "objectiveIndex": 1,
+                "conditionType": "CheckTalkOptionFinish",
+                "finishId": 1,
+            }],
+        }]
+        payload["timelineRecovery"]["scenePlacement"] = {
+            "dlg_e7m4_4": {
+                "sceneKey": "dlg_e7m4_4",
+                "questIds": ["e7m4_q#2"],
+                "questAttachSources": [{"source": "missionStoryRef"}],
+            },
+        }
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["strictQuestIdsWithStoryAttachment"], 1)
+        self.assertEqual(row["questIdsWithoutStrictStoryAttachment"], [])
+
+        payload["flow"]["quests"][0]["storyConnections"][0][
+            "source"
+        ] = "derived dialog completion"
+        invalid = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+        self.assertEqual(
+            invalid["questIdsWithoutStrictStoryAttachment"],
+            ["e7m4_q#2"],
+        )
+
     def test_missing_bundle_is_explicit_high_priority_gap(self) -> None:
         partial = partial_mission("e1m1", scenes=["dlg_a"])
 
