@@ -169,7 +169,10 @@ available through expandable guidance.
   manifest renders the proven chain as quest/mission ownership, server message,
   native event, LevelScript, native action, and Story terminal steps. Unresolved
   playback keeps an explicit ownership gap, while definition-only files remain
-  visibly distinct. Build-pinned candidates rejected by native resolution remain
+  visibly distinct. Exact, build-pinned CutsceneRoot playback aliases render as
+  `Story root -> native playback action -> Story file` debug routes with their
+  own corpus count; they do not attach the target to a mission/quest or imply
+  relative Story order. Build-pinned candidates rejected by native resolution remain
   route-free and, with `Show debug info` enabled, render on the unassigned Story
   card as recovery boundaries rather than graph edges. Every recovered
   serialized event occurrence renders in its own causal lane with its event

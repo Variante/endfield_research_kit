@@ -353,6 +353,11 @@ to a root playback alias only when that exact CutsceneRoot's resolved
 `TimelineHandle.Play` invokes it. A root playback alias proves which
 TimelineAsset that loaded root plays; it still must not be converted into
 mission ownership or relative Story order.
+Mission Pipeline consumes the compact alias rows only when the report schema,
+native mapping and binary hashes, object-index stage signature, and latest
+export source fingerprints all remain current. It publishes the exact
+CutsceneRoot-to-native-action-to-Story chain as an ownership-unresolved debug
+route and corpus count without changing connected/unlinked coverage.
 
 The guide-consumer audit scans the same current, source-fingerprint-validated
 merged index for exact typed `GuideRuntimeAsset` managed references. It accepts

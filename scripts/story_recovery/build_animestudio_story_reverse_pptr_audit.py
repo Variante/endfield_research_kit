@@ -636,6 +636,12 @@ def build_report(
             "stageSignatureSha256": (
                 (summary.get("stageSignature") or {}).get("sha256")
             ),
+            "sourceFingerprint": (
+                (
+                    (summary.get("stageSignature") or {}).get("payload")
+                    or {}
+                ).get("source_fingerprint")
+            ),
         })
 
     relations = []

@@ -3389,6 +3389,17 @@ Therefore do not add `last_01 -> last_02 -> last_03`,
 `f1m9d3 -> f1m9d4`, or
 `cutscene_gm02m4_3 -> cutscene_gm02m4_1` Story-order edges.
 
+Mission Pipeline schema 15 consumes these rows only when the audit schema,
+native mapping, GameAssembly/metadata hashes, object-index stage signature,
+and latest export source fingerprints all match. It publishes four exact
+`cutscene_root_playback_alias` debug routes and a corpus count, but deliberately
+does not create a mission attachment, quest attachment, or Story-order edge.
+The four target files remain `trigger_known_owner_unresolved`; consequently the
+core coverage remains 4,071 connected and 1,211 unlinked. A fresh WebUI
+verification expanded `gm02m4`'s unassigned queue and rendered
+`cutscene_gm02m4_3 -> CutsceneRoot._director -> TimelineHandle.Play ->
+cutscene_gm02m4_1` as `root playback alias / ownership unresolved`.
+
 The reproducible outputs are
 `reports/story/recovery/animestudio_story_reverse_pptr_audit.{json,md}`.
 The next bounded offline question is no longer director activation. It is the

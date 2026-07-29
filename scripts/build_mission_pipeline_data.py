@@ -22,6 +22,7 @@ try:
         compact_dict,
         read_bytes_cached,
         read_json,
+        story_root_playback_aliases,
         write_report_json,
         write_text_if_changed,
     )
@@ -54,6 +55,7 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
         compact_dict,
         read_bytes_cached,
         read_json,
+        story_root_playback_aliases,
         write_report_json,
         write_text_if_changed,
     )
@@ -194,7 +196,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # while keeping same-objective dialog co-gates distinct from UI ownership.
 # v14 adds exact same-objective SubmitItem + LevelScript-stage co-gates and
 # preserves their dialog playback context as non-owning evidence.
-SCHEMA_VERSION = 14
+# v15 adds freshness-checked CutsceneRoot playback-alias routes while
+# preserving their explicit mission-owner and chronology gaps.
+SCHEMA_VERSION = 15
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -3911,6 +3915,63 @@ def build_story_binding_coverage(
             ],
         })
 
+    root_playback_alias_rows = [
+        row
+        for row in story_root_playback_aliases()
+        if row["playableAssetStoryKey"] in story_rows
+    ]
+    for alias in root_playback_alias_rows:
+        root_key = alias["rootStoryKey"]
+        playable_key = alias["playableAssetStoryKey"]
+        add_trigger_route({
+            "storyKey": playable_key,
+            "relation": "cutscene_root_playback_alias",
+            "causality": "playback_alias_owner_unresolved",
+            "direction": "playback",
+            "scope": "cutscene_root",
+            "evidenceTier": "direct",
+            "confidence":
+                "exact_serialized_root_director_plus_native_playback",
+            "ownerStatus": "unresolved",
+            "questTriggerStatus":
+                "no_mission_or_quest_selector_recovered",
+            "missionId": None,
+            "questId": None,
+            "serverExchange": False,
+            "rootStoryKey": root_key,
+            "nativeMappingId": alias["nativeMappingId"],
+            "auditReport": alias["evidenceReport"],
+            "sourceFiles": [
+                value
+                for value in (
+                    alias["directorObject"].get("source"),
+                    alias["evidenceReport"],
+                )
+                if value
+            ],
+            "note": (
+                "The exact CutsceneRoot._director PPtr lands on the "
+                "PlayableDirector whose asset is this Story key, and the "
+                "current native TimelineHandle.Play path executes that "
+                "director. This is a root playback alias, not Story order or "
+                "mission ownership."
+            ),
+            "steps": [
+                {
+                    "kind": "story_root",
+                    "id": root_key,
+                },
+                {
+                    "kind": "native_action",
+                    "id": "CutsceneRoot._director -> TimelineHandle.Play",
+                },
+                {
+                    "kind": "story",
+                    "id": playable_key,
+                },
+            ],
+        })
+
     for mission_id in sorted(mission_ids):
         sidecar_path = mission_sidecar_root / f"{mission_id}.json"
         if not sidecar_path.is_file():
@@ -4384,6 +4445,11 @@ def build_story_binding_coverage(
             "storyTriggerRoutes": trigger_route_count,
             "storyFilesWithTriggerRoutes": story_files_with_trigger_routes,
             "unlinkedStoryFilesWithTriggerRoutes": unlinked_files_with_trigger_routes,
+            "rootPlaybackAliasFiles": len({
+                row["playableAssetStoryKey"]
+                for row in root_playback_alias_rows
+            }),
+            "rootPlaybackAliasRows": len(root_playback_alias_rows),
             "rejectedStoryPlaybackCandidates": sum(
                 len(rows)
                 for key, rows in rejected_playback_by_key.items()
@@ -4455,6 +4521,7 @@ def build_story_binding_coverage(
             ),
         ),
         "storyTriggerManifest": story_trigger_manifest,
+        "rootPlaybackAliases": root_playback_alias_rows,
         "missionStateDependencyCrossOwnerStoryKeys": sorted(
             mission_state_dependency_cross_owner_keys,
             key=natural_quest_key,
@@ -4535,6 +4602,8 @@ def build_story_binding_coverage(
         f"- Normalized Story trigger/context routes: `{counts['storyTriggerRoutes']}`",
         f"- Story files with at least one normalized route: `{counts['storyFilesWithTriggerRoutes']}`",
         f"- Unlinked Story files with a known trigger/context route: `{counts['unlinkedStoryFilesWithTriggerRoutes']}`",
+        f"- Exact root playback alias rows: `{counts['rootPlaybackAliasRows']}`",
+        f"- TimelineAsset Story files reached by those aliases: `{counts['rootPlaybackAliasFiles']}`",
         f"- Non-owning mission-state dependency Story files: `{counts['missionStateDependencyStoryFiles']}`",
         f"- Dependency-only Story files whose nominal owner is outside the pipeline: `{counts['missionStateDependencyCrossOwnerStoryFiles']}`",
         f"- Non-owning mission-state dependency placements: `{counts['missionStateDependencyPlacements']}`",
@@ -4566,6 +4635,23 @@ def build_story_binding_coverage(
     ]
     for kind, values in kind_counts.items():
         lines.append(f"| `{kind}` | {values['total']} | {values['connected']} | {values['unlinked']} |")
+    if root_playback_alias_rows:
+        lines.extend([
+            "",
+            "## Exact CutsceneRoot playback aliases",
+            "",
+            "These rows prove root-to-TimelineAsset playback, not mission "
+            "ownership or relative Story order.",
+            "",
+            "| root Story key | played TimelineAsset Story key | native mapping |",
+            "| --- | --- | --- |",
+        ])
+        for row in root_playback_alias_rows:
+            lines.append(
+                f"| `{row['rootStoryKey']}` | "
+                f"`{row['playableAssetStoryKey']}` | "
+                f"`{row['nativeMappingId']}` |"
+            )
     if native_playback_event_keys:
         lines.extend([
             "",
@@ -6033,6 +6119,8 @@ def main() -> int:
             "counts": coverage["counts"],
             "nativePlaybackEventFamilies": coverage["nativePlaybackEventFamilies"],
             "storyTriggerManifest": coverage["storyTriggerManifest"],
+            "rootPlaybackAliases":
+                coverage.get("rootPlaybackAliases") or [],
             "nonMissionContentKeys": coverage.get("nonMissionContentKeys") or [],
             "missionlessSubGamePlaybackNodes": coverage["missionlessSubGamePlaybackNodes"],
             "missionlessNativeRuntimeNodes": coverage["missionlessNativeRuntimeNodes"],

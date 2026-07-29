@@ -40,6 +40,7 @@
       connectedStory: "Story connected",
       unlinkedStory: "Story unassigned",
       nativePlaybackGaps: "exact-native gaps",
+      rootPlaybackAliases: "root playback aliases",
       definitionOnlyStory: "definition-only black text",
       nonMissionContentStory: "non-mission content",
       nonMissionContentStoryHint: "Story ids proven to be authored non-mission content: speaker radio continuation, character SNS topics, or exact factory tutorial guide actions. The evidence serializes no mission or quest owner. Authored fields and typed consumers admit a key; filenames never do.",
@@ -409,6 +410,7 @@
       triggerContext: "context only",
       triggerDependency: "dependency only",
       triggerUnresolved: "trigger known · owner unresolved",
+      triggerPlaybackAlias: "root playback alias · owner unresolved",
       triggerDefinition: "definition only · no consumer",
       rejectedPlaybackCandidate: "Rejected playback candidate",
       rejectedPlaybackBoundary: "binary-proven boundary · no graph edge",
@@ -422,6 +424,7 @@
       triggerNativeEvent: "native event",
       triggerLevelScript: "LevelScript",
       triggerNativeAction: "playback action",
+      triggerStoryRoot: "CutsceneRoot Story key",
       triggerStory: "Story file",
       triggerExactPaths: "exact native paths",
       triggerEvents: "Triggering events",
@@ -451,6 +454,7 @@
       summarySectionQueues: "Unassigned & boundary queues",
     },
     zh: {
+      rootPlaybackAliases: "\u6839\u64ad\u653e\u522b\u540d",
       relationMissionTrackedWorldEntityLevelScript: "精确的本地队长触发器播放脚本引用了仅由一个任务跟踪的世界实体（仅共享的脚本/实体创作上下文；候选任务节点不证明触发门、激活、播放、完成或所有权）",
       relationMissionTrackedWorldEntityLevelScriptStage: "服务器先同步该 LevelScript 阶段，再进入精确的本地 StageChanged 播放路径；类型化世界实体跟踪只确定唯一任务上下文，不证明任何候选任务节点写入了该阶段",
       relationQuestProgressLockedInteractive: "每个播放实例都由精确的交互实体事件路径触发；该实体的强类型进度锁等待此任务达到已完成状态（仅为本地上下文，不证明剧情归属，也不证明任务激活、播放或完成因果）",
@@ -782,6 +786,7 @@
       triggerContext: "\u4ec5\u4e0a\u4e0b\u6587",
       triggerDependency: "\u4ec5\u4f9d\u8d56",
       triggerUnresolved: "\u89e6\u53d1\u5df2\u77e5 \u00b7 \u5f52\u5c5e\u672a\u89e3\u6790",
+      triggerPlaybackAlias: "\u6839\u64ad\u653e\u522b\u540d \u00b7 \u5f52\u5c5e\u672a\u89e3\u6790",
       triggerDefinition: "\u4ec5\u5b9a\u4e49 \u00b7 \u65e0\u6d88\u8d39\u8005",
       rejectedPlaybackCandidate: "\u5df2\u62d2\u7edd\u7684\u64ad\u653e\u5019\u9009",
       rejectedPlaybackBoundary: "\u4e8c\u8fdb\u5236\u5df2\u8bc1\u8fb9\u754c \u00b7 \u4e0d\u751f\u6210\u56fe\u8fb9",
@@ -795,6 +800,7 @@
       triggerNativeEvent: "\u539f\u751f\u4e8b\u4ef6",
       triggerLevelScript: "LevelScript",
       triggerNativeAction: "\u64ad\u653e\u52a8\u4f5c",
+      triggerStoryRoot: "CutsceneRoot \u5267\u60c5\u952e",
       triggerStory: "\u5267\u60c5\u6587\u4ef6",
       triggerExactPaths: "\u7cbe\u786e\u539f\u751f\u8def\u5f84",
       triggerEvents: "\u89e6\u53d1\u4e8b\u4ef6",
@@ -1228,6 +1234,7 @@
       [storyCounts.connectedUniqueStoryFiles, t("connectedStory")],
       [storyCounts.unlinkedUniqueStoryFiles, t("unlinkedStory")],
       [storyCounts.unlinkedNativePlaybackFiles, t("nativePlaybackGaps")],
+      [storyCounts.rootPlaybackAliasRows, t("rootPlaybackAliases")],
       [storyCounts.missionlessSubGameStoryFiles, t("missionlessSubGameStory")],
       [storyCounts.missionlessNativeRuntimeStoryFiles, t("missionlessRuntimeStory")],
       [storyCounts.unlinkedDefinitionOnlyFiles, t("definitionOnlyStory")],
@@ -1821,6 +1828,7 @@
       context: "triggerContext",
       dependency: "triggerDependency",
       playback_owner_unresolved: "triggerUnresolved",
+      playback_alias_owner_unresolved: "triggerPlaybackAlias",
       definition_only: "triggerDefinition",
     })[causality] || "triggerContext");
   }
@@ -1834,6 +1842,7 @@
       native_event: "triggerNativeEvent",
       levelscript: "triggerLevelScript",
       native_action: "triggerNativeAction",
+      story_root: "triggerStoryRoot",
       story: "triggerStory",
     })[kind] || "triggerContext");
   }
