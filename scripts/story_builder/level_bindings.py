@@ -33,6 +33,10 @@ _LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE: dict[
     frozenset[str],
     list[dict],
 ] = {}
+_LEVELDATA_INTERACTIVE_NARRATIVE_CACHE: dict[
+    frozenset[str],
+    list[dict],
+] = {}
 _WORLD_ENTITY_REGISTRY_CACHE: dict[str, dict[tuple[int, int], list[dict]]] = {}
 _WORLD_ENTITY_REGISTRY_GLOBAL_SCRIPT_CACHE: dict[str, dict[int, list[dict]]] = {}
 _LEVELSCRIPT_BINARY_SUMMARY_CACHE: dict[tuple[str, str], dict] = {}
@@ -5125,15 +5129,15 @@ def _parse_levelscript_interactive_narrative_record(
     offset: int,
     end_limit: int,
 ) -> dict | None:
-    """Decode one complete LevelScript ``LevelInteractiveData`` narrative row.
+    """Decode one bounded ``LevelInteractiveData`` narrative row.
 
     The current installed formatter writes 25 members.  The inherited prefix
     and ``componentProperties`` layout are shared with LevelData, while the
     derived suffix is accepted only when its collection fields are null/empty,
     its progress lock is null, and its final ``properties`` ParamValue map is
     consumed completely.  This deliberately narrow shape covers the authored
-    LevelScript narrative interactives without turning nearby strings into
-    Story evidence.
+    LevelScript and next-record-bounded LevelData narrative interactives
+    without turning nearby strings into Story evidence.
     """
     if (
         offset < 0
@@ -5541,6 +5545,170 @@ def _level_interactive_data_list_frames(data: bytes) -> list[dict]:
             "records": bounded_records,
         })
     return frames
+
+
+def parse_leveldata_interactive_narrative_records(data: bytes) -> list[dict]:
+    """Recover fully next-record-bounded narrative interactives in LevelData.
+
+    The final item of a LevelData interactive list remains intentionally
+    excluded because the following top-level member is not borrowed as an
+    inferred record boundary.
+    """
+    if not data or data[0] != 43:
+        return []
+    rows: list[dict] = []
+    seen_offsets: set[int] = set()
+    for frame in _level_interactive_data_list_frames(data):
+        for boundary in frame.get("records") or []:
+            offset = boundary.get("recordOffset")
+            end_offset = boundary.get("recordEndOffset")
+            if (
+                not isinstance(offset, int)
+                or not isinstance(end_offset, int)
+                or offset in seen_offsets
+            ):
+                continue
+            parsed = _parse_levelscript_interactive_narrative_record(
+                data,
+                offset,
+                end_offset,
+            )
+            if (
+                parsed is None
+                or parsed.get("recordEndOffset") != end_offset
+            ):
+                continue
+            seen_offsets.add(offset)
+            rows.append({
+                **parsed,
+                "recordIndex": boundary.get("recordIndex"),
+                "interactiveListCount": frame.get("listCount"),
+                "interactiveListCountOffset":
+                    frame.get("listCountOffset"),
+            })
+    return rows
+
+
+def build_leveldata_interactive_narrative_story_contexts(
+    available_story_keys: set[str],
+    *,
+    leveldata_root: Path = LEVELDATA_DIR,
+    persistent_leveldata_root: Path = (
+        PERSISTENT_DATA_JSON_DIR / "LevelData"
+    ),
+    reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
+) -> list[dict]:
+    """Bind Story files to exact, bounded LevelData narrative configuration."""
+    use_default_cache = (
+        leveldata_root == LEVELDATA_DIR
+        and persistent_leveldata_root
+        == PERSISTENT_DATA_JSON_DIR / "LevelData"
+        and reading_popup_path
+        == STREAMING_TABLE_DIR / "ReadingPopUpTable.json"
+    )
+    cache_key = frozenset(available_story_keys)
+    if (
+        use_default_cache
+        and cache_key in _LEVELDATA_INTERACTIVE_NARRATIVE_CACHE
+    ):
+        return list(_LEVELDATA_INTERACTIVE_NARRATIVE_CACHE[cache_key])
+    try:
+        reading_rows = json.loads(reading_popup_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        reading_rows = {}
+    if not isinstance(reading_rows, dict):
+        reading_rows = {}
+    interactive_index = _load_interactive_object_template_index()
+    object_to_template = interactive_index.get("objectToTemplate") or {}
+    core_paths = interactive_index.get("coreTemplatePaths") or {}
+    rows: list[dict] = []
+    if leveldata_root.is_dir():
+        for path in sorted(leveldata_root.rglob("*.json")):
+            try:
+                relative_path = path.relative_to(leveldata_root)
+                mirror_path = persistent_leveldata_root / relative_path
+                data = read_bytes_cached(path)
+                mirror_data = read_bytes_cached(mirror_path)
+            except (OSError, ValueError):
+                continue
+            if (
+                data != mirror_data
+                or b"type_id" not in data
+                or b"int_narrative" not in data
+            ):
+                continue
+            for record in parse_leveldata_interactive_narrative_records(data):
+                raw_type_id = str(record.get("typeId") or "")
+                popup_row = reading_rows.get(raw_type_id)
+                popup_content_id = str(
+                    popup_row.get("contentId")
+                    if isinstance(popup_row, dict)
+                    else ""
+                ).strip()
+                if raw_type_id in available_story_keys:
+                    story_key = raw_type_id
+                    resolution = "direct_story_key"
+                elif popup_content_id in available_story_keys:
+                    story_key = popup_content_id
+                    resolution = "reading_popup_content_id"
+                else:
+                    continue
+                entity_detail_id = str(record.get("entityDetailId") or "")
+                template_id = str(object_to_template.get(entity_detail_id) or "")
+                if not template_id.startswith("int_narrative"):
+                    continue
+                rows.append({
+                    **record,
+                    "storyKey": story_key,
+                    "rawTypeId": raw_type_id,
+                    "storyKeyResolution": resolution,
+                    "readingPopupId": (
+                        raw_type_id
+                        if resolution == "reading_popup_content_id"
+                        else ""
+                    ),
+                    "levelId": path.parent.name,
+                    "levelDataAsset": path.stem,
+                    "sourceFile": repo_rel(path),
+                    "verifiedMirrorFile": repo_rel(mirror_path),
+                    "entityTemplateId": template_id,
+                    "entityTemplatePath": str(
+                        core_paths.get(template_id) or ""
+                    ),
+                    "interactiveTableSourceFile": str(
+                        interactive_index.get("sourceFile") or ""
+                    ),
+                    "interactiveTableVerifiedMirrorFile": str(
+                        interactive_index.get("verifiedMirrorFile") or ""
+                    ),
+                    "readingPopupTableSourceFile": repo_rel(
+                        reading_popup_path
+                    ),
+                    "nativeConsumer": (
+                        "NarrativeComponent.ClientCollectNarrative -> "
+                        "_CollectNarrative -> dialog/reading-popup dispatch"
+                    ),
+                    "nativeMappingId":
+                        "leveldata-interactive-narrative-config-v1",
+                    "storyBinding": True,
+                    "ownership": False,
+                    "questActivation": False,
+                    "questPlayback": False,
+                    "questCompletion": False,
+                    "executionSide": "client",
+                    "serverExchange": False,
+                })
+    rows.sort(key=lambda row: (
+        str(row.get("levelId") or ""),
+        str(row.get("levelDataAsset") or ""),
+        int(row.get("recordIndex") or 0),
+        str(row.get("storyKey") or ""),
+    ))
+    if use_default_cache:
+        _LEVELDATA_INTERACTIVE_NARRATIVE_CACHE[cache_key] = rows
+    return [
+        row for row in rows if row.get("storyKey") in available_story_keys
+    ]
 
 
 def parse_level_interactive_quest_progress_lock(

@@ -234,8 +234,10 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v17 preserves authored quest tracking markers, visibility filters, and
 # mission-variable defaults as debug context without creating graph edges.
 # v18 pins the native tracking-property evaluator and server-sync path while
-# preserving the unknown server producer/timing boundary.
-SCHEMA_VERSION = 19
+# preserving the unknown server producer/timing boundary. v19 adds exact
+# top-level LevelScript narrative-interactive configuration routes. v20 adds
+# next-record-bounded LevelData narrative-interactive configuration routes.
+SCHEMA_VERSION = 20
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -3491,9 +3493,22 @@ def build_story_trigger_route(
         })
     if script_ids:
         middle_steps.append({"kind": "levelscript", "ids": script_ids})
+    if relation == "leveldata_interactive_narrative_config":
+        leveldata_assets = _unique_route_strings(row.get("levelDataAssets"))
+        if leveldata_assets:
+            middle_steps.append({
+                "kind": "leveldata",
+                "ids": leveldata_assets,
+            })
     if (
-        relation == "levelscript_interactive_narrative_config"
-        and row.get("localInteractiveId") is not None
+        relation in {
+            "levelscript_interactive_narrative_config",
+            "leveldata_interactive_narrative_config",
+        }
+        and (
+            row.get("localInteractiveId") is not None
+            or row.get("entityLogicId") is not None
+        )
     ):
         interactive_summaries = _unique_route_strings(
             row.get("rawTypeId"),
@@ -3501,7 +3516,11 @@ def build_story_trigger_route(
         )
         middle_steps.append({
             "kind": "narrative_interactive",
-            "id": str(row.get("localInteractiveId")),
+            "id": str(
+                row.get("localInteractiveId")
+                if row.get("localInteractiveId") is not None
+                else row.get("entityLogicId")
+            ),
             "summaries": interactive_summaries,
         })
     if action_names:
@@ -3527,7 +3546,11 @@ def build_story_trigger_route(
         "eventSummaries": event_summaries,
         "actionNames": action_names,
         "scriptIds": script_ids,
+        "levelDataAssets":
+            _unique_route_strings(row.get("levelDataAssets")),
         "localInteractiveId": row.get("localInteractiveId"),
+        "entityLogicId": row.get("entityLogicId"),
+        "interactiveRecordIndex": row.get("interactiveRecordIndex"),
         "rawTypeId": str(row.get("rawTypeId") or ""),
         "entityDetailIds": _unique_route_strings(row.get("entityDetailIds")),
         "entityTemplateIds": _unique_route_strings(row.get("entityTemplateIds")),
@@ -4646,8 +4669,10 @@ def build_story_binding_coverage(
         for row, quest_id, scope in _scoped_connection_rows(flow):
             key = str(row.get("key") or "")
             if (
-                str(row.get("relation") or "")
-                == "levelscript_interactive_narrative_config"
+                str(row.get("relation") or "") in {
+                    "levelscript_interactive_narrative_config",
+                    "leveldata_interactive_narrative_config",
+                }
                 and key in all_index_rows
             ):
                 if key not in all_story_rows:
@@ -5147,7 +5172,7 @@ def build_story_binding_coverage(
 
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "generated": int(time.time()),
         "language": language,
         "policy": (

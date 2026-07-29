@@ -494,6 +494,20 @@ consumer chain. The result is a mission-state FX/playback dependency, not an
 interactive's mission owner. Other framed ReadingPopUp consumers without a
 mission key remain consumer-only evidence.
 
+The same exact framing now recovers narrative configuration even when no
+mission-state PropertyKey shares the record. StreamingAssets and Persistent
+LevelData bytes must match exactly, the record must end at the next typed list
+item, component key `94` must contain the complete `type_id` ParamValue map,
+and the entity must resolve through byte-identical InteractiveTable mirrors to
+an `int_narrative*` template. A direct Story id or exact
+`ReadingPopUpTable.contentId` join then supplies source-configuration context.
+The current corpus has 20 placements for 19 unique Story keys in four
+LevelData assets. The final item of every list remains excluded because the
+next top-level LevelData member is not borrowed as an inferred boundary.
+These rows establish the LevelData asset, narrative entity, and configured
+Story consumer; they do not establish availability, player interaction
+timing, mission/quest activation, ownership, or relative Story order.
+
 Top-level `LevelScriptData` itself is a current 27-member MemoryPack object,
 not the older 26-member working model; the omitted current field was
 `enablePreload`. The newly decoded `interactives` member

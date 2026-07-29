@@ -15450,6 +15450,119 @@ def build_language_bundle(
         ) == signature for existing in connections if isinstance(existing, dict)):
             connections.append(connection)
 
+    # LevelData also owns a counted LevelInteractiveData list. Accept only
+    # records whose end is supplied by the next typed list item and whose
+    # StreamingAssets/Persistent bytes agree. The final unbounded list item is
+    # deliberately excluded.
+    leveldata_interactive_narrative_contexts = (
+        build_leveldata_interactive_narrative_story_contexts(
+            set(all_story_entry_keys)
+        )
+    )
+    for context in leveldata_interactive_narrative_contexts:
+        story_key = resolve_scene_ref_out_key(
+            str(context.get("storyKey") or ""),
+            all_story_entry_keys,
+        )
+        target_mission = str(story_owner_by_key.get(story_key) or "")
+        if (
+            not story_key
+            or not target_mission
+            or target_mission not in mission_flows_payload
+        ):
+            continue
+        level_id = str(context.get("levelId") or "")
+        leveldata_asset = str(context.get("levelDataAsset") or "")
+        connection = {
+            "key": story_key,
+            "kind": story_kind_by_key.get(story_key, "story"),
+            "relation": "leveldata_interactive_narrative_config",
+            "direction": "context",
+            "phase": "interactive_narrative_configuration",
+            "confidence": "native_exact_serialized_config",
+            "evidenceTier": "native_exact_context",
+            "source": (
+                "exact counted LevelData interactive list -> next-record-"
+                "bounded 25-member LevelInteractiveData -> "
+                "componentProperties[94].type_id; the final unbounded list "
+                "item is excluded"
+            ),
+            "storyOwnerMission": target_mission,
+            "storyBinding": True,
+            "ownership": False,
+            "dependencyOnly": False,
+            "questTriggerStatus":
+                "source_config_only_activation_and_quest_unresolved",
+            "activationBoundary": (
+                "the LevelData asset and narrative interactive are exact; "
+                "serialized data does not establish availability, player "
+                "interaction timing, or mission/quest activation"
+            ),
+            "orderBoundary": (
+                "interactive-list order, record index, entity logic id, "
+                "object position, and Story suffix do not establish relative "
+                "Story chronology"
+            ),
+            "executionSide": context.get("executionSide") or "client",
+            "networkRole": "local_interactive_narrative_dispatch",
+            "serverExchange": False,
+            "clientRequest": False,
+            "expectedServerReply": False,
+            "levelIds": [level_id],
+            "levelDataAssets": [leveldata_asset],
+            "sourceFiles": sorted({
+                str(context.get("sourceFile") or ""),
+                str(context.get("verifiedMirrorFile") or ""),
+                str(context.get("readingPopupTableSourceFile") or ""),
+                str(context.get("entityTemplatePath") or ""),
+            } - {""}),
+            "nativeMappingId": context.get("nativeMappingId"),
+            "nativeConsumer": context.get("nativeConsumer"),
+            "storyKeyResolution": context.get("storyKeyResolution"),
+            "rawTypeId": context.get("rawTypeId"),
+            "readingPopupId": context.get("readingPopupId"),
+            "interactiveListCount": context.get("interactiveListCount"),
+            "interactiveListCountOffset":
+                context.get("interactiveListCountOffset"),
+            "interactiveRecordIndex": context.get("recordIndex"),
+            "interactiveRecordOffset": context.get("recordOffset"),
+            "interactiveRecordEndOffset": context.get("recordEndOffset"),
+            "entityLogicId": context.get("embeddedLogicId"),
+            "entityDetailIds": [str(context.get("entityDetailId") or "")],
+            "entityTemplateIds": [str(context.get("entityTemplateId") or "")],
+            "entityTemplatePaths": [
+                str(context.get("entityTemplatePath") or "")
+            ],
+            "narrativeComponentKey": context.get("narrativeComponentKey"),
+            "narrativeParamMapOffset": context.get(
+                "narrativeParamMapOffset"
+            ),
+            "narrativeParamMapEndOffset": context.get(
+                "narrativeParamMapEndOffset"
+            ),
+            "typeIdEntryOffset": context.get("typeIdEntryOffset"),
+            "propertiesCount": context.get("propertiesCount"),
+        }
+        connections = mission_flows_payload[target_mission].setdefault(
+            "missionStoryConnections",
+            [],
+        )
+        signature = (
+            story_key,
+            connection["relation"],
+            level_id,
+            leveldata_asset,
+            context.get("recordOffset"),
+        )
+        if not any((
+            str(existing.get("key") or ""),
+            str(existing.get("relation") or ""),
+            next(iter(existing.get("levelIds") or []), ""),
+            next(iter(existing.get("levelDataAssets") or []), ""),
+            existing.get("interactiveRecordOffset"),
+        ) == signature for existing in connections if isinstance(existing, dict)):
+            connections.append(connection)
+
     # ON_SPAWNER_COMPLETE carries an exact uint64 SpawnerPtr from the server
     # completion push into the local LevelEvent.  A current SpawnerConfig can
     # then provide authored mission context when that id is globally unique and
