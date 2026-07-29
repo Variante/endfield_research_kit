@@ -309,9 +309,14 @@ python scripts\story_recovery\build_animestudio_story_guide_consumer_audit.py
 ```
 
 The carrier audit reads the current source-gap queue and reports only exact
-actionable Story values that occur in typed Story-id fields on the same
+core-isolated Story values that occur in typed Story-id fields on the same
 completely decoded object as typed mission/quest or scene/script identifiers.
-It validates the merged summary, stage signature, and output hashes first.
+The stable `coreIsolatedSceneKeys` target prevents queue-only classification
+changes from invalidating the audit that helps classify that queue. The report
+records the complete target key-to-mission map plus a deterministic target-set
+digest, and the gap builder accepts a negative result only when that digest
+still matches its freshly derived core-isolated target set. It validates the
+merged summary, stage signature, and output hashes first.
 Partial/truncated
 objects, unresolved MonoScript identity, substrings, names, neighboring
 objects, PathID proximity, OCR, and manual overrides are rejected. Output goes
@@ -1949,6 +1954,18 @@ gameplay-video OCR/audio workflow.
   `original_text_definition_without_consumer` classification are also excluded
   from actionable isolation after the bounded LevelScript, DialogTree, and
   Timeline consumer search.
+  A narrower current-build-only deferral class removes a row from scoring only
+  when every named offline evidence gate remains exact. The initial mapping
+  covers the 34 residual `e11m4` radio definitions and
+  `cutscene_e11m4_rift_camera_state1to2`: it requires the expected
+  `GameAssembly.dll`, RadioTable, AudioDialog, NumIdStrTable, and cutscene
+  definition hashes; the complete provenance-valid carrier audit and its
+  current core-target digest; exact RadioTable schema and AudioDialog
+  membership; the exact Timeline registry id; and the current GameObject audit
+  negative for the cutscene root. Deferred rows remain visible as
+  `deferred_current_build_offline_surface_exhausted`, add no graph edge, and
+  automatically become actionable again if a hash, target set, mission
+  assignment, route, or audit gate changes.
   Authored non-mission isolation is also closed without an edge. Speaker radio
   continuation and character SNS topics come only from their keyed tables.
   `radio_blackbox_common_1` comes from the separately freshness-checked

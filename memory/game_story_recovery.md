@@ -4128,8 +4128,9 @@ Current main-story priorities:
    now has an opt-in compact object/schema/MonoScript JSONL writer and a
    deterministic cross-process merger. The maintained
    `build_animestudio_story_carrier_audit.py` consumer validates the published
-   commit marker, stage signature, and hashes, then searches the actionable
-   source-gap keys for exact typed Story-id fields co-carried with typed
+   commit marker, stage signature, and hashes, then searches the stable
+   `coreIsolatedSceneKeys` source-gap set for exact typed Story-id fields
+   co-carried with typed
    mission/quest or scene/script ids on one fully decoded object. It emits
    candidate rows only and cannot create ownership or order without a separate
    native consumer proof. Partial/truncated objects, unresolved scripts,
@@ -4142,15 +4143,19 @@ Current main-story priorities:
    1,218,871 objects / 1,018 MonoScripts / 883 schemas and Persistent has
    116,579 objects / 1,018 MonoScripts / 271 schemas. After rebuilding the CN
    Story gap queue, the synchronized audit scanned all 1,335,450 object rows
-   for 2,459 actionable gap keys. It found 190 objects with exact target values
+   for 3,128 core-isolated keys. It found 239 objects with exact target values
    but zero typed same-object Story plus owner/runtime candidates. Exact
    `TimelineAsset.m_Name` and `CutsceneRootComponent._timelineName` occurrences
    remain rejected name/timeline clues, not ownership or order evidence. The
+   v2 report preserves the complete target key-to-mission map, the stable
+   target-field name, and target-set SHA-256
+   `54268b7c70d03335a4de8d1156f08cdbff61844d6d3ae0b8d825512c018aab2e`;
+   all 3,128 keys are explicitly listed as having no typed candidate. The
    current result is preserved in
    `reports/story/recovery/animestudio_story_carrier_audit.{json,md}` and adds
    zero bindings or edges. This closes the stale-provenance work item: do not
    repeat the full serialized-carrier census until installed data, exporter
-   identity, or the actionable gap-key set changes. Even a future positive
+   identity, or the core-isolated target set changes. Even a future positive
    same-object row still requires independently recovered native consumer
    semantics before ownership/playback promotion and a separate serialized
    control relation before any order edge.
@@ -4301,10 +4306,19 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. The refreshed source-only
-   queue ranks `e11m4` first (175/35 actionable isolated core
-   scenes), followed by `e10m4` (160/32) and `e11m1` (145/29).
-   Continue
+   block metadata or the installed build changes. `sourceStoryGapQueue.v20`
+   now turns the completed exact `e11m4` negative boundary into a fail-closed
+   operational deferral. It activates only while the exact current
+   `GameAssembly.dll`, RadioTable, AudioDialog, NumIdStrTable, and
+   cutscene-definition hashes match; the carrier-audit target digest matches
+   the freshly derived core-isolated set; all 35 keys remain negative in the
+   provenance-valid carrier audit; the radio schema/audio and cutscene
+   registry/root gates remain exact; and no new route exists. The rows stay
+   visible as `deferred_current_build_offline_surface_exhausted`, create no
+   graph edge, and reopen automatically if any gate changes. `e11m4` therefore
+   scores 0 with 35 deferred rows. The genuine offline queue now ranks
+   `e10m4` first (160/32), followed by `e11m1` (145/29) and `e11m6`
+   (125/25). Continue
    offline from those exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
    runtime capture later becomes possible, start with `e11m1`: use the
@@ -4434,8 +4448,9 @@ Current main-story priorities:
    Those referenced state owners are not promoted to Story ownership or
    chronology. The e10m4 queue is therefore 32 actionable rows; its seven
    runtime-configuration closures add no order edge.
-   The current `e11m4` queue score is 175: 49 core isolated scenes split into
-   35 actionable rows, three exact-native closed rows, and eleven exact
+   The current `e11m4` queue has 49 core isolated scenes split into 35
+   current-build offline-exhausted deferred rows, three exact-native closed
+   rows, and eleven exact
    runtime-configuration closures. Five are
    `dlg_e11m4_4`, `_9`, `_10`, `_11`, and `_12`. Their exact
    `NpcProxyExDataTable` rows name mission `e11m4`, map `map02_lv008`, and one
@@ -4545,10 +4560,13 @@ Current main-story priorities:
    but local interactive ids, map order, positions, and Story suffixes still
    prove neither activation time nor relative Story order.
    Further progress needs a genuinely new cross-system producer/owner
-   registry or runtime capture, not another local carrier census. `e11m4` is
-   now the second-highest main-story gap. Its 35 actionable rows are exactly
-   the 34 exhausted radio definitions plus the ownerless rift-camera cutscene;
-   its dialog and text source-configuration frontier is closed.
+   registry, a changed installed build, or supported runtime capture, not
+   another local carrier census. The queue retains these exact 35 rows as
+   current-build offline-exhausted evidence with score zero: the 34 radio
+   definitions plus the ownerless rift-camera cutscene. This is an operational
+   deferral, not a claim that no external/server registry can ever exist, and
+   it creates no ownership or order edge. Its dialog and text
+   source-configuration frontier is closed.
    The generalized LevelData pass also closes `text_e11m5_1..4` from the
    four-item `dung02_rdg008_lv_data_sub_mission_e11m5` interactive list. The
    first three use next-record boundaries. The final record ends exactly at

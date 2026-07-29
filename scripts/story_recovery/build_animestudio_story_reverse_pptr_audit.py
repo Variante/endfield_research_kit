@@ -483,7 +483,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines = [
         "# AnimeStudio Story Reverse-PPtr Audit",
         "",
-        f"- Actionable Story keys: `{report['targetStoryKeys']}`",
+        f"- Core-isolated Story keys: `{report['targetStoryKeys']}`",
         f"- Exact target objects: `{summary['targetObjects']}`",
         f"- Object rows scanned per pass: `{summary['objectsPerPass']}`",
         f"- Exact reverse PPtr relations: `{summary['relations']}`",
