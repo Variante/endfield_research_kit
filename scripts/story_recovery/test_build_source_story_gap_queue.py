@@ -2728,6 +2728,41 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(len(dialog["lineIds"]), 6)
         self.assertEqual(dialog["optionIds"], ())
 
+    def test_declared_e9m4_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E9M4_RADIOS,
+            {"radio_e9m4_1", "radio_e9m4_4d5"},
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e9m4_14"
+        ]
+        self.assertEqual(
+            dialog["lineIds"],
+            (
+                "dlg_e9m4_14_001",
+                "dlg_e9m4_14_002",
+                "dlg_e9m4_14_003",
+                "dlg_e9m4_14_004",
+                "dlg_e9m4_14_005",
+                "dlg_e9m4_14_006",
+                "dlg_e9m4_14_009",
+            ),
+        )
+        self.assertEqual(dialog["optionIds"], ())
+        self.assertEqual(
+            dialog["npcProxyConsumer"],
+            {
+                "proxyId": "lizhui_map02_e9m4",
+                "entryIndex": 0,
+                "entry": {
+                    "addDialogExOption": False,
+                    "envTalkData": {"envTalkOverrideNpc": True},
+                    "dialogExOptionData": [],
+                    "dialogId": "dlg_e9m4_14",
+                },
+            },
+        )
+
     def test_exact_lua_controller_playback_closes_isolated_cutscene(
         self,
     ) -> None:
@@ -2877,6 +2912,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e6m3_6",
                 "dlg_e6m3_12",
                 "misc_dlg_e6m3_3d5",
+                "dlg_e9m4_14",
                 "dlg_e7m2_11",
                 "dlg_e7m2_13",
                 "dlg_e7m3_13",
