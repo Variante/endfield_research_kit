@@ -2424,7 +2424,11 @@ gameplay-video OCR/audio workflow.
   `ScriptEvent_OnLeaderEnterTriggerVolume` slot-80001 chain. This proves shared
   local LevelScript control context, not that the DynamicScene mission
   condition starts that trigger header. The audit therefore keeps
-  `missionGraphAction=none`.
+  `missionGraphAction=none`. The follow-up component census also closes the
+  tempting slot bridge: all 387 mission-controlled roots carry only IdComp,
+  MissionControlComp, ResourceComp, and BlightMiasmaComp, with zero
+  TriggerComp. The TriggerComp schema contains geometry and a position-list
+  group but no trigger-slot or LevelScript identity.
 - `story_recovery/build_compress_data_story_audit.py`: replaces the raw-byte
   `CompressData.bin` probe with a full logical decode. It hash-gates the current
   `DataCompressManager` native mapping, validates the count/absolute-offset

@@ -73,6 +73,9 @@ class DynamicSceneMissionControlAuditTests(unittest.TestCase):
                 "missionControlledRootsWithScriptControl": 0,
                 "levelScriptIdentityRootsWithScriptControl": 0,
                 "storyIdentityRootsWithScriptControl": 0,
+                "missionControlledRootsWithTriggerComp": 0,
+                "levelScriptIdentityRootsWithTriggerComp": 0,
+                "storyIdentityRootsWithTriggerComp": 0,
                 "decodeErrors": 0,
                 "duplicateSceneGridIds": 0,
             },
@@ -86,6 +89,7 @@ class DynamicSceneMissionControlAuditTests(unittest.TestCase):
         markdown = render_markdown(report)
         self.assertIn("| — | — | — | — | — |", markdown)
         self.assertIn("Mission graph action: `none`", markdown)
+        self.assertIn("none carries TriggerComp", markdown)
 
 
 if __name__ == "__main__":

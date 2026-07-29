@@ -74,9 +74,12 @@ TYPE_NAMES = {
     1: "DataIndex",
     14: "MissionCondition",
     15: "IdComp",
+    18: "TriggerComp",
     25: "MissionControlComp",
     29: "ScriptControlComp",
+    30: "ResourceComp",
     31: "RootComp",
+    54: "BlightMiasmaComp",
 }
 
 GRID_FIELD_DATA_INDEX = 5
@@ -522,6 +525,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- mission-controlled roots with ScriptControlComp: {counts['missionControlledRootsWithScriptControl']}",
         f"- LevelScript-id matches with ScriptControlComp: {counts['levelScriptIdentityRootsWithScriptControl']}",
         f"- Story-bearing id matches with ScriptControlComp: {counts['storyIdentityRootsWithScriptControl']}",
+        f"- mission-controlled roots with TriggerComp: {counts.get('missionControlledRootsWithTriggerComp', 0)}",
+        f"- LevelScript-id matches with TriggerComp: {counts.get('levelScriptIdentityRootsWithTriggerComp', 0)}",
+        f"- Story-bearing id matches with TriggerComp: {counts.get('storyIdentityRootsWithTriggerComp', 0)}",
         f"- decode errors: {counts['decodeErrors']}",
         f"- duplicate scene/grid ids: {counts['duplicateSceneGridIds']}",
         "",
@@ -569,6 +575,24 @@ def render_markdown(report: dict[str, Any]) -> str:
             "decoration, animation, audio, view-state, and attachment control. "
             "It has no LevelScript pointer, mission/quest identity, or Story "
             "field and therefore does not close the namespace bridge.",
+            "",
+            "### TriggerComp closure",
+            "",
+            "`FBDynamicSceneSingleGrid` constructor order maps component type "
+            "`18` to `FBDynamicSceneTriggerComp`, type `30` to "
+            "`FBDynamicSceneResourceComp`, and type `54` to "
+            "`FBDynamicSceneBlightMiasmaComp`.",
+            "",
+            "Every current mission-controlled root carries IdComp, "
+            "MissionControlComp, ResourceComp, and BlightMiasmaComp; none "
+            "carries TriggerComp. TriggerComp itself serializes shape, radius, "
+            "center, size, transform, and a position-list group, with no "
+            "trigger-slot, LevelScript, mission, quest, or Story identity. "
+            "ResourceComp contains resource/mount/navigation/LOD groups and "
+            "NavState; BlightMiasmaComp contains only Empty.",
+            "",
+            "Therefore the LevelScript slot-80001 event in the focused action "
+            "bridge is not a DynamicScene TriggerComp foreign key.",
             "",
         ]
     )
@@ -736,6 +760,18 @@ def main() -> int:
             "storyIdentityRootsWithScriptControl": sum(
                 bool(row.get("scriptControls")) for row in story_candidates
             ),
+            "missionControlledRootsWithTriggerComp": sum(
+                any(ref.get("type") == 18 for ref in row.get("componentRefs") or [])
+                for row in roots
+            ),
+            "levelScriptIdentityRootsWithTriggerComp": sum(
+                any(ref.get("type") == 18 for ref in row.get("componentRefs") or [])
+                for row in identity_roots
+            ),
+            "storyIdentityRootsWithTriggerComp": sum(
+                any(ref.get("type") == 18 for ref in row.get("componentRefs") or [])
+                for row in story_candidates
+            ),
             "decodeErrors": len(errors),
             "duplicateSceneGridIds": len(duplicate_grids),
         },
@@ -783,6 +819,42 @@ def main() -> int:
                 "storyFieldFound": False,
                 "classification":
                     "dynamic_scene_entity_control_not_levelscript_bridge",
+            },
+            "triggerComponentBoundary": {
+                "componentTypeMap": {
+                    "18": "FBDynamicSceneTriggerComp",
+                    "30": "FBDynamicSceneResourceComp",
+                    "54": "FBDynamicSceneBlightMiasmaComp",
+                },
+                "rootComponentPopulation": [
+                    "IdComp",
+                    "MissionControlComp",
+                    "ResourceComp",
+                    "BlightMiasmaComp",
+                ],
+                "triggerCompFields": [
+                    "Shape:int32",
+                    "Radius:float",
+                    "Center:FBDynamicSceneVector3",
+                    "Size:FBDynamicSceneVector3",
+                    "Trans:FBDynamicSceneTransform",
+                    "PosListGroup:FBDynamicSceneDataGroup",
+                ],
+                "resourceCompFields": [
+                    "Res:FBDynamicSceneDataGroup",
+                    "Mount:FBDynamicSceneDataGroup",
+                    "MountViewModel:FBDynamicSceneDataGroup",
+                    "NavState:int32",
+                    "NavData:FBDynamicSceneDataGroup",
+                    "LodInfo:FBDynamicSceneDataGroup",
+                ],
+                "blightMiasmaCompFields": ["Empty:bool"],
+                "triggerSlotFieldFound": False,
+                "levelScriptPointerFieldFound": False,
+                "missionOrQuestFieldFound": False,
+                "storyFieldFound": False,
+                "classification":
+                    "no_dynamic_scene_trigger_slot_or_levelscript_carrier",
             },
         },
     }

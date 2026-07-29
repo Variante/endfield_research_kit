@@ -4,7 +4,7 @@
   "sources": {
     "identityAudit": {
       "path": "reports/story/recovery/dynamic_scene_mission_control_audit.json",
-      "sha256": "b47983e0922bc953744dd237bc8147569f04671e525ac816f281c9d4b0f57efa",
+      "sha256": "48637b4ca225132dae2b30d94b4cf4e8a6c8d6e2ab5e93591146db3e04513086",
       "schemaVersion": 1
     },
     "dynamicStreaming": {
@@ -68,6 +68,8 @@
     "candidateRootsWithExactTargetAction": 1,
     "candidateRootsWithSharedStoryControlPath": 1,
     "storyOccurrencesWithSharedControlPath": 1,
+    "storyIdentityRootsWithTriggerComp": 0,
+    "exactTargetBridgeRootsWithTriggerComp": 0,
     "missingScriptFiles": 0,
     "missingStoryRecords": 0,
     "rejectedTargetActionRecords": 2
@@ -80,6 +82,37 @@
     {
       "scene": "map02",
       "logicId": "10100282001",
+      "dynamicRootComponentRefs": [
+        {
+          "isInvalid": false,
+          "type": 15,
+          "typeName": "IdComp",
+          "gridId": 458752,
+          "index": 176
+        },
+        {
+          "isInvalid": false,
+          "type": 25,
+          "typeName": "MissionControlComp",
+          "gridId": 458752,
+          "index": 35
+        },
+        {
+          "isInvalid": false,
+          "type": 30,
+          "typeName": "ResourceComp",
+          "gridId": 458752,
+          "index": 177
+        },
+        {
+          "isInvalid": false,
+          "type": 54,
+          "typeName": "BlightMiasmaComp",
+          "gridId": 458752,
+          "index": 136
+        }
+      ],
+      "triggerCompPresent": false,
       "missionControls": [
         {
           "componentIndex": 35,
@@ -305,6 +338,43 @@
     "missionActivationBridgeFound": false,
     "classification": "exact_local_context_without_mission_activation_edge",
     "missionGraphAction": "none",
+    "triggerCarrierClosure": {
+      "componentTypeMap": {
+        "18": "FBDynamicSceneTriggerComp",
+        "30": "FBDynamicSceneResourceComp",
+        "54": "FBDynamicSceneBlightMiasmaComp"
+      },
+      "rootComponentPopulation": [
+        "IdComp",
+        "MissionControlComp",
+        "ResourceComp",
+        "BlightMiasmaComp"
+      ],
+      "triggerCompFields": [
+        "Shape:int32",
+        "Radius:float",
+        "Center:FBDynamicSceneVector3",
+        "Size:FBDynamicSceneVector3",
+        "Trans:FBDynamicSceneTransform",
+        "PosListGroup:FBDynamicSceneDataGroup"
+      ],
+      "resourceCompFields": [
+        "Res:FBDynamicSceneDataGroup",
+        "Mount:FBDynamicSceneDataGroup",
+        "MountViewModel:FBDynamicSceneDataGroup",
+        "NavState:int32",
+        "NavData:FBDynamicSceneDataGroup",
+        "LodInfo:FBDynamicSceneDataGroup"
+      ],
+      "blightMiasmaCompFields": [
+        "Empty:bool"
+      ],
+      "triggerSlotFieldFound": false,
+      "levelScriptPointerFieldFound": false,
+      "missionOrQuestFieldFound": false,
+      "storyFieldFound": false,
+      "classification": "no_dynamic_scene_trigger_slot_or_levelscript_carrier"
+    },
     "promotionRequirement": "a typed serialized or runtime edge must show that the DynamicScene mission condition activates the matched LevelScript header/action chain"
   }
 }

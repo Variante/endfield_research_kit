@@ -3843,7 +3843,14 @@ Current main-story priorities:
    the LevelScript trigger header. The maintained
    report therefore sets `missionGraphAction=none`, and the WebUI must keep
    this evidence candidate-only unless a typed serialized or runtime edge
-   closes that mission-activation gap. The adjacent component-name lead is
+   closes that mission-activation gap. The most direct slot-carrier attempt is
+   now closed: current FlatBuffer constructor order maps component type 18 to
+   TriggerComp, 30 to ResourceComp, and 54 to BlightMiasmaComp. Every one of
+   the 387 mission-controlled roots has ResourceComp and BlightMiasmaComp but
+   zero has TriggerComp. TriggerComp's complete schema is geometry plus a
+   position-list group and contains no trigger-slot or LevelScript identity,
+   so the exact LevelScript slot `80001` cannot be joined through this family.
+   The adjacent component-name lead is
    also closed: `FBDynamicSceneScriptControlComp` serializes only
    `DefaultLoad:int32`, and none of the 387 mission-controlled roots co-carries
    it. There are therefore zero such components among both the 125 numeric
