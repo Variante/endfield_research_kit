@@ -3419,6 +3419,51 @@ roots. Their aliases provide playback context for the TimelineAssets, but
 mission ownership remains unresolved until a separate source trigger or
 control relation supplies it.
 
+#### StringPathHash closes resource registration as an owner lead
+
+The skipped ExtendData registry is now decoded rather than treated as an opaque
+possible selector source. A targeted AnimeStudio VFS dump recovers
+`Data/ExtendData/Main/StringPathHash.bin`; the maintained
+`build_string_path_hash_story_audit.py` validates its complete current layout:
+an 8-byte header, `entryCount * 8` bucket bytes,
+`entryCount * 16` entries of `hash:int64 + stringPoolOffset:uint64`, and one
+`byteLength:uint32 + UTF-16LE + null:uint16` record per entry. All 538,806
+entries map one-to-one onto all 538,806 string records. The source SHA-256 is
+`680140A7C4D2167FE5BB29E04F352334B664BCB69D6F73C067DF10EFD12BFA96`.
+
+Current IL2CPP metadata agrees with that interpretation.
+`Beyond.Resource.StringPathHash` carries one opaque 8-byte hash and converts to
+and from `System.Int64`. `Beyond.Resource.StringPathHashBinary` owns the
+main/init mapping dictionaries and exposes `_GetMappingStrByHash` /
+`GetMappingStrByHash`: the serialized direction is hash to original resource
+path. It is a reverse diagnostic/resource-resolution dictionary, not a table
+of consumers.
+
+The three unresolved roots resolve to 34 exact registered paths and hashes:
+13 each for the two e11 CutsceneTransition roots and eight for
+`cutscene_f1m9d3_1`. The audit searched both endian byte forms of every hash
+through all 91,231 structured files (7,241,491,260 bytes), and the signed,
+unsigned, and hexadecimal text forms through all 1,337,486 current
+StreamingAssets/Persistent AnimeStudio object rows. A separately dumped
+789,844-byte `CompressData.bin` was also searched. All three surfaces return
+**zero exact consumers**.
+
+This is useful negative evidence, not a recovered attachment. Presence in
+`StringPathHash.bin` proves that the root's JSON/prefab/playable resources are
+available to the loader; it says nothing about who requests them, when they
+play, or which mission/quest owns them. Do not promote the 34 mappings into
+Story routes or source-graph ownership edges. A dynamically computed hash,
+runtime/server selector, or another unscanned encoded registry remains outside
+the exact census. Reproduce and inspect the bounded result in
+`reports/story/recovery/string_path_hash_story_audit.{json,md}`.
+
+The upstream-selector queue is therefore narrower: do not revisit
+StringPathHash registration, raw 64-bit hash literals in exported data, or
+CutsceneRoot child/director activation for these three roots. Further offline
+progress needs a genuinely different producer surface that co-carries one of
+the root identities with a mission, quest, level event, phase, or runtime
+control owner.
+
 ### The cinematic queue: a deterministic cross-type order rule
 
 The same lane exposes the runtime **sequencer** for Story playback, and it is
