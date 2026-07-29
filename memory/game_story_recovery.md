@@ -4306,12 +4306,13 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v44`
-   turns the completed exact `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e9m3`, `e10m4`, `e11m1`, `e11m2`,
+   block metadata or the installed build changes. `sourceStoryGapQueue.v45`
+   turns the completed exact `e0m0`, `e1m3`, `e2m5`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e9m3`, `e10m4`, `e11m1`, `e11m2`,
    `e11m3`, `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
    operational deferrals.
    It activates only while the exact
    current `GameAssembly.dll`, RadioTable, AudioDialog, TextTable,
+   NpcProxyExDataTable,
    NumIdStrTable, and cutscene-definition hashes match; the carrier-audit
    target digest matches the freshly derived core-isolated set; the radio
    schema/audio and Timeline/text-definition gates remain exact; the forward
@@ -4331,11 +4332,11 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 262 actual
-   isolated-scene deferrals: 184 radios, 27 cutscene roots, 27 registered
+   and reopen automatically if any gate changes. There are now 268 actual
+   isolated-scene deferrals: 187 radios, 27 cutscene roots, 28 registered
    dialogs, eleven ReadingPopUp definitions, eight DialogTextTable-only groups,
-   one SNS dialog definition, two text-only cutscenes, and two TextTable-only
-   black definitions. The hash-validated declaration set contains 265 rows
+   one SNS dialog definition, four text-only cutscenes, and two TextTable-only
+   black definitions. The hash-validated declaration set contains 271 rows
    because three declared
    radios close through stronger exact native/runtime contexts instead of
    using the deferral. Every
@@ -4394,8 +4395,18 @@ Current main-story priorities:
    fail-closed deferrals with graph effect `none`; e9m3 now scores zero.
    e10m4's five residual source-link rows are likewise closed under the exact
    definition boundaries detailed below. Its only remaining score comes from
-   three context-only variant-quest attachments, so the next main-story
-   source-link frontier is e2m5.
+   three context-only variant-quest attachments.
+   The following e2m5 pass closes all six of its residual source-link rows:
+   `cutscene_e2m5_2` and `_3` are exact two-row TextTable groups with no
+   Timeline/root/object carrier; `radio_e2m5_5`, `_27`, and `_29` are exact
+   one-line RadioTable definitions with complete AudioDialog membership and no
+   recovered consumer. `dlg_e2m5_6` is different: its hash-locked six-line,
+   two-option registered DialogTree has a real exact consumer at
+   `NpcProxyExDataTable.data.tata_map01_i008[0]`, but that entry's `missionId`
+   is empty. It therefore proves NPC-interaction selection without proving a
+   mission/quest owner, activation time, or Story order. All six remain
+   graph-neutral fail-closed boundaries, e2m5 now scores zero, and the next
+   main-story source-link frontier is e1m2 (score 28).
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,

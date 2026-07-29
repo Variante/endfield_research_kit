@@ -2178,6 +2178,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             {
                 "misc_dlg_e1m3_5d5",
                 "dlg_e2m4_10",
+                "dlg_e2m5_6",
                 "dlg_e2m6_12",
                 "dlg_e3m3_12",
                 "dlg_e3m3_13",
@@ -2304,6 +2305,55 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 ]["lineIds"]
             ),
             7,
+        )
+
+    def test_declared_e2m5_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E2M5_RADIOS,
+            {
+                "radio_e2m5_5",
+                "radio_e2m5_27",
+                "radio_e2m5_29",
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION["e2m5"],
+            {
+                "cutscene_e2m5_2",
+                "cutscene_e2m5_3",
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES[
+                "cutscene_e2m5_2"
+            ]["definitionRowKeys"],
+            (
+                "cutscene_e2m5_2_01",
+                "cutscene_e2m5_2_11",
+            ),
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e2m5_6"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 6)
+        self.assertEqual(len(dialog["optionIds"]), 2)
+        self.assertEqual(
+            dialog["extraConfigSha256"],
+            "ECB4AAE557503DD87DD1D3C02088A41277EE32D977BAE4998BB23D457A1239EF",
+        )
+        self.assertEqual(
+            dialog["npcProxyConsumer"],
+            {
+                "proxyId": "tata_map01_i008",
+                "entryIndex": 0,
+                "entry": {
+                    "addDialogExOption": False,
+                    "envTalkData": {"envTalkOverrideNpc": True},
+                    "dialogExOptionData": [],
+                    "dialogId": "dlg_e2m5_6",
+                    "missionId": "",
+                },
+            },
         )
 
     def test_exact_native_context_isolated_scenes_are_fail_closed(
