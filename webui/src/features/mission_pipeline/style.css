@@ -637,6 +637,27 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
   font-size: 8px;
 }
 
+.mp-property-list {
+  display: grid;
+  gap: 6px;
+}
+
+.mp-property-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 0.35fr) auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: white;
+  font-size: 9px;
+}
+
+.mp-property-row code { color: var(--mp-client); font-weight: 700; }
+.mp-property-row span { color: var(--muted); }
+.mp-property-row strong { overflow-wrap: anywhere; color: var(--text); font-weight: 500; }
+
 .mp-unassigned-story .mp-story-files,
 .mp-non-mission-content .mp-story-files {
   max-height: 360px;
@@ -2117,6 +2138,53 @@ body:not(.show-debug) .mp-playback-rejection {
 .mp-objective > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .mp-objective > header strong { font-size: 10px; }
 .mp-objective > p { margin: 4px 0; color: var(--muted); font: 9px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; }
+
+.mp-objective-tracking {
+  margin-top: 7px;
+  padding: 6px 8px;
+  border: 1px dashed rgba(54, 127, 132, 0.3);
+  border-radius: 7px;
+  background: rgba(54, 127, 132, 0.035);
+}
+
+.mp-objective-tracking > summary {
+  color: var(--text);
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.mp-objective-tracking > summary span {
+  margin-left: 4px;
+  color: var(--mp-client);
+}
+
+.mp-objective-tracking > p {
+  margin: 5px 0;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.mp-tracking-list { display: grid; gap: 5px; }
+
+.mp-tracking-row {
+  padding: 6px;
+  border-radius: 6px;
+  background: white;
+}
+
+.mp-tracking-row > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mp-tracking-row > header code { color: var(--mp-client); font-size: 9px; font-weight: 700; }
+.mp-tracking-row > header small { color: var(--muted); font-size: 8px; }
+.mp-tracking-filter > strong { display: block; margin-top: 5px; color: var(--muted); font-size: 8px; }
+
+body:not(.show-debug) .mp-objective-tracking,
+body:not(.show-debug) .mp-mission-properties { display: none; }
 
 .mp-authority,
 .mp-finish-chip,

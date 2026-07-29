@@ -169,6 +169,11 @@
       runtimeObjectCandidates: "runtime/object candidates",
       unreviewedCandidates: "unreviewed candidates",
       trackingContextOnly: "HUD/map tracking context only",
+      trackingTargets: "Authored tracking targets",
+      trackingTargetsHint: "Quest-marker and HUD navigation configuration only. Marker visibility filters and positions do not create playback, completion, ownership, or ordering edges.",
+      trackingFilter: "marker visibility filter",
+      missionProperties: "Authored mission variables",
+      missionPropertiesHint: "Serialized initial values only. This block does not identify the runtime writer, trigger, or Story owner.",
       nonOwningCrossReference: "non-owning original-data cross-reference",
       unlockQuestPrerequisite: "unlock quest prerequisite",
       unlockMissionPrerequisite: "unlock mission-state prerequisite",
@@ -625,6 +630,11 @@
       runtimeObjectCandidates: "运行时/对象候选",
       unreviewedCandidates: "未审查候选",
       trackingContextOnly: "仅 HUD/地图追踪上下文",
+      trackingTargets: "原始追踪目标",
+      trackingTargetsHint: "仅表示任务标记和 HUD 导航配置。标记可见性条件与坐标不会创建播放、完成、归属或顺序边。",
+      trackingFilter: "标记可见性条件",
+      missionProperties: "原始使命变量",
+      missionPropertiesHint: "这里只显示序列化初始值，不识别运行时写入者、触发器或剧情归属。",
       nonOwningCrossReference: "不表示所有权的原始数据交叉参考",
       unlockQuestPrerequisite: "解锁任务前置条件",
       unlockMissionPrerequisite: "解锁使命状态前置条件",
@@ -2464,6 +2474,21 @@
     </details>`;
   }
 
+  function missionPropertiesHtml() {
+    const properties = state.mission?.mission?.properties || [];
+    if (!properties.length) return "";
+    const rows = properties.map((row) => `<article class="mp-property-row">
+      <code>${esc(row.key || "?")}</code>
+      <span>type ${esc(row.type ?? "?")}</span>
+      <strong>${esc(JSON.stringify(row.values || []))}</strong>
+    </article>`).join("");
+    return `<details class="mp-mission-story mp-mission-properties">
+      <summary>${esc(t("missionProperties"))} <span>${properties.length.toLocaleString()}</span></summary>
+      <p>${esc(t("missionPropertiesHint"))}</p>
+      <div class="mp-property-list">${rows}</div>
+    </details>`;
+  }
+
   function renderMissionSummary() {
     const target = byId("mp-mission-summary");
     if (!target || !state.mission) return;
@@ -2506,7 +2531,7 @@
   // keeps its own summary, hints and boundary notes verbatim, and the order
   // inside each band is the order it had in the flat stack.
   const SUMMARY_SECTIONS = [
-    ["structure", "summarySectionStructure", () => [missionGraphHtml(), storyOrderHtml()]],
+    ["structure", "summarySectionStructure", () => [missionGraphHtml(), storyOrderHtml(), missionPropertiesHtml()]],
     ["runtime", "summarySectionRuntime", () => [nativeRuntimeBindingsHtml(), runtimeTraceHtml()]],
     ["story", "summarySectionStory", () => [
       missionStoryConnectionsHtml(),
@@ -3145,6 +3170,26 @@
     return `<div class="mp-condition-tree"><code>${esc(condition.type)}</code>${factHtml ? `<div class="mp-condition-facts">${factHtml}</div>` : ""}${children ? `<div class="mp-condition-children">${children}</div>` : ""}</div>`;
   }
 
+  function objectiveTrackingHtml(tracking) {
+    if (!tracking?.length) return "";
+    const rows = tracking.map((row) => {
+      const facts = Object.entries(row)
+        .filter(([key]) => !["index", "type", "filterCondition"].includes(key))
+        .map(([key, value]) => `<span><b>${esc(key)}</b>: ${esc(typeof value === "object" ? JSON.stringify(value) : value)}</span>`)
+        .join("");
+      return `<article class="mp-tracking-row">
+        <header><code>${esc(row.type || "TrackingInfo")}</code><small>#${Number(row.index || 0) + 1}</small></header>
+        ${facts ? `<div class="mp-condition-facts">${facts}</div>` : ""}
+        ${row.filterCondition ? `<div class="mp-tracking-filter"><strong>${esc(t("trackingFilter"))}</strong>${renderConditionTree(row.filterCondition)}</div>` : ""}
+      </article>`;
+    }).join("");
+    return `<details class="mp-objective-tracking" open>
+      <summary>${esc(t("trackingTargets"))} <span>${tracking.length.toLocaleString()}</span></summary>
+      <p>${esc(t("trackingTargetsHint"))}</p>
+      <div class="mp-tracking-list">${rows}</div>
+    </details>`;
+  }
+
   function objectiveHtml(objective, questId) {
     const finishRows = (objective.dialogFinishes || []).map((row) => `<span class="mp-finish-chip"><b>${esc(row.dialogId)}</b> · ${row.finishId < 0 ? esc(t("anyFinish")) : `${esc(t("finish"))} ${esc(row.finishId)}`}</span>`).join("");
     const localIds = new Set((state.mission?.nodes || []).map((node) => node.id));
@@ -3159,6 +3204,7 @@
     return `<article class="mp-objective"><header><strong>${esc(t("objectives"))} ${objective.index}</strong><span class="mp-authority is-${esc(objective.authority)}">${esc(objective.authority)}</span></header>
       <p>${esc(objective.descriptionKey || t("noObjective"))}</p>
       <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>
+      ${objectiveTrackingHtml(objective.tracking)}
       ${renderConditionTree(objective.condition)}
     </article>`;
   }
