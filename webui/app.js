@@ -1391,14 +1391,20 @@ function loadStoryTriggerManifest() {
       const coverage = payload && payload.storyCoverage;
       const manifest = coverage && coverage.storyTriggerManifest;
       const base = manifest && typeof manifest === "object" ? manifest : {};
+      const offlineOverlay = coverage
+        && coverage.offlineRecoveryEvidence
+        && coverage.offlineRecoveryEvidence.storyTriggerManifestOverlay;
       // Ambient env_* files are tracked in their own manifest so they stay out
-      // of the mission-pipeline coverage denominator. Merge them here so a
-      // Story-page lookup resolves either kind through one map; the key spaces
-      // are disjoint (env_* vs the mission-ownable kinds), so nothing is shadowed.
+      // of the mission-pipeline coverage denominator. ReadingPopup offline
+      // boundaries use a similarly explicit denominator-neutral overlay.
+      // Merge both for Story-page lookup; neither overlay contributes a route.
       const envTalk = payload && payload.envTalkAttachment && payload.envTalkAttachment.envTalkTriggerManifest;
-      STATE.storyTriggerManifest = envTalk && typeof envTalk === "object"
-        ? Object.assign({}, base, envTalk)
-        : base;
+      STATE.storyTriggerManifest = Object.assign(
+        {},
+        base,
+        offlineOverlay && typeof offlineOverlay === "object" ? offlineOverlay : {},
+        envTalk && typeof envTalk === "object" ? envTalk : {},
+      );
       STATE.storyTriggerLoadState = "loaded";
       STATE.storyTriggerPromise = null;
       return STATE.storyTriggerManifest;
@@ -3603,6 +3609,7 @@ function storyTriggerCategoryLabel(category) {
     dependency: "storyTriggerDependency",
     definition_only: "storyTriggerDefinition",
     non_mission_content: "storyTriggerNonMissionContent",
+    offline_exhausted: "storyTriggerOfflineExhausted",
     ambient_world_content: "storyTriggerAmbientWorldContent",
     unknown: "storyTriggerUnknown",
   })[category] || "storyTriggerUnknown");
@@ -3632,9 +3639,12 @@ function storyTriggerCompactText(key) {
   const categoryLabel = storyTriggerCategoryLabel(view.category);
   const text = pieces.length ? pieces.join(" \u2192 ") : categoryLabel;
   const qualifiers = [];
+  const offlineRecovery = view.record?.offlineRecovery;
   if (compact.pathCount > 1) {
     qualifiers.push(`${compact.pathCount} ${uiText("storyTriggerExactPaths")}`);
   }
+  if (offlineRecovery?.evidenceKind) qualifiers.push(offlineRecovery.evidenceKind);
+  if (offlineRecovery?.consumerBoundary) qualifiers.push(offlineRecovery.consumerBoundary);
   return {
     category: view.category,
     text,

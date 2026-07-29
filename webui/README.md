@@ -488,7 +488,13 @@ available through expandable guidance.
   not load or display this trigger evidence. Exact native
   event/action paths remain distinct from context-only mission ownership;
   condition, context, dependency, definition-only, and unknown rows are not
-  presented as playback triggers. Typed `SubGameInstanceData`
+  presented as playback triggers.
+  Exact current-build offline carrier-search boundaries are shown separately
+  with their consumer/order limits and reopen condition; they add no trigger
+  route, ownership edge, or order edge. ReadingPopup `text_*` records remain
+  outside the Story coverage denominator and are supplied through a
+  denominator-neutral overlay.
+  Typed `SubGameInstanceData`
   mission-to-bound-LevelScript rows are shown as a
   separate runtime-shell layer and never imply a quest or Story attachment.
   Their cards show `gameId`-keyed start/stop requests and asynchronous

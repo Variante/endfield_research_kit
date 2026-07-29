@@ -15,6 +15,110 @@ def condition(kind, **values):
 
 
 class MissionPipelineBuilderTests(unittest.TestCase):
+    def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            queue_path = Path(temporary) / "gap_queue.json"
+            queue_path.write_text(
+                json.dumps({
+                    "_schema": pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
+                    "offlineExhaustionEvidence": {
+                        "status": "active",
+                        "mappingId": "fixture-offline-v1",
+                        "graphEffect": "none",
+                        "sourceHashMismatches": [],
+                    },
+                    "missions": [{
+                        "mission": "testm1",
+                        "deferredOfflineExhaustedIsolatedScenes": [{
+                            "sceneKey": "dlg_testm1_1",
+                            "missionId": "testm1",
+                            "recoveryStatus":
+                                "deferred_current_build_offline_surface_exhausted",
+                            "evidenceKind":
+                                "registered_dialog_definition_without_recovered_activator",
+                            "consumerBoundary": "no exact activator",
+                            "orderBoundary": "definition order is not chronology",
+                        "reopenWhen": "source changes",
+                        "graphEffect": "none",
+                        "gameAssemblySha256": "fixture",
+                    }, {
+                        "sceneKey": "text_testm1_1",
+                        "missionId": "testm1",
+                        "recoveryStatus":
+                            "deferred_current_build_offline_surface_exhausted",
+                        "evidenceKind":
+                            "reading_popup_definition_without_recovered_activator",
+                        "consumerBoundary": "no exact activator",
+                        "orderBoundary": "definition order is not chronology",
+                        "reopenWhen": "source changes",
+                        "graphEffect": "none",
+                        "gameAssemblySha256": "fixture",
+                        }],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            manifest = {
+                "dlg_testm1_1": {
+                    "attachmentStatus": "definition_only_no_consumer",
+                    "routes": [],
+                }
+            }
+
+            result = pipeline.publish_offline_story_recovery(
+                manifest,
+                queue_path,
+            )
+
+        self.assertEqual(result["status"], "active")
+        self.assertEqual(result["publishedStoryKeys"], 1)
+        self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 1)
+        self.assertEqual(
+            manifest["dlg_testm1_1"]["attachmentStatus"],
+            "definition_only_no_consumer",
+        )
+        self.assertEqual(manifest["dlg_testm1_1"]["routes"], [])
+        recovery = manifest["dlg_testm1_1"]["offlineRecovery"]
+        self.assertEqual(recovery["graphEffect"], "none")
+        self.assertNotIn("gameAssemblySha256", recovery)
+        overlay = result["storyTriggerManifestOverlay"]["text_testm1_1"]
+        self.assertEqual(overlay["routes"], [])
+        self.assertEqual(
+            overlay["attachmentStatus"],
+            "offline_exhausted_outside_pipeline_coverage_denominator",
+        )
+
+    def test_offline_story_recovery_fails_closed_on_schema_mismatch(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            queue_path = Path(temporary) / "gap_queue.json"
+            queue_path.write_text(
+                json.dumps({
+                    "_schema": "sourceStoryGapQueue.v999",
+                    "offlineExhaustionEvidence": {
+                        "status": "active",
+                        "mappingId": "fixture-offline-v999",
+                        "graphEffect": "none",
+                        "sourceHashMismatches": [],
+                    },
+                    "missions": [],
+                }),
+                encoding="utf-8",
+            )
+            manifest = {
+                "dlg_testm1_1": {
+                    "attachmentStatus": "definition_only_no_consumer",
+                    "routes": [],
+                }
+            }
+
+            result = pipeline.publish_offline_story_recovery(
+                manifest,
+                queue_path,
+            )
+
+        self.assertEqual(result["status"], "rejected_stale_or_incompatible")
+        self.assertNotIn("offlineRecovery", manifest["dlg_testm1_1"])
+
     def test_dynamic_scene_cross_references_remain_non_owning(self):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "dynamic_scene.json"

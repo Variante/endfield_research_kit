@@ -195,6 +195,10 @@ DEFAULT_STORY_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "build"
 DEFAULT_ORDER_REPORT_ROOT = ROOT / "reports" / "mission_order"
 DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
+DEFAULT_SOURCE_STORY_GAP_QUEUE = (
+    DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
+)
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v44"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -2971,6 +2975,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--story-language", default="CN")
     parser.add_argument("--report-root", type=Path, default=DEFAULT_REPORT_ROOT)
     parser.add_argument(
+        "--source-story-gap-queue",
+        type=Path,
+        default=DEFAULT_SOURCE_STORY_GAP_QUEUE,
+        help=(
+            "fresh source-story gap queue whose exact offline-exhaustion "
+            "boundaries are projected into Story trigger metadata"
+        ),
+    )
+    parser.add_argument(
         "--runtime-trace-bundle",
         type=Path,
         help=(
@@ -2995,6 +3008,97 @@ def write_json(path: Path, value: Any) -> None:
 def repo_path(path: Path) -> str:
     path = path.resolve()
     return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
+
+
+def publish_offline_story_recovery(
+    story_trigger_manifest: dict[str, dict[str, Any]],
+    gap_queue_path: Path | None,
+) -> dict[str, Any]:
+    """Attach fail-closed offline recovery boundaries without adding routes.
+
+    The source-story gap queue is a recovery worklist, not graph evidence.
+    Only its exact current schema and active, graph-neutral evidence block are
+    accepted. Published rows annotate existing manifest records. Story kinds
+    outside the coverage denominator are emitted in a separate overlay with an
+    explicit denominator-neutral status. Neither path changes an existing
+    ``attachmentStatus`` nor adds trigger routes.
+    """
+    inactive = {
+        "status": "unavailable",
+        "schema": "",
+        "mappingId": "",
+        "graphEffect": "none",
+        "publishedStoryKeys": 0,
+        "outsidePipelineCoverageStoryKeys": 0,
+        "storyTriggerManifestOverlay": {},
+        "source": repo_path(gap_queue_path) if gap_queue_path else "",
+    }
+    if gap_queue_path is None or not gap_queue_path.is_file():
+        return inactive
+    payload = read_json(gap_queue_path)
+    if not isinstance(payload, dict):
+        return inactive
+    schema = str(payload.get("_schema") or "")
+    status = payload.get("offlineExhaustionEvidence")
+    if (
+        schema != SOURCE_STORY_GAP_QUEUE_SCHEMA
+        or not isinstance(status, dict)
+        or status.get("status") != "active"
+        or status.get("graphEffect") != "none"
+        or status.get("sourceHashMismatches")
+    ):
+        return {
+            **inactive,
+            "schema": schema,
+            "status": "rejected_stale_or_incompatible",
+        }
+
+    published = 0
+    published_keys: set[str] = set()
+    manifest_overlay: dict[str, dict[str, Any]] = {}
+    for mission in payload.get("missions") or []:
+        if not isinstance(mission, dict):
+            continue
+        for row in mission.get("deferredOfflineExhaustedIsolatedScenes") or []:
+            if not isinstance(row, dict) or row.get("graphEffect") != "none":
+                continue
+            story_key = str(row.get("sceneKey") or "")
+            if not story_key:
+                continue
+            # Keep the exact negative-evidence boundary useful in the static UI
+            # while dropping bulk source hashes and internal queue metrics.
+            recovery = {
+                key: value
+                for key, value in row.items()
+                if key not in {"sceneKey", "gameAssemblySha256"}
+            }
+            manifest_row = story_trigger_manifest.get(story_key)
+            if isinstance(manifest_row, dict):
+                manifest_row["offlineRecovery"] = recovery
+                published += 1
+                published_keys.add(story_key)
+            else:
+                manifest_overlay[story_key] = {
+                    "key": story_key,
+                    "kind": "text",
+                    "nominalMissionId": str(row.get("missionId") or ""),
+                    "attachmentStatus":
+                        "offline_exhausted_outside_pipeline_coverage_denominator",
+                    "routes": [],
+                    "offlineRecovery": recovery,
+                }
+
+    return {
+        "status": "active",
+        "schema": schema,
+        "mappingId": str(status.get("mappingId") or ""),
+        "graphEffect": "none",
+        "publishedStoryKeys": len(published_keys),
+        "publishedRows": published,
+        "outsidePipelineCoverageStoryKeys": len(manifest_overlay),
+        "storyTriggerManifestOverlay": manifest_overlay,
+        "source": repo_path(gap_queue_path),
+    }
 
 
 def classify_definition_only_current_build_consumers(
@@ -7221,6 +7325,14 @@ def main() -> int:
     )
     node_attachment = None
     if coverage:
+        offline_recovery = publish_offline_story_recovery(
+            coverage["storyTriggerManifest"],
+            getattr(
+                args,
+                "source_story_gap_queue",
+                DEFAULT_SOURCE_STORY_GAP_QUEUE,
+            ).resolve(),
+        )
         report_stem = f"mission_pipeline_story_binding_coverage_{coverage['language']}"
         coverage_report = args.report_root.resolve() / f"{report_stem}.json"
         index["storyCoverage"] = {
@@ -7229,6 +7341,7 @@ def main() -> int:
             "counts": coverage["counts"],
             "nativePlaybackEventFamilies": coverage["nativePlaybackEventFamilies"],
             "storyTriggerManifest": coverage["storyTriggerManifest"],
+            "offlineRecoveryEvidence": offline_recovery,
             "rootPlaybackAliases":
                 coverage.get("rootPlaybackAliases") or [],
             "composedRootPlaybackAliases":
