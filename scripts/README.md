@@ -1990,13 +1990,13 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v40` evaluates 172 residual radio definitions, 25 root
-  cutscene carriers, 25 registered dialog definitions, five exact
+  `sourceStoryGapQueue.v41` evaluates 175 residual radio definitions, 27 root
+  cutscene carriers, 26 registered dialog definitions, six exact
   DialogTextTable-only/no-registry groups, ten exact
   ReadingPopUp/RichContent definitions, two text-only cutscenes, and two
   TextTable-only black narrative definitions across
-  `e0m0`, `e1m3`, `e2m4`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e10m3`, `e10m4`,
-  `e11m1`, `e11m2`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 169 radio definitions;
+  `e0m0`, `e1m3`, `e2m4`, `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e10m3`, `e10m4`,
+  `e11m1`, `e11m2`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 172 radio definitions;
   two close through strict exact native mission context, and one through
   strict exact runtime configuration. This includes seven bounded `e1m3`
   radio definitions, its canonical misc-dialog definition and one-host
@@ -2028,6 +2028,8 @@ gameplay-video OCR/audio workflow.
   third black file closes as an exact parent DialogTree action disconnected
   from the prime-node path, without asserting playback or order.
   e2m4 adds seven radios and one registered five-line/two-option dialog.
+  e2m6 adds three radios, two Timeline roots, one registered dialog, and one
+  no-registry dialog with present audio.
   The class also includes all five bounded
   `e6m3` radios, its three dialogs, two text
   definitions, and 14-row text-only cutscene; all eight residual `e9m2` radios and five
