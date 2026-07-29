@@ -628,8 +628,9 @@ Expected active inputs and outputs:
   as one coherent corpus: Persistent wins only when it contains every
   StreamingAssets mission filename, otherwise the builder falls back wholly
   to StreamingAssets instead of creating a partial hybrid. The index records
-  the selected root and completeness decision; an explicit `--mission-root`
-  is labeled separately. The current 980/980 Persistent override yields 490
+  the selected root, completeness decision, and exact changed common
+  filenames; an explicit `--mission-root` is labeled separately. The current
+  980/980 Persistent override changes five files and yields 490
   missions, 4,462 quests, 155 mission-state edges, and the additional strong
   `dlg_f1m32_1 -> dlg_f1m32_2` Story edge. `export.bat` runs it after Story
   so the experimental page can merge names and objective text from

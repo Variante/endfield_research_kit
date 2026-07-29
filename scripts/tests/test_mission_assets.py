@@ -70,7 +70,10 @@ class MissionAssetsTests(unittest.TestCase):
             streaming.mkdir()
             persistent.mkdir()
             (streaming / "m1.json").write_text("{}", encoding="utf-8")
-            (persistent / "m1.json").write_text("{}", encoding="utf-8")
+            (persistent / "m1.json").write_text(
+                '{"patched":true}',
+                encoding="utf-8",
+            )
             summary = mission_runtime_source_summary(
                 streaming,
                 persistent,
@@ -80,6 +83,11 @@ class MissionAssetsTests(unittest.TestCase):
                 "complete_persistent_override",
             )
             self.assertEqual(summary["persistentMissingBaseFiles"], [])
+            self.assertEqual(summary["persistentChangedBaseFileCount"], 1)
+            self.assertEqual(
+                summary["persistentChangedBaseFiles"],
+                ["m1.json"],
+            )
 
 
 if __name__ == "__main__":
