@@ -191,11 +191,12 @@ available through expandable guidance.
   interaction timing, ownership, quest causality, or order. Reading `text_*`
   routes are published as context-only manifest rows without adding that kind
   to the Mission Pipeline coverage denominator. Exact, build-pinned
-  next-record-bounded LevelData narrative configurations render the parallel
+  exactly bounded LevelData narrative configurations render the parallel
   `mission -> LevelData -> narrative interactive -> Story` context route with
-  the LevelData asset and entity logic id. Final unbounded list items are
-  excluded, and these routes likewise do not claim availability, activation,
-  ownership, quest causality, or order. Exact, build-pinned
+  the LevelData asset and entity logic id. Final records require the validated
+  member-21/member-22 boundary and retain that provenance; these routes do not
+  claim availability, activation, ownership, quest causality, or order.
+  Exact, build-pinned
   CutsceneRoot playback aliases render as
   `Story root -> native playback action -> Story file` debug routes with their
   own corpus count. An alias remains non-owning unless an independently

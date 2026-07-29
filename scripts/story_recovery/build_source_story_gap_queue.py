@@ -37,12 +37,12 @@ from build_source_story_partial_order import build_report as build_partial_order
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v14"
+SCHEMA = "sourceStoryGapQueue.v15"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
 LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID = (
-    "leveldata-interactive-narrative-config-v1"
+    "leveldata-interactive-narrative-config-v2"
 )
 BUCKET_ORDER = ("main", "event", "major", "character", "other")
 
@@ -1301,10 +1301,10 @@ def _closed_exact_runtime_config_isolated_scenes(
     already_closed.update(row["sceneKey"] for row in closed)
     leveldata_grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     leveldata_source = (
-        "exact counted LevelData interactive list -> next-record-bounded "
-        "25-member LevelInteractiveData -> "
-        "componentProperties[94].type_id; the final unbounded list item is "
-        "excluded"
+        "exact counted LevelData interactive list -> 25-member "
+        "LevelInteractiveData bounded by the next record or validated "
+        "member-21/member-22 boundary -> "
+        "componentProperties[94].type_id"
     )
     leveldata_order_boundary = (
         "interactive-list order, record index, entity logic id, object "
@@ -1321,6 +1321,45 @@ def _closed_exact_runtime_config_isolated_scenes(
         record_end = row.get("interactiveRecordEndOffset")
         list_count = row.get("interactiveListCount")
         entity_logic_id = row.get("entityLogicId")
+        boundary_source = safe_key(
+            row.get("interactiveRecordBoundarySource")
+        )
+        final_record = (
+            isinstance(record_index, int)
+            and not isinstance(record_index, bool)
+            and isinstance(list_count, int)
+            and not isinstance(list_count, bool)
+            and record_index == list_count - 1
+        )
+        final_boundary_valid = (
+            final_record
+            and boundary_source == "leveldata_member21_start"
+            and isinstance(record_end, int)
+            and not isinstance(record_end, bool)
+            and row.get("levelDataMember21Offset") == record_end
+            and row.get("levelScriptBriefDictionaryCountOffset")
+            == record_end + 4
+            and isinstance(row.get("levelIdNum"), int)
+            and not isinstance(row.get("levelIdNum"), bool)
+            and int(row.get("levelIdNum")) >= 0
+            and isinstance(
+                row.get("levelScriptBriefDictionaryCount"),
+                int,
+            )
+            and not isinstance(
+                row.get("levelScriptBriefDictionaryCount"),
+                bool,
+            )
+            and int(row.get("levelScriptBriefDictionaryCount")) > 0
+        )
+        nonfinal_boundary_valid = (
+            isinstance(record_index, int)
+            and not isinstance(record_index, bool)
+            and isinstance(list_count, int)
+            and not isinstance(list_count, bool)
+            and 0 <= record_index < list_count - 1
+            and boundary_source == "next_record"
+        )
         if (
             scene_key in already_closed
             or scene_key not in isolated_scene_keys
@@ -1346,7 +1385,10 @@ def _closed_exact_runtime_config_isolated_scenes(
             or record_index < 0
             or not isinstance(list_count, int)
             or isinstance(list_count, bool)
-            or list_count <= record_index + 1
+            or not (
+                nonfinal_boundary_valid
+                or final_boundary_valid
+            )
             or not isinstance(record_offset, int)
             or not isinstance(record_end, int)
             or record_offset < 0
@@ -1379,6 +1421,11 @@ def _closed_exact_runtime_config_isolated_scenes(
             "interactiveRecordIndexes": sorted({
                 int(row["interactiveRecordIndex"])
                 for row in rows
+            }),
+            "interactiveRecordBoundarySources": sorted({
+                safe_key(row.get("interactiveRecordBoundarySource"))
+                for row in rows
+                if safe_key(row.get("interactiveRecordBoundarySource"))
             }),
             "entityLogicIds": sorted({
                 int(row["entityLogicId"])

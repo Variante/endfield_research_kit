@@ -15450,10 +15450,11 @@ def build_language_bundle(
         ) == signature for existing in connections if isinstance(existing, dict)):
             connections.append(connection)
 
-    # LevelData also owns a counted LevelInteractiveData list. Accept only
-    # records whose end is supplied by the next typed list item and whose
-    # StreamingAssets/Persistent bytes agree. The final unbounded list item is
-    # deliberately excluded.
+    # LevelData also owns a counted LevelInteractiveData list. Accept records
+    # whose end is supplied by the next typed list item; accept the final item
+    # only when the adjacent member-21/member-22 boundary and complete
+    # LevelScriptBriefData dictionary validate. StreamingAssets/Persistent
+    # bytes must agree.
     leveldata_interactive_narrative_contexts = (
         build_leveldata_interactive_narrative_story_contexts(
             set(all_story_entry_keys)
@@ -15482,10 +15483,10 @@ def build_language_bundle(
             "confidence": "native_exact_serialized_config",
             "evidenceTier": "native_exact_context",
             "source": (
-                "exact counted LevelData interactive list -> next-record-"
-                "bounded 25-member LevelInteractiveData -> "
-                "componentProperties[94].type_id; the final unbounded list "
-                "item is excluded"
+                "exact counted LevelData interactive list -> 25-member "
+                "LevelInteractiveData bounded by the next record or validated "
+                "member-21/member-22 boundary -> "
+                "componentProperties[94].type_id"
             ),
             "storyOwnerMission": target_mission,
             "storyBinding": True,
@@ -15527,6 +15528,15 @@ def build_language_bundle(
             "interactiveRecordIndex": context.get("recordIndex"),
             "interactiveRecordOffset": context.get("recordOffset"),
             "interactiveRecordEndOffset": context.get("recordEndOffset"),
+            "interactiveRecordBoundarySource":
+                context.get("recordBoundarySource"),
+            "levelDataMember21Offset":
+                context.get("levelDataMember21Offset"),
+            "levelIdNum": context.get("levelIdNum"),
+            "levelScriptBriefDictionaryCountOffset":
+                context.get("levelScriptBriefDictionaryCountOffset"),
+            "levelScriptBriefDictionaryCount":
+                context.get("levelScriptBriefDictionaryCount"),
             "entityLogicId": context.get("embeddedLogicId"),
             "entityDetailIds": [str(context.get("entityDetailId") or "")],
             "entityTemplateIds": [str(context.get("entityTemplateId") or "")],

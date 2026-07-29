@@ -1520,13 +1520,15 @@ These are kept because the WebUI story builders import or use them:
   `levelscript_interactive_narrative_config` Mission Pipeline context. These
   rows bind source configuration only; script activation, player interaction,
   quest causality, ownership, and Story order remain unresolved.
-  It also decodes the counted `LevelData` interactive list using only
-  next-record-bounded 25-member values and exact StreamingAssets/Persistent
-  byte mirrors. Narrative component `94`, InteractiveTable template identity,
+  It also decodes the counted `LevelData` interactive list using exact
+  StreamingAssets/Persistent byte mirrors. Non-final 25-member values use the
+  next typed record as their boundary. A final value is admitted only when it
+  ends at top-level member 21 and the adjacent complete member-22
+  LevelScriptBriefData dictionary independently validates. Narrative component
+  `94`, InteractiveTable template identity,
   and direct Story or ReadingPopUp content-id resolution produce
-  `leveldata_interactive_narrative_config` context. The final list item is
-  deliberately excluded because the following top-level member is not an
-  established record boundary. These rows likewise prove configuration only,
+  `leveldata_interactive_narrative_config` context. These rows prove
+  configuration only,
   not availability, activation, ownership, causality, or order.
 - `story_builder/levelscript_binary.py`: shared raw LevelScriptData helpers.
   It verifies serialized script ids against file names and decodes the

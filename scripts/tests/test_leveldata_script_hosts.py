@@ -9,6 +9,7 @@ from unittest.mock import patch
 from scripts.story_builder import level_bindings
 from scripts.story_builder.level_bindings import (
     _find_exact_bytes_offsets,
+    _leveldata_interactive_final_record_boundary,
     _parse_leveldata_mission_host_name,
     build_leveldata_airwall_mission_radio_contexts,
     build_leveldata_interactive_narrative_story_contexts,
@@ -796,6 +797,63 @@ class LevelDataScriptHostTests(unittest.TestCase):
         )
         self.assertEqual([0, 1], [row["recordIndex"] for row in rows])
         self.assertTrue(all(row["interactiveListCount"] == 3 for row in rows))
+        self.assertTrue(all(
+            row["recordBoundarySource"] == "next_record"
+            for row in rows
+        ))
+
+        final_boundary = len(data)
+        rows = parse_leveldata_interactive_narrative_records(
+            data,
+            final_record_end_offset=final_boundary,
+        )
+        self.assertEqual(
+            ["text_test_1", "rp_text_test_2", "text_test_3"],
+            [row["typeId"] for row in rows],
+        )
+        self.assertEqual(
+            "leveldata_member21_start",
+            rows[-1]["recordBoundarySource"],
+        )
+
+    def test_leveldata_interactive_final_boundary_requires_member22_dictionary(
+        self,
+    ) -> None:
+        records = [
+            self._levelscript_narrative_interactive_record(
+                "int_narrative_scene_book",
+                "text_test_1",
+            ),
+            self._levelscript_narrative_interactive_record(
+                "int_narrative_scene_pad",
+                "text_test_2",
+            ),
+        ]
+        record_end = 1 + 4 + sum(len(record) for record in records)
+        data = (
+            b"\x2b"
+            + (2).to_bytes(4, "little", signed=True)
+            + b"".join(records)
+            + (77).to_bytes(4, "little", signed=True)
+            + (1).to_bytes(4, "little", signed=True)
+            + self._brief_entry(123)
+        )
+
+        boundary = _leveldata_interactive_final_record_boundary(
+            data,
+            {123},
+        )
+
+        self.assertIsNotNone(boundary)
+        self.assertEqual(record_end, boundary["recordEndOffset"])
+        self.assertEqual(77, boundary["levelIdNum"])
+        self.assertEqual(
+            record_end + 4,
+            boundary["levelScriptBriefDictionaryCountOffset"],
+        )
+        self.assertIsNone(
+            _leveldata_interactive_final_record_boundary(data, {999})
+        )
 
     def test_leveldata_interactive_narrative_context_requires_exact_mirror(
         self,
