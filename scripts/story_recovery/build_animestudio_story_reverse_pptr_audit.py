@@ -12,6 +12,7 @@ not create mission ownership or chronology.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -28,7 +29,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import build_animestudio_story_carrier_audit as carrier  # noqa: E402
 import build_animestudio_story_gameobject_audit as gameobjects  # noqa: E402
 
-SCHEMA = "animestudioStoryReversePPtrAudit.v1"
+SCHEMA = "animestudioStoryReversePPtrAudit.v2"
 DEFAULT_OUTPUT_ROOT = ROOT / "export_full"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"
@@ -51,6 +52,15 @@ DEFAULT_GAME_ROOT = Path(
         r"D:\Program Files\Endfield Game\Endfield_Data",
     )
 )
+EXPECTED_GAMEASSEMBLY_SHA256 = (
+    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+)
+EXPECTED_METADATA_SHA256 = (
+    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+)
+NATIVE_MAPPING_ID = (
+    "gameassembly-2026-07-28-cutscene-root-director-playback-v1"
+)
 SOURCES = ("StreamingAssets", "Persistent")
 
 
@@ -64,6 +74,14 @@ def write_json(path: Path, payload: Any) -> None:
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        while chunk := stream.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest().upper()
 
 
 def object_key(source: str, row: dict[str, Any]) -> tuple[str, str, int]:
@@ -84,6 +102,20 @@ def pointer_target_key(
         source,
         str(target.get("serializedFile") or ""),
         int(target.get("pathId") or 0),
+    )
+
+
+def pointer_resolves_to_object(
+    pointer: dict[str, Any],
+    identity: dict[str, Any],
+) -> bool:
+    target = pointer.get("target") or {}
+    return (
+        str(pointer.get("status") or "").startswith("resolved")
+        and str(target.get("serializedFile") or "")
+        == str(identity.get("serializedFile") or "")
+        and int(target.get("pathId") or 0)
+        == int(identity.get("pathId") or 0)
     )
 
 
@@ -340,6 +372,7 @@ def analyze_director_hosts(
             objects = objects_by_source[source]
             typed_components = []
             host_story_keys = set()
+            root_director_bindings = []
             for game_object_path_id in row["hierarchyGameObjectPathIds"]:
                 game_object = objects[game_object_path_id]
                 for component_path_id in game_object["componentPathIds"]:
@@ -359,6 +392,7 @@ def analyze_director_hosts(
                     if type_name == (
                         "Beyond.Gameplay.View.CutsceneRootComponent"
                     ):
+                        component_story_keys = set()
                         for field in carrier.scalar_rows(component):
                             if (
                                 field["path"] == "$._timelineName"
@@ -366,6 +400,38 @@ def analyze_director_hosts(
                                 and field["value"] in all_story_keys
                             ):
                                 host_story_keys.add(field["value"])
+                                component_story_keys.add(field["value"])
+                        director_pointers = [
+                            pointer
+                            for pointer in component.get("pptrs") or []
+                            if (
+                                isinstance(pointer, dict)
+                                and pointer.get("path") == "$._director"
+                                and pointer_resolves_to_object(
+                                    pointer,
+                                    row["object"],
+                                )
+                            )
+                        ]
+                        for host_story_key in sorted(component_story_keys):
+                            for pointer in director_pointers:
+                                root_director_bindings.append({
+                                    "hostStoryKey": host_story_key,
+                                    "cutsceneRootGameObjectPathId":
+                                        game_object_path_id,
+                                    "cutsceneRootComponentPathId":
+                                        int(
+                                            (
+                                                component.get("object")
+                                                or {}
+                                            ).get("pathId")
+                                            or 0
+                                        ),
+                                    "pointerPath": pointer["path"],
+                                    "pointerStatus":
+                                        pointer.get("status"),
+                                    "directorObject": row["object"],
+                                })
                     typed_components.append({
                         "gameObjectPathId": game_object_path_id,
                         "gameObjectName": game_object["name"],
@@ -377,6 +443,7 @@ def analyze_director_hosts(
                 if component["ownerFields"] or component["runtimeFields"]
             ]
             row["hostStoryKeys"] = sorted(host_story_keys)
+            row["rootDirectorBindings"] = root_director_bindings
             row["crossStoryContainments"] = [
                 {
                     "hostStoryKey": host,
@@ -388,6 +455,25 @@ def analyze_director_hosts(
                 for host in sorted(host_story_keys)
                 for target in row["storyKeys"]
                 if host != target
+            ]
+            row["crossStoryPlaybackAliases"] = [
+                {
+                    "rootStoryKey": binding["hostStoryKey"],
+                    "playableAssetStoryKey": target,
+                    "relation":
+                        "cutscene_root_director_playable_asset",
+                    "edgeStatus":
+                        "exact_root_playback_alias_no_chronology_or_"
+                        "mission_owner",
+                    "cutsceneRootGameObjectPathId":
+                        binding["cutsceneRootGameObjectPathId"],
+                    "cutsceneRootComponentPathId":
+                        binding["cutsceneRootComponentPathId"],
+                    "directorObject": binding["directorObject"],
+                }
+                for binding in root_director_bindings
+                for target in row["storyKeys"]
+                if binding["hostStoryKey"] != target
             ]
     return analyzed
 
@@ -413,13 +499,38 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"`{summary['candidateRelations'] + summary['hostCandidateComponents']}`",
         "- Cross-Story containment relations: "
         f"`{summary['crossStoryContainments']}`",
+        "- Exact root-director playback aliases: "
+        f"`{summary['crossStoryPlaybackAliases']}`",
         "",
         "Reverse PPtrs establish serialized composition, not mission ownership "
         "or chronology.",
         "",
-        "## Cross-Story containment",
+        "## Exact root-director playback aliases",
         "",
     ]
+    aliases = [
+        relation
+        for row in report["directorHosts"]
+        for relation in row["crossStoryPlaybackAliases"]
+    ]
+    if not aliases:
+        lines.append("_No exact cross-Story root-director alias._")
+    else:
+        lines.extend([
+            "| root Story key | director TimelineAsset | status |",
+            "| --- | --- | --- |",
+        ])
+        for row in aliases:
+            lines.append(
+                f"| `{row['rootStoryKey']}` | "
+                f"`{row['playableAssetStoryKey']}` | "
+                f"`{row['edgeStatus']}` |"
+            )
+    lines.extend([
+        "",
+        "## Cross-Story containment",
+        "",
+    ])
     containments = [
         relation
         for row in report["directorHosts"]
@@ -445,11 +556,17 @@ def render_markdown(report: dict[str, Any]) -> str:
         "- Accepted: current complete object-index provenance, exact target "
         "identity, resolved PPtr target, exact PlayableDirector GameObject, "
         "mutually consistent Transform ancestry/descendants, and exact "
-        "CutsceneRoot `_timelineName`.",
+        "CutsceneRoot `_timelineName`. Playback aliases additionally require "
+        "that exact CutsceneRoot's resolved `_director` PPtr to land on the "
+        "same PlayableDirector.",
         "- Rejected: names without object identity, unresolved PPtrs, "
         "neighboring objects, bundle order/proximity, and filename order.",
         "- No relation here creates mission/quest ownership or relative Story "
         "order. Cross-Story rows are containment/playback composition only.",
+        f"- Native mapping: `{report['nativeEvidence']['mappingId']}`; "
+        "the current root/handle path resolves the root's `_director`, then "
+        "`TimelineHandle.Play` calls `PlayableDirector.Play`, `Resume`, or "
+        "`Evaluate` as appropriate.",
         "",
     ])
     return "\n".join(lines)
@@ -463,7 +580,25 @@ def build_report(
     game_root: Path,
     cli: Path,
     work_parent: Path,
+    gameassembly: Path,
+    metadata: Path,
 ) -> dict[str, Any]:
+    if not gameassembly.is_file():
+        raise AuditError(f"GameAssembly not found: {gameassembly}")
+    if not metadata.is_file():
+        raise AuditError(f"IL2CPP metadata not found: {metadata}")
+    gameassembly_sha256 = sha256(gameassembly)
+    metadata_sha256 = sha256(metadata)
+    if gameassembly_sha256 != EXPECTED_GAMEASSEMBLY_SHA256:
+        raise AuditError(
+            "GameAssembly hash changed; revalidate the CutsceneRoot/"
+            "TimelineHandle playback mapping before publishing aliases"
+        )
+    if metadata_sha256 != EXPECTED_METADATA_SHA256:
+        raise AuditError(
+            "global-metadata.dat hash changed; revalidate the CutsceneRoot/"
+            "TimelineHandle playback mapping before publishing aliases"
+        )
     target_missions = carrier.load_gap_targets(gap_queue)
     all_story_keys = story_index_keys(story_index)
     targets: dict[tuple[str, str, int], dict[str, Any]] = {}
@@ -567,13 +702,84 @@ def build_report(
                 len(row["crossStoryContainments"])
                 for row in director_hosts
             ),
+            "crossStoryPlaybackAliases": sum(
+                len(row["crossStoryPlaybackAliases"])
+                for row in director_hosts
+            ),
         },
         "directorHosts": director_hosts,
         "relations": relations,
+        "nativeEvidence": {
+            "mappingId": NATIVE_MAPPING_ID,
+            "gameAssembly": str(gameassembly),
+            "gameAssemblySha256": gameassembly_sha256,
+            "metadata": str(metadata),
+            "metadataSha256": metadata_sha256,
+            "methods": [
+                {
+                    "type":
+                        "Beyond.Gameplay.View.CutsceneRootComponent",
+                    "method": "get_topDirector",
+                    "token": "0x0600cb29",
+                    "va": "0x1839efb40",
+                    "evidence": "returns _director at this+0x20",
+                },
+                {
+                    "type": (
+                        "Beyond.Gameplay.Core."
+                        "CinematicTimelineManagerBase+TimelineHandle"
+                    ),
+                    "method": "get_director",
+                    "token": "0x0600edfb",
+                    "va": "0x18366d620",
+                    "evidence": (
+                        "reads root at this+0x10 and tail-jumps to "
+                        "CutsceneRootComponent.get_topDirector"
+                    ),
+                },
+                {
+                    "type": (
+                        "Beyond.Gameplay.Core."
+                        "CinematicTimelineManagerBase+TimelineHandle"
+                    ),
+                    "method": "Play",
+                    "token": "0x0600ee15",
+                    "va": "0x186db66a8",
+                    "evidence": (
+                        "gets the root director and calls "
+                        "PlayableDirector.Play/Resume/Evaluate"
+                    ),
+                },
+                {
+                    "type": (
+                        "Beyond.Gameplay.Core."
+                        "MainStreamTimelineManagerBase"
+                    ),
+                    "method": "_PlayMainTimelineStep3",
+                    "token": "0x0600ef70",
+                    "va": "0x186dc1cdc",
+                    "evidence": (
+                        "instantiates the Timeline root then calls "
+                        "PlayMainTimelineSync"
+                    ),
+                },
+                {
+                    "type": (
+                        "Beyond.Gameplay.Core."
+                        "MainStreamTimelineManagerBase"
+                    ),
+                    "method": "PlayMainTimelineSync",
+                    "token": "0x0600ef75",
+                    "va": "0x186dbf934",
+                    "evidence": "calls TimelineHandle.Play",
+                },
+            ],
+        },
         "evidencePolicy": {
             "relation": "serialized composition only",
             "ownership": False,
             "chronology": False,
+            "rootDirectorPlaybackAlias": True,
         },
     }
 
@@ -584,6 +790,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--gap-queue", type=Path, default=DEFAULT_GAP_QUEUE)
     parser.add_argument("--story-index", type=Path, default=DEFAULT_STORY_INDEX)
     parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
+    parser.add_argument(
+        "--gameassembly",
+        type=Path,
+        help=(
+            "GameAssembly.dll used to validate native playback semantics; "
+            "defaults to the parent of --game-root"
+        ),
+    )
+    parser.add_argument(
+        "--metadata",
+        type=Path,
+        help=(
+            "global-metadata.dat paired with GameAssembly; defaults under "
+            "--game-root/il2cpp_data/Metadata"
+        ),
+    )
     parser.add_argument("--animestudio-cli", type=Path, default=DEFAULT_CLI)
     parser.add_argument(
         "--work-parent", type=Path, default=ROOT / "tmp" / "story"
@@ -596,14 +818,27 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    game_root = args.game_root.resolve()
+    gameassembly = (
+        args.gameassembly.resolve()
+        if args.gameassembly
+        else game_root.parent / "GameAssembly.dll"
+    )
+    metadata = (
+        args.metadata.resolve()
+        if args.metadata
+        else game_root / "il2cpp_data" / "Metadata" / "global-metadata.dat"
+    )
     try:
         report = build_report(
             output_root=args.output_root.resolve(),
             gap_queue=args.gap_queue.resolve(),
             story_index=args.story_index.resolve(),
-            game_root=args.game_root.resolve(),
+            game_root=game_root,
             cli=args.animestudio_cli.resolve(),
             work_parent=args.work_parent.resolve(),
+            gameassembly=gameassembly,
+            metadata=metadata,
         )
     except (AuditError, carrier.AuditError, gameobjects.AuditError) as exc:
         raise SystemExit(

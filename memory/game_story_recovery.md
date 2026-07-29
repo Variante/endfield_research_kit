@@ -3331,7 +3331,7 @@ ownership, or chronology. Both cutscenes remain genuine source-ownership gaps;
 the registry rows are not promoted and do not close them as non-mission
 content.
 
-### Exact reverse Timeline references prove containment, not activation
+### Exact reverse Timeline references prove four root playback aliases
 
 `build_animestudio_story_reverse_pptr_audit.py` performs the complementary
 reverse join over the current provenance-valid object indexes. It first
@@ -3348,7 +3348,7 @@ host-hierarchy GameObjects and 2,754 typed components. No referring object or
 host component carries a typed mission, quest, scene, or runtime owner
 candidate.
 
-Four exact cross-Story containment pairs survive the complete join:
+Four exact cross-Story pairs survive the complete join:
 
 - `cutscene_e11m2_liexi_xs_m_01_last_01` contains a director whose playable
   asset is `cutscene_e11m2_liexi_xs_m_01_last_02`;
@@ -3359,24 +3359,43 @@ Four exact cross-Story containment pairs survive the complete join:
 
 This is stronger than filename or bundle proximity: the PlayableDirector
 component, its `m_PlayableAsset` target, its host GameObject hierarchy, and the
-host CutsceneRoot `_timelineName` are all resolved exactly. It is still not an
-activation or ordering relation. A child PlayableDirector can exist in a host
-hierarchy without being invoked, and the serialized binding does not say when
-or whether it runs. Therefore these rows remain
-`exact_containment_no_chronology_or_mission_owner`; in particular, do not add
-`last_01 -> last_02 -> last_03`, `f1m9d3 -> f1m9d4`, or
-`cutscene_gm02m4_3 -> cutscene_gm02m4_1` Story-order edges from this evidence
-alone.
+host CutsceneRoot `_timelineName` are all resolved exactly. The follow-up
+activation probe also closes the unrelated-child objection. In every pair the
+same CutsceneRoot's resolved `_director` PPtr lands on that PlayableDirector;
+this is the root's canonical director, not merely a descendant component.
+
+Current-build native semantics turn the four exact bindings into root playback
+aliases. On GameAssembly SHA-256
+`0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE`
+and metadata SHA-256
+`90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E`:
+
+- `CutsceneRootComponent.get_topDirector` (token `0x0600cb29`, VA
+  `0x1839efb40`) returns `_director` from `this+0x20`;
+- `TimelineHandle.get_director` (token `0x0600edfb`, VA `0x18366d620`)
+  reads the root from `this+0x10` and tail-jumps to `get_topDirector`;
+- `TimelineHandle.Play` (token `0x0600ee15`, VA `0x186db66a8`) resolves that
+  director and calls `PlayableDirector.Play`, `Resume`, or `Evaluate`;
+- `_PlayMainTimelineStep3` instantiates the Timeline root and reaches
+  `PlayMainTimelineSync`, which calls `TimelineHandle.Play`.
+
+The audit hash-gates this mapping as
+`gameassembly-2026-07-28-cutscene-root-director-playback-v1` and reports four
+`exact_root_playback_alias_no_chronology_or_mission_owner` rows. Thus, when
+one of these roots is loaded and played, its canonical director executes the
+other named TimelineAsset. This is still not a temporal edge between two
+independently invoked Story files and supplies no mission/quest trigger.
+Therefore do not add `last_01 -> last_02 -> last_03`,
+`f1m9d3 -> f1m9d4`, or
+`cutscene_gm02m4_3 -> cutscene_gm02m4_1` Story-order edges.
 
 The reproducible outputs are
 `reports/story/recovery/animestudio_story_reverse_pptr_audit.{json,md}`.
-The next bounded offline question is activation: test whether the containing
-Timeline or another exact serialized control object targets each nested
-PlayableDirector, and whether `m_PlayOnAwake`, ControlTrack bindings, exposed
-references, or recovered native setup semantics establish actual execution.
-Only such an independent control relation can promote containment into
-playback context, and even playback context would still not establish mission
-ownership or relative order without additional evidence.
+The next bounded offline question is no longer director activation. It is the
+upstream selector: find an exact mission/quest/LevelScript/runtime consumer
+that chooses one of these root Story keys. The alias can provide playback
+context for the TimelineAsset, but mission ownership and relative order remain
+unresolved until a separate source trigger or control relation supplies them.
 
 ### The cinematic queue: a deterministic cross-type order rule
 
@@ -3771,10 +3790,11 @@ Current main-story priorities:
    cross-Story containment pairs: the three-step e11m2 `last_01`/`last_02`/
    `last_03` chain, `cutscene_f1m9d3_1` containing
    `cutscene_f1m9d4_1`, and `cutscene_gm02m4_3` containing
-   `cutscene_gm02m4_1`. Preserve these as containment only. The next recovery
-   slice is to seek an independent serialized or native activation relation to
-   the nested PlayableDirector; no containment row currently changes the gap
-   queue, mission ownership, or Story order.
+   `cutscene_gm02m4_1`. Exact `_director` PPtrs plus the current native
+   `TimelineHandle.Play` chain promote all four from generic containment to
+   root playback aliases. Preserve them as playback context only. The next
+   recovery slice is the upstream selector/owner of each root Story key; no
+   alias currently creates mission ownership or Story order.
    The generated coverage report now inventories 155 files across 25 decoded
    event families; the largest unique-file groups are Leader trigger volume
    (67), BattleSignal (16), Script custom event (13), and ScriptStageChanged

@@ -345,9 +345,14 @@ objects. It separates same-file Timeline composition from cross-file
 host bundles and resolves their exact Transform ancestry, descendants, typed
 components, and `CutsceneRootComponent._timelineName` values. Output goes to
 `reports/story/recovery/animestudio_story_reverse_pptr_audit.{json,md}`.
-Cross-Story rows prove serialized containment only. They do not prove that a
-child director is activated, and must not be converted into mission ownership
-or relative Story order without an independent control relation.
+The current hash-gated native mapping additionally promotes a cross-Story row
+to a root playback alias only when that exact CutsceneRoot's resolved
+`_director` PPtr lands on the same PlayableDirector:
+`TimelineHandle.get_director` resolves the root's `topDirector`,
+`CutsceneRootComponent.get_topDirector` returns `_director`, and
+`TimelineHandle.Play` invokes it. A root playback alias proves which
+TimelineAsset that loaded root plays; it still must not be converted into
+mission ownership or relative Story order.
 
 The guide-consumer audit scans the same current, source-fingerprint-validated
 merged index for exact typed `GuideRuntimeAsset` managed references. It accepts
