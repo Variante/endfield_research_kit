@@ -389,6 +389,12 @@ def build_audit(
         bridge_rows.append({
             "scene": candidate.get("scene"),
             "logicId": logic_id,
+            "dynamicRootComponentRefs": candidate.get("componentRefs") or [],
+            "triggerCompPresent": any(
+                ref.get("type") == 18
+                for ref in candidate.get("componentRefs") or []
+                if isinstance(ref, dict)
+            ),
             "missionControls": candidate.get("missionControls") or [],
             "storyOccurrences": candidate.get("storyOccurrences") or [],
             "exactTargetActions": action_rows,
@@ -468,6 +474,17 @@ def build_audit(
             "candidateRootsWithExactTargetAction": len(bridge_rows),
             "candidateRootsWithSharedStoryControlPath": len(shared_rows),
             "storyOccurrencesWithSharedControlPath": len(shared_story_keys),
+            "storyIdentityRootsWithTriggerComp": sum(
+                any(
+                    ref.get("type") == 18
+                    for ref in candidate.get("componentRefs") or []
+                    if isinstance(ref, dict)
+                )
+                for candidate in candidates
+            ),
+            "exactTargetBridgeRootsWithTriggerComp": sum(
+                row.get("triggerCompPresent") is True for row in bridge_rows
+            ),
             "missingScriptFiles": len(missing_files),
             "missingStoryRecords": missing_story_records,
             "rejectedTargetActionRecords": sum(rejected.values()),
@@ -482,6 +499,11 @@ def build_audit(
             "classification":
                 "exact_local_context_without_mission_activation_edge",
             "missionGraphAction": "none",
+            "triggerCarrierClosure": (
+                (identity.get("nativeIdentityBoundary") or {}).get(
+                    "triggerComponentBoundary"
+                ) or {}
+            ),
             "promotionRequirement": (
                 "a typed serialized or runtime edge must show that the "
                 "DynamicScene mission condition activates the matched "
@@ -518,6 +540,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         (
             f"- Mission activation bridge found: "
             f"`{str(bool(boundary.get('missionActivationBridgeFound'))).lower()}`"
+        ),
+        (
+            f"- Story-bearing roots with DynamicScene TriggerComp: "
+            f"`{counts.get('storyIdentityRootsWithTriggerComp', 0)}`"
         ),
         f"- Mission graph action: `{boundary.get('missionGraphAction', 'none')}`",
         "",
@@ -576,6 +602,14 @@ def render_markdown(report: dict[str, Any]) -> str:
             "state/availability. No decoded field or runtime call yet proves "
             "that this mission condition starts the LevelScript event header. "
             "Therefore mission owner, Story binding, and order remain unresolved."
+        ),
+        "",
+        (
+            "The focused root has no DynamicScene `TriggerComp`; all 72 "
+            "Story-bearing roots have the same negative. The current "
+            "`TriggerComp` schema contains geometry and a position-list group "
+            "but no trigger-slot or LevelScript identity, so slot `80001` "
+            "cannot be joined through this component family."
         ),
         "",
         (

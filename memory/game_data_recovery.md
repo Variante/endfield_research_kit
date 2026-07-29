@@ -1728,6 +1728,18 @@ leader-enter chain runs `dlg_c27m3_6` and then
 addresses the same DynamicScene root and that both actions share local control
 flow. It does not prove that `MissionControlComp` activates the LevelScript
 header, so ownership/order remain unresolved and `missionGraphAction=none`.
+The full current constructor order names the remaining component refs rather
+than leaving numeric placeholders: type 18 is `FBDynamicSceneTriggerComp`,
+type 30 is `FBDynamicSceneResourceComp`, and type 54 is
+`FBDynamicSceneBlightMiasmaComp`. Every one of the 387 mission-controlled
+roots, including all 125 LevelScript-id and 72 Story-bearing matches, carries
+only IdComp, MissionControlComp, ResourceComp, and BlightMiasmaComp; none
+carries TriggerComp. ResourceComp serializes resource, mount, navigation, and
+LOD groups plus `NavState`; BlightMiasmaComp has only `Empty`. TriggerComp
+itself contains shape/radius/center/size/transform and a position-list group,
+with no trigger-slot, LevelScript, mission/quest, or Story field. The focused
+LevelScript slot `80001` therefore cannot be joined through a DynamicScene
+TriggerComp foreign key.
 
 The adjacent `FBDynamicSceneScriptControlComp` is now
 closed rather than inferred from its name: current metadata exposes only

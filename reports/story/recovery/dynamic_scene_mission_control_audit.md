@@ -13,6 +13,9 @@ This report uses installed DynamicStreaming FlatBuffers and exported LevelScript
 - mission-controlled roots with ScriptControlComp: 0
 - LevelScript-id matches with ScriptControlComp: 0
 - Story-bearing id matches with ScriptControlComp: 0
+- mission-controlled roots with TriggerComp: 0
+- LevelScript-id matches with TriggerComp: 0
+- Story-bearing id matches with TriggerComp: 0
 - decode errors: 0
 - duplicate scene/grid ids: 5
 
@@ -104,3 +107,11 @@ This report uses installed DynamicStreaming FlatBuffers and exported LevelScript
 ### ScriptControlComp closure
 
 `FBDynamicSceneScriptControlComp` serializes only `DefaultLoad:int32`. `DynamicSceneScriptControlSystem` indexes component/entity and DynamicScene logic identities for local decoration, animation, audio, view-state, and attachment control. It has no LevelScript pointer, mission/quest identity, or Story field and therefore does not close the namespace bridge.
+
+### TriggerComp closure
+
+`FBDynamicSceneSingleGrid` constructor order maps component type `18` to `FBDynamicSceneTriggerComp`, type `30` to `FBDynamicSceneResourceComp`, and type `54` to `FBDynamicSceneBlightMiasmaComp`.
+
+Every current mission-controlled root carries IdComp, MissionControlComp, ResourceComp, and BlightMiasmaComp; none carries TriggerComp. TriggerComp itself serializes shape, radius, center, size, transform, and a position-list group, with no trigger-slot, LevelScript, mission, quest, or Story identity. ResourceComp contains resource/mount/navigation/LOD groups and NavState; BlightMiasmaComp contains only Empty.
+
+Therefore the LevelScript slot-80001 event in the focused action bridge is not a DynamicScene TriggerComp foreign key.
