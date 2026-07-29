@@ -2802,6 +2802,12 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_e2m3_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E2M3_RADIOS,
+            {"radio_e2m3_4", "radio_e2m3_6", "radio_e2m3_15"},
+        )
+
     def test_exact_lua_controller_playback_closes_isolated_cutscene(
         self,
     ) -> None:
