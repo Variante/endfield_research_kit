@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v49"
+SCHEMA = "sourceStoryGapQueue.v50"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -128,7 +128,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v28"
+    "current-build-offline-story-carrier-exhaustion-v29"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -893,6 +893,35 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
             },
         },
     },
+    "dlg_e5m1_3": {
+        "missionId": "e5m1",
+        "filename": "dlg_e5m1_3_p55224304204EA22A.json",
+        "sha256":
+            "4CAE541C5D33768930C20788527EA4489EABA4D3EBA3EE73EED1197E6727EFA8",
+        "extraConfigFilename":
+            "dlg_e5m1_3_extra_config_pF7AFF626DE2A4B70.json",
+        "extraConfigSha256":
+            "EA46F8F70C493BD6EF92097431AF29077F6B30DF6729CCDFBFA6D383A414BA9D",
+        "lineIds": (
+            "dlg_e5m1_3_001",
+            "dlg_e5m1_3_002",
+        ),
+        "optionIds": (
+            "option_dlg_e5m1_3_1_001",
+            "option_dlg_e5m1_3_1_002",
+        ),
+        "npcProxyConsumer": {
+            "proxyId": "pelica_base01_lv001_e5m1back",
+            "entryIndex": 1,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e5m1_3",
+                "missionId": "",
+            },
+        },
+    },
     "dlg_e10m1_7": {
         "missionId": "e10m1",
         "filename": "dlg_e10m1_7_pDDE0B4406DC04365.json",
@@ -1632,6 +1661,12 @@ OFFLINE_EXHAUSTION_E2M6_RADIOS = frozenset({
     "radio_e2m6_7d4",
 })
 OFFLINE_EXHAUSTION_E5M2_RADIOS = frozenset({"radio_e5m2_3"})
+OFFLINE_EXHAUSTION_E5M1_RADIOS = frozenset({
+    "radio_e5m1_7",
+    "radio_e5m1_10d8",
+    "radio_e5m1_12",
+    "radio_e5m1_15",
+})
 OFFLINE_EXHAUSTION_E7M4_RADIOS = frozenset({"radio_e7m4_3"})
 OFFLINE_EXHAUSTION_E10M1_RADIOS = frozenset({
     "radio_e10m1_6",
@@ -1646,6 +1681,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e2m5": OFFLINE_EXHAUSTION_E2M5_RADIOS,
     "e2m6": OFFLINE_EXHAUSTION_E2M6_RADIOS,
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
+    "e5m1": OFFLINE_EXHAUSTION_E5M1_RADIOS,
     "e5m2": OFFLINE_EXHAUSTION_E5M2_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e6m4": OFFLINE_EXHAUSTION_E6M4_RADIOS,
