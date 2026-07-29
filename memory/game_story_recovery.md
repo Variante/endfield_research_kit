@@ -4306,10 +4306,10 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v69`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v70`
    turns the completed exact `e0m0`, `e0m2`, `e1m1`, `e1m2`, `e1m3`, `e1m4`,
    `e1m10`, `e2m2`, `e2m3`, `e2m4`,
-   `e2m5`, `e2m6`, `e2m7`, `e3m2`, `e3m3`, `e3m4`, `e4m1`, `e5m1`,
+   `e2m5`, `e2m6`, `e2m7`, `e3m1`, `e3m2`, `e3m3`, `e3m4`, `e4m1`, `e5m1`,
    `e5m2`, `e5m4`,
    `e6m1`, `e6m2`, `e6m3`,
    `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e8m1`, `e8m2`, `e8m3`, `e8m5`,
@@ -4339,9 +4339,9 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 325 actual
-   isolated-scene deferrals: 223 radios, 29 cutscene roots, 43 registered
-   dialogs (sixteen dialogs carry seventeen exact NpcProxy consumers without a
+   and reopen automatically if any gate changes. There are now 335 actual
+   isolated-scene deferrals: 228 radios, 31 cutscene roots, 46 registered
+   dialogs (seventeen dialogs carry eighteen exact NpcProxy consumers without a
    mission owner), ten ReadingPopUp definitions, nine DialogTextTable-only
    groups, two SNS dialog definitions, seven text-only cutscenes, and two
    TextTable-only black definitions. The hash-validated declaration set
@@ -4832,6 +4832,20 @@ Current main-story priorities:
    The main-story bucket is score 132 with 21 actionable core isolated rows,
    108 exact-native isolated closures, 95 exact-runtime-config closures, and
    9 strict-attachment diagnostics. e3m1 is next at score 10.
+   The e3m1 pass closes its two-row frontier while retaining the physical
+   cutscene boundary. `cutscene_e3m1_1` is NumIdStrTable id 191 and has exact
+   gendered roots `f_cutscene_e3m1_1` and `m_cutscene_e3m1_1`, with two
+   hash-locked definitions, two forward CutsceneRoot GameObject rows, and two
+   reverse `PlayableDirector.m_PlayableAsset` hosts. Neither hierarchy
+   contains a typed owner/runtime candidate, and same-file `m_Parent`
+   references remain composition rather than activation, ownership, or order.
+   `radio_e3m1_3` is a one-line RadioTable definition with direct AudioDialog
+   membership and no recovered consumer. Both Story route arrays are empty
+   and the carrier audit reports no candidate. v70/v49 has 335 declarations
+   and 335 active deferrals. The main-story bucket is score 122 with 19
+   actionable core isolated rows, 108 exact-native isolated closures, 95
+   exact-runtime-config closures, and 9 strict-attachment diagnostics.
+   e2m5d5 is next at score 10.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
