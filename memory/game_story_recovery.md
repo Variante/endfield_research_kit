@@ -3850,13 +3850,21 @@ Current main-story priorities:
    zero has TriggerComp. TriggerComp's complete schema is geometry plus a
    position-list group and contains no trigger-slot or LevelScript identity,
    so the exact LevelScript slot `80001` cannot be joined through this family.
+   The LevelScript-side carrier is also closed from current metadata and the
+   exact blob: slot `80001` selects an embedded
+   `LevelScriptTriggerVolumeDataForLeader` sphere with radius `59`. The base
+   type's complete eight-field schema is local flags, slot/count, exit index,
+   and shape list; the Leader subtype adds zero fields. There is no
+   DynamicScene, mission, quest, or foreign entity identity to continue the
+   join. Mission-area rows near the sphere remain weak coordinate context, not
+   activation or chronology evidence.
    The adjacent component-name lead is
    also closed: `FBDynamicSceneScriptControlComp` serializes only
    `DefaultLoad:int32`, and none of the 387 mission-controlled roots co-carries
    it. There are therefore zero such components among both the 125 numeric
    LevelScript-id matches and the 72 Story-bearing matches.
-   The next useful step is
-   no longer another pass over listener names or payload fields: the exact
+   The next useful step is no longer another pass over trigger slots, listener
+   names, or payload fields: the exact
    interactive progress-lock join has already promoted every current row that
    passes its typed entity/config/quest gates, while the remaining
    entity/property, combat/encounter, and lifecycle/navigation audits produce

@@ -1741,6 +1741,19 @@ with no trigger-slot, LevelScript, mission/quest, or Story field. The focused
 LevelScript slot `80001` therefore cannot be joined through a DynamicScene
 TriggerComp foreign key.
 
+The opposite slot carrier is now exact as well. The same event selector resolves
+slot `80001` to the owning `10100282001` LevelScript's embedded
+`LevelScriptTriggerVolumeDataForLeader` row: one sphere at
+`(-757.75, 234.828, -1185.85)`, radius `59`, trigger-count limit `1`. Current
+metadata declares eight fields on the base trigger-volume type
+(`isImportant`, `waitSrvRes`, `enterCheckOnGround`, `triggerOnPole`, `slotId`,
+`triggerCountLimit`, `exitShapeStartIndex`, and `shapeList`) and zero additional
+fields on the Leader subtype. The current eight-member payload is fully
+decoded. It contains no DynamicScene, mission, quest, LevelData entity, or
+other foreign identity. This is an exact local LevelScript trigger definition,
+not a cross-system activation edge; the nearby mission-area matches remain
+coordinate diagnostics and are not promoted.
+
 The adjacent `FBDynamicSceneScriptControlComp` is now
 closed rather than inferred from its name: current metadata exposes only
 `DefaultLoad:int32`, its runtime system indexes DynamicScene component/entity

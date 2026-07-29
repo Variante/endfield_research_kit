@@ -8,6 +8,8 @@
 - Story occurrences on those shared paths: `1`
 - Mission activation bridge found: `false`
 - Story-bearing roots with DynamicScene TriggerComp: `0`
+- Exact embedded LevelScript trigger-volume contexts: `1`
+- Trigger-volume foreign-key bridges: `0`
 - Mission graph action: `none`
 
 ## Exact bridge rows
@@ -23,5 +25,7 @@ The target parameter is an authored `DynamicSceneEntityPtr`, so an admitted equa
 The DynamicScene `MissionControlComp` still controls the root's state/availability. No decoded field or runtime call yet proves that this mission condition starts the LevelScript event header. Therefore mission owner, Story binding, and order remain unresolved.
 
 The focused root has no DynamicScene `TriggerComp`; all 72 Story-bearing roots have the same negative. The current `TriggerComp` schema contains geometry and a position-list group but no trigger-slot or LevelScript identity, so slot `80001` cannot be joined through this component family.
+
+The exact `ScriptEvent_OnLeaderEnterTriggerVolume` selector also resolves slot `80001` to the owning LevelScript's embedded Leader trigger-volume row. The fully decoded row contains only local slot/count/flags and shape geometry. Current metadata declares eight base fields and zero Leader-specific fields; none carries DynamicScene, mission, quest, or foreign entity identity. This closes the LevelScript trigger-volume foreign-key route without promoting coordinate proximity.
 
 Promotion requirement: a typed serialized or runtime edge must show that the DynamicScene mission condition activates the matched LevelScript header/action chain
