@@ -4306,9 +4306,10 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v26`
-   turns the completed exact `e9m2`, `e10m4`, `e11m1`, `e11m2`, `e11m4`, and
-   `e11m6` negative boundaries into fail-closed operational deferrals.
+   block metadata or the installed build changes. `sourceStoryGapQueue.v27`
+   turns the completed exact `e9m2`, `e10m4`, `e11m1`, `e11m2`, `e11m4`,
+   `e11m5`, and `e11m6` negative boundaries into fail-closed operational
+   deferrals.
    It activates only while the exact
    current `GameAssembly.dll`, RadioTable, AudioDialog, TextTable,
    NumIdStrTable, and cutscene-definition hashes match; the carrier-audit
@@ -4330,12 +4331,13 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 137 deferred
+   and reopen automatically if any gate changes. There are now 151 deferred
    rows: eight `e9m2` radios plus five cutscenes; 21 `e10m4` radios;
    23 `e11m1` radios plus five cutscenes; nine `e11m2`
    radios, four cutscenes, and two dialogs; 34 `e11m4` radios plus its
-   rift-camera cutscene; and 22 `e11m6` radios, two exact one-host cutscenes,
-   and one dialog. Every deferred row has graph effect `none` and contributes
+   rift-camera cutscene; seven `e11m5` radios plus seven dialogs; and 22
+   `e11m6` radios, two exact one-host cutscenes, and one dialog. Every
+   deferred row has graph effect `none` and contributes
    zero actionable-isolation score while its exact gates remain valid.
    The three dialog rows are admitted only while their exact MemoryPack
    DialogId source/index hashes and registration records, DialogTree hashes,
@@ -4378,7 +4380,19 @@ Current main-story priorities:
    complete AudioDialog membership and no recovered consumer. These 13 rows
    are operational deferrals with graph effect `none`; e9m2 now has zero
    actionable core-isolated Story rows and only a narrower quest-attachment
-   diagnostic. The genuine offline queue now ranks `e11m5` first. Continue
+   diagnostic. The next e11m5 pass closes seven exact radio definitions and
+   seven registered dialog definitions. Six dialogs have standalone
+   DialogTree line order. `dlg_e11m5_9` instead owns the exact
+   `dlgtl_e11m5_9_sub_1` Timeline: its first nine lines precede the six
+   embedded `dlg_e11m6_9` clips, its `_010`/`_011` lines follow them, and its
+   two authored options occupy a terminal slot after `_011`. The full
+   17-line sequence, source file, track PathID, option ids, registry timeline
+   id, DialogTree hash, and line/audio membership are fail-closed together.
+   This preserves real mixed-Story composition without asserting activation
+   or a whole-file edge. `dlg_e11m5_10` also records the exact current
+   AudioDialog absence of `_002` and `_003` while requiring `_001` membership;
+   a changed audio registry reopens the gate. e11m5 drops from 70/14 to score
+   zero. The genuine offline queue now ranks `e6m3` first. Continue
    offline from its exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
    runtime capture later becomes possible, the existing `e11m1` probe remains
@@ -4673,8 +4687,10 @@ Current main-story priorities:
    four-item `dung02_rdg008_lv_data_sub_mission_e11m5` interactive list. The
    first three use next-record boundaries. The final record ends exactly at
    byte `5896`; member 21 is `levelIdNum=356`, and the validated eight-entry
-   member-22 dictionary count is at byte `5900`. `e11m5` now has 14 actionable
-   isolated core rows and four exact runtime-configuration closures.
+   member-22 dictionary count is at byte `5900`. The later v27 bounded-carrier
+   pass closes the remaining 14 isolated core rows as the exact seven-radio /
+   seven-dialog deferral set described above; `e11m5` now scores zero with no
+   graph edge added.
 5. `e7m3` no longer has an actionable LevelScript control-flow row: it has zero
    untyped multi-scene contexts and zero actionable weak-only scenes. The
    source-only queue now scores it 46, with 58 scenes,

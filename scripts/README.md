@@ -1985,12 +1985,13 @@ gameplay-video OCR/audio workflow.
   Story-to-Story chronology edge.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v26` covers 117 residual radio definitions, 16 root
-  Timeline cutscenes, and three registered dialog definitions across `e9m2`,
-  `e10m4`, `e11m1`, `e11m2`, `e11m4`, and `e11m6`, plus the text-only
+  `sourceStoryGapQueue.v27` covers 124 residual radio definitions, 16 root
+  Timeline cutscenes, and ten registered dialog definitions across `e9m2`,
+  `e10m4`, `e11m1`, `e11m2`, `e11m4`, `e11m5`, and `e11m6`, plus the text-only
   `cutscene_e11m1_2`. This includes all eight residual `e9m2` radios and five
   root cutscenes, all 23 residual `e11m1` radios, all nine residual `e11m2`
-  radios, and all 22 residual `e11m6` radios. It requires the
+  radios, all seven residual `e11m5` radios and seven dialogs, and all 22
+  residual `e11m6` radios. It requires the
   expected
   `GameAssembly.dll`,
   RadioTable, AudioDialog, TextTable, NumIdStrTable, and cutscene-definition
@@ -2007,7 +2008,14 @@ gameplay-video OCR/audio workflow.
   DialogTree hashes, exact DialogTextTable row schemas, AudioDialog membership,
   and no recovered route. The e11m6 dialog also requires its exact six-line
   insertion inside the shared e11m5 Timeline; that containment remains context,
-  not activation or whole-file order. A text-only group
+  not activation or whole-file order. The owning `dlg_e11m5_9` dialog
+  independently requires the exact registered Timeline id, full 17-line mixed
+  e11m5/e11m6 clip sequence, source file, track PathID, and terminal option ids.
+  This owned-Timeline context may defer an isolated scene even though the Story
+  builder does not label it unlinked, but only while it has no accepted route;
+  it remains composition rather than activation or whole-file chronology.
+  Declared missing AudioDialog ids are also fail-closed per dialog rather than
+  treated as present membership. A text-only group
   is admitted only when its complete TextTable rows remain exact and no
   Timeline registry row, GameObject target, reverse relation, director host, or
   route exists. Deferred rows remain visible as

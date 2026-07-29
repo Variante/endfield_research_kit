@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v26"
+SCHEMA = "sourceStoryGapQueue.v27"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v6"
+    "current-build-offline-story-carrier-exhaustion-v7"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -418,6 +418,111 @@ OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES = {
     ),
 }
 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
+    "dlg_e11m5_9": {
+        "missionId": "e11m5",
+        "filename": "dlg_e11m5_9_pC23DB75515095666.json",
+        "sha256":
+            "C0D65ACEC9E7A12EEBC4DF36A63F9885DF164B2501C1D6F01364299BB17C7DA9",
+        "lineIds": tuple(
+            f"dlg_e11m5_9_{number:03d}"
+            for number in range(1, 12)
+        ),
+        "optionIds": (
+            "option_dlg_e11m5_9_1_001",
+            "option_dlg_e11m5_9_1_002",
+        ),
+        "ownedTimeline": {
+            "timeline": "dlgtl_e11m5_9_sub_1",
+            "sourceFile": "CAB-97f6deec242463684933cb9d8b65c753",
+            "trackPathId": 5795311945645305682,
+            "fullLineIds": (
+                *(
+                    f"dlg_e11m5_9_{number:03d}"
+                    for number in range(1, 10)
+                ),
+                "dlg_e11m6_9_005",
+                "dlg_e11m6_9_006",
+                "dlg_e11m6_9_007",
+                "dlg_e11m6_9_003",
+                "dlg_e11m6_9_008",
+                "dlg_e11m6_9_004",
+                "dlg_e11m5_9_010",
+                "dlg_e11m5_9_011",
+            ),
+        },
+    },
+    "dlg_e11m5_10": {
+        "missionId": "e11m5",
+        "filename": "dlg_e11m5_10_p5A9129339D481CC0.json",
+        "sha256":
+            "220464C78CC64E58B76634BF25FB8FE9A1C38188DD7B1D6961D89E948773499D",
+        "lineIds": (
+            "dlg_e11m5_10_001",
+            "dlg_e11m5_10_002",
+            "dlg_e11m5_10_003",
+        ),
+        "optionIds": (),
+        "missingAudioIds": (
+            "au_dlg_e11m5_10_002",
+            "au_dlg_e11m5_10_003",
+        ),
+    },
+    "dlg_e11m5_11": {
+        "missionId": "e11m5",
+        "filename": "dlg_e11m5_11_pD688FD9D65549B75.json",
+        "sha256":
+            "1F04DF04E1397B5936EE12EE1236C10E8ACCE5543451E0F8472AADF14708E5DB",
+        "lineIds": (
+            "dlg_e11m5_11_001",
+            "dlg_e11m5_11_002",
+            "dlg_e11m5_11_003",
+        ),
+        "optionIds": (),
+    },
+    "dlg_e11m5_12": {
+        "missionId": "e11m5",
+        "filename": "dlg_e11m5_12_p135B7060CFFC8F28.json",
+        "sha256":
+            "F333A7ECF1A52DF7C10BA33995A4CF27831540E6CF48C2C83DC39A4DE2BA49F9",
+        "lineIds": (
+            "dlg_e11m5_12_001",
+            "dlg_e11m5_12_003",
+            "dlg_e11m5_12_004",
+        ),
+        "optionIds": (),
+    },
+    "dlg_e11m5_13": {
+        "missionId": "e11m5",
+        "filename": "dlg_e11m5_13_p96F8614CB2A35E7F.json",
+        "sha256":
+            "47D743F27339ABDA651973E2CE3338337A25B1DE903D35F78CA933A1A686F5CC",
+        "lineIds": ("dlg_e11m5_13_001",),
+        "optionIds": (),
+    },
+    "dlg_e11m5_18": {
+        "missionId": "e11m5",
+        "filename": "dlg_e11m5_18_p416EFA9E2A6F4828.json",
+        "sha256":
+            "FDAA2B6D8F2D2E490FA394C0EBF7B9786C0A4D5FC48CA26F46C0C819EC337538",
+        "lineIds": (
+            "dlg_e11m5_18_001",
+            "dlg_e11m5_18_002",
+            "dlg_e11m5_18_003",
+            "dlg_e11m5_18_004",
+        ),
+        "optionIds": (),
+    },
+    "dlg_e11m5_19": {
+        "missionId": "e11m5",
+        "filename": "dlg_e11m5_19_p60D5560775C02212.json",
+        "sha256":
+            "2DF312DB709D69E5F68574D8599B748EE69ACCDFF72FBCB1D619FBF5FDA69782",
+        "lineIds": (
+            "dlg_e11m5_19_001",
+            "dlg_e11m5_19_002",
+        ),
+        "optionIds": (),
+    },
     "dlg_e11m2_17": {
         "missionId": "e11m2",
         "filename": "dlg_e11m2_17_pFD065A1EEEB7D282.json",
@@ -564,6 +669,15 @@ OFFLINE_EXHAUSTION_E11M2_RADIOS = frozenset({
     "radio_e11m2_36",
     "radio_e11m2_37",
 })
+OFFLINE_EXHAUSTION_E11M5_RADIOS = frozenset({
+    "radio_e11m5_12",
+    "radio_e11m5_19",
+    "radio_e11m5_20",
+    "radio_e11m5_21",
+    "radio_e11m5_22",
+    "radio_e11m5_23",
+    "radio_e11m5_24",
+})
 OFFLINE_EXHAUSTION_E9M2_RADIOS = frozenset({
     "radio_e9m2_12",
     "radio_e9m2_33",
@@ -580,6 +694,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e11m1": OFFLINE_EXHAUSTION_E11M1_RADIOS,
     "e11m2": OFFLINE_EXHAUSTION_E11M2_RADIOS,
     "e11m4": OFFLINE_EXHAUSTION_E11M4_RADIOS,
+    "e11m5": OFFLINE_EXHAUSTION_E11M5_RADIOS,
     "e11m6": OFFLINE_EXHAUSTION_E11M6_RADIOS,
 }
 OFFLINE_EXHAUSTION_MISSING_AUDIO_IDS = {
@@ -1000,7 +1115,12 @@ def build_offline_exhaustion_index(
             for line_id in expected_line_ids
             if isinstance(dialog_text_table.get(line_id), dict)
         )
+        expected_missing_audio_ids = set(
+            definition.get("missingAudioIds") or ()
+        )
+        actual_missing_audio_ids = set(line_audio_ids) - audio_stems
         shared_timeline = definition.get("sharedTimeline")
+        owned_timeline = definition.get("ownedTimeline")
         timeline_context: dict[str, Any] | None = None
         if isinstance(shared_timeline, dict):
             owner_dialog_key = safe_key(
@@ -1072,8 +1192,84 @@ def build_offline_exhaustion_index(
                     "shared_dialog_timeline_embedded_line_context",
                 "graphEffect": "none",
             }
+            registry_timeline_valid = (
+                isinstance(registry, dict)
+                and int(registry.get("usedDialogTimelineCount") or 0) == 0
+                and not registry.get("usedDialogTimelineIds")
+            )
+        elif isinstance(owned_timeline, dict):
+            timeline_entry = timeline_line_orders.get(story_key)
+            timeline_id = safe_key(owned_timeline.get("timeline"))
+            source_file = safe_key(owned_timeline.get("sourceFile"))
+            track_path_id = owned_timeline.get("trackPathId")
+            full_line_ids = tuple(owned_timeline["fullLineIds"])
+            timeline_lines = (
+                timeline_entry.get("lines") or []
+                if isinstance(timeline_entry, dict)
+                else []
+            )
+            timeline_option_ids = tuple(sorted(
+                safe_key(option_id)
+                for option_id in (
+                    timeline_entry.get("optionIds") or []
+                    if isinstance(timeline_entry, dict)
+                    else []
+                )
+                if safe_key(option_id)
+            ))
+            timeline_context_valid = (
+                isinstance(timeline_entry, dict)
+                and safe_key(timeline_entry.get("dialogKey")) == story_key
+                and safe_key(timeline_entry.get("timeline")) == timeline_id
+                and tuple(timeline_entry.get("lineIds") or [])
+                == full_line_ids
+                and len(timeline_lines) == len(full_line_ids)
+                and tuple(
+                    safe_key(row.get("id"))
+                    for row in timeline_lines
+                    if isinstance(row, dict)
+                )
+                == full_line_ids
+                and all(
+                    safe_key(row.get("timeline")) == timeline_id
+                    and safe_key(row.get("sourceFile")) == source_file
+                    and row.get("trackPathId") == track_path_id
+                    and safe_key(row.get("lineIdSource"))
+                    == "assetTrunkId"
+                    for row in timeline_lines
+                    if isinstance(row, dict)
+                )
+                and timeline_option_ids == expected_option_ids
+            )
+            registry_timeline_valid = (
+                isinstance(registry, dict)
+                and int(registry.get("usedDialogTimelineCount") or 0) == 1
+                and tuple(registry.get("usedDialogTimelineIds") or [])
+                == (timeline_id,)
+            )
+            timeline_context = {
+                "ownerDialogKey": story_key,
+                "timeline": timeline_id,
+                "sourceFile": source_file,
+                "trackPathId": track_path_id,
+                "lineIds": list(full_line_ids),
+                "embeddedForeignLineIds": [
+                    line_id
+                    for line_id in full_line_ids
+                    if not line_id.startswith(f"{story_key}_")
+                ],
+                "optionIds": list(expected_option_ids),
+                "relation":
+                    "owned_dialog_timeline_exact_mixed_story_context",
+                "graphEffect": "none",
+            }
         else:
             timeline_context_valid = story_key not in timeline_line_orders
+            registry_timeline_valid = (
+                isinstance(registry, dict)
+                and int(registry.get("usedDialogTimelineCount") or 0) == 0
+                and not registry.get("usedDialogTimelineIds")
+            )
         if (
             not isinstance(tree, dict)
             or safe_key(tree.get("m_Name")) != story_key
@@ -1088,12 +1284,15 @@ def build_offline_exhaustion_index(
             != {"memorypack_record_key", "printable_root_token"}
             or int(registry.get("trunkCount") or 0) != 0
             or int(registry.get("lineCount") or 0) != 0
-            or int(registry.get("usedDialogTimelineCount") or 0) != 0
+            or not registry_timeline_valid
             or actual_line_ids != expected_line_ids
             or registered_option_ids != expected_option_ids
             or len(line_audio_ids) != len(expected_line_ids)
             or not all(line_audio_ids)
-            or not set(line_audio_ids) <= audio_stems
+            or actual_missing_audio_ids != expected_missing_audio_ids
+            or not (
+                set(line_audio_ids) - expected_missing_audio_ids
+            ) <= audio_stems
             or any(
                 set(dialog_text_table[line_id])
                 != OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS
@@ -1106,6 +1305,10 @@ def build_offline_exhaustion_index(
         dialog_validation_by_key[story_key] = {
             "lineIds": list(expected_line_ids),
             "audioIds": list(line_audio_ids),
+            "missingAudioIds": sorted(
+                actual_missing_audio_ids,
+                key=natural_key,
+            ),
             "optionIds": list(expected_option_ids),
             "timelineContext": timeline_context,
         }
@@ -1390,6 +1593,12 @@ def build_offline_exhaustion_index(
             ],
             "lineIds": validation["lineIds"],
             "audioIds": validation["audioIds"],
+            "missingAudioIds": validation["missingAudioIds"],
+            "audioMembershipStatus": (
+                "partial_current_audio_dialog_missing_ids"
+                if validation["missingAudioIds"]
+                else "present_current_audio_dialog"
+            ),
             "optionIds": validation["optionIds"],
             "sharedTimelineContext": validation["timelineContext"],
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
@@ -2254,10 +2463,25 @@ def _deferred_offline_exhausted_isolated_scenes(
     deferred: list[dict[str, Any]] = []
     for scene_key in sorted(isolated_scene_keys, key=natural_key):
         evidence = offline_exhaustion_index.get(scene_key)
+        timeline_context = (
+            evidence.get("sharedTimelineContext")
+            if isinstance(evidence, dict)
+            and isinstance(evidence.get("sharedTimelineContext"), dict)
+            else {}
+        )
+        exact_owned_timeline_without_route = (
+            safe_key(evidence.get("evidenceKind"))
+            == "registered_dialog_definition_without_recovered_activator"
+            and safe_key(timeline_context.get("relation"))
+            == "owned_dialog_timeline_exact_mixed_story_context"
+        ) if isinstance(evidence, dict) else False
         if (
             not isinstance(evidence, dict)
             or safe_key(evidence.get("missionId")) != owner_mission
-            or scene_key not in unlinked_keys
+            or (
+                scene_key not in unlinked_keys
+                and not exact_owned_timeline_without_route
+            )
             or scene_key in routed_keys
             or evidence.get("graphEffect") != "none"
             or evidence.get("recoveryStatus")
