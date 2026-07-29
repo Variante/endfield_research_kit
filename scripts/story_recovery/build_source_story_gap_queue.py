@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v28"
+SCHEMA = "sourceStoryGapQueue.v29"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v8"
+    "current-build-offline-story-carrier-exhaustion-v9"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -193,6 +193,7 @@ OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES = frozenset({
     "cutscene_e11m1_shenjiaoe",
 })
 OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
+    "e1m3": frozenset({"cutscene_e1m3_1"}),
     "e6m3": frozenset({"cutscene_e6m3_2"}),
     "e9m2": frozenset({
         "cutscene_dung02_dg002_e9m2_lightthewall",
@@ -218,6 +219,7 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
     }),
 }
 OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
+    "cutscene_e1m3_1": 1,
     "cutscene_dung02_dg002_e9m2_lightthewall": 1,
     "cutscene_dung02_dg002_e9m2_zipline01": 1,
     "cutscene_dung02_dg002_e9m2_zipline02": 1,
@@ -236,6 +238,16 @@ OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e11m6_zhuangcomein": 1,
 }
 OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
+    "cutscene_e1m3_1": {
+        "timelineRegistryId": 89,
+        "files": (
+            (
+                "cutscene_e1m3_1_p08A501CA1E17069D.json",
+                "21F8CFA0B384573D011677A68F2D45C0A9E521CAB35AAB392F22405E3E428BB6",
+                "cutscene_e1m3_1",
+            ),
+        ),
+    },
     "cutscene_dung02_dg002_e9m2_lightthewall": {
         "timelineRegistryId": 327,
         "files": (
@@ -413,6 +425,7 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
     },
 }
 OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS = {
+    "cutscene_e1m3_1": 1,
     "cutscene_dung02_dg002_e9m2_lightthewall": 1,
     "cutscene_dung02_dg002_e9m2_zipline01": 1,
     "cutscene_dung02_dg002_e9m2_zipline02": 1,
@@ -441,6 +454,20 @@ OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES = {
     ),
 }
 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
+    "misc_dlg_e1m3_5d5": {
+        "missionId": "e1m3",
+        "registryKey": "dlg_e1m3_5d5",
+        "definitionName": "dlg_e1m3_5d5",
+        "linePrefix": "dlg_e1m3_5d5",
+        "filename": "dlg_e1m3_5d5_pA56DA1BBAEFC3080.json",
+        "sha256":
+            "014F63CEB6317CAC1DD68FFDEED1D52DBDF8CBCEC55902265302B34296634D6B",
+        "lineIds": (
+            "dlg_e1m3_5d5_002",
+            "dlg_e1m3_5d5_003",
+        ),
+        "optionIds": (),
+    },
     "dlg_e6m3_6": {
         "missionId": "e6m3",
         "filename": "dlg_e6m3_6_p5CAF49EFDB182127.json",
@@ -760,7 +787,19 @@ OFFLINE_EXHAUSTION_E6M3_RADIOS = frozenset({
     "radio_e6m3_22",
     "radio_e6m3_23",
 })
+OFFLINE_EXHAUSTION_E1M3_RADIOS = frozenset({
+    "radio_e1m3_3",
+    "radio_e1m3_4",
+    "radio_e1m3_7",
+    "radio_e1m3_13",
+    "radio_e1m3_13d5",
+    "radio_e1m3_13d7",
+    "radio_e1m3_18",
+    "radio_e1m3_32",
+    "radio_e1m3_34",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
+    "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e9m2": OFFLINE_EXHAUSTION_E9M2_RADIOS,
     "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
