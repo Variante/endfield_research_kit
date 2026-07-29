@@ -14225,6 +14225,33 @@ def build_language_bundle(
             continue
         black_timeline_groups[(black_key, dialog_key)].append(attachment)
 
+    # Dialog Timelines can also contain a complete block of lines belonging to
+    # another emitted dialog.  Require one registered Timeline owner, complete
+    # current DialogTextTable membership, one contiguous foreign block, and
+    # parent lines on both sides.  Mission scope is inherited later only from
+    # the parent dialog's independently recovered typed playback context.
+    foreign_dialog_timeline_groups: dict[
+        tuple[str, str],
+        list[dict],
+    ] = defaultdict(list)
+    for containment in recover_foreign_dialog_timeline_containments(
+        dialog_id_registry,
+        all_story_entry_keys,
+        {str(line_id) for line_id in dialogs},
+    ):
+        if not isinstance(containment, dict):
+            continue
+        story_key = str(containment.get("key") or "")
+        dialog_key = str(containment.get("dialogKey") or "")
+        if (
+            story_key in all_story_entry_keys
+            and dialog_key
+            and story_key != dialog_key
+        ):
+            foreign_dialog_timeline_groups[
+                (story_key, dialog_key)
+            ].append(containment)
+
     # Native NarrativeBlackScreen actions serialize exact TextTable line ids,
     # not a conversation key. Resolve those ids through the already emitted
     # black conversations and require every id in an action to name the same
@@ -19756,6 +19783,108 @@ def build_language_bundle(
             connections.append(connection)
             preexisting_attached_story_keys_by_mission[target_mission].add(black_key)
 
+    # Complete foreign-dialog line blocks use the same exact parent-playback
+    # scope as black Timeline containment, but remain a distinct relation:
+    # the flat Timeline proves nested playback and option routing, not a
+    # precedence edge between the two Story files.
+    for (
+        story_key,
+        dialog_key,
+    ), containment_rows in sorted(
+        foreign_dialog_timeline_groups.items()
+    ):
+        parent_occurrences = list(
+            native_story_playback_index.get(dialog_key) or []
+        )
+        scoped_by_mission, shared_hosts = leveldata_scoped_occurrences(
+            parent_occurrences
+        )
+        if shared_hosts:
+            shared_leveldata_hosts_by_story[story_key].extend({
+                **row,
+                "parentStoryKey": dialog_key,
+            } for row in shared_hosts)
+        story_owner = story_owner_by_key.get(story_key) or ""
+        for target_mission, scoped_occurrences in sorted(
+            scoped_by_mission.items()
+        ):
+            connection = {
+                "key": story_key,
+                "kind": story_kind_by_key.get(story_key, "dialog"),
+                "relation":
+                    "timeline_dialog_contains_foreign_dialog",
+                "direction": "context",
+                "phase": "timeline_contained",
+                "confidence": "native_exact_host",
+                "source": (
+                    "exact DialogIdTable used-Timeline owner + complete "
+                    "contiguous foreign DialogTextTable line block with "
+                    "parent lines on both sides + typed parent-dialog "
+                    "playback + exact same-level validated Mission "
+                    "LevelData BriefData host"
+                ),
+                "storyOwnerMission": story_owner,
+                "levelDataHostMissionId": target_mission,
+                "parentStoryKey": dialog_key,
+                "questTriggerStatus": "unresolved",
+                "occurrenceCount": len(containment_rows),
+                "textIds": sorted({
+                    str(line_id)
+                    for row in containment_rows
+                    for line_id in row.get("lineIds") or []
+                    if line_id
+                }),
+                "optionIds": sorted({
+                    str(option_id)
+                    for row in containment_rows
+                    for option_id in row.get("optionIds") or []
+                    if option_id
+                }),
+                "timelines": sorted({
+                    str(row.get("timeline") or "")
+                    for row in containment_rows
+                    if row.get("timeline")
+                }),
+                "sourceFiles": sorted({
+                    str(row.get("sourceFile") or "")
+                    for row in containment_rows
+                    if row.get("sourceFile")
+                }),
+                "levelDataFiles": sorted({
+                    str(host.get("levelDataFile") or "")
+                    for row in scoped_occurrences
+                    for host in row.get("levelDataHosts") or []
+                    if host.get("levelDataFile")
+                }),
+                "timelineDialogContainments": containment_rows,
+                "parentDialogNativeOccurrences": scoped_occurrences,
+                "placementBoundary": (
+                    "the exact parent Timeline plays the complete foreign "
+                    "dialog block, but parent lines occur on both sides so "
+                    "no Story-file precedence edge is created"
+                ),
+                "graphEffect": "none",
+            }
+            connections = mission_flows_payload[target_mission].setdefault(
+                "missionStoryConnections",
+                [],
+            )
+            signature = (
+                story_key,
+                connection["relation"],
+                dialog_key,
+            )
+            if any((
+                str(existing.get("key") or ""),
+                str(existing.get("relation") or ""),
+                str(existing.get("parentStoryKey") or ""),
+            ) == signature for existing in connections if isinstance(existing, dict)):
+                continue
+            connections.append(connection)
+            preexisting_attached_story_keys_by_mission[target_mission].add(
+                story_key
+            )
+
     # Apply exact system-feature carriers only after every stronger attachment
     # family.  This is a positive typed/native relation, but still mission-shell
     # context rather than quest placement, and it must never duplicate a Story
@@ -21013,6 +21142,83 @@ def build_language_bundle(
             [],
         ).append(connection)
         preexisting_attached_story_keys_by_mission[target_mission].add(black_key)
+
+    for (
+        story_key,
+        dialog_key,
+    ), containment_rows in sorted(
+        foreign_dialog_timeline_groups.items()
+    ):
+        parent_contexts = direct_parent_contexts.get(dialog_key) or {}
+        if len(parent_contexts) != 1:
+            continue
+        target_mission = next(iter(parent_contexts))
+        if story_key in preexisting_attached_story_keys_by_mission[
+            target_mission
+        ]:
+            continue
+        context_rows = parent_contexts[target_mission]
+        connection = {
+            "key": story_key,
+            "kind": story_kind_by_key.get(story_key, "dialog"),
+            "relation": "timeline_dialog_contains_foreign_dialog",
+            "direction": "context",
+            "phase": "timeline_contained",
+            "confidence": "native_exact_parent_context",
+            "source": (
+                "exact DialogIdTable used-Timeline owner + complete "
+                "contiguous foreign DialogTextTable line block with parent "
+                "lines on both sides + unique direct original-data mission "
+                "context of the parent dialog"
+            ),
+            "storyOwnerMission":
+                story_owner_by_key.get(story_key) or "",
+            "parentStoryKey": dialog_key,
+            "questTriggerStatus":
+                "unresolved_parent_has_no_unique_quest",
+            "occurrenceCount": len(containment_rows),
+            "parentScopeRelations": sorted({
+                str(row.get("relation") or "")
+                for row in context_rows
+                if row.get("relation")
+            }),
+            "textIds": sorted({
+                str(line_id)
+                for row in containment_rows
+                for line_id in row.get("lineIds") or []
+                if line_id
+            }),
+            "optionIds": sorted({
+                str(option_id)
+                for row in containment_rows
+                for option_id in row.get("optionIds") or []
+                if option_id
+            }),
+            "timelines": sorted({
+                str(row.get("timeline") or "")
+                for row in containment_rows
+                if row.get("timeline")
+            }),
+            "sourceFiles": sorted({
+                str(row.get("sourceFile") or "")
+                for row in containment_rows
+                if row.get("sourceFile")
+            }),
+            "timelineDialogContainments": containment_rows,
+            "placementBoundary": (
+                "the exact parent Timeline plays the complete foreign "
+                "dialog block, but parent lines occur on both sides so no "
+                "Story-file precedence edge is created"
+            ),
+            "graphEffect": "none",
+        }
+        mission_flows_payload[target_mission].setdefault(
+            "missionStoryConnections",
+            [],
+        ).append(connection)
+        preexisting_attached_story_keys_by_mission[target_mission].add(
+            story_key
+        )
 
     # These residual native listeners carry no mission selector in their event
     # payloads. Recover quest context only when an independent,
