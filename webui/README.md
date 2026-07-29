@@ -200,6 +200,11 @@ available through expandable guidance.
   dictionary or the exact environment-only members 21-43 empty-script suffix
   through EOF, and retain that provenance. A progress-lock owner is
   availability evidence, not Story ownership, activation causality, or order.
+  One exact `int_horn.properties.dialog_id` row also renders a
+  `quest -> LevelData -> availability condition -> horn interactive -> dialog
+  definition` route. This registered base definition has options but no
+  emitted Story conversation, so the route stays outside coverage and is not
+  aliased to a similarly named `d5` conversation.
   Exact, build-pinned
   CutsceneRoot playback aliases render as
   `Story root -> native playback action -> Story file` debug routes with their

@@ -468,6 +468,64 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             1,
         )
 
+    def test_trigger_route_preserves_definition_only_horn_context(self):
+        row = {
+            "key": "dlg_testm1_11",
+            "relation": "leveldata_interactive_narrative_config",
+            "direction": "context",
+            "levelDataAssets": ["map_test_lv_data_sub_testm1"],
+            "entityLogicId": 10003,
+            "interactiveRecordIndex": 2,
+            "narrativeConsumerKind": "horn_dialog_property",
+            "dialogDefinitionOnly": True,
+            "dialogDefinitionBinding": True,
+            "dialogDefinitionConsumerMission": "testm1",
+            "dialogDefinitionConsumerQuestId": "testm1_q#3",
+            "dialogIdEntryOffset": 2800,
+            "interactiveHornNativeMappingId":
+                "gameassembly-test-interactive-horn-dialog-v1",
+            "progressLockConditionStatus": "decoded",
+            "progressLockConditionType":
+                "SimpleConditionCheckQuestState",
+            "progressLockConditions": [{
+                "conditionType": "SimpleConditionCheckQuestState",
+                "ownerKind": "quest",
+                "ownerId": "testm1_q#2",
+                "compareOperator": 0,
+                "compareTarget": 3,
+            }],
+            "rawTypeId": "dlg_testm1_11",
+            "entityDetailIds": ["int_horn"],
+            "entityTemplateIds": ["int_horn"],
+        }
+
+        route = pipeline.build_story_trigger_route(
+            row,
+            mission_id="testm1",
+            quest_id="testm1_q#3",
+            scope="quest",
+        )
+
+        self.assertEqual(
+            [step["kind"] for step in route["steps"]],
+            [
+                "quest",
+                "leveldata",
+                "availability_condition",
+                "narrative_interactive",
+                "dialog_definition",
+            ],
+        )
+        self.assertTrue(route["dialogDefinitionOnly"])
+        self.assertEqual(
+            "testm1_q#3",
+            route["dialogDefinitionConsumerQuestId"],
+        )
+        self.assertEqual(
+            "testm1_q#2",
+            route["progressLockConditions"][0]["ownerId"],
+        )
+
     def test_publish_source_story_partial_order_embeds_lazy_mission_graph(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

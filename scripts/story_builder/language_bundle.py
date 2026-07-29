@@ -15457,17 +15457,52 @@ def build_language_bundle(
     # member-21 boundary. Null progress locks and the exact current-build
     # mission/quest-state condition forms are accepted. StreamingAssets and
     # Persistent bytes must agree.
+    horn_dialog_definition_consumers: dict[
+        str,
+        list[tuple[str, str, dict]],
+    ] = defaultdict(list)
+    for consumer_mission, flow_payload in mission_flows_payload.items():
+        for quest in flow_payload.get("quests") or []:
+            if not isinstance(quest, dict):
+                continue
+            quest_id = str(quest.get("id") or "")
+            for dialog_id in quest.get("dialogs") or []:
+                dialog_id = str(dialog_id or "").strip()
+                if dialog_id:
+                    horn_dialog_definition_consumers[dialog_id].append(
+                        (consumer_mission, quest_id, quest)
+                    )
     leveldata_interactive_narrative_contexts = (
         build_leveldata_interactive_narrative_story_contexts(
-            set(all_story_entry_keys)
+            set(all_story_entry_keys),
+            available_horn_dialog_definition_keys=set(
+                horn_dialog_definition_consumers
+            ),
         )
     )
     for context in leveldata_interactive_narrative_contexts:
+        raw_context_key = str(context.get("storyKey") or "")
         story_key = resolve_scene_ref_out_key(
-            str(context.get("storyKey") or ""),
+            raw_context_key,
             all_story_entry_keys,
         )
-        target_mission = str(story_owner_by_key.get(story_key) or "")
+        definition_consumer = None
+        if (
+            not story_key
+            and context.get("narrativeConsumerKind")
+            == "horn_dialog_property"
+        ):
+            consumers = horn_dialog_definition_consumers.get(
+                raw_context_key
+            ) or []
+            if len(consumers) == 1:
+                definition_consumer = consumers[0]
+                story_key = raw_context_key
+        target_mission = (
+            definition_consumer[0]
+            if definition_consumer
+            else str(story_owner_by_key.get(story_key) or "")
+        )
         if (
             not story_key
             or not target_mission
@@ -15476,6 +15511,31 @@ def build_language_bundle(
             continue
         level_id = str(context.get("levelId") or "")
         leveldata_asset = str(context.get("levelDataAsset") or "")
+        consumer_kind = str(
+            context.get("narrativeConsumerKind")
+            or "narrative_component"
+        )
+        dialog_definition_only = bool(definition_consumer)
+        if consumer_kind == "horn_dialog_property":
+            source = (
+                "exact counted LevelData interactive list -> 25-member "
+                "LevelInteractiveData bounded by the next record or validated "
+                "member-21 suffix (nonempty BriefData dictionary or complete "
+                "empty-script suffix), including an exact null or decoded "
+                "mission/quest-state progress lock -> "
+                "int_horn.properties.dialog_id; the byte-identical authored "
+                "Horn template and current native Horn flow validate the "
+                "dialog consumer"
+            )
+        else:
+            source = (
+                "exact counted LevelData interactive list -> 25-member "
+                "LevelInteractiveData bounded by the next record or validated "
+                "member-21 suffix (nonempty BriefData dictionary or complete "
+                "empty-script suffix), including an exact null or "
+                "decoded mission/quest-state progress lock -> "
+                "componentProperties[94].type_id"
+            )
         connection = {
             "key": story_key,
             "kind": story_kind_by_key.get(story_key, "story"),
@@ -15484,26 +15544,34 @@ def build_language_bundle(
             "phase": "interactive_narrative_configuration",
             "confidence": "native_exact_serialized_config",
             "evidenceTier": "native_exact_context",
-            "source": (
-                "exact counted LevelData interactive list -> 25-member "
-                "LevelInteractiveData bounded by the next record or validated "
-                "member-21 suffix (nonempty BriefData dictionary or complete "
-                "empty-script suffix), including an exact null or "
-                "decoded mission/quest-state progress lock -> "
-                "componentProperties[94].type_id"
-            ),
-            "storyOwnerMission": target_mission,
-            "storyBinding": True,
+            "source": source,
+            "storyOwnerMission":
+                "" if dialog_definition_only else target_mission,
+            "dialogDefinitionConsumerMission":
+                target_mission if dialog_definition_only else "",
+            "dialogDefinitionConsumerQuestId":
+                definition_consumer[1] if definition_consumer else "",
+            "dialogDefinitionOnly": dialog_definition_only,
+            "storyBinding": not dialog_definition_only,
+            "dialogDefinitionBinding": dialog_definition_only,
             "ownership": False,
             "dependencyOnly": False,
             "questTriggerStatus": (
-                "exact_progress_lock_condition_without_story_ownership_"
-                "or_chronology"
+                (
+                    "exact_registered_dialog_definition_consumer_with_"
+                    "separate_progress_lock_without_story_ownership_"
+                    "or_chronology"
+                    if dialog_definition_only
+                    else
+                    "exact_progress_lock_condition_without_story_ownership_"
+                    "or_chronology"
+                )
                 if context.get("progressLockConditionStatus") == "decoded"
                 else "source_config_only_activation_and_quest_unresolved"
             ),
             "activationBoundary": (
-                "the LevelData asset and narrative interactive are exact; "
+                "the LevelData asset and narrative-capable interactive are "
+                "exact; "
                 "an exact progress lock constrains interactive availability "
                 "when present, but does not establish object instantiation, "
                 "player interaction timing, Story ownership, or chronology"
@@ -15514,7 +15582,7 @@ def build_language_bundle(
                 "Story chronology"
             ),
             "executionSide": context.get("executionSide") or "client",
-            "networkRole": "local_interactive_narrative_dispatch",
+            "networkRole": "local_interactive_story_dispatch",
             "serverExchange": False,
             "clientRequest": False,
             "expectedServerReply": False,
@@ -15525,9 +15593,20 @@ def build_language_bundle(
                 str(context.get("verifiedMirrorFile") or ""),
                 str(context.get("readingPopupTableSourceFile") or ""),
                 str(context.get("entityTemplatePath") or ""),
+                str(
+                    context.get("interactiveHornTemplateSourceFile")
+                    or ""
+                ),
+                str(
+                    context.get(
+                        "interactiveHornTemplateVerifiedMirrorFile"
+                    )
+                    or ""
+                ),
             } - {""}),
             "nativeMappingId": context.get("nativeMappingId"),
             "nativeConsumer": context.get("nativeConsumer"),
+            "narrativeConsumerKind": consumer_kind,
             "storyKeyResolution": context.get("storyKeyResolution"),
             "rawTypeId": context.get("rawTypeId"),
             "readingPopupId": context.get("readingPopupId"),
@@ -15573,6 +15652,11 @@ def build_language_bundle(
                 "narrativeParamMapEndOffset"
             ),
             "typeIdEntryOffset": context.get("typeIdEntryOffset"),
+            "dialogIdEntryOffset": context.get("dialogIdEntryOffset"),
+            "interactiveHornTemplateSha256":
+                context.get("interactiveHornTemplateSha256"),
+            "interactiveHornNativeMappingId":
+                context.get("interactiveHornNativeMappingId"),
             "propertiesCount": context.get("propertiesCount"),
             "progressLockConditionStatus":
                 context.get("progressLockConditionStatus"),
@@ -15591,9 +15675,13 @@ def build_language_bundle(
             "progressLockConditions":
                 context.get("progressLockConditions") or [],
         }
-        connections = mission_flows_payload[target_mission].setdefault(
-            "missionStoryConnections",
-            [],
+        connections = (
+            definition_consumer[2].setdefault("storyConnections", [])
+            if definition_consumer
+            else mission_flows_payload[target_mission].setdefault(
+                "missionStoryConnections",
+                [],
+            )
         )
         signature = (
             story_key,
@@ -21610,6 +21698,12 @@ def build_language_bundle(
         for quest in flow_payload.get("quests") or []:
             if not isinstance(quest, dict):
                 continue
+            definition_connections = [
+                row
+                for row in quest.get("storyConnections") or []
+                if isinstance(row, dict)
+                and row.get("dialogDefinitionOnly") is True
+            ]
             quest_available = set(owner_available)
             quest_available.update(
                 str(row.get("key") or "")
@@ -21618,6 +21712,9 @@ def build_language_bundle(
                 and str(row.get("key") or "") in all_story_entry_keys
             )
             connections = quest_attached_story_connections(quest, quest_available)
+            for row in definition_connections:
+                if row not in connections:
+                    connections.append(row)
             if connections:
                 quest["storyConnections"] = connections
             else:

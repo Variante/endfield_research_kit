@@ -37,12 +37,21 @@ from build_source_story_partial_order import build_report as build_partial_order
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v18"
+SCHEMA = "sourceStoryGapQueue.v19"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
 LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "leveldata-interactive-narrative-config-v5"
+)
+LEVELDATA_INTERACTIVE_HORN_MAPPING_ID = (
+    "leveldata-interactive-horn-dialog-config-v1"
+)
+LEVELDATA_INTERACTIVE_HORN_NATIVE_MAPPING_ID = (
+    "gameassembly-2026-07-29-interactive-horn-dialog-v1"
+)
+LEVELDATA_INTERACTIVE_HORN_TEMPLATE_SHA256 = (
+    "1200acb7208de5e4b9e861dc511cc3a3d4f1f5c56dd4b59f1dcb0ef7ab2ea33e"
 )
 BUCKET_ORDER = ("main", "event", "major", "character", "other")
 
@@ -1300,13 +1309,23 @@ def _closed_exact_runtime_config_isolated_scenes(
         })
     already_closed.update(row["sceneKey"] for row in closed)
     leveldata_grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    leveldata_source = (
+    leveldata_component_source = (
         "exact counted LevelData interactive list -> 25-member "
         "LevelInteractiveData bounded by the next record or validated "
         "member-21 suffix (nonempty BriefData dictionary or complete "
         "empty-script suffix), including an exact null or decoded "
         "mission/quest-state progress lock -> "
         "componentProperties[94].type_id"
+    )
+    leveldata_horn_source = (
+        "exact counted LevelData interactive list -> 25-member "
+        "LevelInteractiveData bounded by the next record or validated "
+        "member-21 suffix (nonempty BriefData dictionary or complete "
+        "empty-script suffix), including an exact null or decoded "
+        "mission/quest-state progress lock -> "
+        "int_horn.properties.dialog_id; the byte-identical authored "
+        "Horn template and current native Horn flow validate the "
+        "dialog consumer"
     )
     leveldata_order_boundary = (
         "interactive-list order, record index, entity logic id, object "
@@ -1366,6 +1385,39 @@ def _closed_exact_runtime_config_isolated_scenes(
         record_end = row.get("interactiveRecordEndOffset")
         list_count = row.get("interactiveListCount")
         entity_logic_id = row.get("entityLogicId")
+        consumer_kind = safe_key(
+            row.get("narrativeConsumerKind")
+        ) or "narrative_component"
+        if consumer_kind == "horn_dialog_property":
+            exact_consumer_valid = (
+                safe_key(row.get("source")) == leveldata_horn_source
+                and safe_key(row.get("nativeMappingId"))
+                == LEVELDATA_INTERACTIVE_HORN_MAPPING_ID
+                and entity_details == ["int_horn"]
+                and template_ids == ["int_horn"]
+                and safe_key(row.get("interactiveHornNativeMappingId"))
+                == LEVELDATA_INTERACTIVE_HORN_NATIVE_MAPPING_ID
+                and safe_key(row.get("interactiveHornTemplateSha256"))
+                == LEVELDATA_INTERACTIVE_HORN_TEMPLATE_SHA256
+                and isinstance(row.get("dialogIdEntryOffset"), int)
+                and not isinstance(row.get("dialogIdEntryOffset"), bool)
+                and isinstance(record_offset, int)
+                and row.get("dialogIdEntryOffset") > record_offset
+                and isinstance(record_end, int)
+                and row.get("dialogIdEntryOffset") < record_end
+                and row.get("narrativeComponentKey") is None
+            )
+        else:
+            exact_consumer_valid = (
+                consumer_kind == "narrative_component"
+                and safe_key(row.get("source"))
+                == leveldata_component_source
+                and safe_key(row.get("nativeMappingId"))
+                == LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID
+                and template_ids[0].startswith("int_narrative")
+                if len(template_ids) == 1
+                else False
+            )
         boundary_source = safe_key(
             row.get("interactiveRecordBoundarySource")
         )
@@ -1526,19 +1578,16 @@ def _closed_exact_runtime_config_isolated_scenes(
             != "leveldata_interactive_narrative_config"
             or safe_key(row.get("confidence"))
             != "native_exact_serialized_config"
-            or safe_key(row.get("source")) != leveldata_source
+            or not exact_consumer_valid
             or safe_key(row.get("storyOwnerMission")) != owner_mission
             or row.get("storyBinding") is not True
             or row.get("ownership") is not False
-            or safe_key(row.get("nativeMappingId"))
-            != LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID
             or safe_key(row.get("orderBoundary"))
             != leveldata_order_boundary
             or len(level_ids) != 1
             or len(asset_ids) != 1
             or len(entity_details) != 1
             or len(template_ids) != 1
-            or not template_ids[0].startswith("int_narrative")
             or not isinstance(record_index, int)
             or isinstance(record_index, bool)
             or record_index < 0
@@ -1557,7 +1606,10 @@ def _closed_exact_runtime_config_isolated_scenes(
             or not isinstance(entity_logic_id, int)
             or isinstance(entity_logic_id, bool)
             or entity_logic_id <= 0
-            or row.get("narrativeComponentKey") != 94
+            or (
+                consumer_kind == "narrative_component"
+                and row.get("narrativeComponentKey") != 94
+            )
         ):
             continue
         leveldata_grouped[scene_key].append(row)
@@ -1660,18 +1712,27 @@ def _closed_exact_runtime_config_isolated_scenes(
                 for row in rows
                 if safe_key(row.get("storyKeyResolution"))
             }),
+            "narrativeConsumerKinds": sorted({
+                safe_key(row.get("narrativeConsumerKind"))
+                or "narrative_component"
+                for row in rows
+            }),
             "progressLocks": progress_locks,
             "sourceFiles": sorted({
                 source_file
                 for row in rows
                 for source_file in _string_list(row.get("sourceFiles"))
             }),
-            "nativeConsumer": (
-                "NarrativeComponent.ClientCollectNarrative -> "
-                "_CollectNarrative -> dialog/reading-popup dispatch"
-            ),
-            "nativeMappingId":
-                LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID,
+            "nativeConsumers": sorted({
+                safe_key(row.get("nativeConsumer"))
+                for row in rows
+                if safe_key(row.get("nativeConsumer"))
+            }),
+            "nativeMappingIds": sorted({
+                safe_key(row.get("nativeMappingId"))
+                for row in rows
+                if safe_key(row.get("nativeMappingId"))
+            }),
             "activationBoundary": (
                 "the LevelData asset and narrative interactive are exact; "
                 "an exact progress lock constrains interactive availability "

@@ -245,7 +245,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v23 retains nested combined-condition structure and raw NotEqual leaves.
 # v24 admits final environment-only LevelData rows through the exact complete
 # empty-script member suffix and retains its boundary provenance.
-SCHEMA_VERSION = 24
+# v25 admits an exact authored ``int_horn.properties.dialog_id`` consumer with
+# current-template/native provenance while preserving the ownership/order gap.
+SCHEMA_VERSION = 25
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -3485,7 +3487,14 @@ def build_story_trigger_route(
         "id": quest_id if scope == "quest" and quest_id else mission_id,
         "phase": str(row.get("phase") or ""),
     }
-    story_step = {"kind": "story", "id": key}
+    story_step = {
+        "kind": (
+            "dialog_definition"
+            if row.get("dialogDefinitionOnly") is True
+            else "story"
+        ),
+        "id": key,
+    }
     middle_steps: list[dict[str, Any]] = []
     if row.get("serverMessage"):
         middle_steps.append({
@@ -3606,6 +3615,21 @@ def build_story_trigger_route(
         "interactiveRecordIndex": row.get("interactiveRecordIndex"),
         "interactiveRecordBoundarySource":
             str(row.get("interactiveRecordBoundarySource") or ""),
+        "narrativeConsumerKind":
+            str(row.get("narrativeConsumerKind") or ""),
+        "dialogDefinitionOnly":
+            row.get("dialogDefinitionOnly") is True,
+        "dialogDefinitionBinding":
+            row.get("dialogDefinitionBinding") is True,
+        "dialogDefinitionConsumerMission":
+            str(row.get("dialogDefinitionConsumerMission") or ""),
+        "dialogDefinitionConsumerQuestId":
+            str(row.get("dialogDefinitionConsumerQuestId") or ""),
+        "dialogIdEntryOffset": row.get("dialogIdEntryOffset"),
+        "interactiveHornTemplateSha256":
+            str(row.get("interactiveHornTemplateSha256") or ""),
+        "interactiveHornNativeMappingId":
+            str(row.get("interactiveHornNativeMappingId") or ""),
         "levelDataMember21Offset": row.get("levelDataMember21Offset"),
         "levelIdNum": row.get("levelIdNum"),
         "levelScriptBriefDictionaryCountOffset":
@@ -4623,6 +4647,7 @@ def build_story_binding_coverage(
     missionless_native_runtime_nodes: dict[str, dict[str, Any]] = {}
     story_trigger_routes: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
     context_only_trigger_route_keys: set[str] = set()
+    definition_only_interactive_config_keys: set[str] = set()
     sidecars_read = 0
 
     def add_trigger_route(route: dict[str, Any] | None) -> None:
@@ -4765,8 +4790,13 @@ def build_story_binding_coverage(
                     "levelscript_interactive_narrative_config",
                     "leveldata_interactive_narrative_config",
                 }
-                and key in all_index_rows
+                and (
+                    key in all_index_rows
+                    or row.get("dialogDefinitionOnly") is True
+                )
             ):
+                if row.get("dialogDefinitionOnly") is True:
+                    definition_only_interactive_config_keys.add(key)
                 if key not in all_story_rows:
                     context_only_trigger_route_keys.add(key)
                 add_trigger_route(build_story_trigger_route(
@@ -5176,6 +5206,20 @@ def build_story_binding_coverage(
         if key in story_trigger_manifest:
             continue
         story = all_index_rows.get(key)
+        if not story and key in definition_only_interactive_config_keys:
+            routes_for_key = list(story_trigger_routes[key].values())
+            story = {
+                "key": key,
+                "kind": "dialogDefinition",
+                "missionId": next(
+                    (
+                        str(route.get("missionId") or "")
+                        for route in routes_for_key
+                        if route.get("missionId")
+                    ),
+                    "",
+                ),
+            }
         if not story:
             continue
         routes = list(story_trigger_routes[key].values())
@@ -5195,7 +5239,12 @@ def build_story_binding_coverage(
             "kind": story["kind"],
             "nominalMissionId": story["missionId"],
             "attachmentStatus":
-                "context_only_outside_pipeline_coverage_denominator",
+                (
+                    "registered_dialog_definition_context_only"
+                    if key in definition_only_interactive_config_keys
+                    else
+                    "context_only_outside_pipeline_coverage_denominator"
+                ),
             "routes": routes,
         }
     kind_counts: dict[str, dict[str, int]] = {}
@@ -5264,7 +5313,7 @@ def build_story_binding_coverage(
 
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 9,
+        "schemaVersion": 10,
         "generated": int(time.time()),
         "language": language,
         "policy": (
@@ -5293,6 +5342,16 @@ def build_story_binding_coverage(
             "contextOnlyTriggerRouteFiles":
                 context_only_trigger_route_files,
             "contextOnlyTriggerRoutes": context_only_trigger_route_count,
+            "definitionOnlyInteractiveConfigFiles": len({
+                key
+                for key in definition_only_interactive_config_keys
+                if key in story_trigger_manifest
+            }),
+            "definitionOnlyInteractiveConfigRoutes": sum(
+                len(story_trigger_manifest[key].get("routes") or [])
+                for key in definition_only_interactive_config_keys
+                if key in story_trigger_manifest
+            ),
             "unlinkedStoryFilesWithTriggerRoutes": unlinked_files_with_trigger_routes,
             "rootPlaybackAliasFiles": len({
                 row["playableAssetStoryKey"]

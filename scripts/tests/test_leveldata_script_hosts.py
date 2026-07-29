@@ -24,6 +24,7 @@ from scripts.story_builder.level_bindings import (
     find_levelscript_brief_data_entries,
     parse_leveldata_levelscript_brief_dictionary,
     parse_leveldata_airwall_groups,
+    parse_leveldata_interactive_horn_dialog_records,
     parse_leveldata_interactive_narrative_records,
     parse_level_function_area_radio_trigger_zone_entry,
     parse_level_interactive_narrative_mission_context,
@@ -115,6 +116,31 @@ class LevelDataScriptHostTests(unittest.TestCase):
             + cls._mp_string(key)
             + level_bindings._LEVEL_INTERACTIVE_PARAM_STRING_PREFIX
             + cls._mp_string(value)
+        )
+
+    @classmethod
+    def _param_entry(
+        cls,
+        key: str,
+        value_type: int,
+        atoms: list[tuple[int, str | None]],
+    ) -> bytes:
+        return (
+            b"\x02"
+            + cls._mp_string(key)
+            + b"\x02"
+            + value_type.to_bytes(4, "little", signed=True)
+            + len(atoms).to_bytes(4, "little", signed=True)
+            + b"".join(
+                b"\x02"
+                + bits.to_bytes(8, "little")
+                + (
+                    (-1).to_bytes(4, "little", signed=True)
+                    if value is None
+                    else cls._mp_string(value)
+                )
+                for bits, value in atoms
+            )
         )
 
     @classmethod
@@ -224,6 +250,61 @@ class LevelDataScriptHostTests(unittest.TestCase):
             b"\x19"
             + (b"\x00" * 24)
             + cls._mp_string(entity_detail_id)
+            + (b"\x00" * 52)
+            + component_map
+            + derived_suffix
+        )
+
+    @classmethod
+    def _leveldata_horn_interactive_record(
+        cls,
+        dialog_id: str,
+        *,
+        progress_lock: bytes = b"\xff",
+    ) -> bytes:
+        component_map = (
+            (2).to_bytes(4, "little", signed=True)
+            + (0).to_bytes(4, "little", signed=True)
+            + (0).to_bytes(4, "little", signed=True)
+            + (132).to_bytes(4, "little", signed=True)
+            + (0).to_bytes(4, "little", signed=True)
+        )
+        properties = [
+            cls._param_entry(
+                "audio_key",
+                8,
+                [
+                    (0, "au_int_horn_2nd_song"),
+                    (0, "au_int_horn_3rd_song"),
+                    (0, "au_int_horn_1st_song"),
+                ],
+            ),
+            cls._param_entry("dialog_id", 7, [(0, dialog_id)]),
+            cls._param_entry(
+                "horn_lang_key",
+                28,
+                [(0, "lang_int_horn_2")],
+            ),
+            cls._param_entry("max_count", 3, [(2**64 - 1, None)]),
+            cls._param_entry("index", 3, [(0, None)]),
+            cls._param_entry("state", 3, [(0, None)]),
+            cls._param_entry("count", 3, [(0, None)]),
+        ]
+        derived_suffix = (
+            (-1).to_bytes(4, "little", signed=True)
+            + (-1).to_bytes(4, "little", signed=True)
+            + b"\x00\x00\x00"
+            + (-1).to_bytes(4, "little", signed=True)
+            + (-1).to_bytes(4, "little", signed=True)
+            + b"\x00\x00\x00\x00"
+            + progress_lock
+            + len(properties).to_bytes(4, "little", signed=True)
+            + b"".join(properties)
+        )
+        return (
+            b"\x19"
+            + (b"\x00" * 24)
+            + cls._mp_string("int_horn")
             + (b"\x00" * 52)
             + component_map
             + derived_suffix
@@ -1002,6 +1083,153 @@ class LevelDataScriptHostTests(unittest.TestCase):
         )
         self.assertEqual(0, boundary["levelScriptBriefDictionaryCount"])
         self.assertEqual("text_test_1", rows[0]["typeId"])
+
+    def test_leveldata_horn_dialog_consumer_requires_exact_template(
+        self,
+    ) -> None:
+        progress_lock = (
+            b"\x10\x03"
+            + (0).to_bytes(4, "little", signed=True)
+            + (3).to_bytes(4, "little", signed=True)
+            + self._mp_string("sm1l1m9_q#16")
+        )
+        record = self._leveldata_horn_interactive_record(
+            "dlg_sm1l1m9_11",
+            progress_lock=progress_lock,
+        )
+        record_end = 1 + 4 + len(record)
+        suffix = (
+            (77).to_bytes(4, "little", signed=True)
+            + (0).to_bytes(4, "little", signed=True) * 14
+            + b"\x01\x00\x00\x00\x00"
+            + self._mp_string("map_test")
+            + (0).to_bytes(4, "little", signed=True) * 2
+            + b"\xff"
+            + (0).to_bytes(4, "little", signed=True) * 3
+        )
+        data = (
+            b"\x2b"
+            + (1).to_bytes(4, "little", signed=True)
+            + record
+            + suffix
+        )
+        boundary = _leveldata_interactive_final_record_boundary(
+            data,
+            set(),
+            expected_level_id="map_test",
+        )
+        parsed = parse_leveldata_interactive_horn_dialog_records(
+            data,
+            final_record_end_offset=boundary["recordEndOffset"],
+        )
+
+        self.assertEqual(record_end, boundary["recordEndOffset"])
+        self.assertEqual(1, len(parsed))
+        self.assertEqual("dlg_sm1l1m9_11", parsed[0]["dialogId"])
+        self.assertEqual([0, 132], parsed[0]["componentPropertyKeys"])
+        self.assertEqual(
+            "SimpleConditionCheckQuestState",
+            parsed[0]["progressLockConditionType"],
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            streaming = root / "Streaming" / "map_test"
+            persistent = root / "Persistent" / "map_test"
+            streaming.mkdir(parents=True)
+            persistent.mkdir(parents=True)
+            source_path = streaming / "map_test_lv_data_sub_fixture.json"
+            mirror_path = persistent / source_path.name
+            source_path.write_bytes(data)
+            mirror_path.write_bytes(data)
+            horn_template = (
+                b"int_horn dialog_id $33@_dialogId $33@_finishId "
+                b"[HORN]OnDialogExit: finishid:"
+            )
+            horn_source = root / "Streaming" / "data_int_horn.json"
+            horn_mirror = root / "Persistent" / "data_int_horn.json"
+            horn_source.write_bytes(horn_template)
+            horn_mirror.write_bytes(horn_template)
+            interactive_index = {
+                "objectToTemplate": {"int_horn": "int_horn"},
+                "coreTemplatePaths": {
+                    "int_horn": "data_int_horn.json",
+                },
+                "sourceFile": "InteractiveTable.json",
+                "verifiedMirrorFile": "Persistent/InteractiveTable.json",
+            }
+            with (
+                patch.object(
+                    level_bindings,
+                    "_load_interactive_object_template_index",
+                    return_value=interactive_index,
+                ),
+                patch.object(
+                    level_bindings,
+                    "LEVELDATA_HORN_TEMPLATE_SHA256",
+                    level_bindings.hashlib.sha256(
+                        horn_template
+                    ).hexdigest(),
+                ),
+            ):
+                contexts = (
+                    build_leveldata_interactive_narrative_story_contexts(
+                        {"dlg_sm1l1m9_11"},
+                        leveldata_root=root / "Streaming",
+                        persistent_leveldata_root=root / "Persistent",
+                        levelscript_root=root / "LevelScriptData",
+                        reading_popup_path=root / "ReadingPopUpTable.json",
+                        horn_template_path=horn_source,
+                        persistent_horn_template_path=horn_mirror,
+                    )
+                )
+                self.assertEqual(1, len(contexts))
+                self.assertEqual(
+                    "horn_dialog_property",
+                    contexts[0]["narrativeConsumerKind"],
+                )
+                self.assertEqual(
+                    "sm1l1m9_q#16",
+                    contexts[0]["progressLockConditions"][0]["ownerId"],
+                )
+
+                definition_contexts = (
+                    build_leveldata_interactive_narrative_story_contexts(
+                        set(),
+                        available_horn_dialog_definition_keys={
+                            "dlg_sm1l1m9_11"
+                        },
+                        leveldata_root=root / "Streaming",
+                        persistent_leveldata_root=root / "Persistent",
+                        levelscript_root=root / "LevelScriptData",
+                        reading_popup_path=root / "ReadingPopUpTable.json",
+                        horn_template_path=horn_source,
+                        persistent_horn_template_path=horn_mirror,
+                    )
+                )
+                self.assertEqual(1, len(definition_contexts))
+                self.assertEqual(
+                    "registered_dialog_definition",
+                    definition_contexts[0]["storyKeyResolution"],
+                )
+                self.assertFalse(definition_contexts[0]["storyBinding"])
+                self.assertTrue(
+                    definition_contexts[0]["dialogDefinitionBinding"]
+                )
+
+                horn_mirror.write_bytes(horn_template + b" mismatch")
+                contexts = (
+                    build_leveldata_interactive_narrative_story_contexts(
+                        {"dlg_sm1l1m9_11"},
+                        leveldata_root=root / "Streaming",
+                        persistent_leveldata_root=root / "Persistent",
+                        levelscript_root=root / "LevelScriptData",
+                        reading_popup_path=root / "ReadingPopUpTable.json",
+                        horn_template_path=horn_source,
+                        persistent_horn_template_path=horn_mirror,
+                    )
+                )
+                self.assertEqual([], contexts)
 
     def test_leveldata_interactive_narrative_context_requires_exact_mirror(
         self,

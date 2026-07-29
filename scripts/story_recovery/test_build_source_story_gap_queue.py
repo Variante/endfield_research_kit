@@ -1151,6 +1151,121 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             1,
         )
 
+    def test_exact_leveldata_horn_dialog_config_is_closed_without_order(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "sm1l1m9",
+            scenes=["dlg_sm1l1m9_11"],
+            isolated=["dlg_sm1l1m9_11"],
+        )
+        payload = mission_payload(connections=[{
+            "key": "dlg_sm1l1m9_11",
+            "relation": "leveldata_interactive_narrative_config",
+            "confidence": "native_exact_serialized_config",
+            "source": (
+                "exact counted LevelData interactive list -> 25-member "
+                "LevelInteractiveData bounded by the next record or validated "
+                "member-21 suffix (nonempty BriefData dictionary or complete "
+                "empty-script suffix), including an exact null or decoded "
+                "mission/quest-state progress lock -> "
+                "int_horn.properties.dialog_id; the byte-identical authored "
+                "Horn template and current native Horn flow validate the "
+                "dialog consumer"
+            ),
+            "storyOwnerMission": "sm1l1m9",
+            "storyBinding": True,
+            "ownership": False,
+            "nativeMappingId":
+                "leveldata-interactive-horn-dialog-config-v1",
+            "narrativeConsumerKind": "horn_dialog_property",
+            "interactiveHornNativeMappingId":
+                "gameassembly-2026-07-29-interactive-horn-dialog-v1",
+            "interactiveHornTemplateSha256": (
+                "1200acb7208de5e4b9e861dc511cc3a3d4f1f5c56dd4b59f1"
+                "dcb0ef7ab2ea33e"
+            ),
+            "orderBoundary": (
+                "interactive-list order, record index, entity logic id, "
+                "object position, and Story suffix do not establish relative "
+                "Story chronology"
+            ),
+            "levelIds": ["map01_lv001"],
+            "levelDataAssets": ["map01_lv001_lv_data_sub_sm1l1m9"],
+            "interactiveRecordIndex": 2,
+            "interactiveListCount": 3,
+            "interactiveRecordOffset": 2155,
+            "interactiveRecordEndOffset": 3099,
+            "interactiveRecordBoundarySource":
+                "leveldata_member21_start",
+            "levelDataMember21Offset": 3099,
+            "levelScriptBriefDictionaryCountOffset": 3103,
+            "levelScriptBriefDictionaryCount": 7,
+            "levelIdNum": 1,
+            "levelDataFinalBoundaryValidation":
+                "nonempty_levelscript_brief_dictionary",
+            "entityLogicId": 2100280047,
+            "entityDetailIds": ["int_horn"],
+            "entityTemplateIds": ["int_horn"],
+            "dialogIdEntryOffset": 2800,
+            "progressLockConditionStatus": "decoded",
+            "progressLockConditionUnionTag": 16,
+            "progressLockConditionSerializedMemberCount": 3,
+            "progressLockConditionType":
+                "SimpleConditionCheckQuestState",
+            "progressLockConditionTree": {
+                "unionTag": 16,
+                "serializedMemberCount": 3,
+                "conditionType": "SimpleConditionCheckQuestState",
+                "ownerKind": "quest",
+                "ownerId": "sm1l1m9_q#16",
+                "compareOperator": 0,
+                "compareTarget": 3,
+            },
+            "progressLockConditions": [{
+                "unionTag": 16,
+                "serializedMemberCount": 3,
+                "conditionType": "SimpleConditionCheckQuestState",
+                "ownerKind": "quest",
+                "ownerId": "sm1l1m9_q#16",
+                "compareOperator": 0,
+                "compareTarget": 3,
+            }],
+            "rawTypeId": "dlg_sm1l1m9_11",
+            "storyKeyResolution": "direct_story_key",
+            "sourceFiles": [
+                "export_full/structured/StreamingAssets/Data/Json/"
+                "LevelData/map01_lv001/"
+                "map01_lv001_lv_data_sub_sm1l1m9.json",
+            ],
+            "nativeConsumer": (
+                "data_int_horn dialog_id -> authored dialog flow -> "
+                "OnDialogExit -> ReqInteractHorn(finishId)"
+            ),
+        }])
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(
+            row["metrics"]["closedExactRuntimeConfigIsolatedScenes"],
+            1,
+        )
+        closure = row["closedExactRuntimeConfigIsolatedScenes"][0]
+        self.assertEqual(
+            ["horn_dialog_property"],
+            closure["narrativeConsumerKinds"],
+        )
+        self.assertEqual([2], closure["interactiveRecordIndexes"])
+        self.assertEqual(
+            ["leveldata-interactive-horn-dialog-config-v1"],
+            closure["nativeMappingIds"],
+        )
+
     def test_exact_embedded_dialog_tree_line_context_closes_without_file_edge(
         self,
     ) -> None:

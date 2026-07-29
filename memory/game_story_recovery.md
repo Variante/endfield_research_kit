@@ -3387,7 +3387,7 @@ while the report, latest export source fingerprint, and current object-index
 stage signature agree. `export.bat --export-from-game
 --animestudio-object-index` refreshes it automatically.
 
-The source-gap queue schema is now `sourceStoryGapQueue.v18`.
+The source-gap queue schema is now `sourceStoryGapQueue.v19`.
 `blackbox_common` falls from score 5 to 0 and
 `radio_blackbox_common_1` moves from actionable isolation to
 `closed_exact_guide_runtime_non_mission_content`. Current non-mission closures
@@ -3402,6 +3402,18 @@ reports one non-mission file, while the Storyline debug view labels the radio
 as non-mission authored table/tutorial content. Action ids, `nextId`, asset
 names, PathIDs, and object order remain explicitly barred from mission or
 Story-order inference.
+
+The follow-up final-record census found no parsed-but-unvalidated
+Story-bearing LevelData finals. It did isolate one additional exact consumer:
+the final `int_horn` row in
+`map01_lv001_lv_data_sub_sm1l1m9` configures the registered definition
+`dlg_sm1l1m9_11`, is available after `sm1l1m9_q#16 == Completed`, and joins
+the one exact MissionRuntime consumer on successor `sm1l1m9_q#13`. Mission
+Pipeline schema 25 and coverage schema 10 publish this as one definition-only
+route. Totals are now 5,762 routes, including 95 context-only routes across 91
+keys and one registered dialog-definition route; Story coverage remains 4,153
+connected / 1,129 unlinked and the strict partial order remains 1,429 edges.
+The missing-text definition is not aliased to `misc_dlg_sm1l1m9_11d5`.
 
 ### Video duration and subtitle registries are non-owning
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import math
 import struct
 from functools import lru_cache
@@ -34,7 +35,7 @@ _LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE: dict[
     list[dict],
 ] = {}
 _LEVELDATA_INTERACTIVE_NARRATIVE_CACHE: dict[
-    frozenset[str],
+    tuple[frozenset[str], frozenset[str]],
     list[dict],
 ] = {}
 _WORLD_ENTITY_REGISTRY_CACHE: dict[str, dict[tuple[int, int], list[dict]]] = {}
@@ -60,6 +61,31 @@ GLOBAL_SCRIPT_ID_SCALE = 100_000_000
 # named dialog exits.
 LEVELSCRIPT_DIALOG_EXIT_OPCODE = (0x1355, 0x00)
 LEVELSCRIPT_DIALOG_EXIT_TAG = (0x0055, 0x13)
+
+LEVELDATA_HORN_TEMPLATE_SHA256 = (
+    "1200acb7208de5e4b9e861dc511cc3a3d4f1f5c56dd4b59f1dcb0ef7ab2ea33e"
+)
+LEVELDATA_HORN_NATIVE_MAPPING_ID = (
+    "gameassembly-2026-07-29-interactive-horn-dialog-v1"
+)
+LEVELDATA_HORN_PROPERTY_KEYS = {
+    "audio_key",
+    "count",
+    "dialog_id",
+    "horn_lang_key",
+    "index",
+    "max_count",
+    "state",
+}
+LEVELDATA_HORN_PROPERTY_SHAPES = {
+    "audio_key": (8, 3, True),
+    "count": (3, 1, False),
+    "dialog_id": (7, 1, True),
+    "horn_lang_key": (28, 1, True),
+    "index": (3, 1, False),
+    "max_count": (3, 1, False),
+    "state": (3, 1, False),
+}
 
 
 def _topo_sort_quests(quests_out: list[dict]) -> list[dict]:
@@ -5130,6 +5156,7 @@ def _parse_levelscript_interactive_narrative_record(
     end_limit: int,
     *,
     allow_progress_lock: bool = False,
+    allow_non_narrative_component_shape: bool = False,
 ) -> dict | None:
     """Decode one bounded ``LevelInteractiveData`` narrative row.
 
@@ -5243,11 +5270,18 @@ def _parse_levelscript_interactive_narrative_record(
     cursor = int(properties["endOffset"])
 
     narrative_map = components.get(94)
-    if not isinstance(narrative_map, dict):
-        return None
-    type_id_value = (narrative_map.get("entries") or {}).get("type_id")
-    atoms = type_id_value.get("atoms") if isinstance(type_id_value, dict) else None
     if (
+        not isinstance(narrative_map, dict)
+        and not allow_non_narrative_component_shape
+    ):
+        return None
+    type_id_value = (
+        (narrative_map.get("entries") or {}).get("type_id")
+        if isinstance(narrative_map, dict)
+        else None
+    )
+    atoms = type_id_value.get("atoms") if isinstance(type_id_value, dict) else None
+    if isinstance(narrative_map, dict) and (
         not isinstance(type_id_value, dict)
         or type_id_value.get("valueType") != 7
         or type_id_value.get("atomCount") != 1
@@ -5275,14 +5309,23 @@ def _parse_levelscript_interactive_narrative_record(
         "componentPropertiesCount": component_count,
         "componentPropertyKeys": sorted(components),
         "componentEntryOffsets": component_entry_offsets,
-        "narrativeComponentKey": 94,
-        "narrativeParamMapOffset": narrative_map.get("offset"),
-        "narrativeParamMapEndOffset": narrative_map.get("endOffset"),
-        "narrativeParamMapEntryCount": narrative_map.get("entryCount"),
-        "typeIdEntryOffset": (narrative_map.get("entryOffsets") or {}).get(
-            "type_id"
+        **(
+            {
+                "narrativeComponentKey": 94,
+                "narrativeParamMapOffset": narrative_map.get("offset"),
+                "narrativeParamMapEndOffset":
+                    narrative_map.get("endOffset"),
+                "narrativeParamMapEntryCount":
+                    narrative_map.get("entryCount"),
+                "typeIdEntryOffset":
+                    (narrative_map.get("entryOffsets") or {}).get("type_id"),
+                "typeId": str(atoms[0]["stringValue"]),
+            }
+            if isinstance(narrative_map, dict)
+            else {
+                "componentParamMaps": components,
+            }
         ),
-        "typeId": str(atoms[0]["stringValue"]),
         "nullCollectionOffsets": null_collection_offsets,
         **bool_values,
         "modelScale": model_scale,
@@ -5291,7 +5334,100 @@ def _parse_levelscript_interactive_narrative_record(
         "propertiesOffset": properties.get("offset"),
         "propertiesEndOffset": properties.get("endOffset"),
         "propertiesCount": properties.get("entryCount"),
+        "propertyEntryOffsets": properties.get("entryOffsets") or {},
         "properties": properties.get("entries") or {},
+    }
+
+
+def _level_interactive_scalar_string(value: object) -> str:
+    """Return one exact scalar string ParamValue, otherwise an empty string."""
+    if not isinstance(value, dict):
+        return ""
+    atoms = value.get("atoms")
+    if (
+        value.get("valueType") != 7
+        or value.get("atomCount") != 1
+        or not isinstance(atoms, list)
+        or len(atoms) != 1
+        or atoms[0].get("valueBits") != 0
+    ):
+        return ""
+    return str(atoms[0].get("stringValue") or "").strip()
+
+
+def _parse_leveldata_horn_dialog_record(
+    data: bytes,
+    offset: int,
+    end_limit: int,
+    *,
+    require_end_limit: bool = True,
+) -> dict | None:
+    """Decode one exact ``int_horn`` record and its dialog-id property."""
+    parsed = _parse_levelscript_interactive_narrative_record(
+        data,
+        offset,
+        end_limit,
+        allow_progress_lock=True,
+        allow_non_narrative_component_shape=True,
+    )
+    if (
+        parsed is None
+        or (
+            require_end_limit
+            and parsed.get("recordEndOffset") != end_limit
+        )
+        or parsed.get("entityDetailId") != "int_horn"
+        or parsed.get("componentPropertyKeys") != [0, 132]
+    ):
+        return None
+    properties = parsed.get("properties")
+    component_maps = parsed.pop("componentParamMaps", None)
+    if (
+        not isinstance(properties, dict)
+        or set(properties) != LEVELDATA_HORN_PROPERTY_KEYS
+        or not isinstance(component_maps, dict)
+        or set(component_maps) != {0, 132}
+        or any(
+            component_map.get("entryCount") != 0
+            or component_map.get("entries") not in ({}, [])
+            for component_map in component_maps.values()
+            if isinstance(component_map, dict)
+        )
+        or any(
+            not isinstance(component_map, dict)
+            for component_map in component_maps.values()
+        )
+    ):
+        return None
+    for key, (value_type, atom_count, string_required) in (
+        LEVELDATA_HORN_PROPERTY_SHAPES.items()
+    ):
+        value = properties.get(key)
+        atoms = value.get("atoms") if isinstance(value, dict) else None
+        if (
+            not isinstance(value, dict)
+            or value.get("valueType") != value_type
+            or value.get("atomCount") != atom_count
+            or not isinstance(atoms, list)
+            or len(atoms) != atom_count
+            or any(
+                bool(str(atom.get("stringValue") or "").strip())
+                != string_required
+                for atom in atoms
+                if isinstance(atom, dict)
+            )
+            or any(not isinstance(atom, dict) for atom in atoms)
+        ):
+            return None
+    dialog_id = _level_interactive_scalar_string(properties.get("dialog_id"))
+    if not dialog_id.startswith("dlg_"):
+        return None
+    return {
+        **parsed,
+        "dialogIdEntryOffset":
+            (parsed.get("propertyEntryOffsets") or {}).get("dialog_id"),
+        "dialogId": dialog_id,
+        "narrativeConsumerKind": "horn_dialog_property",
     }
 
 
@@ -5754,7 +5890,8 @@ def parse_leveldata_interactive_narrative_records(
 
     Non-final records use the next typed list item. A caller may supply the
     exact start of top-level member 21 to bound the final record, but only after
-    independently validating the adjacent member-22 dictionary.
+    independently validating either the adjacent nonempty member-22 dictionary
+    or the complete empty-script members 21-43 suffix.
     """
     if not data or data[0] != 43:
         return []
@@ -5797,6 +5934,48 @@ def parse_leveldata_interactive_narrative_records(
     return rows
 
 
+def parse_leveldata_interactive_horn_dialog_records(
+    data: bytes,
+    *,
+    final_record_end_offset: int | None = None,
+) -> list[dict]:
+    """Recover fully bounded ``int_horn.properties.dialog_id`` consumers."""
+    if not data or data[0] != 43:
+        return []
+    rows: list[dict] = []
+    seen_offsets: set[int] = set()
+    for frame in _level_interactive_data_list_frames(
+        data,
+        final_record_end_offset=final_record_end_offset,
+    ):
+        for boundary in frame.get("records") or []:
+            offset = boundary.get("recordOffset")
+            end_offset = boundary.get("recordEndOffset")
+            if (
+                not isinstance(offset, int)
+                or not isinstance(end_offset, int)
+                or offset in seen_offsets
+            ):
+                continue
+            parsed = _parse_leveldata_horn_dialog_record(
+                data,
+                offset,
+                end_offset,
+            )
+            if parsed is None:
+                continue
+            seen_offsets.add(offset)
+            rows.append({
+                **parsed,
+                "recordIndex": boundary.get("recordIndex"),
+                "interactiveListCount": frame.get("listCount"),
+                "interactiveListCountOffset": frame.get("listCountOffset"),
+                "recordBoundarySource":
+                    boundary.get("recordBoundarySource"),
+            })
+    return rows
+
+
 def _leveldata_interactive_final_record_boundary(
     data: bytes,
     candidate_script_ids: set[int],
@@ -5805,11 +5984,10 @@ def _leveldata_interactive_final_record_boundary(
 ) -> dict | None:
     """Validate the member-20/21/22 boundary used by a final interactive.
 
-    Current ``LevelData/43`` member 20 is the interactive list, member 21 is
-    the fixed-width ``levelIdNum`` integer, and member 22 is the validated
-    ``Dictionary<ulong, LevelScriptBriefData/8>``. The independently decoded
-    dictionary therefore supplies an exact boundary without borrowing an
-    unrelated byte pattern.
+    Current ``LevelData/43`` member 20 is the interactive list and member 21 is
+    the fixed-width ``levelIdNum`` integer. A nonempty member-22 BriefData
+    dictionary or the complete empty-script members 21-43 suffix supplies an
+    exact boundary without borrowing an unrelated byte pattern.
     """
     brief_rows = (
         parse_leveldata_levelscript_brief_dictionary(
@@ -5861,6 +6039,13 @@ def _leveldata_interactive_final_record_boundary(
             len(data),
             allow_progress_lock=True,
         )
+        if parsed is None:
+            parsed = _parse_leveldata_horn_dialog_record(
+                data,
+                record_offset,
+                len(data),
+                require_end_limit=False,
+            )
         if parsed is None:
             continue
         member21_offset = int(parsed["recordEndOffset"])
@@ -5936,26 +6121,93 @@ def _leveldata_interactive_final_record_boundary(
     return next(iter(unique.values())) if len(unique) == 1 else None
 
 
+def _validated_leveldata_horn_template(
+    source_path: Path,
+    mirror_path: Path,
+) -> dict | None:
+    """Validate the current authored Horn dialog consumer template."""
+    try:
+        source = read_bytes_cached(source_path)
+        mirror = read_bytes_cached(mirror_path)
+    except OSError:
+        return None
+    required_markers = (
+        b"int_horn",
+        b"dialog_id",
+        b"$33@_dialogId",
+        b"$33@_finishId",
+        b"[HORN]OnDialogExit: finishid:",
+    )
+    digest = hashlib.sha256(source).hexdigest()
+    if (
+        source != mirror
+        or digest != LEVELDATA_HORN_TEMPLATE_SHA256
+        or any(marker not in source for marker in required_markers)
+    ):
+        return None
+    return {
+        "interactiveHornTemplateSourceFile": repo_rel(source_path),
+        "interactiveHornTemplateVerifiedMirrorFile": repo_rel(mirror_path),
+        "interactiveHornTemplateSha256": digest,
+        "interactiveHornNativeMappingId":
+            LEVELDATA_HORN_NATIVE_MAPPING_ID,
+    }
+
+
 def build_leveldata_interactive_narrative_story_contexts(
     available_story_keys: set[str],
     *,
+    available_horn_dialog_definition_keys: set[str] | None = None,
     leveldata_root: Path = LEVELDATA_DIR,
     persistent_leveldata_root: Path = (
         PERSISTENT_DATA_JSON_DIR / "LevelData"
     ),
     levelscript_root: Path = LEVELSCRIPT_DIR,
     reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
+    horn_template_path: Path = (
+        DATA_JSON_DIR
+        / "Interactive"
+        / "InteractiveData"
+        / "data_int_horn.json"
+    ),
+    persistent_horn_template_path: Path = (
+        PERSISTENT_DATA_JSON_DIR
+        / "Interactive"
+        / "InteractiveData"
+        / "data_int_horn.json"
+    ),
 ) -> list[dict]:
     """Bind Story files to exact, bounded LevelData narrative configuration."""
+    available_horn_dialog_definition_keys = (
+        available_horn_dialog_definition_keys or set()
+    )
     use_default_cache = (
         leveldata_root == LEVELDATA_DIR
         and persistent_leveldata_root
         == PERSISTENT_DATA_JSON_DIR / "LevelData"
         and levelscript_root == LEVELSCRIPT_DIR
+        and not available_horn_dialog_definition_keys
         and reading_popup_path
         == STREAMING_TABLE_DIR / "ReadingPopUpTable.json"
+        and horn_template_path
+        == (
+            DATA_JSON_DIR
+            / "Interactive"
+            / "InteractiveData"
+            / "data_int_horn.json"
+        )
+        and persistent_horn_template_path
+        == (
+            PERSISTENT_DATA_JSON_DIR
+            / "Interactive"
+            / "InteractiveData"
+            / "data_int_horn.json"
+        )
     )
-    cache_key = frozenset(available_story_keys)
+    cache_key = (
+        frozenset(available_story_keys),
+        frozenset(available_horn_dialog_definition_keys),
+    )
     if (
         use_default_cache
         and cache_key in _LEVELDATA_INTERACTIVE_NARRATIVE_CACHE
@@ -5970,6 +6222,10 @@ def build_leveldata_interactive_narrative_story_contexts(
     interactive_index = _load_interactive_object_template_index()
     object_to_template = interactive_index.get("objectToTemplate") or {}
     core_paths = interactive_index.get("coreTemplatePaths") or {}
+    horn_template_evidence = _validated_leveldata_horn_template(
+        horn_template_path,
+        persistent_horn_template_path,
+    )
     candidate_script_ids_by_level: dict[str, set[int]] = {}
     if levelscript_root.is_dir():
         for level_dir in levelscript_root.iterdir():
@@ -5992,8 +6248,14 @@ def build_leveldata_interactive_narrative_story_contexts(
                 continue
             if (
                 data != mirror_data
-                or b"type_id" not in data
-                or b"int_narrative" not in data
+                or not (
+                    (b"type_id" in data and b"int_narrative" in data)
+                    or (
+                        horn_template_evidence is not None
+                        and b"dialog_id" in data
+                        and b"int_horn" in data
+                    )
+                )
             ):
                 continue
             final_boundary = _leveldata_interactive_final_record_boundary(
@@ -6001,15 +6263,34 @@ def build_leveldata_interactive_narrative_story_contexts(
                 candidate_script_ids_by_level.get(path.parent.name, set()),
                 expected_level_id=path.parent.name,
             )
-            for record in parse_leveldata_interactive_narrative_records(
-                data,
-                final_record_end_offset=(
-                    final_boundary.get("recordEndOffset")
-                    if isinstance(final_boundary, dict)
-                    else None
-                ),
-            ):
-                raw_type_id = str(record.get("typeId") or "")
+            final_record_end_offset = (
+                final_boundary.get("recordEndOffset")
+                if isinstance(final_boundary, dict)
+                else None
+            )
+            parsed_records = [
+                ("narrative_component", record)
+                for record in parse_leveldata_interactive_narrative_records(
+                    data,
+                    final_record_end_offset=final_record_end_offset,
+                )
+            ]
+            if horn_template_evidence is not None:
+                parsed_records.extend(
+                    ("horn_dialog_property", record)
+                    for record
+                    in parse_leveldata_interactive_horn_dialog_records(
+                        data,
+                        final_record_end_offset=final_record_end_offset,
+                    )
+                )
+            for consumer_kind, record in parsed_records:
+                raw_type_id = str(
+                    record.get("typeId")
+                    if consumer_kind == "narrative_component"
+                    else record.get("dialogId")
+                    or ""
+                )
                 popup_row = reading_rows.get(raw_type_id)
                 popup_content_id = str(
                     popup_row.get("contentId")
@@ -6022,11 +6303,24 @@ def build_leveldata_interactive_narrative_story_contexts(
                 elif popup_content_id in available_story_keys:
                     story_key = popup_content_id
                     resolution = "reading_popup_content_id"
+                elif (
+                    consumer_kind == "horn_dialog_property"
+                    and raw_type_id
+                    in available_horn_dialog_definition_keys
+                ):
+                    story_key = raw_type_id
+                    resolution = "registered_dialog_definition"
                 else:
                     continue
                 entity_detail_id = str(record.get("entityDetailId") or "")
                 template_id = str(object_to_template.get(entity_detail_id) or "")
-                if not template_id.startswith("int_narrative"):
+                if (
+                    consumer_kind == "narrative_component"
+                    and not template_id.startswith("int_narrative")
+                ) or (
+                    consumer_kind == "horn_dialog_property"
+                    and template_id != "int_horn"
+                ):
                     continue
                 rows.append({
                     **record,
@@ -6058,10 +6352,28 @@ def build_leveldata_interactive_narrative_story_contexts(
                     "nativeConsumer": (
                         "NarrativeComponent.ClientCollectNarrative -> "
                         "_CollectNarrative -> dialog/reading-popup dispatch"
+                        if consumer_kind == "narrative_component"
+                        else (
+                            "data_int_horn dialog_id -> authored dialog flow -> "
+                            "OnDialogExit -> ReqInteractHorn(finishId)"
+                        )
                     ),
                     "nativeMappingId":
-                        "leveldata-interactive-narrative-config-v5",
-                    "storyBinding": True,
+                        (
+                            "leveldata-interactive-narrative-config-v5"
+                            if consumer_kind == "narrative_component"
+                            else "leveldata-interactive-horn-dialog-config-v1"
+                        ),
+                    "narrativeConsumerKind": consumer_kind,
+                    **(
+                        horn_template_evidence
+                        if consumer_kind == "horn_dialog_property"
+                        else {}
+                    ),
+                    "storyBinding":
+                        resolution != "registered_dialog_definition",
+                    "dialogDefinitionBinding":
+                        resolution == "registered_dialog_definition",
                     "ownership": False,
                     "questActivation": False,
                     "questPlayback": False,
@@ -6087,7 +6399,17 @@ def build_leveldata_interactive_narrative_story_contexts(
     if use_default_cache:
         _LEVELDATA_INTERACTIVE_NARRATIVE_CACHE[cache_key] = rows
     return [
-        row for row in rows if row.get("storyKey") in available_story_keys
+        row
+        for row in rows
+        if (
+            row.get("storyKey") in available_story_keys
+            or (
+                row.get("narrativeConsumerKind")
+                == "horn_dialog_property"
+                and row.get("storyKey")
+                in available_horn_dialog_definition_keys
+            )
+        )
     ]
 
 

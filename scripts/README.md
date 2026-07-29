@@ -929,6 +929,16 @@ Expected active inputs and outputs:
   prove the state-query and playback lanes; because the exact interaction
   packet/reply is not recovered, the UI separately notes the optional
   `_RequestInteract` path instead of manufacturing a server exchange.
+  The same exact final-record framing now admits one separately validated
+  `int_horn.properties.dialog_id` consumer. It requires component keys
+  `[0,132]`, the exact seven-property Horn shape, byte-identical authored
+  template mirrors pinned by SHA-256, and the current native
+  `RegisterInteractOptions` / `ReqInteractHorn(finishId)` flow. The one current
+  row binds registered definition `dlg_sm1l1m9_11` to the exact q13
+  `CheckTalkOptionFinish` consumer and retains q16 Completed as a separate
+  availability lock. Because the definition has no emitted text conversation,
+  Mission Pipeline publishes a definition-only context route outside Story
+  coverage and does not alias the `...11d5` conversation.
   Typed DialogTree narrative links additionally report direct, direct-mission,
   `derived_exact_quest`, and `derived_exact_shell` evidence tiers. Every exact
   parent use is retained: `unresolvedDialogTreeNarrativeActions` includes both
