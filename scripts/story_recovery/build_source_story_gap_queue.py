@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v65"
+SCHEMA = "sourceStoryGapQueue.v66"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -129,7 +129,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v44"
+    "current-build-offline-story-carrier-exhaustion-v45"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -320,7 +320,6 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
     }),
     "e2m6": frozenset({
         "cutscene_e2m6_designer_AngelSurrounding",
-        "cutscene_e2m6_designer_anchorperish_001",
     }),
     "e3m4": frozenset({"cutscene_e3m4_1"}),
     "e6m3": frozenset({"cutscene_e6m3_2"}),
@@ -364,7 +363,6 @@ OFFLINE_EXHAUSTION_REVERSE_HOST_COUNTS = {
     "cutscene_e1m1_4": 2,
     "cutscene_e1m3_1": 1,
     "cutscene_e2m6_designer_AngelSurrounding": 1,
-    "cutscene_e2m6_designer_anchorperish_001": 1,
     "cutscene_e6m4_1": 1,
     "cutscene_e6m4_hydrantStart": 1,
     "cutscene_e7m2_designer_QingBoZhai": 1,
@@ -477,14 +475,6 @@ OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS = {
             "cutscene_e2m6_designer_AngelSurrounding_p9E14E210A67B0AF8.json",
             "4CFD3CEECC55198E4B99FDEA37EB02E6E62F3676600AE6DA3B4D878264659FBD",
             "cutscene_e2m6_designer_AngelSurrounding",
-        ),),
-    },
-    "cutscene_e2m6_designer_anchorperish_001": {
-        "timelineRegistryId": 265,
-        "files": ((
-            "cutscene_e2m6_designer_anchorperish_001_p47B0268A95477A92.json",
-            "EB2D6F282B72DC47FAFAB970B64360A4FA8BF9B6B19D531E37980042604DE960",
-            "cutscene_e2m6_designer_anchorperish_001",
         ),),
     },
     "cutscene_e6m4_1": {
@@ -701,7 +691,6 @@ OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS = {
     "cutscene_e1m1_4": 2,
     "cutscene_e1m3_1": 1,
     "cutscene_e2m6_designer_AngelSurrounding": 1,
-    "cutscene_e2m6_designer_anchorperish_001": 1,
     "cutscene_e6m4_1": 1,
     "cutscene_e6m4_hydrantStart": 1,
     "cutscene_e7m2_designer_QingBoZhai": 1,
@@ -2135,6 +2124,7 @@ OFFLINE_EXHAUSTION_E8M2_RADIOS = frozenset({
     "radio_e8m2_15",
     "radio_e8m2_16",
 })
+OFFLINE_EXHAUSTION_E8M3_RADIOS = frozenset({"radio_e8m3_27"})
 OFFLINE_EXHAUSTION_E10M1_RADIOS = frozenset({
     "radio_e10m1_6",
     "radio_e10m1_9",
@@ -2166,6 +2156,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e7m3": OFFLINE_EXHAUSTION_E7M3_RADIOS,
     "e7m4": OFFLINE_EXHAUSTION_E7M4_RADIOS,
     "e8m2": OFFLINE_EXHAUSTION_E8M2_RADIOS,
+    "e8m3": OFFLINE_EXHAUSTION_E8M3_RADIOS,
     "e9m2": OFFLINE_EXHAUSTION_E9M2_RADIOS,
     "e9m3": OFFLINE_EXHAUSTION_E9M3_RADIOS,
     "e9m4": OFFLINE_EXHAUSTION_E9M4_RADIOS,
@@ -7682,6 +7673,97 @@ def _exact_cross_owner_leveldata_story_context(
     )
 
 
+def _exact_cross_owner_mission_condition_story_context(
+    connection: dict[str, Any],
+    owner_mission: str,
+    context_mission: str,
+) -> bool:
+    """Validate a foreign playback route scoped by a typed mission condition."""
+    story_key = safe_key(connection.get("key"))
+    occurrences = connection.get("levelScriptOccurrences") or []
+    if (
+        not story_key
+        or safe_key(connection.get("relation"))
+        != "levelscript_mission_context"
+        or safe_key(connection.get("direction")) != "context"
+        or safe_key(connection.get("phase")) != "context"
+        or safe_key(connection.get("confidence")) != "scoped_script"
+        or safe_key(connection.get("storyOwnerMission")) != owner_mission
+        or safe_key(connection.get("levelScriptMissionId"))
+        != context_mission
+        or owner_mission == context_mission
+        or connection.get("hasUnscopedOrOtherMissionOccurrences") is not False
+        or set(_string_list(connection.get("scopeEvidenceKinds")))
+        != {"mission_condition_checks_script"}
+        or not isinstance(occurrences, list)
+        or not occurrences
+        or connection.get("occurrenceCount") != len(occurrences)
+        or connection.get("allOccurrenceCount") != len(occurrences)
+    ):
+        return False
+
+    has_playback = False
+    for occurrence in occurrences:
+        if not isinstance(occurrence, dict):
+            return False
+        action_local_id = occurrence.get("localId")
+        record_class = safe_key(occurrence.get("recordClass"))
+        owners = occurrence.get("nativeEventOwners") or []
+        mission_conditions = occurrence.get("missionConditions") or []
+        if (
+            not safe_key(occurrence.get("levelId"))
+            or not safe_key(occurrence.get("scriptId"))
+            or not safe_key(occurrence.get("sourceFile"))
+            or not isinstance(action_local_id, int)
+            or not safe_key(occurrence.get("actionMapRole")).startswith(
+                "actionList#"
+            )
+            or not (
+                record_class.startswith("play_")
+                or record_class.startswith("preload_")
+            )
+            or not safe_key(occurrence.get("actionName"))
+            or not safe_key(occurrence.get("nativeMappingId")).startswith(
+                "gameassembly-"
+            )
+            or set(_string_list(occurrence.get("allStoryKeysInRecord")))
+            != {story_key}
+            or safe_key(occurrence.get("nativeEventOwnerStatus"))
+            != "exact_serialized_control_path"
+            or not owners
+            or not any(
+                isinstance(owner, dict)
+                and safe_key(owner.get("status"))
+                == "exact_serialized_control_path"
+                and isinstance(owner.get("headerLocalId"), int)
+                and action_local_id in {
+                    step.get("localId")
+                    for step in owner.get("path") or []
+                    if isinstance(step, dict)
+                }
+                for owner in owners
+            )
+            or set(_string_list(occurrence.get("scopeEvidenceKinds")))
+            != {"mission_condition_checks_script"}
+            or not mission_conditions
+            or any(
+                not isinstance(condition, dict)
+                or safe_key(condition.get("missionId")) != context_mission
+                or not safe_key(condition.get("questId")).startswith(
+                    f"{context_mission}_q#"
+                )
+                or not safe_key(condition.get("conditionType")).startswith(
+                    "CheckLevelScript"
+                )
+                or not safe_key(condition.get("sourceFile"))
+                for condition in mission_conditions
+            )
+        ):
+            return False
+        has_playback = has_playback or record_class.startswith("play_")
+    return has_playback
+
+
 def build_gap_report(
     partial_report: dict[str, Any],
     mission_payloads: dict[str, dict[str, Any]],
@@ -7731,6 +7813,13 @@ def build_gap_report(
                     continue
             elif relation == "leveldata_levelscript_mission_context":
                 if not _exact_cross_owner_leveldata_story_context(
+                    connection,
+                    owner_mission,
+                    context_mission,
+                ):
+                    continue
+            elif relation == "levelscript_mission_context":
+                if not _exact_cross_owner_mission_condition_story_context(
                     connection,
                     owner_mission,
                     context_mission,

@@ -4306,13 +4306,13 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v65`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v66`
    turns the completed exact `e0m0`, `e0m2`, `e1m1`, `e1m2`, `e1m3`, `e1m4`,
    `e1m10`, `e2m2`, `e2m3`, `e2m4`,
    `e2m5`, `e2m6`, `e2m7`, `e3m2`, `e3m3`, `e3m4`, `e4m1`, `e5m1`,
    `e5m2`, `e5m4`,
    `e6m1`, `e6m2`, `e6m3`,
-   `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e8m2`, `e9m2`, `e9m3`, `e9m4`,
+   `e6m4`, `e7m2`, `e7m3`, `e7m4`, `e8m2`, `e8m3`, `e9m2`, `e9m3`, `e9m4`,
    `e10m1`, `e10m3`, `e10m4`, `e11m1`, `e11m2`, `e11m3`, `e11m4`,
    `e11m5`, `e11m6`, and `e11m8` negative boundaries into fail-closed
    operational deferrals.
@@ -4778,6 +4778,25 @@ Current main-story priorities:
    deferrals. The main-story bucket is score 172 with 29 actionable core
    isolated rows, 106 exact-native isolated closures, 95 exact-runtime-config
    closures, and 9 strict-attachment diagnostics. e8m3 is next at score 10.
+   The e8m3 pass recovers one positive cross-owner route and one negative
+   carrier boundary. `dlg_e8m3_1` is not unlinked: the `e8m2_q#14d5`
+   `CheckLevelScriptPropertyBool(video_played=true)` condition scopes
+   `map02_lv004/23400020010`, whose exact Leader-enter trigger-slot 80001
+   path reaches `PlayFmvAction(cs_video_e8m2_1)` and then
+   `StartDialogAndTeleportAction(dlg_e8m3_1)`. This proves an authored e8m2
+   playback context despite the dialog's e8m3 filename prefix; it does not
+   prove e8m3 activation or relative order. The same strict typed
+   mission-condition join supersedes the older negative classification of
+   `cutscene_e2m6_designer_anchorperish_001`: its `e2m7`-scoped
+   `map01_lv006/3500060001` event paths contain exact play/preload actions, so
+   it is now an exact-native closure and no longer an offline deferral.
+   `radio_e8m3_27` remains genuinely unlinked: its two RadioTable lines have
+   direct AudioDialog membership, an empty Story route array, and no carrier
+   candidate. Removing the stale e2m6 negative while adding this radio keeps
+   v66/v45 at 327 declarations and 327 active deferrals. The main-story bucket
+   is score 162 with 27 actionable core isolated rows, 108 exact-native
+   isolated closures, 95 exact-runtime-config closures, and 9
+   strict-attachment diagnostics. e8m1 is next at score 10.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
@@ -4896,8 +4915,8 @@ Current main-story priorities:
    e2m4 then closes seven audio-complete RadioTable definitions and registered
    five-line/two-option `dlg_e2m4_10`, dropping from score 40/8 to zero while
    retaining its options as non-routing content. e2m6 then closes three
-   audio-complete radios, two one-host registry/hash-locked designer
-   cutscenes, registered 24-line/four-option `dlg_e2m6_12`, and seven-line
+   audio-complete radios, one one-host registry/hash-locked designer
+   cutscene, registered 24-line/four-option `dlg_e2m6_12`, and seven-line
    no-registry `dlg_e2m6_18` with exact present audio. It reaches score 3
    solely from the scope-only `e2m6_q#17` diagnostic. The genuine offline
    queue now ranks `e11m3` first. Continue
