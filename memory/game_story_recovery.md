@@ -3821,17 +3821,29 @@ Current main-story priorities:
    audit adds another bounded candidate surface: 387 typed
    `RootComp -> IdComp / MissionControlComp` roots include 125 exact numeric
    `IdComp.logicId == LevelScript scriptId` matches, and 72 matching scripts
-   contain 216 Story occurrences. The two occurrences newly visible after the
-   current LevelScript parser refresh are `cutscene_e1m3_1` under logic/script
+   contain 218 Story occurrences. The count now reads Story occurrences from
+   the same effective Persistent LevelScript root as the identity scan; this
+   corrects patched offsets in `map02_lv008/23100350005` and adds two tagged
+   action-list occurrences whose native action classes remain unknown. The two
+   typed playback occurrences newly visible after the current LevelScript
+   parser refresh are `cutscene_e1m3_1` under logic/script
    id `2100060003`, whose DynamicScene conditions mention `e1m2_q#5` and
    `e1m2_q#7`, and `cutscene_e7m4_2` under id `23300000023`, whose condition
    mentions `e7m4`. These are exact authored cross-references only. Native
    DynamicScene registration resolves the logic id through its entity map,
-   while LevelScript resolution uses the selected LevelScript container; no
-   direct runtime bridge passes one identity into the other. The maintained
+   while LevelScript resolution uses the selected LevelScript container.
+   A focused action audit now finds one genuine identity crossing in the
+   LevelScript-to-DynamicScene direction:
+   `map02_lv001/10100282001` serializes the typed
+   `ShowSceneDecorationNew(10100282001, false)` action. Its exact
+   `ScriptEvent_OnLeaderEnterTriggerVolume` slot-80001 chain first runs
+   `dlg_c27m3_6`, then follows `ActionBase.nextId` into that decoration action.
+   This proves a shared local control path and exact DynamicScene target, but
+   not that the root's `c27m3 != 3` / `c27m3_q#3 = 3` mission condition starts
+   the LevelScript trigger header. The maintained
    report therefore sets `missionGraphAction=none`, and the WebUI must keep
-   this evidence candidate-only unless a typed serialized carrier or runtime
-   bridge closes the namespace/owner gap. The adjacent component-name lead is
+   this evidence candidate-only unless a typed serialized or runtime edge
+   closes that mission-activation gap. The adjacent component-name lead is
    also closed: `FBDynamicSceneScriptControlComp` serializes only
    `DefaultLoad:int32`, and none of the 387 mission-controlled roots co-carries
    it. There are therefore zero such components among both the 125 numeric
