@@ -5739,6 +5739,7 @@ def _level_interactive_data_list_frames(
         frames.append({
             "listCountOffset": offset - 4,
             "listCount": count,
+            "finalRecordOffset": record_starts[-1][0],
             "records": bounded_records,
         })
     return frames
@@ -5799,6 +5800,8 @@ def parse_leveldata_interactive_narrative_records(
 def _leveldata_interactive_final_record_boundary(
     data: bytes,
     candidate_script_ids: set[int],
+    *,
+    expected_level_id: str = "",
 ) -> dict | None:
     """Validate the member-20/21/22 boundary used by a final interactive.
 
@@ -5808,36 +5811,129 @@ def _leveldata_interactive_final_record_boundary(
     dictionary therefore supplies an exact boundary without borrowing an
     unrelated byte pattern.
     """
-    if not candidate_script_ids:
-        return None
-    brief_rows = parse_leveldata_levelscript_brief_dictionary(
-        data,
-        candidate_script_ids,
+    brief_rows = (
+        parse_leveldata_levelscript_brief_dictionary(
+            data,
+            candidate_script_ids,
+        )
+        if candidate_script_ids
+        else {}
     )
     count_offsets = {
         int(row["dictionaryCountOffset"])
         for row in brief_rows.values()
         if isinstance(row.get("dictionaryCountOffset"), int)
     }
-    if len(count_offsets) != 1:
-        return None
-    dictionary_count_offset = next(iter(count_offsets))
-    member21_offset = dictionary_count_offset - 4
-    level_id_num_decoded = _read_leveldata_i32(data, member21_offset)
-    if (
-        member21_offset <= 0
-        or level_id_num_decoded is None
-        or level_id_num_decoded[1] != dictionary_count_offset
-        or level_id_num_decoded[0] < 0
-    ):
-        return None
-    return {
-        "recordEndOffset": member21_offset,
-        "levelDataMember21Offset": member21_offset,
-        "levelIdNum": level_id_num_decoded[0],
-        "levelScriptBriefDictionaryCountOffset": dictionary_count_offset,
-        "levelScriptBriefDictionaryCount": len(brief_rows),
+    if len(count_offsets) == 1:
+        dictionary_count_offset = next(iter(count_offsets))
+        member21_offset = dictionary_count_offset - 4
+        level_id_num_decoded = _read_leveldata_i32(data, member21_offset)
+        if (
+            member21_offset > 0
+            and level_id_num_decoded is not None
+            and level_id_num_decoded[1] == dictionary_count_offset
+            and level_id_num_decoded[0] >= 0
+        ):
+            return {
+                "recordEndOffset": member21_offset,
+                "levelDataMember21Offset": member21_offset,
+                "levelIdNum": level_id_num_decoded[0],
+                "levelScriptBriefDictionaryCountOffset":
+                    dictionary_count_offset,
+                "levelScriptBriefDictionaryCount": len(brief_rows),
+                "levelDataFinalBoundaryValidation":
+                    "nonempty_levelscript_brief_dictionary",
+            }
+
+    # Environment-only LevelData can serialize no LevelScriptBriefData rows.
+    # In the current 43-member schema, the complete member-21..43 suffix is
+    # independently recognizable: levelIdNum; fourteen empty collections;
+    # LevelSafeZoneData/1 with its zero value; exact sceneId; two empty
+    # collections; null LevelSpecificData; and three empty collections at EOF.
+    candidates: list[dict] = []
+    for frame in _level_interactive_data_list_frames(data):
+        record_offset = frame.get("finalRecordOffset")
+        if not isinstance(record_offset, int):
+            continue
+        parsed = _parse_levelscript_interactive_narrative_record(
+            data,
+            record_offset,
+            len(data),
+            allow_progress_lock=True,
+        )
+        if parsed is None:
+            continue
+        member21_offset = int(parsed["recordEndOffset"])
+        cursor = member21_offset
+        level_id_num_decoded = _read_leveldata_i32(data, cursor)
+        if level_id_num_decoded is None or level_id_num_decoded[0] < 0:
+            continue
+        level_id_num, cursor = level_id_num_decoded
+        collection_offsets: list[int] = []
+        valid = True
+        for _ in range(14):
+            decoded = _read_leveldata_count(data, cursor, max_count=0)
+            if decoded is None or decoded[0] != 0:
+                valid = False
+                break
+            collection_offsets.append(cursor)
+            _, cursor = decoded
+        if not valid or data[cursor : cursor + 5] != b"\x01\x00\x00\x00\x00":
+            continue
+        safe_zone_offset = cursor
+        cursor += 5
+        scene_decoded = _read_leveldata_memorypack_string(
+            data,
+            cursor,
+            max_length=256,
+        )
+        if scene_decoded is None:
+            continue
+        scene_id, cursor = scene_decoded
+        if expected_level_id and scene_id != expected_level_id:
+            continue
+        for _ in range(2):
+            decoded = _read_leveldata_count(data, cursor, max_count=0)
+            if decoded is None or decoded[0] != 0:
+                valid = False
+                break
+            collection_offsets.append(cursor)
+            _, cursor = decoded
+        if not valid or cursor >= len(data) or data[cursor] != 0xFF:
+            continue
+        specific_data_offset = cursor
+        cursor += 1
+        for _ in range(3):
+            decoded = _read_leveldata_count(data, cursor, max_count=0)
+            if decoded is None or decoded[0] != 0:
+                valid = False
+                break
+            collection_offsets.append(cursor)
+            _, cursor = decoded
+        if not valid or cursor != len(data):
+            continue
+        candidates.append({
+            "recordEndOffset": member21_offset,
+            "levelDataMember21Offset": member21_offset,
+            "levelIdNum": level_id_num,
+            "levelScriptBriefDictionaryCountOffset":
+                collection_offsets[0],
+            "levelScriptBriefDictionaryCount": 0,
+            "levelScriptDataPathDictionaryCountOffset":
+                collection_offsets[1],
+            "levelScriptDataPathDictionaryCount": 0,
+            "levelDataSafeZoneOffset": safe_zone_offset,
+            "levelDataSceneId": scene_id,
+            "levelDataSpecificDataOffset": specific_data_offset,
+            "levelDataEmptySuffixEndOffset": cursor,
+            "levelDataFinalBoundaryValidation":
+                "complete_empty_script_suffix_to_eof",
+        })
+    unique = {
+        int(row["recordEndOffset"]): row
+        for row in candidates
     }
+    return next(iter(unique.values())) if len(unique) == 1 else None
 
 
 def build_leveldata_interactive_narrative_story_contexts(
@@ -5903,6 +5999,7 @@ def build_leveldata_interactive_narrative_story_contexts(
             final_boundary = _leveldata_interactive_final_record_boundary(
                 data,
                 candidate_script_ids_by_level.get(path.parent.name, set()),
+                expected_level_id=path.parent.name,
             )
             for record in parse_leveldata_interactive_narrative_records(
                 data,
@@ -5963,7 +6060,7 @@ def build_leveldata_interactive_narrative_story_contexts(
                         "_CollectNarrative -> dialog/reading-popup dispatch"
                     ),
                     "nativeMappingId":
-                        "leveldata-interactive-narrative-config-v4",
+                        "leveldata-interactive-narrative-config-v5",
                     "storyBinding": True,
                     "ownership": False,
                     "questActivation": False,

@@ -15452,10 +15452,11 @@ def build_language_bundle(
 
     # LevelData also owns a counted LevelInteractiveData list. Accept records
     # whose end is supplied by the next typed list item; accept the final item
-    # only when the adjacent member-21/member-22 boundary and complete
-    # LevelScriptBriefData dictionary validate. Null progress locks and the
-    # exact current-build mission/quest-state condition forms are accepted.
-    # StreamingAssets/Persistent bytes must agree.
+    # only when either the adjacent nonempty LevelScriptBriefData dictionary
+    # or the complete environment-only empty-script suffix validates the
+    # member-21 boundary. Null progress locks and the exact current-build
+    # mission/quest-state condition forms are accepted. StreamingAssets and
+    # Persistent bytes must agree.
     leveldata_interactive_narrative_contexts = (
         build_leveldata_interactive_narrative_story_contexts(
             set(all_story_entry_keys)
@@ -15486,7 +15487,8 @@ def build_language_bundle(
             "source": (
                 "exact counted LevelData interactive list -> 25-member "
                 "LevelInteractiveData bounded by the next record or validated "
-                "member-21/member-22 boundary, including an exact null or "
+                "member-21 suffix (nonempty BriefData dictionary or complete "
+                "empty-script suffix), including an exact null or "
                 "decoded mission/quest-state progress lock -> "
                 "componentProperties[94].type_id"
             ),
@@ -15544,6 +15546,19 @@ def build_language_bundle(
                 context.get("levelScriptBriefDictionaryCountOffset"),
             "levelScriptBriefDictionaryCount":
                 context.get("levelScriptBriefDictionaryCount"),
+            "levelScriptDataPathDictionaryCountOffset":
+                context.get("levelScriptDataPathDictionaryCountOffset"),
+            "levelScriptDataPathDictionaryCount":
+                context.get("levelScriptDataPathDictionaryCount"),
+            "levelDataSafeZoneOffset":
+                context.get("levelDataSafeZoneOffset"),
+            "levelDataSceneId": context.get("levelDataSceneId"),
+            "levelDataSpecificDataOffset":
+                context.get("levelDataSpecificDataOffset"),
+            "levelDataEmptySuffixEndOffset":
+                context.get("levelDataEmptySuffixEndOffset"),
+            "levelDataFinalBoundaryValidation":
+                context.get("levelDataFinalBoundaryValidation"),
             "entityLogicId": context.get("embeddedLogicId"),
             "entityDetailIds": [str(context.get("entityDetailId") or "")],
             "entityTemplateIds": [str(context.get("entityTemplateId") or "")],

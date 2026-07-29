@@ -37,12 +37,12 @@ from build_source_story_partial_order import build_report as build_partial_order
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v17"
+SCHEMA = "sourceStoryGapQueue.v18"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
 LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID = (
-    "leveldata-interactive-narrative-config-v4"
+    "leveldata-interactive-narrative-config-v5"
 )
 BUCKET_ORDER = ("main", "event", "major", "character", "other")
 
@@ -1303,7 +1303,8 @@ def _closed_exact_runtime_config_isolated_scenes(
     leveldata_source = (
         "exact counted LevelData interactive list -> 25-member "
         "LevelInteractiveData bounded by the next record or validated "
-        "member-21/member-22 boundary, including an exact null or decoded "
+        "member-21 suffix (nonempty BriefData dictionary or complete "
+        "empty-script suffix), including an exact null or decoded "
         "mission/quest-state progress lock -> "
         "componentProperties[94].type_id"
     )
@@ -1375,7 +1376,7 @@ def _closed_exact_runtime_config_isolated_scenes(
             and not isinstance(list_count, bool)
             and record_index == list_count - 1
         )
-        final_boundary_valid = (
+        nonempty_final_boundary_valid = (
             final_record
             and boundary_source == "leveldata_member21_start"
             and isinstance(record_end, int)
@@ -1395,6 +1396,31 @@ def _closed_exact_runtime_config_isolated_scenes(
                 bool,
             )
             and int(row.get("levelScriptBriefDictionaryCount")) > 0
+            and safe_key(row.get("levelDataFinalBoundaryValidation"))
+            == "nonempty_levelscript_brief_dictionary"
+        )
+        empty_final_boundary_valid = (
+            final_record
+            and boundary_source == "leveldata_member21_start"
+            and isinstance(record_end, int)
+            and row.get("levelDataMember21Offset") == record_end
+            and row.get("levelScriptBriefDictionaryCountOffset")
+            == record_end + 4
+            and row.get("levelScriptBriefDictionaryCount") == 0
+            and row.get("levelScriptDataPathDictionaryCountOffset")
+            == record_end + 8
+            and row.get("levelScriptDataPathDictionaryCount") == 0
+            and row.get("levelDataSafeZoneOffset") == record_end + 60
+            and safe_key(row.get("levelDataSceneId"))
+            == next(iter(level_ids), "")
+            and isinstance(row.get("levelDataSpecificDataOffset"), int)
+            and row.get("levelDataSpecificDataOffset")
+            > row.get("levelDataSafeZoneOffset")
+            and isinstance(row.get("levelDataEmptySuffixEndOffset"), int)
+            and row.get("levelDataEmptySuffixEndOffset")
+            > row.get("levelDataSpecificDataOffset")
+            and safe_key(row.get("levelDataFinalBoundaryValidation"))
+            == "complete_empty_script_suffix_to_eof"
         )
         nonfinal_boundary_valid = (
             isinstance(record_index, int)
@@ -1520,7 +1546,8 @@ def _closed_exact_runtime_config_isolated_scenes(
             or isinstance(list_count, bool)
             or not (
                 nonfinal_boundary_valid
-                or final_boundary_valid
+                or nonempty_final_boundary_valid
+                or empty_final_boundary_valid
             )
             or not progress_lock_valid
             or not isinstance(record_offset, int)
@@ -1599,6 +1626,16 @@ def _closed_exact_runtime_config_isolated_scenes(
                 for row in rows
                 if safe_key(row.get("interactiveRecordBoundarySource"))
             }),
+            "levelDataFinalBoundaryValidations": sorted({
+                safe_key(row.get("levelDataFinalBoundaryValidation"))
+                for row in rows
+                if safe_key(row.get("levelDataFinalBoundaryValidation"))
+            }),
+            "levelDataSceneIds": sorted({
+                safe_key(row.get("levelDataSceneId"))
+                for row in rows
+                if safe_key(row.get("levelDataSceneId"))
+            }, key=natural_key),
             "entityLogicIds": sorted({
                 int(row["entityLogicId"])
                 for row in rows
