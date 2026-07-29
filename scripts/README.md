@@ -2014,15 +2014,15 @@ gameplay-video OCR/audio workflow.
   explicit context and does not transfer ownership.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v57` evaluates 305 active declarations: 207 residual
-  radio definitions, 29 root cutscene carriers, 40 registered dialog
+  `sourceStoryGapQueue.v58` evaluates 307 active declarations: 208 residual
+  radio definitions, 29 root cutscene carriers, 41 registered dialog
   definitions, fifteen exact NpcProxy rows across fourteen dialogs without a
   mission owner, eight exact
   DialogTextTable-only/no-registry groups, ten exact
   ReadingPopUp/RichContent definitions, two exact SNS dialog definitions, six
   text-only cutscenes (including two e2m5 rows), and two TextTable-only black narrative
   definitions across
-  `e0m0`, `e1m1`, `e1m2`, `e1m3`, `e2m2`, `e2m4`, `e2m5`, `e2m6`, `e2m7`,
+  `e0m0`, `e1m1`, `e1m2`, `e1m3`, `e1m10`, `e2m2`, `e2m4`, `e2m5`, `e2m6`, `e2m7`,
   `e3m3`, `e3m4`, `e5m1`, `e5m2`, `e6m1`, `e6m2`, `e6m3`, `e6m4`, `e7m2`,
   `e7m3`, `e7m4`, `e8m2`, `e9m2`, `e9m3`, `e10m1`, `e10m3`, `e10m4`,
   `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`.
@@ -2184,6 +2184,17 @@ gameplay-video OCR/audio workflow.
   displayed `cs_video_e3m5_4` media is a manual presentation override; the
   authoritative LevelScript/FMV binding targets `cutscene_e3m5_4`, so it
   supplies neither an e3m4 activator nor a relative Story edge.
+  e1m10 adds two definition boundaries: audio-complete two-line
+  `radio_e1m10_0d2` and canonical registered six-line/zero-option
+  `dlg_e1m10_2d7` (surfaced as `misc_dlg_e1m10_2d7`). Registry-id-289
+  `cutscene_e1m10_1` closes positively instead: Story binding coverage
+  schema 10 has one exact shipped-Lua route from
+  `Phase/GenderChange/PhaseGenderChange.lua` `CUT_SCENE_ID` through
+  `GameAction.PlayCutscene`. This proves phase-controller playback but
+  serializes no mission/quest owner and supplies no relative Story order.
+  The separate q10 gap remains active: its objective has only an opaque
+  server-placeholder condition plus `SnsTrackingInfo` for `sns_e1m10_1`;
+  tracking context is not promoted to playback ownership.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
   e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`

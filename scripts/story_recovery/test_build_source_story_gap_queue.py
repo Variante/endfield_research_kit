@@ -2716,6 +2716,97 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ("au_dlg_e3m4_9_001",),
         )
 
+    def test_declared_e1m10_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E1M10_RADIOS,
+            {"radio_e1m10_0d2"},
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "misc_dlg_e1m10_2d7"
+        ]
+        self.assertEqual(dialog["registryKey"], "dlg_e1m10_2d7")
+        self.assertEqual(len(dialog["lineIds"]), 6)
+        self.assertEqual(dialog["optionIds"], ())
+
+    def test_exact_lua_controller_playback_closes_isolated_cutscene(
+        self,
+    ) -> None:
+        lua_file = (
+            "Lua/Data/LuaScripts/Phase/GenderChange/"
+            "PhaseGenderChange.lua"
+        )
+        manifest = {
+            "cutscene_e1m10_1": {
+                "attachmentStatus": "trigger_known_owner_unresolved",
+                "key": "cutscene_e1m10_1",
+                "nominalMissionId": "e1m10",
+                "routes": [{
+                    "causality": "playback_owner_unresolved",
+                    "confidence": "shipped_lua_literal_plus_native_entry",
+                    "direction": "playback",
+                    "evidenceTier": "direct",
+                    "luaCall": "GameAction.PlayCutscene",
+                    "luaFile": lua_file,
+                    "luaSymbol": "CUT_SCENE_ID",
+                    "missionId": None,
+                    "nativeEntry":
+                        "Beyond.Gameplay.Actions.GameAction::PlayCutscene",
+                    "ownerStatus": "unresolved",
+                    "phase": "gender_change",
+                    "questId": None,
+                    "questTriggerStatus":
+                        "no_mission_or_quest_identity_serialized",
+                    "relation": "lua_controller_playback",
+                    "scope": "phase",
+                    "serverExchange": False,
+                    "sourceFiles": [lua_file],
+                    "steps": [
+                        {
+                            "id": lua_file,
+                            "kind": "luaController",
+                            "phase": "gender_change",
+                        },
+                        {
+                            "id":
+                                "Beyond.Gameplay.Actions.GameAction::"
+                                "PlayCutscene",
+                            "kind": "nativePlayback",
+                        },
+                    ],
+                    "storyKey": "cutscene_e1m10_1",
+                }],
+            },
+        }
+        rows = (
+            gap_queue
+            ._closed_exact_lua_controller_playback_isolated_scenes(
+                manifest,
+                {"cutscene_e1m10_1"},
+                "e1m10",
+            )
+        )
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["sceneKey"], "cutscene_e1m10_1")
+        self.assertEqual(rows[0]["relation"], "lua_controller_playback")
+        self.assertEqual(rows[0]["graphEffect"], "none")
+        self.assertEqual(
+            gap_queue
+            ._closed_exact_lua_controller_playback_isolated_scenes(
+                {
+                    "cutscene_e1m10_1": {
+                        **manifest["cutscene_e1m10_1"],
+                        "routes": [{
+                            **manifest["cutscene_e1m10_1"]["routes"][0],
+                            "missionId": "e1m10",
+                        }],
+                    },
+                },
+                {"cutscene_e1m10_1"},
+                "e1m10",
+            ),
+            [],
+        )
+
     def test_declared_e6m2_offline_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E6M2_RADIOS,
@@ -2766,6 +2857,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e1m1_6",
                 "dlg_e1m2_6",
                 "misc_dlg_e1m3_5d5",
+                "misc_dlg_e1m10_2d7",
                 "dlg_e2m2_7",
                 "misc_dlg_e2m2_1d5",
                 "misc_dlg_e2m2_4d5",

@@ -286,13 +286,13 @@ Mission Pipeline:
   `PlayRadio`.
 - The same manifest now carries fail-closed `offlineRecovery` annotations from
   `reports/mission_order/source_story_gap_queue_CN.json` only while the queue is
-  schema `sourceStoryGapQueue.v57`, its current-build evidence is active, all
+  schema `sourceStoryGapQueue.v58`, its current-build evidence is active, all
   source hashes match, and `graphEffect=none`. Existing attachment statuses and
   route arrays are left unchanged. The nine ReadingPopup `text_*` keys outside
   the historical coverage denominator are exposed through
   `offlineRecoveryEvidence.storyTriggerManifestOverlay`, with zero routes and
   an explicit denominator-neutral status. The current live projection covers
-  295 manifest keys plus ten overlay keys. The four e5m2 rows retain empty
+  297 manifest keys plus ten overlay keys. The four e5m2 rows retain empty
   route arrays: three exact blank-owner NpcProxy dialog consumers and one
   consumerless RadioTable definition. e7m4 adds three manifest annotations
   plus one denominator-neutral ReadingPopup overlay; its SNS annotation
@@ -332,6 +332,13 @@ Mission Pipeline:
   explicitly distinguishes its manually attached e3m5 video from original
   e3m4 trigger evidence; the authoritative FMV binding remains on
   `cutscene_e3m5_4`.
+  e1m10 adds zero-route annotations for `radio_e1m10_0d2` and
+  `misc_dlg_e1m10_2d7`. `cutscene_e1m10_1` remains connected without an
+  offline badge through the exact shipped gender-change Lua-controller
+  playback route; its mission/quest owner and relative order remain
+  unresolved. The q10 card continues to expose the separate SNS
+  tracking/server-placeholder boundary without mislabeling tracking context
+  as Story playback.
   Mission cards display the
   evidence kind, consumer boundary, order boundary, and reopen condition; the
   Story debug row labels them as an exhausted current-build offline carrier

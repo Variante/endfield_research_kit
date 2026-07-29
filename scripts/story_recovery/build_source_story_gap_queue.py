@@ -46,7 +46,8 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v57"
+SCHEMA = "sourceStoryGapQueue.v58"
+STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -128,7 +129,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v36"
+    "current-build-offline-story-carrier-exhaustion-v37"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -701,6 +702,28 @@ OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES = {
     ),
 }
 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
+    "misc_dlg_e1m10_2d7": {
+        "missionId": "e1m10",
+        "registryKey": "dlg_e1m10_2d7",
+        "definitionName": "dlg_e1m10_2d7",
+        "linePrefix": "dlg_e1m10_2d7",
+        "filename": "dlg_e1m10_2d7_pAF0815267196C2D1.json",
+        "sha256":
+            "B13AB9764A768CF2DA34DCBCD5BF3050480118267BE06E8BBD2B5DA1E7A74C50",
+        "extraConfigFilename":
+            "dlg_e1m10_2d7_extra_config_p86362B97C91C7811.json",
+        "extraConfigSha256":
+            "BC62FC59A605E61C09A3BC90199A85BE20993469B81C6A11C97B5E2A2DEDE74D",
+        "lineIds": (
+            "dlg_e1m10_2d7_001",
+            "dlg_e1m10_2d7_002",
+            "dlg_e1m10_2d7_003",
+            "dlg_e1m10_2d7_005",
+            "dlg_e1m10_2d7_006",
+            "dlg_e1m10_2d7_007",
+        ),
+        "optionIds": (),
+    },
     "dlg_e1m2_6": {
         "missionId": "e1m2",
         "filename": "dlg_e1m2_6_p907BD8F50D35BD49.json",
@@ -1900,6 +1923,9 @@ OFFLINE_EXHAUSTION_E1M3_RADIOS = frozenset({
     "radio_e1m3_7",
     "radio_e1m3_18",
 })
+OFFLINE_EXHAUSTION_E1M10_RADIOS = frozenset({
+    "radio_e1m10_0d2",
+})
 OFFLINE_EXHAUSTION_E7M2_RADIOS = frozenset({
     "radio_e7m2_2",
     "radio_e7m2_9",
@@ -2000,13 +2026,14 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
+    "e1m10": OFFLINE_EXHAUSTION_E1M10_RADIOS,
     "e2m2": OFFLINE_EXHAUSTION_E2M2_RADIOS,
     "e2m4": OFFLINE_EXHAUSTION_E2M4_RADIOS,
     "e2m5": OFFLINE_EXHAUSTION_E2M5_RADIOS,
     "e2m6": OFFLINE_EXHAUSTION_E2M6_RADIOS,
     "e2m7": OFFLINE_EXHAUSTION_E2M7_RADIOS,
-    "e3m4": OFFLINE_EXHAUSTION_E3M4_RADIOS,
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
+    "e3m4": OFFLINE_EXHAUSTION_E3M4_RADIOS,
     "e5m1": OFFLINE_EXHAUSTION_E5M1_RADIOS,
     "e5m2": OFFLINE_EXHAUSTION_E5M2_RADIOS,
     "e6m1": OFFLINE_EXHAUSTION_E6M1_RADIOS,
@@ -5729,6 +5756,93 @@ def _closed_exact_timeline_foreign_dialog_isolated_scenes(
     return sorted(closed, key=lambda row: natural_key(row["sceneKey"]))
 
 
+def _closed_exact_lua_controller_playback_isolated_scenes(
+    story_trigger_manifest: dict[str, Any],
+    isolated_scene_keys: set[str],
+    owner_mission: str,
+) -> list[dict[str, Any]]:
+    """Close exact shipped-Lua playback with deliberately unresolved owner."""
+    closed: list[dict[str, Any]] = []
+    for scene_key in sorted(isolated_scene_keys, key=natural_key):
+        row = story_trigger_manifest.get(scene_key)
+        if (
+            not isinstance(row, dict)
+            or safe_key(row.get("key")) != scene_key
+            or safe_key(row.get("nominalMissionId")) != owner_mission
+            or safe_key(row.get("attachmentStatus"))
+            != "trigger_known_owner_unresolved"
+        ):
+            continue
+        routes = [
+            route
+            for route in row.get("routes") or []
+            if isinstance(route, dict)
+        ]
+        if len(routes) != 1:
+            continue
+        route = routes[0]
+        lua_file = safe_key(route.get("luaFile"))
+        phase = safe_key(route.get("phase"))
+        expected_steps = [
+            {
+                "id": lua_file,
+                "kind": "luaController",
+                "phase": phase,
+            },
+            {
+                "id": "Beyond.Gameplay.Actions.GameAction::PlayCutscene",
+                "kind": "nativePlayback",
+            },
+        ]
+        if (
+            safe_key(route.get("storyKey")) != scene_key
+            or safe_key(route.get("relation")) != "lua_controller_playback"
+            or safe_key(route.get("direction")) != "playback"
+            or safe_key(route.get("causality"))
+            != "playback_owner_unresolved"
+            or safe_key(route.get("confidence"))
+            != "shipped_lua_literal_plus_native_entry"
+            or safe_key(route.get("evidenceTier")) != "direct"
+            or safe_key(route.get("ownerStatus")) != "unresolved"
+            or route.get("missionId") is not None
+            or route.get("questId") is not None
+            or safe_key(route.get("questTriggerStatus"))
+            != "no_mission_or_quest_identity_serialized"
+            or safe_key(route.get("scope")) != "phase"
+            or not phase
+            or safe_key(route.get("luaCall")) != "GameAction.PlayCutscene"
+            or safe_key(route.get("luaSymbol")) != "CUT_SCENE_ID"
+            or safe_key(route.get("nativeEntry"))
+            != "Beyond.Gameplay.Actions.GameAction::PlayCutscene"
+            or not lua_file
+            or _string_list(route.get("sourceFiles")) != [lua_file]
+            or route.get("serverExchange") is not False
+            or route.get("steps") != expected_steps
+        ):
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_lua_controller_playback_"
+                "no_mission_owner_or_relative_order",
+            "relation": "lua_controller_playback",
+            "phase": phase,
+            "luaFile": lua_file,
+            "luaSymbol": "CUT_SCENE_ID",
+            "luaCall": "GameAction.PlayCutscene",
+            "nativeEntry":
+                "Beyond.Gameplay.Actions.GameAction::PlayCutscene",
+            "ownerStatus": "unresolved",
+            "playbackBoundary": (
+                "the shipped phase controller proves exact cutscene playback; "
+                "it serializes no mission or quest identity and therefore "
+                "establishes neither mission ownership nor relative Story order"
+            ),
+            "graphEffect": "none",
+        })
+    return closed
+
+
 def _closed_exact_runtime_config_isolated_scenes(
     flow: dict[str, Any],
     isolated_scene_keys: set[str],
@@ -6757,9 +6871,11 @@ def build_gap_row(
     non_mission_content: dict[str, dict[str, Any]] | None = None,
     offline_exhaustion_index: dict[str, dict[str, Any]] | None = None,
     cross_owner_story_connections: list[dict[str, Any]] | None = None,
+    story_trigger_manifest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     non_mission_content = non_mission_content or {}
     offline_exhaustion_index = offline_exhaustion_index or {}
+    story_trigger_manifest = story_trigger_manifest or {}
     mission = safe_key(partial_row.get("mission"))
     summary = partial_row.get("summary") if isinstance(partial_row.get("summary"), dict) else {}
     timeline = _timeline(mission_payload)
@@ -6900,6 +7016,15 @@ def build_gap_row(
         )
     for row in _closed_exact_native_context_isolated_scenes(
         cross_owner_flow,
+        set(isolated_scene_keys),
+        safe_key(partial_row.get("mission")),
+    ):
+        closed_exact_native_isolated_by_key.setdefault(
+            row["sceneKey"],
+            row,
+        )
+    for row in _closed_exact_lua_controller_playback_isolated_scenes(
+        story_trigger_manifest,
         set(isolated_scene_keys),
         safe_key(partial_row.get("mission")),
     ):
@@ -7319,6 +7444,7 @@ def build_gap_report(
     table_root: Path | None = None,
     offline_exhaustion_index: dict[str, dict[str, Any]] | None = None,
     offline_exhaustion_status: dict[str, Any] | None = None,
+    story_trigger_manifest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     non_mission_content = (
         combined_non_mission_content_keys(table_root)
@@ -7450,6 +7576,7 @@ def build_gap_report(
             cross_owner_story_connections=cross_owner_connections.get(
                 safe_key(row.get("mission"))
             ),
+            story_trigger_manifest=story_trigger_manifest,
         )
         for row in partial_report.get("missions") or []
         if isinstance(row, dict)
@@ -7710,6 +7837,24 @@ def main(argv: list[str] | None = None) -> int:
         if isinstance(payload, dict):
             mission_payloads[mission] = payload
 
+    coverage_report = read_json(
+        ROOT
+        / "reports"
+        / "story"
+        / "build"
+        / f"mission_pipeline_story_binding_coverage_{args.language}.json",
+        {},
+    )
+    story_trigger_manifest = {}
+    if (
+        isinstance(coverage_report, dict)
+        and coverage_report.get("schemaVersion")
+        == STORY_BINDING_COVERAGE_SCHEMA_VERSION
+        and safe_key(coverage_report.get("language")) == args.language
+        and isinstance(coverage_report.get("storyTriggerManifest"), dict)
+    ):
+        story_trigger_manifest = coverage_report["storyTriggerManifest"]
+
     offline_exhaustion_index, offline_exhaustion_status = (
         build_offline_exhaustion_index(
             partial_report,
@@ -7726,6 +7871,7 @@ def main(argv: list[str] | None = None) -> int:
         table_root=args.table_root,
         offline_exhaustion_index=offline_exhaustion_index,
         offline_exhaustion_status=offline_exhaustion_status,
+        story_trigger_manifest=story_trigger_manifest,
     )
     out_json = args.reports_dir / f"source_story_gap_queue_{args.language}.json"
     out_md = args.reports_dir / f"source_story_gap_queue_{args.language}.md"
