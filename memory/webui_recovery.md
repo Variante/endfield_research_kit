@@ -689,19 +689,23 @@ Mission Pipeline:
   as context-only manifest rows so the card is not visually lossy. The
   source-gap queue closes 106 isolated source-link rows across 43 missions from
   this exact configuration without adding an order edge.
-- Mission Pipeline schemas 20-21 and coverage schema 6 add the parallel exact
-  LevelData interactive-configuration family. The current generated data has
-  22 placements for 21 Story keys in four LevelData assets. Routes render
-  `mission -> LevelData -> narrative interactive -> Story`, retain the asset,
-  entity logic id, record index, raw `type_id`, and template, and label
-  availability, activation, ownership, quest causality, and order as
-  unresolved. Non-final records use the next typed item; final records require
-  an exact member-21/member-22 boundary and retain that provenance. Exactly two
-  finals pass. This
-  adds six connected Story files relative to schema 19 (4,130 connected /
-  1,152 unlinked), increases context-only manifest coverage from 52 to 65
-  files, and closes 21 isolated source-link rows without changing the 1,429
-  strong Story-order edges.
+- Mission Pipeline schema 22, coverage schema 7, and source-gap schema 16
+  expand the parallel exact LevelData interactive-configuration family. The
+  source decoder now finds 222 placements for 217 Story keys across 45
+  LevelData assets: 22 null progress locks and 200 exact mission/quest-state
+  locks. Of these, 74 placements for 69 keys have publishable pipeline mission
+  shells. Routes render
+  `mission -> LevelData -> interactive availability condition -> narrative
+  interactive -> Story` when a lock exists, retaining the raw combined
+  operator/runtime flag and each exact state owner/target. The state owner is
+  availability evidence, not Story ownership or chronology. Non-final records
+  use the next typed item; final records require the member-21/member-22
+  boundary and retain that provenance. Twenty-two finals pass.
+  Relative to schema 21, 52 more trigger routes move coverage to 4,151
+  connected / 1,131 unlinked Story files; context-only manifest coverage rises
+  from 65 files / 66 routes to 89 files / 93 routes. The source queue closes
+  167 additional isolated rows while the strict graph remains unchanged at
+  1,429 strong Story-order edges.
 - Exact EOF-bounded `Play3DRadio` records can connect a radio to a same-scene
   tracked NPC emitter only when `useNpcProxy` is true and all typed consumers
   agree on one mission. A complete typed TravelPole/entity-compare/custom-event

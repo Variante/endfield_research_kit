@@ -37,12 +37,12 @@ from build_source_story_partial_order import build_report as build_partial_order
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v15"
+SCHEMA = "sourceStoryGapQueue.v16"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
 LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID = (
-    "leveldata-interactive-narrative-config-v2"
+    "leveldata-interactive-narrative-config-v3"
 )
 BUCKET_ORDER = ("main", "event", "major", "character", "other")
 
@@ -1303,7 +1303,8 @@ def _closed_exact_runtime_config_isolated_scenes(
     leveldata_source = (
         "exact counted LevelData interactive list -> 25-member "
         "LevelInteractiveData bounded by the next record or validated "
-        "member-21/member-22 boundary -> "
+        "member-21/member-22 boundary, including an exact null or decoded "
+        "mission/quest-state progress lock -> "
         "componentProperties[94].type_id"
     )
     leveldata_order_boundary = (
@@ -1360,6 +1361,74 @@ def _closed_exact_runtime_config_isolated_scenes(
             and 0 <= record_index < list_count - 1
             and boundary_source == "next_record"
         )
+        progress_status = safe_key(
+            row.get("progressLockConditionStatus")
+        )
+        progress_conditions = row.get("progressLockConditions")
+        decoded_progress_valid = (
+            progress_status == "decoded"
+            and safe_key(row.get("progressLockConditionType")) in {
+                "CombinedConditionRuntime",
+                "SimpleConditionCheckMissionState",
+                "SimpleConditionCheckQuestState",
+            }
+            and isinstance(progress_conditions, list)
+            and bool(progress_conditions)
+            and all(
+                isinstance(condition, dict)
+                and condition.get("serializedMemberCount") == 3
+                and condition.get("unionTag") in (0x0C, 0x10)
+                and safe_key(condition.get("conditionType")) in {
+                    "SimpleConditionCheckMissionState",
+                    "SimpleConditionCheckQuestState",
+                }
+                and safe_key(condition.get("ownerKind"))
+                in {"mission", "quest"}
+                and bool(safe_key(condition.get("ownerId")))
+                and condition.get("compareOperator") == 0
+                and isinstance(condition.get("compareTarget"), int)
+                and not isinstance(condition.get("compareTarget"), bool)
+                and 0 <= int(condition.get("compareTarget")) <= 5
+                for condition in progress_conditions
+            )
+        )
+        progress_type = safe_key(row.get("progressLockConditionType"))
+        if progress_type == "CombinedConditionRuntime":
+            decoded_progress_valid = (
+                decoded_progress_valid
+                and row.get("progressLockConditionUnionTag") == 0
+                and row.get(
+                    "progressLockConditionSerializedMemberCount"
+                ) == 3
+                and row.get("progressLockConditionOperator") in (0, 1)
+                and isinstance(
+                    row.get("progressLockSerializedRuntimeFlag"),
+                    bool,
+                )
+            )
+        elif progress_type in {
+            "SimpleConditionCheckMissionState",
+            "SimpleConditionCheckQuestState",
+        }:
+            decoded_progress_valid = (
+                decoded_progress_valid
+                and row.get("progressLockConditionUnionTag") in (0x0C, 0x10)
+                and row.get(
+                    "progressLockConditionSerializedMemberCount"
+                ) == 3
+                and len(progress_conditions) == 1
+                and progress_conditions[0].get("unionTag")
+                == row.get("progressLockConditionUnionTag")
+                and progress_conditions[0].get("conditionType")
+                == row.get("progressLockConditionType")
+            )
+        progress_lock_valid = (
+            (
+                progress_status == "null"
+                and not progress_conditions
+            )
+            or decoded_progress_valid
+        )
         if (
             scene_key in already_closed
             or scene_key not in isolated_scene_keys
@@ -1389,6 +1458,7 @@ def _closed_exact_runtime_config_isolated_scenes(
                 nonfinal_boundary_valid
                 or final_boundary_valid
             )
+            or not progress_lock_valid
             or not isinstance(record_offset, int)
             or not isinstance(record_end, int)
             or record_offset < 0
@@ -1402,6 +1472,42 @@ def _closed_exact_runtime_config_isolated_scenes(
         leveldata_grouped[scene_key].append(row)
 
     for scene_key, rows in leveldata_grouped.items():
+        progress_locks = []
+        for row in rows:
+            progress_locks.append({
+                "levelDataAsset": next(
+                    iter(_string_list(row.get("levelDataAssets"))),
+                    "",
+                ),
+                "interactiveRecordIndex":
+                    row.get("interactiveRecordIndex"),
+                "status": safe_key(
+                    row.get("progressLockConditionStatus")
+                ),
+                "conditionType": safe_key(
+                    row.get("progressLockConditionType")
+                ),
+                "conditionOperator":
+                    row.get("progressLockConditionOperator"),
+                "serializedRuntimeFlag":
+                    row.get("progressLockSerializedRuntimeFlag"),
+                "conditions": [{
+                    key: condition.get(key)
+                    for key in (
+                        "unionTag",
+                        "serializedMemberCount",
+                        "conditionType",
+                        "ownerKind",
+                        "ownerId",
+                        "compareOperator",
+                        "compareTarget",
+                    )
+                } for condition in row.get("progressLockConditions") or []],
+            })
+        progress_locks.sort(key=lambda row: (
+            natural_key(safe_key(row.get("levelDataAsset"))),
+            int(row.get("interactiveRecordIndex") or 0),
+        ))
         closed.append({
             "sceneKey": scene_key,
             "recoveryStatus":
@@ -1451,6 +1557,7 @@ def _closed_exact_runtime_config_isolated_scenes(
                 for row in rows
                 if safe_key(row.get("storyKeyResolution"))
             }),
+            "progressLocks": progress_locks,
             "sourceFiles": sorted({
                 source_file
                 for row in rows
@@ -1464,8 +1571,9 @@ def _closed_exact_runtime_config_isolated_scenes(
                 LEVELDATA_INTERACTIVE_NARRATIVE_MAPPING_ID,
             "activationBoundary": (
                 "the LevelData asset and narrative interactive are exact; "
-                "serialized data does not establish availability, player "
-                "interaction timing, or mission/quest activation"
+                "an exact progress lock constrains interactive availability "
+                "when present, but does not establish object instantiation, "
+                "player interaction timing, Story ownership, or chronology"
             ),
             "orderBoundary": leveldata_order_boundary,
         })

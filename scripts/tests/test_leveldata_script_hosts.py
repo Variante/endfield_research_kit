@@ -201,6 +201,8 @@ class LevelDataScriptHostTests(unittest.TestCase):
         cls,
         entity_detail_id: str,
         type_id: str,
+        *,
+        progress_lock: bytes = b"\xff",
     ) -> bytes:
         component_map = (
             (1).to_bytes(4, "little", signed=True)
@@ -215,7 +217,7 @@ class LevelDataScriptHostTests(unittest.TestCase):
             + (-1).to_bytes(4, "little", signed=True)
             + (-1).to_bytes(4, "little", signed=True)
             + b"\x00\x00\x00\x00"
-            + b"\xff"
+            + progress_lock
             + (0).to_bytes(4, "little", signed=True)
         )
         return (
@@ -814,6 +816,69 @@ class LevelDataScriptHostTests(unittest.TestCase):
         self.assertEqual(
             "leveldata_member21_start",
             rows[-1]["recordBoundarySource"],
+        )
+
+    def test_leveldata_interactive_narrative_decodes_state_progress_locks(
+        self,
+    ) -> None:
+        mission_completed = (
+            b"\x0c\x03"
+            + (0).to_bytes(4, "little", signed=True)
+            + (3).to_bytes(4, "little", signed=True)
+            + self._mp_string("e6m1")
+        )
+        mission_processing = (
+            b"\x0c\x03"
+            + (0).to_bytes(4, "little", signed=True)
+            + (2).to_bytes(4, "little", signed=True)
+            + self._mp_string("e6m1")
+        )
+        combined = (
+            b"\x00\x03"
+            + (1).to_bytes(4, "little", signed=True)
+            + b"\x00"
+            + (2).to_bytes(4, "little", signed=True)
+            + mission_completed
+            + mission_processing
+        )
+        records = [
+            self._levelscript_narrative_interactive_record(
+                "int_narrative_scene_book",
+                "dlg_test_1",
+                progress_lock=mission_completed,
+            ),
+            self._levelscript_narrative_interactive_record(
+                "int_narrative_scene_pad",
+                "dlg_test_2",
+                progress_lock=combined,
+            ),
+        ]
+        data = (
+            b"\x2b"
+            + (2).to_bytes(4, "little", signed=True)
+            + b"".join(records)
+        )
+
+        rows = parse_leveldata_interactive_narrative_records(
+            data,
+            final_record_end_offset=len(data),
+        )
+
+        self.assertEqual(2, len(rows))
+        self.assertEqual(
+            "SimpleConditionCheckMissionState",
+            rows[0]["progressLockConditionType"],
+        )
+        self.assertEqual(
+            "CombinedConditionRuntime",
+            rows[1]["progressLockConditionType"],
+        )
+        self.assertEqual(
+            [3, 2],
+            [
+                condition["compareTarget"]
+                for condition in rows[1]["progressLockConditions"]
+            ],
         )
 
     def test_leveldata_interactive_final_boundary_requires_member22_dictionary(

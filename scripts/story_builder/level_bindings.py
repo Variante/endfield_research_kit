@@ -5128,16 +5128,19 @@ def _parse_levelscript_interactive_narrative_record(
     data: bytes,
     offset: int,
     end_limit: int,
+    *,
+    allow_progress_lock: bool = False,
 ) -> dict | None:
     """Decode one bounded ``LevelInteractiveData`` narrative row.
 
     The current installed formatter writes 25 members.  The inherited prefix
     and ``componentProperties`` layout are shared with LevelData, while the
-    derived suffix is accepted only when its collection fields are null/empty,
-    its progress lock is null, and its final ``properties`` ParamValue map is
-    consumed completely.  This deliberately narrow shape covers the authored
-    LevelScript and next-record-bounded LevelData narrative interactives
-    without turning nearby strings into Story evidence.
+    derived suffix is accepted only when its collection fields are null/empty.
+    LevelScript requires a null progress lock; LevelData may opt into the exact
+    current-build mission/quest-state condition decoder. Its final
+    ``properties`` ParamValue map must be consumed completely. This deliberately
+    narrow shape covers authored narrative interactives without turning nearby
+    strings into Story evidence.
     """
     if (
         offset < 0
@@ -5211,10 +5214,29 @@ def _parse_levelscript_interactive_narrative_record(
     model_scale_offset = cursor
     model_scale = struct.unpack_from("<f", data, cursor)[0]
     cursor += 4
-    if not math.isfinite(model_scale) or data[cursor] != 0xFF:
+    if not math.isfinite(model_scale):
         return None
     progress_lock_offset = cursor
-    cursor += 1
+    progress_lock: dict = {
+        "progressLockConditionOffset": progress_lock_offset,
+        "progressLockConditionStatus": "null",
+    }
+    if data[cursor] == 0xFF:
+        cursor += 1
+    elif allow_progress_lock:
+        progress_lock_decoded = (
+            _parse_level_interactive_progress_lock_condition(
+                data,
+                cursor,
+                end_limit,
+            )
+        )
+        if progress_lock_decoded is None:
+            return None
+        progress_lock = progress_lock_decoded
+        cursor = int(progress_lock_decoded["endOffset"])
+    else:
+        return None
     properties = _parse_level_interactive_param_map(data, cursor, end_limit)
     if properties is None:
         return None
@@ -5265,12 +5287,137 @@ def _parse_levelscript_interactive_narrative_record(
         **bool_values,
         "modelScale": model_scale,
         "modelScaleOffset": model_scale_offset,
-        "progressLockConditionOffset": progress_lock_offset,
-        "progressLockConditionStatus": "null",
+        **progress_lock,
         "propertiesOffset": properties.get("offset"),
         "propertiesEndOffset": properties.get("endOffset"),
         "propertiesCount": properties.get("entryCount"),
         "properties": properties.get("entries") or {},
+    }
+
+
+def _parse_level_interactive_simple_state_condition(
+    data: bytes,
+    offset: int,
+    end_limit: int,
+) -> dict | None:
+    """Decode one exact current-build mission/quest-state condition."""
+    if (
+        offset < 0
+        or offset + 14 > end_limit
+        or data[offset] not in (0x0C, 0x10)
+        or data[offset + 1] != 3
+    ):
+        return None
+    union_tag = data[offset]
+    cursor = offset + 2
+    operator_decoded = _read_leveldata_i32(data, cursor)
+    if operator_decoded is None:
+        return None
+    compare_operator, cursor = operator_decoded
+    target_decoded = _read_leveldata_i32(data, cursor)
+    if target_decoded is None:
+        return None
+    compare_target, cursor = target_decoded
+    owner_decoded = _read_leveldata_memorypack_string(
+        data,
+        cursor,
+        max_length=256,
+    )
+    if owner_decoded is None:
+        return None
+    owner_id, cursor = owner_decoded
+    if (
+        compare_operator != 0
+        or not 0 <= compare_target <= 5
+        or not owner_id
+        or cursor > end_limit
+    ):
+        return None
+    owner_kind = "mission" if union_tag == 0x0C else "quest"
+    return {
+        "offset": offset,
+        "endOffset": cursor,
+        "unionTag": union_tag,
+        "serializedMemberCount": 3,
+        "conditionType": (
+            "SimpleConditionCheckMissionState"
+            if owner_kind == "mission"
+            else "SimpleConditionCheckQuestState"
+        ),
+        "ownerKind": owner_kind,
+        "ownerId": owner_id,
+        "compareOperator": compare_operator,
+        "compareTarget": compare_target,
+    }
+
+
+def _parse_level_interactive_progress_lock_condition(
+    data: bytes,
+    offset: int,
+    end_limit: int,
+) -> dict | None:
+    """Decode an exact current-build narrative progress-lock condition."""
+    direct = _parse_level_interactive_simple_state_condition(
+        data,
+        offset,
+        end_limit,
+    )
+    if direct is not None:
+        return {
+            "endOffset": direct["endOffset"],
+            "progressLockConditionOffset": offset,
+            "progressLockConditionStatus": "decoded",
+            "progressLockConditionUnionTag": direct["unionTag"],
+            "progressLockConditionSerializedMemberCount": 3,
+            "progressLockConditionType": direct["conditionType"],
+            "progressLockConditions": [direct],
+        }
+    if (
+        offset < 0
+        or offset + 11 > end_limit
+        or data[offset : offset + 2] != b"\x00\x03"
+    ):
+        return None
+    cursor = offset + 2
+    operator_decoded = _read_leveldata_i32(data, cursor)
+    if operator_decoded is None:
+        return None
+    condition_operator, cursor = operator_decoded
+    if cursor >= end_limit or data[cursor] not in (0, 1):
+        return None
+    serialized_runtime_flag = bool(data[cursor])
+    cursor += 1
+    count_decoded = _read_leveldata_count(
+        data,
+        cursor,
+        max_count=64,
+    )
+    if count_decoded is None or count_decoded[0] <= 0:
+        return None
+    condition_count, cursor = count_decoded
+    conditions: list[dict] = []
+    for _ in range(condition_count):
+        condition = _parse_level_interactive_simple_state_condition(
+            data,
+            cursor,
+            end_limit,
+        )
+        if condition is None:
+            return None
+        conditions.append(condition)
+        cursor = int(condition["endOffset"])
+    if condition_operator not in (0, 1):
+        return None
+    return {
+        "endOffset": cursor,
+        "progressLockConditionOffset": offset,
+        "progressLockConditionStatus": "decoded",
+        "progressLockConditionUnionTag": 0,
+        "progressLockConditionSerializedMemberCount": 3,
+        "progressLockConditionType": "CombinedConditionRuntime",
+        "progressLockConditionOperator": condition_operator,
+        "progressLockSerializedRuntimeFlag": serialized_runtime_flag,
+        "progressLockConditions": conditions,
     }
 
 
@@ -5595,6 +5742,7 @@ def parse_leveldata_interactive_narrative_records(
                 data,
                 offset,
                 end_offset,
+                allow_progress_lock=True,
             )
             if (
                 parsed is None
@@ -5781,7 +5929,7 @@ def build_leveldata_interactive_narrative_story_contexts(
                         "_CollectNarrative -> dialog/reading-popup dispatch"
                     ),
                     "nativeMappingId":
-                        "leveldata-interactive-narrative-config-v2",
+                        "leveldata-interactive-narrative-config-v3",
                     "storyBinding": True,
                     "ownership": False,
                     "questActivation": False,

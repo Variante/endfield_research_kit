@@ -1524,12 +1524,15 @@ These are kept because the WebUI story builders import or use them:
   StreamingAssets/Persistent byte mirrors. Non-final 25-member values use the
   next typed record as their boundary. A final value is admitted only when it
   ends at top-level member 21 and the adjacent complete member-22
-  LevelScriptBriefData dictionary independently validates. Narrative component
-  `94`, InteractiveTable template identity,
+  LevelScriptBriefData dictionary independently validates. The suffix accepts
+  a null progress lock or exact current-build mission/quest-state leaf and
+  combined condition forms; unknown tags, member counts, operators, targets,
+  or trailing bytes fail closed. Narrative component `94`, InteractiveTable template identity,
   and direct Story or ReadingPopUp content-id resolution produce
-  `leveldata_interactive_narrative_config` context. These rows prove
-  configuration only,
-  not availability, activation, ownership, causality, or order.
+  `leveldata_interactive_narrative_config` context. A decoded lock proves an
+  interactive availability constraint, but its state owner is not Story
+  ownership; object instantiation, playback causality, and order remain
+  unresolved.
 - `story_builder/levelscript_binary.py`: shared raw LevelScriptData helpers.
   It verifies serialized script ids against file names and decodes the
   current 27-member top-level MemoryPack tail fields that are stable, including
