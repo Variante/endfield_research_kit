@@ -4306,8 +4306,8 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v45`
-   turns the completed exact `e0m0`, `e1m3`, `e2m5`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e9m3`, `e10m4`, `e11m1`, `e11m2`,
+   block metadata or the installed build changes. `sourceStoryGapQueue.v46`
+   turns the completed exact `e0m0`, `e1m2`, `e1m3`, `e2m5`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e9m3`, `e10m4`, `e11m1`, `e11m2`,
    `e11m3`, `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
    operational deferrals.
    It activates only while the exact
@@ -4332,17 +4332,17 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 268 actual
-   isolated-scene deferrals: 187 radios, 27 cutscene roots, 28 registered
+   and reopen automatically if any gate changes. There are now 273 actual
+   isolated-scene deferrals: 191 radios, 27 cutscene roots, 29 registered
    dialogs, eleven ReadingPopUp definitions, eight DialogTextTable-only groups,
    one SNS dialog definition, four text-only cutscenes, and two TextTable-only
-   black definitions. The hash-validated declaration set contains 271 rows
+   black definitions. The hash-validated declaration set contains 276 rows
    because three declared
    radios close through stronger exact native/runtime contexts instead of
    using the deferral. Every
    deferred row has graph effect `none` and contributes
    zero actionable-isolation score while its exact gates remain valid.
-   The three dialog rows are admitted only while their exact MemoryPack
+   The registered-dialog rows are admitted only while their exact MemoryPack
    DialogId source/index hashes and registration records, DialogTree hashes,
    complete DialogTextTable row sets/schemas, AudioDialog membership,
    carrier-negative result, and no-route state agree. This proves loadable
@@ -4407,6 +4407,31 @@ Current main-story priorities:
    mission/quest owner, activation time, or Story order. All six remain
    graph-neutral fail-closed boundaries, e2m5 now scores zero, and the next
    main-story source-link frontier is e1m2 (score 28).
+   The following e1m2 pass closes that frontier without conflating its two
+   evidence classes. Four isolated radios (`radio_e1m2_2d5`, `_3d5`, `_5`,
+   and `_7d7`) are exact one-line RadioTable definitions with complete
+   AudioDialog membership and no recovered playback consumer.
+   `dlg_e1m2_6` is a registered four-line/one-option DialogTree with an exact
+   `NpcProxyExDataTable.data.chen_map01_e1m2Factory[0]` interaction consumer,
+   but that consumer's authored `missionId` is empty. Those five rows are
+   therefore current-build offline-exhausted, graph-neutral definitions; the
+   two FactoryBuildingPanelLock references retained for `radio_e1m2_3d5` are
+   non-owning dependencies, not trigger routes.
+   The separate `e1m2_q#3` attachment gap closes positively. Its objective
+   checks `CheckLevelScriptStageReachMax` for scripts `2100060024`,
+   `2100060025`, and `2100060026`. Exact current-build playback occurrences in
+   those scripts carry the same quest condition and play
+   `dlg_e1m2_1`, `_2`, `_3` plus `radio_e1m2_3`, `_4`, and `_6`.
+   `nodeAttachmentCoverage.v4` publishes those six rows as
+   `exact_quest_condition_and_complete_native_playback_scope`; they remain
+   non-owning context with `playbackOwnership=false` and
+   `orderEvidence=false`. Across the corpus this exact same-key validation
+   admits 349 already-authored condition-scope rows. The audit contains 406
+   scoped rows total, and Mission Pipeline publishes 368 deduplicated contexts
+   across 166 quests. This is a quest dependency/scope recovery, not evidence
+   that the quest initiates, owns, or orders the Story calls. With both classes
+   resolved, e1m2 now scores zero; the current top main-story queue item is
+   e10m1 at score 28.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,

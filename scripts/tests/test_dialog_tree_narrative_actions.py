@@ -14,6 +14,7 @@ from scripts.story_builder.language_bundle import (
     quest_attached_dialog_tree_runtime_actions,
     select_unique_original_parent_mission,
     select_unique_typed_mission_area_parent_mission,
+    suppresses_generic_levelscript_mission_context,
 )
 
 
@@ -23,6 +24,22 @@ LEFT_SUBTITLE_TYPE = "Beyond.Gameplay.DialogLeftSubtitleActionData"
 
 
 class DialogTreeNarrativeActionTests(unittest.TestCase):
+    def test_script_condition_scope_keeps_richer_levelscript_fallback_open(
+        self,
+    ) -> None:
+        self.assertFalse(
+            suppresses_generic_levelscript_mission_context({
+                "key": "dlg_e1m2_1",
+                "relation": "levelscript_condition_scope",
+            })
+        )
+        self.assertTrue(
+            suppresses_generic_levelscript_mission_context({
+                "key": "dlg_e1m2_1",
+                "relation": "objective_condition",
+            })
+        )
+
     def test_extracts_only_typed_left_subtitle_langkey_slots(self) -> None:
         payload = {
             "type": "Beyond.Gameplay.DialogTree",

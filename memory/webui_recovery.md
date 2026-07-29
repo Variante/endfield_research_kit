@@ -286,16 +286,25 @@ Mission Pipeline:
   `PlayRadio`.
 - The same manifest now carries fail-closed `offlineRecovery` annotations from
   `reports/mission_order/source_story_gap_queue_CN.json` only while the queue is
-  schema `sourceStoryGapQueue.v45`, its current-build evidence is active, all
+  schema `sourceStoryGapQueue.v46`, its current-build evidence is active, all
   source hashes match, and `graphEffect=none`. Existing attachment statuses and
   route arrays are left unchanged. The 11 ReadingPopup `text_*` keys outside
   the historical coverage denominator are exposed through
   `offlineRecoveryEvidence.storyTriggerManifestOverlay`, with zero routes and
   an explicit denominator-neutral status. The current live projection covers
-  257 manifest keys plus those 11 overlay keys. Mission cards display the
+  262 manifest keys plus those 11 overlay keys. Mission cards display the
   evidence kind, consumer boundary, order boundary, and reopen condition; the
   Story debug row labels them as an exhausted current-build offline carrier
   search rather than an inferred trigger.
+- `nodeAttachmentCoverage.v4` also publishes an already-authored
+  `levelscript_condition_scope` quest row when a complete exact same-key native
+  playback occurrence independently carries that same quest condition.
+  Mission Pipeline currently exposes 368 deduplicated non-owning scope
+  contexts across 166 quest nodes. In e1m2, q3 shows six such rows across
+  scripts `2100060024` through `2100060026`: three dialogs and three radios.
+  Every row states `playbackOwnership=false` and `orderEvidence=false`; the
+  objective observes completion of the hosting scripts but does not prove
+  that q3 starts or owns their Story playback.
 - Exact foreign-dialog Timeline containment uses dedicated parent-Story and
   dialog-Timeline chips in the same route. The live e11m3
   `dlg_e11m3_16` card retains the parent `dlg_e11m3_7`, Timeline

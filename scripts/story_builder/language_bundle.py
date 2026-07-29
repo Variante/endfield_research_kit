@@ -955,6 +955,21 @@ def is_typed_dialog_tree_runtime_action_connection(
     )
 
 
+def suppresses_generic_levelscript_mission_context(connection: dict) -> bool:
+    """Return whether an existing Story connection makes the fallback redundant.
+
+    ``levelscript_condition_scope`` is intentionally not suppressing. That
+    per-quest diagnostic records only that the quest observes the containing
+    script; the later generic pass can add the exact native playback
+    occurrence, completeness boundary, and MissionRuntime condition evidence
+    needed to distinguish a fully scoped script from a favorable subset.
+    """
+    return (
+        str(connection.get("relation") or "")
+        != "levelscript_condition_scope"
+    )
+
+
 def quest_attached_dialog_tree_runtime_actions(
     quest: dict,
     available_story_keys: set[str],
@@ -14639,13 +14654,21 @@ def build_language_bundle(
         preexisting_attached_story_keys_by_mission[attached_mission].update(
             str(row.get("key") or "")
             for row in flow_payload.get("missionStoryConnections") or []
-            if isinstance(row, dict) and row.get("key")
+            if (
+                isinstance(row, dict)
+                and row.get("key")
+                and suppresses_generic_levelscript_mission_context(row)
+            )
         )
         preexisting_attached_story_keys_by_mission[attached_mission].update(
             str(row.get("key") or "")
             for quest in flow_payload.get("quests") or []
             for row in quest.get("storyConnections") or []
-            if isinstance(row, dict) and row.get("key")
+            if (
+                isinstance(row, dict)
+                and row.get("key")
+                and suppresses_generic_levelscript_mission_context(row)
+            )
         )
     mission_runtime_id_set = set(mission_runtime_ids)
     quest_owner_candidates: dict[str, set[str]] = defaultdict(set)

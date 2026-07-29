@@ -2176,6 +2176,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS),
             {
+                "dlg_e1m2_6",
                 "misc_dlg_e1m3_5d5",
                 "dlg_e2m4_10",
                 "dlg_e2m5_6",
@@ -2255,6 +2256,37 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "misc_dlg_e1m3_5d5"
             ]["registryKey"],
             "dlg_e1m3_5d5",
+        )
+
+    def test_declared_e1m2_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E1M2_RADIOS,
+            {
+                "radio_e1m2_2d5",
+                "radio_e1m2_3d5",
+                "radio_e1m2_5",
+                "radio_e1m2_7d7",
+            },
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e1m2_6"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 4)
+        self.assertEqual(
+            dialog["optionIds"],
+            ("option_dlg_e1m2_6_1_001",),
+        )
+        self.assertEqual(
+            dialog["npcProxyConsumer"]["proxyId"],
+            "chen_map01_e1m2Factory",
+        )
+        self.assertEqual(
+            dialog["npcProxyConsumer"]["entry"]["missionId"],
+            "",
+        )
+        self.assertEqual(
+            dialog["extraConfigSha256"],
+            "89B14D65387F1567990671228000339E8AEC0EE76D7529324C3AD2204F490D48",
         )
 
     def test_declared_e2m4_offline_frontier_is_exact(self) -> None:

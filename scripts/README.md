@@ -686,7 +686,7 @@ Expected active inputs and outputs:
   The builder also projects the active exact negative-evidence boundary from
   `reports/mission_order/source_story_gap_queue_CN.json` into
   `storyTriggerManifest[*].offlineRecovery`. It accepts only
-  `sourceStoryGapQueue.v45` with matching source hashes and `graphEffect=none`,
+  `sourceStoryGapQueue.v46` with matching source hashes and `graphEffect=none`,
   never changes an existing attachment status, and never adds a route. The 11
   ReadingPopup `text_*` keys outside the coverage denominator are published in
   the separate `offlineRecoveryEvidence.storyTriggerManifestOverlay`, each with
@@ -2006,14 +2006,14 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v45` evaluates 190 residual radio definitions, 27 root
-  cutscene carriers, 28 registered dialog definitions, eight exact
+  `sourceStoryGapQueue.v46` evaluates 194 residual radio definitions, 27 root
+  cutscene carriers, 29 registered dialog definitions, eight exact
   DialogTextTable-only/no-registry groups, eleven exact
   ReadingPopUp/RichContent definitions, one exact SNS dialog definition, four
   text-only cutscenes (including two e2m5 rows), and two TextTable-only black narrative
   definitions across
-  `e0m0`, `e1m3`, `e2m4`, `e2m5`, `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e9m3`, `e10m3`, `e10m4`,
-  `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 187 radio definitions;
+  `e0m0`, `e1m2`, `e1m3`, `e2m4`, `e2m5`, `e2m6`, `e3m3`, `e6m3`, `e6m4`, `e7m2`, `e7m3`, `e9m2`, `e9m3`, `e10m3`, `e10m4`,
+  `e11m1`, `e11m2`, `e11m3`, `e11m4`, `e11m5`, `e11m6`, and `e11m8`. It defers 191 radio definitions;
   two close through strict exact native mission context, and one through
   strict exact runtime configuration. This includes seven bounded `e1m3`
   radio definitions, its canonical misc-dialog definition and one-host
@@ -2062,6 +2062,17 @@ gameplay-video OCR/audio workflow.
   that entry's `missionId` is empty. The row therefore records NPC-interaction
   selection while preserving an explicit mission/quest owner, activation-time,
   and order gap.
+  e1m2 adds four audio-complete radios plus registered `dlg_e1m2_6`; the
+  dialog has an exact NpcProxyEx interaction consumer whose authored
+  `missionId` is empty, so it remains a non-owning definition boundary.
+  Its separate q3 attachment gap is closed by exact positive evidence:
+  `CheckLevelScriptStageReachMax` names scripts `2100060024` through
+  `2100060026`, and complete native Story occurrences in those scripts carry
+  the same quest condition. `nodeAttachmentCoverage.v4` publishes those
+  already-authored `levelscript_condition_scope` rows only when the same-key
+  occurrence, complete occurrence count, play-action classification, and
+  MissionRuntime condition all agree. They remain non-owning quest context
+  with no playback-ownership or order claim.
   e2m6 adds three radios, two Timeline roots, one registered dialog, and one
   no-registry dialog with present audio.
   e11m3 adds five audio-complete radio definitions. Its `dlg_e11m3_16`

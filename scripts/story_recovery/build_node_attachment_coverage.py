@@ -51,7 +51,7 @@ from common import (  # noqa: E402
 )
 
 
-SCHEMA = "nodeAttachmentCoverage.v3"
+SCHEMA = "nodeAttachmentCoverage.v4"
 
 DEFAULT_FLOW_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "mission"
 DEFAULT_COVERAGE_REPORT = (
@@ -298,6 +298,119 @@ def script_scoped_quest_placements(
     return placements, ambiguities
 
 
+def exact_quest_condition_scope_placements(
+    mission_id: str,
+    flow: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Publish exact per-quest script observations already present in the flow.
+
+    A ``levelscript_condition_scope`` quest row alone is diagnostic. It becomes
+    publishable only when the same flow also has a complete
+    ``levelscript_mission_context`` row whose exact native playback occurrence
+    names the same Story key and carries a MissionRuntime condition for that
+    quest and script.
+    """
+    exact_scopes: set[tuple[str, str, str, str]] = set()
+    for row in flow.get("missionStoryConnections") or []:
+        if (
+            not isinstance(row, dict)
+            or safe_key(row.get("relation")) != "levelscript_mission_context"
+            or safe_key(row.get("confidence")) != "scoped_script"
+            or row.get("hasUnscopedOrOtherMissionOccurrences") is not False
+            or "mission_condition_checks_script"
+            not in {
+                safe_key(value) for value in row.get("scopeEvidenceKinds") or []
+            }
+        ):
+            continue
+        story_key = safe_key(row.get("key"))
+        occurrences = [
+            occurrence
+            for occurrence in row.get("levelScriptOccurrences") or []
+            if isinstance(occurrence, dict)
+        ]
+        if (
+            not story_key
+            or not occurrences
+            or row.get("occurrenceCount") != len(occurrences)
+            or row.get("allOccurrenceCount") != len(occurrences)
+        ):
+            continue
+        for occurrence in occurrences:
+            map_id = safe_key(occurrence.get("levelId"))
+            script_id = safe_key(occurrence.get("scriptId"))
+            if (
+                not map_id
+                or not script_id
+                or not safe_key(occurrence.get("actionMapRole")).startswith(
+                    "actionList#"
+                )
+                or not safe_key(occurrence.get("recordClass")).startswith("play_")
+                or story_key not in {
+                    safe_key(value)
+                    for value in occurrence.get("allStoryKeysInRecord") or []
+                }
+                or "mission_condition_checks_script"
+                not in {
+                    safe_key(value)
+                    for value in occurrence.get("scopeEvidenceKinds") or []
+                }
+            ):
+                continue
+            for condition in occurrence.get("missionConditions") or []:
+                if not isinstance(condition, dict):
+                    continue
+                quest_id = safe_key(condition.get("questId"))
+                if (
+                    safe_key(condition.get("missionId")) == mission_id
+                    and quest_id
+                ):
+                    exact_scopes.add((story_key, map_id, script_id, quest_id))
+
+    placements: list[dict[str, Any]] = []
+    for quest in flow.get("quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        quest_id = safe_key(quest.get("id") or quest.get("questId"))
+        if not quest_id:
+            continue
+        for row in quest.get("storyConnections") or []:
+            if (
+                not isinstance(row, dict)
+                or safe_key(row.get("relation")) != "levelscript_condition_scope"
+                or safe_key(row.get("direction")) != "context"
+                or safe_key(row.get("confidence")) != "scoped_script"
+            ):
+                continue
+            story_key = safe_key(row.get("key"))
+            map_id = safe_key(row.get("mapId"))
+            script_id = safe_key(row.get("scriptId"))
+            if (story_key, map_id, script_id, quest_id) not in exact_scopes:
+                continue
+            placements.append({
+                "missionId": mission_id,
+                "questId": quest_id,
+                "storyKey": story_key,
+                "kind": safe_key(row.get("kind")),
+                "sourceRelation": "levelscript_condition_scope",
+                "scriptIds": [script_id],
+                "mapIds": [map_id],
+                "questTriggerStatus": "",
+                "scopeDiscriminator":
+                    "exact_quest_condition_and_complete_native_playback_scope",
+                "questPredicateEvidence": [],
+            })
+    return sorted(
+        placements,
+        key=lambda item: (
+            item["missionId"],
+            item["questId"],
+            item["storyKey"],
+            item["scriptIds"],
+        ),
+    )
+
+
 def build_report(
     flow_root: Path,
     coverage_report: Path,
@@ -313,6 +426,7 @@ def build_report(
     quest_keys: set[str] = set()
     shell_rows: list[dict[str, Any]] = []
     per_mission: dict[str, dict[str, Any]] = {}
+    exact_condition_placements: list[dict[str, Any]] = []
     quest_node_total = 0
     quest_nodes_with_files = 0
 
@@ -325,6 +439,9 @@ def build_report(
         mission_id = path.stem
         attached = quest_attached_keys(flow)
         quest_keys |= attached
+        exact_condition_placements.extend(
+            exact_quest_condition_scope_placements(mission_id, flow)
+        )
 
         for quest in flow.get("quests") or []:
             if not isinstance(quest, dict):
@@ -377,6 +494,15 @@ def build_report(
     script_placements, script_ambiguities = script_scoped_quest_placements(
         shell_only_rows, script_owners
     )
+    script_placements.extend(exact_condition_placements)
+    script_placements.sort(
+        key=lambda item: (
+            item["missionId"],
+            item["questId"],
+            item["storyKey"],
+            item["scopeDiscriminator"],
+        )
+    )
 
     by_relation_status: dict[str, dict[str, Any]] = defaultdict(
         lambda: {"rows": 0, "keys": set(), "questTriggerStatuses": Counter()}
@@ -420,7 +546,10 @@ def build_report(
                 "same-mission owner is admitted directly. If several quests name the "
                 "same script, only an exact uniquely-decoded quest getter on that "
                 "Story occurrence's serialized playback path may select one of those "
-                "objective owners. This establishes shared quest dependency scope, "
+                "objective owners. An existing per-quest "
+                "`levelscript_condition_scope` row is also published when a complete "
+                "same-key native playback occurrence independently carries that exact "
+                "quest condition. This establishes shared quest dependency scope, "
                 "but does not prove the quest plays, owns, or completes the Story."
             ),
             "publicationBoundary": (
