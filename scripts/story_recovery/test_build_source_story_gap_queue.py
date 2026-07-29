@@ -2079,6 +2079,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "misc_dlg_e6m3_3d5",
                 "dlg_e7m2_11",
                 "dlg_e7m2_13",
+                "dlg_e10m3_3",
+                "dlg_e10m3_9",
                 "dlg_e11m2_17",
                 "dlg_e11m2_18",
                 "dlg_e11m5_9",
@@ -2356,6 +2358,50 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ),
         )
 
+    def test_declared_e10m3_partial_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E10M3_RADIOS,
+            {"radio_e10m3_10"},
+        )
+        owned = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e10m3_9"
+        ]["ownedTimeline"]
+        self.assertEqual(
+            owned["trackPathIds"],
+            (-3513721562143553181, 4679925721215633763),
+        )
+        self.assertEqual(len(owned["fullLineIds"]), 19)
+        self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS)
+            & {"text_e10m3_4", "text_e10m3_6", "text_e10m3_8"},
+            {"text_e10m3_4", "text_e10m3_6", "text_e10m3_8"},
+        )
+        rows = gap_queue._closed_exact_runtime_config_isolated_scenes(
+            {
+                "missionStoryConnections": [{
+                    "key": "radio_e10m3_10",
+                    "relation": "focus_mode_interact_locked_radio",
+                    "direction": "context",
+                    "phase": "interact_locked",
+                    "confidence": "direct_mission_scope",
+                    "storyOwnerMission": "e10m3",
+                    "focusModeField": "radioIdInteractLocked",
+                    "focusModeId": "Zfy_e10m3",
+                    "focusModeMissionId": "e10m3d5",
+                    "subDataParentId": 22800780000,
+                }],
+            },
+            {"radio_e10m3_10"},
+            "e10m3",
+        )
+        self.assertEqual(
+            [(row["sceneKey"], row["relation"]) for row in rows],
+            [(
+                "radio_e10m3_10",
+                "focus_mode_interact_locked_radio",
+            )],
+        )
+
     def test_declared_e6m3_definition_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E6M3_RADIOS,
@@ -2389,6 +2435,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e6m3_4",
                 "text_e7m2_2",
                 "text_e7m2_3",
+                "text_e10m3_4",
+                "text_e10m3_6",
+                "text_e10m3_8",
             },
         )
 

@@ -1990,12 +1990,13 @@ gameplay-video OCR/audio workflow.
   playback context, not relative Story order.
   A narrower current-build-only deferral class removes a row from scoring only
   when every named offline evidence gate remains exact.
-  `sourceStoryGapQueue.v33` evaluates 154 residual radio definitions, 23 root
-  cutscene carriers, 18 registered dialog definitions, five exact
+  `sourceStoryGapQueue.v34` evaluates 155 residual radio definitions, 23 root
+  cutscene carriers, 20 registered dialog definitions, eight exact
   ReadingPopUp/RichContent definitions, and two text-only cutscenes across
-  `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e10m4`, `e11m1`,
-  `e11m2`, `e11m4`, `e11m5`, and `e11m6`. It defers 152 of the radio definitions; the other two close through
-  strict exact native mission context. This includes seven bounded `e1m3`
+  `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e10m3`, `e10m4`, `e11m1`,
+  `e11m2`, `e11m4`, `e11m5`, and `e11m6`. It defers 152 radio definitions;
+  two close through strict exact native mission context, and one through
+  strict exact runtime configuration. This includes seven bounded `e1m3`
   radio definitions, its canonical misc-dialog definition and one-host
   Timeline root; `radio_e1m3_13` instead closes through an exact mission-state
   radio-trigger-zone carrier, and `radio_e1m3_32` through an exact local
@@ -2008,7 +2009,12 @@ gameplay-video OCR/audio workflow.
   radios, four registered Timeline roots, one explicit unregistered
   root/PlayableDirector carrier, and one ReadingPopUp/RichContent definition.
   The remaining e0m0 quest gap stays active because same-script scope is not a
-  strict quest attachment. The class also includes all five bounded
+  strict quest attachment. e10m3 adds two registered dialogs (including one
+  exact 19-line/two-track Timeline) and three ReadingPopUp/RichContent
+  definitions; its interact-locked radio instead closes through exact
+  FocusModeInstanceTable runtime context. Three DialogTextTable-only e10m3
+  groups remain active pending a distinct no-registry definition schema.
+  The class also includes all five bounded
   `e6m3` radios, its three dialogs, two text
   definitions, and 14-row text-only cutscene; all eight residual `e9m2` radios and five
   root cutscenes, all 23 residual `e11m1` radios, all nine residual `e11m2`

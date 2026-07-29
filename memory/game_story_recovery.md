@@ -4306,7 +4306,7 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v33`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v34`
    turns the completed exact `e0m0`, `e1m3`, `e3m3`, `e6m3`, `e7m2`, `e9m2`, `e10m4`, `e11m1`, `e11m2`,
    `e11m4`, `e11m5`, and `e11m6` negative boundaries into fail-closed
    operational deferrals.
@@ -4331,7 +4331,7 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 200 deferred
+   and reopen automatically if any gate changes. There are now 205 deferred
    rows: three `e0m0` radios, five cutscene roots, and one ReadingPopUp
    definition; seven `e1m3` radios, one dialog, and one Timeline root; eight
    `e3m3` radios and two dialogs; five `e6m3`
@@ -4446,7 +4446,17 @@ Current main-story priorities:
    e0m0 intentionally remains score 3: `e0m0_q#7` checks LevelScript property
    `battle_field_clear`, but its four same-script Story rows are only scoped
    context, not a recovered setter/control path or strict quest attachment.
-   The genuine offline queue now ranks `e10m3` first. Continue
+   e10m3 then drops from score 48 to 18: registered `dlg_e10m3_3` and
+   `dlg_e10m3_9` close as exact definitions, with the latter preserving its
+   19-line, two-track owned Timeline and eight explicit missing AudioDialog
+   ids; three ReadingPopUp/RichContent definitions also close.
+   `radio_e10m3_10` closes more strongly through the exact
+   `FocusModeInstanceTable.radioIdInteractLocked` field contributed by the
+   `e10m3d5` variant, which supplies runtime context but no chronology.
+   Keep `dlg_e10m3_10`, `_11`, and `_12` actionable until a separate
+   DialogTextTable-only/no-registry schema is implemented; keep
+   `e10m3d5_q#7`'s scope-only quest diagnostic separate. The genuine offline
+   queue now ranks `e6m4` first. Continue
    offline from its exact isolated-scene source-link rows and require a new
    typed producer, consumer, or control relation before promotion. If supported
    runtime capture later becomes possible, the existing `e11m1` probe remains

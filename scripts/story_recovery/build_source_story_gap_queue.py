@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v33"
+SCHEMA = "sourceStoryGapQueue.v34"
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -125,7 +125,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v12"
+    "current-build-offline-story-carrier-exhaustion-v13"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -533,6 +533,54 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
             "dlg_e1m3_5d5_003",
         ),
         "optionIds": (),
+    },
+    "dlg_e10m3_3": {
+        "missionId": "e10m3",
+        "filename": "dlg_e10m3_3_pB9BB31A2F515FDA0.json",
+        "sha256":
+            "19DF7EB6FE6BEAC868C6C19B73BA54AF656B9366569D103B4B5FF625BEDF449A",
+        "lineIds": tuple(
+            f"dlg_e10m3_3_{number:03d}" for number in range(1, 11)
+        ),
+        "optionIds": (),
+    },
+    "dlg_e10m3_9": {
+        "missionId": "e10m3",
+        "filename": "dlg_e10m3_9_p2CF5E96699979960.json",
+        "sha256":
+            "A0A35752AAAAA5BB6326D14EBBFA1DACCE571761AFE104B9D46AAD0B39CA4BB2",
+        "lineIds": tuple(
+            f"dlg_e10m3_9_{number:03d}" for number in range(1, 20)
+        ),
+        "optionIds": (),
+        "missingAudioIds": (
+            "au_dlg_e10m3_9_006",
+            "au_dlg_e10m3_9_007",
+            "au_dlg_e10m3_9_008",
+            "au_dlg_e10m3_9_010",
+            "au_dlg_e10m3_9_011",
+            "au_dlg_e10m3_9_013",
+            "au_dlg_e10m3_9_014",
+            "au_dlg_e10m3_9_015",
+        ),
+        "ownedTimeline": {
+            "timeline": "dlgtl_e10m3_9_sub_1",
+            "sourceFile": "CAB-6b6c94f7ad380e1b021f87bd7177e880",
+            "trackPathIds": (
+                -3513721562143553181,
+                4679925721215633763,
+            ),
+            "fullLineIds": (
+                "dlg_e10m3_9_016",
+                "dlg_e10m3_9_017",
+                "dlg_e10m3_9_018",
+                "dlg_e10m3_9_019",
+                *(
+                    f"dlg_e10m3_9_{number:03d}"
+                    for number in range(1, 16)
+                ),
+            ),
+        },
     },
     "dlg_e3m3_12": {
         "missionId": "e3m3",
@@ -942,6 +990,7 @@ OFFLINE_EXHAUSTION_E0M0_RADIOS = frozenset({
     "radio_e0m0_10",
     "radio_e0m0_21",
 })
+OFFLINE_EXHAUSTION_E10M3_RADIOS = frozenset({"radio_e10m3_10"})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
@@ -949,6 +998,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
     "e7m2": OFFLINE_EXHAUSTION_E7M2_RADIOS,
     "e9m2": OFFLINE_EXHAUSTION_E9M2_RADIOS,
+    "e10m3": OFFLINE_EXHAUSTION_E10M3_RADIOS,
     "e10m4": OFFLINE_EXHAUSTION_E10M4_RADIOS,
     "e11m1": OFFLINE_EXHAUSTION_E11M1_RADIOS,
     "e11m2": OFFLINE_EXHAUSTION_E11M2_RADIOS,
@@ -984,6 +1034,55 @@ OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
             2511221695470576053,
             5177474080784617714,
             8007409330529367903,
+        ),
+    },
+    "text_e10m3_4": {
+        "missionId": "e10m3",
+        "readingPopupRowId": "text_e10m3_4",
+        "bgType": 0,
+        "iconType": 3,
+        "titleId": -5418710251494718770,
+        "contentTextIds": (
+            -8827241115560565798, 3401144266780048260,
+            -2101308974918454148, 5570283511765309427,
+            6178047961822559599, -8818643026856084710,
+            850312379198939459, 4060913547180972966,
+            582887558014247241, -5144848699727818632,
+            -1010583869551587167, 328614111041957338,
+            6573251800662124396, -1591242057905168982,
+            2275343241851983068, -885900605359348217,
+            -2667917706143050240, 87081009426089158,
+            7360346659785914719, -1527854070225454202,
+            -1542198782537429374, -542349533057357304,
+            7199667849336722774, 2561335607091393850,
+        ),
+    },
+    "text_e10m3_6": {
+        "missionId": "e10m3",
+        "readingPopupRowId": "text_e10m3_6",
+        "bgType": 0,
+        "iconType": 3,
+        "titleId": -8074740233441308703,
+        "contentTextIds": (
+            4355960837539480641,
+            5185389162623878510,
+            7800398873603388730,
+        ),
+    },
+    "text_e10m3_8": {
+        "missionId": "e10m3",
+        "readingPopupRowId": "text_e10m3_8",
+        "bgType": 0,
+        "iconType": 3,
+        "titleId": 5039628381429284738,
+        "contentTextIds": (
+            2791055190685483097,
+            728539389262413568,
+            5155466343858857033,
+            5364191593684276737,
+            930002605663977827,
+            7716424929400781990,
+            -3160792100437463961,
         ),
     },
     "text_e6m3_1": {
@@ -1616,6 +1715,11 @@ def build_offline_exhaustion_index(
             timeline_id = safe_key(owned_timeline.get("timeline"))
             source_file = safe_key(owned_timeline.get("sourceFile"))
             track_path_id = owned_timeline.get("trackPathId")
+            expected_track_path_ids = set(
+                owned_timeline.get("trackPathIds") or (
+                    (track_path_id,) if track_path_id is not None else ()
+                )
+            )
             full_line_ids = tuple(owned_timeline["fullLineIds"])
             timeline_lines = (
                 timeline_entry.get("lines") or []
@@ -1647,12 +1751,17 @@ def build_offline_exhaustion_index(
                 and all(
                     safe_key(row.get("timeline")) == timeline_id
                     and safe_key(row.get("sourceFile")) == source_file
-                    and row.get("trackPathId") == track_path_id
+                    and row.get("trackPathId") in expected_track_path_ids
                     and safe_key(row.get("lineIdSource"))
                     == "assetTrunkId"
                     for row in timeline_lines
                     if isinstance(row, dict)
                 )
+                and {
+                    row.get("trackPathId")
+                    for row in timeline_lines
+                    if isinstance(row, dict)
+                } == expected_track_path_ids
                 and timeline_option_ids == expected_option_ids
             )
             registry_timeline_valid = (
@@ -1665,7 +1774,7 @@ def build_offline_exhaustion_index(
                 "ownerDialogKey": story_key,
                 "timeline": timeline_id,
                 "sourceFile": source_file,
-                "trackPathId": track_path_id,
+                "trackPathIds": sorted(expected_track_path_ids),
                 "lineIds": list(full_line_ids),
                 "embeddedForeignLineIds": [
                     line_id
@@ -3671,6 +3780,45 @@ def _closed_exact_runtime_config_isolated_scenes(
     establishes activation timing or relative Story order.
     """
     closed: list[dict[str, Any]] = []
+    for row in _flow_story_connections(flow):
+        scene_key = safe_key(row.get("key"))
+        if (
+            scene_key not in isolated_scene_keys
+            or safe_key(row.get("relation"))
+            != "focus_mode_interact_locked_radio"
+            or safe_key(row.get("direction")) != "context"
+            or safe_key(row.get("phase")) != "interact_locked"
+            or safe_key(row.get("confidence")) != "direct_mission_scope"
+            or safe_key(row.get("storyOwnerMission")) != owner_mission
+            or safe_key(row.get("focusModeField"))
+            != "radioIdInteractLocked"
+            or not safe_key(row.get("focusModeId"))
+            or not safe_key(row.get("focusModeMissionId"))
+            or not isinstance(row.get("subDataParentId"), int)
+            or isinstance(row.get("subDataParentId"), bool)
+        ):
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_runtime_config_no_relative_order",
+            "relation": "focus_mode_interact_locked_radio",
+            "focusModeId": safe_key(row.get("focusModeId")),
+            "focusModeMissionId": safe_key(
+                row.get("focusModeMissionId")
+            ),
+            "focusModeField": "radioIdInteractLocked",
+            "subDataParentId": row["subDataParentId"],
+            "activationBoundary": (
+                "the exact FocusModeInstanceTable field selects the radio "
+                "when interaction is locked, but does not establish when "
+                "that focus-mode state is entered"
+            ),
+            "orderBoundary": (
+                "table row order, focus-mode naming, and parent id do not "
+                "establish relative Story chronology"
+            ),
+        })
     completion_grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in _flow_story_connections(flow):
         scene_key = safe_key(row.get("key"))
