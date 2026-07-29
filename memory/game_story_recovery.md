@@ -3831,7 +3831,11 @@ Current main-story priorities:
    direct runtime bridge passes one identity into the other. The maintained
    report therefore sets `missionGraphAction=none`, and the WebUI must keep
    this evidence candidate-only unless a typed serialized carrier or runtime
-   bridge closes the namespace/owner gap.
+   bridge closes the namespace/owner gap. The adjacent component-name lead is
+   also closed: `FBDynamicSceneScriptControlComp` serializes only
+   `DefaultLoad:int32`, and none of the 387 mission-controlled roots co-carries
+   it. There are therefore zero such components among both the 125 numeric
+   LevelScript-id matches and the 72 Story-bearing matches.
    The next useful step is
    no longer another pass over listener names or payload fields: the exact
    interactive progress-lock join has already promoted every current row that

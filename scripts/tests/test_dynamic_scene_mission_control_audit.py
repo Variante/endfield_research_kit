@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
 from scripts.story_recovery.build_dynamic_scene_mission_control_audit import (
     _data_index,
     _scene_name,
+    _script_control,
     decode_chunks,
     render_markdown,
 )
@@ -43,6 +44,12 @@ class DynamicSceneMissionControlAuditTests(unittest.TestCase):
         )
         self.assertEqual(_scene_name("Data/other.bytes"), "")
 
+    def test_script_control_has_only_default_load(self) -> None:
+        self.assertEqual(
+            _script_control(struct.pack("<i", -1), 0),
+            {"defaultLoad": -1},
+        )
+
     def test_stream_length_mismatch_is_reported(self) -> None:
         row = {
             "fileName": "Data/DynamicStreaming/PC/Scene/map01/fb_main.bytes",
@@ -63,6 +70,9 @@ class DynamicSceneMissionControlAuditTests(unittest.TestCase):
                 "levelScriptIdentityRoots": 0,
                 "storyIdentityRoots": 0,
                 "storyOccurrences": 0,
+                "missionControlledRootsWithScriptControl": 0,
+                "levelScriptIdentityRootsWithScriptControl": 0,
+                "storyIdentityRootsWithScriptControl": 0,
                 "decodeErrors": 0,
                 "duplicateSceneGridIds": 0,
             },

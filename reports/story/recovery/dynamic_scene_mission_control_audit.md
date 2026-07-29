@@ -10,6 +10,9 @@ This report uses installed DynamicStreaming FlatBuffers and exported LevelScript
 - roots whose IdComp.logicId equals an exported LevelScript id: 125
 - identity-matched roots with Story playback: 72
 - matching Story playback occurrences: 216
+- mission-controlled roots with ScriptControlComp: 0
+- LevelScript-id matches with ScriptControlComp: 0
+- Story-bearing id matches with ScriptControlComp: 0
 - decode errors: 0
 - duplicate scene/grid ids: 5
 
@@ -97,3 +100,7 @@ This report uses installed DynamicStreaming FlatBuffers and exported LevelScript
 - Classification: `exact_cross_reference_not_runtime_owner`
 - Mission graph action: `none`
 - Direct runtime bridge found: `false`
+
+### ScriptControlComp closure
+
+`FBDynamicSceneScriptControlComp` serializes only `DefaultLoad:int32`. `DynamicSceneScriptControlSystem` indexes component/entity and DynamicScene logic identities for local decoration, animation, audio, view-state, and attachment control. It has no LevelScript pointer, mission/quest identity, or Story field and therefore does not close the namespace bridge.

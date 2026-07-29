@@ -1708,7 +1708,13 @@ as LevelScript ids; 72 of those touch 216 Story actions. The maintained current
 audit is
 `reports/story/recovery/dynamic_scene_mission_control_audit.{json,md}` and
 streams the effective installed Persistent overlay rather than depending on a
-saved scratch dump. This equality is a
+saved scratch dump. The adjacent `FBDynamicSceneScriptControlComp` is now
+closed rather than inferred from its name: current metadata exposes only
+`DefaultLoad:int32`, its runtime system indexes DynamicScene component/entity
+and logic ids for local decoration/animation/audio/view-state operations, and
+zero of the 387 mission-controlled roots co-carries that component. The same
+zero therefore holds for all 125 LevelScript-id matches and all 72
+Story-bearing matches. This equality is a
 useful authored cross-reference but not an ownership bridge: exhaustive native
 caller scans found no DynamicScene/LevelScript-manager join, and the remaining
 `23200013031` candidate is a mission-controlled world-resource root with no
