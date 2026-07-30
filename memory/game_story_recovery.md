@@ -4959,6 +4959,36 @@ Current main-story priorities:
    actionable core-isolated rows, four actionable quest attachments, 108
    exact-native isolated closures, 95 exact-runtime-config closures, and three
    closed quest-attachment diagnostics. e5m2 is next at score 6.
+   The e5m2 pass closes both remaining quest-attachment rows as exact
+   graph-neutral negative diagnostics. `e5m2_q#33` checks LevelScript property
+   `bridge` in `map02_lv001/10100070004`; that script contains one
+   `e5m2_q#33` byte string and the exact `PlayRadio(radio_e5m2_10)` and
+   `StartDialogAction(dlg_e5m2_10)` calls. Its two apparent `bridge` hits are
+   only suffixes of `guide_group_wltechbridge` and
+   `guide_text_wltechbridge_title`: the binary has no exact MemoryPack string
+   for the six-character property key, and the bounded task-map decoder yields
+   no property-scoped Story control path. The generated
+   `levelscript_condition_scope` rows therefore remain diagnostic same-script
+   membership, not playback, ownership, or order.
+   `e5m2d5_q#12` is a `GameConditionServerPlaceHolder` objective with
+   `progressToCompare=1`, tracked through NPC proxy
+   `tangtang_map02_e5m2duizhi`. The exact `NpcProxyExDataTable` rows for that
+   proxy have empty mission ids (one empty dialog and one `dlg_e5m2_8`
+   dialog), so they do not provide a mission-bound dialog attachment. The
+   remaining `radio_e5m2_18` evidence is one LevelData quest/Story
+   byte-proximity row at distance 118; the `radio_e5m2_7d5`/`_18` variant
+   attachments synthesized from it retain weak `levelDataQuestRef` semantics.
+   Collection proximity and predecessor-shell context cannot select playback
+   or chronology.
+   Queue schema v78 and negative mapping v2 hash-lock both MissionRuntime
+   files, the LevelScript, the LevelData file, and `NpcProxyExDataTable`, then
+   validate every objective, tracking, connection, byte-count, and LevelData
+   reference shape. Any source/shape change or stronger typed route reopens
+   the rows. e5m2 now scores zero; the main-story bucket is score 46 with
+   eight actionable core-isolated rows, two actionable quest attachments,
+   five closed quest-attachment diagnostics, 108 exact-native isolated
+   closures, 95 exact-runtime-config closures, and 346 offline declarations.
+   e7m1 is next at score 5.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,

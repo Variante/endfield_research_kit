@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import re
 import sys
@@ -46,7 +47,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v77"
+SCHEMA = "sourceStoryGapQueue.v78"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -186,14 +187,59 @@ OFFLINE_EXHAUSTION_TIMELINE_LINE_ORDERS_SHA256 = (
     "C8408C67D8E6AD07CECF2007795C8E388B7F9BCE117B11DAADE8A7EFAD4EAEF2"
 )
 QUEST_ATTACHMENT_DIAGNOSTIC_MAPPING_ID = (
-    "current-build-quest-story-attachment-negative-v1"
+    "current-build-quest-story-attachment-negative-v2"
 )
+QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS = {
+    "missionRuntime:e10m4d5": (
+        "export_full/structured/Persistent/Data/Json/"
+        "MissionRuntimeAsset/e10m4d5.json"
+    ),
+    "levelScript:dung02_rdg002/24400000018": (
+        "export_full/structured/StreamingAssets/Data/Json/"
+        "LevelScriptData/dung02_rdg002/24400000018.json"
+    ),
+    "missionRuntime:e5m2": (
+        "export_full/structured/Persistent/Data/Json/"
+        "MissionRuntimeAsset/e5m2.json"
+    ),
+    "missionRuntime:e5m2d5": (
+        "export_full/structured/Persistent/Data/Json/"
+        "MissionRuntimeAsset/e5m2d5.json"
+    ),
+    "levelScript:map02_lv001/10100070004": (
+        "export_full/structured/StreamingAssets/Data/Json/"
+        "LevelScriptData/map02_lv001/10100070004.json"
+    ),
+    "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2": (
+        "export_full/structured/StreamingAssets/Data/Json/"
+        "LevelData/map02_lv001/map02_lv001_lv_data_sub_e5m2.json"
+    ),
+    "gameplayConfig:NpcProxyExDataTable": (
+        "export_full/structured/StreamingAssets/Data/Json/"
+        "GameplayConfig/NpcProxyExDataTable.json"
+    ),
+}
 QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_HASHES = {
     "missionRuntime:e10m4d5": (
         "D417581D527A42350597FF802A071F2F629C350C3B0942ACDBEB19FD5518FD0B"
     ),
     "levelScript:dung02_rdg002/24400000018": (
         "674D1733DDFA890AABEF7A2D534ED49D99EE427D3C782A6B904C00BFBCB5C5E3"
+    ),
+    "missionRuntime:e5m2": (
+        "1F22C2F11071DAEFC85DB0D573B1A353B317053338A4AC3D664B430F5FF8D4F3"
+    ),
+    "missionRuntime:e5m2d5": (
+        "5A0C49C5C0D1491CD04EBA23DACAA4D590F74D3AA6CCE77FD7B322A10D71C5B6"
+    ),
+    "levelScript:map02_lv001/10100070004": (
+        "B155BA6346D8FC8B9DBFA6DD4BFD8F32F26E4575C5B6B1CE08E622FFA6BBD0DB"
+    ),
+    "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2": (
+        "A134F81DC8797941B356B0C2775CF5AC545290ECB7D34E7E82B9EDAD74F602B8"
+    ),
+    "gameplayConfig:NpcProxyExDataTable": (
+        "19C9A7DC69DEED52A9EAFD26D216F31826065137490548E5917BE589BA11BBAC"
     ),
 }
 QUEST_ATTACHMENT_DIAGNOSTIC_DECLARATIONS = {
@@ -239,6 +285,176 @@ QUEST_ATTACHMENT_DIAGNOSTIC_DECLARATIONS = {
         ),
         "recoveryStatus":
             "closed_shared_levelscript_without_property_scoped_story_bridge",
+    },
+    "e5m2_q#33": {
+        "mission": "e5m2",
+        "variantMission": "e5m2",
+        "sourceKey": "missionRuntime:e5m2",
+        "sourceFile": QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
+            "missionRuntime:e5m2"
+        ],
+        "prevQuestIds": ("e5m2_q#12",),
+        "conditionType": "CheckLevelScriptPropertyBool",
+        "scriptId": "10100070004",
+        "propertyKey": "bridge",
+        "validationKind": "shared_levelscript_condition_scope",
+        "levelScriptSourceKey": "levelScript:map02_lv001/10100070004",
+        "levelScriptFile": QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
+            "levelScript:map02_lv001/10100070004"
+        ],
+        "diagnosticStoryKeys": (
+            "dlg_e5m2_10",
+            "radio_e5m2_10",
+        ),
+        "connectionRows": (
+            {
+                "key": "dlg_e5m2_10",
+                "kind": "dialog",
+                "relation": "levelscript_condition_scope",
+                "direction": "context",
+                "phase": "context",
+                "confidence": "scoped_script",
+                "source": "LevelScript referenced by this quest condition",
+                "mapId": "map02_lv001",
+                "scriptId": "10100070004",
+                "conditionKey": "bridge",
+            },
+            {
+                "key": "radio_e5m2_10",
+                "kind": "radio",
+                "relation": "levelscript_condition_scope",
+                "direction": "context",
+                "phase": "context",
+                "confidence": "scoped_script",
+                "source": "LevelScript referenced by this quest condition",
+                "mapId": "map02_lv001",
+                "scriptId": "10100070004",
+                "conditionKey": "bridge",
+            },
+        ),
+        "levelScriptByteStringCounts": {
+            "e5m2_q#33": 1,
+            "dlg_e5m2_10": 1,
+            "radio_e5m2_10": 1,
+        },
+        "recoveryStatus":
+            "closed_shared_levelscript_without_property_scoped_story_bridge",
+        "evidenceKind": (
+            "exact property checker plus hash-locked same-script task and "
+            "Story-call boundary"
+        ),
+        "attachmentBoundary": (
+            "the script contains this quest id and two Story calls, but its "
+            "only bridge substrings belong to guide_group_wltechbridge and "
+            "guide_text_wltechbridge_title; it has no exact MemoryPack "
+            "string for the six-character property key and no decoded "
+            "property-scoped Story control path"
+        ),
+        "orderBoundary": (
+            "same-script quest/task bytes, Story calls, and generated "
+            "condition scope do not identify playback, ownership, or order"
+        ),
+    },
+    "e5m2d5_q#12": {
+        "mission": "e5m2",
+        "variantMission": "e5m2d5",
+        "sourceKey": "missionRuntime:e5m2d5",
+        "sourceFile": QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
+            "missionRuntime:e5m2d5"
+        ],
+        "prevQuestIds": ("e5m2d5_q#11",),
+        "conditionType": "GameConditionServerPlaceHolder",
+        "progressToCompare": 1,
+        "validationKind": "weak_leveldata_context",
+        "levelDataSourceKey": (
+            "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2"
+        ),
+        "levelDataFile": QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
+            "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2"
+        ],
+        "npcProxyId": "tangtang_map02_e5m2duizhi",
+        "npcProxyDialogRows": (
+            ("", ""),
+            ("", "dlg_e5m2_8"),
+        ),
+        "diagnosticStoryKeys": (
+            "radio_e5m2_7d5",
+            "radio_e5m2_18",
+        ),
+        "connectionRows": (
+            {
+                "key": "radio_e5m2_18",
+                "kind": "level_data",
+                "relation": "leveldata_quest_reference",
+                "direction": "context",
+                "phase": "context",
+                "confidence": "direct",
+                "source": "LevelData quest/story byte-string context",
+                "levelId": "map02_lv001",
+                "file": QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
+                    "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2"
+                ],
+            },
+            {
+                "key": "radio_e5m2_7d5",
+                "kind": "radio",
+                "relation": "variant_runtime_attachment",
+                "direction": "context",
+                "phase": "context",
+                "confidence": "scoped_variant",
+                "source": "variant MissionRuntime quest attachment",
+                "variantMission": "e5m2d5",
+                "attachmentKind": "levelDataQuestRef",
+            },
+            {
+                "key": "radio_e5m2_18",
+                "kind": "radio",
+                "relation": "variant_runtime_attachment",
+                "direction": "context",
+                "phase": "context",
+                "confidence": "scoped_variant",
+                "source": "variant MissionRuntime quest attachment",
+                "variantMission": "e5m2d5",
+                "attachmentKind": "levelDataQuestRef",
+            },
+        ),
+        "levelDataStoryRefs": (
+            {
+                "storyRef": "radio_e5m2_18",
+                "levelId": "map02_lv001",
+                "file": QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
+                    "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2"
+                ],
+                "distance": 118,
+                "source": "LevelData quest/story byte-string context",
+                "fields": ["radio_e5m2_18"],
+            },
+        ),
+        "levelDataByteStringCounts": {
+            "e5m2d5_q#12": 2,
+            "radio_e5m2_18": 3,
+        },
+        "recoveryStatus":
+            "closed_weak_leveldata_reference_without_typed_story_bridge",
+        "evidenceKind": (
+            "exact server placeholder plus hash-locked weak LevelData "
+            "quest/Story byte proximity"
+        ),
+        "attachmentBoundary": (
+            "the objective is server-owned; its tracked NPC proxy has no "
+            "mission-bound dialog, while the LevelData evidence is only "
+            "byte-string proximity to radio_e5m2_18 and a weak synthesized "
+            "variant attachment"
+        ),
+        "orderBoundary": (
+            "LevelData collection proximity and predecessor-shell context "
+            "do not establish playback, ownership, or relative Story order"
+        ),
+        "reopenWhen": (
+            "any source hash or generated shape changes, or a typed "
+            "MissionRuntime, LevelData, or mission-bound NPC-proxy Story "
+            "route is recovered"
+        ),
     },
 }
 OFFLINE_EXHAUSTION_E11M4_CUTSCENE = (
@@ -2745,6 +2961,7 @@ def build_quest_attachment_diagnostic_index(
     *,
     mission_runtime_path: Path | None = None,
     levelscript_path: Path | None = None,
+    source_path_overrides: dict[str, Path] | None = None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     """Validate exact current-build quest/Story negative boundaries.
 
@@ -2753,31 +2970,18 @@ def build_quest_attachment_diagnostic_index(
     Hash changes, generated-shape changes, or a newly recovered strict route
     reopen the quest automatically.
     """
-    mission_runtime_path = mission_runtime_path or (
-        ROOT
-        / "export_full"
-        / "structured"
-        / "Persistent"
-        / "Data"
-        / "Json"
-        / "MissionRuntimeAsset"
-        / "e10m4d5.json"
-    )
-    levelscript_path = levelscript_path or (
-        ROOT
-        / "export_full"
-        / "structured"
-        / "StreamingAssets"
-        / "Data"
-        / "Json"
-        / "LevelScriptData"
-        / "dung02_rdg002"
-        / "24400000018.json"
-    )
     source_paths = {
-        "missionRuntime:e10m4d5": mission_runtime_path,
-        "levelScript:dung02_rdg002/24400000018": levelscript_path,
+        name: ROOT / relative_path
+        for name, relative_path
+        in QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS.items()
     }
+    if mission_runtime_path is not None:
+        source_paths["missionRuntime:e10m4d5"] = mission_runtime_path
+    if levelscript_path is not None:
+        source_paths[
+            "levelScript:dung02_rdg002/24400000018"
+        ] = levelscript_path
+    source_paths.update(source_path_overrides or {})
     actual_hashes = {
         name: _sha256_file(path)
         for name, path in source_paths.items()
@@ -2803,28 +3007,49 @@ def build_quest_attachment_diagnostic_index(
     if mismatches:
         return {}, status
 
-    payload = mission_payloads.get("e10m4")
-    timeline = _timeline(payload)
-    flow = _flow(payload)
-    timeline_quests = {
-        safe_key(row.get("questId")): row
-        for row in timeline.get("quests") or []
-        if isinstance(row, dict) and safe_key(row.get("questId"))
+    source_bytes = {
+        name: path.read_bytes()
+        for name, path in source_paths.items()
     }
-    flow_quests = {
-        safe_key(row.get("id")): row
-        for row in flow.get("quests") or []
-        if isinstance(row, dict) and safe_key(row.get("id"))
-    }
+    npc_proxy_payload = read_json(
+        source_paths["gameplayConfig:NpcProxyExDataTable"]
+    )
+
+    def exact_rows(actual: Any, expected: Any) -> bool:
+        if (
+            not isinstance(actual, list)
+            or not isinstance(expected, (list, tuple))
+            or len(actual) != len(expected)
+            or not all(isinstance(row, dict) for row in actual)
+            or not all(isinstance(row, dict) for row in expected)
+        ):
+            return False
+        return sorted(
+            json.dumps(row, sort_keys=True, separators=(",", ":"))
+            for row in actual
+        ) == sorted(
+            json.dumps(row, sort_keys=True, separators=(",", ":"))
+            for row in expected
+        )
+
     index: dict[str, dict[str, Any]] = {}
     validation_failures: list[str] = []
-    expected_source_file = (
-        "export_full/structured/Persistent/Data/Json/"
-        "MissionRuntimeAsset/e10m4d5.json"
-    )
     for quest_id, declaration in (
         QUEST_ATTACHMENT_DIAGNOSTIC_DECLARATIONS.items()
     ):
+        payload = mission_payloads.get(declaration["mission"])
+        timeline = _timeline(payload)
+        flow = _flow(payload)
+        timeline_quests = {
+            safe_key(row.get("questId")): row
+            for row in timeline.get("quests") or []
+            if isinstance(row, dict) and safe_key(row.get("questId"))
+        }
+        flow_quests = {
+            safe_key(row.get("id")): row
+            for row in flow.get("quests") or []
+            if isinstance(row, dict) and safe_key(row.get("id"))
+        }
         quest = timeline_quests.get(quest_id)
         flow_quest = flow_quests.get(quest_id)
         objectives = quest.get("objectives") if isinstance(quest, dict) else None
@@ -2848,26 +3073,11 @@ def build_quest_attachment_diagnostic_index(
             if isinstance(flow_quest, dict)
             else None
         )
-        diagnostic_connections = (
-            connections
-            if isinstance(connections, list)
-            and connections
-            and all(
-                isinstance(row, dict)
-                and safe_key(row.get("relation"))
-                == "variant_runtime_attachment"
-                and safe_key(row.get("direction")) == "context"
-                and safe_key(row.get("phase")) == "context"
-                and safe_key(row.get("confidence")) == "scoped_variant"
-                and safe_key(row.get("source"))
-                == "variant MissionRuntime quest attachment"
-                and safe_key(row.get("variantMission"))
-                == declaration["variantMission"]
-                and safe_key(row.get("attachmentKind"))
-                in {"questPrev", "questSequence"}
-                for row in connections
-            )
-            else []
+        expected_source_file = declaration.get(
+            "sourceFile",
+            QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
+                "missionRuntime:e10m4d5"
+            ],
         )
         valid = (
             isinstance(quest, dict)
@@ -2880,13 +3090,47 @@ def build_quest_attachment_diagnostic_index(
             and safe_key(leaf.get("type")) == declaration["conditionType"]
             and set(_string_list(objective.get("conditionTypes")))
             == {declaration["conditionType"]}
-            and bool(diagnostic_connections)
-            and {
-                safe_key(row.get("key"))
-                for row in diagnostic_connections
-            }
-            == set(declaration["diagnosticStoryKeys"])
         )
+        validation_kind = declaration.get(
+            "validationKind",
+            "variant_runtime_shell",
+        )
+        if valid and validation_kind == "variant_runtime_shell":
+            diagnostic_connections = (
+                connections
+                if isinstance(connections, list)
+                and connections
+                and all(
+                    isinstance(row, dict)
+                    and safe_key(row.get("relation"))
+                    == "variant_runtime_attachment"
+                    and safe_key(row.get("direction")) == "context"
+                    and safe_key(row.get("phase")) == "context"
+                    and safe_key(row.get("confidence")) == "scoped_variant"
+                    and safe_key(row.get("source"))
+                    == "variant MissionRuntime quest attachment"
+                    and safe_key(row.get("variantMission"))
+                    == declaration["variantMission"]
+                    and safe_key(row.get("attachmentKind"))
+                    in {"questPrev", "questSequence"}
+                    for row in connections
+                )
+                else []
+            )
+            valid = (
+                bool(diagnostic_connections)
+                and {
+                    safe_key(row.get("key"))
+                    for row in diagnostic_connections
+                }
+                == set(declaration["diagnosticStoryKeys"])
+            )
+        elif valid:
+            valid = exact_rows(
+                connections,
+                declaration.get("connectionRows") or (),
+            )
+
         if valid and declaration["conditionType"] == (
             "CheckLevelScriptPropertyBool"
         ):
@@ -2905,7 +3149,7 @@ def build_quest_attachment_diagnostic_index(
                 property_values == [declaration["propertyKey"]]
                 and script_values == [declaration["scriptId"]]
             )
-        elif valid:
+        elif valid and validation_kind == "variant_runtime_shell":
             comparers = [
                 row.get("value")
                 for row in leaf.get("comparers") or []
@@ -2920,6 +3164,90 @@ def build_quest_attachment_diagnostic_index(
                 comparers == [declaration["comparer"]]
                 and progress_values == [declaration["progressToCompare"]]
             )
+        elif valid:
+            comparers = [
+                row.get("value")
+                for row in leaf.get("comparers") or []
+                if isinstance(row, dict)
+            ]
+            progress_values = [
+                row.get("value")
+                for row in leaf.get("compareValues") or []
+                if isinstance(row, dict)
+            ]
+            valid = (
+                comparers == []
+                and progress_values == [declaration["progressToCompare"]]
+            )
+
+        if valid and validation_kind == "shared_levelscript_condition_scope":
+            levelscript_data = source_bytes.get(
+                declaration["levelScriptSourceKey"],
+                b"",
+            )
+            byte_counts = declaration["levelScriptByteStringCounts"]
+            exact_property_string = (
+                b"\x04"
+                + len(declaration["propertyKey"]).to_bytes(4, "little")
+                + declaration["propertyKey"].encode("utf-8")
+            )
+            valid = (
+                all(
+                    levelscript_data.count(value.encode("utf-8")) == count
+                    for value, count in byte_counts.items()
+                )
+                and exact_property_string not in levelscript_data
+            )
+        elif valid and validation_kind == "weak_leveldata_context":
+            tracking = objective.get("tracking")
+            tracking_row = (
+                tracking[0]
+                if isinstance(tracking, list)
+                and len(tracking) == 1
+                and isinstance(tracking[0], dict)
+                else {}
+            )
+            leveldata_data = source_bytes.get(
+                declaration["levelDataSourceKey"],
+                b"",
+            )
+            byte_counts = declaration["levelDataByteStringCounts"]
+            proxy_rows = (
+                (npc_proxy_payload.get("data") or {}).get(
+                    declaration["npcProxyId"]
+                )
+                if isinstance(npc_proxy_payload, dict)
+                else None
+            )
+            proxy_dialog_rows = (
+                tuple(
+                    (
+                        safe_key(row.get("missionId")),
+                        safe_key(row.get("dialogId")),
+                    )
+                    for row in proxy_rows
+                    if isinstance(row, dict)
+                )
+                if isinstance(proxy_rows, list)
+                else ()
+            )
+            valid = (
+                safe_key(tracking_row.get("type"))
+                == "NpcProxyTrackingInfo"
+                and safe_key(tracking_row.get("npcProxyId"))
+                == declaration["npcProxyId"]
+                and exact_rows(
+                    flow_quest.get("levelDataStoryRefs"),
+                    declaration["levelDataStoryRefs"],
+                )
+                and not flow_quest.get("proxyDialogs")
+                and proxy_dialog_rows
+                == declaration["npcProxyDialogRows"]
+                and all(
+                    leveldata_data.count(value.encode("utf-8")) == count
+                    for value, count in byte_counts.items()
+                )
+            )
         if not valid:
             validation_failures.append(quest_id)
             continue
@@ -2932,10 +3260,15 @@ def build_quest_attachment_diagnostic_index(
             "missionId": declaration["mission"],
             "variantMissionId": declaration["variantMission"],
             "recoveryStatus": declaration["recoveryStatus"],
-            "evidenceKind": (
-                "exact property checker plus hash-locked LevelScript negative"
-                if shared_boundary
-                else "exact server-owned placeholder with no client Story field"
+            "evidenceKind": declaration.get(
+                "evidenceKind",
+                (
+                    "exact property checker plus hash-locked LevelScript "
+                    "negative"
+                    if shared_boundary
+                    else "exact server-owned placeholder with no client "
+                    "Story field"
+                ),
             ),
             "conditionType": declaration["conditionType"],
             "scriptId": declaration.get("scriptId", ""),
@@ -2944,38 +3277,48 @@ def build_quest_attachment_diagnostic_index(
                 declaration["diagnosticStoryKeys"]
             ),
             "sourceFile": expected_source_file,
-            "levelScriptFile": (
-                "export_full/structured/StreamingAssets/Data/Json/"
-                "LevelScriptData/dung02_rdg002/24400000018.json"
-                if shared_boundary
-                else ""
+            "levelScriptFile": declaration.get(
+                "levelScriptFile",
+                (
+                    QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
+                        "levelScript:dung02_rdg002/24400000018"
+                    ]
+                    if shared_boundary
+                    else ""
+                ),
             ),
+            "levelDataFile": declaration.get("levelDataFile", ""),
             "nativeMappingId": QUEST_ATTACHMENT_DIAGNOSTIC_MAPPING_ID,
             "graphEffect": "none",
-            "attachmentBoundary": (
-                "the quest checks a named property in a script that contains "
-                "multiple Story calls, but the exact current-build script has "
-                "no matching quest id, property key, or property-scoped Story "
-                "bridge"
-                if shared_boundary
-                else "the objective is server-owned and exposes no "
-                "client-readable Story id or playback field"
+            "attachmentBoundary": declaration.get(
+                "attachmentBoundary",
+                (
+                    "the quest checks a named property in a script that "
+                    "contains multiple Story calls, but the exact "
+                    "current-build script has no matching quest id, property "
+                    "key, or property-scoped Story bridge"
+                    if shared_boundary
+                    else "the objective is server-owned and exposes no "
+                    "client-readable Story id or playback field"
+                ),
             ),
-            "orderBoundary": (
+            "orderBoundary": declaration.get(
+                "orderBoundary",
                 (
                     "shared LevelScript membership and generated "
                     "quest-sequence context do not identify which Story call, "
                     "if any, belongs to this quest"
-                )
-                if shared_boundary
-                else (
+                    if shared_boundary
+                    else
                     "the generated predecessor-shell Story context is "
                     "diagnostic only and does not establish playback or order"
-                )
+                ),
             ),
-            "reopenWhen": (
-                "either source hash or generated condition shape changes, or "
-                "a property/quest-scoped native playback route is recovered"
+            "reopenWhen": declaration.get(
+                "reopenWhen",
+                "either source hash or generated condition shape changes, "
+                "or a property/quest-scoped native playback route is "
+                "recovered",
             ),
         }
 

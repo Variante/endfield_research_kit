@@ -4245,24 +4245,33 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS,
         )
 
-    def test_current_e10m4_quest_attachment_diagnostics_are_exact(self) -> None:
+    def test_current_quest_attachment_diagnostics_are_exact(self) -> None:
         mission_dir = (
             gap_queue.ROOT / "webui" / "data" / "lang" / "CN" / "mission"
         )
-        payload = gap_queue.load_mission_payload_with_variants(
-            mission_dir,
-            "e10m4",
-        )
+        payloads = {
+            mission: gap_queue.load_mission_payload_with_variants(
+                mission_dir,
+                mission,
+            )
+            for mission in ("e5m2", "e10m4")
+        }
 
-        index, status = gap_queue.build_quest_attachment_diagnostic_index({
-            "e10m4": payload,
-        })
+        index, status = gap_queue.build_quest_attachment_diagnostic_index(
+            payloads
+        )
 
         self.assertEqual(status["status"], "active")
         self.assertEqual(status["sourceHashMismatches"], [])
         self.assertEqual(
             set(index),
-            {"e10m4d5_q#31", "e10m4d5_q#34", "e10m4d5_q#35"},
+            {
+                "e5m2_q#33",
+                "e5m2d5_q#12",
+                "e10m4d5_q#31",
+                "e10m4d5_q#34",
+                "e10m4d5_q#35",
+            },
         )
         self.assertEqual(
             index["e10m4d5_q#31"]["propertyKey"],
@@ -4275,6 +4284,70 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             index["e10m4d5_q#34"]["conditionType"],
             "GameConditionServerPlaceHolder",
+        )
+        self.assertEqual(index["e5m2_q#33"]["propertyKey"], "bridge")
+        self.assertEqual(
+            index["e5m2d5_q#12"]["recoveryStatus"],
+            "closed_weak_leveldata_reference_without_typed_story_bridge",
+        )
+        self.assertEqual(
+            index["e5m2d5_q#12"]["diagnosticStoryKeys"],
+            ["radio_e5m2_7d5", "radio_e5m2_18"],
+        )
+
+    def test_quest_attachment_diagnostics_fail_closed_on_shape_change(
+        self,
+    ) -> None:
+        mission_dir = (
+            gap_queue.ROOT / "webui" / "data" / "lang" / "CN" / "mission"
+        )
+        payloads = {
+            mission: gap_queue.load_mission_payload_with_variants(
+                mission_dir,
+                mission,
+            )
+            for mission in ("e5m2", "e10m4")
+        }
+        flow = gap_queue._flow(payloads["e5m2"])
+        quest = next(
+            row
+            for row in flow["quests"]
+            if row["id"] == "e5m2d5_q#12"
+        )
+        quest["storyConnections"][0]["relation"] = "new_typed_route"
+
+        index, status = gap_queue.build_quest_attachment_diagnostic_index(
+            payloads
+        )
+
+        self.assertEqual(index, {})
+        self.assertEqual(
+            status["status"],
+            "inactive_generated_shape_validation_failed",
+        )
+        self.assertEqual(
+            status["validationFailures"],
+            ["e5m2d5_q#12"],
+        )
+
+    def test_quest_attachment_diagnostics_fail_closed_on_hash_change(
+        self,
+    ) -> None:
+        index, status = gap_queue.build_quest_attachment_diagnostic_index(
+            {},
+            source_path_overrides={
+                "missionRuntime:e5m2": Path(__file__),
+            },
+        )
+
+        self.assertEqual(index, {})
+        self.assertEqual(
+            status["status"],
+            "inactive_source_validation_failed",
+        )
+        self.assertEqual(
+            status["sourceHashMismatches"],
+            ["missionRuntime:e5m2"],
         )
 
     def test_declared_e6m4_offline_frontier_is_exact(self) -> None:
