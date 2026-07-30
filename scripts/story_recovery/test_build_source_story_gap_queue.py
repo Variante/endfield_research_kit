@@ -790,6 +790,43 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(row["metrics"]["strictQuestIdsWithStoryAttachment"], 1)
         self.assertEqual(row["questIdsWithoutStrictStoryAttachment"], ["e1m1_q#2"])
 
+    def test_validated_non_owning_quest_diagnostic_is_not_actionable(self) -> None:
+        partial = partial_mission("e1m1", scenes=["dlg_a"])
+        payload = mission_payload(
+            quest_ids=["e1m1_q#2"],
+            placements={
+                "dlg_a": {
+                    "sceneKey": "dlg_a",
+                    "questIds": ["e1m1_q#2"],
+                    "questAttachSources": [{
+                        "questId": "e1m1_q#2",
+                        "source": "variantMissionRuntime",
+                    }],
+                },
+            },
+        )
+        closure = {
+            "questId": "e1m1_q#2",
+            "missionId": "e1m1",
+            "recoveryStatus": "closed_fixture_non_owning_diagnostic",
+            "graphEffect": "none",
+        }
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+            quest_attachment_diagnostic_index={"e1m1_q#2": closure},
+        )
+
+        self.assertEqual(row["questIdsWithoutStrictStoryAttachment"], [])
+        self.assertEqual(row["closedQuestAttachmentDiagnostics"], [closure])
+        self.assertEqual(row["metrics"]["closedQuestAttachmentDiagnostics"], 1)
+        self.assertEqual(
+            row["scoreContributions"]["questIdsWithoutStrictStoryAttachment"],
+            0,
+        )
+
     def test_npc_proxy_dialog_context_is_not_actionable_quest_attachment(
         self,
     ) -> None:
@@ -4131,6 +4168,38 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertIn(
             "text_e10m4_1",
             gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS,
+        )
+
+    def test_current_e10m4_quest_attachment_diagnostics_are_exact(self) -> None:
+        mission_dir = (
+            gap_queue.ROOT / "webui" / "data" / "lang" / "CN" / "mission"
+        )
+        payload = gap_queue.load_mission_payload_with_variants(
+            mission_dir,
+            "e10m4",
+        )
+
+        index, status = gap_queue.build_quest_attachment_diagnostic_index({
+            "e10m4": payload,
+        })
+
+        self.assertEqual(status["status"], "active")
+        self.assertEqual(status["sourceHashMismatches"], [])
+        self.assertEqual(
+            set(index),
+            {"e10m4d5_q#31", "e10m4d5_q#34", "e10m4d5_q#35"},
+        )
+        self.assertEqual(
+            index["e10m4d5_q#31"]["propertyKey"],
+            "enemyStart1",
+        )
+        self.assertEqual(
+            index["e10m4d5_q#35"]["propertyKey"],
+            "enemyStart2",
+        )
+        self.assertEqual(
+            index["e10m4d5_q#34"]["conditionType"],
+            "GameConditionServerPlaceHolder",
         )
 
     def test_declared_e6m4_offline_frontier_is_exact(self) -> None:

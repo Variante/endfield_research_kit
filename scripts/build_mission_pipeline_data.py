@@ -198,7 +198,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v75"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v76"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3046,6 +3046,9 @@ def publish_offline_story_recovery(
         "publishedStoryKeys": 0,
         "outsidePipelineCoverageStoryKeys": 0,
         "storyTriggerManifestOverlay": {},
+        "questAttachmentDiagnosticStatus": "unavailable",
+        "questAttachmentDiagnosticMappingId": "",
+        "questAttachmentDiagnostics": {},
         "source": repo_path(gap_queue_path) if gap_queue_path else "",
     }
     if gap_queue_path is None or not gap_queue_path.is_file():
@@ -3071,9 +3074,30 @@ def publish_offline_story_recovery(
     published = 0
     published_keys: set[str] = set()
     manifest_overlay: dict[str, dict[str, Any]] = {}
+    diagnostic_status = payload.get("questAttachmentDiagnosticEvidence")
+    diagnostic_active = (
+        isinstance(diagnostic_status, dict)
+        and diagnostic_status.get("status") == "active"
+        and diagnostic_status.get("graphEffect") == "none"
+        and not diagnostic_status.get("sourceHashMismatches")
+        and not diagnostic_status.get("validationFailures")
+    )
+    quest_attachment_diagnostics: dict[str, dict[str, Any]] = {}
     for mission in payload.get("missions") or []:
         if not isinstance(mission, dict):
             continue
+        if diagnostic_active:
+            for row in mission.get("closedQuestAttachmentDiagnostics") or []:
+                if not isinstance(row, dict) or row.get("graphEffect") != "none":
+                    continue
+                quest_id = str(row.get("questId") or "")
+                if not quest_id:
+                    continue
+                quest_attachment_diagnostics[quest_id] = {
+                    key: value
+                    for key, value in row.items()
+                    if key not in {"sourceHashes", "expectedSourceHashes"}
+                }
         for row in mission.get("deferredOfflineExhaustedIsolatedScenes") or []:
             if not isinstance(row, dict) or row.get("graphEffect") != "none":
                 continue
@@ -3112,6 +3136,15 @@ def publish_offline_story_recovery(
         "publishedRows": published,
         "outsidePipelineCoverageStoryKeys": len(manifest_overlay),
         "storyTriggerManifestOverlay": manifest_overlay,
+        "questAttachmentDiagnosticStatus": (
+            "active" if diagnostic_active else "unavailable"
+        ),
+        "questAttachmentDiagnosticMappingId": (
+            str(diagnostic_status.get("mappingId") or "")
+            if diagnostic_active
+            else ""
+        ),
+        "questAttachmentDiagnostics": quest_attachment_diagnostics,
         "source": repo_path(gap_queue_path),
     }
 

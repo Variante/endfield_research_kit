@@ -18,7 +18,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v75",
+            "sourceStoryGapQueue.v76",
         )
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
@@ -110,6 +110,57 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         ]
         self.assertEqual(radio_overlay["kind"], "radio")
         self.assertEqual(radio_overlay["routes"], [])
+
+    def test_offline_story_recovery_publishes_non_owning_quest_diagnostic(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            queue_path = Path(temporary) / "gap_queue.json"
+            queue_path.write_text(
+                json.dumps({
+                    "_schema": pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
+                    "offlineExhaustionEvidence": {
+                        "status": "active",
+                        "mappingId": "fixture-offline-v1",
+                        "graphEffect": "none",
+                        "sourceHashMismatches": [],
+                    },
+                    "questAttachmentDiagnosticEvidence": {
+                        "status": "active",
+                        "mappingId": "fixture-quest-negative-v1",
+                        "graphEffect": "none",
+                        "sourceHashMismatches": [],
+                        "validationFailures": [],
+                    },
+                    "missions": [{
+                        "mission": "testm1",
+                        "closedQuestAttachmentDiagnostics": [{
+                            "questId": "testm1_q#1",
+                            "missionId": "testm1",
+                            "recoveryStatus":
+                                "closed_server_placeholder_without_client_story_semantics",
+                            "attachmentBoundary": "no client Story field",
+                            "orderBoundary": "no order edge",
+                            "reopenWhen": "source changes",
+                            "graphEffect": "none",
+                        }],
+                        "deferredOfflineExhaustedIsolatedScenes": [],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+
+            result = pipeline.publish_offline_story_recovery(
+                {},
+                queue_path,
+            )
+
+        self.assertEqual(result["questAttachmentDiagnosticStatus"], "active")
+        self.assertEqual(
+            result["questAttachmentDiagnosticMappingId"],
+            "fixture-quest-negative-v1",
+        )
+        diagnostic = result["questAttachmentDiagnostics"]["testm1_q#1"]
+        self.assertEqual(diagnostic["graphEffect"], "none")
+        self.assertEqual(diagnostic["attachmentBoundary"], "no client Story field")
 
     def test_offline_story_recovery_fails_closed_on_schema_mismatch(self):
         with tempfile.TemporaryDirectory() as temporary:
