@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v74"
+SCHEMA = "sourceStoryGapQueue.v75"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -129,7 +129,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v53"
+    "current-build-offline-story-carrier-exhaustion-v54"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -2351,6 +2351,10 @@ OFFLINE_EXHAUSTION_E5M1_RADIOS = frozenset({
     "radio_e5m1_12",
     "radio_e5m1_15",
 })
+OFFLINE_EXHAUSTION_E5M5_RADIOS = frozenset({
+    "radio_e5m5_1",
+    "radio_e5m5_2",
+})
 OFFLINE_EXHAUSTION_E6M1_RADIOS = frozenset({
     "radio_e6m1_19",
 })
@@ -2401,6 +2405,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e5m1": OFFLINE_EXHAUSTION_E5M1_RADIOS,
     "e5m2": OFFLINE_EXHAUSTION_E5M2_RADIOS,
     "e5m4": OFFLINE_EXHAUSTION_E5M4_RADIOS,
+    "e5m5": OFFLINE_EXHAUSTION_E5M5_RADIOS,
     "e6m1": OFFLINE_EXHAUSTION_E6M1_RADIOS,
     "e6m2": OFFLINE_EXHAUSTION_E6M2_RADIOS,
     "e6m3": OFFLINE_EXHAUSTION_E6M3_RADIOS,
@@ -2461,6 +2466,11 @@ OFFLINE_EXHAUSTION_RADIO_AUDIO_VARIANTS = {
     },
 }
 OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
+    "radio_e5m5_1": frozenset({
+        "au_radio_e5m5_1_001",
+        "au_radio_e5m5_1_002",
+    }),
+    "radio_e5m5_2": frozenset({"au_radio_e5m5_2_001"}),
     "radio_e5m4_1": frozenset(
         f"au_radio_e5m4_1_{number:03d}"
         for number in range(1, 5)

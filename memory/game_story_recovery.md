@@ -4306,11 +4306,11 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v74`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v75`
    turns the completed exact `e0m0`, `e0m2`, `e1m1`, `e1m2`, `e1m3`, `e1m4`,
    `e1m10`, `e2m2`, `e2m3`, `e2m4`,
    `e2m5`, `e2m5d5`, `e2m6`, `e2m7`, `e2m8d5`, `e3m1`, `e3m2`, `e3m3`, `e3m4`, `e4m1`, `e5m1`,
-   `e5m2`, `e5m4`,
+   `e5m2`, `e5m4`, `e5m5`,
    `e6m1`, `e6m2`, `e6m3`,
    `e6m4`, `e6m5`, `e7m2`, `e7m3`, `e7m4`, `e8m1`, `e8m2`, `e8m3`, `e8m5`,
    `e9m2`, `e9m3`, `e9m4`,
@@ -4340,8 +4340,8 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 343 actual
-   isolated-scene deferrals: 229 radios, 31 cutscene roots, 51 registered
+   and reopen automatically if any gate changes. There are now 345 actual
+   isolated-scene deferrals: 231 radios, 31 cutscene roots, 51 registered
    dialogs (twenty-two dialogs carry twenty-three exact NpcProxy consumers without a
    mission owner), eleven ReadingPopUp definitions, ten DialogTextTable-only
    groups, two SNS dialog definitions, seven text-only cutscenes, and two
@@ -4903,6 +4903,18 @@ Current main-story priorities:
    11 actionable core isolated rows, 108 exact-native isolated closures, 95
    exact-runtime-config closures, and 9 strict-attachment diagnostics. e5m5
    is next at score 10.
+   The e5m5 pass closes two denominator-neutral RadioTable definitions.
+   `radio_e5m5_1` has two authored lines and `radio_e5m5_2` has one; all
+   three declared base audio ids are absent from AudioDialog. Neither key is
+   present in the trigger-manifest denominator, and neither has a recovered
+   MissionRuntime, LevelScript, GameplayConfig, Lua, object-index, or native
+   playback consumer. The carrier audit also reports no candidate. v75/v54
+   publishes both through the offline overlay as `radio`, zero-route,
+   graph-neutral definitions. There are 345 active declarations; the
+   main-story bucket is score 72 with 9 actionable core isolated rows, 108
+   exact-native isolated closures, 95 exact-runtime-config closures, and 9
+   strict-attachment diagnostics. e10m4 is next at score 9, entirely from
+   three quest-scene attachment diagnostics rather than isolated Story rows.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,

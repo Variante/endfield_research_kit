@@ -2946,6 +2946,11 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     f"au_radio_e5m4_2_{number:03d}"
                     for number in range(1, 4)
                 },
+                "radio_e5m5_1": {
+                    "au_radio_e5m5_1_001",
+                    "au_radio_e5m5_1_002",
+                },
+                "radio_e5m5_2": {"au_radio_e5m5_2_001"},
             },
         )
 
@@ -4010,6 +4015,24 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             text_only["missingAudioIds"],
             ("au_dlg_e11m8d5_2_001", "au_dlg_e11m8d5_2_002"),
+        )
+
+    def test_declared_e5m5_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E5M5_RADIOS,
+            {"radio_e5m5_1", "radio_e5m5_2"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS[
+                "radio_e5m5_1"
+            ],
+            {"au_radio_e5m5_1_001", "au_radio_e5m5_1_002"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS[
+                "radio_e5m5_2"
+            ],
+            {"au_radio_e5m5_2_001"},
         )
 
     def test_declared_e6m1_offline_frontier_is_exact(self) -> None:
