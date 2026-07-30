@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v73"
+SCHEMA = "sourceStoryGapQueue.v74"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -129,7 +129,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v52"
+    "current-build-offline-story-carrier-exhaustion-v53"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -746,6 +746,41 @@ OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES = {
     ),
 }
 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
+    "dlg_e11m8d5_1": {
+        "missionId": "e11m8d5",
+        "filename": "dlg_e11m8d5_1_pD376152BDDDA1FBD.json",
+        "sha256":
+            "F119A842BD1328FD3908D264E616CAF3BE1E0231E8875AC1779793963EE76DD2",
+        "extraConfigFilename":
+            "dlg_e11m8d5_1_extra_config_pC0736E349974AB51.json",
+        "extraConfigSha256":
+            "0CA91C4AC4CB6BC1F28870C09B3D1F59B55BBD347334735B6DB725594A6FF7AB",
+        "lineIds": tuple(
+            f"dlg_e11m8d5_1_{number:03d}" for number in range(1, 11)
+        ),
+        "optionIds": (
+            "option_dlg_e11m8d5_1_1_001",
+            "option_dlg_e11m8d5_1_1_002",
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_e11m8d5_1_{number:03d}" for number in range(1, 11)
+        ),
+        "npcProxyConsumer": {
+            "proxyId": "lizy_map02_v1d4d0_world",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {
+                    "envTalkIds": [],
+                    "envTalkOdd": [],
+                    "envTalkOverrideNpc": True,
+                },
+                "dialogExOptionData": [],
+                "dialogId": "dlg_e11m8d5_1",
+                "missionId": "",
+            },
+        },
+    },
     "dlg_e2m8d5_2": {
         "missionId": "e2m8d5",
         "filename": "dlg_e2m8d5_2_p40FE1FD84FBFFF67.json",
@@ -1979,6 +2014,17 @@ OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e11m8_9",
 })
 OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
+    "dlg_e11m8d5_2": {
+        "missionId": "e11m8d5",
+        "lineIds": (
+            "dlg_e11m8d5_2_001",
+            "dlg_e11m8d5_2_002",
+        ),
+        "missingAudioIds": (
+            "au_dlg_e11m8d5_2_001",
+            "au_dlg_e11m8d5_2_002",
+        ),
+    },
     "dlg_e3m4_9": {
         "missionId": "e3m4",
         "lineIds": ("dlg_e3m4_9_001",),
