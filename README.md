@@ -1,39 +1,9 @@
 # Endfield Research Kit
 
-Endfield Research Kit turns a local Windows version Endfield install into an
-offline research browser. Its main surface is a static `webui/` app for
-browsing recovered story text, curated gameplay records, exported media/assets,
-raw text tables, playable audio/video, and focused update diffs between
-game-data exports.
-
-The project is built around reproducible local exports:
-
-- `Story` reconstructs dialog, cutscenes, branches, inline media, audio links,
-  story order, and recovery evidence from generated game-data JSON.
-- `Gameplay` surfaces curated weapon, character, skill, talent, progression,
-  and numeric table records from structured game-data tables.
-- `Mission Pipeline` is an experimental quest DAG available from the normal
-  navigation, with explicit client-to-server objective/dialog messages,
-  server-to-client state updates,
-  visibly unknown server successor policy, and evidence-typed links between
-  quest blocks and their recovered Story files. Mission-level acceptance/context
-  links and the still-unassigned Story remainder stay visibly separate. Each
-  linked or unresolved Story file can expose its normalized trigger chain from
-  quest/mission ownership through native event, LevelScript, playback action,
-  and the final Story key, with exact serialized control paths retained. A
-  source-only partial-order view keeps proven Story sequence edges, branches,
-  joins, cycles, and unknown pairs separate instead of forcing a total order;
-  decoded native `Split`, `IfElseAction`, and `SwitchInt` arms are shown as
-  explicit control topology rather than sibling file order. Conditional arms
-  also retain the exact event selector and decoded getter/inline predicate
-  operands when the current binary shape proves them.
-- `Assets` indexes exported images, models, videos, materials, metadata, and
-  related files.
-- `Text Tables` exposes localized table rows and source data in a searchable
-  browser.
-- `Updates` compares a saved previous export against the current export so the
-  WebUI reports game-data changes without treating local WebUI edits as
-  upstream changes.
+Endfield Research Kit turns a local Windows installation of Endfield into an
+offline static research browser. The WebUI exposes recovered Story, Text
+Tables, Gameplay, Assets, game-update comparisons, and an experimental Mission
+Pipeline.
 
 <p>
   <img src="res/story_screenshot.png" alt="Story browser with mission list, reconstructed dialog, filters, and debug controls" height="150">
@@ -42,440 +12,171 @@ The project is built around reproducible local exports:
   <img src="res/story_screenshot3.png" alt="Text Tables browser with searchable localized table rows" height="150">
 </p>
 
-## Disclaimer
-
-This repository is for research and study purposes only. It is intended for
-local inspection of data from a legally obtained installation, with generated
-outputs kept narrow and reproducible. Do not use it to redistribute proprietary
-game content or bypass the rights of the original creators.
-
-Most notes, recovery logic, generated outputs, and documentation in this
-workspace were produced with LLM assistance. Treat them as working research
-artifacts, not authoritative facts. Expect mistakes, inspect the source data,
-and verify important conclusions yourself.
-
-The exported tables, story files, audio, videos, images, and update diffs can
-include unreleased or not-yet-seen game content. Browsing them may spoil story,
-characters, maps, events, mechanics, or other discoveries. If you care about a
-blind playthrough, be careful about what you export and open.
-
-Durable recovery conclusions are maintained as a small set of living topic
-documents under `memory/`; generated reports and one-off experiments stay out
-of those documents so the repo root and research guidance remain focused.
+> Research only. Use a legally obtained client, do not redistribute proprietary
+> game content, and expect spoilers. Most recovery work was produced with LLM
+> assistance and should be verified against the original data.
 
 中文: [b站专栏](https://www.bilibili.com/opus/1212936027582234627)，[百度盘](http://pan.baidu.com/s/1nLaAc6-AdZAbZb6jGObtmA?pwd=94p7)
 
-## First-Time Setup
+## Quick start
 
-For a fresh checkout, install Git, Python 3, and a legally obtained
-Endfield client first. Then clone the project:
+Requirements: Git, Python 3, a local Endfield client, adequate disk space, and
+preferably 64 GiB RAM for default asset exports.
 
 ```bat
 git clone https://github.com/Variante/endfield_research_kit.git
 cd endfield_research_kit
-```
-
-Edit the repo-root path config once, then run the all-in-one setup script from
-the repository root:
-
-```bat
 notepad endfield_paths.bat
 .\setup_first_time.bat
 ```
 
-Set `ENDFIELD_GAME_ROOT` to the installed `Endfield_Data` folder. The same file
-also stores the saved previous export folder used by Updates tracking.
+Set `ENDFIELD_GAME_ROOT` to the installed `Endfield_Data` directory.
+`setup_first_time.bat` initializes AnimeStudio, builds the CLI, exports the
+core WebUI data, and starts or reuses:
 
-The script initializes the AnimeStudio submodule, builds AnimeStudio, verifies
-AnimeStudio's integrated VFS/audio commands, exports Story, Gameplay, Mission
-Pipeline, and Text Tables data into `export_full/` and `webui/data/`, then
-starts or reuses the WebUI server at `http://127.0.0.1:8765/`.
-
-It intentionally skips the heavier optional passes. Run `export_assets.bat`
-later when you want Assets tab media and playable CN audio, and run
-`build_updates.bat --init-build` when you want to initialize the Updates tab
-baseline.
-
-The local `tools/AnimeStudio` fork includes custom Endfield VFS/export work
-informed by [fluffy-dumper](https://git.nekolab.app/fluffield/fluffy-dumper)
-and [EIHRTeam/EndfieldStudio](https://github.com/EIHRTeam/EndfieldStudio).
-Many thanks to those projects and their maintainers for the groundwork.
-
-First-time setup still does real work. Building AnimeStudio and exporting
-Story, Gameplay, Mission Pipeline, and Text Tables can take a while; the optional installed-game asset/media and
-CN audio refresh can take several hours. The full asset path has been observed
-around 27 GiB of process-tree RAM on a 64 GiB workstation, so 64 GiB system RAM
-is the comfortable target for full media refreshes. On lower-RAM systems, start
-with the base setup, then run the optional asset pass later with
-`--webui-assets` or `--animestudio-jobs 1`.
-
-Keep plenty of free disk space for `export_full/`, decoded audio, reports, and
-optional packages. Around 325 GB free is a practical starting point if you want
-debug-level asset diagnostics and broad media outputs.
-
-Keep that terminal window open while browsing the WebUI. To build everything
-without starting the server, add `--no-serve`:
-
-```bat
-.\setup_first_time.bat --no-serve
+```text
+http://127.0.0.1:8765/
 ```
 
-Useful setup options:
+Use `--no-serve` to build without starting the server.
 
-- `--game-root PATH`: one-off override for `ENDFIELD_GAME_ROOT` in `endfield_paths.bat`.
-- `--no-serve`: build the static WebUI data without starting the WebUI server.
-- `--help`: show the script help and examples.
-
-For troubleshooting and implementation details behind the wrappers, see
-`AGENTS.md` and `scripts/README.md`.
-
-## Routine Commands
-
-After `export_full/` already exists and still matches the installed game, use
-the faster rebuild commands:
+## Common commands
 
 ```bat
+:: Rebuild the WebUI from the existing export_full
 .\export.bat
-.\export.bat --mission-pipeline-only
-.\export.bat --mission-pipeline-only --reuse-timeline-orders
+
+:: Refresh Story and assets from the installed game
+.\export.bat --export-from-game --with-assets
+
+:: Fast Story/Mission Pipeline recovery loop
 .\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
+
+:: Rebuild only Mission Pipeline data when Story inputs are current
 .\export.bat --mission-pipeline-data-only
-.\export.bat --with-assets
+
+:: Rebuild asset indexes and relink existing CN audio
 .\export_assets.bat
-.\build_updates.bat
+
+:: Refresh assets and CN audio from the installed game
+.\export_assets.bat --export-from-game
+
+:: Serve the static WebUI
 python serve.py
+
+:: Package the WebUI
+.\pack_webui.bat
 ```
 
-Plain `export.bat` rebuilds Story, Gameplay, Mission Pipeline, and Text Tables
-browser data from the existing `export_full/` and verifies freshness first. It
-also refreshes supporting generated data and rebuilds the local source graph
-after the authored semantic data (and optional assets/audio), using
-only the exact original AssetMap rows required by material, shader, texture, and
-FMV WebUI edges. Graph-backed output uses only that fresh graph; stale graph
-evidence degrades visibly instead of being emitted as direct. Use
-`export.bat --full-source-graph` when an
-exhaustive Unity-object/PathID investigation needs every AssetMap row and the
-generated graph follow-up reports.
+`export.bat` reuses `export_full/` by default and checks that it matches the
+installed game. Use `--export-from-game` only when the installed data changed
+or a fresh extraction is intentional.
 
-For Mission Pipeline recovery work, `export.bat --mission-pipeline-only`
-refreshes original Story evidence, CN Story/Text Tables, and Mission Pipeline,
-then stops before unrelated semantic views and the SQLite graph. When only
-`build_mission_pipeline_data.py` or frontend graph code changed, run
-`export.bat --mission-pipeline-data-only` (or run
-`python scripts\build_mission_pipeline_data.py` directly); it reuses the current
-generated Story bundles and takes only a few seconds. When Story connection
-code changed but `export_full/` and its recovered Timeline inputs did not, add
-`--reuse-timeline-orders` to the mission-pipeline-only command to skip the
-redundant Timeline recovery preflight. Do not use that flag after a game-data
-refresh; the wrapper rejects it with `--export-from-game`. Use
-`--reuse-reference` in the same unchanged-input iteration loop to validate and
-preserve the existing localized Text Tables reference bundle instead of
-rebuilding its 67 MB of JSON. The wrapper also rejects reference reuse with
-`--export-from-game`; omit it whenever exported Table inputs may have changed.
-The wrapper form of the data-only command still verifies `export_full/`
-freshness first (about half a second on this checkout) and stops when installed
-original data has changed. The direct Python builder is intended only after
-that freshness check has already passed.
-Use
-`export.bat --with-assets`
-when you want Story plus asset indexes and CN audio relinking in one local
-rebuild. Use `export.bat --export-from-game` after the installed game updates,
-after `scripts\verify_export_freshness.py` reports stale source roots, or
-whenever you intentionally want to refresh `export_full/` from the installed
-client. Add `--with-assets` when media or audio should refresh too; that path
-runs one combined AnimeStudio Story+asset export instead of running
-`export.bat` and `export_assets.bat` separately.
+Asset refresh modes:
 
-To include a specific static world-streaming cell in an installed-game export,
-pass `--world-scene-chunk MAP:X:Z`. Chunk coordinates are
-`floor(world X / 128)` and `floor(world Z / 128)`. For example, the map02 cell
-containing world position `(305.328, -1609.578)` is exported with:
+- `--focused-assets`: smaller browser-referenced texture export.
+- `--default-assets`: normal WebUI image/model/material/audio export.
+- `--debug-assets`: broad diagnostic conversion.
+- `--animestudio-jobs N`: reduce concurrency when memory is limited.
 
-```bat
-.\export.bat --export-from-game --world-scene-chunk map02:2:-13
-```
-
-This writes both matching `InitChunkData` and `StreamingChunkData` payloads
-under `export_full/structured/StreamingAssets/Data/Streaming/PC/<map>/Streaming/`.
-
-`export_assets.bat` without `--export-from-game` remains the asset/audio-only
-path. It reuses existing decoded assets, rebuilds the Assets tab index and
-compact Story media lookup, then relinks existing CN audio. Pass
-`--export-from-game` when you want to refresh only media or audio from the
-installed client after Story is already current.
-
-Installed-game asset refreshes have three modes:
-
-- `--full-assets`: default; exports the WebUI-facing image/model set plus
-  `Material` JSON, builds the full Assets browser index, and decodes CN audio.
-- `--webui-assets`: lean mode for WebUI-referenced `Texture2D` media when you
-  want a faster media refresh with less output.
-- `--debug-assets`: exhaustive AnimeStudio conversion/JSON diagnostics, then a
-  full Assets browser index from whatever browser-visible files were exported.
-
-AnimeStudio refreshes also accept worker and shard controls:
-
-```bat
-.\export.bat --export-from-game --with-assets --full-assets --animestudio-jobs 2 --animestudio-shards 16
-```
-
-`--animestudio-jobs` is the number of concurrent AnimeStudio worker processes;
-the default is `8`, but use `1`, `2`, or `4` when RAM is tight. `--animestudio-shards`
-is the number of deterministic asset slices, defaulting to `16`; it tunes
-per-process asset batch size and does not by itself increase concurrency.
-Non-sharded JSON type jobs are merged by default with
-`--animestudio-type-job-mode auto`, so AnimeStudio can load matching bundles once
-for multiple JSON types. Pass `--animestudio-type-job-mode parallel` to restore
-the older one-process-per-type behavior. `export.bat --export-from-game`
-accepts `--animestudio-jobs` for Story export work too, and
-`export.bat --export-from-game --with-assets` accepts the same asset mode,
-worker, shard, and type-job controls as `export_assets.bat --export-from-game`.
-Every `export.bat` run also writes a wall-time and process-tree RAM benchmark
-under `reports/export/benchmarks/` and updates `reports/export/export_benchmark_latest.md`.
-
-CN is rebuilt by default. To build more languages after the rebuild:
+To build additional languages:
 
 ```bat
 python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 ```
 
-Package a shareable browser build with:
+## Game updates
 
 ```bat
-.\pack_webui.bat
-```
-
-or:
-
-```bat
-python scripts\pack_webui.py
-```
-
-Packaging writes three zips by default: a story zip with the WebUI,
-story, gameplay, text-table data, and emoji images; a companion assets zip with
-larger story images and videos; and a standalone audio zip with decoded story
-audio.
-Extract the story zip first, then extract the assets and audio zips into the
-same directory when those media or audio files are needed.
-Pass `--skip-audio` to omit the standalone audio zip.
-
-## Generated Reports
-
-Generated reports are ignored by git and grouped by topic; do not create loose
-files directly under `reports/`.
-
-- `reports/export/`: latest exporter summary, timestamped run logs, and export
-  benchmarks. The exporter retains five runs, and benchmark history retains ten
-  runs per label by default.
-- `reports/story/build/`: reports refreshed by the normal Story build.
-- `reports/story/recovery/`: manual Story recovery and option audits.
-- `reports/updates/`: the current exported game-data comparison summary.
-- `reports/assets/`: asset hashes and diagnostics.
-- `reports/source_graph/`, `reports/mission_order/`,
-  `reports/playable_director/`, and `reports/gameplay_video_ocr/`: current graph
-  and recovery evidence.
-
-Some Story, mission-order, OCR, and option reports are inputs to later audit or
-graph builds, so do not delete a current canonical report solely because it is
-generated. Remove superseded run histories, scoped experiments, and temporary
-outputs; put durable conclusions in `memory/` and disposable work in `scratch/`
-or `tmp/`.
-
-Keep `scratch/` and `tmp/` organized by topic too; do not create loose files or
-one-off run directories at either root. Use
-`scratch/<topic>/<task>/` for experiments or prototypes that may be revisited,
-and `tmp/<topic>/<task-or-run>/` for disposable intermediates. Reuse the active
-topic names (`webui`, `story`, `assets`, `animestudio`, `source_graph`,
-`character_recovery`, `game_data`, `updates`, `ocr`, and
-`reverse_engineering`) and use `tests`, `tools`, or `misc` only when no active
-topic fits. Delete completed `tmp/` runs; promote reusable helpers to
-`scripts/` and durable conclusions to `memory/`.
-
-## Game Update Tracking
-
-Use the command that matches the job:
-
-| Job | Command | Changes the WebUI Updates page? |
-| --- | --- | --- |
-| Create an empty Updates page for the first export | `.\build_updates.bat --init-build` | Yes |
-| Detect, patch-export, archive, and build after a game update | `.\build_updates_by_patch.bat` | Yes, only on logical change |
-| Compare the configured previous/current extracted exports | `.\build_updates.bat` | Yes |
-| Compare any two extracted export folders | `.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline` | Yes |
-| Detect whether original VFS data changed without applying it | `.\build_updates_by_patch.bat --check` | No |
-
-`build_updates.bat` is the Updates-page builder. It compares two extracted
-game-data trees and writes `webui/data/updates/latest.json`, which the static
-WebUI reads directly. The normal focused comparison includes Story/Text Tables
-source JSON, exported image/model/video assets, and decoded audio. It ignores
-local WebUI code, reports, memory, scratch, and other repository changes.
-
-`build_updates_by_patch.bat` owns the installed-game update path. With no
-arguments it compares original VFS logical-file hashes against the source
-baseline. Logical no-change, VFS-version-only changes, and chunk repacks leave
-the baseline, exports, archives, and feed untouched. A logical change is built
-in a sibling staging tree: directly dumpable changed VFS files are exported
-selectively, broader AnimeStudio or audio scopes run only when their source
-blocks changed, and unchanged exported outputs are copied forward from the
-previous complete export. After validation it archives the old export,
-publishes the staged tree as the latest `export_full`, rebuilds WebUI data,
-generates the Updates feed, and advances the source baseline.
-
-### First export: create an empty Updates page
-
-For a first-time export, there is no older game export to compare against yet.
-After `setup_first_time.bat` or the first `export.bat` run finishes, create an
-empty Updates page:
-
-```bat
+:: First export: create an empty Updates feed
 .\build_updates.bat --init-build
-```
 
-This writes a baseline-only `webui/data/updates/latest.json`; it does not report
-the entire first export as newly added. To separately seed the original VFS
-detector from only the currently installed version, run:
-
-```bat
+:: Seed installed-game VFS change detection
 .\build_updates_by_patch.bat --init-baseline
-```
 
-The VFS baseline is optional and is not required by `build_updates.bat`.
-
-### Normal game-update workflow
-
-After the installed game updates, run one command:
-
-```bat
+:: Detect, stage, publish, and report a game update
 .\build_updates_by_patch.bat
-```
 
-The configured `ENDFIELD_PREVIOUS_EXPORT_ROOT` is the preferred archive name.
-If it already exists, the workflow creates a snapshot-suffixed sibling instead
-of overwriting it. The current export and preferred archive must be on the same
-volume so folder publication uses renames. Changed direct structured files are
-exported individually; asset-affecting blocks trigger the configured
-AnimeStudio asset scope, and audio-affecting blocks trigger CN audio refresh.
-
-Use detection-only mode when you want to inspect the change plan without
-building or rotating anything:
-
-```bat
+:: Detection only
 .\build_updates_by_patch.bat --check
+
+:: Compare two complete extracted versions
+.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline
 ```
 
-The baseline is copied into the staged new export only after the patch export
-is stable. It becomes active only after the WebUI rebuild and Updates comparison
-succeed. A failed post-rotation build restores the previous `export_full` and
-WebUI data; the failed staged export is retained under
-`.game-data-tracker/original-data/failed/` for inspection.
+Updates compare exported game-data roots, not `webui/`, `reports/`, `memory/`,
+or local source edits.
 
-### Compare two already extracted versions
+## Current recovery status
 
-This is the direct one-off command for any two extracted folders:
+### Story
 
-```bat
-.\build_updates.bat --previous-export-root "D:\exports\Endfield_old" --export-root "D:\exports\Endfield_new" --refresh-previous-export-baseline
-```
+- 5,282 unique Story files across 490 pipeline missions.
+- 4,174 files have an accepted mission/context connection (**79%**).
+- 4,395 have a normalized trigger/context route (**83%**).
+- 1,108 remain unlinked; 155 already have exact native playback but lack a
+  mission/quest activation bridge.
+- The source-only graph is cycle-free, but proves order for only **1.51%** of
+  possible within-mission scene pairs. It is a partial order, not a canonical
+  full playthrough.
 
-The old folder is always `--previous-export-root`; the new folder is always
-`--export-root`. Both should be complete extraction roots containing
-`structured/` and/or `recovered/`, not `webui/` or the installed
-`Endfield_Data` directory.
+The largest missing Story source is a server/runtime ownership bridge joining
+LevelScripts to missions and quests. Details:
+[`memory/game_story_recovery.md`](memory/game_story_recovery.md).
 
-Useful comparison modes:
+### Character models and animation
 
-```bat
-:: Text JSON only
-.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline --skip-asset-updates
+- All 30 playable models are imported and render successfully.
+- All 156 canonical post-model identities have generated prefab paths:
+  30 playables, 2 NPC characters, 1 cutscene clone, 94 enemies, and 29
+  ability/prop actors.
+- Playable UI animation recovery includes 754 body clips and 321 private
+  item/deco clips.
+- Static playable Overview assets are highly recovered, but retail rendering
+  parity is not reached. CharacterNPR coverage is roughly 60–75%; the complete
+  CharInfo/HGRP frame is roughly 35–50%.
 
-:: Text, images, models, and videos, but no decoded audio
-.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline --skip-audio-updates
+The main remaining work is HGRP lighting, shadows, depth/GBuffer/deferred
+composition, live material state, controller execution, IK, facial behavior,
+physics, and non-playable animation. Details:
+[`memory/character_render_and_animation_recovery.md`](memory/character_render_and_animation_recovery.md).
 
-:: Hash binary assets too, detecting same-size binary modifications
-.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline --hash-asset-updates
+## Repository layout
 
-:: Broad audit of every file under both export roots; not the normal WebUI scope
-.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline --full-export-scan
-```
+- `webui/`: static browser and generated data.
+- `scripts/`: export, build, update, audio, and packaging tools.
+- `tools/AnimeStudio/`: tracked exporter fork.
+- `export_full/`: generated extraction from the installed client.
+- `reports/`: generated audits grouped by topic.
+- `memory/`: concise current conclusions and recovery queues.
+- `scratch/`: revisitable experiments.
+- `tmp/`: disposable intermediates.
+- `unity_endfield_graph_shader_lab/`: character rendering/animation recovery.
 
-The builder writes:
+Further documentation:
 
-- `webui/data/updates/latest.json`: data displayed by the Updates tab.
-- `reports/updates/game-data-change-summary.json`: machine-readable detailed report.
-- `reports/updates/game-data-change-summary.md`: readable detailed report.
-- `.game-data-tracker/`: cached previous-export baseline and feed history.
+- [`scripts/README.md`](scripts/README.md): maintained command and script map.
+- [`webui/README.md`](webui/README.md): frontend scope and data contract.
+- [`memory/README.md`](memory/README.md): recovery-status index.
+- `AGENTS.md`: detailed contributor and automation rules.
 
-After the command succeeds, reuse an existing `http://127.0.0.1:8765/` server
-or run `python serve.py`, then refresh the Updates tab. Re-running
-`build_updates.bat` safely replaces the generated latest feed.
+## Acknowledgements
 
-If the saved previous export keeps accumulating files that also exist unchanged
-in the refreshed export, `build_updates.bat` can help prune those old duplicate
-copies. Preview the cleanup first, then run the prune only when the target is
-the saved previous export you intend to trim:
-
-```bat
-.\build_updates.bat --dry-run-prune-previous-export-untracked
-.\build_updates.bat --prune-previous-export-untracked
-```
-
-Do not point update tracking at `webui/`, `reports/`, `memory/`, or `scratch/`.
-It is meant to compare exported game-data roots only. One-off path flags still
-override `endfield_paths.bat` when needed. More specific flags, pruning
-safeguards, and scanner-cache details are documented in `AGENTS.md` and
-`scripts/README.md`.
-
-## Active Layout
-
-- `webui/`: static app and generated browser data.
-- `scripts/`: WebUI builders, packaging tools, and export helpers.
-- `tools/AnimeStudio/`: tracked AnimeStudio fork submodule used for
-  installed-game story and asset exports.
-- `export_full/`: generated data exported from the installed client.
-- `res/`: README screenshots and other small documentation media.
-- `reports/`: generated outputs grouped by topic; see Generated Reports above.
-- `videos/`: local gameplay captures used by optional Story order OCR/audio
-  recovery tools.
-- `scratch/`: topic-grouped experiments and prototypes that may be revisited.
-- `tmp/`: topic-grouped disposable intermediates and per-run output.
-- `memory/`: consolidated, living recovery conclusions by topic; see
-  `memory/README.md` for the index and writing rules.
-
-## Research Memory
-
-The research memory is intentionally concise and topic-based. Update these
-documents in place instead of adding dated investigation snapshots:
-
-- [`memory/webui_recovery.md`](memory/webui_recovery.md): WebUI export,
-  updates, serving, packaging, media, and performance behavior.
-- [`memory/game_story_recovery.md`](memory/game_story_recovery.md): Story
-  ordering evidence, quests, dialog/options, and narrative video.
-- [`memory/game_data_recovery.md`](memory/game_data_recovery.md): VFS and data
-  formats, gameplay payloads, MonoBehaviour semantics, and source graph.
-- [`memory/asset_recovery.md`](memory/asset_recovery.md): models, entities,
-  materials, textures, media, placement, and asset aliases.
-- [`memory/animestudio_recovery.md`](memory/animestudio_recovery.md): exporter
-  architecture, conversion status, parsers, diagnostics, and memory behavior.
-- [`memory/character_render_and_animation_recovery.md`](memory/character_render_and_animation_recovery.md):
-  Unity character rendering, CharInfo/HGRP recovery, roster, and animation.
-
-Changing inventories and exhaustive audits belong under the matching topic in
-`reports/`; temporary probes belong under `scratch/` or `tmp/`. The full
-maintenance contract is in [`memory/README.md`](memory/README.md) and
-`AGENTS.md`.
-
-## Community Resources
+The local `tools/AnimeStudio` fork contains custom Endfield VFS, asset,
+MonoBehaviour, shader, animation, and audio recovery work informed by
+[fluffy-dumper](https://git.nekolab.app/fluffield/fluffy-dumper) and
+[EIHRTeam/EndfieldStudio](https://github.com/EIHRTeam/EndfieldStudio). Many
+thanks to those projects and their maintainers for the groundwork that made
+this research workflow possible.
 
 Special thanks to these LLM-driven community wiki projects. They are not
-affiliated with this project, but they are excellent resources and well worth
-checking out:
+affiliated with this repository, but they are useful public references:
 
 - [AIC | Endfield Industrial Terminal](https://endfield.prts.chat/) is an
-  AI-assisted Endfield wiki/reference project for checking public game
-  knowledge and browsing organized Endfield material.
+  AI-assisted Endfield wiki/reference project for browsing organized public
+  game information.
 - [PRTS | Rhodes Island Terminal](https://prts.chat/) is an AI-assisted
-  Arknights wiki/reference project for checking public game knowledge across
-  the broader Arknights setting.
+  Arknights wiki/reference project covering the broader setting.
 
-If you are looking for conversational public wiki/reference material rather
-than this local research workspace, start with those sites and still verify
-important details against primary sources.
+These resources complement this local research workspace; important claims
+should still be checked against primary game data.

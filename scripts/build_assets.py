@@ -43,9 +43,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=("webui", "full"),
-        default="webui",
-        help="`webui` writes compact Story/Wiki media indexes; `full` writes the broad Assets browser index.",
+        choices=("focused", "default"),
+        default="focused",
+        help="`focused` writes compact Story/Wiki media indexes; `default` writes the broad Assets browser index.",
     )
     return parser.parse_args(argv)
 
@@ -227,7 +227,7 @@ def main(argv: list[str] | None = None) -> None:
         asset_stats, video_stats = existing_stats
         print("Asset index scan: reused existing indexes (--fast)")
         story_media_stats = write_story_media_index(asset_index_path, video_index_path)
-    elif args.mode == "webui":
+    elif args.mode == "focused":
         asset_stats, video_stats, story_media_stats = build_webui_asset_indexes(asset_index_path, video_index_path)
     else:
         asset_stats, video_stats = build_asset_indexes(
@@ -262,9 +262,9 @@ def main(argv: list[str] | None = None) -> None:
             f"{story_media_stats['videos']} videos from {story_media_stats['videoRefs']} refs)"
         ),
     )
-    if args.mode == "webui" or args.fast or args.skip_bundles:
+    if args.mode == "focused" or args.fast or args.skip_bundles:
         write_empty_bundle_index()
-        print("Asset bundle output: skipped (webui/fast/index-only mode)")
+        print("Asset bundle output: skipped (focused/fast/index-only mode)")
         return
 
     bundle_stats = build_asset_bundles(ASSET_DIR / "index.json", ASSET_DIR / "bundles")

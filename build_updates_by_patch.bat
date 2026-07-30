@@ -58,7 +58,7 @@ echo   --init-baseline          Seed the original-VFS baseline from only the
 echo                            current installed version and current export_full.
 echo   --init-current-version   Alias for --init-baseline.
 echo   --baseline-current       Alias for --init-baseline.
-echo   --asset-mode MODE        webui, full, or debug; default full.
+echo   --asset-mode MODE        focused, default, or debug; defaults to default.
 echo   --animestudio-jobs N     Worker limit for asset-affecting patches.
 echo.
 echo Paths default from endfield_paths.bat. If the configured previous-export

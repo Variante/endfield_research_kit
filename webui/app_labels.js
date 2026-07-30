@@ -4,7 +4,7 @@ const UI_TEXTS = {
   zh: {
     suiteTitle: "\u7ec8\u672b\u5730\u7814\u7a76\u5de5\u5177",
     storyTab: "\u5267\u60c5",
-    missionPipelineTab: "\u4efb\u52a1\u6d41\u7a0b",
+    missionPipelineTab: "\u4efb\u52a1\u6d41\u7a0b\uff08\u5b9e\u9a8c\uff09",
     assetsTab: "\u8d44\u6e90",
     uiLanguage: "\u754c\u9762",
     uiLanguageChinese: "\u4e2d\u6587",
@@ -401,7 +401,7 @@ const UI_TEXTS = {
   en: {
     suiteTitle: "Endfield Research Kit",
     storyTab: "Story",
-    missionPipelineTab: "Mission Pipeline",
+    missionPipelineTab: "Mission Pipeline (Experimental)",
     assetsTab: "Assets",
     uiLanguage: "UI",
     uiLanguageChinese: "Chinese",

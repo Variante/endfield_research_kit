@@ -6,6 +6,18 @@ Keep root-level docs and workflow guidance focused on:
 
 - the static WebUI in `webui/`
 
+Keep the active documentation hierarchy concise:
+
+- `README.md` is the short user-facing entry point. Preserve its screenshot
+  gallery, Chinese links, acknowledgements, quick start, common commands, and
+  headline Story/character progress.
+- `scripts/README.md` is a compact maintained command/script map, not an
+  exhaustive implementation narrative.
+- `webui/README.md` documents only frontend scope, data layout, and behavior
+  contracts.
+- each `memory/*.md` topic records current status, stable evidence boundaries,
+  essential commands, and the highest-value remaining gaps.
+
 Fold durable observations, conclusions, and recovery status into the existing
 topic documents under `memory/`. Do not recreate one-file-per-investigation or
 dated status snapshots. Generated inventories belong in `reports/`, and
@@ -86,11 +98,11 @@ Pass `--skip-asset-updates` only for a text-only update feed.
 Use `export_assets.bat` for WebUI Assets tab indexes, compact Story media
 lookup, and CN audio relinking from existing decoded assets when Story is
 already current. Pass `--export-from-game` only when the user explicitly asks to
-run the default full AnimeStudio image/model decode, `Material` JSON, and CN
+run the default AnimeStudio image/model decode, `Material` JSON, and CN
 audio decode from installed game data first. Prefer
 `export.bat --export-from-game --with-assets` when Story and assets both need an
-installed-game refresh. Pass `--webui-assets` for the lean WebUI-referenced
-Texture2D mode, or `--debug-assets` for exhaustive AnimeStudio diagnostics.
+installed-game refresh. Asset modes, from narrowest to broadest, are
+`--focused-assets`, `--default-assets`, and `--debug-assets`.
 Use direct `scripts/build_audio.py` runs for non-CN languages or audio-only
 maintenance. The audio builder writes shared SFX/music once under
 `export_full/structured/Audio/shared/` and language voice under
@@ -189,8 +201,9 @@ requires otherwise.
 
 ## WebUI Technical Notes
 
-Keep detailed browser/export mechanics here, in project skills, or in
-`scripts/README.md`; keep the root `README.md` short and user-facing.
+Keep detailed browser/export mechanics here, in project skills, or in code
+comments. Keep `scripts/README.md` as a compact maintained workflow map and the
+root `README.md` short and user-facing.
 
 Browser behavior:
 
@@ -203,11 +216,11 @@ Browser behavior:
   manual order-edit controls are behind `Show debug info`.
 - The Story reset button returns filters to Story sort while preserving
   expanded mission groups.
-- Normal semantic navigation exposes Gameplay and Mission Pipeline. Characters,
+- Normal semantic navigation exposes Gameplay. Mission Pipeline, Characters,
   Progression, Combat & Projectiles, the retained standalone Combat graph,
-  Factory, World, and Presentation are deferred and hidden unless the top-right
-  `Show debug info` switch is enabled; disabling debug while one is active must
-  normalize to a visible page and URL.
+  Factory, World, and Presentation are experimental and hidden unless the
+  top-right `Show debug info` switch is enabled; disabling debug while one is
+  active must normalize to a visible page and URL.
 - Mission Pipeline Story cards show evidence-typed trigger chains. Preserve an
   explicit ownership gap for unlinked native playback, keep definition-only
   rows distinct, and never infer mission order from native registration or code
@@ -307,10 +320,11 @@ Script notes:
 
 - update the current conclusion, evidence boundary, commands, and recovery
   queue in the owning topic;
-- fold useful session history into concise evidence notes instead of adding a
-  dated Markdown file;
+- keep the topic concise; replace superseded conclusions instead of appending
+  investigation chronology, native-address catalogs, hash inventories, or
+  per-session proof logs;
 - keep changing counts, exhaustive inventories, and generated audits in
-  `reports/`, with links from memory only when they remain useful;
+  `reports/`, with only headline progress and durable interpretation in memory;
 - keep disposable probes and intermediate output in `scratch/` or `tmp/`;
 - add a new memory file only for a genuinely new durable topic, and update
   `memory/README.md`, this guidance list, and relevant active docs together.
@@ -330,7 +344,7 @@ README-shaped or dated snapshots; update the current source of truth instead:
 - script/workflow contract: `scripts/README.md`
 - WebUI frontend scope: `webui/README.md`
 - memory topic index and writing rules: `memory/README.md`
-- detailed WebUI recovery notes: `memory/webui_recovery.md`
+- concise WebUI recovery status: `memory/webui_recovery.md`
 - Story reconstruction conclusions: `memory/game_story_recovery.md`
 - game-data formats, semantics, and source graph: `memory/game_data_recovery.md`
 - semantic asset/entity recovery: `memory/asset_recovery.md`
@@ -442,7 +456,11 @@ folder so the cached scanner baseline is rebuilt.
 
 - Prefer the layout rooted at `serve.py`, `export.bat`, `webui/`,
   `scripts/`, and `unity_endfield_graph_shader_lab/`.
-- Keep `README.md` focused on active WebUI user-facing usage.
+- Keep `README.md` focused on active WebUI usage and headline recovery
+  progress. Preserve its screenshots, Chinese links, and acknowledgements.
+- Keep active READMEs and memory topics concise. Put exhaustive implementation
+  mechanics in code comments or focused generated reports, not long narrative
+  appendices.
 - Fold durable observations and conclusions into the matching consolidated
   `memory/` topic; do not add per-session or dated status files.
 - Keep `reports/` for durable generated reports only, not agent conclusions or

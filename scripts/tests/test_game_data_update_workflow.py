@@ -42,11 +42,25 @@ class WorkflowTests(unittest.TestCase):
             "operational_root": self.root / ".game-data-tracker" / "original-data",
             "plan": self.root / "reports" / "updates" / "plan.json",
             "skip_freshness_check": False,
-            "asset_mode": "full",
+            "asset_mode": "default",
             "animestudio_jobs": 2,
         }
         values.update(overrides)
         return argparse.Namespace(**values)
+
+    def test_public_asset_modes_map_to_internal_modes_and_wrapper_flags(self) -> None:
+        self.assertEqual(
+            workflow.ANIMESTUDIO_ASSET_MODES,
+            {"focused": "focused", "default": "default", "debug": "debug"},
+        )
+        self.assertEqual(
+            workflow.WEBUI_ASSET_FLAGS,
+            {
+                "focused": "--focused-assets",
+                "default": "--default-assets",
+                "debug": "--debug-assets",
+            },
+        )
 
     def test_initialize_publishes_one_source_baseline_without_overwrite(self) -> None:
         calls: list[list[str]] = []

@@ -48,6 +48,16 @@ DEFAULT_ANIMESTUDIO = (
     / "net9.0-windows"
     / "AnimeStudio.CLI.exe"
 )
+ANIMESTUDIO_ASSET_MODES = {
+    "focused": "focused",
+    "default": "default",
+    "debug": "debug",
+}
+WEBUI_ASSET_FLAGS = {
+    "focused": "--focused-assets",
+    "default": "--default-assets",
+    "debug": "--debug-assets",
+}
 DIRECT_STRUCTURED_BLOCKS = frozenset(
     {"table", "jsondata", "video", "auditvideo", "lua"}
 )
@@ -618,7 +628,7 @@ def _refresh_patch_scopes(
                 "--animestudio-scope",
                 "all",
                 "--animestudio-asset-mode",
-                args.asset_mode,
+                ANIMESTUDIO_ASSET_MODES[args.asset_mode],
                 "--animestudio-stages",
                 "maps",
                 "convert_by_type",
@@ -681,11 +691,7 @@ def _validate_candidate_still_current(args: argparse.Namespace, candidate: Path,
 
 
 def _run_webui_build(args: argparse.Namespace) -> None:
-    asset_flag = {
-        "full": "--full-assets",
-        "webui": "--webui-assets",
-        "debug": "--debug-assets",
-    }[args.asset_mode]
+    asset_flag = WEBUI_ASSET_FLAGS[args.asset_mode]
     _run(
         [
             "cmd.exe",
@@ -955,8 +961,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--plan", type=Path, default=DEFAULT_PLAN)
     parser.add_argument(
         "--asset-mode",
-        choices=("webui", "full", "debug"),
-        default="full",
+        choices=("focused", "default", "debug"),
+        default="default",
         help="AnimeStudio asset scope used when changed VFS blocks affect assets",
     )
     parser.add_argument(

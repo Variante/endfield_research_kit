@@ -83,12 +83,11 @@ with `--dry-run-prune-previous-export-untracked`; use
 `--prune-previous-export-untracked` only when intentionally deleting old export
 files outside the focused tracked scope. Use `export_assets.bat` for Assets tab
 indexes and CN audio relinking when Story is already current; pass
-`--export-from-game` to run the full WebUI-facing image/model asset export plus
+`--export-from-game` to run the default WebUI-facing image/model asset export plus
 `Material` JSON and decode CN audio. Prefer
 `export.bat --export-from-game --with-assets` when Story and assets both need an
-installed-game refresh. Pass `--webui-assets` when only WebUI-referenced
-Texture2D media is needed, or `--debug-assets` for exhaustive AnimeStudio
-conversion/JSON diagnostics. The exporter default is
+installed-game refresh. Asset modes, from narrowest to broadest, are
+`--focused-assets`, `--default-assets`, and `--debug-assets`. The exporter default is
 `--animestudio-type-job-mode auto`: it merges map-filtered JSON, runs broad Story
 JSON types sequentially in isolated processes, and leaves asset conversion
 sharded.

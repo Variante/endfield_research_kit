@@ -7,7 +7,7 @@ set "FRESHNESS_ARGS="
 set "STORY_BUILD_ARGS="
 set "EXPORT_FROM_GAME=0"
 set "WITH_ASSETS=0"
-set "ASSET_MODE=full"
+set "ASSET_MODE=default"
 set "FULL_SOURCE_GRAPH=0"
 set "MISSION_PIPELINE_ONLY=0"
 set "MISSION_PIPELINE_DATA_ONLY=0"
@@ -76,15 +76,15 @@ if /I "%~1"=="--reuse-reference" (
   shift
   goto :parse_args
 )
-if /I "%~1"=="--full-assets" (
+if /I "%~1"=="--focused-assets" (
   set "WITH_ASSETS=1"
-  set "ASSET_MODE=full"
+  set "ASSET_MODE=focused"
   shift
   goto :parse_args
 )
-if /I "%~1"=="--webui-assets" (
+if /I "%~1"=="--default-assets" (
   set "WITH_ASSETS=1"
-  set "ASSET_MODE=webui"
+  set "ASSET_MODE=default"
   shift
   goto :parse_args
 )
@@ -242,7 +242,7 @@ if errorlevel 1 exit /b %errorlevel%
 if "%WITH_ASSETS%"=="0" goto :build_semantic_graph
 
 set "BUILD_ASSET_MODE=%ASSET_MODE%"
-if /I "%ASSET_MODE%"=="debug" set "BUILD_ASSET_MODE=full"
+if /I "%ASSET_MODE%"=="debug" set "BUILD_ASSET_MODE=default"
 python .\scripts\build_assets.py --mode "%BUILD_ASSET_MODE%"
 if errorlevel 1 exit /b %errorlevel%
 
@@ -287,11 +287,11 @@ echo [export.bat] Mission Pipeline data refresh complete; no Story, evidence, se
 goto :done
 
 :validate_asset_mode
-if /I "%~1"=="webui" exit /b 0
-if /I "%~1"=="full" exit /b 0
+if /I "%~1"=="focused" exit /b 0
+if /I "%~1"=="default" exit /b 0
 if /I "%~1"=="debug" exit /b 0
 echo Invalid asset mode: "%~1"
-echo Expected webui, full, or debug.
+echo Expected focused, default, or debug.
 exit /b 2
 
 :help
@@ -332,15 +332,15 @@ echo   --reuse-reference     Validate and preserve the current localized Text Ta
 echo                         reference bundle during a Story rebuild. Use only when
 echo                         exported Table inputs have not changed. Incompatible with
 echo                         --export-from-game and unnecessary for data-only builds.
-echo   --full-assets         With --with-assets, use the default WebUI-facing
-echo                         image/model export and full Assets browser index.
-echo   --webui-assets        With --with-assets, use lean WebUI-focused Texture2D media mode.
+echo   --focused-assets      With --with-assets, use focused Texture2D media mode.
+echo   --default-assets      With --with-assets, use the default WebUI-facing
+echo                         image/model export and complete Assets browser index.
 echo   --debug-assets        With --with-assets, export exhaustive AnimeStudio diagnostics,
-echo                         then build the full Assets browser index.
+echo                         then build the complete Assets browser index.
 echo   --game-root PATH      Installed Endfield_Data directory used for export
 echo                         and audio linking.
-echo   --animestudio-asset-mode webui^|full^|debug
-echo                         Lower-level equivalent of --webui-assets/--full-assets/--debug-assets.
+echo   --animestudio-asset-mode focused^|default^|debug
+echo                         Lower-level equivalent of --focused-assets/--default-assets/--debug-assets.
 echo   --animestudio-jobs N  Passed through when --export-from-game is present.
 echo                         Default is 8 shared workers for pooled AnimeStudio calls.
 echo                         Lower this value if peak AnimeStudio memory is too high.
@@ -369,7 +369,7 @@ echo If Endfield is installed somewhere else, pass --game-root.
 echo For repeated runs, edit endfield_paths.bat instead.
 echo Examples:
 echo   export.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
-echo   export.bat --export-from-game --with-assets --webui-assets
+echo   export.bat --export-from-game --with-assets --focused-assets
 echo   export.bat --export-from-game --world-scene-chunk map02:2:-13
 echo   export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
 echo.

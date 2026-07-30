@@ -159,10 +159,10 @@ It only forwards AnimeStudio.CLI `--dummy_dlls` when the selected directory
 exists and contains `.dll` files. Missing or stale DummyDll paths warn and
 continue without DummyDlls instead of failing the export.
 
-`export_assets.bat --export-from-game` defaults to the full asset mode:
+`export_assets.bat --export-from-game` defaults to the default asset mode:
 
 ```bat
-python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-asset-mode full --animestudio-stages maps convert_by_type json_by_type
+python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-asset-mode default --animestudio-stages maps convert_by_type json_by_type
 ```
 
 Full asset mode uses the MessagePack asset map for per-type stages when safe:
@@ -174,7 +174,7 @@ model/material/texture relations. Animator conversion stays on the broad path
 because FBX export may need related GameObject, Mesh, Material, and Texture2D
 dependencies.
 
-Pass `--webui-assets` to `export_assets.bat` or `--animestudio-asset-mode webui`
+Pass `--focused-assets` to `export_assets.bat` or `--animestudio-asset-mode focused`
 for the lean WebUI-focused mode. That mode exports only WebUI-referenced
 `Texture2D` media. It writes a generated name-filter file from current Story/Wiki
 media references, builds JSON plus MessagePack AnimeStudio maps, then loads the
@@ -183,7 +183,7 @@ offset filtering.
 
 Pass `--debug-assets` to `export_assets.bat` or `--animestudio-asset-mode debug`
 for the exhaustive diagnostic mode. That mode restores the old broad conversion
-set plus the full asset JSON set, then builds the normal full Assets browser
+set plus the default asset JSON set, then builds the normal complete Assets browser
 index from whatever files are browser-visible.
 
 The Python wrapper uses:
