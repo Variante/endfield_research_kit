@@ -25,8 +25,9 @@
     "reference",
     "updates",
   ]);
-  const DEBUG_ONLY_VIEWS = new Set(["characters", "progression", "projectiles", "combat", "economy", "world", "presentation"]);
+  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline", "characters", "progression", "projectiles", "combat", "economy", "world", "presentation"]);
   const DEBUG_VIEW_FALLBACKS = Object.freeze({
+    "mission-pipeline": "gameplay",
     characters: "story",
     progression: "gameplay",
     projectiles: "gameplay",

@@ -114,14 +114,14 @@ class AnimeStudioStageOptionsTests(unittest.TestCase):
         self.assertFalse(options["json_by_type"]["asset_map_filter"])
 
     def test_combined_json_keeps_story_sources_outside_asset_map(self) -> None:
-        options = animestudio_stage_options_for_scope("all", "full")
+        options = animestudio_stage_options_for_scope("all", "default")
 
         for type_spec in ANIMESTUDIO_STORY_JSON_TYPES:
             self.assertIn(type_spec, options["json_by_type"]["types"])
         self.assertFalse(options["json_by_type"]["asset_map_filter"])
 
     def test_asset_only_json_can_use_asset_map(self) -> None:
-        options = animestudio_stage_options_for_scope("assets", "full")
+        options = animestudio_stage_options_for_scope("assets", "default")
 
         self.assertTrue(options["json_by_type"]["asset_map_filter"])
 

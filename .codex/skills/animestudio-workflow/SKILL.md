@@ -63,10 +63,9 @@ per-process asset slice size. Non-sharded JSON type jobs use
 `--animestudio-type-job-mode auto` by default, merging map-filtered JSON while
 running broad Story JSON types sequentially in isolated processes; pass
 `parallel` only when comparing concurrent per-type jobs.
-`export_assets.bat --export-from-game` now defaults to the full WebUI-facing
-image/model asset export plus `Material` JSON; add `--webui-assets` when only
-WebUI-referenced Texture2D media is needed, or `--debug-assets` for exhaustive
-conversion/JSON diagnostics.
+`export_assets.bat --export-from-game` now defaults to the standard WebUI-facing
+image/model asset export plus `Material` JSON. Asset modes, from narrowest to
+broadest, are `--focused-assets`, `--default-assets`, and `--debug-assets`.
 
 ## Integrated VFS Commands
 

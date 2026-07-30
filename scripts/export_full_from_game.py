@@ -44,7 +44,7 @@ SOURCE_FINGERPRINT_EXCLUDED_TOP_LEVEL = {
 }
 ANIMESTUDIO_STAGES = ("maps", "convert_by_type", "json_by_type")
 ANIMESTUDIO_SCOPES = ("story", "assets", "all")
-ANIMESTUDIO_ASSET_MODES = ("webui", "full", "debug")
+ANIMESTUDIO_ASSET_MODES = ("focused", "default", "debug")
 STRUCTURED_DUMP_MODES = ("webui", "full", "debug")
 WORLD_SCENE_CHUNK_SPEC_RE = re.compile(
     r"^(?P<map>[A-Za-z0-9_]+):(?P<x>-?\d+):(?P<z>-?\d+)$"
@@ -414,8 +414,8 @@ def write_webui_texture_name_filter(output_root: Path) -> tuple[Path, dict[str, 
     patterns = collect_webui_texture_name_patterns()
     if not patterns:
         raise SystemExit(
-            "WebUI asset mode produced no Texture2D name patterns; refusing to run a broad Texture2D export. "
-            "Use --animestudio-asset-mode full/debug or fix the WebUI media references."
+            "Focused asset mode produced no Texture2D name patterns; refusing to run a broad Texture2D export. "
+            "Use --animestudio-asset-mode default/debug or fix the WebUI media references."
         )
     content = "\n".join(patterns) + "\n"
     if not filter_path.exists() or filter_path.read_text(encoding="utf-8-sig") != content:
@@ -1991,12 +1991,12 @@ def animestudio_stage_items(stage: str, types: tuple[str, ...]) -> list[tuple[st
     return [(type_spec, animestudio_type_name(type_spec)) for type_spec in types]
 
 
-def animestudio_stage_options_for_scope(scope: str, asset_mode: str = "webui") -> dict[str, dict[str, Any]]:
+def animestudio_stage_options_for_scope(scope: str, asset_mode: str = "focused") -> dict[str, dict[str, Any]]:
     if scope == "story":
         json_types = ANIMESTUDIO_STORY_JSON_TYPES
         convert_types: tuple[str, ...] = ()
     else:
-        if asset_mode == "webui":
+        if asset_mode == "focused":
             asset_json_types = ANIMESTUDIO_WEBUI_JSON_TYPES
             convert_types = ANIMESTUDIO_WEBUI_CONVERT_TYPES
         elif asset_mode == "debug":
@@ -2015,7 +2015,7 @@ def animestudio_stage_options_for_scope(scope: str, asset_mode: str = "webui") -
             "export_type": "Convert",
             "types": convert_types,
             "asset_map_filter": scope != "story" and bool(convert_types),
-            "webui_asset_filter": scope != "story" and asset_mode == "webui",
+            "webui_asset_filter": scope != "story" and asset_mode == "focused",
         },
         "json_by_type": {
             "export_type": "JSON",
@@ -2352,17 +2352,18 @@ def parse_args() -> argparse.Namespace:
         default="all",
         help=(
             "`story` exports only maps plus TextAsset/MonoBehaviour/PlayableDirector JSON. "
-            "`assets` uses --animestudio-asset-mode to choose WebUI-focused, full, or debug assets. "
+            "`assets` uses --animestudio-asset-mode to choose focused, default, or debug assets. "
             "`all` combines story JSON with the selected asset mode."
         ),
     )
     parser.add_argument(
         "--animestudio-asset-mode",
         choices=ANIMESTUDIO_ASSET_MODES,
-        default="webui",
+        default="focused",
         help=(
-            "`webui` exports only WebUI-referenced Texture2D media by loading the AnimeStudio asset map "
-            "with generated name filters. `full` exports WebUI-facing image/model assets plus Material JSON. `debug` exports the exhaustive conversion and JSON diagnostic sets."
+            "`focused` exports only browser-referenced Texture2D media by loading the AnimeStudio asset map "
+            "with generated name filters. `default` exports the normal image/model assets plus Material JSON. "
+            "`debug` exports the exhaustive conversion and JSON diagnostic sets."
         ),
     )
     parser.add_argument(
@@ -5240,7 +5241,7 @@ def main() -> int:
     vfs_index_enabled = not args.skip_vfs_index and not args.skip_animestudio and args.animestudio_scope != "story"
     webui_texture_name_filter: Path | None = None
     webui_texture_name_filter_signature: dict[str, Any] | None = None
-    if not args.skip_animestudio and args.animestudio_scope != "story" and args.animestudio_asset_mode == "webui":
+    if not args.skip_animestudio and args.animestudio_scope != "story" and args.animestudio_asset_mode == "focused":
         webui_texture_name_filter, webui_texture_name_filter_signature = write_webui_texture_name_filter(output_root)
     refresh_selectors = ordered_unique(tuple(args.animestudio_refresh_types))
     if args.animestudio_jobs < 1:

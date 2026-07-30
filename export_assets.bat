@@ -4,7 +4,7 @@ setlocal
 set "EXPORT_ARGS="
 set "AUDIO_ARGS="
 set "EXPORT_FROM_GAME=0"
-set "ASSET_MODE=full"
+set "ASSET_MODE=default"
 
 if exist "%~dp0endfield_paths.bat" call "%~dp0endfield_paths.bat"
 if errorlevel 1 exit /b %errorlevel%
@@ -15,13 +15,13 @@ if defined ENDFIELD_EXPORT_ROOT set "AUDIO_ARGS=%AUDIO_ARGS% --export-root "%END
 :parse_args
 if "%~1"=="" goto :parsed_args
 if /I "%~1"=="--help" goto :help
-if /I "%~1"=="--full-assets" (
-  set "ASSET_MODE=full"
+if /I "%~1"=="--focused-assets" (
+  set "ASSET_MODE=focused"
   shift
   goto :parse_args
 )
-if /I "%~1"=="--webui-assets" (
-  set "ASSET_MODE=webui"
+if /I "%~1"=="--default-assets" (
+  set "ASSET_MODE=default"
   shift
   goto :parse_args
 )
@@ -81,7 +81,7 @@ echo [export_assets.bat] Reusing existing decoded assets; pass --export-from-gam
 :after_export_full
 
 set "BUILD_ASSET_MODE=%ASSET_MODE%"
-if /I "%ASSET_MODE%"=="debug" set "BUILD_ASSET_MODE=full"
+if /I "%ASSET_MODE%"=="debug" set "BUILD_ASSET_MODE=default"
 python .\scripts\build_assets.py --mode "%BUILD_ASSET_MODE%"
 if errorlevel 1 exit /b %errorlevel%
 
@@ -100,35 +100,35 @@ endlocal
 exit /b 0
 
 :validate_asset_mode
-if /I "%~1"=="webui" exit /b 0
-if /I "%~1"=="full" exit /b 0
+if /I "%~1"=="focused" exit /b 0
+if /I "%~1"=="default" exit /b 0
 if /I "%~1"=="debug" exit /b 0
 echo Invalid asset mode: "%~1"
-echo Expected webui, full, or debug.
+echo Expected focused, default, or debug.
 exit /b 2
 
 :help
 echo Usage: export_assets.bat [--export-from-game] [--game-root PATH] [export_full_from_game.py options]
 echo.
 echo Rebuilds WebUI asset indexes plus the compact Story media lookup,
-echo then relinks decoded CN Story audio. AnimeStudio full
-echo WebUI-facing image/model decode is the default for installed-game refreshes.
+echo then relinks decoded CN Story audio. The standard AnimeStudio
+echo WebUI-facing image/model decode is used for installed-game refreshes.
 echo Story/reference data is handled by export.bat. When Story and assets both
 echo need an installed-game refresh, use export.bat --export-from-game --with-assets
 echo to run one combined AnimeStudio Story+asset export.
 echo.
 echo   --export-from-game    Run AnimeStudio asset conversion and CN audio decode.
-echo                         Defaults to full WebUI-facing image/model export.
-echo   --full-assets         Use the default WebUI-facing image/model export and
-echo                         full Assets browser index.
-echo   --webui-assets        Use lean WebUI-focused Texture2D media mode.
+echo                         Defaults to the standard WebUI-facing image/model export.
+echo   --focused-assets      Use focused Texture2D media mode.
+echo   --default-assets      Use the default WebUI-facing image/model export and
+echo                         complete Assets browser index.
 echo   --debug-assets        Export exhaustive AnimeStudio conversion/JSON diagnostics,
-echo                         then build the full Assets browser index.
+echo                         then build the complete Assets browser index.
 echo   --game-root PATH      Installed Endfield_Data directory used when
 echo                         --export-from-game refreshes decoded assets/audio,
 echo                         and for audio linking.
-echo   --animestudio-asset-mode webui^|full^|debug
-echo                         Lower-level equivalent of --webui-assets/--full-assets/--debug-assets.
+echo   --animestudio-asset-mode focused^|default^|debug
+echo                         Lower-level equivalent of --focused-assets/--default-assets/--debug-assets.
 echo   --animestudio-jobs N  Passed through when --export-from-game is present.
 echo                         Default is 8 shared workers for pooled AnimeStudio calls.
 echo                         Lower this value if peak AnimeStudio memory is too high.
