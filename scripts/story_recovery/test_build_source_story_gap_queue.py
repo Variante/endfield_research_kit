@@ -3300,6 +3300,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m5_19",
                 "dlg_e11m6_9",
                 "dlg_e11m8_9",
+                "dlg_e11m8d5_1",
             },
         )
         self.assertEqual(
@@ -3866,6 +3867,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e2m6_18",
                 "dlg_e11m8_13",
                 "dlg_e11m8_14",
+                "dlg_e11m8d5_2",
             },
         )
         self.assertEqual(len(text_only["dlg_e10m3_10"]["lineIds"]), 8)
@@ -3986,6 +3988,29 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 facts["missionIdPresent"],
             )
             self.assertFalse(consumer["entry"].get("missionId"))
+
+    def test_declared_e11m8d5_offline_frontier_is_exact(self) -> None:
+        registered = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e11m8d5_1"
+        ]
+        self.assertEqual(len(registered["lineIds"]), 10)
+        self.assertEqual(len(registered["optionIds"]), 2)
+        self.assertEqual(len(registered["missingAudioIds"]), 10)
+        consumer = registered["npcProxyConsumer"]
+        self.assertEqual(consumer["proxyId"], "lizy_map02_v1d4d0_world")
+        self.assertEqual(consumer["entryIndex"], 0)
+        self.assertEqual(consumer["entry"]["missionId"], "")
+        text_only = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+            "dlg_e11m8d5_2"
+        ]
+        self.assertEqual(
+            text_only["lineIds"],
+            ("dlg_e11m8d5_2_001", "dlg_e11m8d5_2_002"),
+        )
+        self.assertEqual(
+            text_only["missingAudioIds"],
+            ("au_dlg_e11m8d5_2_001", "au_dlg_e11m8d5_2_002"),
+        )
 
     def test_declared_e6m1_offline_frontier_is_exact(self) -> None:
         self.assertEqual(

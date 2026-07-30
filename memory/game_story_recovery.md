@@ -4306,7 +4306,7 @@ Current main-story priorities:
    corpus. This result does not prove that opaque world bytes or server state
    contain no owner, but the current typed Streaming/object scans already cover
    their available decoded contents. Do not repeat VFS filename sampling until
-   block metadata or the installed build changes. `sourceStoryGapQueue.v73`
+   block metadata or the installed build changes. `sourceStoryGapQueue.v74`
    turns the completed exact `e0m0`, `e0m2`, `e1m1`, `e1m2`, `e1m3`, `e1m4`,
    `e1m10`, `e2m2`, `e2m3`, `e2m4`,
    `e2m5`, `e2m5d5`, `e2m6`, `e2m7`, `e2m8d5`, `e3m1`, `e3m2`, `e3m3`, `e3m4`, `e4m1`, `e5m1`,
@@ -4315,7 +4315,8 @@ Current main-story priorities:
    `e6m4`, `e6m5`, `e7m2`, `e7m3`, `e7m4`, `e8m1`, `e8m2`, `e8m3`, `e8m5`,
    `e9m2`, `e9m3`, `e9m4`,
    `e10m1`, `e10m2`, `e10m3`, `e10m4`, `e11m1`, `e11m2`, `e11m3`, `e11m4`,
-   `e11m5`, `e11m6`, and `e11m8` negative boundaries into fail-closed
+   `e11m5`, `e11m6`, `e11m8`, and `e11m8d5` negative boundaries into
+   fail-closed
    operational deferrals.
    It activates only while the exact
    current `GameAssembly.dll`, RadioTable, AudioDialog, TextTable,
@@ -4339,10 +4340,10 @@ Current main-story priorities:
    present; this closes the weaker definition gate in the initial e11m1
    classification. The rows remain visible as
    `deferred_current_build_offline_surface_exhausted`, create no graph edge,
-   and reopen automatically if any gate changes. There are now 341 actual
-   isolated-scene deferrals: 229 radios, 31 cutscene roots, 50 registered
-   dialogs (twenty-one dialogs carry twenty-two exact NpcProxy consumers without a
-   mission owner), eleven ReadingPopUp definitions, nine DialogTextTable-only
+   and reopen automatically if any gate changes. There are now 343 actual
+   isolated-scene deferrals: 229 radios, 31 cutscene roots, 51 registered
+   dialogs (twenty-two dialogs carry twenty-three exact NpcProxy consumers without a
+   mission owner), eleven ReadingPopUp definitions, ten DialogTextTable-only
    groups, two SNS dialog definitions, seven text-only cutscenes, and two
    TextTable-only black definitions. The hash-validated declaration set
    contains the same 325 rows; already-positive native/runtime contexts are
@@ -4889,6 +4890,19 @@ Current main-story priorities:
    bucket is score 92 with 13 actionable core isolated rows, 108 exact-native
    isolated closures, 95 exact-runtime-config closures, and 9
    strict-attachment diagnostics. e11m8d5 is next at score 10.
+   The e11m8d5 pass separates a registered NPC dialog from a text-only group.
+   `dlg_e11m8d5_1` is a hash-locked ten-line/two-option DialogTree with exact
+   `lizy_map02_v1d4d0_world[0]` selection and an explicitly empty
+   `missionId`; all ten base AudioDialog ids are absent.
+   `dlg_e11m8d5_2` has exactly two DialogTextTable rows but no DialogId
+   registration, DialogTree asset, Timeline, or NpcProxy consumer, and both
+   audio ids are absent. Both route arrays are empty and the carrier audit
+   reports no candidate. v74/v53 therefore records two graph-neutral
+   boundaries without treating the versioned world-proxy name as ownership.
+   There are 343 active declarations; the main-story bucket is score 82 with
+   11 actionable core isolated rows, 108 exact-native isolated closures, 95
+   exact-runtime-config closures, and 9 strict-attachment diagnostics. e5m5
+   is next at score 10.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
