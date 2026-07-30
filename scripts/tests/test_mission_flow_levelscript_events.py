@@ -37,6 +37,43 @@ from scripts.story_builder.mission_recovery import (
 
 
 class MissionFlowLevelScriptEventTests(unittest.TestCase):
+    def test_sns_objective_tracking_is_typed_attachment_not_playback(self):
+        hints = mission_flow._extract_tracking_hints({
+            "objectiveList": [{
+                "trackingInfoList": [{
+                    "$type": (
+                        "Beyond.Gameplay.SnsTrackingInfo, Gameplay.Beyond"
+                    ),
+                    "snsDialogId": "sns_testm1_1",
+                }],
+            }],
+        })
+        self.assertEqual([{
+            "type": "SnsTrackingInfo",
+            "snsDialogId": "sns_testm1_1",
+            "objectiveIndex": 1,
+            "trackingIndex": 0,
+        }], hints)
+
+        rows = mission_flow._objective_tracking_story_connections(hints)
+        self.assertEqual(1, len(rows))
+        self.assertEqual("sns_testm1_1", rows[0]["key"])
+        self.assertEqual(
+            "objective_tracking_story_reference",
+            rows[0]["relation"],
+        )
+        self.assertEqual("context", rows[0]["direction"])
+        self.assertEqual("tracking", rows[0]["phase"])
+        self.assertEqual("native_typed_context", rows[0]["confidence"])
+        self.assertIs(rows[0]["playback"], False)
+        self.assertEqual(
+            (
+                "MissionRuntimeAsset.questDic[*].objectiveList[0]"
+                ".trackingInfoList[0].snsDialogId"
+            ),
+            rows[0]["source"],
+        )
+
     def test_timeline_scene_edges_receive_only_exact_graph_context(self):
         timeline = {
             "sourceBackedSceneEdges": [

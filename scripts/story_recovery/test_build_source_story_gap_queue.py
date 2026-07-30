@@ -960,6 +960,63 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ["e7m4_q#2"],
         )
 
+    def test_exact_sns_tracking_reference_is_strict_attachment_only(
+        self,
+    ) -> None:
+        partial = partial_mission("e2m1", scenes=["sns_e2m1_1"])
+        payload = mission_payload(
+            quest_ids=["e2m1_q#1"],
+            placements={
+                "sns_e2m1_1": {
+                    "sceneKey": "sns_e2m1_1",
+                    "questIds": ["e2m1_q#1"],
+                    "questAttachSources": [{
+                        "questId": "e2m1_q#1",
+                        "source": "missionStoryRef",
+                    }],
+                },
+            },
+        )
+        payload["flow"]["quests"] = [{
+            "id": "e2m1_q#1",
+            "storyConnections": [{
+                "key": "sns_e2m1_1",
+                "kind": "sns",
+                "relation": "objective_tracking_story_reference",
+                "direction": "context",
+                "phase": "tracking",
+                "confidence": "native_typed_context",
+                "source": (
+                    "MissionRuntimeAsset.questDic[*].objectiveList[0]"
+                    ".trackingInfoList[0].snsDialogId"
+                ),
+                "objectiveIndex": 1,
+                "trackingIndex": 0,
+                "trackingType": "SnsTrackingInfo",
+                "playback": False,
+            }],
+        }]
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["strictQuestIdsWithStoryAttachment"], 1)
+        self.assertEqual(row["questIdsWithoutStrictStoryAttachment"], [])
+
+        payload["flow"]["quests"][0]["storyConnections"][0]["playback"] = True
+        invalid = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+        self.assertEqual(
+            invalid["questIdsWithoutStrictStoryAttachment"],
+            ["e2m1_q#1"],
+        )
+
     def test_missing_bundle_is_explicit_high_priority_gap(self) -> None:
         partial = partial_mission("e1m1", scenes=["dlg_a"])
 
@@ -2635,6 +2692,24 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "radio_e11m2_35",
                 "radio_e11m2_36",
                 "radio_e11m2_37",
+            },
+        )
+
+    def test_declared_e2m1_offline_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION["e2m1"],
+            {"cutscene_e2m1_1"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES[
+                "cutscene_e2m1_1"
+            ],
+            {
+                "missionId": "e2m1",
+                "definitionRowKeys": (
+                    "cutscene_e2m1_1_01",
+                    "cutscene_e2m1_1_02",
+                ),
             },
         )
 
