@@ -4933,6 +4933,32 @@ Current main-story priorities:
    quest inspector. e10m4 now scores zero. The main-story score is 63 with six
    actionable quest diagnostics and nine actionable isolated carriers; e2m1
    is next at score 8.
+   The e2m1 pass closes both parts of that frontier with two deliberately
+   different evidence classes. `cutscene_e2m1_1` is exactly two TextTable rows
+   (`_01` and `_02`) but has no Timeline registry id, GameObject audit row,
+   reverse PlayableDirector host, AudioDialog/TextVoId membership, matching
+   TextAsset, or carrier-audit candidate. v77/v55 therefore adds it to the
+   hash-gated text-only cutscene deferral set with graph effect `none`; its
+   subtitle row order is retained, but activation, ownership, and relative
+   Story order remain unresolved.
+   `e2m1_q#1` is a positive authored attachment rather than another negative
+   deferral: objective 1 tracking row 0 is exactly
+   `SnsTrackingInfo.snsDialogId=sns_e2m1_1`. Mission-flow extraction now
+   publishes this as `objective_tracking_story_reference`, direction
+   `context`, phase `tracking`, and confidence `native_typed_context`, with
+   the full indexed MissionRuntime source path. The strict classifier accepts
+   it only when the type, indices, source path, and explicit
+   `playback=false` boundary all match. This proves quest-to-Story attachment,
+   while preserving the binary result that `SnsTrackingInfo.Execute` updates
+   mission-HUD tracking and is not the SNS playback entry point. It creates no
+   activation, playback, ownership, or order edge.
+   The generalized exact rule also closes the previously documented
+   `e1m10_q#10 -> sns_e1m10_1` tracking attachment without changing that same
+   boundary. Both e2m1 and e1m10 now score zero. The current offline set has
+   346 active declarations; the main-story bucket is score 52 with eight
+   actionable core-isolated rows, four actionable quest attachments, 108
+   exact-native isolated closures, 95 exact-runtime-config closures, and three
+   closed quest-attachment diagnostics. e5m2 is next at score 6.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,

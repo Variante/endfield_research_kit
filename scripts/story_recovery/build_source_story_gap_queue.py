@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v76"
+SCHEMA = "sourceStoryGapQueue.v77"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -129,7 +129,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v54"
+    "current-build-offline-story-carrier-exhaustion-v55"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -250,6 +250,13 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
         "missionId": "e1m1",
         "definitionRowKeys": tuple(
             f"cutscene_e1m1_6_{number:02d}" for number in range(1, 6)
+        ),
+    },
+    "cutscene_e2m1_1": {
+        "missionId": "e2m1",
+        "definitionRowKeys": (
+            "cutscene_e2m1_1_01",
+            "cutscene_e2m1_1_02",
         ),
     },
     "cutscene_e2m5_2": {
@@ -376,6 +383,7 @@ OFFLINE_EXHAUSTION_CUTSCENES_BY_MISSION = {
         "cutscene_e1m1_6",
     }),
     "e1m3": frozenset({"cutscene_e1m3_1"}),
+    "e2m1": frozenset({"cutscene_e2m1_1"}),
     "e2m5": frozenset({
         "cutscene_e2m5_2",
         "cutscene_e2m5_3",
@@ -4994,6 +5002,29 @@ def _strict_quest_attachments(
             relation = safe_key(row.get("relation"))
             objective_index = row.get("objectiveIndex")
             finish_id = row.get("finishId")
+            if (
+                scene_key
+                and relation == "objective_tracking_story_reference"
+                and safe_key(row.get("direction")) == "context"
+                and safe_key(row.get("phase")) == "tracking"
+                and safe_key(row.get("confidence")) == "native_typed_context"
+                and safe_key(row.get("trackingType")) == "SnsTrackingInfo"
+                and row.get("playback") is False
+                and re.fullmatch(
+                    r"MissionRuntimeAsset\.questDic\[\*\]\.objectiveList"
+                    r"\[\d+\]\.trackingInfoList\[\d+\]\.snsDialogId",
+                    safe_key(row.get("source")),
+                )
+                and isinstance(objective_index, int)
+                and not isinstance(objective_index, bool)
+                and objective_index > 0
+                and isinstance(row.get("trackingIndex"), int)
+                and not isinstance(row.get("trackingIndex"), bool)
+                and int(row["trackingIndex"]) >= 0
+            ):
+                quest_ids.add(quest_id)
+                scene_keys.add(scene_key)
+                continue
             if (
                 scene_key
                 and relation == "objective_condition"

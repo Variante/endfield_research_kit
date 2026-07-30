@@ -367,6 +367,7 @@
       storyOutgoingBadge: "Q→S",
       storyContextBadge: "CTX",
       relationObjectiveCondition: "objective waits on Story state",
+      relationObjectiveTrackingStory: "objective tracking references this Story file (attachment only; not playback or order)",
       relationFailureCondition: "Story state participates in failure guard",
       relationClientStart: "quest start launches Story action",
       relationClientSucceed: "quest success launches Story action",
@@ -858,6 +859,7 @@
       storyEvidence: "箭头方向来自运行时语义：条件是“剧情 → 任务”，原生 QuestAction 槽位与严格门控的任务完成事件是“任务 → 剧情”。LevelData、限定作用域的 LevelScript、变体运行时、作者单跳路线、精确 NPC 代理连接和唯一的类型化世界实体集合连接属于上下文；共享世界实体集合不证明任务或服务器触发。类型化 DialogTree 叙事遮罩只是本地呈现，不会产生服务器交换；使命接受对话保留在使命外壳。空间邻近与文件顺序猜测绝不会升级为连接。",
       noStoryFiles: "这个任务节点没有可由证据支持的剧情连接。",
       relationLevelScriptInteractiveNarrative: "\u5e26\u7cbe\u786e\u8ba1\u6570\u8fb9\u754c\u7684 LevelScript \u4ea4\u4e92\u914d\u7f6e\u5c06\u6b64\u5267\u60c5\u6587\u4ef6\u7ed1\u5b9a\u5230\u672c\u5730\u53d9\u4e8b\u5bf9\u8c61\uff1b\u6fc0\u6d3b\u65f6\u673a\u4e0e\u987a\u5e8f\u4ecd\u672a\u89e3\u6790",
+      relationObjectiveTrackingStory: "\u4efb\u52a1\u76ee\u6807\u8ffd\u8e2a\u5f15\u7528\u6b64\u5267\u60c5\u6587\u4ef6\uff08\u4ec5\u8fde\u63a5\uff0c\u4e0d\u4ee3\u8868\u64ad\u653e\u6216\u987a\u5e8f\uff09",
       relationLevelDataInteractiveNarrative: "\u5177\u6709\u7cbe\u786e\u8fb9\u754c\u7684 LevelData \u4ea4\u4e92\u914d\u7f6e\u901a\u8fc7\u7ec4\u4ef6 94 \u6216\u5df2\u9a8c\u8bc1\u7684 int_horn dialog_id \u5c5e\u6027\uff0c\u5c06\u6b64\u5267\u60c5\u6587\u4ef6\u7ed1\u5b9a\u5230\u672c\u5730\u53d9\u4e8b\u5bf9\u8c61\uff1b\u6700\u540e\u8bb0\u5f55\u5fc5\u987b\u7531\u975e\u7a7a BriefData \u8fb9\u754c\u6216\u5230 EOF \u7684\u5b8c\u6574\u7a7a\u811a\u672c\u540e\u7f00\u9a8c\u8bc1\uff0c\u5df2\u89e3\u6790\u7684\u8fdb\u5ea6\u9501\u4ec5\u662f\u53ef\u7528\u6027\u8bc1\u636e\uff0c\u4e0d\u662f\u5267\u60c5\u5f52\u5c5e\u6216\u987a\u5e8f",
       triggerRoute: "\u6062\u590d\u7684\u89e6\u53d1\u8def\u5f84",
       triggerPlayback: "\u64ad\u653e\u89e6\u53d1",
@@ -1597,6 +1599,7 @@
   function storyRelationLabel(relation) {
     const key = {
       objective_condition: "relationObjectiveCondition",
+      objective_tracking_story_reference: "relationObjectiveTrackingStory",
       failure_condition: "relationFailureCondition",
       client_action_start: "relationClientStart",
       client_action_succeed: "relationClientSucceed",

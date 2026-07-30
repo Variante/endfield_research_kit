@@ -635,6 +635,65 @@ def _objective_area_story_connections(objective_anchors: list[dict]) -> list[dic
             _append_story_connection(rows, row)
     return rows
 
+
+def _objective_tracking_story_connections(
+    tracking_hints: list[dict],
+) -> list[dict]:
+    """Keep exact Story ids authored on typed objective tracking rows.
+
+    ``SnsTrackingInfo.snsDialogId`` binds an SNS conversation to the quest
+    objective's tracking configuration. ``SnsTrackingInfo.Execute`` updates
+    mission HUD tracking; it is not the SNS playback entry point. This
+    relation therefore proves attachment only, with no playback, ownership,
+    activation, or ordering claim.
+    """
+    rows: list[dict] = []
+    for hint in tracking_hints:
+        if not isinstance(hint, dict):
+            continue
+        tracking_type = str(hint.get("type") or "")
+        story_key = str(hint.get("snsDialogId") or "").strip()
+        objective_index = hint.get("objectiveIndex")
+        tracking_index = hint.get("trackingIndex")
+        if (
+            tracking_type != "SnsTrackingInfo"
+            or not story_key
+            or not isinstance(objective_index, int)
+            or isinstance(objective_index, bool)
+            or objective_index <= 0
+            or not isinstance(tracking_index, int)
+            or isinstance(tracking_index, bool)
+            or tracking_index < 0
+        ):
+            continue
+        _append_story_connection(rows, {
+            "key": story_key,
+            "kind": "sns",
+            "relation": "objective_tracking_story_reference",
+            "direction": "context",
+            "phase": "tracking",
+            "confidence": "native_typed_context",
+            "source": (
+                "MissionRuntimeAsset.questDic[*].objectiveList"
+                f"[{objective_index - 1}].trackingInfoList"
+                f"[{tracking_index}].snsDialogId"
+            ),
+            "objectiveIndex": objective_index,
+            "trackingIndex": tracking_index,
+            "trackingType": tracking_type,
+            "playback": False,
+            "attachmentBoundary": (
+                "authored objective tracking attachment only; "
+                "SnsTrackingInfo.Execute is not SNS playback"
+            ),
+            "orderBoundary": (
+                "tracking configuration establishes no activation time or "
+                "relative Story order"
+            ),
+        })
+    return rows
+
+
 def _mission_proxy_dialog_ids(mission_id: str, proxy_id: str) -> list[str]:
     if not mission_id or not proxy_id:
         return []
@@ -822,6 +881,9 @@ def load_mission_flow(mission_id: str) -> dict | None:
         if tracking:
             resolved_tracking = [_resolve_tracking_hint(hint) for hint in tracking]
             entry["tracking"] = resolved_tracking
+            connections = entry.setdefault("storyConnections", [])
+            for row in _objective_tracking_story_connections(resolved_tracking):
+                _append_story_connection(connections, row)
             scenes = _unique_preserve(
                 [hint["scene"] for hint in resolved_tracking if hint.get("scene")]
             )

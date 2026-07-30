@@ -2176,6 +2176,12 @@ def _extract_tracking_hints(quest) -> list[dict]:
             jump_id = info.get("jumpId")
             if isinstance(jump_id, str) and jump_id:
                 hint["jumpId"] = jump_id
+            sns_dialog_id = info.get("snsDialogId")
+            if isinstance(sns_dialog_id, str) and sns_dialog_id:
+                # SnsTrackingInfo is authored quest-marker context. Preserve
+                # its exact Story id for a typed quest attachment, while
+                # keeping it distinct from SNS playback evidence.
+                hint["snsDialogId"] = sns_dialog_id
             # EntityTrackingInfo is a native navigation target. Preserve the
             # exact serialized fields so the mission builder can resolve the
             # local script/slot pair through WorldEntityRegistry. This is
@@ -2208,6 +2214,7 @@ def _extract_tracking_hints(quest) -> list[dict]:
                 hint.get("npcProxyId", ""),
                 hint.get("missionAreaId", ""),
                 hint.get("jumpId", ""),
+                hint.get("snsDialogId", ""),
                 hint.get("trackScriptEntity"),
                 hint.get("entityLogicId"),
                 hint.get("scriptId"),
