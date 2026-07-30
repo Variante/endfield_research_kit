@@ -4915,6 +4915,24 @@ Current main-story priorities:
    exact-native isolated closures, 95 exact-runtime-config closures, and 9
    strict-attachment diagnostics. e10m4 is next at score 9, entirely from
    three quest-scene attachment diagnostics rather than isolated Story rows.
+   The e10m4 quest-attachment pass closes those three broad co-memberships as
+   exact current-build negative diagnostics rather than promoting them.
+   `e10m4d5_q#31` and `q#35` check `enemyStart1` and `enemyStart2` respectively
+   in `dung02_rdg002/24400000018`. That same LevelScript contains
+   `radio_e10m4_68` and `dlg_e10m4_{3,4,5}`, but its hash-locked bytes contain
+   neither property key nor either matching quest id and expose no
+   property-scoped playback/control path. `e10m4d5_q#34` is instead an exact
+   `GameConditionServerPlaceHolder` (`comparer=3`,
+   `progressToCompare=6`) with no client-readable Story field. The generated
+   variant `questSequence`/`questPrev` rows remain context-only diagnostics:
+   shared script or predecessor-shell membership cannot select one Story call
+   or establish order. Schema v76 validates both source hashes, every objective
+   condition shape, and the exact diagnostic Story-key sets; it reopens all
+   three rows on any mismatch or newly recovered strict route. The Mission
+   Pipeline publishes the graph-neutral boundaries on quest cards and in the
+   quest inspector. e10m4 now scores zero. The main-story score is 63 with six
+   actionable quest diagnostics and nine actionable isolated carriers; e2m1
+   is next at score 8.
    `_last_03` deliberately has zero forward GameObject audit rows but one exact
    reverse director host, while the other three e11m2 cutscenes each have one
    forward row and one host. All exact counts, registry ids, root definitions,
@@ -5215,10 +5233,12 @@ Current main-story priorities:
    `rp_text_e10m4_1 -> RichContentTable` definition. `sns_e10m4_1` is an exact
    26-message/four-option SNSDialogTable graph with empty `relatedMissionId`;
    its internal message and option edges do not establish mission placement.
-   All five are carrier-audit negative and create no graph edge. e10m4 now has
-   zero actionable isolated scenes and scores 9 solely from three narrower
-   context-only variant-quest attachments (`e10m4d5_q#31`, `q#34`, and
-   `q#35`). Its seven runtime-configuration closures add no order edge.
+   All five are carrier-audit negative and create no graph edge. e10m4 has
+   zero actionable isolated scenes. Its three remaining context-only
+   variant-quest attachments (`e10m4d5_q#31`, `q#34`, and `q#35`) are now
+   separately closed by the hash-locked negative diagnostic described above,
+   so the mission scores zero without adding ownership or order. Its seven
+   runtime-configuration closures likewise add no order edge.
    The current `e11m4` queue has 49 core isolated scenes split into 35
    current-build offline-exhausted deferred rows, three exact-native closed
    rows, and eleven exact

@@ -46,7 +46,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v75"
+SCHEMA = "sourceStoryGapQueue.v76"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -185,6 +185,62 @@ OFFLINE_EXHAUSTION_DIALOG_ID_INDEX_SHA256 = (
 OFFLINE_EXHAUSTION_TIMELINE_LINE_ORDERS_SHA256 = (
     "C8408C67D8E6AD07CECF2007795C8E388B7F9BCE117B11DAADE8A7EFAD4EAEF2"
 )
+QUEST_ATTACHMENT_DIAGNOSTIC_MAPPING_ID = (
+    "current-build-quest-story-attachment-negative-v1"
+)
+QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_HASHES = {
+    "missionRuntime:e10m4d5": (
+        "D417581D527A42350597FF802A071F2F629C350C3B0942ACDBEB19FD5518FD0B"
+    ),
+    "levelScript:dung02_rdg002/24400000018": (
+        "674D1733DDFA890AABEF7A2D534ED49D99EE427D3C782A6B904C00BFBCB5C5E3"
+    ),
+}
+QUEST_ATTACHMENT_DIAGNOSTIC_DECLARATIONS = {
+    "e10m4d5_q#31": {
+        "mission": "e10m4",
+        "variantMission": "e10m4d5",
+        "prevQuestIds": ("e10m4d5_q#8",),
+        "conditionType": "CheckLevelScriptPropertyBool",
+        "scriptId": "24400000018",
+        "propertyKey": "enemyStart1",
+        "diagnosticStoryKeys": (
+            "dlg_e10m4_3",
+            "dlg_e10m4_4",
+            "dlg_e10m4_5",
+            "radio_e10m4_68",
+        ),
+        "recoveryStatus":
+            "closed_shared_levelscript_without_property_scoped_story_bridge",
+    },
+    "e10m4d5_q#34": {
+        "mission": "e10m4",
+        "variantMission": "e10m4d5",
+        "prevQuestIds": ("e10m4d5_q#12",),
+        "conditionType": "GameConditionServerPlaceHolder",
+        "comparer": 3,
+        "progressToCompare": 6,
+        "diagnosticStoryKeys": ("radio_e10m4_68",),
+        "recoveryStatus":
+            "closed_server_placeholder_without_client_story_semantics",
+    },
+    "e10m4d5_q#35": {
+        "mission": "e10m4",
+        "variantMission": "e10m4d5",
+        "prevQuestIds": ("e10m4d5_q#34",),
+        "conditionType": "CheckLevelScriptPropertyBool",
+        "scriptId": "24400000018",
+        "propertyKey": "enemyStart2",
+        "diagnosticStoryKeys": (
+            "dlg_e10m4_3",
+            "dlg_e10m4_4",
+            "dlg_e10m4_5",
+            "radio_e10m4_68",
+        ),
+        "recoveryStatus":
+            "closed_shared_levelscript_without_property_scoped_story_bridge",
+    },
+}
 OFFLINE_EXHAUSTION_E11M4_CUTSCENE = (
     "cutscene_e11m4_rift_camera_state1to2"
 )
@@ -2674,6 +2730,258 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest().upper()
+
+
+def build_quest_attachment_diagnostic_index(
+    mission_payloads: dict[str, dict[str, Any]],
+    *,
+    mission_runtime_path: Path | None = None,
+    levelscript_path: Path | None = None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    """Validate exact current-build quest/Story negative boundaries.
+
+    These rows retire broad diagnostic co-membership from the actionable queue.
+    They do not attach a quest to a Story file and do not assert chronology.
+    Hash changes, generated-shape changes, or a newly recovered strict route
+    reopen the quest automatically.
+    """
+    mission_runtime_path = mission_runtime_path or (
+        ROOT
+        / "export_full"
+        / "structured"
+        / "Persistent"
+        / "Data"
+        / "Json"
+        / "MissionRuntimeAsset"
+        / "e10m4d5.json"
+    )
+    levelscript_path = levelscript_path or (
+        ROOT
+        / "export_full"
+        / "structured"
+        / "StreamingAssets"
+        / "Data"
+        / "Json"
+        / "LevelScriptData"
+        / "dung02_rdg002"
+        / "24400000018.json"
+    )
+    source_paths = {
+        "missionRuntime:e10m4d5": mission_runtime_path,
+        "levelScript:dung02_rdg002/24400000018": levelscript_path,
+    }
+    actual_hashes = {
+        name: _sha256_file(path)
+        for name, path in source_paths.items()
+    }
+    mismatches = sorted(
+        name
+        for name, expected
+        in QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_HASHES.items()
+        if actual_hashes.get(name) != expected
+    )
+    status: dict[str, Any] = {
+        "mappingId": QUEST_ATTACHMENT_DIAGNOSTIC_MAPPING_ID,
+        "status":
+            "inactive_source_validation_failed" if mismatches else "validating",
+        "sourceHashes": actual_hashes,
+        "expectedSourceHashes": QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_HASHES,
+        "sourceHashMismatches": mismatches,
+        "graphEffect": "none",
+        "queueEffect":
+            "close broad diagnostic quest co-membership only while every "
+            "current-build source and generated condition shape matches",
+    }
+    if mismatches:
+        return {}, status
+
+    payload = mission_payloads.get("e10m4")
+    timeline = _timeline(payload)
+    flow = _flow(payload)
+    timeline_quests = {
+        safe_key(row.get("questId")): row
+        for row in timeline.get("quests") or []
+        if isinstance(row, dict) and safe_key(row.get("questId"))
+    }
+    flow_quests = {
+        safe_key(row.get("id")): row
+        for row in flow.get("quests") or []
+        if isinstance(row, dict) and safe_key(row.get("id"))
+    }
+    index: dict[str, dict[str, Any]] = {}
+    validation_failures: list[str] = []
+    expected_source_file = (
+        "export_full/structured/Persistent/Data/Json/"
+        "MissionRuntimeAsset/e10m4d5.json"
+    )
+    for quest_id, declaration in (
+        QUEST_ATTACHMENT_DIAGNOSTIC_DECLARATIONS.items()
+    ):
+        quest = timeline_quests.get(quest_id)
+        flow_quest = flow_quests.get(quest_id)
+        objectives = quest.get("objectives") if isinstance(quest, dict) else None
+        objective = (
+            objectives[0]
+            if isinstance(objectives, list)
+            and len(objectives) == 1
+            and isinstance(objectives[0], dict)
+            else {}
+        )
+        leaves = objective.get("conditionLeaves")
+        leaf = (
+            leaves[0]
+            if isinstance(leaves, list)
+            and len(leaves) == 1
+            and isinstance(leaves[0], dict)
+            else {}
+        )
+        connections = (
+            flow_quest.get("storyConnections")
+            if isinstance(flow_quest, dict)
+            else None
+        )
+        diagnostic_connections = (
+            connections
+            if isinstance(connections, list)
+            and connections
+            and all(
+                isinstance(row, dict)
+                and safe_key(row.get("relation"))
+                == "variant_runtime_attachment"
+                and safe_key(row.get("direction")) == "context"
+                and safe_key(row.get("phase")) == "context"
+                and safe_key(row.get("confidence")) == "scoped_variant"
+                and safe_key(row.get("source"))
+                == "variant MissionRuntime quest attachment"
+                and safe_key(row.get("variantMission"))
+                == declaration["variantMission"]
+                and safe_key(row.get("attachmentKind"))
+                in {"questPrev", "questSequence"}
+                for row in connections
+            )
+            else []
+        )
+        valid = (
+            isinstance(quest, dict)
+            and isinstance(flow_quest, dict)
+            and safe_key((quest.get("source") or {}).get("file"))
+            == expected_source_file
+            and tuple(_string_list(quest.get("prevQuestIds")))
+            == declaration["prevQuestIds"]
+            and objective.get("index") == 1
+            and safe_key(leaf.get("type")) == declaration["conditionType"]
+            and set(_string_list(objective.get("conditionTypes")))
+            == {declaration["conditionType"]}
+            and bool(diagnostic_connections)
+            and {
+                safe_key(row.get("key"))
+                for row in diagnostic_connections
+            }
+            == set(declaration["diagnosticStoryKeys"])
+        )
+        if valid and declaration["conditionType"] == (
+            "CheckLevelScriptPropertyBool"
+        ):
+            property_values = [
+                safe_key(row.get("value"))
+                for row in leaf.get("propertyKeys") or []
+                if isinstance(row, dict)
+            ]
+            script_values = [
+                safe_key((row.get("value") or {}).get("scriptId"))
+                for row in leaf.get("scriptIds") or []
+                if isinstance(row, dict)
+                and isinstance(row.get("value"), dict)
+            ]
+            valid = (
+                property_values == [declaration["propertyKey"]]
+                and script_values == [declaration["scriptId"]]
+            )
+        elif valid:
+            comparers = [
+                row.get("value")
+                for row in leaf.get("comparers") or []
+                if isinstance(row, dict)
+            ]
+            progress_values = [
+                row.get("value")
+                for row in leaf.get("compareValues") or []
+                if isinstance(row, dict)
+            ]
+            valid = (
+                comparers == [declaration["comparer"]]
+                and progress_values == [declaration["progressToCompare"]]
+            )
+        if not valid:
+            validation_failures.append(quest_id)
+            continue
+
+        shared_boundary = declaration["conditionType"] == (
+            "CheckLevelScriptPropertyBool"
+        )
+        index[quest_id] = {
+            "questId": quest_id,
+            "missionId": declaration["mission"],
+            "variantMissionId": declaration["variantMission"],
+            "recoveryStatus": declaration["recoveryStatus"],
+            "evidenceKind": (
+                "exact property checker plus hash-locked LevelScript negative"
+                if shared_boundary
+                else "exact server-owned placeholder with no client Story field"
+            ),
+            "conditionType": declaration["conditionType"],
+            "scriptId": declaration.get("scriptId", ""),
+            "propertyKey": declaration.get("propertyKey", ""),
+            "diagnosticStoryKeys": list(
+                declaration["diagnosticStoryKeys"]
+            ),
+            "sourceFile": expected_source_file,
+            "levelScriptFile": (
+                "export_full/structured/StreamingAssets/Data/Json/"
+                "LevelScriptData/dung02_rdg002/24400000018.json"
+                if shared_boundary
+                else ""
+            ),
+            "nativeMappingId": QUEST_ATTACHMENT_DIAGNOSTIC_MAPPING_ID,
+            "graphEffect": "none",
+            "attachmentBoundary": (
+                "the quest checks a named property in a script that contains "
+                "multiple Story calls, but the exact current-build script has "
+                "no matching quest id, property key, or property-scoped Story "
+                "bridge"
+                if shared_boundary
+                else "the objective is server-owned and exposes no "
+                "client-readable Story id or playback field"
+            ),
+            "orderBoundary": (
+                (
+                    "shared LevelScript membership and generated "
+                    "quest-sequence context do not identify which Story call, "
+                    "if any, belongs to this quest"
+                )
+                if shared_boundary
+                else (
+                    "the generated predecessor-shell Story context is "
+                    "diagnostic only and does not establish playback or order"
+                )
+            ),
+            "reopenWhen": (
+                "either source hash or generated condition shape changes, or "
+                "a property/quest-scoped native playback route is recovered"
+            ),
+        }
+
+    status["validationFailures"] = validation_failures
+    status["validatedQuestIds"] = sorted(index, key=natural_key)
+    status["status"] = (
+        "active"
+        if len(index) == len(QUEST_ATTACHMENT_DIAGNOSTIC_DECLARATIONS)
+        and not validation_failures
+        else "inactive_generated_shape_validation_failed"
+    )
+    if status["status"] != "active":
+        return {}, status
+    return index, status
 
 
 def _configured_game_assembly_path() -> Path | None:
@@ -7452,11 +7760,16 @@ def build_gap_row(
     action_story_occurrences: dict[str, list[dict[str, Any]]] | None = None,
     non_mission_content: dict[str, dict[str, Any]] | None = None,
     offline_exhaustion_index: dict[str, dict[str, Any]] | None = None,
+    quest_attachment_diagnostic_index:
+        dict[str, dict[str, Any]] | None = None,
     cross_owner_story_connections: list[dict[str, Any]] | None = None,
     story_trigger_manifest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     non_mission_content = non_mission_content or {}
     offline_exhaustion_index = offline_exhaustion_index or {}
+    quest_attachment_diagnostic_index = (
+        quest_attachment_diagnostic_index or {}
+    )
     story_trigger_manifest = story_trigger_manifest or {}
     mission = safe_key(partial_row.get("mission"))
     summary = partial_row.get("summary") if isinstance(partial_row.get("summary"), dict) else {}
@@ -7480,10 +7793,32 @@ def build_gap_row(
     diagnostic_quest_ids, diagnostic_quest_scenes, diagnostic_source_counts = (
         _diagnostic_quest_attachments(timeline, candidate_scene_keys)
     )
-    missing_strict_quest_ids = sorted(
+    raw_missing_strict_quest_ids = sorted(
         (quest_ids & diagnostic_quest_ids) - strict_quest_ids,
         key=natural_key,
     )
+    closed_quest_attachment_diagnostics = [
+        quest_attachment_diagnostic_index[quest_id]
+        for quest_id in raw_missing_strict_quest_ids
+        if (
+            quest_id in quest_attachment_diagnostic_index
+            and safe_key(
+                quest_attachment_diagnostic_index[quest_id].get("missionId")
+            ) == mission
+            and quest_attachment_diagnostic_index[quest_id].get(
+                "graphEffect"
+            ) == "none"
+        )
+    ]
+    closed_quest_attachment_ids = {
+        safe_key(row.get("questId"))
+        for row in closed_quest_attachment_diagnostics
+    }
+    missing_strict_quest_ids = [
+        quest_id
+        for quest_id in raw_missing_strict_quest_ids
+        if quest_id not in closed_quest_attachment_ids
+    ]
     quest_ids_without_story_evidence = sorted(
         quest_ids - strict_quest_ids - diagnostic_quest_ids,
         key=natural_key,
@@ -7785,6 +8120,9 @@ def build_gap_row(
         "strictQuestAttachedSceneCount": len(strict_quest_scenes),
         "strictQuestIdsWithStoryAttachment": len(quest_ids & strict_quest_ids),
         "questIdsWithoutStrictStoryAttachment": len(missing_strict_quest_ids),
+        "closedQuestAttachmentDiagnostics": len(
+            closed_quest_attachment_diagnostics
+        ),
         "questIdsWithoutAnyStoryEvidence": len(quest_ids_without_story_evidence),
         "diagnosticQuestAttachedSceneCount": len(diagnostic_quest_scenes),
         "diagnosticQuestIdsWithStoryAttachment": len(quest_ids & diagnostic_quest_ids),
@@ -7867,6 +8205,8 @@ def build_gap_row(
             non_actionable_weak_only_scene_keys,
         "isolatedSceneKinds": dict(sorted(isolated_kinds.items())),
         "questIdsWithoutStrictStoryAttachment": missing_strict_quest_ids,
+        "closedQuestAttachmentDiagnostics":
+            closed_quest_attachment_diagnostics,
         "questIdsWithoutAnyStoryEvidence": quest_ids_without_story_evidence,
         "untypedMultiSceneLevelscriptContexts": context_gaps,
         "closedNonPlaybackLevelscriptContexts": closed_context_gaps,
@@ -8117,6 +8457,9 @@ def build_gap_report(
     table_root: Path | None = None,
     offline_exhaustion_index: dict[str, dict[str, Any]] | None = None,
     offline_exhaustion_status: dict[str, Any] | None = None,
+    quest_attachment_diagnostic_index:
+        dict[str, dict[str, Any]] | None = None,
+    quest_attachment_diagnostic_status: dict[str, Any] | None = None,
     story_trigger_manifest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     non_mission_content = (
@@ -8253,6 +8596,9 @@ def build_gap_report(
             action_story_occurrences=action_story_occurrences,
             non_mission_content=non_mission_content,
             offline_exhaustion_index=offline_exhaustion_index,
+            quest_attachment_diagnostic_index=(
+                quest_attachment_diagnostic_index
+            ),
             cross_owner_story_connections=cross_owner_connections.get(
                 safe_key(row.get("mission"))
             ),
@@ -8298,6 +8644,13 @@ def build_gap_report(
             "status": "not_supplied",
             "graphEffect": "none",
         },
+        "questAttachmentDiagnosticEvidence": (
+            quest_attachment_diagnostic_status
+            or {
+                "status": "not_supplied",
+                "graphEffect": "none",
+            }
+        ),
         "summary": {
             "missions": len(rows),
             "buckets": [
@@ -8336,10 +8689,16 @@ def render_markdown(report: dict[str, Any]) -> str:
             "These rows are deferred from triage only; they create no graph edge "
             "and reopen when a hash or audit target set changes."
         ),
+        (
+            "Current-build quest-attachment diagnostic evidence: "
+            f"`{safe_key((report.get('questAttachmentDiagnosticEvidence') or {}).get('status')) or 'unknown'}`. "
+            "These rows close broad co-membership as non-owning only; they add "
+            "no quest-to-Story or order edge."
+        ),
         "",
         "## Bucket Summary",
         "",
-        "| bucket | missions | score | scenes | isolated (core: actionable / native-closed / runtime-config-closed / definition-closed / non-mission-closed / offline-exhausted) | weak-only (actionable / exact-closed) | cycles | actionable LS gaps | closed LS negatives | actionable quest gaps | option gaps |",
+        "| bucket | missions | score | scenes | isolated (core: actionable / native-closed / runtime-config-closed / definition-closed / non-mission-closed / offline-exhausted) | weak-only (actionable / exact-closed) | cycles | actionable LS gaps | closed LS negatives | quest gaps (actionable / diagnostic-closed) | option gaps |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in report["summary"]["buckets"]:
@@ -8363,14 +8722,16 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"{row.get('sourceCycles', 0)} | "
             f"{row.get('untypedMultiSceneLevelscriptContexts', 0)} | "
             f"{row.get('closedNonPlaybackLevelscriptContexts', 0)} | "
-            f"{row.get('questIdsWithoutStrictStoryAttachment', 0)} | {option_gaps} |"
+            f"{row.get('questIdsWithoutStrictStoryAttachment', 0)} / "
+            f"{row.get('closedQuestAttachmentDiagnostics', 0)} | "
+            f"{option_gaps} |"
         )
 
     lines.extend([
         "",
         "## Ranked Missions",
         "",
-        "| rank | mission | bucket rank | score | scenes | isolated (core: actionable / native-closed / runtime-config-closed / definition-closed / non-mission-closed / offline-exhausted) | weak-only (actionable / exact-closed) | cycles | LS gaps | quest gaps | option gaps | primary frontier |",
+        "| rank | mission | bucket rank | score | scenes | isolated (core: actionable / native-closed / runtime-config-closed / definition-closed / non-mission-closed / offline-exhausted) | weak-only (actionable / exact-closed) | cycles | LS gaps | quest gaps (actionable / diagnostic-closed) | option gaps | primary frontier |",
         "| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ])
     for row in report["missions"][:100]:
@@ -8392,7 +8753,8 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"({metrics['actionableWeakOnlyScenes']} / "
             f"{metrics['closedExactNativeWeakOnlyScenes']}) | "
             f"{metrics['sourceCycles']} | {metrics['untypedMultiSceneLevelscriptContexts']} | "
-            f"{metrics['questIdsWithoutStrictStoryAttachment']} | {option_gaps} | "
+            f"{metrics['questIdsWithoutStrictStoryAttachment']} / "
+            f"{metrics['closedQuestAttachmentDiagnostics']} | {option_gaps} | "
             f"`{row['primaryFrontier']}` |"
         )
 
@@ -8422,7 +8784,9 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"cycles `{metrics['sourceCycles']}`.",
             "",
             f"Quest ids without strict Story attachment: "
-            f"`{metrics['questIdsWithoutStrictStoryAttachment']}`; untyped multi-scene "
+            f"`{metrics['questIdsWithoutStrictStoryAttachment']}`; "
+            f"closed non-owning diagnostic co-memberships: "
+            f"`{metrics['closedQuestAttachmentDiagnostics']}`; untyped multi-scene "
             f"LevelScript contexts: `{metrics['untypedMultiSceneLevelscriptContexts']}`; "
             f"closed binary-negative contexts: "
             f"`{metrics['closedNonPlaybackLevelscriptContexts']}`; "
@@ -8542,6 +8906,10 @@ def main(argv: list[str] | None = None) -> int:
             game_assembly_path=args.game_assembly,
         )
     )
+    (
+        quest_attachment_diagnostic_index,
+        quest_attachment_diagnostic_status,
+    ) = build_quest_attachment_diagnostic_index(mission_payloads)
     report = build_gap_report(
         partial_report,
         mission_payloads,
@@ -8551,6 +8919,12 @@ def main(argv: list[str] | None = None) -> int:
         table_root=args.table_root,
         offline_exhaustion_index=offline_exhaustion_index,
         offline_exhaustion_status=offline_exhaustion_status,
+        quest_attachment_diagnostic_index=(
+            quest_attachment_diagnostic_index
+        ),
+        quest_attachment_diagnostic_status=(
+            quest_attachment_diagnostic_status
+        ),
         story_trigger_manifest=story_trigger_manifest,
     )
     out_json = args.reports_dir / f"source_story_gap_queue_{args.language}.json"

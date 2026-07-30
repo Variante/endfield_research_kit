@@ -450,6 +450,9 @@
       offlineRecoveryConsumer: "Consumer boundary",
       offlineRecoveryOrder: "Order boundary",
       offlineRecoveryReopen: "Reopen when",
+      questAttachmentDiagnostic: "Story ownership unresolved",
+      questAttachmentDiagnosticHint: "Exact offline evidence closes this broad Story co-membership as non-owning. It does not create a quest-to-Story or order edge.",
+      questAttachmentDiagnosticStories: "Diagnostic Story context",
       rejectedPlaybackCandidate: "Rejected playback candidate",
       rejectedPlaybackBoundary: "binary-proven boundary · no graph edge",
       rejectedPlaybackLiteral: "Lua literal",
@@ -870,6 +873,9 @@
       offlineRecoveryConsumer: "\u6d88\u8d39\u8005\u8fb9\u754c",
       offlineRecoveryOrder: "\u987a\u5e8f\u8fb9\u754c",
       offlineRecoveryReopen: "\u91cd\u65b0\u8c03\u67e5\u6761\u4ef6",
+      questAttachmentDiagnostic: "\u5267\u60c5\u5f52\u5c5e\u672a\u89e3\u6790",
+      questAttachmentDiagnosticHint: "\u7cbe\u786e\u79bb\u7ebf\u8bc1\u636e\u5c06\u8fd9\u4e2a\u5bbd\u6cdb\u5267\u60c5\u5171\u73b0\u5173\u7cfb\u95ed\u5408\u4e3a\u975e\u5f52\u5c5e\u8bca\u65ad\uff1b\u4e0d\u751f\u6210\u4efb\u52a1\u5230\u5267\u60c5\u6216\u987a\u5e8f\u8fb9\u3002",
+      questAttachmentDiagnosticStories: "\u8bca\u65ad\u5267\u60c5\u4e0a\u4e0b\u6587",
       rejectedPlaybackCandidate: "\u5df2\u62d2\u7edd\u7684\u64ad\u653e\u5019\u9009",
       rejectedPlaybackBoundary: "\u4e8c\u8fdb\u5236\u5df2\u8bc1\u8fb9\u754c \u00b7 \u4e0d\u751f\u6210\u56fe\u8fb9",
       rejectedPlaybackLiteral: "Lua \u5b57\u9762\u91cf",
@@ -1944,6 +1950,27 @@
       <b>${esc(recovery.evidenceKind || recovery.recoveryStatus || "")}</b>
       ${boundaries}
       ${recovery.nativeMappingId ? `<em><code>${esc(recovery.nativeMappingId)}</code></em>` : ""}
+    </div>`;
+  }
+
+  function questAttachmentDiagnostic(node) {
+    const rows = state.index?.storyCoverage?.offlineRecoveryEvidence?.questAttachmentDiagnostics || {};
+    const row = rows[node?.id];
+    return row?.graphEffect === "none" ? row : null;
+  }
+
+  function questAttachmentDiagnosticHtml(node) {
+    const row = questAttachmentDiagnostic(node);
+    if (!row) return "";
+    const storyKeys = (row.diagnosticStoryKeys || []).map((key) => `<code>${esc(key)}</code>`).join(" ");
+    return `<div class="mp-playback-rejection mp-offline-recovery">
+      <header><strong>${esc(t("questAttachmentDiagnostic"))}</strong><span>${esc(t("offlineRecoveryNoGraphEdge"))}</span></header>
+      <p>${esc(t("questAttachmentDiagnosticHint"))}</p>
+      <small><strong>${esc(t("offlineRecoveryConsumer"))}:</strong> ${esc(row.attachmentBoundary || "")}</small>
+      <small><strong>${esc(t("offlineRecoveryOrder"))}:</strong> ${esc(row.orderBoundary || "")}</small>
+      ${storyKeys ? `<small><strong>${esc(t("questAttachmentDiagnosticStories"))}:</strong> ${storyKeys}</small>` : ""}
+      <small><strong>${esc(t("offlineRecoveryReopen"))}:</strong> ${esc(row.reopenWhen || "")}</small>
+      ${row.nativeMappingId ? `<em><code>${esc(row.nativeMappingId)}</code></em>` : ""}
     </div>`;
   }
 
@@ -3108,6 +3135,7 @@
     )];
     const runtimeActions = questRuntimeActions(node, localizedMap);
     const runtimeObservations = (node.runtimeStoryObservations || []).filter((row) => row && row.storyKey);
+    const attachmentDiagnostic = questAttachmentDiagnostic(node);
     const description = missionDescriptionInfo(node, localizedMap);
     const storyCounts = storyConnectionCounts(node, localizedMap);
     const network = node.network?.outbound;
@@ -3126,9 +3154,9 @@
       const activityId = row.paramData?.activityId || row.dialogKey || "";
       return `${t("openUiAction")}: ${activityId}`;
     }).join("; ");
-    const tooltip = [objectiveText(node, localizedMap), description.text, activitySummary, runtimeSummary, storySummary].filter(Boolean).join("\n\n");
+    const tooltip = [objectiveText(node, localizedMap), description.text, activitySummary, runtimeSummary, storySummary, attachmentDiagnostic ? t("questAttachmentDiagnosticHint") : ""].filter(Boolean).join("\n\n");
     return `<button class="${classes.join(" ")}" type="button" data-quest="${esc(node.id)}" aria-pressed="${selected}" style="left:${position.x}px;top:${position.y}px" title="${esc(tooltip)}">
-      <span class="mp-card-top"><code>${esc(questShortLabel(node.id))}</code><span class="mp-card-badges">${node.mainPath ? `<span>${esc(t("main"))}</span>` : ""}${isHiddenQuest(node) ? `<span class="is-hidden">${esc(t("hidden"))}</span>` : ""}${storyCounts.incoming ? `<span class="is-story is-incoming">${esc(t("storyIncomingBadge"))} ${storyCounts.incoming}</span>` : ""}${storyCounts.outgoing ? `<span class="is-story is-outgoing">${esc(t("storyOutgoingBadge"))} ${storyCounts.outgoing}</span>` : ""}${storyCounts.context ? `<span class="is-story is-context">${esc(t("storyContextBadge"))} ${storyCounts.context}</span>` : ""}${runtimeObservations.length ? `<span class="is-runtime">${esc(t("runtimeObserved"))} ${runtimeObservations.length}</span>` : ""}${runtimeActions.length ? `<span>${esc(t("openUiAction"))} ${runtimeActions.length}</span>` : ""}<span>${esc(t("flow"))} ${Number(node.flowIndex || 0)}</span></span></span>
+      <span class="mp-card-top"><code>${esc(questShortLabel(node.id))}</code><span class="mp-card-badges">${node.mainPath ? `<span>${esc(t("main"))}</span>` : ""}${isHiddenQuest(node) ? `<span class="is-hidden">${esc(t("hidden"))}</span>` : ""}${storyCounts.incoming ? `<span class="is-story is-incoming">${esc(t("storyIncomingBadge"))} ${storyCounts.incoming}</span>` : ""}${storyCounts.outgoing ? `<span class="is-story is-outgoing">${esc(t("storyOutgoingBadge"))} ${storyCounts.outgoing}</span>` : ""}${storyCounts.context ? `<span class="is-story is-context">${esc(t("storyContextBadge"))} ${storyCounts.context}</span>` : ""}${attachmentDiagnostic ? `<span class="is-story is-context">${esc(t("questAttachmentDiagnostic"))}</span>` : ""}${runtimeObservations.length ? `<span class="is-runtime">${esc(t("runtimeObserved"))} ${runtimeObservations.length}</span>` : ""}${runtimeActions.length ? `<span>${esc(t("openUiAction"))} ${runtimeActions.length}</span>` : ""}<span>${esc(t("flow"))} ${Number(node.flowIndex || 0)}</span></span></span>
       <strong>${esc(objectiveText(node, localizedMap))}</strong>
       <span class="mp-card-description">${esc(description.text || t("noDescription"))}</span>
       <span class="mp-condition-row">${runtimeActions.map((row) => `<span title="${esc(t("notStoryFile"))}">${esc(t("openUiAction"))}: ${esc(row.paramData?.activityId || row.dialogKey || "")}</span>`).join("")}${activityLevels.map((value) => `<span title="${esc(t("activityStageLevelHint"))}">${esc(t("activityStageLevel"))}: ${esc(value)}</span>`).join("")}${conditions.map((value) => `<span>${esc(value)}</span>`).join("")}${(node.conditionTypes || []).length > 3 ? `<span>+${node.conditionTypes.length - 3}</span>` : ""}</span>
@@ -3359,6 +3387,7 @@
       ${runtimeActionHtml ? `<section class="mp-inspector-section"><h3>${esc(t("runtimeActions"))}</h3>${runtimeActionHtml}</section>` : ""}
       <section class="mp-inspector-section"><h3>${esc(t("objectives"))}</h3>${(node.objectives || []).map((objective) => objectiveHtml(objective, node.id)).join("") || `<p>${esc(t("noObjective"))}</p>`}${node.failedCondition ? `<div class="mp-failed-condition"><strong>failedCondition</strong>${renderConditionTree(node.failedCondition)}</div>` : ""}</section>
       ${storyFilesHtml(node)}
+      ${questAttachmentDiagnosticHtml(node)}
       ${runtimeObservedHtml ? `<section class="mp-inspector-section mp-runtime-observed-section"><h3>${esc(t("runtimeTraceOverlay"))}</h3><p>${esc(t("runtimeTraceHint"))}</p><div class="mp-runtime-observation-list">${runtimeObservedHtml}</div><small>${esc(t("noAuthoredPromotion"))}</small></section>` : ""}
       ${actionHtml ? `<section class="mp-inspector-section"><h3>${esc(t("clientActions"))}</h3>${actionHtml}</section>` : ""}
       ${protocolHtml(node)}
