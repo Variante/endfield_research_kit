@@ -53,7 +53,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v80"
+SCHEMA = "sourceStoryGapQueue.v81"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -136,7 +136,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v56"
+    "current-build-offline-story-carrier-exhaustion-v57"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -3214,6 +3214,83 @@ OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
         "titleId": 2638866450720374170,
         "contentTextIds": (-7046570968636013796,),
     },
+    "text_a1m9_1": {
+        "missionId": "a1m9",
+        "readingPopupRowId": "rp_text_a1m9_1",
+        "bgType": 0,
+        "iconType": 0,
+        "titleId": 6133950036636760715,
+        "contentTextIds": (
+            4360361720766943813,
+            -5286642356287476400,
+        ),
+    },
+    "text_a1m9_2": {
+        "missionId": "a1m9",
+        "readingPopupRowId": "rp_text_a1m9_2",
+        "bgType": 0,
+        "iconType": 0,
+        "titleId": -9061878788721069148,
+        "contentTextIds": (
+            -8710457857620610713,
+            195657822153420954,
+        ),
+    },
+    "text_a1m9_3": {
+        "missionId": "a1m9",
+        "readingPopupRowId": "rp_text_a1m9_3",
+        "bgType": 0,
+        "iconType": 0,
+        "titleId": -4216673929559825878,
+        "contentTextIds": (
+            5233675183060561957,
+            4427207018166369215,
+        ),
+    },
+    "text_a1m9_4": {
+        "missionId": "a1m9",
+        "readingPopupRowId": "rp_text_a1m9_4",
+        "bgType": 0,
+        "iconType": 0,
+        "titleId": 1447286566198348849,
+        "contentTextIds": (
+            1656717363105155858,
+            -8370465523951817989,
+        ),
+    },
+    "text_a1m9_5": {
+        "missionId": "a1m9",
+        "readingPopupRowId": "rp_text_a1m9_5",
+        "bgType": 0,
+        "iconType": 0,
+        "titleId": -7333612545186178263,
+        "contentTextIds": (
+            -5168759132077193528,
+            7120988803212617269,
+        ),
+    },
+    "text_a1m9_6": {
+        "missionId": "a1m9",
+        "readingPopupRowId": "rp_text_a1m9_6",
+        "bgType": 0,
+        "iconType": 0,
+        "titleId": 93296881304760627,
+        "contentTextIds": (
+            -5058010235124771975,
+            -8995527205053721848,
+        ),
+    },
+    "text_a1m9_7": {
+        "missionId": "a1m9",
+        "readingPopupRowId": "rp_text_a1m9_7",
+        "bgType": 0,
+        "iconType": 0,
+        "titleId": -8532814195849073983,
+        "contentTextIds": (
+            1466176077223606619,
+            4212985633755235735,
+        ),
+    },
     "text_e0m0_1": {
         "missionId": "e0m0",
         "readingPopupRowId": "text_e0m0_1",
@@ -5913,7 +5990,7 @@ def build_offline_exhaustion_index(
                     else ""
                 )
                 + "; no exact "
-                "MissionRuntime, LevelScript/LevelData interactive, Lua, "
+                "MissionRuntime, LevelScript/LevelData interactive, "
                 "object-index, or direct native caller exposes its activator"
             ),
             "orderBoundary": (
@@ -5923,8 +6000,9 @@ def build_offline_exhaustion_index(
             ),
             "reopenWhen": (
                 "installed binary, ReadingPopUpTable, RichContentTable, "
-                "PrtsAllItem, PrtsRecord, object index, Lua corpus, or "
-                "another typed producer/consumer registry changes"
+                "PrtsAllItem, PrtsRecord, object index, or another typed "
+                "producer/consumer registry changes, or an original Lua "
+                "corpus becomes available"
             ),
             "graphEffect": "none",
         }

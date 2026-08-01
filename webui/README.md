@@ -73,6 +73,8 @@ Rebuild Story data after editing overrides.
 - Mission Pipeline distinguishes ownership, context, definition-only rows, and
   unresolved native playback.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
+  shows exact ReadingPopUp/RichContent row identities for definition-only text
+  files and
   lists exact recovered definition files, tables, non-owning LevelData context,
   and internal Timelines without promoting OCR or manual order to evidence.
 - Quest diagnostics list the exact original-data files and decoded property or

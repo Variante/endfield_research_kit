@@ -42,7 +42,7 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The current main-story isolated-scene queue is source-bounded: all 589 core
+The current main-story isolated-scene queue is source-bounded: all 588 core
 isolated rows are now either closed by exact native/runtime/definition evidence
 or deferred after current-build offline carrier exhaustion; none remain broadly
 actionable. The latest batch closed the last two broad main-story quest
@@ -60,6 +60,15 @@ Mission Pipeline attaches that source file and branch context, while retaining
 the boundary that it does not identify one unique trigger or mission-relative
 chronology. The seven `text_a1m5_*` files remain exact ReadingPopUp/RichContent
 definitions with no recovered activator.
+
+The seven `text_a1m9_*` judge-note files are now closed to the same strict
+boundary. Original `ReadingPopUpTable` rows `rp_text_a1m9_1` through
+`rp_text_a1m9_7` each target one exact RichContent payload, but exact searches
+of MissionRuntime, typed LevelScript/LevelData interactive carriers, and both
+current object indexes find no activator. The current structured export has no
+Lua corpus, so Lua is a reopen condition rather than claimed negative evidence.
+This removes seven rows from the event queue without adding ownership or order
+edges; 18 event core-isolated rows remain actionable.
 
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
@@ -87,11 +96,12 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should continue the same binary-first audit with the seven
-`text_a1m9_*` event files, then the highest-ranked major-mission frontier
-(`gm02m2`) and the five character-mission quest gaps. Reopen a deferred row only
-when a new typed producer/consumer or changed source hash supplies an ownership
-or order edge.
+Next work should continue the same binary-first audit with the four-file
+`a1m8d3` event frontier (`black_a1m8d3_1`, `black_a1m8d3_2`,
+`dlg_a1m8d3_2`, and `radio_a1m8d3_1`), then the highest-ranked major-mission
+frontier (`gm02m2`) and the five character-mission quest gaps. Reopen a
+deferred row only when a new typed producer/consumer or changed source hash
+supplies an ownership or order edge.
 
 ## Evidence rules
 

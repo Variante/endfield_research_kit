@@ -4307,6 +4307,86 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
         self.assertEqual(failure["actual"]["richTitle"]["id"], 0)
 
+    def test_declared_a1m9_definition_frontier_is_exact(self) -> None:
+        expected = {
+            "text_a1m9_1": (
+                "rp_text_a1m9_1", 6133950036636760715,
+                (4360361720766943813, -5286642356287476400),
+            ),
+            "text_a1m9_2": (
+                "rp_text_a1m9_2", -9061878788721069148,
+                (-8710457857620610713, 195657822153420954),
+            ),
+            "text_a1m9_3": (
+                "rp_text_a1m9_3", -4216673929559825878,
+                (5233675183060561957, 4427207018166369215),
+            ),
+            "text_a1m9_4": (
+                "rp_text_a1m9_4", 1447286566198348849,
+                (1656717363105155858, -8370465523951817989),
+            ),
+            "text_a1m9_5": (
+                "rp_text_a1m9_5", -7333612545186178263,
+                (-5168759132077193528, 7120988803212617269),
+            ),
+            "text_a1m9_6": (
+                "rp_text_a1m9_6", 93296881304760627,
+                (-5058010235124771975, -8995527205053721848),
+            ),
+            "text_a1m9_7": (
+                "rp_text_a1m9_7", -8532814195849073983,
+                (1466176077223606619, 4212985633755235735),
+            ),
+        }
+        actual = {}
+        for story_key in expected:
+            definition = gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+                story_key
+            ]
+            self.assertEqual(definition["missionId"], "a1m9")
+            self.assertEqual(definition["bgType"], 0)
+            self.assertEqual(definition["iconType"], 0)
+            actual[story_key] = (
+                definition["readingPopupRowId"],
+                definition["titleId"],
+                definition["contentTextIds"],
+            )
+        self.assertEqual(actual, expected)
+
+        story_key = "text_a1m9_1"
+        definition = gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[story_key]
+        popup = {
+            "bgType": 0,
+            "contentId": story_key,
+            "iconType": 0,
+            "id": definition["readingPopupRowId"],
+            "overrideRadioId": "",
+            "title": {"id": 0, "text": ""},
+        }
+        rich = {
+            "contentList": [
+                {"content": {"id": text_id, "text": ""}}
+                for text_id in definition["contentTextIds"]
+            ],
+            "title": {"id": definition["titleId"], "text": ""},
+        }
+        self.assertIsNone(
+            gap_queue._offline_text_definition_validation_failure(
+                story_key, definition, popup, rich, {}, {},
+            )
+        )
+        popup["id"] = story_key
+        failure = gap_queue._offline_text_definition_validation_failure(
+            story_key, definition, popup, rich, {}, {},
+        )
+        self.assertEqual(failure["validator"], "offlineTextDefinition")
+        self.assertEqual(failure["gate"], "exactReadingPopupAndRichContentRows")
+        self.assertEqual(
+            failure["expected"]["popup"]["id"],
+            "rp_text_a1m9_1",
+        )
+        self.assertEqual(failure["actual"]["popup"]["id"], story_key)
+
     def test_declared_e6m3_definition_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E6M3_RADIOS,
@@ -4341,6 +4421,13 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_a1m5_5",
                 "text_a1m5_6",
                 "text_a1m5_7",
+                "text_a1m9_1",
+                "text_a1m9_2",
+                "text_a1m9_3",
+                "text_a1m9_4",
+                "text_a1m9_5",
+                "text_a1m9_6",
+                "text_a1m9_7",
                 "text_e0m0_1",
                 "text_e6m3_1",
                 "text_e6m3_4",
