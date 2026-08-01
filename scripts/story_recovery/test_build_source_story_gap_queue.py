@@ -3303,6 +3303,11 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     "au_radio_gm02m2_10_001",
                     "au_radio_gm02m2_10_002",
                 },
+                "radio_gm02m3_1": {"au_radio_gm02m3_1_001"},
+                "radio_gm02m3_2": {"au_radio_gm02m3_2_002"},
+                "radio_gm02m3_3": {"au_radio_gm02m3_3_003"},
+                "radio_gm02m3_4": {"au_radio_gm02m3_4_004"},
+                "radio_gm02m3_5": {"au_radio_gm02m3_5_001"},
                 "radio_gm01m22_1d2": {"au_radio_gm01m22_1d2_001"},
                 "radio_gm01m22_1d3": {"au_radio_gm01m22_1d3_001"},
                 "radio_e5m4_1": {
@@ -4262,6 +4267,11 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_gm02m2_2",
                 "dlg_gm02m2_3",
                 "dlg_gm02m2_4",
+                "dlg_gm02m3_1",
+                "dlg_gm02m3_2",
+                "dlg_gm02m3_3",
+                "dlg_gm02m3_4",
+                "dlg_gm02m3_5",
             },
         )
         self.assertEqual(len(text_only["dlg_e10m3_10"]["lineIds"]), 8)
@@ -4391,9 +4401,74 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_gm02m3_table_only_branch_frontier_is_exact(self) -> None:
+        text_only = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS
+        self.assertEqual(
+            {
+                key: (
+                    len(text_only[key]["lineIds"]),
+                    len(text_only[key]["optionRows"]),
+                    text_only[key].get(
+                        "dialogIdRegistrationStatus",
+                        "absent",
+                    ),
+                )
+                for key in (
+                    "dlg_gm02m3_1",
+                    "dlg_gm02m3_2",
+                    "dlg_gm02m3_3",
+                    "dlg_gm02m3_4",
+                    "dlg_gm02m3_5",
+                )
+            },
+            {
+                "dlg_gm02m3_1": (12, 3, "present_table_only"),
+                "dlg_gm02m3_2": (4, 2, "present_table_only"),
+                "dlg_gm02m3_3": (3, 2, "present_table_only"),
+                "dlg_gm02m3_4": (4, 0, "absent"),
+                "dlg_gm02m3_5": (7, 3, "absent"),
+            },
+        )
+        self.assertEqual(
+            {
+                key: text_only[key].get("printableOnlyDialogTokens", ())
+                for key in (
+                    "dlg_gm02m3_1",
+                    "dlg_gm02m3_2",
+                    "dlg_gm02m3_3",
+                )
+            },
+            {
+                "dlg_gm02m3_1": ("dlg_gm02m3_1X", "dlg_gm02m3_1Y"),
+                "dlg_gm02m3_2": ("dlg_gm02m3_2Y", "dlg_gm02m3_2Z"),
+                "dlg_gm02m3_3": ("dlg_gm02m3_3Z", "dlg_gm02m3_3d"),
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GM02M3_RADIOS,
+            {f"radio_gm02m3_{number}" for number in range(1, 6)},
+        )
+        self.assertEqual(
+            {
+                key for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm02m3" in key
+            },
+            {
+                "dlg_gm02m3_1", "dlg_gm02m3_2", "dlg_gm02m3_3",
+                "dlg_gm02m3_4", "dlg_gm02m3_5",
+                "radio_gm02m3_1", "radio_gm02m3_2", "radio_gm02m3_3",
+                "radio_gm02m3_4", "radio_gm02m3_5",
+                "dlg_gm02m3_1X", "dlg_gm02m3_1Y",
+                "dlg_gm02m3_2Y", "dlg_gm02m3_2Z",
+                "dlg_gm02m3_3Z", "dlg_gm02m3_3d",
+            },
+        )
     def test_declared_gm01m22_binary_bounded_frontier_is_exact(self) -> None:
         self.assertEqual(
-            set(gap_queue.OFFLINE_EXHAUSTION_GM01M22_ABSENT_BINARY_TOKENS),
+            {
+                key for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm01m22" in key
+            },
             {
                 "dlg_gm01m22_6",
                 "dlg_gm01m22_7",
@@ -4570,6 +4645,48 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(failure["missionId"], "gm02m2")
         self.assertEqual(failure["expected"]["optionCount"], 1)
         self.assertEqual(failure["actual"]["optionCount"], 2)
+        self.assertIn("dialogIdSource", failure["sourceSha256"])
+        self.assertIn("dialogIdIndex", failure["sourceSha256"])
+
+    def test_gm02m3_printable_only_tokens_fail_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        definition = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+            "dlg_gm02m3_1"
+        ]
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS,
+            {"dlg_gm02m3_1": {
+                **definition,
+                "printableOnlyDialogTokens": (
+                    "dlg_gm02m3_1X",
+                    "dlg_gm02m3_not_an_original_token",
+                ),
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual(failed_index, {})
+        failure = next(
+            row for row in failed_status["validatorDiagnostics"]
+            if row["storyKey"] == "dlg_gm02m3_1"
+            and row["gate"] == "exactPrintableOnlyDialogTokens"
+        )
+        self.assertEqual(failure["missionId"], "gm02m3")
+        self.assertIsNone(
+            failure["actual"]["dlg_gm02m3_not_an_original_token"]
+        )
         self.assertIn("dialogIdSource", failure["sourceSha256"])
         self.assertIn("dialogIdIndex", failure["sourceSha256"])
 
