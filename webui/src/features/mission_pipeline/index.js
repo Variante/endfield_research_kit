@@ -471,6 +471,9 @@
       offlineRecoveryDialogTreeBranches: "Internal DialogTree branches",
       offlineRecoveryAuthoredSplit: "authored split",
       offlineRecoveryAuthoredConvergence: "authored convergence",
+      offlineRecoveryTerminalOptions: "Terminal option routes",
+      offlineRecoveryFinishId: "serialized finishId",
+      offlineRecoveryFinishIdAbsent: "finishId not serialized",
       offlineRecoveryMissingAudio: "audio ids absent",
       offlineRecoveryMissionTracking: "Mission NPC tracking context (navigation only)",
       offlineRecoveryTrackedQuests: "tracked quests",
@@ -484,7 +487,7 @@
       offlineRecoveryDialogResultBranch: "Exact LevelData / LevelScript dialog branch",
       offlineRecoveryDialogStart: "Configured start dialog",
       offlineRecoveryDialogResult: "result case",
-      offlineRecoveryDialogBranchBoundary: "Cases are mutually exclusive outcomes. The local custom-event producer and a gm01m24 MissionRuntime quest owner are not serialized here.",
+      offlineRecoveryDialogBranchBoundary: "Cases are mutually exclusive outcomes. The local custom-event producer and a nominal MissionRuntime quest owner are not serialized here.",
       offlineRecoveryPostDialogAction: "Post-dialog local action",
       offlineRecoveryTestStub: "Exact test popup stub; no RichContent payload",
       offlineRecoveryCrossMissionTracking: "Cross-mission SNS tracking (navigation only)",
@@ -935,6 +938,9 @@
       offlineRecoveryDialogTreeBranches: "DialogTree \u5185\u90e8\u5206\u652f",
       offlineRecoveryAuthoredSplit: "\u539f\u751f\u5206\u6d41",
       offlineRecoveryAuthoredConvergence: "\u539f\u751f\u5408\u6d41",
+      offlineRecoveryTerminalOptions: "\u7ec8\u6b62\u9009\u9879\u8def\u7531",
+      offlineRecoveryFinishId: "\u5df2\u5e8f\u5217\u5316 finishId",
+      offlineRecoveryFinishIdAbsent: "\u672a\u5e8f\u5217\u5316 finishId",
       offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
       offlineRecoveryMissionTracking: "\u4efb\u52a1 NPC \u8ffd\u8e2a\u4e0a\u4e0b\u6587\uff08\u4ec5\u5bfc\u822a\uff09",
       offlineRecoveryTrackedQuests: "\u8ffd\u8e2a\u4efb\u52a1\u8282\u70b9",
@@ -948,7 +954,7 @@
       offlineRecoveryDialogResultBranch: "\u7cbe\u786e LevelData / LevelScript \u5bf9\u8bdd\u5206\u652f",
       offlineRecoveryDialogStart: "\u914d\u7f6e\u7684\u8d77\u59cb\u5bf9\u8bdd",
       offlineRecoveryDialogResult: "result \u5206\u652f\u503c",
-      offlineRecoveryDialogBranchBoundary: "\u8fd9\u4e9b case \u662f\u4e92\u65a5\u7ed3\u679c\u3002\u6b64\u5904\u672a\u5e8f\u5217\u5316\u672c\u5730\u81ea\u5b9a\u4e49\u4e8b\u4ef6\u7684\u4ea7\u751f\u8005\uff0c\u4e5f\u6ca1\u6709 gm01m24 MissionRuntime \u4efb\u52a1\u6240\u6709\u8005\u3002",
+      offlineRecoveryDialogBranchBoundary: "\u8fd9\u4e9b case \u662f\u4e92\u65a5\u7ed3\u679c\u3002\u6b64\u5904\u672a\u5e8f\u5217\u5316\u672c\u5730\u81ea\u5b9a\u4e49\u4e8b\u4ef6\u7684\u4ea7\u751f\u8005\uff0c\u4e5f\u6ca1\u6709\u540d\u4e49 MissionRuntime \u4efb\u52a1\u6240\u6709\u8005\u3002",
       offlineRecoveryPostDialogAction: "\u5bf9\u8bdd\u540e\u672c\u5730\u52a8\u4f5c",
       offlineRecoveryTestStub: "\u539f\u59cb\u6d4b\u8bd5\u5f39\u7a97\u5360\u4f4d\uff1b\u65e0 RichContent \u5185\u5bb9",
       offlineRecoveryCrossMissionTracking: "\u8de8\u4efb\u52a1 SNS \u8ffd\u8e2a\uff08\u4ec5\u5bfc\u822a\uff09",
@@ -2689,6 +2695,9 @@
       const branchGroups = Array.isArray(row.dialogTreeBranchGroups)
         ? row.dialogTreeBranchGroups
         : [];
+      const terminalOptionGroups = Array.isArray(row.dialogTreeTerminalOptionRoutes)
+        ? row.dialogTreeTerminalOptionRoutes
+        : [];
       const dialogTreeRoutesRecovered = String(
         row.dialogTreeRouteStatus || "",
       ).startsWith("authored_");
@@ -2703,6 +2712,9 @@
         : "";
       const internalBranches = branchGroups.length
         ? `<div class="mp-order-dialog-branches"><strong>${esc(t("offlineRecoveryDialogTreeBranches"))}</strong>${branchGroups.map((group) => `<details open><summary><code>#${esc(group.optionGroup ?? "?")}</code> ${esc(t(group.routeKind === "authored_convergence" ? "offlineRecoveryAuthoredConvergence" : "offlineRecoveryAuthoredSplit"))}</summary>${(group.optionIds || []).map((optionId, index) => `<div><code>${esc(optionId)}</code><i>&rarr;</i><code>${esc((group.targetLineIds || [])[index] || "?")}</code></div>`).join("")}</details>`).join("")}</div>`
+        : "";
+      const terminalOptions = terminalOptionGroups.length
+        ? `<div class="mp-order-dialog-branches"><strong>${esc(t("offlineRecoveryTerminalOptions"))}</strong>${terminalOptionGroups.map((group) => `<details open><summary><code>#${esc(group.optionGroup ?? "?")}</code></summary>${(group.routes || []).map((route) => `<div><code>${esc(route.optionId || "?")}</code><i>&rarr;</i><span>${route.finishIdSerialized ? `${esc(t("offlineRecoveryFinishId"))} <code>${esc(route.finishId)}</code>` : esc(t("offlineRecoveryFinishIdAbsent"))}</span></div>`).join("")}</details>`).join("")}</div>`
         : "";
       const recoveredLineCount = Array.isArray(row.lineIds) ? row.lineIds.length : 0;
       const missionTracking = row.missionNpcProxyTracking;
@@ -2756,7 +2768,7 @@
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
