@@ -460,8 +460,13 @@
       offlineRecoveryInternalTimeline: "internal Timeline",
       offlineRecoveryLines: "lines",
       offlineRecoveryDefinedOptions: "Defined options (route unresolved)",
+      offlineRecoveryDefinedOptionsResolved: "Defined options",
       offlineRecoveryTableOnlyRegistration: "DialogId table-only registration",
       offlineRecoveryDialogTreeAbsent: "DialogTree asset absent",
+      offlineRecoveryDialogTreeExact: "exact DialogTree asset",
+      offlineRecoveryDialogTreeBranches: "Internal DialogTree branches",
+      offlineRecoveryAuthoredSplit: "authored split",
+      offlineRecoveryAuthoredConvergence: "authored convergence",
       offlineRecoveryMissingAudio: "audio ids absent",
       offlineMissionShell: "Story-only recovery shell",
       offlineMissionShellHint: "No MissionRuntimeAsset exists in the current export. This page exposes exact table definitions and current-build negative carrier evidence only; it has no quest, ownership, playback, handshake, or order edge.",
@@ -899,8 +904,13 @@
       offlineRecoveryInternalTimeline: "\u5185\u90e8 Timeline",
       offlineRecoveryLines: "\u884c",
       offlineRecoveryDefinedOptions: "\u5df2\u5b9a\u4e49\u9009\u9879\uff08\u8def\u7531\u672a\u89e3\u6790\uff09",
+      offlineRecoveryDefinedOptionsResolved: "\u5df2\u5b9a\u4e49\u9009\u9879",
       offlineRecoveryTableOnlyRegistration: "\u4ec5 DialogId \u8868\u6ce8\u518c",
       offlineRecoveryDialogTreeAbsent: "\u7f3a\u5c11 DialogTree \u8d44\u4ea7",
+      offlineRecoveryDialogTreeExact: "\u7cbe\u786e DialogTree \u8d44\u4ea7",
+      offlineRecoveryDialogTreeBranches: "DialogTree \u5185\u90e8\u5206\u652f",
+      offlineRecoveryAuthoredSplit: "\u539f\u751f\u5206\u6d41",
+      offlineRecoveryAuthoredConvergence: "\u539f\u751f\u5408\u6d41",
       offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
       offlineMissionShell: "\u4ec5\u5267\u60c5\u6062\u590d\u7684\u4efb\u52a1\u5916\u58f3",
       offlineMissionShellHint: "\u5f53\u524d\u5bfc\u51fa\u4e2d\u6ca1\u6709 MissionRuntimeAsset\u3002\u672c\u9875\u4ec5\u5c55\u793a\u7cbe\u786e\u8868\u5b9a\u4e49\u548c\u5f53\u524d\u7248\u672c\u7684\u8f7d\u4f53\u8d1f\u8bc1\u636e\uff1b\u4e0d\u4ea7\u751f\u4efb\u52a1\u8282\u70b9\u3001\u5f52\u5c5e\u3001\u64ad\u653e\u3001\u63e1\u624b\u6216\u987a\u5e8f\u8fb9\u3002",
@@ -2606,8 +2616,17 @@
         ? `<p><code>ReadingPopUpTable/${esc(row.readingPopupRowId)}</code><code>RichContentTable/${esc(row.key)}</code></p>`
         : "";
       const optionIds = Array.isArray(row.optionIds) ? row.optionIds : [];
+      const branchGroups = Array.isArray(row.dialogTreeBranchGroups)
+        ? row.dialogTreeBranchGroups
+        : [];
+      const dialogTreeRoutesRecovered = String(
+        row.dialogTreeRouteStatus || "",
+      ).startsWith("authored_");
       const options = optionIds.length
-        ? `<p><strong>${esc(t("offlineRecoveryDefinedOptions"))}</strong>${optionIds.map((optionId) => `<code>${esc(optionId)}</code>`).join(" ")}</p>`
+        ? `<p><strong>${esc(t(dialogTreeRoutesRecovered ? "offlineRecoveryDefinedOptionsResolved" : "offlineRecoveryDefinedOptions"))}</strong>${optionIds.map((optionId) => `<code>${esc(optionId)}</code>`).join(" ")}</p>`
+        : "";
+      const internalBranches = branchGroups.length
+        ? `<div class="mp-order-dialog-branches"><strong>${esc(t("offlineRecoveryDialogTreeBranches"))}</strong>${branchGroups.map((group) => `<details open><summary><code>#${esc(group.optionGroup ?? "?")}</code> ${esc(t(group.routeKind === "authored_convergence" ? "offlineRecoveryAuthoredConvergence" : "offlineRecoveryAuthoredSplit"))}</summary>${(group.optionIds || []).map((optionId, index) => `<div><code>${esc(optionId)}</code><i>&rarr;</i><code>${esc((group.targetLineIds || [])[index] || "?")}</code></div>`).join("")}</details>`).join("")}</div>`
         : "";
       const recoveredLineCount = Array.isArray(row.lineIds) ? row.lineIds.length : 0;
       const definitionFacts = [
@@ -2616,6 +2635,9 @@
           : "",
         row.dialogTreeAssetStatus === "absent"
           ? t("offlineRecoveryDialogTreeAbsent")
+          : "",
+        row.dialogTreeAssetStatus === "present_exact_definition"
+          ? t("offlineRecoveryDialogTreeExact")
           : "",
         recoveredLineCount
           ? `${recoveredLineCount.toLocaleString()} ${t("offlineRecoveryLines")}`
@@ -2627,7 +2649,7 @@
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${options}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${options}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");

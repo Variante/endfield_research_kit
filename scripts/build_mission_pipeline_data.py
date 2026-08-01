@@ -198,7 +198,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v85"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v86"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3137,6 +3137,10 @@ def publish_offline_story_recovery(
             (
                 "dialog_tree_prime_reachable_story_playback_dependency",
                 "closed_exact_parent_dialog_dependency_no_relative_order",
+            ),
+            (
+                "mission_accept_dialog",
+                "closed_exact_mission_accept_dialog_no_relative_order",
             ),
         }
         for row in mission.get(

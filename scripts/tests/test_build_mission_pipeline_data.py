@@ -18,7 +18,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v85",
+            "sourceStoryGapQueue.v86",
         )
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
@@ -45,6 +45,14 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                                 "closed_exact_mission_tracking_context_no_relative_order",
                             "activationBoundary": "tracking is not playback",
                             "orderBoundary": "tracking does not order files",
+                        }, {
+                            "sceneKey": "dlg_testm1_accept",
+                            "missionId": "testm1",
+                            "relation": "mission_accept_dialog",
+                            "recoveryStatus":
+                                "closed_exact_mission_accept_dialog_no_relative_order",
+                            "activationBoundary": "mission accept lifecycle",
+                            "orderBoundary": "accept does not order files",
                         }],
                         "deferredOfflineExhaustedIsolatedScenes": [{
                             "sceneKey": "dlg_testm1_1",
@@ -95,7 +103,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "sns_testm1_1": {
                     "attachmentStatus": "connected",
                     "routes": [{"relation": "objective_tracking_story_reference"}],
-                }
+                },
+                "dlg_testm1_accept": {
+                    "attachmentStatus": "connected",
+                    "routes": [{"relation": "mission_accept_dialog"}],
+                },
             }
 
             result = pipeline.publish_offline_story_recovery(
@@ -105,7 +117,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
-        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 1)
+        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 2)
         self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 2)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
@@ -122,6 +134,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(
             runtime_recovery["questId"],
             "testm1_q#1",
+        )
+        self.assertEqual(
+            manifest["dlg_testm1_accept"]["runtimeContextRecovery"][
+                "recoveryStatus"
+            ],
+            "closed_exact_mission_accept_dialog_no_relative_order",
         )
         overlay = result["storyTriggerManifestOverlay"]["text_testm1_1"]
         self.assertEqual(overlay["routes"], [])

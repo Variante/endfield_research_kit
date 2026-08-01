@@ -126,6 +126,21 @@ zero-edge Story-only recovery shell (also used for `e5m4` and `e5m5`) instead
 of hiding the attachments in a global overlay. This lowers major actionable
 core-isolated rows from 213 to 200 without creating ownership or order edges.
 
+The 12-file actionable `gm01m22` frontier is now fully source-bounded, reducing
+major-mission actionable core-isolated rows to 179. Exact MissionRuntime meta
+attaches `dlg_gm01m22_1` to the mission-accept interaction at
+`jite_map01_005`; this proves mission ownership and accept-phase placement, not
+a relative file edge. The registered parent `dlg_gm01m22_hapo` has exact
+prime-reachable typed carriers for `dlg_gm01m22_6` and `_8`, while quest 27
+observes completion of the parent; the parent activator remains unknown.
+Original DialogTree connections recover `_6` option group 3 as a three-way
+split, `_8` group 6 as a two-option convergence on line `_019`, and `_8` group
+9 as a three-way split. Seven other dialogs/radios, `sns_gm01m22_2`, and
+`text_gm01m22_5` remain exact current-build definitions without a recovered
+activator; exact UTF-8/UTF-16 root tokens are absent from the current
+GameAssembly. Mission Pipeline displays all eleven definition boundaries,
+the internal routes, the accept attachment, and both parent-carrier contexts.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -153,8 +168,8 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should continue the same binary-first audit with the highest-ranked
-major-mission frontier (`gm01m22`, 12 actionable core-isolated files), then the
-five character-mission quest-attachment gaps. Reopen a
+real major-mission frontier (`gm02m3`, 10 actionable core-isolated files), then
+the five character-mission quest-attachment gaps. Reopen a
 deferred row only when a new typed producer/consumer or changed source hash
 supplies an ownership or order edge.
 
