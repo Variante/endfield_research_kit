@@ -7352,12 +7352,15 @@ def _looks_like_npc_patrol_data_start(data: bytes, offset: int) -> bool:
     try:
         move_style = struct.unpack_from("<i", data, offset + 1)[0]
         born_speed = struct.unpack_from("<f", data, offset + 5)[0]
-        lead_name_length = struct.unpack_from("<i", data, offset + 12)[0]
-        loop_type = struct.unpack_from("<i", data, offset + 16)[0]
-        patrol_id = struct.unpack_from("<i", data, offset + 20)[0]
-        point_count = struct.unpack_from("<i", data, offset + 24)[0]
     except struct.error:
         return False
+    lead_name = _read_leveldata_memorypack_string(data, offset + 12)
+    if lead_name is None:
+        return False
+    _lead_config_name, cursor = lead_name
+    if cursor + 12 > len(data):
+        return False
+    loop_type, patrol_id, point_count = struct.unpack_from("<iii", data, cursor)
     return bool(
         -1 <= move_style <= 64
         and math.isfinite(born_speed)
@@ -7365,11 +7368,74 @@ def _looks_like_npc_patrol_data_start(data: bytes, offset: int) -> bool:
         and data[offset + 9] in (0, 1)
         and data[offset + 10] in (0, 1)
         and data[offset + 11] in (0, 1)
-        and lead_name_length == 0
         and -1 <= loop_type <= 64
         and patrol_id > 0
         and 0 <= point_count <= 10_000
     )
+
+
+def _parse_leveldata_patrol_sub_action(
+    data: bytes,
+    offset: int,
+) -> dict | None:
+    """Decode the unambiguous tail of one current PatrolSubAction/26 row.
+
+    The installed ``Deserialize`` method (token ``0x06004bae``, current RVA
+    ``0x3467210``) proves the member count and write sequence.  Some exported
+    rows nevertheless differ in the widths used inside the 44-byte prefix
+    before ``radioId``.  Preserve that prefix as opaque serialized evidence;
+    the framed string and every later member have one exact physical layout.
+    Nested sub-action data must be null, keeping record boundaries fail-closed.
+    """
+    if offset < 0 or offset + 53 > len(data) or data[offset] != 0x1A:
+        return None
+    radio_decoded = _read_leveldata_memorypack_string(data, offset + 49)
+    if radio_decoded is None:
+        return None
+    radio_id, cursor = radio_decoded
+    if cursor + 27 > len(data):
+        return None
+    radio_wait_time, radius = struct.unpack_from("<ff", data, cursor)
+    repeat_anim, root_motion = data[cursor + 8 : cursor + 10]
+    rotation_offset, rotation_y = struct.unpack_from("<ff", data, cursor + 10)
+    snap_to_ground = struct.unpack_from("<i", data, cursor + 18)[0]
+    sub_action_marker = data[cursor + 22]
+    action_type = struct.unpack_from("<i", data, cursor + 23)[0]
+    wait_time = struct.unpack_from("<f", data, cursor + 27)[0]
+    record_end = cursor + 31
+    if (
+        not all(math.isfinite(value) for value in (
+            radio_wait_time,
+            radius,
+            rotation_offset,
+            rotation_y,
+            wait_time,
+        ))
+        or repeat_anim not in (0, 1)
+        or root_motion not in (0, 1)
+        or sub_action_marker != 0xFF
+        or not 0 <= action_type <= 64
+    ):
+        return None
+    return {
+        "recordOffset": offset,
+        "recordEndOffset": record_end,
+        "serializedMemberCount": 26,
+        "opaquePrefixOffset": offset + 5,
+        "opaquePrefixLength": 44,
+        "radioId": radio_id or "",
+        "radioWaitTime": radio_wait_time,
+        "radius": radius,
+        "repeatAnim": bool(repeat_anim),
+        "rootMotion": bool(root_motion),
+        "rotationOffset": rotation_offset,
+        "rotationY": rotation_y,
+        "snapToGround": snap_to_ground,
+        "subActionDataStatus": "null",
+        "type": action_type,
+        "waitTime": wait_time,
+        "payloadLayout": "patrol-sub-action-26-opaque-prefix-44-exact-tail",
+    }
 
 
 def parse_leveldata_npc_patrol_data_entry(
@@ -7380,11 +7446,9 @@ def parse_leveldata_npc_patrol_data_entry(
 ) -> dict | None:
     """Parse one current ``NpcPatrolData/9`` row and its typed points.
 
-    The six Story-facing patrol rows use the current fixed-null-string shape
-    of the 26-member patrol-point action object.  Variable-string action rows
-    are intentionally unsupported here; callers fail closed rather than
-    guessing their length.  Every accepted point, action, gait, and position
-    is consumed before the returned end offset.
+    Every accepted point, variable-string action, gait, and position is
+    consumed before the returned end offset. Nested event-pair and polymorphic
+    sub-action payloads remain deliberately unsupported.
     """
     if not _looks_like_npc_patrol_data_start(data, offset):
         return None
@@ -7426,21 +7490,15 @@ def parse_leveldata_npc_patrol_data_entry(
             return None
         action_count, cursor = actions_decoded
         action_offsets: list[int] = []
+        actions: list[dict] = []
         for _ in range(max(0, action_count)):
             action_offset = cursor
-            if cursor + 84 > len(data):
-                return None
-            action = data[cursor : cursor + 84]
-            if (
-                action[0] != 0x1A
-                or action[1:5] != b"\x00\x00\x00\x00"
-                or action[27:31] != b"\xff\xff\xff\xff"
-                or action[62] not in (0, 1)
-                or action[75] != 0xFF
-            ):
+            action = _parse_leveldata_patrol_sub_action(data, action_offset)
+            if action is None:
                 return None
             action_offsets.append(action_offset)
-            cursor += 84
+            actions.append(action)
+            cursor = int(action["recordEndOffset"])
         gait_decoded = _read_leveldata_i32(data, cursor)
         if gait_decoded is None:
             return None
@@ -7459,6 +7517,7 @@ def parse_leveldata_npc_patrol_data_entry(
             "actionCount": max(0, action_count),
             "actionRecordOffsets": action_offsets,
             "actionSerializedMemberCount": 26 if action_offsets else None,
+            "actions": actions,
             "enterGait": enter_gait,
             "position": {
                 "x": position[0],
@@ -7481,9 +7540,157 @@ def parse_leveldata_npc_patrol_data_entry(
         "leadConfigSoName": lead_config_name,
         "loopType": loop_type,
         "payloadShape": (
-            "npc-patrol-data-9-points-3-fixed-action-26-exact-consume"
+            "npc-patrol-data-9-points-3-action-26-exact-consume"
         ),
     }
+
+
+def _leveldata_npc_patrol_header(data: bytes, offset: int) -> dict | None:
+    if not _looks_like_npc_patrol_data_start(data, offset):
+        return None
+    cursor = offset + 12
+    lead_decoded = _read_leveldata_memorypack_string(data, cursor)
+    if lead_decoded is None:
+        return None
+    lead_config_name, cursor = lead_decoded
+    if cursor + 12 > len(data):
+        return None
+    loop_type, patrol_id, point_count = struct.unpack_from("<iii", data, cursor)
+    return {
+        "recordOffset": offset,
+        "pointsOffset": cursor + 12,
+        "serializedMemberCount": 9,
+        "leadConfigSoName": lead_config_name,
+        "loopType": loop_type,
+        "patrolId": patrol_id,
+        "pointCount": point_count,
+    }
+
+
+def build_leveldata_npc_patrol_radio_story_contexts(
+    available_story_keys: set[str],
+    *,
+    leveldata_root: Path = LEVELDATA_DIR,
+) -> list[dict]:
+    """Recover exact radio-bearing actions inside typed NPC patrol records.
+
+    This is playback context only.  The patrol record does not serialize a
+    mission or quest id, so its location in a mission-named file is never used
+    as ownership or chronology evidence.
+    """
+    rows: list[dict] = []
+    if not leveldata_root.exists():
+        return rows
+    for path in sorted(leveldata_root.rglob("*.json")):
+        try:
+            data = read_bytes_cached(path)
+        except OSError:
+            continue
+        search_offset = 0
+        while True:
+            radio_offset = data.find(b"radio_", search_offset)
+            if radio_offset < 0:
+                break
+            search_offset = radio_offset + 1
+            action_offset = radio_offset - 53
+            action = _parse_leveldata_patrol_sub_action(data, action_offset)
+            if (
+                action is None
+                or action.get("radioId") not in available_story_keys
+                or action.get("type") != 9
+            ):
+                continue
+            window_start = max(0, action_offset - 65_536)
+            window_end = min(len(data), action["recordEndOffset"] + 65_536)
+            patrol_headers: list[dict] = []
+            candidate_offset = data.find(b"\x09", window_start, window_end)
+            while candidate_offset >= 0:
+                header = _leveldata_npc_patrol_header(data, candidate_offset)
+                if header is not None:
+                    patrol_headers.append(header)
+                candidate_offset = data.find(
+                    b"\x09",
+                    candidate_offset + 1,
+                    window_end,
+                )
+            previous = [
+                header for header in patrol_headers
+                if header["recordOffset"] <= action_offset
+            ]
+            following = [
+                header for header in patrol_headers
+                if header["recordOffset"] >= action["recordEndOffset"]
+            ]
+            if not previous or not following:
+                continue
+            patrol = max(previous, key=lambda row: row["recordOffset"])
+            next_patrol_offset = min(
+                row["recordOffset"] for row in following
+            )
+            if not (
+                patrol["pointsOffset"] <= action_offset
+                < action["recordEndOffset"] <= next_patrol_offset
+            ):
+                continue
+            point_index = None
+            point_action_index = None
+            envelope_status = (
+                "exact_typed_neighbor_boundaries_partial_point_decode"
+            )
+            parsed_patrol = parse_leveldata_npc_patrol_data_entry(
+                data,
+                patrol["recordOffset"],
+                expected_patrol_id=patrol["patrolId"],
+            )
+            if (
+                parsed_patrol is not None
+                and parsed_patrol["recordEndOffset"] == next_patrol_offset
+            ):
+                matches = [
+                    (point["pointIndex"], action_index)
+                    for point in parsed_patrol["points"]
+                    for action_index, parsed_action in enumerate(
+                        point["actions"]
+                    )
+                    if parsed_action["recordOffset"] == action_offset
+                ]
+                if len(matches) != 1:
+                    continue
+                point_index, point_action_index = matches[0]
+                envelope_status = "exact_full_patrol_record_consume"
+            rows.append({
+                **action,
+                **patrol,
+                "radioActionSerializedMemberCount": action[
+                    "serializedMemberCount"
+                ],
+                "radioActionRecordOffset": action["recordOffset"],
+                "radioActionRecordEndOffset": action["recordEndOffset"],
+                "nextPatrolRecordOffset": next_patrol_offset,
+                "pointIndex": point_index,
+                "pointActionIndex": point_action_index,
+                "patrolEnvelopeStatus": envelope_status,
+                "levelId": path.parent.name,
+                "sourceFile": path.name,
+                "sourcePath": str(path),
+                "nativeMappingId": (
+                    "patrol-sub-action-26-deserialize-token-06004bae-"
+                    "rva-3467210-v1"
+                ),
+                "nativeConsumer": (
+                    "NewNpcAIPatrolController._PlayRadioSubAction "
+                    "(token 0x0600aed9); "
+                    "NpcAIPatrolController._ProcessRadioInRange "
+                    "(token 0x0600a961)"
+                ),
+            })
+    rows.sort(key=lambda row: (
+        str(row.get("radioId") or ""),
+        str(row.get("levelId") or ""),
+        str(row.get("sourceFile") or ""),
+        int(row.get("radioActionRecordOffset") or 0),
+    ))
+    return rows
 
 
 def _find_leveldata_npc_patrol_entries(

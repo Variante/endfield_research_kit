@@ -4036,6 +4036,12 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "hideBeforeMissionId",
                 "hideCompleteMissionId",
             ],
+            "missionStateRolesById": {
+                "e1m3": [
+                    "hideBeforeMissionId",
+                    "hideCompleteMissionId",
+                ],
+            },
             "nativeMappingId": "radio-zone-test",
             "nativeConsumer": "OnEnter -> GameAction.PlayRadio",
             "unionTag": 9,
@@ -4045,6 +4051,35 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "sourceFiles": ["level-data.json"],
             "recordOffset": 10,
             "recordEndOffset": 20,
+        }
+        patrol_radio = {
+            "key": "radio_e1m3_33",
+            "relation": "npc_patrol_action_radio_playback_context",
+            "direction": "context",
+            "phase": "npc_patrol_action",
+            "confidence": "native_exact_serialized_patrol_action",
+            "evidenceTier": "direct",
+            "storyOwnerMission": "e1m3",
+            "storyBinding": True,
+            "ownership": False,
+            "questActivation": False,
+            "questPlayback": False,
+            "questCompletion": False,
+            "patrolId": 20001,
+            "patrolPointIndex": None,
+            "patrolEnvelopeStatus":
+                "exact_typed_neighbor_boundaries_partial_point_decode",
+            "patrolActionType": 9,
+            "serializedMemberCount": 26,
+            "patrolSubActionDataStatus": "null",
+            "nativeMappingId": "patrol-action-test",
+            "nativeConsumer": "_PlayRadioSubAction",
+            "levelIds": ["map01_lv001"],
+            "sourceFiles": ["level-data.json"],
+            "patrolRecordOffset": 100,
+            "radioActionRecordOffset": 200,
+            "radioActionRecordEndOffset": 300,
+            "nextPatrolRecordOffset": 400,
         }
         tracked_world_entity = {
             "key": "radio_e1m3_32",
@@ -4086,15 +4121,16 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             {
                 "missionStoryConnections": [
                     trigger_zone,
+                    patrol_radio,
                     tracked_world_entity,
                 ],
             },
-            {"radio_e1m3_13", "radio_e1m3_32"},
+            {"radio_e1m3_13", "radio_e1m3_32", "radio_e1m3_33"},
             "e1m3",
         )
         self.assertEqual(
             [row["sceneKey"] for row in rows],
-            ["radio_e1m3_13", "radio_e1m3_32"],
+            ["radio_e1m3_13", "radio_e1m3_32", "radio_e1m3_33"],
         )
         invalid_tracked = dict(tracked_world_entity)
         invalid_tracked["questPlayback"] = True
@@ -4107,15 +4143,52 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                         {
                             "missionStoryConnections": [
                                 trigger_zone,
+                                patrol_radio,
                                 invalid_tracked,
                             ],
                         },
-                        {"radio_e1m3_13", "radio_e1m3_32"},
+                        {
+                            "radio_e1m3_13",
+                            "radio_e1m3_32",
+                            "radio_e1m3_33",
+                        },
                         "e1m3",
                     )
                 )
             ],
-            ["radio_e1m3_13"],
+            ["radio_e1m3_13", "radio_e1m3_33"],
+        )
+        gm_trigger = dict(trigger_zone)
+        gm_trigger.update({
+            "key": "radio_gm01m16_1",
+            "storyOwnerMission": "gm01m16",
+            "missionStateId": "gm01m16",
+            "missionStateGateRoles": ["hideAfterMissionId"],
+            "missionStateRolesById": {
+                "e2m5": ["hideBeforeMissionId"],
+                "gm01m16": ["hideAfterMissionId"],
+            },
+        })
+        self.assertEqual(
+            [
+                row["sceneKey"]
+                for row in gap_queue._closed_exact_native_context_isolated_scenes(
+                    {"missionStoryConnections": [gm_trigger]},
+                    {"radio_gm01m16_1"},
+                    "gm01m16",
+                )
+            ],
+            ["radio_gm01m16_1"],
+        )
+        invalid_patrol = dict(patrol_radio)
+        invalid_patrol["patrolActionType"] = 8
+        self.assertEqual(
+            gap_queue._closed_exact_native_context_isolated_scenes(
+                {"missionStoryConnections": [invalid_patrol]},
+                {"radio_e1m3_33"},
+                "e1m3",
+            ),
+            [],
         )
 
     def test_declared_e7m2_offline_frontier_is_exact(self) -> None:

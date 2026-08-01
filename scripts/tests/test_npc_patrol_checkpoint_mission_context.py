@@ -7,6 +7,7 @@ import unittest
 
 from scripts.story_builder.context import ROOT
 from scripts.story_builder.level_bindings import (
+    build_leveldata_npc_patrol_radio_story_contexts,
     build_levelscript_native_story_playback_index,
     build_npc_patrol_checkpoint_mission_contexts,
     parse_leveldata_npc_patrol_data_entry,
@@ -143,6 +144,55 @@ class NpcPatrolCheckpointMissionContextTests(unittest.TestCase):
             ["sm2l5m1_q#10", "sm2l5m1_q#9"],
             by_key["radio_sm2l5m1_32"]["candidateQuestIds"],
         )
+
+    def test_current_gm01m16_patrol_radios_keep_exact_binary_boundaries(self) -> None:
+        rows = build_leveldata_npc_patrol_radio_story_contexts({
+            "radio_gm01m16_5",
+            "radio_gm01m16_6",
+            "radio_gm01m16_15",
+        })
+        by_key = {row["radioId"]: row for row in rows}
+        self.assertEqual(
+            {
+                "radio_gm01m16_5",
+                "radio_gm01m16_6",
+                "radio_gm01m16_15",
+            },
+            set(by_key),
+        )
+        self.assertEqual(
+            (160002, 1, 0, 8742, 8841),
+            tuple(by_key["radio_gm01m16_5"][key] for key in (
+                "patrolId",
+                "pointIndex",
+                "pointActionIndex",
+                "radioActionRecordOffset",
+                "radioActionRecordEndOffset",
+            )),
+        )
+        self.assertEqual(
+            (160002, 14, 0, 9198, 9297),
+            tuple(by_key["radio_gm01m16_6"][key] for key in (
+                "patrolId",
+                "pointIndex",
+                "pointActionIndex",
+                "radioActionRecordOffset",
+                "radioActionRecordEndOffset",
+            )),
+        )
+        self.assertEqual(20001, by_key["radio_gm01m16_15"]["patrolId"])
+        self.assertEqual(
+            "exact_typed_neighbor_boundaries_partial_point_decode",
+            by_key["radio_gm01m16_15"]["patrolEnvelopeStatus"],
+        )
+        self.assertEqual(9, by_key["radio_gm01m16_15"]["type"])
+        self.assertEqual(
+            26,
+            by_key["radio_gm01m16_15"][
+                "radioActionSerializedMemberCount"
+            ],
+        )
+        self.assertEqual(6.0, by_key["radio_gm01m16_15"]["radius"])
 
 
 if __name__ == "__main__":
