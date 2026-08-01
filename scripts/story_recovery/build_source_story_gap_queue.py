@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v97"
+SCHEMA = "sourceStoryGapQueue.v98"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -190,12 +190,16 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v79"
+    "current-build-offline-story-carrier-exhaustion-v80"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )
 OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
+    "misc_dlg_gm01m3_1d5": "dlg_gm01m3_1d5",
+    "radio_gm01m3_3d2": "radio_gm01m3_3d2",
+    "radio_gm01m3_3d8": "radio_gm01m3_3d8",
+    "sns_gm01m3_1": "sns_gm01m3_1",
     "dlg_gm01m2_1": "dlg_gm01m2_1",
     "dlg_gm01m2_2": "dlg_gm01m2_2",
     "dlg_gm01m2_3": "dlg_gm01m2_3",
@@ -1590,6 +1594,20 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
     },
 }
 OFFLINE_EXHAUSTION_SNS_DEFINITIONS = {
+    "sns_gm01m3_1": {
+        "missionId": "gm01m3",
+        "chatId": "sns_npc_qinjc",
+        "contentIds": (-1, 1, 2, 3, 4),
+        "optionIdsByContentId": {},
+        "optionNextContentIds": {},
+        "optionDescriptionIds": {},
+        "relatedMissionId": "gm01m3",
+        "contentParamsByContentId": {
+            3: ("sns_image_001_mountaintop",),
+            4: ("gm01m3",),
+        },
+        "linkMissionIdsByContentId": {4: "gm01m3"},
+    },
     "sns_gm01m7_1": {
         "missionId": "gm01m7",
         "chatId": "sns_npc_fiona",
@@ -4559,6 +4577,28 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
     },
 }
 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.update({
+    "misc_dlg_gm01m3_1d5": {
+        "missionId": "gm01m3",
+        "registryKey": "dlg_gm01m3_1d5",
+        "definitionName": "dlg_gm01m3_1d5",
+        "linePrefix": "dlg_gm01m3_1d5",
+        "filename": "dlg_gm01m3_1d5_pB106A6457D8BF1BD.json",
+        "sha256":
+            "5ADAEB0133A3198723A5F4C1A502274702EE1B46C4D4A84C67C29A16976220AF",
+        "extraConfigFilename":
+            "dlg_gm01m3_1d5_extra_config_p268BC753F522C8BB.json",
+        "extraConfigSha256":
+            "721600663850AA7D05111E5B01D3E9059C931F9CE3F4DA29FA6A596D6D5B0AC7",
+        "lineIds": (
+            "dlg_gm01m3_1d5_001",
+            "dlg_gm01m3_1d5_002",
+        ),
+        "optionIds": (),
+        "missingAudioIds": (
+            "au_dlg_gm01m3_1d5_001",
+            "au_dlg_gm01m3_1d5_002",
+        ),
+    },
     "dlg_gm01m2_1": {
         "missionId": "gm01m2",
         "filename": "dlg_gm01m2_1_p6DE17CB17A678D5A.json",
@@ -6144,6 +6184,9 @@ OFFLINE_EXHAUSTION_GM01M17_RADIOS = frozenset({
     "radio_gm01m17_5",
     "radio_gm01m17_9",
 })
+OFFLINE_EXHAUSTION_GM01M3_RADIOS = frozenset({
+    "radio_gm01m3_3d8",
+})
 OFFLINE_EXHAUSTION_GM01M5_RADIOS = frozenset({
     "radio_gm01m5_1",
     "radio_gm01m5_2",
@@ -6178,6 +6221,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm01m7": OFFLINE_EXHAUSTION_GM01M7_RADIOS,
     "gm01m16": OFFLINE_EXHAUSTION_GM01M16_RADIOS,
     "gm01m17": OFFLINE_EXHAUSTION_GM01M17_RADIOS,
+    "gm01m3": OFFLINE_EXHAUSTION_GM01M3_RADIOS,
     "gm01m20": OFFLINE_EXHAUSTION_GM01M20_RADIOS,
     "gm01m22": OFFLINE_EXHAUSTION_GM01M22_RADIOS,
     "gm01m24": OFFLINE_EXHAUSTION_GM01M24_RADIOS,
@@ -6341,6 +6385,7 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm01m17_4": frozenset({"au_radio_gm01m17_4_001"}),
     "radio_gm01m17_5": frozenset({"au_radio_gm01m17_5_001"}),
     "radio_gm01m17_9": frozenset({"au_radio_gm01m17_9_001"}),
+    "radio_gm01m3_3d8": frozenset({"au_radio_gm01m3_3d8_001"}),
     "radio_gm01m20_1": frozenset({"au_radio_gm01m20_1_001"}),
     "radio_gm01m20_2": frozenset({"au_radio_gm01m20_2_001"}),
     "radio_gm01m20_3": frozenset({"au_radio_gm01m20_3_001"}),
@@ -10125,6 +10170,12 @@ def build_offline_exhaustion_index(
         content_params_by_content_id = (
             definition.get("contentParamsByContentId") or {}
         )
+        link_mission_ids_by_content_id = (
+            definition.get("linkMissionIdsByContentId") or {}
+        )
+        expected_related_mission_id = safe_key(
+            definition.get("relatedMissionId")
+        )
         pre_content_ids = definition.get("preContentIds") or {}
         next_content_ids = definition.get("nextContentIds") or {}
         expected_option_ids = set(definition["optionNextContentIds"])
@@ -10149,7 +10200,8 @@ def build_offline_exhaustion_index(
             or dialog.get("dialogType")
             != int(definition.get("dialogType", 1))
             or dialog.get("noticeType") != 1
-            or dialog.get("relatedMissionId") != ""
+            or dialog.get("relatedMissionId")
+            != expected_related_mission_id
             or dialog.get("topicId") != ""
             or dialog.get("skipToFirstOption") is not False
             or not isinstance(content, dict)
@@ -10171,6 +10223,7 @@ def build_offline_exhaustion_index(
                     "optionIds": sorted(expected_option_ids, key=natural_key),
                     "chatId": definition["chatId"],
                     "dialogType": int(definition.get("dialogType", 1)),
+                    "relatedMissionId": expected_related_mission_id,
                 },
                 "actual": {
                     "dialogType": type(dialog).__name__,
@@ -10190,6 +10243,10 @@ def build_offline_exhaustion_index(
                     ),
                     "dialogType": (
                         dialog.get("dialogType")
+                        if isinstance(dialog, dict) else None
+                    ),
+                    "relatedMissionId": (
+                        dialog.get("relatedMissionId")
                         if isinstance(dialog, dict) else None
                     ),
                 },
@@ -10219,7 +10276,8 @@ def build_offline_exhaustion_index(
                 or node.get("isEnd") is not (content_id == -1)
                 or tuple(node.get("dialogOptionIds") or ())
                 != tuple(option_ids_by_content_id.get(content_id) or ())
-                or node.get("linkMissionId") != ""
+                or node.get("linkMissionId")
+                != link_mission_ids_by_content_id.get(content_id, "")
                 or node.get("linkRewardId") != ""
                 or tuple(node.get("contentParam") or ())
                 != tuple(content_params_by_content_id.get(content_id) or ())
@@ -10251,6 +10309,11 @@ def build_offline_exhaustion_index(
                         "contentParam": list(
                             content_params_by_content_id.get(content_id) or ()
                         ),
+                        "linkMissionId":
+                            link_mission_ids_by_content_id.get(
+                                content_id,
+                                "",
+                            ),
                     },
                     "actual": node if isinstance(node, dict) else node,
                 })
@@ -10357,6 +10420,12 @@ def build_offline_exhaustion_index(
                 str(content_id): list(content_params)
                 for content_id, content_params
                 in content_params_by_content_id.items()
+            },
+            "relatedMissionId": expected_related_mission_id,
+            "linkMissionIdsByContentId": {
+                str(content_id): mission_id
+                for content_id, mission_id
+                in link_mission_ids_by_content_id.items()
             },
             "runtimeTracking": runtime_tracking_context,
         }
@@ -11969,7 +12038,9 @@ def build_offline_exhaustion_index(
             "optionIds": validation["optionIds"],
             "contentParamsByContentId":
                 validation["contentParamsByContentId"],
-            "relatedMissionId": "",
+            "relatedMissionId": validation["relatedMissionId"],
+            "linkMissionIdsByContentId":
+                validation["linkMissionIdsByContentId"],
             "runtimeTrackingContext": validation["runtimeTracking"],
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
@@ -11979,14 +12050,14 @@ def build_offline_exhaustion_index(
                     "the exact SNSDialogTable content graph defines this "
                     "Story file, and an exact SnsTrackingInfo in the named "
                     "runtime mission points to it for HUD/navigation; "
-                    "SnsTrackingInfo does not play SNS content, relatedMissionId "
-                    "is empty, and no original-data source assigns it to the "
+                    "SnsTrackingInfo does not play SNS content, and no "
+                    "original-data source assigns it to the "
                     "nominal mission or a branch arm"
                     if validation["runtimeTracking"]
                     else
                     "the exact SNSDialogTable content graph and "
                     "SNSDialogOptionTable routes define this current Story "
-                    "file; relatedMissionId is empty, and no exact "
+                    "file; no exact "
                     "MissionRuntime, LevelScript/LevelData, Lua, object-index, "
                     "or accepted native playback dispatch exposes its activator"
                 )
@@ -13071,6 +13142,162 @@ def _closed_exact_native_context_isolated_scenes(
             or safe_key(connection.get("storyOwnerMission")) != owner_mission
             or safe_key(connection.get("direction")) != "context"
         ):
+            continue
+        if relation == "authoritative_scope_leveldata_mission_context":
+            context_mission = safe_key(
+                connection.get("levelDataHostMissionId")
+            )
+            occurrences = [
+                row for row in connection.get("levelScriptOccurrences") or []
+                if isinstance(row, dict)
+            ]
+            exact_paths = []
+            occurrence_hosts_valid = bool(occurrences)
+            for occurrence in occurrences:
+                owners = [
+                    row for row in occurrence.get("nativeEventOwners") or []
+                    if isinstance(row, dict)
+                ]
+                hosts = [
+                    row for row in occurrence.get(
+                        "authoritativeScopeLevelDataHosts"
+                    ) or []
+                    if isinstance(row, dict)
+                ]
+                exact_paths.extend(owners)
+                if (
+                    safe_key(occurrence.get("actionName")) != "PlayRadio"
+                    or safe_key(occurrence.get("recordClass")) != "play_radio"
+                    or scene_key not in _string_list(
+                        occurrence.get("allStoryKeysInRecord")
+                    )
+                    or not owners
+                    or any(
+                        safe_key(owner.get("status"))
+                        != "exact_serialized_control_path"
+                        or safe_key(owner.get("headerName"))
+                        != "EntityEvent_OnInteractiveStateChanged"
+                        or not isinstance(owner.get("eventDetail"), dict)
+                        or owner.get("eventDetail", {}).get(
+                            "serializedMissionOrQuestId"
+                        ) is not False
+                        or owner.get("eventDetail", {}).get(
+                            "serverExchange"
+                        ) is not False
+                        or not any(
+                            isinstance(step, dict)
+                            and safe_key(step.get("actionName")) == "PlayRadio"
+                            and scene_key in _string_list(step.get("texts"))
+                            for step in owner.get("path") or []
+                        )
+                        for owner in owners
+                    )
+                    or len(hosts) != 1
+                    or hosts[0].get("status") != "unique"
+                    or _string_list(hosts[0].get("hostMissionIds"))
+                    != [context_mission]
+                    or safe_key(hosts[0].get("levelDataFile"))
+                    not in _string_list(connection.get("levelDataFiles"))
+                    or hosts[0].get("dictionaryEntryCount")
+                    not in (connection.get(
+                        "levelDataDictionaryEntryCounts"
+                    ) or [])
+                    or safe_key(hosts[0].get(
+                        "nativeSchema"
+                    )) != (
+                        "LevelData/43.member22:Dictionary<u64,"
+                        "LevelScriptBriefData/8>"
+                    )
+                ):
+                    occurrence_hosts_valid = False
+                    break
+            scope_references = [
+                row for row in connection.get(
+                    "authoritativeScopeReferences"
+                ) or []
+                if isinstance(row, dict)
+            ]
+            recognized_scope_kinds = {
+                "typed_mission_runtime_script_condition",
+                "typed_entity_tracking_registry_script",
+            }
+            if (
+                safe_key(connection.get("phase")) != "runtime_playback"
+                or safe_key(connection.get("confidence"))
+                != "native_exact_validated_leveldata_shell"
+                or safe_key(connection.get("evidenceTier"))
+                != "derived_exact_shell"
+                or not context_mission
+                or context_mission == owner_mission
+                or safe_key(connection.get("questTriggerStatus"))
+                != "sibling_script_shell_context_not_playback"
+                or safe_key(connection.get("executionSide")) != "client"
+                or safe_key(connection.get("networkRole"))
+                != "local_asset_shell_context"
+                or connection.get("serverExchange") is not False
+                or connection.get("occurrenceCount") != len(occurrences)
+                or connection.get("allOccurrenceCount") != len(occurrences)
+                or connection.get(
+                    "hasUnscopedOrOtherMissionOccurrences"
+                ) is not False
+                or _string_list(connection.get("nativeActions"))
+                != ["PlayRadio"]
+                or not occurrence_hosts_valid
+                or not exact_paths
+                or not _string_list(connection.get("levelIds"))
+                or not _string_list(connection.get("scriptIds"))
+                or not _string_list(connection.get("sourceFiles"))
+                or not _string_list(connection.get("levelDataFiles"))
+                or not _string_list(connection.get("anchorQuestIds"))
+                or any(
+                    not quest_id.startswith(f"{context_mission}_q#")
+                    for quest_id in _string_list(
+                        connection.get("anchorQuestIds")
+                    )
+                )
+                or not scope_references
+                or set(_string_list(
+                    connection.get("authoritativeScopeKinds")
+                )) != recognized_scope_kinds
+                or any(
+                    safe_key(reference.get("missionId"))
+                    != context_mission
+                    or safe_key(reference.get("scopeKind"))
+                    not in recognized_scope_kinds
+                    or not safe_key(reference.get("sourceFile"))
+                    for reference in scope_references
+                )
+            ):
+                continue
+            closed.append({
+                "sceneKey": scene_key,
+                "recoveryStatus":
+                    "closed_exact_cross_mission_leveldata_shell_playback_context_no_relative_order",
+                "relation": relation,
+                "nominalStoryMissionId": owner_mission,
+                "contextMissionId": context_mission,
+                "contextMissionMismatch": True,
+                "anchorQuestIds": _string_list(
+                    connection.get("anchorQuestIds")
+                ),
+                "levelIds": _string_list(connection.get("levelIds")),
+                "scriptIds": _string_list(connection.get("scriptIds")),
+                "sourceFiles": sorted(set(
+                    _string_list(connection.get("sourceFiles"))
+                    + _string_list(connection.get("levelDataFiles"))
+                ), key=natural_key),
+                "nativeEventPaths": exact_paths,
+                "activationBoundary": (
+                    "the exact local entity-property event plays this radio, "
+                    "while the validated LevelData dictionary scopes its "
+                    f"script as a sibling in the {context_mission} runtime shell"
+                ),
+                "orderBoundary": (
+                    "sibling containment and the shell's typed quest anchors "
+                    "do not transfer Story ownership, identify a quest "
+                    "trigger, or place this radio relative to other mission files"
+                ),
+            })
             continue
         if relation == "npc_proxy_segment_levelscript_mission_context":
             context_mission = (
@@ -14429,6 +14656,7 @@ def _closed_exact_runtime_config_isolated_scenes(
     flow: dict[str, Any],
     isolated_scene_keys: set[str],
     owner_mission: str,
+    offline_exhaustion_index: dict[str, dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Close exact executable Story configs that encode no chronology.
 
@@ -14451,6 +14679,64 @@ def _closed_exact_runtime_config_isolated_scenes(
     establishes activation timing or relative Story order.
     """
     closed: list[dict[str, Any]] = []
+    offline_exhaustion_index = offline_exhaustion_index or {}
+    for row in _flow_story_connections(flow):
+        scene_key = safe_key(row.get("key"))
+        definition = offline_exhaustion_index.get(scene_key)
+        content_ids = _string_list(row.get("snsContentIds"))
+        if (
+            scene_key not in isolated_scene_keys
+            or safe_key(row.get("relation")) != "sns_authored_mission_link"
+            or safe_key(row.get("direction")) != "context"
+            or safe_key(row.get("phase")) != "mission_link"
+            or safe_key(row.get("confidence")) != "authored_direct"
+            or safe_key(row.get("storyOwnerMission")) != owner_mission
+            or safe_key(row.get("snsDialogId")) != scene_key
+            or safe_key(row.get("snsMissionId")) != owner_mission
+            or row.get("snsContentType") != 12
+            or not content_ids
+            or not isinstance(definition, dict)
+            or safe_key(definition.get("missionId")) != owner_mission
+            or safe_key(definition.get("relatedMissionId")) != owner_mission
+            or definition.get("definitionTables") != [
+                "SNSDialogTable",
+                "SNSDialogOptionTable",
+            ]
+            or any(
+                safe_key(
+                    (definition.get("linkMissionIdsByContentId") or {}).get(
+                        content_id
+                    )
+                ) != owner_mission
+                or owner_mission not in (
+                    definition.get("contentParamsByContentId") or {}
+                ).get(content_id, [])
+                for content_id in content_ids
+            )
+        ):
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_authored_sns_mission_link_no_relative_order",
+            "relation": "sns_authored_mission_link",
+            "missionId": owner_mission,
+            "snsContentIds": content_ids,
+            "snsContentType": 12,
+            "sourceFiles": [
+                "export_full/structured/StreamingAssets/Table/"
+                "SNSDialogTable.json",
+            ],
+            "activationBoundary": (
+                "the exact SNSDialogTable relatedMissionId and terminal "
+                "mission-link content node attach this SNS file to the mission"
+            ),
+            "orderBoundary": (
+                "the authored mission link is context, not a playback "
+                "activator; the internal SNS message chain orders only this "
+                "file's messages and does not place it among mission scenes"
+            ),
+        })
     for quest in flow.get("quests") or []:
         if not isinstance(quest, dict):
             continue
@@ -16116,6 +16402,7 @@ def build_gap_row(
             cross_owner_flow,
             set(isolated_scene_keys),
             safe_key(partial_row.get("mission")),
+            offline_exhaustion_index,
         )
     )
     closed_exact_runtime_config_isolated_keys = {
@@ -16824,6 +17111,17 @@ def build_gap_report(
                     connection,
                     owner_mission,
                     context_mission,
+                ):
+                    continue
+            elif relation == "authoritative_scope_leveldata_mission_context":
+                if (
+                    safe_key(connection.get("levelDataHostMissionId"))
+                    != context_mission
+                    or safe_key(connection.get("direction")) != "context"
+                    or safe_key(connection.get("confidence"))
+                    != "native_exact_validated_leveldata_shell"
+                    or safe_key(connection.get("evidenceTier"))
+                    != "derived_exact_shell"
                 ):
                     continue
             elif relation not in {
