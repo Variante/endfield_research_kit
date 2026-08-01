@@ -1385,6 +1385,113 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             0,
         )
 
+    def test_unique_mission_tracked_proxy_bundle_closes_without_order(
+        self,
+    ) -> None:
+        declaration = gap_queue.UNIQUE_MISSION_TRACKED_PROXY_CONTEXTS[
+            "gm01m14"
+        ]
+        story_key = "dlg_gm01m14_2"
+        connection = {
+            "key": story_key,
+            "relation":
+                "unique_mission_tracked_npc_proxy_dialog_context",
+            "direction": "context",
+            "phase": "server_selected_proxy_state",
+            "confidence": "native_exact_mission_context",
+            "evidenceTier": "derived_exact_mission",
+            "storyOwnerMission": "gm01m14",
+            "npcProxyId": declaration["npcProxyId"],
+            "levelIds": [declaration["levelId"]],
+            "candidateQuestIds": list(declaration["questIds"]),
+            "activeRowIndex": 2,
+            "configuredDialogIds": list(declaration["dialogIds"]),
+            "questTriggerStatus": (
+                "shared_tracked_proxy_state_context_not_quest_selection_"
+                "or_playback"
+            ),
+            "selectionOrderStatus": (
+                "one_based_active_row_selection_only_no_cross_row_chronology"
+            ),
+            "storyBinding": True,
+            "ownership": False,
+            "questActivation": False,
+            "questPlayback": False,
+            "questCompletion": False,
+            "serverExchange": True,
+            "clientRequest": False,
+            "expectedClientReply": False,
+            "sourceFiles": list(declaration["sourceHashes"]),
+            "npcProxyTableRow": {
+                "proxyId": declaration["npcProxyId"],
+                "levelId": declaration["levelId"],
+                "subDataParentId": declaration["subDataParentId"],
+            },
+            "npcProxyExRows": [
+                {"missionId": "", "dialogId": dialog_id}
+                for dialog_id in declaration["exDialogIds"]
+            ],
+            "nativeMappingId": "npc-proxy-dialog-selection-native-v1",
+            "gameAssemblySha256": (
+                "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2"
+                "B983FB9D45677D80FFCE"
+            ),
+        }
+        partial = partial_mission(
+            "gm01m14",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+
+        row = gap_queue.build_gap_row(
+            partial,
+            mission_payload(connections=[connection]),
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        closure = row["closedExactRuntimeConfigIsolatedScenes"][0]
+        self.assertEqual(
+            closure["relation"],
+            "unique_mission_tracked_npc_proxy_dialog_context",
+        )
+        self.assertEqual(closure["candidateQuestIds"], list(
+            declaration["questIds"]
+        ))
+        self.assertIn("do not order", closure["orderBoundary"])
+
+        invalid = dict(connection)
+        invalid["activeRowIndex"] = 3
+        reopened = gap_queue.build_gap_row(
+            partial,
+            mission_payload(connections=[invalid]),
+            mission_bundle_exists=True,
+        )
+        self.assertEqual(
+            reopened["metrics"]["actionableCoreIsolatedScenes"],
+            1,
+        )
+
+    def test_gm01m14_unconsumed_definitions_are_exact(self) -> None:
+        dialog = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+            "dlg_gm01m14_7"
+        ]
+        self.assertEqual(dialog["dialogIdRegistrationStatus"], "absent")
+        self.assertEqual(len(dialog["lineIds"]), 11)
+        self.assertEqual(len(dialog["missingAudioIds"]), 11)
+        self.assertEqual(len(dialog["optionRows"]), 5)
+
+        text_4 = gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+            "text_gm01m14_4"
+        ]
+        text_5 = gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+            "text_gm01m14_5"
+        ]
+        self.assertEqual(text_4["readingPopupRowId"], "text_gm01m14_4")
+        self.assertEqual(text_4["contentTextIds"], (7825423282124136370,))
+        self.assertEqual(text_5["readingPopupRowId"], "text_gm01m14_5")
+        self.assertEqual(len(text_5["contentTextIds"]), 7)
+
     def test_exact_levelscript_interactive_config_is_closed_without_order(
         self,
     ) -> None:

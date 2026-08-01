@@ -4104,7 +4104,23 @@ def build_story_trigger_route(
         "sourceFiles": source_files,
         "serverMessage": str(row.get("serverMessage") or ""),
         "serverFields": _unique_route_strings(row.get("serverFields")),
+        "upstreamServerStateSources": _unique_route_strings(
+            row.get("upstreamServerStateSources")
+        ),
         "serverExchange": row.get("serverExchange"),
+        "clientRequest": row.get("clientRequest"),
+        "expectedClientReply": row.get("expectedClientReply"),
+        "npcProxyId": str(row.get("npcProxyId") or ""),
+        "candidateQuestIds": _unique_route_strings(
+            row.get("candidateQuestIds")
+        ),
+        "activeRowIndex": row.get("activeRowIndex"),
+        "configuredDialogIds": _unique_route_strings(
+            row.get("configuredDialogIds")
+        ),
+        "selectionOrderStatus": str(
+            row.get("selectionOrderStatus") or ""
+        ),
         "questTriggerStatus": str(row.get("questTriggerStatus") or ""),
         "steps": steps,
     }

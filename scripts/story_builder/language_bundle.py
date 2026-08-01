@@ -658,6 +658,121 @@ def build_npc_proxy_tracking_dialog_navigation_contexts(
     return out
 
 
+def build_unique_mission_tracked_npc_proxy_dialog_contexts(
+    npc_tracking_consumers: dict[str, list[dict]],
+    npc_proxy_rows: dict,
+    npc_proxy_ex: dict,
+    dialog_id_registry: dict[str, dict],
+    allowed_proxy_missions: dict[str, str] | None = None,
+) -> list[dict]:
+    """Recover a mission shell for a shared missionless proxy dialog set.
+
+    The runtime's one-based ``activeCondIndex`` selects one NpcProxyEx row,
+    but neither the packet nor the row carries a quest id or chronology.  A
+    mission shell is therefore accepted only when every typed tracking
+    consumer for the exact proxy belongs to one mission and one level, the
+    NpcProxyTable identity agrees with that level, every ex row is missionless,
+    and every configured dialog is a current MemoryPack-registered root.
+
+    Multiple tracking quests are retained as observers.  They prove that the
+    mission uses the proxy, not which quest selects or plays any dialog.
+    """
+    ex_rows_by_proxy = (npc_proxy_ex or {}).get("data") or {}
+    out: list[dict] = []
+    for proxy_id, raw_consumers in sorted((npc_tracking_consumers or {}).items()):
+        if (
+            allowed_proxy_missions is not None
+            and proxy_id not in allowed_proxy_missions
+        ):
+            continue
+        consumers = [row for row in raw_consumers if isinstance(row, dict)]
+        if not consumers or len(consumers) != len(raw_consumers):
+            continue
+        mission_ids = {
+            str(row.get("missionId") or "").strip() for row in consumers
+        } - {""}
+        scene_ids = {
+            str(row.get("scene") or "").strip() for row in consumers
+        } - {""}
+        quest_ids = sorted({
+            str(row.get("questId") or "").strip() for row in consumers
+            if str(row.get("questId") or "").strip()
+        }, key=natural_key)
+        proxy_row = (npc_proxy_rows or {}).get(proxy_id)
+        ex_rows = (ex_rows_by_proxy or {}).get(proxy_id)
+        if (
+            len(mission_ids) != 1
+            or len(scene_ids) != 1
+            or len(quest_ids) != len(consumers)
+            or not isinstance(proxy_row, dict)
+            or str(proxy_row.get("proxyId") or "").strip() != proxy_id
+            or str(proxy_row.get("levelId") or "").strip()
+            != next(iter(scene_ids))
+            or not isinstance(ex_rows, list)
+            or not ex_rows
+            or not all(isinstance(row, dict) for row in ex_rows)
+            or any(str(row.get("missionId") or "").strip() for row in ex_rows)
+        ):
+            continue
+        if (
+            allowed_proxy_missions is not None
+            and next(iter(mission_ids))
+            != allowed_proxy_missions[proxy_id]
+        ):
+            continue
+        dialog_selections = [
+            {
+                "activeRowIndex": index,
+                "dialogId": str(row.get("dialogId") or "").strip(),
+            }
+            for index, row in enumerate(ex_rows, start=1)
+            if str(row.get("dialogId") or "").strip()
+        ]
+        dialog_ids = [row["dialogId"] for row in dialog_selections]
+        if not dialog_ids or len(set(dialog_ids)) != len(dialog_ids):
+            continue
+        registrations: list[dict] = []
+        for dialog_id in dialog_ids:
+            registration = dialog_id_registry.get(dialog_id)
+            if (
+                not isinstance(registration, dict)
+                or registration.get("registered") is not True
+                or registration.get("memoryPackRecordKey") is not True
+                or "memorypack_record_key"
+                not in (registration.get("registrationEvidence") or [])
+            ):
+                registrations = []
+                break
+            registrations.append(registration)
+        if len(registrations) != len(dialog_ids):
+            continue
+        out.append({
+            "missionId": next(iter(mission_ids)),
+            "npcProxyId": proxy_id,
+            "levelId": next(iter(scene_ids)),
+            "questIds": quest_ids,
+            "dialogIds": dialog_ids,
+            "dialogSelections": dialog_selections,
+            "trackingConsumers": consumers,
+            "npcProxyTableRow": {
+                "proxyId": proxy_id,
+                "levelId": next(iter(scene_ids)),
+                "subDataParentId": proxy_row.get("subDataParentId"),
+            },
+            "npcProxyExRows": ex_rows,
+            "relation": "unique_mission_tracked_npc_proxy_dialog_context",
+            "storyBinding": True,
+            "ownership": False,
+            "questActivation": False,
+            "questPlayback": False,
+            "questCompletion": False,
+            "serverExchange": True,
+            "clientRequest": False,
+            "expectedClientReply": False,
+        })
+    return out
+
+
 def build_npc_proxy_lazy_destroy_dialog_contexts(
     npc_tracking_consumers: dict[str, list[dict]],
     npc_proxy_rows: dict,
@@ -16958,6 +17073,133 @@ def build_language_bundle(
                         ),
                         "sourceFile": mission_runtime_source,
                     })
+
+    shared_proxy_dialog_contexts = (
+        build_unique_mission_tracked_npc_proxy_dialog_contexts(
+            npc_tracking_consumers,
+            npc_proxy_rows,
+            npc_proxy_ex,
+            dialog_id_registry,
+            {
+                "sesidun04_map01_001": "gm01m14",
+            },
+        )
+    )
+    for context in shared_proxy_dialog_contexts:
+        target_mission = str(context.get("missionId") or "")
+        flow_payload = mission_flows_payload.get(target_mission)
+        if not isinstance(flow_payload, dict):
+            continue
+        for dialog_selection in context.get("dialogSelections") or []:
+            active_row_index = dialog_selection["activeRowIndex"]
+            story_key = dialog_selection["dialogId"]
+            connection = {
+                "key": story_key,
+                "kind": story_kind_by_key.get(story_key, "dialog"),
+                "relation": (
+                    "unique_mission_tracked_npc_proxy_dialog_context"
+                ),
+                "direction": "context",
+                "phase": "server_selected_proxy_state",
+                "confidence": "native_exact_mission_context",
+                "evidenceTier": "derived_exact_mission",
+                "source": (
+                    "all typed MissionRuntime NpcProxyTrackingInfo consumers "
+                    "for one exact same-level proxy agree on this mission + "
+                    "missionless NpcProxyEx dialogId + current DialogIdTable "
+                    "MemoryPack registration"
+                ),
+                "storyOwnerMission": (
+                    story_owner_by_key.get(story_key) or ""
+                ),
+                "npcProxyId": context.get("npcProxyId"),
+                "levelIds": [context.get("levelId")],
+                "candidateQuestIds": list(context.get("questIds") or []),
+                "activeRowIndex": active_row_index,
+                "configuredDialogIds": list(
+                    context.get("dialogIds") or []
+                ),
+                "questTriggerStatus": (
+                    "shared_tracked_proxy_state_context_not_quest_selection_"
+                    "or_playback"
+                ),
+                "selectionOrderStatus": (
+                    "one_based_active_row_selection_only_no_cross_row_"
+                    "chronology"
+                ),
+                "storyBinding": True,
+                "ownership": False,
+                "questActivation": False,
+                "questPlayback": False,
+                "questCompletion": False,
+                "possibleAuthoredRoute": True,
+                "executionSide": "client",
+                "networkRole": (
+                    "server_selected_proxy_state_then_local_interaction_"
+                    "dialog"
+                ),
+                "serverExchange": True,
+                "clientRequest": False,
+                "expectedClientReply": False,
+                "upstreamServerStateSources": [
+                    "SC_NPC_ENTER_MAP_RESYNC",
+                    "SC_NPC_ACTIVE_CHANGE_NTF",
+                ],
+                "serverFields": [
+                    "proxyNumId",
+                    "metaKvs",
+                    "activeCondIndex",
+                ],
+                "serverEvidenceStatus": (
+                    "the packet selects one proxy row by one-based index; it "
+                    "carries no missionId, questId, dialogId, or relative "
+                    "Story order"
+                ),
+                "sourceFiles": sorted({
+                    *[
+                        str(row.get("sourceFile") or "")
+                        for row in context.get("trackingConsumers") or []
+                        if isinstance(row, dict)
+                    ],
+                    repo_rel(NPC_PROXY_TABLE_PATH),
+                    repo_rel(NPC_PROXY_EX_PATH),
+                    repo_rel(
+                        ROOT
+                        / "export_full"
+                        / "recovered"
+                        / "dialog_id_table_index.json"
+                    ),
+                } - {""}),
+                "npcProxyTableRow": context.get("npcProxyTableRow"),
+                "npcProxyExRows": context.get("npcProxyExRows"),
+                "nativeConsumers": [{
+                    "method": (
+                        "NpcInteractComponent."
+                        "_TryGetNpcProxyInteractDialogId"
+                    ),
+                    "token": "0x06011381",
+                    "address": "0x183564080",
+                }, {
+                    "method": "NpcProxyDataSys.SyncAllActiveProxy",
+                    "address": "0x183480890",
+                }, {
+                    "method": "NpcProxyDataSys.OnProxyChange",
+                    "address": "0x18706550c",
+                }],
+                "nativeMappingId": (
+                    "npc-proxy-dialog-selection-native-v1"
+                ),
+                "gameAssemblySha256": (
+                    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2"
+                    "B983FB9D45677D80FFCE"
+                ),
+            }
+            flow_payload.setdefault(
+                "missionStoryConnections", []
+            ).append(connection)
+            preexisting_attached_story_keys_by_mission[
+                target_mission
+            ].add(story_key)
 
     npc_proxy_lazy_destroy_contexts = (
         build_npc_proxy_lazy_destroy_dialog_contexts(
