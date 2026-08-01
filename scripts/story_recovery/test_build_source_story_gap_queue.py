@@ -3541,6 +3541,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "radio_gm01m17_5": {"au_radio_gm01m17_5_001"},
                 "radio_gm01m17_9": {"au_radio_gm01m17_9_001"},
                 "radio_gm01m3_3d8": {"au_radio_gm01m3_3d8_001"},
+                "radio_gm01m4_1": {"au_radio_gm01m4_1_001"},
                 "radio_gm01m20_1": {"au_radio_gm01m20_1_001"},
                 "radio_gm01m20_2": {"au_radio_gm01m20_2_001"},
                 "radio_gm01m20_3": {"au_radio_gm01m20_3_001"},
@@ -3977,6 +3978,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m8_9",
                 "dlg_e11m8d5_1",
                 "misc_dlg_gm01m3_1d5",
+                "dlg_gm01m4_7",
+                "misc_dlg_gm01m4_3d5",
                 "dlg_gm01m13_2",
                 "dlg_gm01m13_3",
                 "dlg_gm01m2_1",
@@ -5008,6 +5011,114 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual([], topology["merges"])
         self.assertEqual([], topology["storyAssignments"])
         self.assertFalse(topology["orderEvidence"])
+
+    def test_gm01m4_dialog_radio_frontier_and_linear_topology_are_exact(
+        self,
+    ) -> None:
+        story_keys = {
+            "dlg_gm01m4_7",
+            "misc_dlg_gm01m4_3d5",
+            "radio_gm01m4_1",
+        }
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GM01M4_RADIOS,
+            {"radio_gm01m4_1"},
+        )
+        self.assertEqual(
+            story_keys,
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm01m4" in key
+            },
+        )
+
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual("active", status["status"])
+        self.assertTrue(story_keys <= set(index))
+
+        linear = index["dlg_gm01m4_7"]
+        self.assertEqual(
+            linear["missingAudioIds"],
+            ["au_dlg_gm01m4_7_001", "au_dlg_gm01m4_7_002"],
+        )
+        self.assertEqual([], linear["dialogTreeBranchGroups"])
+        self.assertEqual(
+            linear["npcProxyConsumers"],
+            [{
+                "proxyId": "luoke_map01_v1d0d0_gm01m4man",
+                "entryIndex": 3,
+                "dialogId": "dlg_gm01m4_7",
+                "missionId": "",
+                "relation": "npc_proxy_ex_dialog_consumer_without_mission_id",
+                "missionOwnership": False,
+                "orderEvidence": False,
+                "graphEffect": "none",
+            }],
+        )
+        self.assertEqual(
+            linear["missionNpcProxyTracking"]["questIds"],
+            ["gm01m4_q#2"],
+        )
+
+        branched = index["misc_dlg_gm01m4_3d5"]
+        self.assertEqual(
+            branched["missingAudioIds"],
+            [
+                f"au_dlg_gm01m4_3d5_{number:03d}"
+                for number in range(1, 7)
+            ],
+        )
+        self.assertEqual(
+            branched["npcProxyConsumers"][0]["entryIndex"],
+            1,
+        )
+        self.assertEqual(
+            branched["dialogTreeBranchGroups"],
+            [{
+                "optionGroup": 1,
+                "optionIds": [
+                    "option_dlg_gm01m4_3d5_1_001",
+                    "option_dlg_gm01m4_3d5_1_002",
+                ],
+                "targetLineIds": [
+                    "dlg_gm01m4_3d5_002",
+                    "dlg_gm01m4_3d5_004",
+                ],
+                "routeKind": "authored_split",
+            }],
+        )
+        self.assertEqual(
+            index["radio_gm01m4_1"]["missingAudioIds"],
+            ["au_radio_gm01m4_1_001"],
+        )
+
+        topology = linear["missionQuestTopologyContext"]
+        self.assertEqual(
+            ["gm01m4_q#1", "gm01m4_q#2"],
+            topology["mainPathQuestIds"],
+        )
+        self.assertEqual([], topology["forks"])
+        self.assertEqual([], topology["merges"])
+        self.assertEqual([], topology["storyAssignments"])
+        self.assertFalse(topology["orderEvidence"])
+        for story_key in story_keys:
+            self.assertEqual(
+                index[story_key]["recoveryStatus"],
+                "deferred_current_build_offline_surface_exhausted",
+            )
+            self.assertEqual(index[story_key]["graphEffect"], "none")
 
     def test_declared_gm01m22_binary_bounded_frontier_is_exact(self) -> None:
         self.assertEqual(

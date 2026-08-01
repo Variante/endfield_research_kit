@@ -513,11 +513,13 @@
       offlineRecoveryEvidenceRadioOnly: "Radio definition only — consumer unknown",
       offlineRecoveryMissingAudio: "audio ids absent",
       offlineRecoveryMissionTracking: "Mission NPC tracking context (navigation only)",
+      offlineRecoveryNpcProxyConsumer: "Exact missionless NpcProxyEx row (index is not chronology)",
       offlineRecoveryTrackedQuests: "tracked quests",
       offlineRecoveryRuntimeMission: "runtime mission",
       offlineRecoveryMissionBranch: "Mission fork/join context (Story arm unresolved)",
       offlineRecoveryMissionSequence: "Authored linear quest context (Story placement unresolved)",
       offlineRecoveryMissionTopology: "Exact authored mission topology",
+      offlineRecoveryLinearTopology: "linear quest chain",
       offlineRecoveryMainPath: "authored main path",
       offlineRecoveryQuestStateDependency: "authored quest-state dependency",
       offlineRecoveryQuestFailureGuard: "authored one-way quest failure guard",
@@ -1015,11 +1017,13 @@
       offlineRecoveryEvidenceRadioOnly: "\u4ec5\u65e0\u7ebf\u7535\u5b9a\u4e49\uff0c\u6d88\u8d39\u8005\u672a\u77e5",
       offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
       offlineRecoveryMissionTracking: "\u4efb\u52a1 NPC \u8ffd\u8e2a\u4e0a\u4e0b\u6587\uff08\u4ec5\u5bfc\u822a\uff09",
+      offlineRecoveryNpcProxyConsumer: "\u7cbe\u786e\u65e0\u4efb\u52a1 NpcProxyEx \u884c\uff08\u7d22\u5f15\u4e0d\u662f\u5267\u60c5\u987a\u5e8f\uff09",
       offlineRecoveryTrackedQuests: "\u8ffd\u8e2a\u4efb\u52a1\u8282\u70b9",
       offlineRecoveryRuntimeMission: "\u8fd0\u884c\u65f6\u4efb\u52a1",
       offlineRecoveryMissionBranch: "\u4efb\u52a1\u5206\u6d41/\u6c47\u5408\u4e0a\u4e0b\u6587\uff08\u5267\u60c5\u5206\u652f\u5f52\u5c5e\u672a\u89e3\u6790\uff09",
       offlineRecoveryMissionSequence: "\u539f\u59cb\u7ebf\u6027\u4efb\u52a1\u94fe\uff08\u5267\u60c5\u6587\u4ef6\u4f4d\u7f6e\u672a\u89e3\u6790\uff09",
       offlineRecoveryMissionTopology: "\u7cbe\u786e\u539f\u751f\u4efb\u52a1\u62d3\u6251",
+      offlineRecoveryLinearTopology: "\u7ebf\u6027\u4efb\u52a1\u94fe",
       offlineRecoveryMainPath: "\u539f\u751f\u4e3b\u8def\u5f84",
       offlineRecoveryQuestStateDependency: "\u539f\u751f\u4efb\u52a1\u72b6\u6001\u4f9d\u8d56",
       offlineRecoveryQuestFailureGuard: "\u539f\u751f\u5355\u5411\u4efb\u52a1\u5931\u8d25\u6761\u4ef6",
@@ -2878,6 +2882,12 @@
       const missionTrackingContext = missionTracking
         ? `<p><strong>${esc(t("offlineRecoveryMissionTracking"))}</strong>${missionTracking.crossMission ? `<span>${esc(t("offlineRecoveryRuntimeMission"))}: <code>${esc(missionTracking.missionId || "?")}</code></span>` : ""}<code>${esc(missionTracking.proxyId || "?")}</code><code>${esc(missionTracking.levelId || "?")}</code>${(missionTracking.questIds || []).length ? `<span>${esc(t("offlineRecoveryTrackedQuests"))}: ${(missionTracking.questIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</span>` : ""}</p>`
         : "";
+      const npcProxyConsumers = Array.isArray(row.npcProxyConsumers)
+        ? row.npcProxyConsumers
+        : [];
+      const npcProxyConsumerContext = npcProxyConsumers.length
+        ? `<p><strong>${esc(t("offlineRecoveryNpcProxyConsumer"))}</strong>${npcProxyConsumers.map((consumer) => `<code>${esc(consumer.proxyId || "?")} [index=${esc(consumer.entryIndex ?? "?")}]</code><i>&rarr;</i><code>${esc(consumer.dialogId || "?")}</code>`).join(" ")}</p>`
+        : "";
       const missionBranch = row.missionQuestBranchContext;
       const missionBranchContext = missionBranch
         ? `<p><strong>${esc(t("offlineRecoveryMissionBranch"))}</strong><code>${esc(missionBranch.fork?.questId || "?")}</code><i>&rarr;</i>${(missionBranch.fork?.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<span>${(missionBranch.merge?.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")} &rarr; <code>${esc(missionBranch.merge?.questId || "?")}</code></span></p>`
@@ -2887,8 +2897,13 @@
         ? `<p><strong>${esc(t("offlineRecoveryMissionSequence"))}</strong>${(missionSequence.questSequence || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>`
         : "";
       const missionTopology = row.missionQuestTopologyContext;
+      const missionTopologyShape = missionTopology
+        ? (((missionTopology.forks || []).length || (missionTopology.merges || []).length)
+          ? `${(missionTopology.forks || []).length.toLocaleString()} ${esc(t("questFork"))} / ${(missionTopology.merges || []).length.toLocaleString()} ${esc(t("questMerge"))}`
+          : esc(t("offlineRecoveryLinearTopology")))
+        : "";
       const missionTopologyContext = missionTopology
-        ? `<details><summary><strong>${esc(t("offlineRecoveryMissionTopology"))}</strong> ${(missionTopology.forks || []).length.toLocaleString()} ${esc(t("questFork"))} / ${(missionTopology.merges || []).length.toLocaleString()} ${esc(t("questMerge"))}</summary><p><strong>${esc(t("offlineRecoveryMainPath"))}</strong>${(missionTopology.mainPathQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>${(missionTopology.failedQuestStateGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryQuestFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><code>${esc(guard.targetQuestId || "?")} state=${esc(guard.targetQuestState ?? "?")}</code></p>`).join("")}${(missionTopology.failedDialogGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryDialogFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><span>${(guard.dialogFinishes || []).map((finish) => `<code>${esc(finish.dialogId || "?")} finish=${esc(finish.finishId ?? "?")}</code>`).join(" " + esc(guard.conditionEvalString || "or") + " ")}</span></p>`).join("")}${(missionTopology.questStateDependencies || []).map((dependency) => `<p><strong>${esc(t("offlineRecoveryQuestStateDependency"))}</strong><code>${esc(dependency.questId || "?")}</code><i>&larr;</i><code>${esc(dependency.targetQuestId || "?")} state=${esc(dependency.targetQuestState ?? "?")}</code>${(dependency.conditionIndexPath || []).length ? `<span>${esc(t("offlineRecoveryConditionPath"))}: <code>${esc(dependency.conditionIndexPath.join("."))}</code></span>` : ""}</p>`).join("")}${(missionTopology.forks || []).map((fork) => `<p><code>${esc(fork.questId || "?")}</code><i>&rarr;</i>${(fork.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</p>`).join("")}${(missionTopology.merges || []).map((merge) => `<p>${(merge.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<i>&rarr;</i><code>${esc(merge.questId || "?")}</code></p>`).join("")}<small>${esc(t("offlineRecoveryMissionTopologyBoundary"))}</small></details>`
+        ? `<details><summary><strong>${esc(t("offlineRecoveryMissionTopology"))}</strong> ${missionTopologyShape}</summary><p><strong>${esc(t("offlineRecoveryMainPath"))}</strong>${(missionTopology.mainPathQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>${(missionTopology.failedQuestStateGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryQuestFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><code>${esc(guard.targetQuestId || "?")} state=${esc(guard.targetQuestState ?? "?")}</code></p>`).join("")}${(missionTopology.failedDialogGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryDialogFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><span>${(guard.dialogFinishes || []).map((finish) => `<code>${esc(finish.dialogId || "?")} finish=${esc(finish.finishId ?? "?")}</code>`).join(" " + esc(guard.conditionEvalString || "or") + " ")}</span></p>`).join("")}${(missionTopology.questStateDependencies || []).map((dependency) => `<p><strong>${esc(t("offlineRecoveryQuestStateDependency"))}</strong><code>${esc(dependency.questId || "?")}</code><i>&larr;</i><code>${esc(dependency.targetQuestId || "?")} state=${esc(dependency.targetQuestState ?? "?")}</code>${(dependency.conditionIndexPath || []).length ? `<span>${esc(t("offlineRecoveryConditionPath"))}: <code>${esc(dependency.conditionIndexPath.join("."))}</code></span>` : ""}</p>`).join("")}${(missionTopology.forks || []).map((fork) => `<p><code>${esc(fork.questId || "?")}</code><i>&rarr;</i>${(fork.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</p>`).join("")}${(missionTopology.merges || []).map((merge) => `<p>${(merge.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<i>&rarr;</i><code>${esc(merge.questId || "?")}</code></p>`).join("")}<small>${esc(t("offlineRecoveryMissionTopologyBoundary"))}</small></details>`
         : "";
       const taskConsumer = row.levelScriptTaskConsumer;
       const taskConsumerContext = taskConsumer
@@ -2966,7 +2981,7 @@
         radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),
       })[row.evidenceKind] || row.evidenceKind || row.recoveryStatus || "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${npcProxyConsumerContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
