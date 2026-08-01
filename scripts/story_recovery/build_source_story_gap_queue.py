@@ -190,7 +190,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v75"
+    "current-build-offline-story-carrier-exhaustion-v76"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -276,6 +276,12 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm01m26_2": "radio_gm01m26_2",
     "radio_gm01m26_3": "radio_gm01m26_3",
     "radio_gm01m26_4": "radio_gm01m26_4",
+    "dlg_gm01m27_1": "dlg_gm01m27_1",
+    "dlg_gm01m27_2": "dlg_gm01m27_2",
+    "dlg_gm01m27_3": "dlg_gm01m27_3",
+    "radio_gm01m27_1": "radio_gm01m27_1",
+    "radio_gm01m27_2": "radio_gm01m27_2",
+    "radio_gm01m27_3": "radio_gm01m27_3",
     "dlg_gm01m5_1": "dlg_gm01m5_1",
     "dlg_gm01m5_2": "dlg_gm01m5_2",
     "dlg_gm01m5_3": "dlg_gm01m5_3",
@@ -321,6 +327,50 @@ OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
             "proxyId": "sesidun_map01_001",
             "levelId": "map01_lv001",
         },
+    },
+}
+OFFLINE_EXHAUSTION_MISSION_RELATED_ORIGINAL_DATA = {
+    "gm01m27": {
+        "relation": "same_nominal_mission_prts_terminal_bundle",
+        "groupId": "term_map01_lv001_gm01m27",
+        "levelId": "map01_lv001",
+        "entries": (
+            {
+                "order": 1,
+                "contentId": "text_gm01m27_1",
+                "prtsId": "nar_gm01m27_1",
+                "uniqId": "term_map01_lv001_gm01m27_1",
+                "numericId": 176,
+                "nameId": 2291375224637431152,
+            },
+            {
+                "order": 2,
+                "contentId": "text_gm01m27_2",
+                "prtsId": "nar_gm01m27_2",
+                "uniqId": "term_map01_lv001_gm01m27_2",
+                "numericId": 175,
+                "nameId": -1279490884708468702,
+            },
+        ),
+        "missionTextRows": {
+            "gm01m27_desc_008": -4721954571166861173,
+            "gm01m27_desc_010": 4234351872060234760,
+            "gm01m27_desc_026": -5260360960064451117,
+            "gm01m27_name": -1774444844579267245,
+            "objective_gm01m27_1_001": -1424917977080405441,
+            "objective_gm01m27_2_001": -6425752074915612424,
+            "objective_gm01m27_2_002": -6913698330769929737,
+            "objective_gm01m27_2_003": 5217138335650443298,
+            "objective_gm01m27_4_001": -1996591101611484771,
+            "objective_gm01m27_5_001": 3054271297337201381,
+            "objective_gm01m27_6_001": 3502640477416576227,
+        },
+        "sourceKeys": (
+            "prtsReadingTable",
+            "numIdStrTable",
+            "strIdNumTable",
+            "textTable",
+        ),
     },
 }
 OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS = {
@@ -719,6 +769,9 @@ OFFLINE_EXHAUSTION_AUDIO_DIALOG_SHA256 = (
 )
 OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256 = (
     "13FE790D69B0B3CDD4B64CCA53BB41DA8BD0D45D31975004FA074B0EDBB73BDE"
+)
+OFFLINE_EXHAUSTION_STR_ID_NUM_TABLE_SHA256 = (
+    "9F7EAD0C728058952575EF0C085321A4E21834A336F661B061758EE827DAFBA7"
 )
 OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256 = (
     "78CECB42561D80255AB2C38DD24F6699DDC6226D2DFF058FABC5E1EE50223CF3"
@@ -5173,6 +5226,70 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
     },
 }
 OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS.update({
+    "dlg_gm01m27_1": {
+        "missionId": "gm01m27",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm01m27_1_{number:03d}" for number in range(1, 7)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m27_1_{number:03d}" for number in range(1, 7)
+        ),
+        "optionRows": {
+            "option_dlg_gm01m27_1_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": -897435998557284210, "text": ""},
+            },
+            "option_dlg_gm01m27_1_2_001": {
+                "iconType": "Default",
+                "optionText": {"id": -8919008434441766997, "text": ""},
+            },
+            "option_dlg_gm01m27_1_5_001": {
+                "iconType": "Default",
+                "optionText": {"id": -4283208703194747952, "text": ""},
+            },
+        },
+    },
+    "dlg_gm01m27_2": {
+        "missionId": "gm01m27",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm01m27_2_{number:03d}" for number in range(2, 5)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m27_2_{number:03d}" for number in range(2, 5)
+        ),
+        "optionRows": {
+            "option_dlg_gm01m27_2_2_001": {
+                "iconType": "Default",
+                "optionText": {"id": -2766844433419409788, "text": ""},
+            },
+            "option_dlg_gm01m27_2_3_001": {
+                "iconType": "Default",
+                "optionText": {"id": -3963554508229574333, "text": ""},
+            },
+        },
+    },
+    "dlg_gm01m27_3": {
+        "missionId": "gm01m27",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm01m27_3_{number:03d}" for number in range(2, 5)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m27_3_{number:03d}" for number in range(2, 5)
+        ),
+        "optionRows": {
+            "option_dlg_gm01m27_3_2_001": {
+                "iconType": "Default",
+                "optionText": {"id": 7795092187764496173, "text": ""},
+            },
+            "option_dlg_gm01m27_3_3_001": {
+                "iconType": "Default",
+                "optionText": {"id": -6802259785297879704, "text": ""},
+            },
+        },
+    },
     "dlg_gm01m14_7": {
         "missionId": "gm01m14",
         "dialogIdRegistrationStatus": "absent",
@@ -5723,6 +5840,11 @@ OFFLINE_EXHAUSTION_GM01M26_RADIOS = frozenset({
     "radio_gm01m26_3",
     "radio_gm01m26_4",
 })
+OFFLINE_EXHAUSTION_GM01M27_RADIOS = frozenset({
+    "radio_gm01m27_1",
+    "radio_gm01m27_2",
+    "radio_gm01m27_3",
+})
 OFFLINE_EXHAUSTION_GM01M5_RADIOS = frozenset({
     "radio_gm01m5_1",
     "radio_gm01m5_2",
@@ -5754,6 +5876,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm01m24": OFFLINE_EXHAUSTION_GM01M24_RADIOS,
     "gm01m25": OFFLINE_EXHAUSTION_GM01M25_RADIOS,
     "gm01m26": OFFLINE_EXHAUSTION_GM01M26_RADIOS,
+    "gm01m27": OFFLINE_EXHAUSTION_GM01M27_RADIOS,
     "gm01m5": OFFLINE_EXHAUSTION_GM01M5_RADIOS,
     "gm02m1": OFFLINE_EXHAUSTION_GM02M1_RADIOS,
     "gm02m23": OFFLINE_EXHAUSTION_GM02M23_RADIOS,
@@ -5923,6 +6046,12 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm01m26_2": frozenset({"au_radio_gm01m26_2_002"}),
     "radio_gm01m26_3": frozenset({"au_radio_gm01m26_3_003"}),
     "radio_gm01m26_4": frozenset({"au_radio_gm01m26_4_004"}),
+    "radio_gm01m27_1": frozenset({
+        "au_radio_gm01m27_1_001",
+        "au_radio_gm01m27_1_002",
+    }),
+    "radio_gm01m27_2": frozenset({"au_radio_gm01m27_2_001"}),
+    "radio_gm01m27_3": frozenset({"au_radio_gm01m27_3_001"}),
     "radio_gm01m5_1": frozenset({
         "au_radio_gm01m5_1_001",
         "au_radio_gm01m5_1_002",
@@ -7237,6 +7366,19 @@ def _configured_game_assembly_path() -> Path | None:
     return root.parent / "GameAssembly.dll" if root.name == "Endfield_Data" else root / "GameAssembly.dll"
 
 
+def _configured_global_metadata_path() -> Path | None:
+    game_assembly_path = _configured_game_assembly_path()
+    if game_assembly_path is None:
+        return None
+    return (
+        game_assembly_path.parent
+        / "Endfield_Data"
+        / "il2cpp_data"
+        / "Metadata"
+        / "global-metadata.dat"
+    )
+
+
 def _core_isolated_target_missions(
     partial_report: dict[str, Any],
 ) -> dict[str, set[str]]:
@@ -7430,6 +7572,136 @@ def _offline_text_definition_validation_failure(
             "prtsReadingDefinitionValid": prts_reading_valid,
         },
     }
+
+
+def _mission_related_original_data_validation(
+    mission_id: str,
+    declaration: dict[str, Any],
+    prts_reading_table: Any,
+    num_id_str_table: Any,
+    str_id_num_table: Any,
+    text_table: Any,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Validate a related mission-prefix bundle without creating Story edges."""
+    group_id = declaration["groupId"]
+    group = (
+        prts_reading_table.get(group_id)
+        if isinstance(prts_reading_table, dict) else None
+    )
+    rows = group.get("list") if isinstance(group, dict) else None
+    actual_entries: list[dict[str, Any]] = []
+    if isinstance(rows, dict):
+        for key in sorted(rows, key=natural_key):
+            row = rows.get(key)
+            if not isinstance(row, dict):
+                continue
+            actual_entries.append({
+                "order": row.get("order"),
+                "contentId": safe_key(row.get("contentId")),
+                "prtsId": safe_key(row.get("prtsId")),
+                "uniqId": safe_key(row.get("uniqId")),
+                "nameId": (
+                    row.get("name", {}).get("id")
+                    if isinstance(row.get("name"), dict) else None
+                ),
+                "overrideRadioId": safe_key(row.get("overrideRadioId")),
+                "subtitleId": (
+                    row.get("subtitle", {}).get("id")
+                    if isinstance(row.get("subtitle"), dict) else None
+                ),
+            })
+    expected_entries = [
+        {
+            "order": entry["order"],
+            "contentId": entry["contentId"],
+            "prtsId": entry["prtsId"],
+            "uniqId": entry["uniqId"],
+            "nameId": entry["nameId"],
+            "overrideRadioId": "",
+            "subtitleId": 0,
+        }
+        for entry in declaration["entries"]
+    ]
+    num_mapping = (
+        num_id_str_table.get("prts_terminal_content_id", {}).get("dic")
+        if isinstance(num_id_str_table, dict) else None
+    )
+    str_mapping = (
+        str_id_num_table.get("prts_terminal_content_id", {}).get("dic")
+        if isinstance(str_id_num_table, dict) else None
+    )
+    expected_num_mapping = {
+        str(entry["numericId"]): entry["uniqId"]
+        for entry in declaration["entries"]
+    }
+    actual_num_mapping = {
+        numeric_id: num_mapping.get(numeric_id)
+        for numeric_id in expected_num_mapping
+    } if isinstance(num_mapping, dict) else None
+    expected_str_mapping = {
+        entry["uniqId"]: entry["numericId"]
+        for entry in declaration["entries"]
+    }
+    actual_str_mapping = {
+        uniq_id: str_mapping.get(uniq_id)
+        for uniq_id in expected_str_mapping
+    } if isinstance(str_mapping, dict) else None
+    expected_text_rows = declaration["missionTextRows"]
+    actual_text_rows = {
+        key: (
+            text_table.get(key, {}).get("id")
+            if isinstance(text_table, dict)
+            and isinstance(text_table.get(key), dict)
+            else None
+        )
+        for key in expected_text_rows
+    }
+    if not (
+        actual_entries == expected_entries
+        and actual_num_mapping == expected_num_mapping
+        and actual_str_mapping == expected_str_mapping
+        and actual_text_rows == expected_text_rows
+    ):
+        return None, {
+            "validator": "offlineMissionRelatedOriginalData",
+            "gate": "exactPrtsTerminalBundleAndMissionTextRows",
+            "mission": mission_id,
+            "expected": {
+                "entries": expected_entries,
+                "numIdStr": expected_num_mapping,
+                "strIdNum": expected_str_mapping,
+                "missionTextRows": expected_text_rows,
+            },
+            "actual": {
+                "entries": actual_entries,
+                "numIdStr": actual_num_mapping,
+                "strIdNum": actual_str_mapping,
+                "missionTextRows": actual_text_rows,
+            },
+        }
+    return {
+        "relation": declaration["relation"],
+        "groupId": group_id,
+        "levelId": declaration["levelId"],
+        "entries": [
+            {
+                "order": entry["order"],
+                "contentId": entry["contentId"],
+                "prtsId": entry["prtsId"],
+                "uniqId": entry["uniqId"],
+                "numericId": entry["numericId"],
+            }
+            for entry in declaration["entries"]
+        ],
+        "missionTextRowKeys": list(expected_text_rows),
+        "storyRelationStatus": (
+            "same_nominal_mission_only_no_scene_or_quest_join"
+        ),
+        "orderBoundary": (
+            "PrtsReading order proves only the two terminal entries; it "
+            "does not order or activate any dialog or radio Story file"
+        ),
+    }, None
 
 
 def _dialog_tree_branch_groups(
@@ -7723,6 +7995,7 @@ def build_offline_exhaustion_index(
     table_root: Path,
     *,
     game_assembly_path: Path | None = None,
+    global_metadata_path: Path | None = None,
     carrier_audit_path: Path | None = None,
     gameobject_audit_path: Path | None = None,
     reverse_pptr_audit_path: Path | None = None,
@@ -7755,10 +8028,14 @@ def build_offline_exhaustion_index(
         / "animestudio_story_reverse_pptr_audit.json"
     )
     game_assembly_path = game_assembly_path or _configured_game_assembly_path()
+    global_metadata_path = (
+        global_metadata_path or _configured_global_metadata_path()
+    )
     source_paths = {
         "radioTable": table_root / "RadioTable.json",
         "audioDialog": table_root / "AudioDialog.json",
         "numIdStrTable": table_root / "NumIdStrTable.json",
+        "strIdNumTable": table_root / "StrIdNumTable.json",
         "textTable": table_root / "TextTable.json",
         "dialogTextTable": table_root / "DialogTextTable.json",
         "dialogOptionTable": table_root / "DialogOptionTable.json",
@@ -7803,6 +8080,7 @@ def build_offline_exhaustion_index(
             / "timeline_line_orders.json"
         ),
         "gameAssembly": game_assembly_path,
+        "globalMetadata": global_metadata_path,
         "carrierAudit": carrier_audit_path,
         "gameObjectAudit": gameobject_audit_path,
         "reversePptrAudit": reverse_pptr_audit_path,
@@ -7901,6 +8179,7 @@ def build_offline_exhaustion_index(
         "radioTable": OFFLINE_EXHAUSTION_RADIO_TABLE_SHA256,
         "audioDialog": OFFLINE_EXHAUSTION_AUDIO_DIALOG_SHA256,
         "numIdStrTable": OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256,
+        "strIdNumTable": OFFLINE_EXHAUSTION_STR_ID_NUM_TABLE_SHA256,
         "textTable": OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256,
         "dialogTextTable": OFFLINE_EXHAUSTION_DIALOG_TEXT_TABLE_SHA256,
         "dialogOptionTable": OFFLINE_EXHAUSTION_DIALOG_OPTION_TABLE_SHA256,
@@ -7923,6 +8202,7 @@ def build_offline_exhaustion_index(
         "timelineLineOrders":
             OFFLINE_EXHAUSTION_TIMELINE_LINE_ORDERS_SHA256,
         "gameAssembly": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+        "globalMetadata": OFFLINE_EXHAUSTION_METADATA_SHA256,
     }
     for context in OFFLINE_EXHAUSTION_RADIO_CONTEXTS.values():
         expected_hashes[context["sourceKey"]] = context["sha256"]
@@ -8023,6 +8303,50 @@ def build_offline_exhaustion_index(
     if mismatches:
         return {}, status
 
+    mission_related_original_data_by_mission: dict[
+        str, dict[str, Any]
+    ] = {}
+    prts_reading_table = read_json(source_paths["prtsReadingTable"], {})
+    num_id_str_table = read_json(source_paths["numIdStrTable"], {})
+    str_id_num_table = read_json(source_paths["strIdNumTable"], {})
+    text_table = read_json(source_paths["textTable"], {})
+    for mission_id, declaration in (
+        OFFLINE_EXHAUSTION_MISSION_RELATED_ORIGINAL_DATA.items()
+    ):
+        related_original_data, failure = (
+            _mission_related_original_data_validation(
+                mission_id,
+                declaration,
+                prts_reading_table,
+                num_id_str_table,
+                str_id_num_table,
+                text_table,
+            )
+        )
+        if failure:
+            failure["sourcePaths"] = [
+                str(source_paths[name])
+                for name in declaration["sourceKeys"]
+            ]
+            failure["sourceSha256"] = {
+                name: actual_hashes.get(name, "")
+                for name in declaration["sourceKeys"]
+            }
+            status.update({
+                "status": (
+                    "inactive_mission_related_original_data_validation_failed"
+                ),
+                "validatorDiagnostics": [failure],
+            })
+            return {}, status
+        related_original_data["sourceFiles"] = [
+            str(source_paths[name].relative_to(ROOT)).replace("\\", "/")
+            for name in declaration["sourceKeys"]
+        ]
+        mission_related_original_data_by_mission[
+            mission_id
+        ] = related_original_data
+
     try:
         game_assembly_bytes = source_paths["gameAssembly"].read_bytes()
     except OSError as exc:
@@ -8076,6 +8400,63 @@ def build_offline_exhaustion_index(
         })
         return {}, status
     status["gameAssemblyAbsentRootTokens"] = binary_token_counts
+
+    try:
+        global_metadata_bytes = source_paths["globalMetadata"].read_bytes()
+    except (AttributeError, OSError) as exc:
+        status.update({
+            "status": "inactive_global_metadata_token_validation_failed",
+            "validatorDiagnostics": [{
+                "validator": "offlineGlobalMetadataTokenAbsence",
+                "gate": "readCurrentGlobalMetadata",
+                "sourcePaths": [str(source_paths["globalMetadata"])],
+                "sourceSha256": {
+                    "globalMetadata": actual_hashes.get(
+                        "globalMetadata", ""
+                    ),
+                },
+                "expected": {"readable": True},
+                "actual": {
+                    "readable": False,
+                    "error": f"{type(exc).__name__}: {exc}",
+                },
+            }],
+        })
+        return {}, status
+    metadata_token_counts = {
+        story_key: {
+            "token": token,
+            "utf8": global_metadata_bytes.count(token.encode("utf-8")),
+            "utf16le": global_metadata_bytes.count(
+                token.encode("utf-16le")
+            ),
+        }
+        for story_key, token
+        in OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS.items()
+    }
+    present_metadata_tokens = {
+        story_key: counts
+        for story_key, counts in metadata_token_counts.items()
+        if counts["utf8"] or counts["utf16le"]
+    }
+    if present_metadata_tokens:
+        status.update({
+            "status": "inactive_global_metadata_token_validation_failed",
+            "validatorDiagnostics": [{
+                "validator": "offlineGlobalMetadataTokenAbsence",
+                "gate": "exactRootTokensAbsent",
+                "sourcePaths": [str(source_paths["globalMetadata"])],
+                "sourceSha256": {
+                    "globalMetadata": actual_hashes.get(
+                        "globalMetadata", ""
+                    ),
+                },
+                "expected": {"utf8Count": 0, "utf16leCount": 0},
+                "actual": present_metadata_tokens,
+            }],
+        })
+        return {}, status
+    status["globalMetadataAbsentRootTokens"] = metadata_token_counts
 
     mission_branch_context_by_mission: dict[str, dict[str, Any]] = {}
     for mission_id, declaration in (
@@ -11422,10 +11803,18 @@ def build_offline_exhaustion_index(
         topology_context = mission_topology_context_by_mission.get(mission_id)
         if topology_context:
             row["missionQuestTopologyContext"] = topology_context
+        related_original_data = (
+            mission_related_original_data_by_mission.get(mission_id)
+        )
+        if related_original_data:
+            row["missionRelatedOriginalData"] = related_original_data
     status.update({
         "status": "active",
         "coreTargetSetSha256": core_target_digest,
         "deferredStoryKeys": len(index),
+        "missionRelatedOriginalData": (
+            mission_related_original_data_by_mission
+        ),
         "deferredMissions": sorted({
             row["missionId"]
             for row in index.values()

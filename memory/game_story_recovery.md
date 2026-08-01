@@ -401,6 +401,25 @@ quests, server fields, and the order boundary. All 55 scene pairs remain
 unordered; OCR, manual order, suffixes, and gameplay observation were not used
 as evidence.
 
+The `gm01m27` frontier is now source-bounded as retired/incomplete mission
+content, lowering its score from 30 to zero and the major actionable backlog
+from 66 to 60. No `MissionRuntimeAsset` survives, so there is no original quest
+graph from which to recover a fork, merge, or scene assignment. The three
+dialogs survive as 12 exact `DialogTextTable` rows and seven single-option
+`DialogOptionTable` rows; all 12 audio ids are absent from `AudioDialog`, and
+none has a DialogId registration, DialogTree, Timeline, AnimeStudio carrier,
+or typed playback consumer. The three radios likewise survive only as four
+`RadioTable` lines whose audio ids are absent. Exact root tokens are absent in
+both the hash-locked installed `GameAssembly.dll` and
+`global-metadata.dat`. A separate original `PrtsReading` group,
+`term_map01_lv001_gm01m27`, has two exact terminal entries with authored orders
+1 and 2, inverse numeric-id registrations, and 11 matching mission/objective
+`TextTable` keys. Mission Pipeline attaches that related four-table bundle but
+keeps its boundary explicit: the terminal order applies only to those two PRTS
+entries and supplies no dialog/radio activation, quest join, or cross-file
+order. All 15 pairs among the six Story files remain unordered; the manual
+display list is cross-reference only.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -429,8 +448,8 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should move to the highest-ranked remaining real major-mission
-frontier (66 actionable core-isolated files remain across that bucket; the
-next frontier is `gm01m27`, score 30 across six actionable isolated files)
+frontier (60 actionable core-isolated files remain across that bucket; the
+next frontier is `gm02m20`, score 25 across five actionable isolated files)
 and the five character-mission quest-attachment gaps. Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
