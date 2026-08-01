@@ -116,6 +116,70 @@ def mission_payload(
 
 
 class SourceStoryPartialOrderTests(unittest.TestCase):
+    @staticmethod
+    def narrative_containment_flow(*, placement_status: str) -> dict:
+        return {
+            "sceneGraph": {"nodes": [], "edges": []},
+            "unresolvedDialogTreeNarrativeActions": [{
+                "key": "black_m1_1",
+                "parentStoryKey": "dlg_m1_1",
+                "relation": "dialog_tree_narrative_action_unscoped",
+                "confidence": "native_exact_containment_unscoped",
+                "dialogTreeNarrativeActions": [{
+                    "textId": "black_m1_1_001",
+                    "dialogKey": "dlg_m1_1",
+                    "nativeMappingId":
+                        "dialog-tree-narrative-mask-connection-native-v1",
+                    "dialogTreeConnectionPlacementStatus": placement_status,
+                    "reachableFromPrimeNode": True,
+                    "embeddedAfterLineIds": ["dlg_m1_1_009"],
+                    "embeddedBeforeLineIds": ["dlg_m1_1_010"],
+                    "sourceFile": "TextAsset/dlg_m1_1.json",
+                }],
+            }],
+        }
+
+    def test_exact_dialog_tree_narrative_containment_is_visible_not_ordered(self) -> None:
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"black_m1_1": "black", "dlg_m1_1": "dlg"},
+            {"flow": self.narrative_containment_flow(
+                placement_status="exact_unique_adjacent_parent_trunks",
+            )},
+        )
+
+        self.assertEqual(result["directEdges"], [])
+        self.assertEqual(result["isolatedSceneKeys"], ["dlg_m1_1"])
+        self.assertEqual(result["unknownSceneKeys"], ["dlg_m1_1"])
+        self.assertEqual(result["containments"][0]["child"], "black_m1_1")
+        self.assertEqual(
+            result["containments"][0]["embeddedAfterLineIds"],
+            ["dlg_m1_1_009"],
+        )
+        child = next(row for row in result["nodes"] if row["key"] == "black_m1_1")
+        self.assertEqual(child["relationStatus"], "embedded")
+        self.assertEqual(result["warnings"], [])
+
+    def test_dialog_tree_narrative_containment_fails_closed_with_diagnostic(self) -> None:
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"black_m1_1": "black", "dlg_m1_1": "dlg"},
+            {"flow": self.narrative_containment_flow(
+                placement_status="not_exact_unique_adjacent_trunks",
+            )},
+        )
+
+        self.assertEqual(result["containments"], [])
+        self.assertEqual(
+            result["isolatedSceneKeys"],
+            ["black_m1_1", "dlg_m1_1"],
+        )
+        diagnostic = result["warnings"][0]
+        self.assertEqual(diagnostic["validator"], "dialogTreeNarrativeContainment")
+        self.assertEqual(diagnostic["storyKey"], "black_m1_1")
+        self.assertEqual(diagnostic["sourcePaths"], ["TextAsset/dlg_m1_1.json"])
+        self.assertEqual(diagnostic["actual"]["validOccurrenceCount"], 0)
+
     def test_declared_variant_mission_evidence_is_merged_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             mission_dir = Path(tmp)

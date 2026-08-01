@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -83,6 +84,47 @@ def mission_payload(
 
 
 class SourceStoryGapQueueTests(unittest.TestCase):
+    def test_radio_definition_validator_reports_exact_audio_failure(self) -> None:
+        row = {
+            "continueAfterDialog": False,
+            "continueAfterRadio": False,
+            "priority": 3,
+            "radioSingleDataList": [{
+                "audioOverride": "au_radio_fixture_001",
+            }],
+            "radioType": 0,
+        }
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS,
+            {"radio_fixture": frozenset()},
+            clear=True,
+        ):
+            failure = gap_queue._offline_radio_definition_validation_failure(
+                "radio_fixture",
+                row,
+                set(),
+            )
+
+        self.assertEqual(failure["validator"], "offlineRadioDefinition")
+        self.assertEqual(failure["gate"], "exactAudioDialogMembership")
+        self.assertEqual(failure["storyKey"], "radio_fixture")
+        self.assertEqual(
+            failure["actual"]["baseAbsentAudioIds"],
+            ["au_radio_fixture_001"],
+        )
+
+    def test_a1m8d3_dialog_declares_exact_missing_audio_surface(self) -> None:
+        definition = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_a1m8d3_2"
+        ]
+        self.assertEqual(
+            definition["missingAudioIds"],
+            tuple(
+                f"au_dlg_a1m8d3_2_{number:03d}"
+                for number in range(2, 20)
+            ),
+        )
+
     def test_option_frontier_scores_only_multi_choice_and_actionable_exclusions(
         self,
     ) -> None:
@@ -3231,6 +3273,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS,
             {
+                "radio_a1m8d3_1": {"au_radio_a1m8d3_1_001"},
                 "radio_e5m4_1": {
                     f"au_radio_e5m4_1_{number:03d}"
                     for number in range(1, 5)
@@ -3549,6 +3592,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS),
             {
+                "dlg_a1m8d3_2",
                 "dlg_e5m0d5_1",
                 "dlg_e1m1_6",
                 "dlg_e1m2_6",
@@ -4991,7 +5035,64 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES),
-            {"black_e7m1_3", "black_e11m8_12", "black_e11m8_39"},
+            {
+                "black_e7m1_3",
+                "black_e11m8_12",
+                "black_e11m8_39",
+            },
+        )
+
+    def test_npc_proxy_segment_native_path_closes_context_without_order(self) -> None:
+        connection = {
+            "key": "black_a1m8d3_2",
+            "relation": "npc_proxy_segment_levelscript_mission_context",
+            "direction": "context",
+            "confidence": "native_exact_npc_proxy_segment_shell",
+            "evidenceTier": "derived_exact_shell",
+            "storyOwnerMission": "a1m8d3",
+            "questTriggerStatus":
+                "same_authored_npc_proxy_segment_not_quest_playback",
+            "executionSide": "client",
+            "serverExchange": False,
+            "npcProxyIds": ["liaowuhen_map02_v1d2d0_005"],
+            "segmentIdsGlobal": ["10100620005"],
+            "candidateQuestIds": ["a1m8d3_q#2"],
+            "sourceFiles": ["LevelScriptData/map02_lv001/10100620005.json"],
+            "nativeEventOwners": [{
+                "status": "exact_serialized_control_path",
+                "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                "path": [{
+                    "actionName": "NarrativeBlackScreenAction",
+                    "recordClass": "play_black",
+                    "texts": ["black_a1m8d3_2_001"],
+                }],
+            }],
+        }
+        flow = {"missionStoryConnections": [connection]}
+
+        rows = gap_queue._closed_exact_native_context_isolated_scenes(
+            flow,
+            {"black_a1m8d3_2"},
+            "a1m8d3",
+        )
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(
+            rows[0]["recoveryStatus"],
+            "closed_exact_npc_proxy_segment_playback_context_no_relative_order",
+        )
+        self.assertEqual(rows[0]["candidateQuestIds"], ["a1m8d3_q#2"])
+
+        broken = {**connection, "nativeEventOwners": [{
+            **connection["nativeEventOwners"][0],
+            "status": "partial",
+        }]}
+        self.assertEqual(
+            gap_queue._closed_exact_native_context_isolated_scenes(
+                {"missionStoryConnections": [broken]},
+                {"black_a1m8d3_2"},
+                "a1m8d3",
+            ),
+            [],
         )
         disconnected = {
             "key": "black_e11m8_27",
