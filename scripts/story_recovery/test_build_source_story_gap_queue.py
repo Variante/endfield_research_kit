@@ -3530,6 +3530,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     for number in range(1, 4)
                 },
                 "radio_gm01m16_14": {"au_radio_gm01m16_14_001"},
+                "radio_gm01m17_4": {"au_radio_gm01m17_4_001"},
+                "radio_gm01m17_5": {"au_radio_gm01m17_5_001"},
+                "radio_gm01m17_9": {"au_radio_gm01m17_9_001"},
                 "radio_gm01m20_1": {"au_radio_gm01m20_1_001"},
                 "radio_gm01m20_2": {"au_radio_gm01m20_2_001"},
                 "radio_gm01m20_3": {"au_radio_gm01m20_3_001"},
@@ -5455,6 +5458,151 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual([], topology["storyAssignments"])
         self.assertFalse(topology["orderEvidence"])
 
+    def test_gm01m17_retired_definitions_and_nested_topology_are_exact(
+        self,
+    ) -> None:
+        radio_keys = {
+            "radio_gm01m17_4",
+            "radio_gm01m17_5",
+            "radio_gm01m17_9",
+        }
+        self.assertEqual(
+            radio_keys,
+            gap_queue.OFFLINE_EXHAUSTION_GM01M17_RADIOS,
+        )
+        self.assertEqual(
+            radio_keys | {"text_gm01m17_1"},
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm01m17" in key
+            },
+        )
+        self.assertEqual(
+            {
+                "missionId": "gm01m17",
+                "readingPopupRowId": "text_gm01m17_1",
+                "bgType": 2,
+                "iconType": 0,
+                "titleId": -5216252211990160921,
+                "contentTextIds": (
+                    2833540280945742009,
+                    -8531949106363903611,
+                ),
+            },
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+                "text_gm01m17_1"
+            ],
+        )
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual("active", status["status"])
+        self.assertTrue(radio_keys | {"text_gm01m17_1"} <= set(index))
+        topology = index["radio_gm01m17_4"][
+            "missionQuestTopologyContext"
+        ]
+        self.assertEqual(
+            [
+                "gm01m17_q#1", "gm01m17_q#2", "gm01m17_q#13",
+                "gm01m17_q#14", "gm01m17_q#16", "gm01m17_q#18",
+            ],
+            topology["mainPathQuestIds"],
+        )
+        self.assertEqual(8, len(topology["entryQuestIds"]))
+        self.assertEqual(3, len(topology["forks"]))
+        self.assertEqual([], topology["merges"])
+        self.assertEqual(12, len(topology["terminalQuestIds"]))
+        self.assertEqual(4, len(topology["questStateDependencies"]))
+        self.assertEqual(
+            {(0, 1), (1, 1), (2, 1)},
+            {
+                tuple(row["conditionIndexPath"])
+                for row in topology["questStateDependencies"]
+                if row["questId"] == "gm01m17_q#3"
+            },
+        )
+        self.assertEqual(
+            [{
+                "questId": "gm01m17_q#13",
+                "conditionType": "CheckQuestState",
+                "targetQuestId": "gm01m17_q#3",
+                "comparer": 0,
+                "targetQuestState": 3,
+                "relation": "authored_quest_failure_guard",
+                "branchExclusivityStatus": (
+                    "not_proven_by_one_way_failure_guard"
+                ),
+                "storyOrderEvidence": False,
+            }],
+            topology["failedQuestStateGuards"],
+        )
+        self.assertEqual([], topology["storyAssignments"])
+        self.assertFalse(topology["orderEvidence"])
+
+    def test_gm01m17_nested_topology_validator_fails_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        declaration = gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS[
+            "gm01m17"
+        ]
+        broken_dependencies = copy.deepcopy(
+            declaration["questStateDependenciesByQuest"]
+        )
+        broken_dependencies["gm01m17_q#3"][1][
+            "targetQuestId"
+        ] = "gm01m17_q#missing"
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS,
+            {"gm01m17": {
+                **declaration,
+                "questStateDependenciesByQuest": broken_dependencies,
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual({}, failed_index)
+        failure = failed_status["validatorDiagnostics"][0]
+        self.assertEqual("offlineMissionTopologyContext", failure["validator"])
+        self.assertEqual(
+            "exactQuestPredecessorGraphMainPathAndStateDependencies",
+            failure["gate"],
+        )
+        self.assertEqual("gm01m17", failure["mission"])
+        expected = failure["expected"]["questStateDependenciesByQuest"]
+        actual = failure["actual"]["questStateDependenciesByQuest"]
+        self.assertEqual(
+            "gm01m17_q#missing",
+            expected["gm01m17_q#3"][1]["targetQuestId"],
+        )
+        self.assertEqual(
+            "gm01m17_q#13",
+            actual["gm01m17_q#3"][1]["targetQuestId"],
+        )
+        self.assertEqual(
+            (1, 1),
+            actual["gm01m17_q#3"][1]["conditionIndexPath"],
+        )
+
     def test_gm02m20_auxiliary_topology_validator_fails_closed(self) -> None:
         partial = gap_queue.read_json(
             gap_queue.ROOT
@@ -6265,6 +6413,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_gm01m12_7",
                 "text_gm01m14_4",
                 "text_gm01m14_5",
+                "text_gm01m17_1",
             },
         )
 
