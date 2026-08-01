@@ -7,6 +7,7 @@ from scripts.story_builder.anime_assets import (
     _extract_dialog_tree_narrative_mask_actions,
     _extract_dialog_tree_open_ui_actions,
     _extract_dialog_tree_open_ui_content_actions,
+    extract_dialog_tree_definition_evidence,
 )
 from scripts.story_builder.language_bundle import (
     classify_leveldata_mission_shell_occurrences,
@@ -25,6 +26,61 @@ LEFT_SUBTITLE_TYPE = "Beyond.Gameplay.DialogLeftSubtitleActionData"
 
 
 class DialogTreeNarrativeActionTests(unittest.TestCase):
+    def test_extracts_exact_dialog_tree_definition_shape(self) -> None:
+        payload = {
+            "_assetName": "dlg_fixture_1",
+            "type": "Beyond.Gameplay.DialogTree",
+            "nodes": [
+                {
+                    "$id": "0",
+                    "$type": "Beyond.Gameplay.DialogTreeTrunkNode",
+                    "_actorNodeData": {
+                        "mfTrunkActionData": {"_trunkId": "dlg_fixture_1_001"},
+                    },
+                },
+                {
+                    "$id": "1",
+                    "$type": "Beyond.Gameplay.DialogTreeOptionNode",
+                    "_normalOptions": [
+                        {"_optionId": "option_dlg_fixture_1_1_001"},
+                        {"_optionId": "option_dlg_fixture_1_1_002"},
+                    ],
+                },
+            ],
+            "connections": [{
+                "$type": "Beyond.Gameplay.DialogTreeConnection",
+                "_sourceNode": {"$ref": "0"},
+                "_targetNode": {"$ref": "1"},
+            }],
+        }
+
+        evidence = extract_dialog_tree_definition_evidence(
+            payload,
+            "dlg_fixture_1",
+        )
+
+        self.assertIsNotNone(evidence)
+        self.assertEqual(["dlg_fixture_1_001"], evidence["lineIds"])
+        self.assertEqual(2, evidence["nodeCount"])
+        self.assertEqual(1, evidence["connectionCount"])
+        self.assertEqual(1, evidence["branchingOptionGroupCount"])
+
+    def test_rejects_dialog_tree_definition_name_or_type_mismatch(self) -> None:
+        payload = {
+            "_assetName": "dlg_other_1",
+            "type": "Beyond.Gameplay.DialogTree",
+            "nodes": [],
+            "connections": [],
+        }
+        self.assertIsNone(
+            extract_dialog_tree_definition_evidence(payload, "dlg_fixture_1")
+        )
+        payload["_assetName"] = "dlg_fixture_1"
+        payload["type"] = "Beyond.Gameplay.OtherAsset"
+        self.assertIsNone(
+            extract_dialog_tree_definition_evidence(payload, "dlg_fixture_1")
+        )
+
     def test_script_condition_scope_keeps_richer_levelscript_fallback_open(
         self,
     ) -> None:

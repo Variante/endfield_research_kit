@@ -762,8 +762,20 @@ def load_timeline_index(path: Path) -> tuple[dict[str, list[dict]], dict]:
     return dict(index), meta
 
 
-def attach_timeline_evidence(refs: list[dict], timeline_index: dict[str, list[dict]]) -> tuple[dict[str, list[dict]], list[dict]]:
+def attach_timeline_evidence(
+    refs: list[dict],
+    timeline_index: dict[str, list[dict]],
+    dialog_tree_loader=None,
+) -> tuple[dict[str, list[dict]], dict[str, dict], list[dict]]:
+    if dialog_tree_loader is None:
+        # Import after story_builder.context has finished initializing.  That
+        # module imports mission_recovery while defining the shared AnimeStudio
+        # roots, so a module-level import here would observe a partial context.
+        from story_builder.anime_assets import recover_dialog_tree_definition_evidence
+
+        dialog_tree_loader = recover_dialog_tree_definition_evidence
     evidence: dict[str, list[dict]] = {}
+    dialog_tree_evidence: dict[str, dict] = {}
     unresolved: list[dict] = []
     for ref in refs:
         scene_key = ref.get("sceneKey") or ""
@@ -774,12 +786,20 @@ def attach_timeline_evidence(refs: list[dict], timeline_index: dict[str, list[di
         if entries:
             evidence.setdefault(scene_key, entries)
         elif kind == "dlg":
-            unresolved.append({
-                "kind": "missingDialogTimelineEvidence",
-                "sceneKey": scene_key,
-                "source": ref.get("source"),
-            })
-    return evidence, unresolved
+            dialog_tree = dialog_tree_loader(scene_key)
+            if isinstance(dialog_tree, dict):
+                dialog_tree_evidence.setdefault(scene_key, dialog_tree)
+            else:
+                unresolved.append({
+                    "kind": "missingDialogTimelineAndDialogTreeEvidence",
+                    "sceneKey": scene_key,
+                    "source": ref.get("source"),
+                    "checkedSources": [
+                        "recovered AnimeStudio timeline_line_orders.json",
+                        "exact typed AnimeStudio TextAsset/DialogTree",
+                    ],
+                })
+    return evidence, dialog_tree_evidence, unresolved
 
 
 def unique_append(bucket: list, value: Any) -> None:
@@ -3433,7 +3453,11 @@ def recover_mission(
     ]
     for action in client_actions:
         all_refs.extend(action.get("storyRefs") or [])
-    timeline_evidence, timeline_unresolved = attach_timeline_evidence(all_refs, timeline_index)
+    (
+        timeline_evidence,
+        dialog_tree_evidence,
+        timeline_unresolved,
+    ) = attach_timeline_evidence(all_refs, timeline_index)
     quest_edges, edge_unresolved = build_quest_edges(quests, path)
     quests_by_id = {quest["questId"]: quest for quest in quests}
 
@@ -3514,6 +3538,7 @@ def recover_mission(
         "sourceBackedCallServerCallbacks": call_server_callbacks,
         "referencedScenes": referenced_scenes,
         "sceneTimelineEvidence": timeline_evidence,
+        "sceneDialogTreeEvidence": dialog_tree_evidence,
         "scenePlacement": scene_placement,
         "questSpatialTrack": quest_spatial_track,
         "scriptConditionAttachments": script_condition_attachments,
@@ -3748,6 +3773,8 @@ def summarize(
     tracking_counter: Counter = Counter()
     missions_with_branches = 0
     missions_with_timeline = 0
+    missions_with_dialog_tree_definitions = 0
+    dialog_tree_definition_total = 0
     missions_with_scene_edges = 0
     missions_with_scene_sequences = 0
     missions_with_story_call_contexts = 0
@@ -3768,6 +3795,11 @@ def summarize(
             missions_with_branches += 1
         if mission.get("sceneTimelineEvidence"):
             missions_with_timeline += 1
+        if mission.get("sceneDialogTreeEvidence"):
+            missions_with_dialog_tree_definitions += 1
+            dialog_tree_definition_total += len(
+                mission.get("sceneDialogTreeEvidence") or {}
+            )
         if mission.get("sourceBackedSceneEdges"):
             missions_with_scene_edges += 1
         if mission.get("sourceBackedSceneSequences"):
@@ -3811,6 +3843,10 @@ def summarize(
         "questCount": sum(len(mission.get("quests") or []) for mission in recovered),
         "missionWithBranchPoints": missions_with_branches,
         "missionsWithDialogTimelineEvidence": missions_with_timeline,
+        "missionsWithDialogTreeDefinitionEvidence": (
+            missions_with_dialog_tree_definitions
+        ),
+        "dialogTreeDefinitionEvidence": dialog_tree_definition_total,
         "missionsWithSourceBackedSceneEdges": missions_with_scene_edges,
         "missionsWithSourceBackedSceneSequences": missions_with_scene_sequences,
         "sourceBackedSceneSequences": scene_sequence_total,
@@ -3849,6 +3885,14 @@ def render_markdown(payload: dict) -> str:
         f"- quests: `{summary['questCount']}`",
         f"- missions with branch points: `{summary['missionWithBranchPoints']}`",
         f"- missions with dialog timeline evidence: `{summary['missionsWithDialogTimelineEvidence']}`",
+        (
+            "- missions with exact DialogTree definition evidence: "
+            f"`{summary.get('missionsWithDialogTreeDefinitionEvidence', 0)}`"
+        ),
+        (
+            "- exact mission-referenced DialogTree definitions: "
+            f"`{summary.get('dialogTreeDefinitionEvidence', 0)}`"
+        ),
         f"- missions with source-backed scene edges: `{summary['missionsWithSourceBackedSceneEdges']}`",
         f"- missions with source-backed scene sequences: `{summary.get('missionsWithSourceBackedSceneSequences', 0)}`",
         f"- source-backed scene sequences: `{summary.get('sourceBackedSceneSequences', 0)}`",
@@ -3991,8 +4035,8 @@ def render_markdown(payload: dict) -> str:
         "",
         "## Mission Index",
         "",
-        "| Mission | Quests | Branches | Timeline Scenes | Scene Edges | Scene Seq | Story Calls | Hash Terms | CallServer Callbacks | Scene Signals | Unresolved | Level |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Mission | Quests | Branches | Timeline Scenes | DialogTrees | Scene Edges | Scene Seq | Story Calls | Hash Terms | CallServer Callbacks | Scene Signals | Unresolved | Level |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ])
     for mission in payload.get("missions") or []:
         metadata = mission.get("metadata") or {}
@@ -4002,6 +4046,7 @@ def render_markdown(payload: dict) -> str:
             f"{len(mission.get('quests') or [])} | "
             f"{len(mission.get('branchPoints') or [])} | "
             f"{len(mission.get('sceneTimelineEvidence') or {})} | "
+            f"{len(mission.get('sceneDialogTreeEvidence') or {})} | "
             f"{len(mission.get('sourceBackedSceneEdges') or [])} | "
             f"{len(mission.get('sourceBackedSceneSequences') or [])} | "
             f"{len(mission.get('sourceBackedStoryCallContexts') or [])} | "

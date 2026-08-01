@@ -3466,5 +3466,183 @@ class MissionGraphPayloadTests(unittest.TestCase):
         self.assertEqual(payload["envTalkContext"], [])
 
 
+class MissionDialogTreeDefinitionPublisherTests(unittest.TestCase):
+    def fixture(self, root: Path, source_sha256: str) -> tuple[dict, Path, Path]:
+        output_root = root / "webui" / "data" / "mission_pipeline"
+        mission_root = output_root / "missions"
+        mission_root.mkdir(parents=True)
+        story_root = root / "webui" / "data" / "lang"
+        sidecar_root = story_root / "CN" / "mission"
+        sidecar_root.mkdir(parents=True)
+        (mission_root / "testm1.json").write_text(
+            json.dumps({
+                "nodes": [{
+                    "id": "testm1_q#1",
+                    "objectives": [{
+                        "index": 1,
+                        "condition": {
+                            "type": "CheckTalkOptionFinish",
+                            "facts": {
+                                "dialogId": "dlg_testm1_1",
+                                "finishId": -1,
+                            },
+                        },
+                        "dialogFinishes": [{
+                            "dialogId": "dlg_testm1_1",
+                            "finishId": -1,
+                        }],
+                    }],
+                }],
+            }),
+            encoding="utf-8",
+        )
+        (sidecar_root / "testm1.json").write_text(
+            json.dumps({
+                "timelineRecovery": {
+                    "sceneDialogTreeEvidence": {
+                        "dlg_testm1_1": {
+                            "sceneKey": "dlg_testm1_1",
+                            "assetType": "Beyond.Gameplay.DialogTree",
+                            "evidenceKind": "exact_dialog_tree_definition",
+                            "sourceFile": "assets/dlg_testm1_1.json",
+                            "sourceSha256": source_sha256,
+                            "lineIds": ["dlg_testm1_1_001"],
+                            "nodeCount": 2,
+                            "connectionCount": 1,
+                            "branchingOptionGroupCount": 0,
+                        },
+                    },
+                },
+            }),
+            encoding="utf-8",
+        )
+        index = {
+            "missions": [{
+                "id": "testm1",
+                "file": "missions/testm1.json",
+            }],
+        }
+        return index, output_root, story_root
+
+    def test_publishes_hash_verified_definition_on_exact_quest_observer(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "assets" / "dlg_testm1_1.json"
+            source.parent.mkdir()
+            source.write_bytes(b"dialog-tree-fixture")
+            digest = hashlib.sha256(source.read_bytes()).hexdigest().upper()
+            index, output_root, story_root = self.fixture(root, digest)
+
+            with patch.object(pipeline, "ROOT", root):
+                result = pipeline.publish_quest_dialog_tree_definitions(
+                    index,
+                    output_root,
+                    story_root,
+                    "CN",
+                )
+
+            mission = json.loads(
+                (output_root / "missions" / "testm1.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            evidence = mission["nodes"][0]["dialogTreeDefinitions"][0]
+            self.assertEqual("dlg_testm1_1", evidence["sceneKey"])
+            self.assertEqual([{
+                "relation": "objective_condition",
+                "conditionType": "CheckTalkOptionFinish",
+                "objectiveIndex": 1,
+                "finishId": -1,
+            }], evidence["missionObservers"])
+            self.assertEqual(1, result["published"]["placements"])
+            self.assertEqual(1, result["published"]["quests"])
+
+    def test_publishes_repeatable_and_failed_condition_observers(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "assets" / "dlg_testm1_1.json"
+            source.parent.mkdir()
+            source.write_bytes(b"dialog-tree-fixture")
+            digest = hashlib.sha256(source.read_bytes()).hexdigest().upper()
+            index, output_root, story_root = self.fixture(root, digest)
+            mission_path = output_root / "missions" / "testm1.json"
+            mission = json.loads(mission_path.read_text(encoding="utf-8"))
+            node = mission["nodes"][0]
+            node["objectives"][0]["condition"] = {
+                "type": "CombineCondition",
+                "children": [{
+                    "type": "CheckRepeatableTalkFinish",
+                    "facts": {"dialogId": "dlg_testm1_1", "finishId": -1},
+                }],
+            }
+            node["failedCondition"] = {
+                "type": "CheckTalkOptionFinish",
+                "facts": {"dialogId": "dlg_testm1_1", "finishId": 2},
+            }
+            mission_path.write_text(json.dumps(mission), encoding="utf-8")
+
+            with patch.object(pipeline, "ROOT", root):
+                pipeline.publish_quest_dialog_tree_definitions(
+                    index, output_root, story_root, "CN"
+                )
+
+            published = json.loads(mission_path.read_text(encoding="utf-8"))
+            observers = published["nodes"][0]["dialogTreeDefinitions"][0][
+                "missionObservers"
+            ]
+            self.assertEqual(
+                ["objective_condition", "failed_condition"],
+                [row["relation"] for row in observers],
+            )
+            self.assertEqual(
+                ["CheckRepeatableTalkFinish", "CheckTalkOptionFinish"],
+                [row["conditionType"] for row in observers],
+            )
+
+    def test_rejects_unplaced_definition_with_expected_actual_diagnostic(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "assets" / "dlg_testm1_1.json"
+            source.parent.mkdir()
+            source.write_bytes(b"dialog-tree-fixture")
+            digest = hashlib.sha256(source.read_bytes()).hexdigest().upper()
+            index, output_root, story_root = self.fixture(root, digest)
+            mission_path = output_root / "missions" / "testm1.json"
+            mission = json.loads(mission_path.read_text(encoding="utf-8"))
+            mission["nodes"][0]["objectives"] = []
+            mission_path.write_text(json.dumps(mission), encoding="utf-8")
+
+            with patch.object(pipeline, "ROOT", root):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    r"mission=testm1.*expected=\['dlg_testm1_1'\].*actual=\[\]",
+                ):
+                    pipeline.publish_quest_dialog_tree_definitions(
+                        index, output_root, story_root, "CN"
+                    )
+
+    def test_rejects_definition_source_hash_mismatch_with_diagnostic(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "assets" / "dlg_testm1_1.json"
+            source.parent.mkdir()
+            source.write_bytes(b"dialog-tree-fixture")
+            expected = "0" * 64
+            actual = hashlib.sha256(source.read_bytes()).hexdigest().upper()
+            index, output_root, story_root = self.fixture(root, expected)
+
+            with patch.object(pipeline, "ROOT", root):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    f"expected={expected} actual={actual}",
+                ):
+                    pipeline.publish_quest_dialog_tree_definitions(
+                        index,
+                        output_root,
+                        story_root,
+                        "CN",
+                    )
+
+
 if __name__ == "__main__":
     unittest.main()
