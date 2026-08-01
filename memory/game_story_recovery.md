@@ -505,6 +505,28 @@ all three declared audio ids are absent from current `AudioDialog`. The manual
 order conflicts with the authoritative quest chain and has no OCR corroboration;
 it remains comparison-only.
 
+The `gm01m13` frontier is now source-bounded, lowering its score from 20 to
+zero and the major actionable backlog from 43 to 39. Exact MissionRuntime
+predecessors form main path
+`q#1 -> q#2 -> q#3 -> q#4 -> q#8 -> q#9 -> q#5 -> q#7 -> q#11`,
+plus auxiliary arm `q#2 -> q#12 -> q#4`. The client serializes no branch
+exclusivity or server successor selector, so this is a fork/rendezvous topology,
+not evidence of a player-choice branch. Registered DialogTrees
+`dlg_gm01m13_2` and `_3` are exact NpcProxyEx entries 1 and 2 on
+`sesidun02_map01_001`; nine quest objectives track that same proxy for
+navigation, but no selection condition assigns either dialog to one quest.
+Both trees prove internal group-1 option convergence only, and all ten authored
+audio ids are absent from current `AudioDialog`. `dlg_gm01m13_5` retains 15
+text rows and four option definitions but has no DialogId registration,
+DialogTree, Timeline, audio membership, or original-data consumer; its manual
+option routes remain comparison-only. `text_gm01m13_1` is an exact
+ReadingPopUp/RichContent definition without an interactive carrier, while
+`text_gm01m13_2` and `_3` retain exact LevelScript interactive configuration.
+The manual scene list is suffix order and there is no OCR proposal; neither is
+chronology evidence. Mission Pipeline now exposes all four source-bounded
+activation gaps, the NPC tracking context, internal convergence, and the exact
+quest fork/merge while preserving all 36 cross-file pairs as unordered.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -533,8 +555,8 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should move to the highest-ranked remaining real major-mission
-frontier (43 actionable core-isolated files remain across that bucket; the
-next ranked frontier is `gm01m13`, score 20 across four actionable isolated files)
+frontier (39 actionable core-isolated files remain across that bucket; the
+next ranked frontier is `gm02m14`, score 15 across three actionable isolated files)
 and the five character-mission quest-attachment gaps. Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
