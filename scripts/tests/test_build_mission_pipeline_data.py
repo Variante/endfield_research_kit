@@ -840,6 +840,49 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             1,
         )
 
+    def test_trigger_route_preserves_shared_proxy_selection_boundary(self):
+        row = {
+            "key": "dlg_testm1_2",
+            "relation":
+                "unique_mission_tracked_npc_proxy_dialog_context",
+            "direction": "context",
+            "phase": "server_selected_proxy_state",
+            "confidence": "native_exact_mission_context",
+            "evidenceTier": "derived_exact_mission",
+            "ownership": False,
+            "npcProxyId": "proxy_a",
+            "candidateQuestIds": ["testm1_q#4", "testm1_q#12"],
+            "activeRowIndex": 2,
+            "configuredDialogIds": ["dlg_testm1_2", "dlg_testm1_1"],
+            "selectionOrderStatus": (
+                "one_based_active_row_selection_only_no_cross_row_chronology"
+            ),
+            "serverExchange": True,
+            "clientRequest": False,
+            "expectedClientReply": False,
+            "serverFields": ["proxyNumId", "activeCondIndex"],
+            "upstreamServerStateSources": ["SC_NPC_ACTIVE_CHANGE_NTF"],
+        }
+
+        route = pipeline.build_story_trigger_route(row, mission_id="testm1")
+
+        self.assertEqual(route["causality"], "dependency")
+        self.assertEqual(route["npcProxyId"], "proxy_a")
+        self.assertEqual(route["activeRowIndex"], 2)
+        self.assertEqual(
+            route["candidateQuestIds"],
+            ["testm1_q#4", "testm1_q#12"],
+        )
+        self.assertEqual(
+            route["configuredDialogIds"],
+            ["dlg_testm1_2", "dlg_testm1_1"],
+        )
+        self.assertEqual(
+            route["upstreamServerStateSources"],
+            ["SC_NPC_ACTIVE_CHANGE_NTF"],
+        )
+        self.assertIs(route["clientRequest"], False)
+
     def test_trigger_route_preserves_definition_only_horn_context(self):
         row = {
             "key": "dlg_testm1_11",

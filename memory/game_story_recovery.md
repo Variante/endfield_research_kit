@@ -382,6 +382,25 @@ a cross-file order edge. The same fail-closed publisher now covers 435 exact
 definitions globally, including nested `CheckRepeatableTalkFinish` objectives
 and failed-dialog guards, with no silently unplaced definition.
 
+The `gm01m14` frontier is now source-bounded, lowering its score from 35 to
+zero and the major actionable backlog from 73 to 66. Its authored
+MissionRuntime topology has two forks (`q#1 -> q#4/q#12` and
+`q#11 -> q#2/q#3`) and one merge (`q#4/q#12 -> q#5`). Six typed tracking
+objectives in that mission and level all name exact proxy
+`sesidun04_map01_001`. Hash-verified `NpcProxyExDataTable` rows 2-5 configure
+`dlg_gm01m14_2`, `_1`, `_3`, and `_6`; the installed client confirms that the
+server's one-based `activeCondIndex` selects the row before the local
+interaction reads `dialogId`. The two server pushes carry proxy state but no
+mission id, quest id, dialog id, or scene order, so this is shared mission
+context only: it does not select one of the six quests and does not order the
+four dialogs. Exact LevelScript interactive carriers separately close `_4`,
+`_5`, and `text_gm01m14_1`. `dlg_gm01m14_7` and popup definitions `_4`/`_5`
+have no current original-data activator and remain offline-exhausted. Mission
+Pipeline exposes all seven exact contexts, active proxy row numbers, candidate
+quests, server fields, and the order boundary. All 55 scene pairs remain
+unordered; OCR, manual order, suffixes, and gameplay observation were not used
+as evidence.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -410,8 +429,8 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should move to the highest-ranked remaining real major-mission
-frontier (73 actionable core-isolated files remain across that bucket; the
-next frontier is `gm01m14`, score 35 across seven actionable isolated files)
+frontier (66 actionable core-isolated files remain across that bucket; the
+next frontier is `gm01m27`, score 30 across six actionable isolated files)
 and the five character-mission quest-attachment gaps. Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
