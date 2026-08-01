@@ -69,7 +69,23 @@ of MissionRuntime, typed LevelScript/LevelData interactive carriers, and both
 current object indexes find no activator. The current structured export has no
 Lua corpus, so Lua is a reopen condition rather than claimed negative evidence.
 This removes seven rows from the event queue without adding ownership or order
-edges; 14 event core-isolated rows remain actionable.
+edges.
+
+The next binary-first event batch closes five more actionable rows without
+inventing chronology. `radio_a1m6d1_1` plays on the exact local
+leader-enter-trigger path in LevelScript `22800970016`; typed MissionRuntime,
+NpcProxyEx, and WorldEntityRegistry joins place that authored segment shell in
+mission `a1m6d4`, not the nominal `a1m6d1`, and do not select one quest or
+relative order. `dlg_a1m6d5_8` is the exact `type_id` of the interactive tracked
+by `a1m6d5_q#4`; this proves a client navigation target, not playback.
+`text_a1m6d5_1` is an exact ReadingPopUp/RichContent definition without a
+recovered activator. `dlg_a1m7_2` and `dlg_a1m7_12` have exact DialogText rows,
+no DialogId/DialogTree/Timeline/audio consumer, and no recovered carrier;
+`dlg_a1m7_2` has three exact DialogOption definitions, but no original route
+graph. Mission Pipeline exposes these files and boundaries. Nine event
+core-isolated rows remain actionable: `radio_a1m6d1_2`, `radio_a1m6d2_1`,
+`sns_a1m8d1_1`, `sns_a1m13_1`, `radio_a1m6d3_1`, `dlg_a1m2_4`,
+`dlg_a1m11_3`, `dlg_a1m4_2`, and `sns_a1m1_1`.
 
 The four-file `a1m8d3` event frontier is closed without using OCR or manual
 order as evidence. Original `dlg_a1m8d3_2` DialogTree connections place
@@ -109,8 +125,8 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should continue the same binary-first audit with the remaining event
-frontier, then the highest-ranked major-mission frontier (`gm02m2`) and the
+Next work should continue the same binary-first audit with the nine remaining
+event rows, then the highest-ranked major-mission frontier (`gm02m2`) and the
 five character-mission quest gaps. Reopen a
 deferred row only when a new typed producer/consumer or changed source hash
 supplies an ownership or order edge.
