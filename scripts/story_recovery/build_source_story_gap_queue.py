@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v92"
+SCHEMA = "sourceStoryGapQueue.v93"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -144,7 +144,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v69"
+    "current-build-offline-story-carrier-exhaustion-v70"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -220,6 +220,11 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm01m24_2": "radio_gm01m24_2",
     "radio_gm01m24_3": "radio_gm01m24_3",
     "radio_gm01m24_4": "radio_gm01m24_4",
+    "dlg_gm01m25_5": "dlg_gm01m25_5",
+    "radio_gm01m25_1d5": "radio_gm01m25_1d5",
+    "radio_gm01m25_2": "radio_gm01m25_2",
+    "radio_gm01m25_3": "radio_gm01m25_3",
+    "radio_gm01m25_4": "radio_gm01m25_4",
 }
 OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
     "gm01m7": {
@@ -337,6 +342,7 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
         "startDialogListener": {
             "headerLocalId": 80,
             "eventName": "LevelEvent_OnDialogEnter",
+            "nextLocalId": 81,
             "propertyPath": "start_dialog",
         },
         "resultSwitch": {
@@ -346,6 +352,10 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
             "switchLocalId": 181,
             "getterLocalId": 180,
             "getterPath": "result",
+            "switchCases": (
+                (0, -1), (1, 182), (2, 183), (3, 18),
+                (4, 184), (5, 185), (8, 209), (9, 186),
+            ),
             "cases": ({
                 "value": 8,
                 "entryLocalId": 209,
@@ -360,6 +370,65 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
                 "getterLocalId": 144,
                 "propertyPath": "failed_dialog",
                 "pathLocalIds": (181, 186, 189, 190, 191, 204, 205, 145),
+            }),
+        },
+    },
+    "gm01m25": {
+        "levelId": "map01_lv007",
+        "scriptId": "2800020003",
+        "levelDataFile": (
+            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            "map01_lv007/map01_lv007_lv_data_sub_01.json"
+        ),
+        "levelDataSha256":
+            "210C01BD69A88F6E8F66DB13EBA200E996A1F989615579B8E702923DD85A7DE0",
+        "levelScriptFile": (
+            "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/"
+            "map01_lv007/2800020003.json"
+        ),
+        "levelScriptSha256":
+            "0B10781C03A03DA8710FA9A92AAF4247034771A7B8D4A5662D42BA7CE943ACF5",
+        "dictionaryEntryCount": 5,
+        "dictionaryScriptIds": (
+            "2800020003", "2800020005", "2800020008",
+            "2800020014", "2800020015",
+        ),
+        "propertyDialogs": {
+            "start_dialog": "dlg_gm01m25_1",
+            "succeed_dialog": "dlg_gm01m25_2",
+            "failed_dialog": "dlg_gm01m25_3",
+        },
+        "startDialogListener": {
+            "headerLocalId": 78,
+            "eventName": "LevelEvent_OnDialogEnter",
+            "nextLocalId": 79,
+            "propertyPath": "start_dialog",
+        },
+        "resultSwitch": {
+            "eventHeaderLocalId": 231,
+            "eventName": "ScriptEvent_OnCustomEvent",
+            "eventKey": "#33fa174c",
+            "switchLocalId": 179,
+            "getterLocalId": 178,
+            "getterPath": "result",
+            "switchCases": (
+                (0, -1), (1, 180), (2, 181), (3, 18),
+                (4, 182), (5, 183), (8, 207), (9, 184),
+            ),
+            "cases": ({
+                "value": 8,
+                "entryLocalId": 207,
+                "actionLocalId": 140,
+                "getterLocalId": 139,
+                "propertyPath": "succeed_dialog",
+                "pathLocalIds": (179, 207, 208, 210, 211, 212, 225, 226, 140),
+            }, {
+                "value": 9,
+                "entryLocalId": 184,
+                "actionLocalId": 143,
+                "getterLocalId": 142,
+                "propertyPath": "failed_dialog",
+                "pathLocalIds": (179, 184, 187, 188, 189, 202, 203, 143),
             }),
         },
     },
@@ -4148,6 +4217,106 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.update({
             f"au_dlg_gm01m24_3_{number:03d}" for number in range(1, 4)
         ),
     },
+    "dlg_gm01m25_1": {
+        "missionId": "gm01m25",
+        "filename": "dlg_gm01m25_1_pBC02BD93868F7244.json",
+        "sha256":
+            "936F8B0806E8C9665E3E893FCEF907BFF39447C8C4E329272FB646B61A8DA6C5",
+        "extraConfigFilename":
+            "dlg_gm01m25_1_extra_config_p283B84916755BA6E.json",
+        "extraConfigSha256":
+            "77F4F895E5195AEDDA2A26E04D6B12D22501FAE9F32C66A08A492A56E2ED5F65",
+        "lineIds": tuple(
+            f"dlg_gm01m25_1_{number:03d}" for number in range(9, 21)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m25_1_1_{number:03d}"
+            for number in (1, 3, 4)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m25_1_{number:03d}" for number in range(9, 21)
+        ),
+        "treeBranchGroups": ({
+            "optionGroup": 1,
+            "optionIds": (
+                "option_dlg_gm01m25_1_1_003",
+                "option_dlg_gm01m25_1_1_001",
+                "option_dlg_gm01m25_1_1_004",
+            ),
+            "targetLineIds": (
+                "dlg_gm01m25_1_016",
+                "dlg_gm01m25_1_013",
+                "dlg_gm01m25_1_009",
+            ),
+            "routeKind": "authored_split",
+        },),
+    },
+    "dlg_gm01m25_2": {
+        "missionId": "gm01m25",
+        "filename": "dlg_gm01m25_2_p61364FB28BF6E590.json",
+        "sha256":
+            "21E7C047FD7963144B258A6BF48FEE880AC5A2F8CC988E8652C8A8AC890528AF",
+        "extraConfigFilename":
+            "dlg_gm01m25_2_extra_config_p51073A344245C91A.json",
+        "extraConfigSha256":
+            "84F053C0E5C62364BC5A20266CE831C6F2858956768AE98B519FA198F73E936D",
+        "lineIds": tuple(
+            f"dlg_gm01m25_2_{number:03d}" for number in range(1, 5)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m25_2_1_{number:03d}" for number in range(1, 3)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m25_2_{number:03d}" for number in range(1, 5)
+        ),
+        "terminalOptionRoutes": ({
+            "optionGroup": 1,
+            "routes": ({
+                "optionId": "option_dlg_gm01m25_2_1_001",
+                "targetKind": "finish",
+                "finishId": 1,
+                "finishIdSerialized": True,
+            }, {
+                "optionId": "option_dlg_gm01m25_2_1_002",
+                "targetKind": "finish",
+                "finishId": None,
+                "finishIdSerialized": False,
+            }),
+        },),
+    },
+    "dlg_gm01m25_3": {
+        "missionId": "gm01m25",
+        "filename": "dlg_gm01m25_3_pE99800EF4392A0ED.json",
+        "sha256":
+            "E560FE80168629B52FC91E37200F615830462B388310E2BF6F4CE1825245171E",
+        "extraConfigFilename":
+            "dlg_gm01m25_3_extra_config_pD29AE7415BF90392.json",
+        "extraConfigSha256":
+            "3E7A166BE7721B67B34ACD2A2F3DD54ED77B7A5998E7E01F3BB3F2A21511BAB3",
+        "lineIds": tuple(
+            f"dlg_gm01m25_3_{number:03d}" for number in range(1, 4)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m25_3_1_{number:03d}" for number in range(1, 3)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m25_3_{number:03d}" for number in range(1, 4)
+        ),
+        "terminalOptionRoutes": ({
+            "optionGroup": 1,
+            "routes": ({
+                "optionId": "option_dlg_gm01m25_3_1_001",
+                "targetKind": "finish",
+                "finishId": 1,
+                "finishIdSerialized": True,
+            }, {
+                "optionId": "option_dlg_gm01m25_3_1_002",
+                "targetKind": "finish",
+                "finishId": None,
+                "finishIdSerialized": False,
+            }),
+        },),
+    },
 })
 OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e10m3_9",
@@ -4610,6 +4779,32 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS.update({
             },
         },
     },
+    "dlg_gm01m25_5": {
+        "missionId": "gm01m25",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm01m25_5_{number:03d}"
+            for number in (1, 2, *range(6, 12))
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m25_5_{number:03d}"
+            for number in (1, 2, *range(6, 12))
+        ),
+        "optionRows": {
+            "option_dlg_gm01m25_5_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": -4403692503426426134, "text": ""},
+            },
+            "option_dlg_gm01m25_5_1_003": {
+                "iconType": "main",
+                "optionText": {"id": -2179532275863901932, "text": ""},
+            },
+            "option_dlg_gm01m25_5_1_004": {
+                "iconType": "Default",
+                "optionText": {"id": 5754714993178035148, "text": ""},
+            },
+        },
+    },
 })
 OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS = frozenset({
     "actorName",
@@ -4935,6 +5130,12 @@ OFFLINE_EXHAUSTION_GM01M24_RADIOS = frozenset({
     "radio_gm01m24_3",
     "radio_gm01m24_4",
 })
+OFFLINE_EXHAUSTION_GM01M25_RADIOS = frozenset({
+    "radio_gm01m25_1d5",
+    "radio_gm01m25_2",
+    "radio_gm01m25_3",
+    "radio_gm01m25_4",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "a1m6d1": OFFLINE_EXHAUSTION_A1M6D1_RADIOS,
     "a1m6d2": OFFLINE_EXHAUSTION_A1M6D2_RADIOS,
@@ -4948,6 +5149,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm01m20": OFFLINE_EXHAUSTION_GM01M20_RADIOS,
     "gm01m22": OFFLINE_EXHAUSTION_GM01M22_RADIOS,
     "gm01m24": OFFLINE_EXHAUSTION_GM01M24_RADIOS,
+    "gm01m25": OFFLINE_EXHAUSTION_GM01M25_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
@@ -5106,6 +5308,10 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm01m24_2": frozenset({"au_radio_gm01m24_2_002"}),
     "radio_gm01m24_3": frozenset({"au_radio_gm01m24_3_003"}),
     "radio_gm01m24_4": frozenset({"au_radio_gm01m24_4_004"}),
+    "radio_gm01m25_1d5": frozenset({"au_radio_gm01m25_1d5_001"}),
+    "radio_gm01m25_2": frozenset({"au_radio_gm01m25_2_002"}),
+    "radio_gm01m25_3": frozenset({"au_radio_gm01m25_3_003"}),
+    "radio_gm01m25_4": frozenset({"au_radio_gm01m25_4_004"}),
     "radio_gm01m22_1d2": frozenset({"au_radio_gm01m22_1d2_001"}),
     "radio_gm01m22_1d3": frozenset({"au_radio_gm01m22_1d3_001"}),
     "radio_e5m5_1": frozenset({
@@ -6688,6 +6894,118 @@ def _dialog_tree_branch_groups(
     return sorted(groups, key=lambda row: row["optionGroup"])
 
 
+def _dialog_tree_terminal_option_routes(
+    tree_asset: Any,
+) -> list[dict[str, Any]] | None:
+    """Decode exact multi-option routes that terminate at FinishNodes.
+
+    The shipped connection order is paired with ``_normalOptions``.  An
+    omitted ``finishId`` remains explicitly absent here; this recovery does
+    not guess the runtime default value.
+    """
+    if not isinstance(tree_asset, dict):
+        return None
+    script = tree_asset.get("m_Script")
+    if not isinstance(script, str) or not script:
+        return None
+    try:
+        payload = json.loads(
+            base64.b64decode(script, validate=True).decode("utf-8-sig")
+        )
+    except (
+        ValueError,
+        binascii.Error,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+    ):
+        return None
+    if (
+        not isinstance(payload, dict)
+        or payload.get("type") != "Beyond.Gameplay.DialogTree"
+        or not isinstance(payload.get("nodes"), list)
+        or not isinstance(payload.get("connections"), list)
+    ):
+        return None
+    node_by_id: dict[str, dict[str, Any]] = {}
+    for node in payload["nodes"]:
+        if not isinstance(node, dict) or node.get("$id") in (None, ""):
+            return None
+        node_id = str(node["$id"])
+        if node_id in node_by_id:
+            return None
+        node_by_id[node_id] = node
+    targets_by_source: dict[str, list[str]] = defaultdict(list)
+    for connection in payload["connections"]:
+        if (
+            not isinstance(connection, dict)
+            or connection.get("$type")
+            != "Beyond.Gameplay.DialogTreeConnection"
+        ):
+            return None
+        source = connection.get("_sourceNode")
+        target = connection.get("_targetNode")
+        source_id = (
+            str(source.get("$ref") or "")
+            if isinstance(source, dict) else ""
+        )
+        target_id = (
+            str(target.get("$ref") or "")
+            if isinstance(target, dict) else ""
+        )
+        if source_id not in node_by_id or target_id not in node_by_id:
+            return None
+        targets_by_source[source_id].append(target_id)
+
+    groups: list[dict[str, Any]] = []
+    for node_id, node in node_by_id.items():
+        option_rows = [
+            row
+            for row in node.get("_normalOptions") or []
+            if isinstance(row, dict) and safe_key(row.get("_optionId"))
+        ]
+        if len(option_rows) <= 1:
+            continue
+        option_ids = [safe_key(row["_optionId"]) for row in option_rows]
+        group_matches = [
+            re.search(r"_(\d+)_\d+$", option_id)
+            for option_id in option_ids
+        ]
+        if any(match is None for match in group_matches):
+            return None
+        group_numbers = {int(match.group(1)) for match in group_matches if match}
+        if len(group_numbers) != 1:
+            return None
+        targets = list(targets_by_source.get(node_id) or [])
+        if len(targets) != len(option_ids):
+            return None
+        target_nodes = [node_by_id[target_id] for target_id in targets]
+        terminal_flags = [
+            safe_key(target.get("$type")).endswith(".DialogTreeFinishNode")
+            for target in target_nodes
+        ]
+        if not any(terminal_flags):
+            continue
+        if not all(terminal_flags):
+            return None
+        routes: list[dict[str, Any]] = []
+        for option_id, target in zip(option_ids, target_nodes, strict=True):
+            finish_id_serialized = "finishId" in target
+            finish_id = target.get("finishId")
+            if finish_id_serialized and not isinstance(finish_id, int):
+                return None
+            routes.append({
+                "optionId": option_id,
+                "targetKind": "finish",
+                "finishId": finish_id,
+                "finishIdSerialized": finish_id_serialized,
+            })
+        groups.append({
+            "optionGroup": next(iter(group_numbers)),
+            "routes": routes,
+        })
+    return sorted(groups, key=lambda row: row["optionGroup"])
+
+
 def build_offline_exhaustion_index(
     partial_report: dict[str, Any],
     table_root: Path,
@@ -7437,9 +7755,13 @@ def build_offline_exhaustion_index(
             and brief.get("propertyMapCount") == 37
             and property_values == declaration["propertyDialogs"]
             and listener_decoded.get("label") == listener["eventName"]
-            and (listener_decoded.get("actionHeader") or {}).get("nextId") == 81
+            and (listener_decoded.get("actionHeader") or {}).get("nextId")
+            == listener["nextLocalId"]
             and listener["propertyPath"].encode("utf-8") in listener_payload
-            and b"$80@_dialogId" in listener_payload
+            and (
+                f"${listener['headerLocalId']}@_dialogId".encode("utf-8")
+                in listener_payload
+            )
             and event_decoded.get("label") == result_switch["eventName"]
             and event_detail.get("eventKey") == result_switch["eventKey"]
             and event_detail.get("serverExchange") is False
@@ -7456,10 +7778,7 @@ def build_offline_exhaustion_index(
             }
             and switch_cases == [
                 {"value": value, "actionLocalId": action}
-                for value, action in (
-                    (0, -1), (1, 182), (2, 183), (3, 18),
-                    (4, 184), (5, 185), (8, 209), (9, 186),
-                )
+                for value, action in result_switch["switchCases"]
             ]
             and branch_valid
         )
@@ -7512,7 +7831,7 @@ def build_offline_exhaustion_index(
             },
             "resultProperty": result_switch["getterPath"],
             "resultBranches": branch_outputs,
-            "runtimeMissionAssetStatus": "absent_for_gm01m24",
+            "runtimeMissionAssetStatus": "absent_for_nominal_mission",
             "serverExchange": False,
             "orderEvidence": True,
             "branchExclusivity": "switch_int_case_exclusive",
@@ -8410,6 +8729,24 @@ def build_offline_exhaustion_index(
             expected_tree_branch_groups is None
             or actual_tree_branch_groups == expected_tree_branch_groups
         )
+        expected_terminal_option_routes = (
+            [
+                {
+                    "optionGroup": int(row["optionGroup"]),
+                    "routes": [dict(route) for route in row["routes"]],
+                }
+                for row in definition["terminalOptionRoutes"]
+            ]
+            if "terminalOptionRoutes" in definition else None
+        )
+        actual_terminal_option_routes = (
+            _dialog_tree_terminal_option_routes(tree)
+        )
+        terminal_option_routes_valid = (
+            expected_terminal_option_routes is None
+            or actual_terminal_option_routes
+            == expected_terminal_option_routes
+        )
         registered_option_ids = tuple(sorted(
             option_id
             for option_ids in (
@@ -8776,6 +9113,7 @@ def build_offline_exhaustion_index(
             or actual_line_ids != expected_line_ids
             or registered_option_ids != expected_option_ids
             or not tree_branch_groups_valid
+            or not terminal_option_routes_valid
             or len(line_audio_ids) != len(expected_line_ids)
             or not all(line_audio_ids)
             or actual_missing_audio_ids != expected_missing_audio_ids
@@ -8806,6 +9144,7 @@ def build_offline_exhaustion_index(
                     "lineIds": list(expected_line_ids),
                     "optionIds": list(expected_option_ids),
                     "treeBranchGroups": expected_tree_branch_groups,
+                    "terminalOptionRoutes": expected_terminal_option_routes,
                     "missingAudioIds": sorted(expected_missing_audio_ids),
                     "registered": True,
                     "registrationEvidence": [
@@ -8825,6 +9164,7 @@ def build_offline_exhaustion_index(
                     "lineIds": list(actual_line_ids),
                     "optionIds": list(registered_option_ids),
                     "treeBranchGroups": actual_tree_branch_groups,
+                    "terminalOptionRoutes": actual_terminal_option_routes,
                     "missingAudioIds": sorted(actual_missing_audio_ids),
                     "registry": {
                         key: registry.get(key)
@@ -8856,6 +9196,7 @@ def build_offline_exhaustion_index(
             ),
             "optionIds": list(expected_option_ids),
             "treeBranchGroups": actual_tree_branch_groups or [],
+            "terminalOptionRoutes": actual_terminal_option_routes or [],
             "timelineContext": timeline_context,
             "npcProxyConsumer": npc_proxy_consumer_context,
             "npcProxyConsumers": npc_proxy_consumer_contexts,
@@ -9595,13 +9936,22 @@ def build_offline_exhaustion_index(
             "optionIds": validation["optionIds"],
             "dialogTreeAssetStatus": "present_exact_definition",
             "dialogTreeBranchGroups": validation["treeBranchGroups"],
+            "dialogTreeTerminalOptionRoutes":
+                validation["terminalOptionRoutes"],
             "dialogTreeRouteStatus": (
                 (
-                    "authored_internal_branch_routes_recovered"
-                    if validation["treeBranchGroups"]
-                    else "authored_linear_or_single_option_routes_recovered"
+                    "authored_terminal_option_routes_recovered"
+                    if validation["terminalOptionRoutes"]
+                    else (
+                        "authored_internal_branch_routes_recovered"
+                        if validation["treeBranchGroups"]
+                        else "authored_linear_or_single_option_routes_recovered"
+                    )
                 )
-                if "treeBranchGroups" in definition
+                if (
+                    "treeBranchGroups" in definition
+                    or "terminalOptionRoutes" in definition
+                )
                 else "not_explicitly_audited"
             ),
             "sharedTimelineContext": validation["timelineContext"],
@@ -9621,7 +9971,7 @@ def build_offline_exhaustion_index(
                 (
                     "the hash-locked LevelData properties resolve this dialog "
                     "through an exact LevelScript listener or StartDialogAction "
-                    "control path; the local script has no serialized gm01m24 "
+                    "control path; the local script has no serialized nominal "
                     "MissionRuntime quest owner or server-event producer"
                     if validation["levelDataDialogBranchContext"]
                     else (
@@ -9658,8 +10008,9 @@ def build_offline_exhaustion_index(
             "orderBoundary": (
                 (
                     "result case 8 selects succeed_dialog and case 9 selects "
-                    "failed_dialog after the configured start_dialog; the two "
-                    "outcome dialogs are exclusive alternatives, not a sequence"
+                    "failed_dialog in the same configured start_dialog context; "
+                    "the two outcome dialogs are exclusive alternatives, not a "
+                    "sequence"
                     if validation["levelDataDialogBranchContext"]
                     else
                     "DialogId registration, DialogTree node order, line ids, "

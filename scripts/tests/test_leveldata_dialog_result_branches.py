@@ -1,5 +1,7 @@
 import copy
+import base64
 import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -91,7 +93,7 @@ class LevelScriptDynamicDialogDecoderTests(unittest.TestCase):
         self.assertNotIn("getterString", decoded)
 
 
-class Gm01m24DialogBranchValidatorTests(unittest.TestCase):
+class LevelDataDialogBranchValidatorTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.partial_report = read_json(
@@ -114,6 +116,30 @@ class Gm01m24DialogBranchValidatorTests(unittest.TestCase):
             [(row["resultValue"], row["dialogId"])
              for row in context["resultBranches"]],
             [(8, "dlg_gm01m24_2"), (9, "dlg_gm01m24_3")],
+        )
+        gm01m25 = index["dlg_gm01m25_2"]["levelDataDialogBranchContext"]
+        self.assertEqual(gm01m25["storyPropertyPath"], "succeed_dialog")
+        self.assertEqual(
+            [(row["resultValue"], row["dialogId"])
+             for row in gm01m25["resultBranches"]],
+            [(8, "dlg_gm01m25_2"), (9, "dlg_gm01m25_3")],
+        )
+        self.assertEqual(
+            index["dlg_gm01m25_2"]["dialogTreeTerminalOptionRoutes"],
+            [{
+                "optionGroup": 1,
+                "routes": [{
+                    "optionId": "option_dlg_gm01m25_2_1_001",
+                    "targetKind": "finish",
+                    "finishId": 1,
+                    "finishIdSerialized": True,
+                }, {
+                    "optionId": "option_dlg_gm01m25_2_1_002",
+                    "targetKind": "finish",
+                    "finishId": None,
+                    "finishIdSerialized": False,
+                }],
+            }],
         )
 
     def test_changed_getter_path_fails_with_actionable_diagnostic(self):
@@ -160,6 +186,68 @@ class Gm01m24DialogBranchValidatorTests(unittest.TestCase):
         self.assertEqual(len(diagnostic["sourcePaths"]), 2)
         self.assertIn("expected", diagnostic)
         self.assertIn("actual", diagnostic)
+
+    def test_changed_terminal_finish_id_fails_with_exact_route_diagnostic(self):
+        declaration = copy.deepcopy(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                "dlg_gm01m25_2"
+            ]
+        )
+        source = (
+            ROOT
+            / "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
+            / "json_by_type/TextAsset"
+            / declaration["filename"]
+        )
+        outer = read_json(source, {})
+        tree = json.loads(
+            base64.b64decode(outer["m_Script"]).decode("utf-8-sig")
+        )
+        finish = next(
+            node for node in tree["nodes"]
+            if node.get("$type") == "Beyond.Gameplay.DialogTreeFinishNode"
+            and node.get("finishId") == 1
+        )
+        finish["finishId"] = 2
+        outer["m_Script"] = base64.b64encode(
+            json.dumps(tree, ensure_ascii=False).encode("utf-8")
+        ).decode("ascii")
+        with tempfile.TemporaryDirectory() as directory:
+            changed = Path(directory) / source.name
+            changed.write_text(
+                json.dumps(outer, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            declaration["filename"] = str(changed)
+            declaration["sha256"] = hashlib.sha256(
+                changed.read_bytes()
+            ).hexdigest().upper()
+            with patch.dict(
+                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS,
+                {"dlg_gm01m25_2": declaration},
+            ):
+                index, status = gap_queue.build_offline_exhaustion_index(
+                    self.partial_report,
+                    self.table_root,
+                )
+        self.assertEqual(index, {})
+        self.assertEqual(
+            status["status"],
+            "inactive_dialog_definition_validation_failed",
+        )
+        diagnostic = status["validatorDiagnostics"][0]
+        self.assertEqual(diagnostic["validator"], "offlineDialogDefinition")
+        self.assertEqual(diagnostic["storyKey"], "dlg_gm01m25_2")
+        self.assertEqual(
+            diagnostic["expected"]["terminalOptionRoutes"][0]
+            ["routes"][0]["finishId"],
+            1,
+        )
+        self.assertEqual(
+            diagnostic["actual"]["terminalOptionRoutes"][0]
+            ["routes"][0]["finishId"],
+            2,
+        )
 
 
 if __name__ == "__main__":
