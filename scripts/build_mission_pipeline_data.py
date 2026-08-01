@@ -199,7 +199,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v97"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v98"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3145,6 +3145,10 @@ def publish_offline_story_recovery(
                 "mission_accept_dialog",
                 "closed_exact_mission_accept_dialog_no_relative_order",
             ),
+            (
+                "sns_authored_mission_link",
+                "closed_exact_authored_sns_mission_link_no_relative_order",
+            ),
         }
         for row in mission.get(
             "closedExactRuntimeConfigIsolatedScenes"
@@ -3155,6 +3159,34 @@ def publish_offline_story_recovery(
                 str(row.get("relation") or ""),
                 str(row.get("recoveryStatus") or ""),
             ) not in approved_runtime_contexts:
+                continue
+            story_key = str(row.get("sceneKey") or "")
+            if not story_key:
+                continue
+            recovery = {
+                key: value
+                for key, value in row.items()
+                if key != "sceneKey"
+            }
+            recovery["graphEffect"] = "none"
+            manifest_row = story_trigger_manifest.get(story_key)
+            if isinstance(manifest_row, dict):
+                manifest_row["runtimeContextRecovery"] = recovery
+                published_runtime_context_keys.add(story_key)
+
+        approved_native_contexts = {
+            (
+                "authoritative_scope_leveldata_mission_context",
+                "closed_exact_cross_mission_leveldata_shell_playback_context_no_relative_order",
+            ),
+        }
+        for row in mission.get("closedExactNativeIsolatedScenes") or []:
+            if not isinstance(row, dict):
+                continue
+            if (
+                str(row.get("relation") or ""),
+                str(row.get("recoveryStatus") or ""),
+            ) not in approved_native_contexts:
                 continue
             story_key = str(row.get("sceneKey") or "")
             if not story_key:

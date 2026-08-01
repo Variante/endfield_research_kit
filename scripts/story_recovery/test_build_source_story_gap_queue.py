@@ -3535,6 +3535,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "radio_gm01m17_4": {"au_radio_gm01m17_4_001"},
                 "radio_gm01m17_5": {"au_radio_gm01m17_5_001"},
                 "radio_gm01m17_9": {"au_radio_gm01m17_9_001"},
+                "radio_gm01m3_3d8": {"au_radio_gm01m3_3d8_001"},
                 "radio_gm01m20_1": {"au_radio_gm01m20_1_001"},
                 "radio_gm01m20_2": {"au_radio_gm01m20_2_001"},
                 "radio_gm01m20_3": {"au_radio_gm01m20_3_001"},
@@ -3970,6 +3971,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m6_9",
                 "dlg_e11m8_9",
                 "dlg_e11m8d5_1",
+                "misc_dlg_gm01m3_1d5",
                 "dlg_gm01m2_1",
                 "dlg_gm01m2_2",
                 "dlg_gm01m2_3",
@@ -5464,6 +5466,115 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual([], topology["storyAssignments"])
         self.assertFalse(topology["orderEvidence"])
 
+    def test_gm01m3_original_context_and_definition_frontier_is_exact(
+        self,
+    ) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GM01M3_RADIOS,
+            {"radio_gm01m3_3d8"},
+        )
+        self.assertEqual(
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm01m3" in key
+            },
+            {
+                "misc_dlg_gm01m3_1d5",
+                "radio_gm01m3_3d2",
+                "radio_gm01m3_3d8",
+                "sns_gm01m3_1",
+            },
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "misc_dlg_gm01m3_1d5"
+        ]
+        self.assertEqual(
+            dialog["lineIds"],
+            ("dlg_gm01m3_1d5_001", "dlg_gm01m3_1d5_002"),
+        )
+        self.assertEqual(dialog["optionIds"], ())
+
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        offline_index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual("active", status["status"])
+        self.assertEqual(
+            offline_index["sns_gm01m3_1"]["relatedMissionId"],
+            "gm01m3",
+        )
+        self.assertEqual(
+            offline_index["sns_gm01m3_1"][
+                "linkMissionIdsByContentId"
+            ],
+            {"4": "gm01m3"},
+        )
+
+        gm01m3 = gap_queue.read_json(
+            gap_queue.ROOT / "webui/data/lang/CN/mission/gm01m3.json",
+            {},
+        )
+        sns_rows = gap_queue._closed_exact_runtime_config_isolated_scenes(
+            gm01m3["flow"],
+            {"sns_gm01m3_1"},
+            "gm01m3",
+            offline_index,
+        )
+        self.assertEqual(
+            [row["recoveryStatus"] for row in sns_rows],
+            ["closed_exact_authored_sns_mission_link_no_relative_order"],
+        )
+        self.assertEqual(
+            gap_queue._closed_exact_runtime_config_isolated_scenes(
+                gm01m3["flow"],
+                {"sns_gm01m3_1"},
+                "gm01m3",
+                {},
+            ),
+            [],
+        )
+
+        gm01m4 = gap_queue.read_json(
+            gap_queue.ROOT / "webui/data/lang/CN/mission/gm01m4.json",
+            {},
+        )
+        connection = next(
+            row
+            for row in gm01m4["flow"]["missionStoryConnections"]
+            if row.get("key") == "radio_gm01m3_3d2"
+        )
+        native_rows = gap_queue._closed_exact_native_context_isolated_scenes(
+            {"missionStoryConnections": [connection]},
+            {"radio_gm01m3_3d2"},
+            "gm01m3",
+        )
+        self.assertEqual(
+            native_rows[0]["recoveryStatus"],
+            "closed_exact_cross_mission_leveldata_shell_playback_context_no_relative_order",
+        )
+        self.assertEqual(native_rows[0]["contextMissionId"], "gm01m4")
+        invalid = copy.deepcopy(connection)
+        invalid["levelScriptOccurrences"][0][
+            "authoritativeScopeLevelDataHosts"
+        ][0]["dictionaryEntryCount"] = 13
+        self.assertEqual(
+            gap_queue._closed_exact_native_context_isolated_scenes(
+                {"missionStoryConnections": [invalid]},
+                {"radio_gm01m3_3d2"},
+                "gm01m3",
+            ),
+            [],
+        )
+
     def test_gm01m17_retired_definitions_and_nested_topology_are_exact(
         self,
     ) -> None:
@@ -6733,6 +6844,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "sns_e1m9_1",
                 "sns_e7m4_1",
                 "sns_e10m4_1",
+                "sns_gm01m3_1",
                 "sns_gm01m22_2",
                 "sns_gm01m7_1",
                 "sns_gm01m7_2",

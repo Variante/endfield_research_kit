@@ -18,7 +18,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v97",
+            "sourceStoryGapQueue.v98",
         )
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
@@ -53,6 +53,25 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                                 "closed_exact_mission_accept_dialog_no_relative_order",
                             "activationBoundary": "mission accept lifecycle",
                             "orderBoundary": "accept does not order files",
+                        }, {
+                            "sceneKey": "sns_testm1_link",
+                            "missionId": "testm1",
+                            "relation": "sns_authored_mission_link",
+                            "recoveryStatus":
+                                "closed_exact_authored_sns_mission_link_no_relative_order",
+                            "activationBoundary": "authored mission link",
+                            "orderBoundary": "link does not order files",
+                        }],
+                        "closedExactNativeIsolatedScenes": [{
+                            "sceneKey": "radio_testm1_shell",
+                            "nominalStoryMissionId": "testm1",
+                            "contextMissionId": "testm2",
+                            "relation":
+                                "authoritative_scope_leveldata_mission_context",
+                            "recoveryStatus":
+                                "closed_exact_cross_mission_leveldata_shell_playback_context_no_relative_order",
+                            "activationBoundary": "exact playback in sibling shell",
+                            "orderBoundary": "shell does not order files",
                         }],
                         "deferredOfflineExhaustedIsolatedScenes": [{
                             "sceneKey": "dlg_testm1_1",
@@ -108,6 +127,17 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "attachmentStatus": "connected",
                     "routes": [{"relation": "mission_accept_dialog"}],
                 },
+                "sns_testm1_link": {
+                    "attachmentStatus": "connected",
+                    "routes": [{"relation": "sns_authored_mission_link"}],
+                },
+                "radio_testm1_shell": {
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "relation":
+                            "authoritative_scope_leveldata_mission_context",
+                    }],
+                },
             }
 
             result = pipeline.publish_offline_story_recovery(
@@ -117,7 +147,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
-        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 2)
+        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 4)
         self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 2)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
@@ -140,6 +170,18 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "recoveryStatus"
             ],
             "closed_exact_mission_accept_dialog_no_relative_order",
+        )
+        self.assertEqual(
+            manifest["sns_testm1_link"]["runtimeContextRecovery"][
+                "recoveryStatus"
+            ],
+            "closed_exact_authored_sns_mission_link_no_relative_order",
+        )
+        self.assertEqual(
+            manifest["radio_testm1_shell"]["runtimeContextRecovery"][
+                "contextMissionId"
+            ],
+            "testm2",
         )
         overlay = result["storyTriggerManifestOverlay"]["text_testm1_1"]
         self.assertEqual(overlay["routes"], [])

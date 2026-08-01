@@ -474,12 +474,17 @@
       offlineRecoveryOrder: "Order boundary",
       offlineRecoveryReopen: "Reopen when",
       offlineRecoverySources: "Original-data files",
+      runtimeRecoveryNominalMission: "Nominal Story mission",
+      runtimeRecoveryContextMission: "Validated runtime shell",
+      runtimeRecoveryQuestAnchors: "Shell quest anchors",
+      runtimeRecoveryNativePaths: "Exact native path",
+      runtimeRecoverySnsLink: "Authored SNS mission link",
       offlineRecoveryRelatedOriginalData: "Related original-data bundle",
       offlineRecoveryPrtsOrder: "terminal order",
       offlineRecoveryStoryRelation: "Story relation",
       offlineRecoveryMissionTextRows: "mission/objective text rows",
       offlineRecoveryGaps: "source-bounded activation gaps",
-      offlineRecoveryGapsHint: "These files and their internal assets are recovered from the current game build, but no original-data mission activator or relative mission-order edge is known. OCR and manual order are not used here.",
+      offlineRecoveryGapsHint: "These exact definitions or runtime contexts are recovered from the current game build, but no original-data mission activator and relative mission-order edge are both known. OCR and manual order are not used here.",
       offlineRecoveryInternalTimeline: "internal Timeline",
       offlineRecoveryLines: "lines",
       offlineRecoveryDefinedOptions: "Defined options (route unresolved)",
@@ -969,12 +974,17 @@
       offlineRecoveryOrder: "\u987a\u5e8f\u8fb9\u754c",
       offlineRecoveryReopen: "\u91cd\u65b0\u8c03\u67e5\u6761\u4ef6",
       offlineRecoverySources: "\u539f\u59cb\u6570\u636e\u6587\u4ef6",
+      runtimeRecoveryNominalMission: "\u5267\u60c5\u6587\u4ef6\u540d\u4e49\u4efb\u52a1",
+      runtimeRecoveryContextMission: "\u5df2\u9a8c\u8bc1\u8fd0\u884c\u65f6\u5916\u58f3",
+      runtimeRecoveryQuestAnchors: "\u5916\u58f3\u4efb\u52a1\u8282\u70b9",
+      runtimeRecoveryNativePaths: "\u7cbe\u786e\u539f\u751f\u8def\u5f84",
+      runtimeRecoverySnsLink: "\u539f\u59cb SNS \u4efb\u52a1\u94fe\u63a5",
       offlineRecoveryRelatedOriginalData: "\u76f8\u5173\u539f\u59cb\u6570\u636e\u675f",
       offlineRecoveryPrtsOrder: "\u7ec8\u7aef\u987a\u5e8f",
       offlineRecoveryStoryRelation: "\u5267\u60c5\u5173\u7cfb",
       offlineRecoveryMissionTextRows: "\u4f7f\u547d/\u76ee\u6807\u6587\u672c\u884c",
       offlineRecoveryGaps: "\u539f\u59cb\u6570\u636e\u9650\u5b9a\u7684\u6fc0\u6d3b\u7f3a\u53e3",
-      offlineRecoveryGapsHint: "\u8fd9\u4e9b\u6587\u4ef6\u53ca\u5176\u5185\u90e8\u8d44\u4ea7\u5df2\u4ece\u5f53\u524d\u6e38\u620f\u7248\u672c\u6062\u590d\uff0c\u4f46\u5c1a\u672a\u627e\u5230\u539f\u59cb\u6570\u636e\u4e2d\u7684\u4efb\u52a1\u6fc0\u6d3b\u5668\u6216\u4efb\u52a1\u5185\u76f8\u5bf9\u987a\u5e8f\u8fb9\u3002\u6b64\u5904\u4e0d\u4f7f\u7528 OCR \u6216\u624b\u52a8\u987a\u5e8f\u4f5c\u4e3a\u8bc1\u636e\u3002",
+      offlineRecoveryGapsHint: "\u8fd9\u4e9b\u7cbe\u786e\u5b9a\u4e49\u6216\u8fd0\u884c\u65f6\u4e0a\u4e0b\u6587\u5df2\u4ece\u5f53\u524d\u6e38\u620f\u7248\u672c\u6062\u590d\uff0c\u4f46\u5c1a\u672a\u540c\u65f6\u627e\u5230\u539f\u59cb\u6570\u636e\u4e2d\u7684\u4efb\u52a1\u6fc0\u6d3b\u5668\u4e0e\u4efb\u52a1\u5185\u76f8\u5bf9\u987a\u5e8f\u8fb9\u3002\u6b64\u5904\u4e0d\u4f7f\u7528 OCR \u6216\u624b\u52a8\u987a\u5e8f\u4f5c\u4e3a\u8bc1\u636e\u3002",
       offlineRecoveryInternalTimeline: "\u5185\u90e8 Timeline",
       offlineRecoveryLines: "\u884c",
       offlineRecoveryDefinedOptions: "\u5df2\u5b9a\u4e49\u9009\u9879\uff08\u8def\u7531\u672a\u89e3\u6790\uff09",
@@ -2126,7 +2136,30 @@
       `<code>#${esc(entry.order)} ${esc(entry.contentId || "?")} / ${esc(entry.prtsId || "?")}</code>`
     )).join(" ");
     const relatedSources = (related?.sourceFiles || []).map((path) => `<code>${esc(path)}</code>`).join("<br>");
+    const nativePaths = (recovery.nativeEventPaths || []).map((path) => {
+      const header = path?.headerName || path?.eventDetail?.type || "?";
+      const actions = (path?.path || []).map((step) => step?.actionName || step?.recordClass).filter(Boolean);
+      return `<code>${esc([header, ...actions].join(" → "))}</code>`;
+    }).join("<br>");
+    const runtimeDetails = runtimeRecovery ? [
+      recovery.nominalStoryMissionId
+        ? `<small><strong>${esc(t("runtimeRecoveryNominalMission"))}:</strong> <code>${esc(recovery.nominalStoryMissionId)}</code></small>`
+        : "",
+      recovery.contextMissionId
+        ? `<small><strong>${esc(t("runtimeRecoveryContextMission"))}:</strong> <code>${esc(recovery.contextMissionId)}</code></small>`
+        : "",
+      (recovery.anchorQuestIds || []).length
+        ? `<small><strong>${esc(t("runtimeRecoveryQuestAnchors"))}:</strong> ${(recovery.anchorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</small>`
+        : "",
+      nativePaths
+        ? `<small><strong>${esc(t("runtimeRecoveryNativePaths"))}:</strong><br>${nativePaths}</small>`
+        : "",
+      recovery.relation === "sns_authored_mission_link"
+        ? `<small><strong>${esc(t("runtimeRecoverySnsLink"))}:</strong> <code>${esc(recovery.missionId || "?")}</code>${(recovery.snsContentIds || []).length ? ` · content ${(recovery.snsContentIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}` : ""}</small>`
+        : "",
+    ].filter(Boolean).join("") : "";
     const boundaries = [
+      runtimeDetails,
       recovery.activationBoundary
         ? `<small><strong>${esc(t("runtimeRecoveryActivation"))}:</strong> ${esc(recovery.activationBoundary)}</small>`
         : "",
@@ -2161,11 +2194,24 @@
     const missionId = String(state.missionId || state.mission?.mission?.id || "");
     const rows = new Map();
     [...Object.values(manifest), ...Object.values(overlay)].forEach((entry) => {
-      const recovery = entry?.offlineRecovery;
+      const offlineRecovery = entry?.offlineRecovery;
+      const runtimeRecovery = entry?.runtimeContextRecovery;
+      const crossMissionRuntimeRecovery = runtimeRecovery
+        && String(runtimeRecovery.nominalStoryMissionId || "") === missionId
+        && String(runtimeRecovery.contextMissionId || "") !== missionId;
+      const authoredSnsMissionRecovery = runtimeRecovery
+        && runtimeRecovery.relation === "sns_authored_mission_link"
+        && String(runtimeRecovery.missionId || "") === missionId;
+      const displayRuntimeRecovery = crossMissionRuntimeRecovery || authoredSnsMissionRecovery;
+      const recovery = offlineRecovery || (displayRuntimeRecovery ? runtimeRecovery : null);
       if (!entry?.key || !recovery || recovery.graphEffect !== "none") return;
-      const owner = String(recovery.missionId || entry.nominalMissionId || "");
+      const owner = String(recovery.missionId || recovery.nominalStoryMissionId || entry.nominalMissionId || "");
       if (owner !== missionId) return;
-      rows.set(entry.key, {key: entry.key, ...recovery});
+      rows.set(entry.key, {
+        key: entry.key,
+        ...recovery,
+        runtimeContextRecovery: Boolean(displayRuntimeRecovery),
+      });
     });
     return [...rows.values()].sort((a, b) => String(a.key).localeCompare(
       String(b.key),
@@ -2751,6 +2797,7 @@
       const timeline = row.sharedTimelineContext?.timeline;
       const lineCount = (row.sharedTimelineContext?.lineIds || []).length;
       const sources = [
+        ...(row.sourceFiles || []),
         ...(row.definitionSourceFiles || []),
         ...(row.definitionAssets || []),
         ...(row.definitionTables || []),
@@ -2864,6 +2911,9 @@
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
         : "";
       const evidenceBoundary = [
+        row.activationBoundary
+          ? `<small><strong>${esc(t("runtimeRecoveryActivation"))}:</strong> ${esc(row.activationBoundary)}</small>`
+          : "",
         row.consumerBoundary
           ? `<small><strong>${esc(t("offlineRecoveryConsumer"))}:</strong> ${esc(row.consumerBoundary)}</small>`
           : "",
@@ -2874,6 +2924,16 @@
           ? `<small><strong>${esc(t("offlineRecoveryReopen"))}:</strong> ${esc(row.reopenWhen)}</small>`
           : "",
       ].filter(Boolean).join("");
+      const nativePaths = (row.nativeEventPaths || []).map((path) => {
+        const header = path?.headerName || path?.eventDetail?.type || "?";
+        const actions = (path?.path || []).map((step) => step?.actionName || step?.recordClass).filter(Boolean);
+        return `<code>${esc([header, ...actions].join(" → "))}</code>`;
+      }).join(" ");
+      const runtimeContext = row.runtimeContextRecovery
+        ? row.relation === "sns_authored_mission_link"
+          ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoverySnsLink"))}: <code>${esc(row.missionId || "?")}</code></span>${(row.snsContentIds || []).length ? `<span>content ${(row.snsContentIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}</p>`
+          : `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || "?")}</code></span><span>${esc(t("runtimeRecoveryContextMission"))}: <code>${esc(row.contextMissionId || "?")}</code></span>${(row.anchorQuestIds || []).length ? `<span>${esc(t("runtimeRecoveryQuestAnchors"))}: ${(row.anchorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${nativePaths ? `<span>${esc(t("runtimeRecoveryNativePaths"))}: ${nativePaths}</span>` : ""}</p>`
+        : "";
       const evidenceLabel = ({
         leveldata_property_resolved_levelscript_result_branch: t("offlineRecoveryEvidenceResultBranch"),
         registered_dialog_definition_without_recovered_activator: t("offlineRecoveryEvidenceDefinitionOnly"),
@@ -2882,7 +2942,7 @@
         radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),
       })[row.evidenceKind] || row.evidenceKind || row.recoveryStatus || "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
