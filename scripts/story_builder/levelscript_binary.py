@@ -2755,6 +2755,64 @@ def _decode_getter_int(payload: bytes) -> dict[str, Any]:
     })
 
 
+def _decode_getter_string(payload: bytes) -> dict[str, Any]:
+    """Decode the installed ``GetterString`` property-path payload.
+
+    The leading byte is the nullable/default string marker, followed by the
+    shared id/source/path fields.  Requiring exact EOF keeps arbitrary strings
+    in neighboring records from being promoted to authored property getters.
+    """
+    if len(payload) < 17 or payload[0] != 0x04:
+        return {}
+    value_size, id_ref, param_source, path_size = struct.unpack_from(
+        "<iiii", payload, 1
+    )
+    if (
+        value_size != -1
+        or id_ref != -1
+        or param_source < 0
+        or param_source > 0x10000
+        or path_size <= 0
+        or path_size > 1024
+        or 17 + path_size != len(payload)
+    ):
+        return {}
+    try:
+        path = payload[17:].decode("utf-8")
+    except UnicodeDecodeError:
+        return {}
+    return {
+        "value": None,
+        "idRef": id_ref,
+        "paramSource": param_source,
+        "path": path,
+        "payloadShape": "nullable-string-property-path-exact-eof",
+    }
+
+
+def _decode_start_dialog_action(payload: bytes) -> dict[str, Any]:
+    """Decode the exact dynamic dialog getter reference in StartDialogAction."""
+    if len(payload) < 17 or payload[0] != 0x04:
+        return {}
+    constant_size, getter_local_id, param_source, path_size = struct.unpack_from(
+        "<iiii", payload, 1
+    )
+    if not (
+        constant_size == -1
+        and 0 <= getter_local_id <= 0x10000
+        and param_source == -1
+        and path_size == -1
+    ):
+        return {}
+    return {
+        "dialogGetterLocalId": getter_local_id,
+        "constantDialogId": None,
+        "paramSource": param_source,
+        "path": None,
+        "payloadShape": "null-dialog-value-local-getter-ref-exact-prefix",
+    }
+
+
 def _decode_get_levelscript_stage_getter(payload: bytes) -> dict[str, Any]:
     script_ptr = _decode_levelscript_ptr_param(payload, 0)
     if script_ptr is None:
@@ -5589,6 +5647,10 @@ def decode_levelscript_record_payload(
         switch_int = _decode_switch_int_action(payload)
         if switch_int:
             out.update(switch_int)
+    if semantic_key == (0x049E, 0x0F):
+        start_dialog = _decode_start_dialog_action(payload)
+        if start_dialog:
+            out["startDialogAction"] = start_dialog
     if semantic_key == (0x04BF, 0x0C):
         switch_string = _decode_switch_string_action(payload)
         if switch_string:
@@ -5664,6 +5726,7 @@ def decode_levelscript_record_payload(
         (0x012F, 0x08),
         (0x013A, 0x08),
         (0x0184, 0x08),
+        (0x01A5, 0x08),
         (0x01AA, 0x0A),
         (0x01AC, 0x09),
         (0x01BA, 0x09),
@@ -5707,6 +5770,10 @@ def decode_levelscript_record_payload(
             getter_int = _decode_getter_int(getter_payload)
             if getter_int:
                 out["getterInt"] = getter_int
+        elif semantic_key == (0x01A5, 0x08):
+            getter_string = _decode_getter_string(getter_payload)
+            if getter_string:
+                out["getterString"] = getter_string
         elif semantic_key == (0x01AA, 0x0A):
             int_compare = _decode_number_compare_getter(
                 getter_payload,

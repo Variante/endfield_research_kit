@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 494 (490 MissionRuntime + 4 Story-only recovery shells) |
+| Pipeline missions | 495 (490 MissionRuntime + 5 Story-only recovery shells) |
 | Unique Story files | 5,282 |
 | Connected files | 4,177 (79.1%) |
 | Files with a normalized trigger/context route | 4,398 (83.3%) |
@@ -255,6 +255,26 @@ AudioDialog ids and no recovered consumer across the hash-locked carrier and
 native surfaces. The WebUI exposes all eight closure cards, the exact alias,
 and the unresolved quest fork without adding a guessed file-order edge.
 
+The `gm01m24` frontier is now source-bounded from original serialized data:
+its queue score fell from 40 to zero and all eight actionable isolated files
+are closed to explicit current-build boundaries. This mission has no
+`MissionRuntimeAsset`; the similarly named `m1m24` tutorial asset is a separate
+namespace and is not ownership evidence. Exact member-22 LevelData dictionary
+`map01_lv006_lv_data_sub_gm01m24` configures `start_dialog = dlg_gm01m24_1`,
+`succeed_dialog = dlg_gm01m24_2`, and `failed_dialog = dlg_gm01m24_3` for
+LevelScript `3500190001`. Its exact local custom-event path reads integer
+property `result` through `SwitchInt`: case 8 reaches `StartDialogAction` via
+`succeed_dialog`, while case 9 reaches it via `failed_dialog`. These two paths
+are mutually exclusive outcome branches after the configured start dialog;
+the client asset does not serialize the custom-event producer or a mission
+quest owner. `dlg_gm01m24_1` also retains its exact three-way internal
+DialogTree split. Unregistered `dlg_gm01m24_5` is DialogText/option-definition
+only, and radios `_1d5`, `_2`, `_3`, and `_4` are one-line RadioTable
+definitions with missing AudioDialog ids and no recovered consumer. Mission
+Pipeline publishes a fifth zero-node Story-only shell, shows the two exact
+result branches and both source files, and keeps OCR/sibling/manual routes as
+comparison-only evidence.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -283,9 +303,8 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should move to the highest-ranked remaining real major-mission
-frontier (124 actionable core-isolated files remain across that bucket; the
-next tied frontier includes `gm01m24`, `gm01m25`, `gm01m26`, `gm01m5`, and
-`gm02m1`) and
+frontier (116 actionable core-isolated files remain across that bucket; the
+next tied frontier includes `gm01m25`, `gm01m26`, `gm01m5`, and `gm02m1`) and
 the five character-mission quest-attachment gaps. For `gm01m16`, reopen the
 patrol rows only if an exact `NpcPatrolStart`, world-entity, or MissionRuntime
 tracking join co-carries patrol `160002` or `20001`; do not infer that join from
