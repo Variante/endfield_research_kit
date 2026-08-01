@@ -11,9 +11,9 @@ Latest CN reports:
 | --- | ---: |
 | Pipeline missions | 494 (490 MissionRuntime + 4 Story-only recovery shells) |
 | Unique Story files | 5,282 |
-| Connected files | 4,174 (79.0%) |
-| Files with a normalized trigger/context route | 4,395 (83.2%) |
-| Unlinked files | 1,108 |
+| Connected files | 4,177 (79.1%) |
+| Files with a normalized trigger/context route | 4,398 (83.3%) |
+| Unlinked files | 1,105 |
 | Unlinked files with exact native playback | 155 |
 | Ordered mission graphs | 487 |
 | Candidate scene placements | 8,876 |
@@ -206,10 +206,11 @@ without RichContent. Cross-mission `gm01m7` NPC-proxy and archive joins remain
 navigation/definition context only. Mission Pipeline exposes all nine files,
 their related sources, the linear quest context, and these evidence boundaries.
 
-The `gm01m16` binary-first batch reduced its actionable core-isolated frontier
-from eight files to four and its queue score from 40 to 20. Its exact
-MissionRuntime graph has 26 quests, two entries, five forks, four merges, eight
-terminals, and the authored 12-quest `mainPathQuests` route. Those facts do not
+The `gm01m16` binary-first recovery is now source-bounded: its actionable
+core-isolated frontier fell from eight files to zero and its queue score from
+40 to zero. Its exact MissionRuntime graph has 26 quests, two entries, five
+forks, four merges, eight terminals, and the authored 12-quest
+`mainPathQuests` route. Those facts do not
 prove branch exclusivity, server successor selection, or Story placement.
 `text_gm01m16_4` is now recovered from the exact top-level tail of LevelScript
 `map01_lv005/3400160000` as `int_narrative_scene` local interactive `40001`;
@@ -219,10 +220,20 @@ definitions whose audio ids are absent from AudioDialog and whose exact roots
 have no consumer outside tables across the current installed VFS and
 GameAssembly surfaces. Mission Pipeline exposes their hash-locked mission
 topology and source file without adding ownership or order. Radios `_1`, `_5`,
-`_6`, and `_15` remain actionable: `_1` has an exact mission-state-gated
-LevelFunctionArea playback context, while `_5`, `_6`, and `_15` occur in
-variable-string NPC patrol-action payloads that still need a complete typed
-decode and mission/quest activation join.
+`_6`, and `_15` now have exact native playback contexts. `_1` is the radio in
+the typed LevelFunctionArea trigger whose `hideAfterMissionId` is `gm01m16`;
+the same row independently carries `e2m5` as `hideBeforeMissionId`. `_5` and
+`_6` are type-9 radio actions at points 1 and 14 of fully consumed patrol
+`160002` in `map01_lv005_lv_data_sub_gm01m16.json`. `_15` is a type-9 action
+inside patrol `20001` in `map01_lv005_lv_data_sub_02.json`; its action and
+neighboring patrol boundaries are exact, but an unrelated nested event-pair
+layout prevents a complete point-index decode, so the point stays unknown.
+Current installed metadata maps `PatrolSubActionForMemoryPack.Deserialize` to
+token `0x06004bae` / RVA `0x3467210`, and native patrol consumers include
+`NewNpcAIPatrolController._PlayRadioSubAction` (`0x0600aed9`). These patrol
+records serialize no mission/quest identity, so Mission Pipeline exposes their
+source files, patrol/action offsets, and point boundaries without creating an
+ownership or relative-order edge.
 
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
@@ -251,13 +262,12 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should finish the four-file `gm01m16` frontier by promoting the
-already typed `_1` trigger-zone context and extending the fail-closed
-`NpcPatrolData` action decoder for `_5`, `_6`, and `_15`; it must then join any
-recovered patrol id through exact `NpcPatrolStart`, world-entity, and
-MissionRuntime tracking evidence. Continue afterward with the highest-ranked
-remaining real major-mission frontier and the character-mission
-quest-attachment gaps. Reopen a
+Next work should move to the highest-ranked remaining real major-mission
+frontier (132 actionable core-isolated files remain across that bucket) and
+the five character-mission quest-attachment gaps. For `gm01m16`, reopen the
+patrol rows only if an exact `NpcPatrolStart`, world-entity, or MissionRuntime
+tracking join co-carries patrol `160002` or `20001`; do not infer that join from
+the mission-like filename or patrol registration order. Reopen a
 deferred row only when a new typed producer/consumer or changed source hash
 supplies an ownership or order edge.
 

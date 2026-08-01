@@ -10357,6 +10357,15 @@ def _closed_exact_native_context_isolated_scenes(
         ):
             continue
         if relation == "radio_trigger_zone_mission_state_playback_context":
+            gate_roles = set(_string_list(
+                connection.get("missionStateGateRoles")
+            ))
+            roles_by_id = connection.get("missionStateRolesById")
+            recognized_roles = {
+                "hideAfterMissionId",
+                "hideBeforeMissionId",
+                "hideCompleteMissionId",
+            }
             if (
                 safe_key(connection.get("phase"))
                 != "mission_state_trigger_zone"
@@ -10365,10 +10374,19 @@ def _closed_exact_native_context_isolated_scenes(
                 or safe_key(connection.get("evidenceTier")) != "direct"
                 or safe_key(connection.get("missionStateId"))
                 != owner_mission
-                or set(_string_list(
-                    connection.get("missionStateGateRoles")
-                ))
-                != {"hideBeforeMissionId", "hideCompleteMissionId"}
+                or not gate_roles
+                or not gate_roles.issubset(recognized_roles)
+                or not isinstance(roles_by_id, dict)
+                or set(_string_list(roles_by_id.get(owner_mission)))
+                != gate_roles
+                or any(
+                    not safe_key(mission_id)
+                    or not set(_string_list(roles)).issubset(
+                        recognized_roles
+                    )
+                    or not _string_list(roles)
+                    for mission_id, roles in roles_by_id.items()
+                )
                 or not safe_key(connection.get("nativeMappingId"))
                 or "PlayRadio" not in safe_key(
                     connection.get("nativeConsumer")
@@ -10401,6 +10419,69 @@ def _closed_exact_native_context_isolated_scenes(
                     "the exact radio trigger-zone row and mission-state "
                     "gates establish playback context, but entering the "
                     "world trigger supplies no relative Story order"
+                ),
+            })
+            continue
+        if relation == "npc_patrol_action_radio_playback_context":
+            patrol_offset = connection.get("patrolRecordOffset")
+            action_offset = connection.get("radioActionRecordOffset")
+            action_end = connection.get("radioActionRecordEndOffset")
+            next_patrol_offset = connection.get("nextPatrolRecordOffset")
+            if (
+                safe_key(connection.get("phase")) != "npc_patrol_action"
+                or safe_key(connection.get("confidence"))
+                != "native_exact_serialized_patrol_action"
+                or safe_key(connection.get("evidenceTier")) != "direct"
+                or connection.get("questActivation") is not False
+                or connection.get("questPlayback") is not False
+                or connection.get("questCompletion") is not False
+                or safe_key(connection.get("patrolEnvelopeStatus")) not in {
+                    "exact_full_patrol_record_consume",
+                    "exact_typed_neighbor_boundaries_partial_point_decode",
+                }
+                or not isinstance(connection.get("patrolId"), int)
+                or connection.get("patrolId") <= 0
+                or connection.get("patrolActionType") != 9
+                or connection.get("serializedMemberCount") != 26
+                or safe_key(connection.get("patrolSubActionDataStatus"))
+                != "null"
+                or not safe_key(connection.get("nativeMappingId"))
+                or "PlayRadio" not in safe_key(
+                    connection.get("nativeConsumer")
+                )
+                or not _string_list(connection.get("levelIds"))
+                or not _string_list(connection.get("sourceFiles"))
+                or not all(isinstance(value, int) for value in (
+                    patrol_offset,
+                    action_offset,
+                    action_end,
+                    next_patrol_offset,
+                ))
+                or not (
+                    patrol_offset < action_offset < action_end
+                    <= next_patrol_offset
+                )
+            ):
+                continue
+            closed.append({
+                "sceneKey": scene_key,
+                "recoveryStatus":
+                    "closed_exact_native_patrol_playback_context_no_relative_order",
+                "relation": relation,
+                "patrolId": connection.get("patrolId"),
+                "patrolPointIndex": connection.get("patrolPointIndex"),
+                "patrolEnvelopeStatus": safe_key(
+                    connection.get("patrolEnvelopeStatus")
+                ),
+                "levelIds": _string_list(connection.get("levelIds")),
+                "sourceFiles": _string_list(connection.get("sourceFiles")),
+                "nativeMappingId": safe_key(
+                    connection.get("nativeMappingId")
+                ),
+                "orderBoundary": (
+                    "the exact typed patrol action establishes native radio "
+                    "playback context; the patrol payload serializes no "
+                    "mission/quest identity or relative Story order"
                 ),
             })
             continue

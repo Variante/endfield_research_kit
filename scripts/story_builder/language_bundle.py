@@ -17586,6 +17586,93 @@ def build_language_bundle(
             preexisting_attached_story_keys_by_mission[target_mission].add(
                 route_story_key
             )
+    patrol_radio_contexts = build_leveldata_npc_patrol_radio_story_contexts(
+        set(all_story_entry_keys),
+    )
+    for context in patrol_radio_contexts:
+        route_story_key = resolve_scene_ref_out_key(
+            str(context.get("radioId") or ""),
+            all_story_entry_keys,
+        )
+        target_mission = story_owner_by_key.get(route_story_key) or ""
+        if not route_story_key or target_mission not in mission_runtime_id_set:
+            continue
+        connection = {
+            "key": route_story_key,
+            "kind": story_kind_by_key.get(route_story_key, "radio"),
+            "relation": "npc_patrol_action_radio_playback_context",
+            "direction": "context",
+            "phase": "npc_patrol_action",
+            "confidence": "native_exact_serialized_patrol_action",
+            "evidenceTier": "direct",
+            "source": (
+                "one typed LevelData NpcPatrolData/9 envelope contains this "
+                "PatrolSubAction/26 radioId; the current installed metadata "
+                "and GameAssembly map the record to the patrol radio consumer"
+            ),
+            "storyOwnerMission": target_mission,
+            "storyBinding": True,
+            "ownership": False,
+            "questActivation": False,
+            "questPlayback": False,
+            "questCompletion": False,
+            "questTriggerStatus": (
+                "exact_npc_patrol_radio_action_without_serialized_mission_"
+                "or_quest_identity"
+            ),
+            "executionSide": "client",
+            "serverExchange": False,
+            "clientRequest": False,
+            "expectedClientReply": False,
+            "nativeMappingId": context.get("nativeMappingId"),
+            "nativeConsumer": context.get("nativeConsumer"),
+            "levelIds": [str(context.get("levelId") or "")],
+            "sourceFiles": [str(context.get("sourceFile") or "")],
+            "sourcePath": context.get("sourcePath"),
+            "patrolId": context.get("patrolId"),
+            "patrolPointCount": context.get("pointCount"),
+            "patrolPointIndex": context.get("pointIndex"),
+            "patrolPointActionIndex": context.get("pointActionIndex"),
+            "patrolRecordOffset": context.get("recordOffset"),
+            "nextPatrolRecordOffset": context.get("nextPatrolRecordOffset"),
+            "patrolEnvelopeStatus": context.get("patrolEnvelopeStatus"),
+            "radioActionRecordOffset": context.get(
+                "radioActionRecordOffset"
+            ),
+            "radioActionRecordEndOffset": context.get(
+                "radioActionRecordEndOffset"
+            ),
+            "serializedMemberCount": context.get(
+                "radioActionSerializedMemberCount"
+            ),
+            "radioWaitTime": context.get("radioWaitTime"),
+            "radioRadius": context.get("radius"),
+            "patrolActionType": context.get("type"),
+            "patrolSubActionDataStatus": context.get(
+                "subActionDataStatus"
+            ),
+        }
+        connections = mission_flows_payload[target_mission].setdefault(
+            "missionStoryConnections",
+            [],
+        )
+        signature = (
+            route_story_key,
+            connection["relation"],
+            tuple(connection.get("sourceFiles") or []),
+            connection.get("radioActionRecordOffset"),
+        )
+        if any((
+            str(existing.get("key") or ""),
+            str(existing.get("relation") or ""),
+            tuple(existing.get("sourceFiles") or []),
+            existing.get("radioActionRecordOffset"),
+        ) == signature for existing in connections if isinstance(existing, dict)):
+            continue
+        connections.append(connection)
+        preexisting_attached_story_keys_by_mission[target_mission].add(
+            route_story_key
+        )
     airwall_radio_contexts = build_leveldata_airwall_mission_radio_contexts(
         set(all_story_entry_keys),
         mission_runtime_id_set,

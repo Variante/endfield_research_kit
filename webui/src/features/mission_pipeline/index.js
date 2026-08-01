@@ -399,6 +399,7 @@
       relationTaskMissionStateDependency: "the same authored LevelScript contains an exact taskMap mission-state condition and Story playback, but no serialized control path links them (dependency only)",
       relationMissionStateProcessing: "the exact native true branch plays this Story action while the named mission equals Processing (mission context, not quest causality)",
       relationRadioTriggerMissionState: "one typed LevelData radio-trigger zone co-carries this radio and the named mission-state boundary; native OnEnter checks that state before playback (context, not quest ownership)",
+      relationNpcPatrolRadioPlayback: "one typed NPC patrol action contains this radio and maps to the installed native patrol-radio consumer (playback context only; the patrol serializes no mission, quest, or relative Story order)",
       relationAirWallMissionState: "one exact LevelData AirWall co-carries typed mission/quest-state predicates and this pushback radio; synchronized state controls the wall, then later player contact can play the radio (context, not transition causality, ownership, or order)",
       relationNarrativeInteractiveMissionState: "one counted LevelInteractiveData entity co-carries the popup consumer id and mission-state FX key; the original narrative template and native component prove the local playback dependency (not ownership)",
       relationLevelScriptInteractiveNarrative: "exact counted LevelScript interactive configuration binds this Story file to a local narrative object; activation and order remain unresolved",
@@ -865,6 +866,7 @@
       relationTaskMissionStateDependency: "同一条原始 LevelScript 同时包含精确的 taskMap 使命状态条件和剧情播放，但序列化控制路径并未连接两者（仅依赖证据）",
       relationMissionStateProcessing: "精确原生 true 分支在该使命等于 Processing 时播放此剧情动作（使命上下文，不代表任务因果）",
       relationRadioTriggerMissionState: "同一条强类型 LevelData 广播触发区记录同时携带该广播与使命状态边界；原生 OnEnter 在播放前检查该状态（上下文，不代表任务归属）",
+      relationNpcPatrolRadioPlayback: "一条强类型 NPC 巡逻动作包含该广播，并映射到当前安装版本的原生巡逻广播消费者（仅为播放上下文；巡逻数据不序列化使命、任务或相对剧情顺序）",
       relationAirWallMissionState: "同一条精确 LevelData 空气墙记录同时携带类型化的使命/任务状态条件与击退广播；同步状态只控制空气墙，玩家之后接触时才可能播放广播（上下文，不代表状态切换因果、归属或顺序）",
       relationNarrativeInteractiveMissionState: "同一条带计数边界的 LevelInteractiveData 实体同时携带弹窗消费端 ID 与使命状态特效键；原始叙事模板及原生组件证明本地播放依赖（不代表归属）",
       relationFocusModeRadio: "FocusMode 将交互锁定广播明确限定到该使命",
@@ -1702,6 +1704,7 @@
       mission_state_processing_native_playback_context: "relationMissionStateProcessing",
       radio_trigger_zone_mission_state_dependency: "relationRadioTriggerMissionState",
       radio_trigger_zone_mission_state_playback_context: "relationRadioTriggerMissionState",
+      npc_patrol_action_radio_playback_context: "relationNpcPatrolRadioPlayback",
       airwall_mission_state_radio_dependency: "relationAirWallMissionState",
       airwall_mission_state_radio_playback_context: "relationAirWallMissionState",
       narrative_interactive_mission_state_dependency: "relationNarrativeInteractiveMissionState",
@@ -1865,6 +1868,21 @@
       (row.missionStateGatePredicates || []).length ? `exact predicates ${(row.missionStateGatePredicates || []).join("; ")}` : "",
       row.radioTriggerId ? `radio-trigger zone ${row.radioTriggerId}` : "",
       row.useRadioTriggerOnce === true ? "one-shot radio trigger" : "",
+      row.patrolId ? `NPC patrol ${row.patrolId}` : "",
+      row.patrolPointCount !== undefined ? `patrol points ${row.patrolPointCount}` : "",
+      row.patrolPointIndex !== undefined && row.patrolPointIndex !== null
+        ? `exact patrol point ${row.patrolPointIndex}`
+        : row.patrolEnvelopeStatus === "exact_typed_neighbor_boundaries_partial_point_decode"
+          ? "patrol point unresolved; exact typed neighbor boundaries retained"
+          : "",
+      row.patrolPointActionIndex !== undefined && row.patrolPointActionIndex !== null
+        ? `point action ${row.patrolPointActionIndex}`
+        : "",
+      row.patrolEnvelopeStatus ? `patrol envelope ${row.patrolEnvelopeStatus}` : "",
+      row.radioActionRecordOffset !== undefined
+        ? `radio action bytes ${row.radioActionRecordOffset}-${row.radioActionRecordEndOffset}`
+        : "",
+      row.radioRadius !== undefined ? `radio radius ${row.radioRadius}` : "",
       row.readingPopupId ? `ReadingPopUp ${row.readingPopupId}` : "",
       row.interactiveListCount ? `LevelInteractiveData list count ${row.interactiveListCount}` : "",
       row.interactiveRecordIndex !== undefined ? `interactive record index ${row.interactiveRecordIndex}` : "",
