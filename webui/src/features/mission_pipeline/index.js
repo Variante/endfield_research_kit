@@ -462,6 +462,7 @@
       offlineRecoveryDefinedOptions: "Defined options (route unresolved)",
       offlineRecoveryDefinedOptionsResolved: "Defined options",
       offlineRecoveryTableOnlyRegistration: "DialogId table-only registration",
+      offlineRecoveryPrintableTokens: "Printable-only DialogId tokens (not branch targets)",
       offlineRecoveryDialogTreeAbsent: "DialogTree asset absent",
       offlineRecoveryDialogTreeExact: "exact DialogTree asset",
       offlineRecoveryDialogTreeBranches: "Internal DialogTree branches",
@@ -906,6 +907,7 @@
       offlineRecoveryDefinedOptions: "\u5df2\u5b9a\u4e49\u9009\u9879\uff08\u8def\u7531\u672a\u89e3\u6790\uff09",
       offlineRecoveryDefinedOptionsResolved: "\u5df2\u5b9a\u4e49\u9009\u9879",
       offlineRecoveryTableOnlyRegistration: "\u4ec5 DialogId \u8868\u6ce8\u518c",
+      offlineRecoveryPrintableTokens: "\u4ec5\u53ef\u6253\u5370\u7684 DialogId \u6807\u8bb0\uff08\u975e\u5206\u652f\u76ee\u6807\uff09",
       offlineRecoveryDialogTreeAbsent: "\u7f3a\u5c11 DialogTree \u8d44\u4ea7",
       offlineRecoveryDialogTreeExact: "\u7cbe\u786e DialogTree \u8d44\u4ea7",
       offlineRecoveryDialogTreeBranches: "DialogTree \u5185\u90e8\u5206\u652f",
@@ -2625,6 +2627,12 @@
       const options = optionIds.length
         ? `<p><strong>${esc(t(dialogTreeRoutesRecovered ? "offlineRecoveryDefinedOptionsResolved" : "offlineRecoveryDefinedOptions"))}</strong>${optionIds.map((optionId) => `<code>${esc(optionId)}</code>`).join(" ")}</p>`
         : "";
+      const printableOnlyTokens = Array.isArray(row.printableOnlyDialogTokens)
+        ? row.printableOnlyDialogTokens
+        : [];
+      const printableTokenBoundary = printableOnlyTokens.length
+        ? `<p><strong>${esc(t("offlineRecoveryPrintableTokens"))}</strong>${printableOnlyTokens.map((token) => `<code>${esc(token)}</code>`).join(" ")}</p>`
+        : "";
       const internalBranches = branchGroups.length
         ? `<div class="mp-order-dialog-branches"><strong>${esc(t("offlineRecoveryDialogTreeBranches"))}</strong>${branchGroups.map((group) => `<details open><summary><code>#${esc(group.optionGroup ?? "?")}</code> ${esc(t(group.routeKind === "authored_convergence" ? "offlineRecoveryAuthoredConvergence" : "offlineRecoveryAuthoredSplit"))}</summary>${(group.optionIds || []).map((optionId, index) => `<div><code>${esc(optionId)}</code><i>&rarr;</i><code>${esc((group.targetLineIds || [])[index] || "?")}</code></div>`).join("")}</details>`).join("")}</div>`
         : "";
@@ -2649,7 +2657,7 @@
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${options}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${options}${printableTokenBoundary}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");

@@ -55,7 +55,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v86"
+SCHEMA = "sourceStoryGapQueue.v87"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -138,12 +138,12 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v62"
+    "current-build-offline-story-carrier-exhaustion-v63"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )
-OFFLINE_EXHAUSTION_GM01M22_ABSENT_BINARY_TOKENS = {
+OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "dlg_gm01m22_6": "dlg_gm01m22_6",
     "dlg_gm01m22_7": "dlg_gm01m22_7",
     "dlg_gm01m22_8": "dlg_gm01m22_8",
@@ -155,6 +155,22 @@ OFFLINE_EXHAUSTION_GM01M22_ABSENT_BINARY_TOKENS = {
     "radio_gm01m22_1d3": "radio_gm01m22_1d3",
     "sns_gm01m22_2": "sns_gm01m22_2",
     "text_gm01m22_5": "text_gm01m22_5",
+    "dlg_gm02m3_1": "dlg_gm02m3_1",
+    "dlg_gm02m3_2": "dlg_gm02m3_2",
+    "dlg_gm02m3_3": "dlg_gm02m3_3",
+    "dlg_gm02m3_4": "dlg_gm02m3_4",
+    "dlg_gm02m3_5": "dlg_gm02m3_5",
+    "radio_gm02m3_1": "radio_gm02m3_1",
+    "radio_gm02m3_2": "radio_gm02m3_2",
+    "radio_gm02m3_3": "radio_gm02m3_3",
+    "radio_gm02m3_4": "radio_gm02m3_4",
+    "radio_gm02m3_5": "radio_gm02m3_5",
+    "dlg_gm02m3_1X": "dlg_gm02m3_1X",
+    "dlg_gm02m3_1Y": "dlg_gm02m3_1Y",
+    "dlg_gm02m3_2Y": "dlg_gm02m3_2Y",
+    "dlg_gm02m3_2Z": "dlg_gm02m3_2Z",
+    "dlg_gm02m3_3Z": "dlg_gm02m3_3Z",
+    "dlg_gm02m3_3d": "dlg_gm02m3_3d",
 }
 EXACT_PARENT_DIALOG_DEPENDENCIES = {
     "dlg_a1m4_2": {
@@ -3126,6 +3142,115 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
             },
         },
     },
+    "dlg_gm02m3_1": {
+        "missionId": "gm02m3",
+        "dialogIdRegistrationStatus": "present_table_only",
+        "lineIds": tuple(
+            f"dlg_gm02m3_1_{number:03d}" for number in range(5, 17)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm02m3_1_{number:03d}" for number in range(5, 17)
+        ),
+        "printableOnlyDialogTokens": (
+            "dlg_gm02m3_1X",
+            "dlg_gm02m3_1Y",
+        ),
+        "optionRows": {
+            "option_dlg_gm02m3_1_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": -3828274658471633553, "text": ""},
+            },
+            "option_dlg_gm02m3_1_1_003": {
+                "iconType": "main",
+                "optionText": {"id": 8683254705963111422, "text": ""},
+            },
+            "option_dlg_gm02m3_1_1_004": {
+                "iconType": "Default",
+                "optionText": {"id": 6923242290816326074, "text": ""},
+            },
+        },
+    },
+    "dlg_gm02m3_2": {
+        "missionId": "gm02m3",
+        "dialogIdRegistrationStatus": "present_table_only",
+        "lineIds": tuple(
+            f"dlg_gm02m3_2_{number:03d}" for number in range(1, 5)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm02m3_2_{number:03d}" for number in range(1, 5)
+        ),
+        "printableOnlyDialogTokens": (
+            "dlg_gm02m3_2Y",
+            "dlg_gm02m3_2Z",
+        ),
+        "optionRows": {
+            "option_dlg_gm02m3_2_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": -1637408631732126940, "text": ""},
+            },
+            "option_dlg_gm02m3_2_1_002": {
+                "iconType": "Default",
+                "optionText": {"id": -1214579014914497398, "text": ""},
+            },
+        },
+    },
+    "dlg_gm02m3_3": {
+        "missionId": "gm02m3",
+        "dialogIdRegistrationStatus": "present_table_only",
+        "lineIds": tuple(
+            f"dlg_gm02m3_3_{number:03d}" for number in range(1, 4)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm02m3_3_{number:03d}" for number in range(1, 4)
+        ),
+        "printableOnlyDialogTokens": (
+            "dlg_gm02m3_3Z",
+            "dlg_gm02m3_3d",
+        ),
+        "optionRows": {
+            "option_dlg_gm02m3_3_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": 3658541488536480160, "text": ""},
+            },
+            "option_dlg_gm02m3_3_1_002": {
+                "iconType": "Default",
+                "optionText": {"id": -6519032108786470153, "text": ""},
+            },
+        },
+    },
+    "dlg_gm02m3_4": {
+        "missionId": "gm02m3",
+        "lineIds": tuple(
+            f"dlg_gm02m3_4_{number:03d}" for number in range(1, 5)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm02m3_4_{number:03d}" for number in range(1, 5)
+        ),
+        "optionRows": {},
+    },
+    "dlg_gm02m3_5": {
+        "missionId": "gm02m3",
+        "lineIds": tuple(
+            f"dlg_gm02m3_5_{number:03d}" for number in range(1, 8)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm02m3_5_{number:03d}" for number in range(1, 8)
+        ),
+        "optionRows": {
+            "option_dlg_gm02m3_5_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": -7430164597458610152, "text": ""},
+            },
+            "option_dlg_gm02m3_5_1_003": {
+                "iconType": "main",
+                "optionText": {"id": -5398790576921489908, "text": ""},
+            },
+            "option_dlg_gm02m3_5_1_004": {
+                "iconType": "Default",
+                "optionText": {"id": -2526259664854754454, "text": ""},
+            },
+        },
+    },
     "dlg_a1m11_3": {
         "missionId": "a1m11",
         "lineIds": ("dlg_a1m11_3_001",),
@@ -3625,6 +3750,13 @@ OFFLINE_EXHAUSTION_GM02M2_RADIOS = frozenset({
     "radio_gm02m2_7",
     "radio_gm02m2_10",
 })
+OFFLINE_EXHAUSTION_GM02M3_RADIOS = frozenset({
+    "radio_gm02m3_1",
+    "radio_gm02m3_2",
+    "radio_gm02m3_3",
+    "radio_gm02m3_4",
+    "radio_gm02m3_5",
+})
 OFFLINE_EXHAUSTION_GM01M22_RADIOS = frozenset({
     "radio_gm01m22_1d2",
     "radio_gm01m22_1d3",
@@ -3635,6 +3767,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "a1m6d3": OFFLINE_EXHAUSTION_A1M6D3_RADIOS,
     "a1m8d3": OFFLINE_EXHAUSTION_A1M8D3_RADIOS,
     "gm02m2": OFFLINE_EXHAUSTION_GM02M2_RADIOS,
+    "gm02m3": OFFLINE_EXHAUSTION_GM02M3_RADIOS,
     "gm01m22": OFFLINE_EXHAUSTION_GM01M22_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
@@ -3767,6 +3900,11 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm02m2_10": frozenset(
         f"au_radio_gm02m2_10_{number:03d}" for number in range(1, 3)
     ),
+    "radio_gm02m3_1": frozenset({"au_radio_gm02m3_1_001"}),
+    "radio_gm02m3_2": frozenset({"au_radio_gm02m3_2_002"}),
+    "radio_gm02m3_3": frozenset({"au_radio_gm02m3_3_003"}),
+    "radio_gm02m3_4": frozenset({"au_radio_gm02m3_4_004"}),
+    "radio_gm02m3_5": frozenset({"au_radio_gm02m3_5_001"}),
     "radio_gm01m22_1d2": frozenset({"au_radio_gm01m22_1d2_001"}),
     "radio_gm01m22_1d3": frozenset({"au_radio_gm01m22_1d3_001"}),
     "radio_e5m5_1": frozenset({
@@ -5404,7 +5542,7 @@ def build_offline_exhaustion_index(
             "utf16le": game_assembly_bytes.count(token.encode("utf-16le")),
         }
         for story_key, token
-        in OFFLINE_EXHAUSTION_GM01M22_ABSENT_BINARY_TOKENS.items()
+        in OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS.items()
     }
     present_binary_tokens = {
         story_key: counts
@@ -6626,6 +6764,9 @@ def build_offline_exhaustion_index(
             definition.get("dialogIdRegistrationStatus")
         ) or "absent"
         registry = dialog_id_index.get(story_key)
+        printable_only_tokens = tuple(
+            definition.get("printableOnlyDialogTokens") or ()
+        )
         if expected_registration_status == "present_table_only":
             expected_options_by_group: dict[str, list[str]] = defaultdict(list)
             option_prefix = f"option_{story_key}_"
@@ -6657,6 +6798,38 @@ def build_offline_exhaustion_index(
                     ("dialogIdSource", "dialogIdIndex"),
                     expected_registry,
                     registry,
+                )
+            expected_printable_only_registry = {
+                "registered": True,
+                "memoryPackRecordKey": False,
+                "registrationEvidence": ["printable_root_token"],
+                "hasRootKey": True,
+                "trunkCount": 0,
+                "trunkIndices": [],
+                "lineCount": 0,
+                "linesByTrunk": {},
+                "optionGroupCount": 0,
+                "optionCount": 0,
+                "optionsByGroup": {},
+                "usedDialogTimelineCount": 0,
+                "usedDialogTimelineIds": [],
+            }
+            actual_printable_only_registries = {
+                token: dialog_id_index.get(token)
+                for token in printable_only_tokens
+            }
+            if any(
+                row != expected_printable_only_registry
+                for row in actual_printable_only_registries.values()
+            ):
+                add_text_only_failure(
+                    "exactPrintableOnlyDialogTokens",
+                    ("dialogIdSource", "dialogIdIndex"),
+                    {
+                        token: expected_printable_only_registry
+                        for token in printable_only_tokens
+                    },
+                    actual_printable_only_registries,
                 )
         elif expected_registration_status == "absent":
             if registry is not None:
@@ -6723,6 +6896,11 @@ def build_offline_exhaustion_index(
             "optionIds": list(expected_option_ids),
             "optionRows": expected_option_rows,
             "dialogIdRegistrationStatus": expected_registration_status,
+            "printableOnlyDialogTokens": list(printable_only_tokens),
+            "printableOnlyTokenStatus": (
+                "string_table_only_not_memorypack_records"
+                if printable_only_tokens else "none"
+            ),
         }
     if text_only_dialog_validation_failures:
         status["status"] = (
@@ -7233,6 +7411,10 @@ def build_offline_exhaustion_index(
                 "present_table_only"
                 if table_only_registration else "absent"
             ),
+            "printableOnlyDialogTokens":
+                validation["printableOnlyDialogTokens"],
+            "printableOnlyTokenStatus":
+                validation["printableOnlyTokenStatus"],
             "dialogTreeAssetStatus": "absent",
             "timelineStatus": "absent",
             "nonOwningContext": definition.get("nonOwningContext"),
@@ -7256,7 +7438,8 @@ def build_offline_exhaustion_index(
                     "AudioDialog membership, typed MissionRuntime or "
                     "LevelScript consumer, Lua reference, or object-index "
                     "carrier exposes its activator; option definitions prove "
-                    "authored choices but not their route graph"
+                    "authored choices but not their route graph; printable-only "
+                    "DialogId tokens are not MemoryPack records or route targets"
                     if table_only_registration
                     else
                     "the exact DialogTextTable line/audio group and any exact "
@@ -7276,8 +7459,9 @@ def build_offline_exhaustion_index(
                     "payload in a unique mission chronology"
                     if branch_context
                     else
-                    "line ids and fallback/manual display positions do not "
-                    "establish playback, option routing, or mission chronology"
+                    "line ids, printable-only token suffixes, and fallback/"
+                    "manual display positions do not establish playback, "
+                    "option routing, or mission chronology"
                 )
             ),
             "reopenWhen": (
