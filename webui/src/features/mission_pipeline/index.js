@@ -475,6 +475,9 @@
       offlineRecoveryFinishId: "serialized finishId",
       offlineRecoveryFinishIdAbsent: "finishId not serialized",
       offlineRecoveryEvidenceResultBranch: "Exact result branch",
+      offlineRecoveryEvidenceEmptyHost: "Definition only \u2014 mission script empty",
+      offlineRecoveryEmptyHost: "Exact empty mission host",
+      offlineRecoveryEmptyHostBoundary: "The mission-named LevelData contains one propertyless LevelScript. Its action list, UID records, and task maps are empty, so it cannot activate or order these Story definitions.",
       offlineRecoveryEvidenceDefinitionOnly: "Definition only — activator unknown",
       offlineRecoveryEvidenceRadioOnly: "Radio definition only — consumer unknown",
       offlineRecoveryMissingAudio: "audio ids absent",
@@ -945,6 +948,9 @@
       offlineRecoveryFinishId: "\u5df2\u5e8f\u5217\u5316 finishId",
       offlineRecoveryFinishIdAbsent: "\u672a\u5e8f\u5217\u5316 finishId",
       offlineRecoveryEvidenceResultBranch: "\u7cbe\u786e\u7ed3\u679c\u5206\u652f",
+      offlineRecoveryEvidenceEmptyHost: "\u4ec5\u5b9a\u4e49 \u2014 \u4efb\u52a1\u811a\u672c\u4e3a\u7a7a",
+      offlineRecoveryEmptyHost: "\u7cbe\u786e\u7a7a\u4efb\u52a1\u5bbf\u4e3b",
+      offlineRecoveryEmptyHostBoundary: "\u8fd9\u4e2a\u4efb\u52a1\u547d\u540d\u7684 LevelData \u53ea\u5305\u542b\u4e00\u4e2a\u65e0\u5c5e\u6027\u7684 LevelScript\u3002\u5176\u52a8\u4f5c\u5217\u8868\u3001UID \u8bb0\u5f55\u548c\u4efb\u52a1\u6620\u5c04\u5747\u4e3a\u7a7a\uff0c\u56e0\u6b64\u4e0d\u80fd\u6fc0\u6d3b\u6216\u6392\u5217\u8fd9\u4e9b Story \u5b9a\u4e49\u3002",
       offlineRecoveryEvidenceDefinitionOnly: "\u4ec5\u5b9a\u4e49\uff0c\u6fc0\u6d3b\u5668\u672a\u77e5",
       offlineRecoveryEvidenceRadioOnly: "\u4ec5\u65e0\u7ebf\u7535\u5b9a\u4e49\uff0c\u6d88\u8d39\u8005\u672a\u77e5",
       offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
@@ -2687,6 +2693,8 @@
         row.levelScriptTaskConsumer?.sourceFile,
         row.levelDataDialogBranchContext?.levelDataFile,
         row.levelDataDialogBranchContext?.levelScriptFile,
+        row.emptyLevelScriptContext?.levelDataFile,
+        row.emptyLevelScriptContext?.levelScriptFile,
         row.runtimeTrackingContext?.sourceFile,
         row.nonOwningContext?.sourceFile,
         row.allowedNonOwningRoute?.file,
@@ -2747,6 +2755,10 @@
       const dialogResultBranchContext = dialogResultBranch
         ? `<details open><summary><strong>${esc(t("offlineRecoveryDialogResultBranch"))}</strong> <code>${esc(dialogResultBranch.levelId || "?")}/${esc(dialogResultBranch.scriptId || "?")}</code></summary><p><strong>${esc(t("offlineRecoveryDialogStart"))}</strong><code>${esc(dialogResultBranch.startDialogListener?.dialogId || "?")}</code><code>${esc(dialogResultBranch.startDialogListener?.propertyPath || "?")}</code></p>${(dialogResultBranch.resultBranches || []).map((branch) => `<p><strong>${esc(t("offlineRecoveryDialogResult"))} ${esc(branch.resultValue ?? "?")}</strong><code>${esc(branch.propertyPath || "?")}</code><i>&rarr;</i><a href="${esc(storyHref(branch.dialogId))}"><code>${esc(branch.dialogId || "?")}</code></a></p>`).join("")}<small>${esc(t("offlineRecoveryDialogBranchBoundary"))}</small></details>`
         : "";
+      const emptyHost = row.emptyLevelScriptContext;
+      const emptyHostContext = emptyHost
+        ? `<details open><summary><strong>${esc(t("offlineRecoveryEmptyHost"))}</strong> <code>${esc(emptyHost.levelId || "?")}/${esc(emptyHost.scriptId || "?")}</code></summary><p><code>properties ${esc(emptyHost.propertyCount ?? "?")}</code><code>UID records ${esc(emptyHost.uidRecordCount ?? "?")}</code><code>actions ${esc(emptyHost.actionListRecordCount ?? "?")}</code><code>tasks ${esc(emptyHost.taskMapCount ?? "?")}</code></p><small>${esc(t("offlineRecoveryEmptyHostBoundary"))}</small></details>`
+        : "";
       const runtimeTracking = row.runtimeTrackingContext;
       const runtimeTrackingContext = runtimeTracking
         ? `<p><strong>${esc(t("offlineRecoveryCrossMissionTracking"))}</strong><code>${esc(runtimeTracking.runtimeMissionId || "?")}</code><code>${esc(runtimeTracking.questId || "?")}</code></p>`
@@ -2778,8 +2790,10 @@
         leveldata_property_resolved_levelscript_result_branch: t("offlineRecoveryEvidenceResultBranch"),
         registered_dialog_definition_without_recovered_activator: t("offlineRecoveryEvidenceDefinitionOnly"),
         radio_definition_without_recovered_consumer: t("offlineRecoveryEvidenceRadioOnly"),
+        dialog_text_table_only_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
+        radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
       })[row.evidenceKind] || row.evidenceKind || row.recoveryStatus || "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
