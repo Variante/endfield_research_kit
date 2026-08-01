@@ -53,7 +53,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v82"
+SCHEMA = "sourceStoryGapQueue.v83"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -136,7 +136,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v58"
+    "current-build-offline-story-carrier-exhaustion-v59"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -161,6 +161,9 @@ OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256 = (
 )
 OFFLINE_EXHAUSTION_DIALOG_TEXT_TABLE_SHA256 = (
     "1C1BB59ACEA89212C9F2E34FE86457672FE5C8783FCD199F161D3F0DC9DEAD72"
+)
+OFFLINE_EXHAUSTION_DIALOG_OPTION_TABLE_SHA256 = (
+    "8D86E8A10025DC0B54F800750650738A360DEBA169A0E3B3C48CB72FB8857C29"
 )
 OFFLINE_EXHAUSTION_READING_POPUP_TABLE_SHA256 = (
     "119BEFCA19E85FB11DF33D945FBA6374BB24E622F717CC50D7DA011BDB2A533C"
@@ -2619,6 +2622,54 @@ OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e11m8_9",
 })
 OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
+    "dlg_a1m7_2": {
+        "missionId": "a1m7",
+        "lineIds": (
+            "dlg_a1m7_2_001",
+            "dlg_a1m7_2_002",
+        ),
+        "missingAudioIds": (
+            "au_dlg_a1m7_2_001",
+            "au_dlg_a1m7_2_002",
+        ),
+        "optionRows": {
+            "option_dlg_a1m7_2_1_001": {
+                "iconType": "Default",
+                "optionText": {
+                    "id": -7326389481153936424,
+                    "text": "",
+                },
+            },
+            "option_dlg_a1m7_2_2_001": {
+                "iconType": "Default",
+                "optionText": {
+                    "id": 3896246422494591643,
+                    "text": "",
+                },
+            },
+            "option_dlg_a1m7_2_2_002": {
+                "iconType": "Default",
+                "optionText": {
+                    "id": 3120352741321777196,
+                    "text": "",
+                },
+            },
+        },
+    },
+    "dlg_a1m7_12": {
+        "missionId": "a1m7",
+        "lineIds": (
+            "dlg_a1m7_12_001",
+            "dlg_a1m7_12_002",
+            "dlg_a1m7_12_003",
+        ),
+        "missingAudioIds": (
+            "au_dlg_a1m7_12_001",
+            "au_dlg_a1m7_12_002",
+            "au_dlg_a1m7_12_003",
+        ),
+        "optionRows": {},
+    },
     "dlg_a1m5_5": {
         "missionId": "a1m5",
         "lineIds": (
@@ -3269,6 +3320,29 @@ def _offline_radio_definition_validation_failure(
         }
     return None
 OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
+    "text_a1m6d5_1": {
+        "missionId": "a1m6d5",
+        "readingPopupRowId": "rp_text_a1m6d5_1",
+        "bgType": 0,
+        "iconType": 3,
+        "titleId": 3721744607745831916,
+        "contentTextIds": (
+            -7408517779335732445,
+            6495096817380252349,
+            -8078140136953514928,
+            -8140252314052994329,
+            -6342349983915179518,
+            8831008759808930696,
+            -4685756133895238350,
+            -9219690230359492856,
+            -1181758195704643561,
+            4387948783769873472,
+            -143699607535162167,
+            -6152714073317416528,
+            -85705076186752261,
+            -7240525900018077618,
+        ),
+    },
     "text_a1m5_1": {
         "missionId": "a1m5",
         "readingPopupRowId": "text_a1m5_1",
@@ -4450,6 +4524,7 @@ def build_offline_exhaustion_index(
         "numIdStrTable": table_root / "NumIdStrTable.json",
         "textTable": table_root / "TextTable.json",
         "dialogTextTable": table_root / "DialogTextTable.json",
+        "dialogOptionTable": table_root / "DialogOptionTable.json",
         "readingPopupTable": table_root / "ReadingPopUpTable.json",
         "richContentTable": table_root / "RichContentTable.json",
         "prtsAllItemTable": table_root / "PrtsAllItem.json",
@@ -4505,6 +4580,7 @@ def build_offline_exhaustion_index(
         / "json_by_type"
         / "TextAsset"
     )
+    source_paths["dialogTextAssetRoot"] = cutscene_definition_root
     for story_key, definition in (
         OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
     ):
@@ -4534,6 +4610,7 @@ def build_offline_exhaustion_index(
         "numIdStrTable": OFFLINE_EXHAUSTION_NUM_ID_STR_TABLE_SHA256,
         "textTable": OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256,
         "dialogTextTable": OFFLINE_EXHAUSTION_DIALOG_TEXT_TABLE_SHA256,
+        "dialogOptionTable": OFFLINE_EXHAUSTION_DIALOG_OPTION_TABLE_SHA256,
         "readingPopupTable":
             OFFLINE_EXHAUSTION_READING_POPUP_TABLE_SHA256,
         "richContentTable":
@@ -5107,6 +5184,7 @@ def build_offline_exhaustion_index(
         return {}, status
 
     dialog_text_table = read_json(source_paths["dialogTextTable"], {})
+    dialog_option_table = read_json(source_paths["dialogOptionTable"], {})
     dialog_id_index = read_json(source_paths["dialogIdIndex"], {})
     timeline_line_orders = read_json(source_paths["timelineLineOrders"], {})
     npc_proxy_ex_table = read_json(
@@ -5526,7 +5604,7 @@ def build_offline_exhaustion_index(
         return {}, status
 
     text_only_dialog_validation_by_key: dict[str, dict[str, Any]] = {}
-    text_only_dialog_definitions_valid = True
+    text_only_dialog_validation_failures: list[dict[str, Any]] = []
     for story_key, definition in (
         OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS.items()
     ):
@@ -5569,40 +5647,155 @@ def build_offline_exhaustion_index(
                 )
             )
         }
+        expected_option_rows = definition.get("optionRows")
+        actual_option_ids = tuple(sorted(
+            key for key in dialog_option_table
+            if key.startswith(f"option_{story_key}_")
+        )) if isinstance(dialog_option_table, dict) else ()
+        expected_option_ids = tuple(sorted(
+            expected_option_rows or {}
+        ))
+        cutscene_matches = sorted(
+            str(path.relative_to(ROOT)).replace("\\", "/")
+            for path in cutscene_definition_root.glob(f"{story_key}_p*.json")
+        )
+        failures_before = len(text_only_dialog_validation_failures)
+
+        def add_text_only_failure(
+            gate: str,
+            source_names: tuple[str, ...],
+            expected: Any,
+            actual: Any,
+        ) -> None:
+            text_only_dialog_validation_failures.append({
+                "validator": "offlineTextOnlyDialogDefinition",
+                "gate": gate,
+                "storyKey": story_key,
+                "missionId": safe_key(definition.get("missionId")),
+                "sourcePaths": [
+                    str(source_paths[name]) for name in source_names
+                ],
+                "sourceSha256": {
+                    name: actual_hashes.get(name, "")
+                    for name in source_names
+                },
+                "expected": expected,
+                "actual": actual,
+            })
+
+        if actual_line_ids != expected_line_ids:
+            add_text_only_failure(
+                "exactDialogTextLineSet",
+                ("dialogTextTable",),
+                list(expected_line_ids),
+                list(actual_line_ids),
+            )
         if (
-            actual_line_ids != expected_line_ids
-            or len(line_audio_ids) != len(expected_line_ids)
+            len(line_audio_ids) != len(expected_line_ids)
             or not all(line_audio_ids)
             or line_audio_ids != expected_audio_ids
-            or not set(expected_audio_variants) <= set(line_audio_ids)
-            or any(
-                not variants
-                or any(
-                    not variant.startswith(f"{audio_id}_")
+        ):
+            add_text_only_failure(
+                "exactDialogTextAudioOverrides",
+                ("dialogTextTable",),
+                list(expected_audio_ids),
+                list(line_audio_ids),
+            )
+        row_fields = {
+            line_id: sorted(dialog_text_table.get(line_id, {}))
+            if isinstance(dialog_text_table.get(line_id), dict) else []
+            for line_id in expected_line_ids
+        }
+        if any(
+            set(row_fields[line_id])
+            != OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS
+            for line_id in expected_line_ids
+        ):
+            add_text_only_failure(
+                "exactDialogTextRowFields",
+                ("dialogTextTable",),
+                sorted(OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS),
+                row_fields,
+            )
+        variant_shape_valid = (
+            set(expected_audio_variants) <= set(line_audio_ids)
+            and all(
+                variants
+                and all(
+                    variant.startswith(f"{audio_id}_")
                     for variant in variants
                 )
                 for audio_id, variants in expected_audio_variants.items()
             )
+        )
+        present_base_audio_ids = (
+            set(line_audio_ids) - expected_missing_audio_ids
+        )
+        if (
+            not variant_shape_valid
             or actual_missing_audio_ids != expected_missing_audio_ids
-            or not (
-                set(line_audio_ids) - expected_missing_audio_ids
-            ) <= (
-                audio_stems
-                | set(expected_audio_variants)
+            or not present_base_audio_ids <= (
+                audio_stems | set(expected_audio_variants)
             )
-            or any(
-                set(dialog_text_table[line_id])
-                != OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS
-                for line_id in expected_line_ids
-            )
-            or story_key in dialog_id_index
-            or story_key in timeline_line_orders
-            or any(cutscene_definition_root.glob(
-                f"{story_key}_p*.json"
-            ))
         ):
-            text_only_dialog_definitions_valid = False
-            break
+            add_text_only_failure(
+                "exactAudioDialogMembership",
+                ("dialogTextTable", "audioDialog"),
+                {
+                    "missingAudioIds": sorted(expected_missing_audio_ids),
+                    "audioVariants": {
+                        key: list(values)
+                        for key, values in expected_audio_variants.items()
+                    },
+                },
+                {
+                    "missingAudioIds": sorted(actual_missing_audio_ids),
+                    "lineAudioIds": list(line_audio_ids),
+                    "variantShapeValid": variant_shape_valid,
+                },
+            )
+        if story_key in dialog_id_index:
+            add_text_only_failure(
+                "dialogIdRegistrationAbsent",
+                ("dialogIdIndex",),
+                {"present": False},
+                {"present": True, "row": dialog_id_index.get(story_key)},
+            )
+        if story_key in timeline_line_orders:
+            add_text_only_failure(
+                "timelineRegistrationAbsent",
+                ("timelineLineOrders",),
+                {"present": False},
+                {"present": True, "row": timeline_line_orders.get(story_key)},
+            )
+        if cutscene_matches:
+            add_text_only_failure(
+                "dialogTreeTextAssetAbsent",
+                ("dialogTextAssetRoot",),
+                [],
+                cutscene_matches,
+            )
+        if expected_option_rows is not None and (
+            not isinstance(dialog_option_table, dict)
+            or actual_option_ids != expected_option_ids
+            or any(
+                dialog_option_table.get(option_id) != expected_row
+                for option_id, expected_row in expected_option_rows.items()
+            )
+        ):
+            add_text_only_failure(
+                "exactDialogOptionDefinitions",
+                ("dialogOptionTable",),
+                expected_option_rows,
+                {
+                    option_id: dialog_option_table.get(option_id)
+                    for option_id in actual_option_ids
+                } if isinstance(dialog_option_table, dict) else {
+                    "payloadType": type(dialog_option_table).__name__,
+                },
+            )
+        if len(text_only_dialog_validation_failures) != failures_before:
+            continue
         text_only_dialog_validation_by_key[story_key] = {
             "lineIds": list(expected_line_ids),
             "audioIds": list(line_audio_ids),
@@ -5615,11 +5808,15 @@ def build_offline_exhaustion_index(
                 for audio_id, variants
                 in expected_audio_variants.items()
             },
+            "optionIds": list(expected_option_ids),
+            "optionRows": expected_option_rows,
         }
-    if not text_only_dialog_definitions_valid:
+    if text_only_dialog_validation_failures:
         status["status"] = (
             "inactive_text_only_dialog_definition_validation_failed"
         )
+        status["validationFailures"] = text_only_dialog_validation_failures
+        status["validatorDiagnostics"] = text_only_dialog_validation_failures
         return {}, status
 
     num_id_table = read_json(source_paths["numIdStrTable"], {})
@@ -6061,10 +6258,22 @@ def build_offline_exhaustion_index(
                 else "dialog_text_table_only_without_registry_asset_or_consumer"
             ),
             "definitionTable": "DialogTextTable",
+            "definitionTables": (
+                ["DialogTextTable", "DialogOptionTable"]
+                if validation["optionIds"]
+                else ["DialogTextTable"]
+            ),
             "lineIds": validation["lineIds"],
             "audioIds": validation["audioIds"],
             "audioVariants": validation["audioVariants"],
             "missingAudioIds": validation["missingAudioIds"],
+            "optionIds": validation["optionIds"],
+            "optionRows": validation["optionRows"],
+            "optionRouteStatus": (
+                "definitions_present_route_unresolved"
+                if validation["optionIds"]
+                else "no_current_option_definitions"
+            ),
             "audioMembershipStatus": (
                 "all_current_audio_dialog_ids_missing"
                 if len(validation["missingAudioIds"])
@@ -6095,11 +6304,13 @@ def build_offline_exhaustion_index(
                     "trigger"
                     if branch_context
                     else
-                    "the exact DialogTextTable line/audio group has no current "
+                    "the exact DialogTextTable line/audio group and any exact "
+                    "DialogOptionTable option definitions have no current "
                     "DialogId registration, DialogTree asset, Timeline, "
                     "AudioDialog membership, typed MissionRuntime or "
                     "LevelScript consumer, Lua reference, or object-index "
-                    "carrier"
+                    "carrier; option definitions prove authored choices but "
+                    "not their route graph"
                 )
             ),
             "orderBoundary": (
@@ -6115,9 +6326,10 @@ def build_offline_exhaustion_index(
                 )
             ),
             "reopenWhen": (
-                "installed binary, DialogTextTable, AudioDialog, DialogId "
-                "index, TextAsset inventory, Timeline index, object index, "
-                "Lua corpus, or another typed producer/consumer changes"
+                "installed binary, DialogTextTable, DialogOptionTable, "
+                "AudioDialog, DialogId index, TextAsset inventory, Timeline "
+                "index, object index, Lua corpus, or another typed "
+                "producer/consumer changes"
             ),
             "graphEffect": "none",
         }
@@ -7184,6 +7396,10 @@ def _closed_exact_native_context_isolated_scenes(
         ):
             continue
         if relation == "npc_proxy_segment_levelscript_mission_context":
+            context_mission = (
+                safe_key(connection.get("contextMissionBundle"))
+                or owner_mission
+            )
             native_owners = [
                 row for row in connection.get("nativeEventOwners") or []
                 if isinstance(row, dict)
@@ -7196,14 +7412,16 @@ def _closed_exact_native_context_isolated_scenes(
                 == "ScriptEvent_OnLeaderEnterTriggerVolume"
                 and any(
                     isinstance(step, dict)
-                    and safe_key(step.get("actionName"))
-                    == "NarrativeBlackScreenAction"
-                    and safe_key(step.get("recordClass")) == "play_black"
-                    and scene_key in {
-                        safe_key(text_id).rsplit("_", 1)[0]
-                        for text_id in step.get("texts") or []
-                        if safe_key(text_id)
-                    }
+                    and safe_key(step.get("recordClass")).startswith("play_")
+                    and scene_key in (
+                        {
+                            safe_key(text_id).rsplit("_", 1)[0]
+                            for text_id in step.get("texts") or []
+                            if safe_key(text_id)
+                        }
+                        if safe_key(step.get("recordClass")) == "play_black"
+                        else set(_string_list(step.get("texts")))
+                    )
                     for step in row.get("path") or []
                 )
             ]
@@ -7219,6 +7437,12 @@ def _closed_exact_native_context_isolated_scenes(
                 or not _string_list(connection.get("npcProxyIds"))
                 or not _string_list(connection.get("segmentIdsGlobal"))
                 or not _string_list(connection.get("candidateQuestIds"))
+                or any(
+                    not quest_id.startswith(f"{context_mission}_q#")
+                    for quest_id in _string_list(
+                        connection.get("candidateQuestIds")
+                    )
+                )
                 or len(exact_paths) != len(native_owners)
                 or not exact_paths
                 or not _string_list(connection.get("sourceFiles"))
@@ -7229,6 +7453,9 @@ def _closed_exact_native_context_isolated_scenes(
                 "recoveryStatus":
                     "closed_exact_npc_proxy_segment_playback_context_no_relative_order",
                 "relation": relation,
+                "nominalStoryMissionId": owner_mission,
+                "contextMissionId": context_mission,
+                "contextMissionMismatch": context_mission != owner_mission,
                 "npcProxyIds": _string_list(connection.get("npcProxyIds")),
                 "segmentIdsGlobal": _string_list(
                     connection.get("segmentIdsGlobal")
@@ -8586,6 +8813,92 @@ def _closed_exact_runtime_config_isolated_scenes(
                 "not establish relative Story chronology"
             ),
         })
+    for row in _flow_story_connections(flow):
+        scene_key = safe_key(row.get("key"))
+        candidate_quest_ids = _string_list(row.get("candidateQuestIds"))
+        if (
+            scene_key not in isolated_scene_keys
+            or safe_key(row.get("relation"))
+            != "entity_tracking_interactive_story_target"
+            or safe_key(row.get("direction")) != "context"
+            or safe_key(row.get("phase")) != "tracking"
+            or safe_key(row.get("confidence"))
+            != "native_exact_tracked_interactive_property"
+            or safe_key(row.get("evidenceTier")) != "native_exact_context"
+            or safe_key(row.get("storyOwnerMission")) != owner_mission
+            or safe_key(row.get("trackingMissionId")) != owner_mission
+            or safe_key(row.get("questTriggerStatus"))
+            != "navigation_target_configured_story_not_playback"
+            or safe_key(row.get("executionSide")) != "client"
+            or safe_key(row.get("networkRole"))
+            != "local_navigation_context"
+            or row.get("clientNavigationOnly") is not True
+            or row.get("serverExchange") is not False
+            or not candidate_quest_ids
+            or any(
+                not quest_id.startswith(f"{owner_mission}_q#")
+                for quest_id in candidate_quest_ids
+            )
+            or not _string_list(row.get("levelIds"))
+            or not _string_list(row.get("scriptIds"))
+            or not _string_list(row.get("localScriptIds"))
+            or not _string_list(row.get("entitySlotIds"))
+            or not _string_list(row.get("entityDetailIds"))
+            or not _string_list(row.get("entityTemplateIds"))
+            or not _string_list(row.get("entityTemplatePaths"))
+            or not _string_list(row.get("registrySourceFiles"))
+            or not _string_list(row.get("interactiveTableSourceFiles"))
+            or not _string_list(row.get("sourceFiles"))
+            or safe_key(row.get("interactivePropertyKey")) != "type_id"
+            or not isinstance(row.get("trackingObjectiveIndex"), int)
+            or isinstance(row.get("trackingObjectiveIndex"), bool)
+            or not isinstance(row.get("trackingIndex"), int)
+            or isinstance(row.get("trackingIndex"), bool)
+            or not isinstance(row.get("interactiveEntryOffset"), int)
+            or isinstance(row.get("interactiveEntryOffset"), bool)
+            or not isinstance(row.get("interactivePropertyOffset"), int)
+            or isinstance(row.get("interactivePropertyOffset"), bool)
+            or not isinstance(row.get("interactiveStoryOffset"), int)
+            or isinstance(row.get("interactiveStoryOffset"), bool)
+            or not (
+                row["interactiveEntryOffset"]
+                < row["interactivePropertyOffset"]
+                < row["interactiveStoryOffset"]
+            )
+        ):
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_tracked_interactive_context_no_relative_order",
+            "relation": "entity_tracking_interactive_story_target",
+            "missionId": owner_mission,
+            "candidateQuestIds": candidate_quest_ids,
+            "trackingObjectiveIndex": row["trackingObjectiveIndex"],
+            "trackingIndex": row["trackingIndex"],
+            "levelIds": _string_list(row.get("levelIds")),
+            "scriptIds": _string_list(row.get("scriptIds")),
+            "localScriptIds": _string_list(row.get("localScriptIds")),
+            "entitySlotIds": _string_list(row.get("entitySlotIds")),
+            "entityDetailIds": _string_list(row.get("entityDetailIds")),
+            "entityTemplateIds": _string_list(row.get("entityTemplateIds")),
+            "interactivePropertyKey": "type_id",
+            "interactiveEntryOffset": row["interactiveEntryOffset"],
+            "interactivePropertyOffset": row["interactivePropertyOffset"],
+            "interactiveStoryOffset": row["interactiveStoryOffset"],
+            "sourceFiles": _string_list(row.get("sourceFiles")),
+            "activationBoundary": (
+                "the exact MissionRuntime EntityTrackingInfo target resolves "
+                "through the registry to an interactive whose serialized "
+                "type_id is this Story key; this is client navigation "
+                "configuration, not playback or quest completion"
+            ),
+            "orderBoundary": (
+                "tracking index, entity slot, serialized offsets, and world "
+                "placement do not establish activation time or relative "
+                "Story chronology"
+            ),
+        })
     completion_grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in _flow_story_connections(flow):
         scene_key = safe_key(row.get("key"))
@@ -9643,10 +9956,11 @@ def build_gap_row(
         set(isolated_scene_keys),
         safe_key(partial_row.get("mission")),
     ):
-        closed_exact_native_isolated_by_key.setdefault(
-            row["sceneKey"],
-            row,
-        )
+        if (
+            row.get("contextMissionMismatch") is True
+            or row["sceneKey"] not in closed_exact_native_isolated_by_key
+        ):
+            closed_exact_native_isolated_by_key[row["sceneKey"]] = row
     for row in _closed_exact_lua_controller_playback_isolated_scenes(
         story_trigger_manifest,
         set(isolated_scene_keys),
@@ -10155,6 +10469,105 @@ def _exact_cross_owner_mission_condition_story_context(
     return has_playback
 
 
+def _exact_cross_owner_npc_proxy_segment_story_context(
+    connection: dict[str, Any],
+    owner_mission: str,
+    context_mission: str,
+) -> bool:
+    """Validate a foreign Story playback path in one exact NpcProxy shell."""
+    story_key = safe_key(connection.get("key"))
+    proxy_ids = set(_string_list(connection.get("npcProxyIds")))
+    segment_ids = set(_string_list(connection.get("segmentIdsGlobal")))
+    candidate_quests = set(_string_list(connection.get("candidateQuestIds")))
+    native_owners = connection.get("nativeEventOwners") or []
+    tracking_rows = connection.get("npcProxyTrackingRows") or []
+    registry_rows = connection.get("npcProxyRegistryRows") or []
+    proxy_ex_rows = connection.get("npcProxyExRows") or []
+    if (
+        not story_key
+        or safe_key(connection.get("relation"))
+        != "npc_proxy_segment_levelscript_mission_context"
+        or safe_key(connection.get("direction")) != "context"
+        or safe_key(connection.get("phase")) != "runtime_playback"
+        or safe_key(connection.get("confidence"))
+        != "native_exact_npc_proxy_segment_shell"
+        or safe_key(connection.get("evidenceTier")) != "derived_exact_shell"
+        or safe_key(connection.get("storyOwnerMission")) != owner_mission
+        or owner_mission == context_mission
+        or safe_key(connection.get("questTriggerStatus"))
+        != "same_authored_npc_proxy_segment_not_quest_playback"
+        or safe_key(connection.get("executionSide")) != "client"
+        or connection.get("serverExchange") is not False
+        or not proxy_ids
+        or not segment_ids
+        or not candidate_quests
+        or any(
+            not quest_id.startswith(f"{context_mission}_q#")
+            for quest_id in candidate_quests
+        )
+        or set(_string_list(connection.get("scriptIds"))) != segment_ids
+        or not native_owners
+        or not tracking_rows
+        or not registry_rows
+        or not proxy_ex_rows
+        or not _string_list(connection.get("sourceFiles"))
+    ):
+        return False
+    if any(
+        not isinstance(row, dict)
+        or safe_key(row.get("missionId")) != context_mission
+        or safe_key(row.get("questId")) not in candidate_quests
+        or not safe_key(row.get("sourceFile"))
+        for row in tracking_rows
+    ):
+        return False
+    if any(
+        not isinstance(row, dict)
+        or safe_key(row.get("proxyId")) not in proxy_ids
+        or safe_key(row.get("dictionaryKey")) not in segment_ids
+        or safe_key(row.get("segmentIdGlobal")) not in segment_ids
+        or not safe_key(row.get("sourceFile"))
+        for row in registry_rows
+    ):
+        return False
+    if any(
+        not isinstance(row, dict)
+        or safe_key(row.get("proxyId")) not in proxy_ids
+        or safe_key(row.get("missionId")) != context_mission
+        or not isinstance(row.get("rowIndex"), int)
+        or isinstance(row.get("rowIndex"), bool)
+        or not safe_key(row.get("sourceFile"))
+        for row in proxy_ex_rows
+    ):
+        return False
+    for owner in native_owners:
+        if (
+            not isinstance(owner, dict)
+            or safe_key(owner.get("status"))
+            != "exact_serialized_control_path"
+            or safe_key(owner.get("headerName"))
+            != "ScriptEvent_OnLeaderEnterTriggerVolume"
+        ):
+            return False
+        playback_found = False
+        for step in owner.get("path") or []:
+            if not isinstance(step, dict):
+                continue
+            record_class = safe_key(step.get("recordClass"))
+            texts = _string_list(step.get("texts"))
+            step_story_keys = (
+                {text.rsplit("_", 1)[0] for text in texts}
+                if record_class == "play_black"
+                else set(texts)
+            )
+            if record_class.startswith("play_") and story_key in step_story_keys:
+                playback_found = True
+                break
+        if not playback_found:
+            return False
+    return True
+
+
 def build_gap_report(
     partial_report: dict[str, Any],
     mission_payloads: dict[str, dict[str, Any]],
@@ -10204,6 +10617,13 @@ def build_gap_report(
                 continue
             if relation == "npc_proxy_ex_mission_context":
                 if proxy_mission != context_mission:
+                    continue
+            elif relation == "npc_proxy_segment_levelscript_mission_context":
+                if not _exact_cross_owner_npc_proxy_segment_story_context(
+                    connection,
+                    owner_mission,
+                    context_mission,
+                ):
                     continue
             elif relation == "leveldata_levelscript_mission_context":
                 if not _exact_cross_owner_leveldata_story_context(

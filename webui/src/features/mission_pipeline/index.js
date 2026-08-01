@@ -457,6 +457,7 @@
       offlineRecoveryGapsHint: "These files and their internal assets are recovered from the current game build, but no original-data mission activator or relative mission-order edge is known. OCR and manual order are not used here.",
       offlineRecoveryInternalTimeline: "internal Timeline",
       offlineRecoveryLines: "lines",
+      offlineRecoveryDefinedOptions: "Defined options (route unresolved)",
       questAttachmentDiagnostic: "Story ownership unresolved",
       questAttachmentDiagnosticHint: "Exact offline evidence closes this broad Story co-membership as non-owning. It does not create a quest-to-Story or order edge.",
       questAttachmentDiagnosticStories: "Diagnostic Story context",
@@ -888,6 +889,7 @@
       offlineRecoveryGapsHint: "\u8fd9\u4e9b\u6587\u4ef6\u53ca\u5176\u5185\u90e8\u8d44\u4ea7\u5df2\u4ece\u5f53\u524d\u6e38\u620f\u7248\u672c\u6062\u590d\uff0c\u4f46\u5c1a\u672a\u627e\u5230\u539f\u59cb\u6570\u636e\u4e2d\u7684\u4efb\u52a1\u6fc0\u6d3b\u5668\u6216\u4efb\u52a1\u5185\u76f8\u5bf9\u987a\u5e8f\u8fb9\u3002\u6b64\u5904\u4e0d\u4f7f\u7528 OCR \u6216\u624b\u52a8\u987a\u5e8f\u4f5c\u4e3a\u8bc1\u636e\u3002",
       offlineRecoveryInternalTimeline: "\u5185\u90e8 Timeline",
       offlineRecoveryLines: "\u884c",
+      offlineRecoveryDefinedOptions: "\u5df2\u5b9a\u4e49\u9009\u9879\uff08\u8def\u7531\u672a\u89e3\u6790\uff09",
       questAttachmentDiagnostic: "\u5267\u60c5\u5f52\u5c5e\u672a\u89e3\u6790",
       questAttachmentDiagnosticHint: "\u7cbe\u786e\u79bb\u7ebf\u8bc1\u636e\u5c06\u8fd9\u4e2a\u5bbd\u6cdb\u5267\u60c5\u5171\u73b0\u5173\u7cfb\u95ed\u5408\u4e3a\u975e\u5f52\u5c5e\u8bca\u65ad\uff1b\u4e0d\u751f\u6210\u4efb\u52a1\u5230\u5267\u60c5\u6216\u987a\u5e8f\u8fb9\u3002",
       questAttachmentDiagnosticStories: "\u8bca\u65ad\u5267\u60c5\u4e0a\u4e0b\u6587",
@@ -2583,7 +2585,11 @@
       const popup = row.readingPopupRowId
         ? `<p><code>ReadingPopUpTable/${esc(row.readingPopupRowId)}</code><code>RichContentTable/${esc(row.key)}</code></p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      const optionIds = Array.isArray(row.optionIds) ? row.optionIds : [];
+      const options = optionIds.length
+        ? `<p><strong>${esc(t("offlineRecoveryDefinedOptions"))}</strong>${optionIds.map((optionId) => `<code>${esc(optionId)}</code>`).join(" ")}</p>`
+        : "";
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${options}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");

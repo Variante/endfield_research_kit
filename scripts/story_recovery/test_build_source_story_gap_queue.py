@@ -4205,6 +4205,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(text_only),
             {
+                "dlg_a1m7_2",
+                "dlg_a1m7_12",
                 "dlg_a1m5_5",
                 "dlg_e3m4_9",
                 "dlg_e10m4_16",
@@ -4221,6 +4223,91 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(len(text_only["dlg_e10m3_10"]["lineIds"]), 8)
         self.assertEqual(len(text_only["dlg_e10m3_11"]["lineIds"]), 4)
         self.assertEqual(len(text_only["dlg_e10m3_12"]["lineIds"]), 16)
+
+    def test_declared_a1m7_text_only_branch_frontier_is_exact(self) -> None:
+        text_only = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS
+        self.assertEqual(
+            text_only["dlg_a1m7_2"]["lineIds"],
+            ("dlg_a1m7_2_001", "dlg_a1m7_2_002"),
+        )
+        self.assertEqual(
+            set(text_only["dlg_a1m7_2"]["optionRows"]),
+            {
+                "option_dlg_a1m7_2_1_001",
+                "option_dlg_a1m7_2_2_001",
+                "option_dlg_a1m7_2_2_002",
+            },
+        )
+        self.assertEqual(text_only["dlg_a1m7_12"]["optionRows"], {})
+        popup = gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+            "text_a1m6d5_1"
+        ]
+        self.assertEqual(popup["readingPopupRowId"], "rp_text_a1m6d5_1")
+        self.assertEqual(popup["iconType"], 3)
+        self.assertEqual(len(popup["contentTextIds"]), 14)
+
+    def test_a1m7_option_definition_validator_reports_exact_failure(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports"
+            / "mission_order"
+            / "source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full"
+            / "structured"
+            / "StreamingAssets"
+            / "Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual(status["status"], "active")
+        self.assertEqual(
+            index["dlg_a1m7_2"]["optionRouteStatus"],
+            "definitions_present_route_unresolved",
+        )
+
+        definition = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+            "dlg_a1m7_2"
+        ]
+        broken_rows = {
+            key: dict(value)
+            for key, value in definition["optionRows"].items()
+        }
+        broken_rows["option_dlg_a1m7_2_1_001"] = {
+            **broken_rows["option_dlg_a1m7_2_1_001"],
+            "iconType": "Changed",
+        }
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS,
+            {"dlg_a1m7_2": {**definition, "optionRows": broken_rows}},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual(failed_index, {})
+        self.assertEqual(
+            failed_status["status"],
+            "inactive_text_only_dialog_definition_validation_failed",
+        )
+        failure = next(
+            row for row in failed_status["validationFailures"]
+            if row["storyKey"] == "dlg_a1m7_2"
+        )
+        self.assertEqual(failure["validator"], "offlineTextOnlyDialogDefinition")
+        self.assertEqual(failure["gate"], "exactDialogOptionDefinitions")
+        self.assertIn("dialogOptionTable", failure["sourceSha256"])
+        self.assertEqual(
+            failure["actual"]["option_dlg_a1m7_2_1_001"]["iconType"],
+            "Default",
+        )
 
     def test_declared_a1m5_definition_frontier_is_exact(self) -> None:
         dialog = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
@@ -4458,6 +4545,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS),
             {
+                "text_a1m6d5_1",
                 "text_a1m5_1",
                 "text_a1m5_2",
                 "text_a1m5_3",
@@ -5094,6 +5182,139 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ),
             [],
         )
+
+    def test_cross_owner_npc_proxy_segment_radio_fails_closed(self) -> None:
+        connection = {
+            "key": "radio_a1m6d1_1",
+            "relation": "npc_proxy_segment_levelscript_mission_context",
+            "direction": "context",
+            "phase": "runtime_playback",
+            "confidence": "native_exact_npc_proxy_segment_shell",
+            "evidenceTier": "derived_exact_shell",
+            "storyOwnerMission": "a1m6d1",
+            "questTriggerStatus":
+                "same_authored_npc_proxy_segment_not_quest_playback",
+            "executionSide": "client",
+            "serverExchange": False,
+            "npcProxyIds": ["yuxiuli2_map02_v1d1d0_002"],
+            "segmentIdsGlobal": ["22800970016"],
+            "candidateQuestIds": ["a1m6d4_q#2", "a1m6d4_q#3"],
+            "scriptIds": ["22800970016"],
+            "sourceFiles": ["MissionRuntimeAsset/a1m6d4.json"],
+            "nativeEventOwners": [{
+                "status": "exact_serialized_control_path",
+                "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                "path": [{
+                    "actionName": "PlayRadio",
+                    "recordClass": "play_radio",
+                    "texts": ["radio_a1m6d1_1"],
+                }],
+            }],
+            "npcProxyTrackingRows": [{
+                "missionId": "a1m6d4",
+                "questId": "a1m6d4_q#2",
+                "sourceFile": "MissionRuntimeAsset/a1m6d4.json",
+            }],
+            "npcProxyRegistryRows": [{
+                "dictionaryKey": "22800970016",
+                "proxyId": "yuxiuli2_map02_v1d1d0_002",
+                "segmentIdGlobal": "22800970016",
+                "sourceFile": "WorldEntityRegistry.json",
+            }],
+            "npcProxyExRows": [{
+                "proxyId": "yuxiuli2_map02_v1d1d0_002",
+                "missionId": "a1m6d4",
+                "rowIndex": 0,
+                "sourceFile": "NpcProxyExDataTable.json",
+            }],
+        }
+        self.assertTrue(
+            gap_queue._exact_cross_owner_npc_proxy_segment_story_context(
+                connection,
+                "a1m6d1",
+                "a1m6d4",
+            )
+        )
+        rows = gap_queue._closed_exact_native_context_isolated_scenes(
+            {"missionStoryConnections": [{
+                **connection,
+                "contextMissionBundle": "a1m6d4",
+            }]},
+            {"radio_a1m6d1_1"},
+            "a1m6d1",
+        )
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["contextMissionId"], "a1m6d4")
+        self.assertTrue(rows[0]["contextMissionMismatch"])
+        self.assertFalse(
+            gap_queue._exact_cross_owner_npc_proxy_segment_story_context(
+                {
+                    **connection,
+                    "npcProxyExRows": [{
+                        **connection["npcProxyExRows"][0],
+                        "missionId": "a1m6d1",
+                    }],
+                },
+                "a1m6d1",
+                "a1m6d4",
+            )
+        )
+
+    def test_tracked_interactive_context_closes_without_playback_or_order(self) -> None:
+        connection = {
+            "key": "dlg_a1m6d5_8",
+            "relation": "entity_tracking_interactive_story_target",
+            "direction": "context",
+            "phase": "tracking",
+            "confidence": "native_exact_tracked_interactive_property",
+            "evidenceTier": "native_exact_context",
+            "storyOwnerMission": "a1m6d5",
+            "trackingMissionId": "a1m6d5",
+            "candidateQuestIds": ["a1m6d5_q#4"],
+            "questTriggerStatus":
+                "navigation_target_configured_story_not_playback",
+            "executionSide": "client",
+            "networkRole": "local_navigation_context",
+            "clientNavigationOnly": True,
+            "serverExchange": False,
+            "levelIds": ["map02_lv002"],
+            "scriptIds": ["22800970028"],
+            "localScriptIds": ["970028"],
+            "entitySlotIds": ["40017"],
+            "entityDetailIds": ["int_narrative_empty"],
+            "entityTemplateIds": ["int_narrative_mission"],
+            "entityTemplatePaths": ["data_int_narrative_mission.json"],
+            "registrySourceFiles": ["WorldEntityRegistry.json"],
+            "interactiveTableSourceFiles": ["InteractiveTable.json"],
+            "sourceFiles": ["MissionRuntimeAsset/a1m6d5.json"],
+            "trackingObjectiveIndex": 1,
+            "trackingIndex": 0,
+            "interactivePropertyKey": "type_id",
+            "interactiveEntryOffset": 15999,
+            "interactivePropertyOffset": 16297,
+            "interactiveStoryOffset": 16331,
+        }
+        rows = gap_queue._closed_exact_runtime_config_isolated_scenes(
+            {"missionStoryConnections": [connection]},
+            {"dlg_a1m6d5_8"},
+            "a1m6d5",
+        )
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(
+            rows[0]["recoveryStatus"],
+            "closed_exact_tracked_interactive_context_no_relative_order",
+        )
+        broken = {**connection, "clientNavigationOnly": False}
+        self.assertEqual(
+            gap_queue._closed_exact_runtime_config_isolated_scenes(
+                {"missionStoryConnections": [broken]},
+                {"dlg_a1m6d5_8"},
+                "a1m6d5",
+            ),
+            [],
+        )
+
+    def test_disconnected_dialog_tree_context_fails_closed(self) -> None:
         disconnected = {
             "key": "black_e11m8_27",
             "relation": "dialog_tree_narrative_action",
