@@ -3324,6 +3324,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     for number in range(1, 4)
                 },
                 "radio_gm01m16_14": {"au_radio_gm01m16_14_001"},
+                "radio_gm01m20_1": {"au_radio_gm01m20_1_001"},
+                "radio_gm01m20_2": {"au_radio_gm01m20_2_001"},
+                "radio_gm01m20_3": {"au_radio_gm01m20_3_001"},
+                "radio_gm01m20_4": {"au_radio_gm01m20_4_001"},
                 "radio_gm01m22_1d2": {"au_radio_gm01m22_1d2_001"},
                 "radio_gm01m22_1d3": {"au_radio_gm01m22_1d3_001"},
                 "radio_e5m4_1": {
@@ -3722,6 +3726,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_gm01m12_1",
                 "dlg_gm01m12_3",
                 "dlg_gm01m12_6",
+                "dlg_gm01m20_1",
+                "dlg_gm01m20_5",
+                "dlg_gm01m20_6",
+                "dlg_gm01m20_7",
             },
         )
         self.assertEqual(
@@ -5144,6 +5152,41 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual("exactQuestPredecessorGraphAndMainPath", failure["gate"])
         self.assertEqual("gm01m16", failure["mission"])
         self.assertIn("sourceSha256", failure)
+
+    def test_gm01m20_exact_fork_and_main_path_are_visible(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual("active", status["status"])
+        topology = index["radio_gm01m20_1"]["missionQuestTopologyContext"]
+        self.assertEqual(["gm01m20_q#7"], topology["entryQuestIds"])
+        self.assertEqual([
+            "gm01m20_q#7", "gm01m20_q#1", "gm01m20_q#6",
+            "gm01m20_q#3", "gm01m20_q#4", "gm01m20_q#2",
+        ], topology["mainPathQuestIds"])
+        self.assertEqual([{
+            "questId": "gm01m20_q#4",
+            "successorQuestIds": ["gm01m20_q#2", "gm01m20_q#10"],
+        }], topology["forks"])
+        self.assertEqual([], topology["merges"])
+        self.assertEqual(
+            {"gm01m20_q#2", "gm01m20_q#10"},
+            set(topology["terminalQuestIds"]),
+        )
+        self.assertEqual([], topology["storyAssignments"])
+        self.assertEqual(
+            "not_serialized_in_client_asset",
+            topology["serverSuccessorSelectionStatus"],
+        )
 
     def test_gm01m7_cross_mission_sns_validator_fails_closed(self) -> None:
         partial = gap_queue.read_json(

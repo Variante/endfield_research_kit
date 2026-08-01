@@ -315,6 +315,7 @@ _ANIME_TREE_PATH_INDEX: dict[str, Path] | None = None
 _ANIME_TREE_SORTED_STEMS: list[str] | None = None
 _DIALOG_TREE_FRAGMENT_TARGETS_CACHE: dict[str, list[dict]] | None = None
 _DIALOG_TREE_SCENE_LINKS_CACHE: dict[str, list[dict]] | None = None
+_DIALOG_TREE_ROOT_PAYLOAD_ALIAS_CACHE: dict[str, dict | None] = {}
 _DIALOG_TREE_EXTRA_CONFIG_CACHE: dict[str, dict | None] = {}
 _DIALOG_TIMELINE_LINE_ORDER_CACHE: dict[str, list[dict]] | None = None
 _NPC_PROXY_EX_CACHE: dict | None = None

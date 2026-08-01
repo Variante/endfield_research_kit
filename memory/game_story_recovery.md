@@ -235,6 +235,26 @@ records serialize no mission/quest identity, so Mission Pipeline exposes their
 source files, patrol/action offsets, and point boundaries without creating an
 ownership or relative-order edge.
 
+The `gm01m20` frontier is now source-bounded too: its queue score fell from 40
+to zero and all eight actionable isolated files are closed to current-build
+evidence boundaries. The exact seven-quest graph is `q#7 -> q#1 -> q#6 -> q#3
+-> q#4`, then forks to terminal `q#2` and `q#10`; `mainPathQuests` chooses
+`q#2` for its authored display path, but no client field reveals the server's
+successor-selection policy. `q#3` observes DialogId root `dlg_gm01m20_8`.
+Its decoded 22,173-byte DialogTree payload is byte-identical to
+`dlg_gm01m20_2` (SHA-256
+`B12B8E56E1A1161DB3D2783680897C0941FBE2845CF3ADB3262320FC28A7F2C0`),
+so Mission Pipeline attaches the canonical Story file to both `q#1` and `q#3`
+and labels the second route as exact root identity, not activation or branch
+selection. `dlg_gm01m20_2` retains its exact two-option internal split. The
+four other dialogs are registered DialogTrees selected by empty-mission
+`NpcProxyEx` rows; `dlg_gm01m20_1` and `_7` share Kupe's proxy with four exact
+quest tracking rows, but that is HUD/navigation context only. Radios `_1`
+through `_4` are exact one-line RadioTable definitions with missing
+AudioDialog ids and no recovered consumer across the hash-locked carrier and
+native surfaces. The WebUI exposes all eight closure cards, the exact alias,
+and the unresolved quest fork without adding a guessed file-order edge.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -263,7 +283,9 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should move to the highest-ranked remaining real major-mission
-frontier (132 actionable core-isolated files remain across that bucket) and
+frontier (124 actionable core-isolated files remain across that bucket; the
+next tied frontier includes `gm01m24`, `gm01m25`, `gm01m26`, `gm01m5`, and
+`gm02m1`) and
 the five character-mission quest-attachment gaps. For `gm01m16`, reopen the
 patrol rows only if an exact `NpcPatrolStart`, world-entity, or MissionRuntime
 tracking join co-carries patrol `160002` or `20001`; do not infer that join from

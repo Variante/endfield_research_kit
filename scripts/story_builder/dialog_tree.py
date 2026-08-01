@@ -2715,6 +2715,77 @@ def load_dialog_tree_fragments(conv_key: str) -> list[dict]:
     return list((_DIALOG_TREE_FRAGMENT_TARGETS_CACHE or {}).get(conv_key, []))
 
 
+def load_exact_dialog_tree_root_payload_alias(root_key: str) -> dict | None:
+    """Resolve one exact DialogTree root whose payload is another Story scene.
+
+    DialogId roots are independently registered runtime resources.  A small
+    number of them serialize a byte-identical ``m_Script`` payload under a
+    second root name.  Admit an alias only when the root contains exactly one
+    foreign Story scene, a canonical asset for that scene exists, and the two
+    decoded payloads are byte-identical.  This proves payload identity, not who
+    launches the root or which server successor is selected afterward.
+    """
+    root_key = str(root_key or "").strip()
+    if not root_key:
+        return None
+    if root_key in _DIALOG_TREE_ROOT_PAYLOAD_ALIAS_CACHE:
+        cached = _DIALOG_TREE_ROOT_PAYLOAD_ALIAS_CACHE[root_key]
+        return dict(cached) if isinstance(cached, dict) else None
+
+    source = _load_dialog_tree_source(root_key)
+    scene_keys = sorted({
+        scene_key
+        for line_id in ((source or {}).get("lineIds") or [])
+        if (scene_key := _dialog_tree_scene_prefix(str(line_id or "")))
+    })
+    if len(scene_keys) != 1 or scene_keys[0] == root_key:
+        _DIALOG_TREE_ROOT_PAYLOAD_ALIAS_CACHE[root_key] = None
+        return None
+    story_key = scene_keys[0]
+    source_path = _find_anime_tree_path(f"{root_key}.json")
+    target_path = _find_anime_tree_path(f"{story_key}.json")
+    if not source_path.exists() or not target_path.exists():
+        _DIALOG_TREE_ROOT_PAYLOAD_ALIAS_CACHE[root_key] = None
+        return None
+
+    def decoded_script(path: Path, expected_name: str) -> bytes | None:
+        try:
+            outer = json.loads(path.read_text(encoding="utf-8-sig"))
+            asset_name = str(
+                outer.get("Name") or outer.get("m_Name") or ""
+            ).strip()
+            script = outer.get("m_Script")
+            if asset_name != expected_name or not isinstance(script, str):
+                return None
+            return base64.b64decode(script, validate=True)
+        except (OSError, ValueError, binascii.Error, json.JSONDecodeError):
+            return None
+
+    source_script = decoded_script(source_path, root_key)
+    target_script = decoded_script(target_path, story_key)
+    if not source_script or source_script != target_script:
+        _DIALOG_TREE_ROOT_PAYLOAD_ALIAS_CACHE[root_key] = None
+        return None
+
+    import hashlib
+
+    alias = {
+        "rootDialogId": root_key,
+        "storyKey": story_key,
+        "relation": "dialog_tree_root_exact_payload_alias",
+        "edgeStatus": "exact_payload_identity_no_activation_or_branch_selection",
+        "sourceFile": repo_rel(source_path),
+        "canonicalStoryFile": repo_rel(target_path),
+        "decodedScriptSha256": hashlib.sha256(source_script).hexdigest().upper(),
+        "decodedScriptLength": len(source_script),
+        "payloadIdentity": True,
+        "activationEvidence": False,
+        "branchSelectionEvidence": False,
+    }
+    _DIALOG_TREE_ROOT_PAYLOAD_ALIAS_CACHE[root_key] = alias
+    return dict(alias)
+
+
 def load_dialog_tree_scene_links(conv_key: str) -> list[dict]:
     """Return authored outgoing scene/menu links for one scene key."""
     global _DIALOG_TREE_SCENE_LINKS_CACHE

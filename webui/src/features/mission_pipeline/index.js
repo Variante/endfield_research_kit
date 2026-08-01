@@ -47,6 +47,8 @@
       unlinkedStory: "Story unassigned",
       nativePlaybackGaps: "exact-native gaps",
       rootPlaybackAliases: "root playback aliases",
+      exactDialogRootAlias: "exact DialogTree root alias",
+      exactDialogRootAliasBoundary: "byte-identical payload; no activation or server branch-selection claim",
       definitionOnlyStory: "definition-only black text",
       nonMissionContentStory: "non-mission content",
       nonMissionContentStoryHint: "Story ids proven to be authored non-mission content: speaker radio continuation, character SNS topics, or exact factory tutorial guide actions. The evidence serializes no mission or quest owner. Authored fields and typed consumers admit a key; filenames never do.",
@@ -539,6 +541,8 @@
     },
     zh: {
       rootPlaybackAliases: "\u6839\u64ad\u653e\u522b\u540d",
+      exactDialogRootAlias: "\u7cbe\u786e DialogTree \u6839\u522b\u540d",
+      exactDialogRootAliasBoundary: "\u5b57\u8282\u5b8c\u5168\u76f8\u540c\u7684\u8f7d\u8377\uff1b\u4e0d\u58f0\u79f0\u6fc0\u6d3b\u65b9\u6216\u670d\u52a1\u5668\u5206\u652f\u9009\u62e9",
       relationRootPlaybackAliasComposed: "\u72ec\u7acb\u5df2\u8fde\u63a5\u7684\u539f\u751f\u6839\u64ad\u653e\u901a\u8fc7 CutsceneRoot director \u6267\u884c\u8be5\u7cbe\u786e TimelineAsset\uff08\u5f52\u5c5e\u4e0a\u4e0b\u6587\uff0c\u975e\u5267\u60c5\u987a\u5e8f\uff09",
       relationMissionTrackedWorldEntityLevelScript: "精确的本地队长触发器播放脚本引用了仅由一个任务跟踪的世界实体（仅共享的脚本/实体创作上下文；候选任务节点不证明触发门、激活、播放、完成或所有权）",
       relationMissionTrackedWorldEntityLevelScriptStage: "服务器先同步该 LevelScript 阶段，再进入精确的本地 StageChanged 播放路径；类型化世界实体跟踪只确定唯一任务上下文，不证明任何候选任务节点写入了该阶段",
@@ -1778,6 +1782,9 @@
   function storyConnectionDetails(row) {
     return [
       storyRelationLabel(row.relation),
+      row.rootDialogId ? `${t("exactDialogRootAlias")} ${row.rootDialogId} \u2192 ${row.key}` : "",
+      row.rootPayloadAlias?.payloadIdentity === true ? t("exactDialogRootAliasBoundary") : "",
+      row.rootPayloadAlias?.decodedScriptSha256 ? `m_Script SHA-256 ${row.rootPayloadAlias.decodedScriptSha256}` : "",
       row.phase ? `phase=${row.phase}` : "",
       row.finishId !== undefined ? `finish=${row.finishId}` : "",
       row.actionType ? `${row.actionType} / slot ${row.actionSlot ?? "?"}` : "",
