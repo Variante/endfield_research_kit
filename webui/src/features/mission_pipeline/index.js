@@ -517,6 +517,8 @@
       offlineRecoveryDialogResultBranch: "Exact LevelData / LevelScript dialog branch",
       offlineRecoveryDialogStart: "Configured start dialog",
       offlineRecoveryDialogResult: "result case",
+      offlineRecoveryControlPath: "serialized control path",
+      offlineRecoveryMissionRuntimeAbsent: "nominal MissionRuntime asset absent",
       offlineRecoveryDialogBranchBoundary: "Cases are mutually exclusive outcomes. The local custom-event producer and a nominal MissionRuntime quest owner are not serialized here.",
       offlineRecoveryPostDialogAction: "Post-dialog local action",
       offlineRecoveryTestStub: "Exact test popup stub; no RichContent payload",
@@ -1010,6 +1012,8 @@
       offlineRecoveryDialogResultBranch: "\u7cbe\u786e LevelData / LevelScript \u5bf9\u8bdd\u5206\u652f",
       offlineRecoveryDialogStart: "\u914d\u7f6e\u7684\u8d77\u59cb\u5bf9\u8bdd",
       offlineRecoveryDialogResult: "result \u5206\u652f\u503c",
+      offlineRecoveryControlPath: "\u5e8f\u5217\u5316\u63a7\u5236\u8def\u5f84",
+      offlineRecoveryMissionRuntimeAbsent: "\u7f3a\u5c11\u540d\u4e49 MissionRuntime \u8d44\u4ea7",
       offlineRecoveryDialogBranchBoundary: "\u8fd9\u4e9b case \u662f\u4e92\u65a5\u7ed3\u679c\u3002\u6b64\u5904\u672a\u5e8f\u5217\u5316\u672c\u5730\u81ea\u5b9a\u4e49\u4e8b\u4ef6\u7684\u4ea7\u751f\u8005\uff0c\u4e5f\u6ca1\u6709\u540d\u4e49 MissionRuntime \u4efb\u52a1\u6240\u6709\u8005\u3002",
       offlineRecoveryPostDialogAction: "\u5bf9\u8bdd\u540e\u672c\u5730\u52a8\u4f5c",
       offlineRecoveryTestStub: "\u539f\u59cb\u6d4b\u8bd5\u5f39\u7a97\u5360\u4f4d\uff1b\u65e0 RichContent \u5185\u5bb9",
@@ -2822,7 +2826,7 @@
         : "";
       const dialogResultBranch = row.levelDataDialogBranchContext;
       const dialogResultBranchContext = dialogResultBranch
-        ? `<details open><summary><strong>${esc(t("offlineRecoveryDialogResultBranch"))}</strong> <code>${esc(dialogResultBranch.levelId || "?")}/${esc(dialogResultBranch.scriptId || "?")}</code></summary><p><strong>${esc(t("offlineRecoveryDialogStart"))}</strong><code>${esc(dialogResultBranch.startDialogListener?.dialogId || "?")}</code><code>${esc(dialogResultBranch.startDialogListener?.propertyPath || "?")}</code></p>${(dialogResultBranch.resultBranches || []).map((branch) => `<p><strong>${esc(t("offlineRecoveryDialogResult"))} ${esc(branch.resultValue ?? "?")}</strong><code>${esc(branch.propertyPath || "?")}</code><i>&rarr;</i><a href="${esc(storyHref(branch.dialogId))}"><code>${esc(branch.dialogId || "?")}</code></a></p>`).join("")}<small>${esc(t("offlineRecoveryDialogBranchBoundary"))}</small></details>`
+        ? `<details open><summary><strong>${esc(t("offlineRecoveryDialogResultBranch"))}</strong> <code>${esc(dialogResultBranch.levelId || "?")}/${esc(dialogResultBranch.scriptId || "?")}</code></summary><p><strong>${esc(t("offlineRecoveryDialogStart"))}</strong><code>${esc(dialogResultBranch.startDialogListener?.dialogId || "?")}</code><code>${esc(dialogResultBranch.startDialogListener?.propertyPath || "?")}</code></p>${dialogResultBranch.runtimeMissionAssetStatus === "absent_for_nominal_mission" ? `<p><span>${esc(t("offlineRecoveryMissionRuntimeAbsent"))}</span></p>` : ""}${(dialogResultBranch.resultBranches || []).map((branch) => `<p><strong>${esc(t("offlineRecoveryDialogResult"))} ${esc(branch.resultValue ?? "?")}</strong><code>${esc(branch.propertyPath || "?")}</code><i>&rarr;</i><a href="${esc(storyHref(branch.dialogId))}"><code>${esc(branch.dialogId || "?")}</code></a>${(branch.controlPath?.pathLocalIds || []).length ? `<span>${esc(t("offlineRecoveryControlPath"))}: <code>${esc(branch.controlPath.pathLocalIds.map((id) => `#${id}`).join(" "))}</code></span>` : ""}</p>`).join("")}<small>${esc(t("offlineRecoveryDialogBranchBoundary"))}</small></details>`
         : "";
       const emptyHost = row.emptyLevelScriptContext;
       const emptyHostContext = emptyHost

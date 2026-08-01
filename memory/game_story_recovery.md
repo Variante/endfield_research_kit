@@ -9,11 +9,11 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 499 (490 MissionRuntime + 9 Story-only recovery shells) |
+| Pipeline missions | 501 (490 MissionRuntime + 11 Story-only recovery shells) |
 | Unique Story files | 5,282 |
-| Connected files | 4,177 (79.1%) |
-| Files with a normalized trigger/context route | 4,398 (83.3%) |
-| Unlinked files | 1,105 |
+| Connected files | 4,181 (79.2%) |
+| Files with a normalized trigger/context route | 4,402 (83.3%) |
+| Unlinked files | 1,101 |
 | Unlinked files with exact native playback | 155 |
 | Ordered mission graphs | 487 |
 | Candidate scene placements | 8,876 |
@@ -461,6 +461,31 @@ failure guard, and nested state dependencies on every source-bounded card,
 without assigning a quest or Story order. The manual suffix list is comparison
 only, and no OCR proposal exists for this mission.
 
+The `gm01m2` frontier is now source-bounded, lowering its score from 20 to
+zero and the major actionable backlog from 51 to 47. No nominal
+`MissionRuntimeAsset` exists. Instead, exact binary LevelData
+`map01_lv001_lv_data_sub_gm01m2` contains three LevelScript briefs;
+`2100210004` has 38 properties and binds `start_dialog`, `succeed_dialog`, and
+`failed_dialog` to `dlg_gm01m2_1`, `_2`, and `_3`. Its local custom event
+`#72a43b08` reads integer `result`: exact `SwitchInt` case 8 reaches the
+success DialogTree and case 9 reaches the failure DialogTree through unique
+serialized `StartDialogAction` paths. This proves mutually exclusive outcome
+selection within the configured race script, but neither a quest owner nor the
+producer of the local event. The exact DialogTrees also recover their internal
+branches: `_1` begins `012 -> 013 -> 017`, then offers two menu loops, one
+long terminal route, and one short terminal route; `_2` has two terminal
+outcomes; `_3` has two terminal outcomes and reuses `_2` option `1_002` for
+its absent-`finishId` route. Id-less disconnected `DialogTreeExActorNode`
+decoration is now ignored narrowly while every other id-less graph node still
+fails closed. `dlg_gm01m2_5` has seven text rows and three option rows but no
+DialogId registration, DialogTree, audio membership, or recovered consumer.
+The installed binaries contain none of the four dialog root tokens, and the
+carrier, GameObject, and reverse-PPtr audits expose no additional consumer.
+Mission Pipeline publishes a zero-quest Story shell with the two original
+carrier files, exact result control paths, internal option routes, and explicit
+missing-`MissionRuntime` boundary. Neither OCR nor the manual order file has a
+`gm01m2` entry.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -489,8 +514,8 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should move to the highest-ranked remaining real major-mission
-frontier (51 actionable core-isolated files remain across that bucket; the
-next ranked frontier is `gm01m2`, score 20 across four actionable isolated files)
+frontier (47 actionable core-isolated files remain across that bucket; the
+next ranked frontier is `gm01m3`, score 20 across four actionable isolated files)
 and the five character-mission quest-attachment gaps. Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
