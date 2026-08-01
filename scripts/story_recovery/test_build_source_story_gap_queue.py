@@ -3314,6 +3314,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 },
                 "radio_gm01m6_4d5": {"au_radio_gm01m6_4d5_001"},
                 "radio_gm01m6_6": {"au_radio_gm01m6_6_001"},
+                "radio_gm01m7_9": {
+                    f"au_radio_gm01m7_9_{number:03d}"
+                    for number in range(1, 13)
+                },
                 "radio_gm01m22_1d2": {"au_radio_gm01m22_1d2_001"},
                 "radio_gm01m22_1d3": {"au_radio_gm01m22_1d3_001"},
                 "radio_e5m4_1": {
@@ -3697,6 +3701,11 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "misc_dlg_gm01m6_3d7",
                 "misc_dlg_gm01m6_4d5",
                 "misc_dlg_gm01m6_4d7",
+                "dlg_gm01m7_1",
+                "dlg_gm01m7_2",
+                "dlg_gm01m7_3",
+                "dlg_gm01m7_5",
+                "dlg_gm01m7_7",
                 "dlg_gm01m22_6",
                 "dlg_gm01m22_7",
                 "dlg_gm01m22_8",
@@ -4658,6 +4667,240 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(failure["mission"], "gm01m6")
         self.assertIn("sourceSha256", failure)
 
+    def test_declared_gm01m7_branch_frontier_is_exact(self) -> None:
+        story_keys = {
+            "dlg_gm01m7_1",
+            "dlg_gm01m7_2",
+            "dlg_gm01m7_3",
+            "dlg_gm01m7_5",
+            "dlg_gm01m7_7",
+            "radio_gm01m7_9",
+            "sns_gm01m7_1",
+            "sns_gm01m7_2",
+            "text_gm01m7_1",
+        }
+        self.assertEqual(
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm01m7" in key
+            },
+            story_keys,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GM01M7_RADIOS,
+            {"radio_gm01m7_9"},
+        )
+        branch = gap_queue.OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS[
+            "gm01m7"
+        ]
+        self.assertEqual(
+            branch["fork"],
+            {
+                "questId": "gm01m7_q#1",
+                "successorQuestIds": (
+                    "gm01m7_q#8",
+                    "gm01m7_q#14",
+                ),
+            },
+        )
+        self.assertEqual(
+            branch["merge"],
+            {
+                "predecessorQuestIds": (
+                    "gm01m7_q#14",
+                    "gm01m7_q#8",
+                ),
+                "questId": "gm01m7_q#9",
+            },
+        )
+        self.assertEqual(
+            branch["sharedTracking"]["proxyId"],
+            "sesidun_map01_001",
+        )
+        self.assertEqual(
+            len(
+                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                    "dlg_gm01m7_1"
+                ]["treeBranchGroups"]
+            ),
+            2,
+        )
+        for story_key in (
+            "dlg_gm01m7_1",
+            "dlg_gm01m7_2",
+            "dlg_gm01m7_3",
+            "dlg_gm01m7_5",
+            "dlg_gm01m7_7",
+        ):
+            self.assertEqual(
+                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                    story_key
+                ]["missionNpcProxyTracking"]["runtimeMissionId"],
+                "gm01m12",
+            )
+        self.assertEqual(
+            len(
+                gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                    "dlg_gm01m7_2"
+                ]["npcProxyConsumers"]
+            ),
+            2,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS[
+                "sns_gm01m7_1"
+            ]["runtimeTracking"]["questId"],
+            "gm01m12_q#16",
+        )
+        self.assertEqual(
+            len(
+                gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+                    "text_gm01m7_1"
+                ]["contentTextIds"]
+            ),
+            13,
+        )
+
+    def test_gm01m7_branch_and_cross_mission_sns_context_are_visible(
+        self,
+    ) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual(status["status"], "active")
+        context = index["dlg_gm01m7_1"]["missionQuestBranchContext"]
+        self.assertEqual(
+            context["fork"]["successorQuestIds"],
+            ["gm01m7_q#8", "gm01m7_q#14"],
+        )
+        self.assertEqual(
+            context["merge"]["predecessorQuestIds"],
+            ["gm01m7_q#14", "gm01m7_q#8"],
+        )
+        self.assertEqual(context["storyArmAssignments"], [])
+        self.assertEqual(
+            context["storyArmAssignmentStatus"],
+            "unresolved",
+        )
+        self.assertFalse(context["orderEvidence"])
+        dialog_tracking = index["dlg_gm01m7_1"][
+            "missionNpcProxyTracking"
+        ]
+        self.assertTrue(dialog_tracking["crossMission"])
+        self.assertEqual(dialog_tracking["missionId"], "gm01m12")
+        self.assertEqual(dialog_tracking["nominalMissionId"], "gm01m7")
+        self.assertEqual(dialog_tracking["questIds"], ["gm01m12_q#14"])
+        shared_dialog_tracking = index["dlg_gm01m7_7"][
+            "missionNpcProxyTracking"
+        ]
+        self.assertEqual(
+            shared_dialog_tracking["questIds"],
+            [
+                "gm01m12_q#2",
+                "gm01m12_q#3",
+                "gm01m12_q#4",
+                "gm01m12_q#6",
+                "gm01m12_q#12",
+            ],
+        )
+        tracking = index["sns_gm01m7_1"]["runtimeTrackingContext"]
+        self.assertEqual(tracking["runtimeMissionId"], "gm01m12")
+        self.assertEqual(tracking["questId"], "gm01m12_q#16")
+        self.assertFalse(tracking["playback"])
+        self.assertFalse(tracking["nominalMissionOwnership"])
+
+    def test_gm01m7_branch_context_validator_fails_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        declaration = gap_queue.OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS[
+            "gm01m7"
+        ]
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS,
+            {"gm01m7": {
+                **declaration,
+                "fork": {
+                    **declaration["fork"],
+                    "successorQuestIds": ("gm01m7_q#missing",),
+                },
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual(failed_index, {})
+        failure = failed_status["validatorDiagnostics"][0]
+        self.assertEqual(failure["validator"], "offlineMissionBranchContext")
+        self.assertEqual(
+            failure["gate"],
+            "exactForkMergeAndSharedNpcTracking",
+        )
+        self.assertEqual(failure["mission"], "gm01m7")
+        self.assertIn("sourceSha256", failure)
+
+    def test_gm01m7_cross_mission_sns_validator_fails_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        story_key = "sns_gm01m7_1"
+        definition = gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS[story_key]
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS,
+            {story_key: {
+                **definition,
+                "runtimeTracking": {
+                    **definition["runtimeTracking"],
+                    "questId": "gm01m12_q#missing",
+                },
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual(failed_index, {})
+        failure = next(
+            row
+            for row in failed_status["validatorDiagnostics"]
+            if row.get("storyKey") == story_key
+        )
+        self.assertEqual(failure["validator"], "offline_sns_definition")
+        self.assertEqual(
+            failure["gate"],
+            "exactCrossMissionSnsTrackingContext",
+        )
+        self.assertEqual(failure["mission"], "gm01m12")
+        self.assertIn("sourceSha256", failure)
+
     def test_gm01m22_dialog_tree_branches_are_exact_and_fail_closed(self) -> None:
         definition_root = (
             gap_queue.ROOT
@@ -5189,6 +5432,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS),
             {
+                "text_gm01m7_1",
                 "text_a1m6d5_1",
                 "text_a1m5_1",
                 "text_a1m5_2",
@@ -5419,6 +5663,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "sns_e7m4_1",
                 "sns_e10m4_1",
                 "sns_gm01m22_2",
+                "sns_gm01m7_1",
+                "sns_gm01m7_2",
             },
         )
         self.assertEqual(
