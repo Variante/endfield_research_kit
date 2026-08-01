@@ -3278,6 +3278,31 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "radio_a1m6d2_1": {"au_radio_a1m6d2_1_001"},
                 "radio_a1m6d3_1": {"au_radio_a1m6d3_1_001"},
                 "radio_a1m8d3_1": {"au_radio_a1m8d3_1_001"},
+                "radio_gm02m2_1": {
+                    "au_radio_gm02m2_1_001",
+                    "au_radio_gm02m2_1_002",
+                },
+                "radio_gm02m2_2": {
+                    "au_radio_gm02m2_2_001",
+                    "au_radio_gm02m2_2_002",
+                },
+                "radio_gm02m2_2d5": {
+                    "au_radio_gm02m2_2d5_001",
+                    "au_radio_gm02m2_2d5_002",
+                    "au_radio_gm02m2_2d5_003",
+                },
+                "radio_gm02m2_3": {
+                    "au_radio_gm02m2_3_001",
+                    "au_radio_gm02m2_3_002",
+                },
+                "radio_gm02m2_4": {"au_radio_gm02m2_4_001"},
+                "radio_gm02m2_5": {"au_radio_gm02m2_5_001"},
+                "radio_gm02m2_6": {"au_radio_gm02m2_6_001"},
+                "radio_gm02m2_7": {"au_radio_gm02m2_7_001"},
+                "radio_gm02m2_10": {
+                    "au_radio_gm02m2_10_001",
+                    "au_radio_gm02m2_10_002",
+                },
                 "radio_e5m4_1": {
                     f"au_radio_e5m4_1_{number:03d}"
                     for number in range(1, 5)
@@ -4224,6 +4249,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m8_13",
                 "dlg_e11m8_14",
                 "dlg_e11m8d5_2",
+                "dlg_gm02m2_1",
+                "dlg_gm02m2_2",
+                "dlg_gm02m2_3",
+                "dlg_gm02m2_4",
             },
         )
         self.assertEqual(len(text_only["dlg_e10m3_10"]["lineIds"]), 8)
@@ -4313,6 +4342,144 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             failure["actual"]["option_dlg_a1m7_2_1_001"]["iconType"],
             "Default",
+        )
+
+    def test_declared_gm02m2_table_only_branch_frontier_is_exact(self) -> None:
+        text_only = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS
+        self.assertEqual(
+            {
+                key: (
+                    len(text_only[key]["lineIds"]),
+                    len(text_only[key]["optionRows"]),
+                    text_only[key]["dialogIdRegistrationStatus"],
+                )
+                for key in (
+                    "dlg_gm02m2_1",
+                    "dlg_gm02m2_2",
+                    "dlg_gm02m2_3",
+                    "dlg_gm02m2_4",
+                )
+            },
+            {
+                "dlg_gm02m2_1": (7, 3, "present_table_only"),
+                "dlg_gm02m2_2": (1, 2, "present_table_only"),
+                "dlg_gm02m2_3": (5, 3, "present_table_only"),
+                "dlg_gm02m2_4": (3, 1, "present_table_only"),
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GM02M2_RADIOS,
+            {
+                "radio_gm02m2_1",
+                "radio_gm02m2_2",
+                "radio_gm02m2_2d5",
+                "radio_gm02m2_3",
+                "radio_gm02m2_4",
+                "radio_gm02m2_5",
+                "radio_gm02m2_6",
+                "radio_gm02m2_7",
+                "radio_gm02m2_10",
+            },
+        )
+
+    def test_gm02m2_table_only_registration_validator_fails_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        definition = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+            "dlg_gm02m2_2"
+        ]
+        incomplete_options = dict(definition["optionRows"])
+        incomplete_options.pop("option_dlg_gm02m2_2_1_002")
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS,
+            {"dlg_gm02m2_2": {
+                **definition,
+                "optionRows": incomplete_options,
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual(failed_index, {})
+        failure = next(
+            row for row in failed_status["validatorDiagnostics"]
+            if row["storyKey"] == "dlg_gm02m2_2"
+            and row["gate"] == "exactTableOnlyDialogIdRegistration"
+        )
+        self.assertEqual(failure["validator"], "offlineTextOnlyDialogDefinition")
+        self.assertEqual(failure["missionId"], "gm02m2")
+        self.assertEqual(failure["expected"]["optionCount"], 1)
+        self.assertEqual(failure["actual"]["optionCount"], 2)
+        self.assertIn("dialogIdSource", failure["sourceSha256"])
+        self.assertIn("dialogIdIndex", failure["sourceSha256"])
+
+    def test_offline_table_only_options_leave_routes_visible_but_deferred(self) -> None:
+        partial = partial_mission(
+            "gm02m2",
+            scenes=["dlg_gm02m2_2"],
+            isolated=["dlg_gm02m2_2"],
+            no_route_groups=1,
+        )
+        partial["summary"].update({
+            "branchingNoExplicitRouteGroupCount": 1,
+            "singleOptionNoExplicitRouteGroupCount": 0,
+        })
+        partial["branches"] = {
+            "branchingNoExplicitRouteGroups": [{
+                "storyKey": "dlg_gm02m2_2",
+                "group": 1,
+                "options": [
+                    {"optionId": "option_dlg_gm02m2_2_1_001"},
+                    {"optionId": "option_dlg_gm02m2_2_1_002"},
+                ],
+            }],
+        }
+        recovery = {
+            "sceneKey": "dlg_gm02m2_2",
+            "missionId": "gm02m2",
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "optionRouteStatus": "definitions_present_route_unresolved",
+            "optionIds": [
+                "option_dlg_gm02m2_2_1_001",
+                "option_dlg_gm02m2_2_1_002",
+            ],
+            "evidenceKind":
+                "registered_dialog_table_rows_without_tree_asset_or_consumer",
+            "consumerBoundary": "fixture exact-build boundary",
+            "graphEffect": "none",
+        }
+        row = gap_queue.build_gap_row(
+            partial,
+            mission_payload(),
+            mission_bundle_exists=True,
+            offline_exhaustion_index={"dlg_gm02m2_2": recovery},
+        )
+        self.assertEqual(
+            row["metrics"]["actionableNoExplicitOptionRouteGroups"],
+            0,
+        )
+        self.assertEqual(
+            row["metrics"]["deferredOfflineExhaustedOptionRouteGroups"],
+            1,
+        )
+        self.assertEqual(
+            row["deferredOfflineExhaustedOptionRouteGroups"][0]["optionIds"],
+            recovery["optionIds"],
+        )
+        self.assertEqual(
+            row["deferredOfflineExhaustedOptionRouteGroups"][0]["graphEffect"],
+            "none",
         )
 
     def test_a1m8d1_sns_branch_validator_reports_exact_failure(self) -> None:
