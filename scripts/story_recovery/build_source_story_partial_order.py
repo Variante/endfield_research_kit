@@ -12,6 +12,7 @@ generated UI rank, ``sceneOrderInfo.questOrder``, or scene-graph node ``order``.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from collections import Counter, defaultdict, deque
@@ -43,6 +44,7 @@ from story_builder.level_bindings import (  # noqa: E402
 )
 from story_builder.anime_assets import (  # noqa: E402
     recover_dialog_tree_narrative_mask_actions,
+    recover_dialog_tree_open_ui_content_actions,
 )
 from story_builder.spawner_binary import (  # noqa: E402
     SPAWNER_WAVE_RUNTIME_MAPPING_ID,
@@ -51,7 +53,11 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v20"
+SCHEMA = "sourceStoryPartialOrder.v21"
+READING_POPUP_TABLE_PATH = (
+    ROOT / "export_full" / "structured" / "StreamingAssets"
+    / "Table" / "ReadingPopUpTable.json"
+)
 VARIANT_FLOW_LIST_FIELDS = (
     "missionStoryConnections",
     "quests",
@@ -1417,6 +1423,169 @@ def _dialog_tree_narrative_containments(
     return containments, warnings
 
 
+def _dialog_tree_open_ui_containments(
+    mission: str,
+    candidate_keys: set[str],
+    occurrences: list[dict[str, Any]] | None,
+    reading_popup_rows: dict[str, Any] | None,
+    *,
+    reading_popup_source: str = "",
+    reading_popup_sha256: str = "",
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Resolve exact DialogTree OpenUI popup consumers to Story content.
+
+    The typed DialogTree node proves containment in its parent dialog. The
+    ReadingPopUpTable join proves which ``text_*`` Story payload is opened.
+    Neither relationship proves how the parent dialog itself is activated.
+    """
+    popup_rows = reading_popup_rows if isinstance(reading_popup_rows, dict) else {}
+    containments: list[dict[str, Any]] = []
+    warnings: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    allowed_placements = {
+        "exact_between_adjacent_parent_trunks",
+        "exact_after_parent_trunk_at_finish",
+        "exact_prime_entry_before_parent_trunk",
+    }
+    for occurrence in occurrences or []:
+        if not isinstance(occurrence, dict):
+            continue
+        popup_id = safe_key(occurrence.get("readingPopupId"))
+        popup_row = popup_rows.get(popup_id)
+        child_key = (
+            safe_key(popup_row.get("contentId"))
+            if isinstance(popup_row, dict) else ""
+        )
+        parent_key = safe_key(occurrence.get("dialogKey"))
+        if child_key not in candidate_keys:
+            continue
+        after_ids = [
+            safe_key(value)
+            for value in occurrence.get("embeddedAfterLineIds") or []
+            if safe_key(value)
+        ]
+        before_ids = [
+            safe_key(value)
+            for value in occurrence.get("embeddedBeforeLineIds") or []
+            if safe_key(value)
+        ]
+        placement = safe_key(
+            occurrence.get("dialogTreeConnectionPlacementStatus")
+        )
+        expected_popup_row = {
+            "bgType": popup_row.get("bgType") if isinstance(popup_row, dict) else None,
+            "contentId": child_key,
+            "iconType": popup_row.get("iconType") if isinstance(popup_row, dict) else None,
+            "id": popup_id,
+            "overrideRadioId": "",
+            "title": {"id": 0, "text": ""},
+        }
+        boundary_valid = (
+            (placement == "exact_between_adjacent_parent_trunks" and after_ids and before_ids)
+            or (placement == "exact_after_parent_trunk_at_finish" and after_ids and not before_ids)
+            or (placement == "exact_prime_entry_before_parent_trunk" and not after_ids and before_ids)
+        )
+        valid = bool(
+            parent_key
+            and parent_key != child_key
+            and child_key.startswith("text_")
+            and popup_id
+            and popup_row == expected_popup_row
+            and occurrence.get("paramData") == {"id": popup_id}
+            and occurrence.get("panelType") == 17
+            and occurrence.get("actionEnum") == 57
+            and safe_key(occurrence.get("nativeMappingId"))
+            == "dialog-tree-open-ui-reading-popup-connection-native-v1"
+            and placement in allowed_placements
+            and occurrence.get("reachableFromPrimeNode") is True
+            and boundary_valid
+        )
+        if not valid:
+            warnings.append({
+                "validator": "dialogTreeOpenUIContainment",
+                "check": "exact_typed_open_ui_reading_popup_boundary",
+                "mission": mission,
+                "storyKey": child_key,
+                "parentStoryKey": parent_key,
+                "sourcePaths": sorted(filter(None, {
+                    safe_key(occurrence.get("sourceFile")),
+                    reading_popup_source,
+                })),
+                "sourceSha256": {
+                    safe_key(occurrence.get("sourceFile")):
+                        safe_key(occurrence.get("sourceSha256")),
+                    reading_popup_source: reading_popup_sha256,
+                },
+                "expected": {
+                    "popupRow": expected_popup_row,
+                    "paramData": {"id": popup_id},
+                    "panelType": 17,
+                    "actionEnum": 57,
+                    "mappingId":
+                        "dialog-tree-open-ui-reading-popup-connection-native-v1",
+                    "placementStatus": sorted(allowed_placements),
+                    "reachableFromPrimeNode": True,
+                    "typedParentCarrier": True,
+                },
+                "actual": {
+                    "popupRow": popup_row,
+                    "paramData": occurrence.get("paramData"),
+                    "panelType": occurrence.get("panelType"),
+                    "actionEnum": occurrence.get("actionEnum"),
+                    "mappingId": safe_key(occurrence.get("nativeMappingId")),
+                    "placementStatus": placement,
+                    "reachableFromPrimeNode":
+                        occurrence.get("reachableFromPrimeNode"),
+                    "typedParentCarrier": bool(parent_key),
+                    "embeddedAfterLineIds": after_ids,
+                    "embeddedBeforeLineIds": before_ids,
+                },
+            })
+            continue
+        signature = (
+            parent_key,
+            child_key,
+            safe_key(occurrence.get("nodeId")),
+        )
+        if signature in seen:
+            continue
+        seen.add(signature)
+        containments.append({
+            "child": child_key,
+            "parent": parent_key,
+            "parentStoryCandidate": parent_key in candidate_keys,
+            "kind": "dialogTreeOpenUIReadingPopup",
+            "relation": "dialog_tree_open_ui_reading_popup_containment",
+            "tier": "native_direct_containment",
+            "boundaryPlacement": placement,
+            "embeddedAfterLineIds": after_ids,
+            "embeddedBeforeLineIds": before_ids,
+            "readingPopupId": popup_id,
+            "panelType": 17,
+            "actionEnum": 57,
+            "sourceFiles": sorted(filter(None, {
+                safe_key(occurrence.get("sourceFile")),
+                reading_popup_source,
+            })),
+            "sourceSha256": {
+                safe_key(occurrence.get("sourceFile")):
+                    safe_key(occurrence.get("sourceSha256")),
+                reading_popup_source: reading_popup_sha256,
+            },
+            "nativeMappingId":
+                "dialog-tree-open-ui-reading-popup-connection-native-v1",
+            "orderBoundary": (
+                "exact popup placement inside the parent DialogTree; not a "
+                "complete Story-file edge and not parent activation evidence"
+            ),
+        })
+    containments.sort(key=lambda row: (
+        natural_key(row["parent"]),
+        natural_key(row["child"]),
+    ))
+    return containments, warnings
+
+
 def _dialog_tree_cross_story_trunk_edges(
     flow: dict[str, Any],
     candidate_keys: set[str],
@@ -2608,6 +2777,10 @@ def build_mission_partial_order(
     exact_levelscript_playback_context_keys: set[str] | None = None,
     exact_native_control_path_context_keys: set[str] | None = None,
     dialog_tree_narrative_occurrences: list[dict[str, Any]] | None = None,
+    dialog_tree_open_ui_occurrences: list[dict[str, Any]] | None = None,
+    reading_popup_rows: dict[str, Any] | None = None,
+    reading_popup_source: str = "",
+    reading_popup_sha256: str = "",
 ) -> dict[str, Any]:
     """Build one source-only mission partial order from generated source evidence."""
     mission_payload = mission_payload if isinstance(mission_payload, dict) else {}
@@ -2721,8 +2894,23 @@ def build_mission_partial_order(
             dialog_tree_narrative_occurrences,
         )
     )
+    open_ui_containments, open_ui_containment_warnings = (
+        _dialog_tree_open_ui_containments(
+            mission,
+            candidate_keys,
+            dialog_tree_open_ui_occurrences,
+            reading_popup_rows,
+            reading_popup_source=reading_popup_source,
+            reading_popup_sha256=reading_popup_sha256,
+        )
+    )
+    all_containments = [*narrative_containments, *open_ui_containments]
+    all_containments.sort(key=lambda row: (
+        natural_key(row["parent"]),
+        natural_key(row["child"]),
+    ))
     embedded_scene_keys = {
-        row["child"] for row in narrative_containments
+        row["child"] for row in all_containments
     }
     _demote_reciprocal_quest_projections(direct_edges)
 
@@ -3005,7 +3193,7 @@ def build_mission_partial_order(
             "weakOnlySceneCount": len(weak_only),
             "unknownSceneCount": len(unknown),
             "definitionOnlySourceNodeCount": len(definition_only_nodes),
-            "embeddedContainmentCount": len(narrative_containments),
+            "embeddedContainmentCount": len(all_containments),
             "embeddedSceneCount": len(embedded_scene_keys),
             "totalScenePairs": total_pairs,
             "comparableScenePairs": comparable_pairs,
@@ -3047,7 +3235,7 @@ def build_mission_partial_order(
         "reducedComponentEdges": reduced_component_edges,
         "topologicalLayers": layers,
         "directEdges": direct_edges,
-        "containments": narrative_containments,
+        "containments": all_containments,
         "cycles": cycles,
         "branches": {
             "sceneGraphOptions": scene_graph_option_branches,
@@ -3098,7 +3286,11 @@ def build_mission_partial_order(
                 key=lambda item: natural_key(item[0]),
             )
         ],
-        "warnings": [*warnings, *narrative_containment_warnings],
+        "warnings": [
+            *warnings,
+            *narrative_containment_warnings,
+            *open_ui_containment_warnings,
+        ],
     }
 
 
@@ -3207,6 +3399,15 @@ def build_report(
     dialog_tree_narrative_occurrences = (
         recover_dialog_tree_narrative_mask_actions()
     )
+    dialog_tree_open_ui_occurrences = (
+        recover_dialog_tree_open_ui_content_actions()
+    )
+    reading_popup_rows = read_json(READING_POPUP_TABLE_PATH, {})
+    reading_popup_source = READING_POPUP_TABLE_PATH.relative_to(ROOT).as_posix()
+    reading_popup_sha256 = (
+        hashlib.sha256(READING_POPUP_TABLE_PATH.read_bytes()).hexdigest().upper()
+        if READING_POPUP_TABLE_PATH.is_file() else ""
+    )
     rows: list[dict[str, Any]] = []
     totals: Counter[str] = Counter()
     edge_kind_totals: Counter[str] = Counter()
@@ -3257,6 +3458,10 @@ def build_report(
             exact_levelscript_playback_context_keys,
             exact_native_control_path_context_keys,
             dialog_tree_narrative_occurrences,
+            dialog_tree_open_ui_occurrences,
+            reading_popup_rows,
+            reading_popup_source,
+            reading_popup_sha256,
         )
         row["missionData"] = (
             mission_path.relative_to(ROOT).as_posix() if mission_path.is_file() else ""

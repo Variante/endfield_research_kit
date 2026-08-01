@@ -291,7 +291,11 @@
       storyOrder: "Source-proven Story order",
       storyOrderHint: "This is a partial causal graph. It preserves branches, joins, cycles, and unknown pairs; it is not a guessed total file sequence.",
       embeddedStory: "Nested Story playback",
-      embeddedStoryHint: "Original DialogTree connections place this child content between exact parent lines. This is containment, not a complete file-order edge or proof of the parent mission trigger.",
+      embeddedStoryHint: "Original DialogTree connections place this child content at an exact line, entry, or finish boundary in the parent. This is containment, not a complete file-order edge or proof of the parent mission trigger.",
+      embeddedBetween: "between parent lines",
+      embeddedAtEntry: "at parent entry",
+      embeddedAtFinish: "at parent finish",
+      readingPopup: "Reading popup",
       strongEdges: "strong order edges",
       weakEdges: "context-only edges",
       orderCycles: "source cycles",
@@ -1011,7 +1015,11 @@
       storyOrder: "\u6e90\u6570\u636e\u8bc1\u660e\u7684\u5267\u60c5\u987a\u5e8f",
       storyOrderHint: "\u8fd9\u662f\u90e8\u5206\u56e0\u679c\u56fe\uff1a\u4fdd\u7559\u5206\u652f\u3001\u6c47\u5408\u3001\u5faa\u73af\u548c\u672a\u77e5\u987a\u5e8f\uff0c\u4e0d\u731c\u6d4b\u552f\u4e00\u6587\u4ef6\u5e8f\u5217\u3002",
       embeddedStory: "\u5d4c\u5957\u5267\u60c5\u64ad\u653e",
-      embeddedStoryHint: "\u539f\u59cb DialogTree \u8fde\u63a5\u5c06\u5b50\u5185\u5bb9\u7cbe\u786e\u653e\u5728\u7236\u5bf9\u8bdd\u884c\u4e4b\u95f4\u3002\u8fd9\u662f\u5305\u542b\u5173\u7cfb\uff0c\u4e0d\u662f\u5b8c\u6574\u6587\u4ef6\u987a\u5e8f\u8fb9\uff0c\u4e5f\u4e0d\u8bc1\u660e\u7236\u5bf9\u8bdd\u7684\u4efb\u52a1\u89e6\u53d1\u3002",
+      embeddedStoryHint: "\u539f\u59cb DialogTree \u8fde\u63a5\u5c06\u5b50\u5185\u5bb9\u7cbe\u786e\u653e\u5728\u7236\u5bf9\u8bdd\u7684\u884c\u3001\u5165\u53e3\u6216\u7ed3\u675f\u8fb9\u754c\u3002\u8fd9\u662f\u5305\u542b\u5173\u7cfb\uff0c\u4e0d\u662f\u5b8c\u6574\u6587\u4ef6\u987a\u5e8f\u8fb9\uff0c\u4e5f\u4e0d\u8bc1\u660e\u7236\u5bf9\u8bdd\u7684\u4efb\u52a1\u89e6\u53d1\u3002",
+      embeddedBetween: "\u7236\u5bf9\u8bdd\u884c\u4e4b\u95f4",
+      embeddedAtEntry: "\u7236\u5bf9\u8bdd\u5165\u53e3",
+      embeddedAtFinish: "\u7236\u5bf9\u8bdd\u7ed3\u675f\u5904",
+      readingPopup: "\u9605\u8bfb\u5f39\u7a97",
       strongEdges: "\u5f3a\u987a\u5e8f\u8fb9",
       weakEdges: "\u4ec5\u4e0a\u4e0b\u6587\u8fb9",
       orderCycles: "\u6e90\u8bc1\u636e\u5faa\u73af",
@@ -2813,7 +2821,21 @@
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
       const before = (row.embeddedBeforeLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
-      return `<div class="mp-order-edge"><a href="${esc(storyHref(row.parent))}"><code>${esc(row.parent || "?")}</code></a><i aria-hidden="true">[${after} &rarr;</i><a href="${esc(storyHref(row.child))}"><code>${esc(row.child || "?")}</code></a><i aria-hidden="true">&rarr; ${before}]</i><small><code>${esc(row.relation || "")}</code></small></div>`;
+      const placement = row.boundaryPlacement === "exact_prime_entry_before_parent_trunk"
+        ? t("embeddedAtEntry")
+        : row.boundaryPlacement === "exact_after_parent_trunk_at_finish"
+          ? t("embeddedAtFinish")
+          : t("embeddedBetween");
+      const leftBoundary = after ? `${after} &rarr; ` : "";
+      const rightBoundary = before ? ` &rarr; ${before}` : "";
+      const popup = row.readingPopupId
+        ? `<small><strong>${esc(t("readingPopup"))}:</strong> <code>${esc(row.readingPopupId)}</code></small>`
+        : "";
+      const sources = (row.sourceFiles || []).map((source) => `<code>${esc(source)}</code>`).join(" ");
+      const parent = row.parentStoryCandidate === false
+        ? `<code>${esc(row.parent || "?")}</code>`
+        : `<a href="${esc(storyHref(row.parent))}"><code>${esc(row.parent || "?")}</code></a>`;
+      return `<div class="mp-order-edge">${parent}<i aria-hidden="true">[${leftBoundary}</i><a href="${esc(storyHref(row.child))}"><code>${esc(row.child || "?")}</code></a><i aria-hidden="true">${rightBoundary}]</i><small><b>${esc(placement)}</b> <code>${esc(row.relation || "")}</code></small>${popup}${sources ? `<small>${sources}</small>` : ""}</div>`;
     }).join("");
     const cycles = (order.cycles || []).map((component) => componentHtml(component.id)).join("");
     return `<details class="mp-mission-story mp-story-order" data-weight="${Number(summary.strongEdgeCount) ? "strong" : "context"}"${Number(summary.strongEdgeCount) || offlineRows.length ? " open" : ""}>

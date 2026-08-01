@@ -5332,6 +5332,64 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             failure["actual"]["treeBranchGroups"],
         )
 
+    def test_gm02m23_dialog_tree_convergence_and_terminal_routes_are_exact(self) -> None:
+        definition_root = (
+            gap_queue.ROOT
+            / "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
+              "json_by_type/TextAsset"
+        )
+        definition = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_gm02m23_3"
+        ]
+        asset = gap_queue.read_json(
+            definition_root / definition["filename"],
+            {},
+        )
+
+        self.assertEqual(
+            gap_queue._dialog_tree_branch_groups(asset),
+            [{
+                "optionGroup": 4,
+                "optionIds": [
+                    "option_dlg_gm02m23_3_4_001",
+                    "option_dlg_gm02m23_3_4_002",
+                ],
+                "targetLineIds": [
+                    "dlg_gm02m23_3_023",
+                    "dlg_gm02m23_3_023",
+                ],
+                "routeKind": "authored_convergence",
+            }, {
+                "optionGroup": 5,
+                "optionIds": [
+                    "option_dlg_gm02m23_3_5_001",
+                    "option_dlg_gm02m23_3_5_002",
+                ],
+                "targetLineIds": [
+                    "dlg_gm02m23_3_024",
+                    "dlg_gm02m23_3_024",
+                ],
+                "routeKind": "authored_convergence",
+            }],
+        )
+        self.assertEqual(
+            gap_queue._dialog_tree_terminal_option_routes(asset),
+            [{
+                "optionGroup": 6,
+                "routes": [{
+                    "optionId": "option_dlg_gm02m23_3_6_001",
+                    "targetKind": "finish",
+                    "finishId": None,
+                    "finishIdSerialized": False,
+                }, {
+                    "optionId": "option_dlg_gm02m23_3_6_002",
+                    "targetKind": "finish",
+                    "finishId": 1,
+                    "finishIdSerialized": True,
+                }],
+            }],
+        )
+
     def test_gm02m2_table_only_registration_validator_fails_closed(self) -> None:
         partial = gap_queue.read_json(
             gap_queue.ROOT

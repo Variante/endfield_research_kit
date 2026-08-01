@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from functools import lru_cache
 
 from .context import *
@@ -654,6 +655,168 @@ def _extract_dialog_tree_open_ui_actions(payload: dict) -> list[dict]:
             "paramData": parsed_param,
             "finishIds": finish_ids,
             "terminalKind": "open_ui",
+        })
+    return out
+
+
+def _extract_dialog_tree_open_ui_content_actions(payload: dict) -> list[dict]:
+    """Extract typed OpenUI content consumers with exact graph boundaries.
+
+    Unlike ``_extract_dialog_tree_open_ui_actions``, this includes inline
+    OpenUI nodes.  It does not infer a Story target from the parameter string;
+    the caller must resolve the exact popup id through its typed source table.
+    """
+    if payload.get("type") != _DIALOG_TREE_TYPE:
+        return []
+    nodes = payload.get("nodes")
+    connections = payload.get("connections")
+    if not isinstance(nodes, list) or not isinstance(connections, list):
+        return []
+
+    node_by_id: dict[str, dict] = {}
+    for node in nodes:
+        if not isinstance(node, dict) or node.get("$id") in (None, ""):
+            return []
+        node_id = str(node["$id"])
+        if node_id in node_by_id:
+            return []
+        node_by_id[node_id] = node
+    if not node_by_id:
+        return []
+    prime_node_id = str(nodes[0].get("$id") or "")
+    if not prime_node_id:
+        return []
+
+    targets_by_source: dict[str, list[str]] = defaultdict(list)
+    sources_by_target: dict[str, list[str]] = defaultdict(list)
+    for connection in connections:
+        if (
+            not isinstance(connection, dict)
+            or connection.get("$type") != _DIALOG_TREE_CONNECTION_TYPE
+        ):
+            return []
+        source = connection.get("_sourceNode")
+        target = connection.get("_targetNode")
+        source_id = str(source.get("$ref") or "") if isinstance(source, dict) else ""
+        target_id = str(target.get("$ref") or "") if isinstance(target, dict) else ""
+        if source_id not in node_by_id or target_id not in node_by_id:
+            return []
+        targets_by_source[source_id].append(target_id)
+        sources_by_target[target_id].append(source_id)
+
+    reachable: set[str] = set()
+    pending = deque([prime_node_id])
+    while pending:
+        node_id = pending.popleft()
+        if node_id in reachable:
+            continue
+        reachable.add(node_id)
+        pending.extend(targets_by_source.get(node_id) or [])
+
+    def trunk_id(node_id: str) -> str:
+        node = node_by_id.get(node_id) or {}
+        if node.get("$type") != _DIALOG_TREE_TRUNK_NODE_TYPE:
+            return ""
+        actor_data = node.get("_actorNodeData")
+        trunk_data = (
+            actor_data.get("mfTrunkActionData")
+            if isinstance(actor_data, dict) else None
+        )
+        return (
+            str(trunk_data.get("_trunkId") or "").strip()
+            if isinstance(trunk_data, dict) else ""
+        )
+
+    def unique_forward_trunk(start_ids: list[str]) -> str:
+        if len(start_ids) != 1:
+            return ""
+        node_id = start_ids[0]
+        seen: set[str] = set()
+        while node_id and node_id not in seen:
+            seen.add(node_id)
+            line_id = trunk_id(node_id)
+            if line_id:
+                return line_id
+            targets = targets_by_source.get(node_id) or []
+            if len(targets) != 1:
+                return ""
+            node_id = targets[0]
+        return ""
+
+    out: list[dict] = []
+    for node_index, node in enumerate(nodes):
+        if node.get("$type") != _DIALOG_TREE_OPEN_UI_NODE_TYPE:
+            continue
+        node_id = str(node.get("$id") or "")
+        action = node.get("_actionData")
+        if (
+            not node_id
+            or not isinstance(action, dict)
+            or action.get("$type") != _DIALOG_OPEN_UI_ACTION_TYPE
+        ):
+            continue
+        raw_param = str(action.get("param") or "").strip()
+        try:
+            parsed_param = json.loads(raw_param) if raw_param else None
+        except json.JSONDecodeError:
+            parsed_param = None
+        if not isinstance(parsed_param, dict):
+            parsed_param = {}
+
+        incoming_ids = sources_by_target.get(node_id) or []
+        outgoing_ids = targets_by_source.get(node_id) or []
+        after_ids = [
+            line_id for adjacent_id in incoming_ids
+            if (line_id := trunk_id(adjacent_id))
+        ]
+        before_ids = [
+            line_id for adjacent_id in outgoing_ids
+            if (line_id := trunk_id(adjacent_id))
+        ]
+        placement_status = "not_exact_story_boundary"
+        if (
+            node_id in reachable
+            and len(incoming_ids) == len(outgoing_ids) == 1
+            and len(after_ids) == len(before_ids) == 1
+        ):
+            placement_status = "exact_between_adjacent_parent_trunks"
+        elif (
+            node_id in reachable
+            and len(incoming_ids) == len(outgoing_ids) == 1
+            and len(after_ids) == 1
+            and not before_ids
+            and (node_by_id.get(outgoing_ids[0]) or {}).get("$type")
+            == _DIALOG_TREE_FINISH_NODE_TYPE
+        ):
+            placement_status = "exact_after_parent_trunk_at_finish"
+        elif (
+            node_id == prime_node_id
+            and not incoming_ids
+            and len(outgoing_ids) == 1
+        ):
+            first_line_id = unique_forward_trunk(outgoing_ids)
+            if first_line_id:
+                before_ids = [first_line_id]
+                placement_status = "exact_prime_entry_before_parent_trunk"
+
+        out.append({
+            "nodeId": node_id,
+            "nodeIndex": node_index,
+            "nodeType": _DIALOG_TREE_OPEN_UI_NODE_TYPE,
+            "actionType": _DIALOG_OPEN_UI_ACTION_TYPE,
+            "actionEnum": action.get("actionEnum"),
+            "panelType": action.get("panelType"),
+            "param": raw_param,
+            "paramData": parsed_param,
+            "readingPopupId": str(parsed_param.get("id") or "").strip(),
+            "incomingNodeIds": list(incoming_ids),
+            "outgoingNodeIds": list(outgoing_ids),
+            "reachableFromPrimeNode": node_id in reachable,
+            "embeddedAfterLineIds": after_ids,
+            "embeddedBeforeLineIds": before_ids,
+            "dialogTreeConnectionPlacementStatus": placement_status,
+            "nativeMappingId":
+                "dialog-tree-open-ui-reading-popup-connection-native-v1",
         })
     return out
 
@@ -1578,6 +1741,37 @@ def recover_dialog_tree_open_ui_actions() -> list[dict]:
                 "assetName": asset_name,
                 "sourceFile": repo_rel(path),
                 "sourcePathId": path_id_export_path_id(path.stem),
+                "sourceType": "AnimeStudio TextAsset/DialogTree",
+            })
+    out.sort(key=lambda row: (
+        str(row.get("dialogKey") or ""),
+        int(row.get("nodeIndex") or 0),
+    ))
+    return out
+
+
+def recover_dialog_tree_open_ui_content_actions() -> list[dict]:
+    """Return typed inline and terminal OpenUI consumers from DialogTrees."""
+    out: list[dict] = []
+    for path in _iter_anime_tree_files("dlg_*.json"):
+        dialog_key = _anime_tree_logical_stem(path)
+        if not dialog_key.startswith("dlg_"):
+            continue
+        payload = _load_anime_resource_payload(path)
+        if not isinstance(payload, dict):
+            continue
+        asset_name = str(payload.get("_assetName") or "").strip()
+        if asset_name != dialog_key:
+            continue
+        source_sha256 = hashlib.sha256(path.read_bytes()).hexdigest().upper()
+        for record in _extract_dialog_tree_open_ui_content_actions(payload):
+            out.append({
+                **record,
+                "dialogKey": dialog_key,
+                "assetName": asset_name,
+                "sourceFile": repo_rel(path),
+                "sourcePathId": path_id_export_path_id(path.stem),
+                "sourceSha256": source_sha256,
                 "sourceType": "AnimeStudio TextAsset/DialogTree",
             })
     out.sort(key=lambda row: (
