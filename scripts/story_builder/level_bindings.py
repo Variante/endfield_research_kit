@@ -265,6 +265,7 @@ LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID = (
 )
 LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {
     (0x0001, 0x00): "ActionForSubGame_ConfirmLeaveSubGame",
+    (0x001F, 0x13): "BlackScreenFadeInAndOut",
     (0x0007, 0x0D): "AddBuffsToTargetsFromGodEntity",
     (0x0009, 0x0D): "AddBuffToTargetFromGodEntity",
     (0x000B, 0x0F): "AddCameraControlState",

@@ -473,6 +473,10 @@
       offlineRecoveryTrackedQuests: "tracked quests",
       offlineRecoveryRuntimeMission: "runtime mission",
       offlineRecoveryMissionBranch: "Mission fork/join context (Story arm unresolved)",
+      offlineRecoveryMissionSequence: "Authored linear quest context (Story placement unresolved)",
+      offlineRecoveryTalkDependency: "LevelScript talk-completion dependency (not playback)",
+      offlineRecoveryPostDialogAction: "Post-dialog local action",
+      offlineRecoveryTestStub: "Exact test popup stub; no RichContent payload",
       offlineRecoveryCrossMissionTracking: "Cross-mission SNS tracking (navigation only)",
       offlineMissionShell: "Story-only recovery shell",
       offlineMissionShellHint: "No MissionRuntimeAsset exists in the current export. This page exposes exact table definitions and current-build negative carrier evidence only; it has no quest, ownership, playback, handshake, or order edge.",
@@ -923,6 +927,10 @@
       offlineRecoveryTrackedQuests: "\u8ffd\u8e2a\u4efb\u52a1\u8282\u70b9",
       offlineRecoveryRuntimeMission: "\u8fd0\u884c\u65f6\u4efb\u52a1",
       offlineRecoveryMissionBranch: "\u4efb\u52a1\u5206\u6d41/\u6c47\u5408\u4e0a\u4e0b\u6587\uff08\u5267\u60c5\u5206\u652f\u5f52\u5c5e\u672a\u89e3\u6790\uff09",
+      offlineRecoveryMissionSequence: "\u539f\u59cb\u7ebf\u6027\u4efb\u52a1\u94fe\uff08\u5267\u60c5\u6587\u4ef6\u4f4d\u7f6e\u672a\u89e3\u6790\uff09",
+      offlineRecoveryTalkDependency: "LevelScript \u5bf9\u8bdd\u5b8c\u6210\u4f9d\u8d56\uff08\u975e\u64ad\u653e\u8bc1\u636e\uff09",
+      offlineRecoveryPostDialogAction: "\u5bf9\u8bdd\u540e\u672c\u5730\u52a8\u4f5c",
+      offlineRecoveryTestStub: "\u539f\u59cb\u6d4b\u8bd5\u5f39\u7a97\u5360\u4f4d\uff1b\u65e0 RichContent \u5185\u5bb9",
       offlineRecoveryCrossMissionTracking: "\u8de8\u4efb\u52a1 SNS \u8ffd\u8e2a\uff08\u4ec5\u5bfc\u822a\uff09",
       offlineMissionShell: "\u4ec5\u5267\u60c5\u6062\u590d\u7684\u4efb\u52a1\u5916\u58f3",
       offlineMissionShellHint: "\u5f53\u524d\u5bfc\u51fa\u4e2d\u6ca1\u6709 MissionRuntimeAsset\u3002\u672c\u9875\u4ec5\u5c55\u793a\u7cbe\u786e\u8868\u5b9a\u4e49\u548c\u5f53\u524d\u7248\u672c\u7684\u8f7d\u4f53\u8d1f\u8bc1\u636e\uff1b\u4e0d\u4ea7\u751f\u4efb\u52a1\u8282\u70b9\u3001\u5f52\u5c5e\u3001\u64ad\u653e\u3001\u63e1\u624b\u6216\u987a\u5e8f\u8fb9\u3002",
@@ -2623,13 +2631,17 @@
         row.npcProxyConsumers?.length ? "NpcProxyExDataTable" : "",
         row.missionNpcProxyTracking?.sourceFile,
         row.missionQuestBranchContext?.sourceFile,
+        row.missionQuestSequenceContext?.sourceFile,
+        row.levelScriptTaskConsumer?.sourceFile,
         row.runtimeTrackingContext?.sourceFile,
         row.nonOwningContext?.sourceFile,
         row.allowedNonOwningRoute?.file,
         row.prtsDefinition?.rowId,
+        row.prtsReadingDefinition?.rowId,
       ].filter(Boolean);
-      const popup = row.readingPopupRowId
-        ? `<p><code>ReadingPopUpTable/${esc(row.readingPopupRowId)}</code><code>RichContentTable/${esc(row.key)}</code></p>`
+      const popupRowIds = (row.readingPopupRowIds || []).filter(Boolean);
+      const popup = popupRowIds.length
+        ? `<p>${popupRowIds.map((rowId) => `<code>ReadingPopUpTable/${esc(rowId)}</code>`).join(" ")}${row.richContentStatus === "absent" ? "" : `<code>RichContentTable/${esc(row.key)}</code>`}</p>`
         : "";
       const optionIds = Array.isArray(row.optionIds) ? row.optionIds : [];
       const branchGroups = Array.isArray(row.dialogTreeBranchGroups)
@@ -2659,6 +2671,14 @@
       const missionBranchContext = missionBranch
         ? `<p><strong>${esc(t("offlineRecoveryMissionBranch"))}</strong><code>${esc(missionBranch.fork?.questId || "?")}</code><i>&rarr;</i>${(missionBranch.fork?.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<span>${(missionBranch.merge?.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")} &rarr; <code>${esc(missionBranch.merge?.questId || "?")}</code></span></p>`
         : "";
+      const missionSequence = row.missionQuestSequenceContext;
+      const missionSequenceContext = missionSequence
+        ? `<p><strong>${esc(t("offlineRecoveryMissionSequence"))}</strong>${(missionSequence.questSequence || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>`
+        : "";
+      const taskConsumer = row.levelScriptTaskConsumer;
+      const taskConsumerContext = taskConsumer
+        ? `<p><strong>${esc(t("offlineRecoveryTalkDependency"))}</strong><code>${esc(taskConsumer.levelId || "?")}/${esc(taskConsumer.scriptId || "?")}</code><code>${esc(taskConsumer.conditionType || "?")}</code><code>${esc(taskConsumer.dialogId || "?")}</code>${taskConsumer.postDialogAction ? `<span><strong>${esc(t("offlineRecoveryPostDialogAction"))}</strong><code>${esc(taskConsumer.postDialogAction.actionName || "?")}</code></span>` : ""}</p>`
+        : "";
       const runtimeTracking = row.runtimeTrackingContext;
       const runtimeTrackingContext = runtimeTracking
         ? `<p><strong>${esc(t("offlineRecoveryCrossMissionTracking"))}</strong><code>${esc(runtimeTracking.runtimeMissionId || "?")}</code><code>${esc(runtimeTracking.questId || "?")}</code></p>`
@@ -2673,6 +2693,9 @@
         row.dialogTreeAssetStatus === "present_exact_definition"
           ? t("offlineRecoveryDialogTreeExact")
           : "",
+        row.richContentStatus === "absent"
+          ? t("offlineRecoveryTestStub")
+          : "",
         recoveredLineCount
           ? `${recoveredLineCount.toLocaleString()} ${t("offlineRecoveryLines")}`
           : "",
@@ -2683,7 +2706,7 @@
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${taskConsumerContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");

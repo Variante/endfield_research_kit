@@ -50,12 +50,16 @@ from story_builder.level_bindings import (  # noqa: E402
     _load_levelscript_binding_data,
 )
 from story_builder.levelscript_binary import (  # noqa: E402
+    decode_levelscript_record_payload,
+    decode_levelscript_task_conditions,
+    extract_levelscript_uid_records,
     levelscript_action_map_membership,
+    levelscript_record_semantic_key,
 )
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v89"
+SCHEMA = "sourceStoryGapQueue.v90"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -138,7 +142,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v65"
+    "current-build-offline-story-carrier-exhaustion-v66"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -189,6 +193,15 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "sns_gm01m7_1": "sns_gm01m7_1",
     "sns_gm01m7_2": "sns_gm01m7_2",
     "text_gm01m7_1": "text_gm01m7_1",
+    "dlg_gm01m12_1": "dlg_gm01m12_1",
+    "dlg_gm01m12_3": "dlg_gm01m12_3",
+    "dlg_gm01m12_6": "dlg_gm01m12_6",
+    "dlg_gm01m12_8": "dlg_gm01m12_8",
+    "text_gm01m12_1": "text_gm01m12_1",
+    "text_gm01m12_3": "text_gm01m12_3",
+    "text_gm01m12_5": "text_gm01m12_5",
+    "text_gm01m12_6": "text_gm01m12_6",
+    "text_gm01m12_7": "text_gm01m12_7",
 }
 OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
     "gm01m7": {
@@ -215,6 +228,54 @@ OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
             "proxyId": "sesidun_map01_001",
             "levelId": "map01_lv001",
         },
+    },
+}
+OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS = {
+    "gm01m12": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm01m12.json"
+        ),
+        "sourceSha256":
+            "B5022E18326385BCCCC4ACFBC076A5563C5B18066D291D1CA63F2DB11AC12EBB",
+        "questSequence": tuple(
+            f"gm01m12_q#{number}"
+            for number in (15, 16, 13, 14, 1, 2, 3, 4, 12, 5, 6)
+        ),
+    },
+}
+OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS = {
+    "dlg_gm01m12_1": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/LevelScriptData/"
+            "map01_lv001/2100110001.json"
+        ),
+        "sourceSha256":
+            "86176021964C371921D28983D2394A934DF2F16C4C7892695D70EB71E01B8791",
+        "levelId": "map01_lv001",
+        "scriptId": "2100110001",
+        "taskKey": "f7239bd1",
+        "conditionKey": "10bf8411",
+        "postDialogAction": {
+            "eventName": "LevelEvent_OnDialogExit",
+            "headerLocalId": 11,
+            "actionLocalId": 12,
+            "actionUnionTag": "0x001f",
+            "serializedMemberCount": 19,
+            "actionName": "BlackScreenFadeInAndOut",
+        },
+    },
+    "dlg_gm01m12_3": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/LevelScriptData/"
+            "map01_lv001/2100110003.json"
+        ),
+        "sourceSha256":
+            "D47D6B43462380E1D399536BD2F016F93415EE24CA8C7B3F91A19E4681892A68",
+        "levelId": "map01_lv001",
+        "scriptId": "2100110003",
+        "taskKey": "f7239bd1",
+        "conditionKey": "10bf8411",
     },
 }
 EXACT_PARENT_DIALOG_DEPENDENCIES = {
@@ -299,6 +360,9 @@ OFFLINE_EXHAUSTION_PRTS_ALL_ITEM_TABLE_SHA256 = (
 )
 OFFLINE_EXHAUSTION_PRTS_RECORD_TABLE_SHA256 = (
     "7E9F2B5812494C045189C03C7E52513C4AB67FF16E06A0D817FC267784F8C61E"
+)
+OFFLINE_EXHAUSTION_PRTS_READING_TABLE_SHA256 = (
+    "7686CE995F0C0DAE8C65ADA53A3E2737CC1CFD238F2E9C781C1A98F2860BDE05"
 )
 OFFLINE_EXHAUSTION_SNS_DIALOG_TABLE_SHA256 = (
     "6DA0BCAB64EB0ECFCFF8D21A446D8AA637669D6DAE3E2A66D43FC2721098A0BF"
@@ -3647,6 +3711,104 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
             "afterLineId": "dlg_e11m5_9_010",
         },
     },
+    "dlg_gm01m12_1": {
+        "missionId": "gm01m12",
+        "filename": "dlg_gm01m12_1_pF2AF8213565C6977.json",
+        "sha256":
+            "C52741D0325B6CEA1BCF9E5E06C150C2CB3ED391E9C855B73ABF51B8DE84B40F",
+        "extraConfigFilename":
+            "dlg_gm01m12_1_extra_config_p06142BC1CDCE8FC7.json",
+        "extraConfigSha256":
+            "BAEF05D1D1255319B7E4C4466C8EA2E20650A18EBED33DEC50175F8E9603390D",
+        "lineIds": tuple(
+            f"dlg_gm01m12_1_{number:03d}" for number in range(1, 8)
+        ),
+        "optionIds": (
+            "option_dlg_gm01m12_1_1_001",
+            "option_dlg_gm01m12_1_2_001",
+            "option_dlg_gm01m12_1_2_002",
+            "option_dlg_gm01m12_1_3_001",
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m12_1_{number:03d}" for number in range(1, 8)
+        ),
+        "treeBranchGroups": ({
+            "optionGroup": 2,
+            "optionIds": (
+                "option_dlg_gm01m12_1_2_001",
+                "option_dlg_gm01m12_1_2_002",
+            ),
+            "targetLineIds": ("dlg_gm01m12_1_005",) * 2,
+            "routeKind": "authored_convergence",
+        },),
+        "npcProxyConsumer": {
+            "proxyId": "sesidun_map01_001",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m12_1",
+            },
+        },
+    },
+    "dlg_gm01m12_3": {
+        "missionId": "gm01m12",
+        "filename": "dlg_gm01m12_3_p53FF91C6849A030C.json",
+        "sha256":
+            "77729BDC4CADACFF5783AAB9317B0F42F655B9C8CE5D8E8C100F6CAE36410470",
+        "extraConfigFilename":
+            "dlg_gm01m12_3_extra_config_p16586299C6F9FFBA.json",
+        "extraConfigSha256":
+            "839031387E1ABEF0CAD71518C23ED5B8C2E06D75E58BF37E79B52A7BDFF0690F",
+        "lineIds": tuple(
+            f"dlg_gm01m12_3_{number:03d}" for number in range(1, 6)
+        ),
+        "optionIds": (
+            "option_dlg_gm01m12_3_1_001",
+            "option_dlg_gm01m12_3_1_002",
+            "option_dlg_gm01m12_3_2_001",
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m12_3_{number:03d}" for number in range(1, 6)
+        ),
+        "treeBranchGroups": ({
+            "optionGroup": 1,
+            "optionIds": (
+                "option_dlg_gm01m12_3_1_001",
+                "option_dlg_gm01m12_3_1_002",
+            ),
+            "targetLineIds": ("dlg_gm01m12_3_002",) * 2,
+            "routeKind": "authored_convergence",
+        },),
+        "npcProxyConsumer": {
+            "proxyId": "sesidun_map01_001",
+            "entryIndex": 2,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m12_3",
+            },
+        },
+    },
+    "dlg_gm01m12_6": {
+        "missionId": "gm01m12",
+        "filename": "dlg_gm01m12_6_p0F7AFEA3958AE324.json",
+        "sha256":
+            "F8A0E8812ABE280036A1521FD0091093CCA38DBC21946077FA2ED957B81983B3",
+        "extraConfigFilename":
+            "dlg_gm01m12_6_extra_config_pF48D871B428F357B.json",
+        "extraConfigSha256":
+            "B9119531E4D96398037D132F36C364CC3E401E7891FEB63E8AE2ABE72A1F5529",
+        "lineIds": ("dlg_gm01m12_6_001", "dlg_gm01m12_6_002"),
+        "optionIds": (),
+        "missingAudioIds": (
+            "au_dlg_gm01m12_6_001",
+            "au_dlg_gm01m12_6_002",
+        ),
+        "treeBranchGroups": (),
+    },
 }
 OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e10m3_9",
@@ -3654,6 +3816,38 @@ OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e11m8_9",
 })
 OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
+    "dlg_gm01m12_8": {
+        "missionId": "gm01m12",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm01m12_8_{number:03d}" for number in range(1, 7)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m12_8_{number:03d}" for number in range(1, 7)
+        ),
+        "optionRows": {
+            "option_dlg_gm01m12_8_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": 180588015484261940, "text": ""},
+            },
+            "option_dlg_gm01m12_8_1_002": {
+                "iconType": "Default",
+                "optionText": {"id": -1365299828596346002, "text": ""},
+            },
+            "option_dlg_gm01m12_8_1_003": {
+                "iconType": "Default",
+                "optionText": {"id": -5116520205592897546, "text": ""},
+            },
+            "option_dlg_gm01m12_8_2_001": {
+                "iconType": "Default",
+                "optionText": {"id": 1507979733122474165, "text": ""},
+            },
+            "option_dlg_gm01m12_8_2_002": {
+                "iconType": "Default",
+                "optionText": {"id": 8277868852189869355, "text": ""},
+            },
+        },
+    },
     "dlg_gm02m2_1": {
         "missionId": "gm02m2",
         "dialogIdRegistrationStatus": "present_table_only",
@@ -4639,6 +4833,122 @@ def _offline_radio_definition_validation_failure(
         }
     return None
 OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
+    "text_gm01m12_1": {
+        "missionId": "gm01m12",
+        "readingPopupRowId": "text_gm01m12_1",
+        "bgType": 1,
+        "iconType": 1,
+        "titleId": 2293272716794736060,
+        "contentTextIds": (
+            2793666067577584250,
+            1177065351896539995,
+            3116054607192772258,
+            -2288554824343091267,
+            -1348820074256568586,
+            6247410809703034848,
+        ),
+        "prtsDefinition": {
+            "rowId": "nar_digital_map01_research1_1_1",
+            "row": {
+                "contentId": "text_gm01m12_1",
+                "desc": {"id": 0, "text": ""},
+                "firstLvId": "digital_map01_research1_1",
+                "id": "nar_digital_map01_research1_1_1",
+                "name": {"id": -3440260695365784665, "text": ""},
+                "order": 1,
+                "overrideRadioId": "",
+                "type": "text",
+            },
+        },
+    },
+    "text_gm01m12_3": {
+        "missionId": "gm01m12",
+        "readingPopupRows": {
+            "rp_test_text_1": {
+                "bgType": 0,
+                "contentId": "text_gm01m12_3",
+                "iconType": 1,
+                "id": "rp_test_text_1",
+                "overrideRadioId": "",
+                "title": {"id": 0, "text": ""},
+            },
+            "rp_test_text_3": {
+                "bgType": 2,
+                "contentId": "text_gm01m12_3",
+                "iconType": 0,
+                "id": "rp_test_text_3",
+                "overrideRadioId": "",
+                "title": {"id": 0, "text": ""},
+            },
+        },
+        "titleId": -4684272300736787803,
+        "contentTextIds": (
+            8714151621675154155,
+            -2570004242404188716,
+            7700964276903699737,
+            -3617402496525378850,
+            -8171718110792362214,
+            -8879273103725698056,
+            -5395881018091111953,
+            -7199702518671668833,
+            -7382605069448195347,
+        ),
+        "prtsReadingDefinition": {
+            "rowId": "term_001_gm01m7",
+            "row": {
+                "list": {
+                    "1": {
+                        "contentId": "text_gm01m12_3",
+                        "name": {"id": -4037519105218976214, "text": ""},
+                        "order": 1,
+                        "overrideRadioId": "",
+                        "prtsId": "",
+                        "subtitle": {"id": 0, "text": ""},
+                        "uniqId": "term_001_gm01m7_1",
+                    },
+                    "2": {
+                        "contentId": "text_gm01m12_4",
+                        "name": {"id": 8051702914420708692, "text": ""},
+                        "order": 2,
+                        "overrideRadioId": "",
+                        "prtsId": "",
+                        "subtitle": {"id": 0, "text": ""},
+                        "uniqId": "term_001_gm01m7_2",
+                    },
+                },
+            },
+        },
+    },
+    "text_gm01m12_5": {
+        "missionId": "gm01m12",
+        "readingPopupRowId": "rp_test_text_2",
+        "bgType": 1,
+        "iconType": 2,
+        "richContentStatus": "absent",
+        "contentTextIds": (),
+    },
+    "text_gm01m12_6": {
+        "missionId": "gm01m12",
+        "readingPopupRowId": "text_gm01m12_6",
+        "bgType": 0,
+        "iconType": 1,
+        "titleId": 3976427637254295323,
+        "contentTextIds": (
+            7326707735276244258,
+            1334924606921900205,
+        ),
+    },
+    "text_gm01m12_7": {
+        "missionId": "gm01m12",
+        "readingPopupRowId": "text_gm01m12_7",
+        "bgType": 0,
+        "iconType": 1,
+        "titleId": -7790167985152345202,
+        "contentTextIds": (
+            -2191157560911838532,
+            -656007744742926406,
+        ),
+    },
     "text_gm01m7_1": {
         "missionId": "gm01m7",
         "readingPopupRowId": "text_gm01m7_1",
@@ -5735,11 +6045,28 @@ def _offline_text_definition_validation_failure(
     rich: Any,
     prts_all_item_table: dict[str, Any],
     prts_record_table: dict[str, Any],
+    prts_reading_table: dict[str, Any] | None = None,
     *,
     source_paths: dict[str, Path] | None = None,
     actual_hashes: dict[str, str] | None = None,
 ) -> dict[str, Any] | None:
-    popup_row_id = definition["readingPopupRowId"]
+    expected_popup_rows = definition.get("readingPopupRows")
+    if not isinstance(expected_popup_rows, dict):
+        popup_row_id = definition["readingPopupRowId"]
+        expected_popup_rows = {
+            popup_row_id: {
+                "bgType": definition["bgType"],
+                "contentId": story_key,
+                "iconType": definition["iconType"],
+                "id": popup_row_id,
+                "overrideRadioId": "",
+                "title": {"id": 0, "text": ""},
+            },
+        }
+    actual_popup_rows = (
+        popup if isinstance(popup, dict) and set(popup) == set(expected_popup_rows)
+        else {next(iter(expected_popup_rows)): popup}
+    )
     expected_content_ids = tuple(definition["contentTextIds"])
     actual_content_ids = tuple(
         item.get("content", {}).get("id")
@@ -5764,36 +6091,43 @@ def _offline_text_definition_validation_failure(
             and expected_prts_row.get("id") == prts_row_id
             and expected_prts_row.get("contentId") == story_key
         )
+    prts_reading_definition = definition.get("prtsReadingDefinition")
+    prts_reading_valid = prts_reading_definition is None
+    if isinstance(prts_reading_definition, dict):
+        prts_reading_row_id = safe_key(prts_reading_definition.get("rowId"))
+        expected_prts_reading_row = prts_reading_definition.get("row")
+        prts_reading_valid = (
+            bool(prts_reading_row_id)
+            and isinstance(expected_prts_reading_row, dict)
+            and isinstance(prts_reading_table, dict)
+            and prts_reading_table.get(prts_reading_row_id)
+            == expected_prts_reading_row
+        )
+    rich_absent = definition.get("richContentStatus") == "absent"
     valid = (
-        isinstance(popup, dict)
-        and set(popup) == {
-            "bgType",
-            "contentId",
-            "iconType",
-            "id",
-            "overrideRadioId",
-            "title",
-        }
-        and popup.get("id") == popup_row_id
-        and popup.get("contentId") == story_key
-        and popup.get("bgType") == definition["bgType"]
-        and popup.get("iconType") == definition["iconType"]
-        and popup.get("overrideRadioId") == ""
-        and popup.get("title") == {"id": 0, "text": ""}
-        and isinstance(rich, dict)
-        and set(rich) == {"contentList", "title"}
-        and rich.get("title")
-        == {"id": definition["titleId"], "text": ""}
-        and len(rich.get("contentList") or []) == len(expected_content_ids)
-        and actual_content_ids == expected_content_ids
-        and all(
-            item == {"content": {"id": text_id, "text": ""}}
-            for item, text_id in zip(
-                rich.get("contentList") or [],
-                expected_content_ids,
+        actual_popup_rows == expected_popup_rows
+        and (
+            rich is None
+            if rich_absent
+            else (
+                isinstance(rich, dict)
+                and set(rich) == {"contentList", "title"}
+                and rich.get("title")
+                == {"id": definition["titleId"], "text": ""}
+                and len(rich.get("contentList") or [])
+                == len(expected_content_ids)
+                and actual_content_ids == expected_content_ids
+                and all(
+                    item == {"content": {"id": text_id, "text": ""}}
+                    for item, text_id in zip(
+                        rich.get("contentList") or [],
+                        expected_content_ids,
+                    )
+                )
             )
         )
         and prts_definition_valid
+        and prts_reading_valid
     )
     if valid:
         return None
@@ -5814,23 +6148,25 @@ def _offline_text_definition_validation_failure(
             for name in ("readingPopupTable", "richContentTable")
         },
         "expected": {
-            "popup": {
-                "id": popup_row_id,
-                "contentId": story_key,
-                "bgType": definition["bgType"],
-                "iconType": definition["iconType"],
-                "overrideRadioId": "",
-                "title": {"id": 0, "text": ""},
-            },
-            "richTitle": {"id": definition["titleId"], "text": ""},
+            "popup": next(iter(expected_popup_rows.values())),
+            "popupRows": expected_popup_rows,
+            "richContentStatus": "absent" if rich_absent else "present",
+            "richTitle": (
+                None if rich_absent
+                else {"id": definition["titleId"], "text": ""}
+            ),
             "contentTextIds": list(expected_content_ids),
             "prtsDefinitionValid": True,
+            "prtsReadingDefinitionValid": True,
         },
         "actual": {
-            "popup": popup if isinstance(popup, dict) else popup,
+            "popup": next(iter(actual_popup_rows.values())),
+            "popupRows": actual_popup_rows,
+            "richContentStatus": "absent" if rich is None else "present",
             "richTitle": rich.get("title") if isinstance(rich, dict) else None,
             "contentTextIds": list(actual_content_ids),
             "prtsDefinitionValid": prts_definition_valid,
+            "prtsReadingDefinitionValid": prts_reading_valid,
         },
     }
 
@@ -6002,6 +6338,7 @@ def build_offline_exhaustion_index(
         "richContentTable": table_root / "RichContentTable.json",
         "prtsAllItemTable": table_root / "PrtsAllItem.json",
         "prtsRecordTable": table_root / "PrtsRecord.json",
+        "prtsReadingTable": table_root / "PrtsReading.json",
         "snsDialogTable": table_root / "SNSDialogTable.json",
         "snsOptionTable": table_root / "SNSDialogOptionTable.json",
         "npcProxyExDataTable": (
@@ -6078,6 +6415,18 @@ def build_offline_exhaustion_index(
         source_paths[
             f"missionBranchContext:{mission_id}"
         ] = ROOT / context["sourceFile"]
+    for mission_id, context in (
+        OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS.items()
+    ):
+        source_paths[
+            f"missionLinearContext:{mission_id}"
+        ] = ROOT / context["sourceFile"]
+    for story_key, consumer in (
+        OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS.items()
+    ):
+        source_paths[
+            f"levelScriptTaskConsumer:{story_key}"
+        ] = ROOT / consumer["sourceFile"]
     for story_key, definition in (
         OFFLINE_EXHAUSTION_SNS_DEFINITIONS.items()
     ):
@@ -6111,6 +6460,8 @@ def build_offline_exhaustion_index(
             OFFLINE_EXHAUSTION_PRTS_ALL_ITEM_TABLE_SHA256,
         "prtsRecordTable":
             OFFLINE_EXHAUSTION_PRTS_RECORD_TABLE_SHA256,
+        "prtsReadingTable":
+            OFFLINE_EXHAUSTION_PRTS_READING_TABLE_SHA256,
         "snsDialogTable": OFFLINE_EXHAUSTION_SNS_DIALOG_TABLE_SHA256,
         "snsOptionTable": OFFLINE_EXHAUSTION_SNS_OPTION_TABLE_SHA256,
         "npcProxyExDataTable":
@@ -6144,6 +6495,18 @@ def build_offline_exhaustion_index(
         expected_hashes[
             f"missionBranchContext:{mission_id}"
         ] = context["sourceSha256"]
+    for mission_id, context in (
+        OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS.items()
+    ):
+        expected_hashes[
+            f"missionLinearContext:{mission_id}"
+        ] = context["sourceSha256"]
+    for story_key, consumer in (
+        OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS.items()
+    ):
+        expected_hashes[
+            f"levelScriptTaskConsumer:{story_key}"
+        ] = consumer["sourceSha256"]
     for story_key, definition in (
         OFFLINE_EXHAUSTION_SNS_DEFINITIONS.items()
     ):
@@ -6344,6 +6707,216 @@ def build_offline_exhaustion_index(
             "serverSuccessorSelectionStatus": "not_serialized_in_client_asset",
             "orderEvidence": False,
             "graphEffect": "none",
+        }
+
+    mission_linear_context_by_mission: dict[str, dict[str, Any]] = {}
+    for mission_id, declaration in (
+        OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS.items()
+    ):
+        source_name = f"missionLinearContext:{mission_id}"
+        payload = read_json(source_paths[source_name], {})
+        quest_dic = payload.get("questDic") if isinstance(payload, dict) else None
+        sequence = list(declaration["questSequence"])
+        actual_prev = {
+            quest_id: (
+                quest_dic.get(quest_id, {}).get("prevQuestIdList")
+                if isinstance(quest_dic, dict)
+                and isinstance(quest_dic.get(quest_id), dict)
+                else None
+            )
+            for quest_id in sequence
+        }
+        expected_prev = {
+            quest_id: ([] if index == 0 else [sequence[index - 1]])
+            for index, quest_id in enumerate(sequence)
+        }
+        valid = (
+            isinstance(quest_dic, dict)
+            and set(quest_dic) == set(sequence)
+            and actual_prev == expected_prev
+        )
+        if not valid:
+            status.update({
+                "status": "inactive_mission_linear_context_validation_failed",
+                "validatorDiagnostics": [{
+                    "validator": "offlineMissionLinearContext",
+                    "gate": "exactSinglePredecessorQuestSequence",
+                    "mission": mission_id,
+                    "sourcePaths": [str(source_paths[source_name])],
+                    "sourceSha256": {
+                        source_name: actual_hashes.get(source_name, ""),
+                    },
+                    "expected": {
+                        "questIds": sequence,
+                        "prevQuestIdListByQuest": expected_prev,
+                    },
+                    "actual": {
+                        "questIds": sorted(quest_dic) if isinstance(quest_dic, dict) else None,
+                        "prevQuestIdListByQuest": actual_prev,
+                    },
+                }],
+            })
+            return {}, status
+        mission_linear_context_by_mission[mission_id] = {
+            "sourceFile": declaration["sourceFile"],
+            "questSequence": sequence,
+            "forkQuestIds": [],
+            "mergeQuestIds": [],
+            "relation": "authored_single_predecessor_quest_sequence",
+            "storyPlacementStatus": "unresolved",
+            "storyAssignments": [],
+            "orderEvidence": False,
+            "graphEffect": "none",
+        }
+
+    levelscript_task_consumer_by_story: dict[str, dict[str, Any]] = {}
+    for story_key, declaration in (
+        OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS.items()
+    ):
+        source_name = f"levelScriptTaskConsumer:{story_key}"
+        data = source_paths[source_name].read_bytes()
+        decoded = decode_levelscript_task_conditions(
+            data,
+            declaration["scriptId"],
+        )
+        task_map = decoded[0] if len(decoded) == 1 else None
+        task = (
+            (task_map.get("tasks") or [None])[0]
+            if isinstance(task_map, dict)
+            else None
+        )
+        condition_row = (
+            (task.get("conditions") or [None])[0]
+            if isinstance(task, dict)
+            else None
+        )
+        condition = (
+            condition_row.get("condition")
+            if isinstance(condition_row, dict)
+            else None
+        )
+        actual = {
+            "decodedMapCount": len(decoded),
+            "startType": task_map.get("startType") if isinstance(task_map, dict) else None,
+            "taskMapBoundaryStatus": (
+                task_map.get("taskMapBoundaryStatus")
+                if isinstance(task_map, dict) else None
+            ),
+            "taskKey": task.get("taskKey") if isinstance(task, dict) else None,
+            "taskCount": len(task_map.get("tasks") or []) if isinstance(task_map, dict) else 0,
+            "conditionKey": (
+                condition_row.get("conditionKey")
+                if isinstance(condition_row, dict) else None
+            ),
+            "conditionCount": len(task.get("conditions") or []) if isinstance(task, dict) else 0,
+            "condition": condition,
+        }
+        valid = (
+            len(decoded) == 1
+            and actual["startType"] == "Manual"
+            and actual["taskMapBoundaryStatus"] == "exact_trigger_volumes_offset"
+            and actual["taskCount"] == 1
+            and actual["taskKey"] == declaration["taskKey"]
+            and actual["conditionCount"] == 1
+            and actual["conditionKey"] == declaration["conditionKey"]
+            and isinstance(condition, dict)
+            and condition.get("type") == "CheckTalkOptionFinish"
+            and condition.get("conditionUnionTag") == "0x009f"
+            and condition.get("serializedMemberCount") == 6
+            and condition.get("scopeMask") == 1
+            and condition.get("uniqueId") == declaration["conditionKey"]
+            and condition.get("useCurrentScope") is False
+            and condition.get("useGraphScope") is True
+            and condition.get("dialogId") == {
+                "value": story_key,
+                "idRef": -1,
+                "paramSource": 0,
+                "path": None,
+            }
+            and condition.get("finishId") == {
+                "value": -1,
+                "idRef": -1,
+                "paramSource": 0,
+                "path": None,
+            }
+        )
+        post_dialog_action = declaration.get("postDialogAction")
+        post_dialog_output = None
+        if valid and isinstance(post_dialog_action, dict):
+            records = extract_levelscript_uid_records(data)
+            action_record = next(
+                (row for row in records if row.get("localId") == post_dialog_action["actionLocalId"]),
+                None,
+            )
+            header_record = next(
+                (row for row in records if row.get("localId") == post_dialog_action["headerLocalId"]),
+                None,
+            )
+            header_payload = (
+                decode_levelscript_record_payload(data, header_record)
+                if isinstance(header_record, dict) else {}
+            )
+            valid = (
+                isinstance(action_record, dict)
+                and levelscript_record_semantic_key(action_record)
+                == (
+                    int(post_dialog_action["actionUnionTag"], 16),
+                    post_dialog_action["serializedMemberCount"],
+                )
+                and action_record.get("nextId") == -1
+                and isinstance(header_record, dict)
+                and header_payload.get("label") == post_dialog_action["eventName"]
+                and header_payload.get("actionHeader", {}).get("nextId")
+                == post_dialog_action["actionLocalId"]
+                and any(
+                    field.get("type") == "string"
+                    and field.get("value") == story_key
+                    for field in header_payload.get("taggedFields") or []
+                )
+            )
+            actual["postDialogAction"] = {
+                "actionRecord": action_record,
+                "headerRecord": header_record,
+                "headerPayload": header_payload,
+            }
+            post_dialog_output = {
+                **post_dialog_action,
+                "relation": "dialog_exit_event_to_local_presentation_action",
+                "playback": False,
+                "orderEvidence": False,
+            }
+        if not valid:
+            status.update({
+                "status": "inactive_levelscript_task_consumer_validation_failed",
+                "validatorDiagnostics": [{
+                    "validator": "offlineLevelScriptTaskConsumer",
+                    "gate": "exactLevelScriptTalkCompletionConsumer",
+                    "mission": "gm01m12",
+                    "storyKey": story_key,
+                    "sourcePaths": [str(source_paths[source_name])],
+                    "sourceSha256": {
+                        source_name: actual_hashes.get(source_name, ""),
+                    },
+                    "expected": declaration,
+                    "actual": actual,
+                }],
+            })
+            return {}, status
+        levelscript_task_consumer_by_story[story_key] = {
+            "sourceFile": declaration["sourceFile"],
+            "levelId": declaration["levelId"],
+            "scriptId": declaration["scriptId"],
+            "startType": "Manual",
+            "taskKey": declaration["taskKey"],
+            "conditionKey": declaration["conditionKey"],
+            "conditionType": "CheckTalkOptionFinish",
+            "dialogId": story_key,
+            "finishId": -1,
+            "relation": "levelscript_task_depends_on_dialog_completion",
+            "playback": False,
+            "missionOwnership": False,
+            "orderEvidence": False,
+            "postDialogAction": post_dialog_output,
         }
 
     carrier_audit = read_json(carrier_audit_path, {})
@@ -6629,11 +7202,13 @@ def build_offline_exhaustion_index(
     rich_content_table = read_json(source_paths["richContentTable"], {})
     prts_all_item_table = read_json(source_paths["prtsAllItemTable"], {})
     prts_record_table = read_json(source_paths["prtsRecordTable"], {})
+    prts_reading_table = read_json(source_paths["prtsReadingTable"], {})
     text_definitions_valid = (
         isinstance(reading_popup_table, dict)
         and isinstance(rich_content_table, dict)
         and isinstance(prts_all_item_table, dict)
         and isinstance(prts_record_table, dict)
+        and isinstance(prts_reading_table, dict)
     )
     text_definition_validation_failures: list[dict[str, Any]] = []
     if not text_definitions_valid:
@@ -6647,6 +7222,7 @@ def build_offline_exhaustion_index(
                     "richContentTable",
                     "prtsAllItemTable",
                     "prtsRecordTable",
+                    "prtsReadingTable",
                 )
             ],
             "expected": {
@@ -6656,6 +7232,7 @@ def build_offline_exhaustion_index(
                     "richContentTable",
                     "prtsAllItemTable",
                     "prtsRecordTable",
+                    "prtsReadingTable",
                 )
             },
             "actual": {
@@ -6663,6 +7240,7 @@ def build_offline_exhaustion_index(
                 "richContentTable": type(rich_content_table).__name__,
                 "prtsAllItemTable": type(prts_all_item_table).__name__,
                 "prtsRecordTable": type(prts_record_table).__name__,
+                "prtsReadingTable": type(prts_reading_table).__name__,
             },
         })
     for story_key, definition in (
@@ -6670,7 +7248,14 @@ def build_offline_exhaustion_index(
     ):
         if not text_definitions_valid:
             break
-        popup = reading_popup_table.get(definition["readingPopupRowId"])
+        popup = (
+            {
+                row_id: reading_popup_table.get(row_id)
+                for row_id in definition["readingPopupRows"]
+            }
+            if isinstance(definition.get("readingPopupRows"), dict)
+            else reading_popup_table.get(definition["readingPopupRowId"])
+        )
         rich = rich_content_table.get(story_key)
         failure = _offline_text_definition_validation_failure(
             story_key,
@@ -6679,6 +7264,7 @@ def build_offline_exhaustion_index(
             rich,
             prts_all_item_table,
             prts_record_table,
+            prts_reading_table,
             source_paths=source_paths,
             actual_hashes=actual_hashes,
         )
@@ -7513,6 +8099,8 @@ def build_offline_exhaustion_index(
             "npcProxyConsumer": npc_proxy_consumer_context,
             "npcProxyConsumers": npc_proxy_consumer_contexts,
             "missionNpcProxyTracking": mission_tracking_context,
+            "levelScriptTaskConsumer":
+                levelscript_task_consumer_by_story.get(story_key),
         }
     if not dialog_definitions_valid:
         status.update({
@@ -8187,15 +8775,19 @@ def build_offline_exhaustion_index(
                 "deferred_current_build_offline_surface_exhausted",
             "evidenceKind":
                 (
-                    "mission_tracked_npc_proxy_dialog_context_without_playback_owner"
-                    if validation["missionNpcProxyTracking"]
+                    "levelscript_talk_completion_dependency_without_playback_owner"
+                    if validation["levelScriptTaskConsumer"]
                     else (
-                        "npc_proxy_dialog_consumer_without_mission_owner"
-                        if validation["npcProxyConsumers"]
+                        "mission_tracked_npc_proxy_dialog_context_without_playback_owner"
+                        if validation["missionNpcProxyTracking"]
                         else (
-                            "registered_dialog_definition_with_nonowning_parent_carrier"
-                            if allowed_non_owning_route else
-                            "registered_dialog_definition_without_recovered_activator"
+                            "npc_proxy_dialog_consumer_without_mission_owner"
+                            if validation["npcProxyConsumers"]
+                            else (
+                                "registered_dialog_definition_with_nonowning_parent_carrier"
+                                if allowed_non_owning_route else
+                                "registered_dialog_definition_without_recovered_activator"
+                            )
                         )
                     )
                 ),
@@ -8251,6 +8843,8 @@ def build_offline_exhaustion_index(
             "npcProxyConsumers": validation["npcProxyConsumers"],
             "missionNpcProxyTracking":
                 validation["missionNpcProxyTracking"],
+            "levelScriptTaskConsumer":
+                validation["levelScriptTaskConsumer"],
             "allowedNonOwningRoute": allowed_non_owning_route,
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
@@ -8485,14 +9079,29 @@ def build_offline_exhaustion_index(
                 "reading_popup_definition_without_recovered_activator",
             "definitionTables": [
                 "ReadingPopUpTable",
-                "RichContentTable",
+                *(
+                    []
+                    if definition.get("richContentStatus") == "absent"
+                    else ["RichContentTable"]
+                ),
                 *(
                     ["PrtsAllItem", "PrtsRecord"]
                     if definition.get("prtsDefinition")
                     else []
                 ),
+                *(
+                    ["PrtsReading"]
+                    if definition.get("prtsReadingDefinition")
+                    else []
+                ),
             ],
-            "readingPopupRowId": definition["readingPopupRowId"],
+            "readingPopupRowId": definition.get("readingPopupRowId"),
+            "readingPopupRowIds": list(
+                definition.get("readingPopupRows")
+                or [definition.get("readingPopupRowId")]
+            ),
+            "richContentStatus":
+                definition.get("richContentStatus", "present"),
             "contentTextIds": list(definition["contentTextIds"]),
             "prtsDefinition": (
                 {
@@ -8506,6 +9115,20 @@ def build_offline_exhaustion_index(
                     "orderEvidence": False,
                 }
                 if definition.get("prtsDefinition")
+                else None
+            ),
+            "prtsReadingDefinition": (
+                {
+                    "rowId": definition["prtsReadingDefinition"]["rowId"],
+                    "contentIds": [
+                        row["contentId"]
+                        for row in definition["prtsReadingDefinition"]["row"]["list"].values()
+                    ],
+                    "relation": "prts_reading_catalog_targets_story",
+                    "missionOwnership": False,
+                    "orderEvidence": False,
+                }
+                if definition.get("prtsReadingDefinition")
                 else None
             ),
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
@@ -8676,6 +9299,9 @@ def build_offline_exhaustion_index(
         branch_context = mission_branch_context_by_mission.get(mission_id)
         if branch_context:
             row["missionQuestBranchContext"] = branch_context
+        linear_context = mission_linear_context_by_mission.get(mission_id)
+        if linear_context:
+            row["missionQuestSequenceContext"] = linear_context
     status.update({
         "status": "active",
         "coreTargetSetSha256": core_target_digest,
