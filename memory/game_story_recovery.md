@@ -42,16 +42,24 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The current main-story isolated-scene queue is source-bounded: all 588 core
+The current main-story isolated-scene queue is source-bounded: all 589 core
 isolated rows are now either closed by exact native/runtime/definition evidence
 or deferred after current-build offline carrier exhaustion; none remain broadly
-actionable. The latest eight-row batch covered `black_e7m1_3`, `sns_e1m9_1`,
-four radio definitions, `text_e8m4_1`, and `dlg_e5m0d5_1`. Exact current-game
-carriers are attached in Mission Pipeline. For `dlg_e5m0d5_1`, the registered
-DialogTree owns internal Timeline `dlgtl_e5m0d5_1_sub_1` and its 14-line order,
-but no mission activator or mission-relative order was found. For
-`radio_e1m5_3d5`, exact LevelData proximity to `e1m5_q#8` remains explicitly
-non-owning and non-ordering.
+actionable. The latest batch closed the last two broad main-story quest
+co-memberships as explicitly non-owning diagnostics and exhausted all eight
+`a1m5` definition/branch rows. `e10m3d5_q#7` tracks the exact doctor proxy and
+its mission-bound `dlg_e10m3_2` row, but its server placeholder exposes no
+playback or completion carrier. `e2m8_q#5` reads `CarParked` from exact
+`getterList#2`; the three Story calls in that LevelScript are separate action
+records. Neither case creates a quest-to-Story or order edge.
+
+`dlg_a1m5_5` is exact authored branch context rather than dead standalone text:
+registered `dlg_a1m5_2` contains its two trunks behind a no-bypass seven-way OR
+over completed quests `q#4`, `q#5`, `q#8`, `q#10`, `q#12`, `q#14`, and `q#16`.
+Mission Pipeline attaches that source file and branch context, while retaining
+the boundary that it does not identify one unique trigger or mission-relative
+chronology. The seven `text_a1m5_*` files remain exact ReadingPopUp/RichContent
+definitions with no recovered activator.
 
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
@@ -64,8 +72,9 @@ ownership or chronology edge.
    161 runtime receiver nodes and 185 receiver-to-Story placements.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
-3. **Main story:** no core-isolated scene remains actionable. Two strict
-   quest-attachment gaps remain: `e10m3d5_q#7` and `e2m8_q#5`.
+3. **Main story:** no core-isolated scene or strict quest-attachment gap remains
+   actionable in the current source-bounded queue; seven broad co-memberships
+   remain visible as non-owning diagnostics.
 4. **Option routes:** five multi-choice groups lack any current installed
    DialogTree, Timeline, MissionRuntime, LevelScript, VFS, or Lua consumer.
 5. **Narrative video:** three placement groups remain unresolved:
@@ -78,12 +87,11 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should trace the two remaining main-story quest gaps through exact
-MissionRuntime conditions, native receivers, and any changed installed-game
-registries, then continue the same binary-first audit into the highest-ranked
-event and major-mission isolated scenes. Reopen a deferred row only when a new
-typed producer/consumer or changed source hash supplies an ownership or order
-edge.
+Next work should continue the same binary-first audit with the seven
+`text_a1m9_*` event files, then the highest-ranked major-mission frontier
+(`gm02m2`) and the five character-mission quest gaps. Reopen a deferred row only
+when a new typed producer/consumer or changed source hash supplies an ownership
+or order edge.
 
 ## Evidence rules
 
