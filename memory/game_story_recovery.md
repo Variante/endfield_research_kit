@@ -172,6 +172,23 @@ authored quest graph is linear; Mission Pipeline retains only the two existing
 `questPrev` Story edges and exposes all definitions, proxy consumers, tracked
 quest ids, and exact source files without adding a graph edge.
 
+The nine-file `gm01m7` frontier is now source-bounded, reducing major-mission
+actionable core-isolated rows from 160 to 151. Its authored MissionRuntime graph
+forks after `q#1` into `q#8` and `q#14`, then joins both at `q#9`; the two arms
+and join track the same `sesidun_map01_001` proxy. No serialized client field
+assigns a Story file to either arm or exposes the server-side arm-selection
+policy, so this is an exact quest fork/join without a Story ownership edge.
+Five registered DialogTrees preserve their own exact option behavior:
+`dlg_gm01m7_1` has one split and one convergence, while `dlg_gm01m7_3` and
+`dlg_gm01m7_5` each have a convergence. Cross-mission `gm01m12` tracking reaches
+the proxies that select these dialogs (`q#14` for `dlg_gm01m7_1`, and
+`q#2/#3/#4/#6/#12` for the other four) and tracks `sns_gm01m7_1` at `q#16`.
+Those joins are navigation context only because the proxy rows serialize no
+selection condition and can select multiple dialogs. The remaining radio, SNS,
+and reading-popup roots are exact definitions without a playback owner. Mission
+Pipeline now exposes the fork/join, dialog-internal branches, cross-mission
+tracking, and exact source files while explicitly withholding ownership/order.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -199,12 +216,11 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should continue the same binary-first audit with the tied
-highest-ranked real major-mission frontiers `gm01m12` and `gm01m7` (nine
-actionable core-isolated files each). `gm01m7` is the higher branching-value
-target because its authored quest graph has one fork and one merge; `gm01m12`
-has neither. Then address the five character-mission quest-attachment gaps.
-Reopen a
+Next work should continue the same binary-first audit with the highest-ranked
+real major-mission frontier `gm01m12` (nine actionable core-isolated files),
+using the cross-mission proxy and SNS joins found during `gm01m7` recovery as
+navigation-only starting points. Then address the five character-mission
+quest-attachment gaps. Reopen a
 deferred row only when a new typed producer/consumer or changed source hash
 supplies an ownership or order edge.
 

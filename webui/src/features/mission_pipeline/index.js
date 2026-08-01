@@ -471,6 +471,9 @@
       offlineRecoveryMissingAudio: "audio ids absent",
       offlineRecoveryMissionTracking: "Mission NPC tracking context (navigation only)",
       offlineRecoveryTrackedQuests: "tracked quests",
+      offlineRecoveryRuntimeMission: "runtime mission",
+      offlineRecoveryMissionBranch: "Mission fork/join context (Story arm unresolved)",
+      offlineRecoveryCrossMissionTracking: "Cross-mission SNS tracking (navigation only)",
       offlineMissionShell: "Story-only recovery shell",
       offlineMissionShellHint: "No MissionRuntimeAsset exists in the current export. This page exposes exact table definitions and current-build negative carrier evidence only; it has no quest, ownership, playback, handshake, or order edge.",
       questAttachmentDiagnostic: "Story ownership unresolved",
@@ -918,6 +921,9 @@
       offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
       offlineRecoveryMissionTracking: "\u4efb\u52a1 NPC \u8ffd\u8e2a\u4e0a\u4e0b\u6587\uff08\u4ec5\u5bfc\u822a\uff09",
       offlineRecoveryTrackedQuests: "\u8ffd\u8e2a\u4efb\u52a1\u8282\u70b9",
+      offlineRecoveryRuntimeMission: "\u8fd0\u884c\u65f6\u4efb\u52a1",
+      offlineRecoveryMissionBranch: "\u4efb\u52a1\u5206\u6d41/\u6c47\u5408\u4e0a\u4e0b\u6587\uff08\u5267\u60c5\u5206\u652f\u5f52\u5c5e\u672a\u89e3\u6790\uff09",
+      offlineRecoveryCrossMissionTracking: "\u8de8\u4efb\u52a1 SNS \u8ffd\u8e2a\uff08\u4ec5\u5bfc\u822a\uff09",
       offlineMissionShell: "\u4ec5\u5267\u60c5\u6062\u590d\u7684\u4efb\u52a1\u5916\u58f3",
       offlineMissionShellHint: "\u5f53\u524d\u5bfc\u51fa\u4e2d\u6ca1\u6709 MissionRuntimeAsset\u3002\u672c\u9875\u4ec5\u5c55\u793a\u7cbe\u786e\u8868\u5b9a\u4e49\u548c\u5f53\u524d\u7248\u672c\u7684\u8f7d\u4f53\u8d1f\u8bc1\u636e\uff1b\u4e0d\u4ea7\u751f\u4efb\u52a1\u8282\u70b9\u3001\u5f52\u5c5e\u3001\u64ad\u653e\u3001\u63e1\u624b\u6216\u987a\u5e8f\u8fb9\u3002",
       questAttachmentDiagnostic: "\u5267\u60c5\u5f52\u5c5e\u672a\u89e3\u6790",
@@ -2616,6 +2622,8 @@
         row.runtimeRegistry,
         row.npcProxyConsumers?.length ? "NpcProxyExDataTable" : "",
         row.missionNpcProxyTracking?.sourceFile,
+        row.missionQuestBranchContext?.sourceFile,
+        row.runtimeTrackingContext?.sourceFile,
         row.nonOwningContext?.sourceFile,
         row.allowedNonOwningRoute?.file,
         row.prtsDefinition?.rowId,
@@ -2645,7 +2653,15 @@
       const recoveredLineCount = Array.isArray(row.lineIds) ? row.lineIds.length : 0;
       const missionTracking = row.missionNpcProxyTracking;
       const missionTrackingContext = missionTracking
-        ? `<p><strong>${esc(t("offlineRecoveryMissionTracking"))}</strong><code>${esc(missionTracking.proxyId || "?")}</code><code>${esc(missionTracking.levelId || "?")}</code>${(missionTracking.questIds || []).length ? `<span>${esc(t("offlineRecoveryTrackedQuests"))}: ${(missionTracking.questIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</span>` : ""}</p>`
+        ? `<p><strong>${esc(t("offlineRecoveryMissionTracking"))}</strong>${missionTracking.crossMission ? `<span>${esc(t("offlineRecoveryRuntimeMission"))}: <code>${esc(missionTracking.missionId || "?")}</code></span>` : ""}<code>${esc(missionTracking.proxyId || "?")}</code><code>${esc(missionTracking.levelId || "?")}</code>${(missionTracking.questIds || []).length ? `<span>${esc(t("offlineRecoveryTrackedQuests"))}: ${(missionTracking.questIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</span>` : ""}</p>`
+        : "";
+      const missionBranch = row.missionQuestBranchContext;
+      const missionBranchContext = missionBranch
+        ? `<p><strong>${esc(t("offlineRecoveryMissionBranch"))}</strong><code>${esc(missionBranch.fork?.questId || "?")}</code><i>&rarr;</i>${(missionBranch.fork?.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<span>${(missionBranch.merge?.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")} &rarr; <code>${esc(missionBranch.merge?.questId || "?")}</code></span></p>`
+        : "";
+      const runtimeTracking = row.runtimeTrackingContext;
+      const runtimeTrackingContext = runtimeTracking
+        ? `<p><strong>${esc(t("offlineRecoveryCrossMissionTracking"))}</strong><code>${esc(runtimeTracking.runtimeMissionId || "?")}</code><code>${esc(runtimeTracking.questId || "?")}</code></p>`
         : "";
       const definitionFacts = [
         row.dialogIdRegistrationStatus === "present_table_only"
@@ -2667,7 +2683,7 @@
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${options}${printableTokenBoundary}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
