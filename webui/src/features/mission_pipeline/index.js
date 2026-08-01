@@ -313,6 +313,10 @@
       partialFrontier: "partial-order frontier",
       causalEdges: "reduced causal edges",
       forkMerge: "Authored forks and joins",
+      dialogConditionalBranch: "Dialog condition branch",
+      dialogConditionalTrueArm: "condition true",
+      dialogConditionalFalseArm: "condition false",
+      dialogConditionalNativeProof: "Native branch selection",
       questFork: "quest fork",
       questMerge: "quest join",
       nativeSplitFanout: "native Split fan-out",
@@ -1081,6 +1085,10 @@
       partialFrontier: "\u90e8\u5206\u987a\u5e8f\u524d\u6cbf",
       causalEdges: "\u7cbe\u7b80\u56e0\u679c\u8fb9",
       forkMerge: "\u4f5c\u8005\u5206\u652f\u4e0e\u6c47\u5408",
+      dialogConditionalBranch: "Dialog \u6761\u4ef6\u5206\u652f",
+      dialogConditionalTrueArm: "\u6761\u4ef6\u4e3a\u771f",
+      dialogConditionalFalseArm: "\u6761\u4ef6\u4e3a\u5047",
+      dialogConditionalNativeProof: "\u539f\u751f\u5206\u652f\u9009\u62e9",
       questFork: "\u4efb\u52a1\u5206\u652f",
       questMerge: "\u4efb\u52a1\u6c47\u5408",
       nativeSplitFanout: "\u539f\u751f Split \u5206\u6d41",
@@ -2787,6 +2795,17 @@
     const nativeBranches = (branches.nativeControlBranches || []).map((row) => `<details><summary><b>${esc(nativeBranchLabel(row.kind))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code></summary><small>${esc(row.eventName || "")}</small>${nativeEventDetailHtml(row.eventDetail)}${nativePredicateHtml(row.predicate)}${(row.arms || []).map((arm) => `<div><code>${esc(arm.edge || "?")} &rarr; #${esc(arm.entryLocalId ?? "?")}</code><span>${(arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("")}</details>`).join("");
     const nativeMerges = (branches.nativeControlMerges || []).map((row) => `<div><b>${esc(t("nativeControlMerge"))}</b><code>#${esc(row.branchLocalId ?? "?")}</code><i>&rarr;</i><code>#${esc(row.mergeLocalId ?? "?")}</code><span>${(row.downstreamStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("");
     const sceneOptions = (branches.sceneGraphOptions || []).map((row) => `<div><b>${esc(t("optionBranches"))}</b><a href="${esc(storyHref(row.from))}"><code>${esc(row.from || "?")}</code></a><i>&rarr;</i><span>${(row.arms || []).flatMap((arm) => arm.targets || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("");
+    const dialogConditionalBranches = directEdges.filter((row) => row.kind === "dialogTreeCrossStoryConditionalBranch").map((row) => {
+      const condition = row.condition || {};
+      const predicate = [
+        condition.mapId,
+        condition.scriptId != null ? `script ${condition.scriptId}` : "",
+        condition.key,
+        condition.value != null ? `= ${String(condition.value)}` : "",
+      ].filter(Boolean).map((value) => `<code>${esc(value)}</code>`).join(" ");
+      const nativeProof = (row.nativeConsumers || []).map((consumer) => `<code>${esc(consumer.method || "?")} ${esc(consumer.token || "")} @ ${esc(consumer.address || "?")}</code>`).join(" ");
+      return `<details open><summary><b>${esc(t("dialogConditionalBranch"))}</b> <a href="${esc(storyHref(row.from))}"><code>${esc(row.from || "?")}</code></a> <i>&rarr;</i> <a href="${esc(storyHref(row.to))}"><code>${esc(row.to || "?")}</code></a></summary><p class="mp-native-predicate"><b>${esc(t("nativePredicate"))}</b>${predicate}</p><div><b>${esc(t("dialogConditionalTrueArm"))}</b><code>index ${esc(row.conditionTrueConnectionIndex ?? "?")}</code><span>${(row.childArmLineIds || []).map((lineId) => `<code>${esc(lineId)}</code>`).join(" ")}</span></div><div><b>${esc(t("dialogConditionalFalseArm"))}</b><code>index ${esc(row.conditionFalseConnectionIndex ?? "?")}</code><span>${(row.parentArmLineIds || []).map((lineId) => `<code>${esc(lineId)}</code>`).join(" ")}</span></div><small><strong>${esc(t("dialogConditionalNativeProof"))}:</strong> ${nativeProof}</small><small>${(row.sourceFiles || []).map((source) => `<code>${esc(source)}</code>`).join(" ")}</small></details>`;
+    }).join("");
     const dialogOptions = (branches.dialogLineOptions || []).map((row) => `<details><summary><code>${esc(row.storyKey || "?")}</code> 路 ${esc(t("optionBranches"))} ${esc(row.group ?? "?")}</summary>${(row.options || []).map((option) => {
       const branchLines = option.branchLineIds || [];
       const directContinuation = option.directContinuation && option.continuationLineId
@@ -2975,7 +2994,7 @@
       ${containments ? `<section><h4>${esc(t("embeddedStory"))}</h4><p>${esc(t("embeddedStoryHint"))}</p><div class="mp-order-edges">${containments}</div></section>` : ""}
       ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}
-      ${questForks || questMerges || nativeBranches || nativeMerges || sceneOptions ? `<section><h4>${esc(t("forkMerge"))}</h4><div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${sceneOptions}</div></section>` : ""}
+      ${questForks || questMerges || nativeBranches || nativeMerges || sceneOptions || dialogConditionalBranches ? `<section><h4>${esc(t("forkMerge"))}</h4><div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${sceneOptions}${dialogConditionalBranches}</div></section>` : ""}
       ${dialogOptions ? `<section><h4>${esc(t("optionBranches"))}</h4><div class="mp-order-dialog-branches">${dialogOptions}</div></section>` : ""}
       ${offlineGaps ? `<details class="mp-order-recovery-gaps" open><summary>${esc(t("offlineRecoveryGaps"))} <span>${offlineRows.length.toLocaleString()}</span></summary><p>${esc(t("offlineRecoveryGapsHint"))}</p><div>${offlineGaps}</div></details>` : ""}
       <small>${esc(t("isolatedScenes"))}: ${Number(summary.isolatedSceneCount || 0).toLocaleString()} 路 ${esc(t("weakOnlyScenes"))}: ${Number(summary.weakOnlySceneCount || 0).toLocaleString()}</small>

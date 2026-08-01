@@ -17,8 +17,8 @@ Latest CN reports:
 | Unlinked files with exact native playback | 155 |
 | Ordered mission graphs | 487 |
 | Candidate scene placements | 8,876 |
-| Strong / supported / weak edges | 1,480 / 834 / 2,630 |
-| Source-comparable scene pairs | 3,762 / 249,651 (1.51%) |
+| Strong / supported / weak edges | 1,481 / 834 / 2,630 |
+| Source-comparable scene pairs | 3,763 / 249,651 (1.51%) |
 | Cyclic components | 0 |
 | Exact nested DialogTree containments | 49 across 44 child files |
 | Exact quest-observed DialogTree definitions | 435 definitions / 461 placements across 422 quests |
@@ -527,6 +527,23 @@ chronology evidence. Mission Pipeline now exposes all four source-bounded
 activation gaps, the NPC tracking context, internal convergence, and the exact
 quest fork/merge while preserving all 36 cross-file pairs as unordered.
 
+The `gm02m14` frontier is now source-bounded, lowering its score from 15 to
+zero and the major actionable backlog from 39 to 36. Registered DialogTree
+`dlg_gm02m14_1` embeds every `dlg_gm02m14_3` trunk behind exact conditional
+node 9. The serialized predicate is `map02_lv005` script `90002` property
+`canskip == true`. Current `GameAssembly.dll` proves
+`DialogTreeIfNode.GetNextIndex` returns outgoing index 1 exactly when
+`GameCondition.result == 1`; authored connection index 1 reaches child node 14,
+while index 0 stays in parent lines `_007` through `_009`. The hash-locked
+carrier validator therefore adds the strong conditional edge
+`dlg_gm02m14_1 -> dlg_gm02m14_3` and reopens it on any source, path, line-set,
+or polarity mismatch. Radios `_1` and `_12` remain one-line `RadioTable`
+definitions: their audio ids are absent from `AudioDialog`, their exact roots
+are absent from both installed binaries, and the current typed/object-index
+surfaces expose no consumer. Mission Pipeline shows those two bounded gaps and
+the exact linear 12-quest topology without placing either radio on it. Manual
+and OCR order remain comparison-only.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -555,8 +572,8 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should move to the highest-ranked remaining real major-mission
-frontier (39 actionable core-isolated files remain across that bucket; the
-next ranked frontier is `gm02m14`, score 15 across three actionable isolated files)
+frontier (36 actionable core-isolated files remain across that bucket; the
+next ranked frontier is `gm02m13`, score 15 across three actionable radios)
 and the five character-mission quest-attachment gaps. Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
