@@ -55,7 +55,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v87"
+SCHEMA = "sourceStoryGapQueue.v88"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -138,7 +138,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v63"
+    "current-build-offline-story-carrier-exhaustion-v64"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -171,6 +171,15 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "dlg_gm02m3_2Z": "dlg_gm02m3_2Z",
     "dlg_gm02m3_3Z": "dlg_gm02m3_3Z",
     "dlg_gm02m3_3d": "dlg_gm02m3_3d",
+    "dlg_gm01m6_6": "dlg_gm01m6_6",
+    "dlg_gm01m6_7": "dlg_gm01m6_7",
+    "misc_dlg_gm01m6_1d5": "dlg_gm01m6_1d5",
+    "misc_dlg_gm01m6_3d7": "dlg_gm01m6_3d7",
+    "misc_dlg_gm01m6_4d5": "dlg_gm01m6_4d5",
+    "misc_dlg_gm01m6_4d7": "dlg_gm01m6_4d7",
+    "radio_gm01m6_0d5": "radio_gm01m6_0d5",
+    "radio_gm01m6_4d5": "radio_gm01m6_4d5",
+    "radio_gm01m6_6": "radio_gm01m6_6",
 }
 EXACT_PARENT_DIALOG_DEPENDENCIES = {
     "dlg_a1m4_2": {
@@ -1715,6 +1724,206 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
         "optionIds": (),
         "missingAudioIds": ("au_dlg_gm01m22_4d0_002",),
         "treeBranchGroups": (),
+    },
+    "dlg_gm01m6_6": {
+        "missionId": "gm01m6",
+        "filename": "dlg_gm01m6_6_pEAAF7ACAF314A409.json",
+        "sha256":
+            "97B366CECDC24CCEED4BC3F583A9D3A69775A704EAF35987303FEAC354AB7F3E",
+        "extraConfigFilename":
+            "dlg_gm01m6_6_extra_config_p62FB4BC8D39CC6AF.json",
+        "extraConfigSha256":
+            "805103584399CE5D828BEF1E74550FB367F4E81FCE868112392DF03E21E3F64F",
+        "lineIds": ("dlg_gm01m6_6_001", "dlg_gm01m6_6_002"),
+        "optionIds": (),
+        "missingAudioIds": (
+            "au_dlg_gm01m6_6_001",
+            "au_dlg_gm01m6_6_002",
+        ),
+        "treeBranchGroups": (),
+        "npcProxyConsumer": {
+            "proxyId": "heerman_map01_default",
+            "entryIndex": 1,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m6_6",
+                "missionId": "",
+            },
+        },
+        "missionNpcProxyTracking": {
+            "sourceFile": (
+                "export_full/structured/Persistent/Data/Json/"
+                "MissionRuntimeAsset/gm01m6.json"
+            ),
+            "sourceSha256":
+                "210142C46704FA160B2397BB48A78EC989D6BEF04D029AEB17A6FF745CC8DBF7",
+            "proxyId": "heerman_map01_default",
+            "levelId": "map01_lv006",
+            "rows": ({
+                "questId": "gm01m6_q#12",
+                "objectiveIndex": 0,
+                "trackingIndex": 0,
+            },),
+        },
+    },
+    "dlg_gm01m6_7": {
+        "missionId": "gm01m6",
+        "filename": "dlg_gm01m6_7_p321590FA5ABC5DEE.json",
+        "sha256":
+            "68411E1779C71BB1264EE32B04A57B90641DB1BD02E99C37DCD8ABCBBE3754AD",
+        "extraConfigFilename":
+            "dlg_gm01m6_7_extra_config_p7764E80EA5AC8B0F.json",
+        "extraConfigSha256":
+            "9734F2AD1E39B269A7DDDE806DB070ADBD4482406EFD85DA10245662F5C44346",
+        "lineIds": ("dlg_gm01m6_7_001", "dlg_gm01m6_7_002"),
+        "optionIds": ("option_dlg_gm01m6_7_1_001",),
+        "missingAudioIds": (
+            "au_dlg_gm01m6_7_001",
+            "au_dlg_gm01m6_7_002",
+        ),
+        "treeBranchGroups": (),
+        "npcProxyConsumer": {
+            "proxyId": "sikete_map01_default",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m6_7",
+                "missionId": "",
+            },
+        },
+    },
+    "misc_dlg_gm01m6_1d5": {
+        "missionId": "gm01m6",
+        "registryKey": "dlg_gm01m6_1d5",
+        "definitionName": "dlg_gm01m6_1d5",
+        "linePrefix": "dlg_gm01m6_1d5",
+        "filename": "dlg_gm01m6_1d5_p0DD18C793D122156.json",
+        "sha256":
+            "C72DE1DC8C052111DF4CEFB908C32E064290D4312AD3E78CAE6A2AE21DC06BFC",
+        "extraConfigFilename":
+            "dlg_gm01m6_1d5_extra_config_p6FEA6F24042A77B9.json",
+        "extraConfigSha256":
+            "7005182628D0AD82094AAF29855DE0CDDC318B7FE3F0A132A424F0C2DB2B4719",
+        "lineIds": ("dlg_gm01m6_1d5_001",),
+        "optionIds": (),
+        "missingAudioIds": ("au_dlg_gm01m6_1d5_001",),
+        "treeBranchGroups": (),
+    },
+    "misc_dlg_gm01m6_3d7": {
+        "missionId": "gm01m6",
+        "registryKey": "dlg_gm01m6_3d7",
+        "definitionName": "dlg_gm01m6_3d7",
+        "linePrefix": "dlg_gm01m6_3d7",
+        "filename": "dlg_gm01m6_3d7_pA32C176F716FBCC1.json",
+        "sha256":
+            "FAFC48AB767F01FB0F3AE0C47468A5F232AE9824714226FF6A32A73F6D37AE76",
+        "extraConfigFilename":
+            "dlg_gm01m6_3d7_extra_config_p51952F8858F44E85.json",
+        "extraConfigSha256":
+            "A0048DEF39A1560B749F5B2E160B23802B4CAE9AF56730B915C34852530E5DE8",
+        "lineIds": (
+            "dlg_gm01m6_3d7_001",
+            "dlg_gm01m6_3d7_002",
+        ),
+        "optionIds": ("option_dlg_gm01m6_3d7_1_001",),
+        "missingAudioIds": (
+            "au_dlg_gm01m6_3d7_001",
+            "au_dlg_gm01m6_3d7_002",
+        ),
+        "treeBranchGroups": (),
+        "npcProxyConsumer": {
+            "proxyId": "heerman_map01_001",
+            "entryIndex": 3,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m6_3d7",
+                "missionId": "",
+            },
+        },
+        "missionNpcProxyTracking": {
+            "sourceFile": (
+                "export_full/structured/Persistent/Data/Json/"
+                "MissionRuntimeAsset/gm01m6.json"
+            ),
+            "sourceSha256":
+                "210142C46704FA160B2397BB48A78EC989D6BEF04D029AEB17A6FF745CC8DBF7",
+            "proxyId": "heerman_map01_001",
+            "levelId": "map01_lv006",
+            "rows": (
+                {
+                    "questId": "gm01m6_q#3",
+                    "objectiveIndex": 0,
+                    "trackingIndex": 0,
+                },
+                {
+                    "questId": "gm01m6_q#10",
+                    "objectiveIndex": 0,
+                    "trackingIndex": 0,
+                },
+            ),
+        },
+    },
+    "misc_dlg_gm01m6_4d5": {
+        "missionId": "gm01m6",
+        "registryKey": "dlg_gm01m6_4d5",
+        "definitionName": "dlg_gm01m6_4d5",
+        "linePrefix": "dlg_gm01m6_4d5",
+        "filename": "dlg_gm01m6_4d5_p85775DE3FF157C61.json",
+        "sha256":
+            "177E8CEFB4414EFB096D4F182C1C30A68C339DBA25E5C8A636F970DAD906BBB8",
+        "extraConfigFilename":
+            "dlg_gm01m6_4d5_extra_config_p9965F84865FB6738.json",
+        "extraConfigSha256":
+            "662331DC8914C802E8710F7D384C013614241A16D9B1A4BB73DD000672906635",
+        "lineIds": ("dlg_gm01m6_4d5_001",),
+        "optionIds": ("option_dlg_gm01m6_4d5_1_001",),
+        "missingAudioIds": ("au_dlg_gm01m6_4d5_001",),
+        "treeBranchGroups": (),
+        "npcProxyConsumer": {
+            "proxyId": "heerman_map01_002",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m6_4d5",
+                "missionId": "",
+            },
+        },
+    },
+    "misc_dlg_gm01m6_4d7": {
+        "missionId": "gm01m6",
+        "registryKey": "dlg_gm01m6_4d7",
+        "definitionName": "dlg_gm01m6_4d7",
+        "linePrefix": "dlg_gm01m6_4d7",
+        "filename": "dlg_gm01m6_4d7_pA978A915C7F0E3C4.json",
+        "sha256":
+            "F5F6B421362EA8795D6F1721F07833F534CA3A9C1170494CF61FA73E4CE99E4A",
+        "extraConfigFilename":
+            "dlg_gm01m6_4d7_extra_config_p98E21661A5F3E7E5.json",
+        "extraConfigSha256":
+            "780DE6BE430457BE24686F3F81EDC9C049FC7DA4FA0F77ED52315BBC0F779F06",
+        "lineIds": ("dlg_gm01m6_4d7_001",),
+        "optionIds": (),
+        "missingAudioIds": ("au_dlg_gm01m6_4d7_001",),
+        "treeBranchGroups": (),
+        "npcProxyConsumer": {
+            "proxyId": "sikete_map01_002",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m6_4d7",
+                "missionId": "",
+            },
+        },
     },
     "dlg_a1m2_4": {
         "missionId": "a1m2",
@@ -3757,6 +3966,11 @@ OFFLINE_EXHAUSTION_GM02M3_RADIOS = frozenset({
     "radio_gm02m3_4",
     "radio_gm02m3_5",
 })
+OFFLINE_EXHAUSTION_GM01M6_RADIOS = frozenset({
+    "radio_gm01m6_0d5",
+    "radio_gm01m6_4d5",
+    "radio_gm01m6_6",
+})
 OFFLINE_EXHAUSTION_GM01M22_RADIOS = frozenset({
     "radio_gm01m22_1d2",
     "radio_gm01m22_1d3",
@@ -3768,6 +3982,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "a1m8d3": OFFLINE_EXHAUSTION_A1M8D3_RADIOS,
     "gm02m2": OFFLINE_EXHAUSTION_GM02M2_RADIOS,
     "gm02m3": OFFLINE_EXHAUSTION_GM02M3_RADIOS,
+    "gm01m6": OFFLINE_EXHAUSTION_GM01M6_RADIOS,
     "gm01m22": OFFLINE_EXHAUSTION_GM01M22_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
@@ -3905,6 +4120,12 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm02m3_3": frozenset({"au_radio_gm02m3_3_003"}),
     "radio_gm02m3_4": frozenset({"au_radio_gm02m3_4_004"}),
     "radio_gm02m3_5": frozenset({"au_radio_gm02m3_5_001"}),
+    "radio_gm01m6_0d5": frozenset({
+        "au_radio_gm01m6_0d5_001",
+        "au_radio_gm01m6_0d5_002",
+    }),
+    "radio_gm01m6_4d5": frozenset({"au_radio_gm01m6_4d5_001"}),
+    "radio_gm01m6_6": frozenset({"au_radio_gm01m6_6_001"}),
     "radio_gm01m22_1d2": frozenset({"au_radio_gm01m22_1d2_001"}),
     "radio_gm01m22_1d3": frozenset({"au_radio_gm01m22_1d3_001"}),
     "radio_e5m5_1": frozenset({
@@ -5436,6 +5657,11 @@ def build_offline_exhaustion_index(
                 cutscene_definition_root
                 / definition["extraConfigFilename"]
             )
+        tracking = definition.get("missionNpcProxyTracking")
+        if isinstance(tracking, dict):
+            source_paths[
+                f"missionNpcProxyTracking:{story_key}"
+            ] = ROOT / tracking["sourceFile"]
     for story_key, definition in (
         OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS.items()
     ):
@@ -5483,6 +5709,11 @@ def build_offline_exhaustion_index(
             expected_hashes[
                 f"dialogExtraConfig:{story_key}"
             ] = definition["extraConfigSha256"]
+        tracking = definition.get("missionNpcProxyTracking")
+        if isinstance(tracking, dict):
+            expected_hashes[
+                f"missionNpcProxyTracking:{story_key}"
+            ] = tracking["sourceSha256"]
     for story_key, definition in (
         OFFLINE_EXHAUSTION_CUTSCENE_DEFINITIONS.items()
     ):
@@ -6320,6 +6551,92 @@ def build_offline_exhaustion_index(
             if len(npc_proxy_consumer_contexts) == 1
             else None
         )
+        mission_tracking_spec = definition.get("missionNpcProxyTracking")
+        mission_tracking_context: dict[str, Any] | None = None
+        if isinstance(mission_tracking_spec, dict):
+            tracking_source_name = f"missionNpcProxyTracking:{story_key}"
+            tracking_payload = read_json(
+                source_paths[tracking_source_name],
+                {},
+            )
+            expected_tracking_rows = list(
+                mission_tracking_spec.get("rows") or []
+            )
+            proxy_id = safe_key(mission_tracking_spec.get("proxyId"))
+            level_id = safe_key(mission_tracking_spec.get("levelId"))
+            actual_tracking_rows: list[dict[str, Any]] = []
+            tracking_rows_valid = bool(
+                proxy_id and level_id and expected_tracking_rows
+            )
+            for expected_row in expected_tracking_rows:
+                quest_id = safe_key(expected_row.get("questId"))
+                objective_index = expected_row.get("objectiveIndex")
+                tracking_index = expected_row.get("trackingIndex")
+                actual_tracking: Any = None
+                try:
+                    actual_tracking = (
+                        tracking_payload["questDic"][quest_id]
+                        ["objectiveList"][objective_index]
+                        ["trackingInfoList"][tracking_index]
+                    )
+                except (KeyError, IndexError, TypeError):
+                    tracking_rows_valid = False
+                expected_tracking = {
+                    "$type": (
+                        "Beyond.Gameplay.NpcProxyTrackingInfo, "
+                        "Gameplay.Beyond"
+                    ),
+                    "useFilterCondition": False,
+                    "sceneId": level_id,
+                    "guidingArea": 0.0,
+                    "npcProxyId": proxy_id,
+                }
+                if actual_tracking != expected_tracking:
+                    tracking_rows_valid = False
+                actual_tracking_rows.append({
+                    "questId": quest_id,
+                    "objectiveIndex": objective_index,
+                    "trackingIndex": tracking_index,
+                    "tracking": actual_tracking,
+                })
+            if not tracking_rows_valid:
+                dialog_definitions_valid = False
+                dialog_validation_failures.append({
+                    "validator": "offlineDialogDefinition",
+                    "gate": "exactMissionNpcProxyTrackingContext",
+                    "mission": safe_key(definition.get("missionId")),
+                    "storyKey": story_key,
+                    "sourcePaths": [
+                        str(source_paths[tracking_source_name]),
+                    ],
+                    "sourceSha256": {
+                        tracking_source_name:
+                            actual_hashes.get(tracking_source_name, ""),
+                    },
+                    "expected": {
+                        "proxyId": proxy_id,
+                        "levelId": level_id,
+                        "rows": expected_tracking_rows,
+                    },
+                    "actual": actual_tracking_rows,
+                })
+                break
+            mission_tracking_context = {
+                "proxyId": proxy_id,
+                "levelId": level_id,
+                "missionId": safe_key(definition.get("missionId")),
+                "questIds": [
+                    safe_key(row.get("questId"))
+                    for row in expected_tracking_rows
+                ],
+                "sourceFile": mission_tracking_spec["sourceFile"],
+                "relation": "mission_quest_npc_proxy_tracking_context",
+                "missionContextOnly": True,
+                "missionOwnership": False,
+                "questPlaybackOwnership": False,
+                "orderEvidence": False,
+                "graphEffect": "none",
+            }
         timeline_context: dict[str, Any] | None = None
         if isinstance(shared_timeline, dict):
             owner_dialog_key = safe_key(
@@ -6583,6 +6900,7 @@ def build_offline_exhaustion_index(
             "timelineContext": timeline_context,
             "npcProxyConsumer": npc_proxy_consumer_context,
             "npcProxyConsumers": npc_proxy_consumer_contexts,
+            "missionNpcProxyTracking": mission_tracking_context,
         }
     if not dialog_definitions_valid:
         status.update({
@@ -7257,12 +7575,16 @@ def build_offline_exhaustion_index(
                 "deferred_current_build_offline_surface_exhausted",
             "evidenceKind":
                 (
-                    "npc_proxy_dialog_consumer_without_mission_owner"
-                    if validation["npcProxyConsumers"]
+                    "mission_tracked_npc_proxy_dialog_context_without_playback_owner"
+                    if validation["missionNpcProxyTracking"]
                     else (
-                        "registered_dialog_definition_with_nonowning_parent_carrier"
-                        if allowed_non_owning_route else
-                        "registered_dialog_definition_without_recovered_activator"
+                        "npc_proxy_dialog_consumer_without_mission_owner"
+                        if validation["npcProxyConsumers"]
+                        else (
+                            "registered_dialog_definition_with_nonowning_parent_carrier"
+                            if allowed_non_owning_route else
+                            "registered_dialog_definition_without_recovered_activator"
+                        )
                     )
                 ),
             "definitionAsset":
@@ -7315,6 +7637,8 @@ def build_offline_exhaustion_index(
             "sharedTimelineContext": validation["timelineContext"],
             "npcProxyConsumer": validation["npcProxyConsumer"],
             "npcProxyConsumers": validation["npcProxyConsumers"],
+            "missionNpcProxyTracking":
+                validation["missionNpcProxyTracking"],
             "allowedNonOwningRoute": allowed_non_owning_route,
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
@@ -7322,23 +7646,32 @@ def build_offline_exhaustion_index(
             "consumerBoundary": (
                 (
                     "the exact NpcProxyEx entry selects this registered "
-                    "DialogTree as an NPC interaction dialog, but its authored "
-                    "missionId is empty; no exact mission/quest owner or "
-                    "activation timing is serialized"
-                    if validation["npcProxyConsumers"]
+                    "DialogTree, and exact MissionRuntime quest tracking points "
+                    "to the same NPC proxy for HUD/navigation context; the "
+                    "NpcProxyEx missionId is empty and no serialized selection "
+                    "condition proves dialog playback, a unique quest owner, "
+                    "or activation timing"
+                    if validation["missionNpcProxyTracking"]
                     else (
-                        "the registered parent DialogTree has an exact typed "
-                        "prime-reachable carrier for this dialog; the owning "
-                        "mission observes completion of the parent, but no "
-                        "original-data source identifies what activates the "
-                        "parent dialog"
-                        if allowed_non_owning_route else
-                        "the exact DialogTree, MemoryPack DialogId registration, "
-                        "DialogTextTable rows, and AudioDialog membership where "
-                        "present establish a current runtime-loadable definition; "
-                        "no exact MissionRuntime, LevelScript, NpcProxyEx, "
-                        "object-index, or direct native playback caller exposes "
-                        "its activator"
+                        "the exact NpcProxyEx entry selects this registered "
+                        "DialogTree as an NPC interaction dialog, but its "
+                        "authored missionId is empty; no exact mission/quest "
+                        "owner or activation timing is serialized"
+                        if validation["npcProxyConsumers"]
+                        else (
+                            "the registered parent DialogTree has an exact typed "
+                            "prime-reachable carrier for this dialog; the owning "
+                            "mission observes completion of the parent, but no "
+                            "original-data source identifies what activates the "
+                            "parent dialog"
+                            if allowed_non_owning_route else
+                            "the exact DialogTree, MemoryPack DialogId registration, "
+                            "DialogTextTable rows, and AudioDialog membership where "
+                            "present establish a current runtime-loadable definition; "
+                            "no exact MissionRuntime, LevelScript, NpcProxyEx, "
+                            "object-index, or direct native playback caller exposes "
+                            "its activator"
+                        )
                     )
                 )
             ),
@@ -7350,7 +7683,8 @@ def build_offline_exhaustion_index(
             "reopenWhen": (
                 "installed binary, DialogId source/index, DialogTree, "
                 "DialogTextTable, AudioDialog, NpcProxyExDataTable, object "
-                "index, shared Timeline, or another typed producer/consumer "
+                "index, MissionRuntime tracking, shared Timeline, or another "
+                "typed producer/consumer "
                 "registry changes"
             ),
             "graphEffect": "none",

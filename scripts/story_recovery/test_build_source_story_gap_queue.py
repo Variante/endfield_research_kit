@@ -3308,6 +3308,12 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "radio_gm02m3_3": {"au_radio_gm02m3_3_003"},
                 "radio_gm02m3_4": {"au_radio_gm02m3_4_004"},
                 "radio_gm02m3_5": {"au_radio_gm02m3_5_001"},
+                "radio_gm01m6_0d5": {
+                    "au_radio_gm01m6_0d5_001",
+                    "au_radio_gm01m6_0d5_002",
+                },
+                "radio_gm01m6_4d5": {"au_radio_gm01m6_4d5_001"},
+                "radio_gm01m6_6": {"au_radio_gm01m6_6_001"},
                 "radio_gm01m22_1d2": {"au_radio_gm01m22_1d2_001"},
                 "radio_gm01m22_1d3": {"au_radio_gm01m22_1d3_001"},
                 "radio_e5m4_1": {
@@ -3685,6 +3691,12 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m6_9",
                 "dlg_e11m8_9",
                 "dlg_e11m8d5_1",
+                "dlg_gm01m6_6",
+                "dlg_gm01m6_7",
+                "misc_dlg_gm01m6_1d5",
+                "misc_dlg_gm01m6_3d7",
+                "misc_dlg_gm01m6_4d5",
+                "misc_dlg_gm01m6_4d7",
                 "dlg_gm01m22_6",
                 "dlg_gm01m22_7",
                 "dlg_gm01m22_8",
@@ -4504,6 +4516,147 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 -5685369311502986662,
             ),
         )
+
+    def test_declared_gm01m6_npc_proxy_frontier_is_exact(self) -> None:
+        story_keys = {
+            "dlg_gm01m6_6",
+            "dlg_gm01m6_7",
+            "misc_dlg_gm01m6_1d5",
+            "misc_dlg_gm01m6_3d7",
+            "misc_dlg_gm01m6_4d5",
+            "misc_dlg_gm01m6_4d7",
+            "radio_gm01m6_0d5",
+            "radio_gm01m6_4d5",
+            "radio_gm01m6_6",
+        }
+        self.assertEqual(
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm01m6" in key
+            },
+            story_keys,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GM01M6_RADIOS,
+            {
+                "radio_gm01m6_0d5",
+                "radio_gm01m6_4d5",
+                "radio_gm01m6_6",
+            },
+        )
+        expected_consumers = {
+            "dlg_gm01m6_6": ("heerman_map01_default", 1),
+            "dlg_gm01m6_7": ("sikete_map01_default", 0),
+            "misc_dlg_gm01m6_3d7": ("heerman_map01_001", 3),
+            "misc_dlg_gm01m6_4d5": ("heerman_map01_002", 0),
+            "misc_dlg_gm01m6_4d7": ("sikete_map01_002", 0),
+        }
+        for story_key, (proxy_id, entry_index) in expected_consumers.items():
+            consumer = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                story_key
+            ]["npcProxyConsumer"]
+            self.assertEqual(consumer["proxyId"], proxy_id)
+            self.assertEqual(consumer["entryIndex"], entry_index)
+            self.assertEqual(consumer["entry"]["missionId"], "")
+        self.assertNotIn(
+            "npcProxyConsumer",
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                "misc_dlg_gm01m6_1d5"
+            ],
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                "misc_dlg_gm01m6_3d7"
+            ]["missionNpcProxyTracking"]["rows"],
+            (
+                {
+                    "questId": "gm01m6_q#3",
+                    "objectiveIndex": 0,
+                    "trackingIndex": 0,
+                },
+                {
+                    "questId": "gm01m6_q#10",
+                    "objectiveIndex": 0,
+                    "trackingIndex": 0,
+                },
+            ),
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                "dlg_gm01m6_6"
+            ]["missionNpcProxyTracking"]["rows"][0]["questId"],
+            "gm01m6_q#12",
+        )
+
+    def test_gm01m6_mission_npc_tracking_is_visible_and_fails_closed(
+        self,
+    ) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual(status["status"], "active")
+        tracking = index["misc_dlg_gm01m6_3d7"][
+            "missionNpcProxyTracking"
+        ]
+        self.assertEqual(tracking["proxyId"], "heerman_map01_001")
+        self.assertEqual(tracking["levelId"], "map01_lv006")
+        self.assertEqual(
+            tracking["questIds"],
+            ["gm01m6_q#3", "gm01m6_q#10"],
+        )
+        self.assertFalse(tracking["missionOwnership"])
+        self.assertFalse(tracking["questPlaybackOwnership"])
+        self.assertFalse(tracking["orderEvidence"])
+
+        story_key = "misc_dlg_gm01m6_3d7"
+        definition = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            story_key
+        ]
+        broken_tracking = {
+            **definition["missionNpcProxyTracking"],
+            "rows": ({
+                "questId": "gm01m6_q#missing",
+                "objectiveIndex": 0,
+                "trackingIndex": 0,
+            },),
+        }
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS,
+            {story_key: {
+                **definition,
+                "missionNpcProxyTracking": broken_tracking,
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual(failed_index, {})
+        failure = next(
+            row
+            for row in failed_status["validatorDiagnostics"]
+            if row.get("storyKey") == story_key
+        )
+        self.assertEqual(failure["validator"], "offlineDialogDefinition")
+        self.assertEqual(
+            failure["gate"],
+            "exactMissionNpcProxyTrackingContext",
+        )
+        self.assertEqual(failure["mission"], "gm01m6")
+        self.assertIn("sourceSha256", failure)
 
     def test_gm01m22_dialog_tree_branches_are_exact_and_fail_closed(self) -> None:
         definition_root = (
