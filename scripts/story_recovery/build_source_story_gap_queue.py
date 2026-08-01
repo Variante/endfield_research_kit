@@ -47,7 +47,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v78"
+SCHEMA = "sourceStoryGapQueue.v79"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -130,7 +130,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v55"
+    "current-build-offline-story-carrier-exhaustion-v56"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -528,6 +528,14 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
     },
 }
 OFFLINE_EXHAUSTION_SNS_DEFINITIONS = {
+    "sns_e1m9_1": {
+        "missionId": "e1m9",
+        "chatId": "sns_chr_0006_wolfgd",
+        "contentIds": (-1, 1, 2),
+        "optionIdsByContentId": {},
+        "optionNextContentIds": {},
+        "optionDescriptionIds": {},
+    },
     "sns_e7m4_1": {
         "missionId": "e7m4",
         "chatId": "sns_npc_yanning_e7m4",
@@ -564,6 +572,11 @@ OFFLINE_EXHAUSTION_SNS_DEFINITIONS = {
     },
 }
 OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES = {
+    "black_e7m1_3": {
+        "missionId": "e7m1",
+        "storyKind": "black",
+        "definitionRowKeys": ("black_e7m1_3_001",),
+    },
     "black_e11m8_12": {
         "missionId": "e11m8",
         "storyKind": "black",
@@ -1026,6 +1039,29 @@ OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES = {
     ),
 }
 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
+    "dlg_e5m0d5_1": {
+        "missionId": "e5m0d5",
+        "filename": "dlg_e5m0d5_1_pAF0BBC8AD9824BE9.json",
+        "sha256":
+            "81353788DEDAEB34DF4DD05C5940ED0831DEE2D57A12A2CC996C559E96885A4B",
+        "extraConfigFilename":
+            "dlg_e5m0d5_1_extra_config_p6D91A9314ED0DB83.json",
+        "extraConfigSha256":
+            "CE90DD0CD2C1DA8EE9478C8D16D01586205AB1F9E4E3F207A5E5252ED95E08F9",
+        "lineIds": tuple(
+            f"dlg_e5m0d5_1_{number:03d}" for number in range(1, 15)
+        ),
+        "optionIds": (),
+        "ownedTimeline": {
+            "timeline": "dlgtl_e5m0d5_1_sub_1",
+            "sourceFile": "CAB-80a46b02bcb42629e533be06211f6e5f",
+            "trackPathId": 3386777180023897082,
+            "fullLineIds": tuple(
+                f"dlg_e5m0d5_1_{number:03d}"
+                for number in range(1, 15)
+            ),
+        },
+    },
     "dlg_e11m8d5_1": {
         "missionId": "e11m8d5",
         "filename": "dlg_e11m8d5_1_pD376152BDDDA1FBD.json",
@@ -2538,6 +2574,8 @@ OFFLINE_EXHAUSTION_E1M4_RADIOS = frozenset({
     "radio_e1m4_1d5",
     "radio_e1m4_2d5",
 })
+OFFLINE_EXHAUSTION_E1M5_RADIOS = frozenset({"radio_e1m5_3d5"})
+OFFLINE_EXHAUSTION_E1M6_RADIOS = frozenset({"radio_e1m6_2"})
 OFFLINE_EXHAUSTION_E1M10_RADIOS = frozenset({
     "radio_e1m10_0d2",
 })
@@ -2620,6 +2658,7 @@ OFFLINE_EXHAUSTION_E2M3_RADIOS = frozenset({
     "radio_e2m3_15",
 })
 OFFLINE_EXHAUSTION_E5M2_RADIOS = frozenset({"radio_e5m2_3"})
+OFFLINE_EXHAUSTION_E5M3_RADIOS = frozenset({"radio_e5m3_14"})
 OFFLINE_EXHAUSTION_E5M4_RADIOS = frozenset({
     "radio_e5m4_1",
     "radio_e5m4_1d5",
@@ -2650,6 +2689,7 @@ OFFLINE_EXHAUSTION_E4M1_RADIOS = frozenset({
     "radio_e4m1_106",
     "radio_e4m1_107",
 })
+OFFLINE_EXHAUSTION_E4M1D5_RADIOS = frozenset({"radio_e4m1d5_3"})
 OFFLINE_EXHAUSTION_E7M4_RADIOS = frozenset({"radio_e7m4_3"})
 OFFLINE_EXHAUSTION_E8M2_RADIOS = frozenset({
     "radio_e8m2_1",
@@ -2670,6 +2710,8 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
     "e1m4": OFFLINE_EXHAUSTION_E1M4_RADIOS,
+    "e1m5": OFFLINE_EXHAUSTION_E1M5_RADIOS,
+    "e1m6": OFFLINE_EXHAUSTION_E1M6_RADIOS,
     "e1m10": OFFLINE_EXHAUSTION_E1M10_RADIOS,
     "e2m2": OFFLINE_EXHAUSTION_E2M2_RADIOS,
     "e2m3": OFFLINE_EXHAUSTION_E2M3_RADIOS,
@@ -2682,8 +2724,10 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e3m3": OFFLINE_EXHAUSTION_E3M3_RADIOS,
     "e3m4": OFFLINE_EXHAUSTION_E3M4_RADIOS,
     "e4m1": OFFLINE_EXHAUSTION_E4M1_RADIOS,
+    "e4m1d5": OFFLINE_EXHAUSTION_E4M1D5_RADIOS,
     "e5m1": OFFLINE_EXHAUSTION_E5M1_RADIOS,
     "e5m2": OFFLINE_EXHAUSTION_E5M2_RADIOS,
+    "e5m3": OFFLINE_EXHAUSTION_E5M3_RADIOS,
     "e5m4": OFFLINE_EXHAUSTION_E5M4_RADIOS,
     "e5m5": OFFLINE_EXHAUSTION_E5M5_RADIOS,
     "e6m1": OFFLINE_EXHAUSTION_E6M1_RADIOS,
@@ -2711,6 +2755,30 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "e11m5": OFFLINE_EXHAUSTION_E11M5_RADIOS,
     "e11m6": OFFLINE_EXHAUSTION_E11M6_RADIOS,
     "e11m8": OFFLINE_EXHAUSTION_E11M8_RADIOS,
+}
+OFFLINE_EXHAUSTION_RADIO_CONTEXTS = {
+    "radio_e1m5_3d5": {
+        "sourceKey": "levelData:map01_lv002/map01_lv002_lv_data",
+        "sourceFile": (
+            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            "map01_lv002/map01_lv002_lv_data.json"
+        ),
+        "sha256":
+            "4342010C5E51FCC24738C0E5D4D61D42BCA2CF8B1453D574647F7CA4E1F399E1",
+        "questId": "e1m5_q#8",
+        "distance": 65,
+        "byteStringCounts": {
+            "radio_e1m5_3d5": 5,
+            "e1m5_q#8": 1,
+        },
+        "allowedRoute": {
+            "relation": "leveldata_quest_reference",
+            "direction": "context",
+            "phase": "context",
+            "confidence": "direct",
+            "levelId": "map01_lv002",
+        },
+    },
 }
 OFFLINE_EXHAUSTION_RADIO_AUDIO_VARIANTS = {
     "radio_e0m0_10": {
@@ -2867,6 +2935,35 @@ OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
             -1462227912355393055,
             3546372858747322539,
         ),
+    },
+    "text_e8m4_1": {
+        "missionId": "e8m4",
+        "readingPopupRowId": "rp_text_e8m4_1",
+        "bgType": 0,
+        "iconType": 0,
+        "titleId": -1501744430170614848,
+        "contentTextIds": (
+            -2333372693013596797,
+            7514769952417356497,
+            -7329223948121738333,
+            -6955748145096260696,
+        ),
+        "prtsDefinition": {
+            "rowId": "nar_collection_map02_12136_1",
+            "row": {
+                "contentId": "text_e8m4_1",
+                "desc": {"id": 0, "text": ""},
+                "firstLvId": "collection_map02_12136",
+                "id": "nar_collection_map02_12136_1",
+                "name": {
+                    "id": -6906129919037809411,
+                    "text": "",
+                },
+                "order": 1,
+                "overrideRadioId": "",
+                "type": "text",
+            },
+        },
     },
     "text_e6m5_1": {
         "missionId": "e6m5",
@@ -3501,6 +3598,8 @@ def build_offline_exhaustion_index(
         "gameObjectAudit": gameobject_audit_path,
         "reversePptrAudit": reverse_pptr_audit_path,
     }
+    for context in OFFLINE_EXHAUSTION_RADIO_CONTEXTS.values():
+        source_paths[context["sourceKey"]] = ROOT / context["sourceFile"]
     cutscene_definition_root = (
         ROOT
         / "export_full"
@@ -3557,6 +3656,8 @@ def build_offline_exhaustion_index(
             OFFLINE_EXHAUSTION_TIMELINE_LINE_ORDERS_SHA256,
         "gameAssembly": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
     }
+    for context in OFFLINE_EXHAUSTION_RADIO_CONTEXTS.values():
+        expected_hashes[context["sourceKey"]] = context["sha256"]
     for story_key, definition in (
         OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.items()
     ):
@@ -3812,6 +3913,44 @@ def build_offline_exhaustion_index(
         ) <= audio_stems
     ):
         status["status"] = "inactive_radio_definition_validation_failed"
+        return {}, status
+
+    radio_contexts_valid = (
+        set(OFFLINE_EXHAUSTION_RADIO_CONTEXTS) <= all_radio_keys
+    )
+    radio_context_validation_failures: list[dict[str, Any]] = []
+    if not radio_contexts_valid:
+        radio_context_validation_failures.append({
+            "validator": "offlineRadioContext",
+            "gate": "declaredContextIsKnownRadio",
+            "expected": sorted(OFFLINE_EXHAUSTION_RADIO_CONTEXTS),
+            "actualMissing": sorted(
+                set(OFFLINE_EXHAUSTION_RADIO_CONTEXTS) - all_radio_keys,
+                key=natural_key,
+            ),
+        })
+    for story_key, context in OFFLINE_EXHAUSTION_RADIO_CONTEXTS.items():
+        source = source_paths.get(context["sourceKey"])
+        source_bytes = source.read_bytes() if isinstance(source, Path) else b""
+        actual_counts = {
+            value: source_bytes.count(value.encode("utf-8"))
+            for value in context["byteStringCounts"]
+        }
+        if not source_bytes or actual_counts != context["byteStringCounts"]:
+            radio_contexts_valid = False
+            radio_context_validation_failures.append({
+                "validator": "offlineRadioContext",
+                "gate": "exactLevelDataByteStringCounts",
+                "storyKey": story_key,
+                "questId": context["questId"],
+                "sourcePath": context["sourceFile"],
+                "sourceSha256": actual_hashes.get(context["sourceKey"], ""),
+                "expected": context["byteStringCounts"],
+                "actual": actual_counts,
+            })
+    if not radio_contexts_valid:
+        status["status"] = "inactive_radio_context_validation_failed"
+        status["validationFailures"] = radio_context_validation_failures
         return {}, status
 
     reading_popup_table = read_json(source_paths["readingPopupTable"], {})
@@ -4749,12 +4888,17 @@ def build_offline_exhaustion_index(
         all_radio_keys,
         key=natural_key,
     ):
+        context = OFFLINE_EXHAUSTION_RADIO_CONTEXTS.get(story_key)
         index[story_key] = {
             "sceneKey": story_key,
             "missionId": radio_mission_by_key[story_key],
             "recoveryStatus":
                 "deferred_current_build_offline_surface_exhausted",
-            "evidenceKind": "radio_definition_without_recovered_consumer",
+            "evidenceKind": (
+                "leveldata_context_without_typed_story_activator"
+                if context
+                else "radio_definition_without_recovered_consumer"
+            ),
             "definitionTable": "RadioTable",
             "audioMembershipTable": "AudioDialog",
             "audioMembershipStatus": (
@@ -4786,16 +4930,48 @@ def build_offline_exhaustion_index(
                 missing_audio_ids_by_story.get(story_key) or set(),
                 key=natural_key,
             ),
+            "nonOwningContext": (
+                {
+                    "questId": context["questId"],
+                    "sourceFile": context["sourceFile"],
+                    "distance": context["distance"],
+                    "relation": context["allowedRoute"]["relation"],
+                    "missionOwnership": False,
+                    "orderEvidence": False,
+                }
+                if context else None
+            ),
+            "allowedNonOwningRoute": (
+                {
+                    **context["allowedRoute"],
+                    "file": context["sourceFile"],
+                }
+                if context else None
+            ),
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
             "consumerBoundary": (
-                "exact ids occur only in current RadioTable definitions and "
-                "AudioDialog membership, including exact authored variants "
-                "where present, across the audited "
-                "MissionRuntime, LevelScript, "
-                "GameplayConfig, Table, Lua, object-index, and direct native "
-                "playback-caller surfaces"
+                (
+                    "the exact LevelData file contains this radio id near "
+                    f"{context['questId']}, but the collection proximity "
+                    "has no typed playback action, activation carrier, or "
+                    "mission-order semantics; the RadioTable and "
+                    "AudioDialog rows establish only the playable definition"
+                    if context else
+                    "exact ids occur only in current RadioTable definitions "
+                    "and AudioDialog membership, including exact authored "
+                    "variants where present, across the audited "
+                    "MissionRuntime, LevelScript, GameplayConfig, Table, "
+                    "Lua, object-index, and direct native playback-caller "
+                    "surfaces"
+                )
+            ),
+            "orderBoundary": (
+                "LevelData byte proximity, collection order, quest "
+                "predecessors, and filename suffixes do not establish "
+                "playback or relative Story order"
+                if context else None
             ),
             "reopenWhen": (
                 "installed binary, exported tables, object index, Lua corpus, "
@@ -6216,18 +6392,53 @@ def _deferred_offline_exhausted_isolated_scenes(
     offline_exhaustion_index: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """Defer exact-build exhausted rows without asserting a graph fact."""
-    routed_keys = {
-        safe_key(row.get("key"))
-        for row in _flow_story_connections(flow)
-        if isinstance(row, dict) and safe_key(row.get("key"))
-    }
+    routed_rows_by_key: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in _flow_story_connections(flow):
+        if isinstance(row, dict) and safe_key(row.get("key")):
+            routed_rows_by_key[safe_key(row.get("key"))].append(row)
     deferred: list[dict[str, Any]] = []
     for scene_key in sorted(isolated_scene_keys, key=natural_key):
         evidence = offline_exhaustion_index.get(scene_key)
+        routed_rows = routed_rows_by_key.get(scene_key, [])
+        allowed_route = (
+            evidence.get("allowedNonOwningRoute")
+            if isinstance(evidence, dict)
+            else None
+        )
+        routed_rows_valid = not routed_rows
+        if routed_rows and isinstance(allowed_route, dict):
+            routed_rows_valid = all(
+                all(row.get(field) == value for field, value in allowed_route.items())
+                for row in routed_rows
+            )
+            context = evidence.get("nonOwningContext") or {}
+            quest_id = safe_key(context.get("questId"))
+            expected_distance = context.get("distance")
+            quest_rows = [
+                quest
+                for quest in flow.get("quests") or []
+                if isinstance(quest, dict)
+                if safe_key(quest.get("id")) == quest_id
+            ]
+            level_data_refs = [
+                ref
+                for quest in quest_rows
+                for ref in quest.get("levelDataStoryRefs") or []
+                if isinstance(ref, dict)
+                and safe_key(ref.get("storyRef")) == scene_key
+            ]
+            routed_rows_valid = (
+                routed_rows_valid
+                and len(quest_rows) == 1
+                and len(level_data_refs) == 1
+                and level_data_refs[0].get("distance") == expected_distance
+                and safe_key(level_data_refs[0].get("file"))
+                == safe_key(allowed_route.get("file"))
+            )
         if (
             not isinstance(evidence, dict)
             or safe_key(evidence.get("missionId")) != owner_mission
-            or scene_key in routed_keys
+            or not routed_rows_valid
             or evidence.get("graphEffect") != "none"
             or evidence.get("recoveryStatus")
             != "deferred_current_build_offline_surface_exhausted"

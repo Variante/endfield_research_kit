@@ -1919,6 +1919,52 @@ body:not(.show-debug) .mp-playback-rejection {
 .mp-order-cycles > .mp-order-component { margin: .2rem; }
 .mp-order-dialog-branches details { border-left: 2px solid var(--accent); padding-left: .55rem; }
 
+.mp-order-recovery-gaps {
+  margin-top: .8rem;
+  padding: .65rem;
+  border: 1px solid color-mix(in srgb, var(--mp-server) 42%, var(--border));
+  border-radius: .65rem;
+  background: color-mix(in srgb, var(--mp-server-soft) 65%, transparent);
+}
+
+.mp-order-recovery-gaps > summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.mp-order-recovery-gaps > summary span {
+  margin-left: .4rem;
+  color: var(--muted);
+}
+
+.mp-order-recovery-gaps > div {
+  display: grid;
+  gap: .55rem;
+}
+
+.mp-order-recovery-gaps article {
+  display: grid;
+  gap: .35rem;
+  padding: .55rem;
+  border: 1px solid var(--border);
+  border-radius: .55rem;
+  background: var(--panel);
+}
+
+.mp-order-recovery-gaps article header,
+.mp-order-recovery-gaps article p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem;
+  margin: 0;
+}
+
+.mp-order-recovery-gaps article header b {
+  color: var(--muted);
+  font-size: .76rem;
+}
+
 .mp-trigger-chain {
   display: flex;
   flex-wrap: wrap;

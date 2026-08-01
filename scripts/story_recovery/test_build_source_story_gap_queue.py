@@ -2713,6 +2713,131 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_remaining_main_story_isolated_frontier_is_exact(
+        self,
+    ) -> None:
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E1M5_RADIOS,
+            {"radio_e1m5_3d5"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_RADIO_CONTEXTS[
+                "radio_e1m5_3d5"
+            ]["byteStringCounts"],
+            {"radio_e1m5_3d5": 5, "e1m5_q#8": 1},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E1M6_RADIOS,
+            {"radio_e1m6_2"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E4M1D5_RADIOS,
+            {"radio_e4m1d5_3"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_E5M3_RADIOS,
+            {"radio_e5m3_14"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES[
+                "black_e7m1_3"
+            ]["definitionRowKeys"],
+            ("black_e7m1_3_001",),
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS[
+                "sns_e1m9_1"
+            ],
+            {
+                "missionId": "e1m9",
+                "chatId": "sns_chr_0006_wolfgd",
+                "contentIds": (-1, 1, 2),
+                "optionIdsByContentId": {},
+                "optionNextContentIds": {},
+                "optionDescriptionIds": {},
+            },
+        )
+        text = gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+            "text_e8m4_1"
+        ]
+        self.assertEqual(text["readingPopupRowId"], "rp_text_e8m4_1")
+        self.assertEqual(
+            text["prtsDefinition"]["rowId"],
+            "nar_collection_map02_12136_1",
+        )
+        dialog = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_e5m0d5_1"
+        ]
+        self.assertEqual(len(dialog["lineIds"]), 14)
+        self.assertEqual(dialog["optionIds"], ())
+        self.assertEqual(
+            dialog["ownedTimeline"]["timeline"],
+            "dlgtl_e5m0d5_1_sub_1",
+        )
+        self.assertEqual(
+            dialog["ownedTimeline"]["trackPathId"],
+            3386777180023897082,
+        )
+
+    def test_offline_radio_leveldata_context_fails_closed_on_route_change(
+        self,
+    ) -> None:
+        source_file = (
+            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            "map01_lv002/map01_lv002_lv_data.json"
+        )
+        route = {
+            "key": "radio_e1m5_3d5",
+            "relation": "leveldata_quest_reference",
+            "direction": "context",
+            "phase": "context",
+            "confidence": "direct",
+            "levelId": "map01_lv002",
+            "file": source_file,
+        }
+        evidence = {
+            "sceneKey": "radio_e1m5_3d5",
+            "missionId": "e1m5",
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "graphEffect": "none",
+            "nonOwningContext": {
+                "questId": "e1m5_q#8",
+                "distance": 65,
+            },
+            "allowedNonOwningRoute": {
+                key: value for key, value in route.items() if key != "key"
+            },
+        }
+        flow = {
+            "quests": [{
+                "id": "e1m5_q#8",
+                "storyConnections": [route],
+                "levelDataStoryRefs": [{
+                    "storyRef": "radio_e1m5_3d5",
+                    "file": source_file,
+                    "distance": 65,
+                }],
+            }],
+        }
+        rows = gap_queue._deferred_offline_exhausted_isolated_scenes(
+            flow,
+            {"radio_e1m5_3d5"},
+            "e1m5",
+            {"radio_e1m5_3d5": evidence},
+        )
+        self.assertEqual([row["sceneKey"] for row in rows], ["radio_e1m5_3d5"])
+        flow["quests"][0]["storyConnections"][0]["confidence"] = "weak"
+        self.assertEqual(
+            gap_queue._deferred_offline_exhausted_isolated_scenes(
+                flow,
+                {"radio_e1m5_3d5"},
+                "e1m5",
+                {"radio_e1m5_3d5": evidence},
+            ),
+            [],
+        )
+
     def test_declared_e2m2_offline_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E2M2_RADIOS,
@@ -3364,6 +3489,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS),
             {
+                "dlg_e5m0d5_1",
                 "dlg_e1m1_6",
                 "dlg_e1m2_6",
                 "misc_dlg_e1m3_5d5",
@@ -4025,6 +4151,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e7m2_2",
                 "text_e7m3_1",
                 "text_e7m4_1",
+                "text_e8m4_1",
                 "text_e10m3_4",
                 "text_e10m3_6",
                 "text_e10m3_8",
@@ -4225,7 +4352,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS),
-            {"sns_e7m4_1", "sns_e10m4_1"},
+            {"sns_e1m9_1", "sns_e7m4_1", "sns_e10m4_1"},
         )
         self.assertEqual(
             set(
@@ -4474,7 +4601,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES),
-            {"black_e11m8_12", "black_e11m8_39"},
+            {"black_e7m1_3", "black_e11m8_12", "black_e11m8_39"},
         )
         disconnected = {
             "key": "black_e11m8_27",
