@@ -174,6 +174,32 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
                 "dlg_gm01m26_5_008",
             ],
         )
+        gm01m5 = index["dlg_gm01m5_1"]
+        self.assertEqual(
+            gm01m5["evidenceKind"],
+            "dialog_text_table_only_with_empty_levelscript_host",
+        )
+        self.assertEqual(gm01m5["optionIds"], [
+            "option_dlg_gm01m5_1_0d5_001",
+            "option_dlg_gm01m5_1_0d7_001",
+            "option_dlg_gm01m5_1_0d8_001",
+            "option_dlg_gm01m5_1_1_001",
+        ])
+        empty_host = gm01m5["emptyLevelScriptContext"]
+        self.assertEqual(empty_host["scriptId"], "2100100004")
+        self.assertEqual(empty_host["dictionaryScriptIds"], ["2100100004"])
+        self.assertEqual(empty_host["propertyCount"], 0)
+        self.assertEqual(empty_host["uidRecordCount"], 0)
+        self.assertEqual(empty_host["actionListRecordCount"], 0)
+        self.assertEqual(empty_host["taskMapCount"], 0)
+        self.assertEqual(
+            index["radio_gm01m5_1"]["evidenceKind"],
+            "radio_definition_with_empty_levelscript_host",
+        )
+        self.assertEqual(
+            index["radio_gm01m5_1"]["missingAudioIds"],
+            ["au_radio_gm01m5_1_001", "au_radio_gm01m5_1_002"],
+        )
 
     def test_changed_getter_path_fails_with_actionable_diagnostic(self):
         declaration = copy.deepcopy(
@@ -219,6 +245,57 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
         self.assertEqual(len(diagnostic["sourcePaths"]), 2)
         self.assertIn("expected", diagnostic)
         self.assertIn("actual", diagnostic)
+
+    def test_nonempty_gm01m5_action_list_fails_with_exact_diagnostic(self):
+        declaration = copy.deepcopy(
+            gap_queue.OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS[
+                "gm01m5"
+            ]
+        )
+        source = ROOT / declaration["levelScriptFile"]
+        data = bytearray(source.read_bytes())
+        self.assertEqual(data[3], 0)
+        data[3] = 1
+        changed_data = bytes(data)
+        with tempfile.TemporaryDirectory() as directory:
+            changed = Path(directory) / "2100100004.json"
+            changed.write_bytes(changed_data)
+            declaration["levelScriptFile"] = str(changed)
+            declaration["levelScriptSha256"] = hashlib.sha256(
+                changed_data
+            ).hexdigest().upper()
+            with patch.dict(
+                gap_queue.OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS,
+                {"gm01m5": declaration},
+            ):
+                index, status = gap_queue.build_offline_exhaustion_index(
+                    self.partial_report,
+                    self.table_root,
+                )
+        self.assertEqual(index, {})
+        self.assertEqual(
+            status["status"],
+            "inactive_empty_levelscript_context_validation_failed",
+        )
+        diagnostic = status["validatorDiagnostics"][0]
+        self.assertEqual(
+            diagnostic["validator"],
+            "offlineEmptyLevelScriptContext",
+        )
+        self.assertEqual(diagnostic["mission"], "gm01m5")
+        self.assertEqual(
+            diagnostic["gate"],
+            "exactSinglePropertylessHostAndNoActionRecords",
+        )
+        self.assertEqual(
+            diagnostic["expected"]["actionListRecordCount"],
+            0,
+        )
+        self.assertEqual(
+            diagnostic["actual"]["actionListRecordCount"],
+            1,
+        )
+        self.assertEqual(len(diagnostic["sourcePaths"]), 2)
 
     def test_changed_terminal_finish_id_fails_with_exact_route_diagnostic(self):
         declaration = copy.deepcopy(

@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v94"
+SCHEMA = "sourceStoryGapQueue.v95"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -144,7 +144,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v71"
+    "current-build-offline-story-carrier-exhaustion-v72"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -230,6 +230,14 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm01m26_2": "radio_gm01m26_2",
     "radio_gm01m26_3": "radio_gm01m26_3",
     "radio_gm01m26_4": "radio_gm01m26_4",
+    "dlg_gm01m5_1": "dlg_gm01m5_1",
+    "dlg_gm01m5_2": "dlg_gm01m5_2",
+    "dlg_gm01m5_3": "dlg_gm01m5_3",
+    "dlg_gm01m5_4": "dlg_gm01m5_4",
+    "radio_gm01m5_1": "radio_gm01m5_1",
+    "radio_gm01m5_2": "radio_gm01m5_2",
+    "radio_gm01m5_3": "radio_gm01m5_3",
+    "radio_gm01m5_4": "radio_gm01m5_4",
 }
 OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
     "gm01m7": {
@@ -499,6 +507,27 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
                 "pathLocalIds": (180, 185, 188, 189, 190, 203, 204, 144),
             }),
         },
+    },
+}
+OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS = {
+    "gm01m5": {
+        "levelId": "map01_lv001",
+        "scriptId": "2100100004",
+        "levelDataFile": (
+            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            "map01_lv001/map01_lv001_lv_data_sub_gm01m5.json"
+        ),
+        "levelDataSha256":
+            "3F32678F67E08B81AFCBFA05F2283EB098DE3E0E3C091E08D69AA502F9B0C6EB",
+        "levelScriptFile": (
+            "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/"
+            "map01_lv001/2100100004.json"
+        ),
+        "levelScriptSha256":
+            "561A82A611951483CD9DEEDAFDB7BDADE58DBCE163A3B3E393370BD4AF460112",
+        "dataPathHash": "15306503476277701362",
+        "levelScriptType": 0,
+        "maxStage": 1,
     },
 }
 OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS = {
@@ -5009,6 +5038,84 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS.update({
             },
         },
     },
+    "dlg_gm01m5_1": {
+        "missionId": "gm01m5",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm01m5_1_{number:03d}"
+            for number in (5, 7, *range(9, 18))
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m5_1_{number:03d}"
+            for number in (5, 7, *range(9, 18))
+        ),
+        "optionRows": {
+            "option_dlg_gm01m5_1_0d5_001": {
+                "iconType": "Default",
+                "optionText": {"id": 7545901413321559642, "text": ""},
+            },
+            "option_dlg_gm01m5_1_0d7_001": {
+                "iconType": "Default",
+                "optionText": {"id": 7393317461208971066, "text": ""},
+            },
+            "option_dlg_gm01m5_1_0d8_001": {
+                "iconType": "Default",
+                "optionText": {"id": -2504463061219860905, "text": ""},
+            },
+            "option_dlg_gm01m5_1_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": 7521016891150217685, "text": ""},
+            },
+        },
+    },
+    "dlg_gm01m5_2": {
+        "missionId": "gm01m5",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm01m5_2_{number:03d}" for number in range(1, 7)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m5_2_{number:03d}" for number in range(1, 7)
+        ),
+        "optionRows": {
+            "option_dlg_gm01m5_2_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": 6525773029524646060, "text": ""},
+            },
+            "option_dlg_gm01m5_2_2_001": {
+                "iconType": "Default",
+                "optionText": {"id": -4462706000586211826, "text": ""},
+            },
+        },
+    },
+    "dlg_gm01m5_3": {
+        "missionId": "gm01m5",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm01m5_3_{number:03d}" for number in range(2, 6)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m5_3_{number:03d}" for number in range(2, 6)
+        ),
+        "optionRows": {
+            "option_dlg_gm01m5_3_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": 8151213580389047998, "text": ""},
+            },
+        },
+    },
+    "dlg_gm01m5_4": {
+        "missionId": "gm01m5",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": (
+            "dlg_gm01m5_4_001",
+            "dlg_gm01m5_4_002",
+        ),
+        "missingAudioIds": (
+            "au_dlg_gm01m5_4_001",
+            "au_dlg_gm01m5_4_002",
+        ),
+    },
 })
 OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS = frozenset({
     "actorName",
@@ -5346,6 +5453,12 @@ OFFLINE_EXHAUSTION_GM01M26_RADIOS = frozenset({
     "radio_gm01m26_3",
     "radio_gm01m26_4",
 })
+OFFLINE_EXHAUSTION_GM01M5_RADIOS = frozenset({
+    "radio_gm01m5_1",
+    "radio_gm01m5_2",
+    "radio_gm01m5_3",
+    "radio_gm01m5_4",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "a1m6d1": OFFLINE_EXHAUSTION_A1M6D1_RADIOS,
     "a1m6d2": OFFLINE_EXHAUSTION_A1M6D2_RADIOS,
@@ -5361,6 +5474,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm01m24": OFFLINE_EXHAUSTION_GM01M24_RADIOS,
     "gm01m25": OFFLINE_EXHAUSTION_GM01M25_RADIOS,
     "gm01m26": OFFLINE_EXHAUSTION_GM01M26_RADIOS,
+    "gm01m5": OFFLINE_EXHAUSTION_GM01M5_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
@@ -5527,6 +5641,13 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm01m26_2": frozenset({"au_radio_gm01m26_2_002"}),
     "radio_gm01m26_3": frozenset({"au_radio_gm01m26_3_003"}),
     "radio_gm01m26_4": frozenset({"au_radio_gm01m26_4_004"}),
+    "radio_gm01m5_1": frozenset({
+        "au_radio_gm01m5_1_001",
+        "au_radio_gm01m5_1_002",
+    }),
+    "radio_gm01m5_2": frozenset({"au_radio_gm01m5_2_001"}),
+    "radio_gm01m5_3": frozenset({"au_radio_gm01m5_3_001"}),
+    "radio_gm01m5_4": frozenset({"au_radio_gm01m5_4_001"}),
     "radio_gm01m22_1d2": frozenset({"au_radio_gm01m22_1d2_001"}),
     "radio_gm01m22_1d3": frozenset({"au_radio_gm01m22_1d3_001"}),
     "radio_e5m5_1": frozenset({
@@ -7367,6 +7488,15 @@ def build_offline_exhaustion_index(
         source_paths[
             f"levelScriptDialogBranch:{mission_id}"
         ] = ROOT / context["levelScriptFile"]
+    for mission_id, context in (
+        OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS.items()
+    ):
+        source_paths[
+            f"emptyLevelDataContext:{mission_id}"
+        ] = ROOT / context["levelDataFile"]
+        source_paths[
+            f"emptyLevelScriptContext:{mission_id}"
+        ] = ROOT / context["levelScriptFile"]
     for story_key, consumer in (
         OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS.items()
     ):
@@ -7461,6 +7591,15 @@ def build_offline_exhaustion_index(
         ] = context["levelDataSha256"]
         expected_hashes[
             f"levelScriptDialogBranch:{mission_id}"
+        ] = context["levelScriptSha256"]
+    for mission_id, context in (
+        OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS.items()
+    ):
+        expected_hashes[
+            f"emptyLevelDataContext:{mission_id}"
+        ] = context["levelDataSha256"]
+        expected_hashes[
+            f"emptyLevelScriptContext:{mission_id}"
         ] = context["levelScriptSha256"]
     for story_key, consumer in (
         OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS.items()
@@ -7820,6 +7959,123 @@ def build_offline_exhaustion_index(
             "serverSuccessorSelectionStatus": "not_serialized_in_client_asset",
             "orderEvidence": False,
             "graphEffect": "none",
+        }
+
+    empty_levelscript_context_by_mission: dict[str, dict[str, Any]] = {}
+    for mission_id, declaration in (
+        OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS.items()
+    ):
+        leveldata_name = f"emptyLevelDataContext:{mission_id}"
+        levelscript_name = f"emptyLevelScriptContext:{mission_id}"
+        leveldata_path = source_paths[leveldata_name]
+        levelscript_path = source_paths[levelscript_name]
+        script_id = int(declaration["scriptId"])
+        leveldata_bytes = leveldata_path.read_bytes()
+        levelscript_bytes = levelscript_path.read_bytes()
+        brief_dictionary = parse_leveldata_levelscript_brief_dictionary(
+            leveldata_bytes,
+            {script_id},
+        )
+        brief = brief_dictionary.get(script_id) or {}
+        records = extract_levelscript_uid_records(levelscript_bytes)
+        action_map, _membership = levelscript_action_map_membership(
+            levelscript_bytes,
+            records,
+        )
+        task_maps = decode_levelscript_task_conditions(
+            levelscript_bytes,
+            script_id,
+        )
+        actual_brief = {
+            "scriptId": safe_key(brief.get("scriptId")),
+            "dataPathHash": safe_key(brief.get("dataPathHash")),
+            "levelScriptType": brief.get("levelScriptType"),
+            "maxStage": brief.get("maxStage"),
+            "parentLevelScriptId": safe_key(
+                brief.get("parentLevelScriptId")
+            ),
+            "propertyCount": brief.get("propertyCount"),
+            "propertyMapCount": brief.get("propertyMapCount"),
+            "refWorldEntityCount": brief.get("refWorldEntityCount"),
+            "dictionaryEntryCount": brief.get("dictionaryEntryCount"),
+        }
+        expected_brief = {
+            "scriptId": declaration["scriptId"],
+            "dataPathHash": declaration["dataPathHash"],
+            "levelScriptType": declaration["levelScriptType"],
+            "maxStage": declaration["maxStage"],
+            "parentLevelScriptId": "0",
+            "propertyCount": 0,
+            "propertyMapCount": 0,
+            "refWorldEntityCount": 0,
+            "dictionaryEntryCount": 1,
+        }
+        valid = (
+            len(brief_dictionary) == 1
+            and actual_brief == expected_brief
+            and not records
+            and action_map.get("status") == "present"
+            and action_map.get("recordCount") == 0
+            and not task_maps
+        )
+        if not valid:
+            status.update({
+                "status": "inactive_empty_levelscript_context_validation_failed",
+                "validatorDiagnostics": [{
+                    "validator": "offlineEmptyLevelScriptContext",
+                    "gate": "exactSinglePropertylessHostAndNoActionRecords",
+                    "mission": mission_id,
+                    "sourcePaths": [str(leveldata_path), str(levelscript_path)],
+                    "sourceSha256": {
+                        leveldata_name: actual_hashes.get(leveldata_name, ""),
+                        levelscript_name: actual_hashes.get(levelscript_name, ""),
+                    },
+                    "expected": {
+                        "brief": expected_brief,
+                        "uidRecordCount": 0,
+                        "actionMapStatus": "present",
+                        "actionListRecordCount": 0,
+                        "taskMapCount": 0,
+                    },
+                    "actual": {
+                        "brief": actual_brief,
+                        "dictionaryScriptIds": sorted(
+                            (str(value) for value in brief_dictionary),
+                            key=int,
+                        ),
+                        "uidRecordCount": len(records),
+                        "actionMapStatus": action_map.get("status"),
+                        "actionListRecordCount": action_map.get("recordCount"),
+                        "taskMapCount": len(task_maps),
+                    },
+                }],
+            })
+            return {}, status
+        empty_levelscript_context_by_mission[mission_id] = {
+            "missionId": mission_id,
+            "levelId": declaration["levelId"],
+            "scriptId": declaration["scriptId"],
+            "levelDataFile": declaration["levelDataFile"],
+            "levelScriptFile": declaration["levelScriptFile"],
+            "dictionaryScriptIds": [declaration["scriptId"]],
+            "dataPathHash": declaration["dataPathHash"],
+            "propertyCount": 0,
+            "propertyMapCount": 0,
+            "refWorldEntityCount": 0,
+            "uidRecordCount": 0,
+            "actionListRecordCount": 0,
+            "taskMapCount": 0,
+            "storyReferences": [],
+            "playbackActions": [],
+            "orderEvidence": False,
+            "graphEffect": "none",
+            "evidenceBoundary": (
+                "the mission-named LevelData contains one exact LevelScript "
+                "BriefData entry, but that entry has no properties or world-"
+                "entity references and its LevelScript has no decoded UID "
+                "action/header/getter records or task maps; the host therefore "
+                "cannot activate or order the nominal Story definitions"
+            ),
         }
 
     leveldata_dialog_branch_by_story: dict[str, dict[str, Any]] = {}
@@ -9993,15 +10249,23 @@ def build_offline_exhaustion_index(
         key=natural_key,
     ):
         context = OFFLINE_EXHAUSTION_RADIO_CONTEXTS.get(story_key)
+        mission_id = radio_mission_by_key[story_key]
+        empty_levelscript_context = (
+            empty_levelscript_context_by_mission.get(mission_id)
+        )
         index[story_key] = {
             "sceneKey": story_key,
-            "missionId": radio_mission_by_key[story_key],
+            "missionId": mission_id,
             "recoveryStatus":
                 "deferred_current_build_offline_surface_exhausted",
             "evidenceKind": (
                 "leveldata_context_without_typed_story_activator"
                 if context
-                else "radio_definition_without_recovered_consumer"
+                else (
+                    "radio_definition_with_empty_levelscript_host"
+                    if empty_levelscript_context
+                    else "radio_definition_without_recovered_consumer"
+                )
             ),
             "definitionTable": "RadioTable",
             "audioMembershipTable": "AudioDialog",
@@ -10052,6 +10316,7 @@ def build_offline_exhaustion_index(
                 }
                 if context else None
             ),
+            "emptyLevelScriptContext": empty_levelscript_context,
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
@@ -10062,20 +10327,33 @@ def build_offline_exhaustion_index(
                     "has no typed playback action, activation carrier, or "
                     "mission-order semantics; the RadioTable and "
                     "AudioDialog rows establish only the playable definition"
-                    if context else
+                    if context else (
+                    "the exact RadioTable rows define the radio, while the "
+                    "mission-named LevelData contains one exact propertyless "
+                    "LevelScript whose serialized action-list count and "
+                    "decoded UID-record count are both zero; neither that "
+                    "empty host nor the audited MissionRuntime, GameplayConfig, "
+                    "object-index, and native playback surfaces expose a consumer"
+                    if empty_levelscript_context else
                     "exact ids occur only in current RadioTable definitions "
                     "and AudioDialog membership, including exact authored "
                     "variants where present, across the audited "
                     "MissionRuntime, LevelScript, GameplayConfig, Table, "
                     "object-index, and direct native playback-caller "
                     "surfaces"
+                    )
                 )
             ),
             "orderBoundary": (
                 "LevelData byte proximity, collection order, quest "
                 "predecessors, and filename suffixes do not establish "
                 "playback or relative Story order"
-                if context else None
+                if context else (
+                    "the empty mission-named LevelScript, RadioTable order, "
+                    "and filename suffixes do not establish playback or "
+                    "relative Story order"
+                    if empty_levelscript_context else None
+                )
             ),
             "reopenWhen": (
                 "installed binary, exported tables, object index, "
@@ -10249,13 +10527,17 @@ def build_offline_exhaustion_index(
         definition = OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[story_key]
         validation = text_only_dialog_validation_by_key[story_key]
         branch_context = definition.get("nonOwningContext")
+        mission_id = text_only_dialog_mission_by_key[story_key]
+        empty_levelscript_context = (
+            empty_levelscript_context_by_mission.get(mission_id)
+        )
         table_only_registration = (
             validation["dialogIdRegistrationStatus"]
             == "present_table_only"
         )
         index[story_key] = {
             "sceneKey": story_key,
-            "missionId": text_only_dialog_mission_by_key[story_key],
+            "missionId": mission_id,
             "recoveryStatus":
                 "deferred_current_build_offline_surface_exhausted",
             "evidenceKind": (
@@ -10264,7 +10546,11 @@ def build_offline_exhaustion_index(
                 else (
                     "registered_dialog_table_rows_without_tree_asset_or_consumer"
                     if table_only_registration
-                    else "dialog_text_table_only_without_registry_asset_or_consumer"
+                    else (
+                        "dialog_text_table_only_with_empty_levelscript_host"
+                        if empty_levelscript_context
+                        else "dialog_text_table_only_without_registry_asset_or_consumer"
+                    )
                 )
             ),
             "definitionTable": "DialogTextTable",
@@ -10308,6 +10594,7 @@ def build_offline_exhaustion_index(
             "allowedNonOwningRoute": definition.get(
                 "allowedNonOwningRoute"
             ),
+            "emptyLevelScriptContext": empty_levelscript_context,
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
@@ -10328,7 +10615,14 @@ def build_offline_exhaustion_index(
                     "authored choices but not their route graph; printable-only "
                     "DialogId tokens are not MemoryPack records or route targets"
                     if table_only_registration
-                    else
+                    else (
+                    "the exact DialogTextTable line/audio group and exact "
+                    "DialogOptionTable definitions have no DialogId registration, "
+                    "DialogTree, Timeline, or AudioDialog membership; the exact "
+                    "mission-named LevelData carries one propertyless LevelScript "
+                    "whose serialized action-list and decoded UID-record counts "
+                    "are zero, so it supplies no activator or option-route graph"
+                    if empty_levelscript_context else
                     "the exact DialogTextTable line/audio group and any exact "
                     "DialogOptionTable option definitions have no current "
                     "DialogId registration, DialogTree asset, Timeline, "
@@ -10336,6 +10630,7 @@ def build_offline_exhaustion_index(
                     "LevelScript consumer, Lua reference, or object-index "
                     "carrier; option definitions prove authored choices but "
                     "not their route graph"
+                    )
                 )
             ),
             "orderBoundary": (
@@ -10346,9 +10641,15 @@ def build_offline_exhaustion_index(
                     "payload in a unique mission chronology"
                     if branch_context
                     else
-                    "line ids, printable-only token suffixes, and fallback/"
-                    "manual display positions do not establish playback, "
-                    "option routing, or mission chronology"
+                    (
+                        "the empty mission-named LevelScript, line ids, option "
+                        "suffixes, and fallback/manual display positions do not "
+                        "establish playback, option routing, or mission chronology"
+                        if empty_levelscript_context else
+                        "line ids, printable-only token suffixes, and fallback/"
+                        "manual display positions do not establish playback, "
+                        "option routing, or mission chronology"
+                    )
                 )
             ),
             "reopenWhen": (
