@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v102"
+SCHEMA = "sourceStoryGapQueue.v103"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -190,7 +190,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v84"
+    "current-build-offline-story-carrier-exhaustion-v85"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -219,6 +219,9 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "dlg_gm01m4_7": "dlg_gm01m4_7",
     "misc_dlg_gm01m4_3d5": "dlg_gm01m4_3d5",
     "radio_gm01m4_1": "radio_gm01m4_1",
+    "dlg_gm01m15_7": "dlg_gm01m15_7",
+    "text_gm01m15_1": "text_gm01m15_1",
+    "text_gm01m15_8": "text_gm01m15_8",
     "text_gm01m17_1": "text_gm01m17_1",
     "dlg_gm01m22_6": "dlg_gm01m22_6",
     "dlg_gm01m22_7": "dlg_gm01m22_7",
@@ -417,6 +420,36 @@ OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS = {
     },
 }
 OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
+    "gm01m15": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm01m15.json"
+        ),
+        "sourceSha256":
+            "0397C4DAD94F167EE1EE571280C7723F8D17D0905FA5CCA71AA101B26B0D5622",
+        "mainPathQuestIds": tuple(
+            f"gm01m15_q#{number}"
+            for number in (2, 3, 4, 6, 7, 8, 14, 5, 10, 11, 12)
+        ),
+        "prevQuestIdsByQuest": {
+            "gm01m15_q#2": (),
+            "gm01m15_q#3": ("gm01m15_q#2",),
+            "gm01m15_q#4": ("gm01m15_q#3",),
+            "gm01m15_q#13": ("gm01m15_q#3",),
+            "gm01m15_q#6": ("gm01m15_q#4", "gm01m15_q#13"),
+            "gm01m15_q#7": ("gm01m15_q#6",),
+            "gm01m15_q#8": ("gm01m15_q#7",),
+            "gm01m15_q#14": ("gm01m15_q#8",),
+            "gm01m15_q#5": ("gm01m15_q#14",),
+            "gm01m15_q#10": ("gm01m15_q#5",),
+            "gm01m15_q#11": ("gm01m15_q#10",),
+            "gm01m15_q#12": ("gm01m15_q#11",),
+        },
+        "failedConditionsByQuest": {
+            f"gm01m15_q#{number}": None
+            for number in (2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14)
+        },
+    },
     "gm01m4": {
         "sourceFile": (
             "export_full/structured/Persistent/Data/Json/"
@@ -1095,6 +1128,12 @@ OFFLINE_EXHAUSTION_DIALOG_TEXT_TABLE_SHA256 = (
 )
 OFFLINE_EXHAUSTION_DIALOG_OPTION_TABLE_SHA256 = (
     "8D86E8A10025DC0B54F800750650738A360DEBA169A0E3B3C48CB72FB8857C29"
+)
+OFFLINE_EXHAUSTION_DIALOG_SUMMARY_MAP_TABLE_SHA256 = (
+    "86A9DF70D9AB2C797E09F0827FB5EADFC7DB67CB80A3AF21C40A4215972BA133"
+)
+OFFLINE_EXHAUSTION_DIALOG_SUMMARY_TABLE_SHA256 = (
+    "98CAC57FB20458208B174E34F8944B51296C8A967C28F7BBB56C75F04E5E792E"
 )
 OFFLINE_EXHAUSTION_READING_POPUP_TABLE_SHA256 = (
     "119BEFCA19E85FB11DF33D945FBA6374BB24E622F717CC50D7DA011BDB2A533C"
@@ -5473,6 +5512,42 @@ OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e11m8_9",
 })
 OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
+    "dlg_gm01m15_7": {
+        "missionId": "gm01m15",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm01m15_7_{number:03d}" for number in range(1, 12)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m15_7_{number:03d}" for number in range(1, 12)
+        ),
+        "optionRows": {
+            "option_dlg_gm01m15_7_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": 7313625240270065029, "text": ""},
+            },
+            "option_dlg_gm01m15_7_2_001": {
+                "iconType": "Default",
+                "optionText": {"id": -699915481480001162, "text": ""},
+            },
+            "option_dlg_gm01m15_7_3_001": {
+                "iconType": "Default",
+                "optionText": {"id": 1876383331345779089, "text": ""},
+            },
+            "option_dlg_gm01m15_7_3_002": {
+                "iconType": "Default",
+                "optionText": {"id": 6833042270075956263, "text": ""},
+            },
+            "option_dlg_gm01m15_7_3_003": {
+                "iconType": "Default",
+                "optionText": {"id": -2379227851902736757, "text": ""},
+            },
+        },
+        "summaryDefinition": {
+            "summaryId": "summary_gm01m15_7_001",
+            "row": {"id": 1386392558646000191, "text": ""},
+        },
+    },
     "dlg_gm01m2_5": {
         "missionId": "gm01m2",
         "dialogIdRegistrationStatus": "absent",
@@ -6996,6 +7071,41 @@ def _offline_radio_definition_validation_failure(
         }
     return None
 OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
+    "text_gm01m15_1": {
+        "missionId": "gm01m15",
+        "readingPopupRowId": "text_gm01m15_1",
+        "bgType": 1,
+        "iconType": 1,
+        "titleId": 5249534470886375510,
+        "contentTextIds": (
+            8242330289792353294,
+            -2455707730206541547,
+            -2339893156956209480,
+            119766408319964938,
+            -8714781499976003721,
+        ),
+        "prtsDefinition": {
+            "rowId": "nar_digital_map01_research1_16_1",
+            "row": {
+                "contentId": "text_gm01m15_1",
+                "desc": {"id": 0, "text": ""},
+                "firstLvId": "digital_map01_research1_16",
+                "id": "nar_digital_map01_research1_16_1",
+                "name": {"id": -3724480734488975224, "text": ""},
+                "order": 1,
+                "overrideRadioId": "",
+                "type": "text",
+            },
+        },
+    },
+    "text_gm01m15_8": {
+        "missionId": "gm01m15",
+        "readingPopupRowId": "text_gm01m15_8",
+        "bgType": 0,
+        "iconType": 1,
+        "titleId": 6250703409374408529,
+        "contentTextIds": (6649389232287698087,),
+    },
     "text_gm01m13_1": {
         "missionId": "gm01m13",
         "readingPopupRowId": "text_gm01m13_1",
@@ -8876,6 +8986,8 @@ def build_offline_exhaustion_index(
         "textTable": table_root / "TextTable.json",
         "dialogTextTable": table_root / "DialogTextTable.json",
         "dialogOptionTable": table_root / "DialogOptionTable.json",
+        "dialogSummaryMapTable": table_root / "DialogSummaryMapTable.json",
+        "dialogSummaryTable": table_root / "DialogSummaryTable.json",
         "readingPopupTable": table_root / "ReadingPopUpTable.json",
         "richContentTable": table_root / "RichContentTable.json",
         "prtsAllItemTable": table_root / "PrtsAllItem.json",
@@ -9020,6 +9132,10 @@ def build_offline_exhaustion_index(
         "textTable": OFFLINE_EXHAUSTION_TEXT_TABLE_SHA256,
         "dialogTextTable": OFFLINE_EXHAUSTION_DIALOG_TEXT_TABLE_SHA256,
         "dialogOptionTable": OFFLINE_EXHAUSTION_DIALOG_OPTION_TABLE_SHA256,
+        "dialogSummaryMapTable":
+            OFFLINE_EXHAUSTION_DIALOG_SUMMARY_MAP_TABLE_SHA256,
+        "dialogSummaryTable":
+            OFFLINE_EXHAUSTION_DIALOG_SUMMARY_TABLE_SHA256,
         "readingPopupTable":
             OFFLINE_EXHAUSTION_READING_POPUP_TABLE_SHA256,
         "richContentTable":
@@ -9635,6 +9751,19 @@ def build_offline_exhaustion_index(
             for quest_id, predecessors in expected_prev.items()
             if len(predecessors) > 1
         ]
+        parallel_rendezvous = [
+            {
+                "forkQuestId": fork["questId"],
+                "parallelQuestIds": fork["successorQuestIds"],
+                "mergeQuestId": merge["questId"],
+                "joinSemantics": "all_predecessor_quests_required",
+                "playerChoice": False,
+            }
+            for fork in forks
+            for merge in merges
+            if set(fork["successorQuestIds"])
+            == set(merge["predecessorQuestIds"])
+        ]
         mission_topology_context_by_mission[mission_id] = {
             "sourceFile": declaration["sourceFile"],
             "entryQuestIds": [
@@ -9644,6 +9773,7 @@ def build_offline_exhaustion_index(
             "mainPathQuestIds": expected_main_path,
             "forks": forks,
             "merges": merges,
+            "parallelRendezvous": parallel_rendezvous,
             "terminalQuestIds": [
                 quest_id for quest_id, quest_successors in successors.items()
                 if not quest_successors
@@ -10939,6 +11069,11 @@ def build_offline_exhaustion_index(
 
     dialog_text_table = read_json(source_paths["dialogTextTable"], {})
     dialog_option_table = read_json(source_paths["dialogOptionTable"], {})
+    dialog_summary_map_table = read_json(
+        source_paths["dialogSummaryMapTable"],
+        {},
+    )
+    dialog_summary_table = read_json(source_paths["dialogSummaryTable"], {})
     dialog_id_index = read_json(source_paths["dialogIdIndex"], {})
     timeline_line_orders = read_json(source_paths["timelineLineOrders"], {})
     npc_proxy_ex_table = read_json(
@@ -11781,6 +11916,35 @@ def build_offline_exhaustion_index(
                     "payloadType": type(dialog_option_table).__name__,
                 },
             )
+        summary_definition = definition.get("summaryDefinition")
+        if summary_definition is not None:
+            expected_summary_id = summary_definition["summaryId"]
+            actual_summary_id = (
+                dialog_summary_map_table.get(definition_root_key)
+                if isinstance(dialog_summary_map_table, dict)
+                else None
+            )
+            actual_summary_row = (
+                dialog_summary_table.get(expected_summary_id)
+                if isinstance(dialog_summary_table, dict)
+                else None
+            )
+            if (
+                actual_summary_id != expected_summary_id
+                or actual_summary_row != summary_definition["row"]
+            ):
+                add_text_only_failure(
+                    "exactDialogSummaryDefinition",
+                    ("dialogSummaryMapTable", "dialogSummaryTable"),
+                    {
+                        "summaryId": expected_summary_id,
+                        "row": summary_definition["row"],
+                    },
+                    {
+                        "summaryId": actual_summary_id,
+                        "row": actual_summary_row,
+                    },
+                )
         if len(text_only_dialog_validation_failures) != failures_before:
             continue
         text_only_dialog_validation_by_key[story_key] = {
@@ -11798,6 +11962,16 @@ def build_offline_exhaustion_index(
             },
             "optionIds": list(expected_option_ids),
             "optionRows": expected_option_rows,
+            "summaryDefinition": (
+                {
+                    "summaryId": summary_definition["summaryId"],
+                    "textId": str(summary_definition["row"]["id"]),
+                    "relation": "dialog_summary_map_targets_dialog",
+                    "missionOwnership": False,
+                    "orderEvidence": False,
+                }
+                if summary_definition else None
+            ),
             "dialogIdRegistrationStatus": expected_registration_status,
             "printableOnlyDialogTokens": list(printable_only_tokens),
             "printableOnlyTokenStatus": (
@@ -12395,15 +12569,27 @@ def build_offline_exhaustion_index(
                 for name in (
                     "dialogTextTable",
                     *(("dialogOptionTable",) if validation["optionIds"] else ()),
+                    *(
+                        ("dialogSummaryMapTable", "dialogSummaryTable")
+                        if validation["summaryDefinition"] else ()
+                    ),
                     "audioDialog",
                     "dialogIdIndex",
                     "timelineLineOrders",
                 )
             ],
             "definitionTables": (
-                ["DialogTextTable", "DialogOptionTable"]
-                if validation["optionIds"]
-                else ["DialogTextTable"]
+                [
+                    "DialogTextTable",
+                    *(
+                        ["DialogOptionTable"]
+                        if validation["optionIds"] else []
+                    ),
+                    *(
+                        ["DialogSummaryMapTable", "DialogSummaryTable"]
+                        if validation["summaryDefinition"] else []
+                    ),
+                ]
             ),
             "lineIds": validation["lineIds"],
             "audioIds": validation["audioIds"],
@@ -12411,6 +12597,7 @@ def build_offline_exhaustion_index(
             "missingAudioIds": validation["missingAudioIds"],
             "optionIds": validation["optionIds"],
             "optionRows": validation["optionRows"],
+            "summaryDefinition": validation["summaryDefinition"],
             "optionRouteStatus": (
                 "definitions_present_route_unresolved"
                 if validation["optionIds"]
@@ -12470,7 +12657,8 @@ def build_offline_exhaustion_index(
                     "are zero, so it supplies no activator or option-route graph"
                     if empty_levelscript_context else
                     "the exact DialogTextTable line/audio group and any exact "
-                    "DialogOptionTable option definitions have no current "
+                    "DialogOptionTable option definitions plus any exact "
+                    "DialogSummaryMapTable artifact have no current "
                     "DialogId registration, DialogTree asset, Timeline, "
                     "AudioDialog membership, typed MissionRuntime or "
                     "LevelScript consumer, Lua reference, or object-index "
@@ -12500,7 +12688,8 @@ def build_offline_exhaustion_index(
             ),
             "reopenWhen": (
                 "installed binary, DialogTextTable, DialogOptionTable, "
-                "AudioDialog, DialogId index, TextAsset inventory, Timeline "
+                "DialogSummaryMapTable, DialogSummaryTable, AudioDialog, "
+                "DialogId index, TextAsset inventory, Timeline "
                 "index, object index, Lua corpus, or another typed "
                 "producer/consumer changes"
             ),

@@ -485,6 +485,8 @@
       runtimeRecoverySnsLink: "Authored SNS mission link",
       offlineRecoveryRelatedOriginalData: "Related original-data bundle",
       offlineRecoveryPrtsOrder: "terminal order",
+      offlineRecoveryPrtsCarrier: "Exact PRTS archive carrier (catalog order, not mission chronology)",
+      offlineRecoveryDialogSummary: "Exact dialog summary artifact (not playback evidence)",
       offlineRecoveryStoryRelation: "Story relation",
       offlineRecoveryMissionTextRows: "mission/objective text rows",
       offlineRecoveryGaps: "source-bounded activation gaps",
@@ -519,6 +521,7 @@
       offlineRecoveryMissionBranch: "Mission fork/join context (Story arm unresolved)",
       offlineRecoveryMissionSequence: "Authored linear quest context (Story placement unresolved)",
       offlineRecoveryMissionTopology: "Exact authored mission topology",
+      offlineRecoveryParallelRendezvous: "Parallel prerequisites with AND rendezvous (not a player choice)",
       offlineRecoveryLinearTopology: "linear quest chain",
       offlineRecoveryMainPath: "authored main path",
       offlineRecoveryQuestStateDependency: "authored quest-state dependency",
@@ -989,6 +992,8 @@
       runtimeRecoverySnsLink: "\u539f\u59cb SNS \u4efb\u52a1\u94fe\u63a5",
       offlineRecoveryRelatedOriginalData: "\u76f8\u5173\u539f\u59cb\u6570\u636e\u675f",
       offlineRecoveryPrtsOrder: "\u7ec8\u7aef\u987a\u5e8f",
+      offlineRecoveryPrtsCarrier: "\u7cbe\u786e PRTS \u6863\u6848\u8f7d\u4f53\uff08\u76ee\u5f55\u987a\u5e8f\uff0c\u975e\u4efb\u52a1\u65f6\u5e8f\uff09",
+      offlineRecoveryDialogSummary: "\u7cbe\u786e\u5bf9\u8bdd\u6458\u8981\u8d44\u6599\uff08\u975e\u64ad\u653e\u8bc1\u636e\uff09",
       offlineRecoveryStoryRelation: "\u5267\u60c5\u5173\u7cfb",
       offlineRecoveryMissionTextRows: "\u4f7f\u547d/\u76ee\u6807\u6587\u672c\u884c",
       offlineRecoveryGaps: "\u539f\u59cb\u6570\u636e\u9650\u5b9a\u7684\u6fc0\u6d3b\u7f3a\u53e3",
@@ -1023,6 +1028,7 @@
       offlineRecoveryMissionBranch: "\u4efb\u52a1\u5206\u6d41/\u6c47\u5408\u4e0a\u4e0b\u6587\uff08\u5267\u60c5\u5206\u652f\u5f52\u5c5e\u672a\u89e3\u6790\uff09",
       offlineRecoveryMissionSequence: "\u539f\u59cb\u7ebf\u6027\u4efb\u52a1\u94fe\uff08\u5267\u60c5\u6587\u4ef6\u4f4d\u7f6e\u672a\u89e3\u6790\uff09",
       offlineRecoveryMissionTopology: "\u7cbe\u786e\u539f\u751f\u4efb\u52a1\u62d3\u6251",
+      offlineRecoveryParallelRendezvous: "\u5e76\u884c\u524d\u7f6e\u4efb\u52a1\u4e0e AND \u6c47\u5408\uff08\u975e\u73a9\u5bb6\u9009\u9879\uff09",
       offlineRecoveryLinearTopology: "\u7ebf\u6027\u4efb\u52a1\u94fe",
       offlineRecoveryMainPath: "\u539f\u751f\u4e3b\u8def\u5f84",
       offlineRecoveryQuestStateDependency: "\u539f\u751f\u4efb\u52a1\u72b6\u6001\u4f9d\u8d56",
@@ -2846,6 +2852,7 @@
         row.allowedNonOwningRoute?.file,
         row.prtsDefinition?.rowId,
         row.prtsReadingDefinition?.rowId,
+        row.summaryDefinition?.summaryId,
         ...(row.missionRelatedOriginalData?.sourceFiles || []),
       ].filter(Boolean);
       const popupRowIds = (row.readingPopupRowIds || []).filter(Boolean);
@@ -2903,7 +2910,13 @@
           : esc(t("offlineRecoveryLinearTopology")))
         : "";
       const missionTopologyContext = missionTopology
-        ? `<details><summary><strong>${esc(t("offlineRecoveryMissionTopology"))}</strong> ${missionTopologyShape}</summary><p><strong>${esc(t("offlineRecoveryMainPath"))}</strong>${(missionTopology.mainPathQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>${(missionTopology.failedQuestStateGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryQuestFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><code>${esc(guard.targetQuestId || "?")} state=${esc(guard.targetQuestState ?? "?")}</code></p>`).join("")}${(missionTopology.failedDialogGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryDialogFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><span>${(guard.dialogFinishes || []).map((finish) => `<code>${esc(finish.dialogId || "?")} finish=${esc(finish.finishId ?? "?")}</code>`).join(" " + esc(guard.conditionEvalString || "or") + " ")}</span></p>`).join("")}${(missionTopology.questStateDependencies || []).map((dependency) => `<p><strong>${esc(t("offlineRecoveryQuestStateDependency"))}</strong><code>${esc(dependency.questId || "?")}</code><i>&larr;</i><code>${esc(dependency.targetQuestId || "?")} state=${esc(dependency.targetQuestState ?? "?")}</code>${(dependency.conditionIndexPath || []).length ? `<span>${esc(t("offlineRecoveryConditionPath"))}: <code>${esc(dependency.conditionIndexPath.join("."))}</code></span>` : ""}</p>`).join("")}${(missionTopology.forks || []).map((fork) => `<p><code>${esc(fork.questId || "?")}</code><i>&rarr;</i>${(fork.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</p>`).join("")}${(missionTopology.merges || []).map((merge) => `<p>${(merge.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<i>&rarr;</i><code>${esc(merge.questId || "?")}</code></p>`).join("")}<small>${esc(t("offlineRecoveryMissionTopologyBoundary"))}</small></details>`
+        ? `<details><summary><strong>${esc(t("offlineRecoveryMissionTopology"))}</strong> ${missionTopologyShape}</summary><p><strong>${esc(t("offlineRecoveryMainPath"))}</strong>${(missionTopology.mainPathQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>${(missionTopology.parallelRendezvous || []).map((join) => `<p><strong>${esc(t("offlineRecoveryParallelRendezvous"))}</strong><code>${esc(join.forkQuestId || "?")}</code><i>&rarr;</i>${(join.parallelQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" + ")}<i>&rarr;</i><code>${esc(join.mergeQuestId || "?")}</code></p>`).join("")}${(missionTopology.failedQuestStateGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryQuestFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><code>${esc(guard.targetQuestId || "?")} state=${esc(guard.targetQuestState ?? "?")}</code></p>`).join("")}${(missionTopology.failedDialogGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryDialogFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><span>${(guard.dialogFinishes || []).map((finish) => `<code>${esc(finish.dialogId || "?")} finish=${esc(finish.finishId ?? "?")}</code>`).join(" " + esc(guard.conditionEvalString || "or") + " ")}</span></p>`).join("")}${(missionTopology.questStateDependencies || []).map((dependency) => `<p><strong>${esc(t("offlineRecoveryQuestStateDependency"))}</strong><code>${esc(dependency.questId || "?")}</code><i>&larr;</i><code>${esc(dependency.targetQuestId || "?")} state=${esc(dependency.targetQuestState ?? "?")}</code>${(dependency.conditionIndexPath || []).length ? `<span>${esc(t("offlineRecoveryConditionPath"))}: <code>${esc(dependency.conditionIndexPath.join("."))}</code></span>` : ""}</p>`).join("")}${(missionTopology.forks || []).map((fork) => `<p><code>${esc(fork.questId || "?")}</code><i>&rarr;</i>${(fork.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</p>`).join("")}${(missionTopology.merges || []).map((merge) => `<p>${(merge.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<i>&rarr;</i><code>${esc(merge.questId || "?")}</code></p>`).join("")}<small>${esc(t("offlineRecoveryMissionTopologyBoundary"))}</small></details>`
+        : "";
+      const prtsCarrierContext = row.prtsDefinition
+        ? `<p><strong>${esc(t("offlineRecoveryPrtsCarrier"))}</strong><code>${esc(row.prtsDefinition.rowId || "?")}</code><code>${esc(row.prtsDefinition.firstLvId || "?")}</code><span>order=${esc(row.prtsDefinition.order ?? "?")}</span></p>`
+        : "";
+      const dialogSummaryContext = row.summaryDefinition
+        ? `<p><strong>${esc(t("offlineRecoveryDialogSummary"))}</strong><code>${esc(row.summaryDefinition.summaryId || "?")}</code><code>textId=${esc(row.summaryDefinition.textId ?? "?")}</code></p>`
         : "";
       const taskConsumer = row.levelScriptTaskConsumer;
       const taskConsumerContext = taskConsumer
@@ -2981,7 +2994,7 @@
         radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),
       })[row.evidenceKind] || row.evidenceKind || row.recoveryStatus || "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${npcProxyConsumerContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
