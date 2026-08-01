@@ -6,6 +6,7 @@ import unittest
 from scripts.story_builder.levelscript_binary import (
     _decode_trigger_volume_map,
     _find_final_trigger_volume_map,
+    decode_levelscript_binary_summary,
     decode_levelscript_encounter_module_target,
 )
 
@@ -127,6 +128,31 @@ class LevelScriptTriggerVolumeTests(unittest.TestCase):
                 self.assertEqual(expected_count, tail.get("count"))
                 self.assertEqual("decoded", tail["parseStatus"])
                 self.assertNotIn("volumes", tail)
+
+    def test_empty_task_map_does_not_search_past_embedded_script_id(self) -> None:
+        script_id = 3400160000
+        embedded = (
+            struct.pack("<Q", script_id)
+            + struct.pack("<i", 0)  # empty start shapes
+            + struct.pack("<i", 1)  # valid start type
+            + struct.pack("<i", 0)  # empty task map
+            + b"embedded-logic-record"
+        )
+        top_level_offset = len(embedded)
+        top_level = (
+            struct.pack("<Q", script_id)
+            + struct.pack("<i", -1)  # null start shapes
+            + struct.pack("<i", 1)  # valid start type
+            + struct.pack("<i", 0)  # empty task map
+            + struct.pack("<i", 0)  # exact empty trigger-volume map at EOF
+        )
+        summary = decode_levelscript_binary_summary(
+            b"\x1b" + embedded + top_level,
+            script_id,
+        )
+        self.assertEqual(top_level_offset + 1, summary["probableScriptIdOffset"])
+        self.assertEqual("present", summary["triggerVolumesStatus"])
+        self.assertEqual(0, summary["triggerVolumesCount"])
 
     def test_rejects_missing_union_tag_and_key_slot_mismatch(self) -> None:
         valid = self._leader_volume(80001)

@@ -474,6 +474,9 @@
       offlineRecoveryRuntimeMission: "runtime mission",
       offlineRecoveryMissionBranch: "Mission fork/join context (Story arm unresolved)",
       offlineRecoveryMissionSequence: "Authored linear quest context (Story placement unresolved)",
+      offlineRecoveryMissionTopology: "Exact authored mission topology",
+      offlineRecoveryMainPath: "authored main path",
+      offlineRecoveryMissionTopologyBoundary: "Quest predecessor links and main-path membership are exact; Story placement, branch exclusivity, and server successor selection remain unresolved.",
       offlineRecoveryTalkDependency: "LevelScript talk-completion dependency (not playback)",
       offlineRecoveryPostDialogAction: "Post-dialog local action",
       offlineRecoveryTestStub: "Exact test popup stub; no RichContent payload",
@@ -928,6 +931,9 @@
       offlineRecoveryRuntimeMission: "\u8fd0\u884c\u65f6\u4efb\u52a1",
       offlineRecoveryMissionBranch: "\u4efb\u52a1\u5206\u6d41/\u6c47\u5408\u4e0a\u4e0b\u6587\uff08\u5267\u60c5\u5206\u652f\u5f52\u5c5e\u672a\u89e3\u6790\uff09",
       offlineRecoveryMissionSequence: "\u539f\u59cb\u7ebf\u6027\u4efb\u52a1\u94fe\uff08\u5267\u60c5\u6587\u4ef6\u4f4d\u7f6e\u672a\u89e3\u6790\uff09",
+      offlineRecoveryMissionTopology: "\u7cbe\u786e\u539f\u751f\u4efb\u52a1\u62d3\u6251",
+      offlineRecoveryMainPath: "\u539f\u751f\u4e3b\u8def\u5f84",
+      offlineRecoveryMissionTopologyBoundary: "\u4efb\u52a1\u524d\u7f6e\u8fde\u63a5\u4e0e\u4e3b\u8def\u5f84\u5f52\u5c5e\u5df2\u7cbe\u786e\u6062\u590d\uff1b\u5267\u60c5\u6587\u4ef6\u4f4d\u7f6e\u3001\u5206\u652f\u4e92\u65a5\u6027\u53ca\u670d\u52a1\u5668\u540e\u7ee7\u9009\u62e9\u4ecd\u672a\u89e3\u6790\u3002",
       offlineRecoveryTalkDependency: "LevelScript \u5bf9\u8bdd\u5b8c\u6210\u4f9d\u8d56\uff08\u975e\u64ad\u653e\u8bc1\u636e\uff09",
       offlineRecoveryPostDialogAction: "\u5bf9\u8bdd\u540e\u672c\u5730\u52a8\u4f5c",
       offlineRecoveryTestStub: "\u539f\u59cb\u6d4b\u8bd5\u5f39\u7a97\u5360\u4f4d\uff1b\u65e0 RichContent \u5185\u5bb9",
@@ -2632,6 +2638,7 @@
         row.missionNpcProxyTracking?.sourceFile,
         row.missionQuestBranchContext?.sourceFile,
         row.missionQuestSequenceContext?.sourceFile,
+        row.missionQuestTopologyContext?.sourceFile,
         row.levelScriptTaskConsumer?.sourceFile,
         row.runtimeTrackingContext?.sourceFile,
         row.nonOwningContext?.sourceFile,
@@ -2675,6 +2682,10 @@
       const missionSequenceContext = missionSequence
         ? `<p><strong>${esc(t("offlineRecoveryMissionSequence"))}</strong>${(missionSequence.questSequence || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>`
         : "";
+      const missionTopology = row.missionQuestTopologyContext;
+      const missionTopologyContext = missionTopology
+        ? `<details><summary><strong>${esc(t("offlineRecoveryMissionTopology"))}</strong> ${(missionTopology.forks || []).length.toLocaleString()} ${esc(t("questFork"))} / ${(missionTopology.merges || []).length.toLocaleString()} ${esc(t("questMerge"))}</summary><p><strong>${esc(t("offlineRecoveryMainPath"))}</strong>${(missionTopology.mainPathQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>${(missionTopology.forks || []).map((fork) => `<p><code>${esc(fork.questId || "?")}</code><i>&rarr;</i>${(fork.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</p>`).join("")}${(missionTopology.merges || []).map((merge) => `<p>${(merge.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<i>&rarr;</i><code>${esc(merge.questId || "?")}</code></p>`).join("")}<small>${esc(t("offlineRecoveryMissionTopologyBoundary"))}</small></details>`
+        : "";
       const taskConsumer = row.levelScriptTaskConsumer;
       const taskConsumerContext = taskConsumer
         ? `<p><strong>${esc(t("offlineRecoveryTalkDependency"))}</strong><code>${esc(taskConsumer.levelId || "?")}/${esc(taskConsumer.scriptId || "?")}</code><code>${esc(taskConsumer.conditionType || "?")}</code><code>${esc(taskConsumer.dialogId || "?")}</code>${taskConsumer.postDialogAction ? `<span><strong>${esc(t("offlineRecoveryPostDialogAction"))}</strong><code>${esc(taskConsumer.postDialogAction.actionName || "?")}</code></span>` : ""}</p>`
@@ -2706,7 +2717,7 @@
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${taskConsumerContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");

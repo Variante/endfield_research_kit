@@ -59,7 +59,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v90"
+SCHEMA = "sourceStoryGapQueue.v91"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -142,7 +142,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v66"
+    "current-build-offline-story-carrier-exhaustion-v67"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -202,6 +202,9 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "text_gm01m12_5": "text_gm01m12_5",
     "text_gm01m12_6": "text_gm01m12_6",
     "text_gm01m12_7": "text_gm01m12_7",
+    "radio_gm01m16_8": "radio_gm01m16_8",
+    "radio_gm01m16_13": "radio_gm01m16_13",
+    "radio_gm01m16_14": "radio_gm01m16_14",
 }
 OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
     "gm01m7": {
@@ -242,6 +245,33 @@ OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS = {
             f"gm01m12_q#{number}"
             for number in (15, 16, 13, 14, 1, 2, 3, 4, 12, 5, 6)
         ),
+    },
+}
+OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
+    "gm01m16": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm01m16.json"
+        ),
+        "sourceSha256":
+            "36DA8C77813A10590B4F03866BD43BB7B8376CB6392BB1FBBC7E56AA96A4CAE7",
+        "mainPathQuestIds": tuple(
+            f"gm01m16_q#{number}"
+            for number in (1, 3, 34, 28, 10, 12, 40, 16, 21, 20, 24, 26)
+        ),
+        "prevQuestIdsByQuest": {
+            f"gm01m16_q#{quest}": tuple(
+                f"gm01m16_q#{previous}" for previous in predecessors
+            )
+            for quest, predecessors in {
+                1: (), 2: (), 3: (2, 1), 5: (2, 1), 7: (5,),
+                34: (3, 7), 4: (3, 7), 25: (34,), 27: (34,),
+                28: (34,), 41: (34,), 42: (34,), 8: (34,), 9: (34,),
+                10: (28,), 11: (9,), 12: (10,), 40: (12,), 16: (40,),
+                21: (16,), 20: (21,), 24: (20,), 26: (24,), 43: (27,),
+                44: (25,), 45: (41,),
+            }.items()
+        },
     },
 }
 OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS = {
@@ -4549,6 +4579,11 @@ OFFLINE_EXHAUSTION_GM01M6_RADIOS = frozenset({
     "radio_gm01m6_6",
 })
 OFFLINE_EXHAUSTION_GM01M7_RADIOS = frozenset({"radio_gm01m7_9"})
+OFFLINE_EXHAUSTION_GM01M16_RADIOS = frozenset({
+    "radio_gm01m16_8",
+    "radio_gm01m16_13",
+    "radio_gm01m16_14",
+})
 OFFLINE_EXHAUSTION_GM01M22_RADIOS = frozenset({
     "radio_gm01m22_1d2",
     "radio_gm01m22_1d3",
@@ -4562,6 +4597,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm02m3": OFFLINE_EXHAUSTION_GM02M3_RADIOS,
     "gm01m6": OFFLINE_EXHAUSTION_GM01M6_RADIOS,
     "gm01m7": OFFLINE_EXHAUSTION_GM01M7_RADIOS,
+    "gm01m16": OFFLINE_EXHAUSTION_GM01M16_RADIOS,
     "gm01m22": OFFLINE_EXHAUSTION_GM01M22_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
@@ -4708,6 +4744,11 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm01m7_9": frozenset({
         f"au_radio_gm01m7_9_{number:03d}" for number in range(1, 13)
     }),
+    "radio_gm01m16_8": frozenset({"au_radio_gm01m16_8_001"}),
+    "radio_gm01m16_13": frozenset(
+        f"au_radio_gm01m16_13_{number:03d}" for number in range(1, 4)
+    ),
+    "radio_gm01m16_14": frozenset({"au_radio_gm01m16_14_001"}),
     "radio_gm01m22_1d2": frozenset({"au_radio_gm01m22_1d2_001"}),
     "radio_gm01m22_1d3": frozenset({"au_radio_gm01m22_1d3_001"}),
     "radio_e5m5_1": frozenset({
@@ -6421,6 +6462,12 @@ def build_offline_exhaustion_index(
         source_paths[
             f"missionLinearContext:{mission_id}"
         ] = ROOT / context["sourceFile"]
+    for mission_id, context in (
+        OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS.items()
+    ):
+        source_paths[
+            f"missionTopologyContext:{mission_id}"
+        ] = ROOT / context["sourceFile"]
     for story_key, consumer in (
         OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS.items()
     ):
@@ -6500,6 +6547,12 @@ def build_offline_exhaustion_index(
     ):
         expected_hashes[
             f"missionLinearContext:{mission_id}"
+        ] = context["sourceSha256"]
+    for mission_id, context in (
+        OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS.items()
+    ):
+        expected_hashes[
+            f"missionTopologyContext:{mission_id}"
         ] = context["sourceSha256"]
     for story_key, consumer in (
         OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS.items()
@@ -6765,6 +6818,98 @@ def build_offline_exhaustion_index(
             "relation": "authored_single_predecessor_quest_sequence",
             "storyPlacementStatus": "unresolved",
             "storyAssignments": [],
+            "orderEvidence": False,
+            "graphEffect": "none",
+        }
+
+    mission_topology_context_by_mission: dict[str, dict[str, Any]] = {}
+    for mission_id, declaration in (
+        OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS.items()
+    ):
+        source_name = f"missionTopologyContext:{mission_id}"
+        payload = read_json(source_paths[source_name], {})
+        quest_dic = payload.get("questDic") if isinstance(payload, dict) else None
+        expected_prev = {
+            quest_id: list(predecessors)
+            for quest_id, predecessors
+            in declaration["prevQuestIdsByQuest"].items()
+        }
+        actual_prev = {
+            quest_id: (
+                quest_dic.get(quest_id, {}).get("prevQuestIdList")
+                if isinstance(quest_dic, dict)
+                and isinstance(quest_dic.get(quest_id), dict)
+                else None
+            )
+            for quest_id in expected_prev
+        }
+        expected_main_path = list(declaration["mainPathQuestIds"])
+        actual_main_path = (
+            payload.get("mainPathQuests") if isinstance(payload, dict) else None
+        )
+        valid = (
+            isinstance(quest_dic, dict)
+            and set(quest_dic) == set(expected_prev)
+            and actual_prev == expected_prev
+            and actual_main_path == expected_main_path
+        )
+        if not valid:
+            status.update({
+                "status": "inactive_mission_topology_context_validation_failed",
+                "validatorDiagnostics": [{
+                    "validator": "offlineMissionTopologyContext",
+                    "gate": "exactQuestPredecessorGraphAndMainPath",
+                    "mission": mission_id,
+                    "sourcePaths": [str(source_paths[source_name])],
+                    "sourceSha256": {
+                        source_name: actual_hashes.get(source_name, ""),
+                    },
+                    "expected": {
+                        "questIds": sorted(expected_prev, key=natural_key),
+                        "prevQuestIdListByQuest": expected_prev,
+                        "mainPathQuests": expected_main_path,
+                    },
+                    "actual": {
+                        "questIds": sorted(quest_dic, key=natural_key)
+                        if isinstance(quest_dic, dict) else None,
+                        "prevQuestIdListByQuest": actual_prev,
+                        "mainPathQuests": actual_main_path,
+                    },
+                }],
+            })
+            return {}, status
+        successors = {quest_id: [] for quest_id in expected_prev}
+        for quest_id, predecessors in expected_prev.items():
+            for predecessor in predecessors:
+                successors[predecessor].append(quest_id)
+        forks = [
+            {"questId": quest_id, "successorQuestIds": quest_successors}
+            for quest_id, quest_successors in successors.items()
+            if len(quest_successors) > 1
+        ]
+        merges = [
+            {"predecessorQuestIds": predecessors, "questId": quest_id}
+            for quest_id, predecessors in expected_prev.items()
+            if len(predecessors) > 1
+        ]
+        mission_topology_context_by_mission[mission_id] = {
+            "sourceFile": declaration["sourceFile"],
+            "entryQuestIds": [
+                quest_id for quest_id, predecessors in expected_prev.items()
+                if not predecessors
+            ],
+            "mainPathQuestIds": expected_main_path,
+            "forks": forks,
+            "merges": merges,
+            "terminalQuestIds": [
+                quest_id for quest_id, quest_successors in successors.items()
+                if not quest_successors
+            ],
+            "relation": "authored_mission_quest_predecessor_topology",
+            "storyPlacementStatus": "unresolved",
+            "storyAssignments": [],
+            "flowIndexExclusivityStatus": "not_evidence",
+            "serverSuccessorSelectionStatus": "not_serialized_in_client_asset",
             "orderEvidence": False,
             "graphEffect": "none",
         }
@@ -9302,6 +9447,9 @@ def build_offline_exhaustion_index(
         linear_context = mission_linear_context_by_mission.get(mission_id)
         if linear_context:
             row["missionQuestSequenceContext"] = linear_context
+        topology_context = mission_topology_context_by_mission.get(mission_id)
+        if topology_context:
+            row["missionQuestTopologyContext"] = topology_context
     status.update({
         "status": "active",
         "coreTargetSetSha256": core_target_digest,
