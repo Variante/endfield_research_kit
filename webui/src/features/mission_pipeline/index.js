@@ -460,6 +460,11 @@
       offlineRecoveryInternalTimeline: "internal Timeline",
       offlineRecoveryLines: "lines",
       offlineRecoveryDefinedOptions: "Defined options (route unresolved)",
+      offlineRecoveryTableOnlyRegistration: "DialogId table-only registration",
+      offlineRecoveryDialogTreeAbsent: "DialogTree asset absent",
+      offlineRecoveryMissingAudio: "audio ids absent",
+      offlineMissionShell: "Story-only recovery shell",
+      offlineMissionShellHint: "No MissionRuntimeAsset exists in the current export. This page exposes exact table definitions and current-build negative carrier evidence only; it has no quest, ownership, playback, handshake, or order edge.",
       questAttachmentDiagnostic: "Story ownership unresolved",
       questAttachmentDiagnosticHint: "Exact offline evidence closes this broad Story co-membership as non-owning. It does not create a quest-to-Story or order edge.",
       questAttachmentDiagnosticStories: "Diagnostic Story context",
@@ -894,6 +899,11 @@
       offlineRecoveryInternalTimeline: "\u5185\u90e8 Timeline",
       offlineRecoveryLines: "\u884c",
       offlineRecoveryDefinedOptions: "\u5df2\u5b9a\u4e49\u9009\u9879\uff08\u8def\u7531\u672a\u89e3\u6790\uff09",
+      offlineRecoveryTableOnlyRegistration: "\u4ec5 DialogId \u8868\u6ce8\u518c",
+      offlineRecoveryDialogTreeAbsent: "\u7f3a\u5c11 DialogTree \u8d44\u4ea7",
+      offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
+      offlineMissionShell: "\u4ec5\u5267\u60c5\u6062\u590d\u7684\u4efb\u52a1\u5916\u58f3",
+      offlineMissionShellHint: "\u5f53\u524d\u5bfc\u51fa\u4e2d\u6ca1\u6709 MissionRuntimeAsset\u3002\u672c\u9875\u4ec5\u5c55\u793a\u7cbe\u786e\u8868\u5b9a\u4e49\u548c\u5f53\u524d\u7248\u672c\u7684\u8f7d\u4f53\u8d1f\u8bc1\u636e\uff1b\u4e0d\u4ea7\u751f\u4efb\u52a1\u8282\u70b9\u3001\u5f52\u5c5e\u3001\u64ad\u653e\u3001\u63e1\u624b\u6216\u987a\u5e8f\u8fb9\u3002",
       questAttachmentDiagnostic: "\u5267\u60c5\u5f52\u5c5e\u672a\u89e3\u6790",
       questAttachmentDiagnosticHint: "\u7cbe\u786e\u79bb\u7ebf\u8bc1\u636e\u5c06\u8fd9\u4e2a\u5bbd\u6cdb\u5267\u60c5\u5171\u73b0\u5173\u7cfb\u95ed\u5408\u4e3a\u975e\u5f52\u5c5e\u8bca\u65ad\uff1b\u4e0d\u751f\u6210\u4efb\u52a1\u5230\u5267\u60c5\u6216\u987a\u5e8f\u8fb9\u3002",
       questAttachmentDiagnosticStories: "\u8bca\u65ad\u5267\u60c5\u4e0a\u4e0b\u6587",
@@ -1455,6 +1465,7 @@
 
   function missionBadges(row) {
     const badges = [];
+    if (row.offlineRecoveryShell) badges.push(`<span class="mp-list-badge is-evidence">${esc(t("offlineMissionShell"))}</span>`);
     if (row.caseStudy) badges.push(`<span class="mp-list-badge is-evidence">${esc(t("evidence"))}</span>`);
     if (row.fanoutCount) badges.push(`<span class="mp-list-badge">${row.fanoutCount} ${esc(t("branches"))}</span>`);
     if (row.multiPrevJoinCount || row.activeJoinCount) badges.push(`<span class="mp-list-badge">${row.multiPrevJoinCount + row.activeJoinCount} ${esc(t("join"))}</span>`);
@@ -2598,7 +2609,25 @@
       const options = optionIds.length
         ? `<p><strong>${esc(t("offlineRecoveryDefinedOptions"))}</strong>${optionIds.map((optionId) => `<code>${esc(optionId)}</code>`).join(" ")}</p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${options}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      const recoveredLineCount = Array.isArray(row.lineIds) ? row.lineIds.length : 0;
+      const definitionFacts = [
+        row.dialogIdRegistrationStatus === "present_table_only"
+          ? t("offlineRecoveryTableOnlyRegistration")
+          : "",
+        row.dialogTreeAssetStatus === "absent"
+          ? t("offlineRecoveryDialogTreeAbsent")
+          : "",
+        recoveredLineCount
+          ? `${recoveredLineCount.toLocaleString()} ${t("offlineRecoveryLines")}`
+          : "",
+        Array.isArray(row.missingAudioIds) && row.missingAudioIds.length
+          ? `${row.missingAudioIds.length.toLocaleString()} ${t("offlineRecoveryMissingAudio")}`
+          : "",
+      ].filter(Boolean);
+      const facts = definitionFacts.length
+        ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
+        : "";
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${options}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
@@ -2685,6 +2714,7 @@
     const mission = state.mission.mission || {};
     const row = state.index?.missions?.find((item) => item.id === mission.id) || {};
     const caseStudy = state.mission.caseStudy;
+    const offlineShell = mission.offlineRecoveryShell === true;
     const metrics = [
       [row.questCount || state.mission.nodes?.length || 0, t("quests")],
       [row.entryCount || 0, t("roots")],
@@ -2701,17 +2731,17 @@
         <div><p class="mp-summary-kicker">${esc(mission.levelId || "—")}</p><h2>${esc(missionName(mission.id))}</h2><code>${esc(mission.id)}</code></div>
         <div class="mp-summary-metrics">${metrics.map(([value, label]) => `<span><strong>${value}</strong>${esc(label)}</span>`).join("")}</div>
       </div>
-      <div class="mp-case${caseStudy ? " has-case" : ""}">
+      <div class="mp-case${caseStudy || offlineShell ? " has-case" : ""}">
         <span class="mp-case-icon" aria-hidden="true">${caseStudy ? "◎" : "○"}</span>
-        <div><strong>${esc(caseStudy?.title || t("evidence"))}</strong><p>${esc(caseStudy?.summary || t("noCase"))}</p>${caseStudy ? `<span class="mp-confidence">${esc(t("confidence"))}: ${esc(caseStudy.confidence)}</span>` : ""}</div>
+        <div><strong>${esc(offlineShell ? t("offlineMissionShell") : (caseStudy?.title || t("evidence")))}</strong><p>${esc(offlineShell ? t("offlineMissionShellHint") : (caseStudy?.summary || t("noCase")))}</p>${caseStudy ? `<span class="mp-confidence">${esc(t("confidence"))}: ${esc(caseStudy.confidence)}</span>` : ""}</div>
       </div>
-      <div class="mp-mission-handshake">
+      ${offlineShell ? "" : `<div class="mp-mission-handshake">
         <strong>${esc(t("missionHandshake"))}</strong>
         <span class="is-outbound">${esc(t("acceptRequest"))}</span>
         <i aria-hidden="true">⇄</i>
         <span class="is-inbound">${esc(t("acceptReturn"))}</span>
         <small>${esc(t("acceptCaveat"))}</small>
-      </div>
+      </div>`}
       ${summarySectionsHtml()}`;
     applySummarySection();
   }
@@ -3188,6 +3218,12 @@
     const showDependencies = Boolean(byId("mp-show-dependencies")?.checked);
     const edges = (state.mission.edges || []).filter((edge) => ids.has(edge.source) && ids.has(edge.target) && (showDependencies || edge.type !== "condition_dependency"));
     if (!nodes.length) {
+      state.selectedQuestId = "";
+      nodesTarget.innerHTML = "";
+      edgesTarget.innerHTML = "";
+      lanesTarget.innerHTML = "";
+      const meta = byId("mp-graph-meta");
+      if (meta) meta.textContent = `0 ${t("quests")} · 0 edges`;
       plane.hidden = true;
       empty.hidden = false;
       empty.textContent = t("noVisibleQuests");

@@ -18,7 +18,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v84",
+            "sourceStoryGapQueue.v85",
         )
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
@@ -216,6 +216,68 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "rejected_stale_or_incompatible")
         self.assertNotIn("offlineRecovery", manifest["dlg_testm1_1"])
+
+    def test_offline_recovery_publishes_graph_neutral_missing_mission_shell(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            queue_path = root / "gap_queue.json"
+            queue_path.write_text(
+                json.dumps({
+                    "missions": [{
+                        "mission": "gm_fixture",
+                        "metrics": {
+                            "sceneCount": 2,
+                            "strongEdgeCount": 0,
+                            "sourceCycles": 0,
+                        },
+                        "deferredOfflineExhaustedIsolatedScenes": [],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            index = {
+                "counts": {"missions": 1},
+                "missions": [{"id": "existing", "file": "missions/existing.json"}],
+            }
+            offline = {
+                "status": "active",
+                "storyTriggerManifestOverlay": {
+                    "dlg_gm_fixture_1": {
+                        "nominalMissionId": "gm_fixture",
+                        "offlineRecovery": {
+                            "missionId": "gm_fixture",
+                            "graphEffect": "none",
+                        },
+                    },
+                    "radio_gm_fixture_1": {
+                        "nominalMissionId": "gm_fixture",
+                        "offlineRecovery": {
+                            "missionId": "gm_fixture",
+                            "graphEffect": "none",
+                        },
+                    },
+                },
+            }
+            published = pipeline.publish_offline_recovery_mission_shells(
+                index,
+                root,
+                offline,
+                queue_path,
+            )
+            shell = json.loads(
+                (root / "missions/gm_fixture.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(published, ["gm_fixture"])
+        self.assertEqual(index["counts"]["missions"], 2)
+        self.assertEqual(index["counts"]["offlineRecoveryMissionShells"], 1)
+        summary = next(row for row in index["missions"] if row["id"] == "gm_fixture")
+        self.assertTrue(summary["offlineRecoveryShell"])
+        self.assertEqual(summary["offlineRecoveryStoryCount"], 2)
+        self.assertEqual(shell["nodes"], [])
+        self.assertEqual(shell["edges"], [])
+        self.assertTrue(shell["mission"]["offlineRecoveryShell"])
+        self.assertEqual(shell["storyOrder"]["mission"], "gm_fixture")
 
     def test_dynamic_scene_cross_references_remain_non_owning(self):
         with tempfile.TemporaryDirectory() as temporary:

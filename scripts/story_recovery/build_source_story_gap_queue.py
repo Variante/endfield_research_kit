@@ -53,7 +53,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v84"
+SCHEMA = "sourceStoryGapQueue.v85"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -136,7 +136,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v60"
+    "current-build-offline-story-carrier-exhaustion-v61"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -2704,6 +2704,86 @@ OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e11m8_9",
 })
 OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
+    "dlg_gm02m2_1": {
+        "missionId": "gm02m2",
+        "dialogIdRegistrationStatus": "present_table_only",
+        "lineIds": tuple(
+            f"dlg_gm02m2_1_{number:03d}" for number in range(1, 8)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm02m2_1_{number:03d}" for number in range(1, 8)
+        ),
+        "optionRows": {
+            "option_dlg_gm02m2_1_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": 1005686289051488859, "text": ""},
+            },
+            "option_dlg_gm02m2_1_2_001": {
+                "iconType": "Default",
+                "optionText": {"id": 451515391251513941, "text": ""},
+            },
+            "option_dlg_gm02m2_1_3_001": {
+                "iconType": "Default",
+                "optionText": {"id": -5322096947619821327, "text": ""},
+            },
+        },
+    },
+    "dlg_gm02m2_2": {
+        "missionId": "gm02m2",
+        "dialogIdRegistrationStatus": "present_table_only",
+        "lineIds": ("dlg_gm02m2_2_001",),
+        "missingAudioIds": ("au_dlg_gm02m2_2_001",),
+        "optionRows": {
+            "option_dlg_gm02m2_2_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": -477720497132806138, "text": ""},
+            },
+            "option_dlg_gm02m2_2_1_002": {
+                "iconType": "Default",
+                "optionText": {"id": -1825776472958836845, "text": ""},
+            },
+        },
+    },
+    "dlg_gm02m2_3": {
+        "missionId": "gm02m2",
+        "dialogIdRegistrationStatus": "present_table_only",
+        "lineIds": tuple(
+            f"dlg_gm02m2_3_{number:03d}" for number in range(1, 6)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm02m2_3_{number:03d}" for number in range(1, 6)
+        ),
+        "optionRows": {
+            "option_dlg_gm02m2_3_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": -5736142493487414003, "text": ""},
+            },
+            "option_dlg_gm02m2_3_2_001": {
+                "iconType": "Default",
+                "optionText": {"id": -3823516309636354685, "text": ""},
+            },
+            "option_dlg_gm02m2_3_2_002": {
+                "iconType": "Default",
+                "optionText": {"id": -2598838857313388174, "text": ""},
+            },
+        },
+    },
+    "dlg_gm02m2_4": {
+        "missionId": "gm02m2",
+        "dialogIdRegistrationStatus": "present_table_only",
+        "lineIds": tuple(
+            f"dlg_gm02m2_4_{number:03d}" for number in range(1, 4)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm02m2_4_{number:03d}" for number in range(1, 4)
+        ),
+        "optionRows": {
+            "option_dlg_gm02m2_4_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": -6194702338391986197, "text": ""},
+            },
+        },
+    },
     "dlg_a1m11_3": {
         "missionId": "a1m11",
         "lineIds": ("dlg_a1m11_3_001",),
@@ -3192,11 +3272,23 @@ OFFLINE_EXHAUSTION_A1M6D1_RADIOS = frozenset({"radio_a1m6d1_2"})
 OFFLINE_EXHAUSTION_A1M6D2_RADIOS = frozenset({"radio_a1m6d2_1"})
 OFFLINE_EXHAUSTION_A1M6D3_RADIOS = frozenset({"radio_a1m6d3_1"})
 OFFLINE_EXHAUSTION_A1M8D3_RADIOS = frozenset({"radio_a1m8d3_1"})
+OFFLINE_EXHAUSTION_GM02M2_RADIOS = frozenset({
+    "radio_gm02m2_1",
+    "radio_gm02m2_2",
+    "radio_gm02m2_2d5",
+    "radio_gm02m2_3",
+    "radio_gm02m2_4",
+    "radio_gm02m2_5",
+    "radio_gm02m2_6",
+    "radio_gm02m2_7",
+    "radio_gm02m2_10",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "a1m6d1": OFFLINE_EXHAUSTION_A1M6D1_RADIOS,
     "a1m6d2": OFFLINE_EXHAUSTION_A1M6D2_RADIOS,
     "a1m6d3": OFFLINE_EXHAUSTION_A1M6D3_RADIOS,
     "a1m8d3": OFFLINE_EXHAUSTION_A1M8D3_RADIOS,
+    "gm02m2": OFFLINE_EXHAUSTION_GM02M2_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
@@ -3309,6 +3401,25 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_a1m6d2_1": frozenset({"au_radio_a1m6d2_1_001"}),
     "radio_a1m6d3_1": frozenset({"au_radio_a1m6d3_1_001"}),
     "radio_a1m8d3_1": frozenset({"au_radio_a1m8d3_1_001"}),
+    "radio_gm02m2_1": frozenset(
+        f"au_radio_gm02m2_1_{number:03d}" for number in range(1, 3)
+    ),
+    "radio_gm02m2_2": frozenset(
+        f"au_radio_gm02m2_2_{number:03d}" for number in range(1, 3)
+    ),
+    "radio_gm02m2_2d5": frozenset(
+        f"au_radio_gm02m2_2d5_{number:03d}" for number in range(1, 4)
+    ),
+    "radio_gm02m2_3": frozenset(
+        f"au_radio_gm02m2_3_{number:03d}" for number in range(1, 3)
+    ),
+    "radio_gm02m2_4": frozenset({"au_radio_gm02m2_4_001"}),
+    "radio_gm02m2_5": frozenset({"au_radio_gm02m2_5_001"}),
+    "radio_gm02m2_6": frozenset({"au_radio_gm02m2_6_001"}),
+    "radio_gm02m2_7": frozenset({"au_radio_gm02m2_7_001"}),
+    "radio_gm02m2_10": frozenset(
+        f"au_radio_gm02m2_10_{number:03d}" for number in range(1, 3)
+    ),
     "radio_e5m5_1": frozenset({
         "au_radio_e5m5_1_001",
         "au_radio_e5m5_1_002",
@@ -5948,12 +6059,56 @@ def build_offline_exhaustion_index(
                     "variantShapeValid": variant_shape_valid,
                 },
             )
-        if story_key in dialog_id_index:
+        expected_registration_status = safe_key(
+            definition.get("dialogIdRegistrationStatus")
+        ) or "absent"
+        registry = dialog_id_index.get(story_key)
+        if expected_registration_status == "present_table_only":
+            expected_options_by_group: dict[str, list[str]] = defaultdict(list)
+            option_prefix = f"option_{story_key}_"
+            for option_id in expected_option_ids:
+                suffix = option_id.removeprefix(option_prefix)
+                group = suffix.split("_", 1)[0]
+                expected_options_by_group[group].append(option_id)
+            expected_registry = {
+                "registered": True,
+                "memoryPackRecordKey": True,
+                "registrationEvidence": [
+                    "memorypack_record_key",
+                    "printable_root_token",
+                ],
+                "hasRootKey": True,
+                "trunkCount": 0,
+                "trunkIndices": [],
+                "lineCount": 0,
+                "linesByTrunk": {},
+                "optionGroupCount": len(expected_options_by_group),
+                "optionCount": len(expected_option_ids),
+                "optionsByGroup": dict(expected_options_by_group),
+                "usedDialogTimelineCount": 0,
+                "usedDialogTimelineIds": [],
+            }
+            if registry != expected_registry:
+                add_text_only_failure(
+                    "exactTableOnlyDialogIdRegistration",
+                    ("dialogIdSource", "dialogIdIndex"),
+                    expected_registry,
+                    registry,
+                )
+        elif expected_registration_status == "absent":
+            if registry is not None:
+                add_text_only_failure(
+                    "dialogIdRegistrationAbsent",
+                    ("dialogIdIndex",),
+                    {"present": False},
+                    {"present": True, "row": registry},
+                )
+        else:
             add_text_only_failure(
-                "dialogIdRegistrationAbsent",
+                "supportedDialogIdRegistrationStatus",
                 ("dialogIdIndex",),
-                {"present": False},
-                {"present": True, "row": dialog_id_index.get(story_key)},
+                ["absent", "present_table_only"],
+                expected_registration_status,
             )
         if story_key in timeline_line_orders:
             add_text_only_failure(
@@ -6004,6 +6159,7 @@ def build_offline_exhaustion_index(
             },
             "optionIds": list(expected_option_ids),
             "optionRows": expected_option_rows,
+            "dialogIdRegistrationStatus": expected_registration_status,
         }
     if text_only_dialog_validation_failures:
         status["status"] = (
@@ -6441,6 +6597,10 @@ def build_offline_exhaustion_index(
         definition = OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[story_key]
         validation = text_only_dialog_validation_by_key[story_key]
         branch_context = definition.get("nonOwningContext")
+        table_only_registration = (
+            validation["dialogIdRegistrationStatus"]
+            == "present_table_only"
+        )
         index[story_key] = {
             "sceneKey": story_key,
             "missionId": text_only_dialog_mission_by_key[story_key],
@@ -6449,7 +6609,11 @@ def build_offline_exhaustion_index(
             "evidenceKind": (
                 "dialog_text_table_branch_payload_with_parent_dialog_tree_context"
                 if branch_context
-                else "dialog_text_table_only_without_registry_asset_or_consumer"
+                else (
+                    "registered_dialog_table_rows_without_tree_asset_or_consumer"
+                    if table_only_registration
+                    else "dialog_text_table_only_without_registry_asset_or_consumer"
+                )
             ),
             "definitionTable": "DialogTextTable",
             "definitionTables": (
@@ -6478,7 +6642,10 @@ def build_offline_exhaustion_index(
                     else "present_current_audio_dialog"
                 )
             ),
-            "dialogIdRegistrationStatus": "absent",
+            "dialogIdRegistrationStatus": (
+                "present_table_only"
+                if table_only_registration else "absent"
+            ),
             "dialogTreeAssetStatus": "absent",
             "timelineStatus": "absent",
             "nonOwningContext": definition.get("nonOwningContext"),
@@ -6489,14 +6656,21 @@ def build_offline_exhaustion_index(
             "gameAssemblySha256":
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
             "consumerBoundary": (
-                (
-                    "the exact DialogTextTable line/audio group is consumed "
-                    "as authored trunks inside the registered parent "
-                    f"DialogTree {branch_context['parentStoryKey']} behind "
-                    "a no-bypass multi-quest completion branch; this proves "
-                    "reachable branch context but not one unique quest "
-                    "trigger"
-                    if branch_context
+                "the exact DialogTextTable line/audio group is consumed "
+                "as authored trunks inside the registered parent "
+                f"DialogTree {branch_context['parentStoryKey']} behind "
+                "a no-bypass multi-quest completion branch; this proves "
+                "reachable branch context but not one unique quest trigger"
+                if branch_context
+                else (
+                    "the exact DialogId registration and DialogTextTable/"
+                    "DialogOptionTable rows establish a loadable table-only "
+                    "dialog root, but no DialogTree TextAsset, Timeline, "
+                    "AudioDialog membership, typed MissionRuntime or "
+                    "LevelScript consumer, Lua reference, or object-index "
+                    "carrier exposes its activator; option definitions prove "
+                    "authored choices but not their route graph"
+                    if table_only_registration
                     else
                     "the exact DialogTextTable line/audio group and any exact "
                     "DialogOptionTable option definitions have no current "
@@ -10386,6 +10560,52 @@ def build_gap_row(
         row["sceneKey"]
         for row in deferred_offline_exhausted_isolated
     }
+    deferred_offline_option_route_groups: list[dict[str, Any]] = []
+    for group_row in (
+        ((partial_row.get("branches") or {}).get(
+            "branchingNoExplicitRouteGroups"
+        ) or [])
+    ):
+        if not isinstance(group_row, dict):
+            continue
+        story_key = safe_key(group_row.get("storyKey"))
+        recovery = offline_exhaustion_index.get(story_key)
+        if (
+            story_key not in deferred_offline_exhausted_isolated_keys
+            or not isinstance(recovery, dict)
+            or recovery.get("optionRouteStatus")
+            != "definitions_present_route_unresolved"
+        ):
+            continue
+        group = int(group_row.get("group") or 0)
+        option_ids = tuple(sorted(
+            safe_key(option.get("optionId"))
+            for option in group_row.get("options") or []
+            if isinstance(option, dict) and safe_key(option.get("optionId"))
+        ))
+        expected_option_ids = tuple(sorted(
+            option_id
+            for option_id in _string_list(recovery.get("optionIds"))
+            if option_id.startswith(f"option_{story_key}_{group}_")
+        ))
+        if not option_ids or option_ids != expected_option_ids:
+            continue
+        deferred_offline_option_route_groups.append({
+            "storyKey": story_key,
+            "group": group,
+            "optionIds": list(option_ids),
+            "recoveryStatus":
+                "deferred_current_build_offline_route_surface_exhausted",
+            "evidenceKind": recovery.get("evidenceKind"),
+            "consumerBoundary": recovery.get("consumerBoundary"),
+            "routeBoundary": (
+                "the exact option definitions survive, but the current "
+                "registered table-only dialog has no DialogTree, Timeline, "
+                "typed runtime consumer, native token, or object-index "
+                "carrier from which an option destination could be recovered"
+            ),
+            "graphEffect": "none",
+        })
     actionable_core_isolated_scene_keys = [
         key
         for key in core_isolated_scene_keys
@@ -10518,12 +10738,18 @@ def build_gap_row(
         "noExplicitOptionRouteGroups": int(
             summary.get("noExplicitRouteGroupCount") or 0
         ),
-        "actionableNoExplicitOptionRouteGroups": int(
-            summary.get(
-                "branchingNoExplicitRouteGroupCount",
-                summary.get("noExplicitRouteGroupCount"),
-            )
-            or 0
+        "actionableNoExplicitOptionRouteGroups": max(
+            0,
+            int(
+                summary.get(
+                    "branchingNoExplicitRouteGroupCount",
+                    summary.get("noExplicitRouteGroupCount"),
+                )
+                or 0
+            ) - len(deferred_offline_option_route_groups),
+        ),
+        "deferredOfflineExhaustedOptionRouteGroups": len(
+            deferred_offline_option_route_groups
         ),
         "singleOptionNoExplicitRouteGroups": int(
             summary.get("singleOptionNoExplicitRouteGroupCount") or 0
@@ -10585,6 +10811,8 @@ def build_gap_row(
             closed_non_mission_content_isolated,
         "deferredOfflineExhaustedIsolatedScenes":
             deferred_offline_exhausted_isolated,
+        "deferredOfflineExhaustedOptionRouteGroups":
+            deferred_offline_option_route_groups,
         "actionableWeakOnlySceneKeys": actionable_weak_only_scene_keys,
         "closedExactNativeWeakOnlyScenes": closed_exact_native_weak_only,
         "nonActionableWeakOnlySceneKeys":
@@ -11329,7 +11557,9 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"`{metrics['closedNonPlaybackLevelscriptContexts']}`; "
             f"actionable option gap groups: "
             f"`{metrics['actionableNoExplicitOptionRouteGroups'] + metrics['actionableExcludedOptionEvidenceGroups']}` "
-            f"(`{metrics['singleOptionNoExplicitRouteGroups']}` single-option "
+            f"(`{metrics['deferredOfflineExhaustedOptionRouteGroups']}` "
+            f"current-build offline-exhausted; "
+            f"`{metrics['singleOptionNoExplicitRouteGroups']}` single-option "
             f"acknowledgements and `{metrics['closedExcludedOptionEvidenceGroups']}` "
             "shared/cosmetic exclusions are retained but not scored).",
             "",

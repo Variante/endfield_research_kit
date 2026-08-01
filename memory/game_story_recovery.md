@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 490 |
+| Pipeline missions | 493 (490 MissionRuntime + 3 Story-only recovery shells) |
 | Unique Story files | 5,282 |
 | Connected files | 4,174 (79.0%) |
 | Files with a normalized trigger/context route | 4,395 (83.2%) |
@@ -111,6 +111,21 @@ hash-locked runtime definitions without recovered activators; their current
 audio ids are absent from `AudioDialog`. Mission Pipeline exposes all four
 boundaries and keeps the mission score at zero.
 
+The 13-file `gm02m2` major-mission frontier is now source-bounded as well.
+Exact original tables retain four DialogId-registered roots with 16
+DialogText lines and nine DialogOption definitions, plus nine RadioTable roots
+with 15 lines. None has current AudioDialog membership. The four dialogs have
+no DialogTree TextAsset, Timeline membership, NpcProxyEx consumer, typed
+MissionRuntime/LevelScript carrier, exact GameAssembly root token, or typed
+object-index carrier; all 13 keys are in the current hash-locked no-candidate
+carrier audit. The two multi-choice groups remain visible with their exact
+option ids, but their destinations and file chronology are unresolved and no
+longer scored as an unsearched runtime-route surface. Because `gm02m2` has no
+MissionRuntimeAsset, Mission Pipeline now publishes an explicit zero-node,
+zero-edge Story-only recovery shell (also used for `e5m4` and `e5m5`) instead
+of hiding the attachments in a global overlay. This lowers major actionable
+core-isolated rows from 213 to 200 without creating ownership or order edges.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -125,7 +140,7 @@ ownership or chronology edge.
 3. **Main/event story:** no core-isolated scene or strict quest-attachment gap
    remains actionable in either current source-bounded queue; seven broad
    main-story co-memberships remain visible as non-owning diagnostics.
-4. **Option routes:** five multi-choice groups lack any current installed
+4. **Option routes:** three actionable multi-choice groups lack any current installed
    DialogTree, Timeline, MissionRuntime, LevelScript, VFS, or Lua consumer.
 5. **Narrative video:** three placement groups remain unresolved:
    `cs_video_e1m3_3`, `remotecomm_e1m2_2`, and `remotecomm_e1m2_3`.
@@ -138,7 +153,7 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should continue the same binary-first audit with the highest-ranked
-major-mission frontier (`gm02m2`, 13 actionable core-isolated files), then the
+major-mission frontier (`gm01m22`, 12 actionable core-isolated files), then the
 five character-mission quest-attachment gaps. Reopen a
 deferred row only when a new typed producer/consumer or changed source hash
 supplies an ownership or order edge.

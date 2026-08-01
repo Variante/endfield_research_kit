@@ -198,7 +198,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v84"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v85"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3186,6 +3186,179 @@ def publish_offline_story_recovery(
         "questAttachmentDiagnostics": quest_attachment_diagnostics,
         "source": repo_path(gap_queue_path),
     }
+
+
+def publish_offline_recovery_mission_shells(
+    index: dict[str, Any],
+    output_root: Path,
+    offline_recovery: dict[str, Any],
+    gap_queue_path: Path,
+) -> list[str]:
+    """Publish navigable graph-neutral shells for exhausted non-runtime missions.
+
+    A Story mission can exist in authored tables without a MissionRuntimeAsset.
+    Its exact-build recovery boundary still belongs in Mission Pipeline, but a
+    shell must never imply quests, ownership, playback, or order edges.
+    """
+    if offline_recovery.get("status") != "active":
+        return []
+    queue = read_json(gap_queue_path)
+    if not isinstance(queue, dict):
+        return []
+    queue_rows = {
+        str(row.get("mission") or ""): row
+        for row in queue.get("missions") or []
+        if isinstance(row, dict) and row.get("mission")
+    }
+    existing = {
+        str(row.get("id") or "")
+        for row in index.get("missions") or []
+        if isinstance(row, dict) and row.get("id")
+    }
+    overlay = offline_recovery.get("storyTriggerManifestOverlay") or {}
+    keys_by_mission: dict[str, list[str]] = defaultdict(list)
+    for story_key, entry in overlay.items():
+        recovery = entry.get("offlineRecovery") if isinstance(entry, dict) else None
+        mission_id = str(
+            (recovery or {}).get("missionId")
+            or (entry or {}).get("nominalMissionId")
+            or ""
+        )
+        if mission_id and mission_id not in existing:
+            keys_by_mission[mission_id].append(str(story_key))
+
+    published: list[str] = []
+    mission_output = output_root / "missions"
+    mission_output.mkdir(parents=True, exist_ok=True)
+    for mission_id in sorted(keys_by_mission, key=natural_quest_key):
+        order_row = queue_rows.get(mission_id)
+        if not isinstance(order_row, dict):
+            continue
+        story_keys = sorted(keys_by_mission[mission_id], key=natural_quest_key)
+        metrics = order_row.get("metrics") or {}
+        components = [
+            {
+                "id": f"p{index}",
+                "sceneKeys": [story_key],
+                "cyclic": False,
+                "internalEdgeIndexes": [],
+            }
+            for index, story_key in enumerate(story_keys, start=1)
+        ]
+        story_order = {
+            "mission": mission_id,
+            "summary": {
+                "sceneCount": int(metrics.get("sceneCount") or len(story_keys)),
+                "strongEdgeCount": 0,
+                "weakEdgeCount": 0,
+                "cycleCount": 0,
+                "unorderedScenePairs": int(metrics.get("totalScenePairs") or 0),
+                "isolatedSceneCount": int(
+                    metrics.get("isolatedScenes") or len(story_keys)
+                ),
+                "weakOnlySceneCount": 0,
+            },
+            "nodes": [
+                {
+                    "key": story_key,
+                    "kind": offline_story_kind(story_key),
+                    "membership": "index",
+                    "component": component["id"],
+                    "relationStatus": "isolated",
+                }
+                for story_key, component in zip(story_keys, components)
+            ],
+            "components": components,
+            "componentEdges": [],
+            "reducedComponentEdges": [],
+            "topologicalLayers": [[row["id"] for row in components]],
+            "directEdges": [],
+            "containments": [],
+            "cycles": [],
+            "branches": {
+                "sceneGraphOptions": [],
+                "nativeControlBranches": [],
+                "nativeControlMerges": [],
+                "dialogLineOptions": [],
+                "questForks": [],
+                "questMerges": [],
+            },
+            "isolatedSceneKeys": story_keys,
+            "weakOnlySceneKeys": [],
+            "unknownSceneKeys": story_keys,
+            "unresolvedSourceNodes": [],
+            "sourceGapQueue": order_row,
+        }
+        payload = {
+            "schemaVersion": SCHEMA_VERSION,
+            "mission": {
+                "id": mission_id,
+                "nameKey": "",
+                "descriptionKey": "",
+                "levelId": "",
+                "missionType": None,
+                "rewardId": "",
+                "mainPath": [],
+                "entryQuestIds": [],
+                "nativeRuntimeBindings": [],
+                "source": repo_path(gap_queue_path),
+                "offlineRecoveryShell": True,
+                "sourceBoundary": (
+                    "No MissionRuntimeAsset exists in the current export; this "
+                    "shell exposes exact graph-neutral Story recovery only."
+                ),
+            },
+            "nodes": [],
+            "edges": [],
+            "caseStudy": None,
+            "missionGraph": {"upstream": {}, "downstream": {}},
+            "envTalkContext": [],
+            "storyOrder": story_order,
+        }
+        write_json(mission_output / f"{mission_id}.json", payload)
+        summary = {
+            "id": mission_id,
+            "nameKey": "",
+            "levelId": "",
+            "questCount": 0,
+            "mainPathCount": 0,
+            "entryCount": 0,
+            "fanoutCount": 0,
+            "multiPrevJoinCount": 0,
+            "activeJoinCount": 0,
+            "exactFinishCount": 0,
+            "serverPlaceholderCount": 0,
+            "serverPlaceholderQuestCount": 0,
+            "failureConditionCount": 0,
+            "externalDependencyCount": 0,
+            "submitItemConditionCount": 0,
+            "submitItemQuestCount": 0,
+            "submitItemDialogCoGateCount": 0,
+            "submitItemLevelScriptCoGateCount": 0,
+            "nativeRuntimeBindingCount": 0,
+            "activityStageHostCount": 0,
+            "activityStageHostedQuestCount": 0,
+            "trackingInfoCount": 0,
+            "trackingObjectiveCount": 0,
+            "missionPropertyCount": 0,
+            "conditionTypes": [],
+            "caseStudy": False,
+            "file": f"missions/{mission_id}.json",
+            "offlineRecoveryShell": True,
+            "offlineRecoveryStoryCount": len(story_keys),
+            "storyOrderSceneCount": int(metrics.get("sceneCount") or 0),
+            "storyOrderStrongEdgeCount": int(
+                metrics.get("strongEdgeCount") or 0
+            ),
+            "storyOrderCycleCount": int(metrics.get("sourceCycles") or 0),
+        }
+        index.setdefault("missions", []).append(summary)
+        published.append(mission_id)
+        existing.add(mission_id)
+    index["missions"].sort(key=lambda row: natural_quest_key(row["id"]))
+    index.setdefault("counts", {})["missions"] = len(index["missions"])
+    index["counts"]["offlineRecoveryMissionShells"] = len(published)
+    return published
 
 
 def classify_definition_only_current_build_consumers(
@@ -7428,6 +7601,18 @@ def main() -> int:
                 "source_story_gap_queue",
                 DEFAULT_SOURCE_STORY_GAP_QUEUE,
             ).resolve(),
+        )
+        offline_recovery["missionShells"] = (
+            publish_offline_recovery_mission_shells(
+                index,
+                output_root,
+                offline_recovery,
+                getattr(
+                    args,
+                    "source_story_gap_queue",
+                    DEFAULT_SOURCE_STORY_GAP_QUEUE,
+                ).resolve(),
+            ) if output_root == DEFAULT_OUTPUT_ROOT.resolve() else []
         )
         report_stem = f"mission_pipeline_story_binding_coverage_{coverage['language']}"
         coverage_report = args.report_root.resolve() / f"{report_stem}.json"
