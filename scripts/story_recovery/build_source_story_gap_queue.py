@@ -142,7 +142,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v67"
+    "current-build-offline-story-carrier-exhaustion-v68"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -205,6 +205,14 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm01m16_8": "radio_gm01m16_8",
     "radio_gm01m16_13": "radio_gm01m16_13",
     "radio_gm01m16_14": "radio_gm01m16_14",
+    "dlg_gm01m20_1": "dlg_gm01m20_1",
+    "dlg_gm01m20_5": "dlg_gm01m20_5",
+    "dlg_gm01m20_6": "dlg_gm01m20_6",
+    "dlg_gm01m20_7": "dlg_gm01m20_7",
+    "radio_gm01m20_1": "radio_gm01m20_1",
+    "radio_gm01m20_2": "radio_gm01m20_2",
+    "radio_gm01m20_3": "radio_gm01m20_3",
+    "radio_gm01m20_4": "radio_gm01m20_4",
 }
 OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
     "gm01m7": {
@@ -270,6 +278,26 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
                 10: (28,), 11: (9,), 12: (10,), 40: (12,), 16: (40,),
                 21: (16,), 20: (21,), 24: (20,), 26: (24,), 43: (27,),
                 44: (25,), 45: (41,),
+            }.items()
+        },
+    },
+    "gm01m20": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm01m20.json"
+        ),
+        "sourceSha256":
+            "01BC364A3A64CFFE8BE236B017020D76ACDBB42866862031A5DC4405B501E355",
+        "mainPathQuestIds": tuple(
+            f"gm01m20_q#{number}" for number in (7, 1, 6, 3, 4, 2)
+        ),
+        "prevQuestIdsByQuest": {
+            f"gm01m20_q#{quest}": tuple(
+                f"gm01m20_q#{previous}" for previous in predecessors
+            )
+            for quest, predecessors in {
+                7: (), 1: (7,), 6: (1,), 3: (6,), 4: (3,),
+                2: (4,), 10: (4,),
             }.items()
         },
     },
@@ -3839,6 +3867,151 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
         ),
         "treeBranchGroups": (),
     },
+    "dlg_gm01m20_1": {
+        "missionId": "gm01m20",
+        "filename": "dlg_gm01m20_1_p3E261E43E6E27E12.json",
+        "sha256":
+            "D643490D25B83810DFA5362A8C2BE633FE73ECECC7127CADDFC18D6561C1A5BF",
+        "extraConfigFilename":
+            "dlg_gm01m20_1_extra_config_p8CA71C2BA146C847.json",
+        "extraConfigSha256":
+            "7E918CFE99522C54CB6BB6F84BC383ADCD15678FC1D9ACF282AAF20ABF5F157B",
+        "lineIds": tuple(
+            f"dlg_gm01m20_1_{number:03d}" for number in range(1, 5)
+        ),
+        "optionIds": (),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m20_1_{number:03d}" for number in range(1, 5)
+        ),
+        "treeBranchGroups": (),
+        "npcProxyConsumer": {
+            "proxyId": "kupe_map01_normal",
+            "entryIndex": 6,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m20_1",
+                "missionId": "",
+            },
+        },
+        "missionNpcProxyTracking": {
+            "sourceFile": (
+                "export_full/structured/Persistent/Data/Json/"
+                "MissionRuntimeAsset/gm01m20.json"
+            ),
+            "sourceSha256":
+                "01BC364A3A64CFFE8BE236B017020D76ACDBB42866862031A5DC4405B501E355",
+            "proxyId": "kupe_map01_normal",
+            "levelId": "map01_lv001",
+            "rows": tuple({
+                "questId": f"gm01m20_q#{quest}",
+                "objectiveIndex": 0,
+                "trackingIndex": 0,
+            } for quest in (1, 3, 2, 10)),
+        },
+    },
+    "dlg_gm01m20_5": {
+        "missionId": "gm01m20",
+        "filename": "dlg_gm01m20_5_pA68209E428C780DF.json",
+        "sha256":
+            "91244B53B797F4A82C3CB2234937C57CCF23CAC705C115BA8D99A5BA92D9BC6B",
+        "extraConfigFilename":
+            "dlg_gm01m20_5_extra_config_p597B261A582F262B.json",
+        "extraConfigSha256":
+            "E3F4F5A14BFFE6A0C45673C844C4C4BB5A0E9246ED7FBF0D49FD702CBE168C60",
+        "lineIds": tuple(
+            f"dlg_gm01m20_5_{number:03d}" for number in range(1, 5)
+        ),
+        "optionIds": (),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m20_5_{number:03d}" for number in range(1, 5)
+        ),
+        "treeBranchGroups": (),
+        "npcProxyConsumer": {
+            "proxyId": "bulongze_map01_normal",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m20_5",
+                "missionId": "",
+            },
+        },
+    },
+    "dlg_gm01m20_6": {
+        "missionId": "gm01m20",
+        "filename": "dlg_gm01m20_6_pD24399E8F7195888.json",
+        "sha256":
+            "9F3041C9F45FD47D49515D6E4BE356E079BE8DFAB76AE1713401EEA125C0BD61",
+        "extraConfigFilename":
+            "dlg_gm01m20_6_extra_config_p8C7D71AAC32E8A1E.json",
+        "extraConfigSha256":
+            "CC1ECBF3C934264D4BECCAE3F59D37D7E3ED941442F4C0A89170D31795867009",
+        "lineIds": ("dlg_gm01m20_6_001", "dlg_gm01m20_6_002"),
+        "optionIds": (),
+        "missingAudioIds": (
+            "au_dlg_gm01m20_6_001",
+            "au_dlg_gm01m20_6_002",
+        ),
+        "treeBranchGroups": (),
+        "npcProxyConsumer": {
+            "proxyId": "bulongze_map01_normal",
+            "entryIndex": 1,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m20_6",
+                "missionId": "",
+            },
+        },
+    },
+    "dlg_gm01m20_7": {
+        "missionId": "gm01m20",
+        "filename": "dlg_gm01m20_7_pFD15B4590CD2E063.json",
+        "sha256":
+            "20FB5080BCBCC43E6A80864644D4AF4C72716521AA284D2E44E2E8FB17905159",
+        "extraConfigFilename":
+            "dlg_gm01m20_7_extra_config_p2E7AD2EF233846E0.json",
+        "extraConfigSha256":
+            "BDA0446EB2158BCE174CA81E9191DA6E2FE44B3988E34FD076F70E992A116779",
+        "lineIds": tuple(
+            f"dlg_gm01m20_7_{number:03d}" for number in range(1, 4)
+        ),
+        "optionIds": (),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m20_7_{number:03d}" for number in range(1, 4)
+        ),
+        "treeBranchGroups": (),
+        "npcProxyConsumer": {
+            "proxyId": "kupe_map01_normal",
+            "entryIndex": 5,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m20_7",
+                "missionId": "",
+            },
+        },
+        "missionNpcProxyTracking": {
+            "sourceFile": (
+                "export_full/structured/Persistent/Data/Json/"
+                "MissionRuntimeAsset/gm01m20.json"
+            ),
+            "sourceSha256":
+                "01BC364A3A64CFFE8BE236B017020D76ACDBB42866862031A5DC4405B501E355",
+            "proxyId": "kupe_map01_normal",
+            "levelId": "map01_lv001",
+            "rows": tuple({
+                "questId": f"gm01m20_q#{quest}",
+                "objectiveIndex": 0,
+                "trackingIndex": 0,
+            } for quest in (1, 3, 2, 10)),
+        },
+    },
 }
 OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e10m3_9",
@@ -4584,6 +4757,12 @@ OFFLINE_EXHAUSTION_GM01M16_RADIOS = frozenset({
     "radio_gm01m16_13",
     "radio_gm01m16_14",
 })
+OFFLINE_EXHAUSTION_GM01M20_RADIOS = frozenset({
+    "radio_gm01m20_1",
+    "radio_gm01m20_2",
+    "radio_gm01m20_3",
+    "radio_gm01m20_4",
+})
 OFFLINE_EXHAUSTION_GM01M22_RADIOS = frozenset({
     "radio_gm01m22_1d2",
     "radio_gm01m22_1d3",
@@ -4598,6 +4777,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm01m6": OFFLINE_EXHAUSTION_GM01M6_RADIOS,
     "gm01m7": OFFLINE_EXHAUSTION_GM01M7_RADIOS,
     "gm01m16": OFFLINE_EXHAUSTION_GM01M16_RADIOS,
+    "gm01m20": OFFLINE_EXHAUSTION_GM01M20_RADIOS,
     "gm01m22": OFFLINE_EXHAUSTION_GM01M22_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
@@ -4749,6 +4929,10 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
         f"au_radio_gm01m16_13_{number:03d}" for number in range(1, 4)
     ),
     "radio_gm01m16_14": frozenset({"au_radio_gm01m16_14_001"}),
+    "radio_gm01m20_1": frozenset({"au_radio_gm01m20_1_001"}),
+    "radio_gm01m20_2": frozenset({"au_radio_gm01m20_2_001"}),
+    "radio_gm01m20_3": frozenset({"au_radio_gm01m20_3_001"}),
+    "radio_gm01m20_4": frozenset({"au_radio_gm01m20_4_001"}),
     "radio_gm01m22_1d2": frozenset({"au_radio_gm01m22_1d2_001"}),
     "radio_gm01m22_1d3": frozenset({"au_radio_gm01m22_1d3_001"}),
     "radio_e5m5_1": frozenset({

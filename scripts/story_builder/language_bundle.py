@@ -2144,10 +2144,33 @@ def build_language_bundle(
                 # conversation. Do not rewrite it to a misc_dlg_* alias.
                 return
             story_key = resolve_scene_ref_out_key(raw_key, available) if raw_key else ""
+            root_payload_alias = None
+            if (
+                not story_key
+                and raw_key
+                and row.get("relation") == "objective_condition"
+                and row.get("conditionType") == "CheckTalkOptionFinish"
+                and str(row.get("source") or "").endswith(
+                    ".condition._dialogId"
+                )
+            ):
+                candidate = load_exact_dialog_tree_root_payload_alias(raw_key)
+                candidate_story_key = str(
+                    (candidate or {}).get("storyKey") or ""
+                )
+                if candidate_story_key in available:
+                    story_key = candidate_story_key
+                    root_payload_alias = candidate
             if not story_key:
                 return
             normalized = dict(row)
             normalized["key"] = story_key
+            if root_payload_alias:
+                normalized.update({
+                    "rootDialogId": raw_key,
+                    "rootPayloadAlias": root_payload_alias,
+                    "evidenceTier": "original_exact_payload_alias",
+                })
             signature = (
                 story_key,
                 normalized.get("relation"),
