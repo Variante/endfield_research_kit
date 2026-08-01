@@ -500,6 +500,7 @@
       offlineRecoveryFinishId: "serialized finishId",
       offlineRecoveryFinishIdAbsent: "finishId not serialized",
       offlineRecoveryEvidenceResultBranch: "Exact result branch",
+      offlineRecoveryEvidenceTrackedNpc: "Mission-tracked NPC dialog — playback owner unknown",
       offlineRecoveryEvidenceEmptyHost: "Definition only \u2014 mission script empty",
       offlineRecoveryEmptyHost: "Exact empty mission host",
       offlineRecoveryEmptyHostBoundary: "The mission-named LevelData contains one propertyless LevelScript. Its action list, UID records, and task maps are empty, so it cannot activate or order these Story definitions.",
@@ -1000,6 +1001,7 @@
       offlineRecoveryFinishId: "\u5df2\u5e8f\u5217\u5316 finishId",
       offlineRecoveryFinishIdAbsent: "\u672a\u5e8f\u5217\u5316 finishId",
       offlineRecoveryEvidenceResultBranch: "\u7cbe\u786e\u7ed3\u679c\u5206\u652f",
+      offlineRecoveryEvidenceTrackedNpc: "\u4efb\u52a1\u8ffd\u8e2a NPC \u5bf9\u8bdd\uff0c\u64ad\u653e\u5f52\u5c5e\u672a\u77e5",
       offlineRecoveryEvidenceEmptyHost: "\u4ec5\u5b9a\u4e49 \u2014 \u4efb\u52a1\u811a\u672c\u4e3a\u7a7a",
       offlineRecoveryEmptyHost: "\u7cbe\u786e\u7a7a\u4efb\u52a1\u5bbf\u4e3b",
       offlineRecoveryEmptyHostBoundary: "\u8fd9\u4e2a\u4efb\u52a1\u547d\u540d\u7684 LevelData \u53ea\u5305\u542b\u4e00\u4e2a\u65e0\u5c5e\u6027\u7684 LevelScript\u3002\u5176\u52a8\u4f5c\u5217\u8868\u3001UID \u8bb0\u5f55\u548c\u4efb\u52a1\u6620\u5c04\u5747\u4e3a\u7a7a\uff0c\u56e0\u6b64\u4e0d\u80fd\u6fc0\u6d3b\u6216\u6392\u5217\u8fd9\u4e9b Story \u5b9a\u4e49\u3002",
@@ -2936,6 +2938,7 @@
         : "";
       const evidenceLabel = ({
         leveldata_property_resolved_levelscript_result_branch: t("offlineRecoveryEvidenceResultBranch"),
+        mission_tracked_npc_proxy_dialog_context_without_playback_owner: t("offlineRecoveryEvidenceTrackedNpc"),
         registered_dialog_definition_without_recovered_activator: t("offlineRecoveryEvidenceDefinitionOnly"),
         radio_definition_without_recovered_consumer: t("offlineRecoveryEvidenceRadioOnly"),
         dialog_text_table_only_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),

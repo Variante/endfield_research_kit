@@ -3972,6 +3972,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m8_9",
                 "dlg_e11m8d5_1",
                 "misc_dlg_gm01m3_1d5",
+                "dlg_gm01m13_2",
+                "dlg_gm01m13_3",
                 "dlg_gm01m2_1",
                 "dlg_gm01m2_2",
                 "dlg_gm01m2_3",
@@ -4674,6 +4676,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_gm01m5_3",
                 "dlg_gm01m5_4",
                 "dlg_gm01m2_5",
+                "dlg_gm01m13_5",
                 "dlg_gm01m24_5",
                 "dlg_gm01m25_5",
                 "dlg_gm01m14_7",
@@ -5052,6 +5055,158 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "exactMissionNpcProxyTrackingContext",
         )
         self.assertEqual(failure["mission"], "gm01m6")
+        self.assertIn("sourceSha256", failure)
+
+    def test_gm01m13_proxy_context_and_definition_frontier_is_exact(
+        self,
+    ) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual(status["status"], "active")
+        self.assertEqual(
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm01m13" in key
+            },
+            {
+                "dlg_gm01m13_2",
+                "dlg_gm01m13_3",
+                "dlg_gm01m13_5",
+                "text_gm01m13_1",
+            },
+        )
+        for story_key, entry_index in (
+            ("dlg_gm01m13_2", 1),
+            ("dlg_gm01m13_3", 2),
+        ):
+            evidence = index[story_key]
+            self.assertEqual(
+                evidence["evidenceKind"],
+                "mission_tracked_npc_proxy_dialog_context_without_playback_owner",
+            )
+            self.assertEqual(
+                evidence["npcProxyConsumer"]["proxyId"],
+                "sesidun02_map01_001",
+            )
+            self.assertEqual(
+                evidence["npcProxyConsumer"]["entryIndex"],
+                entry_index,
+            )
+            self.assertEqual(
+                evidence["missionNpcProxyTracking"]["questIds"],
+                [
+                    "gm01m13_q#1",
+                    "gm01m13_q#2",
+                    "gm01m13_q#3",
+                    "gm01m13_q#4",
+                    "gm01m13_q#7",
+                    "gm01m13_q#8",
+                    "gm01m13_q#9",
+                    "gm01m13_q#11",
+                    "gm01m13_q#12",
+                ],
+            )
+            self.assertFalse(
+                evidence["missionNpcProxyTracking"]["questPlaybackOwnership"]
+            )
+            self.assertEqual(
+                evidence["dialogTreeBranchGroups"][0]["routeKind"],
+                "authored_convergence",
+            )
+            topology = evidence["missionQuestTopologyContext"]
+            self.assertEqual(
+                topology["mainPathQuestIds"],
+                [
+                    "gm01m13_q#1",
+                    "gm01m13_q#2",
+                    "gm01m13_q#3",
+                    "gm01m13_q#4",
+                    "gm01m13_q#8",
+                    "gm01m13_q#9",
+                    "gm01m13_q#5",
+                    "gm01m13_q#7",
+                    "gm01m13_q#11",
+                ],
+            )
+            self.assertEqual(
+                topology["forks"],
+                [{
+                    "questId": "gm01m13_q#2",
+                    "successorQuestIds": [
+                        "gm01m13_q#3",
+                        "gm01m13_q#12",
+                    ],
+                }],
+            )
+            self.assertEqual(
+                topology["merges"],
+                [{
+                    "predecessorQuestIds": [
+                        "gm01m13_q#3",
+                        "gm01m13_q#12",
+                    ],
+                    "questId": "gm01m13_q#4",
+                }],
+            )
+        self.assertEqual(
+            index["dlg_gm01m13_5"]["dialogIdRegistrationStatus"],
+            "absent",
+        )
+        self.assertEqual(
+            len(index["dlg_gm01m13_5"]["optionRows"]),
+            4,
+        )
+        self.assertEqual(
+            index["text_gm01m13_1"]["readingPopupRowId"],
+            "text_gm01m13_1",
+        )
+
+        declaration = (
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS[
+                "gm01m13"
+            ]
+        )
+        broken_predecessors = {
+            **declaration["prevQuestIdsByQuest"],
+            "gm01m13_q#4": ("gm01m13_q#3",),
+        }
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS,
+            {"gm01m13": {
+                **declaration,
+                "prevQuestIdsByQuest": broken_predecessors,
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual(failed_index, {})
+        failure = next(
+            row
+            for row in failed_status["validatorDiagnostics"]
+            if row.get("mission") == "gm01m13"
+        )
+        self.assertEqual(failure["validator"], "offlineMissionTopologyContext")
+        self.assertEqual(
+            failure["gate"],
+            "exactQuestPredecessorGraphMainPathAndStateDependencies",
+        )
+        self.assertEqual(failure["mission"], "gm01m13")
         self.assertIn("sourceSha256", failure)
 
     def test_declared_gm01m7_branch_frontier_is_exact(self) -> None:
@@ -6636,6 +6791,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e10m4_1",
                 "text_gm01m22_5",
                 "text_gm01m12_1",
+                "text_gm01m13_1",
                 "text_gm01m12_3",
                 "text_gm01m12_5",
                 "text_gm01m12_6",
