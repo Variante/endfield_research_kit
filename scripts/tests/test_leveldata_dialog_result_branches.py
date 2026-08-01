@@ -141,6 +141,39 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
                 }],
             }],
         )
+        gm01m26 = index["dlg_gm01m26_2"]["levelDataDialogBranchContext"]
+        self.assertEqual(gm01m26["storyPropertyPath"], "succeed_dialog")
+        self.assertEqual(gm01m26["dictionaryScriptIds"], [
+            "3400010000", "3400010001", "3400010002", "3400010003",
+            "3400010004", "3400010009", "3400010010", "3400010011",
+            "3400010012", "3400010013", "3400010017", "3400010018",
+            "3400010019", "3400010020", "3400010021", "3400010027",
+            "3400010028", "3400010029", "3400010031", "3400010032",
+            "3400010033", "3400010044",
+        ])
+        self.assertEqual(
+            [(row["resultValue"], row["dialogId"])
+             for row in gm01m26["resultBranches"]],
+            [(8, "dlg_gm01m26_2"), (9, "dlg_gm01m26_3")],
+        )
+        self.assertEqual(
+            index["dlg_gm01m26_1"]["dialogTreeBranchGroups"][0]
+            ["targetLineIds"],
+            [
+                "dlg_gm01m26_1_014",
+                "dlg_gm01m26_1_017",
+                "dlg_gm01m26_1_009",
+            ],
+        )
+        self.assertEqual(
+            index["dlg_gm01m26_5"]["dialogTreeBranchGroups"][0]
+            ["targetLineIds"],
+            [
+                "dlg_gm01m26_5_014",
+                "dlg_gm01m26_5_006",
+                "dlg_gm01m26_5_008",
+            ],
+        )
 
     def test_changed_getter_path_fails_with_actionable_diagnostic(self):
         declaration = copy.deepcopy(
