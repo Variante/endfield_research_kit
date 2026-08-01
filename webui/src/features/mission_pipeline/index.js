@@ -458,6 +458,9 @@
       questAttachmentDiagnostic: "Story ownership unresolved",
       questAttachmentDiagnosticHint: "Exact offline evidence closes this broad Story co-membership as non-owning. It does not create a quest-to-Story or order edge.",
       questAttachmentDiagnosticStories: "Diagnostic Story context",
+      questAttachmentDiagnosticFiles: "Related original-data files",
+      questAttachmentDiagnosticProperty: "Exact property record",
+      questAttachmentDiagnosticProxy: "Tracked NPC proxy",
       rejectedPlaybackCandidate: "Rejected playback candidate",
       rejectedPlaybackBoundary: "binary-proven boundary · no graph edge",
       rejectedPlaybackLiteral: "Lua literal",
@@ -886,6 +889,9 @@
       questAttachmentDiagnostic: "\u5267\u60c5\u5f52\u5c5e\u672a\u89e3\u6790",
       questAttachmentDiagnosticHint: "\u7cbe\u786e\u79bb\u7ebf\u8bc1\u636e\u5c06\u8fd9\u4e2a\u5bbd\u6cdb\u5267\u60c5\u5171\u73b0\u5173\u7cfb\u95ed\u5408\u4e3a\u975e\u5f52\u5c5e\u8bca\u65ad\uff1b\u4e0d\u751f\u6210\u4efb\u52a1\u5230\u5267\u60c5\u6216\u987a\u5e8f\u8fb9\u3002",
       questAttachmentDiagnosticStories: "\u8bca\u65ad\u5267\u60c5\u4e0a\u4e0b\u6587",
+      questAttachmentDiagnosticFiles: "\u76f8\u5173\u539f\u59cb\u6570\u636e\u6587\u4ef6",
+      questAttachmentDiagnosticProperty: "\u7cbe\u786e\u5c5e\u6027\u8bb0\u5f55",
+      questAttachmentDiagnosticProxy: "\u8ddf\u8e2a\u7684 NPC \u4ee3\u7406",
       rejectedPlaybackCandidate: "\u5df2\u62d2\u7edd\u7684\u64ad\u653e\u5019\u9009",
       rejectedPlaybackBoundary: "\u4e8c\u8fdb\u5236\u5df2\u8bc1\u8fb9\u754c \u00b7 \u4e0d\u751f\u6210\u56fe\u8fb9",
       rejectedPlaybackLiteral: "Lua \u5b57\u9762\u91cf",
@@ -1994,12 +2000,29 @@
     const row = questAttachmentDiagnostic(node);
     if (!row) return "";
     const storyKeys = (row.diagnosticStoryKeys || []).map((key) => `<code>${esc(key)}</code>`).join(" ");
+    const sourceFiles = [...new Set([
+      ...(row.relatedSourceFiles || []),
+      row.sourceFile,
+      row.levelScriptFile,
+      row.levelDataFile,
+    ].filter(Boolean))];
+    const sourceFilesHtml = sourceFiles.map((path) => `<code>${esc(path)}</code>`).join("<br>");
+    const property = row.propertyRecord && Object.keys(row.propertyRecord).length
+      ? row.propertyRecord
+      : null;
+    const propertyOffset = property?.start ?? property?.recordStart;
+    const propertyHtml = property
+      ? `<small><strong>${esc(t("questAttachmentDiagnosticProperty"))}:</strong> <code>${esc(property.membership || "")}</code> · offset <code>${esc(propertyOffset == null ? "" : `0x${Number(propertyOffset).toString(16)}`)}</code> · <code>${esc((property.texts || []).join(", "))}</code></small>`
+      : "";
     return `<div class="mp-playback-rejection mp-offline-recovery">
       <header><strong>${esc(t("questAttachmentDiagnostic"))}</strong><span>${esc(t("offlineRecoveryNoGraphEdge"))}</span></header>
       <p>${esc(t("questAttachmentDiagnosticHint"))}</p>
       <small><strong>${esc(t("offlineRecoveryConsumer"))}:</strong> ${esc(row.attachmentBoundary || "")}</small>
       <small><strong>${esc(t("offlineRecoveryOrder"))}:</strong> ${esc(row.orderBoundary || "")}</small>
       ${storyKeys ? `<small><strong>${esc(t("questAttachmentDiagnosticStories"))}:</strong> ${storyKeys}</small>` : ""}
+      ${row.npcProxyId ? `<small><strong>${esc(t("questAttachmentDiagnosticProxy"))}:</strong> <code>${esc(row.npcProxyId)}</code></small>` : ""}
+      ${propertyHtml}
+      ${sourceFilesHtml ? `<small><strong>${esc(t("questAttachmentDiagnosticFiles"))}:</strong><br>${sourceFilesHtml}</small>` : ""}
       <small><strong>${esc(t("offlineRecoveryReopen"))}:</strong> ${esc(row.reopenWhen || "")}</small>
       ${row.nativeMappingId ? `<em><code>${esc(row.nativeMappingId)}</code></em>` : ""}
     </div>`;

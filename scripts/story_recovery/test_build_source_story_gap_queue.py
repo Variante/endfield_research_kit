@@ -2838,6 +2838,66 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             [],
         )
 
+    def test_dialog_tree_branch_context_defer_fails_closed(self) -> None:
+        story_key = "dlg_a1m5_5"
+        definition = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+            story_key
+        ]
+        context = definition["nonOwningContext"]
+        route = {
+            "key": story_key,
+            **definition["allowedNonOwningRoute"],
+            "sourceFiles": [context["sourceFile"]],
+            "carrierQuestStateContext": {
+                "candidateQuestIds": list(context["candidateQuestIds"]),
+                "questStateBranchContexts": [{
+                    "questIds": list(context["candidateQuestIds"]),
+                    "conditionEvalString": context["conditionEvalString"],
+                    "noBypass": True,
+                    "conditions": [
+                        {
+                            "questId": quest_id,
+                            "targetQuestState": context[
+                                "targetQuestState"
+                            ],
+                        }
+                        for quest_id in context["candidateQuestIds"]
+                    ],
+                }],
+            },
+        }
+        evidence = {
+            "sceneKey": story_key,
+            "missionId": "a1m5",
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "graphEffect": "none",
+            "nonOwningContext": context,
+            "allowedNonOwningRoute": definition["allowedNonOwningRoute"],
+        }
+        flow = {"missionStoryConnections": [route], "quests": []}
+
+        rows = gap_queue._deferred_offline_exhausted_isolated_scenes(
+            flow,
+            {story_key},
+            "a1m5",
+            {story_key: evidence},
+        )
+        self.assertEqual([row["sceneKey"] for row in rows], [story_key])
+
+        route["carrierQuestStateContext"]["questStateBranchContexts"][0][
+            "noBypass"
+        ] = False
+        self.assertEqual(
+            gap_queue._deferred_offline_exhausted_isolated_scenes(
+                flow,
+                {story_key},
+                "a1m5",
+                {story_key: evidence},
+            ),
+            [],
+        )
+
     def test_declared_e2m2_offline_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E2M2_RADIOS,
@@ -4101,6 +4161,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(text_only),
             {
+                "dlg_a1m5_5",
                 "dlg_e3m4_9",
                 "dlg_e10m4_16",
                 "dlg_e10m4_17",
@@ -4116,6 +4177,135 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(len(text_only["dlg_e10m3_10"]["lineIds"]), 8)
         self.assertEqual(len(text_only["dlg_e10m3_11"]["lineIds"]), 4)
         self.assertEqual(len(text_only["dlg_e10m3_12"]["lineIds"]), 16)
+
+    def test_declared_a1m5_definition_frontier_is_exact(self) -> None:
+        dialog = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+            "dlg_a1m5_5"
+        ]
+        self.assertEqual(dialog["missionId"], "a1m5")
+        self.assertEqual(
+            dialog["lineIds"],
+            ("dlg_a1m5_5_001", "dlg_a1m5_5_002"),
+        )
+        self.assertEqual(
+            dialog["missingAudioIds"],
+            ("au_dlg_a1m5_5_001", "au_dlg_a1m5_5_002"),
+        )
+        self.assertEqual(
+            dialog["allowedNonOwningRoute"]["relation"],
+            "dialog_tree_reachable_story_playback",
+        )
+        self.assertEqual(
+            dialog["nonOwningContext"]["candidateQuestIds"],
+            (
+                "a1m5_q#4",
+                "a1m5_q#5",
+                "a1m5_q#8",
+                "a1m5_q#10",
+                "a1m5_q#12",
+                "a1m5_q#14",
+                "a1m5_q#16",
+            ),
+        )
+        expected_content_ids = {
+            "text_a1m5_1": (
+                7065289209916235881,
+                -3793799197369702242,
+            ),
+            "text_a1m5_2": (145014796983259450,),
+            "text_a1m5_3": (
+                -4841045965292223135,
+                -89499260089272388,
+            ),
+            "text_a1m5_4": (-4489297013210307938,),
+            "text_a1m5_5": (
+                -5413898867121804929,
+                -1357598897532823788,
+            ),
+            "text_a1m5_6": (1303745015045365078,),
+            "text_a1m5_7": (-7046570968636013796,),
+        }
+        self.assertEqual(
+            {
+                key: gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+                    key
+                ]["contentTextIds"]
+                for key in expected_content_ids
+            },
+            expected_content_ids,
+        )
+        self.assertEqual(
+            {
+                key: gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[key][
+                    "titleId"
+                ]
+                for key in expected_content_ids
+            },
+            {
+                "text_a1m5_1": -8904306416814611456,
+                "text_a1m5_2": -2647826485076773960,
+                "text_a1m5_3": -676517154678141545,
+                "text_a1m5_4": 2405623048071579055,
+                "text_a1m5_5": 1365793654747611898,
+                "text_a1m5_6": 5740509153553995198,
+                "text_a1m5_7": 2638866450720374170,
+            },
+        )
+
+    def test_offline_text_definition_validator_reports_exact_failure(
+        self,
+    ) -> None:
+        story_key = "text_a1m5_1"
+        definition = gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+            story_key
+        ]
+        popup = {
+            "bgType": definition["bgType"],
+            "contentId": story_key,
+            "iconType": definition["iconType"],
+            "id": definition["readingPopupRowId"],
+            "overrideRadioId": "",
+            "title": {"id": 0, "text": ""},
+        }
+        rich = {
+            "contentList": [
+                {"content": {"id": text_id, "text": ""}}
+                for text_id in definition["contentTextIds"]
+            ],
+            "title": {"id": definition["titleId"], "text": ""},
+        }
+
+        self.assertIsNone(
+            gap_queue._offline_text_definition_validation_failure(
+                story_key,
+                definition,
+                popup,
+                rich,
+                {},
+                {},
+            )
+        )
+
+        rich["title"]["id"] = 0
+        failure = gap_queue._offline_text_definition_validation_failure(
+            story_key,
+            definition,
+            popup,
+            rich,
+            {},
+            {},
+        )
+        self.assertEqual(failure["validator"], "offlineTextDefinition")
+        self.assertEqual(
+            failure["gate"],
+            "exactReadingPopupAndRichContentRows",
+        )
+        self.assertEqual(failure["storyKey"], story_key)
+        self.assertEqual(
+            failure["expected"]["richTitle"]["id"],
+            -8904306416814611456,
+        )
+        self.assertEqual(failure["actual"]["richTitle"]["id"], 0)
 
     def test_declared_e6m3_definition_frontier_is_exact(self) -> None:
         self.assertEqual(
@@ -4144,6 +4334,13 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS),
             {
+                "text_a1m5_1",
+                "text_a1m5_2",
+                "text_a1m5_3",
+                "text_a1m5_4",
+                "text_a1m5_5",
+                "text_a1m5_6",
+                "text_a1m5_7",
                 "text_e0m0_1",
                 "text_e6m3_1",
                 "text_e6m3_4",
@@ -4381,7 +4578,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 mission_dir,
                 mission,
             )
-            for mission in ("e5m2", "e10m4")
+            for mission in ("e2m8", "e5m2", "e10m3", "e10m4")
         }
 
         index, status = gap_queue.build_quest_attachment_diagnostic_index(
@@ -4393,8 +4590,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(index),
             {
+                "e2m8_q#5",
                 "e5m2_q#33",
                 "e5m2d5_q#12",
+                "e10m3d5_q#7",
                 "e10m4d5_q#31",
                 "e10m4d5_q#34",
                 "e10m4d5_q#35",
@@ -4413,6 +4612,14 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "GameConditionServerPlaceHolder",
         )
         self.assertEqual(index["e5m2_q#33"]["propertyKey"], "bridge")
+        self.assertEqual(
+            index["e2m8_q#5"]["propertyRecord"]["membership"],
+            "getterList#2",
+        )
+        self.assertEqual(
+            index["e10m3d5_q#7"]["npcProxyId"],
+            "cuidaifu_map02_e10m3d5",
+        )
         self.assertEqual(
             index["e5m2d5_q#12"]["recoveryStatus"],
             "closed_weak_leveldata_reference_without_typed_story_bridge",
@@ -4433,7 +4640,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 mission_dir,
                 mission,
             )
-            for mission in ("e5m2", "e10m4")
+            for mission in ("e2m8", "e5m2", "e10m3", "e10m4")
         }
         flow = gap_queue._flow(payloads["e5m2"])
         quest = next(
@@ -4455,6 +4662,102 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             status["validationFailures"],
             ["e5m2d5_q#12"],
+        )
+        self.assertEqual(
+            status["validationFailureDetails"][0]["gate"],
+            "weak_leveldata_context",
+        )
+        self.assertEqual(
+            status["validationFailureDetails"][0]["questId"],
+            "e5m2d5_q#12",
+        )
+        self.assertEqual(
+            status["validationFailureDetails"][0]["actual"][
+                "connectionRelations"
+            ],
+            ["new_typed_route", "variant_runtime_attachment"],
+        )
+
+    def test_property_getter_diagnostic_fails_closed_on_route_change(
+        self,
+    ) -> None:
+        mission_dir = (
+            gap_queue.ROOT / "webui" / "data" / "lang" / "CN" / "mission"
+        )
+        payloads = {
+            mission: gap_queue.load_mission_payload_with_variants(
+                mission_dir,
+                mission,
+            )
+            for mission in ("e2m8", "e5m2", "e10m3", "e10m4")
+        }
+        flow = gap_queue._flow(payloads["e2m8"])
+        quest = next(
+            row for row in flow["quests"] if row["id"] == "e2m8_q#5"
+        )
+        quest["storyConnections"][0]["relation"] = "typed_property_route"
+
+        index, status = gap_queue.build_quest_attachment_diagnostic_index(
+            payloads
+        )
+
+        self.assertEqual(index, {})
+        self.assertEqual(
+            status["validationFailures"],
+            ["e2m8_q#5"],
+        )
+        detail = status["validationFailureDetails"][0]
+        self.assertEqual(detail["validator"], "questAttachmentDiagnostic")
+        self.assertEqual(
+            detail["gate"],
+            "property_getter_without_story_chain",
+        )
+        self.assertEqual(detail["questId"], "e2m8_q#5")
+        self.assertEqual(
+            detail["sourcePath"],
+            gap_queue.QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
+                "missionRuntime:e2m8"
+            ],
+        )
+        self.assertEqual(
+            detail["actual"]["connectionRelations"],
+            ["levelscript_condition_scope", "typed_property_route"],
+        )
+
+    def test_mission_bound_proxy_diagnostic_fails_closed_on_proxy_change(
+        self,
+    ) -> None:
+        mission_dir = (
+            gap_queue.ROOT / "webui" / "data" / "lang" / "CN" / "mission"
+        )
+        payloads = {
+            mission: gap_queue.load_mission_payload_with_variants(
+                mission_dir,
+                mission,
+            )
+            for mission in ("e2m8", "e5m2", "e10m3", "e10m4")
+        }
+        flow = gap_queue._flow(payloads["e10m3"])
+        quest = next(
+            row for row in flow["quests"] if row["id"] == "e10m3d5_q#7"
+        )
+        quest["proxyDialogs"][0]["dialogId"] = "dlg_unrelated"
+
+        index, status = gap_queue.build_quest_attachment_diagnostic_index(
+            payloads
+        )
+
+        self.assertEqual(index, {})
+        self.assertEqual(status["validationFailures"], ["e10m3d5_q#7"])
+        detail = status["validationFailureDetails"][0]
+        self.assertEqual(detail["validator"], "questAttachmentDiagnostic")
+        self.assertEqual(detail["gate"], "mission_bound_npc_proxy_context")
+        self.assertEqual(detail["questId"], "e10m3d5_q#7")
+        self.assertEqual(
+            detail["sourcePath"],
+            gap_queue.QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
+                "missionRuntime:e10m3d5"
+            ],
         )
 
     def test_quest_attachment_diagnostics_fail_closed_on_hash_change(
