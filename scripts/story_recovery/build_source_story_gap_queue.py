@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v95"
+SCHEMA = "sourceStoryGapQueue.v96"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -144,7 +144,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v72"
+    "current-build-offline-story-carrier-exhaustion-v73"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -238,6 +238,14 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm01m5_2": "radio_gm01m5_2",
     "radio_gm01m5_3": "radio_gm01m5_3",
     "radio_gm01m5_4": "radio_gm01m5_4",
+    "dlg_gm02m1_1": "dlg_gm02m1_1",
+    "dlg_gm02m1_2": "dlg_gm02m1_2",
+    "misc_dlg_gm02m1_1d5": "dlg_gm02m1_1d5",
+    "radio_gm02m1_1": "radio_gm02m1_1",
+    "radio_gm02m1_2": "radio_gm02m1_2",
+    "radio_gm02m1_6": "radio_gm02m1_6",
+    "radio_gm02m1_7": "radio_gm02m1_7",
+    "radio_gm02m1_8": "radio_gm02m1_8",
 }
 OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
     "gm01m7": {
@@ -5116,6 +5124,59 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS.update({
             "au_dlg_gm01m5_4_002",
         ),
     },
+    "dlg_gm02m1_1": {
+        "missionId": "gm02m1",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm02m1_1_{number:03d}" for number in range(1, 8)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm02m1_1_{number:03d}" for number in range(1, 8)
+        ),
+        "optionRows": {
+            "option_dlg_gm02m1_1_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": -8588518942092011657, "text": ""},
+            },
+            "option_dlg_gm02m1_1_2_001": {
+                "iconType": "Default",
+                "optionText": {"id": 1502928144381080327, "text": ""},
+            },
+            "option_dlg_gm02m1_1_3_001": {
+                "iconType": "Default",
+                "optionText": {"id": 5996584186730631298, "text": ""},
+            },
+        },
+    },
+    "dlg_gm02m1_2": {
+        "missionId": "gm02m1",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm02m1_2_{number:03d}" for number in range(1, 5)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm02m1_2_{number:03d}" for number in range(1, 5)
+        ),
+        "optionRows": {
+            "option_dlg_gm02m1_2_2_001": {
+                "iconType": "Default",
+                "optionText": {"id": -2271504872494968850, "text": ""},
+            },
+        },
+    },
+    "misc_dlg_gm02m1_1d5": {
+        "missionId": "gm02m1",
+        "definitionRootKey": "dlg_gm02m1_1d5",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": (
+            "dlg_gm02m1_1d5_001",
+            "dlg_gm02m1_1d5_002",
+        ),
+        "missingAudioIds": (
+            "au_dlg_gm02m1_1d5_001",
+            "au_dlg_gm02m1_1d5_002",
+        ),
+    },
 })
 OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS = frozenset({
     "actorName",
@@ -5459,6 +5520,13 @@ OFFLINE_EXHAUSTION_GM01M5_RADIOS = frozenset({
     "radio_gm01m5_3",
     "radio_gm01m5_4",
 })
+OFFLINE_EXHAUSTION_GM02M1_RADIOS = frozenset({
+    "radio_gm02m1_1",
+    "radio_gm02m1_2",
+    "radio_gm02m1_6",
+    "radio_gm02m1_7",
+    "radio_gm02m1_8",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "a1m6d1": OFFLINE_EXHAUSTION_A1M6D1_RADIOS,
     "a1m6d2": OFFLINE_EXHAUSTION_A1M6D2_RADIOS,
@@ -5475,6 +5543,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm01m25": OFFLINE_EXHAUSTION_GM01M25_RADIOS,
     "gm01m26": OFFLINE_EXHAUSTION_GM01M26_RADIOS,
     "gm01m5": OFFLINE_EXHAUSTION_GM01M5_RADIOS,
+    "gm02m1": OFFLINE_EXHAUSTION_GM02M1_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
@@ -5648,6 +5717,20 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm01m5_2": frozenset({"au_radio_gm01m5_2_001"}),
     "radio_gm01m5_3": frozenset({"au_radio_gm01m5_3_001"}),
     "radio_gm01m5_4": frozenset({"au_radio_gm01m5_4_001"}),
+    "radio_gm02m1_1": frozenset({
+        "au_radio_gm02m1_1_001",
+        "au_radio_gm02m1_1_002",
+    }),
+    "radio_gm02m1_2": frozenset({"au_radio_gm02m1_2_001"}),
+    "radio_gm02m1_6": frozenset({
+        "au_radio_gm02m1_6_001",
+        "au_radio_gm02m1_6_002",
+    }),
+    "radio_gm02m1_7": frozenset({
+        "au_radio_gm02m1_7_001",
+        "au_radio_gm02m1_7_002",
+    }),
+    "radio_gm02m1_8": frozenset({"au_radio_gm02m1_8_001"}),
     "radio_gm01m22_1d2": frozenset({"au_radio_gm01m22_1d2_001"}),
     "radio_gm01m22_1d3": frozenset({"au_radio_gm01m22_1d3_001"}),
     "radio_e5m5_1": frozenset({
@@ -9707,11 +9790,14 @@ def build_offline_exhaustion_index(
     for story_key, definition in (
         OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS.items()
     ):
+        definition_root_key = (
+            safe_key(definition.get("definitionRootKey")) or story_key
+        )
         expected_line_ids = tuple(definition["lineIds"])
         actual_line_ids = tuple(sorted(
             key
             for key in dialog_text_table
-            if key.startswith(f"{story_key}_")
+            if key.startswith(f"{definition_root_key}_")
         ))
         line_audio_ids = tuple(
             safe_key(dialog_text_table[line_id].get("audioOverride"))
@@ -9749,14 +9835,16 @@ def build_offline_exhaustion_index(
         expected_option_rows = definition.get("optionRows")
         actual_option_ids = tuple(sorted(
             key for key in dialog_option_table
-            if key.startswith(f"option_{story_key}_")
+            if key.startswith(f"option_{definition_root_key}_")
         )) if isinstance(dialog_option_table, dict) else ()
         expected_option_ids = tuple(sorted(
             expected_option_rows or {}
         ))
         cutscene_matches = sorted(
             str(path.relative_to(ROOT)).replace("\\", "/")
-            for path in cutscene_definition_root.glob(f"{story_key}_p*.json")
+            for path in cutscene_definition_root.glob(
+                f"{definition_root_key}_p*.json"
+            )
         )
         failures_before = len(text_only_dialog_validation_failures)
 
@@ -9856,13 +9944,13 @@ def build_offline_exhaustion_index(
         expected_registration_status = safe_key(
             definition.get("dialogIdRegistrationStatus")
         ) or "absent"
-        registry = dialog_id_index.get(story_key)
+        registry = dialog_id_index.get(definition_root_key)
         printable_only_tokens = tuple(
             definition.get("printableOnlyDialogTokens") or ()
         )
         if expected_registration_status == "present_table_only":
             expected_options_by_group: dict[str, list[str]] = defaultdict(list)
-            option_prefix = f"option_{story_key}_"
+            option_prefix = f"option_{definition_root_key}_"
             for option_id in expected_option_ids:
                 suffix = option_id.removeprefix(option_prefix)
                 group = suffix.split("_", 1)[0]
@@ -9939,12 +10027,20 @@ def build_offline_exhaustion_index(
                 ["absent", "present_table_only"],
                 expected_registration_status,
             )
-        if story_key in timeline_line_orders:
+        timeline_registration_keys = {
+            key for key in (story_key, definition_root_key) if key
+        }
+        registered_timeline_rows = {
+            key: timeline_line_orders[key]
+            for key in timeline_registration_keys
+            if key in timeline_line_orders
+        }
+        if registered_timeline_rows:
             add_text_only_failure(
                 "timelineRegistrationAbsent",
                 ("timelineLineOrders",),
                 {"present": False},
-                {"present": True, "row": timeline_line_orders.get(story_key)},
+                {"present": True, "rows": registered_timeline_rows},
             )
         if cutscene_matches:
             add_text_only_failure(
@@ -9975,6 +10071,7 @@ def build_offline_exhaustion_index(
         if len(text_only_dialog_validation_failures) != failures_before:
             continue
         text_only_dialog_validation_by_key[story_key] = {
+            "definitionRootKey": definition_root_key,
             "lineIds": list(expected_line_ids),
             "audioIds": list(line_audio_ids),
             "missingAudioIds": sorted(
@@ -10268,6 +10365,10 @@ def build_offline_exhaustion_index(
                 )
             ),
             "definitionTable": "RadioTable",
+            "definitionSourceFiles": [
+                str(source_paths[name].relative_to(ROOT)).replace("\\", "/")
+                for name in ("radioTable", "audioDialog")
+            ],
             "audioMembershipTable": "AudioDialog",
             "audioMembershipStatus": (
                 (
@@ -10334,13 +10435,20 @@ def build_offline_exhaustion_index(
                     "decoded UID-record count are both zero; neither that "
                     "empty host nor the audited MissionRuntime, GameplayConfig, "
                     "object-index, and native playback surfaces expose a consumer"
-                    if empty_levelscript_context else
+                    if empty_levelscript_context else (
+                    "the exact ids occur only in current RadioTable definitions; "
+                    "every authored audio id is absent from AudioDialog, and the "
+                    "audited MissionRuntime, LevelScript, GameplayConfig, "
+                    "object-index, and direct native playback-caller surfaces "
+                    "expose no consumer"
+                    if set(missing_audio_ids_by_story.get(story_key, ()))
+                    == radio_audio_ids_by_story[story_key] else
                     "exact ids occur only in current RadioTable definitions "
                     "and AudioDialog membership, including exact authored "
-                    "variants where present, across the audited "
-                    "MissionRuntime, LevelScript, GameplayConfig, Table, "
-                    "object-index, and direct native playback-caller "
-                    "surfaces"
+                    "variants where present, across the audited MissionRuntime, "
+                    "LevelScript, GameplayConfig, Table, object-index, and "
+                    "direct native playback-caller surfaces"
+                    )
                     )
                 )
             ),
@@ -10352,7 +10460,10 @@ def build_offline_exhaustion_index(
                     "the empty mission-named LevelScript, RadioTable order, "
                     "and filename suffixes do not establish playback or "
                     "relative Story order"
-                    if empty_levelscript_context else None
+                    if empty_levelscript_context else
+                    "RadioTable row order, filename suffixes, and any manual "
+                    "display order do not establish playback or relative "
+                    "Story chronology"
                 )
             ),
             "reopenWhen": (
@@ -10406,6 +10517,17 @@ def build_offline_exhaustion_index(
                 if filename
             ],
             "definitionTable": "DialogTextTable",
+            "definitionRootKey": validation["registryKey"],
+            "definitionSourceFiles": [
+                str(source_paths[name].relative_to(ROOT)).replace("\\", "/")
+                for name in (
+                    "dialogTextTable",
+                    *(("dialogOptionTable",) if validation["optionIds"] else ()),
+                    "audioDialog",
+                    "dialogIdIndex",
+                    "timelineLineOrders",
+                )
+            ],
             "runtimeRegistry": "Beyond.Gameplay.DialogIdTable",
             "runtimeRegistryKey": validation["registryKey"],
             "definitionName": validation["definitionName"],
@@ -10554,6 +10676,17 @@ def build_offline_exhaustion_index(
                 )
             ),
             "definitionTable": "DialogTextTable",
+            "definitionRootKey": validation["definitionRootKey"],
+            "definitionSourceFiles": [
+                str(source_paths[name].relative_to(ROOT)).replace("\\", "/")
+                for name in (
+                    "dialogTextTable",
+                    *(("dialogOptionTable",) if validation["optionIds"] else ()),
+                    "audioDialog",
+                    "dialogIdIndex",
+                    "timelineLineOrders",
+                )
+            ],
             "definitionTables": (
                 ["DialogTextTable", "DialogOptionTable"]
                 if validation["optionIds"]

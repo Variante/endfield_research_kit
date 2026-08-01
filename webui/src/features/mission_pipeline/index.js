@@ -479,6 +479,7 @@
       offlineRecoveryEmptyHost: "Exact empty mission host",
       offlineRecoveryEmptyHostBoundary: "The mission-named LevelData contains one propertyless LevelScript. Its action list, UID records, and task maps are empty, so it cannot activate or order these Story definitions.",
       offlineRecoveryEvidenceDefinitionOnly: "Definition only — activator unknown",
+      offlineRecoveryEvidenceUnregistered: "Unregistered definition — no runtime consumer",
       offlineRecoveryEvidenceRadioOnly: "Radio definition only — consumer unknown",
       offlineRecoveryMissingAudio: "audio ids absent",
       offlineRecoveryMissionTracking: "Mission NPC tracking context (navigation only)",
@@ -952,6 +953,7 @@
       offlineRecoveryEmptyHost: "\u7cbe\u786e\u7a7a\u4efb\u52a1\u5bbf\u4e3b",
       offlineRecoveryEmptyHostBoundary: "\u8fd9\u4e2a\u4efb\u52a1\u547d\u540d\u7684 LevelData \u53ea\u5305\u542b\u4e00\u4e2a\u65e0\u5c5e\u6027\u7684 LevelScript\u3002\u5176\u52a8\u4f5c\u5217\u8868\u3001UID \u8bb0\u5f55\u548c\u4efb\u52a1\u6620\u5c04\u5747\u4e3a\u7a7a\uff0c\u56e0\u6b64\u4e0d\u80fd\u6fc0\u6d3b\u6216\u6392\u5217\u8fd9\u4e9b Story \u5b9a\u4e49\u3002",
       offlineRecoveryEvidenceDefinitionOnly: "\u4ec5\u5b9a\u4e49\uff0c\u6fc0\u6d3b\u5668\u672a\u77e5",
+      offlineRecoveryEvidenceUnregistered: "\u672a\u6ce8\u518c\u5b9a\u4e49 \u2014 \u65e0\u8fd0\u884c\u65f6\u6d88\u8d39\u8005",
       offlineRecoveryEvidenceRadioOnly: "\u4ec5\u65e0\u7ebf\u7535\u5b9a\u4e49\uff0c\u6d88\u8d39\u8005\u672a\u77e5",
       offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
       offlineRecoveryMissionTracking: "\u4efb\u52a1 NPC \u8ffd\u8e2a\u4e0a\u4e0b\u6587\uff08\u4ec5\u5bfc\u822a\uff09",
@@ -2680,6 +2682,7 @@
       const timeline = row.sharedTimelineContext?.timeline;
       const lineCount = (row.sharedTimelineContext?.lineIds || []).length;
       const sources = [
+        ...(row.definitionSourceFiles || []),
         ...(row.definitionAssets || []),
         ...(row.definitionTables || []),
         row.definitionTable,
@@ -2786,14 +2789,26 @@
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
         : "";
+      const evidenceBoundary = [
+        row.consumerBoundary
+          ? `<small><strong>${esc(t("offlineRecoveryConsumer"))}:</strong> ${esc(row.consumerBoundary)}</small>`
+          : "",
+        row.orderBoundary
+          ? `<small><strong>${esc(t("offlineRecoveryOrder"))}:</strong> ${esc(row.orderBoundary)}</small>`
+          : "",
+        row.reopenWhen
+          ? `<small><strong>${esc(t("offlineRecoveryReopen"))}:</strong> ${esc(row.reopenWhen)}</small>`
+          : "",
+      ].filter(Boolean).join("");
       const evidenceLabel = ({
         leveldata_property_resolved_levelscript_result_branch: t("offlineRecoveryEvidenceResultBranch"),
         registered_dialog_definition_without_recovered_activator: t("offlineRecoveryEvidenceDefinitionOnly"),
         radio_definition_without_recovered_consumer: t("offlineRecoveryEvidenceRadioOnly"),
         dialog_text_table_only_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
+        dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),
       })[row.evidenceKind] || row.evidenceKind || row.recoveryStatus || "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
