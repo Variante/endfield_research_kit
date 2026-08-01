@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v101"
+SCHEMA = "sourceStoryGapQueue.v102"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -190,7 +190,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v83"
+    "current-build-offline-story-carrier-exhaustion-v84"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -216,6 +216,9 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm02m13_3": "radio_gm02m13_3",
     "radio_gm02m13_4": "radio_gm02m13_4",
     "radio_gm02m13_5": "radio_gm02m13_5",
+    "dlg_gm01m4_7": "dlg_gm01m4_7",
+    "misc_dlg_gm01m4_3d5": "dlg_gm01m4_3d5",
+    "radio_gm01m4_1": "radio_gm01m4_1",
     "text_gm01m17_1": "text_gm01m17_1",
     "dlg_gm01m22_6": "dlg_gm01m22_6",
     "dlg_gm01m22_7": "dlg_gm01m22_7",
@@ -414,6 +417,23 @@ OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS = {
     },
 }
 OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
+    "gm01m4": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm01m4.json"
+        ),
+        "sourceSha256":
+            "43F95A2A63978A06F1CDCC73EC073154A88A7A3E1DB9C6EA2F4195862390868D",
+        "mainPathQuestIds": ("gm01m4_q#1", "gm01m4_q#2"),
+        "prevQuestIdsByQuest": {
+            "gm01m4_q#1": (),
+            "gm01m4_q#2": ("gm01m4_q#1",),
+        },
+        "failedConditionsByQuest": {
+            "gm01m4_q#1": None,
+            "gm01m4_q#2": None,
+        },
+    },
     "gm02m13": {
         "sourceFile": (
             "export_full/structured/Persistent/Data/Json/"
@@ -2593,6 +2613,111 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
         "optionIds": (),
         "missingAudioIds": ("au_dlg_gm01m22_4d0_002",),
         "treeBranchGroups": (),
+    },
+    "dlg_gm01m4_7": {
+        "missionId": "gm01m4",
+        "filename": "dlg_gm01m4_7_pFD9954043BA92F4B.json",
+        "sha256":
+            "1F5BFA67F3D8F63D9E21729746A16042E918AA6D96C8E90AAF5023CA1BAC6DE8",
+        "extraConfigFilename":
+            "dlg_gm01m4_7_extra_config_p3CB06BFD1EB1528E.json",
+        "extraConfigSha256":
+            "0457E91190591D4BBA58E38AF3386136240AB6F9C7679F3D96BF7BBC83507FC1",
+        "lineIds": ("dlg_gm01m4_7_001", "dlg_gm01m4_7_002"),
+        "optionIds": (),
+        "missingAudioIds": (
+            "au_dlg_gm01m4_7_001",
+            "au_dlg_gm01m4_7_002",
+        ),
+        "treeBranchGroups": (),
+        "npcProxyConsumer": {
+            "proxyId": "luoke_map01_v1d0d0_gm01m4man",
+            "entryIndex": 3,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m4_7",
+                "missionId": "",
+            },
+        },
+        "missionNpcProxyTracking": {
+            "sourceFile": (
+                "export_full/structured/Persistent/Data/Json/"
+                "MissionRuntimeAsset/gm01m4.json"
+            ),
+            "sourceSha256":
+                "43F95A2A63978A06F1CDCC73EC073154A88A7A3E1DB9C6EA2F4195862390868D",
+            "proxyId": "luoke_map01_v1d0d0_gm01m4man",
+            "levelId": "map01_lv001",
+            "rows": ({
+                "questId": "gm01m4_q#2",
+                "objectiveIndex": 0,
+                "trackingIndex": 0,
+            },),
+        },
+    },
+    "misc_dlg_gm01m4_3d5": {
+        "missionId": "gm01m4",
+        "registryKey": "dlg_gm01m4_3d5",
+        "definitionName": "dlg_gm01m4_3d5",
+        "linePrefix": "dlg_gm01m4_3d5",
+        "filename": "dlg_gm01m4_3d5_p005943414CADFF30.json",
+        "sha256":
+            "8F63AF4A69F7ACC4D399A35D4B37C4DCA6DDF9CED735FF610EB61333356D6C3B",
+        "extraConfigFilename":
+            "dlg_gm01m4_3d5_extra_config_p763DAF129AD61F5C.json",
+        "extraConfigSha256":
+            "6178009F0AEE6189EF06A672B92BB6F03F8573FDE3D82183D122CF99DC3FB085",
+        "lineIds": tuple(
+            f"dlg_gm01m4_3d5_{number:03d}" for number in range(1, 7)
+        ),
+        "optionIds": (
+            "option_dlg_gm01m4_3d5_1_001",
+            "option_dlg_gm01m4_3d5_1_002",
+            "option_dlg_gm01m4_3d5_2_001",
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m4_3d5_{number:03d}" for number in range(1, 7)
+        ),
+        "treeBranchGroups": ({
+            "optionGroup": 1,
+            "optionIds": (
+                "option_dlg_gm01m4_3d5_1_001",
+                "option_dlg_gm01m4_3d5_1_002",
+            ),
+            "targetLineIds": (
+                "dlg_gm01m4_3d5_002",
+                "dlg_gm01m4_3d5_004",
+            ),
+            "routeKind": "authored_split",
+        },),
+        "npcProxyConsumer": {
+            "proxyId": "luoke_map01_v1d0d0_gm01m4man",
+            "entryIndex": 1,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {"envTalkOverrideNpc": True},
+                "dialogExOptionData": [],
+                "dialogId": "dlg_gm01m4_3d5",
+                "missionId": "",
+            },
+        },
+        "missionNpcProxyTracking": {
+            "sourceFile": (
+                "export_full/structured/Persistent/Data/Json/"
+                "MissionRuntimeAsset/gm01m4.json"
+            ),
+            "sourceSha256":
+                "43F95A2A63978A06F1CDCC73EC073154A88A7A3E1DB9C6EA2F4195862390868D",
+            "proxyId": "luoke_map01_v1d0d0_gm01m4man",
+            "levelId": "map01_lv001",
+            "rows": ({
+                "questId": "gm01m4_q#2",
+                "objectiveIndex": 0,
+                "trackingIndex": 0,
+            },),
+        },
     },
     "dlg_gm01m6_6": {
         "missionId": "gm01m6",
@@ -6427,6 +6552,7 @@ OFFLINE_EXHAUSTION_GM02M13_RADIOS = frozenset({
     "radio_gm02m13_4",
     "radio_gm02m13_5",
 })
+OFFLINE_EXHAUSTION_GM01M4_RADIOS = frozenset({"radio_gm01m4_1"})
 OFFLINE_EXHAUSTION_GM01M6_RADIOS = frozenset({
     "radio_gm01m6_0d5",
     "radio_gm01m6_4d5",
@@ -6511,6 +6637,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm02m3": OFFLINE_EXHAUSTION_GM02M3_RADIOS,
     "gm02m13": OFFLINE_EXHAUSTION_GM02M13_RADIOS,
     "gm02m14": OFFLINE_EXHAUSTION_GM02M14_RADIOS,
+    "gm01m4": OFFLINE_EXHAUSTION_GM01M4_RADIOS,
     "gm01m6": OFFLINE_EXHAUSTION_GM01M6_RADIOS,
     "gm01m7": OFFLINE_EXHAUSTION_GM01M7_RADIOS,
     "gm01m16": OFFLINE_EXHAUSTION_GM01M16_RADIOS,
@@ -6667,6 +6794,7 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm02m13_3": frozenset({"au_radio_gm02m13_3_001"}),
     "radio_gm02m13_4": frozenset({"au_radio_gm02m13_4_001"}),
     "radio_gm02m13_5": frozenset({"au_radio_gm02m13_5_001"}),
+    "radio_gm01m4_1": frozenset({"au_radio_gm01m4_1_001"}),
     "radio_gm01m6_0d5": frozenset({
         "au_radio_gm01m6_0d5_001",
         "au_radio_gm01m6_0d5_002",

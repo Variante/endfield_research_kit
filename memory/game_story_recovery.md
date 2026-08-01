@@ -563,6 +563,25 @@ tables and MissionRuntime file, renders the topology and guards, and keeps all
 three radios graph-neutral. Filename suffixes, row order, OCR, and manual order
 remain cross-reference only.
 
+The `gm01m4` frontier is now source-bounded, lowering its score from 15 to
+zero and the major actionable backlog from 33 to 30. Hash-locked
+MissionRuntime proves only the linear quest chain `q#1 -> q#2`: q#1 is the
+AND gate over exact scripts `2100010048`, `2100010049`, and `2100010050`,
+while q#2 watches `dlg_gm01m4_6` and tracks NPC proxy
+`luoke_map01_v1d0d0_gm01m4man`. Exact missionless NpcProxyEx entries on that
+same proxy select `dlg_gm01m4_3d5` at index 1 and `dlg_gm01m4_7` at index 3;
+the indices are server-selected rows, not playback chronology. The former
+DialogTree contains the exact group-1 split to lines `_002` and `_004`; the
+latter is a linear two-line tree. `radio_gm01m4_1` remains a one-line
+RadioTable definition without a typed consumer. All nine authored audio ids
+for these three files are absent from AudioDialog, and their exact roots,
+audio ids, and proxy id are absent from both installed binaries. The audited
+MissionRuntime, LevelScript, GameplayConfig, object-index, AnimeStudio carrier,
+and native playback-caller surfaces expose no activation owner. Mission
+Pipeline now attaches the exact definitions, proxy rows, q#2 navigation
+context, and linear topology while keeping all three files graph-neutral.
+Manual and OCR order remain comparison-only.
+
 ## Remaining gaps
 
 1. **Mission ownership:** 155 Story files have exact native playback but lack a
@@ -571,8 +590,8 @@ remain cross-reference only.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** main and event have no actionable core-isolated
-   or strict quest-attachment gaps. Major missions retain 33 actionable
-   core-isolated files and score 165; seven broad main-story co-memberships
+   or strict quest-attachment gaps. Major missions retain 30 actionable
+   core-isolated files and score 150; seven broad main-story co-memberships
    remain visible as non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
@@ -587,9 +606,9 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should move to one of the four equally highest-ranked remaining
-major-mission frontiers: `gm01m15`, `gm01m4`, `gm02m17`, or `gm02m8` (score 15
-and three actionable files each), then the five character-mission
+Next work should move to one of the three equally highest-ranked remaining
+major-mission frontiers: `gm01m15`, `gm02m17`, or `gm02m8` (score 15 and
+three actionable files each), then the five character-mission
 quest-attachment gaps. Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
