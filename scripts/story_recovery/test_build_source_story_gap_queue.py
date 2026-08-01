@@ -1492,6 +1492,105 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(text_5["readingPopupRowId"], "text_gm01m14_5")
         self.assertEqual(len(text_5["contentTextIds"]), 7)
 
+    def test_gm01m27_retired_definitions_and_related_prts_bundle_are_exact(
+        self,
+    ) -> None:
+        dialogs = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS
+        self.assertEqual(
+            {
+                key: (
+                    len(dialogs[key]["lineIds"]),
+                    len(dialogs[key]["optionRows"]),
+                )
+                for key in (
+                    "dlg_gm01m27_1",
+                    "dlg_gm01m27_2",
+                    "dlg_gm01m27_3",
+                )
+            },
+            {
+                "dlg_gm01m27_1": (6, 3),
+                "dlg_gm01m27_2": (3, 2),
+                "dlg_gm01m27_3": (3, 2),
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_RADIOS_BY_MISSION["gm01m27"],
+            {
+                "radio_gm01m27_1",
+                "radio_gm01m27_2",
+                "radio_gm01m27_3",
+            },
+        )
+
+        table_root = (
+            gap_queue.ROOT
+            / "export_full"
+            / "structured"
+            / "StreamingAssets"
+            / "Table"
+        )
+        declaration = (
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_RELATED_ORIGINAL_DATA[
+                "gm01m27"
+            ]
+        )
+        prts = gap_queue.read_json(table_root / "PrtsReading.json", {})
+        num_to_str = gap_queue.read_json(
+            table_root / "NumIdStrTable.json", {}
+        )
+        str_to_num = gap_queue.read_json(
+            table_root / "StrIdNumTable.json", {}
+        )
+        text_table = gap_queue.read_json(table_root / "TextTable.json", {})
+
+        related, failure = (
+            gap_queue._mission_related_original_data_validation(
+                "gm01m27",
+                declaration,
+                prts,
+                num_to_str,
+                str_to_num,
+                text_table,
+            )
+        )
+        self.assertIsNone(failure)
+        self.assertEqual(related["groupId"], "term_map01_lv001_gm01m27")
+        self.assertEqual(
+            [row["order"] for row in related["entries"]],
+            [1, 2],
+        )
+        self.assertEqual(
+            related["storyRelationStatus"],
+            "same_nominal_mission_only_no_scene_or_quest_join",
+        )
+
+        broken_prts = copy.deepcopy(prts)
+        broken_prts["term_map01_lv001_gm01m27"]["list"]["1"][
+            "order"
+        ] = 9
+        related, failure = (
+            gap_queue._mission_related_original_data_validation(
+                "gm01m27",
+                declaration,
+                broken_prts,
+                num_to_str,
+                str_to_num,
+                text_table,
+            )
+        )
+        self.assertIsNone(related)
+        self.assertEqual(
+            failure["validator"],
+            "offlineMissionRelatedOriginalData",
+        )
+        self.assertEqual(
+            failure["gate"],
+            "exactPrtsTerminalBundleAndMissionTextRows",
+        )
+        self.assertEqual(failure["expected"]["entries"][0]["order"], 1)
+        self.assertEqual(failure["actual"]["entries"][0]["order"], 9)
+
     def test_exact_levelscript_interactive_config_is_closed_without_order(
         self,
     ) -> None:
@@ -3437,6 +3536,46 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "radio_gm01m20_4": {"au_radio_gm01m20_4_001"},
                 "radio_gm01m22_1d2": {"au_radio_gm01m22_1d2_001"},
                 "radio_gm01m22_1d3": {"au_radio_gm01m22_1d3_001"},
+                "radio_gm01m24_1d5": {"au_radio_gm01m24_1d5_001"},
+                "radio_gm01m24_2": {"au_radio_gm01m24_2_002"},
+                "radio_gm01m24_3": {"au_radio_gm01m24_3_003"},
+                "radio_gm01m24_4": {"au_radio_gm01m24_4_004"},
+                "radio_gm01m25_1d5": {"au_radio_gm01m25_1d5_001"},
+                "radio_gm01m25_2": {"au_radio_gm01m25_2_002"},
+                "radio_gm01m25_3": {"au_radio_gm01m25_3_003"},
+                "radio_gm01m25_4": {"au_radio_gm01m25_4_004"},
+                "radio_gm01m26_1d5": {"au_radio_gm01m26_1d5_001"},
+                "radio_gm01m26_2": {"au_radio_gm01m26_2_002"},
+                "radio_gm01m26_3": {"au_radio_gm01m26_3_003"},
+                "radio_gm01m26_4": {"au_radio_gm01m26_4_004"},
+                "radio_gm01m27_1": {
+                    "au_radio_gm01m27_1_001",
+                    "au_radio_gm01m27_1_002",
+                },
+                "radio_gm01m27_2": {"au_radio_gm01m27_2_001"},
+                "radio_gm01m27_3": {"au_radio_gm01m27_3_001"},
+                "radio_gm01m5_1": {
+                    "au_radio_gm01m5_1_001",
+                    "au_radio_gm01m5_1_002",
+                },
+                "radio_gm01m5_2": {"au_radio_gm01m5_2_001"},
+                "radio_gm01m5_3": {"au_radio_gm01m5_3_001"},
+                "radio_gm01m5_4": {"au_radio_gm01m5_4_001"},
+                "radio_gm02m1_1": {
+                    "au_radio_gm02m1_1_001",
+                    "au_radio_gm02m1_1_002",
+                },
+                "radio_gm02m1_2": {"au_radio_gm02m1_2_001"},
+                "radio_gm02m1_6": {
+                    "au_radio_gm02m1_6_001",
+                    "au_radio_gm02m1_6_002",
+                },
+                "radio_gm02m1_7": {
+                    "au_radio_gm02m1_7_001",
+                    "au_radio_gm02m1_7_002",
+                },
+                "radio_gm02m1_8": {"au_radio_gm02m1_8_001"},
+                "radio_gm02m23_2": {"au_radio_gm02m23_2_001"},
                 "radio_e5m4_1": {
                     f"au_radio_e5m4_1_{number:03d}"
                     for number in range(1, 5)
@@ -3837,6 +3976,18 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_gm01m20_5",
                 "dlg_gm01m20_6",
                 "dlg_gm01m20_7",
+                "dlg_gm01m24_1",
+                "dlg_gm01m24_2",
+                "dlg_gm01m24_3",
+                "dlg_gm01m25_1",
+                "dlg_gm01m25_2",
+                "dlg_gm01m25_3",
+                "dlg_gm01m26_1",
+                "dlg_gm01m26_2",
+                "dlg_gm01m26_3",
+                "dlg_gm01m26_5",
+                "dlg_gm02m23_3",
+                "dlg_gm02m23_10",
             },
         )
         self.assertEqual(
@@ -4491,6 +4642,19 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_gm02m3_4",
                 "dlg_gm02m3_5",
                 "dlg_gm01m12_8",
+                "dlg_gm02m1_1",
+                "dlg_gm02m1_2",
+                "misc_dlg_gm02m1_1d5",
+                "dlg_gm01m5_1",
+                "dlg_gm01m5_2",
+                "dlg_gm01m5_3",
+                "dlg_gm01m5_4",
+                "dlg_gm01m24_5",
+                "dlg_gm01m25_5",
+                "dlg_gm01m14_7",
+                "dlg_gm01m27_1",
+                "dlg_gm01m27_2",
+                "dlg_gm01m27_3",
             },
         )
         self.assertEqual(len(text_only["dlg_e10m3_10"]["lineIds"]), 8)
@@ -5960,6 +6124,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_gm01m12_5",
                 "text_gm01m12_6",
                 "text_gm01m12_7",
+                "text_gm01m14_4",
+                "text_gm01m14_5",
             },
         )
 
