@@ -4676,6 +4676,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_gm02m3_4",
                 "dlg_gm02m3_5",
                 "dlg_gm01m12_8",
+                "dlg_gm01m15_7",
                 "dlg_gm02m1_1",
                 "dlg_gm02m1_2",
                 "misc_dlg_gm02m1_1d5",
@@ -5454,6 +5455,148 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
         self.assertEqual(failure["mission"], "gm01m13")
         self.assertIn("sourceSha256", failure)
+
+    def test_gm01m15_definition_frontier_and_topology_are_exact(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual(status["status"], "active")
+        self.assertEqual(
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm01m15" in key
+            },
+            {"dlg_gm01m15_7", "text_gm01m15_1", "text_gm01m15_8"},
+        )
+
+        dialog = index["dlg_gm01m15_7"]
+        self.assertEqual(
+            dialog["evidenceKind"],
+            "dialog_text_table_only_without_registry_asset_or_consumer",
+        )
+        self.assertEqual(len(dialog["lineIds"]), 11)
+        self.assertEqual(len(dialog["missingAudioIds"]), 11)
+        self.assertEqual(len(dialog["optionIds"]), 5)
+        self.assertEqual(
+            dialog["optionRouteStatus"],
+            "definitions_present_route_unresolved",
+        )
+        self.assertEqual(
+            dialog["summaryDefinition"],
+            {
+                "summaryId": "summary_gm01m15_7_001",
+                "textId": "1386392558646000191",
+                "relation": "dialog_summary_map_targets_dialog",
+                "missionOwnership": False,
+                "orderEvidence": False,
+            },
+        )
+        self.assertNotIn("dialogTreeBranchGroups", dialog)
+
+        text_one = index["text_gm01m15_1"]
+        self.assertEqual(
+            text_one["contentTextIds"],
+            [
+                8242330289792353294,
+                -2455707730206541547,
+                -2339893156956209480,
+                119766408319964938,
+                -8714781499976003721,
+            ],
+        )
+        self.assertEqual(
+            text_one["prtsDefinition"],
+            {
+                "rowId": "nar_digital_map01_research1_16_1",
+                "firstLvId": "digital_map01_research1_16",
+                "type": "text",
+                "order": 1,
+                "relation": "prts_archive_entry_targets_story",
+                "missionOwnership": False,
+                "orderEvidence": False,
+            },
+        )
+        self.assertEqual(
+            index["text_gm01m15_8"]["contentTextIds"],
+            [6649389232287698087],
+        )
+        self.assertIsNone(index["text_gm01m15_8"]["prtsDefinition"])
+
+        topology = dialog["missionQuestTopologyContext"]
+        self.assertEqual(
+            topology["mainPathQuestIds"],
+            [
+                "gm01m15_q#2", "gm01m15_q#3", "gm01m15_q#4",
+                "gm01m15_q#6", "gm01m15_q#7", "gm01m15_q#8",
+                "gm01m15_q#14", "gm01m15_q#5", "gm01m15_q#10",
+                "gm01m15_q#11", "gm01m15_q#12",
+            ],
+        )
+        self.assertEqual(
+            topology["forks"],
+            [{
+                "questId": "gm01m15_q#3",
+                "successorQuestIds": ["gm01m15_q#4", "gm01m15_q#13"],
+            }],
+        )
+        self.assertEqual(
+            topology["merges"],
+            [{
+                "predecessorQuestIds": ["gm01m15_q#4", "gm01m15_q#13"],
+                "questId": "gm01m15_q#6",
+            }],
+        )
+        self.assertEqual(
+            topology["parallelRendezvous"],
+            [{
+                "forkQuestId": "gm01m15_q#3",
+                "parallelQuestIds": ["gm01m15_q#4", "gm01m15_q#13"],
+                "mergeQuestId": "gm01m15_q#6",
+                "joinSemantics": "all_predecessor_quests_required",
+                "playerChoice": False,
+            }],
+        )
+        self.assertEqual(topology["storyAssignments"], [])
+        self.assertFalse(topology["orderEvidence"])
+        for story_key in ("dlg_gm01m15_7", "text_gm01m15_1", "text_gm01m15_8"):
+            self.assertEqual(index[story_key]["graphEffect"], "none")
+
+        definition = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+            "dlg_gm01m15_7"
+        ]
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS,
+            {"dlg_gm01m15_7": {
+                **definition,
+                "summaryDefinition": {
+                    **definition["summaryDefinition"],
+                    "summaryId": "summary_gm01m15_7_changed",
+                },
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(partial, table_root)
+            )
+        self.assertEqual(failed_index, {})
+        failure = next(
+            row for row in failed_status["validatorDiagnostics"]
+            if row.get("storyKey") == "dlg_gm01m15_7"
+            and row.get("gate") == "exactDialogSummaryDefinition"
+        )
+        self.assertEqual(failure["validator"], "offlineTextOnlyDialogDefinition")
+        self.assertIn("dialogSummaryMapTable", failure["sourceSha256"])
+        self.assertIn("dialogSummaryTable", failure["sourceSha256"])
 
     def test_declared_gm01m7_branch_frontier_is_exact(self) -> None:
         story_keys = {
@@ -7038,6 +7181,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_gm01m22_5",
                 "text_gm01m12_1",
                 "text_gm01m13_1",
+                "text_gm01m15_1",
+                "text_gm01m15_8",
                 "text_gm01m12_3",
                 "text_gm01m12_5",
                 "text_gm01m12_6",
