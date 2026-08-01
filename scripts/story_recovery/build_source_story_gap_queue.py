@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v93"
+SCHEMA = "sourceStoryGapQueue.v94"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -144,7 +144,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v70"
+    "current-build-offline-story-carrier-exhaustion-v71"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -225,6 +225,11 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm01m25_2": "radio_gm01m25_2",
     "radio_gm01m25_3": "radio_gm01m25_3",
     "radio_gm01m25_4": "radio_gm01m25_4",
+    "dlg_gm01m26_5": "dlg_gm01m26_5",
+    "radio_gm01m26_1d5": "radio_gm01m26_1d5",
+    "radio_gm01m26_2": "radio_gm01m26_2",
+    "radio_gm01m26_3": "radio_gm01m26_3",
+    "radio_gm01m26_4": "radio_gm01m26_4",
 }
 OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
     "gm01m7": {
@@ -429,6 +434,69 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
                 "getterLocalId": 142,
                 "propertyPath": "failed_dialog",
                 "pathLocalIds": (179, 184, 187, 188, 189, 202, 203, 143),
+            }),
+        },
+    },
+    "gm01m26": {
+        "levelId": "map01_lv005",
+        "scriptId": "3400010017",
+        "levelDataFile": (
+            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            "map01_lv005/map01_lv005_lv_data_sub_01.json"
+        ),
+        "levelDataSha256":
+            "7AEEE38BBBBEF778ACD6AE2F50A6F587652053E9CB57FACB5506621D091FD95D",
+        "levelScriptFile": (
+            "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/"
+            "map01_lv005/3400010017.json"
+        ),
+        "levelScriptSha256":
+            "585D5E7B49C40765801D27867446D410F4D703FF8A62654CE776233D7C97879F",
+        "dictionaryEntryCount": 22,
+        "dictionaryScriptIds": (
+            "3400010000", "3400010001", "3400010002", "3400010003",
+            "3400010004", "3400010009", "3400010010", "3400010011",
+            "3400010012", "3400010013", "3400010017", "3400010018",
+            "3400010019", "3400010020", "3400010021", "3400010027",
+            "3400010028", "3400010029", "3400010031", "3400010032",
+            "3400010033", "3400010044",
+        ),
+        "propertyDialogs": {
+            "start_dialog": "dlg_gm01m26_1",
+            "succeed_dialog": "dlg_gm01m26_2",
+            "failed_dialog": "dlg_gm01m26_3",
+        },
+        "startDialogListener": {
+            "headerLocalId": 79,
+            "eventName": "LevelEvent_OnDialogEnter",
+            "nextLocalId": 80,
+            "propertyPath": "start_dialog",
+        },
+        "resultSwitch": {
+            "eventHeaderLocalId": 232,
+            "eventName": "ScriptEvent_OnCustomEvent",
+            "eventKey": "#3ebdaf39",
+            "switchLocalId": 180,
+            "getterLocalId": 179,
+            "getterPath": "result",
+            "switchCases": (
+                (0, -1), (1, 181), (2, 182), (3, 22),
+                (4, 183), (5, 184), (8, 208), (9, 185),
+            ),
+            "cases": ({
+                "value": 8,
+                "entryLocalId": 208,
+                "actionLocalId": 141,
+                "getterLocalId": 140,
+                "propertyPath": "succeed_dialog",
+                "pathLocalIds": (180, 208, 209, 211, 212, 213, 226, 227, 141),
+            }, {
+                "value": 9,
+                "entryLocalId": 185,
+                "actionLocalId": 144,
+                "getterLocalId": 143,
+                "propertyPath": "failed_dialog",
+                "pathLocalIds": (180, 185, 188, 189, 190, 203, 204, 144),
             }),
         },
     },
@@ -4317,6 +4385,142 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.update({
             }),
         },),
     },
+    "dlg_gm01m26_1": {
+        "missionId": "gm01m26",
+        "filename": "dlg_gm01m26_1_p84AB417C755724F4.json",
+        "sha256":
+            "CA6AE7B5B260F0109F8F3C6F926C4DE9798409F77405F111A1935F31C2D51903",
+        "extraConfigFilename":
+            "dlg_gm01m26_1_extra_config_pD89622849551AACA.json",
+        "extraConfigSha256":
+            "6C932CE0A3060D33116B68F43BE6B6E967E9844D504403E11ABE3B84618ABD5F",
+        "lineIds": tuple(
+            f"dlg_gm01m26_1_{number:03d}" for number in range(9, 22)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m26_1_1_{number:03d}"
+            for number in (1, 3, 4)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m26_1_{number:03d}" for number in range(9, 22)
+        ),
+        "treeBranchGroups": ({
+            "optionGroup": 1,
+            "optionIds": (
+                "option_dlg_gm01m26_1_1_001",
+                "option_dlg_gm01m26_1_1_003",
+                "option_dlg_gm01m26_1_1_004",
+            ),
+            "targetLineIds": (
+                "dlg_gm01m26_1_014",
+                "dlg_gm01m26_1_017",
+                "dlg_gm01m26_1_009",
+            ),
+            "routeKind": "authored_split",
+        },),
+    },
+    "dlg_gm01m26_2": {
+        "missionId": "gm01m26",
+        "filename": "dlg_gm01m26_2_p679A1BBCA360401E.json",
+        "sha256":
+            "E2A19D27A11E9D065492807192B033124D2DCCFB305C2B3F29BD9A1F4673F086",
+        "extraConfigFilename":
+            "dlg_gm01m26_2_extra_config_pD55EAC322AD2673B.json",
+        "extraConfigSha256":
+            "CC2A6D98C9ED66647498A29C22621CD63DEDF97CAA2D6276D1817A8060BF57D8",
+        "lineIds": tuple(
+            f"dlg_gm01m26_2_{number:03d}" for number in range(1, 4)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m26_2_1_{number:03d}" for number in range(1, 3)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m26_2_{number:03d}" for number in range(1, 4)
+        ),
+        "terminalOptionRoutes": ({
+            "optionGroup": 1,
+            "routes": ({
+                "optionId": "option_dlg_gm01m26_2_1_001",
+                "targetKind": "finish",
+                "finishId": 1,
+                "finishIdSerialized": True,
+            }, {
+                "optionId": "option_dlg_gm01m26_2_1_002",
+                "targetKind": "finish",
+                "finishId": None,
+                "finishIdSerialized": False,
+            }),
+        },),
+    },
+    "dlg_gm01m26_3": {
+        "missionId": "gm01m26",
+        "filename": "dlg_gm01m26_3_p0B7B834EB62EDD5D.json",
+        "sha256":
+            "216CC8DC7363291868940FAEED5398C5F54F1AEB2AE74A78E978934B06025326",
+        "extraConfigFilename":
+            "dlg_gm01m26_3_extra_config_p3433C90175C7C10D.json",
+        "extraConfigSha256":
+            "B17C9F79C0D8F3BBA3ED807280C571D4100D6214DEDAD649EA0C8CEF7C81E7DE",
+        "lineIds": tuple(
+            f"dlg_gm01m26_3_{number:03d}" for number in range(1, 4)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m26_3_1_{number:03d}" for number in range(1, 3)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m26_3_{number:03d}" for number in range(1, 4)
+        ),
+        "terminalOptionRoutes": ({
+            "optionGroup": 1,
+            "routes": ({
+                "optionId": "option_dlg_gm01m26_3_1_001",
+                "targetKind": "finish",
+                "finishId": 1,
+                "finishIdSerialized": True,
+            }, {
+                "optionId": "option_dlg_gm01m26_3_1_002",
+                "targetKind": "finish",
+                "finishId": None,
+                "finishIdSerialized": False,
+            }),
+        },),
+    },
+    "dlg_gm01m26_5": {
+        "missionId": "gm01m26",
+        "filename": "dlg_gm01m26_5_p3E79AC01BA5A94CF.json",
+        "sha256":
+            "4F1F0BB5E3D43D7E5AB2D5B2AE8FDF684929D1A35C112EB320B4794A22D2694C",
+        "extraConfigFilename":
+            "dlg_gm01m26_5_extra_config_p30D7F99DBF5386DA.json",
+        "extraConfigSha256":
+            "48320DB9CEA242FBB8E419D6CDEB4EC052DA1BEBC8DD0D8A25E4966FF7F68709",
+        "lineIds": tuple(
+            f"dlg_gm01m26_5_{number:03d}"
+            for number in (1, 2, 6, 7, 8, 14, 15, 16)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m26_5_1_{number:03d}"
+            for number in (1, 3, 4)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m26_5_{number:03d}"
+            for number in (1, 2, 6, 7, 8, 14, 15, 16)
+        ),
+        "treeBranchGroups": ({
+            "optionGroup": 1,
+            "optionIds": (
+                "option_dlg_gm01m26_5_1_001",
+                "option_dlg_gm01m26_5_1_003",
+                "option_dlg_gm01m26_5_1_004",
+            ),
+            "targetLineIds": (
+                "dlg_gm01m26_5_014",
+                "dlg_gm01m26_5_006",
+                "dlg_gm01m26_5_008",
+            ),
+            "routeKind": "authored_split",
+        },),
+    },
 })
 OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e10m3_9",
@@ -5136,6 +5340,12 @@ OFFLINE_EXHAUSTION_GM01M25_RADIOS = frozenset({
     "radio_gm01m25_3",
     "radio_gm01m25_4",
 })
+OFFLINE_EXHAUSTION_GM01M26_RADIOS = frozenset({
+    "radio_gm01m26_1d5",
+    "radio_gm01m26_2",
+    "radio_gm01m26_3",
+    "radio_gm01m26_4",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "a1m6d1": OFFLINE_EXHAUSTION_A1M6D1_RADIOS,
     "a1m6d2": OFFLINE_EXHAUSTION_A1M6D2_RADIOS,
@@ -5150,6 +5360,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm01m22": OFFLINE_EXHAUSTION_GM01M22_RADIOS,
     "gm01m24": OFFLINE_EXHAUSTION_GM01M24_RADIOS,
     "gm01m25": OFFLINE_EXHAUSTION_GM01M25_RADIOS,
+    "gm01m26": OFFLINE_EXHAUSTION_GM01M26_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
@@ -5312,6 +5523,10 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm01m25_2": frozenset({"au_radio_gm01m25_2_002"}),
     "radio_gm01m25_3": frozenset({"au_radio_gm01m25_3_003"}),
     "radio_gm01m25_4": frozenset({"au_radio_gm01m25_4_004"}),
+    "radio_gm01m26_1d5": frozenset({"au_radio_gm01m26_1d5_001"}),
+    "radio_gm01m26_2": frozenset({"au_radio_gm01m26_2_002"}),
+    "radio_gm01m26_3": frozenset({"au_radio_gm01m26_3_003"}),
+    "radio_gm01m26_4": frozenset({"au_radio_gm01m26_4_004"}),
     "radio_gm01m22_1d2": frozenset({"au_radio_gm01m22_1d2_001"}),
     "radio_gm01m22_1d3": frozenset({"au_radio_gm01m22_1d3_001"}),
     "radio_e5m5_1": frozenset({

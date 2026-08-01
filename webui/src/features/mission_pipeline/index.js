@@ -474,6 +474,9 @@
       offlineRecoveryTerminalOptions: "Terminal option routes",
       offlineRecoveryFinishId: "serialized finishId",
       offlineRecoveryFinishIdAbsent: "finishId not serialized",
+      offlineRecoveryEvidenceResultBranch: "Exact result branch",
+      offlineRecoveryEvidenceDefinitionOnly: "Definition only — activator unknown",
+      offlineRecoveryEvidenceRadioOnly: "Radio definition only — consumer unknown",
       offlineRecoveryMissingAudio: "audio ids absent",
       offlineRecoveryMissionTracking: "Mission NPC tracking context (navigation only)",
       offlineRecoveryTrackedQuests: "tracked quests",
@@ -941,6 +944,9 @@
       offlineRecoveryTerminalOptions: "\u7ec8\u6b62\u9009\u9879\u8def\u7531",
       offlineRecoveryFinishId: "\u5df2\u5e8f\u5217\u5316 finishId",
       offlineRecoveryFinishIdAbsent: "\u672a\u5e8f\u5217\u5316 finishId",
+      offlineRecoveryEvidenceResultBranch: "\u7cbe\u786e\u7ed3\u679c\u5206\u652f",
+      offlineRecoveryEvidenceDefinitionOnly: "\u4ec5\u5b9a\u4e49\uff0c\u6fc0\u6d3b\u5668\u672a\u77e5",
+      offlineRecoveryEvidenceRadioOnly: "\u4ec5\u65e0\u7ebf\u7535\u5b9a\u4e49\uff0c\u6d88\u8d39\u8005\u672a\u77e5",
       offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
       offlineRecoveryMissionTracking: "\u4efb\u52a1 NPC \u8ffd\u8e2a\u4e0a\u4e0b\u6587\uff08\u4ec5\u5bfc\u822a\uff09",
       offlineRecoveryTrackedQuests: "\u8ffd\u8e2a\u4efb\u52a1\u8282\u70b9",
@@ -2768,7 +2774,12 @@
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      const evidenceLabel = ({
+        leveldata_property_resolved_levelscript_result_branch: t("offlineRecoveryEvidenceResultBranch"),
+        registered_dialog_definition_without_recovered_activator: t("offlineRecoveryEvidenceDefinitionOnly"),
+        radio_definition_without_recovered_consumer: t("offlineRecoveryEvidenceRadioOnly"),
+      })[row.evidenceKind] || row.evidenceKind || row.recoveryStatus || "";
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${runtimeTrackingContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
