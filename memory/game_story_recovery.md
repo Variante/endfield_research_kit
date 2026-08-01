@@ -21,6 +21,7 @@ Latest CN reports:
 | Source-comparable scene pairs | 3,762 / 249,651 (1.51%) |
 | Cyclic components | 0 |
 | Exact nested DialogTree containments | 49 across 44 child files |
+| Exact quest-observed DialogTree definitions | 435 definitions / 461 placements across 422 quests |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -368,6 +369,18 @@ audit, and the installed GameAssembly expose no additional consumer for these
 three roots. Mission Pipeline shows all five containments, the dialog-internal
 branches, the quest fork/failed-state guard, and the definition boundaries.
 OCR and manual overrides had no `gm02m23` entries and were not evidence.
+The three records formerly reported as missing Timeline activation evidence are
+now correctly classified as exact typed DialogTree definitions:
+`dlg_gm02m23_1` on `q#1`, `_7` on `q#8`, and `_8` on `q#6`. Together they
+contain 33 authored lines, nine option groups, and three multi-option groups.
+Their current-game TextAsset hashes are verified again when Mission Pipeline
+data is published. `CheckTalkOptionFinish` proves that each quest observes the
+dialog's completion state; it does not identify the client action that starts
+the dialog. The WebUI therefore shows the definition, internal branch counts,
+observer type, source path, and SHA-256 without promoting the internal graph to
+a cross-file order edge. The same fail-closed publisher now covers 435 exact
+definitions globally, including nested `CheckRepeatableTalkFinish` objectives
+and failed-dialog guards, with no silently unplaced definition.
 
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
@@ -400,9 +413,11 @@ Next work should move to the highest-ranked remaining real major-mission
 frontier (73 actionable core-isolated files remain across that bucket; the
 next frontier is `gm01m14`, score 35 across seven actionable isolated files)
 and the five character-mission quest-attachment gaps. Within `gm02m23`, the
-three remaining timeline activation records are the only higher-value reopen
-surface; the seven isolated and four weak-only Story files have zero broadly
-actionable rows under the current audited sources. For `gm01m16`, reopen the
+remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
+`radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
+as quest-observed definitions. The seven isolated and four weak-only Story
+files have zero broadly actionable rows under the current audited sources. For
+`gm01m16`, reopen the
 patrol rows only if an exact `NpcPatrolStart`, world-entity, or MissionRuntime
 tracking join co-carries patrol `160002` or `20001`; do not infer that join from
 the mission-like filename or patrol registration order. Reopen a

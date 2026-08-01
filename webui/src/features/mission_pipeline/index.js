@@ -231,6 +231,16 @@
       authority: "Condition authority",
       authoredFields: "Authored fields",
       objectives: "Objectives and gates",
+      dialogTreeDefinitions: "Original DialogTree definitions",
+      dialogTreeDefinitionHint: "The quest observes completion of this exact current-game DialogTree. Its internal nodes and branches are original-data evidence; the client action that starts it remains unknown unless separately shown.",
+      dialogTreeLines: "lines",
+      dialogTreeNodes: "nodes",
+      dialogTreeConnections: "connections",
+      dialogTreeBranchGroups: "multi-option groups",
+      dialogTreeNoOrder: "Definition/internal graph only · no cross-file order promotion",
+      dialogTreeObserver: "Mission observer",
+      dialogTreeObjectiveObserver: "objective",
+      dialogTreeFailureObserver: "failure guard",
       clientActions: "Client actions after synchronized state",
       source: "Source",
       protocol: "Selected quest network pipeline",
@@ -759,6 +769,16 @@
       authority: "条件归属",
       authoredFields: "原始字段",
       objectives: "目标与条件门",
+      dialogTreeDefinitions: "原始 DialogTree 定义",
+      dialogTreeDefinitionHint: "该任务监听这个当前游戏版本中精确 DialogTree 的完成状态。内部节点和分支属于原始数据证据；除非另有证据，启动它的客户端动作仍然未知。",
+      dialogTreeLines: "行",
+      dialogTreeNodes: "节点",
+      dialogTreeConnections: "连接",
+      dialogTreeBranchGroups: "多选项组",
+      dialogTreeNoOrder: "仅定义与内部图 · 不提升为跨文件顺序",
+      dialogTreeObserver: "任务监听条件",
+      dialogTreeObjectiveObserver: "目标",
+      dialogTreeFailureObserver: "失败条件",
       clientActions: "状态同步后的客户端动作",
       source: "来源",
       protocol: "所选任务节点的网络管线",
@@ -3640,6 +3660,41 @@
     </article>`;
   }
 
+  function dialogTreeDefinitionsHtml(node) {
+    const definitions = node.dialogTreeDefinitions || [];
+    if (!definitions.length) return "";
+    const rows = definitions.map((row) => {
+      const facts = [
+        `${Number((row.lineIds || []).length)} ${t("dialogTreeLines")}`,
+        `${Number(row.nodeCount || 0)} ${t("dialogTreeNodes")}`,
+        `${Number(row.connectionCount || 0)} ${t("dialogTreeConnections")}`,
+        `${Number(row.branchingOptionGroupCount || 0)} ${t("dialogTreeBranchGroups")}`,
+      ];
+      const observers = (row.missionObservers || []).map((observer) => {
+        const relation = observer.relation === "failed_condition"
+          ? t("dialogTreeFailureObserver")
+          : `${t("dialogTreeObjectiveObserver")} ${observer.objectiveIndex ?? "?"}`;
+        const finish = Object.prototype.hasOwnProperty.call(observer, "finishId")
+          ? ` · ${observer.finishId < 0 ? t("anyFinish") : `${t("finish")} ${observer.finishId}`}`
+          : "";
+        return `${relation} · ${observer.conditionType || "?"}${finish}`;
+      });
+      return `<article class="mp-action">
+        <a href="${esc(storyHref(row.sceneKey || ""))}"><code>${esc(row.sceneKey || "")}</code></a>
+        <span>${facts.map(esc).join(" · ")}</span>
+        ${observers.map((observer) => `<small>${esc(t("dialogTreeObserver"))}: ${esc(observer)}</small>`).join("")}
+        <small><code>${esc(row.sourceFile || "")}</code></small>
+        <small>SHA-256 <code>${esc(row.sourceSha256 || "")}</code></small>
+        <small>${esc(t("dialogTreeNoOrder"))}</small>
+      </article>`;
+    }).join("");
+    return `<section class="mp-inspector-section mp-dialog-tree-definition-section">
+      <h3>${esc(t("dialogTreeDefinitions"))}</h3>
+      <p>${esc(t("dialogTreeDefinitionHint"))}</p>
+      ${rows}
+    </section>`;
+  }
+
   function protocolRow(step, player, client, server, tone = "") {
     return `<div class="mp-protocol-row ${tone}"><div class="mp-step-label">${esc(step)}</div><div class="mp-lane-cell is-player">${player || ""}</div><div class="mp-lane-cell is-client">${client || ""}</div><div class="mp-lane-cell is-server">${server || ""}</div></div>`;
   }
@@ -3724,6 +3779,7 @@
       ${activityHostHtml ? `<section class="mp-inspector-section"><h3>${esc(t("activityStageLevel"))}</h3><p>${esc(t("activityStageLevelHint"))}</p>${activityHostHtml}</section>` : ""}
       ${runtimeActionHtml ? `<section class="mp-inspector-section"><h3>${esc(t("runtimeActions"))}</h3>${runtimeActionHtml}</section>` : ""}
       <section class="mp-inspector-section"><h3>${esc(t("objectives"))}</h3>${(node.objectives || []).map((objective) => objectiveHtml(objective, node.id)).join("") || `<p>${esc(t("noObjective"))}</p>`}${node.failedCondition ? `<div class="mp-failed-condition"><strong>failedCondition</strong>${renderConditionTree(node.failedCondition)}</div>` : ""}</section>
+      ${dialogTreeDefinitionsHtml(node)}
       ${storyFilesHtml(node)}
       ${questAttachmentDiagnosticHtml(node)}
       ${runtimeObservedHtml ? `<section class="mp-inspector-section mp-runtime-observed-section"><h3>${esc(t("runtimeTraceOverlay"))}</h3><p>${esc(t("runtimeTraceHint"))}</p><div class="mp-runtime-observation-list">${runtimeObservedHtml}</div><small>${esc(t("noAuthoredPromotion"))}</small></section>` : ""}

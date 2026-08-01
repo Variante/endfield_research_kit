@@ -48,6 +48,8 @@ _ANIME_TREE_COMPLETE_MONO_PREFIXES = tuple(
     pattern[:-6]
     for pattern in _ANIME_TREE_MONO_INDEX_PATTERNS
 )
+_ANIME_TREE_PATH_INDEX: dict[str, Path] | None = None
+_ANIME_TREE_SORTED_STEMS: list[str] | None = None
 
 
 def _anime_tree_logical_stem(path: Path) -> str:
@@ -228,6 +230,127 @@ def _load_anime_resource_payload(path: Path):
             decoded_payload["_assetName"] = asset_name
 
     return decoded_payload
+
+
+def extract_dialog_tree_definition_evidence(
+    payload: dict,
+    dialog_key: str,
+) -> dict | None:
+    """Return exact typed definition facts for one authored DialogTree root.
+
+    This is definition and internal-graph evidence only.  It does not prove
+    which mission action starts the dialog, but it is sufficient to distinguish
+    a real DialogTree objective from a genuinely missing Timeline/DialogTree
+    carrier.
+    """
+    dialog_key = str(dialog_key or "").strip()
+    if (
+        not dialog_key
+        or not isinstance(payload, dict)
+        or payload.get("type") != _DIALOG_TREE_TYPE
+        or str(payload.get("_assetName") or "").strip() != dialog_key
+    ):
+        return None
+    nodes = payload.get("nodes")
+    connections = payload.get("connections")
+    if not isinstance(nodes, list) or not isinstance(connections, list):
+        return None
+
+    node_type_counts: dict[str, int] = {}
+    line_ids: list[str] = []
+    option_ids: list[str] = []
+    option_group_count = 0
+    branching_option_group_count = 0
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        node_type = str(node.get("$type") or "").strip()
+        if node_type:
+            short_type = node_type.rsplit(".", 1)[-1]
+            node_type_counts[short_type] = node_type_counts.get(short_type, 0) + 1
+        if node_type == _DIALOG_TREE_TRUNK_NODE_TYPE:
+            actor_data = node.get("_actorNodeData")
+            trunk_data = (
+                actor_data.get("mfTrunkActionData")
+                if isinstance(actor_data, dict)
+                else None
+            )
+            line_id = str(
+                (trunk_data.get("_trunkId") or "")
+                if isinstance(trunk_data, dict)
+                else ""
+            ).strip()
+            if line_id and line_id not in line_ids:
+                line_ids.append(line_id)
+        if node_type == "Beyond.Gameplay.DialogTreeOptionNode":
+            authored_options = [
+                str(row.get("_optionId") or "").strip()
+                for row in (node.get("_normalOptions") or [])
+                if isinstance(row, dict) and str(row.get("_optionId") or "").strip()
+            ]
+            if authored_options:
+                option_group_count += 1
+                if len(authored_options) > 1:
+                    branching_option_group_count += 1
+            for option_id in authored_options:
+                if option_id not in option_ids:
+                    option_ids.append(option_id)
+
+    typed_connection_count = sum(
+        1
+        for row in connections
+        if isinstance(row, dict)
+        and row.get("$type") == _DIALOG_TREE_CONNECTION_TYPE
+        and isinstance(row.get("_sourceNode"), dict)
+        and isinstance(row.get("_targetNode"), dict)
+        and row["_sourceNode"].get("$ref") is not None
+        and row["_targetNode"].get("$ref") is not None
+    )
+    return {
+        "sceneKey": dialog_key,
+        "assetName": dialog_key,
+        "assetType": _DIALOG_TREE_TYPE,
+        "lineIds": line_ids,
+        "optionIds": option_ids,
+        "nodeCount": sum(node_type_counts.values()),
+        "nodeTypeCounts": dict(sorted(node_type_counts.items())),
+        "connectionCount": typed_connection_count,
+        "optionGroupCount": option_group_count,
+        "branchingOptionGroupCount": branching_option_group_count,
+        "evidenceKind": "exact_dialog_tree_definition",
+        "activationBoundary": (
+            "the MissionRuntime condition observes this DialogTree root; the "
+            "definition does not identify the client action that starts it"
+        ),
+        "orderBoundary": (
+            "DialogTree node/connection order is internal to this dialog and "
+            "does not create a cross-file mission chronology edge"
+        ),
+    }
+
+
+@lru_cache(maxsize=8192)
+def _recover_dialog_tree_definition_evidence(dialog_key: str) -> dict | None:
+    path = _find_anime_tree_path(f"{dialog_key}.json")
+    if not path.is_file():
+        return None
+    payload = _load_anime_resource_payload(path)
+    evidence = extract_dialog_tree_definition_evidence(payload, dialog_key)
+    if evidence is None:
+        return None
+    return {
+        **evidence,
+        "sourceFile": repo_rel(path),
+        "sourcePathId": path_id_export_path_id(path.stem),
+        "sourceSha256": hashlib.sha256(path.read_bytes()).hexdigest().upper(),
+        "sourceType": "AnimeStudio TextAsset/DialogTree",
+    }
+
+
+def recover_dialog_tree_definition_evidence(dialog_key: str) -> dict | None:
+    """Load one exact current-game DialogTree definition with provenance."""
+    evidence = _recover_dialog_tree_definition_evidence(str(dialog_key or "").strip())
+    return dict(evidence) if isinstance(evidence, dict) else None
 
 
 def _iter_dialog_tree_action_slots(payload: dict):
