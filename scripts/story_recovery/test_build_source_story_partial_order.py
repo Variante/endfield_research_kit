@@ -429,6 +429,83 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             for edge in rejected["directEdges"]
         ))
 
+    def test_gm02m14_conditional_cross_story_branch_is_fail_closed(
+        self,
+    ) -> None:
+        mission_payload_path = (
+            partial_order.ROOT
+            / "webui" / "data" / "lang" / "CN" / "mission"
+            / "gm02m14.json"
+        )
+        conv_root = (
+            partial_order.ROOT
+            / "webui" / "data" / "lang" / "CN" / "conv"
+        )
+        payload = json.loads(mission_payload_path.read_text(encoding="utf-8"))
+        conversations = [
+            (
+                f"conv/{story_key}.json",
+                json.loads(
+                    (conv_root / f"{story_key}.json").read_text(
+                        encoding="utf-8"
+                    )
+                ),
+            )
+            for story_key in ("dlg_gm02m14_1", "dlg_gm02m14_3")
+        ]
+        candidates = {
+            "dlg_gm02m14_1": "dlg",
+            "dlg_gm02m14_3": "dlg",
+        }
+
+        row = partial_order.build_mission_partial_order(
+            "gm02m14", candidates, payload, conversations
+        )
+        edge = next(
+            edge for edge in row["directEdges"]
+            if edge["kind"] == "dialogTreeCrossStoryConditionalBranch"
+        )
+        self.assertEqual(
+            (edge["from"], edge["to"]),
+            ("dlg_gm02m14_1", "dlg_gm02m14_3"),
+        )
+        self.assertEqual(edge["conditionTrueConnectionIndex"], 1)
+        self.assertEqual(edge["conditionFalseConnectionIndex"], 0)
+        self.assertEqual(edge["condition"]["key"], "canskip")
+        self.assertTrue(edge["condition"]["value"])
+
+        corrupted = copy.deepcopy(payload)
+        connection = next(
+            row for row in corrupted["flow"]["missionStoryConnections"]
+            if row.get("key") == "dlg_gm02m14_3"
+        )
+        connection["dialogTreeStoryPlaybackCarriers"][0][
+            "connectionPath"
+        ][1]["index"] = 99
+        rejected = partial_order.build_mission_partial_order(
+            "gm02m14", candidates, corrupted, conversations
+        )
+        self.assertFalse(any(
+            edge["kind"] == "dialogTreeCrossStoryConditionalBranch"
+            for edge in rejected["directEdges"]
+        ))
+        diagnostic = next(
+            warning for warning in rejected["warnings"]
+            if isinstance(warning, dict)
+            and warning.get("validator")
+            == "dialogTreeCrossStoryConditionalBranch"
+        )
+        self.assertEqual(
+            diagnostic["gate"],
+            "exactSerializedBranchCarrierAndNativePolarity",
+        )
+        self.assertEqual(diagnostic["mission"], "gm02m14")
+        self.assertEqual(
+            diagnostic["actual"]["carrierConnectionIndexes"]
+            ["dlg_gm02m14_3_001"],
+            (10, 99),
+        )
+
     def test_spawner_part_killed_target_recovers_wave_begin_order(self) -> None:
         candidates = {
             "radio_m1_wave4": "radio",

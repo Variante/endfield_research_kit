@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v99"
+SCHEMA = "sourceStoryGapQueue.v100"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -190,7 +190,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v81"
+    "current-build-offline-story-carrier-exhaustion-v82"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -211,6 +211,8 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm01m17_4": "radio_gm01m17_4",
     "radio_gm01m17_5": "radio_gm01m17_5",
     "radio_gm01m17_9": "radio_gm01m17_9",
+    "radio_gm02m14_1": "radio_gm02m14_1",
+    "radio_gm02m14_12": "radio_gm02m14_12",
     "text_gm01m17_1": "text_gm01m17_1",
     "dlg_gm01m22_6": "dlg_gm01m22_6",
     "dlg_gm01m22_7": "dlg_gm01m22_7",
@@ -409,6 +411,28 @@ OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS = {
     },
 }
 OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
+    "gm02m14": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm02m14.json"
+        ),
+        "sourceSha256":
+            "1427E0281C167DC04DE4AC9776CBEBB78C6E31158601EE95E089DDAB4312DA7C",
+        "mainPathQuestIds": tuple(
+            f"gm02m14_q#{number}"
+            for number in (1, 2, 3, 5, 6, 4, 7, 8, 9, 10, 11, 12)
+        ),
+        "prevQuestIdsByQuest": {
+            f"gm02m14_q#{quest}": tuple(
+                f"gm02m14_q#{previous}" for previous in predecessors
+            )
+            for quest, predecessors in {
+                1: (), 2: (1,), 3: (2,), 5: (3,), 6: (5,), 4: (6,),
+                7: (4,), 8: (7,), 9: (8,), 10: (9,), 11: (10,),
+                12: (11,),
+            }.items()
+        },
+    },
     "gm01m13": {
         "sourceFile": (
             "export_full/structured/Persistent/Data/Json/"
@@ -6323,6 +6347,10 @@ OFFLINE_EXHAUSTION_GM02M3_RADIOS = frozenset({
     "radio_gm02m3_4",
     "radio_gm02m3_5",
 })
+OFFLINE_EXHAUSTION_GM02M14_RADIOS = frozenset({
+    "radio_gm02m14_1",
+    "radio_gm02m14_12",
+})
 OFFLINE_EXHAUSTION_GM01M6_RADIOS = frozenset({
     "radio_gm01m6_0d5",
     "radio_gm01m6_4d5",
@@ -6405,6 +6433,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "a1m8d3": OFFLINE_EXHAUSTION_A1M8D3_RADIOS,
     "gm02m2": OFFLINE_EXHAUSTION_GM02M2_RADIOS,
     "gm02m3": OFFLINE_EXHAUSTION_GM02M3_RADIOS,
+    "gm02m14": OFFLINE_EXHAUSTION_GM02M14_RADIOS,
     "gm01m6": OFFLINE_EXHAUSTION_GM01M6_RADIOS,
     "gm01m7": OFFLINE_EXHAUSTION_GM01M7_RADIOS,
     "gm01m16": OFFLINE_EXHAUSTION_GM01M16_RADIOS,
@@ -6556,6 +6585,8 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm02m3_3": frozenset({"au_radio_gm02m3_3_003"}),
     "radio_gm02m3_4": frozenset({"au_radio_gm02m3_4_004"}),
     "radio_gm02m3_5": frozenset({"au_radio_gm02m3_5_001"}),
+    "radio_gm02m14_1": frozenset({"au_radio_gm02m14_1_001"}),
+    "radio_gm02m14_12": frozenset({"au_radio_gm02m14_12_001"}),
     "radio_gm01m6_0d5": frozenset({
         "au_radio_gm01m6_0d5_001",
         "au_radio_gm01m6_0d5_002",

@@ -4874,6 +4874,62 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_gm02m3_3Z", "dlg_gm02m3_3d",
             },
         )
+
+    def test_gm02m14_radio_frontier_and_mission_topology_are_exact(
+        self,
+    ) -> None:
+        story_keys = {"radio_gm02m14_1", "radio_gm02m14_12"}
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GM02M14_RADIOS,
+            story_keys,
+        )
+        self.assertEqual(
+            story_keys,
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm02m14" in key
+            },
+        )
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual("active", status["status"])
+        self.assertTrue(story_keys <= set(index))
+        self.assertEqual(
+            index["radio_gm02m14_1"]["missingAudioIds"],
+            ["au_radio_gm02m14_1_001"],
+        )
+        self.assertEqual(
+            index["radio_gm02m14_12"]["missingAudioIds"],
+            ["au_radio_gm02m14_12_001"],
+        )
+        topology = index["radio_gm02m14_1"][
+            "missionQuestTopologyContext"
+        ]
+        self.assertEqual(
+            [
+                "gm02m14_q#1", "gm02m14_q#2", "gm02m14_q#3",
+                "gm02m14_q#5", "gm02m14_q#6", "gm02m14_q#4",
+                "gm02m14_q#7", "gm02m14_q#8", "gm02m14_q#9",
+                "gm02m14_q#10", "gm02m14_q#11", "gm02m14_q#12",
+            ],
+            topology["mainPathQuestIds"],
+        )
+        self.assertEqual([], topology["forks"])
+        self.assertEqual([], topology["merges"])
+        self.assertEqual([], topology["storyAssignments"])
+        self.assertFalse(topology["orderEvidence"])
+
     def test_declared_gm01m22_binary_bounded_frontier_is_exact(self) -> None:
         self.assertEqual(
             {
