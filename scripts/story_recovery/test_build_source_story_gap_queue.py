@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import base64
 import copy
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -3968,6 +3970,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m6_9",
                 "dlg_e11m8_9",
                 "dlg_e11m8d5_1",
+                "dlg_gm01m2_1",
+                "dlg_gm01m2_2",
+                "dlg_gm01m2_3",
                 "dlg_gm01m6_6",
                 "dlg_gm01m6_7",
                 "misc_dlg_gm01m6_1d5",
@@ -4666,6 +4671,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_gm01m5_2",
                 "dlg_gm01m5_3",
                 "dlg_gm01m5_4",
+                "dlg_gm01m2_5",
                 "dlg_gm01m24_5",
                 "dlg_gm01m25_5",
                 "dlg_gm01m14_7",
@@ -5889,6 +5895,118 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             failure["expected"]["treeBranchGroups"],
             failure["actual"]["treeBranchGroups"],
         )
+
+    def test_gm01m2_result_and_internal_dialog_branches_are_exact(self) -> None:
+        root = (
+            gap_queue.ROOT
+            / "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
+              "json_by_type/TextAsset"
+        )
+        definitions = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS
+        assets = {
+            key: gap_queue.read_json(root / definitions[key]["filename"], {})
+            for key in ("dlg_gm01m2_1", "dlg_gm01m2_2", "dlg_gm01m2_3")
+        }
+        self.assertEqual(
+            gap_queue._dialog_tree_branch_groups(assets["dlg_gm01m2_1"]),
+            [{
+                "optionGroup": 1,
+                "optionIds": [
+                    f"option_dlg_gm01m2_1_1_{number:03d}"
+                    for number in range(1, 5)
+                ],
+                "targetLineIds": [
+                    "dlg_gm01m2_1_003", "dlg_gm01m2_1_004",
+                    "dlg_gm01m2_1_005", "dlg_gm01m2_1_009",
+                ],
+                "routeKind": "authored_split",
+            }],
+        )
+        success_routes = gap_queue._dialog_tree_terminal_option_routes(
+            assets["dlg_gm01m2_2"]
+        )
+        failure_routes = gap_queue._dialog_tree_terminal_option_routes(
+            assets["dlg_gm01m2_3"]
+        )
+        self.assertEqual(
+            [row["finishId"] for row in success_routes[0]["routes"]],
+            [1, None],
+        )
+        self.assertEqual(
+            failure_routes[0]["routes"][1]["optionId"],
+            "option_dlg_gm01m2_2_1_002",
+        )
+        declaration = (
+            gap_queue.OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS[
+                "gm01m2"
+            ]
+        )
+        self.assertEqual(declaration["propertyCount"], 38)
+        self.assertEqual(
+            tuple(
+                (row["value"], row["propertyPath"])
+                for row in declaration["resultSwitch"]["cases"]
+            ),
+            ((8, "succeed_dialog"), (9, "failed_dialog")),
+        )
+
+    def test_dialog_tree_idless_non_actor_node_fails_closed(self) -> None:
+        definition = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_gm01m2_1"
+        ]
+        path = (
+            gap_queue.ROOT
+            / "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
+              "json_by_type/TextAsset"
+            / definition["filename"]
+        )
+        asset = gap_queue.read_json(path, {})
+        payload = json.loads(
+            base64.b64decode(asset["m_Script"]).decode("utf-8-sig")
+        )
+        payload["nodes"][0].pop("$id")
+        broken = {
+            **asset,
+            "m_Script": base64.b64encode(
+                json.dumps(payload).encode("utf-8")
+            ).decode("ascii"),
+        }
+        self.assertIsNone(gap_queue._dialog_tree_branch_groups(broken))
+        self.assertIsNone(
+            gap_queue._dialog_tree_terminal_option_routes(broken)
+        )
+
+    def test_gm01m2_leveldata_property_count_fails_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        contexts = (
+            gap_queue.OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS
+        )
+        declaration = contexts["gm01m2"]
+        with patch.dict(
+            contexts,
+            {"gm01m2": {**declaration, "propertyCount": 37}},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(partial, table_root)
+            )
+        self.assertEqual(failed_index, {})
+        failure = next(
+            row for row in failed_status["validatorDiagnostics"]
+            if row.get("mission") == "gm01m2"
+        )
+        self.assertEqual(
+            failure["validator"],
+            "offlineLevelDataDialogBranchContext",
+        )
+        self.assertEqual(failure["actual"]["propertyCount"], 38)
 
     def test_gm02m23_dialog_tree_convergence_and_terminal_routes_are_exact(self) -> None:
         definition_root = (

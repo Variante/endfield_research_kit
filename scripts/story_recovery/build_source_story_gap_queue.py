@@ -190,12 +190,16 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v78"
+    "current-build-offline-story-carrier-exhaustion-v79"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )
 OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
+    "dlg_gm01m2_1": "dlg_gm01m2_1",
+    "dlg_gm01m2_2": "dlg_gm01m2_2",
+    "dlg_gm01m2_3": "dlg_gm01m2_3",
+    "dlg_gm01m2_5": "dlg_gm01m2_5",
     "radio_gm01m17_4": "radio_gm01m17_4",
     "radio_gm01m17_5": "radio_gm01m17_5",
     "radio_gm01m17_9": "radio_gm01m17_9",
@@ -576,6 +580,65 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
 }
 OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
+    "gm01m2": {
+        "levelId": "map01_lv001",
+        "scriptId": "2100210004",
+        "levelDataFile": (
+            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            "map01_lv001/map01_lv001_lv_data_sub_gm01m2.json"
+        ),
+        "levelDataSha256":
+            "E54CF09A81D8A54C4677DF4CA2C727711F9B7E1174551997D4F5814414561378",
+        "levelScriptFile": (
+            "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/"
+            "map01_lv001/2100210004.json"
+        ),
+        "levelScriptSha256":
+            "1A57F97CE96D2674C63B38410A05213F2816F911C2F36AD5BD745E2C45A68155",
+        "dictionaryEntryCount": 3,
+        "dictionaryScriptIds": (
+            "2100210004", "2100210017", "2100210019",
+        ),
+        "propertyCount": 38,
+        "propertyDialogs": {
+            "start_dialog": "dlg_gm01m2_1",
+            "succeed_dialog": "dlg_gm01m2_2",
+            "failed_dialog": "dlg_gm01m2_3",
+        },
+        "startDialogListener": {
+            "headerLocalId": 87,
+            "eventName": "LevelEvent_OnDialogEnter",
+            "nextLocalId": 88,
+            "propertyPath": "start_dialog",
+        },
+        "resultSwitch": {
+            "eventHeaderLocalId": 188,
+            "eventName": "ScriptEvent_OnCustomEvent",
+            "eventKey": "#72a43b08",
+            "switchLocalId": 189,
+            "getterLocalId": 240,
+            "getterPath": "result",
+            "switchCases": (
+                (0, -1), (1, 190), (2, 191), (3, 21),
+                (4, 192), (5, 193), (8, 217), (9, 194),
+            ),
+            "cases": ({
+                "value": 8,
+                "entryLocalId": 217,
+                "actionLocalId": 148,
+                "getterLocalId": 147,
+                "propertyPath": "succeed_dialog",
+                "pathLocalIds": (189, 217, 218, 220, 221, 222, 235, 236, 148),
+            }, {
+                "value": 9,
+                "entryLocalId": 194,
+                "actionLocalId": 151,
+                "getterLocalId": 150,
+                "propertyPath": "failed_dialog",
+                "pathLocalIds": (189, 194, 197, 198, 199, 212, 213, 151),
+            }),
+        },
+    },
     "gm01m24": {
         "levelId": "map01_lv006",
         "scriptId": "3500190001",
@@ -592,6 +655,7 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
         "levelScriptSha256":
             "34432759C834431DD12FE68F81167775D94F9002578D04E2F12FAC7994785B32",
         "dictionaryEntryCount": 5,
+        "propertyCount": 37,
         "dictionaryScriptIds": tuple(
             str(3500190000 + number) for number in range(1, 6)
         ),
@@ -650,6 +714,7 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
         "levelScriptSha256":
             "0B10781C03A03DA8710FA9A92AAF4247034771A7B8D4A5662D42BA7CE943ACF5",
         "dictionaryEntryCount": 5,
+        "propertyCount": 37,
         "dictionaryScriptIds": (
             "2800020003", "2800020005", "2800020008",
             "2800020014", "2800020015",
@@ -709,6 +774,7 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
         "levelScriptSha256":
             "585D5E7B49C40765801D27867446D410F4D703FF8A62654CE776233D7C97879F",
         "dictionaryEntryCount": 22,
+        "propertyCount": 37,
         "dictionaryScriptIds": (
             "3400010000", "3400010001", "3400010002", "3400010003",
             "3400010004", "3400010009", "3400010010", "3400010011",
@@ -4493,6 +4559,106 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
     },
 }
 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.update({
+    "dlg_gm01m2_1": {
+        "missionId": "gm01m2",
+        "filename": "dlg_gm01m2_1_p6DE17CB17A678D5A.json",
+        "sha256":
+            "BD2DBE7E4BAC8987033E2157261C174D7D4379A2E4D5ED646B080FE93555257D",
+        "extraConfigFilename":
+            "dlg_gm01m2_1_extra_config_pED5DC4585FE28B44.json",
+        "extraConfigSha256":
+            "F73D45BACC004E3B72A099E50210CBF20228B30B23B1E8286C496A830D7F413B",
+        "lineIds": tuple(
+            f"dlg_gm01m2_1_{number:03d}"
+            for number in (3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 17)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m2_1_1_{number:03d}"
+            for number in range(1, 5)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m2_1_{number:03d}"
+            for number in (3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 17)
+        ),
+        "treeBranchGroups": ({
+            "optionGroup": 1,
+            "optionIds": tuple(
+                f"option_dlg_gm01m2_1_1_{number:03d}"
+                for number in range(1, 5)
+            ),
+            "targetLineIds": (
+                "dlg_gm01m2_1_003",
+                "dlg_gm01m2_1_004",
+                "dlg_gm01m2_1_005",
+                "dlg_gm01m2_1_009",
+            ),
+            "routeKind": "authored_split",
+        },),
+    },
+    "dlg_gm01m2_2": {
+        "missionId": "gm01m2",
+        "filename": "dlg_gm01m2_2_p71A462BBE8385359.json",
+        "sha256":
+            "A27896657297FD845B3B0990E86D888C4CC75ED8320EC04C696C7116CB4EF0F0",
+        "extraConfigFilename":
+            "dlg_gm01m2_2_extra_config_pD96C8B0A3A7DDFF6.json",
+        "extraConfigSha256":
+            "25530A8723A86A80C14DAA396F2F62017B3BB3615D34FA970EE87968D1F27523",
+        "lineIds": tuple(
+            f"dlg_gm01m2_2_{number:03d}" for number in range(1, 5)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m2_2_1_{number:03d}" for number in range(1, 3)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m2_2_{number:03d}" for number in range(1, 5)
+        ),
+        "terminalOptionRoutes": ({
+            "optionGroup": 1,
+            "routes": ({
+                "optionId": "option_dlg_gm01m2_2_1_001",
+                "targetKind": "finish",
+                "finishId": 1,
+                "finishIdSerialized": True,
+            }, {
+                "optionId": "option_dlg_gm01m2_2_1_002",
+                "targetKind": "finish",
+                "finishId": None,
+                "finishIdSerialized": False,
+            }),
+        },),
+    },
+    "dlg_gm01m2_3": {
+        "missionId": "gm01m2",
+        "filename": "dlg_gm01m2_3_p37EE6EE6D808E6E1.json",
+        "sha256":
+            "7C4401FB90DC797C0664F86B3B2C9167DB0AC82163E5133BD82C5463AC0DFB8B",
+        "extraConfigFilename":
+            "dlg_gm01m2_3_extra_config_pFC448B2675E98ACB.json",
+        "extraConfigSha256":
+            "F7063C1108A662A67E420E9F5141B3F1C7328FD6924B18DF0A500115529E3BF9",
+        "lineIds": tuple(
+            f"dlg_gm01m2_3_{number:03d}" for number in range(1, 4)
+        ),
+        "optionIds": ("option_dlg_gm01m2_3_1_001",),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m2_3_{number:03d}" for number in range(1, 4)
+        ),
+        "terminalOptionRoutes": ({
+            "optionGroup": 1,
+            "routes": ({
+                "optionId": "option_dlg_gm01m2_3_1_001",
+                "targetKind": "finish",
+                "finishId": 1,
+                "finishIdSerialized": True,
+            }, {
+                "optionId": "option_dlg_gm01m2_2_1_002",
+                "targetKind": "finish",
+                "finishId": None,
+                "finishIdSerialized": False,
+            }),
+        },),
+    },
     "dlg_gm01m24_1": {
         "missionId": "gm01m24",
         "filename": "dlg_gm01m24_1_p79A4F29BA2561B1A.json",
@@ -4899,6 +5065,30 @@ OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e11m8_9",
 })
 OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
+    "dlg_gm01m2_5": {
+        "missionId": "gm01m2",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm01m2_5_{number:03d}" for number in range(1, 8)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m2_5_{number:03d}" for number in range(1, 8)
+        ),
+        "optionRows": {
+            "option_dlg_gm01m2_5_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": -5068127566167360989, "text": ""},
+            },
+            "option_dlg_gm01m2_5_1_003": {
+                "iconType": "main",
+                "optionText": {"id": -4926826630742191157, "text": ""},
+            },
+            "option_dlg_gm01m2_5_1_004": {
+                "iconType": "Default",
+                "optionText": {"id": -2556373309257697984, "text": ""},
+            },
+        },
+    },
     "dlg_gm01m12_8": {
         "missionId": "gm01m12",
         "dialogIdRegistrationStatus": "absent",
@@ -7885,8 +8075,14 @@ def _dialog_tree_branch_groups(
         return None
     node_by_id: dict[str, dict[str, Any]] = {}
     for node in payload["nodes"]:
-        if not isinstance(node, dict) or node.get("$id") in (None, ""):
+        if not isinstance(node, dict):
             return None
+        if node.get("$id") in (None, ""):
+            if safe_key(node.get("$type")) != (
+                "Beyond.Gameplay.DialogTreeExActorNode"
+            ):
+                return None
+            continue
         node_id = str(node["$id"])
         if node_id in node_by_id:
             return None
@@ -8035,8 +8231,14 @@ def _dialog_tree_terminal_option_routes(
         return None
     node_by_id: dict[str, dict[str, Any]] = {}
     for node in payload["nodes"]:
-        if not isinstance(node, dict) or node.get("$id") in (None, ""):
+        if not isinstance(node, dict):
             return None
+        if node.get("$id") in (None, ""):
+            if safe_key(node.get("$type")) != (
+                "Beyond.Gameplay.DialogTreeExActorNode"
+            ):
+                return None
+            continue
         node_id = str(node["$id"])
         if node_id in node_by_id:
             return None
@@ -9257,8 +9459,8 @@ def build_offline_exhaustion_index(
         valid = (
             len(brief_dictionary) == declaration["dictionaryEntryCount"]
             and actual_script_ids == expected_script_ids
-            and brief.get("propertyCount") == 37
-            and brief.get("propertyMapCount") == 37
+            and brief.get("propertyCount") == declaration["propertyCount"]
+            and brief.get("propertyMapCount") == declaration["propertyCount"]
             and property_values == declaration["propertyDialogs"]
             and listener_decoded.get("label") == listener["eventName"]
             and (listener_decoded.get("actionHeader") or {}).get("nextId")
