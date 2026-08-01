@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v100"
+SCHEMA = "sourceStoryGapQueue.v101"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -190,7 +190,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v82"
+    "current-build-offline-story-carrier-exhaustion-v83"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -213,6 +213,9 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm01m17_9": "radio_gm01m17_9",
     "radio_gm02m14_1": "radio_gm02m14_1",
     "radio_gm02m14_12": "radio_gm02m14_12",
+    "radio_gm02m13_3": "radio_gm02m13_3",
+    "radio_gm02m13_4": "radio_gm02m13_4",
+    "radio_gm02m13_5": "radio_gm02m13_5",
     "text_gm01m17_1": "text_gm01m17_1",
     "dlg_gm01m22_6": "dlg_gm01m22_6",
     "dlg_gm01m22_7": "dlg_gm01m22_7",
@@ -411,6 +414,74 @@ OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS = {
     },
 }
 OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
+    "gm02m13": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm02m13.json"
+        ),
+        "sourceSha256":
+            "5F1BFCD6CB10E46B4A613E59CD20E28501B1E283BFA15EAC8B0708E14D914A70",
+        "mainPathQuestIds": tuple(
+            f"gm02m13_q#{number}" for number in (5, 6, 7, 15)
+        ),
+        "prevQuestIdsByQuest": {
+            f"gm02m13_q#{quest}": tuple(
+                f"gm02m13_q#{previous}" for previous in predecessors
+            )
+            for quest, predecessors in {
+                5: (), 6: (5,), 7: (6,), 8: (5,), 9: (5,),
+                10: (6,), 11: (8,), 12: (8,), 13: (9,), 14: (9,),
+                15: (7, 10, 12, 11, 13, 14),
+            }.items()
+        },
+        "failedConditionsByQuest": {
+            **{
+                f"gm02m13_q#{number}": None
+                for number in (5, 7, 10, 11, 12, 13, 14, 15)
+            },
+            **{
+                f"gm02m13_q#{quest}": {
+                    "$type": (
+                        "Beyond.Gameplay.CombineCondition, Gameplay.Beyond"
+                    ),
+                    "uniqueId": unique_id,
+                    "useCurrentScope": False,
+                    "scopeMask": 1,
+                    "useGraphScope": True,
+                    "conditionEvalString": "{0}or{1}",
+                    "subConditions": [
+                        {
+                            "$type": (
+                                "Beyond.Gameplay.CheckTalkOptionFinish, "
+                                "Gameplay.Beyond"
+                            ),
+                            "uniqueId": leaf_id,
+                            "useCurrentScope": False,
+                            "scopeMask": 1,
+                            "useGraphScope": True,
+                            "_dialogId": {"constValue": dialog_id},
+                            "_finishId": {"constValue": 0},
+                        }
+                        for leaf_id, dialog_id in leaves
+                    ],
+                }
+                for quest, unique_id, leaves in (
+                    (6, "c5de1b18", (
+                        ("d0f334db", "dlg_gm02m13_3"),
+                        ("218fc83e", "dlg_gm02m13_4"),
+                    )),
+                    (8, "3707d033", (
+                        ("e5a9d6b4", "dlg_gm02m13_2"),
+                        ("3f7c0016", "dlg_gm02m13_4"),
+                    )),
+                    (9, "b37321d6", (
+                        ("7017c5b8", "dlg_gm02m13_3"),
+                        ("dbf73271", "dlg_gm02m13_2"),
+                    )),
+                )
+            },
+        },
+    },
     "gm02m14": {
         "sourceFile": (
             "export_full/structured/Persistent/Data/Json/"
@@ -6351,6 +6422,11 @@ OFFLINE_EXHAUSTION_GM02M14_RADIOS = frozenset({
     "radio_gm02m14_1",
     "radio_gm02m14_12",
 })
+OFFLINE_EXHAUSTION_GM02M13_RADIOS = frozenset({
+    "radio_gm02m13_3",
+    "radio_gm02m13_4",
+    "radio_gm02m13_5",
+})
 OFFLINE_EXHAUSTION_GM01M6_RADIOS = frozenset({
     "radio_gm01m6_0d5",
     "radio_gm01m6_4d5",
@@ -6433,6 +6509,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "a1m8d3": OFFLINE_EXHAUSTION_A1M8D3_RADIOS,
     "gm02m2": OFFLINE_EXHAUSTION_GM02M2_RADIOS,
     "gm02m3": OFFLINE_EXHAUSTION_GM02M3_RADIOS,
+    "gm02m13": OFFLINE_EXHAUSTION_GM02M13_RADIOS,
     "gm02m14": OFFLINE_EXHAUSTION_GM02M14_RADIOS,
     "gm01m6": OFFLINE_EXHAUSTION_GM01M6_RADIOS,
     "gm01m7": OFFLINE_EXHAUSTION_GM01M7_RADIOS,
@@ -6587,6 +6664,9 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm02m3_5": frozenset({"au_radio_gm02m3_5_001"}),
     "radio_gm02m14_1": frozenset({"au_radio_gm02m14_1_001"}),
     "radio_gm02m14_12": frozenset({"au_radio_gm02m14_12_001"}),
+    "radio_gm02m13_3": frozenset({"au_radio_gm02m13_3_001"}),
+    "radio_gm02m13_4": frozenset({"au_radio_gm02m13_4_001"}),
+    "radio_gm02m13_5": frozenset({"au_radio_gm02m13_5_001"}),
     "radio_gm01m6_0d5": frozenset({
         "au_radio_gm01m6_0d5_001",
         "au_radio_gm01m6_0d5_002",
@@ -9462,7 +9542,53 @@ def build_offline_exhaustion_index(
                 for quest_id, condition in (
                     expected_failed_conditions or {}
                 ).items()
-                if isinstance(condition, dict)
+                if (
+                    isinstance(condition, dict)
+                    and safe_key(condition.get("$type")).split(",", 1)[0]
+                    == "Beyond.Gameplay.CheckQuestState"
+                )
+            ],
+            "failedDialogGuards": [
+                {
+                    "questId": quest_id,
+                    "conditionType": "CombineCondition",
+                    "conditionEvalString": condition.get(
+                        "conditionEvalString"
+                    ),
+                    "dialogFinishes": [
+                        {
+                            "dialogId": safe_key(
+                                (leaf.get("_dialogId") or {}).get(
+                                    "constValue"
+                                )
+                            ),
+                            "finishId": (
+                                leaf.get("_finishId") or {}
+                            ).get("constValue"),
+                        }
+                        for leaf in condition.get("subConditions") or []
+                    ],
+                    "relation": "authored_quest_failure_guard",
+                    "branchExclusivityStatus": (
+                        "not_proven_by_failure_guards_alone"
+                    ),
+                    "storyOrderEvidence": False,
+                }
+                for quest_id, condition in (
+                    expected_failed_conditions or {}
+                ).items()
+                if (
+                    isinstance(condition, dict)
+                    and safe_key(condition.get("$type")).split(",", 1)[0]
+                    == "Beyond.Gameplay.CombineCondition"
+                    and condition.get("subConditions")
+                    and all(
+                        isinstance(leaf, dict)
+                        and safe_key(leaf.get("$type")).split(",", 1)[0]
+                        == "Beyond.Gameplay.CheckTalkOptionFinish"
+                        for leaf in condition.get("subConditions") or []
+                    )
+                )
             ],
             "questStateDependencies": [
                 {"questId": quest_id, **dependency}

@@ -3516,6 +3516,11 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "radio_gm02m3_3": {"au_radio_gm02m3_3_003"},
                 "radio_gm02m3_4": {"au_radio_gm02m3_4_004"},
                 "radio_gm02m3_5": {"au_radio_gm02m3_5_001"},
+                "radio_gm02m13_3": {"au_radio_gm02m13_3_001"},
+                "radio_gm02m13_4": {"au_radio_gm02m13_4_001"},
+                "radio_gm02m13_5": {"au_radio_gm02m13_5_001"},
+                "radio_gm02m14_1": {"au_radio_gm02m14_1_001"},
+                "radio_gm02m14_12": {"au_radio_gm02m14_12_001"},
                 "radio_gm01m6_0d5": {
                     "au_radio_gm01m6_0d5_001",
                     "au_radio_gm01m6_0d5_002",
@@ -4874,6 +4879,80 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_gm02m3_3Z", "dlg_gm02m3_3d",
             },
         )
+
+    def test_gm02m13_radio_frontier_and_dialog_guard_topology_are_exact(
+        self,
+    ) -> None:
+        story_keys = {
+            "radio_gm02m13_3",
+            "radio_gm02m13_4",
+            "radio_gm02m13_5",
+        }
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GM02M13_RADIOS,
+            story_keys,
+        )
+        self.assertEqual(
+            story_keys,
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm02m13" in key
+            },
+        )
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual("active", status["status"])
+        self.assertTrue(story_keys <= set(index))
+        for number in (3, 4, 5):
+            story_key = f"radio_gm02m13_{number}"
+            self.assertEqual(
+                index[story_key]["missingAudioIds"],
+                [f"au_radio_gm02m13_{number}_001"],
+            )
+        topology = index["radio_gm02m13_3"][
+            "missionQuestTopologyContext"
+        ]
+        self.assertEqual(
+            [
+                "gm02m13_q#5", "gm02m13_q#6",
+                "gm02m13_q#7", "gm02m13_q#15",
+            ],
+            topology["mainPathQuestIds"],
+        )
+        self.assertEqual(4, len(topology["forks"]))
+        self.assertEqual(1, len(topology["merges"]))
+        self.assertEqual(
+            {
+                "gm02m13_q#6": {"dlg_gm02m13_3", "dlg_gm02m13_4"},
+                "gm02m13_q#8": {"dlg_gm02m13_2", "dlg_gm02m13_4"},
+                "gm02m13_q#9": {"dlg_gm02m13_2", "dlg_gm02m13_3"},
+            },
+            {
+                row["questId"]: {
+                    finish["dialogId"]
+                    for finish in row["dialogFinishes"]
+                }
+                for row in topology["failedDialogGuards"]
+            },
+        )
+        self.assertTrue(all(
+            not row["storyOrderEvidence"]
+            for row in topology["failedDialogGuards"]
+        ))
+        self.assertEqual([], topology["failedQuestStateGuards"])
+        self.assertEqual([], topology["storyAssignments"])
+        self.assertFalse(topology["orderEvidence"])
 
     def test_gm02m14_radio_frontier_and_mission_topology_are_exact(
         self,
