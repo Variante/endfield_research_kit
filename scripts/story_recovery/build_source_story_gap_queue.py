@@ -48,6 +48,8 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 )
 from story_builder.level_bindings import (  # noqa: E402
     _load_levelscript_binding_data,
+    _levelscript_native_control_paths_to_record,
+    parse_leveldata_levelscript_brief_dictionary,
 )
 from story_builder.levelscript_binary import (  # noqa: E402
     decode_levelscript_record_payload,
@@ -59,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v91"
+SCHEMA = "sourceStoryGapQueue.v92"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -142,7 +144,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v68"
+    "current-build-offline-story-carrier-exhaustion-v69"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -213,6 +215,11 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm01m20_2": "radio_gm01m20_2",
     "radio_gm01m20_3": "radio_gm01m20_3",
     "radio_gm01m20_4": "radio_gm01m20_4",
+    "dlg_gm01m24_5": "dlg_gm01m24_5",
+    "radio_gm01m24_1d5": "radio_gm01m24_1d5",
+    "radio_gm01m24_2": "radio_gm01m24_2",
+    "radio_gm01m24_3": "radio_gm01m24_3",
+    "radio_gm01m24_4": "radio_gm01m24_4",
 }
 OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
     "gm01m7": {
@@ -299,6 +306,61 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
                 7: (), 1: (7,), 6: (1,), 3: (6,), 4: (3,),
                 2: (4,), 10: (4,),
             }.items()
+        },
+    },
+}
+OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
+    "gm01m24": {
+        "levelId": "map01_lv006",
+        "scriptId": "3500190001",
+        "levelDataFile": (
+            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            "map01_lv006/map01_lv006_lv_data_sub_gm01m24.json"
+        ),
+        "levelDataSha256":
+            "AA4A3915C3D1655CAA9A74F043EABAF7B1B9449CE2AC2990D5362D8E3BC21AC2",
+        "levelScriptFile": (
+            "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/"
+            "map01_lv006/3500190001.json"
+        ),
+        "levelScriptSha256":
+            "34432759C834431DD12FE68F81167775D94F9002578D04E2F12FAC7994785B32",
+        "dictionaryEntryCount": 5,
+        "dictionaryScriptIds": tuple(
+            str(3500190000 + number) for number in range(1, 6)
+        ),
+        "propertyDialogs": {
+            "start_dialog": "dlg_gm01m24_1",
+            "succeed_dialog": "dlg_gm01m24_2",
+            "failed_dialog": "dlg_gm01m24_3",
+        },
+        "startDialogListener": {
+            "headerLocalId": 80,
+            "eventName": "LevelEvent_OnDialogEnter",
+            "propertyPath": "start_dialog",
+        },
+        "resultSwitch": {
+            "eventHeaderLocalId": 233,
+            "eventName": "ScriptEvent_OnCustomEvent",
+            "eventKey": "#e9dcab93",
+            "switchLocalId": 181,
+            "getterLocalId": 180,
+            "getterPath": "result",
+            "cases": ({
+                "value": 8,
+                "entryLocalId": 209,
+                "actionLocalId": 142,
+                "getterLocalId": 141,
+                "propertyPath": "succeed_dialog",
+                "pathLocalIds": (181, 209, 210, 212, 213, 214, 227, 228, 142),
+            }, {
+                "value": 9,
+                "entryLocalId": 186,
+                "actionLocalId": 145,
+                "getterLocalId": 144,
+                "propertyPath": "failed_dialog",
+                "pathLocalIds": (181, 186, 189, 190, 191, 204, 205, 145),
+            }),
         },
     },
 }
@@ -4013,6 +4075,80 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
         },
     },
 }
+OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.update({
+    "dlg_gm01m24_1": {
+        "missionId": "gm01m24",
+        "filename": "dlg_gm01m24_1_p79A4F29BA2561B1A.json",
+        "sha256":
+            "4675D4B89F9BD135249BF590A12C335FF8096EA15DC01C0F0C3797C8290AC195",
+        "extraConfigFilename":
+            "dlg_gm01m24_1_extra_config_pE595ACB405045450.json",
+        "extraConfigSha256":
+            "B6DCD1B6DC763EC5144E8899C864C12ACE4FAF7F3363FF9245817F45C789DD6E",
+        "lineIds": tuple(
+            f"dlg_gm01m24_1_{number:03d}"
+            for number in (1, *range(5, 17))
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m24_1_1_{number:03d}" for number in range(1, 4)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m24_1_{number:03d}"
+            for number in (1, *range(5, 17))
+        ),
+        "treeBranchGroups": ({
+            "optionGroup": 1,
+            "optionIds": tuple(
+                f"option_dlg_gm01m24_1_1_{number:03d}"
+                for number in range(1, 4)
+            ),
+            "targetLineIds": (
+                "dlg_gm01m24_1_014",
+                "dlg_gm01m24_1_005",
+                "dlg_gm01m24_1_009",
+            ),
+            "routeKind": "authored_split",
+        },),
+    },
+    "dlg_gm01m24_2": {
+        "missionId": "gm01m24",
+        "filename": "dlg_gm01m24_2_p205ABEA30356033D.json",
+        "sha256":
+            "2976C3D43C97C37E715D8E10A2A98D02693D1C34959E1B904F26619D75A13BDD",
+        "extraConfigFilename":
+            "dlg_gm01m24_2_extra_config_p2386CE5133D132E5.json",
+        "extraConfigSha256":
+            "7CDD719BA4116F348758E84CB680B015FBC9F1754137E109832F59172D23D325",
+        "lineIds": tuple(
+            f"dlg_gm01m24_2_{number:03d}" for number in range(1, 4)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m24_2_1_{number:03d}" for number in range(1, 3)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m24_2_{number:03d}" for number in range(1, 4)
+        ),
+    },
+    "dlg_gm01m24_3": {
+        "missionId": "gm01m24",
+        "filename": "dlg_gm01m24_3_pB62FBC62BE7B1E3B.json",
+        "sha256":
+            "0B0F2BC7E36976FC0D0F990BDE5A54463251DE3F91BEE049DD4776297676ADF9",
+        "extraConfigFilename":
+            "dlg_gm01m24_3_extra_config_p4F40313305D0C643.json",
+        "extraConfigSha256":
+            "C1F8C28F650C84E86A17A36499C870AAFA0F34248EE2C9727E75FFE83EDE5EC8",
+        "lineIds": tuple(
+            f"dlg_gm01m24_3_{number:03d}" for number in range(1, 4)
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm01m24_3_1_{number:03d}" for number in range(1, 3)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m24_3_{number:03d}" for number in range(1, 4)
+        ),
+    },
+})
 OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e10m3_9",
     "dlg_e11m5_9",
@@ -4449,6 +4585,32 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
         "missingAudioIds": (),
     },
 }
+OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS.update({
+    "dlg_gm01m24_5": {
+        "missionId": "gm01m24",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": tuple(
+            f"dlg_gm01m24_5_{number:03d}" for number in range(1, 9)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm01m24_5_{number:03d}" for number in range(1, 9)
+        ),
+        "optionRows": {
+            "option_dlg_gm01m24_5_1_001": {
+                "iconType": "Default",
+                "optionText": {"id": 8992213548012664663, "text": ""},
+            },
+            "option_dlg_gm01m24_5_1_003": {
+                "iconType": "main",
+                "optionText": {"id": -8305820588426344756, "text": ""},
+            },
+            "option_dlg_gm01m24_5_1_004": {
+                "iconType": "Default",
+                "optionText": {"id": -4851703353575780175, "text": ""},
+            },
+        },
+    },
+})
 OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS = frozenset({
     "actorName",
     "actorNameId",
@@ -4767,6 +4929,12 @@ OFFLINE_EXHAUSTION_GM01M22_RADIOS = frozenset({
     "radio_gm01m22_1d2",
     "radio_gm01m22_1d3",
 })
+OFFLINE_EXHAUSTION_GM01M24_RADIOS = frozenset({
+    "radio_gm01m24_1d5",
+    "radio_gm01m24_2",
+    "radio_gm01m24_3",
+    "radio_gm01m24_4",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "a1m6d1": OFFLINE_EXHAUSTION_A1M6D1_RADIOS,
     "a1m6d2": OFFLINE_EXHAUSTION_A1M6D2_RADIOS,
@@ -4779,6 +4947,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm01m16": OFFLINE_EXHAUSTION_GM01M16_RADIOS,
     "gm01m20": OFFLINE_EXHAUSTION_GM01M20_RADIOS,
     "gm01m22": OFFLINE_EXHAUSTION_GM01M22_RADIOS,
+    "gm01m24": OFFLINE_EXHAUSTION_GM01M24_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
@@ -4933,6 +5102,10 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm01m20_2": frozenset({"au_radio_gm01m20_2_001"}),
     "radio_gm01m20_3": frozenset({"au_radio_gm01m20_3_001"}),
     "radio_gm01m20_4": frozenset({"au_radio_gm01m20_4_001"}),
+    "radio_gm01m24_1d5": frozenset({"au_radio_gm01m24_1d5_001"}),
+    "radio_gm01m24_2": frozenset({"au_radio_gm01m24_2_002"}),
+    "radio_gm01m24_3": frozenset({"au_radio_gm01m24_3_003"}),
+    "radio_gm01m24_4": frozenset({"au_radio_gm01m24_4_004"}),
     "radio_gm01m22_1d2": frozenset({"au_radio_gm01m22_1d2_001"}),
     "radio_gm01m22_1d3": frozenset({"au_radio_gm01m22_1d3_001"}),
     "radio_e5m5_1": frozenset({
@@ -6652,6 +6825,15 @@ def build_offline_exhaustion_index(
         source_paths[
             f"missionTopologyContext:{mission_id}"
         ] = ROOT / context["sourceFile"]
+    for mission_id, context in (
+        OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS.items()
+    ):
+        source_paths[
+            f"levelDataDialogBranch:{mission_id}"
+        ] = ROOT / context["levelDataFile"]
+        source_paths[
+            f"levelScriptDialogBranch:{mission_id}"
+        ] = ROOT / context["levelScriptFile"]
     for story_key, consumer in (
         OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS.items()
     ):
@@ -6738,6 +6920,15 @@ def build_offline_exhaustion_index(
         expected_hashes[
             f"missionTopologyContext:{mission_id}"
         ] = context["sourceSha256"]
+    for mission_id, context in (
+        OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS.items()
+    ):
+        expected_hashes[
+            f"levelDataDialogBranch:{mission_id}"
+        ] = context["levelDataSha256"]
+        expected_hashes[
+            f"levelScriptDialogBranch:{mission_id}"
+        ] = context["levelScriptSha256"]
     for story_key, consumer in (
         OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS.items()
     ):
@@ -7097,6 +7288,247 @@ def build_offline_exhaustion_index(
             "orderEvidence": False,
             "graphEffect": "none",
         }
+
+    leveldata_dialog_branch_by_story: dict[str, dict[str, Any]] = {}
+    for mission_id, declaration in (
+        OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS.items()
+    ):
+        leveldata_name = f"levelDataDialogBranch:{mission_id}"
+        levelscript_name = f"levelScriptDialogBranch:{mission_id}"
+        leveldata_path = source_paths[leveldata_name]
+        levelscript_path = source_paths[levelscript_name]
+        levelscript_ids = {
+            int(path.stem)
+            for path in levelscript_path.parent.glob("*.json")
+            if path.stem.isdigit()
+        }
+        leveldata_bytes = leveldata_path.read_bytes()
+        levelscript_bytes = levelscript_path.read_bytes()
+        brief_dictionary = parse_leveldata_levelscript_brief_dictionary(
+            leveldata_bytes,
+            levelscript_ids,
+        )
+        brief = brief_dictionary.get(int(declaration["scriptId"])) or {}
+        property_values: dict[str, str] = {}
+        for property_row in brief.get("properties") or []:
+            if not isinstance(property_row, dict):
+                continue
+            name = safe_key(property_row.get("name"))
+            value = property_row.get("value")
+            atoms = value.get("atoms") if isinstance(value, dict) else None
+            if (
+                name in declaration["propertyDialogs"]
+                and value.get("valueType") == 7
+                and value.get("atomCount") == 1
+                and isinstance(atoms, list)
+                and len(atoms) == 1
+                and isinstance(atoms[0], dict)
+            ):
+                property_values[name] = safe_key(atoms[0].get("text"))
+
+        records = extract_levelscript_uid_records(levelscript_bytes)
+        _action_map, membership = levelscript_action_map_membership(
+            levelscript_bytes,
+            records,
+        )
+        ordered_records = sorted(
+            records,
+            key=lambda row: int(row.get("start") or 0),
+        )
+        next_starts = {
+            int(record.get("start") or 0): (
+                int(ordered_records[index + 1].get("start") or len(levelscript_bytes))
+                if index + 1 < len(ordered_records)
+                else len(levelscript_bytes)
+            )
+            for index, record in enumerate(ordered_records)
+        }
+        records_by_local: dict[int, list[dict[str, Any]]] = defaultdict(list)
+        for record in records:
+            local_id = record.get("localId")
+            if isinstance(local_id, int):
+                records_by_local[local_id].append(record)
+
+        def unique_record(local_id: int) -> dict[str, Any] | None:
+            rows = records_by_local.get(local_id) or []
+            return rows[0] if len(rows) == 1 else None
+
+        def decoded(local_id: int) -> dict[str, Any]:
+            record = unique_record(local_id)
+            if not record:
+                return {}
+            start = int(record.get("start") or 0)
+            return decode_levelscript_record_payload(
+                levelscript_bytes,
+                record,
+                next_start=next_starts.get(start),
+                action_map_role=safe_key(membership.get(start)),
+            )
+
+        listener = declaration["startDialogListener"]
+        listener_record = unique_record(listener["headerLocalId"])
+        listener_decoded = decoded(listener["headerLocalId"])
+        listener_start = int(listener_record.get("start") or 0) if listener_record else -1
+        listener_end = next_starts.get(listener_start, listener_start)
+        listener_payload = (
+            levelscript_bytes[listener_start:listener_end]
+            if listener_start >= 0 and listener_end > listener_start else b""
+        )
+
+        result_switch = declaration["resultSwitch"]
+        event_decoded = decoded(result_switch["eventHeaderLocalId"])
+        switch_decoded = decoded(result_switch["switchLocalId"])
+        switch_getter = decoded(result_switch["getterLocalId"])
+        branch_outputs: list[dict[str, Any]] = []
+        branch_valid = True
+        for branch in result_switch["cases"]:
+            action_record = unique_record(branch["actionLocalId"])
+            action_decoded = decoded(branch["actionLocalId"])
+            getter_decoded = decoded(branch["getterLocalId"])
+            paths = (
+                _levelscript_native_control_paths_to_record(
+                    levelscript_bytes,
+                    records,
+                    membership,
+                    action_record,
+                )
+                if action_record else []
+            )
+            exact_paths = [
+                row for row in paths
+                if row.get("status") == "exact_serialized_control_path"
+                and row.get("headerLocalId") == result_switch["eventHeaderLocalId"]
+                and row.get("pathLocalIds") == list(branch["pathLocalIds"])
+            ]
+            property_path = (
+                (getter_decoded.get("getterString") or {}).get("path")
+            )
+            target_dialog = declaration["propertyDialogs"].get(property_path, "")
+            current_valid = (
+                len(exact_paths) == 1
+                and (action_decoded.get("startDialogAction") or {}).get(
+                    "dialogGetterLocalId"
+                ) == branch["getterLocalId"]
+                and property_path == branch["propertyPath"]
+                and target_dialog
+            )
+            branch_valid = branch_valid and bool(current_valid)
+            branch_outputs.append({
+                "resultValue": branch["value"],
+                "entryLocalId": branch["entryLocalId"],
+                "actionLocalId": branch["actionLocalId"],
+                "getterLocalId": branch["getterLocalId"],
+                "propertyPath": property_path,
+                "dialogId": target_dialog,
+                "controlPath": exact_paths[0] if len(exact_paths) == 1 else None,
+            })
+
+        expected_script_ids = list(declaration["dictionaryScriptIds"])
+        actual_script_ids = sorted(
+            (str(value) for value in brief_dictionary),
+            key=int,
+        )
+        switch_cases = switch_decoded.get("switchCases") or []
+        event_detail = event_decoded.get("nativeEventDetail") or {}
+        valid = (
+            len(brief_dictionary) == declaration["dictionaryEntryCount"]
+            and actual_script_ids == expected_script_ids
+            and brief.get("propertyCount") == 37
+            and brief.get("propertyMapCount") == 37
+            and property_values == declaration["propertyDialogs"]
+            and listener_decoded.get("label") == listener["eventName"]
+            and (listener_decoded.get("actionHeader") or {}).get("nextId") == 81
+            and listener["propertyPath"].encode("utf-8") in listener_payload
+            and b"$80@_dialogId" in listener_payload
+            and event_decoded.get("label") == result_switch["eventName"]
+            and event_detail.get("eventKey") == result_switch["eventKey"]
+            and event_detail.get("serverExchange") is False
+            and event_detail.get("serializedMissionOrQuestId") is False
+            and (event_decoded.get("actionHeader") or {}).get("nextId")
+            == result_switch["switchLocalId"]
+            and switch_decoded.get("switchValueGetterLocalId")
+            == result_switch["getterLocalId"]
+            and (switch_getter.get("getterInt") or {}).get("value") == {
+                "value": 0,
+                "idRef": -1,
+                "paramSource": 300,
+                "path": result_switch["getterPath"],
+            }
+            and switch_cases == [
+                {"value": value, "actionLocalId": action}
+                for value, action in (
+                    (0, -1), (1, 182), (2, 183), (3, 18),
+                    (4, 184), (5, 185), (8, 209), (9, 186),
+                )
+            ]
+            and branch_valid
+        )
+        if not valid:
+            status.update({
+                "status": "inactive_leveldata_dialog_branch_validation_failed",
+                "validatorDiagnostics": [{
+                    "validator": "offlineLevelDataDialogBranchContext",
+                    "gate": "exactPropertiesSwitchAndStartDialogControlPaths",
+                    "mission": mission_id,
+                    "sourcePaths": [str(leveldata_path), str(levelscript_path)],
+                    "sourceSha256": {
+                        leveldata_name: actual_hashes.get(leveldata_name, ""),
+                        levelscript_name: actual_hashes.get(levelscript_name, ""),
+                    },
+                    "expected": {
+                        "dictionaryScriptIds": expected_script_ids,
+                        "propertyDialogs": declaration["propertyDialogs"],
+                        "listener": listener,
+                        "resultSwitch": result_switch,
+                    },
+                    "actual": {
+                        "dictionaryScriptIds": actual_script_ids,
+                        "propertyCount": brief.get("propertyCount"),
+                        "propertyMapCount": brief.get("propertyMapCount"),
+                        "propertyDialogs": property_values,
+                        "listener": listener_decoded,
+                        "event": event_decoded,
+                        "switch": switch_decoded,
+                        "switchGetter": switch_getter,
+                        "branches": branch_outputs,
+                    },
+                }],
+            })
+            return {}, status
+
+        shared_context = {
+            "missionId": mission_id,
+            "levelId": declaration["levelId"],
+            "scriptId": declaration["scriptId"],
+            "levelDataFile": declaration["levelDataFile"],
+            "levelScriptFile": declaration["levelScriptFile"],
+            "dictionaryScriptIds": actual_script_ids,
+            "propertyDialogs": property_values,
+            "startDialogListener": {
+                **listener,
+                "dialogId": property_values[listener["propertyPath"]],
+                "playback": False,
+                "relation": "exact_dialog_enter_listener_filter",
+            },
+            "resultProperty": result_switch["getterPath"],
+            "resultBranches": branch_outputs,
+            "runtimeMissionAssetStatus": "absent_for_gm01m24",
+            "serverExchange": False,
+            "orderEvidence": True,
+            "branchExclusivity": "switch_int_case_exclusive",
+            "graphEffect": "none",
+            "evidenceBoundary": (
+                "the LevelData property names and exact LevelScript control paths "
+                "prove start-dialog configuration plus mutually exclusive result "
+                "branches; they do not serialize a MissionRuntime quest owner or "
+                "the producer that raises the local custom event"
+            ),
+        }
+        for property_path, story_key in property_values.items():
+            leveldata_dialog_branch_by_story[story_key] = {
+                **shared_context,
+                "storyPropertyPath": property_path,
+            }
 
     levelscript_task_consumer_by_story: dict[str, dict[str, Any]] = {}
     for story_key, declaration in (
@@ -8430,6 +8862,8 @@ def build_offline_exhaustion_index(
             "missionNpcProxyTracking": mission_tracking_context,
             "levelScriptTaskConsumer":
                 levelscript_task_consumer_by_story.get(story_key),
+            "levelDataDialogBranchContext":
+                leveldata_dialog_branch_by_story.get(story_key),
         }
     if not dialog_definitions_valid:
         status.update({
@@ -9104,6 +9538,9 @@ def build_offline_exhaustion_index(
                 "deferred_current_build_offline_surface_exhausted",
             "evidenceKind":
                 (
+                    "leveldata_property_resolved_levelscript_result_branch"
+                    if validation["levelDataDialogBranchContext"]
+                    else (
                     "levelscript_talk_completion_dependency_without_playback_owner"
                     if validation["levelScriptTaskConsumer"]
                     else (
@@ -9118,7 +9555,7 @@ def build_offline_exhaustion_index(
                                 "registered_dialog_definition_without_recovered_activator"
                             )
                         )
-                    )
+                    ))
                 ),
             "definitionAsset":
                 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]["filename"],
@@ -9174,12 +9611,20 @@ def build_offline_exhaustion_index(
                 validation["missionNpcProxyTracking"],
             "levelScriptTaskConsumer":
                 validation["levelScriptTaskConsumer"],
+            "levelDataDialogBranchContext":
+                validation["levelDataDialogBranchContext"],
             "allowedNonOwningRoute": allowed_non_owning_route,
             "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
             "gameAssemblySha256":
                 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
             "consumerBoundary": (
                 (
+                    "the hash-locked LevelData properties resolve this dialog "
+                    "through an exact LevelScript listener or StartDialogAction "
+                    "control path; the local script has no serialized gm01m24 "
+                    "MissionRuntime quest owner or server-event producer"
+                    if validation["levelDataDialogBranchContext"]
+                    else (
                     "the exact NpcProxyEx entry selects this registered "
                     "DialogTree, and exact MissionRuntime quest tracking points "
                     "to the same NPC proxy for HUD/navigation context; the "
@@ -9208,12 +9653,19 @@ def build_offline_exhaustion_index(
                             "its activator"
                         )
                     )
-                )
+                ))
             ),
             "orderBoundary": (
-                "DialogId registration, DialogTree node order, line ids, "
-                "shared Timeline context, and filename suffixes do not order "
-                "the Story file relative to mission playback"
+                (
+                    "result case 8 selects succeed_dialog and case 9 selects "
+                    "failed_dialog after the configured start_dialog; the two "
+                    "outcome dialogs are exclusive alternatives, not a sequence"
+                    if validation["levelDataDialogBranchContext"]
+                    else
+                    "DialogId registration, DialogTree node order, line ids, "
+                    "shared Timeline context, and filename suffixes do not order "
+                    "the Story file relative to mission playback"
+                )
             ),
             "reopenWhen": (
                 "installed binary, DialogId source/index, DialogTree, "
