@@ -509,6 +509,7 @@
       offlineRecoveryMissionSequence: "Authored linear quest context (Story placement unresolved)",
       offlineRecoveryMissionTopology: "Exact authored mission topology",
       offlineRecoveryMainPath: "authored main path",
+      offlineRecoveryQuestStateDependency: "authored quest-state dependency",
       offlineRecoveryMissionTopologyBoundary: "Quest predecessor links and main-path membership are exact; Story placement, branch exclusivity, and server successor selection remain unresolved.",
       offlineRecoveryTalkDependency: "LevelScript talk-completion dependency (not playback)",
       offlineRecoveryDialogResultBranch: "Exact LevelData / LevelScript dialog branch",
@@ -999,6 +1000,7 @@
       offlineRecoveryMissionSequence: "\u539f\u59cb\u7ebf\u6027\u4efb\u52a1\u94fe\uff08\u5267\u60c5\u6587\u4ef6\u4f4d\u7f6e\u672a\u89e3\u6790\uff09",
       offlineRecoveryMissionTopology: "\u7cbe\u786e\u539f\u751f\u4efb\u52a1\u62d3\u6251",
       offlineRecoveryMainPath: "\u539f\u751f\u4e3b\u8def\u5f84",
+      offlineRecoveryQuestStateDependency: "\u539f\u751f\u4efb\u52a1\u72b6\u6001\u4f9d\u8d56",
       offlineRecoveryMissionTopologyBoundary: "\u4efb\u52a1\u524d\u7f6e\u8fde\u63a5\u4e0e\u4e3b\u8def\u5f84\u5f52\u5c5e\u5df2\u7cbe\u786e\u6062\u590d\uff1b\u5267\u60c5\u6587\u4ef6\u4f4d\u7f6e\u3001\u5206\u652f\u4e92\u65a5\u6027\u53ca\u670d\u52a1\u5668\u540e\u7ee7\u9009\u62e9\u4ecd\u672a\u89e3\u6790\u3002",
       offlineRecoveryTalkDependency: "LevelScript \u5bf9\u8bdd\u5b8c\u6210\u4f9d\u8d56\uff08\u975e\u64ad\u653e\u8bc1\u636e\uff09",
       offlineRecoveryDialogResultBranch: "\u7cbe\u786e LevelData / LevelScript \u5bf9\u8bdd\u5206\u652f",
@@ -2808,7 +2810,7 @@
         : "";
       const missionTopology = row.missionQuestTopologyContext;
       const missionTopologyContext = missionTopology
-        ? `<details><summary><strong>${esc(t("offlineRecoveryMissionTopology"))}</strong> ${(missionTopology.forks || []).length.toLocaleString()} ${esc(t("questFork"))} / ${(missionTopology.merges || []).length.toLocaleString()} ${esc(t("questMerge"))}</summary><p><strong>${esc(t("offlineRecoveryMainPath"))}</strong>${(missionTopology.mainPathQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>${(missionTopology.forks || []).map((fork) => `<p><code>${esc(fork.questId || "?")}</code><i>&rarr;</i>${(fork.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</p>`).join("")}${(missionTopology.merges || []).map((merge) => `<p>${(merge.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<i>&rarr;</i><code>${esc(merge.questId || "?")}</code></p>`).join("")}<small>${esc(t("offlineRecoveryMissionTopologyBoundary"))}</small></details>`
+        ? `<details><summary><strong>${esc(t("offlineRecoveryMissionTopology"))}</strong> ${(missionTopology.forks || []).length.toLocaleString()} ${esc(t("questFork"))} / ${(missionTopology.merges || []).length.toLocaleString()} ${esc(t("questMerge"))}</summary><p><strong>${esc(t("offlineRecoveryMainPath"))}</strong>${(missionTopology.mainPathQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>${(missionTopology.questStateDependencies || []).map((dependency) => `<p><strong>${esc(t("offlineRecoveryQuestStateDependency"))}</strong><code>${esc(dependency.questId || "?")}</code><i>&larr;</i><code>${esc(dependency.targetQuestId || "?")} state=${esc(dependency.targetQuestState ?? "?")}</code></p>`).join("")}${(missionTopology.forks || []).map((fork) => `<p><code>${esc(fork.questId || "?")}</code><i>&rarr;</i>${(fork.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</p>`).join("")}${(missionTopology.merges || []).map((merge) => `<p>${(merge.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<i>&rarr;</i><code>${esc(merge.questId || "?")}</code></p>`).join("")}<small>${esc(t("offlineRecoveryMissionTopologyBoundary"))}</small></details>`
         : "";
       const taskConsumer = row.levelScriptTaskConsumer;
       const taskConsumerContext = taskConsumer

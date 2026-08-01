@@ -3575,6 +3575,20 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     "au_radio_gm02m1_7_002",
                 },
                 "radio_gm02m1_8": {"au_radio_gm02m1_8_001"},
+                "radio_gm02m20_7": {"au_radio_gm02m20_7_001"},
+                "radio_gm02m20_8": {
+                    "au_radio_gm02m20_8_001",
+                    "au_radio_gm02m20_8_002",
+                },
+                "radio_gm02m20_10": {
+                    "au_radio_gm02m20_10_001",
+                    "au_radio_gm02m20_10_002",
+                },
+                "radio_gm02m20_11": {"au_radio_gm02m20_11_001"},
+                "radio_gm02m20_13": {
+                    "au_radio_gm02m20_13_001",
+                    "au_radio_gm02m20_13_002",
+                },
                 "radio_gm02m23_2": {"au_radio_gm02m23_2_001"},
                 "radio_e5m4_1": {
                     f"au_radio_e5m4_1_{number:03d}"
@@ -5372,6 +5386,128 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(failure["storyKey"], "dlg_gm01m12_1")
         self.assertIn("sourceSha256", failure)
 
+    def test_gm02m20_retired_radios_and_auxiliary_topology_are_exact(
+        self,
+    ) -> None:
+        story_keys = {
+            "radio_gm02m20_7",
+            "radio_gm02m20_8",
+            "radio_gm02m20_10",
+            "radio_gm02m20_11",
+            "radio_gm02m20_13",
+        }
+        self.assertEqual(
+            story_keys,
+            gap_queue.OFFLINE_EXHAUSTION_GM02M20_RADIOS,
+        )
+        self.assertEqual(
+            story_keys,
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm02m20" in key
+            },
+        )
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual("active", status["status"])
+        self.assertTrue(story_keys <= set(index))
+        topology = index["radio_gm02m20_7"][
+            "missionQuestTopologyContext"
+        ]
+        self.assertEqual(
+            [
+                "gm02m20_q#1", "gm02m20_q#2", "gm02m20_q#10",
+                "gm02m20_q#11", "gm02m20_q#3", "gm02m20_q#6",
+                "gm02m20_q#4", "gm02m20_q#7", "gm02m20_q#5",
+                "gm02m20_q#8",
+            ],
+            topology["mainPathQuestIds"],
+        )
+        self.assertEqual(
+            ["gm02m20_q#1", "gm02m20_q#9"],
+            topology["entryQuestIds"],
+        )
+        self.assertEqual([], topology["forks"])
+        self.assertEqual([], topology["merges"])
+        self.assertEqual(
+            [{
+                "questId": "gm02m20_q#9",
+                "objectiveIndex": 1,
+                "targetQuestId": "gm02m20_q#1",
+                "comparer": 0,
+                "targetQuestState": 3,
+                "scopeMask": 1,
+                "useGraphScope": True,
+            }],
+            topology["questStateDependencies"],
+        )
+        self.assertEqual([], topology["storyAssignments"])
+        self.assertFalse(topology["orderEvidence"])
+
+    def test_gm02m20_auxiliary_topology_validator_fails_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        declaration = gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS[
+            "gm02m20"
+        ]
+        broken_dependencies = copy.deepcopy(
+            declaration["questStateDependenciesByQuest"]
+        )
+        broken_dependencies["gm02m20_q#9"][0][
+            "targetQuestId"
+        ] = "gm02m20_q#missing"
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS,
+            {"gm02m20": {
+                **declaration,
+                "questStateDependenciesByQuest": broken_dependencies,
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual({}, failed_index)
+        failure = failed_status["validatorDiagnostics"][0]
+        self.assertEqual(
+            "offlineMissionTopologyContext",
+            failure["validator"],
+        )
+        self.assertEqual(
+            "exactQuestPredecessorGraphMainPathAndStateDependencies",
+            failure["gate"],
+        )
+        self.assertEqual("gm02m20", failure["mission"])
+        self.assertEqual(
+            "gm02m20_q#missing",
+            failure["expected"]["questStateDependenciesByQuest"]
+            ["gm02m20_q#9"][0]["targetQuestId"],
+        )
+        self.assertEqual(
+            "gm02m20_q#1",
+            failure["actual"]["questStateDependenciesByQuest"]
+            ["gm02m20_q#9"][0]["targetQuestId"],
+        )
+
     def test_gm01m16_exact_topology_is_visible_without_story_assignment(self) -> None:
         partial = gap_queue.read_json(
             gap_queue.ROOT
@@ -5420,7 +5556,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual({}, failed_index)
         failure = failed_status["validatorDiagnostics"][0]
         self.assertEqual("offlineMissionTopologyContext", failure["validator"])
-        self.assertEqual("exactQuestPredecessorGraphAndMainPath", failure["gate"])
+        self.assertEqual(
+            "exactQuestPredecessorGraphMainPathAndStateDependencies",
+            failure["gate"],
+        )
         self.assertEqual("gm01m16", failure["mission"])
         self.assertIn("sourceSha256", failure)
 
