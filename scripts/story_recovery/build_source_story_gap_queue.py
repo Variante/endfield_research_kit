@@ -190,7 +190,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v76"
+    "current-build-offline-story-carrier-exhaustion-v77"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -298,6 +298,11 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm02m1_6": "radio_gm02m1_6",
     "radio_gm02m1_7": "radio_gm02m1_7",
     "radio_gm02m1_8": "radio_gm02m1_8",
+    "radio_gm02m20_7": "radio_gm02m20_7",
+    "radio_gm02m20_8": "radio_gm02m20_8",
+    "radio_gm02m20_10": "radio_gm02m20_10",
+    "radio_gm02m20_11": "radio_gm02m20_11",
+    "radio_gm02m20_13": "radio_gm02m20_13",
     "dlg_gm02m23_3": "dlg_gm02m23_3",
     "dlg_gm02m23_10": "dlg_gm02m23_10",
     "radio_gm02m23_2": "radio_gm02m23_2",
@@ -388,6 +393,38 @@ OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS = {
     },
 }
 OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
+    "gm02m20": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm02m20.json"
+        ),
+        "sourceSha256":
+            "39A69825551FB99F98FDBA0F9B72F771CA2BAA5E091174D363270329675785C7",
+        "mainPathQuestIds": tuple(
+            f"gm02m20_q#{number}"
+            for number in (1, 2, 10, 11, 3, 6, 4, 7, 5, 8)
+        ),
+        "prevQuestIdsByQuest": {
+            f"gm02m20_q#{quest}": tuple(
+                f"gm02m20_q#{previous}" for previous in predecessors
+            )
+            for quest, predecessors in {
+                1: (), 2: (1,), 10: (2,), 11: (10,), 3: (11,),
+                6: (3,), 4: (6,), 7: (4,), 5: (7,), 8: (5,),
+                9: (),
+            }.items()
+        },
+        "questStateDependenciesByQuest": {
+            "gm02m20_q#9": ({
+                "objectiveIndex": 1,
+                "targetQuestId": "gm02m20_q#1",
+                "comparer": 0,
+                "targetQuestState": 3,
+                "scopeMask": 1,
+                "useGraphScope": True,
+            },),
+        },
+    },
     "gm01m16": {
         "sourceFile": (
             "export_full/structured/Persistent/Data/Json/"
@@ -5858,6 +5895,13 @@ OFFLINE_EXHAUSTION_GM02M1_RADIOS = frozenset({
     "radio_gm02m1_7",
     "radio_gm02m1_8",
 })
+OFFLINE_EXHAUSTION_GM02M20_RADIOS = frozenset({
+    "radio_gm02m20_7",
+    "radio_gm02m20_8",
+    "radio_gm02m20_10",
+    "radio_gm02m20_11",
+    "radio_gm02m20_13",
+})
 OFFLINE_EXHAUSTION_GM02M23_RADIOS = frozenset({
     "radio_gm02m23_2",
 })
@@ -5879,6 +5923,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm01m27": OFFLINE_EXHAUSTION_GM01M27_RADIOS,
     "gm01m5": OFFLINE_EXHAUSTION_GM01M5_RADIOS,
     "gm02m1": OFFLINE_EXHAUSTION_GM02M1_RADIOS,
+    "gm02m20": OFFLINE_EXHAUSTION_GM02M20_RADIOS,
     "gm02m23": OFFLINE_EXHAUSTION_GM02M23_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
@@ -6073,6 +6118,20 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
         "au_radio_gm02m1_7_002",
     }),
     "radio_gm02m1_8": frozenset({"au_radio_gm02m1_8_001"}),
+    "radio_gm02m20_7": frozenset({"au_radio_gm02m20_7_001"}),
+    "radio_gm02m20_8": frozenset({
+        "au_radio_gm02m20_8_001",
+        "au_radio_gm02m20_8_002",
+    }),
+    "radio_gm02m20_10": frozenset({
+        "au_radio_gm02m20_10_001",
+        "au_radio_gm02m20_10_002",
+    }),
+    "radio_gm02m20_11": frozenset({"au_radio_gm02m20_11_001"}),
+    "radio_gm02m20_13": frozenset({
+        "au_radio_gm02m20_13_001",
+        "au_radio_gm02m20_13_002",
+    }),
     "radio_gm02m23_2": frozenset({"au_radio_gm02m23_2_001"}),
     "radio_gm01m22_1d2": frozenset({"au_radio_gm01m22_1d2_001"}),
     "radio_gm01m22_1d3": frozenset({"au_radio_gm01m22_1d3_001"}),
@@ -8666,6 +8725,54 @@ def build_offline_exhaustion_index(
             and isinstance(quest_dic, dict)
             else None
         )
+        expected_quest_state_dependencies = {
+            quest_id: list(dependencies)
+            for quest_id, dependencies in declaration.get(
+                "questStateDependenciesByQuest", {}
+            ).items()
+        }
+        actual_quest_state_dependencies: dict[
+            str, list[dict[str, Any]] | None
+        ] = {}
+        for quest_id in expected_quest_state_dependencies:
+            quest = (
+                quest_dic.get(quest_id)
+                if isinstance(quest_dic, dict) else None
+            )
+            objectives = (
+                quest.get("objectiveList")
+                if isinstance(quest, dict) else None
+            )
+            if not isinstance(objectives, list):
+                actual_quest_state_dependencies[quest_id] = None
+                continue
+            dependencies: list[dict[str, Any]] = []
+            for objective_index, objective in enumerate(objectives, 1):
+                condition = (
+                    objective.get("condition")
+                    if isinstance(objective, dict) else None
+                )
+                if not (
+                    isinstance(condition, dict)
+                    and safe_key(condition.get("$type")).split(",", 1)[0]
+                    == "Beyond.Gameplay.CheckQuestState"
+                ):
+                    continue
+                dependencies.append({
+                    "objectiveIndex": objective_index,
+                    "targetQuestId": safe_key(
+                        (condition.get("_questId") or {}).get("constValue")
+                    ),
+                    "comparer": (condition.get("_comparer") or {}).get(
+                        "constValue"
+                    ),
+                    "targetQuestState": (
+                        condition.get("_targetQuestState") or {}
+                    ).get("constValue"),
+                    "scopeMask": condition.get("scopeMask"),
+                    "useGraphScope": condition.get("useGraphScope"),
+                })
+            actual_quest_state_dependencies[quest_id] = dependencies
         valid = (
             isinstance(quest_dic, dict)
             and set(quest_dic) == set(expected_prev)
@@ -8675,13 +8782,17 @@ def build_offline_exhaustion_index(
                 expected_failed_conditions is None
                 or actual_failed_conditions == expected_failed_conditions
             )
+            and actual_quest_state_dependencies
+            == expected_quest_state_dependencies
         )
         if not valid:
             status.update({
                 "status": "inactive_mission_topology_context_validation_failed",
                 "validatorDiagnostics": [{
                     "validator": "offlineMissionTopologyContext",
-                    "gate": "exactQuestPredecessorGraphAndMainPath",
+                    "gate": (
+                        "exactQuestPredecessorGraphMainPathAndStateDependencies"
+                    ),
                     "mission": mission_id,
                     "sourcePaths": [str(source_paths[source_name])],
                     "sourceSha256": {
@@ -8692,6 +8803,9 @@ def build_offline_exhaustion_index(
                         "prevQuestIdListByQuest": expected_prev,
                         "mainPathQuests": expected_main_path,
                         "failedConditionsByQuest": expected_failed_conditions,
+                        "questStateDependenciesByQuest": (
+                            expected_quest_state_dependencies
+                        ),
                     },
                     "actual": {
                         "questIds": sorted(quest_dic, key=natural_key)
@@ -8699,6 +8813,9 @@ def build_offline_exhaustion_index(
                         "prevQuestIdListByQuest": actual_prev,
                         "mainPathQuests": actual_main_path,
                         "failedConditionsByQuest": actual_failed_conditions,
+                        "questStateDependenciesByQuest": (
+                            actual_quest_state_dependencies
+                        ),
                     },
                 }],
             })
@@ -8751,6 +8868,12 @@ def build_offline_exhaustion_index(
                     expected_failed_conditions or {}
                 ).items()
                 if isinstance(condition, dict)
+            ],
+            "questStateDependencies": [
+                {"questId": quest_id, **dependency}
+                for quest_id, dependencies
+                in expected_quest_state_dependencies.items()
+                for dependency in dependencies
             ],
             "relation": "authored_mission_quest_predecessor_topology",
             "storyPlacementStatus": "unresolved",
