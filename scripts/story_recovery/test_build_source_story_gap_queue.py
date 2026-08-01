@@ -3713,6 +3713,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "misc_dlg_gm01m22_3d2",
                 "misc_dlg_gm01m22_3d8",
                 "misc_dlg_gm01m22_4d0",
+                "dlg_gm01m12_1",
+                "dlg_gm01m12_3",
+                "dlg_gm01m12_6",
             },
         )
         self.assertEqual(
@@ -4293,6 +4296,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_gm02m3_3",
                 "dlg_gm02m3_4",
                 "dlg_gm02m3_5",
+                "dlg_gm01m12_8",
             },
         )
         self.assertEqual(len(text_only["dlg_e10m3_10"]["lineIds"]), 8)
@@ -4857,6 +4861,157 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "exactForkMergeAndSharedNpcTracking",
         )
         self.assertEqual(failure["mission"], "gm01m7")
+        self.assertIn("sourceSha256", failure)
+
+    def test_declared_gm01m12_linear_frontier_is_exact(self) -> None:
+        story_keys = {
+            "dlg_gm01m12_1",
+            "dlg_gm01m12_3",
+            "dlg_gm01m12_6",
+            "dlg_gm01m12_8",
+            "text_gm01m12_1",
+            "text_gm01m12_3",
+            "text_gm01m12_5",
+            "text_gm01m12_6",
+            "text_gm01m12_7",
+        }
+        self.assertEqual(
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm01m12" in key
+            },
+            story_keys,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS[
+                "gm01m12"
+            ]["questSequence"],
+            tuple(
+                f"gm01m12_q#{number}"
+                for number in (15, 16, 13, 14, 1, 2, 3, 4, 12, 5, 6)
+            ),
+        )
+        self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS),
+            {"dlg_gm01m12_1", "dlg_gm01m12_3"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS[
+                "dlg_gm01m12_1"
+            ]["postDialogAction"]["actionName"],
+            "BlackScreenFadeInAndOut",
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+                "text_gm01m12_5"
+            ]["richContentStatus"],
+            "absent",
+        )
+
+    def test_gm01m12_linear_and_task_context_are_visible(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual(status["status"], "active")
+        row = index["dlg_gm01m12_1"]
+        sequence = row["missionQuestSequenceContext"]
+        self.assertEqual(len(sequence["questSequence"]), 11)
+        self.assertEqual(sequence["forkQuestIds"], [])
+        self.assertEqual(sequence["mergeQuestIds"], [])
+        self.assertEqual(sequence["storyAssignments"], [])
+        self.assertFalse(sequence["orderEvidence"])
+        consumer = row["levelScriptTaskConsumer"]
+        self.assertEqual(consumer["conditionType"], "CheckTalkOptionFinish")
+        self.assertEqual(consumer["finishId"], -1)
+        self.assertFalse(consumer["playback"])
+        self.assertFalse(consumer["missionOwnership"])
+        self.assertEqual(
+            consumer["postDialogAction"]["actionName"],
+            "BlackScreenFadeInAndOut",
+        )
+        self.assertEqual(
+            index["text_gm01m12_3"]["prtsReadingDefinition"]["rowId"],
+            "term_001_gm01m7",
+        )
+
+    def test_gm01m12_linear_context_validator_fails_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        declaration = gap_queue.OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS[
+            "gm01m12"
+        ]
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS,
+            {"gm01m12": {
+                **declaration,
+                "questSequence": (*declaration["questSequence"][:-1], "gm01m12_q#missing"),
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(partial, table_root)
+            )
+        self.assertEqual(failed_index, {})
+        failure = failed_status["validatorDiagnostics"][0]
+        self.assertEqual(failure["validator"], "offlineMissionLinearContext")
+        self.assertEqual(
+            failure["gate"],
+            "exactSinglePredecessorQuestSequence",
+        )
+        self.assertEqual(failure["mission"], "gm01m12")
+        self.assertIn("sourceSha256", failure)
+
+    def test_gm01m12_levelscript_task_validator_fails_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        declaration = gap_queue.OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS[
+            "dlg_gm01m12_1"
+        ]
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS,
+            {"dlg_gm01m12_1": {
+                **declaration,
+                "conditionKey": "changed",
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(partial, table_root)
+            )
+        self.assertEqual(failed_index, {})
+        failure = failed_status["validatorDiagnostics"][0]
+        self.assertEqual(
+            failure["validator"],
+            "offlineLevelScriptTaskConsumer",
+        )
+        self.assertEqual(
+            failure["gate"],
+            "exactLevelScriptTalkCompletionConsumer",
+        )
+        self.assertEqual(failure["storyKey"], "dlg_gm01m12_1")
         self.assertIn("sourceSha256", failure)
 
     def test_gm01m7_cross_mission_sns_validator_fails_closed(self) -> None:
@@ -5461,6 +5616,11 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e10m3_8",
                 "text_e10m4_1",
                 "text_gm01m22_5",
+                "text_gm01m12_1",
+                "text_gm01m12_3",
+                "text_gm01m12_5",
+                "text_gm01m12_6",
+                "text_gm01m12_7",
             },
         )
 

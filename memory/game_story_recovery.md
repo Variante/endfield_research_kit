@@ -189,6 +189,23 @@ and reading-popup roots are exact definitions without a playback owner. Mission
 Pipeline now exposes the fork/join, dialog-internal branches, cross-mission
 tracking, and exact source files while explicitly withholding ownership/order.
 
+The nine-file `gm01m12` frontier is now source-bounded, reducing major-mission
+actionable core-isolated rows from 151 to 142. Its exact authored quest graph is
+the single chain `q#15 -> q#16 -> q#13 -> q#14 -> q#1 -> q#2 -> q#3 -> q#4 ->
+q#12 -> q#5 -> q#6`, with no fork or merge; this is mission context and does
+not place any Story file on the chain. Exact LevelScript tasks
+`map01_lv001/2100110001` and `2100110003` consume completion of
+`dlg_gm01m12_1` and `_3` through `CheckTalkOptionFinish`, respectively. They
+prove client-side completion dependencies, not playback, ownership, or order;
+the first task also reaches exact post-dialog action
+`BlackScreenFadeInAndOut`. DialogTree definitions recover `_1` and `_3` option
+convergences; `_6` has no recovered consumer, and unregistered `_8` remains
+DialogText/option-definition only. Five reading-popup roots are attached with
+their exact table carriers; `text_gm01m12_5` is an authored test-popup stub
+without RichContent. Cross-mission `gm01m7` NPC-proxy and archive joins remain
+navigation/definition context only. Mission Pipeline exposes all nine files,
+their related sources, the linear quest context, and these evidence boundaries.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -217,10 +234,10 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should continue the same binary-first audit with the highest-ranked
-real major-mission frontier `gm01m12` (nine actionable core-isolated files),
-using the cross-mission proxy and SNS joins found during `gm01m7` recovery as
-navigation-only starting points. Then address the five character-mission
-quest-attachment gaps. Reopen a
+real major-mission frontier `gm01m16` (eight actionable core-isolated files),
+then the tied eight-file `gm01m24`, `gm01m25`, `gm01m26`, `gm01m20`, `gm01m5`,
+and `gm02m1` frontiers and the five character-mission quest-attachment gaps.
+Reopen a
 deferred row only when a new typed producer/consumer or changed source hash
 supplies an ownership or order edge.
 
