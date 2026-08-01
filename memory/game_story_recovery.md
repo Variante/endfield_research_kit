@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 498 (490 MissionRuntime + 8 Story-only recovery shells) |
+| Pipeline missions | 499 (490 MissionRuntime + 9 Story-only recovery shells) |
 | Unique Story files | 5,282 |
 | Connected files | 4,177 (79.1%) |
 | Files with a normalized trigger/context route | 4,398 (83.3%) |
@@ -330,6 +330,24 @@ UID-record, action, and task counts. This lowers the mission score from 40 to
 zero and the major actionable backlog from 100 to 92 without treating OCR,
 overrides, table order, or suffixes as evidence.
 
+The `gm02m1` frontier is now source-bounded as retired definition-only content,
+not reconstructed as a playback sequence. An exact-boundary scan of all
+179,925 current structured Data/Json objects finds no `gm02m1` carrier, and
+there is no exact MissionRuntimeAsset, LevelData, LevelScript, DialogId record,
+DialogTree, Timeline, AnimeStudio object carrier, Lua/object-index carrier, or
+current AudioDialog membership. The hash-locked installed `GameAssembly.dll`
+also contains none of the eight exact Story/root tokens in UTF-8 or UTF-16.
+What survives is limited to 13 DialogTextTable rows, four DialogOptionTable
+rows, and five RadioTable definitions. Each option group has exactly one
+choice; those rows prove authored prompts but neither a branch nor a response
+route. `misc_dlg_gm02m1_1d5` is now validated against its distinct original
+definition root `dlg_gm02m1_1d5`. Mission Pipeline publishes a ninth
+Story-only shell, attaches the exact definition and negative-registry source
+files to all eight cards, shows the consumer/order/reopen boundaries, and keeps
+all 28 scene pairs unordered. The locked manual order remains display-only
+cross-reference, and no OCR or option override exists. This lowers the mission
+score from 40 to zero and the major actionable backlog from 92 to 84.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -358,8 +376,8 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should move to the highest-ranked remaining real major-mission
-frontier (92 actionable core-isolated files remain across that bucket; the
-next frontier is `gm02m1`) and
+frontier (84 actionable core-isolated files remain across that bucket; the
+next frontier is `gm02m23`, score 35 across seven isolated files) and
 the five character-mission quest-attachment gaps. For `gm01m16`, reopen the
 patrol rows only if an exact `NpcPatrolStart`, world-entity, or MissionRuntime
 tracking join co-carries patrol `160002` or `20001`; do not infer that join from

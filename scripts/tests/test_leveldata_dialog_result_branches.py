@@ -200,6 +200,69 @@ class LevelDataDialogBranchValidatorTests(unittest.TestCase):
             index["radio_gm01m5_1"]["missingAudioIds"],
             ["au_radio_gm01m5_1_001", "au_radio_gm01m5_1_002"],
         )
+        gm02m1 = index["dlg_gm02m1_1"]
+        self.assertEqual(
+            gm02m1["evidenceKind"],
+            "dialog_text_table_only_without_registry_asset_or_consumer",
+        )
+        self.assertEqual(gm02m1["optionIds"], [
+            "option_dlg_gm02m1_1_1_001",
+            "option_dlg_gm02m1_1_2_001",
+            "option_dlg_gm02m1_1_3_001",
+        ])
+        self.assertEqual(
+            index["misc_dlg_gm02m1_1d5"]["definitionRootKey"],
+            "dlg_gm02m1_1d5",
+        )
+        self.assertEqual(
+            index["misc_dlg_gm02m1_1d5"]["lineIds"],
+            ["dlg_gm02m1_1d5_001", "dlg_gm02m1_1d5_002"],
+        )
+        self.assertIn(
+            "export_full/structured/StreamingAssets/Table/DialogTextTable.json",
+            gm02m1["definitionSourceFiles"],
+        )
+        self.assertEqual(
+            index["radio_gm02m1_7"]["missingAudioIds"],
+            ["au_radio_gm02m1_7_001", "au_radio_gm02m1_7_002"],
+        )
+
+    def test_wrong_misc_definition_root_fails_with_exact_diagnostic(self):
+        declaration = copy.deepcopy(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS[
+                "misc_dlg_gm02m1_1d5"
+            ]
+        )
+        declaration["definitionRootKey"] = "dlg_gm02m1_missing"
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS,
+            {"misc_dlg_gm02m1_1d5": declaration},
+        ):
+            index, status = gap_queue.build_offline_exhaustion_index(
+                self.partial_report,
+                self.table_root,
+            )
+        self.assertEqual(index, {})
+        self.assertEqual(
+            status["status"],
+            "inactive_text_only_dialog_definition_validation_failed",
+        )
+        diagnostic = next(
+            row for row in status["validatorDiagnostics"]
+            if row["storyKey"] == "misc_dlg_gm02m1_1d5"
+            and row["gate"] == "exactDialogTextLineSet"
+        )
+        self.assertEqual(
+            diagnostic["validator"],
+            "offlineTextOnlyDialogDefinition",
+        )
+        self.assertEqual(diagnostic["missionId"], "gm02m1")
+        self.assertEqual(
+            diagnostic["expected"],
+            ["dlg_gm02m1_1d5_001", "dlg_gm02m1_1d5_002"],
+        )
+        self.assertEqual(diagnostic["actual"], [])
+        self.assertEqual(len(diagnostic["sourcePaths"]), 1)
 
     def test_changed_getter_path_fails_with_actionable_diagnostic(self):
         declaration = copy.deepcopy(
