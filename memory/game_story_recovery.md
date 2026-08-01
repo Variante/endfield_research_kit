@@ -20,6 +20,7 @@ Latest CN reports:
 | Strong / supported / weak edges | 1,480 / 834 / 2,630 |
 | Source-comparable scene pairs | 3,762 / 249,651 (1.51%) |
 | Cyclic components | 0 |
+| Exact nested DialogTree containments | 30 across 29 child files |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -42,7 +43,7 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The current main-story isolated-scene queue is source-bounded: all 588 core
+The current main-story isolated-scene queue is source-bounded: all 586 core
 isolated rows are now either closed by exact native/runtime/definition evidence
 or deferred after current-build offline carrier exhaustion; none remain broadly
 actionable. The latest batch closed the last two broad main-story quest
@@ -68,7 +69,19 @@ of MissionRuntime, typed LevelScript/LevelData interactive carriers, and both
 current object indexes find no activator. The current structured export has no
 Lua corpus, so Lua is a reopen condition rather than claimed negative evidence.
 This removes seven rows from the event queue without adding ownership or order
-edges; 18 event core-isolated rows remain actionable.
+edges; 14 event core-isolated rows remain actionable.
+
+The four-file `a1m8d3` event frontier is closed without using OCR or manual
+order as evidence. Original `dlg_a1m8d3_2` DialogTree connections place
+`black_a1m8d3_1_001` exactly after `dlg_a1m8d3_2_009` and before `_010`; this
+is line-level containment, not a complete file-order edge. Original LevelScript
+segment `10100620005` reaches `black_a1m8d3_2` through an exact
+leader-enter-trigger to `NarrativeBlackScreenAction` path and is the exact
+global segment of tracked proxy `liaowuhen_map02_v1d2d0_005`, proving only
+mission-shell playback context. `dlg_a1m8d3_2` and `radio_a1m8d3_1` remain
+hash-locked runtime definitions without recovered activators; their current
+audio ids are absent from `AudioDialog`. Mission Pipeline exposes all four
+boundaries and keeps the mission score at zero.
 
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
@@ -96,10 +109,9 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should continue the same binary-first audit with the four-file
-`a1m8d3` event frontier (`black_a1m8d3_1`, `black_a1m8d3_2`,
-`dlg_a1m8d3_2`, and `radio_a1m8d3_1`), then the highest-ranked major-mission
-frontier (`gm02m2`) and the five character-mission quest gaps. Reopen a
+Next work should continue the same binary-first audit with the remaining event
+frontier, then the highest-ranked major-mission frontier (`gm02m2`) and the
+five character-mission quest gaps. Reopen a
 deferred row only when a new typed producer/consumer or changed source hash
 supplies an ownership or order edge.
 

@@ -53,7 +53,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v81"
+SCHEMA = "sourceStoryGapQueue.v82"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -136,7 +136,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v57"
+    "current-build-offline-story-carrier-exhaustion-v58"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -1308,6 +1308,26 @@ OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES = {
     ),
 }
 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
+    "dlg_a1m8d3_2": {
+        "missionId": "a1m8d3",
+        "filename": "dlg_a1m8d3_2_p9BCBAF7FB96B40D2.json",
+        "sha256":
+            "8CBA037D2AFEE68BA6E171EE6BADFE82BCBBC348C70FE3A8C556EECE9AA64136",
+        "extraConfigFilename":
+            "dlg_a1m8d3_2_extra_config_pAF2E11B8A59BE74B.json",
+        "extraConfigSha256":
+            "F27D2AF4365E5769D5B93C1E5DBCFE67FCCFAA0A1141A10271E55769D6823C76",
+        "lineIds": tuple(
+            f"dlg_a1m8d3_2_{number:03d}" for number in range(2, 20)
+        ),
+        "optionIds": (
+            "option_dlg_a1m8d3_2_1_001",
+            "option_dlg_a1m8d3_2_2_001",
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_a1m8d3_2_{number:03d}" for number in range(2, 20)
+        ),
+    },
     "dlg_e5m0d5_1": {
         "missionId": "e5m0d5",
         "filename": "dlg_e5m0d5_1_pAF0BBC8AD9824BE9.json",
@@ -3014,7 +3034,9 @@ OFFLINE_EXHAUSTION_E10M1_RADIOS = frozenset({
     "radio_e10m1_9",
 })
 OFFLINE_EXHAUSTION_E10M2_RADIOS = frozenset({"radio_e10m2_1"})
+OFFLINE_EXHAUSTION_A1M8D3_RADIOS = frozenset({"radio_a1m8d3_1"})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
+    "a1m8d3": OFFLINE_EXHAUSTION_A1M8D3_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
@@ -3123,6 +3145,7 @@ OFFLINE_EXHAUSTION_RADIO_AUDIO_VARIANTS = {
     },
 }
 OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
+    "radio_a1m8d3_1": frozenset({"au_radio_a1m8d3_1_001"}),
     "radio_e5m5_1": frozenset({
         "au_radio_e5m5_1_001",
         "au_radio_e5m5_1_002",
@@ -3148,6 +3171,103 @@ OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS = frozenset({
     "radioSingleDataList",
     "radioType",
 })
+
+
+def _offline_radio_definition_validation_failure(
+    story_key: str,
+    row: Any,
+    audio_stems: set[str],
+) -> dict[str, Any] | None:
+    """Return one bounded fail-closed RadioTable/AudioDialog diagnostic."""
+    if (
+        not isinstance(row, dict)
+        or set(row) != OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS
+        or not isinstance(row.get("radioSingleDataList"), list)
+        or not row["radioSingleDataList"]
+    ):
+        return {
+            "validator": "offlineRadioDefinition",
+            "gate": "exactRadioTableShape",
+            "storyKey": story_key,
+            "sourcePaths": ["RadioTable"],
+            "expected": {
+                "fields": sorted(OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS),
+                "nonemptyRadioSingleDataList": True,
+            },
+            "actual": {
+                "type": type(row).__name__,
+                "fields": sorted(row) if isinstance(row, dict) else [],
+                "radioSingleDataCount": (
+                    len(row.get("radioSingleDataList") or [])
+                    if isinstance(row, dict) else 0
+                ),
+            },
+        }
+    row_audio_ids = {
+        safe_key(line.get("audioOverride"))
+        for line in row["radioSingleDataList"]
+        if isinstance(line, dict) and safe_key(line.get("audioOverride"))
+    }
+    if len(row_audio_ids) != len(row["radioSingleDataList"]):
+        return {
+            "validator": "offlineRadioDefinition",
+            "gate": "everyLineHasExactAudioOverride",
+            "storyKey": story_key,
+            "sourcePaths": ["RadioTable"],
+            "expected": {"audioOverrideCount": len(row["radioSingleDataList"])},
+            "actual": {"audioOverrideIds": sorted(row_audio_ids)},
+        }
+    expected_variants = {
+        safe_key(audio_id): tuple(safe_key(value) for value in variants)
+        for audio_id, variants in (
+            OFFLINE_EXHAUSTION_RADIO_AUDIO_VARIANTS.get(story_key, {})
+        ).items()
+    }
+    expected_missing = set(
+        OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS.get(story_key, ())
+    )
+    actual_base_absent = row_audio_ids - audio_stems
+    actual_variants = {
+        audio_id: sorted(
+            stem for stem in audio_stems if stem.startswith(f"{audio_id}_")
+        )
+        for audio_id in expected_variants
+    }
+    if (
+        set(expected_variants) & expected_missing
+        or actual_base_absent != set(expected_variants) | expected_missing
+        or any(
+            not variants
+            or any(not value.startswith(f"{audio_id}_") for value in variants)
+            or set(variants) != set(actual_variants[audio_id])
+            for audio_id, variants in expected_variants.items()
+        )
+        or any(
+            any(stem.startswith(f"{audio_id}_") for stem in audio_stems)
+            for audio_id in expected_missing
+        )
+    ):
+        return {
+            "validator": "offlineRadioDefinition",
+            "gate": "exactAudioDialogMembership",
+            "storyKey": story_key,
+            "sourcePaths": ["RadioTable", "AudioDialog"],
+            "expected": {
+                "baseAbsentAudioIds": sorted(
+                    set(expected_variants) | expected_missing
+                ),
+                "missingAudioIds": sorted(expected_missing),
+                "audioVariants": {
+                    key: list(values) for key, values in expected_variants.items()
+                },
+            },
+            "actual": {
+                "rowAudioIds": sorted(row_audio_ids),
+                "baseAbsentAudioIds": sorted(actual_base_absent),
+                "audioVariants": actual_variants,
+            },
+        }
+    return None
 OFFLINE_EXHAUSTION_TEXT_DEFINITIONS = {
     "text_a1m5_1": {
         "missionId": "a1m5",
@@ -4584,14 +4704,16 @@ def build_offline_exhaustion_index(
     ] = {}
     missing_audio_ids_by_story: dict[str, set[str]] = {}
     radio_rows_valid = isinstance(radio_table, dict)
+    radio_validation_failures: list[dict[str, Any]] = []
     for story_key in all_radio_keys:
         row = radio_table.get(story_key) if isinstance(radio_table, dict) else None
-        if (
-            not isinstance(row, dict)
-            or set(row) != OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS
-            or not isinstance(row.get("radioSingleDataList"), list)
-            or not row["radioSingleDataList"]
-        ):
+        failure = _offline_radio_definition_validation_failure(
+            story_key,
+            row,
+            audio_stems,
+        )
+        if failure is not None:
+            radio_validation_failures.append(failure)
             radio_rows_valid = False
             break
         row_audio_ids: set[str] = set()
@@ -4688,7 +4810,31 @@ def build_offline_exhaustion_index(
             }
         ) <= audio_stems
     ):
-        status["status"] = "inactive_radio_definition_validation_failed"
+        if not radio_validation_failures:
+            radio_validation_failures.append({
+                "validator": "offlineRadioDefinition",
+                "gate": "declaredAudioExceptionCoverage",
+                "sourcePaths": ["RadioTable", "AudioDialog"],
+                "expected": {
+                    "variantKeysSubsetOfDeclaredRadios": True,
+                    "missingAudioKeysSubsetOfDeclaredRadios": True,
+                    "allUnexceptedAudioIdsPresent": True,
+                },
+                "actual": {
+                    "unknownVariantKeys": sorted(
+                        set(OFFLINE_EXHAUSTION_RADIO_AUDIO_VARIANTS)
+                        - all_radio_keys
+                    ),
+                    "unknownMissingAudioKeys": sorted(
+                        set(OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS)
+                        - all_radio_keys
+                    ),
+                },
+            })
+        status.update({
+            "status": "inactive_radio_definition_validation_failed",
+            "validatorDiagnostics": radio_validation_failures,
+        })
         return {}, status
 
     radio_contexts_valid = (
@@ -4968,6 +5114,7 @@ def build_offline_exhaustion_index(
         {},
     )
     dialog_validation_by_key: dict[str, dict[str, Any]] = {}
+    dialog_validation_failures: list[dict[str, Any]] = []
     dialog_definitions_valid = (
         isinstance(dialog_text_table, dict)
         and isinstance(dialog_id_index, dict)
@@ -5286,6 +5433,57 @@ def build_offline_exhaustion_index(
             or not timeline_context_valid
             or not npc_proxy_consumer_valid
         ):
+            dialog_validation_failures.append({
+                "validator": "offlineDialogDefinition",
+                "gate": "exactRegisteredDialogDefinition",
+                "mission": safe_key(definition.get("missionId")),
+                "storyKey": story_key,
+                "sourcePaths": [
+                    str(source_paths[f"dialogDefinition:{story_key}"]),
+                    str(source_paths["dialogTextTable"]),
+                    str(source_paths["dialogIdIndex"]),
+                    str(source_paths["audioDialog"]),
+                ],
+                "expected": {
+                    "definitionName": definition_name,
+                    "lineIds": list(expected_line_ids),
+                    "optionIds": list(expected_option_ids),
+                    "missingAudioIds": sorted(expected_missing_audio_ids),
+                    "registered": True,
+                    "registrationEvidence": [
+                        "memorypack_record_key",
+                        "printable_root_token",
+                    ],
+                    "timelineContextValid": True,
+                    "npcProxyConsumerValid": True,
+                },
+                "actual": {
+                    "treeMName": safe_key(tree.get("m_Name"))
+                        if isinstance(tree, dict) else "",
+                    "treeName": safe_key(tree.get("Name"))
+                        if isinstance(tree, dict) else "",
+                    "scriptLength": len(tree.get("m_Script") or "")
+                        if isinstance(tree, dict) else 0,
+                    "lineIds": list(actual_line_ids),
+                    "optionIds": list(registered_option_ids),
+                    "missingAudioIds": sorted(actual_missing_audio_ids),
+                    "registry": {
+                        key: registry.get(key)
+                        for key in (
+                            "registered",
+                            "memoryPackRecordKey",
+                            "hasRootKey",
+                            "registrationEvidence",
+                            "trunkCount",
+                            "lineCount",
+                            "usedDialogTimelineCount",
+                            "usedDialogTimelineIds",
+                        )
+                    } if isinstance(registry, dict) else None,
+                    "timelineContextValid": timeline_context_valid,
+                    "npcProxyConsumerValid": npc_proxy_consumer_valid,
+                },
+            })
             dialog_definitions_valid = False
             break
         dialog_validation_by_key[story_key] = {
@@ -5303,7 +5501,28 @@ def build_offline_exhaustion_index(
             "npcProxyConsumers": npc_proxy_consumer_contexts,
         }
     if not dialog_definitions_valid:
-        status["status"] = "inactive_dialog_definition_validation_failed"
+        status.update({
+            "status": "inactive_dialog_definition_validation_failed",
+            "validatorDiagnostics": dialog_validation_failures or [{
+                "validator": "offlineDialogDefinition",
+                "gate": "requiredSourcePayloadTypes",
+                "sourcePaths": [
+                    str(source_paths["dialogTextTable"]),
+                    str(source_paths["dialogIdIndex"]),
+                    str(source_paths["timelineLineOrders"]),
+                    str(source_paths["npcProxyExDataTable"]),
+                ],
+                "expected": {"allPayloadsAreObjects": True},
+                "actual": {
+                    "types": {
+                        "dialogTextTable": type(dialog_text_table).__name__,
+                        "dialogIdIndex": type(dialog_id_index).__name__,
+                        "timelineLineOrders": type(timeline_line_orders).__name__,
+                        "npcProxyExDataTable": type(npc_proxy_ex_table).__name__,
+                    },
+                },
+            }],
+        })
         return {}, status
 
     text_only_dialog_validation_by_key: dict[str, dict[str, Any]] = {}
@@ -5723,7 +5942,7 @@ def build_offline_exhaustion_index(
                     "and AudioDialog membership, including exact authored "
                     "variants where present, across the audited "
                     "MissionRuntime, LevelScript, GameplayConfig, Table, "
-                    "Lua, object-index, and direct native playback-caller "
+                    "object-index, and direct native playback-caller "
                     "surfaces"
                 )
             ),
@@ -5734,7 +5953,7 @@ def build_offline_exhaustion_index(
                 if context else None
             ),
             "reopenWhen": (
-                "installed binary, exported tables, object index, Lua corpus, "
+                "installed binary, exported tables, object index, "
                 "or another typed producer/consumer registry changes"
             ),
             "graphEffect": "none",
@@ -5806,7 +6025,7 @@ def build_offline_exhaustion_index(
                     "the exact DialogTree, MemoryPack DialogId registration, "
                     "DialogTextTable rows, and AudioDialog membership where "
                     "present establish a current runtime-loadable definition; "
-                    "no exact MissionRuntime, LevelScript, NpcProxyEx, Lua, "
+                    "no exact MissionRuntime, LevelScript, NpcProxyEx, "
                     "object-index, or direct native playback caller exposes "
                     "its activator"
                 )
@@ -6130,12 +6349,12 @@ def build_offline_exhaustion_index(
             "consumerBoundary": (
                 "the exact TextTable group has no Timeline registration, "
                 "DialogTree/TextAsset carrier, object-index relation, "
-                "structured action, Lua consumer, or direct native caller "
+                "structured action or direct native caller "
                 "in the audited build"
             ),
             "reopenWhen": (
                 "installed binary, TextTable, Timeline or DialogId registry, "
-                "TextAsset/object index, Lua corpus, or another typed "
+                "TextAsset/object index or another typed "
                 "producer/consumer registry changes"
             ),
             "graphEffect": "none",
@@ -6957,15 +7176,80 @@ def _closed_exact_native_context_isolated_scenes(
     closed: list[dict[str, Any]] = []
     for connection in _flow_story_connections(flow):
         scene_key = safe_key(connection.get("key"))
+        relation = safe_key(connection.get("relation"))
         if (
             scene_key not in isolated_scene_keys
             or safe_key(connection.get("storyOwnerMission")) != owner_mission
-            or connection.get("storyBinding") is not True
-            or connection.get("ownership") is not False
             or safe_key(connection.get("direction")) != "context"
         ):
             continue
-        relation = safe_key(connection.get("relation"))
+        if relation == "npc_proxy_segment_levelscript_mission_context":
+            native_owners = [
+                row for row in connection.get("nativeEventOwners") or []
+                if isinstance(row, dict)
+            ]
+            exact_paths = [
+                row for row in native_owners
+                if safe_key(row.get("status"))
+                == "exact_serialized_control_path"
+                and safe_key(row.get("headerName"))
+                == "ScriptEvent_OnLeaderEnterTriggerVolume"
+                and any(
+                    isinstance(step, dict)
+                    and safe_key(step.get("actionName"))
+                    == "NarrativeBlackScreenAction"
+                    and safe_key(step.get("recordClass")) == "play_black"
+                    and scene_key in {
+                        safe_key(text_id).rsplit("_", 1)[0]
+                        for text_id in step.get("texts") or []
+                        if safe_key(text_id)
+                    }
+                    for step in row.get("path") or []
+                )
+            ]
+            if (
+                safe_key(connection.get("confidence"))
+                != "native_exact_npc_proxy_segment_shell"
+                or safe_key(connection.get("evidenceTier"))
+                != "derived_exact_shell"
+                or safe_key(connection.get("questTriggerStatus"))
+                != "same_authored_npc_proxy_segment_not_quest_playback"
+                or safe_key(connection.get("executionSide")) != "client"
+                or connection.get("serverExchange") is not False
+                or not _string_list(connection.get("npcProxyIds"))
+                or not _string_list(connection.get("segmentIdsGlobal"))
+                or not _string_list(connection.get("candidateQuestIds"))
+                or len(exact_paths) != len(native_owners)
+                or not exact_paths
+                or not _string_list(connection.get("sourceFiles"))
+            ):
+                continue
+            closed.append({
+                "sceneKey": scene_key,
+                "recoveryStatus":
+                    "closed_exact_npc_proxy_segment_playback_context_no_relative_order",
+                "relation": relation,
+                "npcProxyIds": _string_list(connection.get("npcProxyIds")),
+                "segmentIdsGlobal": _string_list(
+                    connection.get("segmentIdsGlobal")
+                ),
+                "candidateQuestIds": _string_list(
+                    connection.get("candidateQuestIds")
+                ),
+                "nativeEventPaths": exact_paths,
+                "sourceFiles": _string_list(connection.get("sourceFiles")),
+                "orderBoundary": (
+                    "the exact tracked NpcProxy segment and serialized native "
+                    "event path establish mission-shell playback context; they "
+                    "do not identify one quest trigger or relative Story order"
+                ),
+            })
+            continue
+        if (
+            connection.get("storyBinding") is not True
+            or connection.get("ownership") is not False
+        ):
+            continue
         if relation == "radio_trigger_zone_mission_state_playback_context":
             if (
                 safe_key(connection.get("phase"))

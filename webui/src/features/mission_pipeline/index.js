@@ -288,6 +288,8 @@
       branches: "fan-outs",
       storyOrder: "Source-proven Story order",
       storyOrderHint: "This is a partial causal graph. It preserves branches, joins, cycles, and unknown pairs; it is not a guessed total file sequence.",
+      embeddedStory: "Nested Story playback",
+      embeddedStoryHint: "Original DialogTree connections place this child content between exact parent lines. This is containment, not a complete file-order edge or proof of the parent mission trigger.",
       strongEdges: "strong order edges",
       weakEdges: "context-only edges",
       orderCycles: "source cycles",
@@ -922,6 +924,8 @@
       triggerUnknownTransport: "\u4f20\u8f93\u8fb9\u754c\u672a\u89e3\u6790",
       storyOrder: "\u6e90\u6570\u636e\u8bc1\u660e\u7684\u5267\u60c5\u987a\u5e8f",
       storyOrderHint: "\u8fd9\u662f\u90e8\u5206\u56e0\u679c\u56fe\uff1a\u4fdd\u7559\u5206\u652f\u3001\u6c47\u5408\u3001\u5faa\u73af\u548c\u672a\u77e5\u987a\u5e8f\uff0c\u4e0d\u731c\u6d4b\u552f\u4e00\u6587\u4ef6\u5e8f\u5217\u3002",
+      embeddedStory: "\u5d4c\u5957\u5267\u60c5\u64ad\u653e",
+      embeddedStoryHint: "\u539f\u59cb DialogTree \u8fde\u63a5\u5c06\u5b50\u5185\u5bb9\u7cbe\u786e\u653e\u5728\u7236\u5bf9\u8bdd\u884c\u4e4b\u95f4\u3002\u8fd9\u662f\u5305\u542b\u5173\u7cfb\uff0c\u4e0d\u662f\u5b8c\u6574\u6587\u4ef6\u987a\u5e8f\u8fb9\uff0c\u4e5f\u4e0d\u8bc1\u660e\u7236\u5bf9\u8bdd\u7684\u4efb\u52a1\u89e6\u53d1\u3002",
       strongEdges: "\u5f3a\u987a\u5e8f\u8fb9",
       weakEdges: "\u4ec5\u4e0a\u4e0b\u6587\u8fb9",
       orderCycles: "\u6e90\u8bc1\u636e\u5faa\u73af",
@@ -2581,12 +2585,18 @@
         : "";
       return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
+    const containments = (order.containments || []).map((row) => {
+      const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
+      const before = (row.embeddedBeforeLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
+      return `<div class="mp-order-edge"><a href="${esc(storyHref(row.parent))}"><code>${esc(row.parent || "?")}</code></a><i aria-hidden="true">[${after} &rarr;</i><a href="${esc(storyHref(row.child))}"><code>${esc(row.child || "?")}</code></a><i aria-hidden="true">&rarr; ${before}]</i><small><code>${esc(row.relation || "")}</code></small></div>`;
+    }).join("");
     const cycles = (order.cycles || []).map((component) => componentHtml(component.id)).join("");
     return `<details class="mp-mission-story mp-story-order" data-weight="${Number(summary.strongEdgeCount) ? "strong" : "context"}"${Number(summary.strongEdgeCount) || offlineRows.length ? " open" : ""}>
       <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
       <p>${esc(t("storyOrderHint"))}</p>
       <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
       ${causalEdges ? `<section><h4>${esc(t("causalEdges"))}</h4><div class="mp-order-edges">${causalEdges}</div></section>` : ""}
+      ${containments ? `<section><h4>${esc(t("embeddedStory"))}</h4><p>${esc(t("embeddedStoryHint"))}</p><div class="mp-order-edges">${containments}</div></section>` : ""}
       ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}
       ${questForks || questMerges || nativeBranches || nativeMerges || sceneOptions ? `<section><h4>${esc(t("forkMerge"))}</h4><div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${sceneOptions}</div></section>` : ""}

@@ -41,6 +41,9 @@ from story_builder.mission_recovery import (  # noqa: E402
 from story_builder.level_bindings import (  # noqa: E402
     build_levelscript_action_story_occurrences,
 )
+from story_builder.anime_assets import (  # noqa: E402
+    recover_dialog_tree_narrative_mask_actions,
+)
 from story_builder.spawner_binary import (  # noqa: E402
     SPAWNER_WAVE_RUNTIME_MAPPING_ID,
     SpawnerWaveDecodeError,
@@ -48,12 +51,14 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v19"
+SCHEMA = "sourceStoryPartialOrder.v20"
 VARIANT_FLOW_LIST_FIELDS = (
     "missionStoryConnections",
     "quests",
     "unlinkedNativePlayback",
     "unlinkedDefinitionOnly",
+    "unresolvedDialogTreeNarrativeActions",
+    "unlinkedDialogTreeNarrativeActions",
 )
 VARIANT_TIMELINE_LIST_FIELDS = (
     "branchPoints",
@@ -1238,6 +1243,178 @@ def _story_connection_rows(flow: dict[str, Any]) -> Iterable[dict[str, Any]]:
         for row in flow.get(field) or []:
             if isinstance(row, dict):
                 yield row
+
+
+def _dialog_tree_narrative_containments(
+    mission: str,
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+    original_occurrences: list[dict[str, Any]] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Return exact nested black-screen placements without creating file order.
+
+    A narrative action between two parent trunks proves line-level containment.
+    It does not prove how the parent DialogTree is activated, nor does it order
+    the complete child Story file before or after the complete parent file.
+    """
+    rows = (
+        flow.get("unresolvedDialogTreeNarrativeActions")
+        if "unresolvedDialogTreeNarrativeActions" in flow
+        else flow.get("unlinkedDialogTreeNarrativeActions")
+    )
+    containments: list[dict[str, Any]] = []
+    warnings: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, tuple[str, ...], tuple[str, ...]]] = set()
+    candidate_black_keys = sorted(
+        (key for key in candidate_keys if key.startswith("black_")),
+        key=lambda key: (-len(key), natural_key(key)),
+    )
+    source_rows = [row for row in rows or [] if isinstance(row, dict)]
+    for occurrence in original_occurrences or []:
+        if not isinstance(occurrence, dict):
+            continue
+        text_id = safe_key(occurrence.get("textId"))
+        matching_children = [
+            key for key in candidate_black_keys
+            if text_id.startswith(f"{key}_")
+        ]
+        if len(matching_children) != 1:
+            continue
+        source_rows.append({
+            "key": matching_children[0],
+            "parentStoryKey": safe_key(occurrence.get("dialogKey")),
+            "relation": "dialog_tree_narrative_action_unscoped",
+            "confidence": "native_exact_containment_unscoped",
+            "dialogTreeNarrativeActions": [occurrence],
+        })
+    for row in source_rows:
+        if not isinstance(row, dict):
+            continue
+        child_key = safe_key(row.get("key"))
+        parent_key = safe_key(row.get("parentStoryKey"))
+        occurrences = [
+            occurrence
+            for occurrence in row.get("dialogTreeNarrativeActions") or []
+            if isinstance(occurrence, dict)
+        ]
+        if (
+            safe_key(row.get("relation"))
+            != "dialog_tree_narrative_action_unscoped"
+            or child_key not in candidate_keys
+        ):
+            continue
+        header_valid = bool(
+            parent_key in candidate_keys
+            and child_key != parent_key
+            and safe_key(row.get("confidence"))
+            == "native_exact_containment_unscoped"
+            and occurrences
+        )
+        after_ids = sorted({
+            safe_key(line_id)
+            for occurrence in occurrences
+            if safe_key(occurrence.get("nativeMappingId"))
+            == "dialog-tree-narrative-mask-connection-native-v1"
+            and safe_key(occurrence.get("dialogKey")) == parent_key
+            and safe_key(occurrence.get("dialogTreeConnectionPlacementStatus"))
+            == "exact_unique_adjacent_parent_trunks"
+            for line_id in occurrence.get("embeddedAfterLineIds") or []
+            if safe_key(line_id)
+        }, key=natural_key)
+        before_ids = sorted({
+            safe_key(line_id)
+            for occurrence in occurrences
+            if safe_key(occurrence.get("nativeMappingId"))
+            == "dialog-tree-narrative-mask-connection-native-v1"
+            and safe_key(occurrence.get("dialogKey")) == parent_key
+            and safe_key(occurrence.get("dialogTreeConnectionPlacementStatus"))
+            == "exact_unique_adjacent_parent_trunks"
+            for line_id in occurrence.get("embeddedBeforeLineIds") or []
+            if safe_key(line_id)
+        }, key=natural_key)
+        valid_occurrences = [
+            occurrence
+            for occurrence in occurrences
+            if safe_key(occurrence.get("nativeMappingId"))
+            == "dialog-tree-narrative-mask-connection-native-v1"
+            and safe_key(occurrence.get("dialogKey")) == parent_key
+            and safe_key(occurrence.get("dialogTreeConnectionPlacementStatus"))
+            == "exact_unique_adjacent_parent_trunks"
+            and occurrence.get("reachableFromPrimeNode") is True
+            and occurrence.get("embeddedAfterLineIds")
+            and occurrence.get("embeddedBeforeLineIds")
+        ]
+        if (
+            not header_valid
+            or len(valid_occurrences) != len(occurrences)
+            or not after_ids
+            or not before_ids
+        ):
+            warnings.append({
+                "validator": "dialogTreeNarrativeContainment",
+                "check": "exact_unique_adjacent_parent_trunks",
+                "mission": mission,
+                "storyKey": child_key,
+                "parentStoryKey": parent_key,
+                "sourcePaths": sorted({
+                    safe_key(occurrence.get("sourceFile"))
+                    for occurrence in occurrences
+                    if safe_key(occurrence.get("sourceFile"))
+                }),
+                "expected": {
+                    "confidence": "native_exact_containment_unscoped",
+                    "mappingId":
+                        "dialog-tree-narrative-mask-connection-native-v1",
+                    "placementStatus":
+                        "exact_unique_adjacent_parent_trunks",
+                    "reachableFromPrimeNode": True,
+                    "candidateParent": True,
+                    "nonemptyAdjacentLineIds": True,
+                },
+                "actual": {
+                    "confidence": safe_key(row.get("confidence")),
+                    "occurrenceCount": len(occurrences),
+                    "validOccurrenceCount": len(valid_occurrences),
+                    "candidateParent": parent_key in candidate_keys,
+                    "embeddedAfterLineIds": after_ids,
+                    "embeddedBeforeLineIds": before_ids,
+                },
+            })
+            continue
+        signature = (child_key, parent_key, tuple(after_ids), tuple(before_ids))
+        if signature in seen:
+            continue
+        seen.add(signature)
+        containments.append({
+            "child": child_key,
+            "parent": parent_key,
+            "kind": "dialogTreeNarrativeMask",
+            "relation": "dialog_tree_narrative_action_containment",
+            "tier": "native_direct_containment",
+            "embeddedAfterLineIds": after_ids,
+            "embeddedBeforeLineIds": before_ids,
+            "textIds": sorted({
+                safe_key(occurrence.get("textId"))
+                for occurrence in valid_occurrences
+                if safe_key(occurrence.get("textId"))
+            }, key=natural_key),
+            "sourceFiles": sorted({
+                safe_key(occurrence.get("sourceFile"))
+                for occurrence in valid_occurrences
+                if safe_key(occurrence.get("sourceFile"))
+            }),
+            "nativeMappingId":
+                "dialog-tree-narrative-mask-connection-native-v1",
+            "orderBoundary": (
+                "exact line-level placement inside the parent DialogTree; "
+                "not a complete Story-file edge and not parent activation evidence"
+            ),
+        })
+    containments.sort(key=lambda row: (
+        natural_key(row["parent"]),
+        natural_key(row["child"]),
+    ))
+    return containments, warnings
 
 
 def _dialog_tree_cross_story_trunk_edges(
@@ -2430,6 +2607,7 @@ def build_mission_partial_order(
     exact_playback_source_keys: set[str] | None = None,
     exact_levelscript_playback_context_keys: set[str] | None = None,
     exact_native_control_path_context_keys: set[str] | None = None,
+    dialog_tree_narrative_occurrences: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build one source-only mission partial order from generated source evidence."""
     mission_payload = mission_payload if isinstance(mission_payload, dict) else {}
@@ -2535,6 +2713,17 @@ def build_mission_partial_order(
             dialog_payloads,
         )
     )
+    narrative_containments, narrative_containment_warnings = (
+        _dialog_tree_narrative_containments(
+            mission,
+            flow,
+            candidate_keys,
+            dialog_tree_narrative_occurrences,
+        )
+    )
+    embedded_scene_keys = {
+        row["child"] for row in narrative_containments
+    }
     _demote_reciprocal_quest_projections(direct_edges)
 
     direct_edges.sort(key=_edge_sort_key)
@@ -2605,6 +2794,8 @@ def build_mission_partial_order(
             status = "weak-only"
             weak_only.append(scene_key)
             unknown.append(scene_key)
+        elif scene_key in embedded_scene_keys:
+            status = "embedded"
         else:
             status = "isolated"
             isolated.append(scene_key)
@@ -2814,6 +3005,8 @@ def build_mission_partial_order(
             "weakOnlySceneCount": len(weak_only),
             "unknownSceneCount": len(unknown),
             "definitionOnlySourceNodeCount": len(definition_only_nodes),
+            "embeddedContainmentCount": len(narrative_containments),
+            "embeddedSceneCount": len(embedded_scene_keys),
             "totalScenePairs": total_pairs,
             "comparableScenePairs": comparable_pairs,
             "unorderedScenePairs": total_pairs - comparable_pairs,
@@ -2854,6 +3047,7 @@ def build_mission_partial_order(
         "reducedComponentEdges": reduced_component_edges,
         "topologicalLayers": layers,
         "directEdges": direct_edges,
+        "containments": narrative_containments,
         "cycles": cycles,
         "branches": {
             "sceneGraphOptions": scene_graph_option_branches,
@@ -2904,7 +3098,7 @@ def build_mission_partial_order(
                 key=lambda item: natural_key(item[0]),
             )
         ],
-        "warnings": warnings,
+        "warnings": [*warnings, *narrative_containment_warnings],
     }
 
 
@@ -3010,6 +3204,9 @@ def build_report(
             if source_file:
                 playback_source_files_by_key[story_key].add(source_file)
     exact_playback_source_keys = set(playback_source_files_by_key)
+    dialog_tree_narrative_occurrences = (
+        recover_dialog_tree_narrative_mask_actions()
+    )
     rows: list[dict[str, Any]] = []
     totals: Counter[str] = Counter()
     edge_kind_totals: Counter[str] = Counter()
@@ -3059,6 +3256,7 @@ def build_report(
             exact_playback_source_keys,
             exact_levelscript_playback_context_keys,
             exact_native_control_path_context_keys,
+            dialog_tree_narrative_occurrences,
         )
         row["missionData"] = (
             mission_path.relative_to(ROOT).as_posix() if mission_path.is_file() else ""
@@ -3095,6 +3293,8 @@ def build_report(
         totals["definitionOnlySourceNodes"] += summary[
             "definitionOnlySourceNodeCount"
         ]
+        totals["embeddedContainments"] += summary["embeddedContainmentCount"]
+        totals["embeddedScenes"] += summary["embeddedSceneCount"]
         totals["totalScenePairs"] += summary["totalScenePairs"]
         totals["comparableScenePairs"] += summary["comparableScenePairs"]
         totals["unorderedScenePairs"] += summary["unorderedScenePairs"]
@@ -3184,6 +3384,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- cyclic components: `{summary.get('cycles', 0)}` across "
         f"`{summary.get('missionsWithCycles', 0)}` missions",
         f"- isolated scenes: `{summary.get('isolatedScenes', 0)}`",
+        f"- exact nested DialogTree containments: "
+        f"`{summary.get('embeddedContainments', 0)}` across "
+        f"`{summary.get('embeddedScenes', 0)}` child scenes",
         f"- weak-only scenes: `{summary.get('weakOnlyScenes', 0)}`",
         f"- comparable source-proven pairs: `{summary.get('comparableScenePairs', 0)}` / "
         f"`{summary.get('totalScenePairs', 0)}` (`{summary.get('comparablePairRate', 0.0):.2%}`)",
