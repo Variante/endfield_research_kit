@@ -469,6 +469,8 @@
       offlineRecoveryAuthoredSplit: "authored split",
       offlineRecoveryAuthoredConvergence: "authored convergence",
       offlineRecoveryMissingAudio: "audio ids absent",
+      offlineRecoveryMissionTracking: "Mission NPC tracking context (navigation only)",
+      offlineRecoveryTrackedQuests: "tracked quests",
       offlineMissionShell: "Story-only recovery shell",
       offlineMissionShellHint: "No MissionRuntimeAsset exists in the current export. This page exposes exact table definitions and current-build negative carrier evidence only; it has no quest, ownership, playback, handshake, or order edge.",
       questAttachmentDiagnostic: "Story ownership unresolved",
@@ -914,6 +916,8 @@
       offlineRecoveryAuthoredSplit: "\u539f\u751f\u5206\u6d41",
       offlineRecoveryAuthoredConvergence: "\u539f\u751f\u5408\u6d41",
       offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
+      offlineRecoveryMissionTracking: "\u4efb\u52a1 NPC \u8ffd\u8e2a\u4e0a\u4e0b\u6587\uff08\u4ec5\u5bfc\u822a\uff09",
+      offlineRecoveryTrackedQuests: "\u8ffd\u8e2a\u4efb\u52a1\u8282\u70b9",
       offlineMissionShell: "\u4ec5\u5267\u60c5\u6062\u590d\u7684\u4efb\u52a1\u5916\u58f3",
       offlineMissionShellHint: "\u5f53\u524d\u5bfc\u51fa\u4e2d\u6ca1\u6709 MissionRuntimeAsset\u3002\u672c\u9875\u4ec5\u5c55\u793a\u7cbe\u786e\u8868\u5b9a\u4e49\u548c\u5f53\u524d\u7248\u672c\u7684\u8f7d\u4f53\u8d1f\u8bc1\u636e\uff1b\u4e0d\u4ea7\u751f\u4efb\u52a1\u8282\u70b9\u3001\u5f52\u5c5e\u3001\u64ad\u653e\u3001\u63e1\u624b\u6216\u987a\u5e8f\u8fb9\u3002",
       questAttachmentDiagnostic: "\u5267\u60c5\u5f52\u5c5e\u672a\u89e3\u6790",
@@ -2610,6 +2614,8 @@
         row.definitionTable,
         row.audioMembershipTable,
         row.runtimeRegistry,
+        row.npcProxyConsumers?.length ? "NpcProxyExDataTable" : "",
+        row.missionNpcProxyTracking?.sourceFile,
         row.nonOwningContext?.sourceFile,
         row.allowedNonOwningRoute?.file,
         row.prtsDefinition?.rowId,
@@ -2637,6 +2643,10 @@
         ? `<div class="mp-order-dialog-branches"><strong>${esc(t("offlineRecoveryDialogTreeBranches"))}</strong>${branchGroups.map((group) => `<details open><summary><code>#${esc(group.optionGroup ?? "?")}</code> ${esc(t(group.routeKind === "authored_convergence" ? "offlineRecoveryAuthoredConvergence" : "offlineRecoveryAuthoredSplit"))}</summary>${(group.optionIds || []).map((optionId, index) => `<div><code>${esc(optionId)}</code><i>&rarr;</i><code>${esc((group.targetLineIds || [])[index] || "?")}</code></div>`).join("")}</details>`).join("")}</div>`
         : "";
       const recoveredLineCount = Array.isArray(row.lineIds) ? row.lineIds.length : 0;
+      const missionTracking = row.missionNpcProxyTracking;
+      const missionTrackingContext = missionTracking
+        ? `<p><strong>${esc(t("offlineRecoveryMissionTracking"))}</strong><code>${esc(missionTracking.proxyId || "?")}</code><code>${esc(missionTracking.levelId || "?")}</code>${(missionTracking.questIds || []).length ? `<span>${esc(t("offlineRecoveryTrackedQuests"))}: ${(missionTracking.questIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</span>` : ""}</p>`
+        : "";
       const definitionFacts = [
         row.dialogIdRegistrationStatus === "present_table_only"
           ? t("offlineRecoveryTableOnlyRegistration")
@@ -2657,7 +2667,7 @@
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
         : "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${options}${printableTokenBoundary}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${missionTrackingContext}${options}${printableTokenBoundary}${internalBranches}${popup}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");

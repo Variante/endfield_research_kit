@@ -158,6 +158,20 @@ graph, and carrier-audit surfaces expose no consumer. Mission Pipeline publishes
 a fourth Story-only shell with all 10 definitions and three route-unresolved
 multi-choice groups; the manual/OCR positions remain comparison-only.
 
+The nine-file `gm01m6` frontier is now source-bounded, reducing major-mission
+actionable core-isolated rows from 169 to 160. Five exact `NpcProxyEx` entries
+select registered DialogTrees, but every entry has an empty `missionId` and no
+serialized selection condition. MissionRuntime quests `q#3` and `q#10` track
+`heerman_map01_001`, the same proxy that selects `misc_dlg_gm01m6_3d7`; `q#12`
+tracks `heerman_map01_default`, the same proxy that selects `dlg_gm01m6_6`.
+These joins prove mission HUD/navigation context only, not dialog playback,
+quest ownership, or chronology. The six DialogTrees have no internal multiway
+branch group, the three remaining radios are exact definitions without a
+consumer, and all nine roots are absent from the current GameAssembly. The
+authored quest graph is linear; Mission Pipeline retains only the two existing
+`questPrev` Story edges and exposes all definitions, proxy consumers, tracked
+quest ids, and exact source files without adding a graph edge.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -186,9 +200,11 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should continue the same binary-first audit with the tied
-highest-ranked real major-mission frontiers (`gm01m6`, `gm01m12`, and
-`gm01m7`, nine actionable core-isolated files each), then the five
-character-mission quest-attachment gaps. Reopen a
+highest-ranked real major-mission frontiers `gm01m12` and `gm01m7` (nine
+actionable core-isolated files each). `gm01m7` is the higher branching-value
+target because its authored quest graph has one fork and one merge; `gm01m12`
+has neither. Then address the five character-mission quest-attachment gaps.
+Reopen a
 deferred row only when a new typed producer/consumer or changed source hash
 supplies an ownership or order edge.
 
