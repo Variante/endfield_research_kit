@@ -198,7 +198,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v83"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v84"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3044,6 +3044,7 @@ def publish_offline_story_recovery(
         "mappingId": "",
         "graphEffect": "none",
         "publishedStoryKeys": 0,
+        "publishedRuntimeContextStoryKeys": 0,
         "outsidePipelineCoverageStoryKeys": 0,
         "storyTriggerManifestOverlay": {},
         "questAttachmentDiagnosticStatus": "unavailable",
@@ -3073,6 +3074,7 @@ def publish_offline_story_recovery(
 
     published = 0
     published_keys: set[str] = set()
+    published_runtime_context_keys: set[str] = set()
     manifest_overlay: dict[str, dict[str, Any]] = {}
     diagnostic_status = payload.get("questAttachmentDiagnosticEvidence")
     diagnostic_active = (
@@ -3127,6 +3129,40 @@ def publish_offline_story_recovery(
                     "offlineRecovery": recovery,
                 }
 
+        approved_runtime_contexts = {
+            (
+                "objective_tracking_story_reference",
+                "closed_exact_mission_tracking_context_no_relative_order",
+            ),
+            (
+                "dialog_tree_prime_reachable_story_playback_dependency",
+                "closed_exact_parent_dialog_dependency_no_relative_order",
+            ),
+        }
+        for row in mission.get(
+            "closedExactRuntimeConfigIsolatedScenes"
+        ) or []:
+            if not isinstance(row, dict):
+                continue
+            if (
+                str(row.get("relation") or ""),
+                str(row.get("recoveryStatus") or ""),
+            ) not in approved_runtime_contexts:
+                continue
+            story_key = str(row.get("sceneKey") or "")
+            if not story_key:
+                continue
+            recovery = {
+                key: value
+                for key, value in row.items()
+                if key != "sceneKey"
+            }
+            recovery["graphEffect"] = "none"
+            manifest_row = story_trigger_manifest.get(story_key)
+            if isinstance(manifest_row, dict):
+                manifest_row["runtimeContextRecovery"] = recovery
+                published_runtime_context_keys.add(story_key)
+
     return {
         "status": "active",
         "schema": schema,
@@ -3134,6 +3170,9 @@ def publish_offline_story_recovery(
         "graphEffect": "none",
         "publishedStoryKeys": len(published_keys),
         "publishedRows": published,
+        "publishedRuntimeContextStoryKeys": len(
+            published_runtime_context_keys
+        ),
         "outsidePipelineCoverageStoryKeys": len(manifest_overlay),
         "storyTriggerManifestOverlay": manifest_overlay,
         "questAttachmentDiagnosticStatus": (

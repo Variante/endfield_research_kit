@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import sys
 import unittest
 from pathlib import Path
@@ -3273,6 +3274,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS,
             {
+                "radio_a1m6d1_2": {"au_radio_a1m6d1_2_001"},
+                "radio_a1m6d2_1": {"au_radio_a1m6d2_1_001"},
+                "radio_a1m6d3_1": {"au_radio_a1m6d3_1_001"},
                 "radio_a1m8d3_1": {"au_radio_a1m8d3_1_001"},
                 "radio_e5m4_1": {
                     f"au_radio_e5m4_1_{number:03d}"
@@ -3592,6 +3596,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS),
             {
+                "dlg_a1m2_4",
                 "dlg_a1m8d3_2",
                 "dlg_e5m0d5_1",
                 "dlg_e1m1_6",
@@ -4205,6 +4210,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             set(text_only),
             {
+                "dlg_a1m11_3",
                 "dlg_a1m7_2",
                 "dlg_a1m7_12",
                 "dlg_a1m5_5",
@@ -4307,6 +4313,57 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             failure["actual"]["option_dlg_a1m7_2_1_001"]["iconType"],
             "Default",
+        )
+
+    def test_a1m8d1_sns_branch_validator_reports_exact_failure(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        definition = gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS[
+            "sns_a1m8d1_1"
+        ]
+        self.assertEqual(
+            definition["optionNextContentIds"][
+                "option_sns_a1m8d1_1_2_002"
+            ],
+            10,
+        )
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS,
+            {
+                "sns_a1m8d1_1": {
+                    **definition,
+                    "chatId": "changed_native_chat_id",
+                },
+            },
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual(failed_index, {})
+        self.assertEqual(
+            failed_status["status"],
+            "inactive_sns_definition_validation_failed",
+        )
+        failure = failed_status["validationFailures"][0]
+        self.assertEqual(failure["validator"], "offline_sns_definition")
+        self.assertEqual(failure["storyKey"], "sns_a1m8d1_1")
+        self.assertEqual(
+            failure["gate"],
+            "dialog_shape_and_exact_key_sets",
+        )
+        self.assertEqual(
+            failure["actual"]["chatId"],
+            "sns_npc_zuoguyan_a1m8d3",
         )
 
     def test_declared_a1m5_definition_frontier_is_exact(self) -> None:
@@ -4768,7 +4825,12 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
         self.assertEqual(
             set(gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS),
-            {"sns_e1m9_1", "sns_e7m4_1", "sns_e10m4_1"},
+            {
+                "sns_a1m8d1_1",
+                "sns_e1m9_1",
+                "sns_e7m4_1",
+                "sns_e10m4_1",
+            },
         )
         self.assertEqual(
             set(
@@ -5312,6 +5374,78 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "a1m6d5",
             ),
             [],
+        )
+
+    def test_sns_tracking_context_closes_without_playback_or_order(self) -> None:
+        payload = gap_queue.read_json(
+            gap_queue.ROOT
+            / "webui/data/lang/CN/mission/a1m13.json",
+            {},
+        )
+        rows = gap_queue._closed_exact_runtime_config_isolated_scenes(
+            payload["flow"],
+            {"sns_a1m13_1"},
+            "a1m13",
+        )
+        closure = next(
+            row for row in rows if row["sceneKey"] == "sns_a1m13_1"
+        )
+        self.assertEqual(
+            closure["recoveryStatus"],
+            "closed_exact_mission_tracking_context_no_relative_order",
+        )
+        self.assertEqual(closure["questId"], "a1m13_q#1")
+
+        broken = copy.deepcopy(payload["flow"])
+        broken["quests"][1]["storyConnections"][0]["playback"] = True
+        self.assertNotIn(
+            "sns_a1m13_1",
+            {
+                row["sceneKey"]
+                for row in gap_queue._closed_exact_runtime_config_isolated_scenes(
+                    broken,
+                    {"sns_a1m13_1"},
+                    "a1m13",
+                )
+            },
+        )
+
+    def test_prime_reachable_dialog_dependency_is_hash_locked(self) -> None:
+        payload = gap_queue.read_json(
+            gap_queue.ROOT / "webui/data/lang/CN/mission/a1m4.json",
+            {},
+        )
+        rows = gap_queue._closed_exact_runtime_config_isolated_scenes(
+            payload["flow"],
+            {"dlg_a1m4_2"},
+            "a1m4",
+        )
+        closure = next(
+            row for row in rows if row["sceneKey"] == "dlg_a1m4_2"
+        )
+        self.assertEqual(
+            closure["recoveryStatus"],
+            "closed_exact_parent_dialog_dependency_no_relative_order",
+        )
+        self.assertEqual(
+            closure["trunkIds"],
+            ["dlg_a1m4_2_001", "dlg_a1m4_2_002"],
+        )
+
+        broken = copy.deepcopy(payload["flow"])
+        broken["quests"][0]["storyConnections"][1][
+            "questPlayback"
+        ] = True
+        self.assertNotIn(
+            "dlg_a1m4_2",
+            {
+                row["sceneKey"]
+                for row in gap_queue._closed_exact_runtime_config_isolated_scenes(
+                    broken,
+                    {"dlg_a1m4_2"},
+                    "a1m4",
+                )
+            },
         )
 
     def test_disconnected_dialog_tree_context_fails_closed(self) -> None:

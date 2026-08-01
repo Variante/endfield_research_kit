@@ -82,10 +82,22 @@ by `a1m6d5_q#4`; this proves a client navigation target, not playback.
 recovered activator. `dlg_a1m7_2` and `dlg_a1m7_12` have exact DialogText rows,
 no DialogId/DialogTree/Timeline/audio consumer, and no recovered carrier;
 `dlg_a1m7_2` has three exact DialogOption definitions, but no original route
-graph. Mission Pipeline exposes these files and boundaries. Nine event
-core-isolated rows remain actionable: `radio_a1m6d1_2`, `radio_a1m6d2_1`,
-`sns_a1m8d1_1`, `sns_a1m13_1`, `radio_a1m6d3_1`, `dlg_a1m2_4`,
-`dlg_a1m11_3`, `dlg_a1m4_2`, and `sns_a1m1_1`.
+graph. Mission Pipeline exposes these files and boundaries.
+
+The remaining nine event rows are now source-bounded too. Exact typed
+MissionRuntime tracking attaches `sns_a1m1_1` and `sns_a1m13_1` to `q#1` in
+their nominal missions, but `SnsTrackingInfo` is navigation context rather
+than playback. The registered `dlg_a1m4_1` DialogTree's exact prime-node paths
+reach both `dlg_a1m4_2` trunks; the quest observes only parent-dialog
+completion, so activation and inter-file chronology remain unresolved.
+`radio_a1m6d1_2`, `radio_a1m6d2_1`, and `radio_a1m6d3_1` are exact one-line
+RadioTable definitions whose audio ids are absent from current AudioDialog and
+whose audited native/original-data surfaces expose no activator. `dlg_a1m2_4`
+is registered and selectable through an empty-mission NpcProxyEx row;
+`dlg_a1m11_3` is text/option-definition only. `sns_a1m8d1_1` has a complete
+20-node internal content graph and six exact option routes, but no recovered
+mission activator. These closures create no guessed ownership or order edge.
+Both main-story and event core-isolated queues now have zero actionable rows.
 
 The four-file `a1m8d3` event frontier is closed without using OCR or manual
 order as evidence. Original `dlg_a1m8d3_2` DialogTree connections place
@@ -110,9 +122,9 @@ ownership or chronology edge.
    161 runtime receiver nodes and 185 receiver-to-Story placements.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
-3. **Main story:** no core-isolated scene or strict quest-attachment gap remains
-   actionable in the current source-bounded queue; seven broad co-memberships
-   remain visible as non-owning diagnostics.
+3. **Main/event story:** no core-isolated scene or strict quest-attachment gap
+   remains actionable in either current source-bounded queue; seven broad
+   main-story co-memberships remain visible as non-owning diagnostics.
 4. **Option routes:** five multi-choice groups lack any current installed
    DialogTree, Timeline, MissionRuntime, LevelScript, VFS, or Lua consumer.
 5. **Narrative video:** three placement groups remain unresolved:
@@ -125,9 +137,9 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should continue the same binary-first audit with the nine remaining
-event rows, then the highest-ranked major-mission frontier (`gm02m2`) and the
-five character-mission quest gaps. Reopen a
+Next work should continue the same binary-first audit with the highest-ranked
+major-mission frontier (`gm02m2`, 13 actionable core-isolated files), then the
+five character-mission quest-attachment gaps. Reopen a
 deferred row only when a new typed producer/consumer or changed source hash
 supplies an ownership or order edge.
 

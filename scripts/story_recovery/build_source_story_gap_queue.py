@@ -53,7 +53,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v83"
+SCHEMA = "sourceStoryGapQueue.v84"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -136,7 +136,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v59"
+    "current-build-offline-story-carrier-exhaustion-v60"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -800,6 +800,53 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES = {
     },
 }
 OFFLINE_EXHAUSTION_SNS_DEFINITIONS = {
+    "sns_a1m8d1_1": {
+        "missionId": "a1m8d1",
+        "chatId": "sns_npc_zuoguyan_a1m8d3",
+        "contentIds": (-1, *range(1, 20)),
+        "optionIdsByContentId": {
+            2: ("option_sns_a1m8d1_1_1_001",),
+            8: (
+                "option_sns_a1m8d1_1_2_001",
+                "option_sns_a1m8d1_1_2_002",
+            ),
+            12: (
+                "option_sns_a1m8d1_1_3_001",
+                "option_sns_a1m8d1_1_3_002",
+            ),
+            17: ("option_sns_a1m8d1_1_4_001",),
+        },
+        "optionNextContentIds": {
+            "option_sns_a1m8d1_1_1_001": 3,
+            "option_sns_a1m8d1_1_2_001": 9,
+            "option_sns_a1m8d1_1_2_002": 10,
+            "option_sns_a1m8d1_1_3_001": 13,
+            "option_sns_a1m8d1_1_3_002": 14,
+            "option_sns_a1m8d1_1_4_001": 18,
+        },
+        "optionDescriptionIds": {
+            "option_sns_a1m8d1_1_1_001": -2785675792856990654,
+            "option_sns_a1m8d1_1_2_001": 116550779129542386,
+            "option_sns_a1m8d1_1_2_002": 6872746145578674578,
+            "option_sns_a1m8d1_1_3_001": -3208068959343489344,
+            "option_sns_a1m8d1_1_3_002": -3974861342589115965,
+            "option_sns_a1m8d1_1_4_001": 8144357534706424610,
+        },
+        "preContentIds": {
+            9: 8,
+            10: 8,
+            11: 10,
+            13: 12,
+            14: 12,
+            15: 14,
+        },
+        "nextContentIds": {
+            9: 11,
+            10: 11,
+            13: 15,
+            14: 15,
+        },
+    },
     "sns_e1m9_1": {
         "missionId": "e1m9",
         "chatId": "sns_chr_0006_wolfgd",
@@ -1311,6 +1358,41 @@ OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES = {
     ),
 }
 OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS = {
+    "dlg_a1m2_4": {
+        "missionId": "a1m2",
+        "filename": "dlg_a1m2_4_p23BC729FEA1147B6.json",
+        "sha256":
+            "5F44A1771081047DBA74251FF20833DCAF5791C572449814B02E8F7310EFA364",
+        "extraConfigFilename":
+            "dlg_a1m2_4_extra_config_p204ACA7058EBE31A.json",
+        "extraConfigSha256":
+            "32E0B431B9FAAF96424F5028055EA3E9FBE075201903FE950C7EE29DC73B303E",
+        "lineIds": tuple(
+            f"dlg_a1m2_4_{number:03d}" for number in range(1, 4)
+        ),
+        "optionIds": (
+            "option_dlg_a1m2_4_1_001",
+            "option_dlg_a1m2_4_1_002",
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_a1m2_4_{number:03d}" for number in range(1, 4)
+        ),
+        "npcProxyConsumer": {
+            "proxyId": "kelala_map01_v1d1d0_005",
+            "entryIndex": 0,
+            "entry": {
+                "addDialogExOption": False,
+                "envTalkData": {
+                    "envTalkIds": [],
+                    "envTalkOdd": [],
+                    "envTalkOverrideNpc": True,
+                },
+                "dialogExOptionData": [],
+                "dialogId": "dlg_a1m2_4",
+                "missionId": "",
+            },
+        },
+    },
     "dlg_a1m8d3_2": {
         "missionId": "a1m8d3",
         "filename": "dlg_a1m8d3_2_p9BCBAF7FB96B40D2.json",
@@ -2622,6 +2704,27 @@ OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e11m8_9",
 })
 OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
+    "dlg_a1m11_3": {
+        "missionId": "a1m11",
+        "lineIds": ("dlg_a1m11_3_001",),
+        "missingAudioIds": ("au_dlg_a1m11_3_001",),
+        "optionRows": {
+            "option_dlg_a1m11_3_1_001": {
+                "iconType": "activity_openui",
+                "optionText": {
+                    "id": 4913019528184533200,
+                    "text": "",
+                },
+            },
+            "option_dlg_a1m11_3_1_002": {
+                "iconType": "exit",
+                "optionText": {
+                    "id": 6553332152207896152,
+                    "text": "",
+                },
+            },
+        },
+    },
     "dlg_a1m7_2": {
         "missionId": "a1m7",
         "lineIds": (
@@ -3085,8 +3188,14 @@ OFFLINE_EXHAUSTION_E10M1_RADIOS = frozenset({
     "radio_e10m1_9",
 })
 OFFLINE_EXHAUSTION_E10M2_RADIOS = frozenset({"radio_e10m2_1"})
+OFFLINE_EXHAUSTION_A1M6D1_RADIOS = frozenset({"radio_a1m6d1_2"})
+OFFLINE_EXHAUSTION_A1M6D2_RADIOS = frozenset({"radio_a1m6d2_1"})
+OFFLINE_EXHAUSTION_A1M6D3_RADIOS = frozenset({"radio_a1m6d3_1"})
 OFFLINE_EXHAUSTION_A1M8D3_RADIOS = frozenset({"radio_a1m8d3_1"})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
+    "a1m6d1": OFFLINE_EXHAUSTION_A1M6D1_RADIOS,
+    "a1m6d2": OFFLINE_EXHAUSTION_A1M6D2_RADIOS,
+    "a1m6d3": OFFLINE_EXHAUSTION_A1M6D3_RADIOS,
     "a1m8d3": OFFLINE_EXHAUSTION_A1M8D3_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
@@ -3196,6 +3305,9 @@ OFFLINE_EXHAUSTION_RADIO_AUDIO_VARIANTS = {
     },
 }
 OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
+    "radio_a1m6d1_2": frozenset({"au_radio_a1m6d1_2_001"}),
+    "radio_a1m6d2_1": frozenset({"au_radio_a1m6d2_1_001"}),
+    "radio_a1m6d3_1": frozenset({"au_radio_a1m6d3_1_001"}),
     "radio_a1m8d3_1": frozenset({"au_radio_a1m8d3_1_001"}),
     "radio_e5m5_1": frozenset({
         "au_radio_e5m5_1_001",
@@ -5021,6 +5133,7 @@ def build_offline_exhaustion_index(
     sns_dialog_table = read_json(source_paths["snsDialogTable"], {})
     sns_option_table = read_json(source_paths["snsOptionTable"], {})
     sns_validation_by_key: dict[str, dict[str, Any]] = {}
+    sns_validation_failures: list[dict[str, Any]] = []
     sns_definitions_valid = (
         isinstance(sns_dialog_table, dict)
         and isinstance(sns_option_table, dict)
@@ -5077,6 +5190,8 @@ def build_offline_exhaustion_index(
         content_params_by_content_id = (
             definition.get("contentParamsByContentId") or {}
         )
+        pre_content_ids = definition.get("preContentIds") or {}
+        next_content_ids = definition.get("nextContentIds") or {}
         expected_option_ids = set(definition["optionNextContentIds"])
         terminal_content_id = max(
             (
@@ -5106,6 +5221,38 @@ def build_offline_exhaustion_index(
             or actual_prefixed_option_ids != expected_option_ids
         ):
             sns_definitions_valid = False
+            sns_validation_failures.append({
+                "validator": "offline_sns_definition",
+                "gate": "dialog_shape_and_exact_key_sets",
+                "storyKey": story_key,
+                "sourcePaths": [
+                    str(source_paths["snsDialogTable"]),
+                    str(source_paths["snsOptionTable"]),
+                ],
+                "expected": {
+                    "dialogFields": sorted(sns_dialog_fields),
+                    "contentIds": sorted(expected_content_keys),
+                    "optionIds": sorted(expected_option_ids, key=natural_key),
+                    "chatId": definition["chatId"],
+                },
+                "actual": {
+                    "dialogType": type(dialog).__name__,
+                    "dialogFields": (
+                        sorted(dialog) if isinstance(dialog, dict) else []
+                    ),
+                    "contentIds": (
+                        sorted(content) if isinstance(content, dict) else []
+                    ),
+                    "optionIds": sorted(
+                        actual_prefixed_option_ids,
+                        key=natural_key,
+                    ),
+                    "chatId": (
+                        safe_key(dialog.get("chatId"))
+                        if isinstance(dialog, dict) else ""
+                    ),
+                },
+            })
             break
         for content_id in expected_content_ids:
             node = content.get(str(content_id))
@@ -5114,12 +5261,14 @@ def build_offline_exhaustion_index(
                 else 0 if content_id == 1
                 else content_id - 1
             )
+            expected_pre = pre_content_ids.get(content_id, expected_pre)
             expected_next = (
                 0 if content_id == -1
                 else -1 if content_id == terminal_content_id
                 else 0 if content_id in option_ids_by_content_id
                 else content_id + 1
             )
+            expected_next = next_content_ids.get(content_id, expected_next)
             if (
                 not isinstance(node, dict)
                 or set(node) != sns_content_fields
@@ -5146,6 +5295,24 @@ def build_offline_exhaustion_index(
                 or node["content"].get("text") != ""
             ):
                 sns_definitions_valid = False
+                sns_validation_failures.append({
+                    "validator": "offline_sns_definition",
+                    "gate": "content_node_exact",
+                    "storyKey": story_key,
+                    "contentId": content_id,
+                    "sourcePath": str(source_paths["snsDialogTable"]),
+                    "expected": {
+                        "preContentId": expected_pre,
+                        "nextContentId": expected_next,
+                        "dialogOptionIds": list(
+                            option_ids_by_content_id.get(content_id) or ()
+                        ),
+                        "contentParam": list(
+                            content_params_by_content_id.get(content_id) or ()
+                        ),
+                    },
+                    "actual": node if isinstance(node, dict) else node,
+                })
                 break
         if not sns_definitions_valid:
             break
@@ -5166,6 +5333,20 @@ def build_offline_exhaustion_index(
                 or option.get("optionResPath") != ""
             ):
                 sns_definitions_valid = False
+                sns_validation_failures.append({
+                    "validator": "offline_sns_definition",
+                    "gate": "option_row_exact",
+                    "storyKey": story_key,
+                    "optionId": option_id,
+                    "sourcePath": str(source_paths["snsOptionTable"]),
+                    "expected": {
+                        "optionNextContentId":
+                            definition["optionNextContentIds"][option_id],
+                        "optionDescriptionId":
+                            definition["optionDescriptionIds"][option_id],
+                    },
+                    "actual": option if isinstance(option, dict) else option,
+                })
                 break
         if not sns_definitions_valid:
             break
@@ -5181,6 +5362,19 @@ def build_offline_exhaustion_index(
         }
     if not sns_definitions_valid:
         status["status"] = "inactive_sns_definition_validation_failed"
+        status["validationFailures"] = sns_validation_failures or [{
+            "validator": "offline_sns_definition",
+            "gate": "source_table_type",
+            "sourcePaths": [
+                str(source_paths["snsDialogTable"]),
+                str(source_paths["snsOptionTable"]),
+            ],
+            "expected": "two JSON objects",
+            "actual": {
+                "snsDialogTable": type(sns_dialog_table).__name__,
+                "snsOptionTable": type(sns_option_table).__name__,
+            },
+        }]
         return {}, status
 
     dialog_text_table = read_json(source_paths["dialogTextTable"], {})
@@ -8693,6 +8887,177 @@ def _closed_exact_runtime_config_isolated_scenes(
     establishes activation timing or relative Story order.
     """
     closed: list[dict[str, Any]] = []
+    for quest in flow.get("quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        quest_id = safe_key(quest.get("id"))
+        for row in quest.get("storyConnections") or []:
+            if not isinstance(row, dict):
+                continue
+            scene_key = safe_key(row.get("key"))
+            objective_index = row.get("objectiveIndex")
+            tracking_index = row.get("trackingIndex")
+            if (
+                scene_key not in isolated_scene_keys
+                or not quest_id.startswith(f"{owner_mission}_q#")
+                or safe_key(row.get("kind")) != "sns"
+                or safe_key(row.get("relation"))
+                != "objective_tracking_story_reference"
+                or safe_key(row.get("direction")) != "context"
+                or safe_key(row.get("phase")) != "tracking"
+                or safe_key(row.get("confidence"))
+                != "native_typed_context"
+                or safe_key(row.get("trackingType")) != "SnsTrackingInfo"
+                or row.get("playback") is not False
+                or safe_key(row.get("attachmentBoundary"))
+                != (
+                    "authored objective tracking attachment only; "
+                    "SnsTrackingInfo.Execute is not SNS playback"
+                )
+                or safe_key(row.get("orderBoundary"))
+                != (
+                    "tracking configuration establishes no activation time "
+                    "or relative Story order"
+                )
+                or not re.fullmatch(
+                    r"MissionRuntimeAsset\.questDic\[\*\]\.objectiveList"
+                    r"\[\d+\]\.trackingInfoList\[\d+\]\.snsDialogId",
+                    safe_key(row.get("source")),
+                )
+                or not isinstance(objective_index, int)
+                or isinstance(objective_index, bool)
+                or objective_index <= 0
+                or not isinstance(tracking_index, int)
+                or isinstance(tracking_index, bool)
+                or tracking_index < 0
+            ):
+                continue
+            closed.append({
+                "sceneKey": scene_key,
+                "recoveryStatus":
+                    "closed_exact_mission_tracking_context_no_relative_order",
+                "relation": "objective_tracking_story_reference",
+                "missionId": owner_mission,
+                "questId": quest_id,
+                "objectiveIndex": objective_index,
+                "trackingIndex": tracking_index,
+                "trackingType": "SnsTrackingInfo",
+                "activationBoundary": (
+                    "the exact MissionRuntime objective config attaches this "
+                    "SNS conversation to client tracking; the native tracking "
+                    "type does not start SNS playback"
+                ),
+                "orderBoundary": (
+                    "quest attachment establishes mission context but no "
+                    "activation time or relative Story order"
+                ),
+                "sourceFile": (
+                    "export_full/structured/Persistent/Data/Json/"
+                    f"MissionRuntimeAsset/{owner_mission}.json"
+                ),
+            })
+
+    already_closed = {row["sceneKey"] for row in closed}
+    for quest in flow.get("quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        quest_id = safe_key(quest.get("id"))
+        for row in quest.get("storyConnections") or []:
+            if not isinstance(row, dict):
+                continue
+            scene_key = safe_key(row.get("key"))
+            carriers = [
+                carrier
+                for carrier in (
+                    row.get("dialogTreePrimeStoryPlaybackCarriers") or []
+                )
+                if isinstance(carrier, dict)
+            ]
+            source_files = _string_list(row.get("sourceFiles"))
+            expected_source = (
+                "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
+                "json_by_type/TextAsset/"
+                "dlg_a1m4_1_p14B2A876733D2220.json"
+            )
+            source_path = ROOT / expected_source
+            if (
+                scene_key in already_closed
+                or scene_key not in isolated_scene_keys
+                or owner_mission != "a1m4"
+                or quest_id != "a1m4_q#IntroDialog"
+                or scene_key != "dlg_a1m4_2"
+                or safe_key(row.get("relation"))
+                != "dialog_tree_prime_reachable_story_playback_dependency"
+                or safe_key(row.get("direction")) != "context"
+                or safe_key(row.get("phase"))
+                != "dialog_tree_prime_reachable_story_playback"
+                or safe_key(row.get("confidence"))
+                != "native_exact_prime_reachable_parent_quest_dependency"
+                or safe_key(row.get("evidenceTier"))
+                != "native_exact_context"
+                or safe_key(row.get("parentStoryKey")) != "dlg_a1m4_1"
+                or safe_key(row.get("storyOwnerMission")) != owner_mission
+                or row.get("storyBinding") is not True
+                or row.get("ownership") is not False
+                or row.get("dependencyOnly") is not True
+                or row.get("questActivation") is not False
+                or row.get("questPlayback") is not False
+                or row.get("questCompletion") is not False
+                or safe_key(row.get("questTriggerStatus"))
+                != "exact_parent_dialog_completion_context_not_quest_playback_trigger"
+                or safe_key(row.get("nativeMappingId"))
+                != "dialog-tree-prime-reachable-completion-dependency-native-v1"
+                or source_files != [expected_source]
+                or not source_path.is_file()
+                or _sha256_file(source_path)
+                != "E1AD79F7324E3772BB1CB8D95352A55C955F1229C1867EF33541982AD5059382"
+                or _string_list(row.get("sourcePathIds"))
+                != ["14B2A876733D2220"]
+                or _string_list(row.get("trunkIds"))
+                != ["dlg_a1m4_2_001", "dlg_a1m4_2_002"]
+                or len(carriers) != 2
+                or any(
+                    safe_key(carrier.get("dialogKey")) != "dlg_a1m4_1"
+                    or safe_key(carrier.get("storyKey")) != scene_key
+                    or safe_key(carrier.get("carrierKind")) != "trunk"
+                    or safe_key(carrier.get("reachDirection"))
+                    != "prime_to_carrier"
+                    or carrier.get("reachableFromPrimeNode") is not True
+                    or safe_key(carrier.get("entryProof"))
+                    != "exact_registered_dialog_tree_prime_node_reachability"
+                    or carrier.get("registeredDialogRoot") is not True
+                    or not _string_list(carrier.get("nodePath"))
+                    or not carrier.get("connectionPath")
+                    for carrier in carriers
+                )
+            ):
+                continue
+            closed.append({
+                "sceneKey": scene_key,
+                "recoveryStatus":
+                    "closed_exact_parent_dialog_dependency_no_relative_order",
+                "relation":
+                    "dialog_tree_prime_reachable_story_playback_dependency",
+                "missionId": owner_mission,
+                "questId": quest_id,
+                "parentStoryKey": "dlg_a1m4_1",
+                "trunkIds": ["dlg_a1m4_2_001", "dlg_a1m4_2_002"],
+                "sourceFiles": source_files,
+                "sourceSha256": _sha256_file(source_path),
+                "playbackSemantics": (
+                    "the registered parent DialogTree's exact prime-node "
+                    "path reaches both lines of this Story file"
+                ),
+                "activationBoundary": (
+                    "MissionRuntime observes completion of the parent dialog; "
+                    "it does not identify the activator of either dialog"
+                ),
+                "orderBoundary": (
+                    "prime-node reachability orders nodes inside the parent "
+                    "DialogTree only; it creates no inter-file chronology"
+                ),
+            })
+
     for row in _flow_story_connections(flow):
         scene_key = safe_key(row.get("key"))
         if (

@@ -449,8 +449,10 @@
       triggerPlaybackAliasConnected: "root playback alias · owner connected",
       triggerDefinition: "definition only · no consumer",
       offlineRecoveryBoundary: "Offline recovery boundary",
+      runtimeContextRecoveryBoundary: "Exact runtime context boundary",
       offlineRecoveryNoGraphEdge: "no ownership or order edge",
       offlineRecoveryConsumer: "Consumer boundary",
+      runtimeRecoveryActivation: "Activation boundary",
       offlineRecoveryOrder: "Order boundary",
       offlineRecoveryReopen: "Reopen when",
       offlineRecoveryGaps: "source-bounded activation gaps",
@@ -881,8 +883,10 @@
       triggerPlaybackAliasConnected: "\u6839\u64ad\u653e\u522b\u540d \u00b7 \u5f52\u5c5e\u5df2\u8fde\u63a5",
       triggerDefinition: "\u4ec5\u5b9a\u4e49 \u00b7 \u65e0\u6d88\u8d39\u8005",
       offlineRecoveryBoundary: "\u79bb\u7ebf\u6062\u590d\u8fb9\u754c",
+      runtimeContextRecoveryBoundary: "\u7cbe\u786e\u8fd0\u884c\u65f6\u4e0a\u4e0b\u6587\u8fb9\u754c",
       offlineRecoveryNoGraphEdge: "\u4e0d\u751f\u6210\u5f52\u5c5e\u6216\u987a\u5e8f\u8fb9",
       offlineRecoveryConsumer: "\u6d88\u8d39\u8005\u8fb9\u754c",
+      runtimeRecoveryActivation: "\u6fc0\u6d3b\u8fb9\u754c",
       offlineRecoveryOrder: "\u987a\u5e8f\u8fb9\u754c",
       offlineRecoveryReopen: "\u91cd\u65b0\u8c03\u67e5\u6761\u4ef6",
       offlineRecoveryGaps: "\u539f\u59cb\u6570\u636e\u9650\u5b9a\u7684\u6fc0\u6d3b\u7f3a\u53e3",
@@ -1952,12 +1956,17 @@
     const coverage = state.index?.storyCoverage || {};
     const manifest = coverage.storyTriggerManifest || {};
     const overlay = coverage.offlineRecoveryEvidence?.storyTriggerManifestOverlay || {};
-    const recovery = (
+    const offlineRecovery = (
       manifest[row?.key]?.offlineRecovery
       || overlay[row?.key]?.offlineRecovery
     );
+    const runtimeRecovery = manifest[row?.key]?.runtimeContextRecovery;
+    const recovery = offlineRecovery || runtimeRecovery;
     if (!recovery || recovery.graphEffect !== "none") return "";
     const boundaries = [
+      recovery.activationBoundary
+        ? `<small><strong>${esc(t("runtimeRecoveryActivation"))}:</strong> ${esc(recovery.activationBoundary)}</small>`
+        : "",
       recovery.consumerBoundary
         ? `<small><strong>${esc(t("offlineRecoveryConsumer"))}:</strong> ${esc(recovery.consumerBoundary)}</small>`
         : "",
@@ -1969,7 +1978,7 @@
         : "",
     ].filter(Boolean).join("");
     return `<div class="mp-playback-rejection mp-offline-recovery">
-      <header><strong>${esc(t("offlineRecoveryBoundary"))}</strong><span>${esc(t("offlineRecoveryNoGraphEdge"))}</span></header>
+      <header><strong>${esc(t(runtimeRecovery ? "runtimeContextRecoveryBoundary" : "offlineRecoveryBoundary"))}</strong><span>${esc(t("offlineRecoveryNoGraphEdge"))}</span></header>
       <b>${esc(recovery.evidenceKind || recovery.recoveryStatus || "")}</b>
       ${boundaries}
       ${recovery.nativeMappingId ? `<em><code>${esc(recovery.nativeMappingId)}</code></em>` : ""}
