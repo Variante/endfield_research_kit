@@ -72,6 +72,9 @@ Rebuild Story data after editing overrides.
 - Disabling debug from a hidden page returns to a visible page and URL.
 - Mission Pipeline distinguishes ownership, context, definition-only rows, and
   unresolved native playback.
+- Mission Pipeline opens source-bounded activation gaps in the order panel and
+  lists exact recovered definition files, tables, non-owning LevelData context,
+  and internal Timelines without promoting OCR or manual order to evidence.
 - Mission order is never inferred from registration, source-file order, or
   code addresses.
 - World rows without an exported level remain unassigned.

@@ -451,6 +451,10 @@
       offlineRecoveryConsumer: "Consumer boundary",
       offlineRecoveryOrder: "Order boundary",
       offlineRecoveryReopen: "Reopen when",
+      offlineRecoveryGaps: "source-bounded activation gaps",
+      offlineRecoveryGapsHint: "These files and their internal assets are recovered from the current game build, but no original-data mission activator or relative mission-order edge is known. OCR and manual order are not used here.",
+      offlineRecoveryInternalTimeline: "internal Timeline",
+      offlineRecoveryLines: "lines",
       questAttachmentDiagnostic: "Story ownership unresolved",
       questAttachmentDiagnosticHint: "Exact offline evidence closes this broad Story co-membership as non-owning. It does not create a quest-to-Story or order edge.",
       questAttachmentDiagnosticStories: "Diagnostic Story context",
@@ -875,6 +879,10 @@
       offlineRecoveryConsumer: "\u6d88\u8d39\u8005\u8fb9\u754c",
       offlineRecoveryOrder: "\u987a\u5e8f\u8fb9\u754c",
       offlineRecoveryReopen: "\u91cd\u65b0\u8c03\u67e5\u6761\u4ef6",
+      offlineRecoveryGaps: "\u539f\u59cb\u6570\u636e\u9650\u5b9a\u7684\u6fc0\u6d3b\u7f3a\u53e3",
+      offlineRecoveryGapsHint: "\u8fd9\u4e9b\u6587\u4ef6\u53ca\u5176\u5185\u90e8\u8d44\u4ea7\u5df2\u4ece\u5f53\u524d\u6e38\u620f\u7248\u672c\u6062\u590d\uff0c\u4f46\u5c1a\u672a\u627e\u5230\u539f\u59cb\u6570\u636e\u4e2d\u7684\u4efb\u52a1\u6fc0\u6d3b\u5668\u6216\u4efb\u52a1\u5185\u76f8\u5bf9\u987a\u5e8f\u8fb9\u3002\u6b64\u5904\u4e0d\u4f7f\u7528 OCR \u6216\u624b\u52a8\u987a\u5e8f\u4f5c\u4e3a\u8bc1\u636e\u3002",
+      offlineRecoveryInternalTimeline: "\u5185\u90e8 Timeline",
+      offlineRecoveryLines: "\u884c",
       questAttachmentDiagnostic: "\u5267\u60c5\u5f52\u5c5e\u672a\u89e3\u6790",
       questAttachmentDiagnosticHint: "\u7cbe\u786e\u79bb\u7ebf\u8bc1\u636e\u5c06\u8fd9\u4e2a\u5bbd\u6cdb\u5267\u60c5\u5171\u73b0\u5173\u7cfb\u95ed\u5408\u4e3a\u975e\u5f52\u5c5e\u8bca\u65ad\uff1b\u4e0d\u751f\u6210\u4efb\u52a1\u5230\u5267\u60c5\u6216\u987a\u5e8f\u8fb9\u3002",
       questAttachmentDiagnosticStories: "\u8bca\u65ad\u5267\u60c5\u4e0a\u4e0b\u6587",
@@ -1956,6 +1964,26 @@
     </div>`;
   }
 
+  function offlineRecoveryRowsForMission() {
+    const coverage = state.index?.storyCoverage || {};
+    const manifest = coverage.storyTriggerManifest || {};
+    const overlay = coverage.offlineRecoveryEvidence?.storyTriggerManifestOverlay || {};
+    const missionId = String(state.missionId || state.mission?.mission?.id || "");
+    const rows = new Map();
+    [...Object.values(manifest), ...Object.values(overlay)].forEach((entry) => {
+      const recovery = entry?.offlineRecovery;
+      if (!entry?.key || !recovery || recovery.graphEffect !== "none") return;
+      const owner = String(recovery.missionId || entry.nominalMissionId || "");
+      if (owner !== missionId) return;
+      rows.set(entry.key, {key: entry.key, ...recovery});
+    });
+    return [...rows.values()].sort((a, b) => String(a.key).localeCompare(
+      String(b.key),
+      undefined,
+      {numeric: true},
+    ));
+  }
+
   function questAttachmentDiagnostic(node) {
     const rows = state.index?.storyCoverage?.offlineRecoveryEvidence?.questAttachmentDiagnostics || {};
     const row = rows[node?.id];
@@ -2511,16 +2539,33 @@
         : "";
       return `<div><code>${esc(option.optionId || "?")}</code><i>&rarr;</i><span>${branchLines.map((line) => `<code>${esc(line)}</code>`).join(" ")}${directContinuation}</span></div>`;
     }).join("")}</details>`).join("");
+    const offlineRows = offlineRecoveryRowsForMission();
+    const offlineGaps = offlineRows.map((row) => {
+      const timeline = row.sharedTimelineContext?.timeline;
+      const lineCount = (row.sharedTimelineContext?.lineIds || []).length;
+      const sources = [
+        ...(row.definitionAssets || []),
+        ...(row.definitionTables || []),
+        row.definitionTable,
+        row.audioMembershipTable,
+        row.runtimeRegistry,
+        row.nonOwningContext?.sourceFile,
+        row.allowedNonOwningRoute?.file,
+        row.prtsDefinition?.rowId,
+      ].filter(Boolean);
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(row.evidenceKind || row.recoveryStatus || "")}</b></header>${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+    }).join("");
     const cycles = (order.cycles || []).map((component) => componentHtml(component.id)).join("");
-    return `<details class="mp-mission-story mp-story-order" data-weight="${Number(summary.strongEdgeCount) ? "strong" : "context"}"${Number(summary.strongEdgeCount) ? " open" : ""}>
+    return `<details class="mp-mission-story mp-story-order" data-weight="${Number(summary.strongEdgeCount) ? "strong" : "context"}"${Number(summary.strongEdgeCount) || offlineRows.length ? " open" : ""}>
       <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
       <p>${esc(t("storyOrderHint"))}</p>
-      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span></div>
+      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
       ${causalEdges ? `<section><h4>${esc(t("causalEdges"))}</h4><div class="mp-order-edges">${causalEdges}</div></section>` : ""}
       ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}
       ${questForks || questMerges || nativeBranches || nativeMerges || sceneOptions ? `<section><h4>${esc(t("forkMerge"))}</h4><div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${sceneOptions}</div></section>` : ""}
       ${dialogOptions ? `<section><h4>${esc(t("optionBranches"))}</h4><div class="mp-order-dialog-branches">${dialogOptions}</div></section>` : ""}
+      ${offlineGaps ? `<details class="mp-order-recovery-gaps" open><summary>${esc(t("offlineRecoveryGaps"))} <span>${offlineRows.length.toLocaleString()}</span></summary><p>${esc(t("offlineRecoveryGapsHint"))}</p><div>${offlineGaps}</div></details>` : ""}
       <small>${esc(t("isolatedScenes"))}: ${Number(summary.isolatedSceneCount || 0).toLocaleString()} 路 ${esc(t("weakOnlyScenes"))}: ${Number(summary.weakOnlySceneCount || 0).toLocaleString()}</small>
     </details>`;
   }
