@@ -3303,6 +3303,8 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     "au_radio_gm02m2_10_001",
                     "au_radio_gm02m2_10_002",
                 },
+                "radio_gm01m22_1d2": {"au_radio_gm01m22_1d2_001"},
+                "radio_gm01m22_1d3": {"au_radio_gm01m22_1d3_001"},
                 "radio_e5m4_1": {
                     f"au_radio_e5m4_1_{number:03d}"
                     for number in range(1, 5)
@@ -3678,6 +3680,13 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_e11m6_9",
                 "dlg_e11m8_9",
                 "dlg_e11m8d5_1",
+                "dlg_gm01m22_6",
+                "dlg_gm01m22_7",
+                "dlg_gm01m22_8",
+                "misc_dlg_gm01m22_2d5",
+                "misc_dlg_gm01m22_3d2",
+                "misc_dlg_gm01m22_3d8",
+                "misc_dlg_gm01m22_4d0",
             },
         )
         self.assertEqual(
@@ -4382,6 +4391,147 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_declared_gm01m22_binary_bounded_frontier_is_exact(self) -> None:
+        self.assertEqual(
+            set(gap_queue.OFFLINE_EXHAUSTION_GM01M22_ABSENT_BINARY_TOKENS),
+            {
+                "dlg_gm01m22_6",
+                "dlg_gm01m22_7",
+                "dlg_gm01m22_8",
+                "misc_dlg_gm01m22_2d5",
+                "misc_dlg_gm01m22_3d2",
+                "misc_dlg_gm01m22_3d8",
+                "misc_dlg_gm01m22_4d0",
+                "radio_gm01m22_1d2",
+                "radio_gm01m22_1d3",
+                "sns_gm01m22_2",
+                "text_gm01m22_5",
+            },
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GM01M22_RADIOS,
+            {"radio_gm01m22_1d2", "radio_gm01m22_1d3"},
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS[
+                "sns_gm01m22_2"
+            ]["dialogType"],
+            2,
+        )
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_TEXT_DEFINITIONS[
+                "text_gm01m22_5"
+            ]["contentTextIds"],
+            (
+                9056785448930934737,
+                -3599045778776472798,
+                -8943409554594408505,
+                -5685369311502986662,
+            ),
+        )
+
+    def test_gm01m22_dialog_tree_branches_are_exact_and_fail_closed(self) -> None:
+        definition_root = (
+            gap_queue.ROOT
+            / "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
+              "json_by_type/TextAsset"
+        )
+        expected = {
+            "dlg_gm01m22_6": [{
+                "optionGroup": 3,
+                "optionIds": [
+                    "option_dlg_gm01m22_6_3_001",
+                    "option_dlg_gm01m22_6_3_002",
+                    "option_dlg_gm01m22_6_3_003",
+                ],
+                "targetLineIds": [
+                    "dlg_gm01m22_6_007",
+                    "dlg_gm01m22_6_009",
+                    "dlg_gm01m22_6_012",
+                ],
+                "routeKind": "authored_split",
+            }],
+            "dlg_gm01m22_8": [{
+                "optionGroup": 6,
+                "optionIds": [
+                    "option_dlg_gm01m22_8_6_001",
+                    "option_dlg_gm01m22_8_6_002",
+                ],
+                "targetLineIds": [
+                    "dlg_gm01m22_8_019",
+                    "dlg_gm01m22_8_019",
+                ],
+                "routeKind": "authored_convergence",
+            }, {
+                "optionGroup": 9,
+                "optionIds": [
+                    "option_dlg_gm01m22_8_9_001",
+                    "option_dlg_gm01m22_8_9_002",
+                    "option_dlg_gm01m22_8_9_003",
+                ],
+                "targetLineIds": [
+                    "dlg_gm01m22_8_026",
+                    "dlg_gm01m22_8_028",
+                    "dlg_gm01m22_8_031",
+                ],
+                "routeKind": "authored_split",
+            }],
+        }
+        for story_key, groups in expected.items():
+            definition = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+                story_key
+            ]
+            asset = gap_queue.read_json(
+                definition_root / definition["filename"],
+                {},
+            )
+            self.assertEqual(
+                gap_queue._dialog_tree_branch_groups(asset),
+                groups,
+            )
+
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT
+            / "export_full/structured/StreamingAssets/Table"
+        )
+        definition = gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[
+            "dlg_gm01m22_6"
+        ]
+        broken_groups = list(definition["treeBranchGroups"])
+        broken_groups[0] = {
+            **broken_groups[0],
+            "targetLineIds": ("dlg_gm01m22_6_007",) * 3,
+        }
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS,
+            {"dlg_gm01m22_6": {
+                **definition,
+                "treeBranchGroups": broken_groups,
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual(failed_index, {})
+        failure = next(
+            row for row in failed_status["validatorDiagnostics"]
+            if row["storyKey"] == "dlg_gm01m22_6"
+        )
+        self.assertEqual(failure["validator"], "offlineDialogDefinition")
+        self.assertEqual(failure["gate"], "exactRegisteredDialogDefinition")
+        self.assertNotEqual(
+            failure["expected"]["treeBranchGroups"],
+            failure["actual"]["treeBranchGroups"],
+        )
+
     def test_gm02m2_table_only_registration_validator_fails_closed(self) -> None:
         partial = gap_queue.read_json(
             gap_queue.ROOT
@@ -4796,6 +4946,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "text_e10m3_6",
                 "text_e10m3_8",
                 "text_e10m4_1",
+                "text_gm01m22_5",
             },
         )
 
@@ -4997,6 +5148,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "sns_e1m9_1",
                 "sns_e7m4_1",
                 "sns_e10m4_1",
+                "sns_gm01m22_2",
             },
         )
         self.assertEqual(
@@ -5577,6 +5729,52 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             },
         )
 
+    def test_mission_accept_dialog_closes_with_lifecycle_only(self) -> None:
+        connection = {
+            "key": "dlg_gm01m22_1",
+            "kind": "dialog",
+            "relation": "mission_accept_dialog",
+            "direction": "story_to_mission",
+            "phase": "accept",
+            "confidence": "native_typed_direct",
+            "source": (
+                "MissionRuntimeAsset/gm01m22_meta.json."
+                "acceptMode.modeInfo.dialogId"
+            ),
+            "acceptMode": 3,
+            "acceptModeType": "MissionAcceptMode+NPCInfo",
+            "npcProxyId": "jite_map01_005",
+            "levelId": "map01_lv005",
+            "finishId": -1,
+        }
+        rows = gap_queue._closed_exact_runtime_config_isolated_scenes(
+            {"missionStoryConnections": [connection]},
+            {"dlg_gm01m22_1"},
+            "gm01m22",
+        )
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(
+            rows[0]["recoveryStatus"],
+            "closed_exact_mission_accept_dialog_no_relative_order",
+        )
+        self.assertEqual(rows[0]["phase"], "accept")
+        self.assertIn("does not create a relative edge", rows[0]["orderBoundary"])
+
+        for field, bad_value in (
+            ("relation", "mission_finish_dialog"),
+            ("source", "MissionRuntimeAsset/gm01m22.json.dialogId"),
+            ("acceptModeType", "MissionAcceptMode"),
+        ):
+            broken = {**connection, field: bad_value}
+            self.assertEqual(
+                gap_queue._closed_exact_runtime_config_isolated_scenes(
+                    {"missionStoryConnections": [broken]},
+                    {"dlg_gm01m22_1"},
+                    "gm01m22",
+                ),
+                [],
+            )
+
     def test_prime_reachable_dialog_dependency_is_hash_locked(self) -> None:
         payload = gap_queue.read_json(
             gap_queue.ROOT / "webui/data/lang/CN/mission/a1m4.json",
@@ -5611,6 +5809,51 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     broken,
                     {"dlg_a1m4_2"},
                     "a1m4",
+                )
+            },
+        )
+
+    def test_gm01m22_nested_dialog_dependencies_are_hash_locked(self) -> None:
+        payload = gap_queue.read_json(
+            gap_queue.ROOT / "webui/data/lang/CN/mission/gm01m22.json",
+            {},
+        )
+        rows = gap_queue._closed_exact_runtime_config_isolated_scenes(
+            payload["flow"],
+            {"dlg_gm01m22_6", "dlg_gm01m22_8"},
+            "gm01m22",
+        )
+        by_key = {row["sceneKey"]: row for row in rows}
+        self.assertEqual(set(by_key), {"dlg_gm01m22_6", "dlg_gm01m22_8"})
+        for story_key in by_key:
+            self.assertEqual(
+                by_key[story_key]["parentStoryKey"],
+                "dlg_gm01m22_hapo",
+            )
+            self.assertEqual(by_key[story_key]["dialogIds"], [story_key])
+            self.assertEqual(
+                by_key[story_key]["recoveryStatus"],
+                "closed_exact_parent_dialog_dependency_no_relative_order",
+            )
+
+        broken = copy.deepcopy(payload["flow"])
+        dependency = next(
+            row
+            for quest in broken["quests"]
+            for row in quest.get("storyConnections") or []
+            if row.get("key") == "dlg_gm01m22_6"
+        )
+        dependency["dialogTreePrimeStoryPlaybackCarriers"][0][
+            "sourcePathId"
+        ] = "changed"
+        self.assertNotIn(
+            "dlg_gm01m22_6",
+            {
+                row["sceneKey"]
+                for row in gap_queue._closed_exact_runtime_config_isolated_scenes(
+                    broken,
+                    {"dlg_gm01m22_6", "dlg_gm01m22_8"},
+                    "gm01m22",
                 )
             },
         )
