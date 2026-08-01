@@ -3318,6 +3318,12 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     f"au_radio_gm01m7_9_{number:03d}"
                     for number in range(1, 13)
                 },
+                "radio_gm01m16_8": {"au_radio_gm01m16_8_001"},
+                "radio_gm01m16_13": {
+                    f"au_radio_gm01m16_13_{number:03d}"
+                    for number in range(1, 4)
+                },
+                "radio_gm01m16_14": {"au_radio_gm01m16_14_001"},
                 "radio_gm01m22_1d2": {"au_radio_gm01m22_1d2_001"},
                 "radio_gm01m22_1d3": {"au_radio_gm01m22_1d3_001"},
                 "radio_e5m4_1": {
@@ -5012,6 +5018,58 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "exactLevelScriptTalkCompletionConsumer",
         )
         self.assertEqual(failure["storyKey"], "dlg_gm01m12_1")
+        self.assertIn("sourceSha256", failure)
+
+    def test_gm01m16_exact_topology_is_visible_without_story_assignment(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        index, status = gap_queue.build_offline_exhaustion_index(partial, table_root)
+        self.assertEqual("active", status["status"])
+        topology = index["radio_gm01m16_8"]["missionQuestTopologyContext"]
+        self.assertEqual(26, len(
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS[
+                "gm01m16"
+            ]["prevQuestIdsByQuest"]
+        ))
+        self.assertEqual(2, len(topology["entryQuestIds"]))
+        self.assertEqual(5, len(topology["forks"]))
+        self.assertEqual(4, len(topology["merges"]))
+        self.assertEqual(8, len(topology["terminalQuestIds"]))
+        self.assertEqual(12, len(topology["mainPathQuestIds"]))
+        self.assertEqual([], topology["storyAssignments"])
+        self.assertFalse(topology["orderEvidence"])
+        self.assertEqual("not_evidence", topology["flowIndexExclusivityStatus"])
+
+    def test_gm01m16_topology_validator_fails_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        declaration = gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS[
+            "gm01m16"
+        ]
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS,
+            {"gm01m16": {
+                **declaration,
+                "mainPathQuestIds": (*declaration["mainPathQuestIds"][:-1], "gm01m16_q#missing"),
+            }},
+        ):
+            failed_index, failed_status = gap_queue.build_offline_exhaustion_index(
+                partial,
+                table_root,
+            )
+        self.assertEqual({}, failed_index)
+        failure = failed_status["validatorDiagnostics"][0]
+        self.assertEqual("offlineMissionTopologyContext", failure["validator"])
+        self.assertEqual("exactQuestPredecessorGraphAndMainPath", failure["gate"])
+        self.assertEqual("gm01m16", failure["mission"])
         self.assertIn("sourceSha256", failure)
 
     def test_gm01m7_cross_mission_sns_validator_fails_closed(self) -> None:

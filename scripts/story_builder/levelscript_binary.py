@@ -5791,15 +5791,26 @@ def _tail_candidate(data: bytes, offset: int) -> dict[str, Any]:
     task_map_end: int | None = None
     if task_map_offset is not None and task_map_status == "null":
         task_map_end = task_map_offset + 4
+    elif (
+        task_map_offset is not None
+        and task_map_status == "present"
+        and task_map_count == 0
+    ):
+        # An empty dictionary has no records.  Its end is exact, so the next
+        # top-level member must begin immediately after the count.  Searching
+        # forward to the final trigger-volume-shaped bytes can otherwise make
+        # an embedded logic ID look like the repeated top-level script ID.
+        task_map_end = task_map_offset + 4
     trigger_volume_offset = task_map_end
     trigger_volume: dict[str, Any] = {}
+    trigger_volume_end: int | None = None
     if trigger_volume_offset is not None:
-        trigger_volume, _trigger_volume_end = _decode_trigger_volume_map(data, trigger_volume_offset)
+        trigger_volume, trigger_volume_end = _decode_trigger_volume_map(data, trigger_volume_offset)
     elif task_map_offset is not None and task_map_status == "present":
         (
             trigger_volume_offset,
             trigger_volume,
-            _trigger_volume_end,
+            trigger_volume_end,
         ) = _find_final_trigger_volume_map(
             data,
             search_start=task_map_offset + 4,
@@ -5816,6 +5827,14 @@ def _tail_candidate(data: bytes, offset: int) -> dict[str, Any]:
         score += 50_000
     if task_map_status in {"null", "present"}:
         score += 10_000
+    if (
+        trigger_volume_status in {"null", "present"}
+        and trigger_volume.get("parseStatus") != "truncated"
+        and trigger_volume_end == len(data)
+    ):
+        # A completely decoded final top-level member is stronger evidence
+        # than a locally plausible embedded ID and shape/list header.
+        score += 250_000
 
     return {
         "scriptIdOffset": offset,
