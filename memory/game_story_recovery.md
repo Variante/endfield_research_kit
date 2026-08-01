@@ -20,7 +20,7 @@ Latest CN reports:
 | Strong / supported / weak edges | 1,480 / 834 / 2,630 |
 | Source-comparable scene pairs | 3,762 / 249,651 (1.51%) |
 | Cyclic components | 0 |
-| Exact nested DialogTree containments | 30 across 29 child files |
+| Exact nested DialogTree containments | 49 across 44 child files |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -348,6 +348,27 @@ all 28 scene pairs unordered. The locked manual order remains display-only
 cross-reference, and no OCR or option override exists. This lowers the mission
 score from 40 to zero and the major actionable backlog from 92 to 84.
 
+The `gm02m23` frontier is now source-bounded, lowering its score from 35 to
+zero and the major actionable backlog from 84 to 73. The hash-locked authored
+MissionRuntime graph has 10 quests: its main path is `q#1 -> q#2 -> q#11 ->
+q#3 -> q#7 -> q#8 -> q#13 -> q#10 -> q#6`, while `q#2` also reaches `q#9`.
+`q#9` carries an exact failed `CheckQuestState` guard against `q#11` state 3;
+this proves the client-visible quest fork and guard, not the server's successor
+selection policy. Original DialogTree `OpenUI` nodes and exact
+`ReadingPopUpTable` joins place `text_gm02m23_1` at the finish of
+`dlg_gm02m23_1`, `text_gm02m23_2` between lines `_003` and `_015` of `_3`,
+`text_gm02m23_4` at the entry of `_7`, and `text_gm02m23_3` between lines
+`_001` and `_002` of external carrier `_9`. The carrier is retained without
+inventing a standalone Story parent. Registered `dlg_gm02m23_3` preserves two
+two-option convergences and one mixed transition/direct terminal group;
+registered `_10` preserves its two terminal routes. `radio_gm02m23_2` remains
+an exact one-row RadioTable definition whose audio id is absent from
+AudioDialog. Exact scans of 179,925 current Data/Json objects, the typed carrier
+audit, and the installed GameAssembly expose no additional consumer for these
+three roots. Mission Pipeline shows all five containments, the dialog-internal
+branches, the quest fork/failed-state guard, and the definition boundaries.
+OCR and manual overrides had no `gm02m23` entries and were not evidence.
+
 Manual order, OCR, filenames, table order, numeric suffixes, and gameplay
 observation are comparison evidence only. They never promote an original-data
 ownership or chronology edge.
@@ -376,9 +397,12 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should move to the highest-ranked remaining real major-mission
-frontier (84 actionable core-isolated files remain across that bucket; the
-next frontier is `gm02m23`, score 35 across seven isolated files) and
-the five character-mission quest-attachment gaps. For `gm01m16`, reopen the
+frontier (73 actionable core-isolated files remain across that bucket; the
+next frontier is `gm01m14`, score 35 across seven actionable isolated files)
+and the five character-mission quest-attachment gaps. Within `gm02m23`, the
+three remaining timeline activation records are the only higher-value reopen
+surface; the seven isolated and four weak-only Story files have zero broadly
+actionable rows under the current audited sources. For `gm01m16`, reopen the
 patrol rows only if an exact `NpcPatrolStart`, world-entity, or MissionRuntime
 tracking join co-carries patrol `160002` or `20001`; do not infer that join from
 the mission-like filename or patrol registration order. Reopen a

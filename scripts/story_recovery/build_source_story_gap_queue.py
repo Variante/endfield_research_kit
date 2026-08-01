@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v96"
+SCHEMA = "sourceStoryGapQueue.v97"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -144,7 +144,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v73"
+    "current-build-offline-story-carrier-exhaustion-v74"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -246,6 +246,9 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm02m1_6": "radio_gm02m1_6",
     "radio_gm02m1_7": "radio_gm02m1_7",
     "radio_gm02m1_8": "radio_gm02m1_8",
+    "dlg_gm02m23_3": "dlg_gm02m23_3",
+    "dlg_gm02m23_10": "dlg_gm02m23_10",
+    "radio_gm02m23_2": "radio_gm02m23_2",
 }
 OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
     "gm01m7": {
@@ -332,6 +335,43 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
                 7: (), 1: (7,), 6: (1,), 3: (6,), 4: (3,),
                 2: (4,), 10: (4,),
             }.items()
+        },
+    },
+    "gm02m23": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm02m23.json"
+        ),
+        "sourceSha256":
+            "09987B7764C23CA0AA2A1BD4302BAA549E7833F9BE0498283E07814D74F3F5AB",
+        "mainPathQuestIds": tuple(
+            f"gm02m23_q#{number}"
+            for number in (1, 2, 11, 3, 7, 8, 13, 10, 6)
+        ),
+        "prevQuestIdsByQuest": {
+            f"gm02m23_q#{quest}": tuple(
+                f"gm02m23_q#{previous}" for previous in predecessors
+            )
+            for quest, predecessors in {
+                1: (), 2: (1,), 11: (2,), 3: (11,), 7: (3,),
+                8: (7,), 13: (8,), 10: (13,), 6: (10,), 9: (2,),
+            }.items()
+        },
+        "failedConditionsByQuest": {
+            **{
+                f"gm02m23_q#{number}": None
+                for number in (1, 2, 11, 3, 7, 8, 13, 10, 6)
+            },
+            "gm02m23_q#9": {
+                "$type": "Beyond.Gameplay.CheckQuestState, Gameplay.Beyond",
+                "uniqueId": "d234408a",
+                "useCurrentScope": False,
+                "scopeMask": 1,
+                "useGraphScope": True,
+                "_questId": {"constValue": "gm02m23_q#11"},
+                "_comparer": {"constValue": 0},
+                "_targetQuestState": {"constValue": 3},
+            },
         },
     },
 }
@@ -4558,6 +4598,97 @@ OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS.update({
             "routeKind": "authored_split",
         },),
     },
+    "dlg_gm02m23_3": {
+        "missionId": "gm02m23",
+        "filename": "dlg_gm02m23_3_p74D15E007EC90CA9.json",
+        "sha256":
+            "F502E97DCE41E066F7613CC8A824F7A20A0E64FFEF1C78C5F284776515A477C5",
+        "extraConfigFilename":
+            "dlg_gm02m23_3_extra_config_pF338636E6A5CD416.json",
+        "extraConfigSha256":
+            "609B3B2E956C093B05455E0ACD96C2A6E314DAF43237F50DBFB8DFB2CE9648B0",
+        "lineIds": tuple(
+            f"dlg_gm02m23_3_{number:03d}"
+            for number in (1, 2, 3, 4, 12, 13, *range(15, 26))
+        ),
+        "optionIds": tuple(
+            f"option_dlg_gm02m23_3_{group}_{option:03d}"
+            for group, option_count in ((1, 1), (2, 1), (3, 1), (4, 2), (5, 2), (6, 2))
+            for option in range(1, option_count + 1)
+        ),
+        "missingAudioIds": tuple(
+            f"au_dlg_gm02m23_3_{number:03d}"
+            for number in (1, 2, 3, 4, 12, 13, *range(15, 26))
+        ),
+        "treeBranchGroups": ({
+            "optionGroup": 4,
+            "optionIds": (
+                "option_dlg_gm02m23_3_4_001",
+                "option_dlg_gm02m23_3_4_002",
+            ),
+            "targetLineIds": (
+                "dlg_gm02m23_3_023",
+                "dlg_gm02m23_3_023",
+            ),
+            "routeKind": "authored_convergence",
+        }, {
+            "optionGroup": 5,
+            "optionIds": (
+                "option_dlg_gm02m23_3_5_001",
+                "option_dlg_gm02m23_3_5_002",
+            ),
+            "targetLineIds": (
+                "dlg_gm02m23_3_024",
+                "dlg_gm02m23_3_024",
+            ),
+            "routeKind": "authored_convergence",
+        }),
+        "terminalOptionRoutes": ({
+            "optionGroup": 6,
+            "routes": ({
+                "optionId": "option_dlg_gm02m23_3_6_001",
+                "targetKind": "finish",
+                "finishId": None,
+                "finishIdSerialized": False,
+            }, {
+                "optionId": "option_dlg_gm02m23_3_6_002",
+                "targetKind": "finish",
+                "finishId": 1,
+                "finishIdSerialized": True,
+            }),
+        },),
+    },
+    "dlg_gm02m23_10": {
+        "missionId": "gm02m23",
+        "filename": "dlg_gm02m23_10_p99A23FBF0CB0A83A.json",
+        "sha256":
+            "5685E8729B73FDB33D4E10858844C57940506294F9E2B08A169D90A957B56FE5",
+        "extraConfigFilename":
+            "dlg_gm02m23_10_extra_config_pD2C5313C93130F58.json",
+        "extraConfigSha256":
+            "70722DB31C09A31993FCF6D76EDEC10DA6CA39131DD4F9B923E9FF94740AA60A",
+        "lineIds": ("dlg_gm02m23_10_001",),
+        "optionIds": (
+            "option_dlg_gm02m23_10_1_001",
+            "option_dlg_gm02m23_10_1_002",
+        ),
+        "missingAudioIds": ("au_dlg_gm02m23_10_001",),
+        "treeBranchGroups": (),
+        "terminalOptionRoutes": ({
+            "optionGroup": 1,
+            "routes": ({
+                "optionId": "option_dlg_gm02m23_10_1_001",
+                "targetKind": "finish",
+                "finishId": None,
+                "finishIdSerialized": False,
+            }, {
+                "optionId": "option_dlg_gm02m23_10_1_002",
+                "targetKind": "finish",
+                "finishId": 1,
+                "finishIdSerialized": True,
+            }),
+        },),
+    },
 })
 OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS = frozenset({
     "dlg_e10m3_9",
@@ -5527,6 +5658,9 @@ OFFLINE_EXHAUSTION_GM02M1_RADIOS = frozenset({
     "radio_gm02m1_7",
     "radio_gm02m1_8",
 })
+OFFLINE_EXHAUSTION_GM02M23_RADIOS = frozenset({
+    "radio_gm02m23_2",
+})
 OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "a1m6d1": OFFLINE_EXHAUSTION_A1M6D1_RADIOS,
     "a1m6d2": OFFLINE_EXHAUSTION_A1M6D2_RADIOS,
@@ -5544,6 +5678,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm01m26": OFFLINE_EXHAUSTION_GM01M26_RADIOS,
     "gm01m5": OFFLINE_EXHAUSTION_GM01M5_RADIOS,
     "gm02m1": OFFLINE_EXHAUSTION_GM02M1_RADIOS,
+    "gm02m23": OFFLINE_EXHAUSTION_GM02M23_RADIOS,
     "e0m0": OFFLINE_EXHAUSTION_E0M0_RADIOS,
     "e1m2": OFFLINE_EXHAUSTION_E1M2_RADIOS,
     "e1m3": OFFLINE_EXHAUSTION_E1M3_RADIOS,
@@ -5731,6 +5866,7 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
         "au_radio_gm02m1_7_002",
     }),
     "radio_gm02m1_8": frozenset({"au_radio_gm02m1_8_001"}),
+    "radio_gm02m23_2": frozenset({"au_radio_gm02m23_2_001"}),
     "radio_gm01m22_1d2": frozenset({"au_radio_gm01m22_1d2_001"}),
     "radio_gm01m22_1d3": frozenset({"au_radio_gm01m22_1d3_001"}),
     "radio_e5m5_1": frozenset({
@@ -7281,6 +7417,38 @@ def _dialog_tree_branch_groups(
             targets *= len(option_ids)
         if len(targets) != len(option_ids):
             return None
+        target_nodes = [node_by_id[target_id] for target_id in targets]
+        if not all(
+            safe_key(target.get("$type")).endswith(".DialogTreeTrunkNode")
+            for target in target_nodes
+        ):
+            # A multi-option terminal group belongs to the companion terminal
+            # decoder. Accept only exact direct/linear-transition FinishNode
+            # routes here; any mixed or branching shape reopens validation.
+            resolved_terminal_flags: list[bool] = []
+            for target_id in targets:
+                seen: set[str] = set()
+                current_id = target_id
+                while current_id not in seen:
+                    seen.add(current_id)
+                    current = node_by_id[current_id]
+                    current_type = safe_key(current.get("$type"))
+                    if current_type.endswith(".DialogTreeFinishNode"):
+                        resolved_terminal_flags.append(True)
+                        break
+                    if not current_type.endswith(".DialogTransitionNode"):
+                        resolved_terminal_flags.append(False)
+                        break
+                    next_ids = targets_by_source.get(current_id) or []
+                    if len(next_ids) != 1:
+                        resolved_terminal_flags.append(False)
+                        break
+                    current_id = next_ids[0]
+                else:
+                    resolved_terminal_flags.append(False)
+            if all(resolved_terminal_flags):
+                continue
+            return None
         target_line_ids: list[str] = []
         for target_id in targets:
             target = node_by_id[target_id]
@@ -7397,17 +7565,40 @@ def _dialog_tree_terminal_option_routes(
         targets = list(targets_by_source.get(node_id) or [])
         if len(targets) != len(option_ids):
             return None
-        target_nodes = [node_by_id[target_id] for target_id in targets]
+        resolved_target_nodes: list[dict[str, Any]] = []
+        for target_id in targets:
+            seen: set[str] = set()
+            current_id = target_id
+            while current_id not in seen:
+                seen.add(current_id)
+                current = node_by_id[current_id]
+                current_type = safe_key(current.get("$type"))
+                if current_type.endswith(".DialogTreeFinishNode"):
+                    resolved_target_nodes.append(current)
+                    break
+                if not current_type.endswith(".DialogTransitionNode"):
+                    resolved_target_nodes.append(current)
+                    break
+                next_ids = targets_by_source.get(current_id) or []
+                if len(next_ids) != 1:
+                    return None
+                current_id = next_ids[0]
+            else:
+                return None
         terminal_flags = [
             safe_key(target.get("$type")).endswith(".DialogTreeFinishNode")
-            for target in target_nodes
+            for target in resolved_target_nodes
         ]
         if not any(terminal_flags):
             continue
         if not all(terminal_flags):
             return None
         routes: list[dict[str, Any]] = []
-        for option_id, target in zip(option_ids, target_nodes, strict=True):
+        for option_id, target in zip(
+            option_ids,
+            resolved_target_nodes,
+            strict=True,
+        ):
             finish_id_serialized = "finishId" in target
             finish_id = target.get("finishId")
             if finish_id_serialized and not isinstance(finish_id, int):
@@ -7977,11 +8168,30 @@ def build_offline_exhaustion_index(
         actual_main_path = (
             payload.get("mainPathQuests") if isinstance(payload, dict) else None
         )
+        expected_failed_conditions = declaration.get(
+            "failedConditionsByQuest"
+        )
+        actual_failed_conditions = (
+            {
+                quest_id: (
+                    quest_dic.get(quest_id, {}).get("failedCondition")
+                    if isinstance(quest_dic.get(quest_id), dict) else None
+                )
+                for quest_id in expected_failed_conditions
+            }
+            if isinstance(expected_failed_conditions, dict)
+            and isinstance(quest_dic, dict)
+            else None
+        )
         valid = (
             isinstance(quest_dic, dict)
             and set(quest_dic) == set(expected_prev)
             and actual_prev == expected_prev
             and actual_main_path == expected_main_path
+            and (
+                expected_failed_conditions is None
+                or actual_failed_conditions == expected_failed_conditions
+            )
         )
         if not valid:
             status.update({
@@ -7998,12 +8208,14 @@ def build_offline_exhaustion_index(
                         "questIds": sorted(expected_prev, key=natural_key),
                         "prevQuestIdListByQuest": expected_prev,
                         "mainPathQuests": expected_main_path,
+                        "failedConditionsByQuest": expected_failed_conditions,
                     },
                     "actual": {
                         "questIds": sorted(quest_dic, key=natural_key)
                         if isinstance(quest_dic, dict) else None,
                         "prevQuestIdListByQuest": actual_prev,
                         "mainPathQuests": actual_main_path,
+                        "failedConditionsByQuest": actual_failed_conditions,
                     },
                 }],
             })
@@ -8034,6 +8246,28 @@ def build_offline_exhaustion_index(
             "terminalQuestIds": [
                 quest_id for quest_id, quest_successors in successors.items()
                 if not quest_successors
+            ],
+            "failedQuestStateGuards": [
+                {
+                    "questId": quest_id,
+                    "conditionType": "CheckQuestState",
+                    "targetQuestId": safe_key(
+                        (condition.get("_questId") or {}).get("constValue")
+                    ),
+                    "comparer": (condition.get("_comparer") or {}).get(
+                        "constValue"
+                    ),
+                    "targetQuestState": (
+                        condition.get("_targetQuestState") or {}
+                    ).get("constValue"),
+                    "relation": "authored_quest_failure_guard",
+                    "branchExclusivity": True,
+                    "storyOrderEvidence": False,
+                }
+                for quest_id, condition in (
+                    expected_failed_conditions or {}
+                ).items()
+                if isinstance(condition, dict)
             ],
             "relation": "authored_mission_quest_predecessor_topology",
             "storyPlacementStatus": "unresolved",

@@ -180,6 +180,86 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(diagnostic["sourcePaths"], ["TextAsset/dlg_m1_1.json"])
         self.assertEqual(diagnostic["actual"]["validOccurrenceCount"], 0)
 
+    @staticmethod
+    def open_ui_occurrence(*, placement_status: str) -> dict:
+        return {
+            "dialogKey": "dlg_m1_1",
+            "nodeId": "7",
+            "readingPopupId": "rp_text_m1_1",
+            "paramData": {"id": "rp_text_m1_1"},
+            "panelType": 17,
+            "actionEnum": 57,
+            "nativeMappingId":
+                "dialog-tree-open-ui-reading-popup-connection-native-v1",
+            "dialogTreeConnectionPlacementStatus": placement_status,
+            "reachableFromPrimeNode": True,
+            "embeddedAfterLineIds": ["dlg_m1_1_009"],
+            "embeddedBeforeLineIds": ["dlg_m1_1_010"],
+            "sourceFile": "TextAsset/dlg_m1_1.json",
+            "sourceSha256": "A" * 64,
+        }
+
+    def test_exact_dialog_tree_open_ui_popup_containment_is_visible(self) -> None:
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"text_m1_1": "text", "dlg_m1_1": "dlg"},
+            {"flow": {"sceneGraph": {"nodes": [], "edges": []}}},
+            dialog_tree_open_ui_occurrences=[self.open_ui_occurrence(
+                placement_status="exact_between_adjacent_parent_trunks",
+            )],
+            reading_popup_rows={"rp_text_m1_1": {
+                "bgType": 1,
+                "contentId": "text_m1_1",
+                "iconType": 3,
+                "id": "rp_text_m1_1",
+                "overrideRadioId": "",
+                "title": {"id": 0, "text": ""},
+            }},
+            reading_popup_source="Table/ReadingPopUpTable.json",
+            reading_popup_sha256="B" * 64,
+        )
+
+        self.assertEqual(result["directEdges"], [])
+        self.assertEqual(result["isolatedSceneKeys"], ["dlg_m1_1"])
+        self.assertEqual(result["containments"][0]["child"], "text_m1_1")
+        self.assertEqual(
+            result["containments"][0]["readingPopupId"],
+            "rp_text_m1_1",
+        )
+        child = next(row for row in result["nodes"] if row["key"] == "text_m1_1")
+        self.assertEqual(child["relationStatus"], "embedded")
+        self.assertEqual(result["warnings"], [])
+
+    def test_dialog_tree_open_ui_popup_containment_fails_closed(self) -> None:
+        occurrence = self.open_ui_occurrence(
+            placement_status="not_exact_story_boundary",
+        )
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"text_m1_1": "text", "dlg_m1_1": "dlg"},
+            {"flow": {"sceneGraph": {"nodes": [], "edges": []}}},
+            dialog_tree_open_ui_occurrences=[occurrence],
+            reading_popup_rows={"rp_text_m1_1": {
+                "bgType": 1,
+                "contentId": "text_m1_1",
+                "iconType": 3,
+                "id": "rp_text_m1_1",
+                "overrideRadioId": "",
+                "title": {"id": 0, "text": ""},
+            }},
+            reading_popup_source="Table/ReadingPopUpTable.json",
+            reading_popup_sha256="B" * 64,
+        )
+
+        self.assertEqual(result["containments"], [])
+        diagnostic = result["warnings"][0]
+        self.assertEqual(diagnostic["validator"], "dialogTreeOpenUIContainment")
+        self.assertEqual(diagnostic["storyKey"], "text_m1_1")
+        self.assertEqual(
+            diagnostic["actual"]["placementStatus"],
+            "not_exact_story_boundary",
+        )
+
     def test_declared_variant_mission_evidence_is_merged_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             mission_dir = Path(tmp)
