@@ -57,14 +57,24 @@ naming never fills a missing row. Complete partitions close six direct
 black-box scenes covering 23 lines. The same general classifier now exposes
 five partial scenes through ten parents: 30 of 38 authored rows are covered,
 eight are explicitly unmatched, and the parents contain zero option-branch
-groups. Those partial scenes remain actionable and graph-neutral: exact parent
-membership and internal connections are evidence, while missing-row placement,
-activation, cross-parent order, mission ownership, and chronology remain
-unknown. Mission Pipeline attaches their original files in visible Story-only
-shells and displays coverage, missing IDs, parent IDs, branch counts, exact
-connections, and PathID/hash provenance. The other-bucket queue remains 32 and
-the current contract is `sourceStoryGapQueue.v119`; OCR and manual order remain
-comparison-only.
+groups. A general parent-namespace resolver now attaches an exact authored
+level/dungeon asset shell only when `LevelBasicInfoTable`, the unique
+`DungeonTable.sceneId`, LevelConfig, the 43-member LevelData MemoryPack, and any
+matching decoded map TextAsset all independently name the same level. It
+publishes 40 contexts for 37 complete groups and eight contexts for the five
+partial groups, including every related LevelConfig/LevelData file and map
+TextAsset PathID/hash. Numbered missing-row positions are retained only as
+table-row cross-reference diagnostics. These relationships remain actionable
+and graph-neutral: they do not prove activation, ownership, branching, or
+order. Mission Pipeline displays the files and boundaries in visible
+Story-only shells. The other-bucket queue remains 32 and the current contract
+is `sourceStoryGapQueue.v120`; OCR and manual order remain comparison-only.
+
+The original metadata `BlackboxGuideHintController`, `FacGuideHintEnable`, and
+`LevelDataGuideHintConfig` surface is spatial factory guide-hint configuration,
+not DialogText playback. Exact current LevelData strings and typed members do
+not consume the eight unmatched rows, so this path is excluded rather than
+used as a naming-based attachment.
 
 A separate generalized carrier layer removes the object-specific parent-dialog
 dependency catalog. A focused parser resolves one current registered
@@ -95,7 +105,7 @@ tie-breaker; it cannot fill missing rows. `misc_timeline_blackbox_miner` and
 `_pipe` remain open because authored rows lack serialized registered owners.
 Mission Pipeline exposes the parent files, hashes, and directed edges.
 Canonical mission-pipeline builds refresh and validate
-`sourceStoryGapQueue.v119` after current Story coverage
+`sourceStoryGapQueue.v120` after current Story coverage
 and partial order are published; data-only builds deliberately reuse it. OCR
 and manual order remain comparison-only.
 
@@ -956,8 +966,11 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should trace the eight explicitly unmatched black-box rows through
-new binary or serialized producer/consumer surfaces, without deriving placement
-from their numeric suffixes. The partial set is
+the typed factory/tutorial activation registry or another new binary or
+serialized producer/consumer surface, without deriving placement from numeric
+suffixes, dungeon sort ids, guide-hint names, or asset paths. Their exact parent
+level/dungeon shells are now attached, but no audited typed surface consumes
+the loose rows. The partial set is
 `misc_timeline_blackbox_miner`, `dlg_blackbox_mix_3`,
 `dlg_blackbox_gaspump_1`, `misc_timeline_blackbox_pipe`, and
 `dlg_blackbox_xiraniteoven_3`. `dlg_blackbox_shaper_2_2` remains a distinct

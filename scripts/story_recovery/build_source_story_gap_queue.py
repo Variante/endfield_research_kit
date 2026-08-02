@@ -67,7 +67,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v119"
+SCHEMA = "sourceStoryGapQueue.v120"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -7614,11 +7614,316 @@ def _generic_registered_dialog_tree_definition_facts(
     }, None
 
 
+def _repo_source_path(path: Path) -> str:
+    resolved = path.resolve()
+    if resolved.is_relative_to(ROOT):
+        return resolved.relative_to(ROOT).as_posix()
+    return resolved.as_posix()
+
+
+def _memorypack_contains_exact_string(data: bytes, value: str) -> bool:
+    encoded = value.encode("utf-8")
+    return (
+        len(encoded).to_bytes(4, "little", signed=True) + encoded
+    ) in data
+
+
+def _dialog_parent_level_candidate(
+    parent_key: str,
+    level_ids: set[str],
+) -> tuple[str, str | None]:
+    namespace = safe_key(parent_key)
+    if namespace.startswith("dlg_"):
+        namespace = namespace.removeprefix("dlg_")
+    if namespace.startswith("gpl_"):
+        namespace = namespace.removeprefix("gpl_")
+    candidates = sorted(
+        (
+            level_id
+            for level_id in level_ids
+            if namespace == level_id
+            or namespace.startswith(f"{level_id}_")
+        ),
+        key=lambda level_id: (-len(level_id), natural_key(level_id)),
+    )
+    if not candidates:
+        return "", None
+    longest = len(candidates[0])
+    longest_candidates = [
+        level_id for level_id in candidates if len(level_id) == longest
+    ]
+    if len(longest_candidates) != 1:
+        return "", "ambiguousLongestLevelNamespace"
+    return longest_candidates[0], None
+
+
+def _generic_parent_dialog_level_context_facts(
+    parent_dialog_trees: list[dict[str, Any]],
+    level_basic_info_table: Any,
+    dungeon_table: Any,
+    *,
+    level_config_root: Path | None,
+    level_data_root: Path | None,
+    text_asset_root: Path | None,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """Resolve parent DialogTrees to exact authored level/dungeon files.
+
+    Dialog-root naming discovers candidates only. A context is published only
+    when the longest namespace match is unique, LevelBasicInfo and DungeonTable
+    agree on the exact scene id, and both MemoryPack level files contain that
+    exact length-framed id. An optional AnimeStudio map TextAsset is accepted
+    only when its decoded payload independently names the same level.
+
+    These are asset-shell relationships, not activation, ownership, or order.
+    """
+    if (
+        not isinstance(level_basic_info_table, dict)
+        or not isinstance(dungeon_table, dict)
+        or not isinstance(level_config_root, Path)
+        or not isinstance(level_data_root, Path)
+        or not isinstance(text_asset_root, Path)
+    ):
+        return [], None
+    level_ids = {
+        safe_key(level_id)
+        for level_id, row in level_basic_info_table.items()
+        if safe_key(level_id) and isinstance(row, dict)
+    }
+    parents_by_level: dict[str, list[str]] = defaultdict(list)
+    for parent in parent_dialog_trees:
+        parent_key = safe_key(parent.get("sceneKey"))
+        level_id, exclusion = _dialog_parent_level_candidate(
+            parent_key,
+            level_ids,
+        )
+        if exclusion is not None:
+            return [], {
+                "gate": "uniqueLongestParentDialogLevelNamespace",
+                "parentStoryKey": parent_key,
+                "expected": {"uniqueLongestLevelId": True},
+                "actual": {"status": exclusion},
+            }
+        if level_id:
+            parents_by_level[level_id].append(parent_key)
+
+    contexts: list[dict[str, Any]] = []
+    for level_id, parent_keys in sorted(
+        parents_by_level.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        basic_row = level_basic_info_table.get(level_id)
+        dungeon_rows = [
+            (safe_key(row_id), row)
+            for row_id, row in dungeon_table.items()
+            if isinstance(row, dict)
+            and safe_key(row.get("sceneId")) == level_id
+        ]
+        config_relative = safe_key(
+            basic_row.get("configPath")
+            if isinstance(basic_row, dict)
+            else ""
+        )
+        config_path = level_config_root / Path(config_relative).name
+        level_data_path = (
+            level_data_root / level_id / f"{level_id}_lv_data.json"
+        )
+        try:
+            config_data = config_path.read_bytes()
+            level_data = level_data_path.read_bytes()
+        except OSError:
+            config_data = b""
+            level_data = b""
+        valid = (
+            isinstance(basic_row, dict)
+            and safe_key(basic_row.get("id")) == level_id
+            and config_relative
+            == f"Data/Json/LevelConfig/{level_id}.json"
+            and len(dungeon_rows) == 1
+            and config_data
+            and _memorypack_contains_exact_string(config_data, level_id)
+            and level_data[:1] == b"\x2b"
+            and _memorypack_contains_exact_string(level_data, level_id)
+        )
+        if not valid:
+            return [], {
+                "gate": "exactParentDialogLevelContext",
+                "parentStoryKeys": sorted(parent_keys, key=natural_key),
+                "expected": {
+                    "levelId": level_id,
+                    "levelBasicInfoId": level_id,
+                    "configPath": f"Data/Json/LevelConfig/{level_id}.json",
+                    "uniqueDungeonSceneRow": True,
+                    "levelConfigContainsExactMemoryPackString": True,
+                    "levelDataMemberCount": 43,
+                    "levelDataContainsExactMemoryPackString": True,
+                },
+                "actual": {
+                    "levelBasicInfoRow": basic_row,
+                    "dungeonSceneRowIds": [row_id for row_id, _ in dungeon_rows],
+                    "levelConfigPath": _repo_source_path(config_path),
+                    "levelConfigExists": config_path.is_file(),
+                    "levelConfigContainsExactMemoryPackString": (
+                        _memorypack_contains_exact_string(config_data, level_id)
+                        if config_data else False
+                    ),
+                    "levelDataPath": _repo_source_path(level_data_path),
+                    "levelDataExists": level_data_path.is_file(),
+                    "levelDataMemberCount": (
+                        level_data[0] if level_data else None
+                    ),
+                    "levelDataContainsExactMemoryPackString": (
+                        _memorypack_contains_exact_string(level_data, level_id)
+                        if level_data else False
+                    ),
+                },
+            }
+        dungeon_id, dungeon_row = dungeon_rows[0]
+        map_assets = sorted(text_asset_root.glob(f"{level_id}_p*.json"))
+        map_asset_rows: list[dict[str, Any]] = []
+        for map_asset in map_assets:
+            payload = read_json(map_asset, {})
+            try:
+                decoded = json.loads(base64.b64decode(
+                    payload.get("m_Script", ""),
+                    validate=True,
+                ).decode("utf-8-sig"))
+            except (ValueError, UnicodeDecodeError, binascii.Error):
+                decoded = None
+            if (
+                not isinstance(payload, dict)
+                or safe_key(payload.get("m_Name")) != level_id
+                or safe_key(payload.get("Name")) != level_id
+                or not isinstance(decoded, dict)
+                or safe_key(decoded.get("mapIdStr")) != level_id
+                or level_id not in _string_list(decoded.get("levelStrIds"))
+            ):
+                return [], {
+                    "gate": "exactParentDialogLevelMapTextAsset",
+                    "parentStoryKeys": sorted(parent_keys, key=natural_key),
+                    "expected": {
+                        "levelId": level_id,
+                        "mName": level_id,
+                        "mapIdStr": level_id,
+                        "levelStrIdsContainsLevelId": True,
+                    },
+                    "actual": {
+                        "sourceFile": _repo_source_path(map_asset),
+                        "payloadName": (
+                            payload.get("m_Name")
+                            if isinstance(payload, dict) else None
+                        ),
+                        "decodedMapIdStr": (
+                            decoded.get("mapIdStr")
+                            if isinstance(decoded, dict) else None
+                        ),
+                        "decodedLevelStrIds": (
+                            decoded.get("levelStrIds")
+                            if isinstance(decoded, dict) else None
+                        ),
+                    },
+                }
+            map_asset_rows.append({
+                "sourceFile": _repo_source_path(map_asset),
+                "sourcePathId": (
+                    map_asset.stem.rsplit("_p", 1)[-1]
+                    if "_p" in map_asset.stem else ""
+                ),
+                "sourceSha256": _sha256_file(map_asset),
+                "mapIdStr": level_id,
+                "levelStrIds": _string_list(decoded.get("levelStrIds")),
+                "artScenePaths": _string_list(decoded.get("artScenePaths")),
+            })
+        level_data_files = sorted(
+            (level_data_root / level_id).glob("*.json"),
+            key=lambda path: natural_key(path.name),
+        )
+        source_files = [config_path, *level_data_files]
+        contexts.append({
+            "levelId": level_id,
+            "parentDialogTreeIds": sorted(set(parent_keys), key=natural_key),
+            "dungeonId": dungeon_id,
+            "dungeonDomainId": safe_key(dungeon_row.get("domainId")),
+            "dungeonSortId": dungeon_row.get("sortId"),
+            "levelBasicInfo": {
+                "id": level_id,
+                "configPath": config_relative,
+                "domainName": safe_key(basic_row.get("domainName")),
+            },
+            "sourceFiles": [_repo_source_path(path) for path in source_files],
+            "sourceSha256": {
+                _repo_source_path(path): _sha256_file(path)
+                for path in source_files
+            },
+            "mapTextAssets": map_asset_rows,
+            "relation": "exact_parent_dialog_level_asset_shell",
+            "graphEffect": "none",
+            "orderEvidence": False,
+        })
+    return contexts, None
+
+
+def _dialog_text_partition_fragment_facts(
+    line_ids: list[str],
+    covered_line_ids: list[str],
+    missing_line_ids: list[str],
+) -> list[dict[str, Any]]:
+    """Describe numbered table-only fragments without promoting suffix order."""
+    pattern = re.compile(r"^(?P<namespace>.+)_(?P<number>[0-9]+)$")
+    parsed: dict[str, tuple[str, int]] = {}
+    for line_id in line_ids:
+        match = pattern.fullmatch(safe_key(line_id))
+        if match is None:
+            return []
+        parsed[line_id] = (
+            match.group("namespace"),
+            int(match.group("number")),
+        )
+    covered_set = set(covered_line_ids)
+    rows: list[dict[str, Any]] = []
+    for line_id in missing_line_ids:
+        namespace, number = parsed[line_id]
+        covered_peers = sorted(
+            (
+                (peer_number, peer_id)
+                for peer_id, (peer_namespace, peer_number) in parsed.items()
+                if peer_id in covered_set and peer_namespace == namespace
+            ),
+        )
+        lower = [row for row in covered_peers if row[0] < number]
+        upper = [row for row in covered_peers if row[0] > number]
+        if not covered_peers:
+            position = "separate_numbered_namespace"
+        elif not lower:
+            position = "before_covered_numeric_range"
+        elif not upper:
+            position = "after_covered_numeric_range"
+        else:
+            position = "inside_covered_numeric_range"
+        rows.append({
+            "lineId": line_id,
+            "numberedNamespace": namespace,
+            "numericSuffix": number,
+            "numericPosition": position,
+            "nearestLowerCoveredLineId": lower[-1][1] if lower else "",
+            "nearestUpperCoveredLineId": upper[0][1] if upper else "",
+            "evidenceStatus": "original_row_id_cross_reference_only",
+            "graphEffect": "none",
+            "orderEvidence": False,
+        })
+    return rows
+
+
 def _generic_registered_dialog_tree_trunk_group_facts(
     story_key: str,
     dialog_text_table: Any,
     dialog_id_index: Any,
     definitions_by_root: dict[str, dict[str, Any]],
+    *,
+    level_basic_info_table: Any = None,
+    dungeon_table: Any = None,
+    level_config_root: Path | None = None,
+    level_data_root: Path | None = None,
+    text_asset_root: Path | None = None,
 ) -> tuple[
     dict[str, Any] | None,
     dict[str, Any] | None,
@@ -7774,6 +8079,22 @@ def _generic_registered_dialog_tree_trunk_group_facts(
     if not selected:
         return None, None, "noRegisteredParentTreePartition"
     selected.sort(key=lambda row: natural_key(safe_key(row.get("sceneKey"))))
+    parent_level_contexts, level_context_failure = (
+        _generic_parent_dialog_level_context_facts(
+            selected,
+            level_basic_info_table,
+            dungeon_table,
+            level_config_root=level_config_root,
+            level_data_root=level_data_root,
+            text_asset_root=text_asset_root,
+        )
+    )
+    if level_context_failure is not None:
+        level_context_failure.update({
+            "validator": "genericRegisteredDialogTreeTrunkGroup",
+            "storyKey": story_key,
+        })
+        return None, level_context_failure, None
     facts = {
         "emittedStoryKey": story_key,
         "definitionRootKey": definition_root,
@@ -7788,6 +8109,8 @@ def _generic_registered_dialog_tree_trunk_group_facts(
         "missingLineCount": len(missing),
         "parentDialogTrees": selected,
         "parentDialogTreeCount": len(selected),
+        "parentLevelContexts": parent_level_contexts,
+        "parentLevelContextCount": len(parent_level_contexts),
         "branchingParentDialogTreeCount": sum(
             1 for row in selected
             if int(row.get("branchingOptionGroupCount") or 0) > 0
@@ -7812,6 +8135,11 @@ def _generic_registered_dialog_tree_trunk_group_facts(
             for row in selected
             if safe_key(row.get("sourceFile"))
         },
+        "missingLineFragments": _dialog_text_partition_fragment_facts(
+            target_line_ids,
+            sorted(coverage, key=natural_key),
+            missing,
+        ),
     }
     return facts, None, (
         "incompleteParentTreePartition" if missing else None
@@ -11309,6 +11637,34 @@ def build_offline_exhaustion_index(
             / "export_full"
             / "recovered"
             / "dialog_id_table_index.json"
+        ),
+        "levelBasicInfoTable": (
+            ROOT
+            / "export_full"
+            / "structured"
+            / "StreamingAssets"
+            / "Data"
+            / "Json"
+            / "GameplayConfig"
+            / "LevelBasicInfoTable.json"
+        ),
+        "levelConfigRoot": (
+            ROOT
+            / "export_full"
+            / "structured"
+            / "StreamingAssets"
+            / "Data"
+            / "Json"
+            / "LevelConfig"
+        ),
+        "levelDataRoot": (
+            ROOT
+            / "export_full"
+            / "structured"
+            / "StreamingAssets"
+            / "Data"
+            / "Json"
+            / "LevelData"
         ),
         "timelineLineOrders": (
             ROOT
@@ -15947,6 +16303,11 @@ def build_offline_exhaustion_index(
     registered_trunk_group_validation_failures: list[dict[str, Any]] = []
     registered_trunk_group_exclusions: dict[str, list[str]] = defaultdict(list)
     if native_playback_index is not None and action_story_occurrences is not None:
+        level_basic_info_table = read_json(
+            source_paths["levelBasicInfoTable"],
+            {},
+        )
+        dungeon_table = read_json(table_root / "DungeonTable.json", {})
         definitions_by_root = {
             dialog_key: definition
             for dialog_key in sorted(dialog_id_index, key=natural_key)
@@ -15987,6 +16348,11 @@ def build_offline_exhaustion_index(
                     dialog_text_table,
                     dialog_id_index,
                     definitions_by_root,
+                    level_basic_info_table=level_basic_info_table,
+                    dungeon_table=dungeon_table,
+                    level_config_root=source_paths["levelConfigRoot"],
+                    level_data_root=source_paths["levelDataRoot"],
+                    text_asset_root=cutscene_definition_root,
                 )
             )
             if failure is not None:
@@ -16056,8 +16422,21 @@ def build_offline_exhaustion_index(
                     source_display_path(source_paths["dialogTextTable"]),
                     source_display_path(source_paths["dialogIdSource"]),
                     source_display_path(source_paths["dialogIdIndex"]),
+                    source_display_path(source_paths["levelBasicInfoTable"]),
+                    source_display_path(table_root / "DungeonTable.json"),
                     source_display_path(carrier_audit_path),
                     *facts["definitionSourceFiles"],
+                    *(
+                        source_file
+                        for context in facts.get("parentLevelContexts") or []
+                        for source_file in context.get("sourceFiles") or []
+                    ),
+                    *(
+                        row.get("sourceFile")
+                        for context in facts.get("parentLevelContexts") or []
+                        for row in context.get("mapTextAssets") or []
+                        if safe_key(row.get("sourceFile"))
+                    ),
                 ],
                 "originalBinaryFiles": [
                     source_display_path(source_paths["gameAssembly"]),
@@ -17861,6 +18240,18 @@ def build_offline_exhaustion_index(
                 int(row.get("missingLineCount") or 0)
                 for row in registered_trunk_group_partial_evidence_by_key.values()
             ),
+            "qualifiedParentLevelContexts": sum(
+                int(row.get("parentLevelContextCount") or 0)
+                for row in registered_trunk_group_evidence_by_key.values()
+            ),
+            "partialParentLevelContexts": sum(
+                int(row.get("parentLevelContextCount") or 0)
+                for row in registered_trunk_group_partial_evidence_by_key.values()
+            ),
+            "partialMissingLineFragments": sum(
+                len(row.get("missingLineFragments") or [])
+                for row in registered_trunk_group_partial_evidence_by_key.values()
+            ),
             "validationFailures": (
                 registered_trunk_group_validation_failures
             ),
@@ -17872,6 +18263,12 @@ def build_offline_exhaustion_index(
                 "dialogTextTable": str(source_paths["dialogTextTable"]),
                 "dialogIdSource": str(source_paths["dialogIdSource"]),
                 "dialogIdIndex": str(source_paths["dialogIdIndex"]),
+                "levelBasicInfoTable": str(
+                    source_paths["levelBasicInfoTable"]
+                ),
+                "dungeonTable": str(table_root / "DungeonTable.json"),
+                "levelConfigRoot": str(source_paths["levelConfigRoot"]),
+                "levelDataRoot": str(source_paths["levelDataRoot"]),
                 "textAssetRoot": str(cutscene_definition_root),
                 "gameAssembly": str(source_paths["gameAssembly"]),
                 "globalMetadata": str(source_paths["globalMetadata"]),
