@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import fnmatch
+import hashlib
 import os
 import re
 import sys
@@ -387,6 +388,19 @@ GUIDE_RUNTIME_NON_MISSION_REPORT = (
 )
 EXPORT_FULL_SUMMARY = EXPORT_REPORTS_DIR / "export_full_summary.json"
 GUIDE_RUNTIME_NON_MISSION_SCHEMA = "animestudioStoryGuideConsumerAudit.v1"
+SPACESHIP_STORY_NON_MISSION_REPORT = (
+    STORY_RECOVERY_REPORTS_DIR / "spaceship_story_content_audit.json"
+)
+SPACESHIP_STORY_NON_MISSION_SCHEMA = "spaceshipStoryContentAudit.v1"
+SPACESHIP_STORY_NON_MISSION_MAPPING_ID = (
+    "gameassembly-2026-08-02-spaceship-story-consumers-v1"
+)
+SPACESHIP_STORY_GAMEASSEMBLY_SHA256 = (
+    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+)
+SPACESHIP_STORY_METADATA_SHA256 = (
+    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+)
 STORY_ROOT_PLAYBACK_ALIAS_REPORT = (
     STORY_RECOVERY_REPORTS_DIR
     / "animestudio_story_reverse_pptr_audit.json"
@@ -561,6 +575,141 @@ def guide_runtime_non_mission_content_keys(
     return found
 
 
+def spaceship_story_non_mission_content_keys(
+    report_path: Path = SPACESHIP_STORY_NON_MISSION_REPORT,
+    *,
+    source_root: Path = ROOT,
+) -> dict[str, dict[str, Any]]:
+    """Load source-hash-checked operator-spacecraft Story classifications."""
+    report_path = Path(report_path)
+    report = read_json(report_path, {})
+    native = report.get("nativeEvidence") if isinstance(report, dict) else {}
+    if (
+        not isinstance(report, dict)
+        or report.get("_schema") != SPACESHIP_STORY_NON_MISSION_SCHEMA
+        or not isinstance(native, dict)
+        or native.get("validated") is not True
+        or safe_key(native.get("mappingId"))
+        != SPACESHIP_STORY_NON_MISSION_MAPPING_ID
+        or safe_key(native.get("gameAssemblySha256")).upper()
+        != SPACESHIP_STORY_GAMEASSEMBLY_SHA256
+        or safe_key(native.get("metadataSha256")).upper()
+        != SPACESHIP_STORY_METADATA_SHA256
+    ):
+        return {}
+
+    sources = report.get("sources")
+    if not isinstance(sources, list) or not sources:
+        return {}
+    validated_source_paths: set[str] = set()
+    for source in sources:
+        if not isinstance(source, dict):
+            return {}
+        source_path = safe_key(source.get("path"))
+        expected_hash = safe_key(source.get("sha256")).upper()
+        expected_bytes = source.get("bytes")
+        path = Path(source_root) / Path(source_path)
+        if (
+            not source_path
+            or len(expected_hash) != 64
+            or not isinstance(expected_bytes, int)
+            or not path.is_file()
+            or path.stat().st_size != expected_bytes
+        ):
+            return {}
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        if digest.hexdigest().upper() != expected_hash:
+            return {}
+        validated_source_paths.add(source_path)
+
+    try:
+        evidence_report = report_path.resolve().relative_to(
+            ROOT.resolve()
+        ).as_posix()
+    except ValueError:
+        evidence_report = str(report_path)
+    found: dict[str, dict[str, Any]] = {}
+    for row in report.get("classifications") or []:
+        if not isinstance(row, dict):
+            continue
+        story_key = safe_key(row.get("storyKey"))
+        evidence_kind = safe_key(row.get("evidenceKind"))
+        source_files = [
+            safe_key(value)
+            for value in row.get("sourceFiles") or []
+            if safe_key(value)
+        ]
+        if (
+            not story_key
+            or safe_key(row.get("recoveryStatus"))
+            != "closed_exact_spaceship_runtime_non_mission_content"
+            or evidence_kind not in {
+                "spaceship_dialog_tree",
+                "character_profile_voice",
+            }
+            or not source_files
+            or any(
+                source_file not in validated_source_paths
+                for source_file in source_files
+            )
+            or not row.get("lineIds")
+            or safe_key(row.get("nativeMappingId"))
+            != SPACESHIP_STORY_NON_MISSION_MAPPING_ID
+            or (
+                evidence_kind == "spaceship_dialog_tree"
+                and (
+                    not row.get("dialogTreeRoots")
+                    or not row.get("consumerClasses")
+                )
+            )
+            or (
+                evidence_kind == "character_profile_voice"
+                and (
+                    not row.get("characterIds")
+                    or not row.get("profileVoiceIds")
+                )
+            )
+        ):
+            continue
+        found[story_key] = {
+            "evidenceKind": evidence_kind,
+            "content": safe_key(row.get("contentClass")),
+            "lineIds": [
+                safe_key(value)
+                for value in row.get("lineIds") or []
+                if safe_key(value)
+            ],
+            "dialogTreeRoots": [
+                safe_key(value)
+                for value in row.get("dialogTreeRoots") or []
+                if safe_key(value)
+            ],
+            "consumerClasses": [
+                safe_key(value)
+                for value in row.get("consumerClasses") or []
+                if safe_key(value)
+            ],
+            "characterIds": [
+                safe_key(value)
+                for value in row.get("characterIds") or []
+                if safe_key(value)
+            ],
+            "profileVoiceIds": [
+                safe_key(value)
+                for value in row.get("profileVoiceIds") or []
+                if safe_key(value)
+            ],
+            "sourceFiles": source_files,
+            "nativeMappingId": safe_key(row.get("nativeMappingId")),
+            "orderBoundary": safe_key(row.get("orderBoundary")),
+            "evidenceReport": evidence_report,
+        }
+    return found
+
+
 def story_root_playback_aliases(
     report_path: Path = STORY_ROOT_PLAYBACK_ALIAS_REPORT,
     *,
@@ -722,7 +871,7 @@ def combined_non_mission_content_keys(
     export_summary_path: Path = EXPORT_FULL_SUMMARY,
     output_root: Path = EXPORT_ROOT,
 ) -> dict[str, dict[str, Any]]:
-    """Merge table-defined and exact guide-runtime non-mission content."""
+    """Merge table-defined and exact runtime non-mission content."""
     found: dict[str, dict[str, Any]] = {
         key: {"evidenceKind": "authored_table", **row}
         for key, row in non_mission_content_keys(table_root).items()
@@ -732,6 +881,8 @@ def combined_non_mission_content_keys(
         export_summary_path=export_summary_path,
         output_root=output_root,
     ).items():
+        found.setdefault(key, row)
+    for key, row in spaceship_story_non_mission_content_keys().items():
         found.setdefault(key, row)
     return found
 

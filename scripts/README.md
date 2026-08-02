@@ -68,6 +68,9 @@ Important Story components:
 - `timeline_action_evidence.py`: typed action/control evidence.
 - `mission_recovery.py`: mission and quest relationships.
 - `build_source_story_gap_queue.py`: actionable source-only recovery queue.
+- `build_spaceship_story_content_audit.py`: exact typed spacecraft DialogTree
+  and character profile-voice non-mission classification, refreshed by
+  `refresh_evidence.py`.
 
 ## Updates
 

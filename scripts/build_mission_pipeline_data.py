@@ -199,7 +199,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v114"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v115"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -256,6 +256,11 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # objective, repeatable-talk, and failed-dialog MissionRuntime observers.
 SCHEMA_VERSION = 26
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
+PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
+    "guide_runtime_asset",
+    "spaceship_dialog_tree",
+    "character_profile_voice",
+}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
 )
@@ -5155,15 +5160,16 @@ def build_story_binding_coverage(
 
     # Exact authored non-mission content. Table-only continuation/topic rows
     # remain outside the pipeline denominator as before. A freshness-checked
-    # guide-runtime consumer is admitted explicitly so its Story trigger card
-    # can be classified even though its nominal blackbox bucket is not a
-    # MissionRuntime mission.
+    # exact runtime consumers are admitted explicitly so their Story trigger
+    # cards can be classified even though their nominal buckets are not
+    # MissionRuntime missions.
     non_mission_content = combined_non_mission_content_keys(
         DEFAULT_TABLE_ROOT
     )
     for key, evidence in non_mission_content.items():
         if (
-            evidence.get("evidenceKind") == "guide_runtime_asset"
+            evidence.get("evidenceKind")
+            in PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS
             and key in all_story_rows
             and key not in story_rows
         ):
