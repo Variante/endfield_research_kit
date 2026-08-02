@@ -13,6 +13,8 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
+import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -2992,6 +2994,15 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--refresh-source-story-gap-queue",
+        action="store_true",
+        help=(
+            "rebuild and validate the source-story gap queue after current "
+            "partial-order and Story coverage reports are published, before "
+            "projecting recovery evidence into Mission Pipeline"
+        ),
+    )
+    parser.add_argument(
         "--runtime-trace-bundle",
         type=Path,
         help=(
@@ -3011,6 +3022,136 @@ def write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     path.write_text(encoded + "\n", encoding="utf-8", newline="\n")
+
+
+def refresh_source_story_gap_queue(
+    language: str,
+    queue_path: Path,
+) -> dict[str, Any]:
+    """Refresh the canonical queue only after all of its generated inputs exist."""
+    queue_path = queue_path.resolve()
+    expected_path = (
+        queue_path.parent / f"source_story_gap_queue_{language}.json"
+    ).resolve()
+    if queue_path != expected_path:
+        raise ValueError(
+            "source Story gap refresh requires the canonical language filename: "
+            f"expected={expected_path} actual={queue_path}"
+        )
+    command = [
+        sys.executable,
+        str(
+            ROOT
+            / "scripts"
+            / "story_recovery"
+            / "build_source_story_gap_queue.py"
+        ),
+        "--language",
+        language,
+        "--reports-dir",
+        str(queue_path.parent),
+    ]
+    result = subprocess.run(command, cwd=ROOT, check=False)
+    if result.returncode:
+        raise RuntimeError(
+            "source Story gap refresh failed: "
+            f"returncode={result.returncode} queue={repo_path(queue_path)}"
+        )
+    if not queue_path.is_file():
+        raise RuntimeError(
+            "source Story gap refresh produced no queue: "
+            f"queue={repo_path(queue_path)}"
+        )
+    report = read_json(queue_path)
+    failures: list[dict[str, Any]] = []
+    if report.get("_schema") != SOURCE_STORY_GAP_QUEUE_SCHEMA:
+        failures.append({
+            "gate": "schema",
+            "expected": SOURCE_STORY_GAP_QUEUE_SCHEMA,
+            "actual": report.get("_schema"),
+        })
+    if str(report.get("language") or "").upper() != language.upper():
+        failures.append({
+            "gate": "language",
+            "expected": language.upper(),
+            "actual": report.get("language"),
+        })
+    validator_statuses: list[tuple[str, dict[str, Any]]] = []
+    pending_statuses: list[tuple[str, Any]] = [("report", report)]
+    while pending_statuses:
+        validator, status = pending_statuses.pop()
+        if not isinstance(status, dict):
+            continue
+        if any(
+            key in status
+            for key in (
+                "status",
+                "validationFailures",
+                "validationFailureDetails",
+                "sourceHashMismatches",
+            )
+        ):
+            validator_statuses.append((validator, status))
+        pending_statuses.extend(
+            (f"{validator}.{key}", value)
+            for key, value in status.items()
+            if isinstance(value, dict)
+        )
+    for validator, status in validator_statuses:
+        validation_failures = [
+            *(
+                status.get("validationFailures")
+                if isinstance(status.get("validationFailures"), list)
+                else []
+            ),
+            *(
+                status.get("validationFailureDetails")
+                if isinstance(status.get("validationFailureDetails"), list)
+                else []
+            ),
+        ]
+        hash_mismatches = (
+            status.get("sourceHashMismatches")
+            if isinstance(status.get("sourceHashMismatches"), list)
+            else []
+        )
+        state = str(status.get("status") or "")
+        if (
+            validation_failures
+            or hash_mismatches
+            or "fail" in state
+            or "mismatch" in state
+        ):
+            failures.append({
+                "gate": "validator",
+                "validator": validator,
+                "status": state,
+                "validationFailureCount": len(validation_failures),
+                "sourceHashMismatchCount": len(hash_mismatches),
+                "firstFailure": (
+                    validation_failures[0]
+                    if validation_failures
+                    else None
+                ),
+                "firstSourceHashMismatch": (
+                    hash_mismatches[0] if hash_mismatches else None
+                ),
+            })
+    if failures:
+        first = failures[0]
+        raise RuntimeError(
+            "source Story gap validation failed: "
+            f"gate={first.get('gate')} "
+            f"validator={first.get('validator') or '-'} "
+            f"expected={first.get('expected')} "
+            f"actual={first.get('actual')} "
+            f"queue={repo_path(queue_path)}"
+        )
+    print(
+        "Source Story gap queue refreshed and validated: "
+        f"{repo_path(queue_path)}"
+    )
+    return report
 
 
 def repo_path(path: Path) -> str:
@@ -7972,24 +8113,26 @@ def main() -> int:
     )
     node_attachment = None
     if coverage:
+        source_story_gap_queue = getattr(
+            args,
+            "source_story_gap_queue",
+            DEFAULT_SOURCE_STORY_GAP_QUEUE,
+        ).resolve()
+        if getattr(args, "refresh_source_story_gap_queue", False):
+            refresh_source_story_gap_queue(
+                args.story_language,
+                source_story_gap_queue,
+            )
         offline_recovery = publish_offline_story_recovery(
             coverage["storyTriggerManifest"],
-            getattr(
-                args,
-                "source_story_gap_queue",
-                DEFAULT_SOURCE_STORY_GAP_QUEUE,
-            ).resolve(),
+            source_story_gap_queue,
         )
         offline_recovery["missionShells"] = (
             publish_offline_recovery_mission_shells(
                 index,
                 output_root,
                 offline_recovery,
-                getattr(
-                    args,
-                    "source_story_gap_queue",
-                    DEFAULT_SOURCE_STORY_GAP_QUEUE,
-                ).resolve(),
+                source_story_gap_queue,
             ) if output_root == DEFAULT_OUTPUT_ROOT.resolve() else []
         )
         report_stem = f"mission_pipeline_story_binding_coverage_{coverage['language']}"

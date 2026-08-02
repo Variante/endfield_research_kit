@@ -1,5 +1,6 @@
 import hashlib
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -20,6 +21,72 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
             "sourceStoryGapQueue.v116",
         )
+
+    def test_gap_queue_refresh_validates_current_generated_contract(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            queue_path = Path(temporary) / "source_story_gap_queue_CN.json"
+            queue_path.write_text(
+                json.dumps({
+                    "_schema": pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
+                    "language": "CN",
+                    "offlineExhaustionEvidence": {
+                        "status": "active",
+                        "validationFailures": [],
+                        "sourceHashMismatches": [],
+                    },
+                    "crossOwnerValidation": {
+                        "status": "validated",
+                        "validationFailures": [],
+                    },
+                }),
+                encoding="utf-8",
+            )
+            with patch.object(
+                pipeline.subprocess,
+                "run",
+                return_value=subprocess.CompletedProcess([], 0),
+            ) as run:
+                report = pipeline.refresh_source_story_gap_queue(
+                    "CN",
+                    queue_path,
+                )
+
+        self.assertEqual(
+            report["_schema"],
+            pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
+        )
+        self.assertIn("--language", run.call_args.args[0])
+
+    def test_gap_queue_refresh_fails_with_bounded_validator_diagnostic(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            queue_path = Path(temporary) / "source_story_gap_queue_CN.json"
+            queue_path.write_text(
+                json.dumps({
+                    "_schema": pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
+                    "language": "CN",
+                    "crossOwnerValidation": {
+                        "status": "validation_failed",
+                        "validationFailures": [{
+                            "gate": "fixtureGate",
+                            "storyKey": "opaque_story",
+                        }],
+                    },
+                }),
+                encoding="utf-8",
+            )
+            with patch.object(
+                pipeline.subprocess,
+                "run",
+                return_value=subprocess.CompletedProcess([], 0),
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "validator=report.crossOwnerValidation",
+                ):
+                    pipeline.refresh_source_story_gap_queue(
+                        "CN",
+                        queue_path,
+                    )
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:

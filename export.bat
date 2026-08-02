@@ -217,7 +217,7 @@ if errorlevel 1 exit /b %errorlevel%
 python .\scripts\build_character_data.py --languages CN --default-language CN
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\build_mission_pipeline_data.py
+python .\scripts\build_mission_pipeline_data.py --refresh-source-story-gap-queue
 if errorlevel 1 exit /b %errorlevel%
 if "%MISSION_PIPELINE_ONLY%"=="1" (
   echo [export.bat] Mission Pipeline refresh complete; skipped unrelated semantic views and source graph.

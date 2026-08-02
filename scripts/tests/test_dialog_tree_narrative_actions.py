@@ -83,6 +83,52 @@ class DialogTreeNarrativeActionTests(unittest.TestCase):
         self.assertIsNone(
             extract_dialog_tree_definition_evidence(payload, "dlg_fixture_1")
         )
+
+    def test_extracts_exact_directed_trunk_line_graph(self) -> None:
+        payload = {
+            "_assetName": "opaque_parent",
+            "type": "Beyond.Gameplay.DialogTree",
+            "nodes": [{
+                "$id": "a",
+                "$type": "Beyond.Gameplay.DialogTreeTrunkNode",
+                "_actorNodeData": {
+                    "mfTrunkActionData": {"_trunkId": "opaque_line_a"},
+                },
+            }, {
+                "$id": "b",
+                "$type": "Beyond.Gameplay.DialogTreeTrunkNode",
+                "_actorNodeData": {
+                    "mfTrunkActionData": {"_trunkId": "opaque_line_b"},
+                },
+            }, {
+                "$id": "finish",
+                "$type": "Beyond.Gameplay.DialogTreeFinishNode",
+            }],
+            "connections": [{
+                "$type": "Beyond.Gameplay.DialogTreeConnection",
+                "_sourceNode": {"$ref": "a"},
+                "_targetNode": {"$ref": "b"},
+            }, {
+                "$type": "Beyond.Gameplay.DialogTreeConnection",
+                "_sourceNode": {"$ref": "b"},
+                "_targetNode": {"$ref": "finish"},
+            }],
+        }
+
+        evidence = extract_dialog_tree_definition_evidence(
+            payload,
+            "opaque_parent",
+        )
+
+        self.assertEqual(evidence["entryLineIds"], ["opaque_line_a"])
+        self.assertEqual(evidence["terminalLineIds"], ["opaque_line_b"])
+        self.assertEqual(evidence["lineConnections"], [{
+            "fromLineId": "opaque_line_a",
+            "toLineId": "opaque_line_b",
+            "sourceNodeId": "a",
+            "targetNodeId": "b",
+        }])
+        self.assertEqual(evidence["nonLineConnectionCount"], 1)
         payload["_assetName"] = "dlg_fixture_1"
         payload["type"] = "Beyond.Gameplay.OtherAsset"
         self.assertIsNone(
