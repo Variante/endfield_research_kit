@@ -516,6 +516,10 @@
       offlineRecoveryDialogTreeAbsent: "DialogTree asset absent",
       offlineRecoveryDialogTreeExact: "exact DialogTree asset",
       offlineRecoveryDialogTreeBranches: "Internal DialogTree branches",
+      offlineRecoveryParentDialogTrees: "Registered parent DialogTrees",
+      offlineRecoveryParentTreeBranches: "internal branch groups",
+      offlineRecoveryInternalLineConnections: "Exact internal line connections",
+      offlineRecoveryEvidenceParentTreePartition: "Exact registered parent-tree line partition",
       offlineRecoveryAuthoredSplit: "authored split",
       offlineRecoveryAuthoredConvergence: "authored convergence",
       offlineRecoveryTerminalOptions: "Terminal option routes",
@@ -1056,6 +1060,10 @@
       offlineRecoveryDialogTreeAbsent: "\u7f3a\u5c11 DialogTree \u8d44\u4ea7",
       offlineRecoveryDialogTreeExact: "\u7cbe\u786e DialogTree \u8d44\u4ea7",
       offlineRecoveryDialogTreeBranches: "DialogTree \u5185\u90e8\u5206\u652f",
+      offlineRecoveryParentDialogTrees: "\u5df2\u6ce8\u518c\u7684\u7236 DialogTree",
+      offlineRecoveryParentTreeBranches: "\u5185\u90e8\u5206\u652f\u7ec4",
+      offlineRecoveryInternalLineConnections: "\u7cbe\u786e\u5185\u90e8\u53f0\u8bcd\u8fde\u63a5",
+      offlineRecoveryEvidenceParentTreePartition: "\u7cbe\u786e\u7684\u5df2\u6ce8\u518c\u7236\u6811\u53f0\u8bcd\u5206\u533a",
       offlineRecoveryAuthoredSplit: "\u539f\u751f\u5206\u6d41",
       offlineRecoveryAuthoredConvergence: "\u539f\u751f\u5408\u6d41",
       offlineRecoveryTerminalOptions: "\u7ec8\u6b62\u9009\u9879\u8def\u7531",
@@ -3176,6 +3184,17 @@
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
         : "";
+      const parentDialogTrees = Array.isArray(row.parentDialogTrees)
+        ? row.parentDialogTrees
+        : [];
+      const parentDialogTreeContext = parentDialogTrees.length
+        ? `<details${row.emittedGroupKind === "direct_numbered_dialog_scene" ? " open" : ""}><summary><strong>${esc(t("offlineRecoveryParentDialogTrees"))}</strong> ${parentDialogTrees.length.toLocaleString()} · ${Number(row.branchingParentDialogTreeCount || 0).toLocaleString()} ${esc(t("offlineRecoveryParentTreeBranches"))}</summary>${parentDialogTrees.map((tree) => {
+          const connections = (tree.lineConnections || []).map((edge) => (
+            `<code>${esc(edge.fromLineId || "?")} &rarr; ${esc(edge.toLineId || "?")}</code>`
+          )).join(" ");
+          return `<p><code>${esc(tree.sceneKey || tree.assetName || "?")}</code><span>${Number((tree.lineIds || []).length).toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span><span>${Number(tree.branchingOptionGroupCount || 0).toLocaleString()} ${esc(t("offlineRecoveryParentTreeBranches"))}</span></p>${connections ? `<small><strong>${esc(t("offlineRecoveryInternalLineConnections"))}:</strong> ${connections}</small>` : ""}`;
+        }).join("")}</details>`
+        : "";
       const evidenceBoundary = [
         row.activationBoundary
           ? `<small><strong>${esc(t("runtimeRecoveryActivation"))}:</strong> ${esc(row.activationBoundary)}</small>`
@@ -3237,8 +3256,9 @@
         dialog_text_table_only_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),
+        registered_dialog_tree_trunk_group_exact_line_partition: t("offlineRecoveryEvidenceParentTreePartition"),
       })[row.evidenceKind] || runtimeRecoveryEvidenceLabel(row);
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${parentDialogTreeContext}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
