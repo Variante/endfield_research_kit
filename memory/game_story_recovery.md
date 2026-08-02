@@ -9,14 +9,14 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 560 (490 MissionRuntime + 70 Story-only recovery shells) |
+| Pipeline missions | 584 (490 MissionRuntime + 94 Story-only recovery shells) |
 | Unique Story files | 5,562 |
 | Connected files | 4,239 (76.2%) |
 | Files with a normalized trigger/context route | 4,462 (80.2%) |
 | Unlinked files | 1,323 |
 | Unlinked files with exact native playback | 156 |
 | Exact non-mission content | 279 (278 spacecraft/profile + 1 guide runtime) |
-| Actionable core-isolated files | 72, all in the other bucket |
+| Actionable core-isolated files | 44, all in the other bucket |
 | Partial-order mission rows | 487 |
 | Candidate scene placements | 8,877 |
 | Strong / supported / weak edges | 1,502 / 834 / 2,635 |
@@ -46,7 +46,26 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch generalizes two cross-owner context patterns without
+The latest recovery batch generalizes registered DialogTree trunk-group
+recovery without factory- or object-specific mappings. A mechanical
+`misc_timeline_*` aggregate closes only when its complete current
+`DialogTextTable` namespace is an exact one-parent-per-line partition across
+registered, hash-validated `Beyond.Gameplay.DialogTree` assets. Original
+serialized connections retain exact internal line order and branch counts;
+current `GameAssembly.dll` consumers prove typed trunk playback, but neither
+activation nor order between separate parent roots is inferred. When two exact
+registered carriers duplicate the same lines, the authored
+`timeline_<family>` to `dlg_<family>` namespace convention is used only as a
+tie-breaker; it cannot fill missing rows. This classifies 28 aggregates through
+47 parent trees and 136 lines with zero validator failures, lowering the queue
+from 72 to 44. `misc_timeline_blackbox_miner` and `_pipe` remain open because
+authored rows lack serialized registered owners. Mission Pipeline exposes the
+parent files, hashes, and directed edges. Canonical mission-pipeline builds now
+refresh and validate `sourceStoryGapQueue.v116` after current Story coverage
+and partial order are published; data-only builds deliberately reuse it. OCR
+and manual order remain comparison-only.
+
+The preceding recovery batch generalizes two cross-owner context patterns without
 reassigning Story ownership. A typed quest-state `PlayRadio` path may retain its
 foreign mission, quest, LevelScript, and original GameAssembly action mapping
 when every current-build occurrence agrees; this closes
@@ -887,7 +906,7 @@ only.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
    typed attachments or bounded graph-neutral diagnostics. Main, event, major,
    and character missions have no actionable core-isolated files. Other
-   missions retain 72 actionable files and 17 missing mission bundles. Broad co-memberships
+   missions retain 44 actionable files and 17 missing mission bundles. Broad co-memberships
    remain non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
@@ -902,16 +921,15 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should rank the 72 other actionable source-link gaps by reusable
-typed producer/consumer family. The current highest-ranked rows are the
-`blackbox_ mix` and `webui_secret` missing-bundle shells, followed by five
-two-file groups (`gift`, `sm1l5m3`, `blackbox_mix`,
-`blackbox_transmuter_2`, and `blackbox_vaporizer`). Extend the same pattern-based approach
-to other definition families only when their typed schemas and complete
-consumer surfaces can be bounded without weakening the fail-closed rules.
-Fix the canonical build order so a Story-sidecar change refreshes the gap queue
-after publication; until then, a coherent recovery batch requires one direct
-gap-queue refresh before the Mission Pipeline data-only publish.
+Next work should rank the 44 other actionable source-link gaps by reusable
+typed producer/consumer family. The highest-ranked row is
+`black_webui_secret_notice`, followed by two-file groups `gift`, `sm1l5m3`,
+`blackbox_transmuter_2`, and `blackbox_vaporizer`. The incomplete
+`misc_timeline_blackbox_miner` and `_pipe` aggregates should reopen only when a
+serialized owner appears for their currently missing authored rows. Extend the
+same pattern-based approach to other definition families only when their typed
+schemas and complete consumer surfaces can be bounded without weakening the
+fail-closed rules.
 Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed

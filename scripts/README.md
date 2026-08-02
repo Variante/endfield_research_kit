@@ -31,6 +31,9 @@ override those defaults for one run.
 - Use `--full-source-graph` only for exhaustive Unity-object/PathID work.
 - Use `--mission-pipeline-data-only` only when generated Story evidence is
   already current.
+- Canonical `export.bat` runs refresh and validate the source Story gap queue
+  after current partial-order and coverage reports are published, before
+  Mission Pipeline recovery cards are projected. Data-only runs reuse it.
 - Reuse Timeline/reference outputs only when their original inputs did not
   change.
 - The direct Story builder can take several minutes; allow 10–15 minutes for

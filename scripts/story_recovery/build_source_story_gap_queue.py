@@ -193,6 +193,31 @@ UNIQUE_MISSION_TRACKED_PROXY_CONTEXTS = {
 DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
+DIALOG_TREE_TRUNK_GROUP_MAPPING_ID = (
+    "gameassembly-2026-07-11-dialog-tree-trunk-playback-v1"
+)
+DIALOG_TREE_TRUNK_NATIVE_CONSUMERS = (
+    {
+        "method": "DTTrunkNodeData.get_trunkId",
+        "token": "0x06003977",
+        "address": "0x187292f78",
+    },
+    {
+        "method": "DialogTreeTrunkNode.DoExecute",
+        "token": "0x06003bb4",
+        "address": "0x1872a74b4",
+    },
+    {
+        "method": "DialogTreeTrunkNode._DoPlayTrunk",
+        "token": "0x06003bb6",
+        "address": "0x1872a80b8",
+    },
+    {
+        "method": "DialogManager.PlayTrunkNode",
+        "token": "0x0600f785",
+        "address": "0x186e16cc8",
+    },
+)
 OFFLINE_EXHAUSTION_MAPPING_ID = (
     "current-build-offline-story-carrier-exhaustion-v92"
 )
@@ -7573,6 +7598,16 @@ def _generic_registered_dialog_tree_definition_facts(
         and isinstance(definition.get("nodeTypeCounts"), dict)
         and sum(definition["nodeTypeCounts"].values()) == definition["nodeCount"]
         and isinstance(definition.get("lineIds"), list)
+        and isinstance(definition.get("lineConnections"), list)
+        and isinstance(definition.get("entryLineIds"), list)
+        and isinstance(definition.get("terminalLineIds"), list)
+        and isinstance(definition.get("nonLineConnectionCount"), int)
+        and definition["nonLineConnectionCount"] >= 0
+        and (
+            len(definition["lineConnections"])
+            + definition["nonLineConnectionCount"]
+            == definition["connectionCount"]
+        )
         and isinstance(definition.get("optionIds"), list)
         and bool(safe_key(definition.get("sourcePathId")))
         and source_valid
@@ -7606,6 +7641,10 @@ def _generic_registered_dialog_tree_definition_facts(
             "assetName",
             "assetType",
             "lineIds",
+            "lineConnections",
+            "entryLineIds",
+            "terminalLineIds",
+            "nonLineConnectionCount",
             "optionIds",
             "nodeCount",
             "nodeTypeCounts",
@@ -7618,6 +7657,174 @@ def _generic_registered_dialog_tree_definition_facts(
             "sourceType",
         )
     }, None
+
+
+def _generic_registered_dialog_tree_trunk_group_facts(
+    story_key: str,
+    dialog_text_table: Any,
+    dialog_id_index: Any,
+    definitions_by_root: dict[str, dict[str, Any]],
+) -> tuple[
+    dict[str, Any] | None,
+    dict[str, Any] | None,
+    str | None,
+]:
+    """Resolve one emitted non-root line group to exact registered trees.
+
+    The emitted ``misc_*`` key is candidate discovery only. Qualification is
+    an exact set partition: every current DialogText row in the mechanical
+    authored namespace must occur in exactly one registered, hash-validated
+    DialogTree definition, and each selected tree may contain no line outside
+    that set. The tree edges prove only internal parent-dialog order.
+    """
+    if not story_key.startswith("misc_"):
+        return None, None, "notMechanicalMiscGroup"
+    definition_root = story_key.removeprefix("misc_")
+    if not definition_root or not isinstance(dialog_text_table, dict):
+        return None, None, "missingDialogTextTable"
+    if isinstance(dialog_id_index, dict) and definition_root in dialog_id_index:
+        return None, None, "groupIsRegisteredDialogRoot"
+    target_line_ids = sorted(
+        (
+            line_id
+            for line_id in dialog_text_table
+            if safe_key(line_id).startswith(f"{definition_root}_")
+        ),
+        key=natural_key,
+    )
+    if not target_line_ids:
+        return None, None, "noExactDialogTextRows"
+    malformed_rows = {
+        line_id: dialog_text_table.get(line_id)
+        for line_id in target_line_ids
+        if not isinstance(dialog_text_table.get(line_id), dict)
+    }
+    if malformed_rows:
+        return None, {
+            "validator": "genericRegisteredDialogTreeTrunkGroup",
+            "gate": "exactDialogTextRows",
+            "storyKey": story_key,
+            "expected": {"rowType": "object"},
+            "actual": malformed_rows,
+        }, None
+    target_set = set(target_line_ids)
+    selected: list[dict[str, Any]] = []
+    selected_parent_keys: list[str] = []
+    coverage: dict[str, list[str]] = defaultdict(list)
+    for parent_key, definition in definitions_by_root.items():
+        parent_line_ids = _string_list(definition.get("lineIds"))
+        parent_set = set(parent_line_ids)
+        if not parent_set or not parent_set <= target_set:
+            continue
+        dialog_id_row = (
+            dialog_id_index.get(parent_key)
+            if isinstance(dialog_id_index, dict)
+            else None
+        )
+        facts, failure = _generic_registered_dialog_tree_definition_facts(
+            parent_key,
+            dialog_id_row,
+            definition,
+        )
+        if failure is not None:
+            failure.update({
+                "validator": "genericRegisteredDialogTreeTrunkGroup",
+                "gate": "exactRegisteredParentDialogTree",
+                "storyKey": story_key,
+                "parentStoryKey": parent_key,
+            })
+            return None, failure, None
+        for line_id in parent_line_ids:
+            coverage[line_id].append(parent_key)
+        selected.append(facts or {})
+        selected_parent_keys.append(parent_key)
+    missing = [line_id for line_id in target_line_ids if not coverage[line_id]]
+    duplicated = {
+        line_id: parents
+        for line_id, parents in coverage.items()
+        if len(parents) != 1
+    }
+    selection_method = "exact_registered_line_partition"
+    if duplicated:
+        # Authored trunk IDs and their owning DialogTree roots use a stable
+        # namespace convention: ``timeline_<family>`` -> ``dlg_<family>``.
+        # Use it only as a tie-breaker between already hash-validated exact
+        # content matches. It cannot fill an absent row or relax containment.
+        dialog_namespace = (
+            f"dlg_{definition_root.removeprefix('timeline_')}"
+            if definition_root.startswith("timeline_")
+            else f"dlg_{definition_root}"
+        )
+        namespace_parent_keys = {
+            parent_key
+            for parent_key in selected_parent_keys
+            if parent_key == dialog_namespace
+            or parent_key.startswith(f"{dialog_namespace}_")
+        }
+        namespace_selected = [
+            row for parent_key, row in zip(selected_parent_keys, selected)
+            if parent_key in namespace_parent_keys
+        ]
+        namespace_coverage: dict[str, list[str]] = defaultdict(list)
+        for parent_key in namespace_parent_keys:
+            for line_id in _string_list(
+                definitions_by_root[parent_key].get("lineIds")
+            ):
+                namespace_coverage[line_id].append(parent_key)
+        namespace_missing = [
+            line_id for line_id in target_line_ids
+            if not namespace_coverage[line_id]
+        ]
+        namespace_duplicated = {
+            line_id: parents
+            for line_id, parents in namespace_coverage.items()
+            if len(parents) != 1
+        }
+        if (
+            namespace_selected
+            and not namespace_missing
+            and not namespace_duplicated
+        ):
+            selected = namespace_selected
+            coverage = namespace_coverage
+            missing = []
+            duplicated = {}
+            selection_method = "exact_registered_line_partition_namespace_tiebreak"
+    if missing or duplicated or not selected:
+        return None, None, "incompleteOrAmbiguousParentTreePartition"
+    selected.sort(key=lambda row: natural_key(safe_key(row.get("sceneKey"))))
+    return {
+        "emittedStoryKey": story_key,
+        "definitionRootKey": definition_root,
+        "lineIds": target_line_ids,
+        "lineCount": len(target_line_ids),
+        "parentDialogTrees": selected,
+        "parentDialogTreeCount": len(selected),
+        "branchingParentDialogTreeCount": sum(
+            1 for row in selected
+            if int(row.get("branchingOptionGroupCount") or 0) > 0
+        ),
+        "parentSelectionMethod": selection_method,
+        "exactLinePartition": {
+            line_id: parents[0]
+            for line_id, parents in sorted(
+                coverage.items(),
+                key=lambda item: natural_key(item[0]),
+            )
+        },
+        "definitionSourceFiles": sorted({
+            safe_key(row.get("sourceFile"))
+            for row in selected
+            if safe_key(row.get("sourceFile"))
+        }),
+        "sourceSha256": {
+            safe_key(row.get("sourceFile")): safe_key(
+                row.get("sourceSha256")
+            )
+            for row in selected
+            if safe_key(row.get("sourceFile"))
+        },
+    }, None, None
 
 
 def _generic_registered_table_dialog_definition_facts(
@@ -15742,6 +15949,147 @@ def build_offline_exhaustion_index(
                 "graphEffect": "none",
             }
 
+    registered_trunk_group_evidence_by_key: dict[str, dict[str, Any]] = {}
+    registered_trunk_group_validation_failures: list[dict[str, Any]] = []
+    registered_trunk_group_exclusions: dict[str, list[str]] = defaultdict(list)
+    if native_playback_index is not None and action_story_occurrences is not None:
+        definitions_by_root = {
+            dialog_key: definition
+            for dialog_key in sorted(dialog_id_index, key=natural_key)
+            if isinstance(
+                definition := recover_dialog_tree_definition_evidence(
+                    dialog_key
+                ),
+                dict,
+            )
+        } if isinstance(dialog_id_index, dict) else {}
+        for story_key, missions in sorted(
+            core_targets.items(),
+            key=lambda item: natural_key(item[0]),
+        ):
+            if len(missions) != 1:
+                registered_trunk_group_exclusions[
+                    "ambiguousMission"
+                ].append(story_key)
+                continue
+            if native_playback_index.get(story_key):
+                registered_trunk_group_exclusions[
+                    "nativePlayback"
+                ].append(story_key)
+                continue
+            if action_story_occurrences.get(story_key):
+                registered_trunk_group_exclusions[
+                    "typedLevelScriptAction"
+                ].append(story_key)
+                continue
+            if story_key not in no_candidate_keys:
+                registered_trunk_group_exclusions[
+                    "strongerTypedObjectCarrier"
+                ].append(story_key)
+                continue
+            facts, failure, exclusion = (
+                _generic_registered_dialog_tree_trunk_group_facts(
+                    story_key,
+                    dialog_text_table,
+                    dialog_id_index,
+                    definitions_by_root,
+                )
+            )
+            if failure is not None:
+                failure["sourcePaths"] = [
+                    source_display_path(source_paths["dialogTextTable"]),
+                    source_display_path(source_paths["dialogIdSource"]),
+                    source_display_path(source_paths["dialogIdIndex"]),
+                    *(
+                        facts.get("definitionSourceFiles")
+                        if isinstance(facts, dict)
+                        else []
+                    ),
+                ]
+                failure["sourceSha256"] = {
+                    "dialogTextTable": actual_hashes.get(
+                        "dialogTextTable", ""
+                    ),
+                    "dialogIdSource": actual_hashes.get(
+                        "dialogIdSource", ""
+                    ),
+                    "dialogIdIndex": actual_hashes.get(
+                        "dialogIdIndex", ""
+                    ),
+                }
+                registered_trunk_group_validation_failures.append(failure)
+                registered_trunk_group_exclusions[
+                    "validationFailure"
+                ].append(story_key)
+                continue
+            if facts is None:
+                registered_trunk_group_exclusions[
+                    exclusion or "notQualified"
+                ].append(story_key)
+                continue
+            mission_id = next(iter(missions))
+            registered_trunk_group_evidence_by_key[story_key] = {
+                "sceneKey": story_key,
+                "missionId": mission_id,
+                "recoveryStatus":
+                    "deferred_current_build_offline_surface_exhausted",
+                "evidenceKind": (
+                    "registered_dialog_tree_trunk_group_exact_line_partition"
+                ),
+                "carrierStatus": (
+                    "exact_registered_dialog_tree_trunk_group_without_"
+                    "activation_or_cross_parent_order"
+                ),
+                **facts,
+                "definitionTables": ["DialogTextTable"],
+                "runtimeRegistry": "Beyond.Gameplay.DialogIdTable",
+                "runtimeRegistrationStatus": (
+                    "every_parent_is_current_memorypack_record"
+                ),
+                "sourceFiles": [
+                    source_display_path(source_paths["dialogTextTable"]),
+                    source_display_path(source_paths["dialogIdSource"]),
+                    source_display_path(source_paths["dialogIdIndex"]),
+                    *facts["definitionSourceFiles"],
+                ],
+                "originalBinaryFiles": [
+                    source_display_path(source_paths["gameAssembly"]),
+                    source_display_path(source_paths["globalMetadata"]),
+                ],
+                "nativeMappingId": DIALOG_TREE_TRUNK_GROUP_MAPPING_ID,
+                "nativeConsumers": [
+                    dict(row) for row in DIALOG_TREE_TRUNK_NATIVE_CONSUMERS
+                ],
+                "gameAssemblySha256": actual_hashes.get(
+                    "gameAssembly", ""
+                ),
+                "globalMetadataSha256": actual_hashes.get(
+                    "globalMetadata", ""
+                ),
+                "consumerBoundary": (
+                    "the complete current DialogText row group is an exact "
+                    "one-parent-per-line partition across registered, "
+                    "hash-validated DialogTree assets; current GameAssembly "
+                    "executes their typed trunk ids through "
+                    "DialogTreeTrunkNode and DialogManager, but no exact "
+                    "mission/quest or factory-runtime source identifies what "
+                    "activates the emitted aggregate"
+                ),
+                "orderBoundary": (
+                    "each parentDialogTrees.lineConnections row is exact "
+                    "internal authored order and option counts retain exact "
+                    "internal branching; no current original-data source "
+                    "orders separate parent roots or places this aggregate "
+                    "against another Story file"
+                ),
+                "reopenWhen": (
+                    "the installed binary, DialogId registry, DialogTextTable, "
+                    "DialogTree assets, or a typed mission/factory runtime "
+                    "activation registry changes"
+                ),
+                "graphEffect": "none",
+            }
+
     num_id_table = read_json(source_paths["numIdStrTable"], {})
     timeline_ids = (
         ((num_id_table.get("timelines_id") or {}).get("dic") or {})
@@ -16831,6 +17179,11 @@ def build_offline_exhaustion_index(
         key=lambda item: natural_key(item[0]),
     ):
         index.setdefault(story_key, evidence)
+    for story_key, evidence in sorted(
+        registered_trunk_group_evidence_by_key.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        index.setdefault(story_key, evidence)
     for story_key in sorted(all_sns_keys, key=natural_key):
         validation = sns_validation_by_key[story_key]
         index[story_key] = {
@@ -17424,6 +17777,57 @@ def build_offline_exhaustion_index(
                 "qualifiedKeysHaveZeroOccurrences": True,
             },
             "carrierAuditTargetSetSha256": core_target_digest,
+            "graphEffect": "none",
+        },
+        "genericRegisteredDialogTreeTrunkGroupEvidence": {
+            "status": (
+                "validation_failed"
+                if registered_trunk_group_validation_failures
+                else "active"
+            ),
+            "qualifiedStoryKeys": len(
+                registered_trunk_group_evidence_by_key
+            ),
+            "qualifiedMissions": len({
+                row["missionId"]
+                for row in registered_trunk_group_evidence_by_key.values()
+            }),
+            "qualifiedParentDialogTrees": len({
+                safe_key(parent.get("sceneKey"))
+                for row in registered_trunk_group_evidence_by_key.values()
+                for parent in row.get("parentDialogTrees") or []
+                if safe_key(parent.get("sceneKey"))
+            }),
+            "qualifiedLines": sum(
+                int(row.get("lineCount") or 0)
+                for row in registered_trunk_group_evidence_by_key.values()
+            ),
+            "validationFailures": (
+                registered_trunk_group_validation_failures
+            ),
+            "exclusions": {
+                key: sorted(set(values), key=natural_key)
+                for key, values in registered_trunk_group_exclusions.items()
+            },
+            "sourcePaths": {
+                "dialogTextTable": str(source_paths["dialogTextTable"]),
+                "dialogIdSource": str(source_paths["dialogIdSource"]),
+                "dialogIdIndex": str(source_paths["dialogIdIndex"]),
+                "textAssetRoot": str(cutscene_definition_root),
+                "gameAssembly": str(source_paths["gameAssembly"]),
+                "globalMetadata": str(source_paths["globalMetadata"]),
+            },
+            "sourceSha256": {
+                name: actual_hashes.get(name, "")
+                for name in (
+                    "dialogTextTable",
+                    "dialogIdSource",
+                    "dialogIdIndex",
+                    "gameAssembly",
+                    "globalMetadata",
+                )
+            },
+            "nativeMappingId": DIALOG_TREE_TRUNK_GROUP_MAPPING_ID,
             "graphEffect": "none",
         },
         "genericRegisteredTableDialogNegativeConsumerEvidence": {
@@ -24404,6 +24808,14 @@ def main(argv: list[str] | None = None) -> int:
         (
             "Generic unregistered-dialog negative-consumer",
             "genericUnregisteredDialogNegativeConsumerEvidence",
+        ),
+        (
+            "Generic registered DialogTree negative-consumer",
+            "genericRegisteredDialogTreeNegativeConsumerEvidence",
+        ),
+        (
+            "Generic registered DialogTree trunk group",
+            "genericRegisteredDialogTreeTrunkGroupEvidence",
         ),
         (
             "Generic registered table-dialog negative-consumer",
