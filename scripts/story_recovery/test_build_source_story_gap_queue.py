@@ -14,6 +14,9 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import build_source_story_gap_queue as gap_queue  # noqa: E402
+from story_builder.level_bindings import (  # noqa: E402
+    build_levelscript_native_story_playback_index,
+)
 
 
 def partial_mission(
@@ -311,6 +314,11 @@ class SourceStoryGapQueueTests(unittest.TestCase):
 
         linked = copy.deepcopy(row)
         linked["relatedMissionId"] = "mission_fixture"
+        linked["dialogContentData"]["1"].update({
+            "contentParam": ["mission_fixture"],
+            "contentType": 12,
+            "linkMissionId": "mission_fixture",
+        })
         facts, failure, exclusion = (
             gap_queue._generic_unlinked_sns_definition_facts(
                 story_key,
@@ -319,9 +327,28 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 {"chat_fixture": chat},
             )
         )
-        self.assertIsNone(facts)
         self.assertIsNone(failure)
         self.assertEqual(exclusion, "authoredMissionLink")
+        self.assertEqual(facts["relatedMissionId"], "mission_fixture")
+        self.assertEqual(facts["snsContentIds"], ["1"])
+        self.assertEqual(
+            facts["linkMissionIdsByContentId"],
+            {"1": "mission_fixture"},
+        )
+
+        inconsistent = copy.deepcopy(row)
+        inconsistent["relatedMissionId"] = "mission_fixture"
+        facts, failure, exclusion = (
+            gap_queue._generic_unlinked_sns_definition_facts(
+                story_key,
+                inconsistent,
+                {},
+                {"chat_fixture": chat},
+            )
+        )
+        self.assertIsNone(facts)
+        self.assertIsNone(exclusion)
+        self.assertEqual(failure["gate"], "coherentAuthoredMissionLink")
 
     def test_generic_unlinked_sns_definition_reports_dangling_content(self) -> None:
         story_key = "sns_fixture_1"
@@ -7038,8 +7065,30 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         offline_index, status = gap_queue.build_offline_exhaustion_index(
             partial,
             table_root,
+            native_playback_index=(
+                build_levelscript_native_story_playback_index()
+            ),
         )
         self.assertEqual("active", status["status"])
+        generic_cutscene = offline_index["cutscene_gm02m10_1"]
+        self.assertEqual(
+            generic_cutscene["evidenceKind"],
+            "cutscene_root_without_recovered_activator",
+        )
+        self.assertEqual(generic_cutscene["timelineRegistryId"], 402)
+        self.assertEqual(generic_cutscene["graphEffect"], "none")
+        cutscene_status = status["genericCutsceneDefinitionEvidence"]
+        self.assertEqual(cutscene_status["validationFailures"], [])
+        self.assertEqual(cutscene_status["qualifiedStoryKeys"], 28)
+        missing_definition = next(
+            row
+            for row in cutscene_status["qualificationDiagnostics"]
+            if row["storyKey"] == "cutscene_c6m1_1"
+        )
+        self.assertEqual(
+            missing_definition["gate"],
+            "uniqueTextAssetAndBidirectionalTimelineRegistry",
+        )
         self.assertEqual(
             offline_index["sns_gm01m3_1"]["relatedMissionId"],
             "gm01m3",
@@ -7073,6 +7122,30 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 {},
             ),
             [],
+        )
+
+        gm02m11 = gap_queue.read_json(
+            gap_queue.ROOT / "webui/data/lang/CN/mission/gm02m11.json",
+            {},
+        )
+        authored_sns_rows = (
+            gap_queue._closed_exact_runtime_config_isolated_scenes(
+                gm02m11["flow"],
+                {"sns_gm02m11_1"},
+                "gm02m11",
+                offline_index,
+            )
+        )
+        self.assertEqual(
+            authored_sns_rows[0]["sourceFiles"],
+            [
+                "export_full/structured/StreamingAssets/Table/"
+                "SNSDialogTable.json",
+                "export_full/structured/StreamingAssets/Table/"
+                "SNSDialogOptionTable.json",
+                "export_full/structured/StreamingAssets/Table/"
+                "SNSChatTable.json",
+            ],
         )
 
         gm01m4 = gap_queue.read_json(
