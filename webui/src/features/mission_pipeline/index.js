@@ -524,6 +524,15 @@
       offlineRecoveryParentLevelBoundary: "Related original files only; this does not prove activation, ownership, branching, or order.",
       offlineRecoveryDungeonCatalogMetadata: "Dungeon catalog metadata (not chronology)",
       offlineRecoveryRelatedLevelFiles: "Related level files",
+      offlineRecoverySubGameRuntime: "Exact BlackBox SubGame runtime shell",
+      offlineRecoverySubGameBindScript: "bound LevelScript",
+      offlineRecoverySubGameTaskLanes: "Authored task lanes (not Story order)",
+      offlineRecoverySubGameMainTasks: "main",
+      offlineRecoverySubGameExtraTasks: "extra",
+      offlineRecoverySubGameFailTasks: "fail",
+      offlineRecoverySubGameParentPlayback: "Exact parent playback",
+      offlineRecoverySubGameDefinitionOnlyParents: "Definition-only in bound script",
+      offlineRecoverySubGamePlaybackCoverage: "parent playback coverage",
       offlineRecoveryEvidenceParentTreePartition: "Exact registered parent-tree line partition",
       partialRecoveryEvidenceParentTreePartition: "Partial registered parent-tree line partition",
       partialRecoveryCoverage: "Registered coverage",
@@ -1077,6 +1086,15 @@
       offlineRecoveryParentLevelBoundary: "\u4ec5\u8868\u793a\u76f8\u5173\u539f\u59cb\u6587\u4ef6\uff1b\u4e0d\u8bc1\u660e\u6fc0\u6d3b\u3001\u5f52\u5c5e\u3001\u5206\u652f\u6216\u987a\u5e8f\u3002",
       offlineRecoveryDungeonCatalogMetadata: "\u5730\u7262\u76ee\u5f55\u5143\u6570\u636e\uff08\u975e\u65f6\u5e8f\uff09",
       offlineRecoveryRelatedLevelFiles: "\u76f8\u5173\u5173\u5361\u6587\u4ef6",
+      offlineRecoverySubGameRuntime: "\u7cbe\u786e\u9ed1\u76d2 SubGame \u8fd0\u884c\u5916\u58f3",
+      offlineRecoverySubGameBindScript: "\u7ed1\u5b9a LevelScript",
+      offlineRecoverySubGameTaskLanes: "\u539f\u59cb\u4efb\u52a1\u901a\u9053\uff08\u4e0d\u662f\u5267\u60c5\u987a\u5e8f\uff09",
+      offlineRecoverySubGameMainTasks: "\u4e3b\u4efb\u52a1",
+      offlineRecoverySubGameExtraTasks: "\u989d\u5916\u4efb\u52a1",
+      offlineRecoverySubGameFailTasks: "\u5931\u8d25\u4efb\u52a1",
+      offlineRecoverySubGameParentPlayback: "\u7cbe\u786e\u7236\u5bf9\u8bdd\u64ad\u653e",
+      offlineRecoverySubGameDefinitionOnlyParents: "\u5728\u7ed1\u5b9a\u811a\u672c\u4e2d\u4ec5\u5b9a\u4e49",
+      offlineRecoverySubGamePlaybackCoverage: "\u7236\u5bf9\u8bdd\u64ad\u653e\u8986\u76d6",
       offlineRecoveryEvidenceParentTreePartition: "\u7cbe\u786e\u7684\u5df2\u6ce8\u518c\u7236\u6811\u53f0\u8bcd\u5206\u533a",
       partialRecoveryEvidenceParentTreePartition: "\u90e8\u5206\u5df2\u6ce8\u518c\u7236\u6811\u53f0\u8bcd\u5206\u533a",
       partialRecoveryCoverage: "\u5df2\u6ce8\u518c\u8986\u76d6",
@@ -3236,7 +3254,26 @@
           const parents = (context.parentDialogTreeIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
           const files = (context.sourceFiles || []).map((source) => `<code>${esc(source)}</code>`).join(" ");
           const mapAssets = (context.mapTextAssets || []).map((asset) => `<code>${esc(asset.sourceFile || "?")}</code>${asset.sourcePathId ? `<span>PathID ${esc(asset.sourcePathId)}</span>` : ""}`).join(" ");
-          return `<div><p><code>${esc(context.levelId || "?")}</code><span>${esc(t("offlineRecoveryDungeonCatalogMetadata"))}: <code>${esc(context.dungeonId || "?")}</code>${context.dungeonSortId == null ? "" : ` / sortId ${esc(context.dungeonSortId)}`}</span></p>${parents ? `<small>${parents}</small>` : ""}${files || mapAssets ? `<small><strong>${esc(t("offlineRecoveryRelatedLevelFiles"))}:</strong> ${files} ${mapAssets}</small>` : ""}</div>`;
+          const runtime = context.subGameRuntime && typeof context.subGameRuntime === "object"
+            ? context.subGameRuntime
+            : null;
+          const runtimeContext = runtime ? (() => {
+            const lane = (label, tasks) => (Array.isArray(tasks) && tasks.length
+              ? `<span><strong>${esc(label)}:</strong> ${tasks.map((task) => `<code>${esc(task.taskId || "?")}</code>${task.levelScriptId == null ? "" : `<code>${esc(task.levelScriptId)}</code>`}`).join(" ")}</span>`
+              : "");
+            const taskLanes = [
+              lane(t("offlineRecoverySubGameMainTasks"), runtime.mainTasks),
+              lane(t("offlineRecoverySubGameExtraTasks"), runtime.extraTasks),
+              lane(t("offlineRecoverySubGameFailTasks"), runtime.failTasks),
+            ].filter(Boolean).join(" ");
+            const playback = (runtime.parentDialogPlayback || []).map((item) => {
+              const owners = (item.nativeEventOwners || []).map((owner) => `<code>${esc(owner.headerName || "?")}</code>`).join(" ");
+              return `<span><code>${esc(item.parentDialogTreeId || "?")}</code> &larr; <code>${esc(item.actionName || "StartDialogAction")}</code>${owners ? ` ${owners}` : ""}</span>`;
+            }).join(" ");
+            const definitionOnly = (runtime.definitionOnlyParentDialogTreeIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
+            return `<section><p><strong>${esc(t("offlineRecoverySubGameRuntime"))}</strong><code>${esc(runtime.subGameId || context.dungeonId || "?")}</code><span>${esc(t("offlineRecoverySubGameBindScript"))}: <code>${esc(runtime.bindScriptId == null ? "?" : runtime.bindScriptId)}</code></span><span>${esc(t("offlineRecoverySubGamePlaybackCoverage"))}: ${esc(runtime.parentPlaybackCoverage || "none")}</span></p>${taskLanes ? `<small><strong>${esc(t("offlineRecoverySubGameTaskLanes"))}:</strong> ${taskLanes}</small>` : ""}${playback ? `<small><strong>${esc(t("offlineRecoverySubGameParentPlayback"))}:</strong> ${playback}</small>` : ""}${definitionOnly ? `<small><strong>${esc(t("offlineRecoverySubGameDefinitionOnlyParents"))}:</strong> ${definitionOnly}</small>` : ""}${runtime.taskLaneBoundary ? `<small>${esc(runtime.taskLaneBoundary)}</small>` : ""}${runtime.parentPlaybackBoundary ? `<small>${esc(runtime.parentPlaybackBoundary)}</small>` : ""}</section>`;
+          })() : "";
+          return `<div><p><code>${esc(context.levelId || "?")}</code><span>${esc(t("offlineRecoveryDungeonCatalogMetadata"))}: <code>${esc(context.dungeonId || "?")}</code>${context.dungeonSortId == null ? "" : ` / sortId ${esc(context.dungeonSortId)}`}</span></p>${parents ? `<small>${parents}</small>` : ""}${runtimeContext}${files || mapAssets ? `<small><strong>${esc(t("offlineRecoveryRelatedLevelFiles"))}:</strong> ${files} ${mapAssets}</small>` : ""}</div>`;
         }).join("")}</details>`
         : "";
       const missingLineFragments = Array.isArray(row.missingLineFragments)
