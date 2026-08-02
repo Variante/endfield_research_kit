@@ -42,7 +42,9 @@ from story_builder.mission_recovery import (  # noqa: E402
     scene_order_infer_kind,
 )
 from story_builder.level_bindings import (  # noqa: E402
+    LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS,
     build_levelscript_action_story_occurrences,
+    decode_levelscript_native_action_topology,
 )
 from story_builder.anime_assets import (  # noqa: E402
     recover_dialog_tree_narrative_mask_actions,
@@ -55,7 +57,14 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v22"
+SCHEMA = "sourceStoryPartialOrder.v23"
+BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
+    (0x002D, 0x09)
+]
+BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256 = (
+    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+)
+_NATIVE_ACTION_TOPOLOGY_CACHE: dict[str, tuple[dict, dict | None]] = {}
 READING_POPUP_TABLE_PATH = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Table" / "ReadingPopUpTable.json"
@@ -119,6 +128,7 @@ PROVEN_ORDER_EDGE_KINDS = (
     "dialogTreeCrossStoryConditionalBranch",
     "dialogTreeCrossStoryTrunkContinuation",
     "levelscriptNativeControlPath",
+    "levelscriptNativeOrderedSequence",
     "levelscriptQuestStateActionPath",
     "spawnerWaveGroupPartKilled",
     "spawnerWavePartKilled",
@@ -167,6 +177,7 @@ EDGE_EVIDENCE_FIELDS = (
     "parentArmLineIds",
     "childArmLineIds",
     "nativeConsumers",
+    "gameAssemblySha256",
 )
 
 
@@ -375,6 +386,7 @@ EVIDENCE_POLICY = {
         "Dialog Timeline branch clips with complete distinct positive runtime optionIndex coverage and convergent post-response jumps",
         "LevelScript LevelEvent_OnDialogExit action-chain edges",
         "exact serialized LevelScript event-to-action strict path-prefix edges",
+        "exact Branch._idList Story order only when installed Branch.Execute semantics and distinct serialized sequence slots agree",
         "exact LevelEvent_OnQuestStateChanged typed playback action paths",
         "exact SpawnerConfig PartKilled target-wave dependencies joined to typed LevelEvent_OnSpawnerWaveBegin playback",
         "exact SpawnerConfig wave/group nesting and PartKilled gates joined to typed wave/group-begin playback",
@@ -391,7 +403,8 @@ EVIDENCE_POLICY = {
         "radioContinuation pending evidence-policy reconciliation",
         "LevelScript file/cross-file order and untyped chain membership",
         "LevelData quest references and PRTS collection order",
-        "divergent Split/IfElseAction/SwitchInt Story arms as topology only",
+        "related LevelScript action graphs attached through exact Story paths but not promoted wholesale to mission order",
+        "divergent Split/IfElseAction/SwitchInt/SwitchString Story arms as topology only",
     ],
     "rejects": [
         "webui/overrides/story_order.json",
@@ -3018,12 +3031,267 @@ def _spawner_wave_group_part_killed_story_edges(
     return edges
 
 
+def _native_related_action_topologies(
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+) -> list[dict[str, Any]]:
+    """Attach compact graphs only for exact Story-bearing native paths.
+
+    The join starts from an already validated event-to-Story control path. A
+    LevelScript filename, level co-location, or action registration alone can
+    never admit a file into a mission.
+    """
+    related: dict[str, dict[str, set[Any]]] = defaultdict(
+        lambda: {"storyKeys": set(), "events": set()}
+    )
+    for signature, routes in _native_event_story_paths(flow, candidate_keys).items():
+        for story_key, _path, source_files, _detail, _downstream in routes:
+            for source_file in source_files:
+                if "LevelScriptData" not in source_file:
+                    continue
+                related[source_file]["storyKeys"].add(story_key)
+                related[source_file]["events"].add(signature)
+
+    rows: list[dict[str, Any]] = []
+    for source_file, context in sorted(
+        related.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        source_path = Path(source_file)
+        if not source_path.is_absolute():
+            source_path = ROOT / source_path
+        if not source_path.is_file():
+            continue
+        cache_key = source_path.resolve().as_posix()
+        if cache_key not in _NATIVE_ACTION_TOPOLOGY_CACHE:
+            try:
+                _NATIVE_ACTION_TOPOLOGY_CACHE[cache_key] = (
+                    decode_levelscript_native_action_topology(source_path.read_bytes())
+                )
+            except OSError:
+                continue
+        topology, diagnostic = _NATIVE_ACTION_TOPOLOGY_CACHE[cache_key]
+        control_actions = [
+            {
+                key: action[key]
+                for key in (
+                    "localId",
+                    "actionName",
+                    "controlKind",
+                    "controlRuntimeMappingId",
+                    "controlDetail",
+                    "nextActionLocalId",
+                )
+                if action.get(key) not in (None, "", [], {})
+            }
+            for action in topology.get("actions") or []
+            if action.get("controlKind")
+        ]
+        rows.append({
+            "schema": topology.get("schema"),
+            "status": topology.get("status"),
+            "sourceFile": source_file,
+            "relatedStoryKeys": sorted(context["storyKeys"], key=natural_key),
+            "eventSelectors": [
+                {
+                    "levelId": signature[0],
+                    "scriptId": signature[1],
+                    "headerLocalId": signature[2],
+                    "eventName": signature[3],
+                }
+                for signature in sorted(context["events"], key=lambda value: tuple(
+                    natural_key(str(item)) for item in value
+                ))
+            ],
+            "actionNodeCount": int(topology.get("actionNodeCount") or 0),
+            "eventRootCount": int(topology.get("eventRootCount") or 0),
+            "edgeCount": int(topology.get("edgeCount") or 0),
+            "orderedSequenceNodeCount": int(
+                topology.get("orderedSequenceNodeCount") or 0
+            ),
+            "parallelFanoutNodeCount": int(
+                topology.get("parallelFanoutNodeCount") or 0
+            ),
+            "conditionalBranchNodeCount": int(
+                topology.get("conditionalBranchNodeCount") or 0
+            ),
+            "loopNodeCount": int(topology.get("loopNodeCount") or 0),
+            "controlActions": control_actions,
+            "validatorDiagnostic": diagnostic,
+            "nativeActionMappingId": topology.get("nativeActionMappingId"),
+            "relationshipBoundary": (
+                "attached through an exact serialized event-to-Story control path; "
+                "the rest of the file is file-local topology, not additional mission order"
+            ),
+        })
+    return rows
+
+
+def _native_ordered_branch_sequences(
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Recover Branch._idList order from the installed Branch.Execute loop.
+
+    Branch reserves itself, dispatches one ``_idList[m_index]`` action, then
+    advances ``m_index``. After the last list item it resumes ActionBase.nextId.
+    Consequently different sequence indexes have strict order, while Story
+    files reached inside the same item remain unordered here.
+    """
+    route_type = tuple[
+        str,
+        tuple[tuple[Any, ...], ...],
+        tuple[str, ...],
+        str,
+        str,
+    ]
+    sequences: list[dict[str, Any]] = []
+    evidence_by_pair: dict[tuple[str, str], list[dict[str, Any]]] = (
+        defaultdict(list)
+    )
+    for signature, routes in _native_event_story_paths(flow, candidate_keys).items():
+        groups: dict[tuple[tuple[int, ...], int], dict[int, set[route_type]]] = (
+            defaultdict(lambda: defaultdict(set))
+        )
+        labels: dict[tuple[tuple[int, ...], int], dict[int, str]] = defaultdict(dict)
+        for route in routes:
+            _story_key, path, _source_files, _event_detail, _downstream = route
+            for index, step in enumerate(path):
+                if index == 0 or path[index - 1][2] != "Branch":
+                    continue
+                match = re.fullmatch(r"Branch\.sequence\[(\d+)\]", step[1])
+                if match:
+                    ordinal = int(match.group(1))
+                    label = step[1]
+                elif step[1] == "ActionBase.nextId":
+                    ordinal = 1_000_000_000
+                    label = "ActionBase.nextId (after sequence)"
+                else:
+                    continue
+                branch_local_id = int(path[index - 1][0])
+                prefix = tuple(int(value[0]) for value in path[:index])
+                group_key = (prefix, branch_local_id)
+                groups[group_key][ordinal].add(route)
+                labels[group_key][ordinal] = label
+
+        for (prefix, branch_local_id), routes_by_ordinal in groups.items():
+            sequence_ordinals = sorted(
+                ordinal for ordinal in routes_by_ordinal if ordinal < 1_000_000_000
+            )
+            if not sequence_ordinals or len(routes_by_ordinal) < 2:
+                continue
+            ordered_ordinals = sorted(routes_by_ordinal)
+            arm_rows: list[dict[str, Any]] = []
+            for ordinal in ordered_ordinals:
+                arm_routes = routes_by_ordinal[ordinal]
+                arm_rows.append({
+                    "edge": labels[(prefix, branch_local_id)][ordinal],
+                    "sequenceIndex": (
+                        ordinal if ordinal < 1_000_000_000 else None
+                    ),
+                    "storyKeys": sorted(
+                        {route[0] for route in arm_routes}, key=natural_key
+                    ),
+                })
+            all_routes = {
+                route
+                for ordinal in ordered_ordinals
+                for route in routes_by_ordinal[ordinal]
+            }
+            source_files = sorted({
+                source_file
+                for route in all_routes
+                for source_file in route[2]
+                if source_file
+            }, key=natural_key)
+            sequence_row = {
+                "kind": "orderedSequence",
+                "levelId": signature[0],
+                "scriptId": signature[1],
+                "headerLocalId": signature[2],
+                "eventName": signature[3],
+                "branchLocalId": branch_local_id,
+                "branchPath": list(prefix),
+                "arms": arm_rows,
+                "sourceFiles": source_files,
+                "runtimeMappingId": BRANCH_SEQUENCE_RUNTIME["mappingId"],
+                "gameAssemblySha256": BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256,
+                "nativeConsumers": [{
+                    "method": "Beyond.Gameplay.Actions.Branch.Execute",
+                    "address": "0x18764d990",
+                    "contract": (
+                        "dispatches _idList[m_index], reserves Branch for the next "
+                        "item, then resumes ActionBase.nextId after the list"
+                    ),
+                }],
+            }
+            sequences.append(sequence_row)
+            for source_position, source_ordinal in enumerate(ordered_ordinals):
+                for target_ordinal in ordered_ordinals[source_position + 1:]:
+                    for source_route in routes_by_ordinal[source_ordinal]:
+                        for target_route in routes_by_ordinal[target_ordinal]:
+                            if source_route[0] == target_route[0]:
+                                continue
+                            evidence_by_pair[(source_route[0], target_route[0])].append({
+                                "levelId": signature[0],
+                                "scriptId": signature[1],
+                                "headerLocalId": signature[2],
+                                "eventName": signature[3],
+                                "branchLocalId": branch_local_id,
+                                "sourceSequenceEdge": labels[
+                                    (prefix, branch_local_id)
+                                ][source_ordinal],
+                                "targetSequenceEdge": labels[
+                                    (prefix, branch_local_id)
+                                ][target_ordinal],
+                                "sourceFiles": source_files,
+                                "runtimeMappingId": BRANCH_SEQUENCE_RUNTIME[
+                                    "mappingId"
+                                ],
+                                "gameAssemblySha256": BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256,
+                                "nativeConsumers": sequence_row["nativeConsumers"],
+                            })
+
+    conflicts = {
+        pair for pair in evidence_by_pair if (pair[1], pair[0]) in evidence_by_pair
+    }
+    edges: list[dict[str, Any]] = []
+    for pair, evidence_rows in sorted(
+        evidence_by_pair.items(),
+        key=lambda item: (natural_key(item[0][0]), natural_key(item[0][1])),
+    ):
+        if pair in conflicts:
+            continue
+        edges.append({
+            "from": pair[0],
+            "to": pair[1],
+            "kind": "levelscriptNativeOrderedSequence",
+            "tier": "strong",
+            "source": (
+                "exact serialized Branch._idList order + installed "
+                "Branch.Execute iterator"
+            ),
+            "sourceFiles": sorted({
+                source_file
+                for evidence in evidence_rows
+                for source_file in evidence["sourceFiles"]
+            }, key=natural_key),
+            "runtimeMappingId": BRANCH_SEQUENCE_RUNTIME["mappingId"],
+            "gameAssemblySha256": BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256,
+            "nativeConsumers": evidence_rows[0]["nativeConsumers"],
+            "events": evidence_rows,
+        })
+    return edges, sequences
+
+
 def _native_branch_kind(edge: str) -> str:
     if edge.startswith("Split.actions["):
         return "splitFanout"
     if edge in {"IfElseAction.trueAction", "IfElseAction.falseAction"}:
         return "ifElse"
     if edge.startswith("SwitchInt.case[") or edge == "SwitchInt.default":
+        return "switch"
+    if edge.startswith("SwitchString.case[") or edge == "SwitchString.default":
         return "switch"
     return ""
 
@@ -3323,6 +3591,10 @@ def build_mission_partial_order(
         definition_only_nodes.pop(key, None)
 
     direct_edges.extend(_native_control_path_story_edges(flow, candidate_keys))
+    native_ordered_sequence_edges, native_ordered_sequences = (
+        _native_ordered_branch_sequences(flow, candidate_keys)
+    )
+    direct_edges.extend(native_ordered_sequence_edges)
     direct_edges.extend(_quest_state_action_path_story_edges(flow, candidate_keys))
     direct_edges.extend(_spawner_wave_part_killed_story_edges(flow, candidate_keys))
     direct_edges.extend(
@@ -3507,6 +3779,9 @@ def build_mission_partial_order(
     native_control_branches, native_control_merges = _native_control_branches_and_merges(
         flow, candidate_keys
     )
+    native_related_action_topologies = _native_related_action_topologies(
+        flow, candidate_keys
+    )
     native_named_predicates = sum(
         1
         for row in native_control_branches
@@ -3662,6 +3937,11 @@ def build_mission_partial_order(
             "sceneGraphOptionGroupCount": len(scene_graph_option_branches),
             "nativeControlBranchCount": len(native_control_branches),
             "nativeControlMergeCount": len(native_control_merges),
+            "nativeOrderedSequenceCount": len(native_ordered_sequences),
+            "nativeOrderedSequenceEdgeCount": len(native_ordered_sequence_edges),
+            "nativeRelatedActionTopologyCount": len(
+                native_related_action_topologies
+            ),
             "nativeNamedPredicateCount": native_named_predicates,
             "nativeInlinePredicateCount": native_inline_predicates,
             "nativeSemanticPredicateCount": native_semantic_predicates,
@@ -3702,6 +3982,8 @@ def build_mission_partial_order(
             "sceneGraphOptions": scene_graph_option_branches,
             "nativeControlBranches": native_control_branches,
             "nativeControlMerges": native_control_merges,
+            "nativeOrderedSequences": native_ordered_sequences,
+            "nativeRelatedActionTopologies": native_related_action_topologies,
             "dialogLineOptions": dialog_line_options,
             "excludedDialogLineOptions": excluded_dialog_line_options,
             "actionableExcludedDialogLineOptions":
@@ -3969,6 +4251,13 @@ def build_report(
         totals["sceneGraphOptionGroups"] += summary["sceneGraphOptionGroupCount"]
         totals["nativeControlBranches"] += summary["nativeControlBranchCount"]
         totals["nativeControlMerges"] += summary["nativeControlMergeCount"]
+        totals["nativeOrderedSequences"] += summary["nativeOrderedSequenceCount"]
+        totals["nativeOrderedSequenceEdges"] += summary[
+            "nativeOrderedSequenceEdgeCount"
+        ]
+        totals["nativeRelatedActionTopologies"] += summary[
+            "nativeRelatedActionTopologyCount"
+        ]
         totals["nativeNamedPredicates"] += summary["nativeNamedPredicateCount"]
         totals["nativeInlinePredicates"] += summary["nativeInlinePredicateCount"]
         totals["nativeSemanticPredicates"] += summary["nativeSemanticPredicateCount"]
@@ -4067,6 +4356,11 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- native control topology: `{summary.get('nativeControlBranches', 0)}` exact "
         f"Split/IfElse/Switch Story fan-outs and `{summary.get('nativeControlMerges', 0)}` "
         "observed convergences",
+        f"- native ordered topology: `{summary.get('nativeOrderedSequences', 0)}` exact "
+        f"Branch iterators creating `{summary.get('nativeOrderedSequenceEdges', 0)}` "
+        "Story-order edges",
+        f"- related native action graphs: `{summary.get('nativeRelatedActionTopologies', 0)}` "
+        "original LevelScript files attached only through exact Story control paths",
         f"- conditional predicates: `{summary.get('nativeSemanticPredicates', 0)}` exact "
         f"operand decodes, `{summary.get('nativeClassOnlyPredicates', 0)}` exact class-only, "
         f"and `{summary.get('nativeUnresolvedPredicates', 0)}` unresolved",

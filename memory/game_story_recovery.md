@@ -37,7 +37,7 @@ in five payloads.
   communication.
 - Typed LevelScript, DialogTree, Timeline, FMV, quest-state, interactive, and
   selected runtime receiver evidence.
-- Exact native control paths for Split, If/Else, Switch, Branch, playback, and
+- Exact native control paths for Split, If/Else, Switch, ordered Branch, playback, and
   many event families.
 - 307 native branch groups and 19 native convergences, kept as a partial
   graph instead of flattened into a guessed file list.
@@ -84,22 +84,33 @@ missing-row positions remain table-row cross-reference diagnostics only. These
 relationships remain graph-neutral and do not place the eight loose rows.
 A second general decoder follows only the serialized action-map membership,
 `ActionHeader.nextId`, `ActionBase.nextId`, and typed control fields recovered
-from the current GameAssembly formatter. Across all 50 available bound scripts,
-49 contain exact complete action maps and one contains an authored empty map:
-766 actions, 153 event roots, 767 exact edges, 16 typed fan-out nodes, one event
-entry convergence, and zero orphan roots, cycles, or unmapped action types. The
-registered DialogTree recovery surface contains 45 unique scripts with 683
-actions, 140 event roots, 684 edges, 16 fan-outs, one convergence, and 58 typed
-Story targets. Separate event roots have no serialized relative order, and a
-typed fan-out is exact control structure rather than proof of mutually exclusive
-Story branches. The five unresolved-row families contain no action fan-out and
+from the current GameAssembly formatter and Execute bodies. Current
+`Branch.Execute` at `0x18764d990` reserves itself and advances `_idList` one
+item at a time, so `Branch.sequence[*]` is ordered iteration, not fan-out;
+`Split` is parallel fan-out, If/Else and Switch select one arm, and While is a
+loop. Zero action ids are exact terminal pointers. The current 4,512-file census
+therefore validates 4,480 exact graphs (522 authored empty maps, 487 files with
+no map, and 3,471 complete maps) and leaves 32 fail-closed conflicts/dangling
+positive references. It contains 81 ordered sequences, 2,786 Split fan-outs,
+2,549 conditional selectors, and 29 loops. On the current BlackBox recovery
+cards, 47 complete graphs contain 718 actions, 147 event roots, 719 edges, 16
+ordered sequences, zero fan-outs/conditional selectors/loops, and one event
+entry convergence. Separate event roots still have no serialized relative
+order. The five unresolved-row families contain no action fan-out and
 their typed playback targets only the already registered parent DialogTrees;
 none targets the eight loose row ids. Mission Pipeline displays the SubGame id,
 bound script, task topology, condition families/formulas, objective display
-keys, the complete event/action graph with typed fan-outs and Story targets,
+keys, the complete event/action graph with semantic control kinds and Story targets,
 definition-only parents, sources, and boundaries in visible Story-only shells.
+The source partial-order report attaches 1,516 compact original LevelScript
+graphs across 221 rows only when an exact native event-to-Story path already
+relates the file. Mission Pipeline publishes the 1,439 attachments whose 202
+missions have WebUI shells; the rest of each graph stays file-local context.
+No current mission has Story
+targets on two different Branch sequence slots, so this adds zero Branch-derived
+Story-order edges rather than guessing them.
 The other-bucket queue remains 32 and the current contract is
-`sourceStoryGapQueue.v123`; OCR and manual order remain comparison-only.
+`sourceStoryGapQueue.v124`; OCR and manual order remain comparison-only.
 
 The original metadata `BlackboxGuideHintController`, `FacGuideHintEnable`, and
 `LevelDataGuideHintConfig` surface is spatial factory guide-hint configuration,

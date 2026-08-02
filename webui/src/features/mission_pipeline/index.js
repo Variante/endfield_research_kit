@@ -323,6 +323,9 @@
       nativeIfElseBranch: "native If/Else branch",
       nativeSwitchBranch: "native Switch branch",
       nativeControlMerge: "native branch convergence",
+      nativeOrderedSequence: "native ordered action sequence",
+      nativeRelatedActionGraphs: "Related original LevelScript graphs",
+      nativeRelatedActionGraphsHint: "Each file is attached only because an exact serialized event-to-Story path reaches a Story file already in this mission. Its remaining actions are file-local context, not extra mission order.",
       nativeControlReachability: "exact typed downstream reachability",
       nativeControlPath: "control path",
       nativeEventSelector: "event selector",
@@ -549,6 +552,9 @@
       offlineRecoverySubGameActionNodes: "actions",
       offlineRecoverySubGameActionEdges: "edges",
       offlineRecoverySubGameActionFanouts: "typed fan-outs",
+      offlineRecoverySubGameActionSequences: "ordered sequences",
+      offlineRecoverySubGameActionChoices: "conditional choices",
+      offlineRecoverySubGameActionLoops: "loops",
       offlineRecoverySubGameActionConvergence: "convergences",
       offlineRecoverySubGameActionCycles: "cycles",
       offlineRecoverySubGameActionEventTypes: "event families",
@@ -1133,6 +1139,9 @@
       offlineRecoverySubGameActionNodes: "\u52a8\u4f5c",
       offlineRecoverySubGameActionEdges: "\u8fb9",
       offlineRecoverySubGameActionFanouts: "\u7c7b\u578b\u5316\u5206\u53d1",
+      offlineRecoverySubGameActionSequences: "\u6709\u5e8f\u5e8f\u5217",
+      offlineRecoverySubGameActionChoices: "\u6761\u4ef6\u9009\u62e9",
+      offlineRecoverySubGameActionLoops: "\u5faa\u73af",
       offlineRecoverySubGameActionConvergence: "\u6c47\u5408",
       offlineRecoverySubGameActionCycles: "\u73af",
       offlineRecoverySubGameActionEventTypes: "\u4e8b\u4ef6\u7c7b\u578b",
@@ -1265,6 +1274,9 @@
       nativeIfElseBranch: "\u539f\u751f If/Else \u5206\u652f",
       nativeSwitchBranch: "\u539f\u751f Switch \u5206\u652f",
       nativeControlMerge: "\u539f\u751f\u5206\u652f\u6c47\u5408",
+      nativeOrderedSequence: "\u539f\u751f\u6709\u5e8f\u52a8\u4f5c\u5e8f\u5217",
+      nativeRelatedActionGraphs: "\u76f8\u5173\u539f\u59cb LevelScript \u56fe",
+      nativeRelatedActionGraphsHint: "\u4ec5\u5f53\u7cbe\u786e\u5e8f\u5217\u5316\u4e8b\u4ef6\u5230\u5267\u60c5\u8def\u5f84\u5230\u8fbe\u672c\u4efb\u52a1\u7684\u5267\u60c5\u6587\u4ef6\u65f6\u624d\u9644\u52a0\u6b64\u6587\u4ef6\uff1b\u5176\u4f59\u52a8\u4f5c\u53ea\u662f\u6587\u4ef6\u5185\u4e0a\u4e0b\u6587\uff0c\u4e0d\u662f\u989d\u5916\u4efb\u52a1\u987a\u5e8f\u3002",
       nativeControlReachability: "\u7cbe\u786e\u7c7b\u578b\u5316\u4e0b\u6e38\u53ef\u8fbe\u6027",
       nativeControlPath: "\u63a7\u5236\u8def\u5f84",
       nativeEventSelector: "\u4e8b\u4ef6\u9009\u62e9\u5668",
@@ -3083,6 +3095,12 @@
       : "";
     const nativeBranches = (branches.nativeControlBranches || []).map((row) => `<details><summary><b>${esc(nativeBranchLabel(row.kind))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code></summary><small>${esc(row.eventName || "")}</small>${nativeEventDetailHtml(row.eventDetail)}${nativePredicateHtml(row.predicate)}${(row.arms || []).map((arm) => `<div><code>${esc(arm.edge || "?")} &rarr; #${esc(arm.entryLocalId ?? "?")}</code><span>${(arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("")}${nativeSourcesHtml(row)}</details>`).join("");
     const nativeMerges = (branches.nativeControlMerges || []).map((row) => `<details><summary><b>${esc(t("nativeControlMerge"))}</b><code>#${esc(row.branchLocalId ?? "?")}</code><i>&rarr;</i><code>#${esc(row.mergeLocalId ?? "?")}</code></summary><small>${esc(row.convergenceStatus === "exact_serialized_downstream_control_convergence" ? t("nativeControlReachability") : row.convergenceStatus || "")}</small><span>${(row.downstreamStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span>${(row.mergePaths || []).map((path) => `<div><b>${esc(t("nativeControlPath"))}</b>${path.map((localId) => `<code>#${esc(localId)}</code>`).join(" &rarr; ")}</div>`).join("")}${nativeSourcesHtml(row)}</details>`).join("");
+    const nativeSequences = (branches.nativeOrderedSequences || []).map((row) => `<details open><summary><b>${esc(t("nativeOrderedSequence"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code></summary><small>${esc(row.eventName || "")}</small>${(row.arms || []).map((arm, index) => `<div><code>${index + 1}. ${esc(arm.edge || "?")}</code><span>${(arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("")}${(row.nativeConsumers || []).map((consumer) => `<small><code>${esc(consumer.method || "?")} @ ${esc(consumer.address || "?")}</code> ${esc(consumer.contract || "")}</small>`).join("")}${nativeSourcesHtml(row)}</details>`).join("");
+    const relatedActionTopologies = (branches.nativeRelatedActionTopologies || []).map((row) => {
+      const controls = (row.controlActions || []).map((action) => `<div><code>#${esc(action.localId ?? "?")}</code><b>${esc(action.actionName || "?")}</b><span>${esc(action.controlKind || "")}</span></div>`).join("");
+      const stories = (row.relatedStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
+      return `<details><summary><code>${esc(row.sourceFile || "?")}</code><span>${Number(row.actionNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionNodes"))}</span></summary><p>${stories}</p><p><span>${Number(row.orderedSequenceNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionSequences"))}</span> <span>${Number(row.parallelFanoutNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionFanouts"))}</span> <span>${Number(row.conditionalBranchNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionChoices"))}</span> <span>${Number(row.loopNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionLoops"))}</span></p>${controls}<small>${esc(row.relationshipBoundary || "")}</small></details>`;
+    }).join("");
     const sceneOptions = (branches.sceneGraphOptions || []).map((row) => `<div><b>${esc(t("optionBranches"))}</b><a href="${esc(storyHref(row.from))}"><code>${esc(row.from || "?")}</code></a><i>&rarr;</i><span>${(row.arms || []).flatMap((arm) => arm.targets || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("");
     const dialogConditionalBranches = directEdges.filter((row) => row.kind === "dialogTreeCrossStoryConditionalBranch").map((row) => {
       const condition = row.condition || {};
@@ -3373,7 +3391,7 @@
               ? runtime.actionTopology
               : null;
             const actionTopologyContext = actionTopology ? (() => {
-              if (actionTopology.status === "exact_empty_action_map") {
+              if (["exact_empty_action_map", "exact_no_action_map"].includes(actionTopology.status)) {
                 return `<details class="mp-subgame-task-topology mp-subgame-action-topology"><summary><strong>${esc(t("offlineRecoverySubGameActionTopology"))}</strong><span>${esc(t("offlineRecoverySubGameActionTopologyEmpty"))}</span></summary><small>${esc(t("offlineRecoverySubGameActionTopologyBoundary"))}</small></details>`;
               }
               if (actionTopology.status !== "exact_complete_action_map") {
@@ -3399,15 +3417,15 @@
               }).join("");
               const actionRows = (actionTopology.actions || []).map((action) => {
                 const edges = outgoing.get(`action:${action.localId}`) || [];
-                const distinctTargets = new Set(edges.map((edge) => edge.targetActionLocalId));
                 const edgeText = edges.map((edge) => `<span><code>${esc(edge.relation || "edge")}</code> &rarr; <code>#${esc(edge.targetActionLocalId)}</code></span>`).join(" ");
                 const storyTargets = (action.storyTargets || []).map((target) => `<code>${esc(target.storyKey || "?")}</code>`).join(" ");
                 const texts = (action.texts || []).map((value) => `<code>${esc(value)}</code>`).join(" ");
-                const isFanout = distinctTargets.size > 1;
-                return `<details class="${isFanout ? "is-fanout" : ""}"${isFanout || storyTargets ? " open" : ""}><summary><code>#${esc(action.localId)}</code><b>${esc(action.actionName || action.unionTag || "?")}</b>${edges.length ? `<small>${edges.length} ${esc(t("offlineRecoverySubGameActionEdges"))}</small>` : ""}</summary>${storyTargets ? `<p><strong>${esc(t("offlineRecoverySubGameActionStoryTargets"))}:</strong> ${storyTargets}</p>` : ""}${edgeText ? `<p>${edgeText}</p>` : ""}${texts ? `<p>${texts}</p>` : ""}</details>`;
+                const isFanout = action.controlKind === "parallel_fanout" || action.controlKind === "conditional_choice";
+                const isControl = Boolean(action.controlKind);
+                return `<details class="${isFanout ? "is-fanout" : ""}"${isControl || storyTargets ? " open" : ""}><summary><code>#${esc(action.localId)}</code><b>${esc(action.actionName || action.unionTag || "?")}</b>${action.controlKind ? `<small><code>${esc(action.controlKind)}</code></small>` : ""}${edges.length ? `<small>${edges.length} ${esc(t("offlineRecoverySubGameActionEdges"))}</small>` : ""}</summary>${storyTargets ? `<p><strong>${esc(t("offlineRecoverySubGameActionStoryTargets"))}:</strong> ${storyTargets}</p>` : ""}${edgeText ? `<p>${edgeText}</p>` : ""}${texts ? `<p>${texts}</p>` : ""}</details>`;
               }).join("");
-              const open = Number(actionTopology.typedBranchNodeCount || 0) > 0 ? " open" : "";
-              return `<details class="mp-subgame-task-topology mp-subgame-action-topology"${open}><summary><strong>${esc(t("offlineRecoverySubGameActionTopology"))}</strong><span>${Number(actionTopology.eventRootCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionEvents"))}</span><span>${Number(actionTopology.actionNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionNodes"))}</span><span>${Number(actionTopology.edgeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionEdges"))}</span><span>${Number(actionTopology.typedBranchNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionFanouts"))}</span><span>${Number(actionTopology.eventEntryConvergenceCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionConvergence"))}</span><span>${Number(actionTopology.cycleCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionCycles"))}</span></summary>${eventTypes ? `<p><strong>${esc(t("offlineRecoverySubGameActionEventTypes"))}:</strong> ${eventTypes}</p>` : ""}${actionTypes ? `<p><strong>${esc(t("offlineRecoverySubGameActionTypes"))}:</strong> ${actionTypes}</p>` : ""}${eventRows ? `<ol class="mp-subgame-action-events">${eventRows}</ol>` : ""}<div>${actionRows}</div><small>${esc(t("offlineRecoverySubGameActionTopologyBoundary"))}</small></details>`;
+              const open = Number(actionTopology.typedBranchNodeCount || 0) + Number(actionTopology.orderedSequenceNodeCount || 0) + Number(actionTopology.loopNodeCount || 0) > 0 ? " open" : "";
+              return `<details class="mp-subgame-task-topology mp-subgame-action-topology"${open}><summary><strong>${esc(t("offlineRecoverySubGameActionTopology"))}</strong><span>${Number(actionTopology.eventRootCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionEvents"))}</span><span>${Number(actionTopology.actionNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionNodes"))}</span><span>${Number(actionTopology.edgeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionEdges"))}</span><span>${Number(actionTopology.orderedSequenceNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionSequences"))}</span><span>${Number(actionTopology.parallelFanoutNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionFanouts"))}</span><span>${Number(actionTopology.conditionalBranchNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionChoices"))}</span><span>${Number(actionTopology.loopNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionLoops"))}</span><span>${Number(actionTopology.eventEntryConvergenceCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionConvergence"))}</span><span>${Number(actionTopology.cycleCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionCycles"))}</span></summary>${eventTypes ? `<p><strong>${esc(t("offlineRecoverySubGameActionEventTypes"))}:</strong> ${eventTypes}</p>` : ""}${actionTypes ? `<p><strong>${esc(t("offlineRecoverySubGameActionTypes"))}:</strong> ${actionTypes}</p>` : ""}${eventRows ? `<ol class="mp-subgame-action-events">${eventRows}</ol>` : ""}<div>${actionRows}</div><small>${esc(t("offlineRecoverySubGameActionTopologyBoundary"))}</small></details>`;
             })() : "";
             const playback = (runtime.parentDialogPlayback || []).map((item) => {
               const owners = (item.nativeEventOwners || []).map((owner) => `<code>${esc(owner.headerName || "?")}</code>`).join(" ");
@@ -3522,7 +3540,8 @@
       ${containments ? `<section><h4>${esc(t("embeddedStory"))}</h4><p>${esc(t("embeddedStoryHint"))}</p><div class="mp-order-edges">${containments}</div></section>` : ""}
       ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}
-      ${questForks || questMerges || nativeBranches || nativeMerges || sceneOptions || dialogConditionalBranches || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4><div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${sceneOptions}${dialogConditionalBranches}${typedSelectors}</div></section>` : ""}
+      ${questForks || questMerges || nativeBranches || nativeMerges || nativeSequences || sceneOptions || dialogConditionalBranches || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4><div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${nativeSequences}${sceneOptions}${dialogConditionalBranches}${typedSelectors}</div></section>` : ""}
+      ${relatedActionTopologies ? `<section><h4>${esc(t("nativeRelatedActionGraphs"))}</h4><p>${esc(t("nativeRelatedActionGraphsHint"))}</p><div class="mp-order-branches">${relatedActionTopologies}</div></section>` : ""}
       ${dialogOptions ? `<section><h4>${esc(t("optionBranches"))}</h4><div class="mp-order-dialog-branches">${dialogOptions}</div></section>` : ""}
       ${offlineGaps ? `<details class="mp-order-recovery-gaps" open><summary>${esc(t("offlineRecoveryGaps"))} <span>${offlineRows.length.toLocaleString()}</span></summary><p>${esc(t("offlineRecoveryGapsHint"))}</p><div>${offlineGaps}</div></details>` : ""}
       <small>${esc(t("isolatedScenes"))}: ${Number(summary.isolatedSceneCount || 0).toLocaleString()} 路 ${esc(t("weakOnlyScenes"))}: ${Number(summary.weakOnlySceneCount || 0).toLocaleString()}</small>
