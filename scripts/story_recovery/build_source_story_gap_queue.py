@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v108"
+SCHEMA = "sourceStoryGapQueue.v109"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -7566,6 +7566,9 @@ def _generic_unlinked_sns_definition_facts(
     option_target_ids: set[int] = set()
     link_mission_ids: set[str] = set()
     content_params: set[str] = set()
+    link_mission_ids_by_content_id: dict[str, str] = {}
+    content_params_by_content_id: dict[str, list[str]] = {}
+    authored_mission_link_content_ids: list[str] = []
     for serialized_id, node in content.items():
         content_id = node.get("contentId") if isinstance(node, dict) else None
         if (
@@ -7610,8 +7613,24 @@ def _generic_unlinked_sns_definition_facts(
         next_ids.add(node["nextContentId"])
         pre_ids.add(node["preContentId"])
         option_ids.update(node["dialogOptionIds"])
-        link_mission_ids.add(safe_key(node.get("linkMissionId")))
+        link_mission_id = safe_key(node.get("linkMissionId"))
+        link_mission_ids.add(link_mission_id)
         content_params.update(node["contentParam"])
+        if link_mission_id:
+            link_mission_ids_by_content_id[serialized_id] = (
+                link_mission_id
+            )
+        if node["contentParam"]:
+            content_params_by_content_id[serialized_id] = list(
+                node["contentParam"]
+            )
+        if (
+            related_mission_id
+            and node.get("contentType") == 12
+            and link_mission_id == related_mission_id
+            and related_mission_id in node["contentParam"]
+        ):
+            authored_mission_link_content_ids.append(serialized_id)
     invalid_options: list[str] = []
     for option_id in sorted(option_ids, key=natural_key):
         option = sns_option_table.get(option_id)
@@ -7656,7 +7675,51 @@ def _generic_unlinked_sns_definition_facts(
         key=natural_key,
     )
     if nonempty_links:
-        return None, None, "authoredMissionLink"
+        if (
+            not related_mission_id
+            or set(nonempty_links) != {related_mission_id}
+            or not authored_mission_link_content_ids
+        ):
+            return None, {
+                "validator": "genericSnsNegativeConsumer",
+                "gate": "coherentAuthoredMissionLink",
+                "storyKey": story_key,
+                "expected": {
+                    "oneRelatedMissionId": True,
+                    "type12LinkMissionIdMatchesRelatedMissionId": True,
+                    "contentParamContainsRelatedMissionId": True,
+                },
+                "actual": {
+                    "relatedMissionId": related_mission_id,
+                    "linkMissionIdsByContentId": (
+                        link_mission_ids_by_content_id
+                    ),
+                    "contentParamsByContentId": (
+                        content_params_by_content_id
+                    ),
+                    "matchingContentIds": (
+                        authored_mission_link_content_ids
+                    ),
+                },
+            }, None
+        return {
+            "chatId": chat_id,
+            "chatType": chat.get("chatType"),
+            "contentIds": sorted(content_ids),
+            "contentCount": len(content_ids),
+            "optionIds": sorted(option_ids, key=natural_key),
+            "contentParams": sorted(content_params, key=natural_key),
+            "contentParamsByContentId": content_params_by_content_id,
+            "relatedMissionId": related_mission_id,
+            "linkMissionIdsByContentId": link_mission_ids_by_content_id,
+            "snsContentIds": sorted(
+                authored_mission_link_content_ids,
+                key=natural_key,
+            ),
+            "authoredMissionLinkStatus": (
+                "exact_related_type12_link_and_content_param"
+            ),
+        }, None, "authoredMissionLink"
     return {
         "chatId": chat_id,
         "chatType": chat.get("chatType"),
@@ -11870,6 +11933,48 @@ def build_offline_exhaustion_index(
             )
             if exclusion:
                 generic_sns_exclusions[exclusion].append(story_key)
+                if exclusion == "authoredMissionLink" and facts is not None:
+                    mission_id = next(iter(missions))
+                    generic_sns_evidence_by_key[story_key] = {
+                        "sceneKey": story_key,
+                        "missionId": mission_id,
+                        "recoveryStatus": (
+                            "deferred_exact_authored_sns_mission_link"
+                        ),
+                        "evidenceKind": "sns_authored_mission_link",
+                        "definitionTable": "SNSDialogTable",
+                        "definitionTables": [
+                            "SNSDialogTable",
+                            "SNSDialogOptionTable",
+                        ],
+                        "definitionSourceFiles": [
+                            source_display_path(
+                                source_paths["snsDialogTable"]
+                            ),
+                            source_display_path(
+                                source_paths["snsOptionTable"]
+                            ),
+                            source_display_path(
+                                source_paths["snsChatTable"]
+                            ),
+                        ],
+                        **facts,
+                        "consumerBoundary": (
+                            "the exact SNSDialogTable relatedMissionId and "
+                            "type-12 linkMissionId/contentParam triple attach "
+                            "this SNS definition to the same mission"
+                        ),
+                        "orderBoundary": (
+                            "the authored mission link is navigation context, "
+                            "not a playback activator; the internal SNS graph "
+                            "orders messages only"
+                        ),
+                        "reopenWhen": (
+                            "SNSDialogTable, SNSDialogOptionTable, SNSChatTable, "
+                            "or the generated authored-link relation changes"
+                        ),
+                        "graphEffect": "none",
+                    }
                 continue
             if failure is not None:
                 failure["sourcePaths"] = [
@@ -13523,6 +13628,259 @@ def build_offline_exhaustion_index(
         status["status"] = "inactive_cutscene_audit_stale_or_incomplete"
         return {}, status
 
+    # General cutscene-definition recovery: discover current core gaps from
+    # the audited target set, then require the same typed root/director facts
+    # used by the older declared cases.  Identity comes from the original
+    # Timeline registries, TextAsset payload, GameObject hierarchy, and reverse
+    # PPtr graph; filename shape is only used to locate the candidate payload.
+    generic_cutscene_evidence_by_key: dict[str, dict[str, Any]] = {}
+    generic_cutscene_validation_failures: list[dict[str, Any]] = []
+    generic_cutscene_qualification_diagnostics: list[dict[str, Any]] = []
+    generic_cutscene_exclusions: dict[str, list[str]] = {
+        "declaredSpecialCase": [],
+        "ambiguousMission": [],
+        "nativePlayback": [],
+        "typedObjectCarrier": [],
+        "binaryRootTokenPresent": [],
+        "missingExactDefinition": [],
+        "invalidTypedRootGraph": [],
+    }
+    str_timeline_ids = (
+        ((str_id_num_table.get("timelines_id") or {}).get("dic") or {})
+        if isinstance(str_id_num_table, dict)
+        else {}
+    )
+    for story_key, missions in sorted(
+        core_targets.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        if not story_key.startswith("cutscene_"):
+            continue
+        if story_key in all_cutscene_keys:
+            generic_cutscene_exclusions["declaredSpecialCase"].append(
+                story_key
+            )
+            continue
+        if len(missions) != 1:
+            generic_cutscene_exclusions["ambiguousMission"].append(
+                story_key
+            )
+            continue
+        if native_playback_index is None or native_playback_index.get(
+            story_key
+        ):
+            generic_cutscene_exclusions["nativePlayback"].append(
+                story_key
+            )
+            continue
+        if story_key not in no_candidate_keys:
+            generic_cutscene_exclusions["typedObjectCarrier"].append(
+                story_key
+            )
+            continue
+
+        mission_id = next(iter(missions))
+        definition_paths = sorted(
+            cutscene_definition_root.glob(f"{story_key}_p*.json")
+        )
+        registry_id = str_timeline_ids.get(story_key)
+        reverse_registry_value = timeline_ids.get(str(registry_id))
+        if (
+            len(definition_paths) != 1
+            or not isinstance(registry_id, int)
+            or safe_key(reverse_registry_value) != story_key
+        ):
+            generic_cutscene_exclusions[
+                "missingExactDefinition"
+            ].append(story_key)
+            generic_cutscene_qualification_diagnostics.append({
+                "validator": "genericCutsceneDefinitionConsumer",
+                "gate": "uniqueTextAssetAndBidirectionalTimelineRegistry",
+                "storyKey": story_key,
+                "missionId": mission_id,
+                "sourcePaths": [
+                    str(source_paths["strIdNumTable"]),
+                    str(source_paths["numIdStrTable"]),
+                    str(cutscene_definition_root),
+                ],
+                "expected": {
+                    "textAssetCount": 1,
+                    "integerTimelineRegistryId": True,
+                    "reverseRegistryValue": story_key,
+                },
+                "actual": {
+                    "textAssets": [str(path) for path in definition_paths],
+                    "timelineRegistryId": registry_id,
+                    "reverseRegistryValue": reverse_registry_value,
+                },
+            })
+            continue
+
+        definition_path = definition_paths[0]
+        definition_payload = read_json(definition_path, {})
+        decoded_definition: Any = None
+        try:
+            decoded_definition = json.loads(base64.b64decode(
+                definition_payload["m_Script"],
+                validate=True,
+            ))
+        except (KeyError, TypeError, ValueError, binascii.Error, json.JSONDecodeError):
+            pass
+        object_rows = [
+            row
+            for row in gameobject_audit.get("gameObjects") or []
+            if isinstance(row, dict)
+            and set(_string_list(row.get("storyKeys"))) == {story_key}
+        ]
+        director_hosts = [
+            row
+            for row in reverse_pptr_audit.get("directorHosts") or []
+            if isinstance(row, dict)
+            and set(_string_list(row.get("storyKeys"))) == {story_key}
+        ]
+        definition_valid = (
+            isinstance(definition_payload, dict)
+            and set(definition_payload) == {"Name", "m_Name", "m_Script"}
+            and safe_key(definition_payload.get("Name")) == story_key
+            and safe_key(definition_payload.get("m_Name")) == story_key
+            and isinstance(decoded_definition, dict)
+            and safe_key(decoded_definition.get("cutsceneName")) == story_key
+            and safe_key(decoded_definition.get("path")).endswith(
+                f"/{story_key}/Prefab/{story_key}"
+            )
+        )
+        object_graph_valid = (
+            bool(object_rows)
+            and all(
+                set(_string_list(row.get("expectedGapMissions")))
+                == {mission_id}
+                and safe_key((row.get("type") or {}).get("scriptFullName"))
+                == "Beyond.Gameplay.View.CutsceneRootComponent"
+                and row.get("candidateStatus")
+                == "no_typed_owner_or_runtime_sibling_or_descendant"
+                and row.get("edgeStatus") == "no_edge_candidate_only"
+                and not row.get("candidateSiblingComponents")
+                and not row.get("candidateDescendantComponents")
+                and not row.get("unresolvedChildTransformPathIds")
+                for row in object_rows
+            )
+        )
+        director_graph_valid = (
+            bool(director_hosts)
+            and all(
+                set(_string_list(row.get("expectedGapMissions")))
+                == {mission_id}
+                and safe_key(row.get("pointerPath")) == "$.m_PlayableAsset"
+                and not row.get("candidateComponents")
+                and not row.get("crossStoryContainments")
+                and not row.get("crossStoryPlaybackAliases")
+                and any(
+                    safe_key(binding.get("hostStoryKey")) == story_key
+                    and safe_key(binding.get("pointerPath")) == "$._director"
+                    and safe_key(binding.get("pointerStatus")) == "resolved"
+                    for binding in row.get("rootDirectorBindings") or []
+                    if isinstance(binding, dict)
+                )
+                for row in director_hosts
+            )
+        )
+        root_bytes = story_key.encode("utf-8")
+        binary_root_present = (
+            root_bytes in game_assembly_bytes
+            or story_key.encode("utf-16le") in game_assembly_bytes
+            or root_bytes in global_metadata_bytes
+            or story_key.encode("utf-16le") in global_metadata_bytes
+        )
+        if binary_root_present:
+            generic_cutscene_exclusions[
+                "binaryRootTokenPresent"
+            ].append(story_key)
+            continue
+        if not (definition_valid and object_graph_valid and director_graph_valid):
+            generic_cutscene_exclusions[
+                "invalidTypedRootGraph"
+            ].append(story_key)
+            generic_cutscene_qualification_diagnostics.append({
+                "validator": "genericCutsceneDefinitionConsumer",
+                "gate": "exactDefinitionRootDirectorGraph",
+                "storyKey": story_key,
+                "missionId": mission_id,
+                "sourcePaths": [
+                    str(definition_path),
+                    str(gameobject_audit_path),
+                    str(reverse_pptr_audit_path),
+                ],
+                "expected": {
+                    "definitionIdentity": story_key,
+                    "typedCutsceneRootWithoutOwnerRuntimeCandidate": True,
+                    "resolvedRootDirectorWithoutCrossStoryAlias": True,
+                },
+                "actual": {
+                    "definitionValid": definition_valid,
+                    "gameObjectRows": len(object_rows),
+                    "objectGraphValid": object_graph_valid,
+                    "directorHosts": len(director_hosts),
+                    "directorGraphValid": director_graph_valid,
+                },
+            })
+            continue
+        generic_cutscene_evidence_by_key[story_key] = {
+            "sceneKey": story_key,
+            "missionId": mission_id,
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "evidenceKind": "cutscene_root_without_recovered_activator",
+            "timelineRegistryId": registry_id,
+            "definitionRootNames": [story_key],
+            "directorHostCount": len(director_hosts),
+            "gameObjectRowCount": len(object_rows),
+            "definitionSourceFiles": [
+                source_display_path(definition_path),
+                source_display_path(source_paths["strIdNumTable"]),
+                source_display_path(source_paths["numIdStrTable"]),
+            ],
+            "sourceFiles": [
+                source_display_path(carrier_audit_path),
+                source_display_path(gameobject_audit_path),
+                source_display_path(reverse_pptr_audit_path),
+            ],
+            "originalBinaryFiles": [
+                source_display_path(source_paths["gameAssembly"]),
+                source_display_path(source_paths["globalMetadata"]),
+            ],
+            "definitionSha256": _sha256_file(definition_path),
+            "definitionPath": safe_key(decoded_definition.get("path")),
+            "isTransition": decoded_definition.get("isTransition"),
+            "carrierAuditStatus":
+                "no_typed_story_owner_or_runtime_carrier",
+            "candidateStatus":
+                "no_typed_owner_or_runtime_sibling_or_descendant",
+            "binaryRootTokenStatus":
+                "absent_utf8_and_utf16le_in_current_game_binaries",
+            "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+            "playbackMappingId": OFFLINE_EXHAUSTION_REVERSE_PPTR_MAPPING_ID,
+            "gameAssemblySha256": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+            "globalMetadataSha256": OFFLINE_EXHAUSTION_METADATA_SHA256,
+            "consumerBoundary": (
+                "the bidirectional Timeline registry, decoded TextAsset, "
+                "typed CutsceneRootComponent hierarchy, and resolved "
+                "PlayableDirector prove an executable cutscene definition; "
+                "the current typed carrier, reverse-PPtr, playback-index, "
+                "GameAssembly, and metadata surfaces expose no activator or "
+                "mission/quest owner"
+            ),
+            "orderBoundary": (
+                "Timeline registration, object hierarchy, asset path, "
+                "filename suffix, OCR, and manual display order do not place "
+                "the cutscene in mission chronology"
+            ),
+            "reopenWhen": (
+                "the installed binary, Timeline registries, TextAsset, object "
+                "indexes, or typed playback route census changes"
+            ),
+            "graphEffect": "none",
+        }
+
     gameobject_rows_by_key: dict[str, list[dict[str, Any]]] = {}
     reverse_hosts_by_key: dict[str, list[dict[str, Any]]] = {}
     presentation_cutscene_valid = (
@@ -14427,6 +14785,11 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
+    for story_key, evidence in sorted(
+        generic_cutscene_evidence_by_key.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        index.setdefault(story_key, evidence)
     for text_only_key, definition in (
         OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES.items()
     ):
@@ -14607,6 +14970,11 @@ def build_offline_exhaustion_index(
                 else "inactive_native_playback_index_unavailable"
             ),
             "qualifiedStoryKeys": len(generic_sns_evidence_by_key),
+            "qualifiedAuthoredMissionLinkStoryKeys": len({
+                story_key
+                for story_key, row in generic_sns_evidence_by_key.items()
+                if row.get("evidenceKind") == "sns_authored_mission_link"
+            }),
             "qualifiedMissions": len({
                 safe_key(row.get("missionId"))
                 for row in generic_sns_evidence_by_key.values()
@@ -14634,6 +15002,48 @@ def build_offline_exhaustion_index(
                     "snsDialogTable",
                     "snsOptionTable",
                     "snsChatTable",
+                    "gameAssembly",
+                    "globalMetadata",
+                )
+            },
+            "carrierAuditTargetSetSha256": core_target_digest,
+            "graphEffect": "none",
+        },
+        "genericCutsceneDefinitionEvidence": {
+            "status": (
+                "active"
+                if native_playback_index is not None
+                else "inactive_native_playback_index_unavailable"
+            ),
+            "qualifiedStoryKeys": len(generic_cutscene_evidence_by_key),
+            "qualifiedMissions": len({
+                safe_key(row.get("missionId"))
+                for row in generic_cutscene_evidence_by_key.values()
+                if safe_key(row.get("missionId"))
+            }),
+            "validationFailures": generic_cutscene_validation_failures,
+            "qualificationDiagnostics": (
+                generic_cutscene_qualification_diagnostics
+            ),
+            "exclusions": {
+                name: sorted(set(values), key=natural_key)
+                for name, values in generic_cutscene_exclusions.items()
+            },
+            "sourcePaths": {
+                "strIdNumTable": str(source_paths["strIdNumTable"]),
+                "numIdStrTable": str(source_paths["numIdStrTable"]),
+                "textAssetRoot": str(cutscene_definition_root),
+                "carrierAudit": str(carrier_audit_path),
+                "gameObjectAudit": str(gameobject_audit_path),
+                "reversePptrAudit": str(reverse_pptr_audit_path),
+                "gameAssembly": str(source_paths["gameAssembly"]),
+                "globalMetadata": str(source_paths["globalMetadata"]),
+            },
+            "sourceSha256": {
+                name: actual_hashes.get(name, "")
+                for name in (
+                    "strIdNumTable",
+                    "numIdStrTable",
                     "gameAssembly",
                     "globalMetadata",
                 )
@@ -17257,6 +17667,10 @@ def _closed_exact_runtime_config_isolated_scenes(
             "sourceFiles": [
                 "export_full/structured/StreamingAssets/Table/"
                 "SNSDialogTable.json",
+                "export_full/structured/StreamingAssets/Table/"
+                "SNSDialogOptionTable.json",
+                "export_full/structured/StreamingAssets/Table/"
+                "SNSChatTable.json",
             ],
             "activationBoundary": (
                 "the exact SNSDialogTable relatedMissionId and terminal "
@@ -20178,6 +20592,10 @@ def main(argv: list[str] | None = None) -> int:
         (
             "Generic SNS negative-consumer",
             "genericSnsNegativeConsumerEvidence",
+        ),
+        (
+            "Generic cutscene definition",
+            "genericCutsceneDefinitionEvidence",
         ),
     ):
         failures = (

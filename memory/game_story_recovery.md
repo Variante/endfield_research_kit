@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 616 (490 MissionRuntime + 126 Story-only recovery shells) |
+| Pipeline missions | 625 (490 MissionRuntime + 135 Story-only recovery shells) |
 | Unique Story files | 5,282 |
 | Connected files | 4,181 (79.2%) |
 | Files with a normalized trigger/context route | 4,402 (83.3%) |
@@ -44,25 +44,25 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch generalizes current-build classification across
-three definition families. The existing radio classifier still qualifies 504
-rows across 171 missions and excludes 192 exact native-playback rows. A new
-NPC-proxy classifier validates complete missionless `NpcProxyEx` selectors,
-their exact `NpcProxyTable` identity, MemoryPack DialogId registration, and the
-hash-locked native `_TryGetNpcProxyInteractDialogId` method; it qualifies 181
-dialogs across 55 missions while refusing 101 dialogs with native playback.
-A new SNS classifier validates complete dialog/chat/content/option graphs,
-including arbitrary negative terminal ids, then requires empty authored
-mission links and negative route, typed-carrier, native-playback, and installed-
-binary token surfaces; it qualifies 214 definitions across 88 missions and
-excludes seven authored-link rows. All three classifiers fail closed on a
-stronger native or cross-owner route and create no graph edge. Mission Pipeline
-shows proxy identities, active row indices, binary method token/address, SNS
-internal facts, original tables/binaries, and explicit consumer/order/reopen
-boundaries. `gm02m12` and `gm02m7` now score zero. Major actionable rows are
-down to two (score 10); character has 107 and other has 654, while main/event
-remain zero. The graph is unchanged at 1,485 strong edges, 302 native branch
-groups, and 18 convergences.
+The latest recovery batch generalizes two more current-build patterns without
+adding per-scene declarations. The SNS classifier now distinguishes 214
+definition-only conversations from seven exact authored mission links by
+requiring `relatedMissionId`, a type-12 `linkMissionId`, and its `contentParam`
+to agree; it qualifies 221 rows across 93 missions. The new cutscene classifier
+discovers gaps from the current target census, then requires bidirectional
+Timeline registration, decoded TextAsset identity, a typed
+`CutsceneRootComponent` hierarchy, a resolved root `PlayableDirector`, negative
+owner/runtime carrier and native playback indexes, and absent exact root tokens
+in both installed binaries. It qualifies 28 roots across 19 missions; seven
+similar roots do not qualify for this pattern and retain their prior
+classification, with bounded diagnostics explaining the incomplete definition
+or typed root/director proof. `cutscene_gm02m10_1`
+is therefore an executable definition with no recovered activator, while
+`sns_gm02m11_1` is attached to its mission but gains no activation or order
+edge. Mission Pipeline shows all related tables, TextAssets, typed audits, and
+original binaries. Main, event, and major core-isolated queues now have zero
+actionable rows; character has 100 and other has 630. The graph remains 1,485
+strong edges, 302 native branch groups, and 18 convergences.
 
 The preceding `gm02m21` batch recovers its exact native quest topology and closes
 its two remaining actionable radios without inventing placement. Hash-locked
