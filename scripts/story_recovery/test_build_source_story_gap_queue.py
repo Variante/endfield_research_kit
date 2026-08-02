@@ -3521,6 +3521,16 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "radio_gm02m13_5": {"au_radio_gm02m13_5_001"},
                 "radio_gm02m14_1": {"au_radio_gm02m14_1_001"},
                 "radio_gm02m14_12": {"au_radio_gm02m14_12_001"},
+                "radio_gm02m15_9": {
+                    f"au_radio_gm02m15_9_{number:03d}"
+                    for number in range(1, 5)
+                },
+                "radio_gm02m15_12": {
+                    "au_radio_gm02m15_12_001",
+                    "au_radio_gm02m15_12_002",
+                },
+                "radio_gm02m17_2": {"au_radio_gm02m17_2_001"},
+                "radio_gm02m17_4": {"au_radio_gm02m17_4_001"},
                 "radio_gm01m6_0d5": {
                     "au_radio_gm01m6_0d5_001",
                     "au_radio_gm01m6_0d5_002",
@@ -5055,6 +5065,135 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual([], topology["storyAssignments"])
         self.assertFalse(topology["orderEvidence"])
 
+    def test_gm02m15_radio_frontier_and_objective_conjunction_are_exact(
+        self,
+    ) -> None:
+        story_keys = {"radio_gm02m15_9", "radio_gm02m15_12"}
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GM02M15_RADIOS,
+            story_keys,
+        )
+        self.assertEqual(
+            story_keys,
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm02m15" in key
+            },
+        )
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual("active", status["status"])
+        self.assertTrue(story_keys <= set(index))
+        self.assertEqual(
+            [
+                "au_radio_gm02m15_9_001",
+                "au_radio_gm02m15_9_002",
+                "au_radio_gm02m15_9_003",
+                "au_radio_gm02m15_9_004",
+            ],
+            index["radio_gm02m15_9"]["missingAudioIds"],
+        )
+        self.assertEqual(
+            [
+                "au_radio_gm02m15_12_001",
+                "au_radio_gm02m15_12_002",
+            ],
+            index["radio_gm02m15_12"]["missingAudioIds"],
+        )
+        topology = index["radio_gm02m15_9"][
+            "missionQuestTopologyContext"
+        ]
+        self.assertEqual(
+            [f"gm02m15_q#{number}" for number in range(1, 9)],
+            topology["mainPathQuestIds"],
+        )
+        self.assertEqual([], topology["forks"])
+        self.assertEqual([], topology["merges"])
+        self.assertEqual(1, len(topology["objectiveConjunctions"]))
+        conjunction = topology["objectiveConjunctions"][0]
+        self.assertEqual("gm02m15_q#5", conjunction["questId"])
+        self.assertEqual(
+            ["jianbei1", "jianbei2", "jianbei3"],
+            [row["key"] for row in conjunction["subConditions"]],
+        )
+        self.assertEqual(
+            "all_serialized_conditions_required",
+            conjunction["completionSemantics"],
+        )
+        self.assertEqual("not_serialized", conjunction["executionOrderStatus"])
+        self.assertFalse(conjunction["storyOrderEvidence"])
+        self.assertIn(
+            "export_full/structured/StreamingAssets/Data/Json/"
+            "LevelScriptData/map02_lv006/25000120003.json",
+            conjunction["relatedSourceFiles"],
+        )
+        self.assertEqual([], topology["storyAssignments"])
+        self.assertFalse(topology["orderEvidence"])
+
+    def test_gm02m15_objective_conjunction_validator_fails_closed(
+        self,
+    ) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        declaration = gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS[
+            "gm02m15"
+        ]
+        broken_conjunctions = copy.deepcopy(
+            declaration["objectiveConjunctionsByQuest"]
+        )
+        broken_conjunctions["gm02m15_q#5"][0]["subConditions"][1][
+            "key"
+        ] = "jianbei_missing"
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS,
+            {"gm02m15": {
+                **declaration,
+                "objectiveConjunctionsByQuest": broken_conjunctions,
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual({}, failed_index)
+        failure = failed_status["validatorDiagnostics"][0]
+        self.assertEqual("offlineMissionTopologyContext", failure["validator"])
+        self.assertEqual(
+            "exactQuestPredecessorGraphMainPathStateDependenciesAndObjectiveConjunctions",
+            failure["gate"],
+        )
+        self.assertEqual("gm02m15", failure["mission"])
+        expected = failure["expected"]["objectiveConjunctionsByQuest"]
+        actual = failure["actual"]["objectiveConjunctionsByQuest"]
+        self.assertEqual(
+            "jianbei_missing",
+            expected["gm02m15_q#5"][0]["subConditions"][1]["key"],
+        )
+        self.assertEqual(
+            "jianbei2",
+            actual["gm02m15_q#5"][0]["subConditions"][1]["key"],
+        )
+        self.assertIn("sourceSha256", failure)
+
     def test_gm01m4_dialog_radio_frontier_and_linear_topology_are_exact(
         self,
     ) -> None:
@@ -5493,7 +5632,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(failure["validator"], "offlineMissionTopologyContext")
         self.assertEqual(
             failure["gate"],
-            "exactQuestPredecessorGraphMainPathAndStateDependencies",
+            "exactQuestPredecessorGraphMainPathStateDependenciesAndObjectiveConjunctions",
         )
         self.assertEqual(failure["mission"], "gm01m13")
         self.assertIn("sourceSha256", failure)
@@ -6287,7 +6426,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         failure = failed_status["validatorDiagnostics"][0]
         self.assertEqual("offlineMissionTopologyContext", failure["validator"])
         self.assertEqual(
-            "exactQuestPredecessorGraphMainPathAndStateDependencies",
+            "exactQuestPredecessorGraphMainPathStateDependenciesAndObjectiveConjunctions",
             failure["gate"],
         )
         self.assertEqual("gm01m17", failure["mission"])
@@ -6344,7 +6483,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             failure["validator"],
         )
         self.assertEqual(
-            "exactQuestPredecessorGraphMainPathAndStateDependencies",
+            "exactQuestPredecessorGraphMainPathStateDependenciesAndObjectiveConjunctions",
             failure["gate"],
         )
         self.assertEqual("gm02m20", failure["mission"])
@@ -6408,7 +6547,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         failure = failed_status["validatorDiagnostics"][0]
         self.assertEqual("offlineMissionTopologyContext", failure["validator"])
         self.assertEqual(
-            "exactQuestPredecessorGraphMainPathAndStateDependencies",
+            "exactQuestPredecessorGraphMainPathStateDependenciesAndObjectiveConjunctions",
             failure["gate"],
         )
         self.assertEqual("gm01m16", failure["mission"])

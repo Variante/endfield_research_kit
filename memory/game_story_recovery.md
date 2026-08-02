@@ -44,7 +44,22 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest `gm02m8` batch proves that its apparent “nine, six, three items
+The latest `gm02m15` batch closes its two remaining actionable radios without
+inventing placement. Hash-locked MissionRuntime is a strict
+`q#1 -> q#2 -> ... -> q#8` predecessor chain with no quest fork or merge. Its
+q#5 objective is an exact `{0} and {1} and {2}` conjunction over LevelScript
+`map02_lv006/25000120003` booleans `jianbei1`, `jianbei2`, and `jianbei3`: all
+three predicates are required, but their evaluation order and Story placement
+are not serialized. `radio_gm02m15_9` and `_12` occur only as current
+RadioTable definitions; all six authored audio ids are absent from AudioDialog,
+and no typed MissionRuntime, LevelScript, GameplayConfig, complete AnimeStudio
+object carrier, GameObject/reverse-PPtr host, or installed-binary root token
+supplies a consumer. Mission Pipeline shows both source-bounded gaps, the exact
+linear quest topology, q#5 conjunction, MissionRuntime and LevelScript files,
+and graph effect `none`. The major queue now has 15 actionable core-isolated
+rows and score 75; `gm02m21` is next at score 10 with two actionable files.
+
+The preceding `gm02m8` batch proves that its apparent “nine, six, three items
 remaining” dialog progression is not a current runtime branch. Hash-locked
 MissionRuntime contains only the linear quest chain `q#1 -> q#2 -> q#3`, with
 no client action map or mission properties: `dlg_gm02m8_1` is the exact NPC
@@ -56,9 +71,7 @@ consumer, Lua/object-index carrier, or AnimeStudio carrier candidate; their
 exact roots are absent from both current installed binaries. Mission Pipeline
 now exposes all three as original-data-bounded activation gaps, attaches their
 table and mission-topology files, and keeps graph effect `none`. Their localized
-wording is useful cross-reference only and does not prove playback. The major
-queue now has 17 actionable core-isolated rows and score 85; `gm02m15` is next
-at score 10 with two actionable files.
+wording is useful cross-reference only and does not prove playback.
 
 The preceding `gm02m17` batch adds one original-binary-backed Story edge and
 closes its remaining two actionable files without guessing. Current-build
@@ -643,8 +656,8 @@ only.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** main and event have no actionable core-isolated
-   or strict quest-attachment gaps. Major missions retain 17 actionable
-   core-isolated files and score 85; seven broad main-story co-memberships
+   or strict quest-attachment gaps. Major missions retain 15 actionable
+   core-isolated files and score 75; seven broad main-story co-memberships
    remain visible as non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
@@ -660,8 +673,8 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should move to the highest-ranked remaining major-mission frontier:
-`gm02m15` (score 10 and two actionable files), followed by `gm02m21`,
-`gm02m4`, `gm02m12`, and `gm01m8` at the same score, then the five character-mission
+`gm02m21`, `gm02m4`, `gm02m12`, and `gm01m8` (each score 10 with two
+actionable files), then the five character-mission
 quest-attachment gaps. Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed

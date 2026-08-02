@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v105"
+SCHEMA = "sourceStoryGapQueue.v106"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -190,7 +190,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v87"
+    "current-build-offline-story-carrier-exhaustion-v88"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -218,6 +218,8 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm02m13_5": "radio_gm02m13_5",
     "radio_gm02m17_2": "radio_gm02m17_2",
     "radio_gm02m17_4": "radio_gm02m17_4",
+    "radio_gm02m15_9": "radio_gm02m15_9",
+    "radio_gm02m15_12": "radio_gm02m15_12",
     "dlg_gm01m4_7": "dlg_gm01m4_7",
     "misc_dlg_gm01m4_3d5": "dlg_gm01m4_3d5",
     "radio_gm01m4_1": "radio_gm01m4_1",
@@ -576,6 +578,47 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
                 7: (4,), 8: (7,), 9: (8,), 10: (9,), 11: (10,),
                 12: (11,),
             }.items()
+        },
+    },
+    "gm02m15": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm02m15.json"
+        ),
+        "sourceSha256":
+            "026F401C4F0D6DE15235812563B91CD06798509963B8234488AA5D66273891E1",
+        "mainPathQuestIds": tuple(
+            f"gm02m15_q#{number}" for number in range(1, 9)
+        ),
+        "prevQuestIdsByQuest": {
+            f"gm02m15_q#{quest}": (
+                () if quest == 1 else (f"gm02m15_q#{quest - 1}",)
+            )
+            for quest in range(1, 9)
+        },
+        "objectiveConjunctionsByQuest": {
+            "gm02m15_q#5": ({
+                "objectiveIndex": 1,
+                "conditionType": "Beyond.Gameplay.CombineCondition",
+                "conditionEvalString": "{0} and {1} and {2}",
+                "subConditions": tuple({
+                    "conditionIndex": index,
+                    "conditionType": (
+                        "Beyond.Gameplay.CheckLevelScriptPropertyBool"
+                    ),
+                    "mapId": "map02_lv006",
+                    "scriptId": 25000120003,
+                    "key": key,
+                    "value": True,
+                    "comparer": 0,
+                    "sourceFile": (
+                        "export_full/structured/StreamingAssets/Data/Json/"
+                        "LevelScriptData/map02_lv006/25000120003.json"
+                    ),
+                } for index, key in enumerate(
+                    ("jianbei1", "jianbei2", "jianbei3")
+                )),
+            },),
         },
     },
     "gm02m17": {
@@ -6689,6 +6732,10 @@ OFFLINE_EXHAUSTION_GM02M14_RADIOS = frozenset({
     "radio_gm02m14_1",
     "radio_gm02m14_12",
 })
+OFFLINE_EXHAUSTION_GM02M15_RADIOS = frozenset({
+    "radio_gm02m15_9",
+    "radio_gm02m15_12",
+})
 OFFLINE_EXHAUSTION_GM02M13_RADIOS = frozenset({
     "radio_gm02m13_3",
     "radio_gm02m13_4",
@@ -6783,6 +6830,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm02m3": OFFLINE_EXHAUSTION_GM02M3_RADIOS,
     "gm02m13": OFFLINE_EXHAUSTION_GM02M13_RADIOS,
     "gm02m14": OFFLINE_EXHAUSTION_GM02M14_RADIOS,
+    "gm02m15": OFFLINE_EXHAUSTION_GM02M15_RADIOS,
     "gm02m17": OFFLINE_EXHAUSTION_GM02M17_RADIOS,
     "gm01m4": OFFLINE_EXHAUSTION_GM01M4_RADIOS,
     "gm01m6": OFFLINE_EXHAUSTION_GM01M6_RADIOS,
@@ -6938,6 +6986,13 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
     "radio_gm02m3_5": frozenset({"au_radio_gm02m3_5_001"}),
     "radio_gm02m14_1": frozenset({"au_radio_gm02m14_1_001"}),
     "radio_gm02m14_12": frozenset({"au_radio_gm02m14_12_001"}),
+    "radio_gm02m15_9": frozenset(
+        f"au_radio_gm02m15_9_{number:03d}" for number in range(1, 5)
+    ),
+    "radio_gm02m15_12": frozenset({
+        "au_radio_gm02m15_12_001",
+        "au_radio_gm02m15_12_002",
+    }),
     "radio_gm02m13_3": frozenset({"au_radio_gm02m13_3_001"}),
     "radio_gm02m13_4": frozenset({"au_radio_gm02m13_4_001"}),
     "radio_gm02m13_5": frozenset({"au_radio_gm02m13_5_001"}),
@@ -9699,7 +9754,24 @@ def build_offline_exhaustion_index(
                 "questStateDependenciesByQuest", {}
             ).items()
         }
+        expected_objective_conjunctions = {
+            quest_id: [
+                {
+                    **conjunction,
+                    "subConditions": list(
+                        conjunction.get("subConditions") or []
+                    ),
+                }
+                for conjunction in conjunctions
+            ]
+            for quest_id, conjunctions in declaration.get(
+                "objectiveConjunctionsByQuest", {}
+            ).items()
+        }
         actual_quest_state_dependencies: dict[
+            str, list[dict[str, Any]] | None
+        ] = {}
+        actual_objective_conjunctions: dict[
             str, list[dict[str, Any]] | None
         ] = {}
 
@@ -9764,6 +9836,96 @@ def build_offline_exhaustion_index(
                         "useGraphScope": dependency.get("useGraphScope"),
                     })
             actual_quest_state_dependencies[quest_id] = dependencies
+
+        for quest_id, expected_conjunctions in (
+            expected_objective_conjunctions.items()
+        ):
+            quest = (
+                quest_dic.get(quest_id)
+                if isinstance(quest_dic, dict) else None
+            )
+            objectives = (
+                quest.get("objectiveList")
+                if isinstance(quest, dict) else None
+            )
+            if not isinstance(objectives, list):
+                actual_objective_conjunctions[quest_id] = None
+                continue
+            conjunctions: list[dict[str, Any]] = []
+            for expected_conjunction in expected_conjunctions:
+                objective_index = expected_conjunction["objectiveIndex"]
+                objective = (
+                    objectives[objective_index - 1]
+                    if isinstance(objective_index, int)
+                    and 0 < objective_index <= len(objectives)
+                    and isinstance(objectives[objective_index - 1], dict)
+                    else None
+                )
+                condition = (
+                    objective.get("condition")
+                    if isinstance(objective, dict) else None
+                )
+                if not isinstance(condition, dict):
+                    conjunctions.append({
+                        "objectiveIndex": objective_index,
+                        "conditionType": "",
+                        "conditionEvalString": "",
+                        "subConditions": [],
+                    })
+                    continue
+                sub_conditions = []
+                for condition_index, sub_condition in enumerate(
+                    condition.get("subConditions") or []
+                ):
+                    if not isinstance(sub_condition, dict):
+                        continue
+                    map_id = safe_key(
+                        (sub_condition.get("_mapId") or {}).get(
+                            "constValue"
+                        )
+                    )
+                    raw_script_id = (
+                        sub_condition.get("_scriptId") or {}
+                    ).get("constValue")
+                    script_id = (
+                        raw_script_id.get("scriptId")
+                        if isinstance(raw_script_id, dict)
+                        else raw_script_id
+                    )
+                    sub_conditions.append({
+                        "conditionIndex": condition_index,
+                        "conditionType": safe_key(
+                            sub_condition.get("$type")
+                        ).split(",", 1)[0],
+                        "mapId": map_id,
+                        "scriptId": script_id,
+                        "key": safe_key(
+                            (sub_condition.get("_key") or {}).get(
+                                "constValue"
+                            )
+                        ),
+                        "value": (
+                            sub_condition.get("_value") or {}
+                        ).get("constValue"),
+                        "comparer": (
+                            sub_condition.get("_comparer") or {}
+                        ).get("constValue"),
+                        "sourceFile": (
+                            "export_full/structured/StreamingAssets/Data/Json/"
+                            f"LevelScriptData/{map_id}/{script_id}.json"
+                        ),
+                    })
+                conjunctions.append({
+                    "objectiveIndex": objective_index,
+                    "conditionType": safe_key(
+                        condition.get("$type")
+                    ).split(",", 1)[0],
+                    "conditionEvalString": safe_key(
+                        condition.get("conditionEvalString")
+                    ),
+                    "subConditions": sub_conditions,
+                })
+            actual_objective_conjunctions[quest_id] = conjunctions
         valid = (
             isinstance(quest_dic, dict)
             and set(quest_dic) == set(expected_prev)
@@ -9775,6 +9937,8 @@ def build_offline_exhaustion_index(
             )
             and actual_quest_state_dependencies
             == expected_quest_state_dependencies
+            and actual_objective_conjunctions
+            == expected_objective_conjunctions
         )
         if not valid:
             status.update({
@@ -9782,7 +9946,8 @@ def build_offline_exhaustion_index(
                 "validatorDiagnostics": [{
                     "validator": "offlineMissionTopologyContext",
                     "gate": (
-                        "exactQuestPredecessorGraphMainPathAndStateDependencies"
+                        "exactQuestPredecessorGraphMainPathStateDependencies"
+                        "AndObjectiveConjunctions"
                     ),
                     "mission": mission_id,
                     "sourcePaths": [str(source_paths[source_name])],
@@ -9797,6 +9962,9 @@ def build_offline_exhaustion_index(
                         "questStateDependenciesByQuest": (
                             expected_quest_state_dependencies
                         ),
+                        "objectiveConjunctionsByQuest": (
+                            expected_objective_conjunctions
+                        ),
                     },
                     "actual": {
                         "questIds": sorted(quest_dic, key=natural_key)
@@ -9806,6 +9974,9 @@ def build_offline_exhaustion_index(
                         "failedConditionsByQuest": actual_failed_conditions,
                         "questStateDependenciesByQuest": (
                             actual_quest_state_dependencies
+                        ),
+                        "objectiveConjunctionsByQuest": (
+                            actual_objective_conjunctions
                         ),
                     },
                 }],
@@ -9927,6 +10098,29 @@ def build_offline_exhaustion_index(
                 for quest_id, dependencies
                 in expected_quest_state_dependencies.items()
                 for dependency in dependencies
+            ],
+            "objectiveConjunctions": [
+                {
+                    "questId": quest_id,
+                    **conjunction,
+                    "completionSemantics": (
+                        "all_serialized_conditions_required"
+                    ),
+                    "executionOrderStatus": "not_serialized",
+                    "storyOrderEvidence": False,
+                    "relatedSourceFiles": sorted({
+                        declaration["sourceFile"],
+                        *(
+                            sub_condition["sourceFile"]
+                            for sub_condition in conjunction[
+                                "subConditions"
+                            ]
+                        ),
+                    }),
+                }
+                for quest_id, conjunctions
+                in expected_objective_conjunctions.items()
+                for conjunction in conjunctions
             ],
             "relation": "authored_mission_quest_predecessor_topology",
             "storyPlacementStatus": "unresolved",
