@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v104"
+SCHEMA = "sourceStoryGapQueue.v105"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -190,7 +190,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v86"
+    "current-build-offline-story-carrier-exhaustion-v87"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -228,6 +228,9 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "dlg_gm01m22_6": "dlg_gm01m22_6",
     "dlg_gm01m22_7": "dlg_gm01m22_7",
     "dlg_gm01m22_8": "dlg_gm01m22_8",
+    "dlg_gm02m8_2": "dlg_gm02m8_2",
+    "dlg_gm02m8_3": "dlg_gm02m8_3",
+    "dlg_gm02m8_4": "dlg_gm02m8_4",
     "misc_dlg_gm01m22_2d5": "dlg_gm01m22_2d5",
     "misc_dlg_gm01m22_3d2": "dlg_gm01m22_3d2",
     "misc_dlg_gm01m22_3d8": "dlg_gm01m22_3d8",
@@ -535,6 +538,22 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
                     )),
                 )
             },
+        },
+    },
+    "gm02m8": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm02m8.json"
+        ),
+        "sourceSha256":
+            "D927D6757223E97D50A88202804CCEAC6D1B48DD3BF4D76060992DDFBFE2D3DE",
+        "mainPathQuestIds": tuple(
+            f"gm02m8_q#{number}" for number in (1, 2, 3)
+        ),
+        "prevQuestIdsByQuest": {
+            "gm02m8_q#1": (),
+            "gm02m8_q#2": ("gm02m8_q#1",),
+            "gm02m8_q#3": ("gm02m8_q#2",),
         },
     },
     "gm02m14": {
@@ -6024,6 +6043,33 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
     },
 }
 OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS.update({
+    "dlg_gm02m8_2": {
+        "missionId": "gm02m8",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": ("dlg_gm02m8_2_001", "dlg_gm02m8_2_002"),
+        "missingAudioIds": (
+            "au_dlg_gm02m8_2_001",
+            "au_dlg_gm02m8_2_002",
+        ),
+    },
+    "dlg_gm02m8_3": {
+        "missionId": "gm02m8",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": ("dlg_gm02m8_3_001", "dlg_gm02m8_3_002"),
+        "missingAudioIds": (
+            "au_dlg_gm02m8_3_001",
+            "au_dlg_gm02m8_3_002",
+        ),
+    },
+    "dlg_gm02m8_4": {
+        "missionId": "gm02m8",
+        "dialogIdRegistrationStatus": "absent",
+        "lineIds": ("dlg_gm02m8_4_001", "dlg_gm02m8_4_002"),
+        "missingAudioIds": (
+            "au_dlg_gm02m8_4_001",
+            "au_dlg_gm02m8_4_002",
+        ),
+    },
     "dlg_gm01m13_5": {
         "missionId": "gm01m13",
         "dialogIdRegistrationStatus": "absent",
