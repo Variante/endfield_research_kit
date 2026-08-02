@@ -467,6 +467,7 @@
       triggerPlayback: "playback",
       triggerCondition: "condition",
       triggerContext: "context only",
+      triggerContextOwnerUnresolved: "exact carrier context · owner unresolved",
       triggerDependency: "dependency only",
       triggerUnresolved: "trigger known · owner unresolved",
       triggerPlaybackAlias: "root playback alias · owner unresolved",
@@ -486,6 +487,7 @@
       runtimeRecoveryQuestAnchors: "Shell quest anchors",
       runtimeRecoveryNativePaths: "Exact native path",
       runtimeRecoveryPlaybackRoots: "Exact playback root",
+      runtimeRecoveryCarrierParents: "Exact carrier parents",
       runtimeRecoverySnsLink: "Authored SNS mission link",
       offlineRecoveryRelatedOriginalData: "Related original-data bundle",
       offlineRecoveryPrtsOrder: "terminal order",
@@ -995,6 +997,7 @@
       triggerPlayback: "\u64ad\u653e\u89e6\u53d1",
       triggerCondition: "\u5b8c\u6210\u6761\u4ef6",
       triggerContext: "\u4ec5\u4e0a\u4e0b\u6587",
+      triggerContextOwnerUnresolved: "\u7cbe\u786e\u8f7d\u4f53\u4e0a\u4e0b\u6587 \u00b7 \u5f52\u5c5e\u672a\u89e3\u6790",
       triggerDependency: "\u4ec5\u4f9d\u8d56",
       triggerUnresolved: "\u89e6\u53d1\u5df2\u77e5 \u00b7 \u5f52\u5c5e\u672a\u89e3\u6790",
       triggerPlaybackAlias: "\u6839\u64ad\u653e\u522b\u540d \u00b7 \u5f52\u5c5e\u672a\u89e3\u6790",
@@ -1014,6 +1017,7 @@
       runtimeRecoveryQuestAnchors: "\u5916\u58f3\u4efb\u52a1\u8282\u70b9",
       runtimeRecoveryNativePaths: "\u7cbe\u786e\u539f\u751f\u8def\u5f84",
       runtimeRecoveryPlaybackRoots: "\u7cbe\u786e\u64ad\u653e\u6839\u8282\u70b9",
+      runtimeRecoveryCarrierParents: "\u7cbe\u786e\u8f7d\u4f53\u7236\u8282\u70b9",
       runtimeRecoverySnsLink: "\u539f\u59cb SNS \u4efb\u52a1\u94fe\u63a5",
       offlineRecoveryRelatedOriginalData: "\u76f8\u5173\u539f\u59cb\u6570\u636e\u675f",
       offlineRecoveryPrtsOrder: "\u7ec8\u7aef\u987a\u5e8f",
@@ -2184,6 +2188,11 @@
       .filter((candidate) => candidate && candidate.storyKey === row?.key);
   }
 
+  const exactBlackCarrierRelations = new Set([
+    "timeline_dialog_contains_black",
+    "dialog_tree_narrative_action",
+  ]);
+
   function offlineRecoveryHtml(row) {
     const coverage = state.index?.storyCoverage || {};
     const manifest = coverage.storyTriggerManifest || {};
@@ -2283,9 +2292,13 @@
       const composedRootPlaybackRecovery = runtimeRecovery
         && runtimeRecovery.relation === "cutscene_root_playback_alias_composed"
         && String(runtimeRecovery.missionId || "") === missionId;
+      const exactBlackCarrierRecovery = runtimeRecovery
+        && exactBlackCarrierRelations.has(runtimeRecovery.relation)
+        && String(runtimeRecovery.nominalStoryMissionId || "") === missionId;
       const displayRuntimeRecovery = crossMissionRuntimeRecovery
         || authoredSnsMissionRecovery
-        || composedRootPlaybackRecovery;
+        || composedRootPlaybackRecovery
+        || exactBlackCarrierRecovery;
       const recovery = offlineRecovery || (displayRuntimeRecovery ? runtimeRecovery : null);
       if (!entry?.key || !recovery || recovery.graphEffect !== "none") return;
       const owner = String(recovery.missionId || recovery.nominalStoryMissionId || entry.nominalMissionId || "");
@@ -2368,6 +2381,7 @@
       playback: "triggerPlayback",
       condition: "triggerCondition",
       context: "triggerContext",
+      context_owner_unresolved: "triggerContextOwnerUnresolved",
       dependency: "triggerDependency",
       playback_owner_unresolved: "triggerUnresolved",
       playback_alias_owner_unresolved: "triggerPlaybackAlias",
@@ -3096,7 +3110,9 @@
           ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoverySnsLink"))}: <code>${esc(row.missionId || "?")}</code></span>${(row.snsContentIds || []).length ? `<span>content ${(row.snsContentIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}</p>`
           : row.relation === "cutscene_root_playback_alias_composed"
             ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.missionId || "?")}</code></span>${(row.rootStoryKeys || []).length ? `<span>${esc(t("runtimeRecoveryPlaybackRoots"))}: ${(row.rootStoryKeys || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${nativePaths ? `<span>${esc(t("runtimeRecoveryNativePaths"))}: ${nativePaths}</span>` : ""}</p>`
-            : `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || "?")}</code></span><span>${esc(t("runtimeRecoveryContextMission"))}: <code>${esc(row.contextMissionId || "?")}</code></span>${(row.anchorQuestIds || []).length ? `<span>${esc(t("runtimeRecoveryQuestAnchors"))}: ${(row.anchorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${nativePaths ? `<span>${esc(t("runtimeRecoveryNativePaths"))}: ${nativePaths}</span>` : ""}</p>`
+            : exactBlackCarrierRelations.has(row.relation)
+              ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || "?")}</code></span>${(row.parentStoryKeys || []).length ? `<span>${esc(t("runtimeRecoveryCarrierParents"))}: ${(row.parentStoryKeys || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${(row.timelineIds || []).length ? `<span>${esc(t("offlineRecoveryInternalTimeline"))}: ${(row.timelineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}</p>`
+              : `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || "?")}</code></span><span>${esc(t("runtimeRecoveryContextMission"))}: <code>${esc(row.contextMissionId || "?")}</code></span>${(row.anchorQuestIds || []).length ? `<span>${esc(t("runtimeRecoveryQuestAnchors"))}: ${(row.anchorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${nativePaths ? `<span>${esc(t("runtimeRecoveryNativePaths"))}: ${nativePaths}</span>` : ""}</p>`
         : "";
       const evidenceLabel = ({
         leveldata_property_resolved_levelscript_result_branch: t("offlineRecoveryEvidenceResultBranch"),

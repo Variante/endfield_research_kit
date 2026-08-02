@@ -44,7 +44,28 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch generalizes exact local LevelScript playback without
+The latest recovery batch generalizes exact black-screen carrier recovery
+across three original-data classes: typed DialogTree narrative actions,
+serialized Timeline subtitle carriers, and typed native black-screen actions.
+It requires complete exact carrier coverage for a Story key and validates each
+closure against the current source shape; partial carrier coverage remains
+actionable, and validator failures identify the mission, Story key, expected
+and actual carrier sets, source paths, and hashes. This closes five character
+files (`black_c31m1_3`, `black_c31m2_5`, `black_c33m2_2`,
+`black_c17m2_1`, and `black_c13m3_0d5`) plus two newly matching non-character
+rows without per-file rules. Character actionable core-isolated rows fall
+from 11 to 6 and other rows from 427 to 425; five character quests still lack
+a strict Story attachment. Mission Pipeline now preserves unscoped exact
+Timeline/DialogTree containment, distinguishes carrier context with unresolved
+ownership from unresolved playback, and attaches CAB, playable, track, root,
+DialogTree, and LevelScript files. Its recovery cards show exact parent keys
+and Timeline ids. Containment, internal tree adjacency, native shell context,
+filenames, addresses, OCR, and manual order create no ownership or relative
+order edge. The `sourceStoryGapQueue.v113` carrier validator has zero failures,
+and the graph remains 1,485 strong edges, 302 native branch groups, and 18
+convergences.
+
+The preceding recovery batch generalizes exact local LevelScript playback without
 inventing mission ownership. A row qualifies only when every typed playback
 occurrence has a current `gameassembly-*` ActionBase mapping, exact Story
 identity, an existing hash-recorded source file, and a complete serialized
@@ -757,9 +778,9 @@ only.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** main, event, and major have no actionable
-   core-isolated or strict quest-attachment gaps. Character missions retain 11
+   core-isolated or strict quest-attachment gaps. Character missions retain six
    actionable core-isolated files plus five quest-attachment gaps. Other
-   missions retain 427 actionable core-isolated files, 17 missing mission
+   missions retain 425 actionable core-isolated files, 17 missing mission
    bundles, and three quest-attachment gaps. Broad co-memberships remain
    non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
@@ -776,10 +797,10 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should audit the remaining character frontier as shared typed
-carrier/consumer patterns: five black-screen roots, three still-unlinked
-radios, `cutscene_c6m1_1`, and two `c6m1` misc dialog roots. Then audit the five
-character-mission quest-attachment gaps. Extend the
-same pattern-based approach
+carrier/consumer patterns: `cutscene_c6m1_1`, `misc_dlg_c6m1_1d5`,
+`misc_dlg_c6m1_21d5`, and radios `radio_c6m1_23`, `radio_c31m1_12`, and
+`radio_c16m2_25`. Then audit the five character-mission quest-attachment gaps.
+Extend the same pattern-based approach
 to other definition families only when their typed schemas and complete
 consumer surfaces can be bounded without weakening the fail-closed rules.
 Within `gm02m23`, the

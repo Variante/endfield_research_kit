@@ -2687,6 +2687,105 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(row["metrics"]["closedExactNativeIsolatedScenes"], 0)
         self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 1)
 
+    def test_partial_dialog_tree_scope_closes_when_all_exact_carriers_exist(
+        self,
+    ) -> None:
+        partial = partial_mission(
+            "e1m1",
+            scenes=["black_a"],
+            isolated=["black_a"],
+        )
+
+        def occurrence(parent: str, source_path_id: str) -> dict:
+            return {
+                "textId": "black_a_001",
+                "actionType":
+                    "Beyond.Gameplay.DialogNarrativeMaskActionData",
+                "actionKind": "narrative",
+                "actionPath": "nodes[3]._transitionData.actions[0]",
+                "nodeId": "3",
+                "dialogKey": parent,
+                "sourceFile": f"TextAsset/{parent}.json",
+                "sourcePathId": source_path_id,
+                "dialogTreeConnectionPlacementStatus":
+                    "no_exact_unique_adjacent_parent_trunks",
+                "reachableFromPrimeNode": False,
+                "primeToActionNodePath": [],
+                "incomingNodeIds": ["2"],
+                "outgoingNodeIds": ["4"],
+                "nativeMappingId":
+                    gap_queue.DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID,
+            }
+
+        scoped = {
+            "key": "black_a",
+            "relation": "dialog_tree_narrative_action",
+            "parentStoryKey": "dlg_parent_a",
+            "storyOwnerMission": "e1m1",
+            "confidence": "native_derived_exact_parent_shell",
+            "evidenceTier": "derived_exact_shell",
+            "scopeCompleteness": "partial",
+            "allParentStoryKeys": ["dlg_parent_a", "dlg_parent_b"],
+            "unscopedParentStoryKeys": ["dlg_parent_b"],
+            "nativeMappingId":
+                gap_queue.DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID,
+            "occurrenceCount": 1,
+            "dialogTreeNarrativeActions": [
+                occurrence("dlg_parent_a", "AAA")
+            ],
+        }
+        unresolved = {
+            "key": "black_a",
+            "relation": "dialog_tree_narrative_action_unscoped",
+            "parentStoryKey": "dlg_parent_b",
+            "storyOwnerMission": "e1m1",
+            "confidence": "native_exact_containment_unscoped",
+            "allParentStoryKeys": ["dlg_parent_a", "dlg_parent_b"],
+            "nativeMappingId":
+                gap_queue.DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID,
+            "occurrenceCount": 1,
+            "dialogTreeNarrativeActions": [
+                occurrence("dlg_parent_b", "BBB")
+            ],
+        }
+        payload = mission_payload(connections=[scoped])
+        payload["flow"]["unresolvedDialogTreeNarrativeActions"] = [
+            unresolved
+        ]
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        closure = row["closedExactNativeIsolatedScenes"][0]
+        self.assertEqual(
+            closure["recoveryStatus"],
+            "closed_exact_dialog_tree_black_carrier_context_no_file_order",
+        )
+        self.assertEqual(
+            closure["parentStoryKeys"],
+            ["dlg_parent_a", "dlg_parent_b"],
+        )
+        self.assertEqual(row["exactBlackCarrierValidationFailures"], [])
+
+        payload["flow"].pop("unresolvedDialogTreeNarrativeActions")
+        failed = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+        self.assertEqual(
+            failed["actionableCoreIsolatedSceneKeys"],
+            ["black_a"],
+        )
+        self.assertEqual(
+            failed["exactBlackCarrierValidationFailures"][0]["gate"],
+            "dialog_tree_exact_carrier_coverage",
+        )
+
     def test_exact_embedded_playback_context_closes_with_line_position_unknown(
         self,
     ) -> None:

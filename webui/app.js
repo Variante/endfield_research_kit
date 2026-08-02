@@ -3606,6 +3606,7 @@ function storyTriggerCategoryLabel(category) {
     playback_owner_unresolved: "storyTriggerPlaybackUnresolved",
     condition: "storyTriggerCondition",
     context: "storyTriggerContext",
+    context_owner_unresolved: "storyTriggerContextOwnerUnresolved",
     dependency: "storyTriggerDependency",
     definition_only: "storyTriggerDefinition",
     non_mission_content: "storyTriggerNonMissionContent",
