@@ -72,6 +72,9 @@ Rebuild Story data after editing overrides.
 - Disabling debug from a hidden page returns to a visible page and URL.
 - Mission Pipeline distinguishes ownership, context, definition-only rows, and
   unresolved native playback.
+- BlackBox recovery shells show the exact SubGame row, bound LevelScript,
+  separate main/extra/fail task lanes, typed parent playback, and parents that
+  remain definition-only; task lanes are never presented as Story order.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

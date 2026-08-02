@@ -67,7 +67,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v120"
+SCHEMA = "sourceStoryGapQueue.v121"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -7665,6 +7665,10 @@ def _generic_parent_dialog_level_context_facts(
     level_config_root: Path | None,
     level_data_root: Path | None,
     text_asset_root: Path | None,
+    subgame_table: Any = None,
+    subgame_table_path: Path | None = None,
+    level_script_root: Path | None = None,
+    native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     """Resolve parent DialogTrees to exact authored level/dungeon files.
 
@@ -7674,7 +7678,13 @@ def _generic_parent_dialog_level_context_facts(
     exact length-framed id. An optional AnimeStudio map TextAsset is accepted
     only when its decoded payload independently names the same level.
 
-    These are asset-shell relationships, not activation, ownership, or order.
+    When the optional SubGame registry and native playback index are supplied,
+    the same generic resolver also requires an exact missionless BlackBox row,
+    and its bound LevelScript file. Typed ``StartDialogAction`` occurrences are
+    attached only for selected parents actually present in that script; absent
+    parents remain explicitly definition-only in this runtime shell. Main,
+    extra, and fail tasks remain separate authored SubGame lanes and are not
+    promoted to Story chronology.
     """
     if (
         not isinstance(level_basic_info_table, dict)
@@ -7838,7 +7848,7 @@ def _generic_parent_dialog_level_context_facts(
             key=lambda path: natural_key(path.name),
         )
         source_files = [config_path, *level_data_files]
-        contexts.append({
+        context = {
             "levelId": level_id,
             "parentDialogTreeIds": sorted(set(parent_keys), key=natural_key),
             "dungeonId": dungeon_id,
@@ -7858,7 +7868,238 @@ def _generic_parent_dialog_level_context_facts(
             "relation": "exact_parent_dialog_level_asset_shell",
             "graphEffect": "none",
             "orderEvidence": False,
-        })
+        }
+        if (
+            subgame_table is not None
+            or subgame_table_path is not None
+            or level_script_root is not None
+            or native_playback_index is not None
+        ):
+            table_rows = (
+                subgame_table.get("dataTable")
+                if isinstance(subgame_table, dict)
+                and isinstance(subgame_table.get("dataTable"), dict)
+                else subgame_table
+            )
+            subgame_row = (
+                table_rows.get(dungeon_id)
+                if isinstance(table_rows, dict)
+                else None
+            )
+            bind_script_id = (
+                subgame_row.get("bindScriptId")
+                if isinstance(subgame_row, dict)
+                else None
+            )
+            script_path = (
+                level_script_root / level_id / f"{bind_script_id}.json"
+                if isinstance(level_script_root, Path)
+                and isinstance(bind_script_id, int)
+                and not isinstance(bind_script_id, bool)
+                and bind_script_id > 0
+                else None
+            )
+            script_source = (
+                _repo_source_path(script_path)
+                if isinstance(script_path, Path)
+                else ""
+            )
+            expected_parent_keys = sorted(set(parent_keys), key=natural_key)
+            parent_playback: list[dict[str, Any]] = []
+            missing_parent_keys: list[str] = []
+            mismatched_parent_occurrences: dict[str, list[dict[str, Any]]] = {}
+            for parent_key in expected_parent_keys:
+                candidates = (
+                    native_playback_index.get(parent_key) or []
+                    if isinstance(native_playback_index, dict)
+                    else []
+                )
+                matches = [
+                    row for row in candidates
+                    if safe_key(row.get("levelId")) == level_id
+                    and safe_key(row.get("scriptId")) == str(bind_script_id)
+                    and safe_key(row.get("actionName")) == "StartDialogAction"
+                    and safe_key(row.get("sourceFile")) == script_source
+                    and safe_key(row.get("nativeMappingId")).startswith(
+                        "gameassembly-"
+                    )
+                    and safe_key(row.get("nativeEventOwnerStatus"))
+                    == "exact_serialized_control_path"
+                    and isinstance(row.get("nativeEventOwners"), list)
+                    and bool(row.get("nativeEventOwners"))
+                    and all(
+                        isinstance(owner, dict)
+                        and safe_key(owner.get("status"))
+                        == "exact_serialized_control_path"
+                        for owner in row.get("nativeEventOwners")
+                    )
+                ]
+                if len(matches) != 1:
+                    if not candidates:
+                        missing_parent_keys.append(parent_key)
+                    else:
+                        mismatched_parent_occurrences[parent_key] = [
+                            {
+                                "levelId": row.get("levelId"),
+                                "scriptId": row.get("scriptId"),
+                                "actionName": row.get("actionName"),
+                                "sourceFile": row.get("sourceFile"),
+                            }
+                            for row in candidates[:5]
+                        ]
+                    continue
+                match = matches[0]
+                parent_playback.append({
+                    "parentDialogTreeId": parent_key,
+                    "actionName": "StartDialogAction",
+                    "actionLocalId": match.get("localId"),
+                    "recordOffset": match.get("recordOffset"),
+                    "nativeEventOwners": match.get("nativeEventOwners") or [],
+                    "sourceFile": script_source,
+                    "relation": "exact_levelscript_parent_dialog_playback",
+                    "orderEvidence": False,
+                })
+            task_lanes_valid = all(
+                isinstance(subgame_row.get(lane_name), list)
+                and all(
+                    isinstance(task, dict)
+                    and bool(safe_key(task.get("taskId")))
+                    for task in subgame_row.get(lane_name)
+                )
+                for lane_name in ("mainTasks", "extraTasks", "failTasks")
+            ) if isinstance(subgame_row, dict) else False
+            valid_subgame = (
+                isinstance(subgame_table_path, Path)
+                and subgame_table_path.is_file()
+                and isinstance(subgame_row, dict)
+                and safe_key(subgame_row.get("$type"))
+                == "Beyond.Gameplay.Core.BlackBoxSubGameData, Gameplay.Beyond"
+                and safe_key(subgame_row.get("id")) == dungeon_id
+                and safe_key(subgame_row.get("modeId")) == "blackbox"
+                and isinstance(bind_script_id, int)
+                and not isinstance(bind_script_id, bool)
+                and bind_script_id > 0
+                and isinstance(script_path, Path)
+                and script_path.is_file()
+                and task_lanes_valid
+                and not mismatched_parent_occurrences
+            )
+            if not valid_subgame:
+                return [], {
+                    "gate": "exactBlackBoxSubGameParentPlayback",
+                    "parentStoryKeys": expected_parent_keys,
+                    "expected": {
+                        "subGameId": dungeon_id,
+                        "runtimeType": (
+                            "Beyond.Gameplay.Core.BlackBoxSubGameData, "
+                            "Gameplay.Beyond"
+                        ),
+                        "modeId": "blackbox",
+                        "positiveIntegerBindScriptId": True,
+                        "boundLevelScriptExists": True,
+                        "taskLanes": (
+                            "mainTasks/extraTasks/failTasks are arrays of "
+                            "objects with non-empty taskId"
+                        ),
+                        "parentPlaybackMustResolveInThisScriptOrBeAbsent": (
+                            expected_parent_keys
+                        ),
+                    },
+                    "actual": {
+                        "subGameTablePath": (
+                            _repo_source_path(subgame_table_path)
+                            if isinstance(subgame_table_path, Path) else ""
+                        ),
+                        "subGameTableExists": (
+                            subgame_table_path.is_file()
+                            if isinstance(subgame_table_path, Path) else False
+                        ),
+                        "subGameRow": subgame_row,
+                        "boundLevelScriptPath": script_source,
+                        "boundLevelScriptExists": (
+                            script_path.is_file()
+                            if isinstance(script_path, Path) else False
+                        ),
+                        "taskLanesValid": task_lanes_valid,
+                        "matchedParentKeys": [
+                            row["parentDialogTreeId"] for row in parent_playback
+                        ],
+                        "missingParentKeys": missing_parent_keys,
+                        "mismatchedParentOccurrences": (
+                            mismatched_parent_occurrences
+                        ),
+                    },
+                    "sourceSha256": {
+                        "subGameTable": (
+                            _sha256_file(subgame_table_path)
+                            if isinstance(subgame_table_path, Path)
+                            and subgame_table_path.is_file() else ""
+                        ),
+                        "boundLevelScript": (
+                            _sha256_file(script_path)
+                            if isinstance(script_path, Path)
+                            and script_path.is_file() else ""
+                        ),
+                    },
+                }
+
+            def task_lane(name: str) -> list[dict[str, Any]]:
+                rows = subgame_row.get(name) or []
+                return [
+                    {
+                        key: value for key, value in row.items()
+                        if key in {"taskId", "levelScriptId", "failInfo"}
+                    }
+                    for row in rows
+                    if isinstance(row, dict) and safe_key(row.get("taskId"))
+                ]
+
+            subgame_sources = [subgame_table_path, script_path]
+            context["subGameRuntime"] = {
+                "subGameId": dungeon_id,
+                "runtimeType": safe_key(subgame_row.get("$type")),
+                "modeId": "blackbox",
+                "subDataParentId": subgame_row.get("subDataParentId"),
+                "bindScriptId": bind_script_id,
+                "mainTasks": task_lane("mainTasks"),
+                "extraTasks": task_lane("extraTasks"),
+                "failTasks": task_lane("failTasks"),
+                "parentDialogPlayback": parent_playback,
+                "definitionOnlyParentDialogTreeIds": missing_parent_keys,
+                "parentPlaybackCoverage": (
+                    "complete"
+                    if len(parent_playback) == len(expected_parent_keys)
+                    else "partial"
+                    if parent_playback
+                    else "none"
+                ),
+                "sourceFiles": [
+                    _repo_source_path(path) for path in subgame_sources
+                ],
+                "sourceSha256": {
+                    _repo_source_path(path): _sha256_file(path)
+                    for path in subgame_sources
+                },
+                "relation": "exact_blackbox_subgame_parent_dialog_playback",
+                "taskLaneBoundary": (
+                    "main, extra, and fail tasks are authored SubGame lanes, "
+                    "not Story file chronology"
+                ),
+                "parentPlaybackBoundary": (
+                    "selected parents absent from the bound script remain "
+                    "definition-only in this runtime shell; shared level and "
+                    "SubGame context does not invent their activation"
+                ),
+                "graphEffect": "none",
+                "orderEvidence": False,
+            }
+            context["sourceFiles"].extend(
+                context["subGameRuntime"]["sourceFiles"]
+            )
+            context["sourceSha256"].update(
+                context["subGameRuntime"]["sourceSha256"]
+            )
+        contexts.append(context)
     return contexts, None
 
 
@@ -7924,6 +8165,10 @@ def _generic_registered_dialog_tree_trunk_group_facts(
     level_config_root: Path | None = None,
     level_data_root: Path | None = None,
     text_asset_root: Path | None = None,
+    subgame_table: Any = None,
+    subgame_table_path: Path | None = None,
+    level_script_root: Path | None = None,
+    native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
 ) -> tuple[
     dict[str, Any] | None,
     dict[str, Any] | None,
@@ -8087,6 +8332,10 @@ def _generic_registered_dialog_tree_trunk_group_facts(
             level_config_root=level_config_root,
             level_data_root=level_data_root,
             text_asset_root=text_asset_root,
+            subgame_table=subgame_table,
+            subgame_table_path=subgame_table_path,
+            level_script_root=level_script_root,
+            native_playback_index=native_playback_index,
         )
     )
     if level_context_failure is not None:
@@ -11665,6 +11914,25 @@ def build_offline_exhaustion_index(
             / "Data"
             / "Json"
             / "LevelData"
+        ),
+        "levelScriptRoot": (
+            ROOT
+            / "export_full"
+            / "structured"
+            / "StreamingAssets"
+            / "Data"
+            / "Json"
+            / "LevelScriptData"
+        ),
+        "subGameInstanceDataTable": (
+            ROOT
+            / "export_full"
+            / "structured"
+            / "StreamingAssets"
+            / "Data"
+            / "Json"
+            / "GameplayConfig"
+            / "SubGameInstanceDataTable.json"
         ),
         "timelineLineOrders": (
             ROOT
@@ -16308,6 +16576,10 @@ def build_offline_exhaustion_index(
             {},
         )
         dungeon_table = read_json(table_root / "DungeonTable.json", {})
+        subgame_table = read_json(
+            source_paths["subGameInstanceDataTable"],
+            {},
+        )
         definitions_by_root = {
             dialog_key: definition
             for dialog_key in sorted(dialog_id_index, key=natural_key)
@@ -16353,6 +16625,12 @@ def build_offline_exhaustion_index(
                     level_config_root=source_paths["levelConfigRoot"],
                     level_data_root=source_paths["levelDataRoot"],
                     text_asset_root=cutscene_definition_root,
+                    subgame_table=subgame_table,
+                    subgame_table_path=(
+                        source_paths["subGameInstanceDataTable"]
+                    ),
+                    level_script_root=source_paths["levelScriptRoot"],
+                    native_playback_index=native_playback_index,
                 )
             )
             if failure is not None:
@@ -16424,6 +16702,9 @@ def build_offline_exhaustion_index(
                     source_display_path(source_paths["dialogIdIndex"]),
                     source_display_path(source_paths["levelBasicInfoTable"]),
                     source_display_path(table_root / "DungeonTable.json"),
+                    source_display_path(
+                        source_paths["subGameInstanceDataTable"]
+                    ),
                     source_display_path(carrier_audit_path),
                     *facts["definitionSourceFiles"],
                     *(
@@ -18248,6 +18529,38 @@ def build_offline_exhaustion_index(
                 int(row.get("parentLevelContextCount") or 0)
                 for row in registered_trunk_group_partial_evidence_by_key.values()
             ),
+            "qualifiedBlackBoxSubGameRuntimeContexts": sum(
+                1
+                for row in registered_trunk_group_evidence_by_key.values()
+                for context in row.get("parentLevelContexts") or []
+                if isinstance(context.get("subGameRuntime"), dict)
+            ),
+            "partialBlackBoxSubGameRuntimeContexts": sum(
+                1
+                for row in registered_trunk_group_partial_evidence_by_key.values()
+                for context in row.get("parentLevelContexts") or []
+                if isinstance(context.get("subGameRuntime"), dict)
+            ),
+            "partialExactParentDialogPlaybacks": sum(
+                len(
+                    context.get("subGameRuntime", {}).get(
+                        "parentDialogPlayback"
+                    ) or []
+                )
+                for row in registered_trunk_group_partial_evidence_by_key.values()
+                for context in row.get("parentLevelContexts") or []
+                if isinstance(context.get("subGameRuntime"), dict)
+            ),
+            "partialDefinitionOnlyParentsInBoundSubGameScripts": sum(
+                len(
+                    context.get("subGameRuntime", {}).get(
+                        "definitionOnlyParentDialogTreeIds"
+                    ) or []
+                )
+                for row in registered_trunk_group_partial_evidence_by_key.values()
+                for context in row.get("parentLevelContexts") or []
+                if isinstance(context.get("subGameRuntime"), dict)
+            ),
             "partialMissingLineFragments": sum(
                 len(row.get("missingLineFragments") or [])
                 for row in registered_trunk_group_partial_evidence_by_key.values()
@@ -18269,6 +18582,10 @@ def build_offline_exhaustion_index(
                 "dungeonTable": str(table_root / "DungeonTable.json"),
                 "levelConfigRoot": str(source_paths["levelConfigRoot"]),
                 "levelDataRoot": str(source_paths["levelDataRoot"]),
+                "levelScriptRoot": str(source_paths["levelScriptRoot"]),
+                "subGameInstanceDataTable": str(
+                    source_paths["subGameInstanceDataTable"]
+                ),
                 "textAssetRoot": str(cutscene_definition_root),
                 "gameAssembly": str(source_paths["gameAssembly"]),
                 "globalMetadata": str(source_paths["globalMetadata"]),

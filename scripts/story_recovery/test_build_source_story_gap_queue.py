@@ -11153,6 +11153,123 @@ class NonMissionContentClosureTests(unittest.TestCase):
         self.assertEqual(facts[1]["nearestLowerCoveredLineId"], "opaque_02")
         self.assertEqual(facts[1]["nearestUpperCoveredLineId"], "opaque_04")
 
+    def test_parent_level_context_resolves_generic_blackbox_subgame_runtime(
+        self,
+    ) -> None:
+        level_id = "opaque_factory_8"
+        dungeon_id = f"dung_{level_id}"
+        parent_key = f"dlg_{level_id}_intro"
+        bind_script_id = 81000000001
+        framed_level_id = (
+            len(level_id.encode("utf-8")).to_bytes(4, "little", signed=True)
+            + level_id.encode("utf-8")
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_root = root / "LevelConfig"
+            level_data_root = root / "LevelData"
+            text_asset_root = root / "TextAsset"
+            level_script_root = root / "LevelScriptData"
+            config_root.mkdir()
+            (level_data_root / level_id).mkdir(parents=True)
+            text_asset_root.mkdir()
+            (level_script_root / level_id).mkdir(parents=True)
+            (config_root / f"{level_id}.json").write_bytes(
+                b"config" + framed_level_id
+            )
+            (level_data_root / level_id / f"{level_id}_lv_data.json").write_bytes(
+                b"\x2bdata" + framed_level_id
+            )
+            script_path = (
+                level_script_root / level_id / f"{bind_script_id}.json"
+            )
+            script_path.write_bytes(b"exact current LevelScript payload")
+            subgame_path = root / "SubGameInstanceDataTable.json"
+            subgame_row = {
+                "$type": (
+                    "Beyond.Gameplay.Core.BlackBoxSubGameData, Gameplay.Beyond"
+                ),
+                "id": dungeon_id,
+                "modeId": "blackbox",
+                "subDataParentId": bind_script_id - 1,
+                "bindScriptId": bind_script_id,
+                "mainTasks": [{"taskId": "main_a"}],
+                "extraTasks": [{"taskId": "extra_b"}],
+                "failTasks": [{"taskId": "fail_c", "failInfo": "failed"}],
+            }
+            subgame_path.write_text(
+                json.dumps({"dataTable": {dungeon_id: subgame_row}}),
+                encoding="utf-8",
+            )
+            native_index = {parent_key: [{
+                "levelId": level_id,
+                "scriptId": bind_script_id,
+                "actionName": "StartDialogAction",
+                "localId": 7,
+                "recordOffset": 123,
+                "sourceFile": gap_queue._repo_source_path(script_path),
+                "nativeMappingId": "gameassembly-current-test-mapping",
+                "nativeEventOwnerStatus": "exact_serialized_control_path",
+                "nativeEventOwners": [{
+                    "headerName": "ScriptEvent_OnCustomEvent",
+                    "status": "exact_serialized_control_path",
+                }],
+            }]}
+            common = {
+                "level_config_root": config_root,
+                "level_data_root": level_data_root,
+                "text_asset_root": text_asset_root,
+                "subgame_table": {"dataTable": {dungeon_id: subgame_row}},
+                "subgame_table_path": subgame_path,
+                "level_script_root": level_script_root,
+                "native_playback_index": native_index,
+            }
+            contexts, failure = gap_queue._generic_parent_dialog_level_context_facts(
+                [{"sceneKey": parent_key}],
+                {level_id: {
+                    "id": level_id,
+                    "configPath": f"Data/Json/LevelConfig/{level_id}.json",
+                }},
+                {dungeon_id: {"sceneId": level_id}},
+                **common,
+            )
+
+            self.assertIsNone(failure)
+            runtime = contexts[0]["subGameRuntime"]
+            self.assertEqual(runtime["bindScriptId"], bind_script_id)
+            self.assertEqual(runtime["mainTasks"], [{"taskId": "main_a"}])
+            self.assertEqual(runtime["extraTasks"], [{"taskId": "extra_b"}])
+            self.assertEqual(runtime["failTasks"][0]["taskId"], "fail_c")
+            self.assertEqual(
+                runtime["parentDialogPlayback"][0]["parentDialogTreeId"],
+                parent_key,
+            )
+            self.assertFalse(runtime["orderEvidence"])
+
+            drifted_index = {parent_key: [dict(
+                native_index[parent_key][0],
+                scriptId=bind_script_id + 1,
+            )]}
+            contexts, failure = gap_queue._generic_parent_dialog_level_context_facts(
+                [{"sceneKey": parent_key}],
+                {level_id: {
+                    "id": level_id,
+                    "configPath": f"Data/Json/LevelConfig/{level_id}.json",
+                }},
+                {dungeon_id: {"sceneId": level_id}},
+                **dict(common, native_playback_index=drifted_index),
+            )
+            self.assertEqual(contexts, [])
+            self.assertEqual(
+                failure["gate"],
+                "exactBlackBoxSubGameParentPlayback",
+            )
+            self.assertEqual(
+                failure["actual"]["mismatchedParentOccurrences"]
+                [parent_key][0]["scriptId"],
+                bind_script_id + 1,
+            )
+
     def test_cross_owner_dialog_tree_narrative_retains_exact_parent_scope(
         self,
     ) -> None:
