@@ -71,7 +71,14 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
         }
         decoded = {
             10: {
-                "actionHeader": {"nextId": 10},
+                "actionHeader": {
+                    "nextId": 10,
+                    "priority": -2,
+                    "triggerActiveDuring": 0,
+                    "filterMode": 1,
+                    "filterMask": 3,
+                    "filterLevel": 2,
+                },
                 "nativeEventDetail": {
                     "type": "ScriptEvent_OnCustomEvent",
                     "eventKey": "#example",
@@ -94,7 +101,12 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
                 30: records[3],
             },
             "getterByLocal": {},
+            "headerByLocal": {1: records[0]},
             "equivalentRecordOffsets": {},
+            "runtimeShadowedRecordOffsets": {},
+            "runtimeDuplicateSignatureStatus": {},
+            "runtimeShadowedHeaderRecordOffsets": {},
+            "runtimeShadowedGetterRecordOffsets": {},
             "decodedByStart": decoded,
             "nextStarts": {10: 100, 100: 200, 200: 300, 300: 400},
         }
@@ -149,7 +161,7 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
         self.assertEqual(topology["eventRootCount"], 1)
         self.assertEqual(topology["actionNodeCount"], 3)
         self.assertEqual(topology["edgeCount"], 3)
-        self.assertEqual(topology["schema"], "levelScriptNativeActionTopology.v3")
+        self.assertEqual(topology["schema"], "levelScriptNativeActionTopology.v4")
         self.assertEqual(topology["typedBranchNodeCount"], 0)
         self.assertEqual(topology["orderedSequenceNodeCount"], 1)
         self.assertEqual(topology["parallelFanoutNodeCount"], 0)
@@ -161,6 +173,13 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
             ["Branch", "ManuallyAcceptClientGuideGroup", "ShowUIToast"],
         )
         self.assertFalse(topology["storyOrderEvidence"])
+        self.assertEqual(
+            topology["eventRootRuntimeMode"],
+            "independently_invoked_indexed_event_slots",
+        )
+        self.assertEqual(topology["eventPriorityCounts"], {"-2": 1})
+        self.assertEqual(topology["eventRoots"][0]["priority"], -2)
+        self.assertEqual(topology["eventRoots"][0]["filterMask"], 3)
 
     def test_zero_branch_arm_is_an_exact_terminal_not_a_missing_target(self) -> None:
         topology, diagnostic = self.run_topology(branch_targets=[20, 0])
@@ -292,6 +311,54 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
 
         self.assertEqual(context["actionByLocal"][7]["start"], 300)
         self.assertEqual(context["runtimeShadowedRecordOffsets"][7], [100])
+
+    def test_runtime_header_and_getter_slots_share_last_serialized_rule(self) -> None:
+        records = [
+            {
+                "start": start,
+                "localId": local_id,
+                "unionTag": tag,
+                "serializedMemberCount": 0,
+                "nextId": -1,
+                "strings": [],
+                "plainStrings": [],
+            }
+            for start, local_id, tag in (
+                (10, 4, 0x12BA),
+                (20, 4, 0x12BA),
+                (30, 8, 0x0001),
+                (40, 8, 0x0002),
+            )
+        ]
+        membership = {
+            10: "headerList#1",
+            20: "headerList#2",
+            30: "getterList#1",
+            40: "getterList#2",
+        }
+        with patch.object(
+            level_bindings,
+            "decode_levelscript_record_payload",
+            return_value={},
+        ):
+            context = level_bindings._prepare_levelscript_native_control_context(
+                b"fixture",
+                records,
+                membership,
+            )
+
+        self.assertEqual(context["headerByLocal"][4]["start"], 20)
+        self.assertEqual(context["getterByLocal"][8]["start"], 40)
+        self.assertEqual(context["runtimeShadowedHeaderRecordOffsets"][4], [10])
+        self.assertEqual(context["runtimeShadowedGetterRecordOffsets"][8], [30])
+        self.assertEqual(
+            context["runtimeHeaderSlotMappingId"],
+            level_bindings.LEVELSCRIPT_NATIVE_INDEXED_SLOT_MAPPING_ID,
+        )
+        self.assertEqual(
+            context["runtimeGetterSlotMappingId"],
+            level_bindings.LEVELSCRIPT_NATIVE_INDEXED_SLOT_MAPPING_ID,
+        )
 
     def test_accepts_exact_empty_action_map(self) -> None:
         action_map = {

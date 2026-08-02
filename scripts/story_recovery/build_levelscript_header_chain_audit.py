@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Audit LevelScript header events and the action chains they trigger.
 
-The ActionSerializedMap recovery gives us three physical lists:
+The ActionSerializedMap recovery gives us three physical lists (their storage
+layout is not a chronology):
 
     actionList -> getterList -> headerList
 
-This report asks the next playback question: when a named headerList event has
+The current GameAssembly builds a last-serialized indexed runtime slot table
+for each list. This report asks the next playback question: when an active
+named headerList event has
 a `nextId`, does it resolve to an actionList row, and does that action chain
 contain a cutscene/radio/dialog/levelseq play action?
 
@@ -32,6 +35,8 @@ for _path in (_REPO_ROOT / "scripts", _REPO_ROOT / "scripts" / "story_recovery")
 from common import ROOT, md_escape, write_report_json, write_text_if_changed  # noqa: E402
 from story_builder.context import LEVELSCRIPT_DIR  # noqa: E402
 from story_builder.level_bindings import (  # noqa: E402
+    LEVELSCRIPT_NATIVE_INDEXED_SLOT_MAPPING_ID,
+    _prepare_levelscript_native_control_context,
     _levelscript_file_sort_key,
     _load_levelscript_binding_data,
     classify_levelscript_record,
@@ -287,18 +292,47 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 record for record in records
                 if safe_text(membership.get(record_start(record))).startswith("actionList")
             ]
-            action_by_local = unique_by_local_id(action_records)
-            action_buckets = records_by_local_id(action_records)
+            runtime_context = _prepare_levelscript_native_control_context(
+                data,
+                records,
+                membership,
+            )
+            action_by_local = runtime_context.get("actionByLocal") or {}
+            action_buckets = runtime_context.get("actionBuckets") or {}
             all_buckets = records_by_local_id(records)
             all_by_local = unique_by_local_id(records)
             header_records = [
                 record for record in records
                 if safe_text(membership.get(record_start(record))).startswith("headerList")
             ]
+            header_by_local = runtime_context.get("headerByLocal") or {}
+            active_header_records = sorted(
+                header_by_local.values(),
+                key=record_start,
+            )
+            shadowed_actions = (
+                runtime_context.get("runtimeShadowedRecordOffsets") or {}
+            )
+            shadowed_headers = (
+                runtime_context.get("runtimeShadowedHeaderRecordOffsets") or {}
+            )
+            shadowed_getters = (
+                runtime_context.get("runtimeShadowedGetterRecordOffsets") or {}
+            )
             stats["filesWithActionMap"] += 1
             if header_records:
                 stats["filesWithHeaderRows"] += 1
-            for header in header_records:
+            stats["physicalHeaderRows"] += len(header_records)
+            stats["shadowedActionRows"] += sum(
+                len(offsets) for offsets in shadowed_actions.values()
+            )
+            stats["shadowedHeaderRows"] += sum(
+                len(offsets) for offsets in shadowed_headers.values()
+            )
+            stats["shadowedGetterRows"] += sum(
+                len(offsets) for offsets in shadowed_getters.values()
+            )
+            for header in active_header_records:
                 stats["headerRows"] += 1
                 opcode = opcode_key(header)
                 mapping = header_mapping.get(opcode, {})
@@ -316,6 +350,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                     if isinstance(decoded_header.get("actionHeader"), dict)
                     else {}
                 )
+                if isinstance(action_header.get("priority"), int):
+                    stats[f"priority:{action_header['priority']}"] += 1
                 header_next_id = action_header.get("nextId")
                 target_local_id = (
                     header_next_id
@@ -330,9 +366,6 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 if target:
                     stats["headersTargetingActionList"] += 1
                     target_status = "action-list"
-                elif len(action_candidates) > 1:
-                    stats["headersTargetingAmbiguousActionList"] += 1
-                    target_status = "ambiguous-action-list"
                 elif fallback_target:
                     stats["headersTargetingNonActionList"] += 1
                     target_status = "non-action-list"
@@ -391,6 +424,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                     "targetLocalId": target_local_id,
                     "recordNextId": header.get("nextId"),
                     "actionHeader": action_header,
+                    "runtimeSlotStatus": "active-final-serialized-slot",
+                    "runtimeShadowedHeaderRecordOffsets": (
+                        shadowed_headers.get(header.get("localId")) or []
+                    ),
+                    "runtimeSlotMappingId": (
+                        LEVELSCRIPT_NATIVE_INDEXED_SLOT_MAPPING_ID
+                    ),
                     "targetStatus": target_status,
                     "targetAction": (
                         compact_record(target, data=data, next_starts=next_starts, membership=membership)
@@ -469,7 +509,17 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "levelsScanned": len(levels),
             "filesWithActionMap": stats.get("filesWithActionMap", 0),
             "filesWithHeaderRows": stats.get("filesWithHeaderRows", 0),
+            "physicalHeaderRows": stats.get("physicalHeaderRows", 0),
             "headerRows": stats.get("headerRows", 0),
+            "runtimeShadowedActionRows": stats.get("shadowedActionRows", 0),
+            "runtimeShadowedHeaderRows": stats.get("shadowedHeaderRows", 0),
+            "runtimeShadowedGetterRows": stats.get("shadowedGetterRows", 0),
+            "eventPriorityCounts": {
+                key.removeprefix("priority:"): value
+                for key, value in sorted(stats.items())
+                if key.startswith("priority:")
+            },
+            "runtimeSlotMappingId": LEVELSCRIPT_NATIVE_INDEXED_SLOT_MAPPING_ID,
             "namedHeaderRows": stats.get("namedHeaderRows", 0),
             "headersTargetingActionList": stats.get("headersTargetingActionList", 0),
             "headersTargetingAmbiguousActionList": stats.get("headersTargetingAmbiguousActionList", 0),
@@ -538,7 +588,10 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         f"- Levels scanned: `{summary.get('levelsScanned')}`",
         f"- Files with ActionSerializedMap: `{summary.get('filesWithActionMap')}`",
         f"- Files with header rows: `{summary.get('filesWithHeaderRows')}`",
-        f"- Header rows: `{summary.get('headerRows')}`",
+        f"- Physical header rows: `{summary.get('physicalHeaderRows')}`",
+        f"- Active indexed header slots: `{summary.get('headerRows')}`",
+        f"- Runtime-shadowed rows (action/header/getter): `{summary.get('runtimeShadowedActionRows')}` / `{summary.get('runtimeShadowedHeaderRows')}` / `{summary.get('runtimeShadowedGetterRows')}`",
+        f"- Authored event priority counts: `{json.dumps(summary.get('eventPriorityCounts') or {}, sort_keys=True)}`",
         f"- Header rows named by MemoryPack-derived mapping: `{summary.get('namedHeaderRows')}`",
         f"- Headers targeting actionList rows by `nextId`: `{summary.get('headersTargetingActionList')}`",
         f"- Headers targeting duplicate/ambiguous actionList local ids by `nextId`: `{summary.get('headersTargetingAmbiguousActionList')}`",
@@ -552,7 +605,9 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         "",
         "## Interpretation",
         "",
-        "- `headerList` rows are event/listener records. A positive payload `ActionHeader.nextId` that resolves into `actionList` is a direct event-to-action edge.",
+        "- `headerList`, `actionList`, and `getterList` share one current-binary runtime rule: each list is enumerated in serialized order into an array indexed by local ID, so the last serialized record owns a repeated slot.",
+        "- Active `headerList` slots are independently invoked event/listener roots. Physical list order and authored `priority` values are listener metadata, not Story chronology.",
+        "- A positive payload `ActionHeader.nextId` that resolves into the active `actionList` slot is a direct event-to-action edge.",
         "- A target chain with a named play action is the strongest recovered evidence for how a scene/radio/dialog/levelseq can be fired by original LevelScript data.",
         "- Rows without play actions still matter: they often gate state, properties, spawners, or scripted callbacks before another action path becomes active.",
         "",
