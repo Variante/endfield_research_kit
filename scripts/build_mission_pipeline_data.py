@@ -199,7 +199,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v115"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v116"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3222,6 +3222,10 @@ def publish_offline_story_recovery(
             (
                 "leveldata_levelscript_mission_context",
                 "closed_exact_same_mission_leveldata_playback_context_no_relative_order",
+            ),
+            (
+                "cross_owner_levelscript_quest_playback_context",
+                "closed_exact_cross_mission_quest_playback_context_no_relative_order",
             ),
         }
         for row in mission.get("closedExactNativeIsolatedScenes") or []:

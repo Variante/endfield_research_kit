@@ -4127,12 +4127,6 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             {"radio_e5m3_14"},
         )
         self.assertEqual(
-            gap_queue.OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES[
-                "black_e7m1_3"
-            ]["definitionRowKeys"],
-            ("black_e7m1_3_001",),
-        )
-        self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_SNS_DEFINITIONS[
                 "sns_e1m9_1"
             ],
@@ -9798,15 +9792,6 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ]["missingAudioIds"],
             (),
         )
-        self.assertEqual(
-            set(gap_queue.OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES),
-            {
-                "black_e7m1_3",
-                "black_e11m8_12",
-                "black_e11m8_39",
-            },
-        )
-
     def test_npc_proxy_segment_native_path_closes_context_without_order(self) -> None:
         connection = {
             "key": "black_a1m8d3_2",
@@ -10608,6 +10593,143 @@ class NonMissionContentClosureTests(unittest.TestCase):
     def test_missing_table_directory_yields_no_keys(self) -> None:
         keys = gap_queue.non_mission_content_keys(Path("does/not/exist"))
         self.assertEqual(keys, {})
+
+    def test_cross_owner_levelscript_quest_playback_is_identity_agnostic(
+        self,
+    ) -> None:
+        connection = {
+            "key": "opaque_story_key",
+            "relation": "levelscript_quest_completed_action",
+            "direction": "quest_to_story",
+            "phase": "succeed",
+            "confidence": "native_typed_direct",
+            "event": "LevelEvent_OnQuestStateChanged",
+            "questState": 3,
+            "questStateName": "Completed",
+            "levelId": "opaque_level",
+            "scriptId": "42",
+            "sourceFile": (
+                "export_full/structured/StreamingAssets/Data/Json/"
+                "LevelScriptData/opaque_level/42.json"
+            ),
+            "headerLocalId": 7,
+            "actionLocalId": 11,
+            "actionPathLocalIds": [8, 11, 12],
+            "actionName": "OpaqueTypedPlaybackAction",
+            "nativeMappingId": "gameassembly-current-actionbase",
+        }
+        with patch.object(Path, "is_file", return_value=True):
+            valid, failure = (
+                gap_queue._exact_cross_owner_levelscript_quest_playback(
+                    connection,
+                    "owner_alpha",
+                    "runtime_beta",
+                    "runtime_beta_q#opaque",
+                )
+            )
+        self.assertTrue(valid)
+        self.assertIsNone(failure)
+
+        broken = {**connection, "questState": 2}
+        with patch.object(Path, "is_file", return_value=False):
+            valid, failure = (
+                gap_queue._exact_cross_owner_levelscript_quest_playback(
+                    broken,
+                    "owner_alpha",
+                    "runtime_beta",
+                    "runtime_beta_q#opaque",
+                )
+            )
+        self.assertFalse(valid)
+        self.assertEqual(failure["validator"], (
+            "crossOwnerLevelScriptQuestPlayback"
+        ))
+        self.assertEqual(failure["gate"], "exactTypedQuestStatePlaybackPath")
+        self.assertEqual(failure["actual"]["questState"], 2)
+
+    def test_cross_owner_dialog_tree_narrative_retains_exact_parent_scope(
+        self,
+    ) -> None:
+        story_key = "opaque_nested_story"
+        parent_key = "opaque_parent_dialog"
+        parent_context = {
+            "key": parent_key,
+            "relation": "leveldata_levelscript_mission_context",
+            "storyOwnerMission": "parent_owner",
+        }
+        connection = {
+            "key": story_key,
+            "storyOwnerMission": "owner_alpha",
+            "parentStoryKey": parent_key,
+            "relation": "dialog_tree_narrative_action",
+            "direction": "context",
+            "confidence": "native_derived_exact_parent_shell",
+            "evidenceTier": "derived_exact_shell",
+            "contextMissionId": "runtime_beta",
+            "nativeMappingId": (
+                gap_queue.DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID
+            ),
+            "graphEffect": "none",
+            "occurrenceCount": 1,
+            "parentScopeRelations": [
+                "leveldata_levelscript_mission_context"
+            ],
+            "parentScopeContexts": [parent_context],
+            "dialogTreeNarrativeActions": [{
+                "dialogKey": parent_key,
+                "textId": f"{story_key}_001",
+                "actionType": (
+                    "Beyond.Gameplay.DialogNarrativeMaskActionData"
+                ),
+                "nativeMappingId": (
+                    gap_queue.DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID
+                ),
+                "sourceFile": "opaque_tree.json",
+                "sourcePathId": "opaque_path_id",
+            }],
+        }
+        with patch.object(
+            gap_queue,
+            "_exact_leveldata_story_context",
+            return_value=True,
+        ) as parent_validator:
+            valid, failure = (
+                gap_queue._exact_cross_owner_dialog_tree_narrative_context(
+                    connection,
+                    "owner_alpha",
+                    "runtime_beta",
+                )
+            )
+            self.assertTrue(valid)
+            self.assertIsNone(failure)
+        parent_validator.assert_called_once_with(
+            parent_context,
+            "parent_owner",
+            "runtime_beta",
+        )
+        broken = {**connection, "graphEffect": "strong"}
+        with patch.object(
+            gap_queue,
+            "_exact_leveldata_story_context",
+            return_value=True,
+        ):
+            valid, failure = (
+                gap_queue._exact_cross_owner_dialog_tree_narrative_context(
+                    broken,
+                    "owner_alpha",
+                    "runtime_beta",
+                )
+            )
+        self.assertFalse(valid)
+        self.assertEqual(
+            failure["validator"],
+            "crossOwnerDialogTreeNarrativeContext",
+        )
+        self.assertEqual(
+            failure["gate"],
+            "typedNarrativeActionWithExactParentPlaybackShell",
+        )
+        self.assertEqual(failure["actual"]["graphEffect"], "strong")
 
 
 if __name__ == "__main__":

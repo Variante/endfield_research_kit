@@ -21634,6 +21634,24 @@ def build_language_bundle(
             for row in context_rows
             if row.get("relation")
         })
+        connection["contextMissionId"] = target_mission
+        connection["parentScopeContexts"] = context_rows
+        connection["sourceFiles"] = sorted({
+            str(source_file)
+            for source_file in (
+                *(connection.get("sourceFiles") or []),
+                *(
+                    source_file
+                    for row in context_rows
+                    for source_file in (
+                        *(row.get("sourceFiles") or []),
+                        *(row.get("levelDataFiles") or []),
+                    )
+                ),
+            )
+            if source_file
+        })
+        connection["graphEffect"] = "none"
         candidate_quest_ids = sorted({
             str(quest_id)
             for row in context_rows
