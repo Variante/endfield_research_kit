@@ -67,16 +67,26 @@ TextAsset PathID/hash. The general resolver now continues through the exact
 `BlackBoxSubGameData` row and `bindScriptId` into the bound LevelScript. It
 keeps `mainTasks`, `extraTasks`, and `failTasks` as separate authored SubGame
 lanes and attaches only exact typed `StartDialogAction` playback for selected
-parent DialogTrees. All eight partial level contexts have an exact parent
-playback. Pipe 1 plays `_1` from its bound script while `_2` and `_3` remain
-explicitly definition-only there; this partial coverage is preserved instead
-of forcing one uniform producer rule. Numbered missing-row positions are
-retained only as table-row cross-reference diagnostics. These relationships
-remain graph-neutral and do not place the eight loose rows. Mission Pipeline
-displays the SubGame id, bound script, task lanes, exact event/action playback,
-definition-only parents, sources, and boundaries in visible Story-only shells.
-The other-bucket queue remains 32 and the current contract is
-`sourceStoryGapQueue.v121`; OCR and manual order remain comparison-only.
+parent DialogTrees. A single current-build decoder, keyed by the audited
+GameAssembly condition-union tags and the installed metadata formatter setter
+order, now recovers all 50 available bound BlackBox task maps: 49 complete maps
+and one authored null map. Across the 46 maps on the registered DialogTree
+recovery surface this yields 327 tasks and 542 conditions with zero validator
+failures. Exact nested `ScriptTaskExtraInfoTable` rows attach objective display
+keys; `CombineCondition` formulas retain their authored operands. The task
+dictionaries contain no task-successor or Story-file-order field, so the
+topology remains objective structure rather than chronology. All eight partial
+level contexts have an exact parent playback, but none of their loose row ids
+occurs in the decoded task maps. Pipe 1 plays `_1` from its bound script while
+`_2` and `_3` remain explicitly definition-only there; this partial coverage
+is preserved instead of forcing one uniform producer rule. Numbered
+missing-row positions remain table-row cross-reference diagnostics only. These
+relationships remain graph-neutral and do not place the eight loose rows.
+Mission Pipeline displays the SubGame id, bound script, task topology,
+condition families/formulas, objective display keys, exact event/action
+playback, definition-only parents, sources, and boundaries in visible
+Story-only shells. The other-bucket queue remains 32 and the current contract
+is `sourceStoryGapQueue.v122`; OCR and manual order remain comparison-only.
 
 The original metadata `BlackboxGuideHintController`, `FacGuideHintEnable`, and
 `LevelDataGuideHintConfig` surface is spatial factory guide-hint configuration,
@@ -113,7 +123,7 @@ tie-breaker; it cannot fill missing rows. `misc_timeline_blackbox_miner` and
 `_pipe` remain open because authored rows lack serialized registered owners.
 Mission Pipeline exposes the parent files, hashes, and directed edges.
 Canonical mission-pipeline builds refresh and validate
-`sourceStoryGapQueue.v121` after current Story coverage
+`sourceStoryGapQueue.v122` after current Story coverage
 and partial order are published; data-only builds deliberately reuse it. OCR
 and manual order remain comparison-only.
 

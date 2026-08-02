@@ -1844,6 +1844,67 @@ body:not(.show-debug) .mp-playback-rejection {
   overflow-wrap: anywhere;
 }
 
+.mp-subgame-task-topology {
+  margin: 6px 0;
+  border: 1px solid rgba(54, 127, 132, 0.25);
+  border-radius: 6px;
+  background: rgba(54, 127, 132, 0.045);
+}
+
+.mp-subgame-task-topology > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 9px;
+  padding: 6px 7px;
+  cursor: pointer;
+  font-size: 8px;
+}
+
+.mp-subgame-task-topology > summary strong { color: var(--mp-client); }
+.mp-subgame-task-topology > summary span,
+.mp-subgame-task-topology > p span { color: var(--muted); font-size: 7.5px; }
+.mp-subgame-task-topology > p,
+.mp-subgame-task-topology > small { display: block; margin: 0; padding: 5px 7px; font-size: 7.5px; }
+.mp-subgame-task-topology > small { color: var(--muted); }
+
+.mp-subgame-task-topology > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 5px;
+  padding: 0 7px 7px;
+}
+
+.mp-subgame-task-topology > div > details {
+  min-width: 0;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel);
+}
+
+.mp-subgame-task-topology > div > details > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 7px;
+  cursor: pointer;
+  font-size: 7.5px;
+}
+
+.mp-subgame-task-topology > div > details > summary b { color: var(--mp-client); }
+.mp-subgame-task-topology > div > details > summary span { color: #925231; }
+.mp-subgame-task-topology > div > details > summary small { margin-left: auto; color: var(--muted); }
+.mp-subgame-task-topology > div > details > p { margin: 5px 0; font-size: 7.5px; }
+.mp-subgame-task-topology ol { display: grid; gap: 4px; margin: 5px 0 0; padding-left: 18px; }
+.mp-subgame-task-topology li { min-width: 0; font-size: 7.5px; }
+.mp-subgame-task-topology li > small,
+.mp-subgame-task-topology li > em { margin-left: 5px; color: var(--muted); }
+.mp-subgame-task-topology li > p { display: flex; flex-wrap: wrap; gap: 3px 7px; margin: 3px 0 0; }
+.mp-subgame-task-topology li > p b { font-weight: 600; }
+.mp-subgame-task-topology code { overflow-wrap: anywhere; }
+.mp-subgame-task-topology.is-unavailable { border-color: rgba(176, 73, 62, 0.35); }
+
 .mp-story-order > p {
   margin: .65rem 0;
   color: var(--muted);

@@ -2665,6 +2665,33 @@ def _decode_levelscript_ptr_param(
     }, end
 
 
+def _decode_levelscript_task_ptr_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode the current ``Param<LevelScriptTaskPtr>`` key shape."""
+    if cursor + 2 > len(payload) or payload[cursor] != 0x04:
+        return None
+    pointer_mode = payload[cursor + 1]
+    if pointer_mode not in (0, 1):
+        return None
+    decoded_key = _decode_nullable_string_value(payload, cursor + 2)
+    if decoded_key is None:
+        return None
+    task_key = decoded_key[0]["value"]
+    if task_key is not None and not re.fullmatch(r"[0-9a-f]{8}", task_key):
+        return None
+    tail = _decode_param_tail(payload, decoded_key[1])
+    if tail is None:
+        return None
+    detail, end = tail
+    return {
+        "pointerMode": pointer_mode,
+        "taskKey": task_key,
+        **detail,
+    }, end
+
+
 def _decode_boolean_compare_getter(payload: bytes) -> dict[str, Any]:
     comparer = _decode_i32_param(payload, 0)
     if comparer is None:
@@ -5934,9 +5961,16 @@ LEVELSCRIPT_TASK_MISSION_STATE_MAPPING_ID = (
     "gameassembly-2026-07-22-levelscript-task-check-mission-state-0x67"
 )
 LEVELSCRIPT_TASK_CONDITION_MAPPING_ID = (
-    "gameassembly-2026-07-25-levelscript-task-root-gamecondition-tags"
+    "gameassembly-2026-08-02-levelscript-task-root-gamecondition-tags"
 )
 LEVELSCRIPT_TASK_CONDITION_TAGS = {
+    0x0017: ("CheckBuildingConnected", 8),
+    0x0018: ("CheckBuildingConnectedAsMA2SB", 8),
+    0x0019: ("CheckBuildingConnectedExist", 8),
+    0x001A: ("CheckBuildingConnectedSpecify", 9),
+    0x001B: ("CheckBuildingStateInArea", 9),
+    0x0035: ("CheckFacBuildingState", 8),
+    0x0038: ("CheckFluidVolume", 9),
     0x0045: ("CheckInteractiveDestroyed", 6),
     0x0050: ("CheckLevelScriptPropertyBool", 9),
     0x0051: ("CheckLevelScriptPropertyInt", 9),
@@ -5944,10 +5978,25 @@ LEVELSCRIPT_TASK_CONDITION_TAGS = {
     0x0067: ("CheckMissionState", 7),
     0x006A: ("CheckMonsterKilled", 9),
     0x006B: ("CheckMonsterSpawnerComplete", 6),
+    0x0084: ("CheckRepairBuilding", 6),
+    0x008D: ("CheckScriptTaskStateEqual", 9),
     0x009F: ("CheckTalkOptionFinish", 6),
     0x00B2: ("CombineCondition", 6),
+    0x00D0: ("OnBuildingPanelOpen", 6),
+    0x0108: ("DepotHasItem", 7),
+    0x010B: ("FacBattleBuildingCurEnergy", 8),
+    0x010D: ("FacBuildingCountInScene", 8),
+    0x010E: ("FacBuildingFluidContainerHasItem", 9),
+    0x010F: ("FacBuildingProducingCountInScene", 8),
+    0x0112: ("FacProducePowerReach", 6),
+    0x0113: ("FacProducingFormulaCountInScene", 8),
+    0x0114: ("FacStatisticItemGen", 8),
+    0x0115: ("FacStatisticItemGenRate", 8),
+    0x0127: ("HasItemCount", 7),
     0x0129: ("InteractiveCheckBool", 8),
     0x012A: ("InteractiveCheckInt", 9),
+    0x012D: ("PlayerHasItem", 8),
+    0x012E: ("PlayerHasItemInItemBag", 8),
     0x0132: ("TaskReachDestination", 6),
 }
 _MISSION_STATE_NAMES = {
@@ -5996,6 +6045,26 @@ def _decode_string_param(
         return None
     detail, end = tail
     return {"value": value, **detail}, end
+
+
+def _decode_nullable_string_value(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode a raw MemoryPack nullable string without a ``Param`` tail."""
+    if cursor + 4 > len(payload):
+        return None
+    size = struct.unpack_from("<i", payload, cursor)[0]
+    cursor += 4
+    if size == -1:
+        return {"value": None}, cursor
+    if size < 0 or size > 1024 or cursor + size > len(payload):
+        return None
+    try:
+        value = payload[cursor : cursor + size].decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    return {"value": value}, cursor + size
 
 
 def _decode_u64_param(
@@ -6153,6 +6222,181 @@ def _decode_levelscript_task_condition(
             return None
         fields["comparerName"] = _MISSION_STATE_COMPARER_NAMES[comparer_raw]
         fields["targetMissionStateName"] = _MISSION_STATE_NAMES[target_raw]
+    elif condition_type in (
+        "CheckBuildingConnected",
+        "CheckBuildingConnectedAsMA2SB",
+    ):
+        if not (
+            read_param("facBuildingIdA", _decode_string_param)
+            and read_param("facBuildingIdB", _decode_string_param)
+            and read_param("targetCount", _decode_i32_param)
+            and read_param("levelId", _decode_string_param)
+        ):
+            return None
+    elif condition_type == "CheckBuildingConnectedExist":
+        if not (
+            read_param("buildingIdEnd", _decode_string_param)
+            and read_param("buildingIdStart", _decode_string_param)
+            and read_param("exist", _decode_bool_param)
+            and read_param("levelId", _decode_string_param)
+        ):
+            return None
+    elif condition_type == "CheckBuildingConnectedSpecify":
+        if not (
+            read_param("connected", _decode_bool_param)
+            and read_param("conveyorType", _decode_i32_param)
+            and read_param("instKeyA", _decode_string_param)
+            and read_param("instKeyB", _decode_string_param)
+            and read_param("levelId", _decode_string_param)
+        ):
+            return None
+    elif condition_type == "CheckBuildingStateInArea":
+        if not (
+            read_param("facBuildingId", _decode_string_param)
+            and read_param("facStateType", _decode_i32_param)
+            and read_param("targetAreaId", _decode_string_param)
+            and read_param("targetCount", _decode_i32_param)
+            and read_param("targetMapId", _decode_string_param)
+        ):
+            return None
+    elif condition_type == "CheckFluidVolume":
+        if not (
+            read_param("comparer", _decode_i32_param)
+            and read_param("targetVolume", _decode_i32_param)
+            and read_param("levelId", _decode_string_param)
+            and read_param("volumeId", _decode_u64_param)
+            and read_param("waterType", _decode_string_param)
+        ):
+            return None
+        fields["comparerName"] = _NUMBER_COMPARER_NAMES.get(
+            fields["comparer"]["value"],
+            "",
+        )
+    elif condition_type == "CheckFacBuildingState":
+        if not (
+            read_param("facStateId", _decode_i32_param)
+            and read_param("instKey", _decode_string_param)
+            and read_param("isInState", _decode_bool_param)
+            and read_param("sceneName", _decode_string_param)
+        ):
+            return None
+    elif condition_type == "CheckRepairBuilding":
+        if not (
+            read_param("repairId", _decode_string_param)
+            and read_param("levelId", _decode_string_param)
+        ):
+            return None
+    elif condition_type == "CheckScriptTaskStateEqual":
+        if not (
+            read_param("comparer", _decode_i32_param)
+            and read_param("levelId", _decode_string_param)
+            and read_param("scriptId", _decode_levelscript_ptr_param)
+            and read_param("targetValue", _decode_i32_param)
+            and read_param("taskKey", _decode_levelscript_task_ptr_param)
+        ):
+            return None
+        fields["comparerName"] = _NUMBER_COMPARER_NAMES.get(
+            fields["comparer"]["value"],
+            "",
+        )
+    elif condition_type == "OnBuildingPanelOpen":
+        if not (
+            read_param("buildingId", _decode_string_param)
+            and read_param("needWaitAnimation", _decode_bool_param)
+        ):
+            return None
+    elif condition_type == "FacProducePowerReach":
+        if not (
+            read_param("power", _decode_i32_param)
+            and read_param("levelId", _decode_string_param)
+        ):
+            return None
+    elif condition_type == "FacProducingFormulaCountInScene":
+        if not (
+            read_param("compareOperator", _decode_i32_param)
+            and read_param("progressToCompare", _decode_i32_param)
+            and read_param("facFormulaId", _decode_string_param)
+            and read_param("levelId", _decode_string_param)
+        ):
+            return None
+        fields["compareOperatorName"] = _NUMBER_COMPARER_NAMES.get(
+            fields["compareOperator"]["value"],
+            "",
+        )
+    elif condition_type == "DepotHasItem":
+        if not (
+            read_param("compareOperator", _decode_i32_param)
+            and read_param("itemId", _decode_string_param)
+            and read_param("targetItemCount", _decode_i32_param)
+        ):
+            return None
+        fields["compareOperatorName"] = _NUMBER_COMPARER_NAMES.get(
+            fields["compareOperator"]["value"],
+            "",
+        )
+    elif condition_type in (
+        "FacBattleBuildingCurEnergy",
+        "FacBuildingCountInScene",
+        "FacBuildingFluidContainerHasItem",
+        "FacBuildingProducingCountInScene",
+        "FacStatisticItemGen",
+        "FacStatisticItemGenRate",
+        "HasItemCount",
+    ):
+        if not (
+            read_param("compareOperator", _decode_i32_param)
+            and read_param("progressToCompare", _decode_i32_param)
+        ):
+            return None
+        if condition_type == "FacBattleBuildingCurEnergy":
+            if not (
+                read_param("instKey", _decode_string_param)
+                and read_param("levelId", _decode_string_param)
+            ):
+                return None
+        elif condition_type in (
+            "FacBuildingCountInScene",
+            "FacBuildingProducingCountInScene",
+        ):
+            if not (
+                read_param("facBuildingId", _decode_string_param)
+                and read_param("levelId", _decode_string_param)
+            ):
+                return None
+        elif condition_type in (
+            "FacStatisticItemGen",
+            "FacStatisticItemGenRate",
+        ):
+            if not (
+                read_param("itemId", _decode_string_param)
+                and read_param("levelId", _decode_string_param)
+            ):
+                return None
+        elif condition_type == "FacBuildingFluidContainerHasItem":
+            if not (
+                read_param("instKey", _decode_string_param)
+                and read_param("itemId", _decode_string_param)
+                and read_param("levelId", _decode_string_param)
+            ):
+                return None
+        elif not read_param("itemId", _decode_string_param):
+            return None
+        fields["compareOperatorName"] = _NUMBER_COMPARER_NAMES.get(
+            fields["compareOperator"]["value"],
+            "",
+        )
+    elif condition_type in ("PlayerHasItem", "PlayerHasItemInItemBag"):
+        if not (
+            read_param("displayInfoBox", _decode_nullable_string_value)
+            and read_param("compareOperator", _decode_i32_param)
+            and read_param("itemId", _decode_string_param)
+            and read_param("targetItemCount", _decode_i32_param)
+        ):
+            return None
+        fields["compareOperatorName"] = _NUMBER_COMPARER_NAMES.get(
+            fields["compareOperator"]["value"],
+            "",
+        )
     elif condition_type == "CheckInteractiveDestroyed":
         if not (
             read_param("entity", _decode_constant_entity_ptr_param)
@@ -6460,6 +6704,7 @@ def _decode_levelscript_task_entry(
     data: bytes,
     offset: int,
     limit: int,
+    diagnostics: list[dict[str, Any]] | None = None,
 ) -> tuple[dict[str, Any], int] | None:
     """Decode one complete current-build ``LevelScriptTaskData`` envelope."""
     start = offset
@@ -6472,6 +6717,14 @@ def _decode_levelscript_task_entry(
         or data[cursor] != 4
         or data[cursor + 1] not in (0, 1)
     ):
+        if diagnostics is not None and not diagnostics:
+            diagnostics.append({
+                "gate": "taskEntryEnvelope",
+                "taskEntryOffset": offset,
+                "taskEntryOffsetHex": _offset_hex(offset),
+                "limitOffset": limit,
+                "limitOffsetHex": _offset_hex(limit),
+            })
         return None
     task_data_member_count = data[cursor]
     can_be_tracked = bool(data[cursor + 1])
@@ -6491,18 +6744,82 @@ def _decode_levelscript_task_entry(
             or not re.fullmatch(r"[0-9a-f]{8}", condition_key)
             or data[next_cursor] != 3
         ):
+            if diagnostics is not None and not diagnostics:
+                diagnostics.append({
+                    "gate": "taskConditionEnvelope",
+                    "taskKey": task_key,
+                    "conditionIndex": len(conditions),
+                    "conditionEntryOffset": condition_entry_start,
+                    "conditionEntryOffsetHex": _offset_hex(
+                        condition_entry_start
+                    ),
+                })
             return None
         cursor = next_cursor + 1
-        condition_decoded = _decode_levelscript_task_condition(
-            data,
-            cursor,
-            limit,
-        )
+        if cursor < limit and data[cursor] == 0xFF:
+            condition_decoded = ({
+                "type": "NullGameCondition",
+                "conditionUnionTag": None,
+                "conditionUnionTagEncoding": "memorypack-null",
+                "serializedMemberCount": None,
+                "conditionOffset": cursor,
+                "conditionOffsetHex": _offset_hex(cursor),
+                "conditionEndOffset": cursor + 1,
+                "conditionEndOffsetHex": _offset_hex(cursor + 1),
+                "nativeMappingId": LEVELSCRIPT_TASK_CONDITION_MAPPING_ID,
+            }, cursor + 1)
+        else:
+            condition_decoded = _decode_levelscript_task_condition(
+                data,
+                cursor,
+                limit,
+            )
         if condition_decoded is None:
+            if diagnostics is not None and not diagnostics:
+                header = _decode_task_condition_union_header(
+                    data,
+                    cursor,
+                    limit,
+                )
+                union_tag = header[0] if header is not None else None
+                member_count = header[1] if header is not None else None
+                expected = (
+                    LEVELSCRIPT_TASK_CONDITION_TAGS.get(union_tag)
+                    if isinstance(union_tag, int)
+                    else None
+                )
+                diagnostics.append({
+                    "gate": (
+                        "supportedConditionPayloadLayout"
+                        if expected is not None
+                        else "supportedConditionUnionTag"
+                    ),
+                    "taskKey": task_key,
+                    "conditionKey": condition_key,
+                    "conditionIndex": len(conditions),
+                    "conditionOffset": cursor,
+                    "conditionOffsetHex": _offset_hex(cursor),
+                    "conditionUnionTag": (
+                        f"0x{union_tag:04x}"
+                        if isinstance(union_tag, int) else None
+                    ),
+                    "serializedMemberCount": member_count,
+                    "expectedConditionType": (
+                        expected[0] if expected is not None else None
+                    ),
+                    "expectedSerializedMemberCount": (
+                        expected[1] if expected is not None else None
+                    ),
+                    "payloadHexPrefix": data[cursor : cursor + 48].hex(" "),
+                    "nativeMappingId": LEVELSCRIPT_TASK_CONDITION_MAPPING_ID,
+                })
             return None
         condition, cursor = condition_decoded
         if (
-            condition["uniqueId"] != condition_key
+            (
+                condition.get("type") != "NullGameCondition"
+                and condition.get("uniqueId") != condition_key
+            )
             or cursor + 5 > limit
             or data[cursor] not in (0, 1)
         ):
@@ -6547,6 +6864,8 @@ def _decode_levelscript_task_entry(
 def decode_levelscript_task_conditions(
     data: bytes,
     script_id: int | str,
+    *,
+    diagnostics: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Recover only completely bounded LevelScript task-condition maps.
 
@@ -6589,7 +6908,12 @@ def decode_levelscript_task_conditions(
         tasks: list[dict[str, Any]] = []
         valid = True
         for _ in range(task_count):
-            decoded = _decode_levelscript_task_entry(data, cursor, limit)
+            decoded = _decode_levelscript_task_entry(
+                data,
+                cursor,
+                limit,
+                diagnostics,
+            )
             if decoded is None:
                 valid = False
                 break
