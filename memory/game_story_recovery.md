@@ -16,6 +16,7 @@ Latest CN reports:
 | Unlinked files | 1,323 |
 | Unlinked files with exact native playback | 156 |
 | Exact non-mission content | 279 (278 spacecraft/profile + 1 guide runtime) |
+| Actionable core-isolated files | 72, all in the other bucket |
 | Partial-order mission rows | 487 |
 | Candidate scene placements | 8,877 |
 | Strong / supported / weak edges | 1,502 / 834 / 2,635 |
@@ -45,7 +46,26 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch generalizes typed system Story selectors instead of
+The latest recovery batch generalizes two cross-owner context patterns without
+reassigning Story ownership. A typed quest-state `PlayRadio` path may retain its
+foreign mission, quest, LevelScript, and original GameAssembly action mapping
+when every current-build occurrence agrees; this closes
+`radio_m1m10_{8,9,10}` through the exact completed-quest paths in `m1m16`,
+`m1m17`, and `m1m18`. Typed DialogTree narrative-mask actions now retain their
+exact parent dialog and every exact parent LevelData playback shell; this closes
+`black_sm1l2m2_0d5`, `_2`, and `_3` through `dlg_sm1l2m2_{5,10,11}` while
+preserving the foreign `sm1l2m1` shell. The stricter carrier scan also disproved
+three hard-coded TextTable-only classifications: `black_e7m1_3` has exact native
+event playback and `black_e11m8_12`/`_39` have typed DialogTree carriers, so the
+object-specific negative overrides were removed. Both validators fail closed
+with bounded source/hash diagnostics. Mission Pipeline exposes the quest,
+parent-dialog, LevelScript, LevelData, and TextAsset files; the gap queue moves
+from 79 to 72 actionable files, with `m1m10` and `sm1l2m2` both at zero. These
+relations have `graphEffect: none`; the graph remains 1,502 strong edges, 265
+quest forks, 55 merges, 307 native branch groups, and 19 convergences. OCR and
+manual order remain comparison-only.
+
+The preceding recovery batch generalizes typed system Story selectors instead of
 adding an `f1m25` exception. `DomainDepotConst.depotDeliverMissionId`, the
 dialog-table key/`npcProxyId`, and delivery-target `targetId` form an exact
 typed join; current GameAssembly consumers prove that the delivery response
@@ -867,7 +887,7 @@ only.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
    typed attachments or bounded graph-neutral diagnostics. Main, event, major,
    and character missions have no actionable core-isolated files. Other
-   missions retain 103 and 17 missing mission bundles. Broad co-memberships
+   missions retain 72 actionable files and 17 missing mission bundles. Broad co-memberships
    remain non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
@@ -882,12 +902,16 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should rank the 103 other actionable source-link gaps by reusable
-typed producer/consumer family. The largest single family is the 24-dialog
-`f1m25` bucket, followed by smaller radio, black-screen, blackbox, and the two
-unmatched gift-ending groups. Extend the same pattern-based approach
+Next work should rank the 72 other actionable source-link gaps by reusable
+typed producer/consumer family. The current highest-ranked rows are the
+`blackbox_ mix` and `webui_secret` missing-bundle shells, followed by five
+two-file groups (`gift`, `sm1l5m3`, `blackbox_mix`,
+`blackbox_transmuter_2`, and `blackbox_vaporizer`). Extend the same pattern-based approach
 to other definition families only when their typed schemas and complete
 consumer surfaces can be bounded without weakening the fail-closed rules.
+Fix the canonical build order so a Story-sidecar change refreshes the gap queue
+after publication; until then, a coherent recovery batch requires one direct
+gap-queue refresh before the Mission Pipeline data-only publish.
 Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed

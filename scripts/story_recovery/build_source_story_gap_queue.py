@@ -2124,23 +2124,6 @@ OFFLINE_EXHAUSTION_SNS_DEFINITIONS = {
         },
     },
 }
-OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES = {
-    "black_e7m1_3": {
-        "missionId": "e7m1",
-        "storyKind": "black",
-        "definitionRowKeys": ("black_e7m1_3_001",),
-    },
-    "black_e11m8_12": {
-        "missionId": "e11m8",
-        "storyKind": "black",
-        "definitionRowKeys": ("black_e11m8_12_001",),
-    },
-    "black_e11m8_39": {
-        "missionId": "e11m8",
-        "storyKind": "black",
-        "definitionRowKeys": ("black_e11m8_39_001",),
-    },
-}
 OFFLINE_EXHAUSTION_E11M1_PRESENTATION_CUTSCENES = frozenset({
     "cutscene_e11m1_fire_end",
     "cutscene_e11m1_gatebattleend",
@@ -12845,14 +12828,6 @@ def build_offline_exhaustion_index(
         in OFFLINE_EXHAUSTION_TEXT_DEFINITIONS.items()
     }
     all_text_keys = set(text_mission_by_key)
-    text_table_only_story_mission_by_key = {
-        story_key: safe_key(definition.get("missionId"))
-        for story_key, definition
-        in OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES.items()
-    }
-    all_text_table_only_story_keys = set(
-        text_table_only_story_mission_by_key
-    )
     required_key_missions = {
         **radio_mission_by_key,
         **cutscene_mission_by_key,
@@ -12860,7 +12835,6 @@ def build_offline_exhaustion_index(
         **text_only_dialog_mission_by_key,
         **sns_mission_by_key,
         **text_mission_by_key,
-        **text_table_only_story_mission_by_key,
     }
     required_keys = set(required_key_missions)
     if (
@@ -16272,7 +16246,6 @@ def build_offline_exhaustion_index(
     text_table_only_story_valid = True
     text_table_only_definitions = {
         **OFFLINE_EXHAUSTION_TEXT_ONLY_CUTSCENES,
-        **OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES,
     }
     for text_only_key, definition in (
         text_table_only_definitions.items()
@@ -17123,35 +17096,6 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
-    for story_key, definition in (
-        OFFLINE_EXHAUSTION_TEXT_TABLE_ONLY_STORIES.items()
-    ):
-        index[story_key] = {
-            "sceneKey": story_key,
-            "missionId": definition["missionId"],
-            "recoveryStatus":
-                "deferred_current_build_offline_surface_exhausted",
-            "evidenceKind":
-                "text_table_only_story_without_recovered_asset_or_consumer",
-            "storyKind": definition["storyKind"],
-            "definitionTable": "TextTable",
-            "definitionRowKeys": list(definition["definitionRowKeys"]),
-            "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
-            "gameAssemblySha256":
-                OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
-            "consumerBoundary": (
-                "the exact TextTable group has no Timeline registration, "
-                "DialogTree/TextAsset carrier, object-index relation, "
-                "structured action or direct native caller "
-                "in the audited build"
-            ),
-            "reopenWhen": (
-                "installed binary, TextTable, Timeline or DialogId registry, "
-                "TextAsset/object index or another typed "
-                "producer/consumer registry changes"
-            ),
-            "graphEffect": "none",
-        }
     for story_key, evidence in sorted(
         missionless_native_evidence_by_key.items(),
         key=lambda item: natural_key(item[0]),
@@ -17608,21 +17552,6 @@ def build_offline_exhaustion_index(
             )
             for mission in sorted(
                 set(text_mission_by_key.values()),
-                key=natural_key,
-            )
-        },
-        "deferredTextTableOnlyStoryKeysByMission": {
-            mission: sorted(
-                (
-                    story_key
-                    for story_key, story_mission
-                    in text_table_only_story_mission_by_key.items()
-                    if story_mission == mission
-                ),
-                key=natural_key,
-            )
-            for mission in sorted(
-                set(text_table_only_story_mission_by_key.values()),
                 key=natural_key,
             )
         },
@@ -18478,6 +18407,53 @@ def _closed_exact_native_context_isolated_scenes(
             or safe_key(connection.get("storyOwnerMission")) != owner_mission
             or safe_key(connection.get("direction")) != "context"
         ):
+            continue
+        if relation == "cross_owner_levelscript_quest_playback_context":
+            context_mission = safe_key(
+                connection.get("contextMissionBundle")
+            )
+            context_quest = safe_key(connection.get("contextQuestId"))
+            original = {
+                **connection,
+                "relation": safe_key(connection.get("originalRelation")),
+                "direction": safe_key(connection.get("originalDirection")),
+                "phase": safe_key(connection.get("originalPhase")),
+            }
+            valid, _failure = _exact_cross_owner_levelscript_quest_playback(
+                original,
+                owner_mission,
+                context_mission,
+                context_quest,
+            )
+            if not valid or connection.get("graphEffect") != "none":
+                continue
+            closed.append({
+                "sceneKey": scene_key,
+                "recoveryStatus":
+                    "closed_exact_cross_mission_quest_playback_context_no_relative_order",
+                "relation": relation,
+                "originalRelation": safe_key(
+                    connection.get("originalRelation")
+                ),
+                "nominalStoryMissionId": owner_mission,
+                "contextMissionId": context_mission,
+                "contextQuestId": context_quest,
+                "questState": connection.get("questState"),
+                "questStateName": safe_key(
+                    connection.get("questStateName")
+                ),
+                "levelId": safe_key(connection.get("levelId")),
+                "scriptId": safe_key(connection.get("scriptId")),
+                "actionName": safe_key(connection.get("actionName")),
+                "nativeMappingId": safe_key(
+                    connection.get("nativeMappingId")
+                ),
+                "sourceFiles": _string_list(
+                    connection.get("sourceFiles")
+                ),
+                "sourceSha256": connection.get("sourceSha256") or {},
+                "orderBoundary": safe_key(connection.get("orderBoundary")),
+            })
             continue
         if relation == "leveldata_levelscript_mission_context":
             context_mission = (
@@ -23393,6 +23369,236 @@ def _exact_cross_owner_npc_proxy_segment_story_context(
     return True
 
 
+def _exact_cross_owner_levelscript_quest_playback(
+    connection: dict[str, Any],
+    owner_mission: str,
+    context_mission: str,
+    context_quest: str,
+) -> tuple[bool, dict[str, Any] | None]:
+    """Validate one foreign quest's exact binary-typed LevelScript playback."""
+    relation = safe_key(connection.get("relation"))
+    expected_state = {
+        "levelscript_quest_processing_action": (2, "Processing", "start"),
+        "levelscript_quest_completed_action": (3, "Completed", "succeed"),
+    }.get(relation)
+    story_key = safe_key(connection.get("key"))
+    source_file = safe_key(connection.get("sourceFile"))
+    source_path = ROOT / source_file if source_file else None
+    actual = {
+        "relation": relation,
+        "direction": safe_key(connection.get("direction")),
+        "phase": safe_key(connection.get("phase")),
+        "confidence": safe_key(connection.get("confidence")),
+        "event": safe_key(connection.get("event")),
+        "questState": connection.get("questState"),
+        "questStateName": safe_key(connection.get("questStateName")),
+        "levelId": safe_key(connection.get("levelId")),
+        "scriptId": safe_key(connection.get("scriptId")),
+        "sourceFile": source_file,
+        "headerLocalId": connection.get("headerLocalId"),
+        "actionLocalId": connection.get("actionLocalId"),
+        "actionPathLocalIds": connection.get("actionPathLocalIds"),
+        "actionName": safe_key(connection.get("actionName")),
+        "nativeMappingId": safe_key(connection.get("nativeMappingId")),
+    }
+    valid = bool(
+        story_key
+        and owner_mission
+        and owner_mission != context_mission
+        and context_quest.startswith(f"{context_mission}_q#")
+        and expected_state is not None
+        and actual["direction"] == "quest_to_story"
+        and actual["phase"] == expected_state[2]
+        and actual["confidence"] == "native_typed_direct"
+        and actual["event"] == "LevelEvent_OnQuestStateChanged"
+        and actual["questState"] == expected_state[0]
+        and actual["questStateName"] == expected_state[1]
+        and actual["levelId"]
+        and actual["scriptId"]
+        and source_file
+        and source_file.endswith(
+            f"/LevelScriptData/{actual['levelId']}/{actual['scriptId']}.json"
+        )
+        and source_path is not None
+        and source_path.is_file()
+        and isinstance(actual["headerLocalId"], int)
+        and not isinstance(actual["headerLocalId"], bool)
+        and isinstance(actual["actionLocalId"], int)
+        and not isinstance(actual["actionLocalId"], bool)
+        and isinstance(actual["actionPathLocalIds"], list)
+        and actual["actionPathLocalIds"]
+        and actual["actionLocalId"] in actual["actionPathLocalIds"]
+        and actual["actionName"]
+        and actual["nativeMappingId"].startswith("gameassembly-")
+    )
+    if valid:
+        return True, None
+    return False, {
+        "validator": "crossOwnerLevelScriptQuestPlayback",
+        "gate": "exactTypedQuestStatePlaybackPath",
+        "missionId": owner_mission,
+        "contextMissionBundle": context_mission,
+        "contextQuestId": context_quest,
+        "storyKey": story_key,
+        "sourcePaths": [source_file] if source_file else [],
+        "sourceSha256": (
+            {source_file: _sha256_file(source_path)}
+            if source_path is not None and source_path.is_file()
+            else {}
+        ),
+        "expected": {
+            "relationStatePhase": expected_state,
+            "direction": "quest_to_story",
+            "confidence": "native_typed_direct",
+            "event": "LevelEvent_OnQuestStateChanged",
+            "sourcePathMatchesLevelAndScript": True,
+            "typedActionPathEndsAtActionLocalId": True,
+            "nativeMappingPrefix": "gameassembly-",
+        },
+        "actual": actual,
+    }
+
+
+def _exact_cross_owner_dialog_tree_narrative_context(
+    connection: dict[str, Any],
+    owner_mission: str,
+    context_mission: str,
+) -> tuple[bool, dict[str, Any] | None]:
+    """Validate a typed nested narrative action plus its exact foreign shell."""
+    occurrences = [
+        row
+        for row in connection.get("dialogTreeNarrativeActions") or []
+        if isinstance(row, dict)
+    ]
+    parent_contexts = [
+        row
+        for row in connection.get("parentScopeContexts") or []
+        if isinstance(row, dict)
+    ]
+    parent_key = safe_key(connection.get("parentStoryKey"))
+    story_key = safe_key(connection.get("key"))
+    advertised_parent_relations = set(
+        _string_list(connection.get("parentScopeRelations"))
+    )
+    if (
+        safe_key(connection.get("confidence"))
+        != "native_derived_exact_parent_shell"
+        or "leveldata_levelscript_mission_context"
+        not in advertised_parent_relations
+    ):
+        return False, None
+    parent_relations = {
+            safe_key(row.get("relation"))
+            for row in parent_contexts
+            if safe_key(row.get("relation"))
+    }
+    occurrence_rows_valid = all(
+        safe_key(row.get("dialogKey")) == parent_key
+        and safe_key(row.get("textId")).startswith(f"{story_key}_")
+        and safe_key(row.get("actionType")) in {
+            "Beyond.Gameplay.DialogComplexNarrativeMaskActionData",
+            "Beyond.Gameplay.DialogNarrativeMaskActionData",
+        }
+        and safe_key(row.get("nativeMappingId"))
+        == DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID
+        and safe_key(row.get("sourceFile"))
+        and safe_key(row.get("sourcePathId"))
+        for row in occurrences
+    )
+    parent_contexts_valid = all(
+        _exact_leveldata_story_context(
+            row,
+            safe_key(row.get("storyOwnerMission")),
+            context_mission,
+        )
+        for row in parent_contexts
+    )
+    valid = bool(
+        story_key
+        and parent_key
+        and owner_mission != context_mission
+        and safe_key(connection.get("storyOwnerMission")) == owner_mission
+        and safe_key(connection.get("relation"))
+        == "dialog_tree_narrative_action"
+        and safe_key(connection.get("direction")) == "context"
+        and safe_key(connection.get("confidence"))
+        == "native_derived_exact_parent_shell"
+        and safe_key(connection.get("evidenceTier")) == "derived_exact_shell"
+        and safe_key(connection.get("contextMissionId")) == context_mission
+        and safe_key(connection.get("nativeMappingId"))
+        == DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID
+        and connection.get("graphEffect") == "none"
+        and occurrences
+        and connection.get("occurrenceCount") == len(occurrences)
+        and parent_contexts
+        and advertised_parent_relations == parent_relations
+        and occurrence_rows_valid
+        and parent_contexts_valid
+    )
+    if valid:
+        return True, None
+    source_paths = sorted({
+        source_file
+        for source_file in (
+            *_string_list(connection.get("sourceFiles")),
+            *(
+                safe_key(row.get("sourceFile"))
+                for row in occurrences
+            ),
+            *(
+                source_file
+                for row in parent_contexts
+                for source_file in (
+                    *_string_list(row.get("sourceFiles")),
+                    *_string_list(row.get("levelDataFiles")),
+                )
+            ),
+        )
+        if source_file
+    })
+    return False, {
+        "validator": "crossOwnerDialogTreeNarrativeContext",
+        "gate": "typedNarrativeActionWithExactParentPlaybackShell",
+        "missionId": owner_mission,
+        "contextMissionId": context_mission,
+        "storyKey": story_key,
+        "parentStoryKey": parent_key,
+        "sourcePaths": source_paths,
+        "sourceSha256": {
+            source_file: _sha256_file(ROOT / source_file)
+            for source_file in source_paths
+            if (ROOT / source_file).is_file()
+        },
+        "expected": {
+            "relation": "dialog_tree_narrative_action",
+            "direction": "context",
+            "confidence": "native_derived_exact_parent_shell",
+            "evidenceTier": "derived_exact_shell",
+            "nativeMappingId": DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID,
+            "graphEffect": "none",
+            "completeTypedOccurrences": True,
+            "completeExactParentLevelDataContexts": True,
+        },
+        "actual": {
+            "relation": safe_key(connection.get("relation")),
+            "direction": safe_key(connection.get("direction")),
+            "confidence": safe_key(connection.get("confidence")),
+            "evidenceTier": safe_key(connection.get("evidenceTier")),
+            "nativeMappingId": safe_key(connection.get("nativeMappingId")),
+            "graphEffect": connection.get("graphEffect"),
+            "occurrenceCount": connection.get("occurrenceCount"),
+            "retainedOccurrenceCount": len(occurrences),
+            "occurrenceRowsValid": occurrence_rows_valid,
+            "parentContextCount": len(parent_contexts),
+            "parentContextsValid": parent_contexts_valid,
+            "parentScopeRelations": _string_list(
+                connection.get("parentScopeRelations")
+            ),
+            "retainedParentRelations": sorted(parent_relations),
+        },
+    }
+
+
 def build_gap_report(
     partial_report: dict[str, Any],
     mission_payloads: dict[str, dict[str, Any]],
@@ -23415,6 +23621,8 @@ def build_gap_report(
     cross_owner_connections: dict[str, list[dict[str, Any]]] = defaultdict(
         list
     )
+    cross_owner_levelscript_validation_failures: list[dict[str, Any]] = []
+    cross_owner_dialog_tree_validation_failures: list[dict[str, Any]] = []
     story_owners: dict[str, set[str]] = defaultdict(set)
     for partial_row in partial_report.get("missions") or []:
         if not isinstance(partial_row, dict):
@@ -23476,20 +23684,38 @@ def build_gap_report(
                 ):
                     continue
             elif relation == "dialog_tree_narrative_action":
-                if (
+                (
+                    exact_retained_parent_shell,
+                    dialog_tree_failure,
+                ) = (
+                    _exact_cross_owner_dialog_tree_narrative_context(
+                        connection,
+                        owner_mission,
+                        context_mission,
+                    )
+                )
+                legacy_leveldata_host = (
                     safe_key(connection.get("levelDataHostMissionId"))
-                    != context_mission
-                    or safe_key(connection.get("direction")) != "context"
-                    or safe_key(connection.get("confidence")) not in {
+                    == context_mission
+                    and safe_key(connection.get("direction")) == "context"
+                    and safe_key(connection.get("confidence")) in {
                         "native_exact_parent_quest",
                         "native_derived_exact_parent_quest",
                         "native_derived_exact_parent_mission_area_shell",
                         "native_derived_exact_parent_shell",
                         "native_exact_parent_context",
                     }
-                    or safe_key(connection.get("nativeMappingId"))
-                    != DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID
+                    and safe_key(connection.get("nativeMappingId"))
+                    == DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID
+                )
+                if (
+                    dialog_tree_failure is not None
+                    and not legacy_leveldata_host
                 ):
+                    cross_owner_dialog_tree_validation_failures.append(
+                        dialog_tree_failure
+                    )
+                if not exact_retained_parent_shell and not legacy_leveldata_host:
                     continue
             elif relation == "levelscript_native_black_action":
                 if (
@@ -23559,20 +23785,85 @@ def build_gap_report(
                         safe_key(connection.get("source")),
                     ))
                 )
-                if not exact_dialog_finish and not exact_client_action:
-                    continue
                 owner_mission = next(iter(owners))
+                exact_levelscript_playback = False
+                if (
+                    owner_mission != context_mission
+                    and relation in {
+                        "levelscript_quest_processing_action",
+                        "levelscript_quest_completed_action",
+                    }
+                ):
+                    (
+                        exact_levelscript_playback,
+                        levelscript_failure,
+                    ) = _exact_cross_owner_levelscript_quest_playback(
+                        connection,
+                        owner_mission,
+                        context_mission,
+                        context_quest,
+                    )
+                    if levelscript_failure is not None:
+                        cross_owner_levelscript_validation_failures.append(
+                            levelscript_failure
+                        )
+                if (
+                    not exact_dialog_finish
+                    and not exact_client_action
+                    and not exact_levelscript_playback
+                ):
+                    continue
                 if owner_mission not in mission_payloads:
                     continue
-                cross_owner_connections[owner_mission].append({
+                mission_runtime_source = (
+                    "export_full/structured/Persistent/Data/Json/"
+                    f"MissionRuntimeAsset/{context_mission}.json"
+                )
+                levelscript_source = safe_key(connection.get("sourceFile"))
+                source_files = sorted({
+                    source_file
+                    for source_file in (
+                        levelscript_source,
+                        mission_runtime_source,
+                    )
+                    if source_file
+                })
+                source_sha256 = {
+                    source_file: _sha256_file(ROOT / source_file)
+                    for source_file in source_files
+                    if (ROOT / source_file).is_file()
+                }
+                companion = {
                     **connection,
                     "contextMissionBundle": context_mission,
                     "contextQuestId": context_quest,
-                    "sourceFile": (
-                        "export_full/structured/Persistent/Data/Json/"
-                        f"MissionRuntimeAsset/{context_mission}.json"
-                    ),
-                })
+                    "sourceFiles": source_files,
+                    "sourceSha256": source_sha256,
+                }
+                if exact_levelscript_playback:
+                    companion.update({
+                        "relation":
+                            "cross_owner_levelscript_quest_playback_context",
+                        "originalRelation": relation,
+                        "originalDirection": safe_key(
+                            connection.get("direction")
+                        ),
+                        "originalPhase": safe_key(connection.get("phase")),
+                        "direction": "context",
+                        "graphEffect": "none",
+                        "storyOwnerMission": owner_mission,
+                        "ownership": False,
+                        "relativeStoryOrder": False,
+                        "orderBoundary": (
+                            "the exact foreign quest state proves this Story "
+                            "playback lifecycle context, but does not reassign "
+                            "nominal Story ownership or order it against another "
+                            "Story file"
+                        ),
+                    })
+                else:
+                    companion["sourceFile"] = mission_runtime_source
+                cross_owner_connections[owner_mission].append(companion)
     for mission in cross_owner_connections:
         cross_owner_connections[mission].sort(key=lambda row: (
             natural_key(safe_key(row.get("key"))),
@@ -23680,6 +23971,26 @@ def build_gap_report(
             ),
             "validationFailures":
                 exact_runtime_config_validation_failures,
+            "graphEffect": "none",
+        },
+        "crossOwnerLevelScriptQuestPlaybackValidation": {
+            "validator": "cross_owner_levelscript_quest_playback_v1",
+            "status": (
+                "validation_failed"
+                if cross_owner_levelscript_validation_failures
+                else "validated"
+            ),
+            "validationFailures": cross_owner_levelscript_validation_failures,
+            "graphEffect": "none",
+        },
+        "crossOwnerDialogTreeNarrativeValidation": {
+            "validator": "cross_owner_dialog_tree_narrative_context_v1",
+            "status": (
+                "validation_failed"
+                if cross_owner_dialog_tree_validation_failures
+                else "validated"
+            ),
+            "validationFailures": cross_owner_dialog_tree_validation_failures,
             "graphEffect": "none",
         },
         "summary": {
@@ -24144,6 +24455,28 @@ def main(argv: list[str] | None = None) -> int:
             f"actual={first.get('actual')} "
             f"source={(first.get('sourceFiles') or [''])[0]}"
         )
+    for label, status_key in (
+        (
+            "Cross-owner LevelScript quest playback",
+            "crossOwnerLevelScriptQuestPlaybackValidation",
+        ),
+        (
+            "Cross-owner DialogTree narrative context",
+            "crossOwnerDialogTreeNarrativeValidation",
+        ),
+    ):
+        failures = (
+            report.get(status_key) or {}
+        ).get("validationFailures") or []
+        if failures:
+            first = failures[0]
+            print(
+                f"{label} validator failure: "
+                f"mission={safe_key(first.get('missionId'))} "
+                f"story={safe_key(first.get('storyKey'))} "
+                f"gate={safe_key(first.get('gate'))} "
+                f"source={safe_key((first.get('sourcePaths') or [''])[0])}"
+            )
     diagnostic_status = report.get("questAttachmentDiagnosticEvidence") or {}
     diagnostic_failures = diagnostic_status.get(
         "validationFailureDetails"

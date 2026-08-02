@@ -18,7 +18,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v115",
+            "sourceStoryGapQueue.v116",
         )
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
@@ -136,6 +136,20 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             ],
                             "activationBoundary": "exact foreign shell playback",
                             "orderBoundary": "shell does not transfer ownership",
+                        }, {
+                            "sceneKey": "radio_testm1_quest_shell",
+                            "nominalStoryMissionId": "testm1",
+                            "contextMissionId": "testm2",
+                            "contextQuestId": "testm2_q#1",
+                            "relation":
+                                "cross_owner_levelscript_quest_playback_context",
+                            "recoveryStatus":
+                                "closed_exact_cross_mission_quest_playback_context_no_relative_order",
+                            "sourceFiles": [
+                                "LevelScriptData/test.json",
+                                "MissionRuntimeAsset/testm2.json",
+                            ],
+                            "orderBoundary": "quest playback does not transfer ownership",
                         }],
                         "deferredOfflineExhaustedIsolatedScenes": [{
                             "sceneKey": "dlg_testm1_1",
@@ -229,6 +243,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         "relation": "leveldata_levelscript_mission_context",
                     }],
                 },
+                "radio_testm1_quest_shell": {
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "relation":
+                            "cross_owner_levelscript_quest_playback_context",
+                    }],
+                },
             }
 
             result = pipeline.publish_offline_story_recovery(
@@ -238,7 +259,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
-        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 10)
+        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 11)
         self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 3)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
@@ -317,6 +338,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "contextMissionId"
             ],
             "testm2",
+        )
+        self.assertEqual(
+            manifest["radio_testm1_quest_shell"]["runtimeContextRecovery"][
+                "contextQuestId"
+            ],
+            "testm2_q#1",
         )
         overlay = result["storyTriggerManifestOverlay"]["text_testm1_1"]
         self.assertEqual(overlay["routes"], [])
