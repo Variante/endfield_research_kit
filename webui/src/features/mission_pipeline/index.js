@@ -329,6 +329,8 @@
       nativePredicate: "predicate",
       nativePredicateOpaque: "inline predicate not semantically decoded",
       optionBranches: "dialog option branches",
+      typedStorySelectors: "typed system selectors",
+      typedStorySelectorHint: "Original typed tables group these Story files as alternatives for one runtime selector. This creates no order edge between alternatives or selector groups.",
       optionDirectContinuation: "direct shared continuation",
       isolatedScenes: "isolated Story files",
       weakOnlyScenes: "weak-context-only files",
@@ -1167,6 +1169,8 @@
       nativePredicate: "\u5206\u652f\u6761\u4ef6",
       nativePredicateOpaque: "\u5185\u8054\u6761\u4ef6\u5c1a\u672a\u8bed\u4e49\u89e3\u7801",
       optionBranches: "\u5bf9\u8bdd\u9009\u9879\u5206\u652f",
+      typedStorySelectors: "\u7c7b\u578b\u5316\u7cfb\u7edf\u9009\u62e9\u5668",
+      typedStorySelectorHint: "\u539f\u59cb\u7c7b\u578b\u5316\u8868\u628a\u8fd9\u4e9b\u5267\u60c5\u6587\u4ef6\u7ed1\u5b9a\u4e3a\u540c\u4e00\u8fd0\u884c\u65f6\u9009\u62e9\u5668\u7684\u5019\u9009\u9879\uff0c\u4e0d\u4f1a\u5728\u5019\u9009\u9879\u6216\u9009\u62e9\u5668\u7ec4\u4e4b\u95f4\u521b\u5efa\u987a\u5e8f\u8fb9\u3002",
       optionDirectContinuation: "\u76f4\u63a5\u8fdb\u5165\u5171\u4eab\u540e\u7eed",
       isolatedScenes: "\u5b64\u7acb\u5267\u60c5\u6587\u4ef6",
       weakOnlyScenes: "\u4ec5\u5f31\u4e0a\u4e0b\u6587\u6587\u4ef6",
@@ -2879,6 +2883,7 @@
     }).join("");
     const frontiers = (order.topologicalLayers || []).map((layer, index) => `<div class="mp-order-frontier"><b>${esc(t("partialFrontier"))} ${index + 1}</b><span>${(layer || []).map(componentHtml).join("")}</span></div>`).join("");
     const branches = order.branches || {};
+    const typedSelectors = (branches.typedStorySelectorGroups || []).map((row) => `<details><summary><b>${esc(t("typedStorySelectors"))}</b> <code>${esc(row.selectorGroupId || "?")}</code></summary><p>${esc(t("typedStorySelectorHint"))}</p>${(row.alternatives || []).map((alternative) => `<div><code>${esc(alternative.role || "?")}</code><i>&rarr;</i><a href="${esc(storyHref(alternative.key))}"><code>${esc(alternative.key || "?")}</code></a></div>`).join("")}${(row.sourceFiles || []).length ? `<small>${row.sourceFiles.map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</details>`).join("");
     const questForks = (branches.questForks || []).map((row) => `<div><b>${esc(t("questFork"))}</b><code>${esc(row.questId || "?")}</code><i>&rarr;</i><span>${(row.successorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span></div>`).join("");
     const questMerges = (branches.questMerges || []).map((row) => `<div><b>${esc(t("questMerge"))}</b><span>${(row.predecessorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span><i>&rarr;</i><code>${esc(row.questId || "?")}</code></div>`).join("");
     const nativeBranchLabel = (kind) => t(kind === "splitFanout" ? "nativeSplitFanout" : kind === "ifElse" ? "nativeIfElseBranch" : "nativeSwitchBranch");
@@ -3218,7 +3223,7 @@
       ${containments ? `<section><h4>${esc(t("embeddedStory"))}</h4><p>${esc(t("embeddedStoryHint"))}</p><div class="mp-order-edges">${containments}</div></section>` : ""}
       ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}
-      ${questForks || questMerges || nativeBranches || nativeMerges || sceneOptions || dialogConditionalBranches ? `<section><h4>${esc(t("forkMerge"))}</h4><div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${sceneOptions}${dialogConditionalBranches}</div></section>` : ""}
+      ${questForks || questMerges || nativeBranches || nativeMerges || sceneOptions || dialogConditionalBranches || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4><div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${sceneOptions}${dialogConditionalBranches}${typedSelectors}</div></section>` : ""}
       ${dialogOptions ? `<section><h4>${esc(t("optionBranches"))}</h4><div class="mp-order-dialog-branches">${dialogOptions}</div></section>` : ""}
       ${offlineGaps ? `<details class="mp-order-recovery-gaps" open><summary>${esc(t("offlineRecoveryGaps"))} <span>${offlineRows.length.toLocaleString()}</span></summary><p>${esc(t("offlineRecoveryGapsHint"))}</p><div>${offlineGaps}</div></details>` : ""}
       <small>${esc(t("isolatedScenes"))}: ${Number(summary.isolatedSceneCount || 0).toLocaleString()} 路 ${esc(t("weakOnlyScenes"))}: ${Number(summary.weakOnlySceneCount || 0).toLocaleString()}</small>

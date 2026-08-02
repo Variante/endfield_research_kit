@@ -116,6 +116,39 @@ def mission_payload(
 
 
 class SourceStoryPartialOrderTests(unittest.TestCase):
+    def test_typed_selector_alternatives_are_visible_without_order_edges(self) -> None:
+        alternatives = [
+            {"role": "first", "key": "dlg_a"},
+            {"role": "repeat", "key": "dlg_b"},
+        ]
+        payload = mission_payload()
+        payload["flow"]["missionStoryConnections"] = [
+            {
+                "missionId": "m1",
+                "key": key,
+                "selectorKind": "typed_table_story_selector",
+                "selectorGroupId": "target_opaque",
+                "selectorRole": role,
+                "selectorAlternatives": alternatives,
+                "graphEffect": "none",
+                "sourceFiles": ["TypedTable.json"],
+                "nativeMappingId": "mapping-v1",
+                "orderBoundary": "no relative order",
+            }
+            for role, key in (("first", "dlg_a"), ("repeat", "dlg_b"))
+        ]
+
+        result = partial_order.build_mission_partial_order(
+            "m1", {"dlg_a": "dlg", "dlg_b": "dlg"}, payload
+        )
+
+        self.assertEqual(result["directEdges"], [])
+        self.assertEqual(result["summary"]["typedStorySelectorGroupCount"], 1)
+        self.assertEqual(
+            result["branches"]["typedStorySelectorGroups"][0]["alternatives"],
+            alternatives,
+        )
+
     @staticmethod
     def narrative_containment_flow(*, placement_status: str) -> dict:
         return {

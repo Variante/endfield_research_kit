@@ -48,6 +48,12 @@ class OriginalSystemStoryBindingTests(unittest.TestCase):
             ],
         )
         self.assertEqual(rows[0]["deliverTargets"][0]["targetId"], "npc_exact")
+        self.assertEqual(rows[0]["selectorGroupId"], "npc_exact")
+        self.assertEqual(rows[0]["graphEffect"], "none")
+        self.assertEqual(rows[0]["selectorAlternatives"], [
+            {"role": "initialDialogId", "key": "dlg_initial"},
+            {"role": "repeatDialogId", "key": "dlg_repeat"},
+        ])
 
     def test_domain_depot_does_not_infer_an_unavailable_mission(self) -> None:
         self.assertEqual(build_domain_depot_story_connections(

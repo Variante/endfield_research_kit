@@ -1332,6 +1332,51 @@ def _quest_branches_and_merges(timeline_recovery: dict[str, Any]) -> tuple[list[
     return branches, merges
 
 
+def _typed_story_selector_groups(
+    flow: dict[str, Any], candidate_keys: set[str]
+) -> list[dict[str, Any]]:
+    """Expose exact typed selector alternatives without manufacturing edges."""
+    groups: dict[tuple[str, str], dict[str, Any]] = {}
+    invalid_groups: set[tuple[str, str]] = set()
+    for row in _story_connection_rows(flow):
+        if (
+            safe_key(row.get("selectorKind")) != "typed_table_story_selector"
+            or safe_key(row.get("graphEffect")) != "none"
+        ):
+            continue
+        group_id = safe_key(row.get("selectorGroupId"))
+        mission_id = safe_key(row.get("missionId"))
+        alternatives = [
+            {"role": safe_key(item.get("role")), "key": safe_key(item.get("key"))}
+            for item in row.get("selectorAlternatives") or []
+            if isinstance(item, dict)
+            and safe_key(item.get("role"))
+            and safe_key(item.get("key")) in candidate_keys
+        ]
+        if not group_id or len(alternatives) < 2:
+            continue
+        signature = (mission_id, group_id)
+        if signature in invalid_groups:
+            continue
+        current = groups.setdefault(signature, {
+            "selectorKind": "typed_table_story_selector",
+            "missionId": mission_id,
+            "selectorGroupId": group_id,
+            "alternatives": alternatives,
+            "sourceFiles": _string_list(row.get("sourceFiles")),
+            "nativeMappingId": safe_key(row.get("nativeMappingId")),
+            "graphEffect": "none",
+            "orderBoundary": safe_key(row.get("orderBoundary")),
+        })
+        if current["alternatives"] != alternatives:
+            groups.pop(signature, None)
+            invalid_groups.add(signature)
+    return sorted(
+        groups.values(),
+        key=lambda row: (natural_key(row["missionId"]), natural_key(row["selectorGroupId"])),
+    )
+
+
 NATIVE_OCCURRENCE_FIELDS = (
     "occurrences",
     "levelScriptOccurrences",
@@ -3458,6 +3503,7 @@ def build_mission_partial_order(
     )
 
     quest_branches, quest_merges = _quest_branches_and_merges(timeline)
+    typed_story_selector_groups = _typed_story_selector_groups(flow, candidate_keys)
     native_control_branches, native_control_merges = _native_control_branches_and_merges(
         flow, candidate_keys
     )
@@ -3623,6 +3669,7 @@ def build_mission_partial_order(
             "nativeUnresolvedPredicateCount": native_unresolved_predicates,
             "questForkCount": len(quest_branches),
             "questMergeCount": len(quest_merges),
+            "typedStorySelectorGroupCount": len(typed_story_selector_groups),
             "dialogLineOptionGroupCount": len(dialog_line_options),
             "dialogLineOptionRouteCount": dialog_line_route_count,
             "dialogLineOptionLineCount": dialog_line_count,
@@ -3668,6 +3715,7 @@ def build_mission_partial_order(
                 single_option_no_explicit_route_groups,
             "questForks": quest_branches,
             "questMerges": quest_merges,
+            "typedStorySelectorGroups": typed_story_selector_groups,
         },
         "isolatedSceneKeys": isolated,
         "weakOnlySceneKeys": weak_only,
