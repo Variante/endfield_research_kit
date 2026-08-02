@@ -30,6 +30,7 @@ from scripts.story_builder.level_bindings import (
     parse_level_interactive_narrative_mission_context,
     parse_levelscript_interactive_narrative_maps,
     parse_levelscript_brief_data_entry,
+    match_levelscript_native_reading_popup_record,
 )
 
 
@@ -346,6 +347,102 @@ class LevelDataScriptHostTests(unittest.TestCase):
             + len(script_ids).to_bytes(4, "little", signed=True)
             + b"".join(cls._brief_entry(script_id) for script_id in script_ids)
         )
+
+    @classmethod
+    def _reading_popup_brief_dictionary(
+        cls,
+        script_id: int,
+        property_name: str,
+        popup_id: str,
+    ) -> bytes:
+        property_value = (
+            b"\x02"
+            + cls._mp_string(property_name)
+            + b"\x02"
+            + (7).to_bytes(4, "little", signed=True)
+            + (1).to_bytes(4, "little", signed=True)
+            + b"\x02"
+            + (0).to_bytes(8, "little")
+            + cls._mp_string(popup_id)
+        )
+        entry = (
+            script_id.to_bytes(8, "little")
+            + b"\x08"
+            + (script_id + 100).to_bytes(8, "little")
+            + (0).to_bytes(4, "little", signed=True)
+            + (1).to_bytes(4, "little", signed=True)
+            + (0).to_bytes(8, "little")
+            + (1).to_bytes(4, "little", signed=True)
+            + property_value
+            + (0).to_bytes(4, "little", signed=True)
+            + (1).to_bytes(4, "little", signed=True)
+            + (123).to_bytes(8, "little")
+            + script_id.to_bytes(8, "little")
+        )
+        return b"\x2bfixture" + (1).to_bytes(4, "little", signed=True) + entry
+
+    def test_show_reading_popup_resolves_only_through_exact_mirrored_brief_property(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            level_id = "map_test_lv001"
+            script_id = 90100000006
+            leveldata_root = root / "Streaming" / "LevelData"
+            persistent_root = root / "Persistent" / "LevelData"
+            levelscript_root = root / "LevelScriptData"
+            for base in (leveldata_root, persistent_root, levelscript_root):
+                (base / level_id).mkdir(parents=True)
+            (levelscript_root / level_id / f"{script_id}.json").write_bytes(
+                b"fixture"
+            )
+            payload = self._reading_popup_brief_dictionary(
+                script_id,
+                "readingPop",
+                "rp_text_fixture_1",
+            )
+            filename = "map_test_lv001_lv_data_sub_fixture.json"
+            (leveldata_root / level_id / filename).write_bytes(payload)
+            mirror = persistent_root / level_id / filename
+            mirror.write_bytes(payload)
+            popup_table = root / "ReadingPopUpTable.json"
+            popup_table.write_text(
+                json.dumps({
+                    "rp_text_fixture_1": {"contentId": "text_fixture_1"},
+                }),
+                encoding="utf-8",
+            )
+            record = {
+                "code": 0x048C,
+                "kind": 0x09,
+                "unionTag": 0x048C,
+                "serializedMemberCount": 9,
+                "plainStrings": [{"text": "readingPop", "offset": 10}],
+            }
+            matched = match_levelscript_native_reading_popup_record(
+                level_id,
+                str(script_id),
+                record,
+                leveldata_root=leveldata_root,
+                levelscript_root=levelscript_root,
+                persistent_leveldata_root=persistent_root,
+                reading_popup_path=popup_table,
+            )
+            self.assertIsNotNone(matched)
+            self.assertEqual("text_fixture_1", matched["key"])
+            self.assertEqual("rp_text_fixture_1", matched["readingPopupId"])
+            self.assertEqual(1, matched["hostCount"])
+
+            mirror.write_bytes(payload + b"changed")
+            self.assertIsNone(
+                match_levelscript_native_reading_popup_record(
+                    level_id,
+                    str(script_id),
+                    record,
+                    leveldata_root=leveldata_root,
+                    levelscript_root=levelscript_root,
+                    persistent_leveldata_root=persistent_root,
+                    reading_popup_path=popup_table,
+                )
+            )
 
     def test_exact_level_and_runtime_token_are_required(self) -> None:
         missions = {"sm2l8m1", "c27m4d5"}

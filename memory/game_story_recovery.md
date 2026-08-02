@@ -17,8 +17,8 @@ Latest CN reports:
 | Unlinked files with exact native playback | 155 |
 | Ordered mission graphs | 487 |
 | Candidate scene placements | 8,876 |
-| Strong / supported / weak edges | 1,481 / 834 / 2,630 |
-| Source-comparable scene pairs | 3,763 / 249,651 (1.51%) |
+| Strong / supported / weak edges | 1,482 / 834 / 2,635 |
+| Source-comparable scene pairs | 3,764 / 249,651 (1.51%) |
 | Cyclic components | 0 |
 | Exact nested DialogTree containments | 49 across 44 child files |
 | Exact quest-observed DialogTree definitions | 435 definitions / 461 placements across 422 quests |
@@ -43,6 +43,24 @@ in five payloads.
   lines.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
+
+The latest `gm02m17` batch adds one original-binary-backed Story edge and
+closes its remaining two actionable files without guessing. Current-build
+formatter tag `0x048c/9` identifies `ShowUIReadingPopPanel`; LevelScript
+`map02_lv008/23100300006` has an exact custom-event chain from
+`StartDialogAction(dlg_gm02m17_11)` to that action, while the mirrored,
+fully framed LevelData BriefData property `readingPop` resolves through
+`ReadingPopUpTable` to `text_gm02m17_1`. Mission Pipeline therefore shows the
+strong edge `dlg_gm02m17_11 -> text_gm02m17_1` and the related LevelScript,
+LevelData, and table files. The same MissionRuntime has the exact quest fork
+`q#1 -> {q#3,q#4}` and merge `{q#5,q#1} -> q#4`, but only `q#1` is authored
+main path and server placeholders hide successor selection; this is not
+promoted to a player-choice branch. `radio_gm02m17_2` and `_4` remain exact
+one-line RadioTable definitions with missing AudioDialog ids and no recovered
+consumer across MissionRuntime, LevelScript, GameplayConfig, object indexes,
+or direct native-token surfaces. Their offline closure is visible in Mission
+Pipeline with graph effect `none`. The major queue now has 20 actionable core
+isolated rows; `gm02m8` is next at score 15 with dialogs `_2`, `_3`, and `_4`.
 
 The current main-story isolated-scene queue is source-bounded: all 586 core
 isolated rows are now either closed by exact native/runtime/definition evidence
