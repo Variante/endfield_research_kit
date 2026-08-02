@@ -25,6 +25,7 @@ Latest CN reports:
 | Exact nested DialogTree containments | 49 across 44 child files |
 | Exact quest-observed DialogTree definitions | 434 definitions / 461 placements across 422 quests |
 | LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
+| Native branch predicates | 258 named; 256 semantic; 7 class-only; 0 unresolved |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -42,6 +43,9 @@ in five payloads.
   many event families.
 - 307 native branch groups and 19 native convergences, kept as a partial
   graph instead of flattened into a guessed file list.
+- All 3 previously opaque native branch predicates are now typed from the
+  current binary: one general LevelScript-stage comparison and two instances
+  of the general mission-or-quest completion getter.
 - 368 strict option-route groups covering 767 option arms and 1,597 branch
   lines.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
@@ -126,6 +130,15 @@ missions have WebUI shells. Each attachment retains its selected active event
 listener, listener metadata, physical/active counts, shadowed slot counts, and
 the shared original-binary runtime mapping; the rest of each graph stays
 file-local context.
+The current PureGetter union registration, generated MemoryPack setter order,
+and native `GetResult` bodies now also close the last three opaque branch
+predicates without mission-specific rules. `CheckLevelScriptStage` decodes its
+comparer, LevelScript pointer, and expected stage; the present `e7m3` record is
+`current script stage Equal 0`. `CheckMissionOrQuestIsComplete` decodes its
+mission/quest selector and serialized identity; the present `sm1l1m2` and
+`sm1l2m4` records test quests `sm1l1m2_q#7` and `sm1l2m4_q#8` for the native
+completed state. Payloads must consume exactly, apart from the already proven
+outer action-map trailer, so changed or malformed shapes remain unresolved.
 No current mission has Story
 targets on two different Branch sequence slots, so this adds zero Branch-derived
 Story-order edges rather than guessing them.

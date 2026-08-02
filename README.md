@@ -111,12 +111,12 @@ or local source edits.
 
 ### Story
 
-- 5,282 unique Story files across 490 pipeline missions.
-- 4,174 files have an accepted mission/context connection (**79%**).
-- 4,395 have a normalized trigger/context route (**83%**).
-- 1,108 remain unlinked; 155 already have exact native playback but lack a
+- 5,562 unique Story files across 591 pipeline missions.
+- 4,239 files have an accepted mission/context connection (**76.2%**).
+- 4,462 have a normalized trigger/context route (**80.2%**).
+- 1,323 remain unlinked; 156 already have exact native playback but lack a
   mission/quest activation bridge.
-- The source-only graph is cycle-free, but proves order for only **1.51%** of
+- The source-only graph is cycle-free, but proves order for only **1.52%** of
   possible within-mission scene pairs. It is a partial order, not a canonical
   full playthrough.
 

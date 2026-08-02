@@ -2975,6 +2975,59 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertEqual("isTalkFinished", property_detail["propertyKey"])
         self.assertEqual("22800700001", property_detail["targetScript"]["scriptId"])
 
+        stage_check_blob = getter_record(
+            0x0013,
+            10,
+            231,
+            b"0ce4d2aa",
+            constant_i32(0) + current_script_ptr + constant_i32(4),
+        )
+        stage_check_record = extract_levelscript_uid_records(stage_check_blob)[0]
+        stage_check = decode_levelscript_record_payload(
+            stage_check_blob,
+            stage_check_record,
+            next_start=len(stage_check_blob),
+            action_map_role="getterList#11",
+        )["checkLevelScriptStage"]
+        self.assertEqual("Equal", stage_check["comparerName"])
+        self.assertEqual("current_script", stage_check["scriptPtr"]["mode"])
+        self.assertEqual(4, stage_check["expectedStage"]["value"])
+
+        quest_id = b"sm1l1m2_q#7"
+        completion_blob = getter_record(
+            0x0016,
+            9,
+            232,
+            b"4ec92d36",
+            constant_bool(True)
+            + b"\x04"
+            + len(quest_id).to_bytes(4, "little")
+            + quest_id
+            + default_tail,
+        )
+        completion_record = extract_levelscript_uid_records(completion_blob)[0]
+        completion = decode_levelscript_record_payload(
+            completion_blob,
+            completion_record,
+            next_start=len(completion_blob),
+            action_map_role="getterList#12",
+        )["checkMissionOrQuestIsComplete"]
+        self.assertTrue(completion["isQuest"]["value"])
+        self.assertEqual("quest", completion["targetKind"])
+        self.assertEqual("sm1l1m2_q#7", completion["missionOrQuestId"])
+        self.assertEqual("Completed", completion["completedStateName"])
+
+        malformed_completion = decode_levelscript_record_payload(
+            completion_blob[:-1],
+            completion_record,
+            next_start=len(completion_blob) - 1,
+            action_map_role="getterList#12",
+        )
+        self.assertNotIn(
+            "checkMissionOrQuestIsComplete",
+            malformed_completion,
+        )
+
     def records(self):
         return [
             {
