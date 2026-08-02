@@ -44,7 +44,24 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch closes all eight remaining quest-to-Story attachment
+The latest recovery batch generalizes exact LevelData-hosted LevelScript
+playback across matching and foreign mission shells. The validator requires a
+typed current-build playback action, exact native event-to-action path,
+GameAssembly mapping, complete single-key authored record, mechanical
+`misc_dlg_* -> dlg_*` alias where needed, and a validated
+`LevelData/43.member22` script dictionary host. Mission equality changes only
+the displayed ownership boundary; it is not a separate per-mission rule. This
+closes `misc_dlg_e1m3_5d5`, `misc_dlg_e6m3_3d5`,
+`misc_dlg_f1m9d1_4d5`, `misc_dlg_f1m9d3_3d5`, and
+`misc_dlg_sm1l3m1_1d1`. Main, event, major, and character buckets now have
+zero actionable core-isolated files; the other bucket falls from 384 to 381.
+Mission Pipeline shows a localized exact-playback boundary plus both original
+LevelData/LevelScript files. No quest trigger or relative order is inferred,
+and the graph remains 1,502 strong edges, 265 quest forks, 55 quest merges,
+307 native branch groups, and 19 native convergences. OCR/manual order remains
+comparison-only.
+
+The preceding recovery batch closes all eight remaining quest-to-Story attachment
 gaps with schema-driven rules rather than quest/object declarations. Typed
 objective conditions now resolve their Story key by condition class and source
 field shape, including `CheckRepeatableTalkFinish`. Exact LevelScript property
@@ -815,10 +832,10 @@ only.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
-   typed attachments or bounded graph-neutral diagnostics. Event, major, and
-   character missions have no actionable core-isolated files. Main missions
-   retain two actionable core-isolated files; other missions retain 384 and 17
-   missing mission bundles. Broad co-memberships remain non-owning diagnostics.
+   typed attachments or bounded graph-neutral diagnostics. Main, event, major,
+   and character missions have no actionable core-isolated files. Other
+   missions retain 381 and 17 missing mission bundles. Broad co-memberships
+   remain non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
    reopen only when a typed DialogTree/Timeline/runtime consumer appears.
@@ -832,9 +849,8 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should audit the two remaining main-story core-isolated files, then
-rank the 384 other actionable source-link gaps by reusable typed
-producer/consumer family. Extend the same pattern-based approach
+Next work should rank the 381 other actionable source-link gaps by reusable
+typed producer/consumer family. Extend the same pattern-based approach
 to other definition families only when their typed schemas and complete
 consumer surfaces can be bounded without weakening the fail-closed rules.
 Within `gm02m23`, the

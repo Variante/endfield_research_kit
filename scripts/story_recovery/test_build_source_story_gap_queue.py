@@ -3505,11 +3505,114 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         invalid = dict(connection)
         invalid["confidence"] = "derived"
         self.assertFalse(
-            gap_queue._exact_cross_owner_leveldata_story_context(
+            gap_queue._exact_leveldata_story_context(
                 invalid,
                 "e2m7",
                 "e9m3",
             )
+        )
+
+    def test_exact_same_mission_leveldata_alias_playback_closes_gap(
+        self,
+    ) -> None:
+        story_key = "misc_dlg_testm1_1d5"
+        authored_key = "dlg_testm1_1d5"
+        source_file = "LevelScriptData/level_a/1001.json"
+        level_data_file = "LevelData/level_a/testm1.json"
+        occurrence = {
+            "levelId": "level_a",
+            "scriptId": "1001",
+            "sourceFile": source_file,
+            "actionMapRole": "actionList#1 root",
+            "actionCode": "0x049e",
+            "actionKind": "0x0f",
+            "localId": 5,
+            "actionName": "StartDialogAction",
+            "recordClass": "play_dialog",
+            "nativeMappingId": "gameassembly-test-actionbase",
+            "allStoryKeysInRecord": [authored_key],
+            "authoredStoryKey": authored_key,
+            "nativeEventOwnerStatus": "exact_serialized_control_path",
+            "nativeEventOwners": [{
+                "status": "exact_serialized_control_path",
+                "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                "headerLocalId": 4,
+                "eventDetail": {
+                    "summary": "leader enters trigger slot 80001",
+                },
+                "path": [{
+                    "localId": 5,
+                    "actionName": "StartDialogAction",
+                    "recordClass": "play_dialog",
+                    "texts": [authored_key],
+                }],
+            }],
+            "levelDataHosts": [{
+                "missionId": "testm1",
+                "levelId": "level_a",
+                "scriptId": "1001",
+                "levelDataFile": level_data_file,
+                "encoding": "leveldata_member22_levelscriptbriefdata",
+                "nativeSchema": (
+                    "LevelData/43.member22:"
+                    "Dictionary<u64,LevelScriptBriefData/8>"
+                ),
+                "briefData": [{"scriptId": "1001"}],
+            }],
+            "scopeEvidenceKinds": [
+                "mission_leveldata_member22_contains_validated_"
+                "levelscript_brief",
+            ],
+        }
+        connection = {
+            "key": story_key,
+            "relation": "leveldata_levelscript_mission_context",
+            "direction": "context",
+            "phase": "context",
+            "confidence": "native_exact_host",
+            "storyOwnerMission": "testm1",
+            "levelDataHostMissionId": "testm1",
+            "questTriggerStatus": "unresolved",
+            "occurrenceCount": 1,
+            "allOccurrenceCount": 1,
+            "hasUnscopedOrOtherMissionOccurrences": False,
+            "nativeActions": ["StartDialogAction"],
+            "opcodes": ["0x049e/0x0f"],
+            "levelIds": ["level_a"],
+            "scriptIds": ["1001"],
+            "sourceFiles": [source_file],
+            "levelDataFiles": [level_data_file],
+            "levelScriptOccurrences": [occurrence],
+        }
+
+        closures = gap_queue._closed_exact_native_context_isolated_scenes(
+            {"missionStoryConnections": [connection]},
+            {story_key},
+            "testm1",
+        )
+
+        self.assertEqual(len(closures), 1)
+        self.assertEqual(
+            closures[0]["recoveryStatus"],
+            (
+                "closed_exact_same_mission_leveldata_playback_context_"
+                "no_relative_order"
+            ),
+        )
+        self.assertIs(closures[0]["contextMissionMismatch"], False)
+        self.assertEqual(
+            closures[0]["sourceFiles"],
+            [level_data_file, source_file],
+        )
+
+        occurrence["authoredStoryKey"] = "dlg_different_1"
+        self.assertEqual(
+            gap_queue._closed_exact_native_context_isolated_scenes(
+                {"missionStoryConnections": [connection]},
+                {story_key},
+                "testm1",
+            ),
+            [],
         )
 
     def test_exact_cross_mission_condition_playback_closes_story_gap(

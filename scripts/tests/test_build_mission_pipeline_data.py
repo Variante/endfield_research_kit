@@ -73,6 +73,19 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "orderBoundary": "wall state does not order files",
                         }],
                         "closedExactNativeIsolatedScenes": [{
+                            "sceneKey": "misc_dlg_testm1_local_shell",
+                            "nominalStoryMissionId": "testm1",
+                            "contextMissionId": "testm1",
+                            "relation": "leveldata_levelscript_mission_context",
+                            "recoveryStatus":
+                                "closed_exact_same_mission_leveldata_playback_context_no_relative_order",
+                            "sourceFiles": [
+                                "LevelScriptData/local.json",
+                                "LevelData/testm1.json",
+                            ],
+                            "activationBoundary": "exact local shell playback",
+                            "orderBoundary": "local playback does not order files",
+                        }, {
                             "sceneKey": "radio_testm1_shell",
                             "nominalStoryMissionId": "testm1",
                             "contextMissionId": "testm2",
@@ -189,6 +202,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "authoritative_scope_leveldata_mission_context",
                     }],
                 },
+                "misc_dlg_testm1_local_shell": {
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "relation": "leveldata_levelscript_mission_context",
+                    }],
+                },
                 "cutscene_testm1_alias": {
                     "attachmentStatus": "connected",
                     "routes": [{
@@ -219,7 +238,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
-        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 9)
+        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 10)
         self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 3)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
@@ -262,6 +281,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "relation"
             ],
             "airwall_mission_state_radio_playback_context",
+        )
+        self.assertEqual(
+            manifest["misc_dlg_testm1_local_shell"][
+                "runtimeContextRecovery"
+            ]["contextMissionId"],
+            "testm1",
         )
         self.assertEqual(
             manifest["radio_testm1_shell"]["runtimeContextRecovery"][
