@@ -165,6 +165,213 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(failure["storyKey"], story_key)
         self.assertEqual(failure["actual"]["lineId"], "wrong_owner_1")
 
+    def test_generic_missionless_npc_proxy_consumer_recovers_identity(self) -> None:
+        story_key = "dlg_fixture_1"
+        row = {
+            "addDialogExOption": False,
+            "dialogExOptionData": [],
+            "dialogId": story_key,
+            "envTalkData": {"envTalkOverrideNpc": True},
+            "missionId": "",
+        }
+        facts, failure = (
+            gap_queue._generic_missionless_npc_proxy_dialog_facts(
+                story_key,
+                {
+                    "data": {"proxy_fixture": [row]},
+                    "proxyInfoData": {"proxy_fixture": {
+                        "npcProxyType": 0,
+                        "npcId": "npc_fixture",
+                        "npcNameId": "npc_name_fixture",
+                        "mapId": "map_fixture",
+                    }},
+                },
+                {"dataTable": {"proxy_fixture": {
+                    "proxyId": "proxy_fixture",
+                    "levelId": "level_fixture",
+                    "subDataParentId": 42,
+                }}},
+                {story_key: {
+                    "registered": True,
+                    "memoryPackRecordKey": True,
+                    "hasRootKey": True,
+                }},
+            )
+        )
+
+        self.assertIsNone(failure)
+        self.assertEqual(facts["consumerCount"], 1)
+        self.assertEqual(
+            facts["npcProxyConsumers"][0]["npcProxyId"],
+            "proxy_fixture",
+        )
+        self.assertEqual(
+            facts["dialogIdRegistrationStatus"],
+            "memorypack_root_registered",
+        )
+
+    def test_generic_missionless_npc_proxy_consumer_reports_row_shape(self) -> None:
+        story_key = "dlg_fixture_1"
+        facts, failure = (
+            gap_queue._generic_missionless_npc_proxy_dialog_facts(
+                story_key,
+                {
+                    "data": {"proxy_fixture": [{
+                        "dialogId": story_key,
+                        "missionId": "",
+                    }]},
+                    "proxyInfoData": {"proxy_fixture": {
+                        "npcProxyType": 0,
+                        "npcId": "npc_fixture",
+                        "npcNameId": "npc_name_fixture",
+                        "mapId": "map_fixture",
+                    }},
+                },
+                {"dataTable": {"proxy_fixture": {
+                    "proxyId": "proxy_fixture",
+                    "levelId": "level_fixture",
+                }}},
+                {story_key: {
+                    "registered": True,
+                    "memoryPackRecordKey": True,
+                    "hasRootKey": True,
+                }},
+            )
+        )
+
+        self.assertIsNone(facts)
+        self.assertEqual(
+            failure["validator"],
+            "genericMissionlessNpcProxyDialogConsumer",
+        )
+        self.assertEqual(failure["gate"], "exactNpcProxyExConsumerRow")
+        self.assertEqual(failure["npcProxyId"], "proxy_fixture")
+
+    def test_generic_unlinked_sns_definition_recovers_internal_graph(self) -> None:
+        story_key = "sns_fixture_1"
+        content_fields = {
+            "content": {"id": 1, "text": ""},
+            "contentParam": [],
+            "contentParams": "",
+            "contentType": 1,
+            "dialogOptionIds": [],
+            "isEnd": False,
+            "linkMissionId": "",
+            "linkRewardId": "",
+            "optionType": 0,
+            "speaker": "speaker_fixture",
+        }
+        row = {
+            "chatId": "chat_fixture",
+            "dialogContentData": {
+                "1": {
+                    **content_fields,
+                    "contentId": 1,
+                    "preContentId": 0,
+                    "nextContentId": -1,
+                },
+                "-1": {
+                    **content_fields,
+                    "content": {"id": 0, "text": ""},
+                    "contentId": -1,
+                    "preContentId": 1,
+                    "nextContentId": 0,
+                    "isEnd": True,
+                },
+            },
+            "dialogId": story_key,
+            "dialogType": 2,
+            "noticeType": 0,
+            "relatedMissionId": "",
+            "skipToFirstOption": False,
+            "topicId": "",
+        }
+        chat = {
+            field: 0
+            for field in gap_queue.SNS_CHAT_ROW_FIELDS
+        }
+        chat.update({
+            "chatId": "chat_fixture",
+            "name": {"id": 1, "text": ""},
+        })
+
+        facts, failure, exclusion = (
+            gap_queue._generic_unlinked_sns_definition_facts(
+                story_key,
+                row,
+                {},
+                {"chat_fixture": chat},
+            )
+        )
+
+        self.assertIsNone(failure)
+        self.assertIsNone(exclusion)
+        self.assertEqual(facts["contentIds"], [-1, 1])
+        self.assertEqual(facts["authoredMissionLinkStatus"], "absent")
+
+        linked = copy.deepcopy(row)
+        linked["relatedMissionId"] = "mission_fixture"
+        facts, failure, exclusion = (
+            gap_queue._generic_unlinked_sns_definition_facts(
+                story_key,
+                linked,
+                {},
+                {"chat_fixture": chat},
+            )
+        )
+        self.assertIsNone(facts)
+        self.assertIsNone(failure)
+        self.assertEqual(exclusion, "authoredMissionLink")
+
+    def test_generic_unlinked_sns_definition_reports_dangling_content(self) -> None:
+        story_key = "sns_fixture_1"
+        row = {
+            field: ""
+            for field in gap_queue.SNS_DIALOG_ROW_FIELDS
+        }
+        row.update({
+            "chatId": "chat_fixture",
+            "dialogId": story_key,
+            "dialogType": 2,
+            "noticeType": 0,
+            "skipToFirstOption": False,
+            "dialogContentData": {"-1": {
+                "content": {"id": 0, "text": ""},
+                "contentId": -1,
+                "contentParam": [],
+                "contentParams": "",
+                "contentType": 1,
+                "dialogOptionIds": [],
+                "isEnd": True,
+                "linkMissionId": "",
+                "linkRewardId": "",
+                "nextContentId": 0,
+                "optionType": 0,
+                "preContentId": 99,
+                "speaker": "",
+            }},
+        })
+        chat = {field: 0 for field in gap_queue.SNS_CHAT_ROW_FIELDS}
+        chat.update({
+            "chatId": "chat_fixture",
+            "name": {"id": 1, "text": ""},
+        })
+
+        facts, failure, exclusion = (
+            gap_queue._generic_unlinked_sns_definition_facts(
+                story_key,
+                row,
+                {},
+                {"chat_fixture": chat},
+            )
+        )
+
+        self.assertIsNone(facts)
+        self.assertIsNone(exclusion)
+        self.assertEqual(failure["validator"], "genericSnsNegativeConsumer")
+        self.assertEqual(failure["gate"], "closedContentGraphAndOptions")
+        self.assertEqual(failure["actual"]["invalidContentReferences"], [99])
+
     def test_radio_definition_validator_reports_exact_audio_failure(self) -> None:
         row = {
             "continueAfterDialog": False,
@@ -3227,40 +3434,52 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             [],
         )
 
-    def test_generic_radio_negative_consumer_fails_closed(self) -> None:
-        story_key = "radio_fixture"
-        evidence = {
-            "sceneKey": story_key,
-            "missionId": "fixture_mission",
-            "recoveryStatus":
-                "deferred_current_build_offline_surface_exhausted",
-            "evidenceKind":
-                "radio_definition_binary_consumer_surface_exhausted",
-            "graphEffect": "none",
-        }
-        args = (
-            {"missionStoryConnections": [], "quests": []},
-            {story_key},
-            "fixture_mission",
-            {story_key: evidence},
-        )
+    def test_generic_family_recoveries_fail_closed_on_stronger_routes(self) -> None:
+        for evidence_kind in (
+            "radio_definition_binary_consumer_surface_exhausted",
+            "missionless_npc_proxy_dialog_native_consumer",
+            "sns_definition_binary_consumer_surface_exhausted",
+        ):
+            with self.subTest(evidence_kind=evidence_kind):
+                story_key = f"fixture_{evidence_kind}"
+                evidence = {
+                    "sceneKey": story_key,
+                    "missionId": "fixture_mission",
+                    "recoveryStatus":
+                        "deferred_current_build_offline_surface_exhausted",
+                    "evidenceKind": evidence_kind,
+                    "graphEffect": "none",
+                }
+                args = (
+                    {"missionStoryConnections": [], "quests": []},
+                    {story_key},
+                    "fixture_mission",
+                    {story_key: evidence},
+                )
 
-        rows = gap_queue._deferred_offline_exhausted_isolated_scenes(*args)
-        self.assertEqual([row["sceneKey"] for row in rows], [story_key])
-        self.assertEqual(
-            gap_queue._deferred_offline_exhausted_isolated_scenes(
-                *args,
-                native_playback_index={story_key: [{"method": "Play"}]},
-            ),
-            [],
-        )
-        self.assertEqual(
-            gap_queue._deferred_offline_exhausted_isolated_scenes(
-                *args,
-                cross_owner_story_connections=[{"key": story_key}],
-            ),
-            [],
-        )
+                rows = gap_queue._deferred_offline_exhausted_isolated_scenes(
+                    *args
+                )
+                self.assertEqual(
+                    [row["sceneKey"] for row in rows],
+                    [story_key],
+                )
+                self.assertEqual(
+                    gap_queue._deferred_offline_exhausted_isolated_scenes(
+                        *args,
+                        native_playback_index={
+                            story_key: [{"method": "Play"}]
+                        },
+                    ),
+                    [],
+                )
+                self.assertEqual(
+                    gap_queue._deferred_offline_exhausted_isolated_scenes(
+                        *args,
+                        cross_owner_story_connections=[{"key": story_key}],
+                    ),
+                    [],
+                )
 
     def test_declared_offline_case_keeps_its_specific_route_contract(self) -> None:
         story_key = "radio_fixture"

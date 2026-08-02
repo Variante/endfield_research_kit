@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 559 (490 MissionRuntime + 69 Story-only recovery shells) |
+| Pipeline missions | 616 (490 MissionRuntime + 126 Story-only recovery shells) |
 | Unique Story files | 5,282 |
 | Connected files | 4,181 (79.2%) |
 | Files with a normalized trigger/context route | 4,402 (83.3%) |
@@ -44,22 +44,25 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch replaces new per-radio declarations with a generic,
-fail-closed current-build negative-consumer classifier. It starts only from
-core-isolated `radio_*` definitions with one unambiguous mission, validates the
-exact current `RadioTable` row and line schema, and refuses any key with a
-generated Story route, exact native playback, cross-owner connection, or typed
-AnimeStudio owner/runtime carrier. It then scans current `GameAssembly.dll` and
-`global-metadata.dat` once per encoding for all remaining exact roots, retaining
-overlapping/prefix matches. This qualifies 504 keys across 171 missions; 192
-were excluded because native playback exists, and no qualified definition had
-an exact UTF-8/UTF-16 root token or validation failure. These are build-locked
-surface-exhaustion closures with graph effect `none`, not proof that the content
-never plays. Audio membership, OCR, overrides, suffixes, row order, and line
-indices remain context only. Mission Pipeline shows the exact tables, carrier
-audit, original binaries, and reopen boundary. Major actionable core-isolated
-rows are now 6 (score 30); character has 118, other has 845, and main/event stay
-at zero. `gm02m4` and `gm01m8` now both have score zero.
+The latest recovery batch generalizes current-build classification across
+three definition families. The existing radio classifier still qualifies 504
+rows across 171 missions and excludes 192 exact native-playback rows. A new
+NPC-proxy classifier validates complete missionless `NpcProxyEx` selectors,
+their exact `NpcProxyTable` identity, MemoryPack DialogId registration, and the
+hash-locked native `_TryGetNpcProxyInteractDialogId` method; it qualifies 181
+dialogs across 55 missions while refusing 101 dialogs with native playback.
+A new SNS classifier validates complete dialog/chat/content/option graphs,
+including arbitrary negative terminal ids, then requires empty authored
+mission links and negative route, typed-carrier, native-playback, and installed-
+binary token surfaces; it qualifies 214 definitions across 88 missions and
+excludes seven authored-link rows. All three classifiers fail closed on a
+stronger native or cross-owner route and create no graph edge. Mission Pipeline
+shows proxy identities, active row indices, binary method token/address, SNS
+internal facts, original tables/binaries, and explicit consumer/order/reopen
+boundaries. `gm02m12` and `gm02m7` now score zero. Major actionable rows are
+down to two (score 10); character has 107 and other has 654, while main/event
+remain zero. The graph is unchanged at 1,485 strong edges, 302 native branch
+groups, and 18 convergences.
 
 The preceding `gm02m21` batch recovers its exact native quest topology and closes
 its two remaining actionable radios without inventing placement. Hash-locked
@@ -723,9 +726,9 @@ only.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** main and event have no actionable core-isolated
-   or strict quest-attachment gaps. Major missions retain 6 actionable
-   core-isolated files and score 30; character missions retain 118 and other
-   missions retain 845. Seven broad main-story co-memberships remain visible as
+   or strict quest-attachment gaps. Major missions retain 2 actionable
+   core-isolated files and score 10; character missions retain 107 and other
+   missions retain 654. Seven broad main-story co-memberships remain visible as
    non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
@@ -740,9 +743,9 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should audit `gm02m12` (`dlg_gm02m12_8` and `sns_gm02m12_1`), then
-the single-file major frontiers in `gm02m10`, `gm02m11`, `gm02m16`, and
-`gm02m7`, followed by the character-mission quest-attachment gaps. Extend the
+Next work should audit the two remaining single-file major frontiers:
+`cutscene_gm02m10_1` and authored-link `sns_gm02m11_1`, followed by the five
+character-mission quest-attachment gaps. Extend the
 same pattern-based approach to other definition families only when their typed
 schemas and complete consumer surfaces can be bounded without weakening the
 fail-closed rules. Within `gm02m23`, the

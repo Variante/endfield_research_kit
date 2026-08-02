@@ -518,6 +518,10 @@
       offlineRecoveryEvidenceUnregistered: "Unregistered definition — no runtime consumer",
       offlineRecoveryEvidenceRadioOnly: "Radio definition only — consumer unknown",
       offlineRecoveryEvidenceBinaryRadio: "Definition only — no consumer on current original-data surfaces",
+      offlineRecoveryEvidenceNpcProxyConsumer: "Native NPC-proxy consumer - mission activation unknown",
+      offlineRecoveryEvidenceBinarySns: "SNS definition only - no consumer on current original-data surfaces",
+      offlineRecoveryNativeConsumer: "Original-binary consumer",
+      offlineRecoverySnsDefinition: "SNS internal definition",
       offlineRecoveryMissingAudio: "audio ids absent",
       offlineRecoveryAudioMembership: "audio membership",
       offlineRecoveryCarrierAudit: "typed carrier audit",
@@ -1037,6 +1041,10 @@
       offlineRecoveryEvidenceUnregistered: "\u672a\u6ce8\u518c\u5b9a\u4e49 \u2014 \u65e0\u8fd0\u884c\u65f6\u6d88\u8d39\u8005",
       offlineRecoveryEvidenceRadioOnly: "\u4ec5\u65e0\u7ebf\u7535\u5b9a\u4e49\uff0c\u6d88\u8d39\u8005\u672a\u77e5",
       offlineRecoveryEvidenceBinaryRadio: "\u4ec5\u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6d88\u8d39\u8005",
+      offlineRecoveryEvidenceNpcProxyConsumer: "\u539f\u59cb\u4e8c\u8fdb\u5236 NPC \u4ee3\u7406\u6d88\u8d39\u8005\uff0c\u4efb\u52a1\u6fc0\u6d3b\u65f6\u673a\u672a\u77e5",
+      offlineRecoveryEvidenceBinarySns: "\u4ec5 SNS \u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6d88\u8d39\u8005",
+      offlineRecoveryNativeConsumer: "\u539f\u59cb\u4e8c\u8fdb\u5236\u6d88\u8d39\u8005",
+      offlineRecoverySnsDefinition: "SNS \u5185\u90e8\u5b9a\u4e49",
       offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
       offlineRecoveryAudioMembership: "\u97f3\u9891\u6210\u5458\u72b6\u6001",
       offlineRecoveryCarrierAudit: "\u7c7b\u578b\u5316\u8f7d\u4f53\u5ba1\u8ba1",
@@ -2944,7 +2952,21 @@
         ? row.npcProxyConsumers
         : [];
       const npcProxyConsumerContext = npcProxyConsumers.length
-        ? `<p><strong>${esc(t("offlineRecoveryNpcProxyConsumer"))}</strong>${npcProxyConsumers.map((consumer) => `<code>${esc(consumer.proxyId || "?")} [index=${esc(consumer.entryIndex ?? "?")}]</code><i>&rarr;</i><code>${esc(consumer.dialogId || "?")}</code>`).join(" ")}</p>`
+        ? `<p><strong>${esc(t("offlineRecoveryNpcProxyConsumer"))}</strong>${npcProxyConsumers.map((consumer) => {
+          const proxyId = consumer.proxyId || consumer.npcProxyId || "?";
+          const rowIndex = consumer.entryIndex ?? consumer.activeRowIndex ?? "?";
+          const identity = [consumer.npcNameId, consumer.npcId, consumer.levelId].filter(Boolean);
+          return `<code>${esc(proxyId)} [index=${esc(rowIndex)}]</code><i>&rarr;</i><code>${esc(consumer.dialogId || row.key || "?")}</code>${identity.length ? `<span>${identity.map((value) => `<code>${esc(value)}</code>`).join(" ")}</span>` : ""}`;
+        }).join(" ")}</p>`
+        : "";
+      const nativeConsumerMethods = Array.isArray(row.nativeConsumerMethods)
+        ? row.nativeConsumerMethods
+        : [];
+      const nativeConsumerContext = nativeConsumerMethods.length
+        ? `<p><strong>${esc(t("offlineRecoveryNativeConsumer"))}</strong>${nativeConsumerMethods.map((method) => `<code>${esc(method.method || "?")} ${esc(method.token || "")} @ ${esc(method.address || "?")}</code>${method.selectionField ? `<span>${esc(method.selectionField)}</span>` : ""}`).join(" ")}</p>`
+        : "";
+      const snsDefinitionContext = row.chatId
+        ? `<p><strong>${esc(t("offlineRecoverySnsDefinition"))}</strong><code>${esc(row.chatId)}</code><span>${Number(row.contentCount || 0).toLocaleString()} content</span>${(row.contentParams || []).map((value) => `<code>${esc(value)}</code>`).join(" ")}</p>`
         : "";
       const missionBranch = row.missionQuestBranchContext;
       const missionBranchContext = missionBranch
@@ -2999,6 +3021,9 @@
       const definitionFacts = [
         row.dialogIdRegistrationStatus === "present_table_only"
           ? t("offlineRecoveryTableOnlyRegistration")
+          : "",
+        row.dialogIdRegistrationStatus === "memorypack_root_registered"
+          ? "MemoryPack DialogId root registered"
           : "",
         row.dialogTreeAssetStatus === "absent"
           ? t("offlineRecoveryDialogTreeAbsent")
@@ -3066,11 +3091,13 @@
         registered_dialog_definition_without_recovered_activator: t("offlineRecoveryEvidenceDefinitionOnly"),
         radio_definition_without_recovered_consumer: t("offlineRecoveryEvidenceRadioOnly"),
         radio_definition_binary_consumer_surface_exhausted: t("offlineRecoveryEvidenceBinaryRadio"),
+        missionless_npc_proxy_dialog_native_consumer: t("offlineRecoveryEvidenceNpcProxyConsumer"),
+        sns_definition_binary_consumer_surface_exhausted: t("offlineRecoveryEvidenceBinarySns"),
         dialog_text_table_only_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),
       })[row.evidenceKind] || row.evidenceKind || row.recoveryStatus || "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");

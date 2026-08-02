@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v107"
+SCHEMA = "sourceStoryGapQueue.v108"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -190,7 +190,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v89"
+    "current-build-offline-story-carrier-exhaustion-v90"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -1324,6 +1324,12 @@ OFFLINE_EXHAUSTION_SNS_OPTION_TABLE_SHA256 = (
 )
 OFFLINE_EXHAUSTION_NPC_PROXY_EX_TABLE_SHA256 = (
     "19C9A7DC69DEED52A9EAFD26D216F31826065137490548E5917BE589BA11BBAC"
+)
+OFFLINE_EXHAUSTION_NPC_PROXY_TABLE_SHA256 = (
+    "E683D0F7666451D7E7E22D863CC9F2C52AC79D1DBAA6F1A89BA2681829C5C5EA"
+)
+OFFLINE_EXHAUSTION_SNS_CHAT_TABLE_SHA256 = (
+    "B7CC51B37FAE4F34A8E35C7D1E4F87651602CE9E2314287B8DC2C9980D751026"
 )
 OFFLINE_EXHAUSTION_DIALOG_ID_SOURCE_SHA256 = (
     "AE2E68E93DCDE3C2AC792541A7456E5CE6B7AF4F2AE10887D178EBFBDC080F79"
@@ -7320,6 +7326,348 @@ def _generic_radio_definition_facts(
     }, None
 
 
+NPC_PROXY_EX_ROW_FIELDS = frozenset({
+    "addDialogExOption",
+    "dialogExOptionData",
+    "dialogId",
+    "envTalkData",
+    "missionId",
+})
+NPC_PROXY_EX_LEGACY_ROW_FIELDS = NPC_PROXY_EX_ROW_FIELDS - {"missionId"}
+NPC_PROXY_INFO_FIELDS = frozenset({
+    "mapId",
+    "npcId",
+    "npcNameId",
+    "npcProxyType",
+})
+SNS_DIALOG_ROW_FIELDS = frozenset({
+    "chatId",
+    "dialogContentData",
+    "dialogId",
+    "dialogType",
+    "noticeType",
+    "relatedMissionId",
+    "skipToFirstOption",
+    "topicId",
+})
+SNS_CONTENT_ROW_FIELDS = frozenset({
+    "content",
+    "contentId",
+    "contentParam",
+    "contentParams",
+    "contentType",
+    "dialogOptionIds",
+    "isEnd",
+    "linkMissionId",
+    "linkRewardId",
+    "nextContentId",
+    "optionType",
+    "preContentId",
+    "speaker",
+})
+SNS_CHAT_ROW_FIELDS = frozenset({
+    "charGender",
+    "chatId",
+    "chatType",
+    "icon",
+    "isSettlementChannel",
+    "name",
+    "owner",
+    "tagType",
+})
+SNS_OPTION_ROW_FIELDS = frozenset({
+    "optionDesc",
+    "optionId",
+    "optionNPCCount",
+    "optionNPCIds",
+    "optionNextContentId",
+    "optionResPath",
+})
+
+
+def _generic_missionless_npc_proxy_dialog_facts(
+    story_key: str,
+    npc_proxy_ex_table: Any,
+    npc_proxy_table: Any,
+    dialog_id_index: Any,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Recover exact native-selectable proxy rows without assigning order."""
+    ex_data = (
+        npc_proxy_ex_table.get("data")
+        if isinstance(npc_proxy_ex_table, dict) else None
+    )
+    proxy_info_data = (
+        npc_proxy_ex_table.get("proxyInfoData")
+        if isinstance(npc_proxy_ex_table, dict) else None
+    )
+    proxy_rows = (
+        npc_proxy_table.get("dataTable")
+        if isinstance(npc_proxy_table, dict) else None
+    )
+    registry = (
+        dialog_id_index.get(story_key)
+        if isinstance(dialog_id_index, dict) else None
+    )
+    if not all(isinstance(value, dict) for value in (
+        ex_data,
+        proxy_info_data,
+        proxy_rows,
+        dialog_id_index,
+    )):
+        return None, {
+            "validator": "genericMissionlessNpcProxyDialogConsumer",
+            "gate": "sourceTableShape",
+            "storyKey": story_key,
+            "expected": "NpcProxyEx data/proxyInfoData, NpcProxy dataTable, and DialogId index objects",
+            "actual": {
+                "npcProxyExData": type(ex_data).__name__,
+                "npcProxyInfoData": type(proxy_info_data).__name__,
+                "npcProxyDataTable": type(proxy_rows).__name__,
+                "dialogIdIndex": type(dialog_id_index).__name__,
+            },
+        }
+    consumers: list[dict[str, Any]] = []
+    for proxy_id, rows in sorted(ex_data.items(), key=lambda item: natural_key(item[0])):
+        if not isinstance(rows, list):
+            continue
+        for active_row_index, row in enumerate(rows):
+            if not isinstance(row, dict) or safe_key(row.get("dialogId")) != story_key:
+                continue
+            if safe_key(row.get("missionId")):
+                continue
+            info = proxy_info_data.get(proxy_id)
+            proxy = proxy_rows.get(proxy_id)
+            row_fields = set(row)
+            valid_row_fields = row_fields in {
+                NPC_PROXY_EX_ROW_FIELDS,
+                NPC_PROXY_EX_LEGACY_ROW_FIELDS,
+            }
+            valid_registry = (
+                isinstance(registry, dict)
+                and registry.get("registered") is True
+                and registry.get("memoryPackRecordKey") is True
+                and registry.get("hasRootKey") is True
+            )
+            if (
+                not valid_row_fields
+                or row.get("addDialogExOption") not in (True, False)
+                or not isinstance(row.get("dialogExOptionData"), list)
+                or not isinstance(row.get("envTalkData"), dict)
+            ):
+                return None, {
+                    "validator": "genericMissionlessNpcProxyDialogConsumer",
+                    "gate": "exactNpcProxyExConsumerRow",
+                    "storyKey": story_key,
+                    "npcProxyId": proxy_id,
+                    "activeRowIndex": active_row_index,
+                    "expected": {
+                        "rowFields": [
+                            sorted(NPC_PROXY_EX_LEGACY_ROW_FIELDS),
+                            sorted(NPC_PROXY_EX_ROW_FIELDS),
+                        ],
+                        "emptyMissionId": True,
+                    },
+                    "actual": {
+                        "rowFields": sorted(row_fields),
+                        "missionId": safe_key(row.get("missionId")),
+                        "proxyId": safe_key(proxy.get("proxyId")) if isinstance(proxy, dict) else "",
+                        "levelId": safe_key(proxy.get("levelId")) if isinstance(proxy, dict) else "",
+                        "proxyInfo": info if isinstance(info, dict) else info,
+                        "dialogRegistry": registry if isinstance(registry, dict) else registry,
+                    },
+                }
+            # NpcProxyEx contains a small number of legacy/environment rows
+            # without a current NpcProxy entity or DialogId registration. They
+            # are valid table data, but cannot satisfy this exact identity
+            # proof and are deliberately left actionable.
+            if (
+                not isinstance(info, dict)
+                or set(info) != NPC_PROXY_INFO_FIELDS
+                or not all(safe_key(info.get(field)) for field in (
+                    "npcId", "npcNameId", "mapId"
+                ))
+                or not isinstance(info.get("npcProxyType"), int)
+                or isinstance(info.get("npcProxyType"), bool)
+                or not isinstance(proxy, dict)
+                or safe_key(proxy.get("proxyId")) != proxy_id
+                or not safe_key(proxy.get("levelId"))
+                or not valid_registry
+            ):
+                continue
+            consumers.append({
+                "npcProxyId": proxy_id,
+                "activeRowIndex": active_row_index,
+                "levelId": safe_key(proxy.get("levelId")),
+                "subDataParentId": proxy.get("subDataParentId"),
+                "npcId": safe_key(info.get("npcId")),
+                "npcNameId": safe_key(info.get("npcNameId")),
+                "mapId": safe_key(info.get("mapId")),
+                "missionId": "",
+            })
+    if not consumers:
+        return None, None
+    return {
+        "npcProxyConsumers": consumers,
+        "dialogIdRegistrationStatus": "memorypack_root_registered",
+        "consumerCount": len(consumers),
+    }, None
+
+
+def _generic_unlinked_sns_definition_facts(
+    story_key: str,
+    row: Any,
+    sns_option_table: Any,
+    sns_chat_table: Any,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, str | None]:
+    """Validate an SNS definition and distinguish authored mission links."""
+    content = row.get("dialogContentData") if isinstance(row, dict) else None
+    chat_id = safe_key(row.get("chatId")) if isinstance(row, dict) else ""
+    chat = sns_chat_table.get(chat_id) if isinstance(sns_chat_table, dict) else None
+    if (
+        not isinstance(row, dict)
+        or set(row) != SNS_DIALOG_ROW_FIELDS
+        or safe_key(row.get("dialogId")) != story_key
+        or not chat_id
+        or not isinstance(content, dict)
+        or not content
+        or not isinstance(row.get("dialogType"), int)
+        or isinstance(row.get("dialogType"), bool)
+        or not isinstance(row.get("noticeType"), int)
+        or isinstance(row.get("noticeType"), bool)
+        or row.get("skipToFirstOption") not in (True, False)
+        or not isinstance(sns_option_table, dict)
+        or not isinstance(chat, dict)
+        or set(chat) != SNS_CHAT_ROW_FIELDS
+        or safe_key(chat.get("chatId")) != chat_id
+    ):
+        return None, {
+            "validator": "genericSnsNegativeConsumer",
+            "gate": "exactDialogAndChatShape",
+            "storyKey": story_key,
+            "expected": {
+                "dialogFields": sorted(SNS_DIALOG_ROW_FIELDS),
+                "nonemptyContent": True,
+                "registeredChatRow": True,
+                "chatFields": sorted(SNS_CHAT_ROW_FIELDS),
+            },
+            "actual": {
+                "dialogType": type(row).__name__,
+                "dialogFields": sorted(row) if isinstance(row, dict) else [],
+                "chatId": chat_id,
+                "chatType": type(chat).__name__,
+                "chatFields": sorted(chat) if isinstance(chat, dict) else [],
+            },
+        }, None
+    related_mission_id = safe_key(row.get("relatedMissionId"))
+    content_ids: set[int] = set()
+    next_ids: set[int] = set()
+    pre_ids: set[int] = set()
+    option_ids: set[str] = set()
+    option_target_ids: set[int] = set()
+    link_mission_ids: set[str] = set()
+    content_params: set[str] = set()
+    for serialized_id, node in content.items():
+        content_id = node.get("contentId") if isinstance(node, dict) else None
+        if (
+            not isinstance(node, dict)
+            or set(node) != SNS_CONTENT_ROW_FIELDS
+            or not isinstance(content_id, int)
+            or isinstance(content_id, bool)
+            or str(content_id) != serialized_id
+            or not isinstance(node.get("preContentId"), int)
+            or isinstance(node.get("preContentId"), bool)
+            or not isinstance(node.get("nextContentId"), int)
+            or isinstance(node.get("nextContentId"), bool)
+            or not isinstance(node.get("dialogOptionIds"), list)
+            or not all(isinstance(value, str) and value for value in node["dialogOptionIds"])
+            or not isinstance(node.get("contentParam"), list)
+            or not all(isinstance(value, str) and value for value in node["contentParam"])
+            or not isinstance(node.get("content"), dict)
+            or set(node["content"]) != {"id", "text"}
+            or not isinstance(node["content"].get("id"), int)
+            or isinstance(node["content"].get("id"), bool)
+            or not isinstance(node["content"].get("text"), str)
+            or not isinstance(node.get("contentType"), int)
+            or isinstance(node.get("contentType"), bool)
+            or not isinstance(node.get("optionType"), int)
+            or isinstance(node.get("optionType"), bool)
+            or not isinstance(node.get("speaker"), str)
+            or node.get("isEnd") is not (content_id < 0)
+        ):
+            return None, {
+                "validator": "genericSnsNegativeConsumer",
+                "gate": "exactContentNodeShape",
+                "storyKey": story_key,
+                "contentId": serialized_id,
+                "expected": {
+                    "fields": sorted(SNS_CONTENT_ROW_FIELDS),
+                    "serializedIdMatchesContentId": True,
+                    "typedReferences": True,
+                },
+                "actual": node if isinstance(node, dict) else node,
+            }, None
+        content_ids.add(content_id)
+        next_ids.add(node["nextContentId"])
+        pre_ids.add(node["preContentId"])
+        option_ids.update(node["dialogOptionIds"])
+        link_mission_ids.add(safe_key(node.get("linkMissionId")))
+        content_params.update(node["contentParam"])
+    invalid_options: list[str] = []
+    for option_id in sorted(option_ids, key=natural_key):
+        option = sns_option_table.get(option_id)
+        if (
+            not isinstance(option, dict)
+            or set(option) != SNS_OPTION_ROW_FIELDS
+            or safe_key(option.get("optionId")) != option_id
+            or not isinstance(option.get("optionNextContentId"), int)
+            or isinstance(option.get("optionNextContentId"), bool)
+            or not isinstance(option.get("optionDesc"), dict)
+            or set(option["optionDesc"]) != {"id", "text"}
+        ):
+            invalid_options.append(option_id)
+            continue
+        option_target_ids.add(option["optionNextContentId"])
+    invalid_refs = sorted((next_ids | pre_ids) - content_ids - {0})
+    invalid_option_targets = sorted(option_target_ids - content_ids)
+    if (
+        not any(content_id < 0 for content_id in content_ids)
+        or invalid_refs
+        or invalid_options
+        or invalid_option_targets
+    ):
+        return None, {
+            "validator": "genericSnsNegativeConsumer",
+            "gate": "closedContentGraphAndOptions",
+            "storyKey": story_key,
+            "expected": {
+                "negativeTerminalContentId": True,
+                "allReferencesResolve": True,
+                "allOptionsResolve": True,
+            },
+            "actual": {
+                "contentIds": sorted(content_ids),
+                "invalidContentReferences": invalid_refs,
+                "invalidOptionIds": invalid_options,
+                "invalidOptionTargetIds": invalid_option_targets,
+            },
+        }, None
+    nonempty_links = sorted(
+        ({related_mission_id} | link_mission_ids) - {""},
+        key=natural_key,
+    )
+    if nonempty_links:
+        return None, None, "authoredMissionLink"
+    return {
+        "chatId": chat_id,
+        "chatType": chat.get("chatType"),
+        "contentIds": sorted(content_ids),
+        "contentCount": len(content_ids),
+        "optionIds": sorted(option_ids, key=natural_key),
+        "contentParams": sorted(content_params, key=natural_key),
+        "authoredMissionLinkStatus": "absent",
+    }, None, None
+
+
 def _offline_radio_definition_validation_failure(
     story_key: str,
     row: Any,
@@ -9377,6 +9725,7 @@ def build_offline_exhaustion_index(
         "prtsReadingTable": table_root / "PrtsReading.json",
         "snsDialogTable": table_root / "SNSDialogTable.json",
         "snsOptionTable": table_root / "SNSDialogOptionTable.json",
+        "snsChatTable": table_root / "SNSChatTable.json",
         "npcProxyExDataTable": (
             ROOT
             / "export_full"
@@ -9386,6 +9735,16 @@ def build_offline_exhaustion_index(
             / "Json"
             / "GameplayConfig"
             / "NpcProxyExDataTable.json"
+        ),
+        "npcProxyTable": (
+            ROOT
+            / "export_full"
+            / "structured"
+            / "StreamingAssets"
+            / "Data"
+            / "Json"
+            / "GameplayConfig"
+            / "NpcProxyTable.json"
         ),
         "dialogIdSource": (
             ROOT
@@ -9537,8 +9896,10 @@ def build_offline_exhaustion_index(
             OFFLINE_EXHAUSTION_PRTS_READING_TABLE_SHA256,
         "snsDialogTable": OFFLINE_EXHAUSTION_SNS_DIALOG_TABLE_SHA256,
         "snsOptionTable": OFFLINE_EXHAUSTION_SNS_OPTION_TABLE_SHA256,
+        "snsChatTable": OFFLINE_EXHAUSTION_SNS_CHAT_TABLE_SHA256,
         "npcProxyExDataTable":
             OFFLINE_EXHAUSTION_NPC_PROXY_EX_TABLE_SHA256,
+        "npcProxyTable": OFFLINE_EXHAUSTION_NPC_PROXY_TABLE_SHA256,
         "dialogIdSource": OFFLINE_EXHAUSTION_DIALOG_ID_SOURCE_SHA256,
         "dialogIdIndex": OFFLINE_EXHAUSTION_DIALOG_ID_INDEX_SHA256,
         "timelineLineOrders":
@@ -11177,6 +11538,13 @@ def build_offline_exhaustion_index(
         "invalidDefinition": [],
     }
     generic_radio_definition_facts: dict[str, dict[str, Any]] = {}
+
+    def source_display_path(path: Path) -> str:
+        resolved = path.resolve()
+        if resolved.is_relative_to(ROOT):
+            return resolved.relative_to(ROOT).as_posix()
+        return resolved.as_posix()
+
     if native_playback_index is not None:
         for story_key, missions in sorted(
             core_targets.items(),
@@ -11257,12 +11625,6 @@ def build_offline_exhaustion_index(
             key=natural_key,
         )
 
-        def source_display_path(path: Path) -> str:
-            resolved = path.resolve()
-            if resolved.is_relative_to(ROOT):
-                return resolved.relative_to(ROOT).as_posix()
-            return resolved.as_posix()
-
         for story_key, facts in sorted(
             generic_radio_definition_facts.items(),
             key=lambda item: natural_key(item[0]),
@@ -11324,6 +11686,285 @@ def build_offline_exhaustion_index(
                     "the installed binary, exported tables, generated route "
                     "census, object index, or another typed producer/consumer "
                     "registry changes"
+                ),
+                "graphEffect": "none",
+            }
+
+    generic_npc_proxy_evidence_by_key: dict[str, dict[str, Any]] = {}
+    generic_npc_proxy_validation_failures: list[dict[str, Any]] = []
+    generic_npc_proxy_exclusions: dict[str, list[str]] = {
+        "declaredSpecialCase": [],
+        "ambiguousMission": [],
+        "nativePlayback": [],
+        "typedObjectCarrier": [],
+        "noMissionlessProxyConsumer": [],
+        "invalidConsumer": [],
+    }
+    npc_proxy_ex_for_generic = read_json(
+        source_paths["npcProxyExDataTable"],
+        {},
+    )
+    npc_proxy_for_generic = read_json(source_paths["npcProxyTable"], {})
+    dialog_id_index_for_generic = read_json(
+        source_paths["dialogIdIndex"],
+        {},
+    )
+    if native_playback_index is not None:
+        for story_key, missions in sorted(
+            core_targets.items(),
+            key=lambda item: natural_key(item[0]),
+        ):
+            if not story_key.startswith("dlg_"):
+                continue
+            if story_key in all_dialog_keys:
+                generic_npc_proxy_exclusions["declaredSpecialCase"].append(
+                    story_key
+                )
+                continue
+            if len(missions) != 1:
+                generic_npc_proxy_exclusions["ambiguousMission"].append(
+                    story_key
+                )
+                continue
+            if native_playback_index.get(story_key) or []:
+                generic_npc_proxy_exclusions["nativePlayback"].append(
+                    story_key
+                )
+                continue
+            if story_key not in no_candidate_keys:
+                generic_npc_proxy_exclusions["typedObjectCarrier"].append(
+                    story_key
+                )
+                continue
+            facts, failure = _generic_missionless_npc_proxy_dialog_facts(
+                story_key,
+                npc_proxy_ex_for_generic,
+                npc_proxy_for_generic,
+                dialog_id_index_for_generic,
+            )
+            if failure is not None:
+                failure["sourcePaths"] = [
+                    str(source_paths["npcProxyExDataTable"]),
+                    str(source_paths["npcProxyTable"]),
+                    str(source_paths["dialogIdIndex"]),
+                ]
+                failure["sourceSha256"] = {
+                    name: actual_hashes.get(name, "")
+                    for name in (
+                        "npcProxyExDataTable",
+                        "npcProxyTable",
+                        "dialogIdIndex",
+                    )
+                }
+                generic_npc_proxy_validation_failures.append(failure)
+                generic_npc_proxy_exclusions["invalidConsumer"].append(
+                    story_key
+                )
+                continue
+            if facts is None:
+                generic_npc_proxy_exclusions[
+                    "noMissionlessProxyConsumer"
+                ].append(story_key)
+                continue
+            mission_id = next(iter(missions))
+            generic_npc_proxy_evidence_by_key[story_key] = {
+                "sceneKey": story_key,
+                "missionId": mission_id,
+                "recoveryStatus":
+                    "deferred_current_build_offline_surface_exhausted",
+                "evidenceKind":
+                    "missionless_npc_proxy_dialog_native_consumer",
+                "definitionTable": "NpcProxyExDataTable",
+                "definitionSourceFiles": [
+                    source_display_path(source_paths["npcProxyExDataTable"]),
+                    source_display_path(source_paths["npcProxyTable"]),
+                    source_display_path(source_paths["dialogIdIndex"]),
+                ],
+                "sourceFiles": [source_display_path(carrier_audit_path)],
+                "originalBinaryFiles": [
+                    source_display_path(source_paths["gameAssembly"]),
+                ],
+                **facts,
+                "carrierAuditStatus":
+                    "no_typed_story_owner_or_runtime_carrier",
+                "carrierAuditTargetSetSha256": core_target_digest,
+                "nativeMappingId": NPC_PROXY_DIALOG_SELECTION_MAPPING_ID,
+                "gameAssemblySha256":
+                    NPC_PROXY_DIALOG_SELECTION_GAMEASSEMBLY_SHA256,
+                "nativeConsumerMethods": [{
+                    "method": (
+                        "Beyond.Gameplay.NpcInteractComponent."
+                        "_TryGetNpcProxyInteractDialogId"
+                    ),
+                    "token": "0x06011381",
+                    "address": "0x183564080",
+                    "selectionField": "activeCondIndex",
+                }],
+                "searchedConsumerKinds": [
+                    "exact NpcProxyExDataTable dialog selectors",
+                    "exact NpcProxyTable proxy identities",
+                    "MemoryPack DialogId registrations",
+                    "typed native LevelScript playback actions",
+                    "typed AnimeStudio owner/runtime object carriers",
+                ],
+                "consumerBoundary": (
+                    "the hash-locked native NPC interaction method selects "
+                    "the active NpcProxyEx row's exact dialogId; these "
+                    "missionless rows therefore prove runtime consumption, "
+                    "but expose no mission activator"
+                ),
+                "orderBoundary": (
+                    "activeCondIndex, proxy table order, world registration, "
+                    "filename suffixes, OCR, and manual display order do not "
+                    "establish activation or relative Story chronology"
+                ),
+                "reopenWhen": (
+                    "the installed binary, NpcProxy tables, DialogId "
+                    "registry, carrier audit, or typed playback index changes"
+                ),
+                "graphEffect": "none",
+            }
+
+    generic_sns_evidence_by_key: dict[str, dict[str, Any]] = {}
+    generic_sns_validation_failures: list[dict[str, Any]] = []
+    generic_sns_exclusions: dict[str, list[str]] = {
+        "declaredSpecialCase": [],
+        "ambiguousMission": [],
+        "nativePlayback": [],
+        "typedObjectCarrier": [],
+        "authoredMissionLink": [],
+        "binaryRootTokenPresent": [],
+        "invalidDefinition": [],
+    }
+    sns_dialog_for_generic = read_json(source_paths["snsDialogTable"], {})
+    sns_option_for_generic = read_json(source_paths["snsOptionTable"], {})
+    sns_chat_for_generic = read_json(source_paths["snsChatTable"], {})
+    generic_sns_definition_facts: dict[str, dict[str, Any]] = {}
+    if native_playback_index is not None:
+        for story_key, missions in sorted(
+            core_targets.items(),
+            key=lambda item: natural_key(item[0]),
+        ):
+            if not story_key.startswith("sns_"):
+                continue
+            if story_key in all_sns_keys:
+                generic_sns_exclusions["declaredSpecialCase"].append(
+                    story_key
+                )
+                continue
+            if len(missions) != 1:
+                generic_sns_exclusions["ambiguousMission"].append(story_key)
+                continue
+            if native_playback_index.get(story_key) or []:
+                generic_sns_exclusions["nativePlayback"].append(story_key)
+                continue
+            if story_key not in no_candidate_keys:
+                generic_sns_exclusions["typedObjectCarrier"].append(story_key)
+                continue
+            facts, failure, exclusion = _generic_unlinked_sns_definition_facts(
+                story_key,
+                sns_dialog_for_generic.get(story_key)
+                if isinstance(sns_dialog_for_generic, dict) else None,
+                sns_option_for_generic,
+                sns_chat_for_generic,
+            )
+            if exclusion:
+                generic_sns_exclusions[exclusion].append(story_key)
+                continue
+            if failure is not None:
+                failure["sourcePaths"] = [
+                    str(source_paths["snsDialogTable"]),
+                    str(source_paths["snsOptionTable"]),
+                    str(source_paths["snsChatTable"]),
+                ]
+                failure["sourceSha256"] = {
+                    name: actual_hashes.get(name, "")
+                    for name in (
+                        "snsDialogTable", "snsOptionTable", "snsChatTable"
+                    )
+                }
+                generic_sns_validation_failures.append(failure)
+                generic_sns_exclusions["invalidDefinition"].append(story_key)
+                continue
+            if facts is not None:
+                generic_sns_definition_facts[story_key] = facts
+        sns_literals = {
+            story_key: story_key
+            for story_key in generic_sns_definition_facts
+        }
+        sns_binary_present = (
+            _present_literal_keys(game_assembly_bytes, sns_literals, "utf-8")
+            | _present_literal_keys(
+                game_assembly_bytes, sns_literals, "utf-16le"
+            )
+            | _present_literal_keys(
+                global_metadata_bytes, sns_literals, "utf-8"
+            )
+            | _present_literal_keys(
+                global_metadata_bytes, sns_literals, "utf-16le"
+            )
+        )
+        generic_sns_exclusions["binaryRootTokenPresent"] = sorted(
+            sns_binary_present,
+            key=natural_key,
+        )
+        for story_key, facts in sorted(
+            generic_sns_definition_facts.items(),
+            key=lambda item: natural_key(item[0]),
+        ):
+            if story_key in sns_binary_present:
+                continue
+            generic_sns_evidence_by_key[story_key] = {
+                "sceneKey": story_key,
+                "missionId": next(iter(core_targets[story_key])),
+                "recoveryStatus":
+                    "deferred_current_build_offline_surface_exhausted",
+                "evidenceKind":
+                    "sns_definition_binary_consumer_surface_exhausted",
+                "definitionTable": "SNSDialogTable",
+                "definitionSourceFiles": [
+                    source_display_path(source_paths["snsDialogTable"]),
+                    source_display_path(source_paths["snsOptionTable"]),
+                    source_display_path(source_paths["snsChatTable"]),
+                ],
+                "sourceFiles": [source_display_path(carrier_audit_path)],
+                "originalBinaryFiles": [
+                    source_display_path(source_paths["gameAssembly"]),
+                    source_display_path(source_paths["globalMetadata"]),
+                ],
+                **facts,
+                "carrierAuditStatus":
+                    "no_typed_story_owner_or_runtime_carrier",
+                "carrierAuditTargetSetSha256": core_target_digest,
+                "binaryRootTokenStatus":
+                    "absent_utf8_and_utf16le_in_current_game_binaries",
+                "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+                "gameAssemblySha256":
+                    OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+                "globalMetadataSha256": OFFLINE_EXHAUSTION_METADATA_SHA256,
+                "searchedConsumerKinds": [
+                    "authored SNS relatedMissionId/linkMissionId fields",
+                    "MissionRuntime Story routes",
+                    "typed native LevelScript playback actions",
+                    "typed AnimeStudio owner/runtime object carriers",
+                    "GameAssembly exact UTF-8/UTF-16 root tokens",
+                    "global-metadata exact UTF-8/UTF-16 root tokens",
+                ],
+                "consumerBoundary": (
+                    "the exact SNS dialog and chat definitions survive, but "
+                    "their authored mission links are empty and the complete "
+                    "typed route, native playback, object-carrier, and "
+                    "current-binary token surfaces expose no consumer"
+                ),
+                "orderBoundary": (
+                    "SNS content links describe only the internal message "
+                    "graph; content ids, table order, filename suffixes, OCR, "
+                    "and manual display order do not establish mission "
+                    "activation or relative Story chronology"
+                ),
+                "reopenWhen": (
+                    "the installed binary, SNS tables, generated route "
+                    "census, object index, or another typed consumer changes"
                 ),
                 "graphEffect": "none",
             }
@@ -13220,6 +13861,15 @@ def build_offline_exhaustion_index(
         key=lambda item: natural_key(item[0]),
     ):
         index.setdefault(story_key, evidence)
+    for evidence_by_key in (
+        generic_npc_proxy_evidence_by_key,
+        generic_sns_evidence_by_key,
+    ):
+        for story_key, evidence in sorted(
+            evidence_by_key.items(),
+            key=lambda item: natural_key(item[0]),
+        ):
+            index.setdefault(story_key, evidence)
     for story_key in sorted(all_dialog_keys, key=natural_key):
         definition = OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]
         validation = dialog_validation_by_key[story_key]
@@ -13906,6 +14556,87 @@ def build_offline_exhaustion_index(
                 "audioDialog": actual_hashes.get("audioDialog", ""),
                 "gameAssembly": actual_hashes.get("gameAssembly", ""),
                 "globalMetadata": actual_hashes.get("globalMetadata", ""),
+            },
+            "carrierAuditTargetSetSha256": core_target_digest,
+            "graphEffect": "none",
+        },
+        "genericMissionlessNpcProxyDialogEvidence": {
+            "status": (
+                "active"
+                if native_playback_index is not None
+                else "inactive_native_playback_index_unavailable"
+            ),
+            "qualifiedStoryKeys": len(generic_npc_proxy_evidence_by_key),
+            "qualifiedMissions": len({
+                safe_key(row.get("missionId"))
+                for row in generic_npc_proxy_evidence_by_key.values()
+                if safe_key(row.get("missionId"))
+            }),
+            "validationFailures": generic_npc_proxy_validation_failures,
+            "exclusions": {
+                name: sorted(set(values), key=natural_key)
+                for name, values in generic_npc_proxy_exclusions.items()
+            },
+            "sourcePaths": {
+                name: str(source_paths[name])
+                for name in (
+                    "npcProxyExDataTable",
+                    "npcProxyTable",
+                    "dialogIdIndex",
+                    "gameAssembly",
+                    "carrierAudit",
+                )
+            },
+            "sourceSha256": {
+                name: actual_hashes.get(name, "")
+                for name in (
+                    "npcProxyExDataTable",
+                    "npcProxyTable",
+                    "dialogIdIndex",
+                    "gameAssembly",
+                )
+            },
+            "nativeMappingId": NPC_PROXY_DIALOG_SELECTION_MAPPING_ID,
+            "carrierAuditTargetSetSha256": core_target_digest,
+            "graphEffect": "none",
+        },
+        "genericSnsNegativeConsumerEvidence": {
+            "status": (
+                "active"
+                if native_playback_index is not None
+                else "inactive_native_playback_index_unavailable"
+            ),
+            "qualifiedStoryKeys": len(generic_sns_evidence_by_key),
+            "qualifiedMissions": len({
+                safe_key(row.get("missionId"))
+                for row in generic_sns_evidence_by_key.values()
+                if safe_key(row.get("missionId"))
+            }),
+            "validationFailures": generic_sns_validation_failures,
+            "exclusions": {
+                name: sorted(set(values), key=natural_key)
+                for name, values in generic_sns_exclusions.items()
+            },
+            "sourcePaths": {
+                name: str(source_paths[name])
+                for name in (
+                    "snsDialogTable",
+                    "snsOptionTable",
+                    "snsChatTable",
+                    "carrierAudit",
+                    "gameAssembly",
+                    "globalMetadata",
+                )
+            },
+            "sourceSha256": {
+                name: actual_hashes.get(name, "")
+                for name in (
+                    "snsDialogTable",
+                    "snsOptionTable",
+                    "snsChatTable",
+                    "gameAssembly",
+                    "globalMetadata",
+                )
             },
             "carrierAuditTargetSetSha256": core_target_digest,
             "graphEffect": "none",
@@ -15266,10 +15997,13 @@ def _deferred_offline_exhausted_isolated_scenes(
     for scene_key in sorted(isolated_scene_keys, key=natural_key):
         evidence = offline_exhaustion_index.get(scene_key)
         routed_rows = routed_rows_by_key.get(scene_key, [])
-        generic_negative_consumer = (
+        generic_guarded_recovery = (
             isinstance(evidence, dict)
-            and safe_key(evidence.get("evidenceKind"))
-            == "radio_definition_binary_consumer_surface_exhausted"
+            and safe_key(evidence.get("evidenceKind")) in {
+                "radio_definition_binary_consumer_surface_exhausted",
+                "missionless_npc_proxy_dialog_native_consumer",
+                "sns_definition_binary_consumer_surface_exhausted",
+            }
         )
         cross_owner_rows = [
             row
@@ -15369,8 +16103,8 @@ def _deferred_offline_exhausted_isolated_scenes(
             not isinstance(evidence, dict)
             or safe_key(evidence.get("missionId")) != owner_mission
             or not routed_rows_valid
-            or (generic_negative_consumer and exact_native_playback_rows)
-            or (generic_negative_consumer and cross_owner_rows)
+            or (generic_guarded_recovery and exact_native_playback_rows)
+            or (generic_guarded_recovery and cross_owner_rows)
             or evidence.get("graphEffect") != "none"
             or evidence.get("recoveryStatus")
             != "deferred_current_build_offline_surface_exhausted"
@@ -19436,6 +20170,29 @@ def main(argv: list[str] | None = None) -> int:
             f"gate={safe_key(first.get('gate'))} "
             f"source={safe_key((first.get('sourcePaths') or [''])[0])}"
         )
+    for label, status_key in (
+        (
+            "Generic missionless NPC-proxy consumer",
+            "genericMissionlessNpcProxyDialogEvidence",
+        ),
+        (
+            "Generic SNS negative-consumer",
+            "genericSnsNegativeConsumerEvidence",
+        ),
+    ):
+        failures = (
+            (offline_status.get(status_key) or {}).get(
+                "validationFailures"
+            ) or []
+        )
+        if failures:
+            first = failures[0]
+            print(
+                f"{label} validator failure: "
+                f"story={safe_key(first.get('storyKey')) or '-'} "
+                f"gate={safe_key(first.get('gate'))} "
+                f"source={safe_key((first.get('sourcePaths') or [''])[0])}"
+            )
     diagnostic_status = report.get("questAttachmentDiagnosticEvidence") or {}
     diagnostic_failures = diagnostic_status.get(
         "validationFailureDetails"
