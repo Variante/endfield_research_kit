@@ -64,7 +64,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v111"
+SCHEMA = "sourceStoryGapQueue.v112"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -193,7 +193,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v91"
+    "current-build-offline-story-carrier-exhaustion-v92"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -8938,6 +8938,209 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest().upper()
 
 
+def _generic_missionless_native_playback_facts(
+    story_key: str,
+    occurrences: Any,
+    *,
+    source_root: Path = ROOT,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, str | None]:
+    """Validate exact local event-to-playback paths without mission identity.
+
+    This is deliberately a playback classifier, not an ownership or ordering
+    rule.  A row qualifies only when every typed occurrence is backed by a
+    complete current-build GameAssembly mapping and every exact event owner is
+    explicitly local (no serialized mission/quest id and no server exchange).
+    """
+    exact_statuses = {
+        "exact_serialized_control_path",
+        "exact_serialized_control_path_equivalent_duplicates",
+    }
+
+    def failure(
+        gate: str,
+        occurrence: Any,
+        expected: dict[str, Any],
+        actual: dict[str, Any],
+    ) -> tuple[None, dict[str, Any], None]:
+        source_file = (
+            safe_key(occurrence.get("sourceFile"))
+            if isinstance(occurrence, dict) else ""
+        )
+        source_path = Path(source_file)
+        if source_file and not source_path.is_absolute():
+            source_path = source_root / source_path
+        return None, {
+            "validator": "genericMissionlessNativePlayback",
+            "gate": gate,
+            "storyKey": story_key,
+            "sourcePaths": [source_file] if source_file else [],
+            "sourceSha256": {
+                source_file: _sha256_file(source_path)
+            } if source_file else {},
+            "expected": expected,
+            "actual": actual,
+        }, None
+
+    if not isinstance(occurrences, list) or not occurrences:
+        return None, None, "noNativePlayback"
+    typed_occurrences = [
+        occurrence
+        for occurrence in occurrences
+        if (
+            isinstance(occurrence, dict)
+            and safe_key(occurrence.get("actionMapRole")).startswith(
+                "actionList#"
+            )
+            and safe_key(occurrence.get("recordClass")).startswith("play_")
+            and safe_key(occurrence.get("actionName"))
+        )
+    ]
+    if not typed_occurrences:
+        return None, None, "noTypedPlayback"
+
+    accepted_paths: list[dict[str, Any]] = []
+    source_hashes: dict[str, str] = {}
+    mapping_ids: set[str] = set()
+    saw_exact_owner = False
+    saw_mission_or_server_owner = False
+    for occurrence in typed_occurrences:
+        source_file = safe_key(occurrence.get("sourceFile"))
+        source_path = Path(source_file)
+        if source_file and not source_path.is_absolute():
+            source_path = source_root / source_path
+        action_name = safe_key(occurrence.get("actionName"))
+        record_class = safe_key(occurrence.get("recordClass"))
+        action_local_id = occurrence.get("localId")
+        mapping_id = safe_key(occurrence.get("nativeMappingId"))
+        story_keys = _string_list(occurrence.get("allStoryKeysInRecord"))
+        if (
+            not source_file
+            or not source_path.is_file()
+            or not safe_key(occurrence.get("actionMapRole")).startswith(
+                "actionList#"
+            )
+            or not action_name
+            or not record_class.startswith("play_")
+            or not isinstance(action_local_id, int)
+            or not mapping_id.startswith("gameassembly-")
+            or story_key not in story_keys
+        ):
+            return failure(
+                "exactTypedPlaybackRecord",
+                occurrence,
+                {
+                    "existingSourceFile": True,
+                    "actionMapRolePrefix": "actionList#",
+                    "recordClassPrefix": "play_",
+                    "integerLocalId": True,
+                    "currentGameAssemblyMapping": True,
+                    "recordContainsStoryKey": story_key,
+                },
+                {
+                    "sourceFile": source_file,
+                    "sourceFileExists": source_path.is_file(),
+                    "actionMapRole": occurrence.get("actionMapRole"),
+                    "actionName": action_name,
+                    "recordClass": record_class,
+                    "localId": action_local_id,
+                    "nativeMappingId": mapping_id,
+                    "allStoryKeysInRecord": story_keys,
+                },
+            )
+        exact_owners = [
+            owner
+            for owner in occurrence.get("nativeEventOwners") or []
+            if isinstance(owner, dict)
+            and safe_key(owner.get("status")) in exact_statuses
+        ]
+        if not exact_owners:
+            return None, None, "incompleteNativeControlPath"
+        saw_exact_owner = True
+        mapping_ids.add(mapping_id)
+        source_hashes[source_file] = _sha256_file(source_path)
+        for owner in exact_owners:
+            event_detail = (
+                owner.get("eventDetail")
+                if isinstance(owner.get("eventDetail"), dict) else {}
+            )
+            if (
+                event_detail.get("serializedMissionOrQuestId") is not False
+                or event_detail.get("serverExchange") is not False
+            ):
+                saw_mission_or_server_owner = True
+                continue
+            path = owner.get("path")
+            terminal = path[-1] if isinstance(path, list) and path else None
+            path_local_ids = [
+                step.get("localId")
+                for step in path or []
+                if isinstance(step, dict)
+            ]
+            if (
+                not safe_key(owner.get("headerName"))
+                or not isinstance(owner.get("headerLocalId"), int)
+                or not isinstance(path, list)
+                or not path
+                or len(path_local_ids) != len(path)
+                or not all(isinstance(local_id, int) for local_id in path_local_ids)
+                or not isinstance(terminal, dict)
+                or terminal.get("localId") != action_local_id
+                or safe_key(terminal.get("actionName")) != action_name
+                or safe_key(terminal.get("recordClass")) != record_class
+            ):
+                return failure(
+                    "exactMissionlessNativeControlPath",
+                    occurrence,
+                    {
+                        "namedIntegerHeader": True,
+                        "nonemptyIntegerPath": True,
+                        "terminalLocalId": action_local_id,
+                        "terminalActionName": action_name,
+                        "terminalRecordClass": record_class,
+                        "serializedMissionOrQuestId": False,
+                        "serverExchange": False,
+                    },
+                    {
+                        "headerName": owner.get("headerName"),
+                        "headerLocalId": owner.get("headerLocalId"),
+                        "pathLocalIds": path_local_ids,
+                        "terminal": terminal,
+                        "eventDetail": event_detail,
+                    },
+                )
+            accepted_paths.append({
+                "levelId": safe_key(occurrence.get("levelId")),
+                "scriptId": safe_key(occurrence.get("scriptId")),
+                "sourceFile": source_file,
+                "sourceSha256": source_hashes[source_file],
+                "nativeMappingId": mapping_id,
+                "controlPathStatus": safe_key(owner.get("status")),
+                "headerName": safe_key(owner.get("headerName")),
+                "headerLocalId": owner.get("headerLocalId"),
+                "eventSummary": safe_key(event_detail.get("summary")),
+                "eventType": safe_key(event_detail.get("type")),
+                "actionName": action_name,
+                "recordClass": record_class,
+                "actionLocalId": action_local_id,
+                "pathLocalIds": path_local_ids,
+                "path": path,
+            })
+
+    if saw_mission_or_server_owner:
+        return None, None, "missionOrServerBoundEventPath"
+    if not saw_exact_owner or not accepted_paths:
+        return None, None, "noExactMissionlessEventPath"
+    return {
+        "nativeEventPaths": accepted_paths,
+        "nativeMappingIds": sorted(mapping_ids),
+        "sourceFiles": sorted(source_hashes, key=natural_key),
+        "sourceSha256": {
+            path: source_hashes[path]
+            for path in sorted(source_hashes, key=natural_key)
+        },
+    }, None, None
+
+
 def _present_literal_keys(
     payload: bytes,
     literals: dict[str, str],
@@ -12103,6 +12306,80 @@ def build_offline_exhaustion_index(
         if resolved.is_relative_to(ROOT):
             return resolved.relative_to(ROOT).as_posix()
         return resolved.as_posix()
+
+    missionless_native_evidence_by_key: dict[str, dict[str, Any]] = {}
+    missionless_native_validation_failures: list[dict[str, Any]] = []
+    missionless_native_exclusions: dict[str, list[str]] = defaultdict(list)
+    if native_playback_index is not None:
+        for story_key, missions in sorted(
+            core_targets.items(),
+            key=lambda item: natural_key(item[0]),
+        ):
+            occurrences = native_playback_index.get(story_key) or []
+            if not occurrences:
+                missionless_native_exclusions["noNativePlayback"].append(
+                    story_key
+                )
+                continue
+            if len(missions) != 1:
+                missionless_native_exclusions["ambiguousMission"].append(
+                    story_key
+                )
+                continue
+            facts, failure, exclusion = (
+                _generic_missionless_native_playback_facts(
+                    story_key,
+                    occurrences,
+                )
+            )
+            if failure is not None:
+                missionless_native_validation_failures.append(failure)
+                missionless_native_exclusions["validationFailure"].append(
+                    story_key
+                )
+                continue
+            if facts is None:
+                missionless_native_exclusions[
+                    exclusion or "notQualified"
+                ].append(story_key)
+                continue
+            missionless_native_evidence_by_key[story_key] = {
+                "sceneKey": story_key,
+                "missionId": next(iter(missions)),
+                "recoveryStatus":
+                    "deferred_exact_native_playback_without_mission_bridge",
+                "evidenceKind":
+                    "exact_missionless_native_event_playback_path",
+                **facts,
+                "originalBinaryFiles": [
+                    source_display_path(source_paths["gameAssembly"]),
+                ],
+                "gameAssemblySha256": actual_hashes.get(
+                    "gameAssembly", ""
+                ),
+                "playbackStatus": "exact_local_event_to_typed_action",
+                "missionOwnership": False,
+                "activationBoundary": (
+                    "the current-build binary mapping and serialized "
+                    "LevelScript prove the complete local event-to-playback "
+                    "path, but this decoded event carries no mission/quest id "
+                    "or server exchange; attachment as an unresolved mission "
+                    "gap is admitted only when the mission flow has no "
+                    "separate routed bridge for the Story key"
+                ),
+                "orderBoundary": (
+                    "trigger-slot values, local ids, action-list positions, "
+                    "source-file order, filename suffixes, OCR, and manual "
+                    "display order do not place this playback relative to "
+                    "other mission Story files"
+                ),
+                "reopenWhen": (
+                    "LevelData, MissionRuntime, a receiver registry, or "
+                    "another exact original-data source links this script or "
+                    "trigger to a mission/quest, or any hashed source changes"
+                ),
+                "graphEffect": "none",
+            }
 
     if native_playback_index is not None:
         for story_key, missions in sorted(
@@ -15957,6 +16234,15 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
+    for story_key, evidence in sorted(
+        missionless_native_evidence_by_key.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        if story_key in index:
+            missionless_native_exclusions[
+                "supersededWeakerOfflineEvidence"
+            ].append(story_key)
+        index[story_key] = evidence
     for story_key in sorted(
         set(registered_tree_evidence_by_key) & set(index),
         key=natural_key,
@@ -16006,6 +16292,33 @@ def build_offline_exhaustion_index(
             mission: sorted(story_keys, key=natural_key)
             for mission, story_keys
             in sorted(deferred_radio_keys_by_mission.items())
+        },
+        "genericMissionlessNativePlaybackEvidence": {
+            "status": (
+                "active"
+                if native_playback_index is not None
+                else "inactive_native_playback_index_unavailable"
+            ),
+            "qualifiedStoryKeys": len(
+                missionless_native_evidence_by_key
+            ),
+            "qualifiedMissions": len({
+                row["missionId"]
+                for row in missionless_native_evidence_by_key.values()
+            }),
+            "validationFailures": missionless_native_validation_failures,
+            "exclusions": {
+                name: sorted(set(values), key=natural_key)
+                for name, values in missionless_native_exclusions.items()
+            },
+            "sourcePaths": {
+                "gameAssembly": str(source_paths["gameAssembly"]),
+            },
+            "sourceSha256": {
+                "gameAssembly": actual_hashes.get("gameAssembly", ""),
+            },
+            "mappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+            "graphEffect": "none",
         },
         "genericRadioNegativeConsumerEvidence": {
             "status": (
@@ -17758,8 +18071,10 @@ def _deferred_offline_exhausted_isolated_scenes(
             or (generic_guarded_recovery and exact_native_playback_rows)
             or (generic_guarded_recovery and cross_owner_rows)
             or evidence.get("graphEffect") != "none"
-            or evidence.get("recoveryStatus")
-            != "deferred_current_build_offline_surface_exhausted"
+            or evidence.get("recoveryStatus") not in {
+                "deferred_current_build_offline_surface_exhausted",
+                "deferred_exact_native_playback_without_mission_bridge",
+            }
         ):
             continue
         deferred.append(dict(evidence))
@@ -21843,6 +22158,10 @@ def main(argv: list[str] | None = None) -> int:
             f"source={safe_key((first.get('sourcePaths') or [''])[0])}"
         )
     for label, status_key in (
+        (
+            "Generic missionless native playback",
+            "genericMissionlessNativePlaybackEvidence",
+        ),
         (
             "Generic missionless NPC-proxy consumer",
             "genericMissionlessNpcProxyDialogEvidence",

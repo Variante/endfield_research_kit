@@ -523,6 +523,7 @@
       offlineRecoveryEvidenceBinaryReadingPopup: "Readable definition only - no activator on current original-data surfaces",
       offlineRecoveryEvidenceBinaryUnregisteredDialog: "Unregistered dialog definition - no consumer on current original-data surfaces",
       offlineRecoveryEvidenceBinaryRegisteredDialogTree: "Registered DialogTree definition - no activator on current original-data surfaces",
+      offlineRecoveryEvidenceMissionlessNativePlayback: "Exact local playback - mission bridge and order unknown",
       offlineRecoveryEvidenceCutsceneRoot: "Cutscene root resolved - mission activator unknown",
       offlineRecoveryNativeConsumer: "Original-binary consumer",
       offlineRecoverySnsDefinition: "SNS internal definition",
@@ -1050,6 +1051,7 @@
       offlineRecoveryEvidenceBinaryReadingPopup: "\u4ec5\u53ef\u8bfb\u5185\u5bb9\u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6fc0\u6d3b\u5668",
       offlineRecoveryEvidenceBinaryUnregisteredDialog: "\u672a\u6ce8\u518c\u5bf9\u8bdd\u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6d88\u8d39\u8005",
       offlineRecoveryEvidenceBinaryRegisteredDialogTree: "\u5df2\u6ce8\u518c DialogTree \u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6fc0\u6d3b\u5668",
+      offlineRecoveryEvidenceMissionlessNativePlayback: "\u5df2\u7cbe\u786e\u6062\u590d\u672c\u5730\u64ad\u653e\uff0c\u4efb\u52a1\u6865\u63a5\u4e0e\u987a\u5e8f\u672a\u77e5",
       offlineRecoveryEvidenceCutsceneRoot: "\u5df2\u89e3\u6790\u8fc7\u573a\u6839\u8282\u70b9 \u2014 \u4efb\u52a1\u6fc0\u6d3b\u5668\u672a\u77e5",
       offlineRecoveryNativeConsumer: "\u539f\u59cb\u4e8c\u8fdb\u5236\u6d88\u8d39\u8005",
       offlineRecoverySnsDefinition: "SNS \u5185\u90e8\u5b9a\u4e49",
@@ -3086,6 +3088,9 @@
         const actions = (path?.path || path?.steps || []).map((step) => step?.actionName || step?.recordClass).filter(Boolean);
         return `<code>${esc([header, ...actions].join(" → "))}</code>`;
       }).join(" ");
+      const nativePathEvidence = nativePaths
+        ? `<small><strong>${esc(t("runtimeRecoveryNativePaths"))}:</strong> ${nativePaths}</small>`
+        : "";
       const runtimeContext = row.runtimeContextRecovery
         ? row.relation === "sns_authored_mission_link"
           ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoverySnsLink"))}: <code>${esc(row.missionId || "?")}</code></span>${(row.snsContentIds || []).length ? `<span>content ${(row.snsContentIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}</p>`
@@ -3104,12 +3109,13 @@
         reading_popup_definition_binary_consumer_surface_exhausted: t("offlineRecoveryEvidenceBinaryReadingPopup"),
         unregistered_dialog_definition_binary_consumer_surface_exhausted: t("offlineRecoveryEvidenceBinaryUnregisteredDialog"),
         registered_dialog_tree_definition_binary_consumer_surface_exhausted: t("offlineRecoveryEvidenceBinaryRegisteredDialogTree"),
+        exact_missionless_native_event_playback_path: t("offlineRecoveryEvidenceMissionlessNativePlayback"),
         cutscene_root_without_recovered_activator: t("offlineRecoveryEvidenceCutsceneRoot"),
         dialog_text_table_only_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),
       })[row.evidenceKind] || row.evidenceKind || row.recoveryStatus || "";
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");

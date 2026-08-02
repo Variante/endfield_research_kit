@@ -44,7 +44,27 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch adds a third declaration-free current-build
+The latest recovery batch generalizes exact local LevelScript playback without
+inventing mission ownership. A row qualifies only when every typed playback
+occurrence has a current `gameassembly-*` ActionBase mapping, exact Story
+identity, an existing hash-recorded source file, and a complete serialized
+event path whose terminal action matches the playback record. The decoded
+event must explicitly carry neither a mission/quest id nor a server exchange;
+mission-bound paths are exclusions, and malformed exact paths fail closed with
+structured and CLI diagnostics. This binary-first classifier validates 338
+local playback keys across 140 nominal missions with zero failures. The
+separate mission-flow gate attaches only the 36 keys across 15 missions that
+still have no routed bridge, including six character files across `c6m1`,
+`c31m3`, and `c13m2`. Character actionable core-isolated rows fall from 17 to
+11 and other rows from 454 to 427. Mission Pipeline attaches source hashes and
+the original GameAssembly mapping, while its cards show the exact native
+event-to-action chain, related original-data files, and explicit
+activation/order boundaries. Trigger slots, local ids,
+action-list positions, file order, suffixes, OCR, and manual display order add
+no ownership or chronology. The graph remains 1,485 strong edges, 302 native
+branch groups, and 18 convergences.
+
+The preceding recovery batch adds a third declaration-free current-build
 definition pattern. It requires an exact MemoryPack `DialogId` registration,
 an exact decoded `Beyond.Gameplay.DialogTree` with a verified source hash, a
 unique mission target, and zero typed LevelScript action/native playback,
@@ -737,9 +757,9 @@ only.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** main, event, and major have no actionable
-   core-isolated or strict quest-attachment gaps. Character missions retain 17
+   core-isolated or strict quest-attachment gaps. Character missions retain 11
    actionable core-isolated files plus five quest-attachment gaps. Other
-   missions retain 454 actionable core-isolated files, 17 missing mission
+   missions retain 427 actionable core-isolated files, 17 missing mission
    bundles, and three quest-attachment gaps. Broad co-memberships remain
    non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
@@ -756,9 +776,9 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should audit the remaining character frontier as shared typed
-playback/ownership patterns: seven `c6m1` cutscene/misc/radio roots, two
-`c13m2` dialog/radio playback roots, five black-screen roots, and three other
-radios. Then audit the five character-mission quest-attachment gaps. Extend the
+carrier/consumer patterns: five black-screen roots, three still-unlinked
+radios, `cutscene_c6m1_1`, and two `c6m1` misc dialog roots. Then audit the five
+character-mission quest-attachment gaps. Extend the
 same pattern-based approach
 to other definition families only when their typed schemas and complete
 consumer surfaces can be bounded without weakening the fail-closed rules.
