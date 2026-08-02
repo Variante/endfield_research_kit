@@ -3529,6 +3529,11 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     "au_radio_gm02m15_12_001",
                     "au_radio_gm02m15_12_002",
                 },
+                "radio_gm02m21_4": {
+                    "au_radio_gm02m21_4_001",
+                    "au_radio_gm02m21_4_002",
+                },
+                "radio_gm02m21_7": {"au_radio_gm02m21_7_001"},
                 "radio_gm02m17_2": {"au_radio_gm02m17_2_001"},
                 "radio_gm02m17_4": {"au_radio_gm02m17_4_001"},
                 "radio_gm01m6_0d5": {
@@ -5191,6 +5196,222 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             "jianbei2",
             actual["gm02m15_q#5"][0]["subConditions"][1]["key"],
+        )
+        self.assertIn("sourceSha256", failure)
+
+    def test_gm02m21_branch_stage_gate_and_playback_inventory_are_exact(
+        self,
+    ) -> None:
+        story_keys = {"radio_gm02m21_4", "radio_gm02m21_7"}
+        self.assertEqual(
+            gap_queue.OFFLINE_EXHAUSTION_GM02M21_RADIOS,
+            story_keys,
+        )
+        self.assertEqual(
+            story_keys,
+            {
+                key
+                for key in gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS
+                if "gm02m21" in key
+            },
+        )
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        index, status = gap_queue.build_offline_exhaustion_index(
+            partial,
+            table_root,
+        )
+        self.assertEqual("active", status["status"])
+        self.assertTrue(story_keys <= set(index))
+        self.assertEqual(
+            [
+                "au_radio_gm02m21_4_001",
+                "au_radio_gm02m21_4_002",
+            ],
+            index["radio_gm02m21_4"]["missingAudioIds"],
+        )
+        self.assertEqual(
+            ["au_radio_gm02m21_7_001"],
+            index["radio_gm02m21_7"]["missingAudioIds"],
+        )
+        topology = index["radio_gm02m21_4"][
+            "missionQuestTopologyContext"
+        ]
+        self.assertEqual(
+            [f"gm02m21_q#{number}" for number in range(1, 6)],
+            topology["mainPathQuestIds"],
+        )
+        self.assertEqual(
+            [{
+                "questId": "gm02m21_q#1",
+                "successorQuestIds": ["gm02m21_q#2", "gm02m21_q#6"],
+            }],
+            topology["forks"],
+        )
+        self.assertEqual([], topology["merges"])
+        self.assertEqual(
+            [{
+                "questId": "gm02m21_q#6",
+                "conditionType": "CheckQuestState",
+                "targetQuestId": "gm02m21_q#1",
+                "comparer": 1,
+                "targetQuestState": 3,
+                "relation": "authored_quest_failure_guard",
+                "branchExclusivityStatus": (
+                    "not_proven_by_one_way_failure_guard"
+                ),
+                "storyOrderEvidence": False,
+            }],
+            topology["failedQuestStateGuards"],
+        )
+        self.assertEqual(
+            [{
+                "questId": "gm02m21_q#6",
+                "objectiveIndex": 1,
+                "targetQuestId": "gm02m21_q#2",
+                "comparer": 0,
+                "targetQuestState": 3,
+                "scopeMask": 1,
+                "useGraphScope": True,
+            }],
+            topology["questStateDependencies"],
+        )
+        conjunction = topology["objectiveConjunctions"][0]
+        self.assertEqual("gm02m21_q#2", conjunction["questId"])
+        self.assertEqual(
+            [1, 2, 3, 4, 7],
+            [row["stageValue"] for row in conjunction["subConditions"]],
+        )
+        self.assertEqual(
+            {3},
+            {row["compareOperator"] for row in conjunction["subConditions"]},
+        )
+        inventory = topology["levelScriptPlaybackInventories"][0]
+        self.assertEqual(
+            [
+                "radio_gm02m21_1", "radio_gm02m21_2",
+                "radio_gm02m21_3", "radio_gm02m21_5",
+                "radio_gm02m21_8",
+            ],
+            [row["storyKey"] for row in inventory["playbackRecords"]],
+        )
+        self.assertTrue(all(
+            row["independentActionRoot"]
+            for row in inventory["playbackRecords"]
+        ))
+        self.assertEqual(
+            ["radio_gm02m21_4", "radio_gm02m21_7"],
+            inventory["absentStoryKeys"],
+        )
+        self.assertEqual(
+            "not_execution_order",
+            inventory["serializedListOrderStatus"],
+        )
+        self.assertFalse(inventory["storyOrderEvidence"])
+        self.assertEqual([], topology["storyAssignments"])
+        self.assertFalse(topology["orderEvidence"])
+
+    def test_gm02m21_stage_conjunction_validator_fails_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        declaration = gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS[
+            "gm02m21"
+        ]
+        broken_conjunctions = copy.deepcopy(
+            declaration["objectiveConjunctionsByQuest"]
+        )
+        broken_conjunctions["gm02m21_q#2"][0]["subConditions"][4][
+            "stageValue"
+        ] = 6
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS,
+            {"gm02m21": {
+                **declaration,
+                "objectiveConjunctionsByQuest": broken_conjunctions,
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual({}, failed_index)
+        failure = failed_status["validatorDiagnostics"][0]
+        self.assertEqual("offlineMissionTopologyContext", failure["validator"])
+        self.assertEqual("gm02m21", failure["mission"])
+        self.assertEqual(
+            6,
+            failure["expected"]["objectiveConjunctionsByQuest"]
+            ["gm02m21_q#2"][0]["subConditions"][4]["stageValue"],
+        )
+        self.assertEqual(
+            7,
+            failure["actual"]["objectiveConjunctionsByQuest"]
+            ["gm02m21_q#2"][0]["subConditions"][4]["stageValue"],
+        )
+
+    def test_gm02m21_playback_inventory_validator_fails_closed(self) -> None:
+        partial = gap_queue.read_json(
+            gap_queue.ROOT
+            / "reports/mission_order/source_story_partial_order_CN.json",
+            {},
+        )
+        table_root = (
+            gap_queue.ROOT / "export_full/structured/StreamingAssets/Table"
+        )
+        declaration = gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS[
+            "gm02m21"
+        ]
+        broken_inventories = copy.deepcopy(
+            declaration["levelScriptPlaybackInventories"]
+        )
+        broken_inventories[0]["playbackRecords"][3][
+            "storyKey"
+        ] = "radio_gm02m21_missing"
+        with patch.dict(
+            gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS,
+            {"gm02m21": {
+                **declaration,
+                "levelScriptPlaybackInventories": broken_inventories,
+            }},
+        ):
+            failed_index, failed_status = (
+                gap_queue.build_offline_exhaustion_index(
+                    partial,
+                    table_root,
+                )
+            )
+        self.assertEqual({}, failed_index)
+        failure = failed_status["validatorDiagnostics"][0]
+        self.assertEqual(
+            "offlineLevelScriptPlaybackInventory",
+            failure["validator"],
+        )
+        self.assertEqual(
+            "exactTypedPlaybackRecordsIndependentRootsAndAbsentTargets",
+            failure["gate"],
+        )
+        self.assertEqual("gm02m21", failure["mission"])
+        self.assertEqual(
+            "radio_gm02m21_missing",
+            failure["expected"][0]["playbackRecords"][3]["storyKey"],
+        )
+        self.assertEqual(
+            "radio_gm02m21_5",
+            failure["actual"][0]["playbackRecords"][3]["storyKey"],
         )
         self.assertIn("sourceSha256", failure)
 
