@@ -761,6 +761,7 @@ LEVELSCRIPT_OPCODE_TABLE: dict[tuple[int, int], str] = {
     (0x0015, 0x09): "set_state",
     (0x0070, 0x13): "set_state",
     (0x0450, 0x0f): "show_guide",
+    (0x048C, 0x09): "play_reading_popup",
 }
 
 _LEVELSCRIPT_BLACK_LINE_ID_RE = re.compile(r"^black_.+_\d{3,}$", re.IGNORECASE)
@@ -813,6 +814,119 @@ def match_levelscript_native_black_record(
             line_id: sorted(offsets)
             for line_id, offsets in sorted(line_offsets.items())
         },
+    }
+
+
+def match_levelscript_native_reading_popup_record(
+    level_id: str,
+    script_id: str,
+    record: dict,
+    *,
+    leveldata_root: Path = LEVELDATA_DIR,
+    levelscript_root: Path = LEVELSCRIPT_DIR,
+    persistent_leveldata_root: Path = PERSISTENT_DATA_JSON_DIR / "LevelData",
+    reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
+) -> dict | None:
+    """Resolve one ShowUIReadingPopPanel property through exact BriefData.
+
+    The action stores a LevelScript property name, not a Story id.  Promotion
+    therefore requires the current-build native action tag, one exact property
+    name in the action, a completely framed member-22 BriefData dictionary,
+    an identical Persistent mirror, and one ReadingPopUpTable content id.
+    LevelData filenames contribute no Story identity or chronology.
+    """
+    if (
+        levelscript_record_semantic_key(record) != (0x048C, 0x09)
+        or levelscript_native_action_name(record) != "ShowUIReadingPopPanel"
+        or not str(script_id).isdigit()
+    ):
+        return None
+    property_names = _levelscript_record_texts(record)
+    if len(property_names) != 1:
+        return None
+    property_name = property_names[0]
+    try:
+        reading_rows = json.loads(reading_popup_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(reading_rows, dict):
+        return None
+    script_dir = levelscript_root / level_id
+    candidate_script_ids = {
+        int(path.stem)
+        for path in script_dir.glob("*.json")
+        if path.stem.isdigit()
+    }
+    if int(script_id) not in candidate_script_ids:
+        return None
+
+    matches: list[dict] = []
+    for path in sorted((leveldata_root / level_id).glob("*.json")):
+        mirror_path = persistent_leveldata_root / level_id / path.name
+        try:
+            data = read_bytes_cached(path)
+            mirror_data = read_bytes_cached(mirror_path)
+        except OSError:
+            continue
+        if data != mirror_data:
+            continue
+        brief = parse_leveldata_levelscript_brief_dictionary(
+            data,
+            candidate_script_ids,
+        ).get(int(script_id))
+        if not isinstance(brief, dict):
+            continue
+        properties = [
+            prop
+            for prop in brief.get("properties") or []
+            if isinstance(prop, dict) and prop.get("name") == property_name
+        ]
+        if len(properties) != 1:
+            continue
+        value = properties[0].get("value")
+        atoms = value.get("atoms") if isinstance(value, dict) else None
+        if (
+            not isinstance(value, dict)
+            or value.get("valueType") != 7
+            or value.get("atomCount") != 1
+            or not isinstance(atoms, list)
+            or len(atoms) != 1
+            or not isinstance(atoms[0], dict)
+        ):
+            continue
+        popup_id = str(atoms[0].get("text") or "").strip()
+        popup_row = reading_rows.get(popup_id)
+        story_key = str(
+            popup_row.get("contentId") if isinstance(popup_row, dict) else ""
+        ).strip()
+        if not popup_id or not story_key.startswith("text_"):
+            continue
+        matches.append({
+            "key": story_key,
+            "propertyName": property_name,
+            "readingPopupId": popup_id,
+            "levelDataFile": repo_rel(path),
+            "verifiedMirrorFile": repo_rel(mirror_path),
+            "levelDataSha256": hashlib.sha256(data).hexdigest().upper(),
+            "readingPopupTableSourceFile": repo_rel(reading_popup_path),
+            "briefData": brief,
+            "nativeMappingId": (
+                "gameassembly-show-ui-reading-popup-leveldata-property-v1"
+            ),
+        })
+    signatures = {
+        (match["key"], match["readingPopupId"], match["propertyName"])
+        for match in matches
+    }
+    if len(signatures) != 1 or not matches:
+        return None
+    return {
+        **matches[0],
+        "levelDataFiles": [match["levelDataFile"] for match in matches],
+        "verifiedMirrorFiles": [
+            match["verifiedMirrorFile"] for match in matches
+        ],
+        "hostCount": len(matches),
     }
 
 
@@ -1855,6 +1969,33 @@ def build_levelscript_action_story_occurrences(
                     ):
                         continue
                     story_hits = {fmv_story_key: [fmv_field_offset]}
+                reading_popup_action: dict = {}
+                if record_class == "play_reading_popup":
+                    reading_popup_action = (
+                        match_levelscript_native_reading_popup_record(
+                            level_dir.name,
+                            str(file_info.get("fileStem") or ""),
+                            record,
+                            levelscript_root=root,
+                        )
+                        or {}
+                    )
+                    popup_story_key = str(
+                        reading_popup_action.get("key") or ""
+                    )
+                    if not popup_story_key:
+                        continue
+                    property_offsets = [
+                        int(hit.get("offset"))
+                        for hit in record.get("plainStrings") or []
+                        if isinstance(hit, dict)
+                        and hit.get("text")
+                        == reading_popup_action.get("propertyName")
+                        and isinstance(hit.get("offset"), int)
+                    ]
+                    if not property_offsets:
+                        continue
+                    story_hits = {popup_story_key: property_offsets}
                 all_story_keys = sorted(story_hits)
                 for story_key, string_offsets in story_hits.items():
                     signature = (
@@ -1902,6 +2043,14 @@ def build_levelscript_action_story_occurrences(
                             and story_key == fmv_story_key
                         ):
                             out[story_key][-1]["fmvAction"] = fmv_action
+                        if (
+                            record_class == "play_reading_popup"
+                            and reading_popup_action
+                            and story_key == reading_popup_action.get("key")
+                        ):
+                            out[story_key][-1]["readingPopupAction"] = (
+                                reading_popup_action
+                            )
                         if control_context is None:
                             control_context = _prepare_levelscript_native_control_context(
                                 data,
@@ -10287,6 +10436,27 @@ def _build_levelscript_scene_chain_map(
                 )
                 for record in chain
             ]
+            for record, step in zip(chain, steps):
+                if classify_levelscript_record(record) != "play_reading_popup":
+                    continue
+                popup_action = match_levelscript_native_reading_popup_record(
+                    level_id,
+                    str(file_info.get("fileStem") or ""),
+                    record,
+                )
+                if not popup_action:
+                    continue
+                popup_payloads = _annotate_binding_payloads(
+                    [str(popup_action["key"])],
+                    dialog_key_resolver,
+                    mission_id,
+                )
+                for payload in popup_payloads:
+                    payload["resolution"] = "leveldataReadingPopupProperty"
+                    payload["readingPopupId"] = popup_action["readingPopupId"]
+                    payload["levelDataFile"] = popup_action["levelDataFile"]
+                    if payload not in step["payloads"]:
+                        step["payloads"].append(payload)
             scene_keys: list[str] = []
             seen_scene_keys: set[str] = set()
             for step in steps:
