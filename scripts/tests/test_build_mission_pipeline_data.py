@@ -1352,6 +1352,26 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual("guide_group_team", row["facts"]["guideGroupId"])
         self.assertEqual(2, row["facts"]["completeType"])
 
+    def test_interactive_int_condition_retains_generic_entity_comparison(self):
+        row = pipeline.condition_tree(condition(
+            "InteractiveCheckInt",
+            _levelId={"constValue": "map_fixture"},
+            _entityId={"constValue": {"logicId": 10100360003}},
+            _key={"constValue": "state"},
+            _compareValue={"constValue": 1},
+            _comparer={"constValue": 0},
+        ))
+        self.assertEqual(row, {
+            "type": "InteractiveCheckInt",
+            "facts": {
+                "levelId": "map_fixture",
+                "entityId": {"logicId": 10100360003},
+                "key": "state",
+                "compareValue": 1,
+                "comparer": 0,
+            },
+        })
+
     def test_objective_retains_tracking_filter_without_creating_condition_edge(self):
         row = pipeline.objective_row({
             "description": {"key": "objective_tracking"},

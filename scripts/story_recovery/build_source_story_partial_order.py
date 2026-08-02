@@ -2034,6 +2034,7 @@ def _connection_native_occurrences(row: dict[str, Any]) -> list[dict[str, Any]]:
             "levelId": next(iter(row.get("levelIds") or []), ""),
             "scriptId": next(iter(row.get("scriptIds") or []), ""),
             "sourceFile": next(iter(row.get("sourceFiles") or []), ""),
+            "sourceFiles": row.get("sourceFiles") or [],
             "nativeEventOwners": row.get("nativeEventOwners") or [],
         })
     return occurrences
@@ -2044,11 +2045,11 @@ def _native_event_story_paths(
     candidate_keys: set[str] | None,
 ) -> dict[
     tuple[str, str, int, str],
-    set[tuple[str, tuple[tuple[Any, ...], ...], str, str]],
+    set[tuple[str, tuple[tuple[Any, ...], ...], tuple[str, ...], str, str]],
 ]:
     event_paths: dict[
         tuple[str, str, int, str],
-        set[tuple[str, tuple[tuple[Any, ...], ...], str, str]],
+        set[tuple[str, tuple[tuple[Any, ...], ...], tuple[str, ...], str, str]],
     ] = defaultdict(set)
     for row in _story_connection_rows(flow):
         story_key = safe_key(row.get("key"))
@@ -2058,10 +2059,20 @@ def _native_event_story_paths(
             level_id = safe_key(occurrence.get("levelId"))
             script_id = safe_key(occurrence.get("scriptId"))
             source_file = safe_key(occurrence.get("sourceFile"))
+            source_files = tuple(sorted({
+                source_file,
+                *[
+                    safe_key(value)
+                    for value in occurrence.get("sourceFiles") or []
+                ],
+            } - {""}, key=natural_key))
             for owner in occurrence.get("nativeEventOwners") or []:
                 if (
                     not isinstance(owner, dict)
-                    or owner.get("status") != "exact_serialized_control_path"
+                    or owner.get("status") not in {
+                        "exact_serialized_control_path",
+                        "exact_serialized_control_path_equivalent_duplicates",
+                    }
                     or not isinstance(owner.get("headerLocalId"), int)
                 ):
                     continue
@@ -2092,9 +2103,15 @@ def _native_event_story_paths(
                 event_paths[signature].add((
                     story_key,
                     path,
-                    source_file,
+                    source_files,
                     json.dumps(
                         owner.get("eventDetail") or {},
+                        ensure_ascii=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                    json.dumps(
+                        owner.get("downstreamControlPaths") or [],
                         ensure_ascii=False,
                         sort_keys=True,
                         separators=(",", ":"),
@@ -2145,10 +2162,10 @@ def _expand_native_control_path_candidates(
 
     for rows in _native_event_story_paths(flow, None).values():
         rows = list(rows)
-        for anchor_key, anchor_path, _source_file, _event_detail in rows:
+        for anchor_key, anchor_path, _source_files, _event_detail, _downstream in rows:
             if anchor_key not in anchor_keys:
                 continue
-            for external_key, external_path, _target_file, _target_detail in rows:
+            for external_key, external_path, _target_files, _target_detail, _target_downstream in rows:
                 if external_key in anchor_keys or external_key == anchor_key:
                     continue
                 if not (
@@ -2173,8 +2190,8 @@ def _native_control_path_story_edges(
 
     evidence_by_pair: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for signature, rows in event_paths.items():
-        for source_key, source_path, source_file, source_event_detail in rows:
-            for target_key, target_path, target_file, target_event_detail in rows:
+        for source_key, source_path, source_files, source_event_detail, _source_downstream in rows:
+            for target_key, target_path, target_files, target_event_detail, _target_downstream in rows:
                 if (
                     source_key == target_key
                     or not _strict_native_path_prefix(source_path, target_path)
@@ -2196,7 +2213,10 @@ def _native_control_path_story_edges(
                     ],
                     "sourcePath": list(source_path_ids),
                     "targetPath": list(target_path_ids),
-                    "sourceFiles": sorted({source_file, target_file} - {""}),
+                    "sourceFiles": sorted(
+                        {*source_files, *target_files},
+                        key=natural_key,
+                    ),
                 })
 
     conflicts = {
@@ -2975,17 +2995,25 @@ def _native_control_branches_and_merges(
             tuple[tuple[int, ...], str],
             dict[
                 tuple[int, str],
-                set[tuple[str, tuple[tuple[Any, ...], ...], str, str]],
+                set[
+                    tuple[
+                        str,
+                        tuple[tuple[Any, ...], ...],
+                        tuple[str, ...],
+                        str,
+                        str,
+                    ]
+                ],
             ],
         ] = defaultdict(lambda: defaultdict(set))
-        for story_key, path, source_file, event_detail in routes:
+        for story_key, path, source_file, event_detail, downstream in routes:
             for index, step in enumerate(path):
                 branch_kind = _native_branch_kind(step[1])
                 if not branch_kind:
                     continue
                 prefix = tuple(path_step[0] for path_step in path[:index])
                 groups[(prefix, branch_kind)][(step[0], step[1])].add(
-                    (story_key, path, source_file, event_detail)
+                    (story_key, path, source_file, event_detail, downstream)
                 )
 
         for (prefix, branch_kind), arms_by_key in groups.items():
@@ -2993,7 +3021,13 @@ def _native_control_branches_and_merges(
                 continue
             arm_rows: list[dict[str, Any]] = []
             all_routes: list[
-                tuple[str, tuple[tuple[Any, ...], ...], str, str]
+                tuple[
+                    str,
+                    tuple[tuple[Any, ...], ...],
+                    tuple[str, ...],
+                    str,
+                    str,
+                ]
             ] = []
             for (entry_local_id, edge), arm_routes in sorted(
                 arms_by_key.items(),
@@ -3005,7 +3039,12 @@ def _native_control_branches_and_merges(
                     "entryLocalId": entry_local_id,
                     "storyKeys": sorted({route[0] for route in arm_routes}, key=natural_key),
                 })
-            source_files = sorted({route[2] for route in all_routes if route[2]})
+            source_files = sorted({
+                source_file
+                for route in all_routes
+                for source_file in route[2]
+                if source_file
+            }, key=natural_key)
             predicate_json_rows = {
                 route[1][len(prefix) - 1][4]
                 for route in all_routes
@@ -3043,7 +3082,7 @@ def _native_control_branches_and_merges(
             common_ids: set[int] | None = None
             route_positions: list[dict[int, int]] = []
             branch_depth = len(prefix) + 1
-            for _story_key, path, _source_file, _event_detail in all_routes:
+            for _story_key, path, _source_files, _event_detail, _downstream in all_routes:
                 positions = {
                     step[0]: index
                     for index, step in enumerate(path)
@@ -3051,7 +3090,36 @@ def _native_control_branches_and_merges(
                 }
                 route_positions.append(positions)
                 common_ids = set(positions) if common_ids is None else common_ids & set(positions)
-            if common_ids:
+            merge_paths: list[list[int]] = []
+            if not common_ids:
+                common_ids = None
+                downstream_positions: list[dict[int, int]] = []
+                for route in all_routes:
+                    paths = json.loads(route[4])
+                    positions: dict[int, int] = {}
+                    for control_path in paths if isinstance(paths, list) else []:
+                        if not isinstance(control_path, list):
+                            continue
+                        local_ids = [
+                            step.get("localId")
+                            for step in control_path
+                            if isinstance(step, dict)
+                            and isinstance(step.get("localId"), int)
+                        ]
+                        for index, local_id in enumerate(local_ids):
+                            positions[local_id] = min(
+                                positions.get(local_id, index),
+                                index,
+                            )
+                    downstream_positions.append(positions)
+                    common_ids = (
+                        set(positions)
+                        if common_ids is None
+                        else common_ids & set(positions)
+                    )
+                if common_ids:
+                    route_positions = downstream_positions
+            if common_ids and route_positions:
                 merge_local_id = min(
                     common_ids,
                     key=lambda local_id: (
@@ -3060,9 +3128,34 @@ def _native_control_branches_and_merges(
                         local_id,
                     ),
                 )
+                for route in all_routes:
+                    paths = json.loads(route[4])
+                    candidates = [
+                        [
+                            step.get("localId")
+                            for step in control_path
+                            if isinstance(step, dict)
+                            and isinstance(step.get("localId"), int)
+                        ]
+                        for control_path in paths
+                        if isinstance(control_path, list)
+                        and any(
+                            isinstance(step, dict)
+                            and step.get("localId") == merge_local_id
+                            for step in control_path
+                        )
+                    ]
+                    if candidates:
+                        merge_paths.append(min(candidates, key=len))
                 merges.append({
                     **branch,
                     "mergeLocalId": merge_local_id,
+                    "convergenceStatus": (
+                        "exact_serialized_downstream_control_convergence"
+                        if merge_paths
+                        else "exact_observed_story_path_convergence"
+                    ),
+                    "mergePaths": merge_paths,
                     "downstreamStoryKeys": sorted(
                         {route[0] for route in all_routes}, key=natural_key
                     ),

@@ -17,8 +17,8 @@ Latest CN reports:
 | Unlinked files with exact native playback | 155 |
 | Ordered mission graphs | 487 |
 | Candidate scene placements | 8,876 |
-| Strong / supported / weak edges | 1,482 / 834 / 2,635 |
-| Source-comparable scene pairs | 3,764 / 249,651 (1.51%) |
+| Strong / supported / weak edges | 1,485 / 834 / 2,635 |
+| Source-comparable scene pairs | 3,767 / 249,651 (1.51%) |
 | Cyclic components | 0 |
 | Exact nested DialogTree containments | 49 across 44 child files |
 | Exact quest-observed DialogTree definitions | 435 definitions / 461 placements across 422 quests |
@@ -37,7 +37,7 @@ in five payloads.
   selected runtime receiver evidence.
 - Exact native control paths for Split, If/Else, Switch, Branch, playback, and
   many event families.
-- 296 native branch groups and four native convergences, kept as a partial
+- 302 native branch groups and 18 native convergences, kept as a partial
   graph instead of flattened into a guessed file list.
 - 368 strict option-route groups covering 767 option arms and 1,597 branch
   lines.
@@ -61,6 +61,24 @@ files, displays the fork, dependency, failure guard, stage conjunction,
 present playback roots, and absent targets, and keeps both unresolved radios at
 graph effect `none`. The major queue now has 13 actionable core-isolated rows
 and score 65; `gm02m4` is next at score 10 with two actionable files.
+
+The current `gm02m4` audit generalized native branch recovery instead of
+adding a mission-specific rule. LevelScript control paths now admit repeated
+local-id records only when every typed control field is semantically
+equivalent; conflicting duplicates still fail closed. This recovers six
+additional exact branch groups across the corpus: the gm02m4 Split and five
+sm2l2m2 Switches. gm02m4's exact Split at local id 7 has arm 0
+`radio_gm02m4_15 -> _16 -> _17` and arm 1 `cutscene_gm02m4_2`; the radio arm
+terminates, while only the cutscene arm continues through local ids 10 and 11,
+so there is no authored convergence between the arms. MissionRuntime remains
+the linear chain `q#11 -> q#3 -> q#7 -> q#8 -> q#9`. q#3 is an exact AND over
+six `InteractiveCheckInt` entity/state comparisons, now exposed generically in
+Mission Pipeline with entity ids and comparator targets. Native branch rows
+retain the complete MissionRuntime and LevelScript source-file set. The
+remaining isolated `cutscene_gm02m4_1` has an exact composed CutsceneRoot
+playback alias and mission-shell context but no unique quest or relative order;
+`radio_gm02m4_11` remains definition-only with no typed current-build consumer.
+Neither row is placed from OCR, manual order, suffixes, or table order.
 
 The preceding `gm02m15` batch closes its two remaining actionable radios without
 inventing placement. Hash-locked MissionRuntime is a strict
@@ -673,8 +691,8 @@ only.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** main and event have no actionable core-isolated
-   or strict quest-attachment gaps. Major missions retain 15 actionable
-   core-isolated files and score 75; seven broad main-story co-memberships
+   or strict quest-attachment gaps. Major missions retain 13 actionable
+   core-isolated files and score 65; seven broad main-story co-memberships
    remain visible as non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
@@ -690,8 +708,8 @@ LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
 Next work should move to the highest-ranked remaining major-mission frontier:
-`gm02m21`, `gm02m4`, `gm02m12`, and `gm01m8` (each score 10 with two
-actionable files), then the five character-mission
+the still source-bounded `gm02m4` pair, then `gm02m12` and `gm01m8` (each
+score 10 with two actionable files), followed by the five character-mission
 quest-attachment gaps. Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
