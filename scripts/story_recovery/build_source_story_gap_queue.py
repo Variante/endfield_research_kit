@@ -9912,6 +9912,473 @@ def build_quest_attachment_diagnostic_index(
     return index, status
 
 
+SERVER_PLACEHOLDER_CONTEXT_RELATIONS = {
+    "leveldata_quest_reference": ("context", "context", "direct"),
+    "levelscript_condition_scope": ("context", "context", "scoped_script"),
+    "npc_proxy_ex_attachment": ("context", "context", "scoped_unique"),
+    "variant_runtime_attachment": ("context", "context", "scoped_variant"),
+}
+
+
+def _classify_server_placeholder_story_boundary(
+    mission: str,
+    quest_id: str,
+    mission_payload: dict[str, Any],
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Classify one opaque server objective with context-only Story evidence."""
+    timeline_quest = next((
+        row
+        for row in _timeline(mission_payload).get("quests") or []
+        if isinstance(row, dict) and safe_key(row.get("questId")) == quest_id
+    ), None)
+    flow_quest = next((
+        row
+        for row in _flow(mission_payload).get("quests") or []
+        if isinstance(row, dict) and safe_key(row.get("id")) == quest_id
+    ), None)
+    if not isinstance(timeline_quest, dict) or not isinstance(flow_quest, dict):
+        return None, None
+    objectives = timeline_quest.get("objectives") or []
+    leaves = [
+        leaf
+        for objective in objectives
+        if isinstance(objective, dict)
+        for leaf in objective.get("conditionLeaves") or []
+        if isinstance(leaf, dict)
+    ]
+    if (
+        len(objectives) != 1
+        or len(leaves) != 1
+        or safe_key(leaves[0].get("type"))
+        != "GameConditionServerPlaceHolder"
+    ):
+        return None, None
+    connections = [
+        row
+        for row in flow_quest.get("storyConnections") or []
+        if isinstance(row, dict)
+    ]
+    if not connections:
+        return None, None
+
+    source_file = safe_key((timeline_quest.get("source") or {}).get("file"))
+    source_paths = {source_file} if source_file else set()
+    failures: list[dict[str, Any]] = []
+    quest_mission = quest_id.split("_q#", 1)[0]
+    expected_source_suffix = f"/MissionRuntimeAsset/{quest_mission}.json"
+    if (
+        not source_file
+        or not source_file.replace("\\", "/").endswith(expected_source_suffix)
+        or not (ROOT / source_file).is_file()
+    ):
+        failures.append({
+            "gate": "mission_runtime_source",
+            "expected": expected_source_suffix,
+            "actual": source_file,
+        })
+
+    for connection in connections:
+        relation = safe_key(connection.get("relation"))
+        expected_shape = SERVER_PLACEHOLDER_CONTEXT_RELATIONS.get(relation)
+        actual_shape = (
+            safe_key(connection.get("direction")),
+            safe_key(connection.get("phase")),
+            safe_key(connection.get("confidence")),
+        )
+        if not expected_shape or actual_shape != expected_shape:
+            failures.append({
+                "gate": "context_only_story_relation",
+                "expected": {
+                    key: list(value)
+                    for key, value in SERVER_PLACEHOLDER_CONTEXT_RELATIONS.items()
+                },
+                "actual": {"relation": relation, "shape": list(actual_shape)},
+            })
+            continue
+        if relation == "leveldata_quest_reference":
+            path = safe_key(connection.get("file"))
+            if (
+                not path
+                or not (ROOT / path).is_file()
+                or not safe_key(connection.get("key"))
+            ):
+                failures.append({
+                    "gate": "leveldata_context_source",
+                    "expected": "existing LevelData file plus exact Story key",
+                    "actual": {"file": path, "key": connection.get("key")},
+                })
+            elif path:
+                source_paths.add(path)
+        elif relation == "levelscript_condition_scope":
+            level_id = safe_key(connection.get("mapId"))
+            script_id = safe_key(connection.get("scriptId"))
+            path = (
+                "export_full/structured/StreamingAssets/Data/Json/"
+                f"LevelScriptData/{level_id}/{script_id}.json"
+            )
+            if not level_id or not script_id or not (ROOT / path).is_file():
+                failures.append({
+                    "gate": "levelscript_context_source",
+                    "expected": "existing typed level/script source",
+                    "actual": {"levelId": level_id, "scriptId": script_id},
+                })
+            else:
+                source_paths.add(path)
+        elif relation == "npc_proxy_ex_attachment":
+            proxy_id = safe_key(connection.get("npcProxyId"))
+            proxy_mission = safe_key(connection.get("npcProxyMissionId"))
+            proxy_rows = [
+                row
+                for row in flow_quest.get("proxyDialogs") or []
+                if isinstance(row, dict)
+                and safe_key(row.get("npcProxyId")) == proxy_id
+                and safe_key(row.get("missionId")) == proxy_mission
+                and safe_key(row.get("dialogId"))
+                == safe_key(connection.get("key"))
+            ]
+            if not proxy_id or proxy_mission != quest_mission or len(proxy_rows) != 1:
+                failures.append({
+                    "gate": "npc_proxy_exact_context",
+                    "expected": {
+                        "missionId": quest_mission,
+                        "matchingProxyDialogRows": 1,
+                    },
+                    "actual": {
+                        "missionId": proxy_mission,
+                        "matchingProxyDialogRows": len(proxy_rows),
+                    },
+                })
+            proxy_path = QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS[
+                "gameplayConfig:NpcProxyExDataTable"
+            ]
+            if (ROOT / proxy_path).is_file():
+                source_paths.add(proxy_path)
+        elif relation == "variant_runtime_attachment":
+            if (
+                safe_key(connection.get("variantMission")) != quest_mission
+                or not safe_key(connection.get("attachmentKind"))
+            ):
+                failures.append({
+                    "gate": "variant_runtime_scope",
+                    "expected": {
+                        "variantMission": quest_mission,
+                        "attachmentKind": "non-empty",
+                    },
+                    "actual": {
+                        "variantMission": connection.get("variantMission"),
+                        "attachmentKind": connection.get("attachmentKind"),
+                    },
+                })
+
+    if failures:
+        first = failures[0]
+        return None, {
+            "validator": "genericServerPlaceholderStoryBoundary",
+            "gate": first["gate"],
+            "missionId": mission,
+            "questId": quest_id,
+            "sourcePath": source_file,
+            "expected": first["expected"],
+            "actual": first["actual"],
+            "independentFailures": failures,
+        }
+
+    source_files = sorted(source_paths, key=natural_key)
+    return {
+        "questId": quest_id,
+        "missionId": mission,
+        "conditionType": "GameConditionServerPlaceHolder",
+        "diagnosticStoryKeys": sorted({
+            safe_key(row.get("key"))
+            for row in connections
+            if safe_key(row.get("key"))
+        }, key=natural_key),
+        "diagnosticRelations": sorted({
+            safe_key(row.get("relation")) for row in connections
+        }),
+        "recoveryStatus": (
+            "closed_server_placeholder_context_without_typed_story_consumer"
+        ),
+        "sourceFile": source_file,
+        "relatedSourceFiles": source_files,
+        "sourceHashes": {
+            path: _sha256_file(ROOT / path)
+            for path in source_files
+        },
+        "nativeMappingId": "generic-server-placeholder-story-boundary-v1",
+        "graphEffect": "none",
+        "attachmentBoundary": (
+            "the typed objective is a server-owned placeholder and every Story "
+            "reference is exact authored context; no client-readable Story id, "
+            "playback field, or completion consumer is serialized on the quest"
+        ),
+        "orderBoundary": (
+            "shared LevelData, LevelScript, proxy, or variant context cannot "
+            "select playback or relative Story order"
+        ),
+        "reopenWhen": (
+            "the generic shape gains a typed Story lifecycle field or an exact "
+            "property/quest-scoped native playback consumer"
+        ),
+    }, None
+
+
+def _classify_levelscript_condition_story_boundary(
+    mission: str,
+    quest_id: str,
+    mission_payload: dict[str, Any],
+    native_playback_index: dict[str, list[dict[str, Any]]],
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Close exact script co-scope when no typed condition consumer exists."""
+    timeline_quest = next((
+        row
+        for row in _timeline(mission_payload).get("quests") or []
+        if isinstance(row, dict) and safe_key(row.get("questId")) == quest_id
+    ), None)
+    flow_quest = next((
+        row
+        for row in _flow(mission_payload).get("quests") or []
+        if isinstance(row, dict) and safe_key(row.get("id")) == quest_id
+    ), None)
+    if not isinstance(timeline_quest, dict) or not isinstance(flow_quest, dict):
+        return None, None
+    objectives = timeline_quest.get("objectives") or []
+    leaves = [
+        leaf
+        for objective in objectives
+        if isinstance(objective, dict)
+        for leaf in objective.get("conditionLeaves") or []
+        if isinstance(leaf, dict)
+    ]
+    if len(objectives) != 1 or len(leaves) != 1:
+        return None, None
+    leaf = leaves[0]
+    condition_type = safe_key(leaf.get("type"))
+    if condition_type not in {
+        "CheckLevelScriptPropertyBool",
+        "CheckLevelScriptPropertyInt",
+        "CheckScriptMonsterKilled",
+    }:
+        return None, None
+    connections = [
+        row
+        for row in flow_quest.get("storyConnections") or []
+        if isinstance(row, dict)
+    ]
+    if not connections or any(
+        safe_key(row.get("relation")) != "levelscript_condition_scope"
+        or safe_key(row.get("direction")) != "context"
+        or safe_key(row.get("confidence")) != "scoped_script"
+        for row in connections
+    ):
+        return None, None
+
+    script_rows = [
+        row.get("value") or {}
+        for row in leaf.get("scriptIds") or []
+        if isinstance(row, dict) and isinstance(row.get("value"), dict)
+    ]
+    script_ids = {
+        safe_key(row.get("scriptId"))
+        for row in script_rows
+        if safe_key(row.get("scriptId"))
+    }
+    connection_pairs = {
+        (safe_key(row.get("mapId")), safe_key(row.get("scriptId")))
+        for row in connections
+    }
+    if len(connection_pairs) != 1 or len(script_ids) != 1:
+        return None, {
+            "validator": "genericLevelScriptConditionStoryBoundary",
+            "gate": "unique_condition_script",
+            "missionId": mission,
+            "questId": quest_id,
+            "sourcePath": safe_key((timeline_quest.get("source") or {}).get("file")),
+            "expected": {"scriptCount": 1, "connectionPairCount": 1},
+            "actual": {
+                "scriptIds": sorted(script_ids),
+                "connectionPairs": sorted(connection_pairs),
+            },
+        }
+    level_id, script_id = next(iter(connection_pairs))
+    if script_id not in script_ids or not level_id:
+        return None, {
+            "validator": "genericLevelScriptConditionStoryBoundary",
+            "gate": "condition_connection_script_agreement",
+            "missionId": mission,
+            "questId": quest_id,
+            "sourcePath": safe_key((timeline_quest.get("source") or {}).get("file")),
+            "expected": {"scriptId": next(iter(script_ids))},
+            "actual": {"levelId": level_id, "scriptId": script_id},
+        }
+    levelscript_file = (
+        "export_full/structured/StreamingAssets/Data/Json/"
+        f"LevelScriptData/{level_id}/{script_id}.json"
+    )
+    levelscript_path = ROOT / levelscript_file
+    mission_runtime_file = safe_key(
+        (timeline_quest.get("source") or {}).get("file")
+    )
+    if not levelscript_path.is_file() or not (ROOT / mission_runtime_file).is_file():
+        return None, {
+            "validator": "genericLevelScriptConditionStoryBoundary",
+            "gate": "typed_source_files",
+            "missionId": mission,
+            "questId": quest_id,
+            "sourcePath": levelscript_file,
+            "expected": "existing MissionRuntime and LevelScript sources",
+            "actual": {
+                "missionRuntimeExists": (ROOT / mission_runtime_file).is_file(),
+                "levelScriptExists": levelscript_path.is_file(),
+            },
+        }
+    levelscript_data = levelscript_path.read_bytes()
+    property_keys = [
+        safe_key(row.get("value"))
+        for row in leaf.get("propertyKeys") or []
+        if isinstance(row, dict) and safe_key(row.get("value"))
+    ]
+    if condition_type.startswith("CheckLevelScriptProperty"):
+        if len(property_keys) != 1 or property_keys[0].encode("utf-8") in levelscript_data:
+            return None, None
+    elif property_keys:
+        return None, None
+
+    native_event_names: set[str] = set()
+    if condition_type == "CheckScriptMonsterKilled":
+        for connection in connections:
+            story_key = safe_key(connection.get("key"))
+            occurrences = [
+                row
+                for row in native_playback_index.get(story_key) or []
+                if safe_key(row.get("levelId")) == level_id
+                and safe_key(row.get("scriptId")) == script_id
+            ]
+            if not occurrences:
+                return None, None
+            owners = [
+                owner
+                for occurrence in occurrences
+                for owner in occurrence.get("nativeEventOwners") or []
+                if isinstance(owner, dict)
+            ]
+            if not owners or any(
+                safe_key(owner.get("status"))
+                != "exact_serialized_control_path"
+                or safe_key(owner.get("headerName"))
+                != "ScriptEvent_OnLeaderEnterTriggerVolume"
+                for owner in owners
+            ):
+                return None, None
+            native_event_names.update(
+                safe_key(owner.get("headerName")) for owner in owners
+            )
+
+    story_keys = sorted({
+        safe_key(row.get("key"))
+        for row in connections
+        if safe_key(row.get("key"))
+    }, key=natural_key)
+    return {
+        "questId": quest_id,
+        "missionId": mission,
+        "conditionType": condition_type,
+        "conditionKey": property_keys[0] if property_keys else "",
+        "diagnosticStoryKeys": story_keys,
+        "diagnosticRelations": ["levelscript_condition_scope"],
+        "recoveryStatus": (
+            "closed_levelscript_condition_scope_without_typed_story_consumer"
+        ),
+        "sourceFile": mission_runtime_file,
+        "levelScriptFile": levelscript_file,
+        "relatedSourceFiles": [mission_runtime_file, levelscript_file],
+        "sourceHashes": {
+            mission_runtime_file: _sha256_file(ROOT / mission_runtime_file),
+            levelscript_file: _sha256_file(levelscript_path),
+        },
+        "nativeEventNames": sorted(native_event_names),
+        "nativeMappingId": "generic-levelscript-condition-story-boundary-v1",
+        "graphEffect": "none",
+        "attachmentBoundary": (
+            "the typed quest condition names this LevelScript, but the original "
+            "serialized Story actions expose no matching property/condition "
+            "consumer path"
+        ),
+        "orderBoundary": (
+            "same-script membership does not identify which independent Story "
+            "action, if any, belongs to the quest or establish relative order"
+        ),
+        "reopenWhen": (
+            "an exact condition-key/value consumer reaches Story playback, or "
+            "the original MissionRuntime/LevelScript shape changes"
+        ),
+    }, None
+
+
+def build_general_quest_attachment_boundary_index(
+    partial_report: dict[str, Any],
+    mission_payloads: dict[str, dict[str, Any]],
+    native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    """Discover graph-neutral quest boundaries from reusable typed patterns."""
+    index: dict[str, dict[str, Any]] = {}
+    failures: list[dict[str, Any]] = []
+    candidates: list[str] = []
+    native_playback_index = native_playback_index or {}
+    for partial_row in partial_report.get("missions") or []:
+        if not isinstance(partial_row, dict):
+            continue
+        mission = safe_key(partial_row.get("mission"))
+        payload = mission_payloads.get(mission)
+        if not isinstance(payload, dict):
+            continue
+        timeline = _timeline(payload)
+        flow = _flow(payload)
+        candidate_scene_keys = {
+            safe_key(node.get("key"))
+            for node in partial_row.get("nodes") or []
+            if isinstance(node, dict) and safe_key(node.get("key"))
+        }
+        quest_ids = {
+            safe_key(row.get("questId"))
+            for row in timeline.get("quests") or []
+            if isinstance(row, dict) and safe_key(row.get("questId"))
+        }
+        strict_ids, _strict_scenes = _strict_quest_attachments(partial_row, flow)
+        diagnostic_ids, _diagnostic_scenes, _counts = (
+            _diagnostic_quest_attachments(timeline, candidate_scene_keys)
+        )
+        for quest_id in sorted(
+            (quest_ids & diagnostic_ids) - strict_ids,
+            key=natural_key,
+        ):
+            candidates.append(quest_id)
+            row, failure = _classify_server_placeholder_story_boundary(
+                mission,
+                quest_id,
+                payload,
+            )
+            if row is None and failure is None:
+                row, failure = _classify_levelscript_condition_story_boundary(
+                    mission,
+                    quest_id,
+                    payload,
+                    native_playback_index,
+                )
+            if row:
+                index[quest_id] = row
+            if failure:
+                failures.append(failure)
+    return index, {
+        "mappingId": "generic-quest-story-attachment-boundaries-v1",
+        "status": "validation_failed" if failures else "active",
+        "graphEffect": "none",
+        "candidateQuestIds": sorted(set(candidates), key=natural_key),
+        "validatedQuestIds": sorted(index, key=natural_key),
+        "validationFailures": failures,
+    }
+
+
 def _configured_game_assembly_path() -> Path | None:
     game_root = os.environ.get("ENDFIELD_GAME_ROOT", "").strip()
     if not game_root:
@@ -17182,6 +17649,83 @@ def _flow(mission_payload: dict[str, Any] | None) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+DIRECT_OBJECTIVE_STORY_CONDITION_FIELDS = {
+    "CheckCutsceneFinish": "_cutsceneId",
+    "CheckRemoteCommFinish": "_remoteCommId",
+    "CheckRepeatableTalkFinish": "_dialogId",
+    "CheckSNSDialogComplete": "_dialogId",
+    "CheckTalkOptionFinish": "_dialogId",
+}
+
+
+def _exact_levelscript_property_story_consumer(
+    row: dict[str, Any],
+    quest_id: str,
+) -> bool:
+    """Validate a typed property check joined to its native Story consumer."""
+    key = safe_key(row.get("conditionKey"))
+    level_id = safe_key(row.get("mapId"))
+    script_id = safe_key(row.get("scriptId"))
+    owner = row.get("nativeEventOwner")
+    occurrence = row.get("levelScriptOccurrence")
+    source_files = set(_string_list(row.get("sourceFiles")))
+    quest_mission = quest_id.split("_q#", 1)[0]
+    expected_mission_suffix = f"/MissionRuntimeAsset/{quest_mission}.json"
+    expected_script_suffix = (
+        f"/LevelScriptData/{level_id}/{script_id}.json"
+    )
+    if (
+        safe_key(row.get("relation"))
+        != "levelscript_property_story_consumer"
+        or safe_key(row.get("direction")) != "shared_trigger"
+        or safe_key(row.get("phase")) != "progress_and_runtime_playback"
+        or safe_key(row.get("confidence")) != "native_typed_direct"
+        or safe_key(row.get("evidenceTier")) != "native_direct"
+        or safe_key(row.get("conditionType"))
+        != "CheckLevelScriptPropertyBool"
+        or not isinstance(row.get("conditionValue"), bool)
+        or not key
+        or not level_id
+        or not script_id
+        or not isinstance(owner, dict)
+        or not isinstance(occurrence, dict)
+        or not any(path.replace("\\", "/").endswith(expected_mission_suffix)
+                   for path in source_files)
+        or not any(path.replace("\\", "/").endswith(expected_script_suffix)
+                   for path in source_files)
+        or safe_key(occurrence.get("levelId")) != level_id
+        or safe_key(occurrence.get("scriptId")) != script_id
+        or safe_key(occurrence.get("sourceFile")) not in source_files
+        or not safe_key(occurrence.get("recordClass")).startswith("play_")
+        or safe_key(owner.get("status")) != "exact_serialized_control_path"
+        or safe_key(owner.get("headerName"))
+        != "ScriptEvent_OnPropertyChanged"
+        or safe_key(owner.get("downstreamControlStatus"))
+        != "exact_serialized_typed_reachability"
+    ):
+        return False
+    detail = owner.get("eventDetail")
+    if (
+        not isinstance(detail, dict)
+        or safe_key(detail.get("propertyKeyFilter")) != key
+        or safe_key(detail.get("payloadSchemaStatus"))
+        != "exact_current_build_memorypack_fields"
+        or safe_key(detail.get("transport"))
+        != "local-level-script-variable-event"
+        or (detail.get("validateParam") or {}).get("constValue")
+        is not row.get("conditionValue")
+    ):
+        return False
+    local_id = occurrence.get("localId")
+    return sum(
+        1
+        for step in owner.get("path") or []
+        if isinstance(step, dict)
+        and step.get("localId") == local_id
+        and safe_key(step.get("recordClass")).startswith("play_")
+    ) == 1
+
+
 def _strict_quest_attachments(
     partial_row: dict[str, Any],
     flow: dict[str, Any] | None = None,
@@ -17257,6 +17801,13 @@ def _strict_quest_attachments(
             relation = safe_key(row.get("relation"))
             objective_index = row.get("objectiveIndex")
             finish_id = row.get("finishId")
+            if scene_key and _exact_levelscript_property_story_consumer(
+                row,
+                quest_id,
+            ):
+                quest_ids.add(quest_id)
+                scene_keys.add(scene_key)
+                continue
             if (
                 scene_key
                 and relation == "objective_tracking_story_reference"
@@ -17280,24 +17831,32 @@ def _strict_quest_attachments(
                 quest_ids.add(quest_id)
                 scene_keys.add(scene_key)
                 continue
+            condition_type = safe_key(row.get("conditionType"))
+            condition_field = DIRECT_OBJECTIVE_STORY_CONDITION_FIELDS.get(
+                condition_type
+            )
             if (
                 scene_key
                 and relation == "objective_condition"
                 and safe_key(row.get("direction")) == "story_to_quest"
                 and safe_key(row.get("phase")) == "progress"
                 and safe_key(row.get("confidence")) == "direct"
-                and safe_key(row.get("conditionType"))
-                == "CheckTalkOptionFinish"
+                and bool(condition_field)
                 and re.fullmatch(
                     r"MissionRuntimeAsset\.questDic\[\*\]\.objectiveList"
-                    r"\[\d+\]\.condition\._dialogId",
+                    rf"\[\d+\]\.condition\.{condition_field}",
                     safe_key(row.get("source")),
                 )
                 and isinstance(objective_index, int)
                 and not isinstance(objective_index, bool)
                 and objective_index > 0
-                and isinstance(finish_id, int)
-                and not isinstance(finish_id, bool)
+                and (
+                    condition_type != "CheckTalkOptionFinish"
+                    or (
+                        isinstance(finish_id, int)
+                        and not isinstance(finish_id, bool)
+                    )
+                )
             ):
                 quest_ids.add(quest_id)
                 scene_keys.add(scene_key)
@@ -23293,6 +23852,31 @@ def main(argv: list[str] | None = None) -> int:
         quest_attachment_diagnostic_index,
         quest_attachment_diagnostic_status,
     ) = build_quest_attachment_diagnostic_index(mission_payloads)
+    (
+        general_boundary_index,
+        general_boundary_status,
+    ) = build_general_quest_attachment_boundary_index(
+        partial_report,
+        mission_payloads,
+        native_playback_index,
+    )
+    quest_attachment_diagnostic_index.update(general_boundary_index)
+    quest_attachment_diagnostic_status[
+        "genericQuestAttachmentBoundaries"
+    ] = general_boundary_status
+    quest_attachment_diagnostic_status["validatedQuestIds"] = sorted(
+        quest_attachment_diagnostic_index,
+        key=natural_key,
+    )
+    general_failures = general_boundary_status.get("validationFailures") or []
+    if general_failures:
+        quest_attachment_diagnostic_status.setdefault(
+            "validationFailureDetails",
+            [],
+        ).extend(general_failures)
+        quest_attachment_diagnostic_status["status"] = (
+            "inactive_generated_shape_validation_failed"
+        )
     report = build_gap_report(
         partial_report,
         mission_payloads,

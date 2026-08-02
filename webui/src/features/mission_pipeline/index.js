@@ -398,6 +398,7 @@
       relationClientFailed: "quest failure launches Story action",
       relationLevelData: "LevelData explicitly places Story on this quest",
       relationLevelScript: "quest condition scopes this LevelScript Story call",
+      relationLevelScriptPropertyConsumer: "quest and Story playback share one exact LevelScript property-change trigger",
       relationQuestObjectiveLevelScriptScope: "the quest objective reads the unique LevelScript that hosts this Story occurrence (shared scope only; not playback ownership or order)",
       relationLevelScriptMission: "LevelScript action and separate script evidence scope this Story file to the mission",
       relationLevelDataScriptHost: "mission-named LevelData contains this validated typed-playback script brief (asset context)",
@@ -938,6 +939,7 @@
       relationClientFailed: "任务失败后触发剧情动作",
       relationLevelData: "LevelData 明确把剧情放到此任务节点",
       relationLevelScript: "任务条件限定了这条 LevelScript 剧情调用",
+      relationLevelScriptPropertyConsumer: "任务与剧情播放共享同一个精确的 LevelScript 属性变化触发器",
       relationLevelScriptMission: "LevelScript 动作与独立脚本证据共同将剧情限定到该使命",
       relationLevelDataScriptHost: "使命命名的 LevelData 包含经过结构验证的剧情脚本简表（资源上下文）",
       relationWorldEntityQuestPlayback: "任务条件与该剧情播放脚本引用同一组唯一解析的世界实体（精确外键上下文，不证明任务或服务器触发）",
@@ -1826,11 +1828,19 @@
   function storyConnectionCounts(node, localizedMap = localizedQuestMap()) {
     const counts = { incoming: 0, outgoing: 0, context: 0 };
     for (const row of questStoryConnections(node, localizedMap)) {
-      if (row.direction === "story_to_quest") counts.incoming += 1;
-      else if (row.direction === "quest_to_story") counts.outgoing += 1;
+      const direction = storyConnectionDirectionGroup(row);
+      if (direction === "story_to_quest") counts.incoming += 1;
+      else if (direction === "quest_to_story") counts.outgoing += 1;
       else counts.context += 1;
     }
     return counts;
+  }
+
+  function storyConnectionDirectionGroup(row) {
+    const direction = row?.direction || "context";
+    return direction === "story_to_quest" || direction === "quest_to_story"
+      ? direction
+      : "context";
   }
 
   function storyRelationLabel(relation) {
@@ -1843,6 +1853,7 @@
       client_action_failed: "relationClientFailed",
       leveldata_quest_reference: "relationLevelData",
       levelscript_condition_scope: "relationLevelScript",
+      levelscript_property_story_consumer: "relationLevelScriptPropertyConsumer",
       quest_objective_levelscript_scope_context: "relationQuestObjectiveLevelScriptScope",
       levelscript_mission_context: "relationLevelScriptMission",
       leveldata_levelscript_mission_context: "relationLevelDataScriptHost",
@@ -1951,6 +1962,7 @@
       row.actionType ? `${row.actionType} / slot ${row.actionSlot ?? "?"}` : "",
       row.actionName ? row.actionName : "",
       row.nativeAction ? `native action ${row.nativeAction}` : "",
+      row.nativeEventName ? `native event ${row.nativeEventName}` : "",
       (row.nativeActions || []).length ? `native action ${(row.nativeActions || []).join(", ")}` : "",
       (row.opcodes || []).length ? `opcode ${(row.opcodes || []).join(", ")}` : "",
       (row.nativeActionTags || []).length ? `MemoryPack action tag ${(row.nativeActionTags || []).join(", ")}` : "",
@@ -1977,6 +1989,7 @@
       (row.raisedEventKeys || []).length ? `raised events ${(row.raisedEventKeys || []).join(", ")}` : "",
       (row.producerReceiverModes || []).length ? `event receivers ${(row.producerReceiverModes || []).join(", ")}` : "",
       row.conditionKey ? `condition ${row.conditionKey}` : "",
+      row.conditionValue !== undefined ? `condition value ${row.conditionValue}` : "",
       row.taskKey ? `task ${row.taskKey}` : "",
       row.taskEntryOffsetHex ? `task offset ${row.taskEntryOffsetHex}` : "",
       row.conditionOffsetHex ? `condition offset ${row.conditionOffsetHex}` : "",
@@ -2137,6 +2150,7 @@
       row.levelDataHostStatus ? `LevelData host ${row.levelDataHostStatus}` : "",
       (row.scopeEvidenceKinds || []).length ? `scope ${(row.scopeEvidenceKinds || []).join(", ")}` : "",
       row.questTriggerStatus ? `quest trigger ${row.questTriggerStatus}` : "",
+      row.orderStatus ? `order boundary ${row.orderStatus}` : "",
       row.nativeMappingId ? `mapping ${row.nativeMappingId}` : "",
       row.acceptModeType ? row.acceptModeType : "",
       (row.anchors || []).length ? `anchor ${(row.anchors || []).join(", ")}` : "",
@@ -4049,7 +4063,7 @@
       ["context", t("storyContext"), "context"],
     ];
     const body = connections.length ? `<div class="mp-story-files">${groups.map(([direction, label, className]) => {
-      const rows = connections.filter((row) => (row.direction || "context") === direction);
+      const rows = connections.filter((row) => storyConnectionDirectionGroup(row) === direction);
       if (!rows.length) return "";
       return `<section class="mp-story-group is-${className}"><h4>${esc(label)} <span>${rows.length}</span></h4>${rows.map((row) => storyConnectionLink(row, className, node.id)).join("")}</section>`;
     }).join("")}</div>` : `<p>${esc(t("noStoryFiles"))}</p>`;

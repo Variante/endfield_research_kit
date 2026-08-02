@@ -1432,6 +1432,99 @@ def load_reused_reference_stats(reference_dir: Path, language_code: str) -> dict
     }
 
 
+def select_levelscript_property_story_consumers(
+    script_condition_bindings: dict[tuple[str, str], list[dict]],
+    native_story_playback_index: dict[str, list[dict]],
+) -> list[dict]:
+    """Join typed quest property checks to exact native Story consumers.
+
+    This deliberately matches a serialized pattern rather than named missions,
+    quests, scripts, or Story files.  A bool quest condition must observe the
+    same level/script/property/value as an exact OnPropertyChanged control path
+    whose typed downstream path reaches the indexed Story playback action.
+    Shared script membership or a property string elsewhere in the file is not
+    sufficient.
+    """
+    matches: list[dict] = []
+    for story_key, occurrences in sorted(native_story_playback_index.items()):
+        for occurrence in occurrences:
+            level_id = str(occurrence.get("levelId") or "")
+            script_id = str(occurrence.get("scriptId") or "")
+            source_file = str(occurrence.get("sourceFile") or "")
+            local_id = occurrence.get("localId")
+            if not level_id or not script_id or not source_file:
+                continue
+            conditions = script_condition_bindings.get((level_id, script_id)) or []
+            if not conditions:
+                continue
+            for owner in occurrence.get("nativeEventOwners") or []:
+                detail = owner.get("eventDetail") if isinstance(owner, dict) else None
+                path = owner.get("path") if isinstance(owner, dict) else None
+                if (
+                    owner.get("status") != "exact_serialized_control_path"
+                    or owner.get("headerName") != "ScriptEvent_OnPropertyChanged"
+                    or owner.get("downstreamControlStatus")
+                    != "exact_serialized_typed_reachability"
+                    or not isinstance(detail, dict)
+                    or detail.get("payloadSchemaStatus")
+                    != "exact_current_build_memorypack_fields"
+                    or detail.get("transport") != "local-level-script-variable-event"
+                    or not isinstance(path, list)
+                    or not path
+                ):
+                    continue
+                property_key = str(detail.get("propertyKeyFilter") or "")
+                validate_value = (detail.get("validateParam") or {}).get("constValue")
+                playback_steps = [
+                    step
+                    for step in path
+                    if isinstance(step, dict)
+                    and step.get("localId") == local_id
+                    and str(step.get("recordClass") or "").startswith("play_")
+                ]
+                if (
+                    not property_key
+                    or not isinstance(validate_value, bool)
+                    or len(playback_steps) != 1
+                ):
+                    continue
+                for condition in conditions:
+                    if (
+                        str(condition.get("conditionType") or "")
+                        != "CheckLevelScriptPropertyBool"
+                        or str(condition.get("conditionKey") or "") != property_key
+                        or condition.get("conditionValue") is not validate_value
+                        or not str(condition.get("missionId") or "")
+                        or not str(condition.get("questId") or "")
+                        or not str(condition.get("sourceFile") or "")
+                    ):
+                        continue
+                    matches.append({
+                        "storyKey": story_key,
+                        "missionId": str(condition["missionId"]),
+                        "questId": str(condition["questId"]),
+                        "conditionType": "CheckLevelScriptPropertyBool",
+                        "conditionKey": property_key,
+                        "conditionValue": validate_value,
+                        "levelId": level_id,
+                        "scriptId": script_id,
+                        "sourceFiles": sorted({
+                            source_file,
+                            str(condition["sourceFile"]),
+                        }),
+                        "occurrence": occurrence,
+                        "nativeEventOwner": owner,
+                    })
+    matches.sort(key=lambda row: (
+        natural_key(row["missionId"]),
+        natural_key(row["questId"]),
+        natural_key(row["storyKey"]),
+        natural_key(row["levelId"]),
+        natural_key(row["scriptId"]),
+    ))
+    return matches
+
+
 def build_language_bundle(
     language_code: str,
     out_dir: Path,
@@ -15521,6 +15614,79 @@ def build_language_bundle(
             })
 
     action_story_occurrences = build_levelscript_action_story_occurrences()
+
+    # A quest can observe the same typed local property event that drives a
+    # native Story playback path.  Recover that exact shared trigger before the
+    # broader script-scope pass: otherwise an already-known variant/context row
+    # can suppress the stronger property-specific connection.  This does not
+    # claim that the quest starts playback or that either side precedes the
+    # other; it binds both to the same serialized event/value path.
+    for match in select_levelscript_property_story_consumers(
+        script_condition_bindings,
+        native_story_playback_index,
+    ):
+        target = quest_targets.get(match["questId"])
+        if not target or target[0] != match["missionId"]:
+            continue
+        target_mission, quest = target
+        occurrence = match["occurrence"]
+        owner = match["nativeEventOwner"]
+        connection = {
+            "key": match["storyKey"],
+            "kind": story_kind_by_key.get(match["storyKey"], "story"),
+            "relation": "levelscript_property_story_consumer",
+            "direction": "shared_trigger",
+            "phase": "progress_and_runtime_playback",
+            "confidence": "native_typed_direct",
+            "evidenceTier": "native_direct",
+            "source": (
+                "typed MissionRuntime bool-property condition joined by exact "
+                "level/script/property/value to an original LevelScript "
+                "OnPropertyChanged -> typed downstream Story playback path"
+            ),
+            "conditionType": match["conditionType"],
+            "conditionKey": match["conditionKey"],
+            "conditionValue": match["conditionValue"],
+            "mapId": match["levelId"],
+            "scriptId": match["scriptId"],
+            "nativeAction": str(occurrence.get("actionName") or ""),
+            "opcode": (
+                f"{occurrence.get('actionCode')}/{occurrence.get('actionKind')}"
+            ),
+            "nativeEventName": str(owner.get("headerName") or ""),
+            "nativeEventOwner": owner,
+            "levelScriptOccurrence": occurrence,
+            "sourceFiles": match["sourceFiles"],
+            "questTriggerStatus": (
+                "exact_shared_property_event_not_quest_initiated_playback"
+            ),
+            "orderStatus": (
+                "shared property trigger establishes attachment but no order "
+                "between quest completion and Story playback"
+            ),
+            "executionSide": "client",
+            "networkRole": "local_presentation_and_local_property_observer",
+            "serverExchange": False,
+        }
+        connections = quest.setdefault("storyConnections", [])
+        signature = (
+            connection["key"],
+            connection["relation"],
+            connection["mapId"],
+            connection["scriptId"],
+            connection["conditionKey"],
+        )
+        if not any((
+            str(existing.get("key") or ""),
+            str(existing.get("relation") or ""),
+            str(existing.get("mapId") or ""),
+            str(existing.get("scriptId") or ""),
+            str(existing.get("conditionKey") or ""),
+        ) == signature for existing in connections if isinstance(existing, dict)):
+            connections.append(connection)
+        preexisting_attached_story_keys_by_mission[target_mission].add(
+            match["storyKey"]
+        )
 
     # LevelScriptData can author narrative interactives directly rather than
     # through an ActionBase playback row. Recover the counted

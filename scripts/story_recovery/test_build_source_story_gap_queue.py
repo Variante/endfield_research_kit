@@ -1714,6 +1714,121 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ["e7m4_q#2"],
         )
 
+    def test_repeatable_dialog_finish_is_a_typed_strict_attachment(self) -> None:
+        partial = partial_mission("c1m1", scenes=["dlg_c1m1_1"])
+        payload = mission_payload(quest_ids=["c1m1_q#1"])
+        payload["flow"]["quests"] = [{
+            "id": "c1m1_q#1",
+            "storyConnections": [{
+                "key": "dlg_c1m1_1",
+                "relation": "objective_condition",
+                "direction": "story_to_quest",
+                "phase": "progress",
+                "confidence": "direct",
+                "source": (
+                    "MissionRuntimeAsset.questDic[*].objectiveList[0]"
+                    ".condition._dialogId"
+                ),
+                "objectiveIndex": 1,
+                "conditionType": "CheckRepeatableTalkFinish",
+            }],
+        }]
+        payload["timelineRecovery"]["scenePlacement"] = {
+            "dlg_c1m1_1": {
+                "sceneKey": "dlg_c1m1_1",
+                "questIds": ["c1m1_q#1"],
+                "questAttachSources": [{"source": "missionStoryRef"}],
+            },
+        }
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["strictQuestIdsWithStoryAttachment"], 1)
+        self.assertEqual(row["questIdsWithoutStrictStoryAttachment"], [])
+
+    def test_exact_property_story_consumer_is_a_strict_attachment(self) -> None:
+        story_key = "radio_c1m1_1"
+        quest_id = "c1m1_q#1"
+        partial = partial_mission("c1m1", scenes=[story_key])
+        payload = mission_payload(quest_ids=[quest_id])
+        owner = {
+            "status": "exact_serialized_control_path",
+            "headerName": "ScriptEvent_OnPropertyChanged",
+            "downstreamControlStatus": "exact_serialized_typed_reachability",
+            "eventDetail": {
+                "propertyKeyFilter": "allTalkFinished",
+                "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                "transport": "local-level-script-variable-event",
+                "validateParam": {"constValue": True},
+            },
+            "path": [{"localId": 9, "recordClass": "play_radio"}],
+        }
+        connection = {
+            "key": story_key,
+            "relation": "levelscript_property_story_consumer",
+            "direction": "shared_trigger",
+            "phase": "progress_and_runtime_playback",
+            "confidence": "native_typed_direct",
+            "evidenceTier": "native_direct",
+            "conditionType": "CheckLevelScriptPropertyBool",
+            "conditionKey": "allTalkFinished",
+            "conditionValue": True,
+            "mapId": "level_a",
+            "scriptId": "1001",
+            "nativeEventOwner": owner,
+            "levelScriptOccurrence": {
+                "levelId": "level_a",
+                "scriptId": "1001",
+                "sourceFile": (
+                    "export_full/structured/StreamingAssets/Data/Json/"
+                    "LevelScriptData/level_a/1001.json"
+                ),
+                "recordClass": "play_radio",
+                "localId": 9,
+            },
+            "sourceFiles": [
+                "export_full/structured/Persistent/Data/Json/"
+                "MissionRuntimeAsset/c1m1.json",
+                "export_full/structured/StreamingAssets/Data/Json/"
+                "LevelScriptData/level_a/1001.json",
+            ],
+        }
+        payload["flow"]["quests"] = [{
+            "id": quest_id,
+            "storyConnections": [connection],
+        }]
+        payload["timelineRecovery"]["scenePlacement"] = {
+            story_key: {
+                "sceneKey": story_key,
+                "questIds": [quest_id],
+                "questAttachSources": [{"source": "scriptCondition"}],
+            },
+        }
+
+        row = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+        self.assertEqual(row["questIdsWithoutStrictStoryAttachment"], [])
+
+        connection["nativeEventOwner"]["eventDetail"][
+            "propertyKeyFilter"
+        ] = "different"
+        invalid = gap_queue.build_gap_row(
+            partial,
+            payload,
+            mission_bundle_exists=True,
+        )
+        self.assertEqual(
+            invalid["questIdsWithoutStrictStoryAttachment"],
+            [quest_id],
+        )
+
     def test_exact_sns_tracking_reference_is_strict_attachment_only(
         self,
     ) -> None:
@@ -9123,6 +9238,129 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(
             index["e5m2d5_q#12"]["diagnosticStoryKeys"],
             ["radio_e5m2_7d5", "radio_e5m2_18"],
+        )
+
+    def test_generic_server_placeholder_boundary_uses_typed_shape(self) -> None:
+        mission_dir = (
+            gap_queue.ROOT / "webui" / "data" / "lang" / "CN" / "mission"
+        )
+        payload = gap_queue.load_mission_payload_with_variants(
+            mission_dir,
+            "c16m4",
+        )
+
+        row, failure = gap_queue._classify_server_placeholder_story_boundary(
+            "c16m4",
+            "c16m4d5_q#11",
+            payload,
+        )
+
+        self.assertIsNone(failure)
+        self.assertEqual(
+            row["recoveryStatus"],
+            "closed_server_placeholder_context_without_typed_story_consumer",
+        )
+        self.assertEqual(
+            row["diagnosticRelations"],
+            ["leveldata_quest_reference", "variant_runtime_attachment"],
+        )
+        self.assertIn(
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/c16m4d5.json",
+            row["sourceHashes"],
+        )
+
+    def test_generic_server_placeholder_boundary_fails_closed(self) -> None:
+        mission_dir = (
+            gap_queue.ROOT / "webui" / "data" / "lang" / "CN" / "mission"
+        )
+        payload = gap_queue.load_mission_payload_with_variants(
+            mission_dir,
+            "c16m4",
+        )
+        quest = next(
+            row
+            for row in gap_queue._flow(payload)["quests"]
+            if row["id"] == "c16m4d5_q#11"
+        )
+        quest["storyConnections"][0]["relation"] = "untyped_guess"
+
+        row, failure = gap_queue._classify_server_placeholder_story_boundary(
+            "c16m4",
+            "c16m4d5_q#11",
+            payload,
+        )
+
+        self.assertIsNone(row)
+        self.assertEqual(
+            failure["validator"],
+            "genericServerPlaceholderStoryBoundary",
+        )
+        self.assertEqual(failure["gate"], "context_only_story_relation")
+        self.assertEqual(failure["questId"], "c16m4d5_q#11")
+        self.assertEqual(
+            failure["actual"]["relation"],
+            "untyped_guess",
+        )
+
+    def test_generic_levelscript_condition_boundary_uses_typed_shape(self) -> None:
+        mission_dir = (
+            gap_queue.ROOT / "webui" / "data" / "lang" / "CN" / "mission"
+        )
+        payload = gap_queue.load_mission_payload_with_variants(
+            mission_dir,
+            "sm1l1m6",
+        )
+
+        row, failure = (
+            gap_queue._classify_levelscript_condition_story_boundary(
+                "sm1l1m6",
+                "sm1l1m6_q#19",
+                payload,
+                {},
+            )
+        )
+
+        self.assertIsNone(failure)
+        self.assertEqual(
+            row["recoveryStatus"],
+            "closed_levelscript_condition_scope_without_typed_story_consumer",
+        )
+        self.assertEqual(row["conditionKey"], "blackscreen_end")
+        self.assertEqual(row["diagnosticStoryKeys"], ["dlg_sm1l1m6_5"])
+
+    def test_generic_levelscript_condition_boundary_fails_closed(self) -> None:
+        mission_dir = (
+            gap_queue.ROOT / "webui" / "data" / "lang" / "CN" / "mission"
+        )
+        payload = gap_queue.load_mission_payload_with_variants(
+            mission_dir,
+            "sm1l1m6",
+        )
+        quest = next(
+            row
+            for row in gap_queue._flow(payload)["quests"]
+            if row["id"] == "sm1l1m6_q#19"
+        )
+        quest["storyConnections"][0]["scriptId"] = "different"
+
+        row, failure = (
+            gap_queue._classify_levelscript_condition_story_boundary(
+                "sm1l1m6",
+                "sm1l1m6_q#19",
+                payload,
+                {},
+            )
+        )
+
+        self.assertIsNone(row)
+        self.assertEqual(
+            failure["validator"],
+            "genericLevelScriptConditionStoryBoundary",
+        )
+        self.assertEqual(
+            failure["gate"],
+            "condition_connection_script_agreement",
         )
 
     def test_quest_attachment_diagnostics_fail_closed_on_shape_change(
