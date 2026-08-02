@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 630 (490 MissionRuntime + 140 Story-only recovery shells) |
+| Pipeline missions | 560 (490 MissionRuntime + 70 Story-only recovery shells) |
 | Unique Story files | 5,282 |
 | Connected files | 4,181 (79.2%) |
 | Files with a normalized trigger/context route | 4,402 (83.3%) |
@@ -44,24 +44,27 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch generalizes two more current-build definition
-patterns without per-object declarations. Exact `ReadingPopUpTable` and
-`RichContentTable` shapes qualify 192 readable Story keys across 71 missions;
-exact `DialogTextTable` roots, optional `DialogOptionTable` choices, and
-`AudioDialog` membership qualify 121 unregistered dialog keys across 33
-missions. Both classifiers require a unique mission target and exhaust the
-current native playback, typed carrier, DialogId, Timeline, TextAsset, and
-installed `GameAssembly.dll`/global-metadata root-token surfaces. The dialog
-root matcher uses exact numeric boundaries, so `_1` cannot absorb `_10`.
-Schema mismatches fail closed with bounded diagnostics; zero validation
-failures remain. These are definition/consumer-boundary findings, not playback,
-mission activation, or chronology evidence: table order, line/option ids,
-filename suffixes, OCR, and manual order add no graph edge. Mission Pipeline
-shows the typed tables, carrier audit, and original binaries for runtime
-missions and Story-only shells. Main, event, and major core-isolated queues
-remain at zero actionable rows; character falls from 100 to 35 and other from
-630 to 495. The graph remains 1,485 strong edges, 302 native branch groups,
-and 18 convergences.
+The latest recovery batch adds a third declaration-free current-build
+definition pattern. It requires an exact MemoryPack `DialogId` registration,
+an exact decoded `Beyond.Gameplay.DialogTree` with a verified source hash, a
+unique mission target, and zero typed LevelScript action/native playback,
+object-carrier, mission-route, or installed-binary root-token consumers. An
+optional exact `dlgtl_*` definition is attached as internal presentation only:
+its line/track structure, source roots, and any internal option graph do not
+prove an external activator or cross-file order. Positive playback, runtime,
+definition, or non-mission evidence always takes precedence over negative
+consumer-surface exhaustion. The classifier qualifies 380 definitions across
+113 missions; precedence leaves 59 newly deferred gaps visible (18 character
+files across seven missions and 41 other files across 18 missions), including
+three with attached dialog-Timeline roots. Validators report zero failures.
+Character actionable core-isolated rows fall from 35 to 17 and other rows from
+495 to 454. Exact `ReadingPopUpTable`/`RichContentTable` recovery remains at
+192 keys across 71 missions, and generic unregistered dialog recovery remains
+at 121 keys across 33 missions. All three patterns are definition/consumer
+boundaries, not playback, activation, or chronology evidence: table/registry
+order, line/option ids, filename suffixes, OCR, and manual order add no graph
+edge. The graph remains 1,485 strong edges, 302 native branch groups, and 18
+convergences.
 
 The preceding batch generalized SNS and cutscene definitions. The SNS
 classifier distinguishes 214 definition-only conversations from seven exact
@@ -734,9 +737,9 @@ only.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** main, event, and major have no actionable
-   core-isolated or strict quest-attachment gaps. Character missions retain 35
+   core-isolated or strict quest-attachment gaps. Character missions retain 17
    actionable core-isolated files plus five quest-attachment gaps. Other
-   missions retain 495 actionable core-isolated files, 17 missing mission
+   missions retain 454 actionable core-isolated files, 17 missing mission
    bundles, and three quest-attachment gaps. Broad co-memberships remain
    non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
@@ -752,9 +755,11 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should audit the remaining character frontier as shared registered
-DialogTree/native-playback/black-screen/radio/cutscene patterns, then the five
-character-mission quest-attachment gaps. Extend the same pattern-based approach
+Next work should audit the remaining character frontier as shared typed
+playback/ownership patterns: seven `c6m1` cutscene/misc/radio roots, two
+`c13m2` dialog/radio playback roots, five black-screen roots, and three other
+radios. Then audit the five character-mission quest-attachment gaps. Extend the
+same pattern-based approach
 to other definition families only when their typed schemas and complete
 consumer surfaces can be bounded without weakening the fail-closed rules.
 Within `gm02m23`, the
