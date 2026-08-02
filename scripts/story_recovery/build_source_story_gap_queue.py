@@ -58,10 +58,13 @@ from story_builder.levelscript_binary import (  # noqa: E402
     levelscript_action_map_membership,
     levelscript_record_semantic_key,
 )
+from story_builder.anime_assets import (  # noqa: E402
+    recover_dialog_tree_definition_evidence,
+)
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v110"
+SCHEMA = "sourceStoryGapQueue.v111"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -190,7 +193,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v90"
+    "current-build-offline-story-carrier-exhaustion-v91"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -7512,6 +7515,204 @@ def _generic_unregistered_dialog_definition_facts(
     }, None
 
 
+def _generic_registered_dialog_tree_definition_facts(
+    story_key: str,
+    dialog_id_row: Any,
+    definition: Any,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Validate one registered DialogTree without assuming an activator.
+
+    Registration proves that the current client can resolve the root and the
+    TextAsset proves its internal graph. Neither fact identifies which mission
+    action starts the dialog, so consumer exhaustion is checked separately.
+    """
+    if (
+        not isinstance(dialog_id_row, dict)
+        or dialog_id_row.get("registered") is not True
+        or dialog_id_row.get("memoryPackRecordKey") is not True
+        or dialog_id_row.get("hasRootKey") is not True
+    ):
+        return None, {
+            "validator": "genericRegisteredDialogTreeNegativeConsumer",
+            "gate": "exactCurrentDialogIdRegistration",
+            "storyKey": story_key,
+            "expected": {
+                "registered": True,
+                "memoryPackRecordKey": True,
+                "hasRootKey": True,
+            },
+            "actual": dialog_id_row,
+        }
+    required_definition = {
+        "sceneKey": story_key,
+        "assetName": story_key,
+        "assetType": "Beyond.Gameplay.DialogTree",
+        "evidenceKind": "exact_dialog_tree_definition",
+        "sourceType": "AnimeStudio TextAsset/DialogTree",
+    }
+    actual_definition = {
+        key: definition.get(key)
+        for key in required_definition
+    } if isinstance(definition, dict) else {
+        "type": type(definition).__name__,
+    }
+    source_file = (
+        safe_key(definition.get("sourceFile"))
+        if isinstance(definition, dict) else ""
+    )
+    source_path = ROOT / source_file if source_file else None
+    source_sha256 = (
+        safe_key(definition.get("sourceSha256")).upper()
+        if isinstance(definition, dict) else ""
+    )
+    source_valid = (
+        isinstance(source_path, Path)
+        and source_path.is_file()
+        and source_path.parent.name == "TextAsset"
+        and source_path.name.startswith(f"{story_key}_p")
+        and _sha256_file(source_path).upper() == source_sha256
+    )
+    count_fields = (
+        "nodeCount",
+        "connectionCount",
+        "optionGroupCount",
+        "branchingOptionGroupCount",
+    )
+    structure_valid = (
+        isinstance(definition, dict)
+        and all(definition.get(key) == value for key, value in required_definition.items())
+        and all(
+            isinstance(definition.get(key), int) and definition[key] >= 0
+            for key in count_fields
+        )
+        and definition["nodeCount"] > 0
+        and isinstance(definition.get("nodeTypeCounts"), dict)
+        and sum(definition["nodeTypeCounts"].values()) == definition["nodeCount"]
+        and isinstance(definition.get("lineIds"), list)
+        and isinstance(definition.get("optionIds"), list)
+        and bool(safe_key(definition.get("sourcePathId")))
+        and source_valid
+    )
+    if not structure_valid:
+        return None, {
+            "validator": "genericRegisteredDialogTreeNegativeConsumer",
+            "gate": "exactCurrentDialogTreeDefinition",
+            "storyKey": story_key,
+            "expected": {
+                **required_definition,
+                "positiveNodeCount": True,
+                "nonnegativeStructureCounts": list(count_fields),
+                "exactSourceHash": True,
+            },
+            "actual": {
+                **actual_definition,
+                "sourceFile": source_file,
+                "sourceSha256": source_sha256,
+                "sourceHashMatches": source_valid,
+                **({
+                    key: definition.get(key)
+                    for key in (*count_fields, "nodeTypeCounts")
+                } if isinstance(definition, dict) else {}),
+            },
+        }
+    return {
+        key: definition[key]
+        for key in (
+            "sceneKey",
+            "assetName",
+            "assetType",
+            "lineIds",
+            "optionIds",
+            "nodeCount",
+            "nodeTypeCounts",
+            "connectionCount",
+            "optionGroupCount",
+            "branchingOptionGroupCount",
+            "sourceFile",
+            "sourcePathId",
+            "sourceSha256",
+            "sourceType",
+        )
+    }, None
+
+
+def _generic_dialog_timeline_definition_facts(
+    story_key: str,
+    timeline_row: Any,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Validate optional internal dialog-Timeline evidence for one root."""
+    if timeline_row is None:
+        return None, None
+    source_roots = (
+        timeline_row.get("sourceRoots")
+        if isinstance(timeline_row, dict) else None
+    )
+    source_paths = [
+        ROOT / safe_key(value)
+        for value in source_roots or []
+        if safe_key(value)
+    ]
+    valid = (
+        isinstance(timeline_row, dict)
+        and safe_key(timeline_row.get("dialogKey")) == story_key
+        and safe_key(timeline_row.get("timeline")).startswith("dlgtl_")
+        and isinstance(timeline_row.get("lineIds"), list)
+        and all(isinstance(value, str) for value in timeline_row["lineIds"])
+        and isinstance(timeline_row.get("trackCount"), int)
+        and timeline_row["trackCount"] >= 0
+        and isinstance(timeline_row.get("duplicateClipCount"), int)
+        and timeline_row["duplicateClipCount"] >= 0
+        and isinstance(timeline_row.get("runtimeJumpClips"), list)
+        and isinstance(source_roots, list)
+        and bool(source_roots)
+        and len(source_paths) == len(source_roots)
+        and all(path.is_file() for path in source_paths)
+    )
+    if not valid:
+        return None, {
+            "validator": "genericRegisteredDialogTreeNegativeConsumer",
+            "gate": "exactInternalDialogTimelineDefinition",
+            "storyKey": story_key,
+            "expected": {
+                "dialogKey": story_key,
+                "timelinePrefix": "dlgtl_",
+                "lineIds": "string[]",
+                "nonnegativeTrackCounts": True,
+                "nonemptyExistingSourceRoots": True,
+            },
+            "actual": {
+                "type": type(timeline_row).__name__,
+                "dialogKey": (
+                    timeline_row.get("dialogKey")
+                    if isinstance(timeline_row, dict) else None
+                ),
+                "timeline": (
+                    timeline_row.get("timeline")
+                    if isinstance(timeline_row, dict) else None
+                ),
+                "lineIdsType": type(
+                    timeline_row.get("lineIds")
+                    if isinstance(timeline_row, dict) else None
+                ).__name__,
+                "sourceRoots": source_roots,
+                "existingSourceRoots": sum(path.is_file() for path in source_paths),
+            },
+        }
+    return {
+        "timeline": timeline_row["timeline"],
+        "dialogKey": timeline_row["dialogKey"],
+        "lineIds": list(timeline_row["lineIds"]),
+        "trackCount": timeline_row["trackCount"],
+        "duplicateClipCount": timeline_row["duplicateClipCount"],
+        "runtimeJumpClips": list(timeline_row["runtimeJumpClips"]),
+        "source": safe_key(timeline_row.get("source")),
+        "sourceRoots": list(source_roots),
+        "evidenceKind": "exact_internal_dialog_timeline_definition",
+        "activationEvidence": False,
+        "crossFileOrderEvidence": False,
+    }, None
+
+
 def _generic_radio_definition_facts(
     story_key: str,
     row: Any,
@@ -10033,6 +10234,7 @@ def build_offline_exhaustion_index(
     gameobject_audit_path: Path | None = None,
     reverse_pptr_audit_path: Path | None = None,
     native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
+    action_story_occurrences: dict[str, list[dict[str, Any]]] | None = None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     """Build hash-locked current-build deferrals for exhausted offline rows.
 
@@ -14282,6 +14484,205 @@ def build_offline_exhaustion_index(
                 "graphEffect": "none",
             }
 
+    registered_tree_evidence_by_key: dict[str, dict[str, Any]] = {}
+    registered_tree_validation_failures: list[dict[str, Any]] = []
+    registered_tree_exclusions: dict[str, list[str]] = {
+        "declaredSpecialCase": [],
+        "alreadyRecoveredTypedConsumer": [],
+        "alreadyRecoveredHigherPrecedenceEvidence": [],
+        "ambiguousMission": [],
+        "nativePlayback": [],
+        "typedLevelScriptAction": [],
+        "typedObjectCarrier": [],
+        "dialogRegistry": [],
+        "missingDialogTreeDefinition": [],
+        "binaryRootTokenPresent": [],
+        "invalidDefinition": [],
+    }
+    registered_tree_definition_facts: dict[str, dict[str, Any]] = {}
+    if native_playback_index is not None and action_story_occurrences is not None:
+        for story_key, missions in sorted(
+            core_targets.items(),
+            key=lambda item: natural_key(item[0]),
+        ):
+            if not story_key.startswith("dlg_"):
+                continue
+            if story_key in declared_dialog_keys:
+                registered_tree_exclusions["declaredSpecialCase"].append(story_key)
+                continue
+            if story_key in generic_npc_proxy_evidence_by_key:
+                registered_tree_exclusions[
+                    "alreadyRecoveredTypedConsumer"
+                ].append(story_key)
+                continue
+            if len(missions) != 1:
+                registered_tree_exclusions["ambiguousMission"].append(story_key)
+                continue
+            if native_playback_index.get(story_key) or []:
+                registered_tree_exclusions["nativePlayback"].append(story_key)
+                continue
+            if action_story_occurrences.get(story_key) or []:
+                registered_tree_exclusions["typedLevelScriptAction"].append(story_key)
+                continue
+            if story_key not in no_candidate_keys:
+                registered_tree_exclusions["typedObjectCarrier"].append(story_key)
+                continue
+            dialog_id_row = dialog_id_index.get(story_key)
+            if not isinstance(dialog_id_row, dict):
+                registered_tree_exclusions["dialogRegistry"].append(story_key)
+                continue
+            definition = recover_dialog_tree_definition_evidence(story_key)
+            if definition is None:
+                registered_tree_exclusions["missingDialogTreeDefinition"].append(story_key)
+                continue
+            facts, failure = _generic_registered_dialog_tree_definition_facts(
+                story_key,
+                dialog_id_row,
+                definition,
+            )
+            if failure is not None:
+                failure["sourcePaths"] = [
+                    str(source_paths["dialogIdIndex"]),
+                    str(cutscene_definition_root),
+                ]
+                failure["sourceSha256"] = {
+                    "dialogIdIndex": actual_hashes.get("dialogIdIndex", ""),
+                    "dialogTreeDefinition": safe_key(definition.get("sourceSha256")),
+                }
+                registered_tree_validation_failures.append(failure)
+                registered_tree_exclusions["invalidDefinition"].append(story_key)
+                continue
+            timeline_facts, timeline_failure = (
+                _generic_dialog_timeline_definition_facts(
+                    story_key,
+                    timeline_line_orders.get(story_key),
+                )
+            )
+            if timeline_failure is not None:
+                timeline_failure["sourcePaths"] = [
+                    str(source_paths["timelineLineOrders"]),
+                    *(
+                        timeline_line_orders.get(story_key, {}).get("sourceRoots")
+                        or []
+                    ),
+                ]
+                timeline_failure["sourceSha256"] = {
+                    "timelineLineOrders": actual_hashes.get(
+                        "timelineLineOrders", ""
+                    ),
+                }
+                registered_tree_validation_failures.append(timeline_failure)
+                registered_tree_exclusions["invalidDefinition"].append(story_key)
+                continue
+            facts["dialogTimelineDefinition"] = timeline_facts
+            registered_tree_definition_facts[story_key] = facts
+
+        registered_tree_binary_present = (
+            _present_literal_keys(
+                game_assembly_bytes,
+                {key: key for key in registered_tree_definition_facts},
+                "utf-8",
+            )
+            | _present_literal_keys(
+                game_assembly_bytes,
+                {key: key for key in registered_tree_definition_facts},
+                "utf-16le",
+            )
+            | _present_literal_keys(
+                global_metadata_bytes,
+                {key: key for key in registered_tree_definition_facts},
+                "utf-8",
+            )
+            | _present_literal_keys(
+                global_metadata_bytes,
+                {key: key for key in registered_tree_definition_facts},
+                "utf-16le",
+            )
+        )
+        registered_tree_exclusions["binaryRootTokenPresent"] = sorted(
+            registered_tree_binary_present,
+            key=natural_key,
+        )
+        for story_key, facts in sorted(
+            registered_tree_definition_facts.items(),
+            key=lambda item: natural_key(item[0]),
+        ):
+            if story_key in registered_tree_binary_present:
+                continue
+            mission_id = next(iter(core_targets[story_key]))
+            registered_tree_evidence_by_key[story_key] = {
+                "sceneKey": story_key,
+                "missionId": mission_id,
+                "recoveryStatus": "deferred_current_build_offline_surface_exhausted",
+                "evidenceKind": (
+                    "registered_dialog_tree_definition_binary_consumer_surface_exhausted"
+                ),
+                **facts,
+                "definitionSourceFiles": [
+                    facts["sourceFile"],
+                    *((facts.get("dialogTimelineDefinition") or {}).get(
+                        "sourceRoots"
+                    ) or []),
+                ],
+                "sourceFiles": [
+                    source_display_path(source_paths["dialogIdSource"]),
+                    source_display_path(source_paths["dialogIdIndex"]),
+                    source_display_path(carrier_audit_path),
+                ],
+                "originalBinaryFiles": [
+                    source_display_path(source_paths["gameAssembly"]),
+                    source_display_path(source_paths["globalMetadata"]),
+                ],
+                "dialogIdRegistrationStatus": "exact_current_dialog_id_registry",
+                "dialogTreeDefinitionStatus": "exact_current_dialog_tree",
+                "dialogTimelineDefinitionStatus": (
+                    "exact_internal_dialog_timeline"
+                    if facts.get("dialogTimelineDefinition")
+                    else "absent"
+                ),
+                "levelScriptActionCensusStatus": "zero_typed_action_occurrences",
+                "nativePlaybackStatus": "zero_typed_native_playback_occurrences",
+                "carrierAuditStatus": "no_typed_story_owner_or_runtime_carrier",
+                "carrierAuditTargetSetSha256": core_target_digest,
+                "binaryRootTokenStatus": (
+                    "absent_utf8_and_utf16le_in_current_game_binaries"
+                ),
+                "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+                "gameAssemblySha256": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+                "globalMetadataSha256": OFFLINE_EXHAUSTION_METADATA_SHA256,
+                "searchedConsumerKinds": [
+                    "MissionRuntime Story routes",
+                    "complete typed LevelScript action-list census",
+                    "typed native LevelScript playback index",
+                    "GameplayConfig Story routes",
+                    "dialog Timeline definitions and external Timeline routes",
+                    "typed AnimeStudio owner/runtime object carriers",
+                    "GameAssembly exact UTF-8/UTF-16 root tokens",
+                    "global-metadata exact UTF-8/UTF-16 root tokens",
+                ],
+                "consumerBoundary": (
+                    "the exact current DialogId registration proves a loadable root "
+                    "and the exact DialogTree TextAsset proves its internal authored "
+                    "graph and any exact dialog Timeline proves only internal "
+                    "presentation; the complete current typed LevelScript action/native "
+                    "playback census, MissionRuntime and GameplayConfig routes, "
+                    "external Timeline routes, AnimeStudio carrier audit, GameAssembly, and "
+                    "global metadata expose no mission activator or owner"
+                ),
+                "orderBoundary": (
+                    "DialogTree nodes, connections, lines, and option groups order "
+                    "content only inside this dialog; registry/table order, asset "
+                    "paths, numeric suffixes, OCR, and manual display order do not "
+                    "establish mission activation or cross-file chronology"
+                ),
+                "reopenWhen": (
+                    "the installed binary, DialogId registry, DialogTree asset, "
+                    "LevelScript action census, generated Story routes, object "
+                    "index, or another typed producer/consumer changes"
+                ),
+                "graphEffect": "none",
+            }
+
     num_id_table = read_json(source_paths["numIdStrTable"], {})
     timeline_ids = (
         ((num_id_table.get("timelines_id") or {}).get("dic") or {})
@@ -15556,6 +15957,19 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
+    for story_key in sorted(
+        set(registered_tree_evidence_by_key) & set(index),
+        key=natural_key,
+    ):
+        registered_tree_exclusions[
+            "alreadyRecoveredHigherPrecedenceEvidence"
+        ].append(story_key)
+        del registered_tree_evidence_by_key[story_key]
+    for story_key, evidence in sorted(
+        registered_tree_evidence_by_key.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        index[story_key] = evidence
     for row in index.values():
         mission_id = safe_key(row.get("missionId"))
         branch_context = mission_branch_context_by_mission.get(mission_id)
@@ -15790,6 +16204,49 @@ def build_offline_exhaustion_index(
                     "gameAssembly",
                     "globalMetadata",
                 )
+            },
+            "carrierAuditTargetSetSha256": core_target_digest,
+            "graphEffect": "none",
+        },
+        "genericRegisteredDialogTreeNegativeConsumerEvidence": {
+            "status": (
+                "active"
+                if (
+                    native_playback_index is not None
+                    and action_story_occurrences is not None
+                )
+                else "inactive_action_or_native_playback_index_unavailable"
+            ),
+            "qualifiedStoryKeys": len(registered_tree_evidence_by_key),
+            "qualifiedMissions": len({
+                row["missionId"]
+                for row in registered_tree_evidence_by_key.values()
+            }),
+            "validationFailures": registered_tree_validation_failures,
+            "exclusions": {
+                key: sorted(values, key=natural_key)
+                for key, values in registered_tree_exclusions.items()
+            },
+            "sourcePaths": {
+                "dialogIdSource": str(source_paths["dialogIdSource"]),
+                "dialogIdIndex": str(source_paths["dialogIdIndex"]),
+                "textAssetRoot": str(cutscene_definition_root),
+                "carrierAudit": str(carrier_audit_path),
+                "gameAssembly": str(source_paths["gameAssembly"]),
+                "globalMetadata": str(source_paths["globalMetadata"]),
+            },
+            "sourceSha256": {
+                name: actual_hashes.get(name, "")
+                for name in (
+                    "dialogIdSource",
+                    "dialogIdIndex",
+                    "gameAssembly",
+                    "globalMetadata",
+                )
+            },
+            "actionCensus": {
+                "mappingId": "current-build-levelscript-action-story-occurrence-census-v1",
+                "qualifiedKeysHaveZeroOccurrences": True,
             },
             "carrierAuditTargetSetSha256": core_target_digest,
             "graphEffect": "none",
@@ -20178,6 +20635,21 @@ def build_gap_row(
             cross_owner_story_connections,
         )
     )
+    # Positive playback/runtime/definition evidence has precedence over a
+    # negative consumer-surface exhaustion result. Keep the offline index
+    # reusable and corpus-wide, but never expose the same scene as both
+    # positively closed and negatively deferred in the mission queue.
+    positive_closure_keys = (
+        closed_exact_native_isolated_keys
+        | closed_exact_runtime_config_isolated_keys
+        | closed_definition_only_isolated_keys
+        | closed_non_mission_content_isolated_keys
+    )
+    deferred_offline_exhausted_isolated = [
+        row
+        for row in deferred_offline_exhausted_isolated
+        if safe_key(row.get("sceneKey")) not in positive_closure_keys
+    ]
     deferred_offline_exhausted_isolated_keys = {
         row["sceneKey"]
         for row in deferred_offline_exhausted_isolated
@@ -21305,6 +21777,7 @@ def main(argv: list[str] | None = None) -> int:
             args.table_root,
             game_assembly_path=args.game_assembly,
             native_playback_index=native_playback_index,
+            action_story_occurrences=action_story_occurrences,
         )
     )
     (

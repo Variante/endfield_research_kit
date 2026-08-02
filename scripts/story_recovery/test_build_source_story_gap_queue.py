@@ -15,7 +15,11 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import build_source_story_gap_queue as gap_queue  # noqa: E402
 from story_builder.level_bindings import (  # noqa: E402
+    build_levelscript_action_story_occurrences,
     build_levelscript_native_story_playback_index,
+)
+from story_builder.anime_assets import (  # noqa: E402
+    recover_dialog_tree_definition_evidence,
 )
 
 
@@ -291,6 +295,87 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
         self.assertEqual(failure["gate"], "exactDialogOptionShape")
         self.assertEqual(failure["storyKey"], story_key)
+
+    def test_generic_registered_dialog_tree_validates_exact_definition(self) -> None:
+        story_key = "dlg_c27m4_15"
+        definition = recover_dialog_tree_definition_evidence(story_key)
+        facts, failure = (
+            gap_queue._generic_registered_dialog_tree_definition_facts(
+                story_key,
+                {
+                    "registered": True,
+                    "memoryPackRecordKey": True,
+                    "hasRootKey": True,
+                },
+                definition,
+            )
+        )
+
+        self.assertIsNone(failure)
+        self.assertEqual(facts["sceneKey"], story_key)
+        self.assertEqual(facts["assetType"], "Beyond.Gameplay.DialogTree")
+        self.assertEqual(facts["nodeCount"], 2)
+        self.assertTrue(facts["sourceSha256"])
+
+    def test_generic_registered_dialog_tree_reports_source_hash_failure(self) -> None:
+        story_key = "dlg_c27m4_15"
+        definition = recover_dialog_tree_definition_evidence(story_key)
+        invalid = {**definition, "sourceSha256": "0" * 64}
+        facts, failure = (
+            gap_queue._generic_registered_dialog_tree_definition_facts(
+                story_key,
+                {
+                    "registered": True,
+                    "memoryPackRecordKey": True,
+                    "hasRootKey": True,
+                },
+                invalid,
+            )
+        )
+
+        self.assertIsNone(facts)
+        self.assertEqual(
+            failure["validator"],
+            "genericRegisteredDialogTreeNegativeConsumer",
+        )
+        self.assertEqual(failure["gate"], "exactCurrentDialogTreeDefinition")
+        self.assertFalse(failure["actual"]["sourceHashMatches"])
+
+    def test_generic_dialog_timeline_is_internal_definition_only(self) -> None:
+        timeline_rows = gap_queue.read_json(
+            gap_queue.ROOT
+            / "export_full/recovered/AnimeStudio-cli/timeline_line_orders.json",
+            {},
+        )
+        facts, failure = gap_queue._generic_dialog_timeline_definition_facts(
+            "dlg_c6m1_27",
+            timeline_rows["dlg_c6m1_27"],
+        )
+
+        self.assertIsNone(failure)
+        self.assertEqual(facts["timeline"], "dlgtl_c6m1_27_sub_1")
+        self.assertFalse(facts["activationEvidence"])
+        self.assertFalse(facts["crossFileOrderEvidence"])
+        self.assertTrue(facts["sourceRoots"])
+
+    def test_generic_dialog_timeline_reports_missing_source_root(self) -> None:
+        timeline_rows = gap_queue.read_json(
+            gap_queue.ROOT
+            / "export_full/recovered/AnimeStudio-cli/timeline_line_orders.json",
+            {},
+        )
+        invalid = {
+            **timeline_rows["dlg_c6m1_27"],
+            "sourceRoots": ["export_full/recovered/missing-dialog-timeline.json"],
+        }
+        facts, failure = gap_queue._generic_dialog_timeline_definition_facts(
+            "dlg_c6m1_27",
+            invalid,
+        )
+
+        self.assertIsNone(facts)
+        self.assertEqual(failure["gate"], "exactInternalDialogTimelineDefinition")
+        self.assertEqual(failure["actual"]["existingSourceRoots"], 0)
 
     def test_generic_missionless_npc_proxy_consumer_recovers_identity(self) -> None:
         story_key = "dlg_fixture_1"
@@ -7192,6 +7277,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             native_playback_index=(
                 build_levelscript_native_story_playback_index()
             ),
+            action_story_occurrences=(
+                build_levelscript_action_story_occurrences()
+            ),
         )
         self.assertEqual("active", status["status"])
         generic_cutscene = offline_index["cutscene_gm02m10_1"]
@@ -7204,6 +7292,17 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         cutscene_status = status["genericCutsceneDefinitionEvidence"]
         self.assertEqual(cutscene_status["validationFailures"], [])
         self.assertEqual(cutscene_status["qualifiedStoryKeys"], 28)
+        registered_tree_status = status[
+            "genericRegisteredDialogTreeNegativeConsumerEvidence"
+        ]
+        self.assertEqual(registered_tree_status["validationFailures"], [])
+        self.assertGreaterEqual(registered_tree_status["qualifiedStoryKeys"], 375)
+        self.assertEqual(
+            offline_index["dlg_c27m4_15"]["evidenceKind"],
+            "registered_dialog_tree_definition_binary_consumer_surface_exhausted",
+        )
+        self.assertEqual(offline_index["dlg_c27m4_15"]["graphEffect"], "none")
+        self.assertNotIn("dlg_c13m2_9", offline_index)
         missing_definition = next(
             row
             for row in cutscene_status["qualificationDiagnostics"]
