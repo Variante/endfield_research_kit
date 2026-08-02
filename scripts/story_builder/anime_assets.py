@@ -2062,38 +2062,92 @@ def recover_dialog_tree_prime_reachable_story_playback_carriers(
         dialog_key = _anime_tree_logical_stem(path)
         if eligible is not None and dialog_key not in eligible:
             continue
-        registry_row = dialog_id_registry.get(dialog_key)
-        if (
-            not dialog_key.startswith("dlg_")
-            or not isinstance(registry_row, dict)
-            or registry_row.get("registered") is not True
-            or registry_row.get("memoryPackRecordKey") is not True
-            or "memorypack_record_key"
-            not in (registry_row.get("registrationEvidence") or [])
-        ):
-            continue
-        payload = _load_anime_resource_payload(path)
-        if not isinstance(payload, dict):
-            continue
-        asset_name = str(payload.get("_assetName") or "").strip()
-        if asset_name != dialog_key:
-            continue
-        for record in _extract_dialog_tree_prime_reachable_story_playback_carriers(
+        out.extend(
+            _recover_dialog_tree_prime_reachable_carriers_from_path(
+                path,
+                dialog_key,
+                dialog_id_registry,
+                story_keys,
+                authored_text_ids,
+            )
+        )
+    out.sort(key=lambda row: (
+        str(row.get("storyKey") or ""),
+        str(row.get("dialogKey") or ""),
+        int(row.get("nodeIndex") or 0),
+        str(row.get("sourceFile") or ""),
+    ))
+    return out
+
+
+def _recover_dialog_tree_prime_reachable_carriers_from_path(
+    path: Path,
+    dialog_key: str,
+    dialog_id_registry: dict[str, dict],
+    story_keys: set[str],
+    authored_text_ids: set[str],
+) -> list[dict]:
+    """Parse one registered parent asset into exact prime-reachable carriers."""
+    registry_row = dialog_id_registry.get(dialog_key)
+    if (
+        not dialog_key.startswith("dlg_")
+        or not isinstance(registry_row, dict)
+        or registry_row.get("registered") is not True
+        or registry_row.get("memoryPackRecordKey") is not True
+        or "memorypack_record_key"
+        not in (registry_row.get("registrationEvidence") or [])
+        or _anime_tree_logical_stem(path) != dialog_key
+    ):
+        return []
+    payload = _load_anime_resource_payload(path)
+    if not isinstance(payload, dict):
+        return []
+    asset_name = str(payload.get("_assetName") or "").strip()
+    if asset_name != dialog_key:
+        return []
+    return [{
+        **record,
+        "assetName": asset_name,
+        "registeredDialogRoot": True,
+        "registrationEvidence": ["memorypack_record_key"],
+        "sourceFile": repo_rel(path),
+        "sourcePathId": path_id_export_path_id(path.stem),
+        "sourceType": "AnimeStudio TextAsset/DialogTree",
+    } for record in (
+        _extract_dialog_tree_prime_reachable_story_playback_carriers(
             payload,
             dialog_key,
             story_keys,
             authored_text_ids,
             set(dialog_id_registry),
-        ):
-            out.append({
-                **record,
-                "assetName": asset_name,
-                "registeredDialogRoot": True,
-                "registrationEvidence": ["memorypack_record_key"],
-                "sourceFile": repo_rel(path),
-                "sourcePathId": path_id_export_path_id(path.stem),
-                "sourceType": "AnimeStudio TextAsset/DialogTree",
-            })
+        )
+    )]
+
+
+def recover_dialog_tree_prime_reachable_carriers_for_parent(
+    dialog_id_registry: dict[str, dict],
+    parent_dialog_key: str,
+    story_keys: set[str],
+    authored_text_ids: set[str],
+) -> list[dict]:
+    """Re-derive exact carrier paths from one current registered parent.
+
+    This focused form is intended for fail-closed validators. It avoids a
+    corpus scan and never accepts a caller-provided source path as proof.
+    """
+    dialog_key = str(parent_dialog_key or "").strip()
+    if not dialog_key:
+        return []
+    path = _find_anime_tree_path(dialog_key)
+    if not path.is_file():
+        return []
+    out = _recover_dialog_tree_prime_reachable_carriers_from_path(
+        path,
+        dialog_key,
+        dialog_id_registry,
+        story_keys,
+        authored_text_ids,
+    )
     out.sort(key=lambda row: (
         str(row.get("storyKey") or ""),
         str(row.get("dialogKey") or ""),

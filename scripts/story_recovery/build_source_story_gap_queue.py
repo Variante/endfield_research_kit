@@ -19,6 +19,7 @@ import re
 import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -61,11 +62,12 @@ from story_builder.levelscript_binary import (  # noqa: E402
 )
 from story_builder.anime_assets import (  # noqa: E402
     recover_dialog_tree_definition_evidence,
+    recover_dialog_tree_prime_reachable_carriers_for_parent,
 )
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v116"
+SCHEMA = "sourceStoryGapQueue.v117"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -1248,53 +1250,6 @@ OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS = {
         "scriptId": "2100110003",
         "taskKey": "f7239bd1",
         "conditionKey": "10bf8411",
-    },
-}
-EXACT_PARENT_DIALOG_DEPENDENCIES = {
-    "dlg_a1m4_2": {
-        "missionId": "a1m4",
-        "questId": "a1m4_q#IntroDialog",
-        "parentStoryKey": "dlg_a1m4_1",
-        "sourceFile": (
-            "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
-            "json_by_type/TextAsset/dlg_a1m4_1_p14B2A876733D2220.json"
-        ),
-        "sourceSha256":
-            "E1AD79F7324E3772BB1CB8D95352A55C955F1229C1867EF33541982AD5059382",
-        "sourcePathId": "14B2A876733D2220",
-        "carrierKind": "trunk",
-        "trunkIds": ("dlg_a1m4_2_001", "dlg_a1m4_2_002"),
-        "carrierCount": 2,
-    },
-    "dlg_gm01m22_6": {
-        "missionId": "gm01m22",
-        "questId": "gm01m22_q#27",
-        "parentStoryKey": "dlg_gm01m22_hapo",
-        "sourceFile": (
-            "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
-            "json_by_type/TextAsset/dlg_gm01m22_hapo_p4AEE0BFF15D9FD8F.json"
-        ),
-        "sourceSha256":
-            "E8C224D75F98349C9272C16222538DC73BC0F99623DE974B2AC86941E85B5D08",
-        "sourcePathId": "4AEE0BFF15D9FD8F",
-        "carrierKind": "dialog",
-        "dialogIds": ("dlg_gm01m22_6",),
-        "carrierCount": 1,
-    },
-    "dlg_gm01m22_8": {
-        "missionId": "gm01m22",
-        "questId": "gm01m22_q#27",
-        "parentStoryKey": "dlg_gm01m22_hapo",
-        "sourceFile": (
-            "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
-            "json_by_type/TextAsset/dlg_gm01m22_hapo_p4AEE0BFF15D9FD8F.json"
-        ),
-        "sourceSha256":
-            "E8C224D75F98349C9272C16222538DC73BC0F99623DE974B2AC86941E85B5D08",
-        "sourcePathId": "4AEE0BFF15D9FD8F",
-        "carrierKind": "dialog",
-        "dialogIds": ("dlg_gm01m22_8",),
-        "carrierCount": 1,
     },
 }
 OFFLINE_EXHAUSTION_REVERSE_PPTR_MAPPING_ID = (
@@ -21280,6 +21235,526 @@ def _closed_exact_system_selector_isolated_scenes(
     return closed, failures
 
 
+@lru_cache(maxsize=1)
+def _current_dialog_id_index_for_validation() -> dict[str, Any]:
+    value = read_json(
+        ROOT / "export_full" / "recovered" / "dialog_id_table_index.json",
+        {},
+    )
+    return value if isinstance(value, dict) else {}
+
+
+def _generic_prime_reachable_dialog_dependency_facts(
+    row: Any,
+    scene_key: str,
+    owner_mission: str,
+    quest_id: str,
+    *,
+    dialog_id_index: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Validate a typed parent-DialogTree carrier without an object catalog."""
+    validator = "genericPrimeReachableDialogDependency"
+    required_route = {
+        "key": scene_key,
+        "relation": "dialog_tree_prime_reachable_story_playback_dependency",
+        "direction": "context",
+        "phase": "dialog_tree_prime_reachable_story_playback",
+        "confidence": "native_exact_prime_reachable_parent_quest_dependency",
+        "evidenceTier": "native_exact_context",
+        "storyOwnerMission": owner_mission,
+        "storyBinding": True,
+        "ownership": False,
+        "dependencyOnly": True,
+        "questActivation": False,
+        "questPlayback": False,
+        "questCompletion": False,
+        "questTriggerStatus": (
+            "exact_parent_dialog_completion_context_not_quest_playback_trigger"
+        ),
+        "nativeMappingId": (
+            "dialog-tree-prime-reachable-completion-dependency-native-v1"
+        ),
+    }
+    if not isinstance(row, dict) or any(
+        row.get(field) != expected
+        for field, expected in required_route.items()
+    ):
+        actual = {
+            field: row.get(field)
+            for field in required_route
+        } if isinstance(row, dict) else {
+            "type": type(row).__name__,
+        }
+        return None, {
+            "validator": validator,
+            "gate": "exactNonOwningQuestDependencyEnvelope",
+            "missionId": owner_mission,
+            "questId": quest_id,
+            "storyKey": scene_key,
+            "expected": required_route,
+            "actual": actual,
+        }
+    parent_story_key = safe_key(row.get("parentStoryKey"))
+    carriers = [
+        carrier
+        for carrier in row.get("dialogTreePrimeStoryPlaybackCarriers") or []
+        if isinstance(carrier, dict)
+    ]
+    trunk_ids = _string_list(row.get("trunkIds"))
+    dialog_ids = _string_list(row.get("dialogIds"))
+    source_files = _string_list(row.get("sourceFiles"))
+    source_path_ids = _string_list(row.get("sourcePathIds"))
+    if (
+        not parent_story_key
+        or not carriers
+        or len(source_files) != 1
+        or len(source_path_ids) != 1
+        or bool(trunk_ids) == bool(dialog_ids)
+    ):
+        return None, {
+            "validator": validator,
+            "gate": "boundedTypedCarrierSet",
+            "missionId": owner_mission,
+            "questId": quest_id,
+            "storyKey": scene_key,
+            "expected": {
+                "oneParentStoryKey": True,
+                "positiveCarrierCount": True,
+                "sourceFileCount": 1,
+                "sourcePathIdCount": 1,
+                "exactlyOneCarrierIdKind": True,
+            },
+            "actual": {
+                "parentStoryKey": parent_story_key,
+                "carrierCount": len(carriers),
+                "sourceFiles": source_files,
+                "sourcePathIds": source_path_ids,
+                "trunkIds": trunk_ids,
+                "dialogIds": dialog_ids,
+            },
+        }
+    current_registry = (
+        dialog_id_index
+        if isinstance(dialog_id_index, dict)
+        else _current_dialog_id_index_for_validation()
+    )
+    current_carriers = (
+        recover_dialog_tree_prime_reachable_carriers_for_parent(
+            current_registry,
+            parent_story_key,
+            {scene_key},
+            set(trunk_ids),
+        )
+    )
+    if carriers != current_carriers:
+        return None, {
+            "validator": validator,
+            "gate": "freshSerializedPrimeReachability",
+            "missionId": owner_mission,
+            "questId": quest_id,
+            "storyKey": scene_key,
+            "sourcePath": source_files[0],
+            "expected": {
+                "carrierCount": len(current_carriers),
+                "carrierValues": [
+                    safe_key(carrier.get("carrierValue"))
+                    for carrier in current_carriers
+                ],
+                "sourceFiles": sorted({
+                    safe_key(carrier.get("sourceFile"))
+                    for carrier in current_carriers
+                }),
+                "sourcePathIds": sorted({
+                    safe_key(carrier.get("sourcePathId"))
+                    for carrier in current_carriers
+                }),
+            },
+            "actual": {
+                "carrierCount": len(carriers),
+                "carrierValues": [
+                    safe_key(carrier.get("carrierValue"))
+                    for carrier in carriers
+                ],
+                "sourceFiles": source_files,
+                "sourcePathIds": source_path_ids,
+            },
+        }
+    current_trunk_ids = [
+        safe_key(carrier.get("carrierValue"))
+        for carrier in current_carriers
+        if safe_key(carrier.get("carrierKind")) == "trunk"
+    ]
+    current_dialog_ids = [
+        safe_key(carrier.get("carrierValue"))
+        for carrier in current_carriers
+        if safe_key(carrier.get("carrierKind")) == "dialog"
+    ]
+    if (
+        source_files
+        != sorted({
+            safe_key(carrier.get("sourceFile"))
+            for carrier in current_carriers
+        })
+        or source_path_ids
+        != sorted({
+            safe_key(carrier.get("sourcePathId"))
+            for carrier in current_carriers
+        })
+        or trunk_ids != current_trunk_ids
+        or dialog_ids != current_dialog_ids
+    ):
+        return None, {
+            "validator": validator,
+            "gate": "exactCarrierProjection",
+            "missionId": owner_mission,
+            "questId": quest_id,
+            "storyKey": scene_key,
+            "sourcePath": source_files[0],
+            "expected": {
+                "sourceFiles": sorted({
+                    safe_key(carrier.get("sourceFile"))
+                    for carrier in current_carriers
+                }),
+                "sourcePathIds": sorted({
+                    safe_key(carrier.get("sourcePathId"))
+                    for carrier in current_carriers
+                }),
+                "trunkIds": current_trunk_ids,
+                "dialogIds": current_dialog_ids,
+            },
+            "actual": {
+                "sourceFiles": source_files,
+                "sourcePathIds": source_path_ids,
+                "trunkIds": trunk_ids,
+                "dialogIds": dialog_ids,
+            },
+        }
+    source_path = ROOT / source_files[0]
+    source_valid = (
+        source_path.is_file()
+        and source_path.parent.name == "TextAsset"
+        and source_path.name.startswith(
+            f"{parent_story_key}_p{source_path_ids[0]}"
+        )
+    )
+    if not source_valid:
+        return None, {
+            "validator": validator,
+            "gate": "exactCurrentParentSource",
+            "missionId": owner_mission,
+            "questId": quest_id,
+            "storyKey": scene_key,
+            "sourcePath": source_files[0],
+            "expected": {
+                "exists": True,
+                "parentDirectory": "TextAsset",
+                "filenamePrefix": (
+                    f"{parent_story_key}_p{source_path_ids[0]}"
+                ),
+            },
+            "actual": {
+                "exists": source_path.is_file(),
+                "parentDirectory": source_path.parent.name,
+                "filename": source_path.name,
+            },
+        }
+    return {
+        "sceneKey": scene_key,
+        "recoveryStatus": (
+            "closed_exact_parent_dialog_dependency_no_relative_order"
+        ),
+        "relation": required_route["relation"],
+        "missionId": owner_mission,
+        "questId": quest_id,
+        "parentStoryKey": parent_story_key,
+        "carrierKinds": sorted({
+            safe_key(carrier.get("carrierKind"))
+            for carrier in current_carriers
+        }),
+        "trunkIds": trunk_ids,
+        "dialogIds": dialog_ids,
+        "dialogTreePrimeStoryPlaybackCarriers": current_carriers,
+        "sourceFiles": source_files,
+        "sourcePathIds": source_path_ids,
+        "sourceSha256": {
+            source_files[0]: _sha256_file(source_path),
+        },
+        "nativeMappingId": required_route["nativeMappingId"],
+        "gameAssemblySha256": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+        "playbackSemantics": (
+            "the current registered parent DialogTree's exact prime-node "
+            "paths reach every typed Story carrier retained for this file"
+        ),
+        "activationBoundary": (
+            "MissionRuntime observes completion of the parent dialog; it "
+            "does not identify the activator of either dialog"
+        ),
+        "orderBoundary": (
+            "prime-node reachability orders nodes inside the parent "
+            "DialogTree only; it creates no inter-file chronology"
+        ),
+    }, None
+
+
+@lru_cache(maxsize=1)
+def _current_game_assembly_sha256_for_validation() -> str:
+    path = _configured_game_assembly_path()
+    return _sha256_file(path).upper() if path.is_file() else ""
+
+
+def _generic_registered_dialog_non_owning_context_facts(
+    row: Any,
+    scene_key: str,
+    owner_mission: str,
+    quest_id: str,
+    *,
+    dialog_id_index: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, str | None]:
+    """Compose a registered DialogTree with one exact non-owning context."""
+    validator = "genericRegisteredDialogNonOwningContext"
+    relation = safe_key(row.get("relation")) if isinstance(row, dict) else ""
+    contracts = {
+        "npc_proxy_tracking_dialog_navigation_context": {
+            "phase": "tracking",
+            "confidence": "native_exact_quest_navigation_context",
+            "evidenceTier": "derived_exact_quest",
+            "questTriggerStatus": (
+                "tracked_proxy_navigation_context_not_quest_playback"
+            ),
+            "nativeMappingId": (
+                "npc-proxy-tracking-dialog-navigation-context-native-v1"
+            ),
+            "serverExchange": False,
+            "minimumSourceFiles": 5,
+        },
+        "npc_proxy_lazy_destroy_dialog_context": {
+            "phase": "server_proxy_deactivation",
+            "confidence": "native_exact_quest_navigation_context",
+            "evidenceTier": "derived_exact_quest",
+            "questTriggerStatus": (
+                "tracked_proxy_navigation_and_dialog_configuration_context_"
+                "not_quest_deactivation_or_playback"
+            ),
+            "nativeMappingId": (
+                "npc-proxy-lazy-destroy-dialog-context-native-v1"
+            ),
+            "serverExchange": True,
+            "minimumSourceFiles": 2,
+        },
+    }
+    contract = contracts.get(relation)
+    if contract is None:
+        return None, None, "unsupportedRelation"
+    required_route = {
+        "key": scene_key,
+        "relation": relation,
+        "direction": "context",
+        "phase": contract["phase"],
+        "confidence": contract["confidence"],
+        "evidenceTier": contract["evidenceTier"],
+        "storyOwnerMission": owner_mission,
+        "storyBinding": True,
+        "ownership": False,
+        "possibleAuthoredRoute": True,
+        "questPlayback": False,
+        "questCompletion": False,
+        "questTriggerStatus": contract["questTriggerStatus"],
+        "nativeMappingId": contract["nativeMappingId"],
+        "serverExchange": contract["serverExchange"],
+        "clientRequest": False,
+        "expectedClientReply": False,
+    }
+    if not isinstance(row, dict) or any(
+        row.get(field) != expected
+        for field, expected in required_route.items()
+    ):
+        actual = {
+            field: row.get(field)
+            for field in required_route
+        } if isinstance(row, dict) else {
+            "type": type(row).__name__,
+        }
+        return None, {
+            "validator": validator,
+            "gate": "exactNonOwningContextEnvelope",
+            "missionId": owner_mission,
+            "questId": quest_id,
+            "storyKey": scene_key,
+            "expected": required_route,
+            "actual": actual,
+        }, None
+    source_files = _string_list(row.get("sourceFiles"))
+    source_paths = [ROOT / value for value in source_files]
+    if (
+        len(source_files) < int(contract["minimumSourceFiles"])
+        or len(source_files) != len(set(source_files))
+        or not all(path.is_file() for path in source_paths)
+    ):
+        return None, {
+            "validator": validator,
+            "gate": "exactCurrentContextSources",
+            "missionId": owner_mission,
+            "questId": quest_id,
+            "storyKey": scene_key,
+            "expected": {
+                "minimumSourceFiles": contract["minimumSourceFiles"],
+                "allUnique": True,
+                "allExist": True,
+            },
+            "actual": {
+                "sourceFiles": source_files,
+                "sourceExists": {
+                    value: path.is_file()
+                    for value, path in zip(source_files, source_paths)
+                },
+            },
+        }, None
+    if relation == "npc_proxy_lazy_destroy_dialog_context":
+        proxy_row = row.get("npcProxyTableRow")
+        relation_valid = (
+            safe_key(row.get("dialogId")) == scene_key
+            and isinstance(proxy_row, dict)
+            and proxy_row.get("lazyDestroy") is True
+            and safe_key(proxy_row.get("lazyDestroyOverrideDialogId"))
+            == scene_key
+        )
+        relation_actual = {
+            "dialogId": row.get("dialogId"),
+            "lazyDestroy": (
+                proxy_row.get("lazyDestroy")
+                if isinstance(proxy_row, dict) else None
+            ),
+            "lazyDestroyOverrideDialogId": (
+                proxy_row.get("lazyDestroyOverrideDialogId")
+                if isinstance(proxy_row, dict) else None
+            ),
+        }
+    else:
+        child_story_keys = _string_list(row.get("childStoryKeys"))
+        child_routes = [
+            route
+            for route in row.get("dialogTreeChildRoutes") or []
+            if isinstance(route, dict)
+        ]
+        route_child_keys = sorted({
+            safe_key(route.get("childStoryKey"))
+            for route in child_routes
+            if safe_key(route.get("childStoryKey"))
+        }, key=natural_key)
+        relation_valid = (
+            bool(safe_key(row.get("npcProxyId")))
+            and safe_key(row.get("trackingVisibilityRole"))
+            == "navigation_marker_visibility_only_not_dialog_activation"
+            and bool(child_story_keys)
+            and route_child_keys == sorted(child_story_keys, key=natural_key)
+            and all(route.get("occurrences") for route in child_routes)
+        )
+        relation_actual = {
+            "npcProxyId": row.get("npcProxyId"),
+            "trackingVisibilityRole": row.get("trackingVisibilityRole"),
+            "childStoryKeys": child_story_keys,
+            "routeChildStoryKeys": route_child_keys,
+            "childRouteCount": len(child_routes),
+        }
+    if not relation_valid:
+        return None, {
+            "validator": validator,
+            "gate": "exactTypedRelationPayload",
+            "missionId": owner_mission,
+            "questId": quest_id,
+            "storyKey": scene_key,
+            "expected": {
+                "relation": relation,
+                "typedPayloadMatchesStory": True,
+            },
+            "actual": relation_actual,
+        }, None
+    current_registry = (
+        dialog_id_index
+        if isinstance(dialog_id_index, dict)
+        else _current_dialog_id_index_for_validation()
+    )
+    definition = recover_dialog_tree_definition_evidence(scene_key)
+    definition_facts, definition_failure = (
+        _generic_registered_dialog_tree_definition_facts(
+            scene_key,
+            current_registry.get(scene_key),
+            definition,
+        )
+    )
+    if definition_failure is not None:
+        definition_failure.update({
+            "validator": validator,
+            "gate": "exactCurrentRegisteredDialogDefinition",
+            "missionId": owner_mission,
+            "questId": quest_id,
+            "storyKey": scene_key,
+        })
+        return None, definition_failure, None
+    current_binary_hash = _current_game_assembly_sha256_for_validation()
+    if current_binary_hash != OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256:
+        return None, {
+            "validator": validator,
+            "gate": "currentGameAssembly",
+            "missionId": owner_mission,
+            "questId": quest_id,
+            "storyKey": scene_key,
+            "sourcePath": str(_configured_game_assembly_path()),
+            "expected": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+            "actual": current_binary_hash,
+        }, None
+    definition_source = safe_key(definition_facts.get("sourceFile"))
+    all_source_files = sorted(
+        set(source_files) | ({definition_source} if definition_source else set()),
+        key=natural_key,
+    )
+    return {
+        "sceneKey": scene_key,
+        "recoveryStatus": (
+            "closed_exact_non_owning_dialog_context_no_relative_order"
+        ),
+        "relation": relation,
+        "missionId": owner_mission,
+        "questId": quest_id,
+        "npcProxyId": safe_key(row.get("npcProxyId")),
+        "levelIds": _string_list(row.get("levelIds")),
+        "childStoryKeys": _string_list(row.get("childStoryKeys")),
+        "dialogTreeDefinition": definition_facts,
+        "contextRoute": {
+            key: row.get(key)
+            for key in (
+                "relation",
+                "phase",
+                "confidence",
+                "evidenceTier",
+                "questTriggerStatus",
+                "networkRole",
+                "serverExchange",
+                "upstreamServerStateSources",
+                "serverFields",
+                "nativeConsumers",
+                "nativeMappingId",
+            )
+        },
+        "sourceFiles": all_source_files,
+        "sourceSha256": {
+            value: _sha256_file(ROOT / value)
+            for value in all_source_files
+        },
+        "originalBinaryFiles": [
+            _configured_game_assembly_path().as_posix(),
+        ],
+        "gameAssemblySha256": current_binary_hash,
+        "activationBoundary": safe_key(row.get("questTriggerStatus")),
+        "orderBoundary": (
+            "the typed proxy context and the DialogTree's internal graph do "
+            "not place this file against another Story file or prove which "
+            "quest transition activates interaction"
+        ),
+        "graphEffect": "none",
+    }, None, None
+
+
 def _closed_exact_runtime_config_isolated_scenes(
     flow: dict[str, Any],
     isolated_scene_keys: set[str],
@@ -21505,111 +21980,103 @@ def _closed_exact_runtime_config_isolated_scenes(
             if not isinstance(row, dict):
                 continue
             scene_key = safe_key(row.get("key"))
-            carriers = [
-                carrier
-                for carrier in (
-                    row.get("dialogTreePrimeStoryPlaybackCarriers") or []
-                )
-                if isinstance(carrier, dict)
-            ]
-            source_files = _string_list(row.get("sourceFiles"))
-            dependency = EXACT_PARENT_DIALOG_DEPENDENCIES.get(scene_key)
-            if not isinstance(dependency, dict):
-                continue
-            expected_source = dependency["sourceFile"]
-            source_path = ROOT / expected_source
-            expected_carrier_values = list(
-                dependency.get("trunkIds")
-                or dependency.get("dialogIds")
-                or ()
-            )
             if (
                 scene_key in already_closed
                 or scene_key not in isolated_scene_keys
-                or owner_mission != dependency["missionId"]
-                or quest_id != dependency["questId"]
                 or safe_key(row.get("relation"))
                 != "dialog_tree_prime_reachable_story_playback_dependency"
-                or safe_key(row.get("direction")) != "context"
-                or safe_key(row.get("phase"))
-                != "dialog_tree_prime_reachable_story_playback"
-                or safe_key(row.get("confidence"))
-                != "native_exact_prime_reachable_parent_quest_dependency"
-                or safe_key(row.get("evidenceTier"))
-                != "native_exact_context"
-                or safe_key(row.get("parentStoryKey"))
-                != dependency["parentStoryKey"]
-                or safe_key(row.get("storyOwnerMission")) != owner_mission
-                or row.get("storyBinding") is not True
-                or row.get("ownership") is not False
-                or row.get("dependencyOnly") is not True
-                or row.get("questActivation") is not False
-                or row.get("questPlayback") is not False
-                or row.get("questCompletion") is not False
-                or safe_key(row.get("questTriggerStatus"))
-                != "exact_parent_dialog_completion_context_not_quest_playback_trigger"
-                or safe_key(row.get("nativeMappingId"))
-                != "dialog-tree-prime-reachable-completion-dependency-native-v1"
-                or source_files != [expected_source]
-                or not source_path.is_file()
-                or _sha256_file(source_path)
-                != dependency["sourceSha256"]
-                or _string_list(row.get("sourcePathIds"))
-                != [dependency["sourcePathId"]]
-                or _string_list(row.get("trunkIds"))
-                != list(dependency.get("trunkIds") or ())
-                or _string_list(row.get("dialogIds"))
-                != list(dependency.get("dialogIds") or ())
-                or len(carriers) != dependency["carrierCount"]
-                or [safe_key(carrier.get("carrierValue")) for carrier in carriers]
-                != expected_carrier_values
-                or any(
-                    safe_key(carrier.get("dialogKey"))
-                    != dependency["parentStoryKey"]
-                    or safe_key(carrier.get("storyKey")) != scene_key
-                    or safe_key(carrier.get("carrierKind"))
-                    != dependency["carrierKind"]
-                    or safe_key(carrier.get("reachDirection"))
-                    != "prime_to_carrier"
-                    or carrier.get("reachableFromPrimeNode") is not True
-                    or safe_key(carrier.get("entryProof"))
-                    != "exact_registered_dialog_tree_prime_node_reachability"
-                    or carrier.get("registeredDialogRoot") is not True
-                    or safe_key(carrier.get("sourceFile")) != expected_source
-                    or safe_key(carrier.get("sourcePathId"))
-                    != dependency["sourcePathId"]
-                    or not _string_list(carrier.get("nodePath"))
-                    or not carrier.get("connectionPath")
-                    for carrier in carriers
-                )
             ):
                 continue
-            closed.append({
-                "sceneKey": scene_key,
-                "recoveryStatus":
-                    "closed_exact_parent_dialog_dependency_no_relative_order",
-                "relation":
-                    "dialog_tree_prime_reachable_story_playback_dependency",
-                "missionId": owner_mission,
-                "questId": quest_id,
-                "parentStoryKey": dependency["parentStoryKey"],
-                "trunkIds": list(dependency.get("trunkIds") or ()),
-                "dialogIds": list(dependency.get("dialogIds") or ()),
-                "sourceFiles": source_files,
-                "sourceSha256": _sha256_file(source_path),
-                "playbackSemantics": (
-                    "the registered parent DialogTree's exact prime-node "
-                    "path reaches the typed Story carrier for this file"
-                ),
-                "activationBoundary": (
-                    "MissionRuntime observes completion of the parent dialog; "
-                    "it does not identify the activator of either dialog"
-                ),
-                "orderBoundary": (
-                    "prime-node reachability orders nodes inside the parent "
-                    "DialogTree only; it creates no inter-file chronology"
-                ),
-            })
+            facts, failure = (
+                _generic_prime_reachable_dialog_dependency_facts(
+                    row,
+                    scene_key,
+                    owner_mission,
+                    quest_id,
+                )
+            )
+            if failure is not None:
+                if validation_failures is not None:
+                    validation_failures.append(failure)
+                continue
+            if facts is not None:
+                closed.append(facts)
+
+    already_closed = {row["sceneKey"] for row in closed}
+    non_owning_dialog_contexts: dict[
+        str,
+        list[tuple[str, dict[str, Any]]],
+    ] = defaultdict(list)
+    for quest in flow.get("quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        quest_id = safe_key(quest.get("id"))
+        for row in quest.get("storyConnections") or []:
+            if not isinstance(row, dict):
+                continue
+            scene_key = safe_key(row.get("key"))
+            if (
+                scene_key in already_closed
+                or scene_key not in isolated_scene_keys
+                or safe_key(row.get("relation")) not in {
+                    "npc_proxy_tracking_dialog_navigation_context",
+                    "npc_proxy_lazy_destroy_dialog_context",
+                }
+            ):
+                continue
+            non_owning_dialog_contexts[scene_key].append((quest_id, row))
+    for scene_key, candidates in sorted(
+        non_owning_dialog_contexts.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        candidate_facts: list[dict[str, Any]] = []
+        candidate_failed = False
+        for quest_id, row in candidates:
+            facts, failure, _ = (
+                _generic_registered_dialog_non_owning_context_facts(
+                    row,
+                    scene_key,
+                    owner_mission,
+                    quest_id,
+                )
+            )
+            if failure is not None:
+                candidate_failed = True
+                if validation_failures is not None:
+                    validation_failures.append(failure)
+                continue
+            if facts is not None:
+                candidate_facts.append(facts)
+        if candidate_failed or len(candidate_facts) != len(candidates):
+            continue
+        merged = dict(candidate_facts[0])
+        merged["questIds"] = sorted({
+            safe_key(facts.get("questId"))
+            for facts in candidate_facts
+            if safe_key(facts.get("questId"))
+        }, key=natural_key)
+        merged["relations"] = sorted({
+            safe_key(facts.get("relation"))
+            for facts in candidate_facts
+            if safe_key(facts.get("relation"))
+        }, key=natural_key)
+        merged["contextRoutes"] = [
+            {
+                "questId": safe_key(facts.get("questId")),
+                **(facts.get("contextRoute") or {}),
+            }
+            for facts in candidate_facts
+        ]
+        merged["sourceFiles"] = sorted({
+            source_file
+            for facts in candidate_facts
+            for source_file in _string_list(facts.get("sourceFiles"))
+        }, key=natural_key)
+        merged["sourceSha256"] = {
+            source_file: _sha256_file(ROOT / source_file)
+            for source_file in merged["sourceFiles"]
+        }
+        closed.append(merged)
 
     for row in _flow_story_connections(flow):
         scene_key = safe_key(row.get("key"))
@@ -22215,18 +22682,40 @@ def _closed_exact_runtime_config_isolated_scenes(
             if safe_key(row.get("gameAssemblySha256"))
         }
         if (
-            len(mission_ids) != 1
+            not mission_ids
             or mapping_ids != {NPC_PROXY_DIALOG_SELECTION_MAPPING_ID}
             or hashes
             != {NPC_PROXY_DIALOG_SELECTION_GAMEASSEMBLY_SHA256}
         ):
             continue
-        context_mission = next(iter(mission_ids))
-        cross_mission_context = context_mission != owner_mission
+        context_missions = sorted(mission_ids, key=natural_key)
+        context_mission = (
+            owner_mission
+            if owner_mission in mission_ids
+            else context_missions[0]
+        )
+        cross_mission_context = any(
+            mission_id != owner_mission
+            for mission_id in mission_ids
+        )
+        multi_mission_context = len(mission_ids) > 1
+        npc_proxy_ex_sources = [
+            value
+            for value in (
+                "export_full/structured/StreamingAssets/Data/Json/"
+                "GameplayConfig/NpcProxyExDataTable.json",
+                "export_full/structured/Persistent/Data/Json/"
+                "GameplayConfig/NpcProxyExDataTable.json",
+            )
+            if (ROOT / value).is_file()
+        ]
         closed.append({
             "sceneKey": scene_key,
             "recoveryStatus":
                 (
+                    "closed_exact_multi_mission_runtime_config_"
+                    "no_relative_order"
+                    if multi_mission_context else
                     "closed_exact_cross_mission_runtime_config_"
                     "no_relative_order"
                     if cross_mission_context
@@ -22234,6 +22723,7 @@ def _closed_exact_runtime_config_isolated_scenes(
                 ),
             "relation": "npc_proxy_ex_mission_context",
             "missionId": context_mission,
+            "contextMissionIds": context_missions,
             "nominalStoryMissionId": owner_mission,
             "contextMissionMismatch": cross_mission_context,
             "contextMissionBundles": sorted({
@@ -22255,10 +22745,19 @@ def _closed_exact_runtime_config_isolated_scenes(
             ),
             "contextBoundary": (
                 "the exact proxy row makes this nominal Story file selectable "
-                f"while mission {context_mission} is active; it does not move "
-                "the file into that mission's chronology or establish a "
-                "relative Story edge"
+                "under the authored mission context set "
+                f"{', '.join(context_missions)}; it does not choose between "
+                "those contexts, move the file into another chronology, or "
+                "establish a relative Story edge"
             ),
+            "sourceFiles": npc_proxy_ex_sources,
+            "sourceSha256": {
+                value: _sha256_file(ROOT / value)
+                for value in npc_proxy_ex_sources
+            },
+            "originalBinaryFiles": [
+                _configured_game_assembly_path().as_posix(),
+            ],
             "upstreamServerStateSources": [
                 "SC_NPC_ENTER_MAP_RESYNC",
                 "SC_NPC_ACTIVE_CHANGE_NTF",
