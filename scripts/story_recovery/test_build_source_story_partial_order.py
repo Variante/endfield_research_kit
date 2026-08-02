@@ -1320,7 +1320,7 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             }],
         }]
         topology = {
-            "schema": "levelScriptNativeActionTopology.v2",
+            "schema": "levelScriptNativeActionTopology.v3",
             "status": "exact_complete_action_map",
             "actionNodeCount": 3,
             "eventRootCount": 1,
@@ -1358,7 +1358,7 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(related["orderedSequenceNodeCount"], 1)
         self.assertEqual(related["controlActions"][0]["actionName"], "Branch")
 
-    def test_equivalent_duplicate_native_paths_preserve_exact_split(self) -> None:
+    def test_runtime_shadowed_native_paths_preserve_exact_split(self) -> None:
         candidates = {"radio_m1_1": "radio", "cutscene_m1_1": "cutscene"}
         payload = mission_payload([])
 
@@ -1377,16 +1377,16 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
                     "LevelScriptData/map_test/70000000001.json",
                 ],
                 "nativeEventOwners": [{
-                        "status": (
-                            "exact_serialized_control_path_equivalent_duplicates"
-                        ),
+                        "status": "exact_serialized_control_path_runtime_shadowing",
                         "headerName": "MissionEvent_OnClientGlobalVarChanged",
                         "headerLocalId": 28,
                         "path": [
                             {
                                 "localId": 7,
                                 "edge": "ActionHeader.nextId",
-                                "equivalentRecordOffsets": [7, 1676],
+                                "runtimeShadowedRecordOffsets": [7],
+                                "runtimeDuplicateSignatureStatus":
+                                    "different_payload",
                             },
                             {"localId": entry_id, "edge": arm_edge},
                         ],

@@ -60,6 +60,7 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
         self,
         *,
         branch_targets: list[int],
+        serialized_action_count: int = 3,
     ) -> tuple[dict, dict | None]:
         records = self.records()
         membership = {
@@ -99,7 +100,11 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
         }
         action_map = {
             "status": "present",
-            "listCounts": {"actionList": 3, "getterList": 0, "headerList": 1},
+            "listCounts": {
+                "actionList": serialized_action_count,
+                "getterList": 0,
+                "headerList": 1,
+            },
         }
         with ExitStack() as stack:
             stack.enter_context(patch.object(
@@ -144,7 +149,7 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
         self.assertEqual(topology["eventRootCount"], 1)
         self.assertEqual(topology["actionNodeCount"], 3)
         self.assertEqual(topology["edgeCount"], 3)
-        self.assertEqual(topology["schema"], "levelScriptNativeActionTopology.v2")
+        self.assertEqual(topology["schema"], "levelScriptNativeActionTopology.v3")
         self.assertEqual(topology["typedBranchNodeCount"], 0)
         self.assertEqual(topology["orderedSequenceNodeCount"], 1)
         self.assertEqual(topology["parallelFanoutNodeCount"], 0)
@@ -187,28 +192,106 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
             "parallel_fanout",
         )
 
-    def test_fails_closed_with_bounded_missing_target_diagnostic(self) -> None:
+    def test_missing_positive_target_is_an_exact_runtime_terminal(self) -> None:
         topology, diagnostic = self.run_topology(branch_targets=[20, 99])
 
+        self.assertIsNone(diagnostic)
+        self.assertEqual(topology["status"], "exact_complete_action_map")
+        self.assertEqual(topology["runtimeTerminalTargetCount"], 1)
+        self.assertEqual(
+            topology["runtimeTerminalTargets"][0]["targetActionLocalId"],
+            99,
+        )
+        self.assertEqual(
+            topology["runtimeTerminalTargets"][0]["nativeMappingId"],
+            level_bindings.LEVELSCRIPT_NATIVE_MISSING_ACTION_TERMINAL_MAPPING_ID,
+        )
+
+    def test_fails_closed_with_bounded_physical_count_diagnostic(self) -> None:
+        topology, diagnostic = self.run_topology(
+            branch_targets=[20, 30],
+            serialized_action_count=4,
+        )
+
         self.assertEqual(topology["status"], "unavailable_fail_closed")
-        self.assertEqual(
-            diagnostic["validator"],
-            "levelScriptNativeActionTopology",
-        )
-        self.assertEqual(
-            diagnostic["gate"],
-            "completeSerializedActionEventGraph",
-        )
+        self.assertEqual(diagnostic["validator"], "levelScriptNativeActionTopology")
+        self.assertEqual(diagnostic["gate"], "completeSerializedActionEventGraph")
         failure = next(
             row
             for row in diagnostic["actual"]["failures"]
-            if row["check"] == "allSerializedControlTargetsResolve"
+            if row["check"] == "physicalActionRecordCount"
         )
-        self.assertEqual(failure["failureCount"], 1)
+        self.assertEqual(failure["expected"], 4)
+        self.assertEqual(failure["actual"], 3)
+
+    def test_runtime_action_slot_uses_final_serialized_duplicate(self) -> None:
+        first = {
+            "start": 100,
+            "localId": 14,
+            "unionTag": 0x00FF,
+            "serializedMemberCount": 0x0B,
+            "nextId": -1,
+            "strings": [],
+            "plainStrings": [],
+        }
+        final = {**first, "start": 200}
+        membership = {100: "actionList#1", 200: "actionList#2"}
+
+        def decode(_data, record, **_kwargs):
+            return {
+                "trueActionLocalId": 4 if record["start"] == 200 else 0,
+                "falseActionLocalId": 0 if record["start"] == 200 else 15,
+            }
+
+        with patch.object(
+            level_bindings,
+            "decode_levelscript_record_payload",
+            side_effect=decode,
+        ):
+            context = level_bindings._prepare_levelscript_native_control_context(
+                b"fixture",
+                [final, first],
+                membership,
+            )
+
+        self.assertIs(context["actionByLocal"][14], final)
+        self.assertEqual(context["runtimeShadowedRecordOffsets"][14], [100])
         self.assertEqual(
-            failure["actual"][0]["targetActionLocalId"],
-            99,
+            context["runtimeDuplicateSignatureStatus"][14],
+            "different_payload",
         )
+        self.assertEqual(
+            context["runtimeActionSlotMappingId"],
+            level_bindings.LEVELSCRIPT_NATIVE_ACTION_SLOT_MAPPING_ID,
+        )
+
+    def test_runtime_action_slot_selection_tracks_serialized_order(self) -> None:
+        records = [
+            {
+                "start": start,
+                "localId": 7,
+                "unionTag": tag,
+                "serializedMemberCount": 0x09,
+                "nextId": -1,
+                "strings": [],
+                "plainStrings": [],
+            }
+            for start, tag in ((300, 0x0303), (100, 0x048D))
+        ]
+        membership = {100: "actionList#1", 300: "actionList#2"}
+        with patch.object(
+            level_bindings,
+            "decode_levelscript_record_payload",
+            return_value={},
+        ):
+            context = level_bindings._prepare_levelscript_native_control_context(
+                b"fixture",
+                records,
+                membership,
+            )
+
+        self.assertEqual(context["actionByLocal"][7]["start"], 300)
+        self.assertEqual(context["runtimeShadowedRecordOffsets"][7], [100])
 
     def test_accepts_exact_empty_action_map(self) -> None:
         action_map = {

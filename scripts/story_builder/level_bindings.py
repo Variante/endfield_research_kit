@@ -263,6 +263,31 @@ def _load_mission_levelscript_dialogs(mission_id: str, level_ids: list[str]) -> 
 LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID = (
     "gameassembly-2026-07-11-cr-0x18b9217d0-actionbase-0x0000-0x0520"
 )
+# Current original GameAssembly.dll (SHA-256
+# 0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE)
+# proves that ActionMapRuntime stores actions in actionArray[action.id]. In
+# New at 0x183176bc0, the List<ActionBase> enumerator's MoveNext at +0xc3f is
+# followed by the action-id read at +0xc61 and indexed slot write at +0xce5;
+# iteration then resumes. TryGetActionNode at 0x1831705e0 performs the same
+# direct indexed lookup, while Append at 0x1875f4544 grows and writes the same
+# slot for dynamic additions. Repeated ids therefore shadow earlier physical
+# records rather than creating independently-addressable nodes.
+LEVELSCRIPT_NATIVE_ACTION_SLOT_MAPPING_ID = (
+    "gameassembly-2026-08-02-actionmapruntime-indexed-last-serialized-action"
+)
+# In ActionExecutor._DoLogicTick (0x18316eab0), the failed branch after
+# TryGetActionNode at +0x864 reaches +0xfcb: it tries
+# _TryToRemoveInvalidStackLayer and otherwise calls _NormalReachEnd. A positive
+# continuation id with no active action-array slot is consequently an exact
+# runtime terminal, not evidence for an unparsed or adjacent physical record.
+LEVELSCRIPT_NATIVE_MISSING_ACTION_TERMINAL_MAPPING_ID = (
+    "gameassembly-2026-08-02-actionexecutor-missing-slot-normal-reach-end"
+)
+LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES = frozenset({
+    "exact_serialized_control_path",
+    "exact_serialized_control_path_equivalent_duplicates",
+    "exact_serialized_control_path_runtime_shadowing",
+})
 LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS = {
     (0x002D, 0x09): {
         "kind": "ordered_sequence",
@@ -1036,22 +1061,26 @@ def _prepare_levelscript_native_control_context(
             (detail.get("waitScriptPtr") or {}).get("mode"),
         )
 
-    # Authored files can repeat one local-id record byte-for-byte in separate
-    # serialized list fragments. Accept the id only when every record has the
-    # same typed tag/member count, texts, nextId, and decoded branch targets.
-    # Retain every offset so the graph can distinguish this from a physically
-    # unique record. Conflicting duplicates still fail closed.
+    # ActionMapRuntime.New enumerates dataMap.actionList in serialized order and
+    # stores every action at actionArray[action.id]. The final
+    # physical record for an id is therefore active and every earlier record is
+    # shadowed. Preserve all offsets and payload-equivalence status; this is a
+    # general runtime rule, not an exception keyed to a file or action class.
     action_by_local: dict[int, dict] = {}
     equivalent_record_offsets: dict[int, list[int]] = {}
+    runtime_shadowed_record_offsets: dict[int, list[int]] = {}
+    runtime_duplicate_signature_status: dict[int, str] = {}
     for local_id, bucket in action_buckets.items():
         signatures = {control_signature(record) for record in bucket}
-        if len(signatures) != 1:
-            continue
-        action_by_local[local_id] = bucket[0]
+        action_by_local[local_id] = bucket[-1]
         if len(bucket) > 1:
-            equivalent_record_offsets[local_id] = sorted(
-                int(record.get("start") or 0) for record in bucket
+            offsets = [int(record.get("start") or 0) for record in bucket]
+            runtime_shadowed_record_offsets[local_id] = offsets[:-1]
+            runtime_duplicate_signature_status[local_id] = (
+                "equivalent" if len(signatures) == 1 else "different_payload"
             )
+            if len(signatures) == 1:
+                equivalent_record_offsets[local_id] = offsets
     getter_by_local = {
         local_id: bucket[0]
         for local_id, bucket in getter_buckets.items()
@@ -1063,6 +1092,9 @@ def _prepare_levelscript_native_control_context(
         "actionByLocal": action_by_local,
         "getterByLocal": getter_by_local,
         "equivalentRecordOffsets": equivalent_record_offsets,
+        "runtimeShadowedRecordOffsets": runtime_shadowed_record_offsets,
+        "runtimeDuplicateSignatureStatus": runtime_duplicate_signature_status,
+        "runtimeActionSlotMappingId": LEVELSCRIPT_NATIVE_ACTION_SLOT_MAPPING_ID,
         "decodedByStart": decoded_cache,
         "nextStarts": next_starts,
     }
@@ -1146,7 +1178,9 @@ def _levelscript_native_control_paths_to_record(
 ) -> list[dict]:
     """Return exact ActionHeader/typed-branch paths to one action record.
 
-    Every traversed local id must resolve to exactly one actionList row.  The
+    Every traversed local id resolves to the active runtime action-array slot.
+    Repeated serialized ids resolve to their final list record, exactly as the
+    current original binary does; earlier records remain audit-only. The
     graph uses only authored ``ActionHeader.nextId``, ``ActionBase.nextId``,
     the current-build ordered ``Branch._idList``, ``Split.actions`` list,
     current-build ``IfElseAction`` true/false fields, and current-build
@@ -1167,6 +1201,12 @@ def _levelscript_native_control_paths_to_record(
     action_by_local = context.get("actionByLocal") or {}
     getter_by_local = context.get("getterByLocal") or {}
     equivalent_record_offsets = context.get("equivalentRecordOffsets") or {}
+    runtime_shadowed_record_offsets = (
+        context.get("runtimeShadowedRecordOffsets") or {}
+    )
+    runtime_duplicate_signature_status = (
+        context.get("runtimeDuplicateSignatureStatus") or {}
+    )
     decoded_cache = context.get("decodedByStart") or {}
     next_starts = context.get("nextStarts") or {}
     downstream_cache = context.setdefault("downstreamControlPaths", {})
@@ -1328,6 +1368,27 @@ def _levelscript_native_control_paths_to_record(
                 "equivalentRecordOffsets": equivalent_record_offsets.get(
                     int(record.get("localId"))
                 ) if isinstance(record.get("localId"), int) else None,
+                "runtimeShadowedRecordOffsets": (
+                    runtime_shadowed_record_offsets.get(
+                        int(record.get("localId"))
+                    )
+                    if isinstance(record.get("localId"), int)
+                    else None
+                ),
+                "runtimeDuplicateSignatureStatus": (
+                    runtime_duplicate_signature_status.get(
+                        int(record.get("localId"))
+                    )
+                    if isinstance(record.get("localId"), int)
+                    else None
+                ),
+                "runtimeActionSlotMappingId": (
+                    LEVELSCRIPT_NATIVE_ACTION_SLOT_MAPPING_ID
+                    if isinstance(record.get("localId"), int)
+                    and int(record.get("localId"))
+                    in runtime_shadowed_record_offsets
+                    else None
+                ),
             }.items()
             if value not in ("", None, [], {})
         }
@@ -1335,12 +1396,12 @@ def _levelscript_native_control_paths_to_record(
     def downstream_control_paths(record: dict) -> list[list[dict]]:
         """Return bounded exact paths from one action to every reachable action.
 
-        These paths use the same typed successor decoder and duplicate-local-id
-        gate as event-to-action traversal.  Publishing every reachable prefix,
+        These paths use the same typed successor decoder and runtime indexed-
+        slot selection as event-to-action traversal. Publishing every reachable prefix,
         rather than only leaf paths, lets downstream consumers prove branch
         convergence without treating serialized record adjacency as control
-        flow.  Cycles are bounded per path and conflicting duplicate targets
-        remain absent from ``action_by_local``.
+        flow. Cycles are bounded per path and shadowed physical records never
+        become independently addressable nodes.
         """
         start_local_id = record.get("localId")
         if isinstance(start_local_id, int) and start_local_id in downstream_cache:
@@ -1423,9 +1484,15 @@ def _levelscript_native_control_paths_to_record(
                     len(step.get("equivalentRecordOffsets") or []) > 1
                     for step in path
                 )
+                has_runtime_shadowing = any(
+                    step.get("runtimeShadowedRecordOffsets")
+                    for step in path
+                )
                 paths.append({
                     "status": (
-                        "exact_serialized_control_path_equivalent_duplicates"
+                        "exact_serialized_control_path_runtime_shadowing"
+                        if has_runtime_shadowing
+                        else "exact_serialized_control_path_equivalent_duplicates"
                         if has_equivalent_duplicates
                         else "exact_serialized_control_path"
                     ),
@@ -1481,8 +1548,9 @@ def decode_levelscript_native_action_topology(
     The graph uses only ActionSerializedMap membership, ActionHeader.nextId,
     ActionBase.nextId, and the typed control fields shared with native Story
     control-path recovery. Record adjacency and text naming never create an
-    edge. Equivalent duplicate action rows are collapsed only when the existing
-    control-path validator proves their complete typed signatures identical.
+    edge. Repeated action ids follow the current original runtime's indexed-slot
+    contract: the final serialized actionList record is active and earlier
+    physical records are retained as shadowed audit evidence.
     """
     if not data:
         diagnostic = {
@@ -1492,7 +1560,7 @@ def decode_levelscript_native_action_topology(
             "actual": {"payloadBytes": 0},
         }
         return {
-            "schema": "levelScriptNativeActionTopology.v2",
+            "schema": "levelScriptNativeActionTopology.v3",
             "status": "unavailable_fail_closed",
             "validatorDiagnostic": diagnostic,
             "actionControlFlowEvidence": False,
@@ -1535,7 +1603,7 @@ def decode_levelscript_native_action_topology(
             "exact_empty_action_map" if empty_present_map else "exact_no_action_map"
         )
         return {
-            "schema": "levelScriptNativeActionTopology.v2",
+            "schema": "levelScriptNativeActionTopology.v3",
             "status": empty_status,
             "physicalActionRecordCount": 0,
             "actionNodeCount": 0,
@@ -1573,6 +1641,10 @@ def decode_levelscript_native_action_topology(
     action_buckets = context.get("actionBuckets") or {}
     action_by_local = context.get("actionByLocal") or {}
     equivalent_offsets = context.get("equivalentRecordOffsets") or {}
+    shadowed_offsets = context.get("runtimeShadowedRecordOffsets") or {}
+    duplicate_signature_status = (
+        context.get("runtimeDuplicateSignatureStatus") or {}
+    )
     next_starts = context.get("nextStarts") or {}
     decoded_cache = context.get("decodedByStart") or {}
     header_buckets: dict[int, list[dict]] = defaultdict(list)
@@ -1617,22 +1689,11 @@ def decode_levelscript_native_action_topology(
             "expected": list_counts.get("headerList"),
             "actual": len(header_records),
         })
-    conflicting_action_ids = sorted(
-        local_id
-        for local_id in action_buckets
-        if local_id not in action_by_local
-    )
     duplicate_header_ids = sorted(
         local_id
         for local_id, bucket in header_buckets.items()
         if len(bucket) != 1
     )
-    if conflicting_action_ids:
-        failures.append({
-            "check": "equivalentOrUniqueActionLocalIds",
-            "expected": [],
-            "actual": conflicting_action_ids[:16],
-        })
     if duplicate_header_ids:
         failures.append({
             "check": "uniqueHeaderLocalIds",
@@ -1641,7 +1702,8 @@ def decode_levelscript_native_action_topology(
         })
 
     edges: list[dict] = []
-    missing_targets: list[dict] = []
+    invalid_targets: list[dict] = []
+    runtime_terminal_targets: list[dict] = []
     event_rows: list[dict] = []
     event_type_counts: Counter[str] = Counter()
     for header in sorted(header_records, key=lambda row: int(row.get("start") or 0)):
@@ -1660,18 +1722,22 @@ def decode_levelscript_native_action_topology(
                 "serializedMemberCount": header.get("serializedMemberCount"),
             })
         if not isinstance(target_id, int):
-            missing_targets.append({
+            invalid_targets.append({
                 "sourceKind": "event",
                 "sourceLocalId": header.get("localId"),
                 "relation": "ActionHeader.nextId",
                 "targetActionLocalId": target_id,
             })
         elif target_id > 0 and target_id not in action_by_local:
-            missing_targets.append({
+            runtime_terminal_targets.append({
                 "sourceKind": "event",
                 "sourceLocalId": header.get("localId"),
                 "relation": "ActionHeader.nextId",
                 "targetActionLocalId": target_id,
+                "terminalKind": "missing_runtime_action_slot",
+                "nativeMappingId": (
+                    LEVELSCRIPT_NATIVE_MISSING_ACTION_TERMINAL_MAPPING_ID
+                ),
             })
         elif target_id > 0:
             edges.append({
@@ -1754,11 +1820,15 @@ def decode_levelscript_native_action_topology(
         successors = _levelscript_native_action_successors(record, detail)
         for relation, target_id in successors:
             if target_id not in action_by_local:
-                missing_targets.append({
+                runtime_terminal_targets.append({
                     "sourceKind": "action",
                     "sourceLocalId": local_id,
                     "relation": relation,
                     "targetActionLocalId": target_id,
+                    "terminalKind": "missing_runtime_action_slot",
+                    "nativeMappingId": (
+                        LEVELSCRIPT_NATIVE_MISSING_ACTION_TERMINAL_MAPPING_ID
+                    ),
                 })
                 continue
             edges.append({
@@ -1797,16 +1867,25 @@ def decode_levelscript_native_action_topology(
                 ),
                 "controlDetail": control_detail,
                 "equivalentRecordOffsets": equivalent_offsets.get(local_id),
+                "runtimeShadowedRecordOffsets": shadowed_offsets.get(local_id),
+                "runtimeDuplicateSignatureStatus": (
+                    duplicate_signature_status.get(local_id)
+                ),
+                "runtimeActionSlotMappingId": (
+                    LEVELSCRIPT_NATIVE_ACTION_SLOT_MAPPING_ID
+                    if local_id in shadowed_offsets
+                    else None
+                ),
             }.items()
             if value not in (None, "", [], {})
         })
 
-    if missing_targets:
+    if invalid_targets:
         failures.append({
-            "check": "allSerializedControlTargetsResolve",
+            "check": "allSerializedControlTargetsDecodeAsIntegers",
             "expected": [],
-            "actual": missing_targets[:16],
-            "failureCount": len(missing_targets),
+            "actual": invalid_targets[:16],
+            "failureCount": len(invalid_targets),
         })
     if failures:
         diagnostic = {
@@ -1815,10 +1894,10 @@ def decode_levelscript_native_action_topology(
             "expected": {
                 "actionMapStatus": "present",
                 "physicalCountsMatchSerializedLists": True,
-                "actionLocalIdsUniqueOrEquivalent": True,
+                "repeatedActionLocalIdsUseRuntimeLastSerializedSlot": True,
                 "headerLocalIdsUnique": True,
                 "allHeaderTypesMapped": True,
-                "allControlTargetsResolve": True,
+                "allControlTargetsDecodeAsIntegers": True,
             },
             "actual": {
                 "actionMapStatus": action_map.get("status"),
@@ -1829,7 +1908,7 @@ def decode_levelscript_native_action_topology(
             },
         }
         return {
-            "schema": "levelScriptNativeActionTopology.v2",
+            "schema": "levelScriptNativeActionTopology.v3",
             "status": "unavailable_fail_closed",
             "physicalActionRecordCount": len(action_records),
             "actionNodeCount": len(action_by_local),
@@ -1896,12 +1975,27 @@ def decode_levelscript_native_action_topology(
         local_id for local_id in action_by_local if incoming_total[local_id] == 0
     )
     return {
-        "schema": "levelScriptNativeActionTopology.v2",
-        "status": "exact_complete_action_map",
+        "schema": "levelScriptNativeActionTopology.v3",
+        "status": (
+            "exact_complete_action_map_with_runtime_shadowing"
+            if shadowed_offsets
+            else "exact_complete_action_map"
+        ),
         "physicalActionRecordCount": len(action_records),
         "actionNodeCount": len(action_by_local),
+        "runtimeShadowedActionRecordCount": sum(
+            len(offsets) for offsets in shadowed_offsets.values()
+        ),
+        "runtimeShadowedActionLocalIdCount": len(shadowed_offsets),
+        "runtimeDifferentPayloadShadowLocalIdCount": sum(
+            1
+            for status in duplicate_signature_status.values()
+            if status == "different_payload"
+        ),
         "eventRootCount": len(event_rows),
         "edgeCount": len(edges),
+        "runtimeTerminalTargetCount": len(runtime_terminal_targets),
+        "runtimeTerminalTargets": runtime_terminal_targets,
         "typedBranchNodeCount": sum(
             control_kind_counts[kind]
             for kind in ("parallel_fanout", "conditional_choice")
@@ -1927,14 +2021,19 @@ def decode_levelscript_native_action_topology(
         "actions": action_rows,
         "edges": edges,
         "nativeActionMappingId": LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
+        "runtimeActionSlotMappingId": LEVELSCRIPT_NATIVE_ACTION_SLOT_MAPPING_ID,
+        "runtimeMissingActionTerminalMappingId": (
+            LEVELSCRIPT_NATIVE_MISSING_ACTION_TERMINAL_MAPPING_ID
+        ),
         "nativeHeaderMappingId": LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
         "actionControlFlowEvidence": True,
         "storyOrderEvidence": False,
         "controlBoundary": (
             "edges are exact within one LevelScript action map; separate event "
             "roots have no serialized relative order, orphan roots have no "
-            "decoded event owner, and control flow does not order Story files "
-            "unless a typed action explicitly targets one"
+            "decoded event owner, absent positive action-array targets are "
+            "exact runtime terminals, and control flow does not order Story "
+            "files unless a typed action explicitly targets one"
         ),
     }, None
 

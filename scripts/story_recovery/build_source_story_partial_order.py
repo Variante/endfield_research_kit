@@ -43,6 +43,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 from story_builder.level_bindings import (  # noqa: E402
     LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS,
+    LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES,
     build_levelscript_action_story_occurrences,
     decode_levelscript_native_action_topology,
 )
@@ -2127,10 +2128,8 @@ def _native_event_story_paths(
             for owner in occurrence.get("nativeEventOwners") or []:
                 if (
                     not isinstance(owner, dict)
-                    or owner.get("status") not in {
-                        "exact_serialized_control_path",
-                        "exact_serialized_control_path_equivalent_duplicates",
-                    }
+                    or owner.get("status")
+                    not in LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES
                     or not isinstance(owner.get("headerLocalId"), int)
                 ):
                     continue
@@ -3081,6 +3080,9 @@ def _native_related_action_topologies(
                     "controlRuntimeMappingId",
                     "controlDetail",
                     "nextActionLocalId",
+                    "runtimeShadowedRecordOffsets",
+                    "runtimeDuplicateSignatureStatus",
+                    "runtimeActionSlotMappingId",
                 )
                 if action.get(key) not in (None, "", [], {})
             }
@@ -3106,6 +3108,18 @@ def _native_related_action_topologies(
             "actionNodeCount": int(topology.get("actionNodeCount") or 0),
             "eventRootCount": int(topology.get("eventRootCount") or 0),
             "edgeCount": int(topology.get("edgeCount") or 0),
+            "runtimeShadowedActionRecordCount": int(
+                topology.get("runtimeShadowedActionRecordCount") or 0
+            ),
+            "runtimeShadowedActionLocalIdCount": int(
+                topology.get("runtimeShadowedActionLocalIdCount") or 0
+            ),
+            "runtimeTerminalTargetCount": int(
+                topology.get("runtimeTerminalTargetCount") or 0
+            ),
+            "runtimeTerminalTargets": list(
+                topology.get("runtimeTerminalTargets") or []
+            ),
             "orderedSequenceNodeCount": int(
                 topology.get("orderedSequenceNodeCount") or 0
             ),
@@ -3119,6 +3133,12 @@ def _native_related_action_topologies(
             "controlActions": control_actions,
             "validatorDiagnostic": diagnostic,
             "nativeActionMappingId": topology.get("nativeActionMappingId"),
+            "runtimeActionSlotMappingId": topology.get(
+                "runtimeActionSlotMappingId"
+            ),
+            "runtimeMissingActionTerminalMappingId": topology.get(
+                "runtimeMissingActionTerminalMappingId"
+            ),
             "relationshipBoundary": (
                 "attached through an exact serialized event-to-Story control path; "
                 "the rest of the file is file-local topology, not additional mission order"

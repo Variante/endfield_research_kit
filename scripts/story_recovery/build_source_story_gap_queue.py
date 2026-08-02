@@ -49,6 +49,7 @@ from build_animestudio_story_carrier_audit import (  # noqa: E402
 )
 from story_builder.level_bindings import (  # noqa: E402
     LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
+    LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES,
     _load_levelscript_binding_data,
     _levelscript_native_control_paths_to_record,
     decode_levelscript_native_action_topology,
@@ -10261,10 +10262,7 @@ def _generic_missionless_native_playback_facts(
     complete current-build GameAssembly mapping and every exact event owner is
     explicitly local (no serialized mission/quest id and no server exchange).
     """
-    exact_statuses = {
-        "exact_serialized_control_path",
-        "exact_serialized_control_path_equivalent_duplicates",
-    }
+    exact_statuses = LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES
 
     def failure(
         gate: str,
@@ -19934,10 +19932,7 @@ def _closed_exact_native_unordered_scenes(
         defaultdict(dict)
     )
     exact_stub_scopes: dict[str, set[tuple[str, str, str]]] = defaultdict(set)
-    exact_control_path_statuses = {
-        "exact_serialized_control_path",
-        "exact_serialized_control_path_equivalent_duplicates",
-    }
+    exact_control_path_statuses = LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES
     for connection in _flow_story_connections(flow):
         scene_key = safe_key(connection.get("key"))
         if scene_key not in weak_only_scene_keys:
@@ -21418,10 +21413,7 @@ def _closed_exact_timeline_dialog_embedded_isolated_scenes(
                 if (
                     isinstance(owner, dict)
                     and safe_key(owner.get("status"))
-                    in {
-                        "exact_serialized_control_path",
-                        "exact_serialized_control_path_equivalent_duplicates",
-                    }
+                    in LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES
                     and action_local_id
                     in {
                         step.get("localId")
@@ -21474,10 +21466,7 @@ def _closed_exact_timeline_foreign_dialog_isolated_scenes(
         mission,
         *_string_list(flow.get("_sourceVariantMissionIds")),
     }
-    exact_owner_statuses = {
-        "exact_serialized_control_path",
-        "exact_serialized_control_path_equivalent_duplicates",
-    }
+    exact_owner_statuses = LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES
     closed: list[dict[str, Any]] = []
     for row in _flow_story_connections(flow):
         scene_key = safe_key(row.get("key"))

@@ -557,10 +557,13 @@
       offlineRecoverySubGameActionLoops: "loops",
       offlineRecoverySubGameActionConvergence: "convergences",
       offlineRecoverySubGameActionCycles: "cycles",
+      offlineRecoverySubGameActionShadowed: "runtime-shadowed records",
+      offlineRecoverySubGameActionTerminals: "missing-slot terminals",
+      offlineRecoverySubGameActionActiveSlot: "active runtime slot",
       offlineRecoverySubGameActionEventTypes: "event families",
       offlineRecoverySubGameActionTypes: "action families",
       offlineRecoverySubGameActionStoryTargets: "typed Story targets",
-      offlineRecoverySubGameActionTopologyBoundary: "Edges are exact within one LevelScript. Separate event roots have no relative order; control flow does not order Story files unless a typed action explicitly targets one.",
+      offlineRecoverySubGameActionTopologyBoundary: "Edges are exact within one LevelScript. Repeated action IDs use the last serialized record, and absent positive action slots end normally. Separate event roots have no relative order; control flow does not order Story files unless a typed action explicitly targets one.",
       offlineRecoveryEvidenceParentTreePartition: "Exact registered parent-tree line partition",
       partialRecoveryEvidenceParentTreePartition: "Partial registered parent-tree line partition",
       partialRecoveryCoverage: "Registered coverage",
@@ -1144,10 +1147,13 @@
       offlineRecoverySubGameActionLoops: "\u5faa\u73af",
       offlineRecoverySubGameActionConvergence: "\u6c47\u5408",
       offlineRecoverySubGameActionCycles: "\u73af",
+      offlineRecoverySubGameActionShadowed: "\u8fd0\u884c\u65f6\u8986\u76d6\u8bb0\u5f55",
+      offlineRecoverySubGameActionTerminals: "\u7f3a\u5931\u69fd\u7ec8\u70b9",
+      offlineRecoverySubGameActionActiveSlot: "\u6d3b\u52a8\u8fd0\u884c\u65f6\u69fd",
       offlineRecoverySubGameActionEventTypes: "\u4e8b\u4ef6\u7c7b\u578b",
       offlineRecoverySubGameActionTypes: "\u52a8\u4f5c\u7c7b\u578b",
       offlineRecoverySubGameActionStoryTargets: "\u7c7b\u578b\u5316\u5267\u60c5\u76ee\u6807",
-      offlineRecoverySubGameActionTopologyBoundary: "\u8fb9\u4ec5\u5728\u540c\u4e00 LevelScript \u5185\u662f\u7cbe\u786e\u7684\u3002\u72ec\u7acb\u4e8b\u4ef6\u6839\u4e4b\u95f4\u6ca1\u6709\u76f8\u5bf9\u987a\u5e8f\uff1b\u9664\u975e\u7c7b\u578b\u5316\u52a8\u4f5c\u660e\u786e\u6307\u5411\u5267\u60c5\u6587\u4ef6\uff0c\u63a7\u5236\u6d41\u4e0d\u4f1a\u6392\u5e8f\u5267\u60c5\u6587\u4ef6\u3002",
+      offlineRecoverySubGameActionTopologyBoundary: "\u8fb9\u4ec5\u5728\u540c\u4e00 LevelScript \u5185\u662f\u7cbe\u786e\u7684\u3002\u91cd\u590d\u52a8\u4f5c ID \u4f7f\u7528\u6700\u540e\u4e00\u6761\u5e8f\u5217\u5316\u8bb0\u5f55\uff0c\u7f3a\u5931\u7684\u6b63\u6570\u52a8\u4f5c\u69fd\u4f1a\u6b63\u5e38\u7ed3\u675f\u3002\u72ec\u7acb\u4e8b\u4ef6\u6839\u4e4b\u95f4\u6ca1\u6709\u76f8\u5bf9\u987a\u5e8f\uff1b\u9664\u975e\u7c7b\u5316\u52a8\u4f5c\u660e\u786e\u6307\u5411\u5267\u60c5\u6587\u4ef6\uff0c\u63a7\u5236\u6d41\u4e0d\u4f1a\u6392\u5e8f\u5267\u60c5\u6587\u4ef6\u3002",
       offlineRecoveryEvidenceParentTreePartition: "\u7cbe\u786e\u7684\u5df2\u6ce8\u518c\u7236\u6811\u53f0\u8bcd\u5206\u533a",
       partialRecoveryEvidenceParentTreePartition: "\u90e8\u5206\u5df2\u6ce8\u518c\u7236\u6811\u53f0\u8bcd\u5206\u533a",
       partialRecoveryCoverage: "\u5df2\u6ce8\u518c\u8986\u76d6",
@@ -3097,9 +3103,15 @@
     const nativeMerges = (branches.nativeControlMerges || []).map((row) => `<details><summary><b>${esc(t("nativeControlMerge"))}</b><code>#${esc(row.branchLocalId ?? "?")}</code><i>&rarr;</i><code>#${esc(row.mergeLocalId ?? "?")}</code></summary><small>${esc(row.convergenceStatus === "exact_serialized_downstream_control_convergence" ? t("nativeControlReachability") : row.convergenceStatus || "")}</small><span>${(row.downstreamStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span>${(row.mergePaths || []).map((path) => `<div><b>${esc(t("nativeControlPath"))}</b>${path.map((localId) => `<code>#${esc(localId)}</code>`).join(" &rarr; ")}</div>`).join("")}${nativeSourcesHtml(row)}</details>`).join("");
     const nativeSequences = (branches.nativeOrderedSequences || []).map((row) => `<details open><summary><b>${esc(t("nativeOrderedSequence"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code></summary><small>${esc(row.eventName || "")}</small>${(row.arms || []).map((arm, index) => `<div><code>${index + 1}. ${esc(arm.edge || "?")}</code><span>${(arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("")}${(row.nativeConsumers || []).map((consumer) => `<small><code>${esc(consumer.method || "?")} @ ${esc(consumer.address || "?")}</code> ${esc(consumer.contract || "")}</small>`).join("")}${nativeSourcesHtml(row)}</details>`).join("");
     const relatedActionTopologies = (branches.nativeRelatedActionTopologies || []).map((row) => {
-      const controls = (row.controlActions || []).map((action) => `<div><code>#${esc(action.localId ?? "?")}</code><b>${esc(action.actionName || "?")}</b><span>${esc(action.controlKind || "")}</span></div>`).join("");
+      const controls = (row.controlActions || []).map((action) => {
+        const shadowed = (action.runtimeShadowedRecordOffsets || []).length
+          ? `<small>${(action.runtimeShadowedRecordOffsets || []).length} ${esc(t("offlineRecoverySubGameActionShadowed"))}; ${esc(t("offlineRecoverySubGameActionActiveSlot"))}</small>`
+          : "";
+        return `<div><code>#${esc(action.localId ?? "?")}</code><b>${esc(action.actionName || "?")}</b><span>${esc(action.controlKind || "")}</span>${shadowed}</div>`;
+      }).join("");
+      const terminals = (row.runtimeTerminalTargets || []).map((target) => `<div><code>#${esc(target.sourceLocalId ?? "?")}</code><span>${esc(target.relation || "edge")} &rarr; #${esc(target.targetActionLocalId ?? "?")}</span><small>${esc(t("offlineRecoverySubGameActionTerminals"))}</small></div>`).join("");
       const stories = (row.relatedStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
-      return `<details><summary><code>${esc(row.sourceFile || "?")}</code><span>${Number(row.actionNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionNodes"))}</span></summary><p>${stories}</p><p><span>${Number(row.orderedSequenceNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionSequences"))}</span> <span>${Number(row.parallelFanoutNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionFanouts"))}</span> <span>${Number(row.conditionalBranchNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionChoices"))}</span> <span>${Number(row.loopNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionLoops"))}</span></p>${controls}<small>${esc(row.relationshipBoundary || "")}</small></details>`;
+      return `<details><summary><code>${esc(row.sourceFile || "?")}</code><span>${Number(row.actionNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionNodes"))}</span>${Number(row.runtimeShadowedActionRecordCount || 0) ? `<span>${Number(row.runtimeShadowedActionRecordCount).toLocaleString()} ${esc(t("offlineRecoverySubGameActionShadowed"))}</span>` : ""}${Number(row.runtimeTerminalTargetCount || 0) ? `<span>${Number(row.runtimeTerminalTargetCount).toLocaleString()} ${esc(t("offlineRecoverySubGameActionTerminals"))}</span>` : ""}</summary><p>${stories}</p><p><span>${Number(row.orderedSequenceNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionSequences"))}</span> <span>${Number(row.parallelFanoutNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionFanouts"))}</span> <span>${Number(row.conditionalBranchNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionChoices"))}</span> <span>${Number(row.loopNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionLoops"))}</span></p>${controls}${terminals}<small>${esc(row.relationshipBoundary || "")}</small></details>`;
     }).join("");
     const sceneOptions = (branches.sceneGraphOptions || []).map((row) => `<div><b>${esc(t("optionBranches"))}</b><a href="${esc(storyHref(row.from))}"><code>${esc(row.from || "?")}</code></a><i>&rarr;</i><span>${(row.arms || []).flatMap((arm) => arm.targets || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("");
     const dialogConditionalBranches = directEdges.filter((row) => row.kind === "dialogTreeCrossStoryConditionalBranch").map((row) => {
@@ -3394,7 +3406,7 @@
               if (["exact_empty_action_map", "exact_no_action_map"].includes(actionTopology.status)) {
                 return `<details class="mp-subgame-task-topology mp-subgame-action-topology"><summary><strong>${esc(t("offlineRecoverySubGameActionTopology"))}</strong><span>${esc(t("offlineRecoverySubGameActionTopologyEmpty"))}</span></summary><small>${esc(t("offlineRecoverySubGameActionTopologyBoundary"))}</small></details>`;
               }
-              if (actionTopology.status !== "exact_complete_action_map") {
+              if (!["exact_complete_action_map", "exact_complete_action_map_with_runtime_shadowing"].includes(actionTopology.status)) {
                 const diagnostic = actionTopology.validatorDiagnostic || {};
                 return `<details class="mp-subgame-task-topology mp-subgame-action-topology is-unavailable"><summary><strong>${esc(t("offlineRecoverySubGameActionTopology"))}</strong><span>${esc(actionTopology.status || "unavailable")}</span></summary>${diagnostic.gate ? `<small><code>${esc(diagnostic.gate)}</code></small>` : ""}</details>`;
               }
@@ -3409,6 +3421,12 @@
                 if (!outgoing.has(key)) outgoing.set(key, []);
                 outgoing.get(key).push(edge);
               }
+              const terminals = new Map();
+              for (const target of actionTopology.runtimeTerminalTargets || []) {
+                const key = `${target.sourceKind || "?"}:${target.sourceLocalId}`;
+                if (!terminals.has(key)) terminals.set(key, []);
+                terminals.get(key).push(target);
+              }
               const eventRows = (actionTopology.eventRoots || []).map((event) => {
                 const detail = event.eventDetail || {};
                 const detailText = detail.summary || detail.eventKey || detail.guideIdFilter || (detail.triggerSlotIdFilter == null ? "" : `slot ${detail.triggerSlotIdFilter}`);
@@ -3417,15 +3435,19 @@
               }).join("");
               const actionRows = (actionTopology.actions || []).map((action) => {
                 const edges = outgoing.get(`action:${action.localId}`) || [];
+                const terminalEdges = terminals.get(`action:${action.localId}`) || [];
                 const edgeText = edges.map((edge) => `<span><code>${esc(edge.relation || "edge")}</code> &rarr; <code>#${esc(edge.targetActionLocalId)}</code></span>`).join(" ");
+                const terminalText = terminalEdges.map((edge) => `<span><code>${esc(edge.relation || "edge")}</code> &rarr; <code>#${esc(edge.targetActionLocalId)}</code> <small>${esc(t("offlineRecoverySubGameActionTerminals"))}</small></span>`).join(" ");
                 const storyTargets = (action.storyTargets || []).map((target) => `<code>${esc(target.storyKey || "?")}</code>`).join(" ");
                 const texts = (action.texts || []).map((value) => `<code>${esc(value)}</code>`).join(" ");
+                const shadowed = action.runtimeShadowedRecordOffsets || [];
+                const shadowText = shadowed.length ? `<p><strong>${esc(t("offlineRecoverySubGameActionActiveSlot"))}:</strong> <code>${esc(action.recordOffsetHex || action.recordOffset || "?")}</code> <span>${shadowed.length} ${esc(t("offlineRecoverySubGameActionShadowed"))}</span> ${shadowed.map((offset) => `<code>0x${Number(offset).toString(16)}</code>`).join(" ")}</p>` : "";
                 const isFanout = action.controlKind === "parallel_fanout" || action.controlKind === "conditional_choice";
                 const isControl = Boolean(action.controlKind);
-                return `<details class="${isFanout ? "is-fanout" : ""}"${isControl || storyTargets ? " open" : ""}><summary><code>#${esc(action.localId)}</code><b>${esc(action.actionName || action.unionTag || "?")}</b>${action.controlKind ? `<small><code>${esc(action.controlKind)}</code></small>` : ""}${edges.length ? `<small>${edges.length} ${esc(t("offlineRecoverySubGameActionEdges"))}</small>` : ""}</summary>${storyTargets ? `<p><strong>${esc(t("offlineRecoverySubGameActionStoryTargets"))}:</strong> ${storyTargets}</p>` : ""}${edgeText ? `<p>${edgeText}</p>` : ""}${texts ? `<p>${texts}</p>` : ""}</details>`;
+                return `<details class="${isFanout ? "is-fanout" : ""}"${isControl || storyTargets || shadowed.length || terminalEdges.length ? " open" : ""}><summary><code>#${esc(action.localId)}</code><b>${esc(action.actionName || action.unionTag || "?")}</b>${action.controlKind ? `<small><code>${esc(action.controlKind)}</code></small>` : ""}${edges.length ? `<small>${edges.length} ${esc(t("offlineRecoverySubGameActionEdges"))}</small>` : ""}${shadowed.length ? `<small>${shadowed.length} ${esc(t("offlineRecoverySubGameActionShadowed"))}</small>` : ""}</summary>${storyTargets ? `<p><strong>${esc(t("offlineRecoverySubGameActionStoryTargets"))}:</strong> ${storyTargets}</p>` : ""}${edgeText ? `<p>${edgeText}</p>` : ""}${terminalText ? `<p>${terminalText}</p>` : ""}${shadowText}${texts ? `<p>${texts}</p>` : ""}</details>`;
               }).join("");
               const open = Number(actionTopology.typedBranchNodeCount || 0) + Number(actionTopology.orderedSequenceNodeCount || 0) + Number(actionTopology.loopNodeCount || 0) > 0 ? " open" : "";
-              return `<details class="mp-subgame-task-topology mp-subgame-action-topology"${open}><summary><strong>${esc(t("offlineRecoverySubGameActionTopology"))}</strong><span>${Number(actionTopology.eventRootCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionEvents"))}</span><span>${Number(actionTopology.actionNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionNodes"))}</span><span>${Number(actionTopology.edgeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionEdges"))}</span><span>${Number(actionTopology.orderedSequenceNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionSequences"))}</span><span>${Number(actionTopology.parallelFanoutNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionFanouts"))}</span><span>${Number(actionTopology.conditionalBranchNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionChoices"))}</span><span>${Number(actionTopology.loopNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionLoops"))}</span><span>${Number(actionTopology.eventEntryConvergenceCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionConvergence"))}</span><span>${Number(actionTopology.cycleCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionCycles"))}</span></summary>${eventTypes ? `<p><strong>${esc(t("offlineRecoverySubGameActionEventTypes"))}:</strong> ${eventTypes}</p>` : ""}${actionTypes ? `<p><strong>${esc(t("offlineRecoverySubGameActionTypes"))}:</strong> ${actionTypes}</p>` : ""}${eventRows ? `<ol class="mp-subgame-action-events">${eventRows}</ol>` : ""}<div>${actionRows}</div><small>${esc(t("offlineRecoverySubGameActionTopologyBoundary"))}</small></details>`;
+              return `<details class="mp-subgame-task-topology mp-subgame-action-topology"${open}><summary><strong>${esc(t("offlineRecoverySubGameActionTopology"))}</strong><span>${Number(actionTopology.eventRootCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionEvents"))}</span><span>${Number(actionTopology.actionNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionNodes"))}</span><span>${Number(actionTopology.edgeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionEdges"))}</span>${Number(actionTopology.runtimeShadowedActionRecordCount || 0) ? `<span>${Number(actionTopology.runtimeShadowedActionRecordCount).toLocaleString()} ${esc(t("offlineRecoverySubGameActionShadowed"))}</span>` : ""}${Number(actionTopology.runtimeTerminalTargetCount || 0) ? `<span>${Number(actionTopology.runtimeTerminalTargetCount).toLocaleString()} ${esc(t("offlineRecoverySubGameActionTerminals"))}</span>` : ""}<span>${Number(actionTopology.orderedSequenceNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionSequences"))}</span><span>${Number(actionTopology.parallelFanoutNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionFanouts"))}</span><span>${Number(actionTopology.conditionalBranchNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionChoices"))}</span><span>${Number(actionTopology.loopNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionLoops"))}</span><span>${Number(actionTopology.eventEntryConvergenceCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionConvergence"))}</span><span>${Number(actionTopology.cycleCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionCycles"))}</span></summary>${eventTypes ? `<p><strong>${esc(t("offlineRecoverySubGameActionEventTypes"))}:</strong> ${eventTypes}</p>` : ""}${actionTypes ? `<p><strong>${esc(t("offlineRecoverySubGameActionTypes"))}:</strong> ${actionTypes}</p>` : ""}${eventRows ? `<ol class="mp-subgame-action-events">${eventRows}</ol>` : ""}<div>${actionRows}</div><small>${esc(t("offlineRecoverySubGameActionTopologyBoundary"))}</small></details>`;
             })() : "";
             const playback = (runtime.parentDialogPlayback || []).map((item) => {
               const owners = (item.nativeEventOwners || []).map((owner) => `<code>${esc(owner.headerName || "?")}</code>`).join(" ");
