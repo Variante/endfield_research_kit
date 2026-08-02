@@ -201,7 +201,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v116"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v117"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3298,6 +3298,26 @@ def publish_offline_story_recovery(
             (
                 "airwall_mission_state_radio_playback_context",
                 "closed_exact_native_playback_context_no_relative_order",
+            ),
+            (
+                "npc_proxy_tracking_dialog_navigation_context",
+                "closed_exact_non_owning_dialog_context_no_relative_order",
+            ),
+            (
+                "npc_proxy_lazy_destroy_dialog_context",
+                "closed_exact_non_owning_dialog_context_no_relative_order",
+            ),
+            (
+                "npc_proxy_ex_mission_context",
+                "closed_exact_runtime_config_no_relative_order",
+            ),
+            (
+                "npc_proxy_ex_mission_context",
+                "closed_exact_cross_mission_runtime_config_no_relative_order",
+            ),
+            (
+                "npc_proxy_ex_mission_context",
+                "closed_exact_multi_mission_runtime_config_no_relative_order",
             ),
         }
         for row in mission.get(

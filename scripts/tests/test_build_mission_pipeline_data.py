@@ -19,7 +19,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v116",
+            "sourceStoryGapQueue.v117",
         )
 
     def test_gap_queue_refresh_validates_current_generated_contract(self):
@@ -138,6 +138,36 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "sourceFiles": ["LevelData/testm1.json"],
                             "activationBoundary": "exact wall-state playback context",
                             "orderBoundary": "wall state does not order files",
+                        }, {
+                            "sceneKey": "dlg_testm1_tracking",
+                            "missionId": "testm1",
+                            "questIds": ["testm1_q#2"],
+                            "relation":
+                                "npc_proxy_tracking_dialog_navigation_context",
+                            "recoveryStatus":
+                                "closed_exact_non_owning_dialog_context_no_relative_order",
+                            "sourceFiles": ["NpcProxyTable.json"],
+                            "activationBoundary": "navigation is not playback",
+                            "orderBoundary": "tracking does not order files",
+                        }, {
+                            "sceneKey": "dlg_testm1_lazy",
+                            "missionId": "testm1",
+                            "relation": "npc_proxy_lazy_destroy_dialog_context",
+                            "recoveryStatus":
+                                "closed_exact_non_owning_dialog_context_no_relative_order",
+                            "sourceFiles": ["GameAssembly.dll"],
+                            "activationBoundary": "deactivation context only",
+                            "orderBoundary": "deactivation does not order files",
+                        }, {
+                            "sceneKey": "dlg_testm1_multi",
+                            "missionId": "testm1",
+                            "contextMissionIds": ["testm1", "testm2"],
+                            "relation": "npc_proxy_ex_mission_context",
+                            "recoveryStatus":
+                                "closed_exact_multi_mission_runtime_config_no_relative_order",
+                            "sourceFiles": ["NpcProxyExDataTable.json"],
+                            "contextBoundary": "authored alternatives, not chronology",
+                            "orderBoundary": "selection does not order files",
                         }],
                         "closedExactNativeIsolatedScenes": [{
                             "sceneKey": "misc_dlg_testm1_local_shell",
@@ -317,6 +347,25 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "cross_owner_levelscript_quest_playback_context",
                     }],
                 },
+                "dlg_testm1_tracking": {
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "relation":
+                            "npc_proxy_tracking_dialog_navigation_context",
+                    }],
+                },
+                "dlg_testm1_lazy": {
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "relation": "npc_proxy_lazy_destroy_dialog_context",
+                    }],
+                },
+                "dlg_testm1_multi": {
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "relation": "npc_proxy_ex_mission_context",
+                    }],
+                },
             }
 
             result = pipeline.publish_offline_story_recovery(
@@ -326,7 +375,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
-        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 11)
+        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 14)
         self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 3)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
@@ -411,6 +460,24 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "contextQuestId"
             ],
             "testm2_q#1",
+        )
+        self.assertEqual(
+            manifest["dlg_testm1_tracking"]["runtimeContextRecovery"][
+                "questIds"
+            ],
+            ["testm1_q#2"],
+        )
+        self.assertEqual(
+            manifest["dlg_testm1_lazy"]["runtimeContextRecovery"][
+                "relation"
+            ],
+            "npc_proxy_lazy_destroy_dialog_context",
+        )
+        self.assertEqual(
+            manifest["dlg_testm1_multi"]["runtimeContextRecovery"][
+                "contextMissionIds"
+            ],
+            ["testm1", "testm2"],
         )
         overlay = result["storyTriggerManifestOverlay"]["text_testm1_1"]
         self.assertEqual(overlay["routes"], [])

@@ -16,7 +16,7 @@ Latest CN reports:
 | Unlinked files | 1,323 |
 | Unlinked files with exact native playback | 156 |
 | Exact non-mission content | 279 (278 spacecraft/profile + 1 guide runtime) |
-| Actionable core-isolated files | 44, all in the other bucket |
+| Actionable core-isolated files | 38, all in the other bucket |
 | Partial-order mission rows | 487 |
 | Candidate scene placements | 8,877 |
 | Strong / supported / weak edges | 1,502 / 834 / 2,635 |
@@ -46,7 +46,24 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch generalizes registered DialogTree trunk-group
+The latest recovery batch removes the object-specific parent-dialog dependency
+catalog. A focused parser resolves one current registered parent DialogTree and
+re-derives every exact prime-reachable trunk or nested-dialog carrier from its
+serialized nodes and connections; the validator compares the complete carrier
+paths and fails closed on current registry, source, PathID, or hash drift. This
+general rule closes six dependencies, including uncatalogued `dlg_f1m10_8`,
+`dlg_f1m10d1_5`, and `dlg_f1m28_5`. Two further typed NpcProxy navigation and
+lazy-destroy relations now compose an exact registered DialogTree definition
+with current `GameAssembly.dll`, MissionRuntime, proxy-table, and world-registry
+evidence without claiming playback ownership. NpcProxyEx rows shared by
+multiple mission contexts retain the complete authored context set as
+alternatives, never chronology. The other-bucket queue falls from 44 to 38 with
+zero validator failures. Mission Pipeline publishes localized graph-neutral
+cards for these relation families, including context/quest sets, source files,
+hashes, and binary boundaries. The queue contract is
+`sourceStoryGapQueue.v117`; OCR and manual order remain comparison-only.
+
+The preceding recovery batch generalizes registered DialogTree trunk-group
 recovery without factory- or object-specific mappings. A mechanical
 `misc_timeline_*` aggregate closes only when its complete current
 `DialogTextTable` namespace is an exact one-parent-per-line partition across
@@ -61,7 +78,7 @@ tie-breaker; it cannot fill missing rows. This classifies 28 aggregates through
 from 72 to 44. `misc_timeline_blackbox_miner` and `_pipe` remain open because
 authored rows lack serialized registered owners. Mission Pipeline exposes the
 parent files, hashes, and directed edges. Canonical mission-pipeline builds now
-refresh and validate `sourceStoryGapQueue.v116` after current Story coverage
+refresh and validate `sourceStoryGapQueue.v117` after current Story coverage
 and partial order are published; data-only builds deliberately reuse it. OCR
 and manual order remain comparison-only.
 

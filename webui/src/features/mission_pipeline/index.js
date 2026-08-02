@@ -487,6 +487,13 @@
       offlineRecoverySources: "Original-data files",
       runtimeRecoveryNominalMission: "Nominal Story mission",
       runtimeRecoveryContextMission: "Validated runtime shell",
+      runtimeRecoveryContextMissions: "Validated runtime contexts",
+      runtimeRecoveryContextBoundary: "Context boundary",
+      runtimeRecoveryParentDialogDependency: "Exact parent DialogTree carrier dependency - activation/order unknown",
+      runtimeRecoveryNpcDialogContext: "Exact NPC dialog context - no playback owner or order edge",
+      runtimeRecoveryNpcSelectionContext: "Exact NPC runtime selection context - no relative order",
+      runtimeRecoveryNpcCrossMissionContext: "Exact cross-mission NPC runtime context - no ownership or order edge",
+      runtimeRecoveryNpcMultiMissionContext: "Exact multi-mission NPC runtime contexts - alternatives, not chronology",
       runtimeRecoveryQuestAnchors: "Shell quest anchors",
       runtimeRecoveryNativePaths: "Exact native path",
       runtimeRecoveryPlaybackRoots: "Exact playback root",
@@ -1020,6 +1027,13 @@
       offlineRecoverySources: "\u539f\u59cb\u6570\u636e\u6587\u4ef6",
       runtimeRecoveryNominalMission: "\u5267\u60c5\u6587\u4ef6\u540d\u4e49\u4efb\u52a1",
       runtimeRecoveryContextMission: "\u5df2\u9a8c\u8bc1\u8fd0\u884c\u65f6\u5916\u58f3",
+      runtimeRecoveryContextMissions: "\u5df2\u9a8c\u8bc1\u8fd0\u884c\u65f6\u4e0a\u4e0b\u6587",
+      runtimeRecoveryContextBoundary: "\u4e0a\u4e0b\u6587\u8fb9\u754c",
+      runtimeRecoveryParentDialogDependency: "\u7cbe\u786e\u7236 DialogTree \u8f7d\u4f53\u4f9d\u8d56\uff0c\u6fc0\u6d3b\u4e0e\u76f8\u5bf9\u987a\u5e8f\u672a\u77e5",
+      runtimeRecoveryNpcDialogContext: "\u7cbe\u786e NPC \u5bf9\u8bdd\u4e0a\u4e0b\u6587\uff0c\u4e0d\u8bc1\u660e\u64ad\u653e\u5f52\u5c5e\u6216\u987a\u5e8f\u8fb9",
+      runtimeRecoveryNpcSelectionContext: "\u7cbe\u786e NPC \u8fd0\u884c\u65f6\u9009\u62e9\u4e0a\u4e0b\u6587\uff0c\u4e0d\u8bc1\u660e\u76f8\u5bf9\u987a\u5e8f",
+      runtimeRecoveryNpcCrossMissionContext: "\u7cbe\u786e\u8de8\u4efb\u52a1 NPC \u8fd0\u884c\u65f6\u4e0a\u4e0b\u6587\uff0c\u4e0d\u8bc1\u660e\u5f52\u5c5e\u6216\u987a\u5e8f\u8fb9",
+      runtimeRecoveryNpcMultiMissionContext: "\u7cbe\u786e\u591a\u4efb\u52a1 NPC \u8fd0\u884c\u65f6\u4e0a\u4e0b\u6587\uff0c\u8868\u793a\u5019\u9009\u800c\u975e\u65f6\u5e8f",
       runtimeRecoveryQuestAnchors: "\u5916\u58f3\u4efb\u52a1\u8282\u70b9",
       runtimeRecoveryNativePaths: "\u7cbe\u786e\u539f\u751f\u8def\u5f84",
       runtimeRecoveryPlaybackRoots: "\u7cbe\u786e\u64ad\u653e\u6839\u8282\u70b9",
@@ -2221,6 +2235,11 @@
     "airwall_mission_state_radio_playback_context",
     "leveldata_levelscript_mission_context",
   ]);
+  const exactNpcProxyRuntimeRelations = new Set([
+    "npc_proxy_ex_mission_context",
+    "npc_proxy_tracking_dialog_navigation_context",
+    "npc_proxy_lazy_destroy_dialog_context",
+  ]);
 
   function runtimeRecoveryEvidenceLabel(row) {
     const status = row?.evidenceKind || row?.recoveryStatus || "";
@@ -2229,6 +2248,16 @@
         t("runtimeRecoveryEvidenceSameMissionLevelDataPlayback"),
       closed_exact_cross_mission_leveldata_playback_context_no_relative_order:
         t("runtimeRecoveryEvidenceCrossMissionLevelDataPlayback"),
+      closed_exact_parent_dialog_dependency_no_relative_order:
+        t("runtimeRecoveryParentDialogDependency"),
+      closed_exact_non_owning_dialog_context_no_relative_order:
+        t("runtimeRecoveryNpcDialogContext"),
+      closed_exact_runtime_config_no_relative_order:
+        t("runtimeRecoveryNpcSelectionContext"),
+      closed_exact_cross_mission_runtime_config_no_relative_order:
+        t("runtimeRecoveryNpcCrossMissionContext"),
+      closed_exact_multi_mission_runtime_config_no_relative_order:
+        t("runtimeRecoveryNpcMultiMissionContext"),
     })[status] || status;
   }
 
@@ -2268,6 +2297,9 @@
       recovery.contextMissionId
         ? `<small><strong>${esc(t("runtimeRecoveryContextMission"))}:</strong> <code>${esc(recovery.contextMissionId)}</code></small>`
         : "",
+      (recovery.contextMissionIds || []).length
+        ? `<small><strong>${esc(t("runtimeRecoveryContextMissions"))}:</strong> ${(recovery.contextMissionIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</small>`
+        : "",
       (recovery.anchorQuestIds || []).length
         ? `<small><strong>${esc(t("runtimeRecoveryQuestAnchors"))}:</strong> ${(recovery.anchorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</small>`
         : "",
@@ -2291,6 +2323,9 @@
         : "",
       recovery.consumerBoundary
         ? `<small><strong>${esc(t("offlineRecoveryConsumer"))}:</strong> ${esc(recovery.consumerBoundary)}</small>`
+        : "",
+      recovery.contextBoundary
+        ? `<small><strong>${esc(t("runtimeRecoveryContextBoundary"))}:</strong> ${esc(recovery.contextBoundary)}</small>`
         : "",
       recovery.orderBoundary
         ? `<small><strong>${esc(t("offlineRecoveryOrder"))}:</strong> ${esc(recovery.orderBoundary)}</small>`
@@ -2337,11 +2372,15 @@
       const exactSameMissionRuntimeRecovery = runtimeRecovery
         && exactSameMissionRuntimeRelations.has(runtimeRecovery.relation)
         && String(runtimeRecovery.missionId || entry.nominalMissionId || "") === missionId;
+      const exactNpcProxyRuntimeRecovery = runtimeRecovery
+        && exactNpcProxyRuntimeRelations.has(runtimeRecovery.relation)
+        && String(runtimeRecovery.missionId || runtimeRecovery.nominalStoryMissionId || entry.nominalMissionId || "") === missionId;
       const displayRuntimeRecovery = crossMissionRuntimeRecovery
         || authoredSnsMissionRecovery
         || composedRootPlaybackRecovery
         || exactBlackCarrierRecovery
-        || exactSameMissionRuntimeRecovery;
+        || exactSameMissionRuntimeRecovery
+        || exactNpcProxyRuntimeRecovery;
       const recovery = offlineRecovery || (displayRuntimeRecovery ? runtimeRecovery : null);
       if (!entry?.key || !recovery || recovery.graphEffect !== "none") return;
       const owner = String(recovery.missionId || recovery.nominalStoryMissionId || entry.nominalMissionId || "");
@@ -3165,6 +3204,12 @@
       const nativePathEvidence = nativePaths
         ? `<small><strong>${esc(t("runtimeRecoveryNativePaths"))}:</strong> ${nativePaths}</small>`
         : "";
+      const runtimeContextMissionIds = (row.contextMissionIds || []).length
+        ? row.contextMissionIds
+        : [row.contextMissionId || row.missionStateId || row.missionId].filter(Boolean);
+      const runtimeContextQuestIds = (row.anchorQuestIds || []).length
+        ? row.anchorQuestIds
+        : ((row.questIds || []).length ? row.questIds : [row.questId].filter(Boolean));
       const runtimeContext = row.runtimeContextRecovery
         ? row.relation === "sns_authored_mission_link"
           ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoverySnsLink"))}: <code>${esc(row.missionId || "?")}</code></span>${(row.snsContentIds || []).length ? `<span>content ${(row.snsContentIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}</p>`
@@ -3174,7 +3219,7 @@
               ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || "?")}</code></span>${(row.parentStoryKeys || []).length ? `<span>${esc(t("runtimeRecoveryCarrierParents"))}: ${(row.parentStoryKeys || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${(row.timelineIds || []).length ? `<span>${esc(t("offlineRecoveryInternalTimeline"))}: ${(row.timelineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}</p>`
               : exactSameMissionRuntimeRelations.has(row.relation)
                 ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || row.missionId || row.nominalMissionId || "?")}</code></span><span>${esc(t("runtimeRecoveryContextMission"))}: <code>${esc(row.contextMissionId || row.missionStateId || "?")}</code></span></p>`
-                : `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || "?")}</code></span><span>${esc(t("runtimeRecoveryContextMission"))}: <code>${esc(row.contextMissionId || "?")}</code></span>${(row.anchorQuestIds || []).length ? `<span>${esc(t("runtimeRecoveryQuestAnchors"))}: ${(row.anchorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${nativePaths ? `<span>${esc(t("runtimeRecoveryNativePaths"))}: ${nativePaths}</span>` : ""}</p>`
+                : `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || row.missionId || row.nominalMissionId || "?")}</code></span><span>${esc(t(runtimeContextMissionIds.length > 1 ? "runtimeRecoveryContextMissions" : "runtimeRecoveryContextMission"))}: ${runtimeContextMissionIds.length ? runtimeContextMissionIds.map((id) => `<code>${esc(id)}</code>`).join(" ") : `<code>?</code>`}</span>${runtimeContextQuestIds.length ? `<span>${esc(t("runtimeRecoveryQuestAnchors"))}: ${runtimeContextQuestIds.map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${nativePaths ? `<span>${esc(t("runtimeRecoveryNativePaths"))}: ${nativePaths}</span>` : ""}</p>`
         : "";
       const evidenceLabel = ({
         leveldata_property_resolved_levelscript_result_branch: t("offlineRecoveryEvidenceResultBranch"),

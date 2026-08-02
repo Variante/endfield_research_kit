@@ -10082,6 +10082,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         broken["quests"][0]["storyConnections"][1][
             "questPlayback"
         ] = True
+        failures = []
         self.assertNotIn(
             "dlg_a1m4_2",
             {
@@ -10090,8 +10091,148 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     broken,
                     {"dlg_a1m4_2"},
                     "a1m4",
+                    validation_failures=failures,
                 )
             },
+        )
+        self.assertEqual(
+            failures[0]["validator"],
+            "genericPrimeReachableDialogDependency",
+        )
+        self.assertEqual(
+            failures[0]["gate"],
+            "exactNonOwningQuestDependencyEnvelope",
+        )
+        self.assertEqual(failures[0]["storyKey"], "dlg_a1m4_2")
+
+    def test_uncataloged_prime_reachable_dialog_dependency_is_general(self) -> None:
+        payload = gap_queue.read_json(
+            gap_queue.ROOT / "webui/data/lang/CN/mission/f1m28.json",
+            {},
+        )
+        failures = []
+        rows = gap_queue._closed_exact_runtime_config_isolated_scenes(
+            payload["flow"],
+            {"dlg_f1m28_5"},
+            "f1m28",
+            validation_failures=failures,
+        )
+        closure = next(
+            row for row in rows if row["sceneKey"] == "dlg_f1m28_5"
+        )
+        self.assertEqual(failures, [])
+        self.assertEqual(closure["parentStoryKey"], "dlg_f1m28_1")
+        self.assertEqual(closure["carrierKinds"], ["dialog"])
+        self.assertEqual(closure["dialogIds"], ["dlg_f1m28_5"])
+        self.assertEqual(closure["trunkIds"], [])
+        self.assertEqual(len(closure["dialogTreePrimeStoryPlaybackCarriers"]), 1)
+        self.assertIn(closure["sourceFiles"][0], closure["sourceSha256"])
+
+    def test_registered_dialog_non_owning_contexts_are_general(self) -> None:
+        cases = (
+            ("sm2l2m1", "dlg_sm2l2m1_13"),
+            ("sm2l7m1", "dlg_sm2l7m1_18"),
+        )
+        for mission_id, story_key in cases:
+            with self.subTest(mission_id=mission_id, story_key=story_key):
+                payload = gap_queue.read_json(
+                    gap_queue.ROOT
+                    / f"webui/data/lang/CN/mission/{mission_id}.json",
+                    {},
+                )
+                failures = []
+                rows = gap_queue._closed_exact_runtime_config_isolated_scenes(
+                    payload["flow"],
+                    {story_key},
+                    mission_id,
+                    validation_failures=failures,
+                )
+                closure = next(
+                    row for row in rows if row["sceneKey"] == story_key
+                )
+                self.assertEqual(failures, [])
+                self.assertEqual(
+                    closure["recoveryStatus"],
+                    "closed_exact_non_owning_dialog_context_no_relative_order",
+                )
+                self.assertEqual(closure["graphEffect"], "none")
+                self.assertTrue(closure["dialogTreeDefinition"]["lineIds"])
+                self.assertEqual(
+                    set(closure["sourceFiles"]),
+                    set(closure["sourceSha256"]),
+                )
+
+    def test_registered_dialog_context_payload_fails_closed(self) -> None:
+        payload = gap_queue.read_json(
+            gap_queue.ROOT / "webui/data/lang/CN/mission/sm2l7m1.json",
+            {},
+        )
+        broken = copy.deepcopy(payload["flow"])
+        connection = next(
+            row
+            for row in gap_queue._flow_story_connections(broken)
+            if row.get("key") == "dlg_sm2l7m1_18"
+            and row.get("relation")
+            == "npc_proxy_lazy_destroy_dialog_context"
+        )
+        connection["npcProxyTableRow"]["lazyDestroy"] = False
+        failures = []
+        rows = gap_queue._closed_exact_runtime_config_isolated_scenes(
+            broken,
+            {"dlg_sm2l7m1_18"},
+            "sm2l7m1",
+            validation_failures=failures,
+        )
+        self.assertNotIn("dlg_sm2l7m1_18", {row["sceneKey"] for row in rows})
+        self.assertEqual(
+            failures[0]["validator"],
+            "genericRegisteredDialogNonOwningContext",
+        )
+        self.assertEqual(failures[0]["gate"], "exactTypedRelationPayload")
+        self.assertEqual(failures[0]["storyKey"], "dlg_sm2l7m1_18")
+
+    def test_npc_proxy_multi_mission_context_preserves_alternatives(self) -> None:
+        nominal = gap_queue.read_json(
+            gap_queue.ROOT / "webui/data/lang/CN/mission/sm2l3m2.json",
+            {},
+        )
+        adjacent = gap_queue.read_json(
+            gap_queue.ROOT / "webui/data/lang/CN/mission/sm2l3m3.json",
+            {},
+        )
+        nominal_row = next(
+            row
+            for row in gap_queue._flow_story_connections(nominal["flow"])
+            if row.get("key") == "dlg_sm2l3m2_7"
+            and row.get("relation") == "npc_proxy_ex_mission_context"
+        )
+        adjacent_row = copy.deepcopy(next(
+            row
+            for row in gap_queue._flow_story_connections(adjacent["flow"])
+            if row.get("key") == "dlg_sm2l3m2_7"
+            and row.get("relation") == "npc_proxy_ex_mission_context"
+        ))
+        adjacent_row["contextMissionBundle"] = "sm2l3m3"
+        rows = gap_queue._closed_exact_runtime_config_isolated_scenes(
+            {"missionStoryConnections": [nominal_row, adjacent_row]},
+            {"dlg_sm2l3m2_7"},
+            "sm2l3m2",
+        )
+        closure = next(
+            row for row in rows if row["sceneKey"] == "dlg_sm2l3m2_7"
+        )
+        self.assertEqual(
+            closure["recoveryStatus"],
+            "closed_exact_multi_mission_runtime_config_no_relative_order",
+        )
+        self.assertEqual(
+            closure["contextMissionIds"],
+            ["sm2l3m2", "sm2l3m3"],
+        )
+        self.assertIn("does not choose", closure["contextBoundary"])
+        self.assertEqual(
+            set(closure["sourceFiles"]),
+            set(closure["sourceSha256"]),
         )
 
     def test_gm01m22_nested_dialog_dependencies_are_hash_locked(self) -> None:
