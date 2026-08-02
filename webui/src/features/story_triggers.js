@@ -12,15 +12,16 @@
     playback_owner_unresolved: 3,
     condition: 4,
     context: 5,
-    dependency: 6,
-    definition_only: 7,
-    non_mission_content: 8,
-    offline_exhausted: 9,
+    context_owner_unresolved: 6,
+    dependency: 7,
+    definition_only: 8,
+    non_mission_content: 9,
+    offline_exhausted: 10,
     // Ambient world content: a consumer table names the file, but nothing in
     // the shipped data proves what triggers it. Ranked below attached and
     // exact offline-boundary classes and above only "unknown".
-    ambient_world_content: 10,
-    unknown: 11,
+    ambient_world_content: 11,
+    unknown: 12,
   };
 
   function array(value) {

@@ -199,7 +199,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v112"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v113"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3183,6 +3183,14 @@ def publish_offline_story_recovery(
                 "cutscene_root_playback_alias_composed",
                 "closed_exact_composed_root_playback_context_no_relative_order",
             ),
+            (
+                "timeline_dialog_contains_black",
+                "closed_exact_timeline_black_carrier_context_owner_or_order_unresolved",
+            ),
+            (
+                "dialog_tree_narrative_action",
+                "closed_exact_dialog_tree_black_carrier_context_no_file_order",
+            ),
         }
         for row in mission.get("closedExactNativeIsolatedScenes") or []:
             if not isinstance(row, dict):
@@ -3843,10 +3851,16 @@ def build_story_trigger_route(
         return None
     relation = str(row.get("relation") or "unknown")
     direction = str(row.get("direction") or "context")
+    owner_unresolved = owner_status in {
+        "unresolved",
+        "unresolved_playback",
+    }
     if relation == "original_text_definition_without_consumer":
         causality = "definition_only"
-    elif owner_status == "unresolved":
+    elif owner_status == "unresolved_playback":
         causality = "playback_owner_unresolved"
+    elif owner_unresolved:
+        causality = "context_owner_unresolved"
     elif direction == "quest_to_story":
         causality = "playback"
     elif direction == "story_to_quest":
@@ -3886,6 +3900,9 @@ def build_story_trigger_route(
     )
     source_files = _unique_route_strings(
         row.get("sourceFiles"),
+        row.get("assetPaths"),
+        row.get("trackPaths"),
+        row.get("rootPaths"),
         [path.get("sourceFile") for path in native_paths],
     )
     timeline_dialog_containments = [
@@ -3927,7 +3944,7 @@ def build_story_trigger_route(
     ])
 
     owner_step = {
-        "kind": "ownership_gap" if owner_status == "unresolved" else scope,
+        "kind": "ownership_gap" if owner_unresolved else scope,
         "id": quest_id if scope == "quest" and quest_id else mission_id,
         "phase": str(row.get("phase") or ""),
     }
@@ -4054,7 +4071,7 @@ def build_story_trigger_route(
         "missionId": mission_id,
         "questId": quest_id or None,
         "scope": scope,
-        "ownerStatus": owner_status,
+        "ownerStatus": "unresolved" if owner_unresolved else owner_status,
         "relation": relation,
         "direction": direction,
         "phase": str(row.get("phase") or ""),
@@ -4160,6 +4177,26 @@ def build_story_trigger_route(
         "questTriggerStatus": str(row.get("questTriggerStatus") or ""),
         "steps": steps,
     }
+
+
+def story_trigger_route_sort_key(route: dict[str, Any]) -> tuple:
+    """Keep direct playback/condition routes ahead of context diagnostics."""
+    causality = str(route.get("causality") or "")
+    causality_rank = {
+        "playback": 0,
+        "condition": 1,
+        "dependency": 2,
+        "context": 3,
+        "playback_owner_unresolved": 4,
+        "context_owner_unresolved": 5,
+        "definition_only": 6,
+    }.get(causality, 7)
+    return (
+        causality_rank,
+        natural_quest_key(str(route.get("missionId") or "")),
+        natural_quest_key(str(route.get("questId") or "")),
+        str(route.get("relation") or ""),
+    )
 
 
 def build_composed_root_playback_alias_route(
@@ -5316,7 +5353,7 @@ def build_story_binding_coverage(
                     row,
                     mission_id=mission_id,
                     scope="mission",
-                    owner_status="unresolved",
+                    owner_status="unresolved_playback",
                 ))
                 event_names = {
                     str(value).strip()
@@ -5530,6 +5567,12 @@ def build_story_binding_coverage(
         for row in flow.get("unlinkedTimelineContainment") or []:
             if isinstance(row, dict) and str(row.get("key") or "") in story_rows:
                 unresolved_timeline_containment.add(str(row["key"]))
+                add_trigger_route(build_story_trigger_route(
+                    row,
+                    mission_id=mission_id,
+                    scope="mission",
+                    owner_status="unresolved",
+                ))
         unresolved_dialog_rows = (
             flow.get("unresolvedDialogTreeNarrativeActions")
             if "unresolvedDialogTreeNarrativeActions" in flow
@@ -5538,6 +5581,12 @@ def build_story_binding_coverage(
         for row in unresolved_dialog_rows or []:
             if isinstance(row, dict) and str(row.get("key") or "") in story_rows:
                 unresolved_dialog_tree_containment.add(str(row["key"]))
+                add_trigger_route(build_story_trigger_route(
+                    row,
+                    mission_id=mission_id,
+                    scope="mission",
+                    owner_status="unresolved",
+                ))
         for row in flow.get("unlinkedDialogTreeNarrativeActions") or []:
             if isinstance(row, dict) and str(row.get("key") or "") in story_rows:
                 unlinked_dialog_tree_containment.add(str(row["key"]))
@@ -5549,12 +5598,24 @@ def build_story_binding_coverage(
         for row in unresolved_left_subtitle_rows or []:
             if isinstance(row, dict) and str(row.get("key") or "") in story_rows:
                 unresolved_dialog_tree_left_subtitle.add(str(row["key"]))
+                add_trigger_route(build_story_trigger_route(
+                    row,
+                    mission_id=mission_id,
+                    scope="mission",
+                    owner_status="unresolved",
+                ))
         for row in flow.get("unlinkedDialogTreeLeftSubtitleActions") or []:
             if isinstance(row, dict) and str(row.get("key") or "") in story_rows:
                 unlinked_dialog_tree_left_subtitle.add(str(row["key"]))
         for row in flow.get("unresolvedDialogTreeStoryPlaybackCarriers") or []:
             if isinstance(row, dict) and str(row.get("key") or "") in story_rows:
                 unresolved_dialog_tree_story_playback.add(str(row["key"]))
+                add_trigger_route(build_story_trigger_route(
+                    row,
+                    mission_id=mission_id,
+                    scope="mission",
+                    owner_status="unresolved",
+                ))
         for row in flow.get("unlinkedDefinitionOnly") or []:
             if isinstance(row, dict) and str(row.get("key") or "") in story_rows:
                 key = str(row["key"])
@@ -5640,12 +5701,7 @@ def build_story_binding_coverage(
     context_only_trigger_route_count = 0
     for key, story in sorted(story_rows.items(), key=lambda item: natural_quest_key(item[0])):
         routes = list(story_trigger_routes.get(key, {}).values())
-        routes.sort(key=lambda route: (
-            natural_quest_key(str(route.get("missionId") or "")),
-            natural_quest_key(str(route.get("questId") or "")),
-            str(route.get("causality") or ""),
-            str(route.get("relation") or ""),
-        ))
+        routes.sort(key=story_trigger_route_sort_key)
         if key in connected_keys:
             attachment_status = "connected"
         elif key in native_playback_unscoped:
@@ -5704,12 +5760,7 @@ def build_story_binding_coverage(
         if not story:
             continue
         routes = list(story_trigger_routes[key].values())
-        routes.sort(key=lambda route: (
-            natural_quest_key(str(route.get("missionId") or "")),
-            natural_quest_key(str(route.get("questId") or "")),
-            str(route.get("causality") or ""),
-            str(route.get("relation") or ""),
-        ))
+        routes.sort(key=story_trigger_route_sort_key)
         if not routes:
             continue
         context_only_trigger_route_files += 1

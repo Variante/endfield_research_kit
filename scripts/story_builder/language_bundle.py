@@ -14365,6 +14365,10 @@ def build_language_bundle(
     # mission scope is added later only when original LevelData uniquely hosts
     # the typed LevelScript action that starts the parent dialog.
     unresolved_black_timeline_attachments: dict[str, list[dict]] = defaultdict(list)
+    unresolved_black_timeline_parent_groups: dict[
+        str,
+        list[dict],
+    ] = defaultdict(list)
     black_timeline_groups: dict[tuple[str, str], list[dict]] = defaultdict(list)
     for attachment in recover_black_timeline_attachments():
         if not isinstance(attachment, dict):
@@ -20078,6 +20082,7 @@ def build_language_bundle(
     # Timeline containment receives mission scope through the parent dialog's
     # typed native playback and exact LevelData host.  This also supports
     # runtime-registered parent dialogs with no emitted ordinary text lines.
+    scoped_black_timeline_pairs: set[tuple[str, str]] = set()
     for (black_key, dialog_key), attachment_rows in sorted(black_timeline_groups.items()):
         parent_occurrences = list(native_story_playback_index.get(dialog_key) or [])
         scoped_by_mission, shared_hosts = leveldata_scoped_occurrences(parent_occurrences)
@@ -20154,8 +20159,10 @@ def build_language_bundle(
                 str(existing.get("relation") or ""),
                 str(existing.get("parentStoryKey") or ""),
             ) == signature for existing in connections if isinstance(existing, dict)):
+                scoped_black_timeline_pairs.add((black_key, dialog_key))
                 continue
             connections.append(connection)
+            scoped_black_timeline_pairs.add((black_key, dialog_key))
             preexisting_attached_story_keys_by_mission[target_mission].add(black_key)
 
     # Complete foreign-dialog line blocks use the same exact parent-playback
@@ -21516,7 +21523,22 @@ def build_language_bundle(
             "missionStoryConnections",
             [],
         ).append(connection)
+        scoped_black_timeline_pairs.add((black_key, dialog_key))
         preexisting_attached_story_keys_by_mission[target_mission].add(black_key)
+
+    # Preserve exact Timeline/DialogIdTable containment even when the parent
+    # dialog has no independently recovered mission playback or direct mission
+    # context.  This is an exact related-file/consumer link, but deliberately
+    # remains unscoped and must not make the Story file mission-attached.
+    for (black_key, dialog_key), attachment_rows in sorted(
+        black_timeline_groups.items()
+    ):
+        if (black_key, dialog_key) in scoped_black_timeline_pairs:
+            continue
+        unresolved_black_timeline_parent_groups[black_key].append({
+            "parentStoryKey": dialog_key,
+            "attachments": attachment_rows,
+        })
 
     for (
         story_key,
@@ -22249,6 +22271,13 @@ def build_language_bundle(
                 if occurrence.get("sourcePathId")
             }),
         }
+        native_mapping_ids = sorted({
+            str(occurrence.get("nativeMappingId") or "")
+            for occurrence in occurrence_rows
+            if occurrence.get("nativeMappingId")
+        })
+        if len(native_mapping_ids) == 1:
+            row["nativeMappingId"] = native_mapping_ids[0]
         if left_subtitle_only:
             row["textFields"] = sorted({
                 str(occurrence.get("textField") or "")
@@ -22493,39 +22522,106 @@ def build_language_bundle(
         unresolved_timeline_rows: list[dict] = []
         for story_key in unlinked:
             attachments = unresolved_black_timeline_attachments.get(story_key) or []
-            if not attachments:
-                continue
-            unresolved_timeline_rows.append({
-                "key": story_key,
-                "kind": story_kind_by_key.get(story_key, "black"),
-                "relation": "timeline_black_root_unresolved",
-                "direction": "context",
-                "phase": "timeline_contained",
-                "confidence": "authored_root_unscoped",
-                "source": (
-                    "serialized black-screen text playable and owning Timeline Actor root; "
-                    "no exact recovered root-to-dialog mapping"
-                ),
-                "storyOwnerMission": owner_mission,
-                "questTriggerStatus": "unresolved",
-                "occurrenceCount": len(attachments),
-                "textIds": sorted({
-                    str(row.get("textId") or "")
-                    for row in attachments
-                    if row.get("textId")
-                }),
-                "timelines": sorted({
-                    str(row.get("timeline") or "")
-                    for row in attachments
-                    if row.get("timeline")
-                }),
-                "sourceFiles": sorted({
-                    str(row.get("sourceFile") or "")
-                    for row in attachments
-                    if row.get("sourceFile")
-                }),
-                "attachments": attachments,
-            })
+            if attachments:
+                unresolved_timeline_rows.append({
+                    "key": story_key,
+                    "kind": story_kind_by_key.get(story_key, "black"),
+                    "relation": "timeline_black_root_unresolved",
+                    "direction": "context",
+                    "phase": "timeline_contained",
+                    "confidence": "authored_root_unscoped",
+                    "source": (
+                        "serialized black-screen text playable and owning Timeline Actor root; "
+                        "no exact recovered root-to-dialog mapping"
+                    ),
+                    "storyOwnerMission": owner_mission,
+                    "questTriggerStatus": "unresolved",
+                    "occurrenceCount": len(attachments),
+                    "textIds": sorted({
+                        str(row.get("textId") or "")
+                        for row in attachments
+                        if row.get("textId")
+                    }),
+                    "timelines": sorted({
+                        str(row.get("timeline") or "")
+                        for row in attachments
+                        if row.get("timeline")
+                    }),
+                    "sourceFiles": sorted({
+                        str(row.get("sourceFile") or "")
+                        for row in attachments
+                        if row.get("sourceFile")
+                    }),
+                    "attachments": attachments,
+                })
+            for parent_group in (
+                unresolved_black_timeline_parent_groups.get(story_key) or []
+            ):
+                parent_attachments = [
+                    row
+                    for row in parent_group.get("attachments") or []
+                    if isinstance(row, dict)
+                ]
+                if not parent_attachments:
+                    continue
+                unresolved_timeline_rows.append({
+                    "key": story_key,
+                    "kind": story_kind_by_key.get(story_key, "black"),
+                    "relation": "timeline_dialog_contains_black",
+                    "direction": "context",
+                    "phase": "timeline_contained",
+                    "confidence": "native_exact_parent_unscoped",
+                    "source": (
+                        "serialized black playable/track/Actor containment + "
+                        "exact DialogIdTable timeline owner; parent mission and "
+                        "quest playback remain unresolved"
+                    ),
+                    "storyOwnerMission": owner_mission,
+                    "parentStoryKey": str(
+                        parent_group.get("parentStoryKey") or ""
+                    ),
+                    "questTriggerStatus": "unresolved_parent_scope",
+                    "occurrenceCount": len(parent_attachments),
+                    "textIds": sorted({
+                        str(row.get("textId") or "")
+                        for row in parent_attachments
+                        if row.get("textId")
+                    }),
+                    "timelines": sorted({
+                        str(row.get("timeline") or "")
+                        for row in parent_attachments
+                        if row.get("timeline")
+                    }),
+                    "sourceFiles": sorted({
+                        str(row.get("sourceFile") or "")
+                        for row in parent_attachments
+                        if row.get("sourceFile")
+                    }),
+                    "assetPaths": sorted({
+                        str(row.get("assetPath") or "")
+                        for row in parent_attachments
+                        if row.get("assetPath")
+                    }),
+                    "trackPaths": sorted({
+                        str(row.get("trackPath") or "")
+                        for row in parent_attachments
+                        if row.get("trackPath")
+                    }),
+                    "rootPaths": sorted({
+                        str(row.get("rootPath") or "")
+                        for row in parent_attachments
+                        if row.get("rootPath")
+                    }),
+                    "timelineAttachments": parent_attachments,
+                    "scopeBoundary": (
+                        "exact Timeline carrier and registered parent dialog; "
+                        "no mission or quest owner inferred"
+                    ),
+                    "orderBoundary": (
+                        "Timeline containment alone does not place the Story "
+                        "file relative to mission files"
+                    ),
+                })
         if unresolved_timeline_rows:
             flow_payload["unlinkedTimelineContainment"] = unresolved_timeline_rows
         else:

@@ -78,6 +78,7 @@ const triggers = require({str(MODULE)!r});
 const manifest = {{
   condition: {{routes: [{{storyKey: "condition", causality: "condition"}}]}},
   context: {{routes: [{{storyKey: "context", causality: "context"}}]}},
+  unresolvedContext: {{routes: [{{storyKey: "unresolvedContext", causality: "context_owner_unresolved"}}]}},
   dependency: {{routes: [{{storyKey: "dependency", causality: "dependency"}}]}},
   definition: {{attachmentStatus: "definition_only_no_consumer", routes: []}},
   exhausted: {{
@@ -90,6 +91,7 @@ const manifest = {{
 for (const [key, category] of [
   ["condition", "condition"],
   ["context", "context"],
+  ["unresolvedContext", "context_owner_unresolved"],
   ["dependency", "dependency"],
   ["definition", "definition_only"],
   ["exhausted", "offline_exhausted"],

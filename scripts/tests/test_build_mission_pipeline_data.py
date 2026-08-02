@@ -18,7 +18,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v112",
+            "sourceStoryGapQueue.v113",
         )
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
@@ -82,6 +82,24 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                                 "closed_exact_composed_root_playback_context_no_relative_order",
                             "playbackBoundary": "exact composed playback",
                             "orderBoundary": "alias does not order files",
+                        }, {
+                            "sceneKey": "black_testm1_timeline",
+                            "nominalStoryMissionId": "testm1",
+                            "relation": "timeline_dialog_contains_black",
+                            "recoveryStatus":
+                                "closed_exact_timeline_black_carrier_context_owner_or_order_unresolved",
+                            "sourceFiles": ["CAB-fixture", "track.json"],
+                            "activationBoundary": "exact carrier only",
+                            "orderBoundary": "carrier does not order files",
+                        }, {
+                            "sceneKey": "black_testm1_tree",
+                            "nominalStoryMissionId": "testm1",
+                            "relation": "dialog_tree_narrative_action",
+                            "recoveryStatus":
+                                "closed_exact_dialog_tree_black_carrier_context_no_file_order",
+                            "sourceFiles": ["dialog-tree.json"],
+                            "activationBoundary": "exact parent only",
+                            "orderBoundary": "tree adjacency does not order files",
                         }],
                         "deferredOfflineExhaustedIsolatedScenes": [{
                             "sceneKey": "dlg_testm1_1",
@@ -155,6 +173,14 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "cutscene_root_playback_alias_composed",
                     }],
                 },
+                "black_testm1_timeline": {
+                    "attachmentStatus": "unlinked_no_trigger_route",
+                    "routes": [],
+                },
+                "black_testm1_tree": {
+                    "attachmentStatus": "connected",
+                    "routes": [{"causality": "context_owner_unresolved"}],
+                },
             }
 
             result = pipeline.publish_offline_story_recovery(
@@ -164,7 +190,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
-        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 5)
+        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 7)
         self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 2)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
@@ -205,6 +231,18 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "rootStoryKeys"
             ],
             ["cutscene_testm1_root"],
+        )
+        self.assertEqual(
+            manifest["black_testm1_timeline"]["runtimeContextRecovery"][
+                "sourceFiles"
+            ],
+            ["CAB-fixture", "track.json"],
+        )
+        self.assertEqual(
+            manifest["black_testm1_tree"]["runtimeContextRecovery"][
+                "relation"
+            ],
+            "dialog_tree_narrative_action",
         )
         overlay = result["storyTriggerManifestOverlay"]["text_testm1_1"]
         self.assertEqual(overlay["routes"], [])
@@ -669,6 +707,41 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(route["scriptIds"], ["70000000001"])
         self.assertEqual(route["controlPathCount"], 1)
         self.assertEqual(route["nativePaths"][0]["headerLocalId"], 4)
+
+    def test_unresolved_timeline_route_stays_context_and_attaches_files(self):
+        row = {
+            "key": "black_testm1_1",
+            "relation": "timeline_dialog_contains_black",
+            "direction": "context",
+            "phase": "timeline_contained",
+            "parentStoryKey": "dlg_parent",
+            "sourceFiles": ["CAB-story"],
+            "assetPaths": ["TextPlayable.json"],
+            "trackPaths": ["Track.json"],
+            "rootPaths": ["TimelineRoot.json"],
+        }
+
+        route = pipeline.build_story_trigger_route(
+            row,
+            mission_id="testm1",
+            owner_status="unresolved",
+        )
+
+        self.assertEqual(route["causality"], "context_owner_unresolved")
+        self.assertEqual(
+            route["sourceFiles"],
+            [
+                "CAB-story",
+                "TextPlayable.json",
+                "Track.json",
+                "TimelineRoot.json",
+            ],
+        )
+        direct = {"causality": "playback", "questId": "testm1_q#1"}
+        self.assertLess(
+            pipeline.story_trigger_route_sort_key(direct),
+            pipeline.story_trigger_route_sort_key(route),
+        )
 
     def test_trigger_route_reads_world_entity_listener_evidence(self):
         row = {
