@@ -527,6 +527,8 @@
       offlineRecoveryEvidenceBinaryUnregisteredDialog: "Unregistered dialog definition - no consumer on current original-data surfaces",
       offlineRecoveryEvidenceBinaryRegisteredDialogTree: "Registered DialogTree definition - no activator on current original-data surfaces",
       offlineRecoveryEvidenceMissionlessNativePlayback: "Exact local playback - mission bridge and order unknown",
+      runtimeRecoveryEvidenceSameMissionLevelDataPlayback: "Exact native playback in this mission shell - quest trigger and order unknown",
+      runtimeRecoveryEvidenceCrossMissionLevelDataPlayback: "Exact native playback in a related mission shell - ownership and order unknown",
       offlineRecoveryEvidenceCutsceneRoot: "Cutscene root resolved - mission activator unknown",
       offlineRecoveryNativeConsumer: "Original-binary consumer",
       offlineRecoverySnsDefinition: "SNS internal definition",
@@ -1058,6 +1060,8 @@
       offlineRecoveryEvidenceBinaryUnregisteredDialog: "\u672a\u6ce8\u518c\u5bf9\u8bdd\u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6d88\u8d39\u8005",
       offlineRecoveryEvidenceBinaryRegisteredDialogTree: "\u5df2\u6ce8\u518c DialogTree \u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6fc0\u6d3b\u5668",
       offlineRecoveryEvidenceMissionlessNativePlayback: "\u5df2\u7cbe\u786e\u6062\u590d\u672c\u5730\u64ad\u653e\uff0c\u4efb\u52a1\u6865\u63a5\u4e0e\u987a\u5e8f\u672a\u77e5",
+      runtimeRecoveryEvidenceSameMissionLevelDataPlayback: "\u5df2\u7cbe\u786e\u6062\u590d\u672c\u4efb\u52a1\u5916\u58f3\u5185\u7684\u539f\u751f\u64ad\u653e\uff0c\u4efb\u52a1\u8282\u70b9\u4e0e\u987a\u5e8f\u672a\u77e5",
+      runtimeRecoveryEvidenceCrossMissionLevelDataPlayback: "\u5df2\u7cbe\u786e\u6062\u590d\u76f8\u5173\u4efb\u52a1\u5916\u58f3\u5185\u7684\u539f\u751f\u64ad\u653e\uff0c\u5f52\u5c5e\u4e0e\u987a\u5e8f\u672a\u77e5",
       offlineRecoveryEvidenceCutsceneRoot: "\u5df2\u89e3\u6790\u8fc7\u573a\u6839\u8282\u70b9 \u2014 \u4efb\u52a1\u6fc0\u6d3b\u5668\u672a\u77e5",
       offlineRecoveryNativeConsumer: "\u539f\u59cb\u4e8c\u8fdb\u5236\u6d88\u8d39\u8005",
       offlineRecoverySnsDefinition: "SNS \u5185\u90e8\u5b9a\u4e49",
@@ -2208,7 +2212,18 @@
   ]);
   const exactSameMissionRuntimeRelations = new Set([
     "airwall_mission_state_radio_playback_context",
+    "leveldata_levelscript_mission_context",
   ]);
+
+  function runtimeRecoveryEvidenceLabel(row) {
+    const status = row?.evidenceKind || row?.recoveryStatus || "";
+    return ({
+      closed_exact_same_mission_leveldata_playback_context_no_relative_order:
+        t("runtimeRecoveryEvidenceSameMissionLevelDataPlayback"),
+      closed_exact_cross_mission_leveldata_playback_context_no_relative_order:
+        t("runtimeRecoveryEvidenceCrossMissionLevelDataPlayback"),
+    })[status] || status;
+  }
 
   function offlineRecoveryHtml(row) {
     const coverage = state.index?.storyCoverage || {};
@@ -2285,7 +2300,7 @@
     ].filter(Boolean).join("");
     return `<div class="mp-playback-rejection mp-offline-recovery">
       <header><strong>${esc(t(runtimeRecovery ? "runtimeContextRecoveryBoundary" : "offlineRecoveryBoundary"))}</strong><span>${esc(t("offlineRecoveryNoGraphEdge"))}</span></header>
-      <b>${esc(recovery.evidenceKind || recovery.recoveryStatus || "")}</b>
+      <b>${esc(runtimeRecoveryEvidenceLabel(recovery))}</b>
       ${boundaries}
       ${recovery.nativeMappingId ? `<em><code>${esc(recovery.nativeMappingId)}</code></em>` : ""}
     </div>`;
@@ -3135,7 +3150,7 @@
             : exactBlackCarrierRelations.has(row.relation)
               ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || "?")}</code></span>${(row.parentStoryKeys || []).length ? `<span>${esc(t("runtimeRecoveryCarrierParents"))}: ${(row.parentStoryKeys || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${(row.timelineIds || []).length ? `<span>${esc(t("offlineRecoveryInternalTimeline"))}: ${(row.timelineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}</p>`
               : exactSameMissionRuntimeRelations.has(row.relation)
-                ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.missionId || row.nominalMissionId || "?")}</code></span><span>${esc(t("runtimeRecoveryContextMission"))}: <code>${esc(row.missionStateId || "?")}</code></span></p>`
+                ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || row.missionId || row.nominalMissionId || "?")}</code></span><span>${esc(t("runtimeRecoveryContextMission"))}: <code>${esc(row.contextMissionId || row.missionStateId || "?")}</code></span></p>`
                 : `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || "?")}</code></span><span>${esc(t("runtimeRecoveryContextMission"))}: <code>${esc(row.contextMissionId || "?")}</code></span>${(row.anchorQuestIds || []).length ? `<span>${esc(t("runtimeRecoveryQuestAnchors"))}: ${(row.anchorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${nativePaths ? `<span>${esc(t("runtimeRecoveryNativePaths"))}: ${nativePaths}</span>` : ""}</p>`
         : "";
       const evidenceLabel = ({
@@ -3154,7 +3169,7 @@
         dialog_text_table_only_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),
-      })[row.evidenceKind] || row.evidenceKind || row.recoveryStatus || "";
+      })[row.evidenceKind] || runtimeRecoveryEvidenceLabel(row);
       return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {

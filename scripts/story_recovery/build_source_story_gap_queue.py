@@ -18480,23 +18480,31 @@ def _closed_exact_native_context_isolated_scenes(
         ):
             continue
         if relation == "leveldata_levelscript_mission_context":
-            context_mission = safe_key(
-                connection.get("contextMissionBundle")
+            context_mission = (
+                safe_key(connection.get("contextMissionBundle"))
+                or safe_key(connection.get("levelDataHostMissionId"))
             )
-            if not _exact_cross_owner_leveldata_story_context(
+            if not _exact_leveldata_story_context(
                 connection,
                 owner_mission,
                 context_mission,
             ):
                 continue
+            context_mismatch = context_mission != owner_mission
             closed.append({
                 "sceneKey": scene_key,
                 "recoveryStatus":
-                    "closed_exact_cross_mission_leveldata_playback_context_no_relative_order",
+                    (
+                        "closed_exact_cross_mission_leveldata_playback_"
+                        "context_no_relative_order"
+                        if context_mismatch
+                        else "closed_exact_same_mission_leveldata_playback_"
+                        "context_no_relative_order"
+                    ),
                 "relation": relation,
                 "nominalStoryMissionId": owner_mission,
                 "contextMissionId": context_mission,
-                "contextMissionMismatch": True,
+                "contextMissionMismatch": context_mismatch,
                 "levelIds": _string_list(connection.get("levelIds")),
                 "scriptIds": _string_list(connection.get("scriptIds")),
                 "sourceFiles": sorted(set(
@@ -18513,9 +18521,9 @@ def _closed_exact_native_context_isolated_scenes(
                     "event serializes no mission/quest id or server exchange"
                 ),
                 "orderBoundary": (
-                    "mission-shell containment identifies related original "
-                    "files but does not transfer Story ownership, identify a "
-                    "quest trigger, or establish relative Story chronology"
+                    "mission-shell containment identifies the related original "
+                    "files and exact local playback but does not identify a "
+                    "quest trigger or establish relative Story chronology"
                 ),
             })
             continue
@@ -22913,12 +22921,18 @@ def build_gap_row(
     }
 
 
-def _exact_cross_owner_leveldata_story_context(
+def _exact_leveldata_story_context(
     connection: dict[str, Any],
     owner_mission: str,
     context_mission: str,
 ) -> bool:
-    """Validate an exact foreign mission-shell LevelScript playback route."""
+    """Validate an exact LevelData-hosted LevelScript playback route.
+
+    The same source shape is valid whether the LevelData shell matches the
+    Story's nominal mission or belongs to a foreign mission.  Ownership
+    equality affects the interpretation of the resulting boundary, not the
+    binary validation gates.
+    """
     story_key = safe_key(connection.get("key"))
     occurrences = connection.get("levelScriptOccurrences") or []
     if (
@@ -22931,7 +22945,6 @@ def _exact_cross_owner_leveldata_story_context(
         or safe_key(connection.get("storyOwnerMission")) != owner_mission
         or safe_key(connection.get("levelDataHostMissionId"))
         != context_mission
-        or owner_mission == context_mission
         or safe_key(connection.get("questTriggerStatus")) != "unresolved"
         or connection.get("hasUnscopedOrOtherMissionOccurrences") is not False
         or not isinstance(occurrences, list)
@@ -23313,7 +23326,7 @@ def build_gap_report(
                 ):
                     continue
             elif relation == "leveldata_levelscript_mission_context":
-                if not _exact_cross_owner_leveldata_story_context(
+                if not _exact_leveldata_story_context(
                     connection,
                     owner_mission,
                     context_mission,
