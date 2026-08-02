@@ -179,6 +179,7 @@ def filter_native_story_playback_index(
     native_story_playback_index: dict[str, list[dict]],
     emitted_story_keys: set[str],
     suppressed_fmv_pairs: set[tuple[str, str]] | None = None,
+    story_key_resolver=None,
 ) -> dict[str, list[dict]]:
     """Keep native playback identities that have an emitted Story page.
 
@@ -188,22 +189,37 @@ def filter_native_story_playback_index(
     ghost runtime node or an implicit override relation.
     """
     suppressed = suppressed_fmv_pairs or set()
-    out: dict[str, list[dict]] = {}
-    for story_key, rows in native_story_playback_index.items():
-        if story_key not in emitted_story_keys:
+    out: dict[str, list[dict]] = defaultdict(list)
+    seen: dict[str, set[tuple]] = defaultdict(set)
+    for authored_story_key, rows in native_story_playback_index.items():
+        story_key = (
+            story_key_resolver(authored_story_key, emitted_story_keys)
+            if story_key_resolver is not None
+            else authored_story_key
+        )
+        if not story_key or story_key not in emitted_story_keys:
             continue
-        retained = [
-            row
-            for row in rows
+        for row in rows:
             if (
                 story_key,
                 str((row.get("fmvAction") or {}).get("fmvId") or "").lower(),
+            ) in suppressed:
+                continue
+            normalized = dict(row)
+            if authored_story_key != story_key:
+                normalized["authoredStoryKey"] = authored_story_key
+            signature = (
+                str(normalized.get("levelId") or ""),
+                str(normalized.get("scriptId") or ""),
+                str(normalized.get("sourceFile") or ""),
+                normalized.get("recordOffset"),
+                str(normalized.get("actionName") or ""),
             )
-            not in suppressed
-        ]
-        if retained:
-            out[story_key] = retained
-    return out
+            if signature in seen[story_key]:
+                continue
+            seen[story_key].add(signature)
+            out[story_key].append(normalized)
+    return dict(out)
 
 
 def filter_non_fmv_story_playback_index(
@@ -14530,6 +14546,7 @@ def build_language_bundle(
         build_levelscript_native_story_playback_index(),
         all_story_entry_keys,
         suppressed_native_fmv_pairs,
+        resolve_scene_ref_out_key,
     )
     native_non_fmv_story_playback_index = filter_non_fmv_story_playback_index(
         native_story_playback_index
