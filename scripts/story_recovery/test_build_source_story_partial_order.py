@@ -1320,12 +1320,29 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             }],
         }]
         topology = {
-            "schema": "levelScriptNativeActionTopology.v3",
+            "schema": "levelScriptNativeActionTopology.v4",
             "status": "exact_complete_action_map",
             "actionNodeCount": 3,
             "eventRootCount": 1,
+            "physicalHeaderRecordCount": 2,
+            "runtimeShadowedHeaderRecordCount": 1,
+            "runtimeShadowedHeaderLocalIdCount": 1,
+            "runtimeShadowedGetterRecordCount": 2,
+            "runtimeShadowedGetterLocalIdCount": 1,
             "edgeCount": 3,
             "orderedSequenceNodeCount": 1,
+            "eventRootRuntimeMode": "independently_invoked_indexed_event_slots",
+            "runtimeHeaderSlotMappingId": "indexed-slots",
+            "runtimeGetterSlotMappingId": "indexed-slots",
+            "eventRoots": [{
+                "localId": 4,
+                "headerName": "ScriptEvent_OnCustomEvent",
+                "nextActionLocalId": 5,
+                "priority": -1000,
+                "triggerActiveDuring": True,
+                "filterMode": 2,
+                "runtimeHeaderSlotMappingId": "indexed-slots",
+            }],
             "actions": [{
                 "localId": 5,
                 "actionName": "Branch",
@@ -1357,6 +1374,21 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(related["relatedStoryKeys"], ["radio_m1_1"])
         self.assertEqual(related["orderedSequenceNodeCount"], 1)
         self.assertEqual(related["controlActions"][0]["actionName"], "Branch")
+        self.assertEqual(related["physicalHeaderRecordCount"], 2)
+        self.assertEqual(related["runtimeShadowedHeaderRecordCount"], 1)
+        self.assertEqual(related["runtimeShadowedGetterRecordCount"], 2)
+        self.assertEqual(related["runtimeHeaderSlotMappingId"], "indexed-slots")
+        self.assertEqual(related["runtimeGetterSlotMappingId"], "indexed-slots")
+        self.assertEqual(
+            related["eventRootRuntimeMode"],
+            "independently_invoked_indexed_event_slots",
+        )
+        self.assertEqual(related["selectedEventRoots"][0]["localId"], 4)
+        self.assertEqual(
+            related["selectedEventRoots"][0]["headerName"],
+            "ScriptEvent_OnCustomEvent",
+        )
+        self.assertEqual(related["selectedEventRoots"][0]["priority"], -1000)
 
     def test_runtime_shadowed_native_paths_preserve_exact_split(self) -> None:
         candidates = {"radio_m1_1": "radio", "cutscene_m1_1": "cutscene"}

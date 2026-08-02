@@ -3070,6 +3070,32 @@ def _native_related_action_topologies(
             except OSError:
                 continue
         topology, diagnostic = _NATIVE_ACTION_TOPOLOGY_CACHE[cache_key]
+        selected_header_ids = {
+            int(signature[2])
+            for signature in context["events"]
+            if signature[2] is not None
+        }
+        selected_event_roots = [
+            {
+                key: event[key]
+                for key in (
+                    "localId",
+                    "headerName",
+                    "nextActionLocalId",
+                    "priority",
+                    "triggerActiveDuring",
+                    "filterMode",
+                    "filterMask",
+                    "filterLevel",
+                    "runtimeShadowedRecordOffsets",
+                    "runtimeDuplicateSignatureStatus",
+                    "runtimeHeaderSlotMappingId",
+                )
+                if event.get(key) not in (None, "", [], {})
+            }
+            for event in topology.get("eventRoots") or []
+            if int(event.get("localId") or 0) in selected_header_ids
+        ]
         control_actions = [
             {
                 key: action[key]
@@ -3107,12 +3133,33 @@ def _native_related_action_topologies(
             ],
             "actionNodeCount": int(topology.get("actionNodeCount") or 0),
             "eventRootCount": int(topology.get("eventRootCount") or 0),
+            "physicalHeaderRecordCount": int(
+                topology.get("physicalHeaderRecordCount") or 0
+            ),
             "edgeCount": int(topology.get("edgeCount") or 0),
             "runtimeShadowedActionRecordCount": int(
                 topology.get("runtimeShadowedActionRecordCount") or 0
             ),
             "runtimeShadowedActionLocalIdCount": int(
                 topology.get("runtimeShadowedActionLocalIdCount") or 0
+            ),
+            "runtimeShadowedHeaderRecordCount": int(
+                topology.get("runtimeShadowedHeaderRecordCount") or 0
+            ),
+            "runtimeShadowedHeaderLocalIdCount": int(
+                topology.get("runtimeShadowedHeaderLocalIdCount") or 0
+            ),
+            "runtimeShadowedGetterRecordCount": int(
+                topology.get("runtimeShadowedGetterRecordCount") or 0
+            ),
+            "runtimeShadowedGetterLocalIdCount": int(
+                topology.get("runtimeShadowedGetterLocalIdCount") or 0
+            ),
+            "runtimeShadowedIndexedRecordCount": int(
+                topology.get("runtimeShadowedIndexedRecordCount") or 0
+            ),
+            "runtimeShadowedIndexedLocalIdCount": int(
+                topology.get("runtimeShadowedIndexedLocalIdCount") or 0
             ),
             "runtimeTerminalTargetCount": int(
                 topology.get("runtimeTerminalTargetCount") or 0
@@ -3130,12 +3177,20 @@ def _native_related_action_topologies(
                 topology.get("conditionalBranchNodeCount") or 0
             ),
             "loopNodeCount": int(topology.get("loopNodeCount") or 0),
+            "selectedEventRoots": selected_event_roots,
             "controlActions": control_actions,
             "validatorDiagnostic": diagnostic,
             "nativeActionMappingId": topology.get("nativeActionMappingId"),
             "runtimeActionSlotMappingId": topology.get(
                 "runtimeActionSlotMappingId"
             ),
+            "runtimeHeaderSlotMappingId": topology.get(
+                "runtimeHeaderSlotMappingId"
+            ),
+            "runtimeGetterSlotMappingId": topology.get(
+                "runtimeGetterSlotMappingId"
+            ),
+            "eventRootRuntimeMode": topology.get("eventRootRuntimeMode"),
             "runtimeMissingActionTerminalMappingId": topology.get(
                 "runtimeMissingActionTerminalMappingId"
             ),

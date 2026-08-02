@@ -73,7 +73,10 @@ their inputs.
 - Mission Story-order panels list compact original LevelScript graphs only when
   an exact native event-to-Story path relates the file to that mission. Their
   remaining actions are visibly file-local and do not imply extra order;
-  active last-serialized slots stay distinct from shadowed physical records.
+  active last-serialized header/action/getter slots stay distinct from
+  shadowed physical records. The selected event listener exposes priority,
+  active-during, and filter metadata, while the UI states that listener
+  priority and physical list order are not Story chronology.
 - Native playback without mission ownership stays explicitly unassigned.
 - Definition-only rows remain distinct from playback.
 - Mission or scene order is never inferred from registration or file order.

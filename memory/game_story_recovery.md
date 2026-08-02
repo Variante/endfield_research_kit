@@ -90,14 +90,21 @@ from the current GameAssembly formatter and Execute bodies. Current
 item at a time, so `Branch.sequence[*]` is ordered iteration, not fan-out;
 `Split` is parallel fan-out, If/Else and Switch select one arm, and While is a
 loop. Zero action ids are exact terminal pointers. The current binary also
-proves that `ActionMapRuntime` indexes `actionArray[action.id]` while the
-serialized `actionList` is traversed in order: the final record for a repeated
-id is active and earlier physical records are runtime-shadowed audit rows. If
+proves one reusable construction rule for all three `ActionMapRuntime`
+collections: serialized header, action, and getter records are assigned into
+their respective runtime arrays by local id, so the final serialized record
+for a repeated id is active and earlier physical records are runtime-shadowed
+audit rows. Event roots are resolved by indexed header id and invoked
+independently; physical header-list order and listener priority do not provide
+Story chronology. The current 13,458-header census has no repeated header id,
+while getter indexing exposes 120 shadowed physical rows. Listener metadata is
+overwhelmingly priority `0` (13,455 rows), with three `-1000` spawner-death
+listeners retained as metadata rather than order evidence. If
 a positive continuation has no active slot, `ActionExecutor._DoLogicTick`
 removes an invalid stack layer or calls `_NormalReachEnd`; it is an exact
 terminal, not an unparsed object. The 4,512-file census now classifies every
 file: 522 authored empty maps, 487 files with no map, 3,403 ordinary complete
-maps, and 100 complete maps with runtime shadowing. Across 49,127 physical
+maps, and 100 complete maps with action-slot runtime shadowing. Across 49,127 physical
 action records, 48,712 active slots remain; 415 records are shadowed across
 242 repeated ids (26 ids change payload), and 23 missing-slot terminals occur
 in 14 files. There are zero fail-closed graphs. It contains 81 ordered
@@ -115,7 +122,10 @@ definition-only parents, sources, and boundaries in visible Story-only shells.
 The source partial-order report attaches 1,516 compact original LevelScript
 graphs across 221 rows only when an exact native event-to-Story path already
 relates the file. Mission Pipeline publishes the 1,439 attachments whose 202
-missions have WebUI shells; the rest of each graph stays file-local context.
+missions have WebUI shells. Each attachment retains its selected active event
+listener, listener metadata, physical/active counts, shadowed slot counts, and
+the shared original-binary runtime mapping; the rest of each graph stays
+file-local context.
 No current mission has Story
 targets on two different Branch sequence slots, so this adds zero Branch-derived
 Story-order edges rather than guessing them.
