@@ -4675,6 +4675,9 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "dlg_gm02m3_3",
                 "dlg_gm02m3_4",
                 "dlg_gm02m3_5",
+                "dlg_gm02m8_2",
+                "dlg_gm02m8_3",
+                "dlg_gm02m8_4",
                 "dlg_gm01m12_8",
                 "dlg_gm01m15_7",
                 "dlg_gm02m1_1",
@@ -4697,6 +4700,45 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(len(text_only["dlg_e10m3_10"]["lineIds"]), 8)
         self.assertEqual(len(text_only["dlg_e10m3_11"]["lineIds"]), 4)
         self.assertEqual(len(text_only["dlg_e10m3_12"]["lineIds"]), 16)
+
+    def test_declared_gm02m8_text_only_progress_dialogs_are_exact(self) -> None:
+        text_only = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS
+        for number in (2, 3, 4):
+            story_key = f"dlg_gm02m8_{number}"
+            self.assertEqual(
+                text_only[story_key],
+                {
+                    "missionId": "gm02m8",
+                    "dialogIdRegistrationStatus": "absent",
+                    "lineIds": (
+                        f"{story_key}_001",
+                        f"{story_key}_002",
+                    ),
+                    "missingAudioIds": (
+                        f"au_{story_key}_001",
+                        f"au_{story_key}_002",
+                    ),
+                },
+            )
+            self.assertEqual(
+                gap_queue.OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS[story_key],
+                story_key,
+            )
+        topology = gap_queue.OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS[
+            "gm02m8"
+        ]
+        self.assertEqual(
+            topology["mainPathQuestIds"],
+            ("gm02m8_q#1", "gm02m8_q#2", "gm02m8_q#3"),
+        )
+        self.assertEqual(
+            topology["prevQuestIdsByQuest"],
+            {
+                "gm02m8_q#1": (),
+                "gm02m8_q#2": ("gm02m8_q#1",),
+                "gm02m8_q#3": ("gm02m8_q#2",),
+            },
+        )
 
     def test_declared_a1m7_text_only_branch_frontier_is_exact(self) -> None:
         text_only = gap_queue.OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS
