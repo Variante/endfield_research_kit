@@ -136,7 +136,7 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
                 b"fixture"
             )
 
-    def test_recovers_typed_fanout_without_record_adjacency(self) -> None:
+    def test_recovers_ordered_branch_sequence_without_record_adjacency(self) -> None:
         topology, diagnostic = self.run_topology(branch_targets=[20, 30])
 
         self.assertIsNone(diagnostic)
@@ -144,7 +144,10 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
         self.assertEqual(topology["eventRootCount"], 1)
         self.assertEqual(topology["actionNodeCount"], 3)
         self.assertEqual(topology["edgeCount"], 3)
-        self.assertEqual(topology["typedBranchNodeCount"], 1)
+        self.assertEqual(topology["schema"], "levelScriptNativeActionTopology.v2")
+        self.assertEqual(topology["typedBranchNodeCount"], 0)
+        self.assertEqual(topology["orderedSequenceNodeCount"], 1)
+        self.assertEqual(topology["parallelFanoutNodeCount"], 0)
         self.assertEqual(topology["cycleCount"], 0)
         self.assertEqual(topology["orphanRootActionCount"], 0)
         self.assertEqual(topology["unmappedActionTypeCounts"], {})
@@ -153,6 +156,36 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
             ["Branch", "ManuallyAcceptClientGuideGroup", "ShowUIToast"],
         )
         self.assertFalse(topology["storyOrderEvidence"])
+
+    def test_zero_branch_arm_is_an_exact_terminal_not_a_missing_target(self) -> None:
+        topology, diagnostic = self.run_topology(branch_targets=[20, 0])
+
+        self.assertIsNone(diagnostic)
+        self.assertEqual(topology["status"], "exact_complete_action_map")
+        self.assertEqual(topology["orderedSequenceNodeCount"], 1)
+        self.assertEqual(topology["orphanRootActionCount"], 1)
+
+    def test_split_is_classified_as_parallel_fanout(self) -> None:
+        record = {
+            "nextId": -1,
+            "unionTag": 0x0495,
+            "serializedMemberCount": 0x09,
+        }
+        successors = level_bindings._levelscript_native_action_successors(
+            record,
+            {"splitActionLocalIds": [20, 30]},
+        )
+
+        self.assertEqual(
+            successors,
+            [("Split.actions[0]", 20), ("Split.actions[1]", 30)],
+        )
+        self.assertEqual(
+            level_bindings.LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
+                (0x0495, 0x09)
+            ]["kind"],
+            "parallel_fanout",
+        )
 
     def test_fails_closed_with_bounded_missing_target_diagnostic(self) -> None:
         topology, diagnostic = self.run_topology(branch_targets=[20, 99])
@@ -212,6 +245,35 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
         self.assertIsNone(diagnostic)
         self.assertEqual(topology["status"], "exact_empty_action_map")
         self.assertEqual(topology["actionNodeCount"], 0)
+        self.assertTrue(topology["actionControlFlowEvidence"])
+
+    def test_accepts_file_with_no_serialized_action_map(self) -> None:
+        action_map = {"status": "absent", "listCounts": {}}
+        with patch.object(
+            level_bindings,
+            "_extract_levelscript_tagged_ascii_strings",
+            return_value=[],
+        ), patch.object(
+            level_bindings,
+            "_extract_levelscript_plain_ascii_strings",
+            return_value=[],
+        ), patch.object(
+            level_bindings,
+            "extract_levelscript_uid_records",
+            return_value=[],
+        ), patch.object(
+            level_bindings,
+            "levelscript_action_map_membership",
+            return_value=(action_map, {}),
+        ):
+            topology, diagnostic = (
+                level_bindings.decode_levelscript_native_action_topology(
+                    b"no-map-fixture"
+                )
+            )
+
+        self.assertIsNone(diagnostic)
+        self.assertEqual(topology["status"], "exact_no_action_map")
         self.assertTrue(topology["actionControlFlowEvidence"])
 
 

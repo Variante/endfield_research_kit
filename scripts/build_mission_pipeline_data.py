@@ -201,7 +201,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v123"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v124"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3578,6 +3578,8 @@ def publish_offline_recovery_mission_shells(
                 "sceneGraphOptions": [],
                 "nativeControlBranches": [],
                 "nativeControlMerges": [],
+                "nativeOrderedSequences": [],
+                "nativeRelatedActionTopologies": [],
                 "dialogLineOptions": [],
                 "questForks": [],
                 "questMerges": [],
@@ -7529,6 +7531,12 @@ def publish_source_story_partial_order(
         summary["storyOrderNativeMergeCount"] = int(
             order_summary.get("nativeControlMergeCount") or 0
         )
+        summary["storyOrderNativeOrderedSequenceCount"] = int(
+            order_summary.get("nativeOrderedSequenceCount") or 0
+        )
+        summary["storyOrderNativeRelatedActionTopologyCount"] = int(
+            order_summary.get("nativeRelatedActionTopologyCount") or 0
+        )
         summary["storyOrderNativeNamedPredicateCount"] = int(
             order_summary.get("nativeNamedPredicateCount") or 0
         )
@@ -8285,6 +8293,8 @@ def main() -> int:
             f"{summary.get('questMerges', 0)} quest merges, "
             f"{summary.get('nativeControlBranches', 0)} native branch groups, "
             f"{summary.get('nativeControlMerges', 0)} native convergences, "
+            f"{summary.get('nativeOrderedSequences', 0)} native ordered sequences, "
+            f"{summary.get('nativeRelatedActionTopologies', 0)} related action graphs, "
             f"{summary.get('nativeNamedPredicates', 0)} named predicates, "
             f"{summary.get('nativeInlinePredicates', 0)} inline predicates, "
             f"{summary.get('nativeSemanticPredicates', 0)} semantic predicates, "
