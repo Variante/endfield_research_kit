@@ -18,7 +18,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v113",
+            "sourceStoryGapQueue.v114",
         )
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
@@ -61,6 +61,16 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                                 "closed_exact_authored_sns_mission_link_no_relative_order",
                             "activationBoundary": "authored mission link",
                             "orderBoundary": "link does not order files",
+                        }, {
+                            "sceneKey": "radio_testm1_airwall",
+                            "missionId": "testm1",
+                            "relation":
+                                "airwall_mission_state_radio_playback_context",
+                            "recoveryStatus":
+                                "closed_exact_native_playback_context_no_relative_order",
+                            "sourceFiles": ["LevelData/testm1.json"],
+                            "activationBoundary": "exact wall-state playback context",
+                            "orderBoundary": "wall state does not order files",
                         }],
                         "closedExactNativeIsolatedScenes": [{
                             "sceneKey": "radio_testm1_shell",
@@ -100,6 +110,19 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "sourceFiles": ["dialog-tree.json"],
                             "activationBoundary": "exact parent only",
                             "orderBoundary": "tree adjacency does not order files",
+                        }, {
+                            "sceneKey": "dlg_testm1_foreign_shell",
+                            "nominalStoryMissionId": "testm1",
+                            "contextMissionId": "testm2",
+                            "relation": "leveldata_levelscript_mission_context",
+                            "recoveryStatus":
+                                "closed_exact_cross_mission_leveldata_playback_context_no_relative_order",
+                            "sourceFiles": [
+                                "LevelScriptData/test.json",
+                                "LevelData/testm2.json",
+                            ],
+                            "activationBoundary": "exact foreign shell playback",
+                            "orderBoundary": "shell does not transfer ownership",
                         }],
                         "deferredOfflineExhaustedIsolatedScenes": [{
                             "sceneKey": "dlg_testm1_1",
@@ -181,6 +204,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "attachmentStatus": "connected",
                     "routes": [{"causality": "context_owner_unresolved"}],
                 },
+                "dlg_testm1_foreign_shell": {
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "relation": "leveldata_levelscript_mission_context",
+                    }],
+                },
             }
 
             result = pipeline.publish_offline_story_recovery(
@@ -190,8 +219,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
-        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 7)
-        self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 2)
+        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 9)
+        self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 3)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
             "definition_only_no_consumer",
@@ -221,6 +250,20 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "closed_exact_authored_sns_mission_link_no_relative_order",
         )
         self.assertEqual(
+            result["storyTriggerManifestOverlay"]["radio_testm1_airwall"][
+                "runtimeContextRecovery"
+            ][
+                "sourceFiles"
+            ],
+            ["LevelData/testm1.json"],
+        )
+        self.assertEqual(
+            manifest["radio_testm1_airwall"]["runtimeContextRecovery"][
+                "relation"
+            ],
+            "airwall_mission_state_radio_playback_context",
+        )
+        self.assertEqual(
             manifest["radio_testm1_shell"]["runtimeContextRecovery"][
                 "contextMissionId"
             ],
@@ -243,6 +286,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "relation"
             ],
             "dialog_tree_narrative_action",
+        )
+        self.assertEqual(
+            manifest["dlg_testm1_foreign_shell"]["runtimeContextRecovery"][
+                "contextMissionId"
+            ],
+            "testm2",
         )
         overlay = result["storyTriggerManifestOverlay"]["text_testm1_1"]
         self.assertEqual(overlay["routes"], [])

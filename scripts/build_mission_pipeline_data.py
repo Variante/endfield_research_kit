@@ -199,7 +199,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v113"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v114"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3149,6 +3149,10 @@ def publish_offline_story_recovery(
                 "sns_authored_mission_link",
                 "closed_exact_authored_sns_mission_link_no_relative_order",
             ),
+            (
+                "airwall_mission_state_radio_playback_context",
+                "closed_exact_native_playback_context_no_relative_order",
+            ),
         }
         for row in mission.get(
             "closedExactRuntimeConfigIsolatedScenes"
@@ -3173,6 +3177,21 @@ def publish_offline_story_recovery(
             if isinstance(manifest_row, dict):
                 manifest_row["runtimeContextRecovery"] = recovery
                 published_runtime_context_keys.add(story_key)
+            else:
+                overlay = manifest_overlay.setdefault(story_key, {
+                    "key": story_key,
+                    "kind": offline_story_kind(story_key),
+                    "nominalMissionId": str(
+                        row.get("missionId")
+                        or mission.get("mission")
+                        or ""
+                    ),
+                    "attachmentStatus":
+                        "runtime_context_outside_pipeline_coverage_denominator",
+                    "routes": [],
+                })
+                overlay["runtimeContextRecovery"] = recovery
+                published_runtime_context_keys.add(story_key)
 
         approved_native_contexts = {
             (
@@ -3190,6 +3209,10 @@ def publish_offline_story_recovery(
             (
                 "dialog_tree_narrative_action",
                 "closed_exact_dialog_tree_black_carrier_context_no_file_order",
+            ),
+            (
+                "leveldata_levelscript_mission_context",
+                "closed_exact_cross_mission_leveldata_playback_context_no_relative_order",
             ),
         }
         for row in mission.get("closedExactNativeIsolatedScenes") or []:
@@ -3213,6 +3236,24 @@ def publish_offline_story_recovery(
             if isinstance(manifest_row, dict):
                 manifest_row["runtimeContextRecovery"] = recovery
                 published_runtime_context_keys.add(story_key)
+            else:
+                overlay = manifest_overlay.setdefault(story_key, {
+                    "key": story_key,
+                    "kind": offline_story_kind(story_key),
+                    "nominalMissionId": str(
+                        row.get("nominalStoryMissionId")
+                        or mission.get("mission")
+                        or ""
+                    ),
+                    "attachmentStatus":
+                        "runtime_context_outside_pipeline_coverage_denominator",
+                    "routes": [],
+                })
+                overlay["runtimeContextRecovery"] = recovery
+                published_runtime_context_keys.add(story_key)
+
+    for story_key, entry in manifest_overlay.items():
+        story_trigger_manifest.setdefault(story_key, entry)
 
     return {
         "status": "active",

@@ -10,15 +10,15 @@ Latest CN reports:
 | Metric | Current |
 | --- | ---: |
 | Pipeline missions | 560 (490 MissionRuntime + 70 Story-only recovery shells) |
-| Unique Story files | 5,282 |
-| Connected files | 4,181 (79.2%) |
-| Files with a normalized trigger/context route | 4,402 (83.3%) |
-| Unlinked files | 1,101 |
-| Unlinked files with exact native playback | 155 |
-| Ordered mission graphs | 487 |
-| Candidate scene placements | 8,876 |
-| Strong / supported / weak edges | 1,485 / 834 / 2,635 |
-| Source-comparable scene pairs | 3,767 / 249,651 (1.51%) |
+| Unique Story files | 5,284 |
+| Connected files | 4,239 (80.2%) |
+| Files with a normalized trigger/context route | 4,462 (84.4%) |
+| Unlinked files | 1,045 |
+| Unlinked files with exact native playback | 156 |
+| Partial-order mission rows | 487 |
+| Candidate scene placements | 8,877 |
+| Strong / supported / weak edges | 1,502 / 834 / 2,635 |
+| Source-comparable scene pairs | 3,791 / 249,695 (1.52%) |
 | Cyclic components | 0 |
 | Exact nested DialogTree containments | 49 across 44 child files |
 | Exact quest-observed DialogTree definitions | 434 definitions / 461 placements across 422 quests |
@@ -37,14 +37,35 @@ in five payloads.
   selected runtime receiver evidence.
 - Exact native control paths for Split, If/Else, Switch, Branch, playback, and
   many event families.
-- 302 native branch groups and 18 native convergences, kept as a partial
+- 307 native branch groups and 19 native convergences, kept as a partial
   graph instead of flattened into a guessed file list.
 - 368 strict option-route groups covering 767 option arms and 1,597 branch
   lines.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch generalizes exact black-screen carrier recovery
+The latest recovery batch closes the six-file character frontier through four
+current-build patterns rather than per-object declarations. Authored
+`dlg_*` playback is normalized mechanically onto emitted `misc_dlg_*` pages;
+the same alias also lets registered DialogTree definitions retain their exact
+runtime root. AirWall radio context now validates every typed mission-state
+transition predicate (`rise`/`down`, `equal`/`not_equal`) instead of assuming
+one hard-coded pair. Text-only cutscenes require an exact localized TextTable
+group plus complete absence from Timeline, TextAsset/root, reverse-PPtr,
+typed action/playback, carrier, GameAssembly, and metadata surfaces. Finally,
+foreign LevelData shells attach exact LevelScript playback and both source
+files without transferring Story ownership. This closes
+`cutscene_c6m1_1`, `misc_dlg_c6m1_1d5`, `misc_dlg_c6m1_21d5`,
+`radio_c6m1_23`, `radio_c31m1_12`, and `radio_c16m2_25`; character
+actionable core-isolated rows fall from six to zero, while five character
+quest-attachment gaps remain. The `sourceStoryGapQueue.v114` offline and
+runtime-config validators are active with zero failures. Mission Pipeline
+shows the authored alias, transition predicates, foreign mission shell, and
+the exact DialogTree, TextTable, LevelScript, LevelData, GameAssembly, and
+metadata files. None of these relations creates a relative Story-order edge,
+and OCR/manual order remains comparison-only.
+
+The preceding recovery batch generalizes exact black-screen carrier recovery
 across three original-data classes: typed DialogTree narrative actions,
 serialized Timeline subtitle carriers, and typed native black-screen actions.
 It requires complete exact carrier coverage for a Story key and validates each
@@ -777,10 +798,10 @@ only.
    161 runtime receiver nodes and 185 receiver-to-Story placements.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
-3. **Story recovery queues:** main, event, and major have no actionable
-   core-isolated or strict quest-attachment gaps. Character missions retain six
-   actionable core-isolated files plus five quest-attachment gaps. Other
-   missions retain 425 actionable core-isolated files, 17 missing mission
+3. **Story recovery queues:** event, major, and character missions have no
+   actionable core-isolated files; character missions retain five
+   quest-attachment gaps. Main missions retain two actionable core-isolated
+   files. Other missions retain 384 actionable core-isolated files, 17 missing mission
    bundles, and three quest-attachment gaps. Broad co-memberships remain
    non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
@@ -796,10 +817,9 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should audit the remaining character frontier as shared typed
-carrier/consumer patterns: `cutscene_c6m1_1`, `misc_dlg_c6m1_1d5`,
-`misc_dlg_c6m1_21d5`, and radios `radio_c6m1_23`, `radio_c31m1_12`, and
-`radio_c16m2_25`. Then audit the five character-mission quest-attachment gaps.
+Next work should audit the five character-mission quest-attachment gaps as
+shared typed carrier/consumer patterns, then the two remaining main-story
+core-isolated files.
 Extend the same pattern-based approach
 to other definition families only when their typed schemas and complete
 consumer surfaces can be bounded without weakening the fail-closed rules.

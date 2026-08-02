@@ -229,6 +229,33 @@ class LevelScriptFmvActionTests(unittest.TestCase):
             ),
         )
 
+    def test_emitted_page_filter_normalizes_authored_dialog_aliases(self) -> None:
+        occurrence = {
+            "levelId": "dung_test",
+            "scriptId": "10001",
+            "sourceFile": "LevelScriptData/dung_test/10001.json",
+            "recordOffset": 32,
+            "actionName": "StartDialogAndTeleportAction",
+        }
+
+        def resolve(story_key: str, emitted: set[str]) -> str:
+            alias = f"misc_{story_key}"
+            return alias if alias in emitted else ""
+
+        self.assertEqual(
+            {
+                "misc_dlg_testm1_1d5": [{
+                    **occurrence,
+                    "authoredStoryKey": "dlg_testm1_1d5",
+                }],
+            },
+            filter_native_story_playback_index(
+                {"dlg_testm1_1d5": [occurrence]},
+                {"misc_dlg_testm1_1d5"},
+                story_key_resolver=resolve,
+            ),
+        )
+
     def test_fmv_mission_scope_requires_every_occurrence_to_agree(self) -> None:
         hosted = {"mission": [{"recordClass": "play_fmv"}]}
         self.assertTrue(native_fmv_scope_is_complete(
