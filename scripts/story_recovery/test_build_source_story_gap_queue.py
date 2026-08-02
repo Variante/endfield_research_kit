@@ -95,6 +95,65 @@ def mission_payload(
 
 
 class SourceStoryGapQueueTests(unittest.TestCase):
+    @staticmethod
+    def typed_selector_connection(story_key: str) -> dict:
+        alternatives = [
+            {"role": "first", "key": "dlg_a"},
+            {"role": "repeat", "key": "dlg_b"},
+        ]
+        return {
+            "missionId": "m1",
+            "key": story_key,
+            "relation": "opaque_system_selector",
+            "selectorKind": "typed_table_story_selector",
+            "selectorGroupId": "target_opaque",
+            "selectorRole": next(
+                item["role"] for item in alternatives if item["key"] == story_key
+            ),
+            "selectorAlternatives": alternatives,
+            "graphEffect": "none",
+            "sourceFiles": ["TypedTable.json"],
+            "nativeMappingId": "mapping-v1",
+            "nativeConsumers": [{"method": "Select"}],
+            "orderBoundary": "no relative order",
+        }
+
+    def test_exact_typed_selector_closes_isolated_alternatives(self) -> None:
+        partial = partial_mission(
+            "m1", scenes=["dlg_a", "dlg_b"], isolated=["dlg_a", "dlg_b"]
+        )
+        row = gap_queue.build_gap_row(
+            partial,
+            mission_payload(connections=[
+                self.typed_selector_connection("dlg_a"),
+                self.typed_selector_connection("dlg_b"),
+            ]),
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        self.assertEqual(
+            row["metrics"]["closedExactSystemSelectorIsolatedScenes"], 2
+        )
+        self.assertEqual(row["exactSystemSelectorValidationFailures"], [])
+
+    def test_partial_typed_selector_fails_closed_with_diagnostics(self) -> None:
+        connection = self.typed_selector_connection("dlg_a")
+        connection["selectorAlternatives"] = [
+            {"role": "first", "key": "dlg_a"}
+        ]
+        row = gap_queue.build_gap_row(
+            partial_mission("m1", scenes=["dlg_a"], isolated=["dlg_a"]),
+            mission_payload(connections=[connection]),
+            mission_bundle_exists=True,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 1)
+        failure = row["exactSystemSelectorValidationFailures"][0]
+        self.assertEqual(failure["validator"], "exact_typed_story_selector")
+        self.assertIn("distinctKeys", failure["failedChecks"])
+        self.assertEqual(failure["expected"]["minimumDistinctAlternatives"], 2)
+
     def test_present_literal_keys_preserves_overlapping_prefixes(self) -> None:
         payload = b"before radio_fixture_10 after"
         present = gap_queue._present_literal_keys(

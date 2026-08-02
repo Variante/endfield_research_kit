@@ -936,6 +936,11 @@ def build_domain_depot_story_connections(
         target_matches = targets_by_id.get(npc_proxy_id) or []
         if not target_matches:
             continue
+        selector_alternatives = [
+            {"role": dialog_field, "key": story_key}
+            for dialog_field in ("initialDialogId", "repeatDialogId")
+            if (story_key := str(raw_row.get(dialog_field) or "").strip())
+        ]
         for dialog_field, dialog_phase in (
             ("initialDialogId", "initial_delivery_dialog"),
             ("repeatDialogId", "repeat_delivery_dialog"),
@@ -952,6 +957,11 @@ def build_domain_depot_story_connections(
                 "dialogTableKey": str(row_key),
                 "dialogField": dialog_field,
                 "dialogPhase": dialog_phase,
+                "selectorKind": "typed_table_story_selector",
+                "selectorGroupId": npc_proxy_id,
+                "selectorRole": dialog_field,
+                "selectorAlternatives": selector_alternatives,
+                "graphEffect": "none",
                 "deliverTargets": target_matches,
                 "sourceTables": [
                     "DomainDepotConst.json",
@@ -15356,6 +15366,11 @@ def build_language_bundle(
                 },
             ],
             "nativeMappingId": "domain-depot-delivery-dialog-tables-native-v1",
+            "orderBoundary": (
+                "the typed row proves target-specific initial/repeat selector "
+                "roles, but the current native evidence does not prove a file "
+                "order between the alternatives or between delivery targets"
+            ),
         }
         pending_original_system_story_connections.append((
             target_mission,

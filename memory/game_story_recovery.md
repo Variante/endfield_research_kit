@@ -45,7 +45,23 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch generalizes spacecraft/operator content recovery
+The latest recovery batch generalizes typed system Story selectors instead of
+adding an `f1m25` exception. `DomainDepotConst.depotDeliverMissionId`, the
+dialog-table key/`npcProxyId`, and delivery-target `targetId` form an exact
+typed join; current GameAssembly consumers prove that the delivery response
+installs and later removes the selected dialog override. The generic carrier
+publishes each same-row selector as graph-neutral alternatives with authored
+roles and fails closed when the mission, role/key set, sources, native mapping,
+or order boundary is incomplete. For `f1m25`, this exposes 12 NPC-target
+groups covering 24 `initialDialogId`/`repeatDialogId` files and attaches all
+six Persistent/StreamingAssets table sources in Mission Pipeline. The queue
+falls from 103 to 79 other-bucket actionable isolated files; `f1m25` falls
+from 24 to zero with 24 exact selector closures and zero validator failures.
+It deliberately adds zero Story-order edges: the binary evidence does not yet
+prove initial-before-repeat chronology or an order between delivery targets.
+OCR/manual order remains comparison-only.
+
+The preceding recovery batch generalizes spacecraft/operator content recovery
 without actor- or file-specific rules. Complete DialogText buckets close only
 when an exact typed `DialogTree` consumes every line through
 `SpaceshipOptionGiftData` or `SpaceshipOptionWorkData`, or when a mechanical

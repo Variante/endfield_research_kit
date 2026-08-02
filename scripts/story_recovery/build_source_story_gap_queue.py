@@ -65,7 +65,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v115"
+SCHEMA = "sourceStoryGapQueue.v116"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -20818,6 +20818,88 @@ def _exact_typed_mission_state_transition_checks(
     return list(checks), None
 
 
+def _closed_exact_system_selector_isolated_scenes(
+    flow: dict[str, Any],
+    isolated_scene_keys: set[str],
+    owner_mission: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Close exact typed selector members while preserving zero graph effect."""
+    closed: list[dict[str, Any]] = []
+    failures: list[dict[str, Any]] = []
+    for row in _flow_story_connections(flow):
+        scene_key = safe_key(row.get("key"))
+        if (
+            scene_key not in isolated_scene_keys
+            or safe_key(row.get("selectorKind"))
+            != "typed_table_story_selector"
+        ):
+            continue
+        alternatives = [
+            {"role": safe_key(item.get("role")), "key": safe_key(item.get("key"))}
+            for item in row.get("selectorAlternatives") or []
+            if isinstance(item, dict)
+        ]
+        roles = [item["role"] for item in alternatives]
+        keys = [item["key"] for item in alternatives]
+        checks = {
+            "missionMatches": safe_key(row.get("missionId")) == owner_mission,
+            "graphNeutral": safe_key(row.get("graphEffect")) == "none",
+            "groupPresent": bool(safe_key(row.get("selectorGroupId"))),
+            "roleMatches": safe_key(row.get("selectorRole")) in roles,
+            "sceneIsAlternative": scene_key in keys,
+            "roleKeyMatches": any(
+                item["role"] == safe_key(row.get("selectorRole"))
+                and item["key"] == scene_key
+                for item in alternatives
+            ),
+            "distinctRoles": len(roles) >= 2 and len(set(roles)) == len(roles),
+            "distinctKeys": len(keys) >= 2 and len(set(keys)) == len(keys),
+            "sourceFilesPresent": bool(_string_list(row.get("sourceFiles"))),
+            "nativeMappingPresent": bool(safe_key(row.get("nativeMappingId"))),
+            "nativeConsumersPresent": bool(row.get("nativeConsumers")),
+            "orderBoundaryPresent": bool(safe_key(row.get("orderBoundary"))),
+        }
+        failed_checks = sorted(name for name, passed in checks.items() if not passed)
+        if failed_checks:
+            failures.append({
+                "validator": "exact_typed_story_selector",
+                "failedChecks": failed_checks,
+                "missionId": owner_mission,
+                "sceneKey": scene_key,
+                "selectorGroupId": safe_key(row.get("selectorGroupId")),
+                "expected": {
+                    "missionId": owner_mission,
+                    "graphEffect": "none",
+                    "minimumDistinctAlternatives": 2,
+                },
+                "actual": {
+                    "missionId": safe_key(row.get("missionId")),
+                    "graphEffect": safe_key(row.get("graphEffect")),
+                    "roles": roles,
+                    "keys": keys,
+                },
+                "sourceFiles": _string_list(row.get("sourceFiles")),
+            })
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus":
+                "closed_exact_typed_story_selector_no_relative_order",
+            "relation": safe_key(row.get("relation")),
+            "missionId": owner_mission,
+            "selectorKind": "typed_table_story_selector",
+            "selectorGroupId": safe_key(row.get("selectorGroupId")),
+            "selectorRole": safe_key(row.get("selectorRole")),
+            "selectorAlternatives": alternatives,
+            "sourceFiles": _string_list(row.get("sourceFiles")),
+            "nativeMappingId": safe_key(row.get("nativeMappingId")),
+            "nativeConsumers": row.get("nativeConsumers"),
+            "orderBoundary": safe_key(row.get("orderBoundary")),
+            "graphEffect": "none",
+        })
+    return closed, failures
+
+
 def _closed_exact_runtime_config_isolated_scenes(
     flow: dict[str, Any],
     isolated_scene_keys: set[str],
@@ -22598,6 +22680,17 @@ def build_gap_row(
         row["sceneKey"]
         for row in closed_exact_native_isolated
     }
+    (
+        closed_exact_system_selector_isolated,
+        exact_system_selector_validation_failures,
+    ) = _closed_exact_system_selector_isolated_scenes(
+        cross_owner_flow,
+        set(isolated_scene_keys),
+        safe_key(partial_row.get("mission")),
+    )
+    closed_exact_system_selector_isolated_keys = {
+        row["sceneKey"] for row in closed_exact_system_selector_isolated
+    }
     exact_runtime_config_validation_failures: list[dict[str, Any]] = []
     closed_exact_runtime_config_isolated = (
         _closed_exact_runtime_config_isolated_scenes(
@@ -22648,6 +22741,7 @@ def build_gap_row(
     # positively closed and negatively deferred in the mission queue.
     positive_closure_keys = (
         closed_exact_native_isolated_keys
+        | closed_exact_system_selector_isolated_keys
         | closed_exact_runtime_config_isolated_keys
         | closed_definition_only_isolated_keys
         | closed_non_mission_content_isolated_keys
@@ -22711,6 +22805,7 @@ def build_gap_row(
         key
         for key in core_isolated_scene_keys
         if key not in closed_exact_native_isolated_keys
+        and key not in closed_exact_system_selector_isolated_keys
         and key not in closed_exact_runtime_config_isolated_keys
         and key not in closed_definition_only_isolated_keys
         and key not in closed_non_mission_content_isolated_keys
@@ -22798,6 +22893,9 @@ def build_gap_row(
         "closedExactNativeIsolatedScenes": len(
             closed_exact_native_isolated_keys
         ),
+        "closedExactSystemSelectorIsolatedScenes": len(
+            closed_exact_system_selector_isolated_keys
+        ),
         "closedExactRuntimeConfigIsolatedScenes": len(
             closed_exact_runtime_config_isolated_keys
         ),
@@ -22828,6 +22926,9 @@ def build_gap_row(
         ),
         "exactRuntimeConfigValidationFailures": len(
             exact_runtime_config_validation_failures
+        ),
+        "exactSystemSelectorValidationFailures": len(
+            exact_system_selector_validation_failures
         ),
         "questCount": len(quest_ids),
         "strictQuestAttachedSceneCount": len(strict_quest_scenes),
@@ -22910,6 +23011,8 @@ def build_gap_row(
             actionable_core_isolated_scene_keys,
         "closedExactNativeIsolatedScenes":
             closed_exact_native_isolated,
+        "closedExactSystemSelectorIsolatedScenes":
+            closed_exact_system_selector_isolated,
         "closedExactRuntimeConfigIsolatedScenes":
             closed_exact_runtime_config_isolated,
         "closedDefinitionOnlyIsolatedScenes":
@@ -22935,6 +23038,8 @@ def build_gap_row(
             exact_black_carrier_validation_failures,
         "exactRuntimeConfigValidationFailures":
             exact_runtime_config_validation_failures,
+        "exactSystemSelectorValidationFailures":
+            exact_system_selector_validation_failures,
         "timelineUnresolvedKinds": dict(sorted(unresolved_kinds.items())),
         "diagnosticQuestAttachmentSources": dict(sorted(diagnostic_source_counts.items())),
         "unresolvedSourceNodes": partial_row.get("unresolvedSourceNodes") or [],
