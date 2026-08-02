@@ -1905,6 +1905,52 @@ body:not(.show-debug) .mp-playback-rejection {
 .mp-subgame-task-topology code { overflow-wrap: anywhere; }
 .mp-subgame-task-topology.is-unavailable { border-color: rgba(176, 73, 62, 0.35); }
 
+.mp-subgame-action-topology {
+  border-color: rgba(101, 84, 163, 0.3);
+  background: rgba(101, 84, 163, 0.045);
+}
+
+.mp-subgame-action-topology > summary strong { color: #6554a3; }
+
+.mp-subgame-action-events {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0 7px 7px;
+  list-style: none;
+}
+
+.mp-subgame-action-events > li {
+  min-width: 0;
+  padding: 5px;
+  border: 1px dashed rgba(101, 84, 163, 0.3);
+  border-radius: 5px;
+  font-size: 7.5px;
+}
+
+.mp-subgame-action-events > li > b,
+.mp-subgame-action-events > li > span,
+.mp-subgame-action-events > li > small {
+  margin-left: 6px;
+}
+
+.mp-subgame-action-events > li > small { color: var(--muted); }
+.mp-subgame-action-events > li > p { margin: 4px 0 0; }
+
+.mp-subgame-action-topology > div > details.is-fanout {
+  border-color: rgba(185, 117, 39, 0.5);
+  background: rgba(185, 117, 39, 0.055);
+}
+
+.mp-subgame-action-topology > div > details > p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 7px;
+  margin: 5px 0 0;
+  font-size: 7.5px;
+}
+
 .mp-story-order > p {
   margin: .65rem 0;
   color: var(--muted);

@@ -74,9 +74,11 @@ Rebuild Story data after editing overrides.
   unresolved native playback.
 - BlackBox recovery shells show the exact SubGame row, bound LevelScript,
   separate main/extra/fail task lanes, complete decoded task conditions,
-  condition formulas, objective display keys, typed parent playback, and
-  parents that remain definition-only. Task topology is never presented as a
-  successor graph or Story order.
+  condition formulas, objective display keys, typed parent playback, and the
+  complete serialized event/action graph. Typed action fan-outs, convergences,
+  and Story targets remain distinct from separate event roots and from parents
+  that are definition-only. Task topology is never presented as a successor
+  graph or Story order, and action edges never order separate event roots.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

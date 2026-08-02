@@ -64,9 +64,10 @@ their inputs.
 - Mission Pipeline links show evidence-typed trigger chains.
 - BlackBox recovery cards expose exact SubGame/bound-LevelScript context,
   separate authored task lanes, complete decoded task/condition topology,
-  condition formulas, objective display keys, exact parent playback, and
-  definition-only parent coverage without inventing task successors or Story
-  chronology.
+  condition formulas, objective display keys, exact parent playback, and the
+  serialized event/action graph. Typed fan-outs and Story targets are visible,
+  while definition-only parents and unordered event roots remain explicit;
+  neither task definitions nor separate action roots invent Story chronology.
 - Native playback without mission ownership stays explicitly unassigned.
 - Definition-only rows remain distinct from playback.
 - Mission or scene order is never inferred from registration or file order.
