@@ -2602,7 +2602,7 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
             paths[0]["path"][0]["branchPredicate"]["getterName"],
         )
 
-    def test_control_path_accepts_only_semantically_equivalent_duplicate_ids(self):
+    def test_control_path_uses_final_runtime_slot_for_duplicate_ids(self):
         header = {
             "code": 0x1052,
             "kind": 0x00,
@@ -2655,7 +2655,7 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
             )
         self.assertEqual(1, len(paths))
         self.assertEqual(
-            "exact_serialized_control_path_equivalent_duplicates",
+            "exact_serialized_control_path_runtime_shadowing",
             paths[0]["status"],
         )
         self.assertEqual(
@@ -2668,12 +2668,18 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
             "scripts.story_builder.level_bindings.decode_levelscript_record_payload",
             side_effect=decode,
         ):
-            self.assertEqual(
-                [],
-                _levelscript_native_control_paths_to_record(
-                    bytes(400), records, membership, target
-                ),
+            paths = _levelscript_native_control_paths_to_record(
+                bytes(400), records, membership, target
             )
+        self.assertEqual(1, len(paths))
+        self.assertEqual(
+            [100],
+            paths[0]["path"][0]["runtimeShadowedRecordOffsets"],
+        )
+        self.assertEqual(
+            "different_payload",
+            paths[0]["path"][0]["runtimeDuplicateSignatureStatus"],
+        )
 
     def test_if_else_and_entity_compare_decode_exact_tracked_slot_bridge(self):
         if_else_payload = (

@@ -24,6 +24,7 @@ Latest CN reports:
 | Cyclic components | 0 |
 | Exact nested DialogTree containments | 49 across 44 child files |
 | Exact quest-observed DialogTree definitions | 434 definitions / 461 placements across 422 quests |
+| LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -88,11 +89,20 @@ from the current GameAssembly formatter and Execute bodies. Current
 `Branch.Execute` at `0x18764d990` reserves itself and advances `_idList` one
 item at a time, so `Branch.sequence[*]` is ordered iteration, not fan-out;
 `Split` is parallel fan-out, If/Else and Switch select one arm, and While is a
-loop. Zero action ids are exact terminal pointers. The current 4,512-file census
-therefore validates 4,480 exact graphs (522 authored empty maps, 487 files with
-no map, and 3,471 complete maps) and leaves 32 fail-closed conflicts/dangling
-positive references. It contains 81 ordered sequences, 2,786 Split fan-outs,
-2,549 conditional selectors, and 29 loops. On the current BlackBox recovery
+loop. Zero action ids are exact terminal pointers. The current binary also
+proves that `ActionMapRuntime` indexes `actionArray[action.id]` while the
+serialized `actionList` is traversed in order: the final record for a repeated
+id is active and earlier physical records are runtime-shadowed audit rows. If
+a positive continuation has no active slot, `ActionExecutor._DoLogicTick`
+removes an invalid stack layer or calls `_NormalReachEnd`; it is an exact
+terminal, not an unparsed object. The 4,512-file census now classifies every
+file: 522 authored empty maps, 487 files with no map, 3,403 ordinary complete
+maps, and 100 complete maps with runtime shadowing. Across 49,127 physical
+action records, 48,712 active slots remain; 415 records are shadowed across
+242 repeated ids (26 ids change payload), and 23 missing-slot terminals occur
+in 14 files. There are zero fail-closed graphs. It contains 81 ordered
+sequences, 2,786 Split fan-outs, 2,549 conditional selectors, and 29 loops. On
+the current BlackBox recovery
 cards, 47 complete graphs contain 718 actions, 147 event roots, 719 edges, 16
 ordered sequences, zero fan-outs/conditional selectors/loops, and one event
 entry convergence. Separate event roots still have no serialized relative

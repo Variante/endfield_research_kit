@@ -1054,7 +1054,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "closed_exact_native_event_path_no_relative_order",
         )
 
-    def test_equivalent_duplicate_native_path_is_closed_not_actionable(self) -> None:
+    def test_runtime_shadowed_native_path_is_closed_not_actionable(self) -> None:
         partial = partial_mission(
             "e1m1",
             scenes=["radio_a"],
@@ -1072,8 +1072,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "localId": 8,
                 "allStoryKeysInRecord": ["radio_a"],
                 "nativeEventOwners": [{
-                    "status":
-                        "exact_serialized_control_path_equivalent_duplicates",
+                    "status": "exact_serialized_control_path_runtime_shadowing",
                     "headerName": "ScriptEvent_OnScriptStageChanged",
                     "headerLocalId": 4,
                     "eventDetail": {
@@ -1082,7 +1081,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     "path": [
                         {
                             "localId": 7,
-                            "equivalentRecordOffsets": [100, 200],
+                            "runtimeShadowedRecordOffsets": [100],
                         },
                         {"localId": 8},
                     ],
@@ -1105,7 +1104,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             row["closedExactNativeWeakOnlyScenes"][0]["nativeEventPaths"][0][
                 "controlPathStatus"
             ],
-            "exact_serialized_control_path_equivalent_duplicates",
+            "exact_serialized_control_path_runtime_shadowing",
         )
 
     def test_incomplete_native_weak_only_scene_remains_actionable(self) -> None:

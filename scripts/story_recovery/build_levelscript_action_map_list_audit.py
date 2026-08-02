@@ -31,6 +31,7 @@ from story_builder.context import LEVELSCRIPT_DIR  # noqa: E402
 from story_builder.level_bindings import (  # noqa: E402
     _load_levelscript_binding_data,
     classify_levelscript_record,
+    decode_levelscript_native_action_topology,
 )
 from story_builder.levelscript_binary import (  # noqa: E402
     ACTION_SERIALIZED_MAP_LIST_ORDER,
@@ -161,6 +162,9 @@ def build_report(*, union_audit: Path, top_limit: int) -> dict[str, Any]:
     decoded_files = 0
     total_records = 0
     sample_files: list[dict[str, Any]] = []
+    topology_status_counts: Counter[str] = Counter()
+    topology_totals: Counter[str] = Counter()
+    topology_failure_samples: list[dict[str, Any]] = []
 
     def ensure_list(name: str, rank: int) -> dict[str, Any]:
         if name not in list_stats:
@@ -186,12 +190,13 @@ def build_report(*, union_audit: Path, top_limit: int) -> dict[str, Any]:
                 list(file_info.get("records") or []),
                 key=lambda record: int(record.get("start") or 0),
             )
-            if not records:
-                continue
             path = ROOT / str(file_info.get("file") or "")
             try:
                 data = path.read_bytes()
             except OSError:
+                continue
+
+            if not records:
                 continue
 
             action_map = decode_levelscript_action_map_lists(data, records)
@@ -300,6 +305,34 @@ def build_report(*, union_audit: Path, top_limit: int) -> dict[str, Any]:
                             }
                         )
 
+    # Binding-data caches intentionally omit files without UID records. The
+    # topology census must instead walk every original LevelScript payload so
+    # empty and absent maps remain part of the fail-closed coverage total.
+    for path in sorted(LEVELSCRIPT_DIR.rglob("*.json")):
+        try:
+            topology, diagnostic = decode_levelscript_native_action_topology(
+                path.read_bytes()
+            )
+        except OSError:
+            continue
+        topology_status_counts[str(topology.get("status") or "unknown")] += 1
+        for key in (
+            "physicalActionRecordCount",
+            "actionNodeCount",
+            "eventRootCount",
+            "edgeCount",
+            "runtimeShadowedActionRecordCount",
+            "runtimeShadowedActionLocalIdCount",
+            "runtimeDifferentPayloadShadowLocalIdCount",
+            "runtimeTerminalTargetCount",
+        ):
+            topology_totals[key] += int(topology.get(key) or 0)
+        if diagnostic and len(topology_failure_samples) < 16:
+            topology_failure_samples.append({
+                "file": repo_rel(path),
+                "diagnostic": diagnostic,
+            })
+
     list_rows: list[dict[str, Any]] = []
     for list_name in ACTION_SERIALIZED_MAP_LIST_ORDER:
         stats = list_stats.get(list_name)
@@ -343,6 +376,13 @@ def build_report(*, union_audit: Path, top_limit: int) -> dict[str, Any]:
             "serializedRecords": total_records,
             "physicalCounts": dict(physical_counts),
             "listStatusCounts": dict(list_status_counts),
+            "topologyStatusCounts": dict(topology_status_counts),
+            "topologyTotals": dict(topology_totals),
+            "topologyFailureCount": sum(
+                count
+                for status, count in topology_status_counts.items()
+                if status == "unavailable_fail_closed"
+            ),
         },
         "keyFindings": [
             (
@@ -363,6 +403,13 @@ def build_report(*, union_audit: Path, top_limit: int) -> dict[str, Any]:
                 "gate/read family; 0x0bed/0x00 sits in actionList, consistent with a "
                 "terminal action-branch family."
             ),
+            (
+                "The current original runtime stores actions by local-id array slot: "
+                "the last serialized record shadows earlier records with the same id. "
+                "A positive continuation with no active slot reaches the executor's "
+                "normal-end path. These two general rules close the full corpus without "
+                "file- or action-class overrides."
+            ),
         ],
         "lists": list_rows,
         "selectedOpcodesByList": {
@@ -370,6 +417,7 @@ def build_report(*, union_audit: Path, top_limit: int) -> dict[str, Any]:
             for opcode, counter in selected_by_list.items()
         },
         "sampleFiles": sample_files,
+        "topologyFailureSamples": topology_failure_samples,
     }
 
 
@@ -389,6 +437,9 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Files with all three lists present: `{summary.get('filesWithThreePresentLists')}`",
         f"- Files with inferred omitted getterList: `{summary.get('filesWithInferredOmittedGetter')}`",
         f"- Serialized UID records in first three lists: `{summary.get('serializedRecords')}`",
+        f"- Native topology statuses: `{json.dumps(summary.get('topologyStatusCounts') or {}, sort_keys=True)}`",
+        f"- Native topology totals: `{json.dumps(summary.get('topologyTotals') or {}, sort_keys=True)}`",
+        f"- Fail-closed native topologies: `{summary.get('topologyFailureCount')}`",
         f"- Decoded list order: `{', '.join(payload.get('listOrder') or [])}`",
         "",
         "## Key Findings",

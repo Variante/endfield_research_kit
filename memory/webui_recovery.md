@@ -66,12 +66,14 @@ their inputs.
   separate authored task lanes, complete decoded task/condition topology,
   condition formulas, objective display keys, exact parent playback, and the
   serialized event/action graph. Ordered sequences, parallel fan-outs,
-  conditional choices, loops, and Story targets are visible,
+  conditional choices, loops, Story targets, runtime-shadowed duplicate-id
+  records, and missing-slot normal terminals are visible,
   while definition-only parents and unordered event roots remain explicit;
   neither task definitions nor separate action roots invent Story chronology.
 - Mission Story-order panels list compact original LevelScript graphs only when
   an exact native event-to-Story path relates the file to that mission. Their
-  remaining actions are visibly file-local and do not imply extra order.
+  remaining actions are visibly file-local and do not imply extra order;
+  active last-serialized slots stay distinct from shadowed physical records.
 - Native playback without mission ownership stays explicitly unassigned.
 - Definition-only rows remain distinct from playback.
 - Mission or scene order is never inferred from registration or file order.
