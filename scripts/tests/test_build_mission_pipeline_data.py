@@ -72,6 +72,16 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                                 "closed_exact_cross_mission_leveldata_shell_playback_context_no_relative_order",
                             "activationBoundary": "exact playback in sibling shell",
                             "orderBoundary": "shell does not order files",
+                        }, {
+                            "sceneKey": "cutscene_testm1_alias",
+                            "missionId": "testm1",
+                            "rootStoryKeys": ["cutscene_testm1_root"],
+                            "relation":
+                                "cutscene_root_playback_alias_composed",
+                            "recoveryStatus":
+                                "closed_exact_composed_root_playback_context_no_relative_order",
+                            "playbackBoundary": "exact composed playback",
+                            "orderBoundary": "alias does not order files",
                         }],
                         "deferredOfflineExhaustedIsolatedScenes": [{
                             "sceneKey": "dlg_testm1_1",
@@ -138,6 +148,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "authoritative_scope_leveldata_mission_context",
                     }],
                 },
+                "cutscene_testm1_alias": {
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "relation":
+                            "cutscene_root_playback_alias_composed",
+                    }],
+                },
             }
 
             result = pipeline.publish_offline_story_recovery(
@@ -147,7 +164,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
-        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 4)
+        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 5)
         self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 2)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
@@ -182,6 +199,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "contextMissionId"
             ],
             "testm2",
+        )
+        self.assertEqual(
+            manifest["cutscene_testm1_alias"]["runtimeContextRecovery"][
+                "rootStoryKeys"
+            ],
+            ["cutscene_testm1_root"],
         )
         overlay = result["storyTriggerManifestOverlay"]["text_testm1_1"]
         self.assertEqual(overlay["routes"], [])

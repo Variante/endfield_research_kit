@@ -15866,6 +15866,205 @@ def _closed_exact_lua_controller_playback_isolated_scenes(
     return closed
 
 
+def _closed_exact_composed_root_playback_isolated_scenes(
+    story_trigger_manifest: dict[str, Any],
+    isolated_scene_keys: set[str],
+    owner_mission: str,
+) -> list[dict[str, Any]]:
+    """Close exact owned CutsceneRoot aliases without inventing chronology.
+
+    A standalone ``CutsceneRoot._director`` PPtr proves playback only.  It is
+    admitted here only when the current trigger manifest has already composed
+    that serialized alias with an independently connected native route ending
+    at the root Story key.  The route shape and evidence files are revalidated
+    so a stale or partially populated manifest fails closed.
+    """
+    closed: list[dict[str, Any]] = []
+    for scene_key in sorted(isolated_scene_keys, key=natural_key):
+        manifest_row = story_trigger_manifest.get(scene_key)
+        if (
+            not isinstance(manifest_row, dict)
+            or safe_key(manifest_row.get("key")) != scene_key
+            or safe_key(manifest_row.get("nominalMissionId")) != owner_mission
+            or safe_key(manifest_row.get("attachmentStatus")) != "connected"
+        ):
+            continue
+        composed_routes = [
+            route
+            for route in manifest_row.get("routes") or []
+            if isinstance(route, dict)
+            and safe_key(route.get("relation"))
+            == "cutscene_root_playback_alias_composed"
+        ]
+        alias_routes = [
+            route
+            for route in manifest_row.get("routes") or []
+            if isinstance(route, dict)
+            and safe_key(route.get("relation"))
+            == "cutscene_root_playback_alias"
+        ]
+        if not composed_routes or not alias_routes:
+            continue
+        validated: list[dict[str, Any]] = []
+        for route in composed_routes:
+            root_key = safe_key(route.get("rootStoryKey"))
+            steps = route.get("steps")
+            source_files = _string_list(route.get("sourceFiles"))
+            audit_report = safe_key(route.get("auditReport"))
+            native_paths = [
+                row
+                for row in route.get("nativePaths") or []
+                if isinstance(row, dict)
+            ]
+            quest_id = safe_key(route.get("questId"))
+            matching_aliases = []
+            for alias_route in alias_routes:
+                alias_sources = _string_list(alias_route.get("sourceFiles"))
+                if (
+                    safe_key(alias_route.get("storyKey")) == scene_key
+                    and safe_key(alias_route.get("rootStoryKey")) == root_key
+                    and safe_key(alias_route.get("direction")) == "playback"
+                    and safe_key(alias_route.get("causality"))
+                    == "playback_alias_owner_unresolved"
+                    and safe_key(alias_route.get("confidence"))
+                    == "exact_serialized_root_director_plus_native_playback"
+                    and safe_key(alias_route.get("evidenceTier")) == "direct"
+                    and safe_key(alias_route.get("ownerStatus")) == "unresolved"
+                    and alias_route.get("missionId") is None
+                    and alias_route.get("questId") is None
+                    and safe_key(alias_route.get("questTriggerStatus"))
+                    == "no_mission_or_quest_selector_recovered"
+                    and safe_key(alias_route.get("scope")) == "cutscene_root"
+                    and alias_route.get("serverExchange") is False
+                    and safe_key(alias_route.get("nativeMappingId"))
+                    == safe_key(route.get("nativeMappingId"))
+                    and safe_key(alias_route.get("auditReport")) == audit_report
+                    and alias_sources
+                    and audit_report in alias_sources
+                    and set(alias_sources).issubset(source_files)
+                    and alias_route.get("steps") == [
+                        {"id": root_key, "kind": "story_root"},
+                        {
+                            "id": (
+                                "CutsceneRoot._director -> "
+                                "TimelineHandle.Play"
+                            ),
+                            "kind": "native_action",
+                        },
+                        {"id": scene_key, "kind": "story"},
+                    ]
+                ):
+                    matching_aliases.append(alias_route)
+            if (
+                safe_key(route.get("storyKey")) != scene_key
+                or safe_key(route.get("missionId")) != owner_mission
+                or safe_key(route.get("direction")) != "context"
+                or safe_key(route.get("causality"))
+                != "playback_alias_owner_connected"
+                or safe_key(route.get("confidence"))
+                != (
+                    "exact_connected_root_playback_plus_"
+                    "serialized_director_alias"
+                )
+                or safe_key(route.get("evidenceTier"))
+                != "native_serialized_composed_exact"
+                or safe_key(route.get("ownerStatus")) != "connected"
+                or safe_key(route.get("scope")) != "mission"
+                or safe_key(route.get("questTriggerStatus"))
+                != (
+                    "connected_root_native_playback_composed_"
+                    "with_exact_alias"
+                )
+                or route.get("serverExchange") is not False
+                or not root_key
+                or root_key == scene_key
+                or not safe_key(route.get("rootBaseRelation"))
+                or not safe_key(route.get("rootBaseCausality"))
+                or safe_key(route.get("aliasRelation"))
+                != "cutscene_root_director_playable_asset"
+                or not safe_key(route.get("nativeMappingId"))
+                or not audit_report
+                or audit_report not in source_files
+                or not native_paths
+                or len(matching_aliases) != 1
+                or any(
+                    not safe_key(path.get("sourceFile"))
+                    or safe_key(path.get("sourceFile")) not in source_files
+                    or not any(
+                        isinstance(step, dict)
+                        and safe_key(step.get("actionName")).startswith("Play")
+                        for step in path.get("steps") or []
+                    )
+                    for path in native_paths
+                )
+                or (quest_id and not quest_id.startswith(f"{owner_mission}_q#"))
+                or not isinstance(steps, list)
+                or len(steps) < 5
+                or not isinstance(steps[0], dict)
+                or safe_key(steps[0].get("kind")) != "mission"
+                or safe_key(steps[0].get("id")) != owner_mission
+                or not any(
+                    isinstance(step, dict)
+                    and safe_key(step.get("kind")) == "native_action"
+                    for step in steps[:-3]
+                )
+                or steps[-3] != {"id": root_key, "kind": "story_root"}
+                or steps[-2] != {
+                    "id": "CutsceneRoot._director -> TimelineHandle.Play",
+                    "kind": "native_action",
+                }
+                or steps[-1] != {"id": scene_key, "kind": "story"}
+            ):
+                validated = []
+                break
+            validated.append(route)
+        if not validated:
+            continue
+        closed.append({
+            "sceneKey": scene_key,
+            "recoveryStatus": (
+                "closed_exact_composed_root_playback_context_"
+                "no_relative_order"
+            ),
+            "relation": "cutscene_root_playback_alias_composed",
+            "missionId": owner_mission,
+            "rootStoryKeys": sorted({
+                safe_key(route.get("rootStoryKey"))
+                for route in validated
+            }, key=natural_key),
+            "rootBaseRelations": sorted({
+                safe_key(route.get("rootBaseRelation"))
+                for route in validated
+            }, key=natural_key),
+            "nativeMappingIds": sorted({
+                safe_key(route.get("nativeMappingId"))
+                for route in validated
+            }, key=natural_key),
+            "sourceFiles": sorted({
+                source_file
+                for route in validated
+                for source_file in _string_list(route.get("sourceFiles"))
+            }, key=natural_key),
+            "nativePaths": [
+                path
+                for route in validated
+                for path in route.get("nativePaths") or []
+                if isinstance(path, dict)
+            ],
+            "playbackBoundary": (
+                "the independently connected native route reaches the exact "
+                "CutsceneRoot, whose serialized _director PPtr identifies the "
+                "TimelineAsset executed by TimelineHandle.Play"
+            ),
+            "orderBoundary": (
+                "the composed playback alias transfers mission context only; "
+                "it supplies no relative Story-file edge"
+            ),
+            "graphEffect": "none",
+        })
+    return closed
+
+
 def _closed_exact_runtime_config_isolated_scenes(
     flow: dict[str, Any],
     isolated_scene_keys: set[str],
@@ -17595,6 +17794,15 @@ def build_gap_row(
         ):
             closed_exact_native_isolated_by_key[row["sceneKey"]] = row
     for row in _closed_exact_lua_controller_playback_isolated_scenes(
+        story_trigger_manifest,
+        set(isolated_scene_keys),
+        safe_key(partial_row.get("mission")),
+    ):
+        closed_exact_native_isolated_by_key.setdefault(
+            row["sceneKey"],
+            row,
+        )
+    for row in _closed_exact_composed_root_playback_isolated_scenes(
         story_trigger_manifest,
         set(isolated_scene_keys),
         safe_key(partial_row.get("mission")),
