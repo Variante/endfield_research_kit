@@ -61,7 +61,7 @@ from story_builder.levelscript_binary import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v106"
+SCHEMA = "sourceStoryGapQueue.v107"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -190,7 +190,7 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
-    "current-build-offline-story-carrier-exhaustion-v88"
+    "current-build-offline-story-carrier-exhaustion-v89"
 )
 OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -220,6 +220,8 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "radio_gm02m17_4": "radio_gm02m17_4",
     "radio_gm02m15_9": "radio_gm02m15_9",
     "radio_gm02m15_12": "radio_gm02m15_12",
+    "radio_gm02m21_4": "radio_gm02m21_4",
+    "radio_gm02m21_7": "radio_gm02m21_7",
     "dlg_gm01m4_7": "dlg_gm01m4_7",
     "misc_dlg_gm01m4_3d5": "dlg_gm01m4_3d5",
     "radio_gm01m4_1": "radio_gm01m4_1",
@@ -620,6 +622,87 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
                 )),
             },),
         },
+    },
+    "gm02m21": {
+        "sourceFile": (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/gm02m21.json"
+        ),
+        "sourceSha256":
+            "FBEE030B16BC77EC465523E7E0CCEF8CC77B50328C645C3694DEA9125730599F",
+        "mainPathQuestIds": tuple(
+            f"gm02m21_q#{number}" for number in range(1, 6)
+        ),
+        "prevQuestIdsByQuest": {
+            "gm02m21_q#1": (),
+            "gm02m21_q#2": ("gm02m21_q#1",),
+            "gm02m21_q#3": ("gm02m21_q#2",),
+            "gm02m21_q#4": ("gm02m21_q#3",),
+            "gm02m21_q#5": ("gm02m21_q#4",),
+            "gm02m21_q#6": ("gm02m21_q#1",),
+        },
+        "failedConditionsByQuest": {
+            **{f"gm02m21_q#{number}": None for number in range(1, 6)},
+            "gm02m21_q#6": {
+                "$type": "Beyond.Gameplay.CheckQuestState, Gameplay.Beyond",
+                "uniqueId": "7ed8c99f",
+                "useCurrentScope": False,
+                "scopeMask": 1,
+                "useGraphScope": True,
+                "_questId": {"constValue": "gm02m21_q#1"},
+                "_comparer": {"constValue": 1},
+                "_targetQuestState": {"constValue": 3},
+            },
+        },
+        "questStateDependenciesByQuest": {
+            "gm02m21_q#6": ({
+                "objectiveIndex": 1,
+                "targetQuestId": "gm02m21_q#2",
+                "comparer": 0,
+                "targetQuestState": 3,
+                "scopeMask": 1,
+                "useGraphScope": True,
+            },),
+        },
+        "objectiveConjunctionsByQuest": {
+            "gm02m21_q#2": ({
+                "objectiveIndex": 1,
+                "conditionType": "Beyond.Gameplay.CombineCondition",
+                "conditionEvalString": "{0}and{1}and{2}and{3}and{4}",
+                "subConditions": tuple({
+                    "conditionIndex": index,
+                    "conditionType": (
+                        "Beyond.Gameplay.CheckLevelScriptStage"
+                    ),
+                    "mapId": "map02_lv007",
+                    "scriptId": 10200190002,
+                    "stageValue": stage,
+                    "compareOperator": 3,
+                    "sourceFile": (
+                        "export_full/structured/StreamingAssets/Data/Json/"
+                        "LevelScriptData/map02_lv007/10200190002.json"
+                    ),
+                } for index, stage in enumerate((1, 2, 3, 4, 7))),
+            },),
+        },
+        "levelScriptPlaybackInventories": ({
+            "sourceFile": (
+                "export_full/structured/StreamingAssets/Data/Json/"
+                "LevelScriptData/map02_lv007/10200190002.json"
+            ),
+            "sourceSha256": (
+                "444389EA6AC01B7FBF9823A50FEDB8405711675520848A3C19FD9050DCE732A8"
+            ),
+            "playbackRecords": tuple({
+                "action": "PlayRadio",
+                "storyKey": f"radio_gm02m21_{number}",
+                "independentActionRoot": True,
+            } for number in (1, 2, 3, 5, 8)),
+            "absentStoryKeys": (
+                "radio_gm02m21_4",
+                "radio_gm02m21_7",
+            ),
+        },),
     },
     "gm02m17": {
         "sourceFile": (
@@ -6736,6 +6819,10 @@ OFFLINE_EXHAUSTION_GM02M15_RADIOS = frozenset({
     "radio_gm02m15_9",
     "radio_gm02m15_12",
 })
+OFFLINE_EXHAUSTION_GM02M21_RADIOS = frozenset({
+    "radio_gm02m21_4",
+    "radio_gm02m21_7",
+})
 OFFLINE_EXHAUSTION_GM02M13_RADIOS = frozenset({
     "radio_gm02m13_3",
     "radio_gm02m13_4",
@@ -6831,6 +6918,7 @@ OFFLINE_EXHAUSTION_RADIOS_BY_MISSION = {
     "gm02m13": OFFLINE_EXHAUSTION_GM02M13_RADIOS,
     "gm02m14": OFFLINE_EXHAUSTION_GM02M14_RADIOS,
     "gm02m15": OFFLINE_EXHAUSTION_GM02M15_RADIOS,
+    "gm02m21": OFFLINE_EXHAUSTION_GM02M21_RADIOS,
     "gm02m17": OFFLINE_EXHAUSTION_GM02M17_RADIOS,
     "gm01m4": OFFLINE_EXHAUSTION_GM01M4_RADIOS,
     "gm01m6": OFFLINE_EXHAUSTION_GM01M6_RADIOS,
@@ -6993,6 +7081,11 @@ OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS = {
         "au_radio_gm02m15_12_001",
         "au_radio_gm02m15_12_002",
     }),
+    "radio_gm02m21_4": frozenset({
+        "au_radio_gm02m21_4_001",
+        "au_radio_gm02m21_4_002",
+    }),
+    "radio_gm02m21_7": frozenset({"au_radio_gm02m21_7_001"}),
     "radio_gm02m13_3": frozenset({"au_radio_gm02m13_3_001"}),
     "radio_gm02m13_4": frozenset({"au_radio_gm02m13_4_001"}),
     "radio_gm02m13_5": frozenset({"au_radio_gm02m13_5_001"}),
@@ -9211,6 +9304,13 @@ def build_offline_exhaustion_index(
         source_paths[
             f"missionTopologyContext:{mission_id}"
         ] = ROOT / context["sourceFile"]
+        for inventory_index, inventory in enumerate(
+            context.get("levelScriptPlaybackInventories", ()),
+            start=1,
+        ):
+            source_paths[
+                f"missionTopologyPlayback:{mission_id}:{inventory_index}"
+            ] = ROOT / inventory["sourceFile"]
     for mission_id, context in (
         OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS.items()
     ):
@@ -9321,6 +9421,13 @@ def build_offline_exhaustion_index(
         expected_hashes[
             f"missionTopologyContext:{mission_id}"
         ] = context["sourceSha256"]
+        for inventory_index, inventory in enumerate(
+            context.get("levelScriptPlaybackInventories", ()),
+            start=1,
+        ):
+            expected_hashes[
+                f"missionTopologyPlayback:{mission_id}:{inventory_index}"
+            ] = inventory["sourceSha256"]
     for mission_id, context in (
         OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS.items()
     ):
@@ -9768,12 +9875,23 @@ def build_offline_exhaustion_index(
                 "objectiveConjunctionsByQuest", {}
             ).items()
         }
+        expected_levelscript_playback_inventories = [
+            {
+                **inventory,
+                "playbackRecords": list(inventory["playbackRecords"]),
+                "absentStoryKeys": list(inventory["absentStoryKeys"]),
+            }
+            for inventory in declaration.get(
+                "levelScriptPlaybackInventories", ()
+            )
+        ]
         actual_quest_state_dependencies: dict[
             str, list[dict[str, Any]] | None
         ] = {}
         actual_objective_conjunctions: dict[
             str, list[dict[str, Any]] | None
         ] = {}
+        actual_levelscript_playback_inventories: list[dict[str, Any]] = []
 
         def iter_quest_state_conditions(
             condition: Any,
@@ -9879,42 +9997,71 @@ def build_offline_exhaustion_index(
                 ):
                     if not isinstance(sub_condition, dict):
                         continue
+                    condition_type = safe_key(
+                        sub_condition.get("$type")
+                    ).split(",", 1)[0]
+                    level_id_field = (
+                        "levelId"
+                        if condition_type
+                        == "Beyond.Gameplay.CheckLevelScriptStage"
+                        else "_mapId"
+                    )
+                    script_id_field = (
+                        "scriptId"
+                        if condition_type
+                        == "Beyond.Gameplay.CheckLevelScriptStage"
+                        else "_scriptId"
+                    )
                     map_id = safe_key(
-                        (sub_condition.get("_mapId") or {}).get(
+                        (sub_condition.get(level_id_field) or {}).get(
                             "constValue"
                         )
                     )
                     raw_script_id = (
-                        sub_condition.get("_scriptId") or {}
+                        sub_condition.get(script_id_field) or {}
                     ).get("constValue")
                     script_id = (
                         raw_script_id.get("scriptId")
                         if isinstance(raw_script_id, dict)
                         else raw_script_id
                     )
-                    sub_conditions.append({
+                    sub_condition_row = {
                         "conditionIndex": condition_index,
-                        "conditionType": safe_key(
-                            sub_condition.get("$type")
-                        ).split(",", 1)[0],
+                        "conditionType": condition_type,
                         "mapId": map_id,
                         "scriptId": script_id,
-                        "key": safe_key(
-                            (sub_condition.get("_key") or {}).get(
-                                "constValue"
-                            )
-                        ),
-                        "value": (
-                            sub_condition.get("_value") or {}
-                        ).get("constValue"),
-                        "comparer": (
-                            sub_condition.get("_comparer") or {}
-                        ).get("constValue"),
                         "sourceFile": (
                             "export_full/structured/StreamingAssets/Data/Json/"
                             f"LevelScriptData/{map_id}/{script_id}.json"
                         ),
-                    })
+                    }
+                    if (
+                        condition_type
+                        == "Beyond.Gameplay.CheckLevelScriptStage"
+                    ):
+                        sub_condition_row.update({
+                            "stageValue": (
+                                sub_condition.get("_progressToCompare") or {}
+                            ).get("constValue"),
+                            "compareOperator": (
+                                sub_condition.get("_compareOperator") or {}
+                            ).get("constValue"),
+                        })
+                    else:
+                        sub_condition_row.update({
+                            "key": safe_key(
+                                (sub_condition.get("_key") or {}).get(
+                                    "constValue"
+                                )
+                            ),
+                            "value": (
+                                sub_condition.get("_value") or {}
+                            ).get("constValue"),
+                            "comparer": (
+                                sub_condition.get("_comparer") or {}
+                            ).get("constValue"),
+                        })
+                    sub_conditions.append(sub_condition_row)
                 conjunctions.append({
                     "objectiveIndex": objective_index,
                     "conditionType": safe_key(
@@ -9926,6 +10073,114 @@ def build_offline_exhaustion_index(
                     "subConditions": sub_conditions,
                 })
             actual_objective_conjunctions[quest_id] = conjunctions
+
+        for inventory_index, expected_inventory in enumerate(
+            expected_levelscript_playback_inventories,
+            start=1,
+        ):
+            playback_source_name = (
+                f"missionTopologyPlayback:{mission_id}:{inventory_index}"
+            )
+            playback_data = source_paths[playback_source_name].read_bytes()
+            playback_records = extract_levelscript_uid_records(
+                playback_data
+            )
+            _action_map, playback_membership = (
+                levelscript_action_map_membership(
+                    playback_data,
+                    playback_records,
+                )
+            )
+            actual_playback_records = []
+            for record_index, record in enumerate(playback_records):
+                action = {
+                    (0x0363, 0x0D): "PlayRadio",
+                    (0x0364, 0x0D): "PlayRadioAndWait",
+                }.get(levelscript_record_semantic_key(record))
+                if not action:
+                    continue
+                role = safe_key(
+                    playback_membership.get(record.get("start"))
+                )
+                decoded_payload = decode_levelscript_record_payload(
+                    playback_data,
+                    record,
+                    next_start=(
+                        playback_records[record_index + 1].get("start")
+                        if record_index + 1 < len(playback_records)
+                        else None
+                    ),
+                    action_map_role=role,
+                )
+                story_values = [
+                    safe_key(field.get("value"))
+                    for field in decoded_payload.get("taggedFields") or []
+                    if (
+                        isinstance(field, dict)
+                        and field.get("type") == "string"
+                        and safe_key(field.get("value"))
+                    )
+                ]
+                actual_playback_records.append({
+                    "action": action,
+                    "storyKey": (
+                        story_values[0] if len(story_values) == 1 else ""
+                    ),
+                    "independentActionRoot": (
+                        role.startswith("actionList#")
+                        and role.endswith(" root")
+                    ),
+                })
+            actual_playback_records.sort(
+                key=lambda row: natural_key(row["storyKey"])
+            )
+            actual_story_keys = {
+                row["storyKey"] for row in actual_playback_records
+            }
+            actual_levelscript_playback_inventories.append({
+                "sourceFile": expected_inventory["sourceFile"],
+                "sourceSha256": expected_inventory["sourceSha256"],
+                "playbackRecords": actual_playback_records,
+                "absentStoryKeys": [
+                    story_key
+                    for story_key in expected_inventory["absentStoryKeys"]
+                    if story_key not in actual_story_keys
+                ],
+            })
+        if (
+            actual_levelscript_playback_inventories
+            != expected_levelscript_playback_inventories
+        ):
+            playback_source_names = [
+                f"missionTopologyPlayback:{mission_id}:{inventory_index}"
+                for inventory_index in range(
+                    1,
+                    len(expected_levelscript_playback_inventories) + 1,
+                )
+            ]
+            status.update({
+                "status": (
+                    "inactive_levelscript_playback_inventory_validation_failed"
+                ),
+                "validatorDiagnostics": [{
+                    "validator": "offlineLevelScriptPlaybackInventory",
+                    "gate": (
+                        "exactTypedPlaybackRecordsIndependentRootsAndAbsentTargets"
+                    ),
+                    "mission": mission_id,
+                    "sourcePaths": [
+                        str(source_paths[name])
+                        for name in playback_source_names
+                    ],
+                    "sourceSha256": {
+                        name: actual_hashes.get(name, "")
+                        for name in playback_source_names
+                    },
+                    "expected": expected_levelscript_playback_inventories,
+                    "actual": actual_levelscript_playback_inventories,
+                }],
+            })
+            return {}, status
         valid = (
             isinstance(quest_dic, dict)
             and set(quest_dic) == set(expected_prev)
@@ -10121,6 +10376,18 @@ def build_offline_exhaustion_index(
                 for quest_id, conjunctions
                 in expected_objective_conjunctions.items()
                 for conjunction in conjunctions
+            ],
+            "levelScriptPlaybackInventories": [
+                {
+                    **inventory,
+                    "serializedListOrderStatus": "not_execution_order",
+                    "ownershipBoundary": (
+                        "exact playback ownership only for listed Story keys; "
+                        "absent targets remain definition-only"
+                    ),
+                    "storyOrderEvidence": False,
+                }
+                for inventory in expected_levelscript_playback_inventories
             ],
             "relation": "authored_mission_quest_predecessor_topology",
             "storyPlacementStatus": "unresolved",

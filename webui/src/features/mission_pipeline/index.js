@@ -524,6 +524,10 @@
       offlineRecoveryParallelRendezvous: "Parallel prerequisites with AND rendezvous (not a player choice)",
       offlineRecoveryObjectiveConjunction: "AND-gated objective conditions",
       offlineRecoveryObjectiveConjunctionBoundary: "All predicates are required, but their evaluation order and Story placement are not serialized.",
+      offlineRecoveryLevelScriptPlaybackInventory: "Exact related LevelScript playback",
+      offlineRecoveryLevelScriptPlaybackPresent: "independent playback roots",
+      offlineRecoveryLevelScriptPlaybackAbsent: "absent targets",
+      offlineRecoveryLevelScriptPlaybackBoundary: "These are independent action-list roots. Serialized list position is not execution order, and absent targets receive no playback or Story placement edge.",
       offlineRecoveryLinearTopology: "linear quest chain",
       offlineRecoveryMainPath: "authored main path",
       offlineRecoveryQuestStateDependency: "authored quest-state dependency",
@@ -1033,6 +1037,10 @@
       offlineRecoveryParallelRendezvous: "\u5e76\u884c\u524d\u7f6e\u4efb\u52a1\u4e0e AND \u6c47\u5408\uff08\u975e\u73a9\u5bb6\u9009\u9879\uff09",
       offlineRecoveryObjectiveConjunction: "AND \u6c47\u5408\u7684\u76ee\u6807\u6761\u4ef6",
       offlineRecoveryObjectiveConjunctionBoundary: "\u6240\u6709\u6761\u4ef6\u90fd\u5fc5\u987b\u6ee1\u8db3\uff0c\u4f46\u6761\u4ef6\u8bc4\u4f30\u987a\u5e8f\u4e0e Story \u4f4d\u7f6e\u672a\u5728\u539f\u59cb\u6570\u636e\u4e2d\u5e8f\u5217\u5316\u3002",
+      offlineRecoveryLevelScriptPlaybackInventory: "\u76f8\u5173 LevelScript \u7684\u7cbe\u786e\u64ad\u653e\u8bb0\u5f55",
+      offlineRecoveryLevelScriptPlaybackPresent: "\u72ec\u7acb\u64ad\u653e\u6839\u8282\u70b9",
+      offlineRecoveryLevelScriptPlaybackAbsent: "\u7f3a\u5931\u7684\u76ee\u6807",
+      offlineRecoveryLevelScriptPlaybackBoundary: "\u8fd9\u4e9b\u662f\u72ec\u7acb\u7684 action-list \u6839\u8282\u70b9\u3002\u5e8f\u5217\u5316\u5217\u8868\u4f4d\u7f6e\u4e0d\u662f\u6267\u884c\u987a\u5e8f\uff0c\u7f3a\u5931\u76ee\u6807\u4e0d\u4f1a\u83b7\u5f97\u64ad\u653e\u6216 Story \u4f4d\u7f6e\u8fb9\u3002",
       offlineRecoveryLinearTopology: "\u7ebf\u6027\u4efb\u52a1\u94fe",
       offlineRecoveryMainPath: "\u539f\u751f\u4e3b\u8def\u5f84",
       offlineRecoveryQuestStateDependency: "\u539f\u751f\u4efb\u52a1\u72b6\u6001\u4f9d\u8d56",
@@ -2848,6 +2856,8 @@
         row.missionQuestTopologyContext?.sourceFile,
         ...(row.missionQuestTopologyContext?.objectiveConjunctions || [])
           .flatMap((conjunction) => conjunction.relatedSourceFiles || []),
+        ...(row.missionQuestTopologyContext?.levelScriptPlaybackInventories || [])
+          .map((inventory) => inventory.sourceFile),
         row.levelScriptTaskConsumer?.sourceFile,
         row.levelDataDialogBranchContext?.levelDataFile,
         row.levelDataDialogBranchContext?.levelScriptFile,
@@ -2910,13 +2920,20 @@
         ? `<p><strong>${esc(t("offlineRecoveryMissionSequence"))}</strong>${(missionSequence.questSequence || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>`
         : "";
       const missionTopology = row.missionQuestTopologyContext;
+      const formatObjectiveCondition = (condition) => {
+        const host = `${condition.mapId || "?"}/${condition.scriptId ?? "?"}`;
+        if (condition.stageValue !== undefined) {
+          return `${host}:stage op=${condition.compareOperator ?? "?"} target=${condition.stageValue}`;
+        }
+        return `${host}:${condition.key || "?"}=${condition.value ?? "?"}`;
+      };
       const missionTopologyShape = missionTopology
         ? (((missionTopology.forks || []).length || (missionTopology.merges || []).length)
           ? `${(missionTopology.forks || []).length.toLocaleString()} ${esc(t("questFork"))} / ${(missionTopology.merges || []).length.toLocaleString()} ${esc(t("questMerge"))}`
           : esc(t("offlineRecoveryLinearTopology")))
         : "";
       const missionTopologyContext = missionTopology
-        ? `<details><summary><strong>${esc(t("offlineRecoveryMissionTopology"))}</strong> ${missionTopologyShape}</summary><p><strong>${esc(t("offlineRecoveryMainPath"))}</strong>${(missionTopology.mainPathQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>${(missionTopology.parallelRendezvous || []).map((join) => `<p><strong>${esc(t("offlineRecoveryParallelRendezvous"))}</strong><code>${esc(join.forkQuestId || "?")}</code><i>&rarr;</i>${(join.parallelQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" + ")}<i>&rarr;</i><code>${esc(join.mergeQuestId || "?")}</code></p>`).join("")}${(missionTopology.objectiveConjunctions || []).map((join) => `<p><strong>${esc(t("offlineRecoveryObjectiveConjunction"))}</strong><code>${esc(join.questId || "?")}</code><span>${(join.subConditions || []).map((condition) => `<code>${esc(condition.mapId || "?")}/${esc(condition.scriptId ?? "?")}:${esc(condition.key || "?")}=${esc(condition.value ?? "?")}</code>`).join(" + ")}</span><small>${esc(t("offlineRecoveryObjectiveConjunctionBoundary"))}</small></p>`).join("")}${(missionTopology.failedQuestStateGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryQuestFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><code>${esc(guard.targetQuestId || "?")} state=${esc(guard.targetQuestState ?? "?")}</code></p>`).join("")}${(missionTopology.failedDialogGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryDialogFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><span>${(guard.dialogFinishes || []).map((finish) => `<code>${esc(finish.dialogId || "?")} finish=${esc(finish.finishId ?? "?")}</code>`).join(" " + esc(guard.conditionEvalString || "or") + " ")}</span></p>`).join("")}${(missionTopology.questStateDependencies || []).map((dependency) => `<p><strong>${esc(t("offlineRecoveryQuestStateDependency"))}</strong><code>${esc(dependency.questId || "?")}</code><i>&larr;</i><code>${esc(dependency.targetQuestId || "?")} state=${esc(dependency.targetQuestState ?? "?")}</code>${(dependency.conditionIndexPath || []).length ? `<span>${esc(t("offlineRecoveryConditionPath"))}: <code>${esc(dependency.conditionIndexPath.join("."))}</code></span>` : ""}</p>`).join("")}${(missionTopology.forks || []).map((fork) => `<p><code>${esc(fork.questId || "?")}</code><i>&rarr;</i>${(fork.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</p>`).join("")}${(missionTopology.merges || []).map((merge) => `<p>${(merge.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<i>&rarr;</i><code>${esc(merge.questId || "?")}</code></p>`).join("")}<small>${esc(t("offlineRecoveryMissionTopologyBoundary"))}</small></details>`
+        ? `<details><summary><strong>${esc(t("offlineRecoveryMissionTopology"))}</strong> ${missionTopologyShape}</summary><p><strong>${esc(t("offlineRecoveryMainPath"))}</strong>${(missionTopology.mainPathQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join('<i>&rarr;</i>')}</p>${(missionTopology.parallelRendezvous || []).map((join) => `<p><strong>${esc(t("offlineRecoveryParallelRendezvous"))}</strong><code>${esc(join.forkQuestId || "?")}</code><i>&rarr;</i>${(join.parallelQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" + ")}<i>&rarr;</i><code>${esc(join.mergeQuestId || "?")}</code></p>`).join("")}${(missionTopology.objectiveConjunctions || []).map((join) => `<p><strong>${esc(t("offlineRecoveryObjectiveConjunction"))}</strong><code>${esc(join.questId || "?")}</code><span>${(join.subConditions || []).map((condition) => `<code>${esc(formatObjectiveCondition(condition))}</code>`).join(" + ")}</span><small>${esc(t("offlineRecoveryObjectiveConjunctionBoundary"))}</small></p>`).join("")}${(missionTopology.levelScriptPlaybackInventories || []).map((inventory) => `<p><strong>${esc(t("offlineRecoveryLevelScriptPlaybackInventory"))}</strong><span>${esc(t("offlineRecoveryLevelScriptPlaybackPresent"))}: ${(inventory.playbackRecords || []).map((record) => `<code>${esc(record.storyKey || "?")}</code>`).join(" ")}</span><span>${esc(t("offlineRecoveryLevelScriptPlaybackAbsent"))}: ${(inventory.absentStoryKeys || []).map((storyKey) => `<code>${esc(storyKey)}</code>`).join(" ")}</span><small>${esc(t("offlineRecoveryLevelScriptPlaybackBoundary"))}</small></p>`).join("")}${(missionTopology.failedQuestStateGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryQuestFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><code>${esc(guard.targetQuestId || "?")} state=${esc(guard.targetQuestState ?? "?")}</code></p>`).join("")}${(missionTopology.failedDialogGuards || []).map((guard) => `<p><strong>${esc(t("offlineRecoveryDialogFailureGuard"))}</strong><code>${esc(guard.questId || "?")}</code><i>&larr;</i><span>${(guard.dialogFinishes || []).map((finish) => `<code>${esc(finish.dialogId || "?")} finish=${esc(finish.finishId ?? "?")}</code>`).join(" " + esc(guard.conditionEvalString || "or") + " ")}</span></p>`).join("")}${(missionTopology.questStateDependencies || []).map((dependency) => `<p><strong>${esc(t("offlineRecoveryQuestStateDependency"))}</strong><code>${esc(dependency.questId || "?")}</code><i>&larr;</i><code>${esc(dependency.targetQuestId || "?")} state=${esc(dependency.targetQuestState ?? "?")}</code>${(dependency.conditionIndexPath || []).length ? `<span>${esc(t("offlineRecoveryConditionPath"))}: <code>${esc(dependency.conditionIndexPath.join("."))}</code></span>` : ""}</p>`).join("")}${(missionTopology.forks || []).map((fork) => `<p><code>${esc(fork.questId || "?")}</code><i>&rarr;</i>${(fork.successorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}</p>`).join("")}${(missionTopology.merges || []).map((merge) => `<p>${(merge.predecessorQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ")}<i>&rarr;</i><code>${esc(merge.questId || "?")}</code></p>`).join("")}<small>${esc(t("offlineRecoveryMissionTopologyBoundary"))}</small></details>`
         : "";
       const prtsCarrierContext = row.prtsDefinition
         ? `<p><strong>${esc(t("offlineRecoveryPrtsCarrier"))}</strong><code>${esc(row.prtsDefinition.rowId || "?")}</code><code>${esc(row.prtsDefinition.firstLvId || "?")}</code><span>order=${esc(row.prtsDefinition.order ?? "?")}</span></p>`

@@ -44,7 +44,25 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest `gm02m15` batch closes its two remaining actionable radios without
+The latest `gm02m21` batch recovers its exact native quest topology and closes
+its two remaining actionable radios without inventing placement. Hash-locked
+MissionRuntime proves the main path `q#1 -> q#2 -> q#3 -> q#4 -> q#5` and the
+auxiliary fork `q#1 -> q#6`. The q#6 objective requires q#2 state 3, while its
+one-way failure condition refers to q#1 state 3; this does not prove mutual
+exclusion or a player-choice branch. The q#2 objective is an exact five-part
+AND over LevelScript `map02_lv007/10200190002` stages 1, 2, 3, 4, and 7. That
+LevelScript contains five independent typed PlayRadio action roots for
+`radio_gm02m21_{1,2,3,5,8}`; their serialized list positions are not execution
+order. `radio_gm02m21_4` and `_7` are absent from every typed playback record,
+their three authored audio ids are absent from AudioDialog, and complete
+AnimeStudio object/reverse-PPtr plus installed-binary token audits find no
+consumer. Mission Pipeline attaches the exact MissionRuntime and LevelScript
+files, displays the fork, dependency, failure guard, stage conjunction,
+present playback roots, and absent targets, and keeps both unresolved radios at
+graph effect `none`. The major queue now has 13 actionable core-isolated rows
+and score 65; `gm02m4` is next at score 10 with two actionable files.
+
+The preceding `gm02m15` batch closes its two remaining actionable radios without
 inventing placement. Hash-locked MissionRuntime is a strict
 `q#1 -> q#2 -> ... -> q#8` predecessor chain with no quest fork or merge. Its
 q#5 objective is an exact `{0} and {1} and {2}` conjunction over LevelScript
@@ -56,8 +74,7 @@ and no typed MissionRuntime, LevelScript, GameplayConfig, complete AnimeStudio
 object carrier, GameObject/reverse-PPtr host, or installed-binary root token
 supplies a consumer. Mission Pipeline shows both source-bounded gaps, the exact
 linear quest topology, q#5 conjunction, MissionRuntime and LevelScript files,
-and graph effect `none`. The major queue now has 15 actionable core-isolated
-rows and score 75; `gm02m21` is next at score 10 with two actionable files.
+and graph effect `none`.
 
 The preceding `gm02m8` batch proves that its apparent “nine, six, three items
 remaining” dialog progression is not a current runtime branch. Hash-locked
