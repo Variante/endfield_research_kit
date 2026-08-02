@@ -7195,6 +7195,129 @@ OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS = frozenset({
     "radioSingleDataList",
     "radioType",
 })
+OFFLINE_EXHAUSTION_RADIO_LINE_FIELDS = frozenset({
+    "actorName",
+    "actorNameId",
+    "audioEffect",
+    "audioEvent",
+    "audioEventDuration",
+    "audioOverride",
+    "emotionType",
+    "iconSuffix",
+    "id",
+    "index",
+    "infoActorName",
+    "is3D",
+    "radioText",
+})
+
+
+def _generic_radio_definition_facts(
+    story_key: str,
+    row: Any,
+    audio_stems: set[str],
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Validate one current RadioTable definition without key declarations."""
+    lines = row.get("radioSingleDataList") if isinstance(row, dict) else None
+    if (
+        not isinstance(row, dict)
+        or set(row) != OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS
+        or not isinstance(lines, list)
+        or not lines
+    ):
+        return None, {
+            "validator": "genericRadioNegativeConsumer",
+            "gate": "exactRadioTableShape",
+            "storyKey": story_key,
+            "expected": {
+                "fields": sorted(OFFLINE_EXHAUSTION_RADIO_ROW_FIELDS),
+                "nonemptyRadioSingleDataList": True,
+            },
+            "actual": {
+                "type": type(row).__name__,
+                "fields": sorted(row) if isinstance(row, dict) else [],
+                "radioSingleDataCount": len(lines or []),
+            },
+        }
+    line_ids: list[str] = []
+    audio_ids: list[str] = []
+    indices: list[int] = []
+    for line in lines:
+        line_id = safe_key(line.get("id")) if isinstance(line, dict) else ""
+        audio_id = (
+            safe_key(line.get("audioOverride"))
+            if isinstance(line, dict) else ""
+        )
+        index = line.get("index") if isinstance(line, dict) else None
+        if (
+            not isinstance(line, dict)
+            or set(line) != OFFLINE_EXHAUSTION_RADIO_LINE_FIELDS
+            or not line_id.startswith(f"{story_key}_")
+            or not audio_id
+            or not isinstance(index, int)
+            or isinstance(index, bool)
+            or index <= 0
+        ):
+            return None, {
+                "validator": "genericRadioNegativeConsumer",
+                "gate": "exactRadioLineShape",
+                "storyKey": story_key,
+                "expected": {
+                    "fields": sorted(OFFLINE_EXHAUSTION_RADIO_LINE_FIELDS),
+                    "lineIdPrefix": f"{story_key}_",
+                    "nonemptyAudioOverride": True,
+                    "positiveIntegerIndex": True,
+                },
+                "actual": {
+                    "type": type(line).__name__,
+                    "fields": sorted(line) if isinstance(line, dict) else [],
+                    "lineId": line_id,
+                    "audioOverride": audio_id,
+                    "index": index,
+                },
+            }
+        line_ids.append(line_id)
+        audio_ids.append(audio_id)
+        indices.append(index)
+    if len(set(line_ids)) != len(line_ids) or len(set(indices)) != len(indices):
+        return None, {
+            "validator": "genericRadioNegativeConsumer",
+            "gate": "uniqueRadioLineIdentity",
+            "storyKey": story_key,
+            "expected": {
+                "uniqueLineIds": len(line_ids),
+                "uniqueIndices": len(indices),
+            },
+            "actual": {
+                "uniqueLineIds": len(set(line_ids)),
+                "uniqueIndices": len(set(indices)),
+            },
+        }
+    audio_membership = {
+        audio_id: sorted(
+            stem
+            for stem in audio_stems
+            if stem == audio_id or stem.startswith(f"{audio_id}_")
+        )
+        for audio_id in sorted(set(audio_ids), key=natural_key)
+    }
+    present_audio_ids = {
+        audio_id for audio_id, matches in audio_membership.items() if matches
+    }
+    return {
+        "lineIds": line_ids,
+        "lineIndices": indices,
+        "audioIds": sorted(set(audio_ids), key=natural_key),
+        "audioMembership": audio_membership,
+        "audioMembershipStatus": (
+            "all_current_audio_dialog_ids_missing"
+            if not present_audio_ids else (
+                "all_current_audio_dialog_ids_present"
+                if len(present_audio_ids) == len(audio_membership)
+                else "partial_current_audio_dialog_missing_ids"
+            )
+        ),
+    }, None
 
 
 def _offline_radio_definition_validation_failure(
@@ -7907,6 +8030,42 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest().upper()
+
+
+def _present_literal_keys(
+    payload: bytes,
+    literals: dict[str, str],
+    encoding: str,
+) -> set[str]:
+    """Return keys whose exact literal bytes occur, including overlaps.
+
+    One look-ahead alternation scans the binary once. Sorting longest first
+    and expanding prefix matches preserves shorter literals that begin at the
+    same byte offset without falling back to one full binary scan per key.
+    """
+    encoded_to_keys: dict[bytes, set[str]] = defaultdict(set)
+    for key, literal in literals.items():
+        if key and literal:
+            encoded_to_keys[literal.encode(encoding)].add(key)
+    if not payload or not encoded_to_keys:
+        return set()
+    patterns = sorted(encoded_to_keys, key=lambda value: (-len(value), value))
+    matcher = re.compile(
+        b"(?=(" + b"|".join(re.escape(value) for value in patterns) + b"))"
+    )
+    prefixes_by_match = {
+        value: {
+            key
+            for prefix, keys in encoded_to_keys.items()
+            if value.startswith(prefix)
+            for key in keys
+        }
+        for value in patterns
+    }
+    present: set[str] = set()
+    for match in matcher.finditer(payload):
+        present.update(prefixes_by_match.get(match.group(1), set()))
+    return present
 
 
 def build_quest_attachment_diagnostic_index(
@@ -9168,6 +9327,7 @@ def build_offline_exhaustion_index(
     carrier_audit_path: Path | None = None,
     gameobject_audit_path: Path | None = None,
     reverse_pptr_audit_path: Path | None = None,
+    native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     """Build hash-locked current-build deferrals for exhausted offline rows.
 
@@ -11006,6 +11166,167 @@ def build_offline_exhaustion_index(
         )
         if isinstance(row, dict) and safe_key(row.get("path"))
     }
+    generic_radio_evidence_by_key: dict[str, dict[str, Any]] = {}
+    generic_radio_validation_failures: list[dict[str, Any]] = []
+    generic_radio_exclusions: dict[str, list[str]] = {
+        "declaredSpecialCase": [],
+        "ambiguousMission": [],
+        "nativePlayback": [],
+        "typedObjectCarrier": [],
+        "binaryRootTokenPresent": [],
+        "invalidDefinition": [],
+    }
+    generic_radio_definition_facts: dict[str, dict[str, Any]] = {}
+    if native_playback_index is not None:
+        for story_key, missions in sorted(
+            core_targets.items(),
+            key=lambda item: natural_key(item[0]),
+        ):
+            if not story_key.startswith("radio_"):
+                continue
+            if story_key in all_radio_keys:
+                generic_radio_exclusions["declaredSpecialCase"].append(
+                    story_key
+                )
+                continue
+            if len(missions) != 1:
+                generic_radio_exclusions["ambiguousMission"].append(story_key)
+                continue
+            if (native_playback_index.get(story_key) or []):
+                generic_radio_exclusions["nativePlayback"].append(story_key)
+                continue
+            if story_key not in no_candidate_keys:
+                generic_radio_exclusions["typedObjectCarrier"].append(
+                    story_key
+                )
+                continue
+            facts, failure = _generic_radio_definition_facts(
+                story_key,
+                radio_table.get(story_key)
+                if isinstance(radio_table, dict) else None,
+                audio_stems,
+            )
+            if failure is not None:
+                failure["sourcePaths"] = [
+                    str(source_paths["radioTable"]),
+                    str(source_paths["audioDialog"]),
+                ]
+                failure["sourceSha256"] = {
+                    "radioTable": actual_hashes.get("radioTable", ""),
+                    "audioDialog": actual_hashes.get("audioDialog", ""),
+                }
+                generic_radio_validation_failures.append(failure)
+                generic_radio_exclusions["invalidDefinition"].append(
+                    story_key
+                )
+                continue
+            if facts is not None:
+                generic_radio_definition_facts[story_key] = facts
+
+        generic_literals = {
+            story_key: story_key
+            for story_key in generic_radio_definition_facts
+        }
+        game_assembly_present = (
+            _present_literal_keys(
+                game_assembly_bytes,
+                generic_literals,
+                "utf-8",
+            )
+            | _present_literal_keys(
+                game_assembly_bytes,
+                generic_literals,
+                "utf-16le",
+            )
+        )
+        metadata_present = (
+            _present_literal_keys(
+                global_metadata_bytes,
+                generic_literals,
+                "utf-8",
+            )
+            | _present_literal_keys(
+                global_metadata_bytes,
+                generic_literals,
+                "utf-16le",
+            )
+        )
+        binary_present = game_assembly_present | metadata_present
+        generic_radio_exclusions["binaryRootTokenPresent"] = sorted(
+            binary_present,
+            key=natural_key,
+        )
+
+        def source_display_path(path: Path) -> str:
+            resolved = path.resolve()
+            if resolved.is_relative_to(ROOT):
+                return resolved.relative_to(ROOT).as_posix()
+            return resolved.as_posix()
+
+        for story_key, facts in sorted(
+            generic_radio_definition_facts.items(),
+            key=lambda item: natural_key(item[0]),
+        ):
+            if story_key in binary_present:
+                continue
+            mission_id = next(iter(core_targets[story_key]))
+            generic_radio_evidence_by_key[story_key] = {
+                "sceneKey": story_key,
+                "missionId": mission_id,
+                "recoveryStatus":
+                    "deferred_current_build_offline_surface_exhausted",
+                "evidenceKind":
+                    "radio_definition_binary_consumer_surface_exhausted",
+                "definitionTable": "RadioTable",
+                "definitionSourceFiles": [
+                    source_display_path(source_paths["radioTable"]),
+                    source_display_path(source_paths["audioDialog"]),
+                ],
+                "sourceFiles": [
+                    source_display_path(carrier_audit_path),
+                ],
+                "originalBinaryFiles": [
+                    source_display_path(source_paths["gameAssembly"]),
+                    source_display_path(source_paths["globalMetadata"]),
+                ],
+                **facts,
+                "carrierAuditStatus":
+                    "no_typed_story_owner_or_runtime_carrier",
+                "carrierAuditTargetSetSha256": core_target_digest,
+                "binaryRootTokenStatus":
+                    "absent_utf8_and_utf16le_in_current_game_binaries",
+                "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+                "gameAssemblySha256":
+                    OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+                "globalMetadataSha256": OFFLINE_EXHAUSTION_METADATA_SHA256,
+                "searchedConsumerKinds": [
+                    "MissionRuntime Story routes",
+                    "typed LevelScript playback actions",
+                    "GameplayConfig Story routes",
+                    "missionless native playback receivers",
+                    "typed AnimeStudio owner/runtime object carriers",
+                    "GameAssembly exact UTF-8/UTF-16 root tokens",
+                    "global-metadata exact UTF-8/UTF-16 root tokens",
+                ],
+                "consumerBoundary": (
+                    "the exact current RadioTable definition survives, but "
+                    "the complete generated Story-route census, typed native "
+                    "LevelScript playback index, hash-matched AnimeStudio "
+                    "object index, current GameAssembly, and current global "
+                    "metadata expose no playback consumer or owner carrier"
+                ),
+                "orderBoundary": (
+                    "RadioTable row order, line indices, filename suffixes, "
+                    "audio membership, OCR, and manual display order do not "
+                    "establish playback or relative Story chronology"
+                ),
+                "reopenWhen": (
+                    "the installed binary, exported tables, generated route "
+                    "census, object index, or another typed producer/consumer "
+                    "registry changes"
+                ),
+                "graphEffect": "none",
+            }
     radio_audio_ids: set[str] = set()
     radio_audio_ids_by_story: dict[str, set[str]] = {}
     base_absent_audio_ids_by_story: dict[str, set[str]] = {}
@@ -12894,6 +13215,11 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
+    for story_key, evidence in sorted(
+        generic_radio_evidence_by_key.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        index.setdefault(story_key, evidence)
     for story_key in sorted(all_dialog_keys, key=natural_key):
         definition = OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS[story_key]
         validation = dialog_validation_by_key[story_key]
@@ -13530,6 +13856,11 @@ def build_offline_exhaustion_index(
         )
         if related_original_data:
             row["missionRelatedOriginalData"] = related_original_data
+    deferred_radio_keys_by_mission: dict[str, set[str]] = defaultdict(set)
+    for story_key, row in index.items():
+        mission_id = safe_key(row.get("missionId"))
+        if mission_id and story_key.startswith("radio_"):
+            deferred_radio_keys_by_mission[mission_id].add(story_key)
     status.update({
         "status": "active",
         "coreTargetSetSha256": core_target_digest,
@@ -13543,7 +13874,41 @@ def build_offline_exhaustion_index(
         }, key=natural_key),
         "deferredRadioStoryKeysByMission": {
             mission: sorted(story_keys, key=natural_key)
-            for mission, story_keys in OFFLINE_EXHAUSTION_RADIOS_BY_MISSION.items()
+            for mission, story_keys
+            in sorted(deferred_radio_keys_by_mission.items())
+        },
+        "genericRadioNegativeConsumerEvidence": {
+            "status": (
+                "active"
+                if native_playback_index is not None
+                else "inactive_native_playback_index_unavailable"
+            ),
+            "qualifiedStoryKeys": len(generic_radio_evidence_by_key),
+            "qualifiedMissions": len({
+                safe_key(row.get("missionId"))
+                for row in generic_radio_evidence_by_key.values()
+                if safe_key(row.get("missionId"))
+            }),
+            "validationFailures": generic_radio_validation_failures,
+            "exclusions": {
+                name: sorted(set(values), key=natural_key)
+                for name, values in generic_radio_exclusions.items()
+            },
+            "sourcePaths": {
+                "radioTable": str(source_paths["radioTable"]),
+                "audioDialog": str(source_paths["audioDialog"]),
+                "carrierAudit": str(carrier_audit_path),
+                "gameAssembly": str(source_paths["gameAssembly"]),
+                "globalMetadata": str(source_paths["globalMetadata"]),
+            },
+            "sourceSha256": {
+                "radioTable": actual_hashes.get("radioTable", ""),
+                "audioDialog": actual_hashes.get("audioDialog", ""),
+                "gameAssembly": actual_hashes.get("gameAssembly", ""),
+                "globalMetadata": actual_hashes.get("globalMetadata", ""),
+            },
+            "carrierAuditTargetSetSha256": core_target_digest,
+            "graphEffect": "none",
         },
         "deferredDialogStoryKeysByMission": {
             mission: sorted(
@@ -14889,6 +15254,8 @@ def _deferred_offline_exhausted_isolated_scenes(
     isolated_scene_keys: set[str],
     owner_mission: str,
     offline_exhaustion_index: dict[str, dict[str, Any]],
+    native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
+    cross_owner_story_connections: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Defer exact-build exhausted rows without asserting a graph fact."""
     routed_rows_by_key: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -14899,6 +15266,21 @@ def _deferred_offline_exhausted_isolated_scenes(
     for scene_key in sorted(isolated_scene_keys, key=natural_key):
         evidence = offline_exhaustion_index.get(scene_key)
         routed_rows = routed_rows_by_key.get(scene_key, [])
+        generic_negative_consumer = (
+            isinstance(evidence, dict)
+            and safe_key(evidence.get("evidenceKind"))
+            == "radio_definition_binary_consumer_surface_exhausted"
+        )
+        cross_owner_rows = [
+            row
+            for row in cross_owner_story_connections or []
+            if isinstance(row, dict) and safe_key(row.get("key")) == scene_key
+        ]
+        exact_native_playback_rows = [
+            row
+            for row in (native_playback_index or {}).get(scene_key) or []
+            if isinstance(row, dict)
+        ]
         allowed_route = (
             evidence.get("allowedNonOwningRoute")
             if isinstance(evidence, dict)
@@ -14987,6 +15369,8 @@ def _deferred_offline_exhausted_isolated_scenes(
             not isinstance(evidence, dict)
             or safe_key(evidence.get("missionId")) != owner_mission
             or not routed_rows_valid
+            or (generic_negative_consumer and exact_native_playback_rows)
+            or (generic_negative_consumer and cross_owner_rows)
             or evidence.get("graphEffect") != "none"
             or evidence.get("recoveryStatus")
             != "deferred_current_build_offline_surface_exhausted"
@@ -17857,6 +18241,8 @@ def build_gap_row(
             set(isolated_scene_keys),
             safe_key(partial_row.get("mission")),
             offline_exhaustion_index,
+            native_playback_index,
+            cross_owner_story_connections,
         )
     )
     deferred_offline_exhausted_isolated_keys = {
@@ -18985,6 +19371,7 @@ def main(argv: list[str] | None = None) -> int:
             partial_report,
             args.table_root,
             game_assembly_path=args.game_assembly,
+            native_playback_index=native_playback_index,
         )
     )
     (
@@ -19034,6 +19421,20 @@ def main(argv: list[str] | None = None) -> int:
         print(
             "Offline-exhaustion source hash mismatch: "
             + ", ".join(offline_status["sourceHashMismatches"])
+        )
+    generic_radio_status = (
+        offline_status.get("genericRadioNegativeConsumerEvidence") or {}
+    )
+    generic_radio_failures = (
+        generic_radio_status.get("validationFailures") or []
+    )
+    if generic_radio_failures:
+        first = generic_radio_failures[0]
+        print(
+            "Generic radio negative-consumer validator failure: "
+            f"story={safe_key(first.get('storyKey')) or '-'} "
+            f"gate={safe_key(first.get('gate'))} "
+            f"source={safe_key((first.get('sourcePaths') or [''])[0])}"
         )
     diagnostic_status = report.get("questAttachmentDiagnosticEvidence") or {}
     diagnostic_failures = diagnostic_status.get(

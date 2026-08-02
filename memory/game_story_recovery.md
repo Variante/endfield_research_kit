@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 501 (490 MissionRuntime + 11 Story-only recovery shells) |
+| Pipeline missions | 559 (490 MissionRuntime + 69 Story-only recovery shells) |
 | Unique Story files | 5,282 |
 | Connected files | 4,181 (79.2%) |
 | Files with a normalized trigger/context route | 4,402 (83.3%) |
@@ -21,7 +21,7 @@ Latest CN reports:
 | Source-comparable scene pairs | 3,767 / 249,651 (1.51%) |
 | Cyclic components | 0 |
 | Exact nested DialogTree containments | 49 across 44 child files |
-| Exact quest-observed DialogTree definitions | 435 definitions / 461 placements across 422 quests |
+| Exact quest-observed DialogTree definitions | 434 definitions / 461 placements across 422 quests |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -44,7 +44,24 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest `gm02m21` batch recovers its exact native quest topology and closes
+The latest recovery batch replaces new per-radio declarations with a generic,
+fail-closed current-build negative-consumer classifier. It starts only from
+core-isolated `radio_*` definitions with one unambiguous mission, validates the
+exact current `RadioTable` row and line schema, and refuses any key with a
+generated Story route, exact native playback, cross-owner connection, or typed
+AnimeStudio owner/runtime carrier. It then scans current `GameAssembly.dll` and
+`global-metadata.dat` once per encoding for all remaining exact roots, retaining
+overlapping/prefix matches. This qualifies 504 keys across 171 missions; 192
+were excluded because native playback exists, and no qualified definition had
+an exact UTF-8/UTF-16 root token or validation failure. These are build-locked
+surface-exhaustion closures with graph effect `none`, not proof that the content
+never plays. Audio membership, OCR, overrides, suffixes, row order, and line
+indices remain context only. Mission Pipeline shows the exact tables, carrier
+audit, original binaries, and reopen boundary. Major actionable core-isolated
+rows are now 6 (score 30); character has 118, other has 845, and main/event stay
+at zero. `gm02m4` and `gm01m8` now both have score zero.
+
+The preceding `gm02m21` batch recovers its exact native quest topology and closes
 its two remaining actionable radios without inventing placement. Hash-locked
 MissionRuntime proves the main path `q#1 -> q#2 -> q#3 -> q#4 -> q#5` and the
 auxiliary fork `q#1 -> q#6`. The q#6 objective requires q#2 state 3, while its
@@ -59,9 +76,7 @@ AnimeStudio object/reverse-PPtr plus installed-binary token audits find no
 consumer. Mission Pipeline attaches the exact MissionRuntime and LevelScript
 files, displays the fork, dependency, failure guard, stage conjunction,
 present playback roots, and absent targets, and keeps both unresolved radios at
-graph effect `none`. The subsequent generic playback-alias batch reduces the
-major queue to 12 actionable core-isolated rows and score 60; `gm02m4` now has
-one actionable file and score 5.
+graph effect `none`.
 
 The latest playback-alias audit generalizes the same fail-closed principle to
 serialized `CutsceneRoot._director` PPtrs. The current corpus has four exact
@@ -92,10 +107,10 @@ the linear chain `q#11 -> q#3 -> q#7 -> q#8 -> q#9`. q#3 is an exact AND over
 six `InteractiveCheckInt` entity/state comparisons, now exposed generically in
 Mission Pipeline with entity ids and comparator targets. Native branch rows
 retain the complete MissionRuntime and LevelScript source-file set.
-`radio_gm02m4_11` remains definition-only with no typed current-build consumer
-and is the mission's sole actionable isolated file. The composed cutscene
-context and unresolved radio are not placed from OCR, manual order, suffixes,
-or table order.
+`radio_gm02m4_11` is now closed by the generic current-build classifier: its
+exact definition remains visible, but all accepted consumer surfaces are
+negative. Both it and the composed cutscene context remain graph-neutral and
+are not placed from OCR, manual order, suffixes, audio, or table order.
 
 The preceding `gm02m15` batch closes its two remaining actionable radios without
 inventing placement. Hash-locked MissionRuntime is a strict
@@ -708,9 +723,10 @@ only.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** main and event have no actionable core-isolated
-   or strict quest-attachment gaps. Major missions retain 12 actionable
-   core-isolated files and score 60; seven broad main-story co-memberships
-   remain visible as non-owning diagnostics.
+   or strict quest-attachment gaps. Major missions retain 6 actionable
+   core-isolated files and score 30; character missions retain 118 and other
+   missions retain 845. Seven broad main-story co-memberships remain visible as
+   non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
    reopen only when a typed DialogTree/Timeline/runtime consumer appears.
@@ -724,12 +740,12 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should finish the remaining definition-only consumer audit for
-`radio_gm02m4_11`, then move to `gm02m12` and `gm01m8` (each score 10 with two
-actionable files), followed by the five character-mission quest-attachment
-gaps. The next general recovery target is a source-bounded negative-consumer
-classifier that applies across definition-only radios rather than a per-radio
-exception. Within `gm02m23`, the
+Next work should audit `gm02m12` (`dlg_gm02m12_8` and `sns_gm02m12_1`), then
+the single-file major frontiers in `gm02m10`, `gm02m11`, `gm02m16`, and
+`gm02m7`, followed by the character-mission quest-attachment gaps. Extend the
+same pattern-based approach to other definition families only when their typed
+schemas and complete consumer surfaces can be bounded without weakening the
+fail-closed rules. Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
 as quest-observed definitions. The seven isolated and four weak-only Story

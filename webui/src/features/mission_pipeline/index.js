@@ -517,7 +517,11 @@
       offlineRecoveryEvidenceDefinitionOnly: "Definition only — activator unknown",
       offlineRecoveryEvidenceUnregistered: "Unregistered definition — no runtime consumer",
       offlineRecoveryEvidenceRadioOnly: "Radio definition only — consumer unknown",
+      offlineRecoveryEvidenceBinaryRadio: "Definition only — no consumer on current original-data surfaces",
       offlineRecoveryMissingAudio: "audio ids absent",
+      offlineRecoveryAudioMembership: "audio membership",
+      offlineRecoveryCarrierAudit: "typed carrier audit",
+      offlineRecoveryBinaryRootToken: "original-binary root token",
       offlineRecoveryMissionTracking: "Mission NPC tracking context (navigation only)",
       offlineRecoveryNpcProxyConsumer: "Exact missionless NpcProxyEx row (index is not chronology)",
       offlineRecoveryTrackedQuests: "tracked quests",
@@ -1032,7 +1036,11 @@
       offlineRecoveryEvidenceDefinitionOnly: "\u4ec5\u5b9a\u4e49\uff0c\u6fc0\u6d3b\u5668\u672a\u77e5",
       offlineRecoveryEvidenceUnregistered: "\u672a\u6ce8\u518c\u5b9a\u4e49 \u2014 \u65e0\u8fd0\u884c\u65f6\u6d88\u8d39\u8005",
       offlineRecoveryEvidenceRadioOnly: "\u4ec5\u65e0\u7ebf\u7535\u5b9a\u4e49\uff0c\u6d88\u8d39\u8005\u672a\u77e5",
+      offlineRecoveryEvidenceBinaryRadio: "\u4ec5\u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6d88\u8d39\u8005",
       offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
+      offlineRecoveryAudioMembership: "\u97f3\u9891\u6210\u5458\u72b6\u6001",
+      offlineRecoveryCarrierAudit: "\u7c7b\u578b\u5316\u8f7d\u4f53\u5ba1\u8ba1",
+      offlineRecoveryBinaryRootToken: "\u539f\u59cb\u4e8c\u8fdb\u5236\u6839\u6807\u8bb0",
       offlineRecoveryMissionTracking: "\u4efb\u52a1 NPC \u8ffd\u8e2a\u4e0a\u4e0b\u6587\uff08\u4ec5\u5bfc\u822a\uff09",
       offlineRecoveryNpcProxyConsumer: "\u7cbe\u786e\u65e0\u4efb\u52a1 NpcProxyEx \u884c\uff08\u7d22\u5f15\u4e0d\u662f\u5267\u60c5\u987a\u5e8f\uff09",
       offlineRecoveryTrackedQuests: "\u8ffd\u8e2a\u4efb\u52a1\u8282\u70b9",
@@ -2172,6 +2180,7 @@
     const sourceFiles = [...new Set([
       ...(recovery.definitionSourceFiles || []),
       ...(recovery.sourceFiles || []),
+      ...(recovery.originalBinaryFiles || []),
     ].filter(Boolean))];
     const related = recovery.missionRelatedOriginalData;
     const relatedEntries = (related?.entries || []).map((entry) => (
@@ -2869,6 +2878,7 @@
       const sources = [
         ...(row.sourceFiles || []),
         ...(row.definitionSourceFiles || []),
+        ...(row.originalBinaryFiles || []),
         ...(row.definitionAssets || []),
         ...(row.definitionTables || []),
         row.definitionTable,
@@ -3005,6 +3015,15 @@
         Array.isArray(row.missingAudioIds) && row.missingAudioIds.length
           ? `${row.missingAudioIds.length.toLocaleString()} ${t("offlineRecoveryMissingAudio")}`
           : "",
+        row.audioMembershipStatus
+          ? `${t("offlineRecoveryAudioMembership")}: ${row.audioMembershipStatus}`
+          : "",
+        row.carrierAuditStatus
+          ? `${t("offlineRecoveryCarrierAudit")}: ${row.carrierAuditStatus}`
+          : "",
+        row.binaryRootTokenStatus
+          ? `${t("offlineRecoveryBinaryRootToken")}: ${row.binaryRootTokenStatus}`
+          : "",
       ].filter(Boolean);
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
@@ -3046,6 +3065,7 @@
         mission_tracked_npc_proxy_dialog_context_without_playback_owner: t("offlineRecoveryEvidenceTrackedNpc"),
         registered_dialog_definition_without_recovered_activator: t("offlineRecoveryEvidenceDefinitionOnly"),
         radio_definition_without_recovered_consumer: t("offlineRecoveryEvidenceRadioOnly"),
+        radio_definition_binary_consumer_surface_exhausted: t("offlineRecoveryEvidenceBinaryRadio"),
         dialog_text_table_only_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),

@@ -87,6 +87,84 @@ def mission_payload(
 
 
 class SourceStoryGapQueueTests(unittest.TestCase):
+    def test_present_literal_keys_preserves_overlapping_prefixes(self) -> None:
+        payload = b"before radio_fixture_10 after"
+        present = gap_queue._present_literal_keys(
+            payload,
+            {
+                "short": "radio_fixture_1",
+                "long": "radio_fixture_10",
+                "absent": "radio_fixture_11",
+            },
+            "utf-8",
+        )
+
+        self.assertEqual(present, {"short", "long"})
+
+    def test_generic_radio_definition_validator_recovers_shape(self) -> None:
+        story_key = "radio_fixture"
+        line = {
+            field: ""
+            for field in gap_queue.OFFLINE_EXHAUSTION_RADIO_LINE_FIELDS
+        }
+        line.update({
+            "id": f"{story_key}_1",
+            "index": 1,
+            "audioOverride": "au_radio_fixture_001",
+        })
+        row = {
+            "continueAfterDialog": False,
+            "continueAfterRadio": False,
+            "priority": 3,
+            "radioSingleDataList": [line],
+            "radioType": 0,
+        }
+
+        facts, failure = gap_queue._generic_radio_definition_facts(
+            story_key,
+            row,
+            {"au_radio_fixture_001_variant"},
+        )
+
+        self.assertIsNone(failure)
+        self.assertEqual(facts["lineIds"], ["radio_fixture_1"])
+        self.assertEqual(facts["lineIndices"], [1])
+        self.assertEqual(
+            facts["audioMembershipStatus"],
+            "all_current_audio_dialog_ids_present",
+        )
+
+    def test_generic_radio_definition_validator_reports_line_shape(self) -> None:
+        story_key = "radio_fixture"
+        line = {
+            field: ""
+            for field in gap_queue.OFFLINE_EXHAUSTION_RADIO_LINE_FIELDS
+        }
+        line.update({
+            "id": "wrong_owner_1",
+            "index": 0,
+            "audioOverride": "",
+        })
+        row = {
+            "continueAfterDialog": False,
+            "continueAfterRadio": False,
+            "priority": 3,
+            "radioSingleDataList": [line],
+            "radioType": 0,
+        }
+
+        facts, failure = gap_queue._generic_radio_definition_facts(
+            story_key,
+            row,
+            set(),
+        )
+
+        self.assertIsNone(facts)
+        self.assertEqual(failure["validator"], "genericRadioNegativeConsumer")
+        self.assertEqual(failure["gate"], "exactRadioLineShape")
+        self.assertEqual(failure["storyKey"], story_key)
+        self.assertEqual(failure["actual"]["lineId"], "wrong_owner_1")
+
     def test_radio_definition_validator_reports_exact_audio_failure(self) -> None:
         row = {
             "continueAfterDialog": False,
@@ -3148,6 +3226,63 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             ),
             [],
         )
+
+    def test_generic_radio_negative_consumer_fails_closed(self) -> None:
+        story_key = "radio_fixture"
+        evidence = {
+            "sceneKey": story_key,
+            "missionId": "fixture_mission",
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "evidenceKind":
+                "radio_definition_binary_consumer_surface_exhausted",
+            "graphEffect": "none",
+        }
+        args = (
+            {"missionStoryConnections": [], "quests": []},
+            {story_key},
+            "fixture_mission",
+            {story_key: evidence},
+        )
+
+        rows = gap_queue._deferred_offline_exhausted_isolated_scenes(*args)
+        self.assertEqual([row["sceneKey"] for row in rows], [story_key])
+        self.assertEqual(
+            gap_queue._deferred_offline_exhausted_isolated_scenes(
+                *args,
+                native_playback_index={story_key: [{"method": "Play"}]},
+            ),
+            [],
+        )
+        self.assertEqual(
+            gap_queue._deferred_offline_exhausted_isolated_scenes(
+                *args,
+                cross_owner_story_connections=[{"key": story_key}],
+            ),
+            [],
+        )
+
+    def test_declared_offline_case_keeps_its_specific_route_contract(self) -> None:
+        story_key = "radio_fixture"
+        evidence = {
+            "sceneKey": story_key,
+            "missionId": "fixture_mission",
+            "recoveryStatus":
+                "deferred_current_build_offline_surface_exhausted",
+            "evidenceKind": "radio_definition_without_recovered_consumer",
+            "graphEffect": "none",
+        }
+
+        rows = gap_queue._deferred_offline_exhausted_isolated_scenes(
+            {"missionStoryConnections": [], "quests": []},
+            {story_key},
+            "fixture_mission",
+            {story_key: evidence},
+            native_playback_index={story_key: [{"method": "fixture"}]},
+            cross_owner_story_connections=[{"key": story_key}],
+        )
+
+        self.assertEqual([row["sceneKey"] for row in rows], [story_key])
 
     def test_declared_e2m2_offline_frontier_is_exact(self) -> None:
         self.assertEqual(
