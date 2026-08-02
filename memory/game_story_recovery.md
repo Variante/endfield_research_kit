@@ -82,11 +82,24 @@ occurs in the decoded task maps. Pipe 1 plays `_1` from its bound script while
 is preserved instead of forcing one uniform producer rule. Numbered
 missing-row positions remain table-row cross-reference diagnostics only. These
 relationships remain graph-neutral and do not place the eight loose rows.
-Mission Pipeline displays the SubGame id, bound script, task topology,
-condition families/formulas, objective display keys, exact event/action
-playback, definition-only parents, sources, and boundaries in visible
-Story-only shells. The other-bucket queue remains 32 and the current contract
-is `sourceStoryGapQueue.v122`; OCR and manual order remain comparison-only.
+A second general decoder follows only the serialized action-map membership,
+`ActionHeader.nextId`, `ActionBase.nextId`, and typed control fields recovered
+from the current GameAssembly formatter. Across all 50 available bound scripts,
+49 contain exact complete action maps and one contains an authored empty map:
+766 actions, 153 event roots, 767 exact edges, 16 typed fan-out nodes, one event
+entry convergence, and zero orphan roots, cycles, or unmapped action types. The
+registered DialogTree recovery surface contains 45 unique scripts with 683
+actions, 140 event roots, 684 edges, 16 fan-outs, one convergence, and 58 typed
+Story targets. Separate event roots have no serialized relative order, and a
+typed fan-out is exact control structure rather than proof of mutually exclusive
+Story branches. The five unresolved-row families contain no action fan-out and
+their typed playback targets only the already registered parent DialogTrees;
+none targets the eight loose row ids. Mission Pipeline displays the SubGame id,
+bound script, task topology, condition families/formulas, objective display
+keys, the complete event/action graph with typed fan-outs and Story targets,
+definition-only parents, sources, and boundaries in visible Story-only shells.
+The other-bucket queue remains 32 and the current contract is
+`sourceStoryGapQueue.v123`; OCR and manual order remain comparison-only.
 
 The original metadata `BlackboxGuideHintController`, `FacGuideHintEnable`, and
 `LevelDataGuideHintConfig` surface is spatial factory guide-hint configuration,
@@ -123,7 +136,7 @@ tie-breaker; it cannot fill missing rows. `misc_timeline_blackbox_miner` and
 `_pipe` remain open because authored rows lack serialized registered owners.
 Mission Pipeline exposes the parent files, hashes, and directed edges.
 Canonical mission-pipeline builds refresh and validate
-`sourceStoryGapQueue.v122` after current Story coverage
+`sourceStoryGapQueue.v123` after current Story coverage
 and partial order are published; data-only builds deliberately reuse it. OCR
 and manual order remain comparison-only.
 

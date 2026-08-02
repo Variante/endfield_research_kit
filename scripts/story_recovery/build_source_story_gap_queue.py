@@ -51,6 +51,7 @@ from story_builder.level_bindings import (  # noqa: E402
     LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
     _load_levelscript_binding_data,
     _levelscript_native_control_paths_to_record,
+    decode_levelscript_native_action_topology,
     parse_leveldata_levelscript_brief_dictionary,
 )
 from story_builder.levelscript_binary import (  # noqa: E402
@@ -68,7 +69,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v122"
+SCHEMA = "sourceStoryGapQueue.v123"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -7896,6 +7897,154 @@ def _blackbox_subgame_task_topology(
     }, None
 
 
+def _blackbox_subgame_action_topology(
+    level_id: str,
+    bind_script_id: int,
+    script_path: Path,
+    native_playback_index: dict[str, list[dict[str, Any]]] | None,
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Attach exact typed Story targets to a complete LevelScript graph.
+
+    The graph decoder is object-agnostic. This BlackBox join adds only exact
+    same-file native playback occurrences and requires every current action
+    type to be named by the installed GameAssembly formatter mapping.
+    """
+    data = script_path.read_bytes()
+    topology, diagnostic = decode_levelscript_native_action_topology(data)
+    source_file = _repo_source_path(script_path)
+    topology.update({
+        "scriptId": str(bind_script_id),
+        "levelId": level_id,
+        "sourceFiles": [source_file],
+        "sourceSha256": {source_file: _sha256_file(script_path)},
+    })
+    if diagnostic is not None:
+        return topology, {
+            **diagnostic,
+            "levelId": level_id,
+            "scriptId": str(bind_script_id),
+            "sourcePath": source_file,
+            "sourceSha256": _sha256_file(script_path),
+        }
+
+    unmapped = topology.get("unmappedActionTypeCounts") or {}
+    if unmapped:
+        failure = {
+            "validator": "blackBoxSubGameActionTopology",
+            "gate": "completeCurrentBuildActionTypeMapping",
+            "levelId": level_id,
+            "scriptId": str(bind_script_id),
+            "sourcePath": source_file,
+            "expected": {"unmappedActionTypeCounts": {}},
+            "actual": {"unmappedActionTypeCounts": unmapped},
+            "sourceSha256": _sha256_file(script_path),
+            "nativeMappingId": LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
+        }
+        return {
+            **topology,
+            "status": "unavailable_fail_closed",
+            "validatorDiagnostic": failure,
+            "actionControlFlowEvidence": False,
+        }, failure
+
+    occurrences: list[dict[str, Any]] = []
+    for story_key, rows in (
+        native_playback_index.items()
+        if isinstance(native_playback_index, dict)
+        else []
+    ):
+        for row in rows or []:
+            if (
+                isinstance(row, dict)
+                and safe_key(row.get("levelId")) == level_id
+                and safe_key(row.get("scriptId")) == str(bind_script_id)
+                and safe_key(row.get("sourceFile")) == source_file
+                and safe_key(row.get("actionName"))
+                and safe_key(row.get("recordClass"))
+                and safe_key(row.get("nativeMappingId"))
+                == LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID
+                and isinstance(row.get("localId"), int)
+            ):
+                occurrences.append({
+                    "storyKey": safe_key(story_key),
+                    "actionLocalId": row.get("localId"),
+                    "actionName": safe_key(row.get("actionName")),
+                    "recordClass": safe_key(row.get("recordClass")),
+                    "recordOffset": row.get("recordOffset"),
+                    "nativeEventOwnerStatus": safe_key(
+                        row.get("nativeEventOwnerStatus")
+                    ),
+                })
+    occurrences.sort(key=lambda row: (
+        row["actionLocalId"],
+        natural_key(row["storyKey"]),
+    ))
+    occurrence_signatures = [
+        (row["storyKey"], row["actionLocalId"])
+        for row in occurrences
+    ]
+    actions_by_id = {
+        row.get("localId"): row
+        for row in topology.get("actions") or []
+        if isinstance(row, dict) and isinstance(row.get("localId"), int)
+    }
+    mismatches = [
+        row
+        for row in occurrences
+        if row["actionLocalId"] not in actions_by_id
+        or row["actionName"]
+        != safe_key(actions_by_id[row["actionLocalId"]].get("actionName"))
+    ]
+    if len(occurrence_signatures) != len(set(occurrence_signatures)) or mismatches:
+        failure = {
+            "validator": "blackBoxSubGameActionTopology",
+            "gate": "exactNativeStoryTargetJoin",
+            "levelId": level_id,
+            "scriptId": str(bind_script_id),
+            "sourcePath": source_file,
+            "expected": {
+                "uniqueStoryKeyActionLocalIdPairs": True,
+                "everyStoryTargetActionExistsWithMatchingType": True,
+            },
+            "actual": {
+                "storyTargetCount": len(occurrences),
+                "uniqueStoryTargetCount": len(set(occurrence_signatures)),
+                "mismatches": mismatches[:16],
+            },
+            "sourceSha256": _sha256_file(script_path),
+            "nativeMappingId": LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
+        }
+        return {
+            **topology,
+            "status": "unavailable_fail_closed",
+            "validatorDiagnostic": failure,
+            "actionControlFlowEvidence": False,
+        }, failure
+
+    targets_by_action: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for occurrence in occurrences:
+        targets_by_action[occurrence["actionLocalId"]].append({
+            key: value
+            for key, value in occurrence.items()
+            if key != "actionLocalId" and value not in (None, "")
+        })
+    for local_id, targets in targets_by_action.items():
+        actions_by_id[local_id]["storyTargets"] = targets
+    topology.update({
+        "storyTargetCount": len(occurrences),
+        "storyTargetActionCount": len(targets_by_action),
+        "storyTargetKeys": sorted(
+            {row["storyKey"] for row in occurrences},
+            key=natural_key,
+        ),
+        "nativeStoryPlaybackBoundary": (
+            "only typed same-script action targets are attached; tagged strings "
+            "in other action types and table-only DialogText rows remain unrelated"
+        ),
+    })
+    return topology, None
+
+
 def _generic_parent_dialog_level_context_facts(
     parent_dialog_trees: list[dict[str, Any]],
     level_basic_info_table: Any,
@@ -8307,6 +8456,19 @@ def _generic_parent_dialog_level_context_facts(
             )
             if task_topology_failure is not None:
                 task_topology["validatorDiagnostic"] = task_topology_failure
+            action_topology, action_topology_failure = (
+                _blackbox_subgame_action_topology(
+                    level_id,
+                    bind_script_id,
+                    script_path,
+                    native_playback_index,
+                )
+            )
+            if action_topology_failure is not None:
+                # The owning carrier validator propagates this structured
+                # failure into both the report and the bounded CLI summary.
+                # Do not publish a partially decoded runtime shell.
+                return [], action_topology_failure
             subgame_sources = [
                 subgame_table_path,
                 script_path,
@@ -8322,6 +8484,7 @@ def _generic_parent_dialog_level_context_facts(
                 "extraTasks": task_lane("extraTasks"),
                 "failTasks": task_lane("failTasks"),
                 "taskTopology": task_topology,
+                "actionTopology": action_topology,
                 "parentDialogPlayback": parent_playback,
                 "definitionOnlyParentDialogTreeIds": missing_parent_keys,
                 "parentPlaybackCoverage": (
