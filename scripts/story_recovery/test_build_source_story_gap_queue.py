@@ -10917,6 +10917,112 @@ class NonMissionContentClosureTests(unittest.TestCase):
             "dlg_opaque_group_1"
         })
 
+    def test_registered_dialog_tree_trunk_group_direct_scene_is_exact_numbered(
+        self,
+    ) -> None:
+        story_key = "dlg_opaque_pipe_1"
+        table = {
+            "dlg_opaque_pipe_1_01": {},
+            "dlg_opaque_pipe_1_02": {},
+            "dlg_opaque_pipe_1_2_01": {},
+            "dlg_opaque_pipe_1_suffix": {},
+        }
+        definitions = {
+            "dlg_gpl_opaque_pipe_1_1": {
+                "lineIds": [
+                    "dlg_opaque_pipe_1_01",
+                    "dlg_opaque_pipe_1_02",
+                ],
+                "sourceFile": "direct.json",
+                "sourceSha256": "A",
+            },
+            "dlg_gpl_opaque_pipe_1_2": {
+                "lineIds": ["dlg_opaque_pipe_1_2_01"],
+                "sourceFile": "nested.json",
+                "sourceSha256": "B",
+            },
+        }
+        registry = {key: {"registered": True} for key in definitions}
+
+        def validate(parent_key, _registry_row, definition):
+            return {**definition, "sceneKey": parent_key}, None
+
+        with patch.object(
+            gap_queue,
+            "_generic_registered_dialog_tree_definition_facts",
+            side_effect=validate,
+        ):
+            facts, failure, exclusion = (
+                gap_queue._generic_registered_dialog_tree_trunk_group_facts(
+                    story_key,
+                    table,
+                    registry,
+                    definitions,
+                )
+            )
+
+        self.assertIsNone(failure)
+        self.assertIsNone(exclusion)
+        self.assertEqual(facts["emittedGroupKind"], (
+            "direct_numbered_dialog_scene"
+        ))
+        self.assertEqual(facts["lineSelectionMethod"], (
+            "exact_numbered_scene_rows"
+        ))
+        self.assertEqual(facts["lineIds"], [
+            "dlg_opaque_pipe_1_01",
+            "dlg_opaque_pipe_1_02",
+        ])
+        self.assertEqual(facts["parentDialogTreeCount"], 1)
+        self.assertEqual(set(facts["exactLinePartition"].values()), {
+            "dlg_gpl_opaque_pipe_1_1"
+        })
+
+    def test_registered_dialog_tree_trunk_group_direct_scene_fails_closed(
+        self,
+    ) -> None:
+        story_key = "dlg_opaque_mix_3"
+        table = {
+            "dlg_opaque_mix_3_01": {},
+            "dlg_opaque_mix_3_02": {},
+            "dlg_opaque_mix_3_03": {},
+        }
+        definitions = {
+            "dlg_opaque_mix_3_1": {
+                "lineIds": [
+                    "dlg_opaque_mix_3_01",
+                    "dlg_opaque_mix_3_02",
+                ],
+                "sourceFile": "incomplete.json",
+                "sourceSha256": "A",
+            },
+        }
+        registry = {"dlg_opaque_mix_3_1": {"registered": True}}
+
+        def validate(parent_key, _registry_row, definition):
+            return {**definition, "sceneKey": parent_key}, None
+
+        with patch.object(
+            gap_queue,
+            "_generic_registered_dialog_tree_definition_facts",
+            side_effect=validate,
+        ):
+            facts, failure, exclusion = (
+                gap_queue._generic_registered_dialog_tree_trunk_group_facts(
+                    story_key,
+                    table,
+                    registry,
+                    definitions,
+                )
+            )
+
+        self.assertIsNone(facts)
+        self.assertIsNone(failure)
+        self.assertEqual(
+            exclusion,
+            "incompleteOrAmbiguousParentTreePartition",
+        )
+
     def test_cross_owner_dialog_tree_narrative_retains_exact_parent_scope(
         self,
     ) -> None:

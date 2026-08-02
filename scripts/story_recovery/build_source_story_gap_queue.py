@@ -67,7 +67,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v117"
+SCHEMA = "sourceStoryGapQueue.v118"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -7626,15 +7626,34 @@ def _generic_registered_dialog_tree_trunk_group_facts(
 ]:
     """Resolve one emitted non-root line group to exact registered trees.
 
-    The emitted ``misc_*`` key is candidate discovery only. Qualification is
-    an exact set partition: every current DialogText row in the mechanical
-    authored namespace must occur in exactly one registered, hash-validated
-    DialogTree definition, and each selected tree may contain no line outside
-    that set. The tree edges prove only internal parent-dialog order.
+    The emitted key is candidate discovery only. ``misc_*`` aggregates select
+    their complete authored namespace, while direct unregistered ``dlg_*``
+    scene buckets select only exact numbered rows (``<scene>_<digits>``), so a
+    nested scene cannot be absorbed by a shorter prefix. Qualification is an
+    exact set partition: every selected current DialogText row must occur in
+    exactly one registered, hash-validated DialogTree definition, and each
+    selected tree may contain no line outside that set. The tree edges prove
+    only internal parent-dialog order.
     """
-    if not story_key.startswith("misc_"):
-        return None, None, "notMechanicalMiscGroup"
-    definition_root = story_key.removeprefix("misc_")
+    if story_key.startswith("misc_"):
+        definition_root = story_key.removeprefix("misc_")
+        emitted_group_kind = "mechanical_namespace_aggregate"
+        line_selection_method = "authored_namespace_prefix"
+
+        def is_target_line(line_id: Any) -> bool:
+            return safe_key(line_id).startswith(f"{definition_root}_")
+    elif story_key.startswith("dlg_"):
+        definition_root = story_key
+        emitted_group_kind = "direct_numbered_dialog_scene"
+        line_selection_method = "exact_numbered_scene_rows"
+        numbered_line_pattern = re.compile(
+            rf"^{re.escape(definition_root)}_[0-9]+$"
+        )
+
+        def is_target_line(line_id: Any) -> bool:
+            return numbered_line_pattern.fullmatch(safe_key(line_id)) is not None
+    else:
+        return None, None, "notSupportedEmittedDialogGroup"
     if not definition_root or not isinstance(dialog_text_table, dict):
         return None, None, "missingDialogTextTable"
     if isinstance(dialog_id_index, dict) and definition_root in dialog_id_index:
@@ -7643,7 +7662,7 @@ def _generic_registered_dialog_tree_trunk_group_facts(
         (
             line_id
             for line_id in dialog_text_table
-            if safe_key(line_id).startswith(f"{definition_root}_")
+            if is_target_line(line_id)
         ),
         key=natural_key,
     )
@@ -7706,9 +7725,13 @@ def _generic_registered_dialog_tree_trunk_group_facts(
         # Use it only as a tie-breaker between already hash-validated exact
         # content matches. It cannot fill an absent row or relax containment.
         dialog_namespace = (
-            f"dlg_{definition_root.removeprefix('timeline_')}"
-            if definition_root.startswith("timeline_")
-            else f"dlg_{definition_root}"
+            definition_root
+            if definition_root.startswith("dlg_")
+            else (
+                f"dlg_{definition_root.removeprefix('timeline_')}"
+                if definition_root.startswith("timeline_")
+                else f"dlg_{definition_root}"
+            )
         )
         namespace_parent_keys = {
             parent_key
@@ -7751,6 +7774,8 @@ def _generic_registered_dialog_tree_trunk_group_facts(
     return {
         "emittedStoryKey": story_key,
         "definitionRootKey": definition_root,
+        "emittedGroupKind": emitted_group_kind,
+        "lineSelectionMethod": line_selection_method,
         "lineIds": target_line_ids,
         "lineCount": len(target_line_ids),
         "parentDialogTrees": selected,
