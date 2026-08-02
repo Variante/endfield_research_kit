@@ -168,6 +168,130 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(failure["storyKey"], story_key)
         self.assertEqual(failure["actual"]["lineId"], "wrong_owner_1")
 
+    def test_generic_reading_popup_validator_recovers_definition(self) -> None:
+        story_key = "text_fixture_1"
+        facts, failure = gap_queue._generic_reading_popup_definition_facts(
+            story_key,
+            {
+                "rp_text_fixture_1": {
+                    "bgType": 2,
+                    "contentId": story_key,
+                    "iconType": 0,
+                    "id": "rp_text_fixture_1",
+                    "overrideRadioId": "",
+                    "title": {"id": 0, "text": ""},
+                },
+            },
+            {
+                "contentList": [
+                    {"content": {"id": 42, "text": ""}},
+                    {"content": {"id": -7, "text": ""}},
+                ],
+                "title": {"id": 11, "text": ""},
+            },
+        )
+
+        self.assertIsNone(failure)
+        self.assertEqual(facts["readingPopupRowIds"], ["rp_text_fixture_1"])
+        self.assertEqual(facts["richContentTitleId"], 11)
+        self.assertEqual(facts["contentTextIds"], [42, -7])
+
+    def test_generic_reading_popup_validator_reports_rich_shape(self) -> None:
+        story_key = "text_fixture_1"
+        facts, failure = gap_queue._generic_reading_popup_definition_facts(
+            story_key,
+            {
+                story_key: {
+                    "bgType": 0,
+                    "contentId": story_key,
+                    "iconType": 0,
+                    "id": story_key,
+                    "overrideRadioId": "",
+                    "title": {"id": 0, "text": ""},
+                },
+            },
+            {
+                "contentList": [{"content": {"id": True, "text": ""}}],
+                "title": {"id": 11, "text": ""},
+            },
+        )
+
+        self.assertIsNone(facts)
+        self.assertEqual(
+            failure["validator"],
+            "genericReadingPopupNegativeConsumer",
+        )
+        self.assertEqual(failure["gate"], "exactRichContentDefinitionShape")
+        self.assertEqual(failure["storyKey"], story_key)
+
+    def test_generic_unregistered_dialog_uses_exact_root_boundary(self) -> None:
+        story_key = "dlg_fixture_1"
+        line = {
+            field: ""
+            for field in gap_queue.OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS
+        }
+        line["audioOverride"] = "au_dlg_fixture_1_001"
+        other_line = dict(line, audioOverride="au_dlg_fixture_10_001")
+        facts, failure = (
+            gap_queue._generic_unregistered_dialog_definition_facts(
+                story_key,
+                {
+                    "dlg_fixture_1_001": line,
+                    "dlg_fixture_10_001": other_line,
+                },
+                {
+                    "option_dlg_fixture_1_2_001": {
+                        "iconType": "Default",
+                        "optionText": {"id": 42, "text": ""},
+                    },
+                    "option_dlg_fixture_10_1_001": {
+                        "iconType": "Default",
+                        "optionText": {"id": 99, "text": ""},
+                    },
+                },
+                {"au_dlg_fixture_1_001"},
+            )
+        )
+
+        self.assertIsNone(failure)
+        self.assertEqual(facts["lineIds"], ["dlg_fixture_1_001"])
+        self.assertEqual(
+            facts["optionIds"],
+            ["option_dlg_fixture_1_2_001"],
+        )
+        self.assertEqual(facts["optionsByGroup"], {"2": [
+            "option_dlg_fixture_1_2_001",
+        ]})
+
+    def test_generic_unregistered_dialog_reports_option_shape(self) -> None:
+        story_key = "dlg_fixture_1"
+        line = {
+            field: ""
+            for field in gap_queue.OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS
+        }
+        line["audioOverride"] = "au_dlg_fixture_1_001"
+        facts, failure = (
+            gap_queue._generic_unregistered_dialog_definition_facts(
+                story_key,
+                {"dlg_fixture_1_001": line},
+                {
+                    "option_dlg_fixture_1_1_001": {
+                        "iconType": "",
+                        "optionText": {"id": True, "text": ""},
+                    },
+                },
+                set(),
+            )
+        )
+
+        self.assertIsNone(facts)
+        self.assertEqual(
+            failure["validator"],
+            "genericUnregisteredDialogNegativeConsumer",
+        )
+        self.assertEqual(failure["gate"], "exactDialogOptionShape")
+        self.assertEqual(failure["storyKey"], story_key)
+
     def test_generic_missionless_npc_proxy_consumer_recovers_identity(self) -> None:
         story_key = "dlg_fixture_1"
         row = {

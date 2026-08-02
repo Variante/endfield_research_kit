@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 625 (490 MissionRuntime + 135 Story-only recovery shells) |
+| Pipeline missions | 630 (490 MissionRuntime + 140 Story-only recovery shells) |
 | Unique Story files | 5,282 |
 | Connected files | 4,181 (79.2%) |
 | Files with a normalized trigger/context route | 4,402 (83.3%) |
@@ -44,25 +44,33 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch generalizes two more current-build patterns without
-adding per-scene declarations. The SNS classifier now distinguishes 214
-definition-only conversations from seven exact authored mission links by
-requiring `relatedMissionId`, a type-12 `linkMissionId`, and its `contentParam`
-to agree; it qualifies 221 rows across 93 missions. The new cutscene classifier
-discovers gaps from the current target census, then requires bidirectional
-Timeline registration, decoded TextAsset identity, a typed
-`CutsceneRootComponent` hierarchy, a resolved root `PlayableDirector`, negative
-owner/runtime carrier and native playback indexes, and absent exact root tokens
-in both installed binaries. It qualifies 28 roots across 19 missions; seven
-similar roots do not qualify for this pattern and retain their prior
-classification, with bounded diagnostics explaining the incomplete definition
-or typed root/director proof. `cutscene_gm02m10_1`
-is therefore an executable definition with no recovered activator, while
-`sns_gm02m11_1` is attached to its mission but gains no activation or order
-edge. Mission Pipeline shows all related tables, TextAssets, typed audits, and
-original binaries. Main, event, and major core-isolated queues now have zero
-actionable rows; character has 100 and other has 630. The graph remains 1,485
-strong edges, 302 native branch groups, and 18 convergences.
+The latest recovery batch generalizes two more current-build definition
+patterns without per-object declarations. Exact `ReadingPopUpTable` and
+`RichContentTable` shapes qualify 192 readable Story keys across 71 missions;
+exact `DialogTextTable` roots, optional `DialogOptionTable` choices, and
+`AudioDialog` membership qualify 121 unregistered dialog keys across 33
+missions. Both classifiers require a unique mission target and exhaust the
+current native playback, typed carrier, DialogId, Timeline, TextAsset, and
+installed `GameAssembly.dll`/global-metadata root-token surfaces. The dialog
+root matcher uses exact numeric boundaries, so `_1` cannot absorb `_10`.
+Schema mismatches fail closed with bounded diagnostics; zero validation
+failures remain. These are definition/consumer-boundary findings, not playback,
+mission activation, or chronology evidence: table order, line/option ids,
+filename suffixes, OCR, and manual order add no graph edge. Mission Pipeline
+shows the typed tables, carrier audit, and original binaries for runtime
+missions and Story-only shells. Main, event, and major core-isolated queues
+remain at zero actionable rows; character falls from 100 to 35 and other from
+630 to 495. The graph remains 1,485 strong edges, 302 native branch groups,
+and 18 convergences.
+
+The preceding batch generalized SNS and cutscene definitions. The SNS
+classifier distinguishes 214 definition-only conversations from seven exact
+authored mission links by requiring `relatedMissionId`, a type-12
+`linkMissionId`, and `contentParam` to agree. The cutscene classifier requires
+bidirectional Timeline registration, decoded TextAsset identity, a typed
+`CutsceneRootComponent` hierarchy, and a resolved root `PlayableDirector`, then
+applies the same negative consumer boundaries. It qualifies 28 roots across 19
+missions without treating an executable definition as an activator.
 
 The preceding `gm02m21` batch recovers its exact native quest topology and closes
 its two remaining actionable radios without inventing placement. Hash-locked
@@ -725,10 +733,11 @@ only.
    161 runtime receiver nodes and 185 receiver-to-Story placements.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
-3. **Story recovery queues:** main and event have no actionable core-isolated
-   or strict quest-attachment gaps. Major missions retain 2 actionable
-   core-isolated files and score 10; character missions retain 107 and other
-   missions retain 654. Seven broad main-story co-memberships remain visible as
+3. **Story recovery queues:** main, event, and major have no actionable
+   core-isolated or strict quest-attachment gaps. Character missions retain 35
+   actionable core-isolated files plus five quest-attachment gaps. Other
+   missions retain 495 actionable core-isolated files, 17 missing mission
+   bundles, and three quest-attachment gaps. Broad co-memberships remain
    non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
@@ -743,12 +752,12 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should audit the two remaining single-file major frontiers:
-`cutscene_gm02m10_1` and authored-link `sns_gm02m11_1`, followed by the five
-character-mission quest-attachment gaps. Extend the
-same pattern-based approach to other definition families only when their typed
-schemas and complete consumer surfaces can be bounded without weakening the
-fail-closed rules. Within `gm02m23`, the
+Next work should audit the remaining character frontier as shared registered
+DialogTree/native-playback/black-screen/radio/cutscene patterns, then the five
+character-mission quest-attachment gaps. Extend the same pattern-based approach
+to other definition families only when their typed schemas and complete
+consumer surfaces can be bounded without weakening the fail-closed rules.
+Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
 as quest-observed definitions. The seven isolated and four weak-only Story
