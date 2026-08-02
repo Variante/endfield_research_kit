@@ -44,7 +44,24 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch closes the six-file character frontier through four
+The latest recovery batch closes all eight remaining quest-to-Story attachment
+gaps with schema-driven rules rather than quest/object declarations. Typed
+objective conditions now resolve their Story key by condition class and source
+field shape, including `CheckRepeatableTalkFinish`. Exact LevelScript property
+conditions can attach native Story playback only when level, script, property,
+value, property-change event, and downstream typed action all agree; this
+recovers the shared `isAllTalkFinished` trigger between `c31m3d5_q#8` and
+`radio_c31m3_21` without ordering quest completion against playback. Generic
+server-placeholder and LevelScript-condition boundaries close the other source
+contexts graph-neutrally when no typed Story consumer exists. The current queue
+has zero quests without a strict attachment or bounded diagnostic, with 13
+closed diagnostics and no validation failures across main, character, and
+other missions. Mission Pipeline shows the exact MissionRuntime, LevelData,
+LevelScript, proxy, native event/action, source hashes, and reopening boundary;
+unknown/shared directions normalize to visible context instead of disappearing
+from the inspector. OCR and manual order were not used as evidence.
+
+The preceding recovery batch closes the six-file character frontier through four
 current-build patterns rather than per-object declarations. Authored
 `dlg_*` playback is normalized mechanically onto emitted `misc_dlg_*` pages;
 the same alias also lets registered DialogTree definitions retain their exact
@@ -57,8 +74,7 @@ foreign LevelData shells attach exact LevelScript playback and both source
 files without transferring Story ownership. This closes
 `cutscene_c6m1_1`, `misc_dlg_c6m1_1d5`, `misc_dlg_c6m1_21d5`,
 `radio_c6m1_23`, `radio_c31m1_12`, and `radio_c16m2_25`; character
-actionable core-isolated rows fall from six to zero, while five character
-quest-attachment gaps remain. The `sourceStoryGapQueue.v114` offline and
+actionable core-isolated rows fall from six to zero. The `sourceStoryGapQueue.v114` offline and
 runtime-config validators are active with zero failures. Mission Pipeline
 shows the authored alias, transition predicates, foreign mission shell, and
 the exact DialogTree, TextTable, LevelScript, LevelData, GameAssembly, and
@@ -793,17 +809,16 @@ only.
 
 ## Remaining gaps
 
-1. **Mission ownership:** 155 Story files have exact native playback but lack a
+1. **Mission ownership:** 156 Story files have exact native playback but lack a
    mission/quest activation bridge. The unresolved surface is organized under
    161 runtime receiver nodes and 185 receiver-to-Story placements.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
-3. **Story recovery queues:** event, major, and character missions have no
-   actionable core-isolated files; character missions retain five
-   quest-attachment gaps. Main missions retain two actionable core-isolated
-   files. Other missions retain 384 actionable core-isolated files, 17 missing mission
-   bundles, and three quest-attachment gaps. Broad co-memberships remain
-   non-owning diagnostics.
+3. **Story recovery queues:** all quest-attachment gaps are now either strict
+   typed attachments or bounded graph-neutral diagnostics. Event, major, and
+   character missions have no actionable core-isolated files. Main missions
+   retain two actionable core-isolated files; other missions retain 384 and 17
+   missing mission bundles. Broad co-memberships remain non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
    reopen only when a typed DialogTree/Timeline/runtime consumer appears.
@@ -817,10 +832,9 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should audit the five character-mission quest-attachment gaps as
-shared typed carrier/consumer patterns, then the two remaining main-story
-core-isolated files.
-Extend the same pattern-based approach
+Next work should audit the two remaining main-story core-isolated files, then
+rank the 384 other actionable source-link gaps by reusable typed
+producer/consumer family. Extend the same pattern-based approach
 to other definition families only when their typed schemas and complete
 consumer surfaces can be bounded without weakening the fail-closed rules.
 Within `gm02m23`, the
