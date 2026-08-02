@@ -190,6 +190,18 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
 
         self.assertEqual([2], first_paths[0]["pathLocalIds"])
         self.assertEqual([2, 3], second_paths[0]["pathLocalIds"])
+        self.assertEqual(
+            [[3]],
+            [
+                [step["localId"] for step in path]
+                for path in first_paths[0]["downstreamControlPaths"]
+            ],
+        )
+        self.assertEqual(
+            "exact_serialized_typed_reachability",
+            first_paths[0]["downstreamControlStatus"],
+        )
+        self.assertEqual([], second_paths[0]["downstreamControlPaths"])
         self.assertEqual(3, decoder.call_count)
 
     def test_dynamic_hp_spawner_context_rejects_constant_entity_lists(self):

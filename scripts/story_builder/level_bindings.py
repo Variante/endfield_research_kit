@@ -1055,6 +1055,7 @@ def _levelscript_native_control_paths_to_record(
     equivalent_record_offsets = context.get("equivalentRecordOffsets") or {}
     decoded_cache = context.get("decodedByStart") or {}
     next_starts = context.get("nextStarts") or {}
+    downstream_cache = context.setdefault("downstreamControlPaths", {})
     target_local_id = target_record.get("localId")
     if not isinstance(target_local_id, int):
         return []
@@ -1272,6 +1273,62 @@ def _levelscript_native_control_paths_to_record(
             if value not in ("", None, [], {})
         }
 
+    def downstream_control_paths(record: dict) -> list[list[dict]]:
+        """Return bounded exact paths from one action to every reachable action.
+
+        These paths use the same typed successor decoder and duplicate-local-id
+        gate as event-to-action traversal.  Publishing every reachable prefix,
+        rather than only leaf paths, lets downstream consumers prove branch
+        convergence without treating serialized record adjacency as control
+        flow.  Cycles are bounded per path and conflicting duplicate targets
+        remain absent from ``action_by_local``.
+        """
+        start_local_id = record.get("localId")
+        if isinstance(start_local_id, int) and start_local_id in downstream_cache:
+            return downstream_cache[start_local_id]
+        output: list[list[dict]] = []
+        seen: set[tuple[tuple[str, int], ...]] = set()
+        visited = (
+            frozenset({start_local_id})
+            if isinstance(start_local_id, int)
+            else frozenset()
+        )
+        queue: list[tuple[dict, list[dict], frozenset[int]]] = []
+        for edge, next_local_id in successors(record):
+            next_record = action_by_local.get(next_local_id)
+            if next_record is None or next_local_id in visited:
+                continue
+            queue.append((
+                next_record,
+                [compact_step(next_record, edge)],
+                visited | {next_local_id},
+            ))
+        while queue and len(output) < 64:
+            current, path, path_visited = queue.pop(0)
+            signature = tuple(
+                (str(step.get("edge") or "").strip(), int(step["localId"]))
+                for step in path
+                if isinstance(step.get("localId"), int)
+            )
+            if not signature or signature in seen:
+                continue
+            seen.add(signature)
+            output.append(path)
+            if len(path) >= 64:
+                continue
+            for edge, next_local_id in successors(current):
+                next_record = action_by_local.get(next_local_id)
+                if next_record is None or next_local_id in path_visited:
+                    continue
+                queue.append((
+                    next_record,
+                    [*path, compact_step(next_record, edge)],
+                    path_visited | {next_local_id},
+                ))
+        if isinstance(start_local_id, int):
+            downstream_cache[start_local_id] = output
+        return output
+
     paths: list[dict] = []
     seen_paths: set[tuple] = set()
     for header in ordered:
@@ -1333,6 +1390,11 @@ def _levelscript_native_control_paths_to_record(
                     "triggerSlotIds": list(header_detail.get("triggerSlotIds") or []),
                     "pathLocalIds": [step.get("localId") for step in path],
                     "path": path,
+                    "downstreamControlStatus":
+                        "exact_serialized_typed_reachability",
+                    "downstreamControlPaths": downstream_control_paths(
+                        current
+                    ),
                     "nativeHeaderMappingId": LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
                 })
                 continue

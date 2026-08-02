@@ -1198,6 +1198,130 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(result["summary"]["nativeSemanticPredicateCount"], 1)
         self.assertEqual(result["summary"]["nativeClassOnlyPredicateCount"], 0)
 
+    def test_equivalent_duplicate_native_paths_preserve_exact_split(self) -> None:
+        candidates = {"radio_m1_1": "radio", "cutscene_m1_1": "cutscene"}
+        payload = mission_payload([])
+
+        def connection(
+            key: str,
+            arm_edge: str,
+            entry_id: int,
+            downstream_ids: list[int],
+        ) -> dict:
+            return {
+                "key": key,
+                "levelIds": ["map_test"],
+                "scriptIds": ["70000000001"],
+                "sourceFiles": [
+                    "MissionRuntimeAsset/m1.json",
+                    "LevelScriptData/map_test/70000000001.json",
+                ],
+                "nativeEventOwners": [{
+                        "status": (
+                            "exact_serialized_control_path_equivalent_duplicates"
+                        ),
+                        "headerName": "MissionEvent_OnClientGlobalVarChanged",
+                        "headerLocalId": 28,
+                        "path": [
+                            {
+                                "localId": 7,
+                                "edge": "ActionHeader.nextId",
+                                "equivalentRecordOffsets": [7, 1676],
+                            },
+                            {"localId": entry_id, "edge": arm_edge},
+                        ],
+                        "downstreamControlStatus":
+                            "exact_serialized_typed_reachability",
+                        "downstreamControlPaths": [
+                            [
+                                {
+                                    "localId": local_id,
+                                    "edge": "ActionBase.nextId",
+                                }
+                                for local_id in downstream_ids[:index]
+                            ]
+                            for index in range(1, len(downstream_ids) + 1)
+                        ],
+                    }],
+            }
+
+        payload["flow"]["missionStoryConnections"] = [
+            connection(
+                "radio_m1_1",
+                "Split.actions[0]",
+                17,
+                [18, 11],
+            ),
+            connection(
+                "cutscene_m1_1",
+                "Split.actions[1]",
+                8,
+                [9, 10, 11],
+            ),
+        ]
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            candidates,
+            payload,
+        )
+
+        self.assertEqual(result["summary"]["nativeControlBranchCount"], 1)
+        branch = result["branches"]["nativeControlBranches"][0]
+        self.assertEqual(branch["kind"], "splitFanout")
+        self.assertEqual(branch["branchLocalId"], 7)
+        self.assertEqual(
+            [arm["edge"] for arm in branch["arms"]],
+            ["Split.actions[0]", "Split.actions[1]"],
+        )
+        self.assertEqual(branch["sourceFiles"], [
+            "LevelScriptData/map_test/70000000001.json",
+            "MissionRuntimeAsset/m1.json",
+        ])
+        merge = result["branches"]["nativeControlMerges"][0]
+        self.assertEqual(merge["mergeLocalId"], 11)
+        self.assertEqual(
+            merge["convergenceStatus"],
+            "exact_serialized_downstream_control_convergence",
+        )
+        self.assertEqual(merge["mergePaths"], [[18, 11], [9, 10, 11]])
+
+    def test_unvalidated_duplicate_native_path_status_stays_excluded(self) -> None:
+        candidates = {"radio_m1_1": "radio", "cutscene_m1_1": "cutscene"}
+        payload = mission_payload([])
+        payload["flow"]["missionStoryConnections"] = [
+            {
+                "key": key,
+                "levelScriptOccurrences": [{
+                    "levelId": "map_test",
+                    "scriptId": "70000000001",
+                    "sourceFile": "fixture.json",
+                    "nativeEventOwners": [{
+                        "status": "duplicate_local_id_conflict",
+                        "headerName": "ScriptEvent_OnCustomEvent",
+                        "headerLocalId": 4,
+                        "path": [
+                            {"localId": 5, "edge": "ActionHeader.nextId"},
+                            {"localId": entry, "edge": edge},
+                        ],
+                    }],
+                }],
+            }
+            for key, entry, edge in (
+                ("radio_m1_1", 6, "Split.actions[0]"),
+                ("cutscene_m1_1", 7, "Split.actions[1]"),
+            )
+        ]
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            candidates,
+            payload,
+        )
+
+        self.assertEqual(result["summary"]["nativeControlBranchCount"], 0)
+        self.assertEqual(result["directEdges"], [])
+
     def test_chain_is_transitively_reduced(self) -> None:
         candidates = {"dlg_a": "dlg", "dlg_b": "dlg", "dlg_c": "dlg"}
         payload = mission_payload([
