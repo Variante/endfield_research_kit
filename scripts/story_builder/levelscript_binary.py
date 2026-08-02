@@ -2980,6 +2980,83 @@ def _decode_compare_mission_state_getter(payload: bytes) -> dict[str, Any]:
     }
 
 
+def _decode_check_levelscript_stage_getter(payload: bytes) -> dict[str, Any]:
+    """Decode the current generic LevelScript-stage comparison getter.
+
+    Current metadata names the runtime fields ``_scriptPtr``, ``_comparer``,
+    and ``_value``.  The generated MemoryPack setter order is comparer,
+    scriptPtr, value; the native ``GetResult`` body resolves the script, reads
+    its stage, and passes the operands to ``ComparerExtensions.DoCompare``.
+    """
+    comparer = _decode_i32_param(payload, 0)
+    if comparer is None:
+        return {}
+    script_ptr = _decode_levelscript_ptr_param(payload, comparer[1])
+    if script_ptr is None:
+        return {}
+    expected_stage = _decode_i32_param(payload, script_ptr[1])
+    if expected_stage is None:
+        return {}
+    comparer_raw = comparer[0]["value"]
+    return _finish_getter_fields(payload, expected_stage[1], {
+        "type": "CheckLevelScriptStage",
+        "scriptPtr": script_ptr[0],
+        "comparer": comparer[0],
+        "comparerName": {
+            0: "Equal",
+            1: "NotEqual",
+            2: "GreaterThan",
+            3: "GreaterEqual",
+            4: "LessThan",
+            5: "LessEqual",
+        }.get(comparer_raw, ""),
+        "expectedStage": expected_stage[0],
+        "payloadShape": "comparer-level-script-ptr-stage-exact-fields",
+        "serializedMemberCount": 10,
+        "pureGetterUnionTag": "0x0013",
+        "nativeMappingId": "gameassembly-2026-08-02-check-levelscript-stage",
+        "executionSide": "client",
+        "serverExchange": False,
+    })
+
+
+def _decode_check_mission_or_quest_complete_getter(
+    payload: bytes,
+) -> dict[str, Any]:
+    """Decode the current mission/quest completion predicate.
+
+    The generated formatter writes ``_isQuest`` followed by ``_missionId``.
+    The native ``GetResult`` body selects MissionSystem.GetQuestState when the
+    flag is true and GetMissionData otherwise, and accepts state value 3 in
+    both paths.
+    """
+    is_quest = _decode_bool_param(payload, 0)
+    if is_quest is None:
+        return {}
+    identity = _decode_constant_string_param(payload, is_quest[1])
+    if identity is None:
+        return {}
+    mission_or_quest_id = identity[0]
+    if not re.fullmatch(r"[A-Za-z0-9_#-]+", mission_or_quest_id):
+        return {}
+    target_kind = "quest" if is_quest[0]["value"] else "mission"
+    return _finish_getter_fields(payload, identity[1], {
+        "type": "CheckMissionOrQuestIsComplete",
+        "isQuest": is_quest[0],
+        "targetKind": target_kind,
+        "missionOrQuestId": mission_or_quest_id,
+        "completedStateRaw": 3,
+        "completedStateName": "Completed",
+        "payloadShape": "is-quest-and-identity-exact-fields",
+        "serializedMemberCount": 9,
+        "pureGetterUnionTag": "0x0016",
+        "nativeMappingId": "gameassembly-2026-08-02-check-mission-or-quest-complete",
+        "executionSide": "client",
+        "networkRole": "reads_synchronized_local_mission_or_quest_state",
+        "serverExchange": False,
+    })
+
+
 def _getter_subtype_payload(
     data: bytes,
     record: dict[str, Any],
@@ -5747,6 +5824,8 @@ def decode_levelscript_record_payload(
             out["entityCompare"] = entity_compare
     if getter_role and semantic_key in {
         (0x0004, 0x0A),
+        (0x0013, 0x0A),
+        (0x0016, 0x09),
         (0x001F, 0x0A),
         (0x0049, 0x0A),
         (0x0100, 0x09),
@@ -5764,6 +5843,16 @@ def decode_levelscript_record_payload(
             mission_state_getter = _decode_get_mission_state_getter(getter_payload)
             if mission_state_getter:
                 out["getMissionState"] = mission_state_getter
+        elif semantic_key == (0x0013, 0x0A):
+            stage_check = _decode_check_levelscript_stage_getter(getter_payload)
+            if stage_check:
+                out["checkLevelScriptStage"] = stage_check
+        elif semantic_key == (0x0016, 0x09):
+            completion_check = _decode_check_mission_or_quest_complete_getter(
+                getter_payload
+            )
+            if completion_check:
+                out["checkMissionOrQuestIsComplete"] = completion_check
         elif semantic_key == (0x001F, 0x0A):
             mission_state_compare = _decode_compare_mission_state_getter(
                 getter_payload

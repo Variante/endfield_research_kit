@@ -428,6 +428,8 @@ LEVELSCRIPT_NATIVE_GETTER_MAPPING_ID = (
 # confusing overlapping union-tag spaces or a future changed payload shape.
 LEVELSCRIPT_NATIVE_GETTER_NAMES: dict[tuple[int, int], str] = {
     (0x0004, 0x0A): "BooleanCompare",
+    (0x0013, 0x0A): "CheckLevelScriptStage",
+    (0x0016, 0x09): "CheckMissionOrQuestIsComplete",
     (0x001F, 0x0A): "CompareMissionState",
     (0x0049, 0x0A): "FloatNewCompare",
     (0x004E, 0x08): "GetConditionResult",
@@ -1321,6 +1323,8 @@ def _levelscript_native_control_paths_to_record(
                 })
                 for detail_kind in (
                     "booleanCompare",
+                    "checkLevelScriptStage",
+                    "checkMissionOrQuestIsComplete",
                     "floatNewCompare",
                     "intCompare",
                     "intEqual",
