@@ -18,7 +18,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v114",
+            "sourceStoryGapQueue.v115",
         )
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
@@ -3580,6 +3580,16 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
 
 
 class NonMissionContentTableTests(unittest.TestCase):
+    def test_exact_runtime_non_mission_families_are_pipeline_visible(self) -> None:
+        self.assertEqual(
+            pipeline.PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS,
+            {
+                "guide_runtime_asset",
+                "spaceship_dialog_tree",
+                "character_profile_voice",
+            },
+        )
+
     def test_tables_are_keyed_outside_the_mission_lane(self) -> None:
         from scripts.common import NON_MISSION_CONTENT_TABLES
 

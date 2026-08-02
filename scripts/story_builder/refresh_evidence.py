@@ -51,6 +51,10 @@ STEPS = (
     EvidenceStep("dialog_registry", ("scripts/story_builder/dialog_registry.py", "--quiet")),
     EvidenceStep("video_bindings", ("scripts/story_builder/video_bindings.py",)),
     EvidenceStep("source_links", ("scripts/story_builder/source_links.py",)),
+    EvidenceStep(
+        "spaceship_story_content",
+        ("scripts/story_recovery/build_spaceship_story_content_audit.py",),
+    ),
 )
 
 
@@ -92,7 +96,10 @@ def main() -> int:
         print(f"[story-evidence] checked roots: {roots}", file=sys.stderr)
         return 1
 
-    print("[story-evidence] refreshing dialog registry, video bindings, and source links")
+    print(
+        "[story-evidence] refreshing dialog registry, video bindings, source "
+        "links, and spaceship Story content"
+    )
     results_by_name: dict[str, EvidenceResult] = {}
     with ThreadPoolExecutor(max_workers=len(STEPS)) as executor:
         future_to_step = {executor.submit(run_step, step): step for step in STEPS}

@@ -65,7 +65,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v114"
+SCHEMA = "sourceStoryGapQueue.v115"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -19000,6 +19000,26 @@ def _closed_non_mission_content_isolated_scenes(
                 "guideLevelIds": row.get("guideLevelIds") or [],
                 "nativeMappingId": row.get("nativeMappingId"),
                 "nativeMethod": row.get("nativeMethod") or {},
+                "orderBoundary": row.get("orderBoundary"),
+                "evidenceReport": row.get("evidenceReport"),
+            })
+        elif row.get("evidenceKind") in {
+            "spaceship_dialog_tree",
+            "character_profile_voice",
+        }:
+            closed.append({
+                "sceneKey": scene_key,
+                "recoveryStatus":
+                    "closed_exact_spaceship_runtime_non_mission_content",
+                "evidenceKind": row.get("evidenceKind"),
+                "contentClass": row.get("content"),
+                "lineIds": row.get("lineIds") or [],
+                "dialogTreeRoots": row.get("dialogTreeRoots") or [],
+                "consumerClasses": row.get("consumerClasses") or [],
+                "characterIds": row.get("characterIds") or [],
+                "profileVoiceIds": row.get("profileVoiceIds") or [],
+                "sourceFiles": row.get("sourceFiles") or [],
+                "nativeMappingId": row.get("nativeMappingId"),
                 "orderBoundary": row.get("orderBoundary"),
                 "evidenceReport": row.get("evidenceReport"),
             })

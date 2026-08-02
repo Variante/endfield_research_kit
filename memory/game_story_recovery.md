@@ -10,11 +10,12 @@ Latest CN reports:
 | Metric | Current |
 | --- | ---: |
 | Pipeline missions | 560 (490 MissionRuntime + 70 Story-only recovery shells) |
-| Unique Story files | 5,284 |
-| Connected files | 4,239 (80.2%) |
-| Files with a normalized trigger/context route | 4,462 (84.4%) |
-| Unlinked files | 1,045 |
+| Unique Story files | 5,562 |
+| Connected files | 4,239 (76.2%) |
+| Files with a normalized trigger/context route | 4,462 (80.2%) |
+| Unlinked files | 1,323 |
 | Unlinked files with exact native playback | 156 |
+| Exact non-mission content | 279 (278 spacecraft/profile + 1 guide runtime) |
 | Partial-order mission rows | 487 |
 | Candidate scene placements | 8,877 |
 | Strong / supported / weak edges | 1,502 / 834 / 2,635 |
@@ -44,7 +45,23 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The latest recovery batch generalizes exact LevelData-hosted LevelScript
+The latest recovery batch generalizes spacecraft/operator content recovery
+without actor- or file-specific rules. Complete DialogText buckets close only
+when an exact typed `DialogTree` consumes every line through
+`SpaceshipOptionGiftData` or `SpaceshipOptionWorkData`, or when a mechanical
+`CharacterTable.profileVoice` mirror has an exact duplicated `AudioDialog`
+metadata pair. Current GameAssembly and metadata hashes pin the reviewed gift,
+work-state, dialog-selection, and NPC reaction consumers. This classifies 278
+non-mission Story keys: 194 typed DialogTree buckets (138 gift, 28 rest, 28
+work) and 84 profile-talk buckets. Mission Pipeline exposes all 279 exact
+non-mission records in one collapsible browser with their original DialogTree
+and table files. The other actionable queue falls from 381 to 103;
+`misc_sim_gift_ikut_recvbye` and `misc_sim_gift_wolfgd_recvbye` remain open
+because the current original corpus has no typed trunk consumer for either.
+These classifications prove content and internal branch membership, not mission
+ownership or cross-file chronology; OCR/manual order remains comparison-only.
+
+The preceding recovery batch generalizes exact LevelData-hosted LevelScript
 playback across matching and foreign mission shells. The validator requires a
 typed current-build playback action, exact native event-to-action path,
 GameAssembly mapping, complete single-key authored record, mechanical
@@ -834,7 +851,7 @@ only.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
    typed attachments or bounded graph-neutral diagnostics. Main, event, major,
    and character missions have no actionable core-isolated files. Other
-   missions retain 381 and 17 missing mission bundles. Broad co-memberships
+   missions retain 103 and 17 missing mission bundles. Broad co-memberships
    remain non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
@@ -849,8 +866,10 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should rank the 381 other actionable source-link gaps by reusable
-typed producer/consumer family. Extend the same pattern-based approach
+Next work should rank the 103 other actionable source-link gaps by reusable
+typed producer/consumer family. The largest single family is the 24-dialog
+`f1m25` bucket, followed by smaller radio, black-screen, blackbox, and the two
+unmatched gift-ending groups. Extend the same pattern-based approach
 to other definition families only when their typed schemas and complete
 consumer surfaces can be bounded without weakening the fail-closed rules.
 Within `gm02m23`, the

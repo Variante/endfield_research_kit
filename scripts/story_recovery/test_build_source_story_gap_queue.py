@@ -10479,6 +10479,51 @@ class NonMissionContentClosureTests(unittest.TestCase):
         )
         self.assertEqual(closed["actionCount"], 13)
 
+    def test_exact_spaceship_runtime_content_is_closed_without_order(self) -> None:
+        story_key = "misc_sim_work_aglina"
+        partial = partial_mission(
+            "work",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        row = gap_queue.build_gap_row(
+            partial,
+            mission_payload(),
+            mission_bundle_exists=True,
+            non_mission_content={
+                story_key: {
+                    "evidenceKind": "spaceship_dialog_tree",
+                    "content": "operator_spaceship_dialog_tree",
+                    "lineIds": ["sim_work_aglina_01"],
+                    "dialogTreeRoots": [
+                        "dlg_npc_0013_aglina_spaceshippresent",
+                    ],
+                    "consumerClasses": [
+                        "Beyond.Gameplay.SpaceshipOptionWorkData",
+                    ],
+                    "sourceFiles": ["tree.json", "DialogTextTable.json"],
+                    "nativeMappingId": "spaceship-mapping-v1",
+                    "orderBoundary": "no mission or Story order edge",
+                    "evidenceReport": "report.json",
+                },
+            },
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        closed = row["closedNonMissionContentIsolatedScenes"][0]
+        self.assertEqual(
+            closed["recoveryStatus"],
+            "closed_exact_spaceship_runtime_non_mission_content",
+        )
+        self.assertEqual(
+            closed["dialogTreeRoots"],
+            ["dlg_npc_0013_aglina_spaceshippresent"],
+        )
+        self.assertEqual(closed["sourceFiles"], [
+            "tree.json",
+            "DialogTextTable.json",
+        ])
+
     def test_lookalike_key_not_in_any_table_stays_actionable(self) -> None:
         # Same filename shape, absent from the tables: must NOT be closed.
         root = self._table_root(AudioRadioContinueTable={})

@@ -51,7 +51,7 @@
       exactDialogRootAliasBoundary: "byte-identical payload; no activation or server branch-selection claim",
       definitionOnlyStory: "definition-only black text",
       nonMissionContentStory: "non-mission content",
-      nonMissionContentStoryHint: "Story ids proven to be authored non-mission content: speaker radio continuation, character SNS topics, or exact factory tutorial guide actions. The evidence serializes no mission or quest owner. Authored fields and typed consumers admit a key; filenames never do.",
+      nonMissionContentStoryHint: "Story ids proven to be authored non-mission content: speaker radio continuation, character SNS topics, factory tutorial actions, operator profile voices, or typed spacecraft DialogTrees. The evidence serializes no mission or quest owner. Authored fields and typed consumers admit a key; filenames never do.",
       missionGraph: "Cross-mission relations",
       missionGraphUpstream: "upstream",
       missionGraphDownstream: "downstream",
@@ -661,7 +661,7 @@
       nativePlaybackGaps: "原生路径缺口",
       definitionOnlyStory: "仅有定义的黑屏文本",
       nonMissionContentStory: "非使命内容",
-      nonMissionContentStoryHint: "这些剧情 ID 已由原生数据证明属于非使命内容：按说话人分的电台续播语音、角色 SNS 话题，或工厂教程资产中的精确动作。证据没有序列化使命或任务归属。仅依据原生字段和强类型消费者判定，绝不依据文件名。",
+      nonMissionContentStoryHint: "这些剧情 ID 已由原生数据证明属于非使命内容：按说话人分的电台续播语音、角色 SNS 话题、工厂教程动作、干员档案语音，或舰船系统强类型对话树。证据没有序列化使命或任务归属。仅依据原生字段和强类型消费者判定，绝不依据文件名。",
       missionGraph: "跨使命关系",
       missionGraphUpstream: "上游",
       missionGraphDownstream: "下游",
@@ -1349,6 +1349,7 @@
         </header>
         <div id="mp-warning" class="mp-boundary-warning" role="note"></div>
         <div id="mp-source-provenance" class="mp-source-provenance" role="note" hidden></div>
+        <div id="mp-non-mission-overview" class="mp-non-mission-overview"></div>
         <div class="mp-layout">
           <aside class="mp-browser" aria-label="Mission browser">
             <div class="mp-browser-controls">
@@ -1461,6 +1462,7 @@
       // the data language, so a UI-locale switch used to leave its stat labels
       // in the previous language.
       updateCorpus();
+      renderNonMissionOverview();
       renderMissionList();
       if (state.mission) renderMission();
     });
@@ -1528,6 +1530,7 @@
       state.missionCache.clear();
       state.localizedCache.clear();
       updateCorpus();
+      renderNonMissionOverview();
       applyMissionFilters();
       const preferred = index.missions?.some((row) => row.id === state.missionId) ? state.missionId : (index.missions?.[0]?.id || "");
       if (preferred) await selectMission(preferred, { force });
@@ -2767,16 +2770,31 @@
       <div class="mp-story-files"><section class="mp-story-group is-context">
         ${rows.map((row) => {
           const guideRuntime = row.evidenceKind === "guide_runtime_asset";
+          const spaceshipRuntime = [
+            "spaceship_dialog_tree",
+            "character_profile_voice",
+          ].includes(row.evidenceKind);
+          const spaceshipConsumers = [
+            ...(row.consumerClasses || []),
+            ...(row.characterIds || []),
+            ...(row.dialogTreeRoots || []),
+          ];
           return storyConnectionLink({
             key: row.key,
             relation: "non_mission_content",
             direction: "context",
-            confidence: guideRuntime
-              ? "exact_typed_guide_runtime_non_mission_content"
-              : "table_backed_non_mission_content",
+            confidence: spaceshipRuntime
+              ? "exact_typed_spaceship_non_mission_content"
+              : guideRuntime
+                ? "exact_typed_guide_runtime_non_mission_content"
+                : "table_backed_non_mission_content",
             source: guideRuntime
               ? `${row.consumerClass} · ${row.actionCount || 0} actions / ${row.assetCount || 0} guide assets`
-              : `${row.table}.${row.field} (keyed by ${row.keyedBy})`,
+              : spaceshipRuntime
+                ? `${spaceshipConsumers.join(", ")} · ${(row.sourceFiles || []).join("; ")}`
+                : `${row.table}.${row.field} (keyed by ${row.keyedBy})`,
+            sourceFiles: row.sourceFiles || [],
+            nativeMappingId: row.nativeMappingId,
           }, "context");
         }).join("")}
       </section></div>
@@ -3248,6 +3266,14 @@
       ${contextOnly.length ? `<section><h4>${esc(t("runtimeObserved"))} 路 ${esc(t("notQuestAttached"))}</h4><div class="mp-runtime-observation-list">${contextOnly.map(runtimeObservationHtml).join("")}</div></section>` : ""}
       <small>${esc(t("noAuthoredPromotion"))}</small>
     </details>`;
+  }
+
+  function renderNonMissionOverview() {
+    const target = byId("mp-non-mission-overview");
+    if (!target) return;
+    target.innerHTML = nonMissionContentHtml(
+      Array.from(nonMissionContentByKey().values()),
+    );
   }
 
   function missionPropertiesHtml() {

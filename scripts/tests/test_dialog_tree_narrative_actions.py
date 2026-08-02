@@ -42,7 +42,11 @@ class DialogTreeNarrativeActionTests(unittest.TestCase):
                     "$id": "1",
                     "$type": "Beyond.Gameplay.DialogTreeOptionNode",
                     "_normalOptions": [
-                        {"_optionId": "option_dlg_fixture_1_1_001"},
+                        {
+                            "_optionId": "option_dlg_fixture_1_1_001",
+                            "$type":
+                                "Beyond.Gameplay.SpaceshipOptionGiftData",
+                        },
                         {"_optionId": "option_dlg_fixture_1_1_002"},
                     ],
                 },
@@ -64,6 +68,10 @@ class DialogTreeNarrativeActionTests(unittest.TestCase):
         self.assertEqual(2, evidence["nodeCount"])
         self.assertEqual(1, evidence["connectionCount"])
         self.assertEqual(1, evidence["branchingOptionGroupCount"])
+        self.assertEqual(
+            ["Beyond.Gameplay.SpaceshipOptionGiftData"],
+            evidence["runtimeOptionTypes"],
+        )
 
     def test_rejects_dialog_tree_definition_name_or_type_mismatch(self) -> None:
         payload = {

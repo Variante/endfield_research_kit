@@ -259,6 +259,7 @@ def extract_dialog_tree_definition_evidence(
     node_type_counts: dict[str, int] = {}
     line_ids: list[str] = []
     option_ids: list[str] = []
+    runtime_option_types: list[str] = []
     option_group_count = 0
     branching_option_group_count = 0
     for node in nodes:
@@ -283,6 +284,12 @@ def extract_dialog_tree_definition_evidence(
             if line_id and line_id not in line_ids:
                 line_ids.append(line_id)
         if node_type == "Beyond.Gameplay.DialogTreeOptionNode":
+            for option in node.get("_normalOptions") or []:
+                if not isinstance(option, dict):
+                    continue
+                option_type = str(option.get("$type") or "").strip()
+                if option_type and option_type not in runtime_option_types:
+                    runtime_option_types.append(option_type)
             authored_options = [
                 str(row.get("_optionId") or "").strip()
                 for row in (node.get("_normalOptions") or [])
@@ -312,6 +319,7 @@ def extract_dialog_tree_definition_evidence(
         "assetType": _DIALOG_TREE_TYPE,
         "lineIds": line_ids,
         "optionIds": option_ids,
+        "runtimeOptionTypes": runtime_option_types,
         "nodeCount": sum(node_type_counts.values()),
         "nodeTypeCounts": dict(sorted(node_type_counts.items())),
         "connectionCount": typed_connection_count,
