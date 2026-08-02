@@ -11032,6 +11032,127 @@ class NonMissionContentClosureTests(unittest.TestCase):
             "incompleteParentTreePartition",
         )
 
+    def test_parent_dialog_level_context_is_generic_and_binary_validated(
+        self,
+    ) -> None:
+        level_id = "opaque_factory_7"
+        encoded_level_id = level_id.encode("utf-8")
+        framed_level_id = (
+            len(encoded_level_id).to_bytes(4, "little", signed=True)
+            + encoded_level_id
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_root = root / "LevelConfig"
+            level_data_root = root / "LevelData"
+            text_asset_root = root / "TextAsset"
+            config_root.mkdir()
+            (level_data_root / level_id).mkdir(parents=True)
+            text_asset_root.mkdir()
+            (config_root / f"{level_id}.json").write_bytes(
+                b"config" + framed_level_id
+            )
+            (level_data_root / level_id / f"{level_id}_lv_data.json").write_bytes(
+                b"\x2bdata" + framed_level_id
+            )
+            map_payload = {
+                "mapIdStr": level_id,
+                "levelStrIds": [level_id],
+                "artScenePaths": [f"Assets/Scenes/{level_id}.unity"],
+            }
+            (text_asset_root / f"{level_id}_pABC.json").write_text(
+                json.dumps({
+                    "m_Name": level_id,
+                    "Name": level_id,
+                    "m_Script": base64.b64encode(
+                        json.dumps(map_payload).encode("utf-8")
+                    ).decode("ascii"),
+                }),
+                encoding="utf-8",
+            )
+            contexts, failure = (
+                gap_queue._generic_parent_dialog_level_context_facts(
+                    [{"sceneKey": f"dlg_gpl_{level_id}_intro"}],
+                    {level_id: {
+                        "id": level_id,
+                        "configPath": f"Data/Json/LevelConfig/{level_id}.json",
+                        "domainName": "opaque_domain",
+                    }},
+                    {f"dung_{level_id}": {
+                        "sceneId": level_id,
+                        "domainId": "opaque_domain",
+                        "sortId": 17,
+                    }},
+                    level_config_root=config_root,
+                    level_data_root=level_data_root,
+                    text_asset_root=text_asset_root,
+                )
+            )
+
+            self.assertIsNone(failure)
+            self.assertEqual(len(contexts), 1)
+            self.assertEqual(contexts[0]["levelId"], level_id)
+            self.assertEqual(contexts[0]["dungeonId"], f"dung_{level_id}")
+            self.assertEqual(
+                contexts[0]["relation"],
+                "exact_parent_dialog_level_asset_shell",
+            )
+            self.assertFalse(contexts[0]["orderEvidence"])
+            self.assertEqual(
+                contexts[0]["mapTextAssets"][0]["sourcePathId"],
+                "ABC",
+            )
+
+            (level_data_root / level_id / f"{level_id}_lv_data.json").write_bytes(
+                b"\x2a" + framed_level_id
+            )
+            contexts, failure = (
+                gap_queue._generic_parent_dialog_level_context_facts(
+                    [{"sceneKey": f"dlg_{level_id}_intro"}],
+                    {level_id: {
+                        "id": level_id,
+                        "configPath": f"Data/Json/LevelConfig/{level_id}.json",
+                    }},
+                    {f"dung_{level_id}": {"sceneId": level_id}},
+                    level_config_root=config_root,
+                    level_data_root=level_data_root,
+                    text_asset_root=text_asset_root,
+                )
+            )
+
+            self.assertEqual(contexts, [])
+            self.assertEqual(failure["gate"], "exactParentDialogLevelContext")
+            self.assertEqual(failure["actual"]["levelDataMemberCount"], 42)
+            self.assertEqual(failure["expected"]["levelDataMemberCount"], 43)
+
+    def test_dialog_text_partition_fragments_are_cross_reference_only(
+        self,
+    ) -> None:
+        facts = gap_queue._dialog_text_partition_fragment_facts(
+            [
+                "opaque_01",
+                "opaque_02",
+                "opaque_03",
+                "opaque_04",
+                "opaque_05",
+            ],
+            ["opaque_02", "opaque_04"],
+            ["opaque_01", "opaque_03", "opaque_05"],
+        )
+
+        self.assertEqual(
+            [row["numericPosition"] for row in facts],
+            [
+                "before_covered_numeric_range",
+                "inside_covered_numeric_range",
+                "after_covered_numeric_range",
+            ],
+        )
+        self.assertTrue(all(row["graphEffect"] == "none" for row in facts))
+        self.assertTrue(all(row["orderEvidence"] is False for row in facts))
+        self.assertEqual(facts[1]["nearestLowerCoveredLineId"], "opaque_02")
+        self.assertEqual(facts[1]["nearestUpperCoveredLineId"], "opaque_04")
+
     def test_cross_owner_dialog_tree_narrative_retains_exact_parent_scope(
         self,
     ) -> None:

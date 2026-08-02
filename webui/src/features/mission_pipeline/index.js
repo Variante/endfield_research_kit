@@ -520,10 +520,15 @@
       offlineRecoveryParentDialogTrees: "Registered parent DialogTrees",
       offlineRecoveryParentTreeBranches: "internal branch groups",
       offlineRecoveryInternalLineConnections: "Exact internal line connections",
+      offlineRecoveryParentLevelContexts: "Exact parent level/dungeon asset shells",
+      offlineRecoveryParentLevelBoundary: "Related original files only; this does not prove activation, ownership, branching, or order.",
+      offlineRecoveryDungeonCatalogMetadata: "Dungeon catalog metadata (not chronology)",
+      offlineRecoveryRelatedLevelFiles: "Related level files",
       offlineRecoveryEvidenceParentTreePartition: "Exact registered parent-tree line partition",
       partialRecoveryEvidenceParentTreePartition: "Partial registered parent-tree line partition",
       partialRecoveryCoverage: "Registered coverage",
       partialRecoveryUnmatchedRows: "Unmatched authored rows",
+      partialRecoveryRowIdPositions: "Table row-id positions (cross-reference only, not order)",
       offlineRecoveryAuthoredSplit: "authored split",
       offlineRecoveryAuthoredConvergence: "authored convergence",
       offlineRecoveryTerminalOptions: "Terminal option routes",
@@ -1068,10 +1073,15 @@
       offlineRecoveryParentDialogTrees: "\u5df2\u6ce8\u518c\u7684\u7236 DialogTree",
       offlineRecoveryParentTreeBranches: "\u5185\u90e8\u5206\u652f\u7ec4",
       offlineRecoveryInternalLineConnections: "\u7cbe\u786e\u5185\u90e8\u53f0\u8bcd\u8fde\u63a5",
+      offlineRecoveryParentLevelContexts: "\u7cbe\u786e\u7684\u7236\u5bf9\u8bdd\u5173\u8054\u5173\u5361/\u5730\u7262\u8d44\u4ea7\u5916\u58f3",
+      offlineRecoveryParentLevelBoundary: "\u4ec5\u8868\u793a\u76f8\u5173\u539f\u59cb\u6587\u4ef6\uff1b\u4e0d\u8bc1\u660e\u6fc0\u6d3b\u3001\u5f52\u5c5e\u3001\u5206\u652f\u6216\u987a\u5e8f\u3002",
+      offlineRecoveryDungeonCatalogMetadata: "\u5730\u7262\u76ee\u5f55\u5143\u6570\u636e\uff08\u975e\u65f6\u5e8f\uff09",
+      offlineRecoveryRelatedLevelFiles: "\u76f8\u5173\u5173\u5361\u6587\u4ef6",
       offlineRecoveryEvidenceParentTreePartition: "\u7cbe\u786e\u7684\u5df2\u6ce8\u518c\u7236\u6811\u53f0\u8bcd\u5206\u533a",
       partialRecoveryEvidenceParentTreePartition: "\u90e8\u5206\u5df2\u6ce8\u518c\u7236\u6811\u53f0\u8bcd\u5206\u533a",
       partialRecoveryCoverage: "\u5df2\u6ce8\u518c\u8986\u76d6",
       partialRecoveryUnmatchedRows: "\u672a\u5339\u914d\u7684\u539f\u59cb\u53f0\u8bcd\u884c",
+      partialRecoveryRowIdPositions: "\u8868\u884c ID \u4f4d\u7f6e\uff08\u4ec5\u4ea4\u53c9\u53c2\u8003\uff0c\u975e\u987a\u5e8f\u8bc1\u636e\uff09",
       offlineRecoveryAuthoredSplit: "\u539f\u751f\u5206\u6d41",
       offlineRecoveryAuthoredConvergence: "\u539f\u751f\u5408\u6d41",
       offlineRecoveryTerminalOptions: "\u7ec8\u6b62\u9009\u9879\u8def\u7531",
@@ -3218,6 +3228,26 @@
           return `<p><code>${esc(tree.sceneKey || tree.assetName || "?")}</code><span>${Number((tree.lineIds || []).length).toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span><span>${Number(tree.branchingOptionGroupCount || 0).toLocaleString()} ${esc(t("offlineRecoveryParentTreeBranches"))}</span></p>${connections ? `<small><strong>${esc(t("offlineRecoveryInternalLineConnections"))}:</strong> ${connections}</small>` : ""}`;
         }).join("")}${row.partialRecovery && (row.missingLineIds || []).length ? `<small><strong>${esc(t("partialRecoveryUnmatchedRows"))}:</strong> ${(row.missingLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</small>` : ""}</details>`
         : "";
+      const parentLevelContexts = Array.isArray(row.parentLevelContexts)
+        ? row.parentLevelContexts
+        : [];
+      const parentLevelContext = parentLevelContexts.length
+        ? `<details${row.partialRecovery ? " open" : ""}><summary><strong>${esc(t("offlineRecoveryParentLevelContexts"))}</strong> ${parentLevelContexts.length.toLocaleString()}</summary><p>${esc(t("offlineRecoveryParentLevelBoundary"))}</p>${parentLevelContexts.map((context) => {
+          const parents = (context.parentDialogTreeIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
+          const files = (context.sourceFiles || []).map((source) => `<code>${esc(source)}</code>`).join(" ");
+          const mapAssets = (context.mapTextAssets || []).map((asset) => `<code>${esc(asset.sourceFile || "?")}</code>${asset.sourcePathId ? `<span>PathID ${esc(asset.sourcePathId)}</span>` : ""}`).join(" ");
+          return `<div><p><code>${esc(context.levelId || "?")}</code><span>${esc(t("offlineRecoveryDungeonCatalogMetadata"))}: <code>${esc(context.dungeonId || "?")}</code>${context.dungeonSortId == null ? "" : ` / sortId ${esc(context.dungeonSortId)}`}</span></p>${parents ? `<small>${parents}</small>` : ""}${files || mapAssets ? `<small><strong>${esc(t("offlineRecoveryRelatedLevelFiles"))}:</strong> ${files} ${mapAssets}</small>` : ""}</div>`;
+        }).join("")}</details>`
+        : "";
+      const missingLineFragments = Array.isArray(row.missingLineFragments)
+        ? row.missingLineFragments
+        : [];
+      const missingLineFragmentContext = missingLineFragments.length
+        ? `<small><strong>${esc(t("partialRecoveryRowIdPositions"))}:</strong> ${missingLineFragments.map((fragment) => {
+          const neighbors = [fragment.nearestLowerCoveredLineId, fragment.nearestUpperCoveredLineId].filter(Boolean).map((id) => `<code>${esc(id)}</code>`).join(" / ");
+          return `<span><code>${esc(fragment.lineId || "?")}</code> ${esc(fragment.numericPosition || "?")}${neighbors ? ` (${neighbors})` : ""}</span>`;
+        }).join(" ")}</small>`
+        : "";
       const evidenceBoundary = [
         row.activationBoundary
           ? `<small><strong>${esc(t("runtimeRecoveryActivation"))}:</strong> ${esc(row.activationBoundary)}</small>`
@@ -3282,7 +3312,7 @@
         registered_dialog_tree_trunk_group_exact_line_partition: t("offlineRecoveryEvidenceParentTreePartition"),
         partial_registered_dialog_tree_trunk_group_line_partition: t("partialRecoveryEvidenceParentTreePartition"),
       })[row.evidenceKind] || runtimeRecoveryEvidenceLabel(row);
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${parentDialogTreeContext}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${parentDialogTreeContext}${parentLevelContext}${missingLineFragmentContext}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
