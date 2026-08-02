@@ -22,8 +22,20 @@ def i32_param(value: int) -> bytes:
     return b"\x04" + struct.pack("<i", value) + PARAM_TAIL
 
 
+def bool_param(value: bool) -> bytes:
+    return b"\x04" + bytes([int(value)]) + PARAM_TAIL
+
+
 def u64_param(value: int) -> bytes:
     return b"\x04" + struct.pack("<Q", value) + PARAM_TAIL
+
+
+def levelscript_ptr_param(script_id: int) -> bytes:
+    return b"\x04" + struct.pack("<QQ", script_id, 0) + PARAM_TAIL
+
+
+def levelscript_task_ptr_param(task_key: str) -> bytes:
+    return b"\x04\x01" + compact_string(task_key) + PARAM_TAIL
 
 
 def string_param(value: str | None, *, source: int = 0) -> bytes:
@@ -126,6 +138,53 @@ def task_entry() -> bytes:
     )
 
 
+def factory_task_entry() -> bytes:
+    specs = [
+        (0x0017, 8, [string_param("a"), string_param("b"), i32_param(2), string_param("level")]),
+        (0x0018, 8, [string_param("a"), string_param("b"), i32_param(2), string_param(None, source=1000)]),
+        (0x0019, 8, [string_param("end"), string_param("start"), bool_param(True), string_param("level")]),
+        (0x001A, 9, [bool_param(True), i32_param(1), string_param("a"), string_param("b"), string_param("level")]),
+        (0x001B, 9, [string_param("building"), i32_param(10), string_param("area"), i32_param(3), string_param("map")]),
+        (0x0035, 8, [i32_param(2), string_param("instance"), bool_param(True), string_param("scene")]),
+        (0x0038, 9, [i32_param(3), i32_param(8), string_param("level"), u64_param(42), string_param("water")]),
+        (0x0084, 6, [string_param("repair"), string_param("level")]),
+        (0x008D, 9, [i32_param(0), string_param("level"), levelscript_ptr_param(SCRIPT_ID), i32_param(2), levelscript_task_ptr_param("1234abcd")]),
+        (0x00D0, 6, [string_param("building"), bool_param(True)]),
+        (0x0108, 7, [i32_param(3), string_param("item"), i32_param(4)]),
+        (0x010B, 8, [i32_param(3), i32_param(5), string_param("instance"), string_param("level")]),
+        (0x010D, 8, [i32_param(3), i32_param(5), string_param("building"), string_param("level")]),
+        (0x010E, 9, [i32_param(3), i32_param(5), string_param("instance"), string_param("item"), string_param("level")]),
+        (0x010F, 8, [i32_param(3), i32_param(5), string_param("building"), string_param("level")]),
+        (0x0112, 6, [i32_param(12), string_param("level")]),
+        (0x0113, 8, [i32_param(3), i32_param(5), string_param("formula"), string_param("level")]),
+        (0x0114, 8, [i32_param(3), i32_param(5), string_param("item"), string_param("level")]),
+        (0x0115, 8, [i32_param(3), i32_param(5), string_param("item"), string_param("level")]),
+        (0x0127, 7, [i32_param(3), i32_param(5), string_param("item")]),
+        (0x012D, 8, [struct.pack("<i", -1), i32_param(3), string_param("item"), i32_param(5)]),
+        (0x012E, 8, [struct.pack("<i", -1), i32_param(3), string_param("item"), i32_param(5)]),
+    ]
+    conditions = []
+    for index, (tag, member_count, fields) in enumerate(specs):
+        key = f"{index + 1:08x}"
+        union = (
+            bytes([tag, member_count])
+            if tag < 0xFA
+            else b"\xfa" + struct.pack("<H", tag) + bytes([member_count])
+        )
+        conditions.append(
+            condition_entry(key, union + common(key) + b"".join(fields))
+        )
+    conditions.append(condition_entry("eeeeeeee", b"\xff"))
+    return (
+        compact_string("fedcba98")
+        + b"\x04\x01"
+        + struct.pack("<I", len(conditions))
+        + b"".join(conditions)
+        + b"\x00"
+        + struct.pack("<i", 0)
+    )
+
+
 def levelscript_blob(entry: bytes) -> bytes:
     return (
         b"\x1b"
@@ -147,7 +206,10 @@ class LevelScriptTaskConditionTests(unittest.TestCase):
         )
 
         self.assertEqual(1, len(rows))
-        self.assertEqual("exact_declared_task_count", rows[0]["taskMapBoundaryStatus"])
+        self.assertEqual(
+            "exact_trigger_volumes_offset",
+            rows[0]["taskMapBoundaryStatus"],
+        )
         self.assertEqual(1, len(rows[0]["tasks"]))
         task = rows[0]["tasks"][0]
         self.assertTrue(task["canBeTracked"])
@@ -176,6 +238,72 @@ class LevelScriptTaskConditionTests(unittest.TestCase):
             )
         )
 
+    def test_complete_factory_condition_family_decodes_by_formatter_layout(self) -> None:
+        rows = decode_levelscript_task_conditions(
+            levelscript_blob(factory_task_entry()),
+            SCRIPT_ID,
+        )
+
+        self.assertEqual(1, len(rows))
+        conditions = [
+            row["condition"]
+            for row in rows[0]["tasks"][0]["conditions"]
+        ]
+        self.assertEqual(
+            [
+                "CheckBuildingConnected",
+                "CheckBuildingConnectedAsMA2SB",
+                "CheckBuildingConnectedExist",
+                "CheckBuildingConnectedSpecify",
+                "CheckBuildingStateInArea",
+                "CheckFacBuildingState",
+                "CheckFluidVolume",
+                "CheckRepairBuilding",
+                "CheckScriptTaskStateEqual",
+                "OnBuildingPanelOpen",
+                "DepotHasItem",
+                "FacBattleBuildingCurEnergy",
+                "FacBuildingCountInScene",
+                "FacBuildingFluidContainerHasItem",
+                "FacBuildingProducingCountInScene",
+                "FacProducePowerReach",
+                "FacProducingFormulaCountInScene",
+                "FacStatisticItemGen",
+                "FacStatisticItemGenRate",
+                "HasItemCount",
+                "PlayerHasItem",
+                "PlayerHasItemInItemBag",
+                "NullGameCondition",
+            ],
+            [row["type"] for row in conditions],
+        )
+        self.assertEqual("a", conditions[0]["facBuildingIdA"]["value"])
+        self.assertEqual("area", conditions[4]["targetAreaId"]["value"])
+        self.assertEqual("42", conditions[6]["volumeId"]["value"])
+        self.assertEqual("formula", conditions[16]["facFormulaId"]["value"])
+        self.assertEqual(
+            "memorypack-null",
+            conditions[-1]["conditionUnionTagEncoding"],
+        )
+
+    def test_factory_condition_member_count_drift_fails_closed(self) -> None:
+        valid = bytearray(levelscript_blob(factory_task_entry()))
+        condition_offset = valid.index(b"\x18\x08")
+        valid[condition_offset + 1] = 7
+        diagnostics: list[dict[str, object]] = []
+        self.assertEqual(
+            [],
+            decode_levelscript_task_conditions(
+                bytes(valid),
+                SCRIPT_ID,
+                diagnostics=diagnostics,
+            ),
+        )
+        self.assertEqual("supportedConditionPayloadLayout", diagnostics[0]["gate"])
+        self.assertEqual("0x0018", diagnostics[0]["conditionUnionTag"])
+        self.assertEqual(7, diagnostics[0]["serializedMemberCount"])
+        self.assertEqual(8, diagnostics[0]["expectedSerializedMemberCount"])
+
     def test_decoder_rejects_partial_or_unknown_condition_maps(self) -> None:
         valid = levelscript_blob(task_entry())
         self.assertEqual(
@@ -184,10 +312,17 @@ class LevelScriptTaskConditionTests(unittest.TestCase):
         )
         unknown = bytearray(valid)
         unknown[unknown.index(b"\x67\x07")] = 0x66
+        diagnostics: list[dict[str, object]] = []
         self.assertEqual(
             [],
-            decode_levelscript_task_conditions(bytes(unknown), SCRIPT_ID),
+            decode_levelscript_task_conditions(
+                bytes(unknown),
+                SCRIPT_ID,
+                diagnostics=diagnostics,
+            ),
         )
+        self.assertEqual("supportedConditionUnionTag", diagnostics[0]["gate"])
+        self.assertEqual("0x0066", diagnostics[0]["conditionUnionTag"])
 
 
 if __name__ == "__main__":

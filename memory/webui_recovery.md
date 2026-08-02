@@ -63,8 +63,10 @@ their inputs.
 - Disabling debug while a hidden page is active returns to a visible page.
 - Mission Pipeline links show evidence-typed trigger chains.
 - BlackBox recovery cards expose exact SubGame/bound-LevelScript context,
-  separate authored task lanes, exact parent playback, and definition-only
-  parent coverage without converting task lanes into Story chronology.
+  separate authored task lanes, complete decoded task/condition topology,
+  condition formulas, objective display keys, exact parent playback, and
+  definition-only parent coverage without inventing task successors or Story
+  chronology.
 - Native playback without mission ownership stays explicitly unassigned.
 - Definition-only rows remain distinct from playback.
 - Mission or scene order is never inferred from registration or file order.

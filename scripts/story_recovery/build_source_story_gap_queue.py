@@ -54,6 +54,7 @@ from story_builder.level_bindings import (  # noqa: E402
     parse_leveldata_levelscript_brief_dictionary,
 )
 from story_builder.levelscript_binary import (  # noqa: E402
+    decode_levelscript_binary_summary,
     decode_levelscript_record_payload,
     decode_levelscript_task_conditions,
     extract_levelscript_uid_records,
@@ -67,7 +68,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v121"
+SCHEMA = "sourceStoryGapQueue.v122"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -7657,6 +7658,244 @@ def _dialog_parent_level_candidate(
     return longest_candidates[0], None
 
 
+def _blackbox_subgame_task_topology(
+    level_id: str,
+    bind_script_id: int,
+    subgame_row: dict[str, Any],
+    script_path: Path,
+    script_task_extra_info_table: Any,
+    script_task_extra_info_table_path: Path | None,
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Decode a complete BlackBox task map without inventing task order.
+
+    The join is generic: SubGame lane IDs, the bound LevelScript task keys,
+    and ScriptTaskExtraInfo keys must agree exactly. Unsupported condition
+    unions stay visible as a bounded decoder diagnostic and publish no partial
+    topology.
+    """
+    data = script_path.read_bytes()
+    diagnostics: list[dict[str, Any]] = []
+    decoded = decode_levelscript_task_conditions(
+        data,
+        bind_script_id,
+        diagnostics=diagnostics,
+    )
+    summary = decode_levelscript_binary_summary(data, bind_script_id)
+    task_map = decoded[0] if len(decoded) == 1 else None
+    tasks = (
+        task_map.get("tasks") or []
+        if isinstance(task_map, dict)
+        else []
+    )
+    lane_names = ("mainTasks", "extraTasks", "failTasks")
+    lane_by_task: dict[str, str] = {}
+    duplicate_lane_ids: list[str] = []
+    for lane_name in lane_names:
+        lane = lane_name.removesuffix("Tasks")
+        for row in subgame_row.get(lane_name) or []:
+            task_id = safe_key(row.get("taskId")) if isinstance(row, dict) else ""
+            if task_id in lane_by_task:
+                duplicate_lane_ids.append(task_id)
+            elif task_id:
+                lane_by_task[task_id] = lane
+
+    task_ids = [safe_key(row.get("taskKey")) for row in tasks]
+    task_id_set = set(task_ids)
+    tracked_task_ids = {
+        safe_key(row.get("taskKey"))
+        for row in tasks
+        if row.get("canBeTracked") is True
+    }
+    table_rows = (
+        script_task_extra_info_table.get("dataTable")
+        if isinstance(script_task_extra_info_table, dict)
+        and isinstance(script_task_extra_info_table.get("dataTable"), dict)
+        else script_task_extra_info_table
+    )
+    level_rows = (
+        table_rows.get(level_id)
+        if isinstance(table_rows, dict)
+        else None
+    )
+    display_rows = (
+        level_rows.get(str(bind_script_id))
+        if isinstance(level_rows, dict)
+        else None
+    )
+    display_rows = display_rows if isinstance(display_rows, dict) else {}
+    display_task_ids = set(map(safe_key, display_rows))
+    declared_task_count = summary.get("taskMapCount")
+    if (
+        summary.get("taskMapStatus") == "null"
+        and not lane_by_task
+        and not display_task_ids
+        and isinstance(script_task_extra_info_table_path, Path)
+        and script_task_extra_info_table_path.is_file()
+    ):
+        return {
+            "schema": "blackBoxSubGameTaskTopology.v1",
+            "status": "exact_null_task_map",
+            "scriptId": str(bind_script_id),
+            "startType": summary.get("startTypeName"),
+            "taskMapBoundaryStatus": "exact_memorypack_null",
+            "declaredTaskCount": None,
+            "decodedTaskCount": 0,
+            "registeredLaneTaskCount": 0,
+            "trackedTaskCount": 0,
+            "internalTaskCount": 0,
+            "conditionCount": 0,
+            "conditionTypeCounts": {},
+            "combineExpressions": [],
+            "tasks": [],
+            "sourceFiles": [
+                _repo_source_path(script_path),
+                _repo_source_path(script_task_extra_info_table_path),
+            ],
+            "sourceSha256": {
+                _repo_source_path(script_path): _sha256_file(script_path),
+                _repo_source_path(script_task_extra_info_table_path): (
+                    _sha256_file(script_task_extra_info_table_path)
+                ),
+            },
+            "branchModel": "no serialized task map or registered task lanes",
+            "storyConsumerBoundary": "no task conditions exist",
+            "graphEffect": "none",
+            "orderEvidence": False,
+        }, None
+    valid = (
+        len(decoded) == 1
+        and isinstance(declared_task_count, int)
+        and declared_task_count == len(tasks)
+        and len(task_ids) == len(task_id_set)
+        and not duplicate_lane_ids
+        and set(lane_by_task) <= task_id_set
+        and display_task_ids == tracked_task_ids
+        and isinstance(script_task_extra_info_table_path, Path)
+        and script_task_extra_info_table_path.is_file()
+    )
+    if not valid:
+        return {
+            "schema": "blackBoxSubGameTaskTopology.v1",
+            "status": "unavailable_fail_closed",
+            "scriptId": str(bind_script_id),
+            "declaredTaskCount": declared_task_count,
+            "decodedTaskCount": len(tasks),
+            "decoderDiagnostics": diagnostics,
+            "orderEvidence": False,
+        }, {
+            "gate": "exactBlackBoxTaskMapAndDisplayJoin",
+            "expected": {
+                "decodedMapCount": 1,
+                "decodedTaskCount": declared_task_count,
+                "uniqueTaskIds": True,
+                "registeredLaneTaskIdsSubsetOfDecodedTaskIds": True,
+                "scriptTaskExtraInfoIdsEqualTrackedTaskIds": True,
+            },
+            "actual": {
+                "decodedMapCount": len(decoded),
+                "decodedTaskCount": len(tasks),
+                "decodedTaskIds": task_ids,
+                "registeredLaneTaskIds": sorted(lane_by_task, key=natural_key),
+                "duplicateLaneTaskIds": sorted(
+                    set(duplicate_lane_ids), key=natural_key
+                ),
+                "trackedTaskIds": sorted(tracked_task_ids, key=natural_key),
+                "scriptTaskExtraInfoIds": sorted(
+                    display_task_ids, key=natural_key
+                ),
+                "decoderDiagnostics": diagnostics,
+            },
+            "sourcePaths": [
+                _repo_source_path(script_path),
+                (
+                    _repo_source_path(script_task_extra_info_table_path)
+                    if isinstance(script_task_extra_info_table_path, Path)
+                    else ""
+                ),
+            ],
+            "sourceSha256": {
+                "boundLevelScript": _sha256_file(script_path),
+                "scriptTaskExtraInfoTable": (
+                    _sha256_file(script_task_extra_info_table_path)
+                    if isinstance(script_task_extra_info_table_path, Path)
+                    and script_task_extra_info_table_path.is_file()
+                    else ""
+                ),
+            },
+        }
+
+    condition_type_counts: Counter[str] = Counter()
+    combine_expressions: list[dict[str, Any]] = []
+    output_tasks: list[dict[str, Any]] = []
+    for task in tasks:
+        task_id = safe_key(task.get("taskKey"))
+        conditions = task.get("conditions") or []
+        for condition_row in conditions:
+            condition = condition_row.get("condition") or {}
+            condition_type = safe_key(condition.get("type"))
+            if condition_type:
+                condition_type_counts[condition_type] += 1
+            expression = safe_key(condition.get("conditionEvalString"))
+            if expression:
+                combine_expressions.append({
+                    "taskId": task_id,
+                    "conditionKey": condition_row.get("conditionKey"),
+                    "expression": expression,
+                    "operandBindingStatus": "not_proven_from_serialized_map",
+                })
+        output_tasks.append({
+            "taskId": task_id,
+            "lane": lane_by_task.get(task_id, "internal"),
+            "registeredInSubGame": task_id in lane_by_task,
+            "canBeTracked": task.get("canBeTracked") is True,
+            "needManualCheck": task.get("needManualCheck") is True,
+            "taskType": task.get("taskType"),
+            "conditionCount": len(conditions),
+            "conditions": conditions,
+            "displayInfo": display_rows.get(task_id),
+        })
+    return {
+        "schema": "blackBoxSubGameTaskTopology.v1",
+        "status": "exact_complete_task_map",
+        "scriptId": str(bind_script_id),
+        "startType": task_map.get("startType"),
+        "taskMapBoundaryStatus": task_map.get("taskMapBoundaryStatus"),
+        "declaredTaskCount": declared_task_count,
+        "decodedTaskCount": len(tasks),
+        "registeredLaneTaskCount": len(lane_by_task),
+        "trackedTaskCount": len(tracked_task_ids),
+        "internalTaskCount": sum(
+            1 for task_id in task_ids if task_id not in lane_by_task
+        ),
+        "conditionCount": sum(condition_type_counts.values()),
+        "conditionTypeCounts": dict(sorted(condition_type_counts.items())),
+        "combineExpressions": combine_expressions,
+        "tasks": output_tasks,
+        "sourceFiles": [
+            _repo_source_path(script_path),
+            _repo_source_path(script_task_extra_info_table_path),
+        ],
+        "sourceSha256": {
+            _repo_source_path(script_path): _sha256_file(script_path),
+            _repo_source_path(script_task_extra_info_table_path): (
+                _sha256_file(script_task_extra_info_table_path)
+            ),
+        },
+        "branchModel": (
+            "main/extra/fail are exact authored lane memberships; internal "
+            "tasks and CombineCondition formulas are exact definitions, but "
+            "the task dictionary serializes no successor edges or lane "
+            "selection/exclusivity"
+        ),
+        "storyConsumerBoundary": (
+            "condition operands describe task completion; absent exact dialog "
+            "IDs cannot place table-only DialogText rows or order Story files"
+        ),
+        "graphEffect": "none",
+        "orderEvidence": False,
+    }, None
+
+
 def _generic_parent_dialog_level_context_facts(
     parent_dialog_trees: list[dict[str, Any]],
     level_basic_info_table: Any,
@@ -7667,6 +7906,8 @@ def _generic_parent_dialog_level_context_facts(
     text_asset_root: Path | None,
     subgame_table: Any = None,
     subgame_table_path: Path | None = None,
+    script_task_extra_info_table: Any = None,
+    script_task_extra_info_table_path: Path | None = None,
     level_script_root: Path | None = None,
     native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
@@ -8054,7 +8295,23 @@ def _generic_parent_dialog_level_context_facts(
                     if isinstance(row, dict) and safe_key(row.get("taskId"))
                 ]
 
-            subgame_sources = [subgame_table_path, script_path]
+            task_topology, task_topology_failure = (
+                _blackbox_subgame_task_topology(
+                    level_id,
+                    bind_script_id,
+                    subgame_row,
+                    script_path,
+                    script_task_extra_info_table,
+                    script_task_extra_info_table_path,
+                )
+            )
+            if task_topology_failure is not None:
+                task_topology["validatorDiagnostic"] = task_topology_failure
+            subgame_sources = [
+                subgame_table_path,
+                script_path,
+                script_task_extra_info_table_path,
+            ]
             context["subGameRuntime"] = {
                 "subGameId": dungeon_id,
                 "runtimeType": safe_key(subgame_row.get("$type")),
@@ -8064,6 +8321,7 @@ def _generic_parent_dialog_level_context_facts(
                 "mainTasks": task_lane("mainTasks"),
                 "extraTasks": task_lane("extraTasks"),
                 "failTasks": task_lane("failTasks"),
+                "taskTopology": task_topology,
                 "parentDialogPlayback": parent_playback,
                 "definitionOnlyParentDialogTreeIds": missing_parent_keys,
                 "parentPlaybackCoverage": (
@@ -8167,6 +8425,8 @@ def _generic_registered_dialog_tree_trunk_group_facts(
     text_asset_root: Path | None = None,
     subgame_table: Any = None,
     subgame_table_path: Path | None = None,
+    script_task_extra_info_table: Any = None,
+    script_task_extra_info_table_path: Path | None = None,
     level_script_root: Path | None = None,
     native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
 ) -> tuple[
@@ -8334,6 +8594,10 @@ def _generic_registered_dialog_tree_trunk_group_facts(
             text_asset_root=text_asset_root,
             subgame_table=subgame_table,
             subgame_table_path=subgame_table_path,
+            script_task_extra_info_table=script_task_extra_info_table,
+            script_task_extra_info_table_path=(
+                script_task_extra_info_table_path
+            ),
             level_script_root=level_script_root,
             native_playback_index=native_playback_index,
         )
@@ -11933,6 +12197,16 @@ def build_offline_exhaustion_index(
             / "Json"
             / "GameplayConfig"
             / "SubGameInstanceDataTable.json"
+        ),
+        "scriptTaskExtraInfoTable": (
+            ROOT
+            / "export_full"
+            / "structured"
+            / "StreamingAssets"
+            / "Data"
+            / "Json"
+            / "GameplayConfig"
+            / "ScriptTaskExtraInfoTable.json"
         ),
         "timelineLineOrders": (
             ROOT
@@ -16580,6 +16854,10 @@ def build_offline_exhaustion_index(
             source_paths["subGameInstanceDataTable"],
             {},
         )
+        script_task_extra_info_table = read_json(
+            source_paths["scriptTaskExtraInfoTable"],
+            {},
+        )
         definitions_by_root = {
             dialog_key: definition
             for dialog_key in sorted(dialog_id_index, key=natural_key)
@@ -16628,6 +16906,12 @@ def build_offline_exhaustion_index(
                     subgame_table=subgame_table,
                     subgame_table_path=(
                         source_paths["subGameInstanceDataTable"]
+                    ),
+                    script_task_extra_info_table=(
+                        script_task_extra_info_table
+                    ),
+                    script_task_extra_info_table_path=(
+                        source_paths["scriptTaskExtraInfoTable"]
                     ),
                     level_script_root=source_paths["levelScriptRoot"],
                     native_playback_index=native_playback_index,
@@ -18190,6 +18474,28 @@ def build_offline_exhaustion_index(
         mission_id = safe_key(row.get("missionId"))
         if mission_id and story_key.startswith("radio_"):
             deferred_radio_keys_by_mission[mission_id].add(story_key)
+    registered_trunk_task_topology_by_script: dict[str, dict[str, Any]] = {}
+    for evidence_rows in (
+        registered_trunk_group_evidence_by_key.values(),
+        registered_trunk_group_partial_evidence_by_key.values(),
+    ):
+        for evidence_row in evidence_rows:
+            for context in evidence_row.get("parentLevelContexts") or []:
+                runtime = context.get("subGameRuntime")
+                topology = (
+                    runtime.get("taskTopology")
+                    if isinstance(runtime, dict)
+                    else None
+                )
+                script_id = safe_key(
+                    topology.get("scriptId")
+                    if isinstance(topology, dict)
+                    else ""
+                )
+                if script_id:
+                    registered_trunk_task_topology_by_script[script_id] = (
+                        topology
+                    )
     status.update({
         "status": "active",
         "coreTargetSetSha256": core_target_digest,
@@ -18541,6 +18847,27 @@ def build_offline_exhaustion_index(
                 for context in row.get("parentLevelContexts") or []
                 if isinstance(context.get("subGameRuntime"), dict)
             ),
+            "distinctBlackBoxTaskTopologyScripts": len(
+                registered_trunk_task_topology_by_script
+            ),
+            "exactCompleteBlackBoxTaskTopologyScripts": sum(
+                1
+                for topology in registered_trunk_task_topology_by_script.values()
+                if topology.get("status") == "exact_complete_task_map"
+            ),
+            "exactNullBlackBoxTaskTopologyScripts": sum(
+                1
+                for topology in registered_trunk_task_topology_by_script.values()
+                if topology.get("status") == "exact_null_task_map"
+            ),
+            "decodedBlackBoxTasks": sum(
+                int(topology.get("decodedTaskCount") or 0)
+                for topology in registered_trunk_task_topology_by_script.values()
+            ),
+            "decodedBlackBoxTaskConditions": sum(
+                int(topology.get("conditionCount") or 0)
+                for topology in registered_trunk_task_topology_by_script.values()
+            ),
             "partialExactParentDialogPlaybacks": sum(
                 len(
                     context.get("subGameRuntime", {}).get(
@@ -18586,19 +18913,27 @@ def build_offline_exhaustion_index(
                 "subGameInstanceDataTable": str(
                     source_paths["subGameInstanceDataTable"]
                 ),
+                "scriptTaskExtraInfoTable": str(
+                    source_paths["scriptTaskExtraInfoTable"]
+                ),
                 "textAssetRoot": str(cutscene_definition_root),
                 "gameAssembly": str(source_paths["gameAssembly"]),
                 "globalMetadata": str(source_paths["globalMetadata"]),
             },
             "sourceSha256": {
-                name: actual_hashes.get(name, "")
-                for name in (
-                    "dialogTextTable",
-                    "dialogIdSource",
-                    "dialogIdIndex",
-                    "gameAssembly",
-                    "globalMetadata",
-                )
+                **{
+                    name: actual_hashes.get(name, "")
+                    for name in (
+                        "dialogTextTable",
+                        "dialogIdSource",
+                        "dialogIdIndex",
+                        "gameAssembly",
+                        "globalMetadata",
+                    )
+                },
+                "scriptTaskExtraInfoTable": _sha256_file(
+                    source_paths["scriptTaskExtraInfoTable"]
+                ),
             },
             "nativeMappingId": DIALOG_TREE_TRUNK_GROUP_MAPPING_ID,
             "graphEffect": "none",

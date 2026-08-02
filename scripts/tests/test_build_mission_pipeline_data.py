@@ -19,7 +19,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v121",
+            "sourceStoryGapQueue.v122",
         )
 
     def test_gap_queue_refresh_validates_current_generated_contract(self):

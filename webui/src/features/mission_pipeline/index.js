@@ -533,6 +533,16 @@
       offlineRecoverySubGameParentPlayback: "Exact parent playback",
       offlineRecoverySubGameDefinitionOnlyParents: "Definition-only in bound script",
       offlineRecoverySubGamePlaybackCoverage: "parent playback coverage",
+      offlineRecoverySubGameTaskTopology: "Exact task completion topology",
+      offlineRecoverySubGameTaskTopologyNull: "No authored task map",
+      offlineRecoverySubGameTasks: "tasks",
+      offlineRecoverySubGameConditions: "conditions",
+      offlineRecoverySubGameTracked: "tracked",
+      offlineRecoverySubGameInternal: "internal",
+      offlineRecoverySubGameConditionTypes: "condition families",
+      offlineRecoverySubGameCombineExpressions: "serialized formulas",
+      offlineRecoverySubGameTaskDescriptions: "display objectives",
+      offlineRecoverySubGameTopologyBoundary: "Task conditions and main/extra/fail lanes are exact original-data structure. They serialize no task-successor or Story-file order edge.",
       offlineRecoveryEvidenceParentTreePartition: "Exact registered parent-tree line partition",
       partialRecoveryEvidenceParentTreePartition: "Partial registered parent-tree line partition",
       partialRecoveryCoverage: "Registered coverage",
@@ -1095,6 +1105,16 @@
       offlineRecoverySubGameParentPlayback: "\u7cbe\u786e\u7236\u5bf9\u8bdd\u64ad\u653e",
       offlineRecoverySubGameDefinitionOnlyParents: "\u5728\u7ed1\u5b9a\u811a\u672c\u4e2d\u4ec5\u5b9a\u4e49",
       offlineRecoverySubGamePlaybackCoverage: "\u7236\u5bf9\u8bdd\u64ad\u653e\u8986\u76d6",
+      offlineRecoverySubGameTaskTopology: "\u7cbe\u786e\u4efb\u52a1\u5b8c\u6210\u62d3\u6251",
+      offlineRecoverySubGameTaskTopologyNull: "\u6ca1\u6709\u539f\u751f\u4efb\u52a1\u6620\u5c04",
+      offlineRecoverySubGameTasks: "\u4efb\u52a1",
+      offlineRecoverySubGameConditions: "\u6761\u4ef6",
+      offlineRecoverySubGameTracked: "\u53ef\u8ffd\u8e2a",
+      offlineRecoverySubGameInternal: "\u5185\u90e8",
+      offlineRecoverySubGameConditionTypes: "\u6761\u4ef6\u7c7b\u578b",
+      offlineRecoverySubGameCombineExpressions: "\u5e8f\u5217\u5316\u516c\u5f0f",
+      offlineRecoverySubGameTaskDescriptions: "\u663e\u793a\u76ee\u6807",
+      offlineRecoverySubGameTopologyBoundary: "\u4efb\u52a1\u6761\u4ef6\u4e0e\u4e3b/\u989d\u5916/\u5931\u8d25\u901a\u9053\u5747\u662f\u7cbe\u786e\u539f\u59cb\u6570\u636e\u7ed3\u6784\uff0c\u4f46\u5b83\u4eec\u6ca1\u6709\u5e8f\u5217\u5316\u4efb\u52a1\u540e\u7ee7\u8fb9\u6216\u5267\u60c5\u6587\u4ef6\u987a\u5e8f\u8fb9\u3002",
       offlineRecoveryEvidenceParentTreePartition: "\u7cbe\u786e\u7684\u5df2\u6ce8\u518c\u7236\u6811\u53f0\u8bcd\u5206\u533a",
       partialRecoveryEvidenceParentTreePartition: "\u90e8\u5206\u5df2\u6ce8\u518c\u7236\u6811\u53f0\u8bcd\u5206\u533a",
       partialRecoveryCoverage: "\u5df2\u6ce8\u518c\u8986\u76d6",
@@ -3266,12 +3286,71 @@
               lane(t("offlineRecoverySubGameExtraTasks"), runtime.extraTasks),
               lane(t("offlineRecoverySubGameFailTasks"), runtime.failTasks),
             ].filter(Boolean).join(" ");
+            const topology = runtime.taskTopology && typeof runtime.taskTopology === "object"
+              ? runtime.taskTopology
+              : null;
+            const topologyContext = topology ? (() => {
+              if (topology.status === "exact_null_task_map") {
+                return `<details class="mp-subgame-task-topology"><summary><strong>${esc(t("offlineRecoverySubGameTaskTopology"))}</strong><span>${esc(t("offlineRecoverySubGameTaskTopologyNull"))}</span></summary><small>${esc(t("offlineRecoverySubGameTopologyBoundary"))}</small></details>`;
+              }
+              if (topology.status !== "exact_complete_task_map") {
+                const diagnostic = (topology.decoderDiagnostics || [])[0] || {};
+                return `<details class="mp-subgame-task-topology is-unavailable"><summary><strong>${esc(t("offlineRecoverySubGameTaskTopology"))}</strong><span>${esc(topology.status || "unavailable")}</span></summary>${diagnostic.gate ? `<small><code>${esc(diagnostic.gate)}</code> <code>${esc(diagnostic.conditionUnionTag || "?")}</code></small>` : ""}</details>`;
+              }
+              const laneLabel = (value) => ({
+                main: t("offlineRecoverySubGameMainTasks"),
+                extra: t("offlineRecoverySubGameExtraTasks"),
+                fail: t("offlineRecoverySubGameFailTasks"),
+                internal: t("offlineRecoverySubGameInternal"),
+              }[value] || value || t("offlineRecoverySubGameInternal"));
+              const conditionValue = (value) => {
+                if (value == null) return "∅";
+                if (["string", "number", "boolean"].includes(typeof value)) return String(value);
+                if (Object.prototype.hasOwnProperty.call(value, "value")) return value.value == null ? "∅" : String(value.value);
+                if (value.taskKey != null) return String(value.taskKey);
+                if (value.scriptId != null) return String(value.scriptId || value.mode || "current");
+                if (Array.isArray(value.values)) return `${value.values.length} values`;
+                return "";
+              };
+              const ignoredConditionFields = new Set([
+                "type", "conditionUnionTag", "conditionUnionTagEncoding", "serializedMemberCount",
+                "conditionOffset", "conditionOffsetHex", "conditionEndOffset", "conditionEndOffsetHex",
+                "scopeMask", "uniqueId", "useCurrentScope", "useGraphScope", "nativeMappingId",
+              ]);
+              const taskRows = (topology.tasks || []).map((task) => {
+                const descriptions = Object.values(task.displayInfo?.trackingInfoDict || {})
+                  .map((row) => row?.description?.key)
+                  .filter(Boolean);
+                const conditions = (task.conditions || []).map((row) => {
+                  const condition = row.condition || {};
+                  const fields = Object.entries(condition)
+                    .filter(([key]) => !ignoredConditionFields.has(key) && !key.endsWith("Name") && key !== "conditionEvalString" && key !== "subConditionCount")
+                    .map(([key, value]) => [key, conditionValue(value)])
+                    .filter(([, value]) => value !== "")
+                    .slice(0, 5)
+                    .map(([key, value]) => `<span><b>${esc(key)}</b>=<code>${esc(value)}</code></span>`)
+                    .join(" ");
+                  const expression = condition.conditionEvalString
+                    ? `<em>${esc(condition.conditionEvalString)}</em>`
+                    : "";
+                  return `<li><code>${esc(condition.type || "?")}</code><small>${esc(row.conditionKey || "?")}</small>${expression}${fields ? `<p>${fields}</p>` : ""}</li>`;
+                }).join("");
+                return `<details${task.registeredInSubGame ? " open" : ""}><summary><code>${esc(task.taskId || "?")}</code><b>${esc(laneLabel(task.lane))}</b>${task.canBeTracked ? `<span>${esc(t("offlineRecoverySubGameTracked"))}</span>` : ""}<small>${Number(task.conditionCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameConditions"))}</small></summary>${descriptions.length ? `<p><strong>${esc(t("offlineRecoverySubGameTaskDescriptions"))}:</strong> ${descriptions.map((key) => `<code>${esc(key)}</code>`).join(" ")}</p>` : ""}${conditions ? `<ol>${conditions}</ol>` : ""}</details>`;
+              }).join("");
+              const typeCounts = Object.entries(topology.conditionTypeCounts || {})
+                .map(([type, count]) => `<span><code>${esc(type)}</code> ${Number(count || 0).toLocaleString()}</span>`)
+                .join(" ");
+              const formulas = (topology.combineExpressions || [])
+                .map((row) => `<span><code>${esc(row.taskId || "?")}</code> <em>${esc(row.expression || "?")}</em></span>`)
+                .join(" ");
+              return `<details class="mp-subgame-task-topology" open><summary><strong>${esc(t("offlineRecoverySubGameTaskTopology"))}</strong><span>${Number(topology.decodedTaskCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameTasks"))}</span><span>${Number(topology.conditionCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameConditions"))}</span></summary>${typeCounts ? `<p><strong>${esc(t("offlineRecoverySubGameConditionTypes"))}:</strong> ${typeCounts}</p>` : ""}${formulas ? `<p><strong>${esc(t("offlineRecoverySubGameCombineExpressions"))}:</strong> ${formulas}</p>` : ""}<div>${taskRows}</div><small>${esc(t("offlineRecoverySubGameTopologyBoundary"))}</small></details>`;
+            })() : "";
             const playback = (runtime.parentDialogPlayback || []).map((item) => {
               const owners = (item.nativeEventOwners || []).map((owner) => `<code>${esc(owner.headerName || "?")}</code>`).join(" ");
               return `<span><code>${esc(item.parentDialogTreeId || "?")}</code> &larr; <code>${esc(item.actionName || "StartDialogAction")}</code>${owners ? ` ${owners}` : ""}</span>`;
             }).join(" ");
             const definitionOnly = (runtime.definitionOnlyParentDialogTreeIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
-            return `<section><p><strong>${esc(t("offlineRecoverySubGameRuntime"))}</strong><code>${esc(runtime.subGameId || context.dungeonId || "?")}</code><span>${esc(t("offlineRecoverySubGameBindScript"))}: <code>${esc(runtime.bindScriptId == null ? "?" : runtime.bindScriptId)}</code></span><span>${esc(t("offlineRecoverySubGamePlaybackCoverage"))}: ${esc(runtime.parentPlaybackCoverage || "none")}</span></p>${taskLanes ? `<small><strong>${esc(t("offlineRecoverySubGameTaskLanes"))}:</strong> ${taskLanes}</small>` : ""}${playback ? `<small><strong>${esc(t("offlineRecoverySubGameParentPlayback"))}:</strong> ${playback}</small>` : ""}${definitionOnly ? `<small><strong>${esc(t("offlineRecoverySubGameDefinitionOnlyParents"))}:</strong> ${definitionOnly}</small>` : ""}${runtime.taskLaneBoundary ? `<small>${esc(runtime.taskLaneBoundary)}</small>` : ""}${runtime.parentPlaybackBoundary ? `<small>${esc(runtime.parentPlaybackBoundary)}</small>` : ""}</section>`;
+            return `<section><p><strong>${esc(t("offlineRecoverySubGameRuntime"))}</strong><code>${esc(runtime.subGameId || context.dungeonId || "?")}</code><span>${esc(t("offlineRecoverySubGameBindScript"))}: <code>${esc(runtime.bindScriptId == null ? "?" : runtime.bindScriptId)}</code></span><span>${esc(t("offlineRecoverySubGamePlaybackCoverage"))}: ${esc(runtime.parentPlaybackCoverage || "none")}</span></p>${taskLanes ? `<small><strong>${esc(t("offlineRecoverySubGameTaskLanes"))}:</strong> ${taskLanes}</small>` : ""}${topologyContext}${playback ? `<small><strong>${esc(t("offlineRecoverySubGameParentPlayback"))}:</strong> ${playback}</small>` : ""}${definitionOnly ? `<small><strong>${esc(t("offlineRecoverySubGameDefinitionOnlyParents"))}:</strong> ${definitionOnly}</small>` : ""}${runtime.taskLaneBoundary ? `<small>${esc(runtime.taskLaneBoundary)}</small>` : ""}${runtime.parentPlaybackBoundary ? `<small>${esc(runtime.parentPlaybackBoundary)}</small>` : ""}</section>`;
           })() : "";
           return `<div><p><code>${esc(context.levelId || "?")}</code><span>${esc(t("offlineRecoveryDungeonCatalogMetadata"))}: <code>${esc(context.dungeonId || "?")}</code>${context.dungeonSortId == null ? "" : ` / sortId ${esc(context.dungeonSortId)}`}</span></p>${parents ? `<small>${parents}</small>` : ""}${runtimeContext}${files || mapAssets ? `<small><strong>${esc(t("offlineRecoveryRelatedLevelFiles"))}:</strong> ${files} ${mapAssets}</small>` : ""}</div>`;
         }).join("")}</details>`
