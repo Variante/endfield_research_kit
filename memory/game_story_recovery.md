@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 588 (490 MissionRuntime + 98 Story-only recovery shells) |
+| Pipeline missions | 591 (490 MissionRuntime + 101 Story-only recovery shells) |
 | Unique Story files | 5,562 |
 | Connected files | 4,239 (76.2%) |
 | Files with a normalized trigger/context route | 4,462 (80.2%) |
@@ -46,23 +46,24 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The registered DialogTree trunk-group recovery now handles two emitted shapes
-with one fail-closed partition rule. Mechanical `misc_*` aggregates select a
-complete authored prefix namespace; direct unregistered `dlg_*` scene buckets
-select only exact `<scene>_<digits>` rows, preventing a shorter scene key from
-absorbing nested scenes such as `_1_2`. Every selected row must belong to
-exactly one current registered, hash-validated serialized DialogTree, and no
-selected parent may contain lines outside the set. This classifies 37 groups
-through 56 parent trees and 172 lines with zero validator failures. The direct
-extension closes six black-box scenes (two transmuter, two vaporizer, and two
-underground-pipe scenes) covering 23 lines; all six parents have zero authored
-option branches. Mix, shaper, gas-pump, and xiranite-oven remain open because
-their known parent assets cover only part of the emitted line set, while the
-missionless speed-limit scene is outside the current mission target set.
-Mission Pipeline displays parent IDs, internal branch counts, exact serialized
-line connections, source files, PathID/hash provenance, and the explicit
-activation/cross-file-order boundary. The other-bucket queue is 32 and the
-current contract is `sourceStoryGapQueue.v118`; OCR and manual order remain
+The registered DialogTree trunk-group recovery handles both complete and
+partial emitted shapes with one fail-closed partition rule. Mechanical
+`misc_*` aggregates select their authored prefix namespace; direct unregistered
+`dlg_*` scenes select only exact `<scene>_<digits>` rows, preventing a shorter
+key from absorbing nested scenes such as `_1_2`. Each covered row must belong
+to exactly one current registered, hash-validated serialized DialogTree;
+duplicate carriers resolve only through the existing namespace tie-break, and
+naming never fills a missing row. Complete partitions close six direct
+black-box scenes covering 23 lines. The same general classifier now exposes
+five partial scenes through ten parents: 30 of 38 authored rows are covered,
+eight are explicitly unmatched, and the parents contain zero option-branch
+groups. Those partial scenes remain actionable and graph-neutral: exact parent
+membership and internal connections are evidence, while missing-row placement,
+activation, cross-parent order, mission ownership, and chronology remain
+unknown. Mission Pipeline attaches their original files in visible Story-only
+shells and displays coverage, missing IDs, parent IDs, branch counts, exact
+connections, and PathID/hash provenance. The other-bucket queue remains 32 and
+the current contract is `sourceStoryGapQueue.v119`; OCR and manual order remain
 comparison-only.
 
 A separate generalized carrier layer removes the object-specific parent-dialog
@@ -94,7 +95,7 @@ tie-breaker; it cannot fill missing rows. `misc_timeline_blackbox_miner` and
 `_pipe` remain open because authored rows lack serialized registered owners.
 Mission Pipeline exposes the parent files, hashes, and directed edges.
 Canonical mission-pipeline builds refresh and validate
-`sourceStoryGapQueue.v118` after current Story coverage
+`sourceStoryGapQueue.v119` after current Story coverage
 and partial order are published; data-only builds deliberately reuse it. OCR
 and manual order remain comparison-only.
 
@@ -939,7 +940,7 @@ only.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
    typed attachments or bounded graph-neutral diagnostics. Main, event, major,
    and character missions have no actionable core-isolated files. Other
-   missions retain 44 actionable files and 17 missing mission bundles. Broad co-memberships
+   missions retain 32 actionable files and 17 missing mission bundles. Broad co-memberships
    remain non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
@@ -954,15 +955,17 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should rank the 44 other actionable source-link gaps by reusable
-typed producer/consumer family. The highest-ranked row is
-`black_webui_secret_notice`, followed by two-file groups `gift`, `sm1l5m3`,
-`blackbox_transmuter_2`, and `blackbox_vaporizer`. The incomplete
-`misc_timeline_blackbox_miner` and `_pipe` aggregates should reopen only when a
-serialized owner appears for their currently missing authored rows. Extend the
-same pattern-based approach to other definition families only when their typed
-schemas and complete consumer surfaces can be bounded without weakening the
-fail-closed rules.
+Next work should trace the eight explicitly unmatched black-box rows through
+new binary or serialized producer/consumer surfaces, without deriving placement
+from their numeric suffixes. The partial set is
+`misc_timeline_blackbox_miner`, `dlg_blackbox_mix_3`,
+`dlg_blackbox_gaspump_1`, `misc_timeline_blackbox_pipe`, and
+`dlg_blackbox_xiraniteoven_3`. `dlg_blackbox_shaper_2_2` remains a distinct
+namespace mismatch rather than a partial partition, and the missionless
+speed-limit definition still needs a separately proven mission attachment.
+Extend the pattern-based classifier to branch-bearing consumers only when the
+typed schema and complete current consumer surface can be bounded without
+weakening the fail-closed rules.
 Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed

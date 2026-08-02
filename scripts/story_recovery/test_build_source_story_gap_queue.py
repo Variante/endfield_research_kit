@@ -10978,7 +10978,7 @@ class NonMissionContentClosureTests(unittest.TestCase):
             "dlg_gpl_opaque_pipe_1_1"
         })
 
-    def test_registered_dialog_tree_trunk_group_direct_scene_fails_closed(
+    def test_registered_dialog_tree_trunk_group_direct_scene_retains_partial_partition(
         self,
     ) -> None:
         story_key = "dlg_opaque_mix_3"
@@ -11016,11 +11016,20 @@ class NonMissionContentClosureTests(unittest.TestCase):
                 )
             )
 
-        self.assertIsNone(facts)
         self.assertIsNone(failure)
+        self.assertEqual(facts["partitionStatus"], "partial")
+        self.assertEqual(facts["coveredLineIds"], [
+            "dlg_opaque_mix_3_01",
+            "dlg_opaque_mix_3_02",
+        ])
+        self.assertEqual(facts["missingLineIds"], [
+            "dlg_opaque_mix_3_03",
+        ])
+        self.assertEqual(facts["coveredLineCount"], 2)
+        self.assertEqual(facts["missingLineCount"], 1)
         self.assertEqual(
             exclusion,
-            "incompleteOrAmbiguousParentTreePartition",
+            "incompleteParentTreePartition",
         )
 
     def test_cross_owner_dialog_tree_narrative_retains_exact_parent_scope(
