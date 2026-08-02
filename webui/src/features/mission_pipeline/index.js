@@ -477,6 +477,7 @@
       triggerPlaybackAliasConnected: "root playback alias · owner connected",
       triggerDefinition: "definition only · no consumer",
       offlineRecoveryBoundary: "Offline recovery boundary",
+      partialRecoveryBoundary: "Partial registered carrier",
       runtimeContextRecoveryBoundary: "Exact runtime context boundary",
       offlineRecoveryNoGraphEdge: "no ownership or order edge",
       offlineRecoveryConsumer: "Consumer boundary",
@@ -520,6 +521,9 @@
       offlineRecoveryParentTreeBranches: "internal branch groups",
       offlineRecoveryInternalLineConnections: "Exact internal line connections",
       offlineRecoveryEvidenceParentTreePartition: "Exact registered parent-tree line partition",
+      partialRecoveryEvidenceParentTreePartition: "Partial registered parent-tree line partition",
+      partialRecoveryCoverage: "Registered coverage",
+      partialRecoveryUnmatchedRows: "Unmatched authored rows",
       offlineRecoveryAuthoredSplit: "authored split",
       offlineRecoveryAuthoredConvergence: "authored convergence",
       offlineRecoveryTerminalOptions: "Terminal option routes",
@@ -1021,6 +1025,7 @@
       triggerPlaybackAliasConnected: "\u6839\u64ad\u653e\u522b\u540d \u00b7 \u5f52\u5c5e\u5df2\u8fde\u63a5",
       triggerDefinition: "\u4ec5\u5b9a\u4e49 \u00b7 \u65e0\u6d88\u8d39\u8005",
       offlineRecoveryBoundary: "\u79bb\u7ebf\u6062\u590d\u8fb9\u754c",
+      partialRecoveryBoundary: "\u90e8\u5206\u5df2\u6ce8\u518c\u8f7d\u4f53",
       runtimeContextRecoveryBoundary: "\u7cbe\u786e\u8fd0\u884c\u65f6\u4e0a\u4e0b\u6587\u8fb9\u754c",
       offlineRecoveryNoGraphEdge: "\u4e0d\u751f\u6210\u5f52\u5c5e\u6216\u987a\u5e8f\u8fb9",
       offlineRecoveryConsumer: "\u6d88\u8d39\u8005\u8fb9\u754c",
@@ -1064,6 +1069,9 @@
       offlineRecoveryParentTreeBranches: "\u5185\u90e8\u5206\u652f\u7ec4",
       offlineRecoveryInternalLineConnections: "\u7cbe\u786e\u5185\u90e8\u53f0\u8bcd\u8fde\u63a5",
       offlineRecoveryEvidenceParentTreePartition: "\u7cbe\u786e\u7684\u5df2\u6ce8\u518c\u7236\u6811\u53f0\u8bcd\u5206\u533a",
+      partialRecoveryEvidenceParentTreePartition: "\u90e8\u5206\u5df2\u6ce8\u518c\u7236\u6811\u53f0\u8bcd\u5206\u533a",
+      partialRecoveryCoverage: "\u5df2\u6ce8\u518c\u8986\u76d6",
+      partialRecoveryUnmatchedRows: "\u672a\u5339\u914d\u7684\u539f\u59cb\u53f0\u8bcd\u884c",
       offlineRecoveryAuthoredSplit: "\u539f\u751f\u5206\u6d41",
       offlineRecoveryAuthoredConvergence: "\u539f\u751f\u5408\u6d41",
       offlineRecoveryTerminalOptions: "\u7ec8\u6b62\u9009\u9879\u8def\u7531",
@@ -2277,8 +2285,12 @@
       manifest[row?.key]?.offlineRecovery
       || overlay[row?.key]?.offlineRecovery
     );
+    const partialRecovery = (
+      manifest[row?.key]?.partialRecovery
+      || overlay[row?.key]?.partialRecovery
+    );
     const runtimeRecovery = manifest[row?.key]?.runtimeContextRecovery;
-    const recovery = offlineRecovery || runtimeRecovery;
+    const recovery = offlineRecovery || partialRecovery || runtimeRecovery;
     if (!recovery || recovery.graphEffect !== "none") return "";
     const sourceFiles = [...new Set([
       ...(recovery.definitionSourceFiles || []),
@@ -2341,6 +2353,12 @@
       recovery.reopenWhen
         ? `<small><strong>${esc(t("offlineRecoveryReopen"))}:</strong> ${esc(recovery.reopenWhen)}</small>`
         : "",
+      partialRecovery
+        ? `<small><strong>${esc(t("partialRecoveryCoverage"))}:</strong> ${Number(recovery.coveredLineCount || 0).toLocaleString()} / ${Number(recovery.lineCount || 0).toLocaleString()} ${esc(t("offlineRecoveryLines"))}</small>`
+        : "",
+      partialRecovery && (recovery.missingLineIds || []).length
+        ? `<small><strong>${esc(t("partialRecoveryUnmatchedRows"))}:</strong> ${(recovery.missingLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</small>`
+        : "",
       sourceFiles.length
         ? `<small><strong>${esc(t("offlineRecoverySources"))}:</strong><br>${sourceFiles.map((path) => `<code>${esc(path)}</code>`).join("<br>")}</small>`
         : "",
@@ -2349,8 +2367,8 @@
         : "",
     ].filter(Boolean).join("");
     return `<div class="mp-playback-rejection mp-offline-recovery">
-      <header><strong>${esc(t(runtimeRecovery ? "runtimeContextRecoveryBoundary" : "offlineRecoveryBoundary"))}</strong><span>${esc(t("offlineRecoveryNoGraphEdge"))}</span></header>
-      <b>${esc(runtimeRecoveryEvidenceLabel(recovery))}</b>
+      <header><strong>${esc(t(runtimeRecovery ? "runtimeContextRecoveryBoundary" : partialRecovery ? "partialRecoveryBoundary" : "offlineRecoveryBoundary"))}</strong><span>${esc(t("offlineRecoveryNoGraphEdge"))}</span></header>
+      <b>${esc(partialRecovery ? t("partialRecoveryEvidenceParentTreePartition") : runtimeRecoveryEvidenceLabel(recovery))}</b>
       ${boundaries}
       ${recovery.nativeMappingId ? `<em><code>${esc(recovery.nativeMappingId)}</code></em>` : ""}
     </div>`;
@@ -2364,6 +2382,7 @@
     const rows = new Map();
     [...Object.values(manifest), ...Object.values(overlay)].forEach((entry) => {
       const offlineRecovery = entry?.offlineRecovery;
+      const partialRecovery = entry?.partialRecovery;
       const runtimeRecovery = entry?.runtimeContextRecovery;
       const crossMissionRuntimeRecovery = runtimeRecovery
         && String(runtimeRecovery.nominalStoryMissionId || "") === missionId
@@ -2389,7 +2408,7 @@
         || exactBlackCarrierRecovery
         || exactSameMissionRuntimeRecovery
         || exactNpcProxyRuntimeRecovery;
-      const recovery = offlineRecovery || (displayRuntimeRecovery ? runtimeRecovery : null);
+      const recovery = offlineRecovery || partialRecovery || (displayRuntimeRecovery ? runtimeRecovery : null);
       if (!entry?.key || !recovery || recovery.graphEffect !== "none") return;
       const owner = String(recovery.missionId || recovery.nominalStoryMissionId || entry.nominalMissionId || "");
       if (owner !== missionId) return;
@@ -2398,6 +2417,7 @@
         nominalMissionId: entry.nominalMissionId,
         ...recovery,
         runtimeContextRecovery: Boolean(displayRuntimeRecovery),
+        partialRecovery: Boolean(partialRecovery),
       });
     });
     return [...rows.values()].sort((a, b) => String(a.key).localeCompare(
@@ -3180,6 +3200,9 @@
         row.binaryRootTokenStatus
           ? `${t("offlineRecoveryBinaryRootToken")}: ${row.binaryRootTokenStatus}`
           : "",
+        row.partialRecovery
+          ? `${t("partialRecoveryCoverage")}: ${Number(row.coveredLineCount || 0).toLocaleString()} / ${Number(row.lineCount || 0).toLocaleString()} ${t("offlineRecoveryLines")}`
+          : "",
       ].filter(Boolean);
       const facts = definitionFacts.length
         ? `<p>${definitionFacts.map((fact) => `<span>${esc(fact)}</span>`).join("")}</p>`
@@ -3188,12 +3211,12 @@
         ? row.parentDialogTrees
         : [];
       const parentDialogTreeContext = parentDialogTrees.length
-        ? `<details${row.emittedGroupKind === "direct_numbered_dialog_scene" ? " open" : ""}><summary><strong>${esc(t("offlineRecoveryParentDialogTrees"))}</strong> ${parentDialogTrees.length.toLocaleString()} · ${Number(row.branchingParentDialogTreeCount || 0).toLocaleString()} ${esc(t("offlineRecoveryParentTreeBranches"))}</summary>${parentDialogTrees.map((tree) => {
+        ? `<details${row.emittedGroupKind === "direct_numbered_dialog_scene" || row.partialRecovery ? " open" : ""}><summary><strong>${esc(t("offlineRecoveryParentDialogTrees"))}</strong> ${parentDialogTrees.length.toLocaleString()} · ${Number(row.branchingParentDialogTreeCount || 0).toLocaleString()} ${esc(t("offlineRecoveryParentTreeBranches"))}</summary>${parentDialogTrees.map((tree) => {
           const connections = (tree.lineConnections || []).map((edge) => (
             `<code>${esc(edge.fromLineId || "?")} &rarr; ${esc(edge.toLineId || "?")}</code>`
           )).join(" ");
           return `<p><code>${esc(tree.sceneKey || tree.assetName || "?")}</code><span>${Number((tree.lineIds || []).length).toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span><span>${Number(tree.branchingOptionGroupCount || 0).toLocaleString()} ${esc(t("offlineRecoveryParentTreeBranches"))}</span></p>${connections ? `<small><strong>${esc(t("offlineRecoveryInternalLineConnections"))}:</strong> ${connections}</small>` : ""}`;
-        }).join("")}</details>`
+        }).join("")}${row.partialRecovery && (row.missingLineIds || []).length ? `<small><strong>${esc(t("partialRecoveryUnmatchedRows"))}:</strong> ${(row.missingLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</small>` : ""}</details>`
         : "";
       const evidenceBoundary = [
         row.activationBoundary
@@ -3257,6 +3280,7 @@
         radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),
         registered_dialog_tree_trunk_group_exact_line_partition: t("offlineRecoveryEvidenceParentTreePartition"),
+        partial_registered_dialog_tree_trunk_group_line_partition: t("partialRecoveryEvidenceParentTreePartition"),
       })[row.evidenceKind] || runtimeRecoveryEvidenceLabel(row);
       return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${parentDialogTreeContext}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");

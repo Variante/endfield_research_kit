@@ -19,7 +19,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v118",
+            "sourceStoryGapQueue.v119",
         )
 
     def test_gap_queue_refresh_validates_current_generated_contract(self):
@@ -285,6 +285,26 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         "graphEffect": "none",
                         "gameAssemblySha256": "fixture",
                         }],
+                        "partialRegisteredDialogTreeCarriers": [{
+                            "sceneKey": "dlg_testm1_partial",
+                            "missionId": "testm1",
+                            "recoveryStatus":
+                                "actionable_partial_registered_dialog_tree_partition",
+                            "evidenceKind":
+                                "partial_registered_dialog_tree_trunk_group_line_partition",
+                            "coveredLineIds": ["dlg_testm1_partial_01"],
+                            "coveredLineCount": 1,
+                            "missingLineIds": ["dlg_testm1_partial_02"],
+                            "missingLineCount": 1,
+                            "parentDialogTrees": [{
+                                "sceneKey": "dlg_testm1_partial_1",
+                                "sourceFile": "TextAsset/partial.json",
+                            }],
+                            "consumerBoundary": "one authored row unmatched",
+                            "orderBoundary": "partial carrier is not chronology",
+                            "graphEffect": "none",
+                            "gameAssemblySha256": "fixture",
+                        }],
                     }],
                 }),
                 encoding="utf-8",
@@ -292,6 +312,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             manifest = {
                 "dlg_testm1_1": {
                     "attachmentStatus": "definition_only_no_consumer",
+                    "routes": [],
+                },
+                "dlg_testm1_partial": {
+                    "attachmentStatus": "unlinked_no_trigger_route",
                     "routes": [],
                 },
                 "sns_testm1_1": {
@@ -375,6 +399,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
+        self.assertEqual(result["publishedPartialStoryKeys"], 1)
         self.assertEqual(result["publishedRuntimeContextStoryKeys"], 14)
         self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 3)
         self.assertEqual(
@@ -385,6 +410,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         recovery = manifest["dlg_testm1_1"]["offlineRecovery"]
         self.assertEqual(recovery["graphEffect"], "none")
         self.assertNotIn("gameAssemblySha256", recovery)
+        partial = manifest["dlg_testm1_partial"]["partialRecovery"]
+        self.assertEqual(partial["missingLineIds"], [
+            "dlg_testm1_partial_02",
+        ])
+        self.assertNotIn("gameAssemblySha256", partial)
+        self.assertNotIn("offlineRecovery", manifest["dlg_testm1_partial"])
         runtime_recovery = manifest["sns_testm1_1"][
             "runtimeContextRecovery"
         ]

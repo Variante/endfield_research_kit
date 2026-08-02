@@ -201,7 +201,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v118"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v119"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3223,6 +3223,7 @@ def publish_offline_story_recovery(
 
     published = 0
     published_keys: set[str] = set()
+    published_partial_keys: set[str] = set()
     published_runtime_context_keys: set[str] = set()
     manifest_overlay: dict[str, dict[str, Any]] = {}
     diagnostic_status = payload.get("questAttachmentDiagnosticEvidence")
@@ -3277,6 +3278,37 @@ def publish_offline_story_recovery(
                     "routes": [],
                     "offlineRecovery": recovery,
                 }
+
+        for row in mission.get("partialRegisteredDialogTreeCarriers") or []:
+            if (
+                not isinstance(row, dict)
+                or row.get("graphEffect") != "none"
+                or row.get("recoveryStatus")
+                != "actionable_partial_registered_dialog_tree_partition"
+            ):
+                continue
+            story_key = str(row.get("sceneKey") or "")
+            if not story_key:
+                continue
+            recovery = {
+                key: value
+                for key, value in row.items()
+                if key not in {"sceneKey", "gameAssemblySha256"}
+            }
+            manifest_row = story_trigger_manifest.get(story_key)
+            if isinstance(manifest_row, dict):
+                manifest_row["partialRecovery"] = recovery
+            else:
+                overlay = manifest_overlay.setdefault(story_key, {
+                    "key": story_key,
+                    "kind": offline_story_kind(story_key),
+                    "nominalMissionId": str(row.get("missionId") or ""),
+                    "attachmentStatus":
+                        "partial_carrier_outside_pipeline_coverage_denominator",
+                    "routes": [],
+                })
+                overlay["partialRecovery"] = recovery
+            published_partial_keys.add(story_key)
 
         approved_runtime_contexts = {
             (
@@ -3436,6 +3468,7 @@ def publish_offline_story_recovery(
         "graphEffect": "none",
         "publishedStoryKeys": len(published_keys),
         "publishedRows": published,
+        "publishedPartialStoryKeys": len(published_partial_keys),
         "publishedRuntimeContextStoryKeys": len(
             published_runtime_context_keys
         ),

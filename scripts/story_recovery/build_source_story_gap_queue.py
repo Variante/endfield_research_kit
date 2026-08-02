@@ -67,7 +67,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v118"
+SCHEMA = "sourceStoryGapQueue.v119"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -7630,10 +7630,12 @@ def _generic_registered_dialog_tree_trunk_group_facts(
     their complete authored namespace, while direct unregistered ``dlg_*``
     scene buckets select only exact numbered rows (``<scene>_<digits>``), so a
     nested scene cannot be absorbed by a shorter prefix. Qualification is an
-    exact set partition: every selected current DialogText row must occur in
-    exactly one registered, hash-validated DialogTree definition, and each
-    selected tree may contain no line outside that set. The tree edges prove
-    only internal parent-dialog order.
+    exact, non-overlapping set partition across the rows actually carried by
+    registered, hash-validated DialogTree definitions; each selected tree may
+    contain no line outside the emitted row set. A complete partition can
+    close the carrier search. A partial partition is retained as graph-neutral
+    evidence while its unmatched rows remain an actionable recovery gap. Tree
+    edges prove only internal parent-dialog order in either case.
     """
     if story_key.startswith("misc_"):
         definition_root = story_key.removeprefix("misc_")
@@ -7712,11 +7714,14 @@ def _generic_registered_dialog_tree_trunk_group_facts(
             coverage[line_id].append(parent_key)
         selected.append(facts or {})
         selected_parent_keys.append(parent_key)
-    missing = [line_id for line_id in target_line_ids if not coverage[line_id]]
+    missing = [
+        line_id for line_id in target_line_ids
+        if not coverage.get(line_id)
+    ]
     duplicated = {
         line_id: parents
         for line_id, parents in coverage.items()
-        if len(parents) != 1
+        if len(parents) > 1
     }
     selection_method = "exact_registered_line_partition"
     if duplicated:
@@ -7751,33 +7756,36 @@ def _generic_registered_dialog_tree_trunk_group_facts(
                 namespace_coverage[line_id].append(parent_key)
         namespace_missing = [
             line_id for line_id in target_line_ids
-            if not namespace_coverage[line_id]
+            if not namespace_coverage.get(line_id)
         ]
         namespace_duplicated = {
             line_id: parents
             for line_id, parents in namespace_coverage.items()
-            if len(parents) != 1
+            if len(parents) > 1
         }
-        if (
-            namespace_selected
-            and not namespace_missing
-            and not namespace_duplicated
-        ):
+        if namespace_selected and not namespace_duplicated:
             selected = namespace_selected
             coverage = namespace_coverage
-            missing = []
+            missing = namespace_missing
             duplicated = {}
             selection_method = "exact_registered_line_partition_namespace_tiebreak"
-    if missing or duplicated or not selected:
-        return None, None, "incompleteOrAmbiguousParentTreePartition"
+    if duplicated:
+        return None, None, "ambiguousParentTreePartition"
+    if not selected:
+        return None, None, "noRegisteredParentTreePartition"
     selected.sort(key=lambda row: natural_key(safe_key(row.get("sceneKey"))))
-    return {
+    facts = {
         "emittedStoryKey": story_key,
         "definitionRootKey": definition_root,
         "emittedGroupKind": emitted_group_kind,
         "lineSelectionMethod": line_selection_method,
+        "partitionStatus": "partial" if missing else "complete",
         "lineIds": target_line_ids,
         "lineCount": len(target_line_ids),
+        "coveredLineIds": sorted(coverage, key=natural_key),
+        "coveredLineCount": len(coverage),
+        "missingLineIds": missing,
+        "missingLineCount": len(missing),
         "parentDialogTrees": selected,
         "parentDialogTreeCount": len(selected),
         "branchingParentDialogTreeCount": sum(
@@ -7804,7 +7812,10 @@ def _generic_registered_dialog_tree_trunk_group_facts(
             for row in selected
             if safe_key(row.get("sourceFile"))
         },
-    }, None, None
+    }
+    return facts, None, (
+        "incompleteParentTreePartition" if missing else None
+    )
 
 
 def _generic_registered_table_dialog_definition_facts(
@@ -15930,6 +15941,9 @@ def build_offline_exhaustion_index(
             }
 
     registered_trunk_group_evidence_by_key: dict[str, dict[str, Any]] = {}
+    registered_trunk_group_partial_evidence_by_key: dict[
+        str, dict[str, Any]
+    ] = {}
     registered_trunk_group_validation_failures: list[dict[str, Any]] = []
     registered_trunk_group_exclusions: dict[str, list[str]] = defaultdict(list)
     if native_playback_index is not None and action_story_occurrences is not None:
@@ -16008,16 +16022,28 @@ def build_offline_exhaustion_index(
                 ].append(story_key)
                 continue
             mission_id = next(iter(missions))
-            registered_trunk_group_evidence_by_key[story_key] = {
+            partial_partition = (
+                facts.get("partitionStatus") == "partial"
+                and exclusion == "incompleteParentTreePartition"
+            )
+            evidence = {
                 "sceneKey": story_key,
                 "missionId": mission_id,
-                "recoveryStatus":
-                    "deferred_current_build_offline_surface_exhausted",
+                "recoveryStatus": (
+                    "actionable_partial_registered_dialog_tree_partition"
+                    if partial_partition
+                    else "deferred_current_build_offline_surface_exhausted"
+                ),
                 "evidenceKind": (
-                    "registered_dialog_tree_trunk_group_exact_line_partition"
+                    "partial_registered_dialog_tree_trunk_group_line_partition"
+                    if partial_partition
+                    else "registered_dialog_tree_trunk_group_exact_line_partition"
                 ),
                 "carrierStatus": (
-                    "exact_registered_dialog_tree_trunk_group_without_"
+                    "partial_exact_registered_dialog_tree_trunk_group_with_"
+                    "unmatched_rows"
+                    if partial_partition
+                    else "exact_registered_dialog_tree_trunk_group_without_"
                     "activation_or_cross_parent_order"
                 ),
                 **facts,
@@ -16030,6 +16056,7 @@ def build_offline_exhaustion_index(
                     source_display_path(source_paths["dialogTextTable"]),
                     source_display_path(source_paths["dialogIdSource"]),
                     source_display_path(source_paths["dialogIdIndex"]),
+                    source_display_path(carrier_audit_path),
                     *facts["definitionSourceFiles"],
                 ],
                 "originalBinaryFiles": [
@@ -16046,21 +16073,41 @@ def build_offline_exhaustion_index(
                 "globalMetadataSha256": actual_hashes.get(
                     "globalMetadata", ""
                 ),
+                "levelScriptActionCensusStatus":
+                    "zero_typed_action_occurrences",
+                "nativePlaybackStatus":
+                    "zero_typed_native_playback_occurrences",
+                "carrierAuditStatus":
+                    "no_typed_story_owner_or_runtime_carrier",
+                "carrierAuditTargetSetSha256": core_target_digest,
                 "consumerBoundary": (
-                    "the complete current DialogText row group is an exact "
-                    "one-parent-per-line partition across registered, "
-                    "hash-validated DialogTree assets; current GameAssembly "
-                    "executes their typed trunk ids through "
-                    "DialogTreeTrunkNode and DialogManager, but no exact "
-                    "mission/quest or factory-runtime source identifies what "
-                    "activates the emitted aggregate"
+                    (
+                        "the covered DialogText rows are an exact one-parent-per-line "
+                        "partition across registered, hash-validated DialogTree "
+                        "assets, but the explicitly listed missing rows occur in no "
+                        "selected registered parent; current typed LevelScript/native "
+                        "playback indexes and the complete AnimeStudio carrier audit "
+                        "expose no alternate mission activator or owner"
+                    ) if partial_partition else (
+                        "the complete current DialogText row group is an exact "
+                        "one-parent-per-line partition across registered, "
+                        "hash-validated DialogTree assets; current GameAssembly "
+                        "executes their typed trunk ids through DialogTreeTrunkNode "
+                        "and DialogManager, but no exact mission/quest or "
+                        "factory-runtime source identifies what activates the "
+                        "emitted aggregate"
+                    )
                 ),
                 "orderBoundary": (
-                    "each parentDialogTrees.lineConnections row is exact "
-                    "internal authored order and option counts retain exact "
-                    "internal branching; no current original-data source "
-                    "orders separate parent roots or places this aggregate "
-                    "against another Story file"
+                    "each parentDialogTrees.lineConnections row is exact internal "
+                    "authored order and option counts retain exact internal "
+                    "branching; missing rows, separate parent roots, activation, "
+                    "and cross-file chronology remain unresolved"
+                    if partial_partition else
+                    "each parentDialogTrees.lineConnections row is exact internal "
+                    "authored order and option counts retain exact internal "
+                    "branching; no current original-data source orders separate "
+                    "parent roots or places this aggregate against another Story file"
                 ),
                 "reopenWhen": (
                     "the installed binary, DialogId registry, DialogTextTable, "
@@ -16069,6 +16116,12 @@ def build_offline_exhaustion_index(
                 ),
                 "graphEffect": "none",
             }
+            if partial_partition:
+                registered_trunk_group_partial_evidence_by_key[story_key] = (
+                    evidence
+                )
+            else:
+                registered_trunk_group_evidence_by_key[story_key] = evidence
 
     num_id_table = read_json(source_paths["numIdStrTable"], {})
     timeline_ids = (
@@ -17164,6 +17217,11 @@ def build_offline_exhaustion_index(
         key=lambda item: natural_key(item[0]),
     ):
         index.setdefault(story_key, evidence)
+    for story_key, evidence in sorted(
+        registered_trunk_group_partial_evidence_by_key.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        index.setdefault(story_key, evidence)
     for story_key in sorted(all_sns_keys, key=natural_key):
         validation = sns_validation_by_key[story_key]
         index[story_key] = {
@@ -17781,6 +17839,27 @@ def build_offline_exhaustion_index(
             "qualifiedLines": sum(
                 int(row.get("lineCount") or 0)
                 for row in registered_trunk_group_evidence_by_key.values()
+            ),
+            "partialStoryKeys": len(
+                registered_trunk_group_partial_evidence_by_key
+            ),
+            "partialMissions": len({
+                row["missionId"]
+                for row in registered_trunk_group_partial_evidence_by_key.values()
+            }),
+            "partialParentDialogTrees": len({
+                safe_key(parent.get("sceneKey"))
+                for row in registered_trunk_group_partial_evidence_by_key.values()
+                for parent in row.get("parentDialogTrees") or []
+                if safe_key(parent.get("sceneKey"))
+            }),
+            "partialCoveredLines": sum(
+                int(row.get("coveredLineCount") or 0)
+                for row in registered_trunk_group_partial_evidence_by_key.values()
+            ),
+            "partialMissingLines": sum(
+                int(row.get("missingLineCount") or 0)
+                for row in registered_trunk_group_partial_evidence_by_key.values()
             ),
             "validationFailures": (
                 registered_trunk_group_validation_failures
@@ -23659,6 +23738,21 @@ def build_gap_row(
         row["sceneKey"]
         for row in deferred_offline_exhausted_isolated
     }
+    partial_registered_dialog_tree_carriers = sorted(
+        (
+            recovery
+            for scene_key in isolated_scene_keys
+            if isinstance(
+                recovery := offline_exhaustion_index.get(scene_key),
+                dict,
+            )
+            and recovery.get("recoveryStatus")
+            == "actionable_partial_registered_dialog_tree_partition"
+            and safe_key(recovery.get("missionId")) == mission
+            and recovery.get("graphEffect") == "none"
+        ),
+        key=lambda row: natural_key(safe_key(row.get("sceneKey"))),
+    )
     deferred_offline_option_route_groups: list[dict[str, Any]] = []
     for group_row in (
         ((partial_row.get("branches") or {}).get(
@@ -23812,6 +23906,9 @@ def build_gap_row(
         "deferredOfflineExhaustedIsolatedScenes": len(
             deferred_offline_exhausted_isolated_keys
         ),
+        "partialRegisteredDialogTreeCarrierScenes": len(
+            partial_registered_dialog_tree_carriers
+        ),
         "weakOnlyScenes": int(summary.get("weakOnlySceneCount") or 0),
         "actionableWeakOnlyScenes": len(actionable_weak_only_scene_keys),
         "closedExactNativeWeakOnlyScenes": len(
@@ -23925,6 +24022,8 @@ def build_gap_row(
             closed_non_mission_content_isolated,
         "deferredOfflineExhaustedIsolatedScenes":
             deferred_offline_exhausted_isolated,
+        "partialRegisteredDialogTreeCarriers":
+            partial_registered_dialog_tree_carriers,
         "deferredOfflineExhaustedOptionRouteGroups":
             deferred_offline_option_route_groups,
         "actionableWeakOnlySceneKeys": actionable_weak_only_scene_keys,
