@@ -4,6 +4,7 @@ import base64
 import copy
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -266,6 +267,108 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(facts["optionsByGroup"], {"2": [
             "option_dlg_fixture_1_2_001",
         ]})
+
+    def test_generic_missionless_native_playback_validates_exact_path(
+        self,
+    ) -> None:
+        story_key = "radio_fixture_1"
+        with tempfile.TemporaryDirectory() as directory:
+            source_root = Path(directory)
+            source_file = source_root / "LevelScriptData/lv1/1001.json"
+            source_file.parent.mkdir(parents=True)
+            source_file.write_text("{}", encoding="utf-8")
+            occurrences = [{
+                "levelId": "lv1",
+                "scriptId": "1001",
+                "sourceFile": "LevelScriptData/lv1/1001.json",
+                "actionMapRole": "actionList#1 linked",
+                "allStoryKeysInRecord": [story_key],
+                "localId": 6,
+                "actionName": "PlayRadio",
+                "recordClass": "play_radio",
+                "nativeMappingId": "gameassembly-fixture-actionbase-v1",
+                "nativeEventOwners": [{
+                    "status": "exact_serialized_control_path",
+                    "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    "headerLocalId": 4,
+                    "eventDetail": {
+                        "type": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                        "serializedMissionOrQuestId": False,
+                        "serverExchange": False,
+                        "summary": "leader enters trigger slot 80001",
+                    },
+                    "path": [{
+                        "localId": 6,
+                        "actionName": "PlayRadio",
+                        "recordClass": "play_radio",
+                    }],
+                }],
+            }]
+
+            facts, failure, exclusion = (
+                gap_queue._generic_missionless_native_playback_facts(
+                    story_key,
+                    occurrences,
+                    source_root=source_root,
+                )
+            )
+
+        self.assertIsNone(failure)
+        self.assertIsNone(exclusion)
+        self.assertEqual(facts["nativeEventPaths"][0]["actionLocalId"], 6)
+        self.assertTrue(facts["sourceSha256"][occurrences[0]["sourceFile"]])
+
+    def test_generic_missionless_native_playback_fails_closed_on_terminal(
+        self,
+    ) -> None:
+        story_key = "dlg_fixture_1"
+        with tempfile.TemporaryDirectory() as directory:
+            source_root = Path(directory)
+            source_file = source_root / "LevelScriptData/lv1/1001.json"
+            source_file.parent.mkdir(parents=True)
+            source_file.write_text("{}", encoding="utf-8")
+            facts, failure, exclusion = (
+                gap_queue._generic_missionless_native_playback_facts(
+                    story_key,
+                    [{
+                        "sourceFile": "LevelScriptData/lv1/1001.json",
+                        "actionMapRole": "actionList#2 root",
+                        "allStoryKeysInRecord": [story_key],
+                        "localId": 2,
+                        "actionName": "StartDialogAction",
+                        "recordClass": "play_dialog",
+                        "nativeMappingId": "gameassembly-fixture-actionbase-v1",
+                        "nativeEventOwners": [{
+                            "status": "exact_serialized_control_path",
+                            "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                            "headerLocalId": 0,
+                            "eventDetail": {
+                                "serializedMissionOrQuestId": False,
+                                "serverExchange": False,
+                            },
+                            "path": [{
+                                "localId": 3,
+                                "actionName": "StartDialogAction",
+                                "recordClass": "play_dialog",
+                            }],
+                        }],
+                    }],
+                    source_root=source_root,
+                )
+            )
+
+        self.assertIsNone(facts)
+        self.assertIsNone(exclusion)
+        self.assertEqual(
+            failure["validator"],
+            "genericMissionlessNativePlayback",
+        )
+        self.assertEqual(
+            failure["gate"],
+            "exactMissionlessNativeControlPath",
+        )
+        self.assertEqual(failure["expected"]["terminalLocalId"], 2)
+        self.assertEqual(failure["actual"]["terminal"]["localId"], 3)
 
     def test_generic_unregistered_dialog_reports_option_shape(self) -> None:
         story_key = "dlg_fixture_1"
@@ -7302,7 +7405,22 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "registered_dialog_tree_definition_binary_consumer_surface_exhausted",
         )
         self.assertEqual(offline_index["dlg_c27m4_15"]["graphEffect"], "none")
-        self.assertNotIn("dlg_c13m2_9", offline_index)
+        missionless_native_status = status[
+            "genericMissionlessNativePlaybackEvidence"
+        ]
+        self.assertEqual(missionless_native_status["validationFailures"], [])
+        self.assertEqual(missionless_native_status["qualifiedStoryKeys"], 338)
+        missionless_dialog = offline_index["dlg_c13m2_9"]
+        self.assertEqual(
+            missionless_dialog["evidenceKind"],
+            "exact_missionless_native_event_playback_path",
+        )
+        self.assertEqual(
+            missionless_dialog["recoveryStatus"],
+            "deferred_exact_native_playback_without_mission_bridge",
+        )
+        self.assertFalse(missionless_dialog["missionOwnership"])
+        self.assertTrue(missionless_dialog["nativeEventPaths"])
         missing_definition = next(
             row
             for row in cutscene_status["qualificationDiagnostics"]
