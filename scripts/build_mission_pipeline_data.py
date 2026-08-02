@@ -3179,6 +3179,10 @@ def publish_offline_story_recovery(
                 "authoritative_scope_leveldata_mission_context",
                 "closed_exact_cross_mission_leveldata_shell_playback_context_no_relative_order",
             ),
+            (
+                "cutscene_root_playback_alias_composed",
+                "closed_exact_composed_root_playback_context_no_relative_order",
+            ),
         }
         for row in mission.get("closedExactNativeIsolatedScenes") or []:
             if not isinstance(row, dict):

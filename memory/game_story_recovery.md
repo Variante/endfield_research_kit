@@ -59,10 +59,27 @@ AnimeStudio object/reverse-PPtr plus installed-binary token audits find no
 consumer. Mission Pipeline attaches the exact MissionRuntime and LevelScript
 files, displays the fork, dependency, failure guard, stage conjunction,
 present playback roots, and absent targets, and keeps both unresolved radios at
-graph effect `none`. The major queue now has 13 actionable core-isolated rows
-and score 65; `gm02m4` is next at score 10 with two actionable files.
+graph effect `none`. The subsequent generic playback-alias batch reduces the
+major queue to 12 actionable core-isolated rows and score 60; `gm02m4` now has
+one actionable file and score 5.
 
-The current `gm02m4` audit generalized native branch recovery instead of
+The latest playback-alias audit generalizes the same fail-closed principle to
+serialized `CutsceneRoot._director` PPtrs. The current corpus has four exact
+root-to-TimelineAsset aliases, but a standalone alias proves playback only.
+The gap queue now closes an isolated target only when its current trigger
+manifest also contains a mission-consistent, independently connected native
+playback route ending at the root Story key, the exact
+`CutsceneRoot._director -> TimelineHandle.Play -> target` suffix, complete
+native/audit source files, and the expected original-binary mapping. This
+qualifies only `cutscene_gm02m4_1`: its root `cutscene_gm02m4_3` is reached by
+the exact gm02m4 client-global-variable event and `PlayCutsceneAction` path.
+Mission Pipeline shows the composed root, native path, MissionRuntime,
+LevelScript, VFS chunk, and reverse-PPtr audit together, with graph effect
+`none` and an explicit no-relative-order boundary. The three e11m2/f1m9d4
+aliases remain owner-unresolved because their roots have no equivalent owned
+route. This changes no graph edge or branch count.
+
+The preceding `gm02m4` audit generalized native branch recovery instead of
 adding a mission-specific rule. LevelScript control paths now admit repeated
 local-id records only when every typed control field is semantically
 equivalent; conflicting duplicates still fail closed. This recovers six
@@ -74,11 +91,11 @@ so there is no authored convergence between the arms. MissionRuntime remains
 the linear chain `q#11 -> q#3 -> q#7 -> q#8 -> q#9`. q#3 is an exact AND over
 six `InteractiveCheckInt` entity/state comparisons, now exposed generically in
 Mission Pipeline with entity ids and comparator targets. Native branch rows
-retain the complete MissionRuntime and LevelScript source-file set. The
-remaining isolated `cutscene_gm02m4_1` has an exact composed CutsceneRoot
-playback alias and mission-shell context but no unique quest or relative order;
-`radio_gm02m4_11` remains definition-only with no typed current-build consumer.
-Neither row is placed from OCR, manual order, suffixes, or table order.
+retain the complete MissionRuntime and LevelScript source-file set.
+`radio_gm02m4_11` remains definition-only with no typed current-build consumer
+and is the mission's sole actionable isolated file. The composed cutscene
+context and unresolved radio are not placed from OCR, manual order, suffixes,
+or table order.
 
 The preceding `gm02m15` batch closes its two remaining actionable radios without
 inventing placement. Hash-locked MissionRuntime is a strict
@@ -691,8 +708,8 @@ only.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** main and event have no actionable core-isolated
-   or strict quest-attachment gaps. Major missions retain 13 actionable
-   core-isolated files and score 65; seven broad main-story co-memberships
+   or strict quest-attachment gaps. Major missions retain 12 actionable
+   core-isolated files and score 60; seven broad main-story co-memberships
    remain visible as non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
@@ -707,10 +724,12 @@ contains both LevelScript and mission/quest identity. Repeating existing
 LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
 unlikely to close the remaining ownership gap without changed inputs.
 
-Next work should move to the highest-ranked remaining major-mission frontier:
-the still source-bounded `gm02m4` pair, then `gm02m12` and `gm01m8` (each
-score 10 with two actionable files), followed by the five character-mission
-quest-attachment gaps. Within `gm02m23`, the
+Next work should finish the remaining definition-only consumer audit for
+`radio_gm02m4_11`, then move to `gm02m12` and `gm01m8` (each score 10 with two
+actionable files), followed by the five character-mission quest-attachment
+gaps. The next general recovery target is a source-bounded negative-consumer
+classifier that applies across definition-only radios rather than a per-radio
+exception. Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
 as quest-observed definitions. The seven isolated and four weak-only Story

@@ -3888,6 +3888,238 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             [],
         )
 
+    def test_exact_composed_root_playback_closes_arbitrary_isolated_cutscene(
+        self,
+    ) -> None:
+        story_key = "cutscene_testm2_target"
+        root_key = "cutscene_testm2_root"
+        mission_source = (
+            "export_full/structured/Persistent/Data/Json/"
+            "MissionRuntimeAsset/testm2.json"
+        )
+        level_source = (
+            "export_full/structured/StreamingAssets/Data/Json/"
+            "LevelScriptData/test_level/123.json"
+        )
+        alias_source = "VFS/ABCD/alias.chk"
+        audit_report = (
+            "reports/story/recovery/"
+            "animestudio_story_reverse_pptr_audit.json"
+        )
+        route = {
+            "aliasRelation": "cutscene_root_director_playable_asset",
+            "auditReport": audit_report,
+            "causality": "playback_alias_owner_connected",
+            "confidence": (
+                "exact_connected_root_playback_plus_serialized_director_alias"
+            ),
+            "direction": "context",
+            "evidenceTier": "native_serialized_composed_exact",
+            "missionId": "testm2",
+            "nativeMappingId": "gameassembly-test-cutscene-root-playback-v1",
+            "nativePaths": [{
+                "sourceFile": mission_source,
+                "steps": [{"actionName": "PlayCutsceneAction"}],
+            }],
+            "ownerStatus": "connected",
+            "questId": None,
+            "questTriggerStatus": (
+                "connected_root_native_playback_composed_with_exact_alias"
+            ),
+            "relation": "cutscene_root_playback_alias_composed",
+            "rootBaseCausality": "context",
+            "rootBaseRelation": "mission_event_native_playback_context",
+            "rootStoryKey": root_key,
+            "scope": "mission",
+            "serverExchange": False,
+            "sourceFiles": [
+                mission_source,
+                level_source,
+                alias_source,
+                audit_report,
+            ],
+            "steps": [
+                {"id": "testm2", "kind": "mission"},
+                {"ids": ["event"], "kind": "native_event"},
+                {"ids": ["123"], "kind": "levelscript"},
+                {"ids": ["PlayCutsceneAction"], "kind": "native_action"},
+                {"id": root_key, "kind": "story_root"},
+                {
+                    "id": "CutsceneRoot._director -> TimelineHandle.Play",
+                    "kind": "native_action",
+                },
+                {"id": story_key, "kind": "story"},
+            ],
+            "storyKey": story_key,
+        }
+        alias_route = {
+            "auditReport": audit_report,
+            "causality": "playback_alias_owner_unresolved",
+            "confidence": "exact_serialized_root_director_plus_native_playback",
+            "direction": "playback",
+            "evidenceTier": "direct",
+            "missionId": None,
+            "nativeMappingId": route["nativeMappingId"],
+            "ownerStatus": "unresolved",
+            "questId": None,
+            "questTriggerStatus": "no_mission_or_quest_selector_recovered",
+            "relation": "cutscene_root_playback_alias",
+            "rootStoryKey": root_key,
+            "scope": "cutscene_root",
+            "serverExchange": False,
+            "sourceFiles": [alias_source, audit_report],
+            "steps": route["steps"][-3:],
+            "storyKey": story_key,
+        }
+        manifest = {
+            story_key: {
+                "attachmentStatus": "connected",
+                "key": story_key,
+                "nominalMissionId": "testm2",
+                "routes": [alias_route, route],
+            },
+        }
+        partial = partial_mission(
+            "testm2",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+
+        row = gap_queue.build_gap_row(
+            partial,
+            mission_payload(),
+            mission_bundle_exists=True,
+            story_trigger_manifest=manifest,
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        closure = row["closedExactNativeIsolatedScenes"][0]
+        self.assertEqual(closure["sceneKey"], story_key)
+        self.assertEqual(closure["rootStoryKeys"], [root_key])
+        self.assertEqual(closure["sourceFiles"], sorted(
+            route["sourceFiles"],
+            key=gap_queue.natural_key,
+        ))
+        self.assertEqual(closure["graphEffect"], "none")
+
+    def test_composed_root_playback_closure_fails_closed_on_route_drift(
+        self,
+    ) -> None:
+        story_key = "cutscene_testm2_target"
+        root_key = "cutscene_testm2_root"
+        audit_report = "reports/story/recovery/alias_audit.json"
+        mission_source = "MissionRuntimeAsset/testm2.json"
+        route = {
+            "aliasRelation": "cutscene_root_director_playable_asset",
+            "auditReport": audit_report,
+            "causality": "playback_alias_owner_connected",
+            "confidence": (
+                "exact_connected_root_playback_plus_serialized_director_alias"
+            ),
+            "direction": "context",
+            "evidenceTier": "native_serialized_composed_exact",
+            "missionId": "testm2",
+            "nativeMappingId": "native-map-v1",
+            "nativePaths": [{
+                "sourceFile": mission_source,
+                "steps": [{"actionName": "PlayCutsceneAction"}],
+            }],
+            "ownerStatus": "connected",
+            "questId": None,
+            "questTriggerStatus": (
+                "connected_root_native_playback_composed_with_exact_alias"
+            ),
+            "relation": "cutscene_root_playback_alias_composed",
+            "rootBaseCausality": "context",
+            "rootBaseRelation": "mission_event_native_playback_context",
+            "rootStoryKey": root_key,
+            "scope": "mission",
+            "serverExchange": False,
+            "sourceFiles": [mission_source, "VFS/alias.chk", audit_report],
+            "steps": [
+                {"id": "testm2", "kind": "mission"},
+                {"ids": ["PlayCutsceneAction"], "kind": "native_action"},
+                {"id": root_key, "kind": "story_root"},
+                {
+                    "id": "CutsceneRoot._director -> TimelineHandle.Play",
+                    "kind": "native_action",
+                },
+                {"id": story_key, "kind": "story"},
+            ],
+            "storyKey": story_key,
+        }
+        alias_route = {
+            "auditReport": audit_report,
+            "causality": "playback_alias_owner_unresolved",
+            "confidence": "exact_serialized_root_director_plus_native_playback",
+            "direction": "playback",
+            "evidenceTier": "direct",
+            "missionId": None,
+            "nativeMappingId": route["nativeMappingId"],
+            "ownerStatus": "unresolved",
+            "questId": None,
+            "questTriggerStatus": "no_mission_or_quest_selector_recovered",
+            "relation": "cutscene_root_playback_alias",
+            "rootStoryKey": root_key,
+            "scope": "cutscene_root",
+            "serverExchange": False,
+            "sourceFiles": ["VFS/alias.chk", audit_report],
+            "steps": route["steps"][-3:],
+            "storyKey": story_key,
+        }
+
+        mutations = {
+            "wrong mission": {"missionId": "otherm1"},
+            "unresolved owner": {"ownerStatus": "unresolved"},
+            "weak tier": {"evidenceTier": "direct"},
+            "missing audit": {"auditReport": ""},
+            "wrong alias action": {
+                "steps": [
+                    *route["steps"][:-2],
+                    {"id": "TimelineHandle.Stop", "kind": "native_action"},
+                    route["steps"][-1],
+                ],
+            },
+            "missing native source": {
+                "sourceFiles": ["VFS/alias.chk", audit_report],
+            },
+        }
+        for label, mutation in mutations.items():
+            with self.subTest(label=label):
+                candidate = {**route, **mutation}
+                manifest = {
+                    story_key: {
+                        "attachmentStatus": "connected",
+                        "key": story_key,
+                        "nominalMissionId": "testm2",
+                        "routes": [alias_route, candidate],
+                    },
+                }
+                self.assertEqual(
+                    gap_queue
+                    ._closed_exact_composed_root_playback_isolated_scenes(
+                        manifest,
+                        {story_key},
+                        "testm2",
+                    ),
+                    [],
+                )
+        self.assertEqual(
+            gap_queue._closed_exact_composed_root_playback_isolated_scenes(
+                {
+                    story_key: {
+                        "attachmentStatus": "connected",
+                        "key": story_key,
+                        "nominalMissionId": "testm2",
+                        "routes": [route],
+                    },
+                },
+                {story_key},
+                "testm2",
+            ),
+            [],
+        )
+
     def test_declared_e6m2_offline_frontier_is_exact(self) -> None:
         self.assertEqual(
             gap_queue.OFFLINE_EXHAUSTION_E6M2_RADIOS,
