@@ -41,6 +41,9 @@ DEFAULT_TABLE_ROOTS = (
     ROOT / "export_full" / "structured" / "StreamingAssets" / "Table",
 )
 DEFAULT_STORY_INDEX = ROOT / "webui" / "data" / "lang" / "CN" / "index.json"
+DEFAULT_CINEMATIC_RUNTIME_AUDIT = (
+    ROOT / "reports" / "story" / "recovery" / "cinematic_queue_runtime_audit.json"
+)
 
 GAME_ACTION_CALL_RE = re.compile(
     r"\b(?:CS\.Beyond\.Gameplay\.Actions\.)?GameAction\s*\.\s*"
@@ -220,6 +223,46 @@ def load_story_keys(path: Path) -> set[str]:
     }
 
 
+def load_cinematic_runtime_contract(path: Path) -> dict[str, Any]:
+    """Load the binary-proven polymorphic handle contract fail-closed."""
+    if not path.is_file():
+        raise RuntimeError(
+            "validator=lua_cinematic_dispatch failed: gate=runtime_audit_exists "
+            f"expected=file actual=missing source={repo_rel(path)}"
+        )
+    raw = path.read_bytes()
+    payload = json.loads(raw.decode("utf-8"))
+    contract = payload.get("contract") or {}
+    conclusion = payload.get("conclusion") or {}
+    methods = contract.get("nativeDispatcherMethods") or []
+    source = payload.get("source") or {}
+    if (
+        payload.get("schemaVersion") != "cinematicQueueRuntimeAudit.v1"
+        or conclusion.get("luaCallsAreRuntimeDispatchers") is not True
+        or conclusion.get("staticMissionOwnership") is not False
+        or conclusion.get("staticStoryOrder") is not False
+        or not methods
+        or not all(isinstance(value, str) and value.endswith("ByHandle") for value in methods)
+        or not re.fullmatch(r"[0-9a-f]{64}", str(source.get("gameAssemblySha256") or ""))
+        or not re.fullmatch(r"[0-9a-f]{64}", str(source.get("metadataSha256") or ""))
+    ):
+        raise RuntimeError(
+            "validator=lua_cinematic_dispatch failed: gate=runtime_contract "
+            f"expected=validated_polymorphic_handle actual=invalid source={repo_rel(path)}"
+        )
+    return {
+        "report": repo_rel(path),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "gameAssemblySha256": source["gameAssemblySha256"],
+        "metadataSha256": source["metadataSha256"],
+        "handleType": (contract.get("queueHandle") or {}).get("type"),
+        "queueBaseType": (contract.get("queueBase") or {}).get("type"),
+        "dispatcherMethods": sorted(set(methods)),
+        "payloadTypeCount": len(contract.get("payloadTypes") or []),
+        "enqueueEdgeCount": len(contract.get("enqueueEdges") or []),
+    }
+
+
 def load_table_payloads(
     table_index: dict[str, dict[str, Any]],
 ) -> dict[str, dict[str, Any]]:
@@ -354,6 +397,7 @@ def scan_game_action_calls(
     table_payloads: dict[str, dict[str, Any]] | None = None,
     source_path: str = "",
     source_sha256: str = "",
+    cinematic_handle_dispatchers: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     assignments = {
         match.group(1): match.group(3)
@@ -406,6 +450,14 @@ def scan_game_action_calls(
         window = text[max(0, match.start() - 1200): min(len(text), match.end() + 1200)]
         nearby_tables = sorted(set(re.findall(r"\bTables\.([A-Za-z_]\w*)", window)))
         playback = STORY_PLAYBACK_GAME_ACTIONS.get(method)
+        is_runtime_dispatcher = bool(
+            playback
+            and playback.get("argument") == "cinematic_handle"
+            and method in (cinematic_handle_dispatchers or set())
+        )
+        if is_runtime_dispatcher:
+            resolution = "runtime_handle_payload"
+            registry_status = "runtime_payload_not_static_story_id"
         rows.append(
             {
                 "module": rel,
@@ -416,6 +468,11 @@ def scan_game_action_calls(
                 "classification": "story_playback" if playback else "other_game_action",
                 "playbackKind": playback.get("kind") if playback else None,
                 "argumentSemantics": playback.get("argument") if playback else None,
+                "playbackRole": (
+                    "runtime_queue_dispatcher"
+                    if is_runtime_dispatcher
+                    else "authored_reference"
+                ) if playback else None,
                 "firstArgument": argument[:300],
                 "literalResolution": resolution,
                 "resolvedLiteral": resolved or None,
@@ -548,6 +605,9 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     table_roots = [root.resolve() for root in (args.table_root or list(DEFAULT_TABLE_ROOTS))]
     story_index = args.story_index.resolve()
     story_keys = load_story_keys(story_index)
+    cinematic_runtime = load_cinematic_runtime_contract(
+        args.cinematic_runtime_audit.resolve()
+    )
     table_index, table_root_summaries = build_table_index(table_roots)
     table_payloads = load_table_payloads(table_index)
     modules: dict[str, dict[str, Any]] = {}
@@ -595,6 +655,12 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
                 "byteLength": byte_total,
             }
         )
+    if not any(row["fileCount"] for row in root_summaries):
+        raise RuntimeError(
+            "validator=lua_consumer_reference failed: gate=nonempty_lua_roots "
+            f"expected=one_or_more_lua_files actual=0 roots="
+            f"{','.join(row['root'] for row in root_summaries)}"
+        )
 
     global_counts: dict[str, Counter[str]] = {name: Counter() for name, _pattern in REFERENCE_PATTERNS}
     global_examples: dict[str, list[dict[str, Any]]] = {name: [] for name, _pattern in REFERENCE_PATTERNS}
@@ -618,6 +684,9 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
                 table_payloads=table_payloads,
                 source_path=str(row.get("canonicalPath") or ""),
                 source_sha256=str(row.get("canonicalSha256") or ""),
+                cinematic_handle_dispatchers=set(
+                    cinematic_runtime["dispatcherMethods"]
+                ),
             )
         )
         counts, examples = scan_references(text, rel=rel, example_limit=args.example_limit)
@@ -727,9 +796,17 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         row["literalResolution"] for row in playback_calls
     )
     playback_registry_counts = Counter(row["registryStatus"] for row in playback_calls)
+    runtime_dispatcher_calls = [
+        row for row in playback_calls
+        if row.get("playbackRole") == "runtime_queue_dispatcher"
+    ]
+    authored_playback_calls = [
+        row for row in playback_calls
+        if row.get("playbackRole") == "authored_reference"
+    ]
 
     return {
-        "schemaVersion": "luaConsumerReferenceAudit.v3",
+        "schemaVersion": "luaConsumerReferenceAudit.v4",
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "metadata": {
             "luaRoots": [repo_rel(root) for root in lua_roots],
@@ -738,6 +815,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "unknownFocus": unknown_focus,
             "storyIndex": repo_rel(story_index),
             "storyRegistryKeys": len(story_keys),
+            "cinematicRuntimeAudit": cinematic_runtime,
         },
         "settings": {
             "topLimit": args.top_limit,
@@ -763,6 +841,9 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "gameActionMethodCount": len({row["method"] for row in game_action_calls}),
             "storyPlaybackCallCount": len(playback_calls),
             "storyPlaybackModuleCount": len({row["module"] for row in playback_calls}),
+            "authoredStoryPlaybackCallCount": len(authored_playback_calls),
+            "runtimeHandleDispatcherCallCount": len(runtime_dispatcher_calls),
+            "runtimeHandleDispatcherFamilyCount": 1 if runtime_dispatcher_calls else 0,
             "storyPlaybackMethodCounts": dict(sorted(playback_method_counts.items())),
             "storyPlaybackResolutionCounts": dict(
                 sorted(playback_resolution_counts.items())
@@ -794,8 +875,10 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
                     "Direct quoted arguments and simple local string assignments are "
                     "resolved. A simple Tables.<name> row field is also resolved when "
                     "the current original table has exactly one non-empty candidate; "
-                    "multi-row fields, function parameters, handles, concatenation, and "
-                    "general control flow remain unresolved."
+                    "multi-row fields, function parameters, concatenation, and general "
+                    "control flow remain unresolved. Calls accepting the binary-proven "
+                    "cinematic queue handle are classified as one runtime dispatcher "
+                    "family, not as unresolved authored Story references."
                 ),
                 "case": (
                     "Exact registry spelling is proven separately from a case-folded "
@@ -815,6 +898,9 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
                 row["method"] for row in game_action_calls
             ).items())),
             "storyPlaybackCalls": playback_calls,
+            "authoredStoryPlaybackCalls": authored_playback_calls,
+            "runtimeHandleDispatcherCalls": runtime_dispatcher_calls,
+            "runtimeHandleContract": cinematic_runtime,
             "allCalls": game_action_calls,
         },
         "duplicateModulesSample": duplicate_modules[: args.top_limit],
@@ -864,6 +950,15 @@ def render_markdown(payload: dict[str, Any]) -> str:
     lines.append(
         f"- Story-playback calls: `{summary.get('storyPlaybackCallCount')}` "
         f"across `{summary.get('storyPlaybackModuleCount')}` modules"
+    )
+    lines.append(
+        f"- authored playback references: "
+        f"`{summary.get('authoredStoryPlaybackCallCount')}`"
+    )
+    lines.append(
+        f"- binary-proven runtime handle dispatch branches: "
+        f"`{summary.get('runtimeHandleDispatcherCallCount')}` in "
+        f"`{summary.get('runtimeHandleDispatcherFamilyCount')}` queue family"
     )
     lines.append(
         f"- registry keys used for exact-case validation: "
@@ -945,6 +1040,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=DEFAULT_STORY_INDEX,
         help="Generated Story index used only for exact-case literal validation",
+    )
+    parser.add_argument(
+        "--cinematic-runtime-audit",
+        type=Path,
+        default=DEFAULT_CINEMATIC_RUNTIME_AUDIT,
+        help="Installed-binary cinematic queue contract used to classify handle dispatchers",
     )
     parser.add_argument("--focus", default="sns,remotecomm,dialog,mapmark,mission")
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)

@@ -140,7 +140,7 @@ DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT = (
 DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT = (
     ROOT / "reports" / "story" / "recovery" / "cutscene_case_resolution_audit.json"
 )
-LUA_CONSUMER_REFERENCE_SCHEMA = "luaConsumerReferenceAudit.v3"
+LUA_CONSUMER_REFERENCE_SCHEMA = "luaConsumerReferenceAudit.v4"
 NATIVE_GAME_ACTION_TYPE = "Beyond.Gameplay.Actions.GameAction"
 DEFAULT_ACTIVITY_STAGE_TABLE = DEFAULT_TABLE_ROOT / "ActivityConditionalMultiStageTable.json"
 DEFAULT_ACTIVITY_DUNGEON_FIGHTING_STAGE_TABLE = (
@@ -3374,6 +3374,28 @@ def load_lua_story_playback_evidence(
 
     accepted.sort(key=lambda row: (natural_quest_key(row["storyKey"]), row["luaFile"], row["luaLine"]))
     rejected.sort(key=lambda row: (natural_quest_key(row["storyKey"]), row["luaFile"], row["luaLine"]))
+    runtime_dispatchers = [
+        row for row in calls
+        if row.get("playbackRole") == "runtime_queue_dispatcher"
+    ]
+    runtime_contract = (audit.get("gameActionAudit") or {}).get(
+        "runtimeHandleContract"
+    ) or {}
+    if runtime_dispatchers and (
+        not runtime_contract.get("report")
+        or not re.fullmatch(
+            r"[0-9a-fA-F]{64}",
+            str(runtime_contract.get("sha256") or ""),
+        )
+        or not {
+            str(row.get("method") or "") for row in runtime_dispatchers
+        }.issubset(set(runtime_contract.get("dispatcherMethods") or []))
+    ):
+        raise RuntimeError(
+            f"validator={validator} failed: gate=runtime_handle_contract "
+            f"expected=complete_binary_dispatch_family actual=invalid "
+            f"source={repo_path(lua_audit_path)}"
+        )
     return {
         "validator": validator,
         "status": "validated",
@@ -3383,7 +3405,13 @@ def load_lua_story_playback_evidence(
         "scannedPlaybackCalls": len(calls),
         "acceptedExactPlaybackCalls": accepted,
         "rejectedCaseMismatchCalls": rejected,
-        "unresolvedPlaybackCalls": len(calls) - len(accepted) - len(rejected),
+        "runtimeHandleDispatcherCalls": runtime_dispatchers,
+        "runtimeHandleDispatcherCallCount": len(runtime_dispatchers),
+        "runtimeHandleDispatcherFamilyCount": 1 if runtime_dispatchers else 0,
+        "runtimeHandleContract": runtime_contract,
+        "unresolvedPlaybackCalls": (
+            len(calls) - len(accepted) - len(rejected) - len(runtime_dispatchers)
+        ),
         "acceptedTableCarrierCalls": sum(
             1 for row in accepted if row.get("literalResolution") == "table_field_singleton"
         ),
@@ -3393,6 +3421,8 @@ def load_lua_story_playback_evidence(
             "playback. A mission/quest attachment is admitted only when the same "
             "resolved original table row co-carries that identity; otherwise Lua "
             "does not supply mission ownership or Story order. "
+            "Binary-proven cinematic-handle calls are one polymorphic runtime "
+            "dispatcher family and are not counted as unresolved authored references. "
             "Case-folded matches create no route without matching installed-binary proof."
         ),
     }
@@ -6665,6 +6695,12 @@ def build_story_binding_coverage(
             "rejectedLuaCaseMismatchCalls": len(
                 lua_playback_evidence["rejectedCaseMismatchCalls"]
             ),
+            "runtimeLuaHandleDispatcherCalls":
+                lua_playback_evidence["runtimeHandleDispatcherCallCount"],
+            "runtimeLuaHandleDispatcherFamilies":
+                lua_playback_evidence["runtimeHandleDispatcherFamilyCount"],
+            "unresolvedLuaAuthoredPlaybackCalls":
+                lua_playback_evidence["unresolvedPlaybackCalls"],
             "missionStateDependencyStoryFiles": len(
                 mission_state_dependency_keys
             ),
@@ -6829,6 +6865,8 @@ def build_story_binding_coverage(
         f"- Shipped-Lua Story playback calls scanned: `{counts['scannedLuaStoryPlaybackCalls']}`",
         f"- Exact-case Lua playback calls admitted: `{counts['acceptedLuaExactPlaybackCalls']}`",
         f"- Case-mismatched Lua calls rejected by installed-binary proof: `{counts['rejectedLuaCaseMismatchCalls']}`",
+        f"- Runtime Lua handle dispatcher branches: `{counts['runtimeLuaHandleDispatcherCalls']}` in `{counts['runtimeLuaHandleDispatcherFamilies']}` polymorphic queue family",
+        f"- Unresolved authored Lua playback references: `{counts['unresolvedLuaAuthoredPlaybackCalls']}`",
         f"- Exact root playback alias rows: `{counts['rootPlaybackAliasRows']}`",
         f"- TimelineAsset Story files reached by those aliases: `{counts['rootPlaybackAliasFiles']}`",
         f"- Alias rows composed with an independently connected root playback route: `{counts['composedRootPlaybackAliasRows']}`",

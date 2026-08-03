@@ -27,20 +27,22 @@
 
 - all direct `GameAction.*` calls: `72` across `36` methods
 - Story-playback calls: `10` across `4` modules
+- authored playback references: `3`
+- binary-proven runtime handle dispatch branches: `7` in `1` queue family
 - registry keys used for exact-case validation: `10895`
 - `case_mismatch_registry_match`: `1`
 - `exact_registry_match`: `2`
-- `not_story_shaped`: `7`
+- `runtime_payload_not_static_story_id`: `7`
 
 | module | line | GameAction | first argument | resolution | registry | nearby tables |
 | --- | ---: | --- | --- | --- | --- | --- |
-| `LuaSystem/CinematicSystem.lua` | 74 | `DoPlayDialogByHandle` | `handle` | `unresolved_expression` | `not_story_shaped` |  |
-| `LuaSystem/CinematicSystem.lua` | 76 | `DoPlayCutsceneByHandle` | `handle` | `unresolved_expression` | `not_story_shaped` |  |
-| `LuaSystem/CinematicSystem.lua` | 78 | `PlayCGByHandle` | `handle` | `unresolved_expression` | `not_story_shaped` |  |
-| `LuaSystem/CinematicSystem.lua` | 80 | `StartRemoteCommByHandle` | `handle` | `unresolved_expression` | `not_story_shaped` |  |
-| `LuaSystem/CinematicSystem.lua` | 82 | `ShowNarrativeBlackScreenByHandle` | `handle` | `unresolved_expression` | `not_story_shaped` |  |
-| `LuaSystem/CinematicSystem.lua` | 84 | `ShowUIReadingPopPanelByHandle` | `handle` | `unresolved_expression` | `not_story_shaped` |  |
-| `LuaSystem/CinematicSystem.lua` | 86 | `DoPlayForceSNSByHandle` | `handle` | `unresolved_expression` | `not_story_shaped` |  |
+| `LuaSystem/CinematicSystem.lua` | 74 | `DoPlayDialogByHandle` | `handle` | `runtime_handle_payload` | `runtime_payload_not_static_story_id` |  |
+| `LuaSystem/CinematicSystem.lua` | 76 | `DoPlayCutsceneByHandle` | `handle` | `runtime_handle_payload` | `runtime_payload_not_static_story_id` |  |
+| `LuaSystem/CinematicSystem.lua` | 78 | `PlayCGByHandle` | `handle` | `runtime_handle_payload` | `runtime_payload_not_static_story_id` |  |
+| `LuaSystem/CinematicSystem.lua` | 80 | `StartRemoteCommByHandle` | `handle` | `runtime_handle_payload` | `runtime_payload_not_static_story_id` |  |
+| `LuaSystem/CinematicSystem.lua` | 82 | `ShowNarrativeBlackScreenByHandle` | `handle` | `runtime_handle_payload` | `runtime_payload_not_static_story_id` |  |
+| `LuaSystem/CinematicSystem.lua` | 84 | `ShowUIReadingPopPanelByHandle` | `handle` | `runtime_handle_payload` | `runtime_payload_not_static_story_id` |  |
+| `LuaSystem/CinematicSystem.lua` | 86 | `DoPlayForceSNSByHandle` | `handle` | `runtime_handle_payload` | `runtime_payload_not_static_story_id` |  |
 | `Phase/GenderChange/PhaseGenderChange.lua` | 104 | `PlayCutscene` | `CUT_SCENE_ID` | `module_constant` | `exact_registry_match` |  |
 | `Phase/GenderSelect/PhaseGenderSelect.lua` | 75 | `PlayCutsceneAndGetHandle` | `EnterCutsceneId` | `module_constant` | `case_mismatch_registry_match` |  |
 | `UI/Panels/ActivitySkipChapter1Confirm/ActivitySkipChapter1ConfirmCtrl.lua` | 97 | `StartDialog` | `bindDlgId` | `table_field_singleton` | `exact_registry_match` | skipChapterTable |
@@ -48,7 +50,7 @@
 Evidence boundary:
 
 - **scope:** All direct GameAction.* calls in each unique Lua module are enumerated. The Story subset is a bounded allowlist of native playback entry points.
-- **literalResolution:** Direct quoted arguments and simple local string assignments are resolved. A simple Tables.<name> row field is also resolved when the current original table has exactly one non-empty candidate; multi-row fields, function parameters, handles, concatenation, and general control flow remain unresolved.
+- **literalResolution:** Direct quoted arguments and simple local string assignments are resolved. A simple Tables.<name> row field is also resolved when the current original table has exactly one non-empty candidate; multi-row fields, function parameters, concatenation, and general control flow remain unresolved. Calls accepting the binary-proven cinematic queue handle are classified as one runtime dispatcher family, not as unresolved authored Story references.
 - **case:** Exact registry spelling is proven separately from a case-folded candidate. A case mismatch is never promoted to a Story binding.
 - **ownership:** A Lua call proves that the controller owns playback. It creates no mission/quest attachment unless the same consumed route carries an exact mission or quest identity.
 - **nearbyTables:** Table names within a bounded source window are triage hints, not data-flow proof.

@@ -1073,12 +1073,20 @@ traces `SkipChapterTable[skip_chapter_1].bindDlgId` through the shipped
 row co-carries `missionId=e5m1`, so `dlg_e5m0d5_1` gains a mission-level Lua
 playback attachment and both the Lua and original table files appear in Mission
 Pipeline. One case-mismatched literal remains rejected only after the installed
-GameAssembly/metadata audit proves case-sensitive `StringPathHash` resolution;
-seven handle expressions remain unresolved. Multi-row table fields stay
-candidates unless their lookup key is proven. Every row carries source hashes,
-line, typed native entry, audit hash, and a fail-closed validator result. Lua
-without a same-row mission/quest foreign key still proves controller playback
-only, never Story order; OCR and manual order do not participate.
+GameAssembly/metadata audit proves case-sensitive `StringPathHash` resolution.
+The other seven calls are not unresolved authored references: one structural
+native audit proves they are branches of the same polymorphic cinematic queue.
+`CinematicQueueItemDataBase` carries `cinematicId`, the handle carries `id` plus
+`data`, and seven typed payload classes expose their identity through getters
+selected by `queueItemType`. Current GameAssembly bodies map all seven
+dispatchers and the direct enqueue edge. Lua therefore contributes one runtime
+dispatcher family with zero unresolved authored playback references. The next
+ownership step is generic producer tracing from native queue-item construction
+back to an original row that co-carries mission/quest identity. Multi-row table
+fields stay candidates unless their lookup key is proven. Every row carries
+source hashes, line, typed native entry, audit hash, and a fail-closed validator
+result. Lua without a same-row mission/quest foreign key still proves controller
+playback only, never Story order; OCR and manual order do not participate.
 
 ## Remaining gaps
 

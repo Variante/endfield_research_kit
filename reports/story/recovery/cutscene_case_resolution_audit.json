@@ -8,7 +8,7 @@
     "metadataBytes": 62925560,
     "metadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
     "luaAudit": "D:\\fluffy-dump\\reports\\mission_order\\lua_consumer_reference_audit.json",
-    "luaAuditSha256": "967386730ed30c8e9619a0b05f093a8e9f5d1689ee4ea91530a90d00ac242648",
+    "luaAuditSha256": "aec42f388f182da11428de9178ce688fe8712c6e3bd03b06defa7fd51f1ead08",
     "ifixAudit": "D:\\fluffy-dump\\reports\\story\\recovery\\current_ifix_mission_graph_audit.json",
     "ifixPatchSha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21"
   },
@@ -21,6 +21,7 @@
     "classification": "story_playback",
     "playbackKind": "cutscene",
     "argumentSemantics": "story_id",
+    "playbackRole": "authored_reference",
     "firstArgument": "EnterCutsceneId",
     "literalResolution": "module_constant",
     "resolvedLiteral": "Cutscene_e0m0_1",

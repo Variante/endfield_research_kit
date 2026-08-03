@@ -45,7 +45,10 @@ override those defaults for one run.
   original table has one possible non-empty value; mission/quest ownership is
   admitted only from the same resolved row. Mission Pipeline validates Lua and
   table hashes and admits no case-folded match without a matching
-  installed-binary case-resolution audit.
+  installed-binary case-resolution audit. The cinematic-queue runtime audit
+  structurally discovers the native base/handle/payload contract, mapped
+  one-handle dispatchers, and enqueue edge; handle branches are one runtime
+  family rather than unresolved authored Story references.
 - Reuse Timeline/reference outputs only when their original inputs did not
   change.
 - The direct Story builder can take several minutes; allow 10–15 minutes for
@@ -83,6 +86,8 @@ Important Story components:
 - `timeline_action_evidence.py`: typed action/control evidence.
 - `mission_recovery.py`: mission and quest relationships.
 - `build_source_story_gap_queue.py`: actionable source-only recovery queue.
+- `story_recovery/build_cinematic_queue_runtime_audit.py`: repeatable installed
+  metadata/GameAssembly audit of the general cinematic handle family.
 - `build_spaceship_story_content_audit.py`: exact typed spacecraft DialogTree
   and character profile-voice non-mission classification, refreshed by
   `refresh_evidence.py`.
