@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "gameAssembly": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
+    "gameAssemblyBytes": 280436712,
+    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "metadata": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+    "metadataBytes": 62925560,
+    "metadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "luaAudit": "D:\\fluffy-dump\\reports\\mission_order\\lua_consumer_reference_audit.json",
+    "luaAuditSha256": "69320a1db95bb02de24880fc90e61e0828bd952d701cb2a3d9beef0513a954ee",
+    "ifixAudit": "D:\\fluffy-dump\\reports\\story\\recovery\\current_ifix_mission_graph_audit.json",
+    "ifixPatchSha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21"
+  },
+  "luaPlayback": {
+    "module": "Phase/GenderSelect/PhaseGenderSelect.lua",
+    "sourcePath": "scratch/animestudio/zhuangfy_lizi_lua_dither_20260724/Lua/Data/LuaScripts/Phase/GenderSelect/PhaseGenderSelect.lua",
+    "sourceSha256": "a56b82797427f179d4f21e6c28989be8ab8ccfaedac1b06d2bd5d286e243e368",
+    "line": 75,
+    "method": "PlayCutsceneAndGetHandle",
+    "classification": "story_playback",
+    "playbackKind": "cutscene",
+    "argumentSemantics": "story_id",
+    "firstArgument": "EnterCutsceneId",
+    "literalResolution": "module_constant",
+    "resolvedLiteral": "Cutscene_e0m0_1",
+    "registryStatus": "case_mismatch_registry_match",
+    "canonicalStoryKey": "cutscene_e0m0_1",
+    "nearbyTables": [],
+    "context": "self.m_timelineHandle = GameAction.PlayCutsceneAndGetHandle(EnterCutsceneId, function()"
+  },
+  "canonicalRegistryKey": "cutscene_e0m0_1",
+  "methodChain": {
+    "gameAction": {
+      "methodIndex": 32855,
+      "type": "Beyond.Gameplay.Actions.GameAction",
+      "method": "PlayCutsceneAndGetHandle",
+      "token": "0x06008058",
+      "entryPoint": "0x1875e6aac",
+      "pointerSource": "codegen_module",
+      "methodSpecs": []
+    },
+    "playCutscene": {
+      "methodIndex": 61163,
+      "type": "Beyond.Gameplay.Core.CutsceneManager",
+      "method": "PlayCutscene",
+      "token": "0x0600eeec",
+      "entryPoint": "0x186db94cc",
+      "pointerSource": "codegen_module",
+      "methodSpecs": []
+    },
+    "checkCanPlay": {
+      "methodIndex": 61164,
+      "type": "Beyond.Gameplay.Core.CutsceneManager",
+      "method": "CheckCanPlay",
+      "token": "0x0600eeed",
+      "entryPoint": "0x186db8a94",
+      "pointerSource": "codegen_module",
+      "methodSpecs": []
+    },
+    "genderedId": {
+      "methodIndex": 6530,
+      "type": "Beyond.Gameplay.NarrativeUtils",
+      "method": "GetGenderedCutsceneId",
+      "token": "0x06001983",
+      "entryPoint": "0x1835fd630",
+      "pointerSource": "codegen_module",
+      "methodSpecs": []
+    },
+    "getCinematicData": {
+      "methodIndex": 60787,
+      "type": "Beyond.Gameplay.Core.CinematicTimelineManagerBase",
+      "method": "TryGetCinematicData",
+      "token": "0x0600ed74",
+      "entryPoint": "0x1848511c0",
+      "pointerSource": "generic_method_pointer",
+      "methodSpecs": [
+        {
+          "methodIndex": 60787,
+          "type": "Beyond.Gameplay.Core.CinematicTimelineManagerBase",
+          "method": "TryGetCinematicData",
+          "token": "0x0600ed74",
+          "genericInstantiation": true,
+          "genericMethodPointerSlot": 476449,
+          "methodSpecIndex": 507962
+        }
+      ]
+    },
+    "loadByName": {
+      "methodIndex": 60785,
+      "type": "Beyond.Gameplay.Core.CinematicTimelineManagerBase",
+      "method": "_TryLoadCutsceneDataByName",
+      "token": "0x0600ed72",
+      "entryPoint": "0x184495b60",
+      "pointerSource": "generic_method_pointer",
+      "methodSpecs": [
+        {
+          "methodIndex": 60785,
+          "type": "Beyond.Gameplay.Core.CinematicTimelineManagerBase",
+          "method": "_TryLoadCutsceneDataByName",
+          "token": "0x0600ed72",
+          "genericInstantiation": true,
+          "genericMethodPointerSlot": 476450,
+          "methodSpecIndex": 507964
+        }
+      ]
+    },
+    "cachedTryLoad": {
+      "methodIndex": 296332,
+      "type": "Beyond.Resource.CachedPathAssetLoader",
+      "method": "TryLoad",
+      "token": "0x06000f27",
+      "entryPoint": "0x18304bb40",
+      "pointerSource": "generic_method_pointer",
+      "methodSpecs": [
+        {
+          "methodIndex": 296332,
+          "type": "Beyond.Resource.CachedPathAssetLoader",
+          "method": "TryLoad",
+          "token": "0x06000f27",
+          "genericInstantiation": true,
+          "genericMethodPointerSlot": 474628,
+          "methodSpecIndex": 506129
+        }
+      ]
+    },
+    "cachedTypedTryLoad": {
+      "methodIndex": 296335,
+      "type": "Beyond.Resource.CachedPathAssetLoader",
+      "method": "TryLoad",
+      "token": "0x06000f2a",
+      "entryPoint": "0x18304bbd0",
+      "pointerSource": "codegen_module",
+      "methodSpecs": []
+    },
+    "stringPathHashCtor": {
+      "methodIndex": 296749,
+      "type": "Beyond.Resource.StringPathHash",
+      "method": ".ctor",
+      "token": "0x060010c8",
+      "entryPoint": "0x1868c15bc",
+      "pointerSource": "codegen_module",
+      "methodSpecs": []
+    }
+  },
+  "callEvidence": [
+    {
+      "caller": "gameAction",
+      "callee": "playCutscene",
+      "callerEntryPoint": "0x1875e6aac",
+      "calleeEntryPoint": "0x186db94cc",
+      "scanBytes": 408,
+      "nextEntryPoint": "0x1875e6c44"
+    },
+    {
+      "caller": "playCutscene",
+      "callee": "checkCanPlay",
+      "callerEntryPoint": "0x186db94cc",
+      "calleeEntryPoint": "0x186db8a94",
+      "scanBytes": 792,
+      "nextEntryPoint": "0x186db97e4"
+    },
+    {
+      "caller": "checkCanPlay",
+      "callee": "genderedId",
+      "callerEntryPoint": "0x186db8a94",
+      "calleeEntryPoint": "0x1835fd630",
+      "scanBytes": 196,
+      "nextEntryPoint": "0x186db8b58"
+    },
+    {
+      "caller": "checkCanPlay",
+      "callee": "getCinematicData",
+      "callerEntryPoint": "0x186db8a94",
+      "calleeEntryPoint": "0x1848511c0",
+      "scanBytes": 196,
+      "nextEntryPoint": "0x186db8b58"
+    },
+    {
+      "caller": "getCinematicData",
+      "callee": "loadByName",
+      "callerEntryPoint": "0x1848511c0",
+      "calleeEntryPoint": "0x184495b60",
+      "scanBytes": 128,
+      "nextEntryPoint": "0x184851240"
+    },
+    {
+      "caller": "loadByName",
+      "callee": "cachedTryLoad",
+      "callerEntryPoint": "0x184495b60",
+      "calleeEntryPoint": "0x18304bb40",
+      "scanBytes": 1040,
+      "nextEntryPoint": "0x184495f70"
+    },
+    {
+      "caller": "cachedTryLoad",
+      "callee": "cachedTypedTryLoad",
+      "callerEntryPoint": "0x18304bb40",
+      "calleeEntryPoint": "0x18304bbd0",
+      "scanBytes": 144,
+      "nextEntryPoint": "0x18304bbd0"
+    }
+  ],
+  "instructionEvidence": {
+    "getGenderedCutsceneId": {
+      "originalIdSaved": true,
+      "originalIdPassedIntoGenderCandidate": true,
+      "originalIdReturnedOnFallback": true,
+      "caseConversionCalls": []
+    },
+    "stringPathHashStringConstructor": {
+      "entryPoint": "0x1868c15bc",
+      "rawStringHashEntryPoint": "0x182f75f50",
+      "directCallConfirmed": true
+    },
+    "cachedPathAssetLoaderTypedTryLoad": {
+      "entryPoint": "0x18304bbd0",
+      "rawStringHashEntryPoint": "0x182f75f50",
+      "directCallConfirmed": true
+    },
+    "rawStringHash": {
+      "entryPoint": "0x182f75f50",
+      "originalStringSaved": true,
+      "originalStringPassedToHash": true,
+      "hashResultReturned": true,
+      "caseConversionCalls": []
+    }
+  },
+  "ifixBoundary": {
+    "fixedMethodCount": 30,
+    "reviewedResolverMatches": []
+  },
+  "conclusion": {
+    "caseResolution": "case_sensitive",
+    "luaLiteral": "Cutscene_e0m0_1",
+    "canonicalStoryKey": "cutscene_e0m0_1",
+    "literalResolvesToCanonicalKey": false,
+    "graphAction": "reject_case_mismatch_no_playback_binding",
+    "ownershipAction": "none",
+    "reason": "The original Lua spelling is preserved through gender selection and resource-path construction, then converted directly to StringPathHash without case folding. The mismatched spelling therefore cannot prove playback of the lowercase registry key in this build."
+  },
+  "boundary": "This rejects one playback edge for the reviewed installed build. It does not infer mission ownership, and it must be rerun and reviewed after any binary, metadata, Lua-audit, or IFix fingerprint changes."
+}

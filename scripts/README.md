@@ -39,6 +39,10 @@ override those defaults for one run.
   walks reusable AND/OR/NOT/ALL and comparison trees to exact leaves; unknown,
   missing, cyclic, and malformed children fail closed instead of receiving
   object-specific rules.
+- Shipped-Lua Story playback is likewise corpus-driven: the Lua consumer audit
+  enumerates typed `GameAction` calls and exact literals, while Mission Pipeline
+  validates source hashes and admits no case-folded match without a matching
+  installed-binary case-resolution audit.
 - Reuse Timeline/reference outputs only when their original inputs did not
   change.
 - The direct Story builder can take several minutes; allow 10–15 minutes for

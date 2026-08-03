@@ -213,6 +213,8 @@ def scan_game_action_calls(
     *,
     rel: str,
     story_keys: set[str],
+    source_path: str = "",
+    source_sha256: str = "",
 ) -> list[dict[str, Any]]:
     assignments = {
         match.group(1): match.group(3)
@@ -251,6 +253,8 @@ def scan_game_action_calls(
         rows.append(
             {
                 "module": rel,
+                "sourcePath": source_path or None,
+                "sourceSha256": source_sha256 or None,
                 "line": line_number(text, match.start()),
                 "method": method,
                 "classification": "story_playback" if playback else "other_game_action",
@@ -449,7 +453,13 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     for rel, row in sorted(modules.items()):
         text = str(row.get("text") or "")
         game_action_calls.extend(
-            scan_game_action_calls(text, rel=rel, story_keys=story_keys)
+            scan_game_action_calls(
+                text,
+                rel=rel,
+                story_keys=story_keys,
+                source_path=str(row.get("canonicalPath") or ""),
+                source_sha256=str(row.get("canonicalSha256") or ""),
+            )
         )
         counts, examples = scan_references(text, rel=rel, example_limit=args.example_limit)
         merge_counter_dicts(global_counts, counts)
@@ -560,6 +570,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     playback_registry_counts = Counter(row["registryStatus"] for row in playback_calls)
 
     return {
+        "schemaVersion": "luaConsumerReferenceAudit.v2",
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "metadata": {
             "luaRoots": [repo_rel(root) for root in lua_roots],

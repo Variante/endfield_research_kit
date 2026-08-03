@@ -384,6 +384,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "metadataBytes": args.metadata.stat().st_size,
             "metadataSha256": metadata_sha,
             "luaAudit": str(args.lua_audit),
+            "luaAuditSha256": sha256_path(args.lua_audit),
             "ifixAudit": str(args.ifix_audit),
             "ifixPatchSha256": ifix_sha,
         },

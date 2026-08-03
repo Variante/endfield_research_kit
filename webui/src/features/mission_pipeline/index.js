@@ -46,6 +46,9 @@
       connectedStory: "Story connected",
       unlinkedStory: "Story unassigned",
       nativePlaybackGaps: "exact-native gaps",
+      luaPlaybackAccepted: "Lua playback admitted",
+      luaPlaybackRejected: "Lua case rejected",
+      luaPlaybackAudit: "Shipped-Lua census",
       rootPlaybackAliases: "root playback aliases",
       exactDialogRootAlias: "exact DialogTree root alias",
       exactDialogRootAliasBoundary: "byte-identical payload; no activation or server branch-selection claim",
@@ -1732,6 +1735,8 @@
       [storyCounts.connectedUniqueStoryFiles, t("connectedStory")],
       [storyCounts.unlinkedUniqueStoryFiles, t("unlinkedStory")],
       [storyCounts.unlinkedNativePlaybackFiles, t("nativePlaybackGaps")],
+      [storyCounts.acceptedLuaExactPlaybackCalls, t("luaPlaybackAccepted")],
+      [storyCounts.rejectedLuaCaseMismatchCalls, t("luaPlaybackRejected")],
       [storyCounts.rootPlaybackAliasRows, t("rootPlaybackAliases")],
       [storyCounts.missionlessSubGameStoryFiles, t("missionlessSubGameStory")],
       [storyCounts.missionlessNativeRuntimeStoryFiles, t("missionlessRuntimeStory")],
@@ -1770,6 +1775,7 @@
       <span>${esc(t("sourceChangedFiles"))}: ${Number(source.persistentChangedBaseFileCount || changedFiles.length).toLocaleString()} / ${Number(source.streamingFileCount || 0).toLocaleString()}</span>
       ${changedFiles.length ? `<code>${esc(changedFiles.join(", "))}</code>` : ""}
       <span>${esc(t("sourceMissingFiles"))}: ${Number(missingFiles.length).toLocaleString()}</span>
+      ${state.index?.storyCoverage?.luaStoryPlaybackEvidence?.status ? `<span>${esc(t("luaPlaybackAudit"))}: <strong>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.status)}</strong> 路 ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.scannedPlaybackCalls || 0).toLocaleString()} calls 路 <code>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.auditSha256 || "")}</code></span>` : ""}
     `;
   }
 
