@@ -15,6 +15,81 @@ import build_native_receiver_activation_frontier as frontier  # noqa: E402
 
 
 class NativeReceiverActivationFrontierTests(unittest.TestCase):
+    @staticmethod
+    def encounter_host(script_id: str) -> dict:
+        prefix = f"@{script_id}_"
+        properties = [
+            {
+                "name": prefix + suffix,
+                "valueType": 1,
+                "atomCount": 1,
+                "atoms": [{"valueBit64": 0, "text": ""}],
+            }
+            for suffix in frontier.ENCOUNTER_REQUIRED_BOOL_SUFFIXES
+        ]
+        properties.extend([
+            {
+                "name": prefix + "enemy_list",
+                "valueType": 14,
+                "atomCount": 0,
+                "atoms": [],
+            },
+            {
+                "name": prefix + "spawner_id",
+                "valueType": 50,
+                "atomCount": 1,
+                "atoms": [{"valueBit64": 1002, "text": ""}],
+            },
+        ])
+        return {
+            "sourceFile": "source/leveldata.bin",
+            "briefData": {"properties": properties},
+        }
+
+    def test_encounter_contract_is_structural_and_attaches_spawner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            spawner_root = Path(tmp)
+            level_dir = spawner_root / "map_fixture"
+            level_dir.mkdir()
+            spawner = level_dir / "sc_map_fixture_1002.json"
+            spawner.write_bytes(b"fixture")
+            rows = frontier.encounter_controller_contexts(
+                "map_fixture",
+                "1001",
+                [self.encounter_host("1001")],
+                spawner_root=spawner_root,
+            )
+        self.assertEqual(1, len(rows))
+        self.assertEqual(
+            "encounter_controller_property_contract",
+            rows[0]["classification"],
+        )
+        self.assertEqual("1002", rows[0]["spawnerId"])
+        self.assertEqual(2, len(rows[0]["relatedFiles"]))
+        self.assertFalse(rows[0]["storyBinding"])
+        self.assertFalse(rows[0]["orderEvidence"])
+
+    def test_encounter_contract_fails_closed_on_wrong_native_shape(self) -> None:
+        host = self.encounter_host("1001")
+        host["briefData"]["properties"][0]["valueType"] = 2
+        self.assertEqual(
+            [],
+            frontier.encounter_controller_contexts(
+                "map_fixture",
+                "1001",
+                [host],
+                spawner_root=Path("missing"),
+            ),
+        )
+
+    def test_frontend_renders_encounter_context_as_non_owning_files(self) -> None:
+        source = (
+            ROOT / "webui" / "src" / "features" / "mission_pipeline" / "index.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("activation.encounterControllerContexts", source)
+        self.assertIn('t("relatedOriginalFile")', source)
+        self.assertIn('t("encounterControllerBoundary")', source)
+
     def test_frontend_renders_objective_consumer_as_observation_only(self) -> None:
         source = (
             ROOT / "webui" / "src" / "features" / "mission_pipeline" / "index.js"
@@ -309,6 +384,27 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                             "hostMissionId": None,
                         }
                     ],
+                    "encounterControllerContexts": [
+                        {
+                            "classification": (
+                                "encounter_controller_property_contract"
+                            ),
+                            "mappingId": "fixture-mapping",
+                            "runtimeType": "EncounterBase<T>",
+                            "dataType": "EncounterData",
+                            "spawnerId": "1002",
+                            "relatedFiles": [
+                                {
+                                    "kind": "encounter_spawner_config",
+                                    "sourceFile": "source/spawner.bin",
+                                    "relationship": (
+                                        "typed_spawner_id_property"
+                                    ),
+                                }
+                            ],
+                            "evidenceBoundary": "encounter context only",
+                        }
+                    ],
                     "subGameBindings": [],
                     "dungeonSceneContexts": [
                         {
@@ -385,6 +481,14 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         ]
         self.assertEqual("Manual", annotation["startTypeName"])
         self.assertNotIn("missionOwnerStatus", annotation)
+        encounter = annotation["encounterControllerContexts"][0]
+        self.assertEqual("1002", encounter["spawnerId"])
+        self.assertEqual(
+            "source/spawner.bin",
+            encounter["relatedFiles"][0]["sourceFile"],
+        )
+        self.assertFalse(encounter["storyBinding"])
+        self.assertFalse(encounter["orderEvidence"])
         self.assertFalse(
             annotation["dungeonSceneContexts"][0]["receiverIsBoundScript"]
         )

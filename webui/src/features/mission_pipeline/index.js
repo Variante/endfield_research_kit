@@ -89,6 +89,10 @@
       activationClass: "static activation class",
       startPolicy: "LevelScript start policy",
       levelDataContainer: "validated LevelData container",
+      encounterController: "binary-proven Encounter controller",
+      encounterSpawner: "typed Encounter spawner",
+      relatedOriginalFile: "related original-data file",
+      encounterControllerBoundary: "Encounter type and related files are exact; mission ownership, Story activation, branching, and order remain unresolved.",
       dungeonSceneContext: "exact Dungeon/SubGame scene context",
       boundReceiverScript: "receiver is bound script",
       siblingReceiverScript: "receiver is a sibling script",
@@ -766,6 +770,10 @@
       activationClass: "静态激活分类",
       startPolicy: "LevelScript 启动策略",
       levelDataContainer: "已验证的 LevelData 容器",
+      encounterController: "二进制已证实的遭遇战控制器",
+      encounterSpawner: "强类型遭遇战生成器",
+      relatedOriginalFile: "相关原始数据文件",
+      encounterControllerBoundary: "遭遇战类型及相关文件已有精确证据；使命归属、剧情激活、分支和顺序仍未解决。",
       dungeonSceneContext: "精确 Dungeon/SubGame 场景上下文",
       boundReceiverScript: "接收器就是绑定脚本",
       siblingReceiverScript: "接收器是同场景兄弟脚本",
@@ -3923,6 +3931,8 @@
           const activation = row.activationFrontier || {};
           const activationHosts = (activation.levelDataHosts || [])
             .filter((host) => host && host.fileName);
+          const encounterContexts = (activation.encounterControllerContexts || [])
+            .filter((context) => context && context.classification);
           const nominalHostComparison = activation.nominalMissionHostComparison || {};
           const nominalStoryCandidates = (nominalHostComparison.storyCandidates || [])
             .filter((candidate) => candidate && candidate.nominalMissionId);
@@ -4029,6 +4039,12 @@
               ${activationTasks.length ? `<small>${esc(t("taskConditionBoundary"))}</small>` : ""}
               <div><span>${esc(t("activationClass"))}</span><i aria-hidden="true">→</i><code>${esc(String(activation.activationClass).replaceAll("_", " "))}</code><b>${esc(t("noMissionOwner"))}</b></div>
               <div><span>${esc(t("startPolicy"))}</span><i aria-hidden="true">→</i><code>${esc(`${activation.startTypeName || "unresolved"} · shapes ${activation.startShapeListStatus || "unresolved"}/${activation.startShapeListCount ?? 0} · taskMap ${activation.taskMapStatus || "unresolved"}/${activation.taskMapCount ?? 0}`)}</code></div>
+              ${encounterContexts.flatMap((context) => [
+                `<div><span>${esc(t("encounterController"))}</span><i aria-hidden="true">→</i><code>${esc(context.runtimeType || "EncounterBase<T>")}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(`${context.dataType || "EncounterData"} · ${context.mappingId || ""}`)}</small></div>`,
+                ...(context.spawnerId ? [`<div><span>${esc(t("encounterSpawner"))}</span><i aria-hidden="true">→</i><code>${esc(context.spawnerId)}</code><b>${esc(t("nonOwningCrossReference"))}</b></div>`] : []),
+                ...(context.relatedFiles || []).filter((related) => related && related.sourceFile).map((related) => `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(related.sourceFile)}</code><b>${esc(String(related.kind || "source").replaceAll("_", " "))}</b><small>${esc(String(related.relationship || "").replaceAll("_", " "))}</small></div>`),
+              ]).join("")}
+              ${encounterContexts.length ? `<small>${esc(t("encounterControllerBoundary"))}</small>` : ""}
               ${activationHosts.map((host) => `<div><span>${esc(t("levelDataContainer"))}</span><i aria-hidden="true">→</i><code>${esc(host.fileName)}</code><b>${esc(host.hostMissionId || "generic")}</b><small>${esc(`${host.dictionaryEntryCount ?? "?"} LevelScripts`)}</small></div>`).join("")}
               ${nominalStoryCandidates.map((candidate) => {
                 const matchingHosts = nominalMissionHosts.filter((host) => host.missionId === candidate.nominalMissionId);

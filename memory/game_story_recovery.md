@@ -15,6 +15,7 @@ Latest CN reports:
 | Files with a normalized trigger/context route | 4,462 (80.2%) |
 | Unlinked files | 1,323 |
 | Unlinked files with exact native playback | 156 |
+| Encounter-controller contexts | 2 scripts / 23 Story keys / 4 related source files |
 | Exact non-mission content | 279 (278 spacecraft/profile + 1 guide runtime) |
 | Actionable core-isolated files | 32, all in the other bucket |
 | Partial-order mission rows | 487 |
@@ -151,6 +152,16 @@ Pipeline renders those nested fields, getter linkage/range, both branch arms,
 and the exact LevelScript source file. Payloads must consume exactly, apart
 from the already proven outer action-map trailer, so changed or malformed
 shapes remain unresolved.
+The current original binary also identifies one reusable non-owning receiver
+family: `EncounterBase<T>` owns the enabled/activated/completed/failed,
+battle-completed, and first-intro lifecycle properties, while `EncounterData`
+owns the enemy-list and typed spawner fields. A structural classifier requires
+all eight exact script-prefixed properties and their native value shapes; it
+does not inspect host or Story filenames. This recognizes scripts
+`10200260001` and `23100270001`, covering 23 Story keys, and attaches their two
+validated LevelData hosts plus the two SpawnerConfig files named by the typed
+`spawner_id` values. Encounter activation still supplies no MissionRuntime
+foreign key, Story branch, or order edge.
 No current mission has Story
 targets on two different Branch sequence slots, so this adds zero Branch-derived
 Story-order edges rather than guessing them.
@@ -1031,7 +1042,9 @@ only.
 
 1. **Mission ownership:** 156 Story files have exact native playback but lack a
    mission/quest activation bridge. The unresolved surface is organized under
-   161 runtime receiver nodes and 185 receiver-to-Story placements.
+   161 runtime receiver nodes and 186 receiver-to-Story placements. Twenty-three
+   of those Story keys now have exact Encounter-controller and related-file
+   context, but remain unowned.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
@@ -1048,9 +1061,12 @@ only.
    evidence. A display order must remain separate from source proof.
 
 The highest-value missing source is a serialized server/runtime registry that
-contains both LevelScript and mission/quest identity. Repeating existing
-LevelScript, DialogTree, Timeline, teleport, proxy, or local carrier scans is
-unlikely to close the remaining ownership gap without changed inputs.
+contains both LevelScript and mission/quest identity. Next inspect other
+repeated typed LevelData property contracts and their native controller
+consumers, but publish them first as related system/file context. Repeating
+existing LevelScript, DialogTree, Timeline, teleport, proxy, Encounter, or
+local carrier scans is unlikely to close ownership without a new foreign key
+or changed inputs.
 
 Next work should trace the eight explicitly unmatched black-box rows through a
 new binary or serialized producer/consumer surface, without deriving placement
