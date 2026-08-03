@@ -15,7 +15,7 @@ Latest CN reports:
 | Files with a normalized trigger/context route | 4,462 (80.2%) |
 | Unlinked files | 1,323 |
 | Unlinked files with exact native playback | 156 |
-| Encounter-controller contexts | 2 scripts / 23 Story keys / 4 related source files |
+| Encounter-controller contexts | 5 receiver scripts / 7 modules / 27 Story keys / 9 related source files |
 | Exact non-mission content | 279 (278 spacecraft/profile + 1 guide runtime) |
 | Actionable core-isolated files | 32, all in the other bucket |
 | Partial-order mission rows | 487 |
@@ -156,11 +156,16 @@ The current original binary also identifies one reusable non-owning receiver
 family: `EncounterBase<T>` owns the enabled/activated/completed/failed,
 battle-completed, and first-intro lifecycle properties, while `EncounterData`
 owns the enemy-list and typed spawner fields. A structural classifier requires
-all eight exact script-prefixed properties and their native value shapes; it
-does not inspect host or Story filenames. This recognizes scripts
-`10200260001` and `23100270001`, covering 23 Story keys, and attaches their two
-validated LevelData hosts plus the two SpawnerConfig files named by the typed
-`spawner_id` values. Encounter activation still supplies no MissionRuntime
+all eight exact module-prefixed properties and their native value shapes; it
+does not inspect host, Story, or object filenames. Installed
+`LevelScriptModule.GetSaveKeyPrefixed` reads the LsmPtr module id from
+`this+0x18`, proving that this namespace may differ from the receiver
+LevelScript id. The current census recognizes seven modules across five
+receiver scripts and 27 Story keys. It attaches five validated receiver-host
+placements across three distinct LevelData files, plus the six existing
+SpawnerConfig files named by positive typed `spawner_id` values; the seventh
+contract has the valid zero/no-spawner form. Five module ids differ from their
+receiver script id. Encounter activation still supplies no MissionRuntime
 foreign key, Story branch, or order edge.
 No current mission has Story
 targets on two different Branch sequence slots, so this adds zero Branch-derived
@@ -1042,7 +1047,7 @@ only.
 
 1. **Mission ownership:** 156 Story files have exact native playback but lack a
    mission/quest activation bridge. The unresolved surface is organized under
-   161 runtime receiver nodes and 186 receiver-to-Story placements. Twenty-three
+   161 runtime receiver nodes and 186 receiver-to-Story placements. Twenty-seven
    of those Story keys now have exact Encounter-controller and related-file
    context, but remain unowned.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a

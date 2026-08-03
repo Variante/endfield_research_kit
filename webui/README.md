@@ -92,8 +92,10 @@ Rebuild Story data after editing overrides.
   visibly unresolved.
 - Exact native receiver cards recognize the reusable `EncounterBase<T>` /
   `EncounterData` property contract structurally and show its validated
-  LevelData host and typed SpawnerConfig dependency. These remain explicitly
-  non-owning and add no branch or order edge.
+  LevelData host, LsmPtr module namespace, receiver LevelScript, and typed
+  SpawnerConfig dependency. Module and receiver ids are kept distinct, zero
+  spawners are labeled explicitly, and these remain non-owning with no branch
+  or order edge.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

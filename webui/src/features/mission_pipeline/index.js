@@ -90,7 +90,11 @@
       startPolicy: "LevelScript start policy",
       levelDataContainer: "validated LevelData container",
       encounterController: "binary-proven Encounter controller",
+      encounterModuleNamespace: "Encounter LsmPtr module namespace",
+      moduleMatchesReceiver: "module id matches receiver id",
+      relatedModuleNamespace: "related module id",
       encounterSpawner: "typed Encounter spawner",
+      noConfiguredSpawner: "no configured spawner",
       relatedOriginalFile: "related original-data file",
       encounterControllerBoundary: "Encounter type and related files are exact; mission ownership, Story activation, branching, and order remain unresolved.",
       dungeonSceneContext: "exact Dungeon/SubGame scene context",
@@ -771,7 +775,11 @@
       startPolicy: "LevelScript 启动策略",
       levelDataContainer: "已验证的 LevelData 容器",
       encounterController: "二进制已证实的遭遇战控制器",
+      encounterModuleNamespace: "遭遇战 LsmPtr 模块命名空间",
+      moduleMatchesReceiver: "模块 ID 与接收脚本 ID 相同",
+      relatedModuleNamespace: "相关模块 ID",
       encounterSpawner: "强类型遭遇战生成器",
+      noConfiguredSpawner: "未配置生成器",
       relatedOriginalFile: "相关原始数据文件",
       encounterControllerBoundary: "遭遇战类型及相关文件已有精确证据；使命归属、剧情激活、分支和顺序仍未解决。",
       dungeonSceneContext: "精确 Dungeon/SubGame 场景上下文",
@@ -4041,7 +4049,8 @@
               <div><span>${esc(t("startPolicy"))}</span><i aria-hidden="true">→</i><code>${esc(`${activation.startTypeName || "unresolved"} · shapes ${activation.startShapeListStatus || "unresolved"}/${activation.startShapeListCount ?? 0} · taskMap ${activation.taskMapStatus || "unresolved"}/${activation.taskMapCount ?? 0}`)}</code></div>
               ${encounterContexts.flatMap((context) => [
                 `<div><span>${esc(t("encounterController"))}</span><i aria-hidden="true">→</i><code>${esc(context.runtimeType || "EncounterBase<T>")}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(`${context.dataType || "EncounterData"} · ${context.mappingId || ""}`)}</small></div>`,
-                ...(context.spawnerId ? [`<div><span>${esc(t("encounterSpawner"))}</span><i aria-hidden="true">→</i><code>${esc(context.spawnerId)}</code><b>${esc(t("nonOwningCrossReference"))}</b></div>`] : []),
+                `<div><span>${esc(t("encounterModuleNamespace"))}</span><i aria-hidden="true">→</i><code>${esc(context.moduleId || "—")}</code><b>${esc(context.moduleIdMatchesReceiverScript ? t("moduleMatchesReceiver") : t("relatedModuleNamespace"))}</b><small>${esc(`receiver LevelScript ${context.receiverScriptId || selector.listenerScriptId || "—"}`)}</small></div>`,
+                ...(context.spawnerId ? [`<div><span>${esc(t("encounterSpawner"))}</span><i aria-hidden="true">→</i><code>${esc(context.spawnerId)}</code><b>${esc(String(context.spawnerId) === "0" ? t("noConfiguredSpawner") : t("nonOwningCrossReference"))}</b></div>`] : []),
                 ...(context.relatedFiles || []).filter((related) => related && related.sourceFile).map((related) => `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(related.sourceFile)}</code><b>${esc(String(related.kind || "source").replaceAll("_", " "))}</b><small>${esc(String(related.relationship || "").replaceAll("_", " "))}</small></div>`),
               ]).join("")}
               ${encounterContexts.length ? `<small>${esc(t("encounterControllerBoundary"))}</small>` : ""}
