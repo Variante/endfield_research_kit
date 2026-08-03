@@ -116,6 +116,9 @@ or local source edits.
 - 4,462 have a normalized trigger/context route (**80.2%**).
 - 1,323 remain unlinked; 156 already have exact native playback but lack a
   mission/quest activation bridge.
+- All 258 named native branch predicates are operand-decoded where their
+  current binary layout is supported; the pipeline reports 263 semantic
+  predicates including inline forms, with 0 class-only and 0 unresolved.
 - The source-only graph is cycle-free, but proves order for only **1.52%** of
   possible within-mission scene pairs. It is a partial order, not a canonical
   full playthrough.

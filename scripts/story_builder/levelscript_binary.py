@@ -2713,17 +2713,65 @@ def _decode_boolean_compare_getter(payload: bytes) -> dict[str, Any]:
 
 
 def _decode_int_equal_getter(payload: bytes) -> dict[str, Any]:
-    value_a = _decode_i32_param(payload, 0)
+    value_a = _decode_i32_operand(payload, 0)
     if value_a is None:
         return {}
-    value_b = _decode_i32_param(payload, value_a[1])
+    value_b = _decode_i32_operand(payload, value_a[1])
     if value_b is None:
         return {}
-    return _finish_getter_fields(payload, value_b[1], {
+    has_getter_ref = any(
+        operand.get("operandKind") == "localGetterRef"
+        for operand in (value_a[0], value_b[0])
+    )
+    detail = {
         "operation": "Equal",
         "valueA": value_a[0],
         "valueB": value_b[0],
-        "payloadShape": "two-int-params-exact-eof",
+        "payloadShape": (
+            "two-int-operands-exact-eof"
+            if has_getter_ref
+            else "two-int-params-exact-eof"
+        ),
+    }
+    for label, operand in (("valueA", value_a[0]), ("valueB", value_b[0])):
+        getter_local_id = operand.get("getterLocalId")
+        if isinstance(getter_local_id, int):
+            detail[f"{label}GetterLocalId"] = getter_local_id
+    return _finish_getter_fields(payload, value_b[1], detail)
+
+
+def _decode_i32_operand(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode one polymorphic ``Param<int>`` operand exactly.
+
+    The installed serializer uses the same field for authored constants and
+    local getter references.  A getter reference has a distinct 17-byte
+    envelope, so keep its identity instead of interpreting its local id as a
+    constant value.
+    """
+    getter_ref = _decode_local_getter_ref(payload, cursor)
+    if getter_ref is not None:
+        return {
+            "operandKind": "localGetterRef",
+            "getterLocalId": getter_ref[0],
+        }, getter_ref[1]
+    value = _decode_i32_param(payload, cursor)
+    if value is None:
+        return None
+    return value
+
+
+def _decode_get_condition_result_getter(payload: bytes) -> dict[str, Any]:
+    """Decode the embedded root ``GameCondition`` union used by this getter."""
+    decoded = _decode_levelscript_task_condition(payload, 0, len(payload))
+    if decoded is None:
+        return {}
+    condition, end = decoded
+    return _finish_getter_fields(payload, end, {
+        "condition": condition,
+        "payloadShape": "root-game-condition-union-exact-fields",
     })
 
 
@@ -5827,6 +5875,7 @@ def decode_levelscript_record_payload(
         (0x0013, 0x0A),
         (0x0016, 0x09),
         (0x001F, 0x0A),
+        (0x004E, 0x08),
         (0x0049, 0x0A),
         (0x0100, 0x09),
         (0x012F, 0x08),
@@ -5863,6 +5912,12 @@ def decode_levelscript_record_payload(
             boolean_compare = _decode_boolean_compare_getter(getter_payload)
             if boolean_compare:
                 out["booleanCompare"] = boolean_compare
+        elif semantic_key == (0x004E, 0x08):
+            condition_result = _decode_get_condition_result_getter(
+                getter_payload
+            )
+            if condition_result:
+                out["getConditionResult"] = condition_result
         elif semantic_key == (0x0049, 0x0A):
             float_compare = _decode_number_compare_getter(
                 getter_payload,
@@ -6058,8 +6113,10 @@ LEVELSCRIPT_TASK_CONDITION_TAGS = {
     0x0019: ("CheckBuildingConnectedExist", 8),
     0x001A: ("CheckBuildingConnectedSpecify", 9),
     0x001B: ("CheckBuildingStateInArea", 9),
+    0x0023: ("CheckClientGlobalVar", 7),
     0x0035: ("CheckFacBuildingState", 8),
     0x0038: ("CheckFluidVolume", 9),
+    0x0039: ("CheckFMVFinish", 5),
     0x0045: ("CheckInteractiveDestroyed", 6),
     0x0050: ("CheckLevelScriptPropertyBool", 9),
     0x0051: ("CheckLevelScriptPropertyInt", 9),
@@ -6069,6 +6126,7 @@ LEVELSCRIPT_TASK_CONDITION_TAGS = {
     0x006B: ("CheckMonsterSpawnerComplete", 6),
     0x0084: ("CheckRepairBuilding", 6),
     0x008D: ("CheckScriptTaskStateEqual", 9),
+    0x008F: ("CheckServerGlobalVar", 7),
     0x009F: ("CheckTalkOptionFinish", 6),
     0x00B2: ("CombineCondition", 6),
     0x00D0: ("OnBuildingPanelOpen", 6),
@@ -6311,6 +6369,25 @@ def _decode_levelscript_task_condition(
             return None
         fields["comparerName"] = _MISSION_STATE_COMPARER_NAMES[comparer_raw]
         fields["targetMissionStateName"] = _MISSION_STATE_NAMES[target_raw]
+    elif condition_type == "CheckFMVFinish":
+        if not read_param("fmvId", _decode_string_param):
+            return None
+    elif condition_type in ("CheckClientGlobalVar", "CheckServerGlobalVar"):
+        key_decoder = (
+            _decode_string_param
+            if condition_type == "CheckClientGlobalVar"
+            else _decode_i32_param
+        )
+        if not (
+            read_param("comparer", _decode_i32_param)
+            and read_param("key", key_decoder)
+            and read_param("targetValue", _decode_u64_param)
+        ):
+            return None
+        fields["comparerName"] = _NUMBER_COMPARER_NAMES.get(
+            fields["comparer"]["value"],
+            "",
+        )
     elif condition_type in (
         "CheckBuildingConnected",
         "CheckBuildingConnectedAsMA2SB",
