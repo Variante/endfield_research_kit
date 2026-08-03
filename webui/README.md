@@ -72,6 +72,9 @@ Rebuild Story data after editing overrides.
 - Disabling debug from a hidden page returns to a visible page and URL.
 - Mission Pipeline distinguishes ownership, context, definition-only rows, and
   unresolved native playback.
+- Post-playback `CallServer` rows show their complete binary-decoded serialized
+  contract and exact related `LevelScriptData` file, while keeping correlation
+  labels and argument parameters explicitly non-owning.
 - BlackBox recovery shells show the exact SubGame row, bound LevelScript,
   separate main/extra/fail task lanes, complete decoded task conditions,
   condition formulas, objective display keys, typed parent playback, and the

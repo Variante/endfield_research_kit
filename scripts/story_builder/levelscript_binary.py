@@ -5235,6 +5235,34 @@ def _decode_call_server_action(payload: bytes) -> dict[str, Any]:
     }
 
 
+CALLSERVER_SERIALIZED_CONTRACT_FIELDS = (
+    "payloadShape",
+    "callClientOutputUIDs",
+    "eventArgsPtr",
+    "eventName",
+    "eventNameIdentity",
+    "callbackCorrelationLabel",
+    "useCustomEvent",
+    "waitForCallback",
+    "withEventArgs",
+    "consumedBytes",
+    "trailingBytes",
+)
+
+
+def compact_callserver_serialized_contract(
+    call_server: dict[str, Any],
+) -> dict[str, Any]:
+    """Project decoded bytes without derived graph/evidence annotations."""
+    if not isinstance(call_server, dict):
+        return {}
+    return {
+        key: call_server[key]
+        for key in CALLSERVER_SERIALIZED_CONTRACT_FIELDS
+        if key in call_server
+    }
+
+
 def _decode_entity_compare_getter(payload: bytes, property_outputs: list[dict]) -> dict[str, Any]:
     """Decode the exact current-build EntityCompare ScriptEntityPtr operand.
 

@@ -32,6 +32,7 @@ try:
         write_text_if_changed,
     )
     from story_builder.levelscript_binary import (
+        compact_callserver_serialized_contract,
         decode_levelscript_action_header_validation,
         decode_levelscript_encounter_module_target,
     )
@@ -83,6 +84,7 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
         write_text_if_changed,
     )
     from scripts.story_builder.levelscript_binary import (
+        compact_callserver_serialized_contract,
         decode_levelscript_action_header_validation,
         decode_levelscript_encounter_module_target,
     )
@@ -5961,6 +5963,7 @@ def exact_native_receiver_post_playback_control(
                     for value in raw_step.get("texts") or []
                     if str(value)
                 ][:8],
+                "callServerContract": raw_step.get("callServerContract") or None,
                 "branchPredicate": raw_step.get("branchPredicate") or None,
             })
             path.append(step)
@@ -6021,6 +6024,11 @@ def exact_native_receiver_post_playback_control(
             if isinstance(value, str) and value.startswith("#")
         ]
         callback_header_uids = node.get("callServerCallbackOutputUIDs")
+        serialized_contract = node.get("callServerContract") or {}
+        if not callback_header_uids and isinstance(
+            serialized_contract.get("callClientOutputUIDs"), list
+        ):
+            callback_header_uids = serialized_contract["callClientOutputUIDs"]
         server_handoffs.append({
             key: value
             for key, value in {
@@ -6035,6 +6043,12 @@ def exact_native_receiver_post_playback_control(
                 "callbackHeaderMappingId": node.get(
                     "callServerCallbackMappingId"
                 ),
+                "serializedContract": serialized_contract or None,
+                "relatedOriginalFiles": [{
+                    "kind": "LevelScriptData",
+                    "sourceFile": source_file,
+                    "relationship": "serialized_callserver_action",
+                }],
                 "serverHandlerIdentity": False,
             }.items()
             if value is not None
@@ -6068,6 +6082,99 @@ def exact_native_receiver_post_playback_control(
             "headers; those conditional paths are admitted only through exact "
             "same-file UID/event/header matches. Callback labels do not identify "
             "a server handler, mission/quest owner, or state write."
+        ),
+    }
+
+
+def attach_post_playback_callserver_contracts(
+    runtime_nodes: list[dict[str, Any]],
+    callback_audit: dict[str, Any],
+) -> dict[str, Any]:
+    """Attach complete-corpus CallServer rows by exact source/local identity.
+
+    The join is intentionally generic across all missions, maps, and Story
+    actions. It fails closed on duplicate or disagreeing rows and never treats
+    an event name or argument path as a mission/quest foreign key.
+    """
+    audit_rows: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
+    for row in callback_audit.get("rows") or []:
+        source_file = str(row.get("sourceFile") or "").replace("\\", "/")
+        local_id = row.get("callServerLocalId")
+        if source_file and isinstance(local_id, int):
+            audit_rows[(source_file, local_id)].append(row)
+
+    counts: Counter[str] = Counter()
+    event_identities: Counter[str] = Counter()
+    argument_paths: Counter[str] = Counter()
+    flag_combinations: Counter[str] = Counter()
+    failures: list[dict[str, Any]] = []
+    for node in runtime_nodes:
+        for control in node.get("postPlaybackControls") or []:
+            source_file = str(control.get("sourceFile") or "").replace("\\", "/")
+            for handoff in control.get("serverHandoffs") or []:
+                counts["handoffs"] += 1
+                local_id = handoff.get("localId")
+                candidates = audit_rows.get((source_file, local_id), [])
+                if len(candidates) != 1:
+                    counts["unresolvedContracts"] += 1
+                    failures.append({
+                        "gate": "post_playback_callserver_exact_identity",
+                        "source": source_file,
+                        "localId": local_id,
+                        "expectedCandidateCount": 1,
+                        "actualCandidateCount": len(candidates),
+                    })
+                    continue
+                audit_contract = compact_callserver_serialized_contract(
+                    candidates[0].get("serializedContract") or {}
+                )
+                path_contract = compact_callserver_serialized_contract(
+                    handoff.get("serializedContract") or {}
+                )
+                if path_contract and path_contract != audit_contract:
+                    counts["contractMismatches"] += 1
+                    failures.append({
+                        "gate": "post_playback_callserver_contract_match",
+                        "source": source_file,
+                        "localId": local_id,
+                        "expected": audit_contract,
+                        "actual": path_contract,
+                    })
+                    continue
+                handoff["serializedContract"] = audit_contract
+                handoff["contractStatus"] = "exact_source_local_id_match"
+                handoff["missionOwnershipEvidence"] = False
+                counts["exactContracts"] += 1
+                event_identities[
+                    str(audit_contract.get("eventNameIdentity") or "other")
+                ] += 1
+                event_args = audit_contract.get("eventArgsPtr") or {}
+                argument_paths[
+                    str(event_args.get("path") or "<null>")
+                ] += 1
+                flag_combinations[
+                    "custom={custom},wait={wait},args={args}".format(
+                        custom=int(bool(audit_contract.get("useCustomEvent"))),
+                        wait=int(bool(audit_contract.get("waitForCallback"))),
+                        args=int(bool(audit_contract.get("withEventArgs"))),
+                    )
+                ] += 1
+    return {
+        "status": "validated" if not failures else "validation_failed",
+        "summary": {
+            **dict(sorted(counts.items())),
+            "eventNameIdentityDistribution": dict(sorted(event_identities.items())),
+            "eventArgsParamPathDistribution": dict(sorted(argument_paths.items())),
+            "flagDistribution": dict(sorted(flag_combinations.items())),
+        },
+        "validationFailures": failures,
+        "missionOwnershipEvidence": False,
+        "evidenceBoundary": (
+            "Every post-playback CallServer is joined to the complete original-data "
+            "action audit by exact source file and local action id. Serialized event "
+            "names, argument parameters, flags, and callback UIDs describe the client "
+            "handoff contract; absent an independent original-data foreign key, they "
+            "do not identify a mission/quest owner or order another Story file."
         ),
     }
 
@@ -7535,6 +7642,31 @@ def build_story_binding_coverage(
         else {}
     )
     callback_audit_summary = callback_audit.get("summary") or {}
+    post_playback_callserver_contract_audit = (
+        attach_post_playback_callserver_contracts(
+            missionless_runtime_nodes,
+            callback_audit,
+        )
+    )
+    post_playback_callserver_summary = (
+        post_playback_callserver_contract_audit.get("summary") or {}
+    )
+    if (
+        callback_audit.get("status") == "validated_complete_corpus"
+        and post_playback_callserver_contract_audit.get("status")
+        != "validated"
+    ):
+        failures = (
+            post_playback_callserver_contract_audit.get("validationFailures")
+            or []
+        )
+        raise ValueError(json.dumps({
+            "validator": "post_playback_callserver_contract_audit",
+            "gate": "exact_source_local_id_contract_join",
+            "summary": post_playback_callserver_summary,
+            "firstFailure": failures[0] if failures else None,
+            "validationFailures": failures[:100],
+        }, ensure_ascii=False, indent=2))
     callback_story_routes = []
     for callback_row in callback_audit.get("rows") or []:
         if not isinstance(callback_row, dict):
@@ -7561,6 +7693,7 @@ def build_story_binding_coverage(
         "source": repo_path(CALLSERVER_CALLBACK_AUDIT_JSON),
         "summary": callback_audit_summary,
         "storyCallbackRoutes": callback_story_routes,
+        "postPlaybackContractAudit": post_playback_callserver_contract_audit,
         "unresolvedCallbackOutputs": (
             callback_audit.get("unresolvedCallbackOutputs") or []
         ),
@@ -7775,6 +7908,12 @@ def build_story_binding_coverage(
             ),
             "callServerUnresolvedCallbackOutputs": callback_audit_summary.get(
                 "unresolvedCallbackOutputs", 0
+            ),
+            "postPlaybackCallServerExactContracts": (
+                post_playback_callserver_summary.get("exactContracts", 0)
+            ),
+            "postPlaybackCallServerUnresolvedContracts": (
+                post_playback_callserver_summary.get("unresolvedContracts", 0)
             ),
             "postPlaybackLevelSequenceActions": level_sequence_asset_summary.get(
                 "typedActionPlacements", 0
