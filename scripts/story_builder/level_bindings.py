@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import struct
 from functools import lru_cache
 from pathlib import Path
@@ -561,6 +562,96 @@ def load_actionbase_formatter_names(
 ACTIONBASE_FORMATTER_ACTION_NAMES, ACTIONBASE_FORMATTER_NAME_AUDIT = (
     load_actionbase_formatter_names()
 )
+
+DEFAULT_CALLSERVER_CALLBACK_CONTRACT = (
+    ROOT
+    / "reports"
+    / "mission_order"
+    / "levelscript_callserver_callback_contract.json"
+)
+
+
+@lru_cache(maxsize=8)
+def load_callserver_callback_contract(
+    contract_path: Path = DEFAULT_CALLSERVER_CALLBACK_CONTRACT,
+) -> dict:
+    """Load the hash-pinned native CallServer callback-header contract."""
+    path = Path(contract_path)
+    source_file = repo_rel(path)
+    failures: list[dict] = []
+
+    def reject(gate: str, expected, actual) -> None:
+        failures.append({
+            "validator": "callServerCallbackNativeContract",
+            "gate": gate,
+            "sourceFile": source_file,
+            "expected": expected,
+            "actual": actual,
+        })
+
+    try:
+        raw = path.read_bytes()
+        contract = json.loads(raw.decode("utf-8-sig"))
+    except (OSError, UnicodeError, ValueError) as error:
+        reject("read_valid_json", {"readableJsonObject": True}, str(error)[:400])
+        return {
+            "schema": "callServerCallbackNativeContractAudit.v1",
+            "status": "validation_failed",
+            "sourceFile": source_file,
+            "sourceSha256": "",
+            "validationFailures": failures,
+        }
+    if not isinstance(contract, dict):
+        reject("contract_object", {"type": "object"}, {
+            "type": type(contract).__name__,
+        })
+        contract = {}
+    sources = contract.get("sources") if isinstance(contract.get("sources"), dict) else {}
+    call_server = (
+        contract.get("callServer")
+        if isinstance(contract.get("callServer"), dict)
+        else {}
+    )
+    action_base = (
+        contract.get("actionBase")
+        if isinstance(contract.get("actionBase"), dict)
+        else {}
+    )
+    validation = (
+        contract.get("validation")
+        if isinstance(contract.get("validation"), dict)
+        else {}
+    )
+    exact_gates = (
+        ("schema", "callServerCallbackNativeContract.v1", contract.get("schema")),
+        ("status", "validated", contract.get("status")),
+        ("gameassembly_sha256", ACTIONBASE_FORMATTER_GAMEASSEMBLY_SHA256, sources.get("gameAssemblySha256")),
+        ("metadata_sha256", ACTIONBASE_FORMATTER_METADATA_SHA256, sources.get("globalMetadataSha256")),
+        ("execute_method_token", "0x06008f04", call_server.get("executeMethodToken")),
+        ("execute_method_va", "0x1845f6000", call_server.get("executeMethodVa")),
+        ("output_field_token", "0x040069fe", call_server.get("outputFieldToken")),
+        ("output_field_offset", "this+0xd8", call_server.get("outputFieldOffset")),
+        ("set_wait_method_token", "0x06007e87", action_base.get("setWaitMethodToken")),
+        ("set_wait_method_va", "0x1875f1180", action_base.get("setWaitMethodVa")),
+        ("wait_header_uid_list_offset", "this+0x80", action_base.get("waitHeaderUidListOffset")),
+        ("byte_gate_count", 4, len(validation.get("byteGates") or [])),
+        ("native_validation_failures", [], validation.get("validationFailures")),
+    )
+    for gate, expected, actual in exact_gates:
+        if actual != expected:
+            reject(gate, expected, actual)
+    return {
+        "schema": "callServerCallbackNativeContractAudit.v1",
+        "status": "validated" if not failures else "validation_failed",
+        "sourceFile": source_file,
+        "sourceSha256": hashlib.sha256(raw).hexdigest().upper(),
+        "nativeContract": contract if not failures else {},
+        "validationFailures": failures,
+        "usesOcrOrManualOrder": False,
+    }
+
+
+CALLSERVER_CALLBACK_CONTRACT_AUDIT = load_callserver_callback_contract()
 
 
 def levelscript_native_action_name_from_pair(pair: tuple[int, int]) -> str:
@@ -1373,6 +1464,62 @@ def _levelscript_native_action_successors(
     return list(dict.fromkeys(edges))
 
 
+def _levelscript_native_callserver_callback_successors(
+    record: dict,
+    detail: dict,
+    *,
+    records_by_uid: dict[str, list[dict]],
+    membership: dict[int, str],
+    decode_record,
+) -> list[tuple[str, int]]:
+    """Resolve binary-proven CallServer output UIDs to callback actions.
+
+    ``CallServer.Execute`` passes ``_callClientOutputUIDs`` to
+    ``ActionBase.SetResultWaitForPossibleSubExecutor``. Each admitted value
+    must therefore resolve to one exact ``ScriptEvent_OnCustomEvent`` header
+    whose event key is the same hash and whose typed header successor selects
+    the callback action. Missing or ambiguous UIDs fail closed.
+    """
+    if CALLSERVER_CALLBACK_CONTRACT_AUDIT.get("status") != "validated":
+        return []
+    if levelscript_record_semantic_key(record) != (0x0034, 0x0E):
+        return []
+    call_server = detail.get("callServer") or {}
+    output_uids = call_server.get("callClientOutputUIDs")
+    if not isinstance(output_uids, list):
+        return []
+    edges: list[tuple[str, int]] = []
+    for index, output_uid in enumerate(output_uids):
+        if not isinstance(output_uid, str) or not re.fullmatch(
+            r"[0-9a-fA-F]{8}",
+            output_uid,
+        ):
+            continue
+        candidates = records_by_uid.get(output_uid.casefold(), [])
+        if len(candidates) != 1:
+            continue
+        header = candidates[0]
+        header_start = int(header.get("start") or 0)
+        if not str(membership.get(header_start) or "").startswith("headerList#"):
+            continue
+        header_detail = decode_record(header)
+        event = header_detail.get("nativeEventDetail") or {}
+        next_local_id = (header_detail.get("actionHeader") or {}).get("nextId")
+        if (
+            str(event.get("type") or "") != "ScriptEvent_OnCustomEvent"
+            or str(event.get("eventKey") or "").casefold()
+            != f"#{output_uid}".casefold()
+            or not isinstance(next_local_id, int)
+            or next_local_id <= 0
+        ):
+            continue
+        edges.append((
+            f"CallServer.callClientOutputUIDs[{index}]#{output_uid}",
+            next_local_id,
+        ))
+    return list(dict.fromkeys(edges))
+
+
 def _levelscript_native_control_paths_to_record(
     data: bytes,
     records: list[dict],
@@ -1437,8 +1584,24 @@ def _levelscript_native_control_paths_to_record(
             )
         return decoded_cache[start]
 
+    records_by_uid: dict[str, list[dict]] = defaultdict(list)
+    for candidate in ordered:
+        uid = str(candidate.get("uid") or "").casefold()
+        if uid:
+            records_by_uid[uid].append(candidate)
+
     def successors(record: dict) -> list[tuple[str, int]]:
-        return _levelscript_native_action_successors(record, decoded(record))
+        detail = decoded(record)
+        return list(dict.fromkeys([
+            *_levelscript_native_action_successors(record, detail),
+            *_levelscript_native_callserver_callback_successors(
+                record,
+                detail,
+                records_by_uid=records_by_uid,
+                membership=membership,
+                decode_record=decoded,
+            ),
+        ]))
 
     getter_detail_kinds = (
         "booleanCompare",
@@ -1591,6 +1754,24 @@ def _levelscript_native_control_paths_to_record(
                 "actionName": levelscript_native_action_name_from_pair(pair),
                 "recordClass": LEVELSCRIPT_OPCODE_TABLE.get(pair, ""),
                 "texts": texts[:8],
+                "callServerCallbackOutputUIDs": (
+                    (detail.get("callServer") or {}).get(
+                        "callClientOutputUIDs"
+                    )
+                    if pair == (0x0034, 0x0E)
+                    else None
+                ),
+                "callServerCallbackMappingId": (
+                    "gameassembly-2026-08-03-callserver-callback-header-uids-v1"
+                    if pair == (0x0034, 0x0E)
+                    and isinstance(
+                        (detail.get("callServer") or {}).get(
+                            "callClientOutputUIDs"
+                        ),
+                        list,
+                    )
+                    else None
+                ),
                 "branchPredicate": predicate,
                 "equivalentRecordOffsets": equivalent_record_offsets.get(
                     int(record.get("localId"))

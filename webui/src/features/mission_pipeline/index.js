@@ -100,6 +100,13 @@
       nativeTransitionNamedEndpoints: "named native transition endpoints",
       postPlaybackOutsideActionBase: "unresolved action shapes",
       postPlaybackActionNameBoundary: "Action names come from all 1,313 contiguous union tags recovered from the installed MemoryPack formatter. The compact unionTag plus serialized member count is authoritative; legacy combined raw opcodes remain provenance only. Class names do not select branches, establish mission ownership, or order Story files.",
+      callServerCallbackAudit: "Binary-validated CallServer callback branches",
+      callServerActionsDecoded: "CallServer actions decoded",
+      callServerCallbackHeaders: "exact callback headers",
+      callServerStoryCallbacks: "Story-bearing callback headers",
+      callServerDanglingCallbacks: "dangling callback UIDs",
+      callServerUnownedSurface: "callback UIDs on unresolved post-playback handoffs",
+      callServerCallbackBoundary: "The installed binary proves that each non-empty output string is a possible subexecutor header UID. Exact same-file UID, custom-event key, and typed successor matches recover conditional callback topology; they do not prove execution or mission ownership. These Story-bearing callbacks have no typed predecessor from an earlier Story playback, so they add no Story-to-Story order edge.",
       postPlaybackLevelSequenceAudit: "Exact post-playback LevelSequence files",
       postPlaybackLevelSequenceActions: "typed sequence action placements",
       postPlaybackLevelSequenceAssets: "exact original TextAssets",
@@ -4009,6 +4016,10 @@
     const variableBridgeSummary = variableBridgeAudit.summary || {};
     const actionNameAudit = state.index?.storyCoverage?.postPlaybackActionNameAudit || {};
     const actionNameSummary = actionNameAudit.summary || {};
+    const callServerCallbackAudit = state.index?.storyCoverage?.callServerCallbackAudit || {};
+    const callServerCallbackSummary = callServerCallbackAudit.summary || {};
+    const callServerCallbackRoutes = callServerCallbackAudit.storyCallbackRoutes || [];
+    const storyCoverageCounts = state.index?.storyCoverage?.counts || {};
     const storyOrderSummary = state.index?.storyOrder?.summary || {};
     const levelSequenceAudit = state.index?.storyCoverage?.postPlaybackLevelSequenceAssetAudit || {};
     const levelSequenceSummary = levelSequenceAudit.summary || {};
@@ -4123,6 +4134,18 @@
         </div>
         ${(actionNameAudit.unresolvedActionShapes || []).length ? `<p class="mp-gap-policy">${actionNameAudit.unresolvedActionShapes.map((row) => `<code>${esc(`${row.opcode} ×${row.count}`)}</code>`).join(" ")}</p>` : ""}
         <p class="mp-gap-policy"><code>${esc(actionNameAudit.formatterTable?.sourceFile || "")}</code> · SHA-256 <code>${esc(actionNameAudit.formatterTable?.sourceSha256 || "")}</code></p>
+      </section>` : ""}
+      ${callServerCallbackAudit.schema ? `<section class="mp-gap-queue mp-callserver-callback-audit">
+        <header><strong>${esc(t("callServerCallbackAudit"))}</strong><p>${esc(t("callServerCallbackBoundary"))}</p></header>
+        <div class="mp-gap-family-list">
+          <div class="mp-gap-family-row"><code>${esc(t("callServerActionsDecoded"))}</code><span></span><b>${Number(callServerCallbackSummary.decodedCallServerActions || 0).toLocaleString()} / ${Number(callServerCallbackSummary.callServerActions || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("callServerCallbackHeaders"))}</code><span></span><b>${Number(callServerCallbackSummary.exactCallbackHeaders || 0).toLocaleString()} / ${Number(callServerCallbackSummary.callbackOutputUids || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("callServerStoryCallbacks"))}</code><span></span><b>${Number(callServerCallbackSummary.callbackHeadersReachingStory || 0).toLocaleString()} / ${Number(callServerCallbackSummary.callbackStoryTargets || 0).toLocaleString()} Story targets</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("callServerDanglingCallbacks"))}</code><span></span><b>${Number(callServerCallbackSummary.unresolvedCallbackOutputs || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("callServerUnownedSurface"))}</code><span></span><b>${Number(storyCoverageCounts.missionlessNativeRuntimePostPlaybackCallbackHeaderUids || 0).toLocaleString()} / ${Number(storyCoverageCounts.missionlessNativeRuntimePostPlaybackServerHandoffs || 0).toLocaleString()}</b></div>
+        </div>
+        ${callServerCallbackRoutes.length ? `<div class="mp-missionless-story-links">${callServerCallbackRoutes.map((route) => `<a href="${esc(storyHref((route.storyKeys || [])[0] || ""))}"><span><code>${esc(`${route.levelId || ""}/${route.scriptId || ""}`)}</code> / <code>#${esc(route.callbackHeaderUid || "")}</code></span><small>${esc(route.sourceFile || "")}</small><b aria-hidden="true">-&gt;</b><strong>${esc((route.storyKeys || []).join(", "))}</strong></a>`).join("")}</div>` : ""}
+        <p class="mp-gap-policy"><code>${esc(callServerCallbackAudit.nativeContract?.callServer?.executeMethodVa || "")}</code> / <code>${esc(callServerCallbackAudit.source || "")}</code></p>
       </section>` : ""}
       ${levelSequenceAudit.schema ? `<section class="mp-gap-queue mp-level-sequence-audit">
         <header><strong>${esc(t("postPlaybackLevelSequenceAudit"))}</strong><p>${esc(t("postPlaybackLevelSequenceBoundary"))}</p></header>

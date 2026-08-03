@@ -47,6 +47,12 @@ try:
     from story_recovery.build_envtalk_attachment import (
         build_report as build_envtalk_attachment_report,
     )
+    from story_recovery.build_callserver_callback_audit import (
+        DEFAULT_JSON as CALLSERVER_CALLBACK_AUDIT_JSON,
+        DEFAULT_MARKDOWN as CALLSERVER_CALLBACK_AUDIT_MARKDOWN,
+        build_report as build_callserver_callback_audit_report,
+        markdown_report as render_callserver_callback_audit_markdown,
+    )
     from story_recovery.build_mission_dependency_graph import (
         build_report as build_mission_dependency_graph_report,
     )
@@ -91,6 +97,12 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
     )
     from scripts.story_recovery.build_envtalk_attachment import (
         build_report as build_envtalk_attachment_report,
+    )
+    from scripts.story_recovery.build_callserver_callback_audit import (
+        DEFAULT_JSON as CALLSERVER_CALLBACK_AUDIT_JSON,
+        DEFAULT_MARKDOWN as CALLSERVER_CALLBACK_AUDIT_MARKDOWN,
+        build_report as build_callserver_callback_audit_report,
+        markdown_report as render_callserver_callback_audit_markdown,
     )
     from scripts.story_recovery.build_mission_dependency_graph import (
         build_report as build_mission_dependency_graph_report,
@@ -246,7 +258,7 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # original TextAssets without using their names as mission/order evidence. v32
 # names the complete ActionBase surface through one hash-validated formatter
 # table recovered from the installed binary.
-SCHEMA_VERSION = 32
+SCHEMA_VERSION = 33
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -6008,11 +6020,24 @@ def exact_native_receiver_post_playback_control(
             for value in node.get("texts") or []
             if isinstance(value, str) and value.startswith("#")
         ]
+        callback_header_uids = node.get("callServerCallbackOutputUIDs")
         server_handoffs.append({
-            "localId": node.get("localId"),
-            "actionName": node.get("actionName") or "CallServer",
-            "callbackCorrelationLabels": labels,
-            "serverHandlerIdentity": False,
+            key: value
+            for key, value in {
+                "localId": node.get("localId"),
+                "actionName": node.get("actionName") or "CallServer",
+                "callbackCorrelationLabels": labels,
+                "possibleCallbackHeaderUIDs": (
+                    callback_header_uids
+                    if isinstance(callback_header_uids, list)
+                    else None
+                ),
+                "callbackHeaderMappingId": node.get(
+                    "callServerCallbackMappingId"
+                ),
+                "serverHandlerIdentity": False,
+            }.items()
+            if value is not None
         })
     return {
         "schema": "exactNativePostPlaybackControl.v1",
@@ -6038,9 +6063,11 @@ def exact_native_receiver_post_playback_control(
         "serverHandlerIdentityEvidence": False,
         "evidenceBoundary": (
             "Typed successor fields prove only the exact local action graph "
-            "after this Story action. Callback labels do not identify a "
-            "server handler, mission/quest owner, state write, or cross-Story "
-            "chronology."
+            "after this Story action. The installed binary additionally proves "
+            "that non-empty CallServer output lists name possible callback "
+            "headers; those conditional paths are admitted only through exact "
+            "same-file UID/event/header matches. Callback labels do not identify "
+            "a server handler, mission/quest owner, or state write."
         ),
     }
 
@@ -6554,6 +6581,7 @@ def build_story_binding_coverage(
     ),
     *,
     native_story_playback_index: dict[str, list[dict[str, Any]]] | None = None,
+    callserver_callback_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Write a unique-file Story-to-pipeline coverage audit.
 
@@ -7501,6 +7529,49 @@ def build_story_binding_coverage(
         missionless_runtime_nodes
     )
     action_name_summary = post_playback_action_name_audit.get("summary") or {}
+    callback_audit = (
+        callserver_callback_audit
+        if isinstance(callserver_callback_audit, dict)
+        else {}
+    )
+    callback_audit_summary = callback_audit.get("summary") or {}
+    callback_story_routes = []
+    for callback_row in callback_audit.get("rows") or []:
+        if not isinstance(callback_row, dict):
+            continue
+        for callback in callback_row.get("callbackOutputs") or []:
+            graph = callback.get("controlGraph") or {}
+            if not graph.get("storyKeys"):
+                continue
+            callback_story_routes.append({
+                "levelId": callback_row.get("levelId"),
+                "scriptId": callback_row.get("scriptId"),
+                "sourceFile": callback_row.get("sourceFile"),
+                "callServerLocalId": callback_row.get("callServerLocalId"),
+                "callServerUid": callback_row.get("callServerUid"),
+                "callbackHeaderUid": callback.get("headerUid"),
+                "callbackHeaderLocalId": callback.get("headerLocalId"),
+                "storyKeys": graph.get("storyKeys") or [],
+                "actionCount": graph.get("actionCount", 0),
+                "branchPointCount": graph.get("branchPointCount", 0),
+            })
+    compact_callback_audit = {
+        "schema": callback_audit.get("schema"),
+        "status": callback_audit.get("status"),
+        "source": repo_path(CALLSERVER_CALLBACK_AUDIT_JSON),
+        "summary": callback_audit_summary,
+        "storyCallbackRoutes": callback_story_routes,
+        "unresolvedCallbackOutputs": (
+            callback_audit.get("unresolvedCallbackOutputs") or []
+        ),
+        "validationFailures": callback_audit.get("validationFailures") or [],
+        "nativeContract": (
+            (callback_audit.get("sources") or {}).get("nativeContract") or {}
+        ),
+        "evidenceBoundary": callback_audit.get("evidenceBoundary") or "",
+        "missionOwnershipEvidence": False,
+        "usesOcrOrManualOrder": False,
+    }
     post_playback_level_sequence_asset_audit = attach_exact_level_sequence_assets(
         missionless_runtime_nodes,
         level_sequence_textasset_index,
@@ -7520,7 +7591,7 @@ def build_story_binding_coverage(
     )
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 16,
+        "schemaVersion": 17,
         "generated": int(time.time()),
         "language": language,
         "policy": (
@@ -7542,6 +7613,9 @@ def build_story_binding_coverage(
             ),
             "actionBaseFormatterTable": str(
                 ACTIONBASE_FORMATTER_NAME_AUDIT.get("sourceFile") or ""
+            ),
+            "callServerCallbackAudit": repo_path(
+                CALLSERVER_CALLBACK_AUDIT_JSON
             ),
         },
         "counts": {
@@ -7681,6 +7755,27 @@ def build_story_binding_coverage(
                 for node in missionless_runtime_nodes
                 for control in node.get("postPlaybackControls") or []
             ),
+            "missionlessNativeRuntimePostPlaybackCallbackHeaderUids": sum(
+                len(handoff.get("possibleCallbackHeaderUIDs") or [])
+                for node in missionless_runtime_nodes
+                for control in node.get("postPlaybackControls") or []
+                for handoff in control.get("serverHandoffs") or []
+            ),
+            "callServerActions": callback_audit_summary.get(
+                "callServerActions", 0
+            ),
+            "callServerCallbackOutputUids": callback_audit_summary.get(
+                "callbackOutputUids", 0
+            ),
+            "callServerExactCallbackHeaders": callback_audit_summary.get(
+                "exactCallbackHeaders", 0
+            ),
+            "callServerCallbackHeadersReachingStory": callback_audit_summary.get(
+                "callbackHeadersReachingStory", 0
+            ),
+            "callServerUnresolvedCallbackOutputs": callback_audit_summary.get(
+                "unresolvedCallbackOutputs", 0
+            ),
             "postPlaybackLevelSequenceActions": level_sequence_asset_summary.get(
                 "typedActionPlacements", 0
             ),
@@ -7739,6 +7834,7 @@ def build_story_binding_coverage(
         ),
         "storyTriggerManifest": story_trigger_manifest,
         "postPlaybackActionNameAudit": post_playback_action_name_audit,
+        "callServerCallbackAudit": compact_callback_audit,
         "postPlaybackLevelSequenceAssetAudit": (
             post_playback_level_sequence_asset_audit
         ),
@@ -9746,6 +9842,21 @@ def main() -> int:
         args.story_data_root.resolve(),
         args.story_language,
     )
+    # The complete-corpus callback audit is generated once for the canonical
+    # pipeline. Reduced fixture outputs never overwrite or silently consume it.
+    callserver_callback_audit: dict[str, Any] = {}
+    if output_root == DEFAULT_OUTPUT_ROOT.resolve():
+        callserver_callback_audit = build_callserver_callback_audit_report()
+        write_report_json(
+            CALLSERVER_CALLBACK_AUDIT_JSON,
+            callserver_callback_audit,
+        )
+        write_text_if_changed(
+            CALLSERVER_CALLBACK_AUDIT_MARKDOWN,
+            render_callserver_callback_audit_markdown(
+                callserver_callback_audit
+            ),
+        )
     coverage = build_story_binding_coverage(
         index,
         output_root / "index.json",
@@ -9769,6 +9880,7 @@ def main() -> int:
                 or [DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT]
             )
         ),
+        callserver_callback_audit=callserver_callback_audit,
     )
     node_attachment = None
     if coverage:
@@ -9814,6 +9926,9 @@ def main() -> int:
             "missionlessNativeRuntimeNodes": coverage["missionlessNativeRuntimeNodes"],
             "postPlaybackActionNameAudit": (
                 coverage.get("postPlaybackActionNameAudit") or {}
+            ),
+            "callServerCallbackAudit": (
+                coverage.get("callServerCallbackAudit") or {}
             ),
             "postPlaybackLevelSequenceAssetAudit": (
                 coverage.get("postPlaybackLevelSequenceAssetAudit") or {}
