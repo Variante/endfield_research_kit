@@ -147,7 +147,11 @@
       questObserverBoundary: "MissionRuntime reads this LevelScript as an objective operand. This does not prove that the quest starts or owns the Story, or that the playback handoff sets the observed property.",
       literalCrossScriptControls: "literal cross-script manual controls",
       exactStartShapeAreaMatches: "exact complete start-shape / MissionArea matches",
-      serializedMissionIdTokens: "serialized MissionRuntime ID tokens",
+      serializedMissionIdTokens: "serialized mission-like string tokens",
+      authoredPropertyContract: "authored LevelData property contract",
+      missionObservedProperty: "exact MissionRuntime property observer",
+      unobservedProperty: "no exact mission-side observer",
+      propertyContractBoundary: "Property names and exact mission reads are visible context only. They do not identify the writer, Story owner, or scene-file order.",
       taskConditionEvidence: "fully decoded task conditions",
       taskConditionBoundary: "task evaluation dependency, not mission ownership or execution order",
       taskOperandSources: "exact authored operand sources",
@@ -4221,6 +4225,9 @@
             .filter((task) => task && task.taskKey);
           const activationConsumers = (activation.missionRuntimeScriptConsumers || [])
             .filter((consumer) => consumer && (consumer.missionId || consumer.questId));
+          const propertyContract = activation.authoredPropertyContract || {};
+          const authoredPropertyNames = (propertyContract.authoredNames || []).filter(Boolean);
+          const missionObservedPropertyNames = (propertyContract.missionObservedNames || []).filter(Boolean);
           const paramValue = (param) => {
             if (!param || typeof param !== "object") return "";
             if (param.value !== null && param.value !== undefined && param.value !== "") return String(param.value);
@@ -4340,6 +4347,7 @@
                 ...(context.associations || []).filter((association) => association && association.targetId).map((association) => `<div class="is-boundary"><span>${esc(activationAssociationLabel(association.relation))}</span><i aria-hidden="true">⇢</i><code>${esc(association.targetId)}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(association.finding || "")}</small></div>`),
               ]).join("")}
               ${activationDungeonContexts.length ? `<small>${esc(t("dungeonSceneBoundary"))}</small>` : ""}
+              ${authoredPropertyNames.length ? `<div class="is-boundary"><span>${esc(t("authoredPropertyContract"))}</span><i aria-hidden="true">⇢</i><code>${esc(authoredPropertyNames.join(", "))}</code><b>${esc(missionObservedPropertyNames.length ? t("missionObservedProperty") : t("unobservedProperty"))}</b>${missionObservedPropertyNames.length ? `<small>${esc(missionObservedPropertyNames.join(", "))}</small>` : ""}</div><small>${esc(propertyContract.evidenceBoundary || t("propertyContractBoundary"))}</small>` : ""}
               ${(activation.serializedMissionRuntimeIdTokens || []).length ? `<div><span>${esc(t("serializedMissionIdTokens"))}</span><i aria-hidden="true">→</i><code>${esc(activation.serializedMissionRuntimeIdTokens.join(", "))}</code><b>${esc(t("nonOwningCrossReference"))}</b></div>` : ""}
               ${activationConsumers.map((consumer) => {
                 const identity = [consumer.missionId, consumer.questId].filter(Boolean).join("/");
@@ -4347,7 +4355,8 @@
                   ? ` · objective ${consumer.objectiveIndex}`
                   : "";
                 const conditions = (consumer.conditionTypes || []).filter(Boolean).join(", ");
-                return `<div class="is-boundary"><span>${esc(t("questObserver"))}</span><i aria-hidden="true">⇢</i><code>${esc(`${identity}${objective}`)}</code><b>${esc(t("observationOnly"))}</b><small>${esc([conditions, consumer.evidenceBoundary || t("questObserverBoundary")].filter(Boolean).join(" · "))}</small></div>${consumer.sourceFile ? `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(consumer.sourceFile)}</code><b>MissionRuntimeAsset</b><small>${esc(consumer.pipelineSourceFile || "")}</small></div>` : ""}`;
+                const propertyKeys = (consumer.propertyKeys || []).filter(Boolean);
+                return `<div class="is-boundary"><span>${esc(t("questObserver"))}</span><i aria-hidden="true">⇢</i><code>${esc(`${identity}${objective}`)}</code><b>${esc(t("observationOnly"))}</b><small>${esc([conditions, propertyKeys.length ? `properties=${propertyKeys.join(", ")}` : "", consumer.evidenceBoundary || t("questObserverBoundary")].filter(Boolean).join(" · "))}</small></div>${consumer.sourceFile ? `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(consumer.sourceFile)}</code><b>MissionRuntimeAsset</b><small>${esc(consumer.pipelineSourceFile || "")}</small></div>` : ""}`;
               }).join("")}
               <small>${esc(`${t("missionRuntimeConsumers")}: ${activation.missionRuntimeObjectiveConsumerCount ?? 0} · ${t("literalCrossScriptControls")}: ${activation.incomingLiteralCrossControlCount ?? 0} · ${t("exactStartShapeAreaMatches")}: ${activation.exactStartShapeMissionAreaMatchCount ?? 0}`)}</small>
             </div>` : ""}

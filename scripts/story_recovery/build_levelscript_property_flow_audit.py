@@ -18,13 +18,12 @@ triples. This script:
    which record(s) carry the property key as a string payload plus
    adjacent story refs (`dlg_*`, `radio_*`, `cutscene_*`, etc.).
 
-The output records two evidence classes:
+The output retains two legacy ``bridgeStatus`` values for downstream audit
+compatibility, but they classify literal presence only:
 
 - **bridgeFound**: the key appears as a length-prefixed string in the
-  target LS file. This is strong evidence the property is declared or
-  read/gated inside that script. Adjacent story-keyed records in the same
-  LS file are candidates for follow-up order evidence, but are not setter
-  proof by themselves.
+  target LS file. This proves only that the serialized file carries the
+  literal; it does not distinguish declaration, read, listener, or write.
 - **bridgeMissing**: the key is not in the LS binary. This is typical
   for runtime-system property names like `isFinished` and `isSucceeded`
   which the script exposes implicitly without storing the string.
@@ -34,9 +33,8 @@ Output:
     reports/mission_order/levelscript_property_flow_CN.json
     reports/mission_order/levelscript_property_flow_CN.md
 
-Treat the bridgeFound rows as candidates for follow-up promotion to
-strong scene-order edges once the setter opcode/kind is identified by
-cross-referencing record adjacency with the rest of the mission audit.
+Never promote record adjacency or literal presence to scene order. A future
+promotion requires an independently decoded, typed setter-to-observer route.
 """
 from __future__ import annotations
 
@@ -361,6 +359,7 @@ def build_audit() -> dict[str, Any]:
             "checkerStoryRefs": checker_story_refs,
             "lsDetect": detect,
             "bridgeStatus": bridge_status,
+            "evidenceRole": "serialized_property_literal_presence_only",
             "nearbyStoryRefs": nearby_story_refs,
             "propertyRecordHits": property_record_hits,
         })
@@ -382,15 +381,15 @@ def build_audit() -> dict[str, Any]:
             "propertyRecordRoleCounts": dict(property_record_role_counts.most_common()),
         },
         "evidenceClassification": {
-            "isOrderingSource": True,
+            "isOrderingSource": False,
             "isPromotable": False,
             "reason": (
-                "This audit identifies which checker conditions have a real "
-                "owning LS script (key visible as length-prefixed UTF-8 in the "
-                "binary), establishing the bridge. The named low ActionBase "
-                "setters do not exact-match these MissionRuntime check triples, "
-                "so promotion requires a decoded gate/terminal walk or another "
-                "independent runtime edge."
+                "This audit joins typed MissionRuntime property readers to the "
+                "named LevelScript file and records raw serialized literal "
+                "presence. A literal and an adjacent Story reference do not "
+                "identify declaration/read/listener/write semantics, ownership, "
+                "or order. Promotion requires an independently decoded typed "
+                "setter-to-observer route."
             ),
         },
         "rows": bridge_rows,
@@ -437,7 +436,7 @@ def markdown_report(payload: dict[str, Any]) -> str:
 
     lines.extend([
         "",
-        "## Bridge Found Rows (sample, first 40)",
+        "## Serialized Literal Present (legacy bridgeFound; first 40)",
         "",
         "| mapId | scriptId | key | checker count | missions | key offset | record opcodes | nearby refs |",
         "| --- | --- | --- | ---: | --- | ---: | --- | --- |",
@@ -494,7 +493,7 @@ def markdown_report(payload: dict[str, Any]) -> str:
 
     lines.extend([
         "",
-        "## Bridge Missing Rows (system-level property names)",
+        "## Serialized Literal Absent or Substring-only",
         "",
         "| mapId | scriptId | key | checker count | missions |",
         "| --- | --- | --- | ---: | --- |",
@@ -517,12 +516,11 @@ def markdown_report(payload: dict[str, Any]) -> str:
         "",
         "## Notes",
         "",
-        "Bridge-found rows are candidates for follow-up scene-order analysis.",
-        "Bridge-missing rows mostly use runtime-system property names",
-        "(`isFinished`, `isSucceeded`, etc.) that the LS script exposes",
-        "implicitly without storing the property name as a literal string.",
-        "Use this audit as input to downstream gate/terminal decoders; do not",
-        "promote anything to strong order edges directly from this report.",
+        "The legacy bridgeFound label means serialized literal presence only.",
+        "Absent literals can be runtime-system properties, but absence alone",
+        "does not establish that interpretation. Use this audit as input to",
+        "typed setter/observer decoders; do not promote adjacency or literal",
+        "presence to ownership or strong order edges.",
     ])
 
     return "\n".join(lines) + "\n"

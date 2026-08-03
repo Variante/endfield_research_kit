@@ -83,6 +83,8 @@ RUNTIME_EXACT_NAMES = {
     "Beyond.Gameplay.CheckLevelScriptPropertyString",
     "Beyond.Gameplay.ParamBlackboard",
     "Beyond.Gameplay.ParamVariable",
+    "Beyond.Gameplay.Actions.ParamExtensions",
+    "Beyond.Gameplay.Actions.Param`1",
     "Beyond.Gameplay.Core.LevelScriptManager",
     "Beyond.Gameplay.Core.LevelScriptModule",
     "Beyond.Gameplay.Core.LevelScriptRuntime",
@@ -217,6 +219,9 @@ SELECTED_TARGETS = {
     ("Beyond.Gameplay.ParamVariable", "RawSetValue"),
     ("Beyond.Gameplay.ParamVariable", "SetupOnPropertyChangedEventForLevelScript"),
     ("Beyond.Gameplay.ParamVariable", "_RaiseOnPropertyChangedEvent"),
+    ("Beyond.Gameplay.Actions.ParamExtensions", "GetValue"),
+    ("Beyond.Gameplay.Actions.ParamExtensions", "SetValue"),
+    ("Beyond.Gameplay.Actions.Param`1", "SetterSetValue"),
     ("Beyond_Gameplay_Actions_SetLevelScriptPtrForMemoryPack", "Deserialize"),
     ("Beyond_Gameplay_Actions_SetPropertyPathForMemoryPack", "Deserialize"),
     ("Beyond_Gameplay_Actions_SetBoolForMemoryPack", "Deserialize"),
@@ -408,7 +413,7 @@ def call_label(call: dict[str, Any]) -> str:
 
 def target_summary(row: dict[str, Any]) -> dict[str, Any]:
     summary = row.get("methodBodySummary") or {}
-    return {
+    item = {
         "type": row.get("type"),
         "method": row.get("method"),
         "methodIndex": row.get("methodIndex"),
@@ -435,6 +440,38 @@ def target_summary(row: dict[str, Any]) -> dict[str, Any]:
         ],
         "directCalls": [compact_call(call) for call in (row.get("directCalls") or [])[:16]],
     }
+    generic_candidates = []
+    for candidate in row.get("genericBodyCandidates") or []:
+        instantiations = []
+        for instantiation in candidate.get("instantiations") or []:
+            instantiations.append(
+                {
+                    "methodSpecIndex": instantiation.get("methodSpecIndex"),
+                    "classInstantiation": instantiation.get("classInstantiation"),
+                    "methodInstantiation": instantiation.get("methodInstantiation"),
+                }
+            )
+        generic_candidates.append(
+            {
+                "methodPointerVa": candidate.get("methodPointerVa"),
+                "instantiations": instantiations,
+                "body": {
+                    "methodPointerRva": (candidate.get("body") or {}).get("methodPointerRva"),
+                    "scanBytes": (candidate.get("body") or {}).get("scanBytes"),
+                    "methodBodySummary": (candidate.get("body") or {}).get("methodBodySummary"),
+                    "directCalls": [
+                        compact_call(call)
+                        for call in ((candidate.get("body") or {}).get("directCalls") or [])[:16]
+                    ],
+                    "unresolvedDirectCallCount": (candidate.get("body") or {}).get(
+                        "unresolvedDirectCallCount"
+                    ),
+                },
+            }
+        )
+    if generic_candidates:
+        item["genericBodyCandidates"] = generic_candidates
+    return item
 
 
 def selected_target_summaries(mapped_targets: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -458,6 +495,36 @@ def find_summary(targets: list[dict[str, Any]], type_name: str, method: str) -> 
     return [row for row in targets if row.get("type") == type_name and row.get("method") == method]
 
 
+def generic_argument_names(
+    instantiation: dict[str, Any],
+    key: str,
+) -> tuple[str, ...]:
+    return tuple(
+        str(argument.get("typeName") or "")
+        for argument in (instantiation.get(key) or {}).get("arguments") or []
+        if argument.get("status") == "decoded" and argument.get("typeName")
+    )
+
+
+def generic_candidate_has_edge(
+    candidate: dict[str, Any],
+    *,
+    callee_type: str,
+    callee_method: str,
+    callee_instantiation_key: str,
+    argument_name: str,
+) -> bool:
+    summary = (candidate.get("body") or {}).get("methodBodySummary") or {}
+    return any(
+        resolved.get("type") == callee_type
+        and resolved.get("method") == callee_method
+        and generic_argument_names(resolved, callee_instantiation_key)
+        == (argument_name,)
+        for flow in summary.get("controlFlow") or []
+        for resolved in flow.get("resolved") or []
+    )
+
+
 def build_key_findings(report: dict[str, Any], focused_types: list[dict[str, Any]]) -> list[str]:
     targets = report.get("bodyTargets") or []
     type_by_name = {row.get("type"): row for row in focused_types}
@@ -472,7 +539,7 @@ def build_key_findings(report: dict[str, Any], focused_types: list[dict[str, Any
         "ScriptEvent.OnPropertyChanged registers through LevelScriptModule/LevelEventManager and its Process body reads ParamBlackboard variables; this is listener evidence.",
         "LevelScriptRuntime.UpdateRuntimeState calls ModuleResetUpdateProperty, which calls LevelScriptModule.ResetUpdateProperty; the module method only toggles small reset/update flags in the recovered body.",
         "LevelScriptRuntime.TryGetProperty is present in metadata but mapped to a null GameAssembly pointer in this build, so it cannot currently explain the serialized setter edge.",
-        "Generic Set<T> and SetList<T> runtime types carry _key + _value fields, but their generic CollectParams/Execute body pointers map to null in this IL2CPP body table.",
+        "Generic Set<T> and SetList<T> runtime types carry _key + _value fields. Their open-generic body slots are null, but shipped MethodSpecs resolve through MetadataRegistration to multiple type-specific entry points; the audit keeps the open method ambiguous and exposes every decoded candidate instead of selecting one by address.",
         "Concrete MemoryPack wrappers for Set<bool>/Set<int>/Set<PropertyPath>/Set<LevelScriptPtr> deserialize key before value and their generic wrapper setters store key at the real instance +0xd0 and value at +0xd8.",
         "ActionSerializedMapForMemoryPack.Deserialize calls setters in actionList, getterList, headerList order; the setters write runtime ActionSerializedMap fields at +0x18, +0x20, and +0x10 respectively.",
         "ParamVariable._RaiseOnPropertyChangedEvent can call ParamBlackboard.SetVariableValue, so property-change listeners can feed blackboard writes; this still does not identify an authored LevelScript setter opcode.",
@@ -528,7 +595,48 @@ def build_key_findings(report: dict[str, Any], focused_types: list[dict[str, Any
         fields = type_row.get("fields") or []
         methods = type_row.get("methods") or []
         findings.append(
-            f"{name} has {len(fields)} runtime fields and {len(methods)} runtime methods in metadata; body mapping currently cannot inspect its generic Execute method."
+            f"{name} has {len(fields)} runtime fields and {len(methods)} runtime methods in metadata; its open Execute method remains fail-closed when multiple concrete MethodSpecs have distinct entry points."
+        )
+    set_execute_rows = find_summary(
+        targets,
+        "Beyond.Gameplay.Actions.Set`1",
+        "Execute",
+    )
+    typed_set_routes = set()
+    for row in set_execute_rows:
+        for candidate in row.get("genericBodyCandidates") or []:
+            instantiations = candidate.get("instantiations") or []
+            if not instantiations:
+                continue
+            arguments = generic_argument_names(
+                instantiations[0],
+                "classInstantiation",
+            )
+            if len(arguments) != 1:
+                continue
+            argument_name = arguments[0]
+            if generic_candidate_has_edge(
+                candidate,
+                callee_type="Beyond.Gameplay.Actions.ParamExtensions",
+                callee_method="SetValue",
+                callee_instantiation_key="methodInstantiation",
+                argument_name=argument_name,
+            ):
+                typed_set_routes.add(argument_name)
+    required_set_routes = {"System.Boolean", "System.Int32"}
+    if required_set_routes <= typed_set_routes:
+        findings.append(
+            "The concrete Set<bool>.Execute and Set<int>.Execute MethodSpecs "
+            "both read _key/_value, resolve the typed value through "
+            "ParamExtensions.GetValue<T>, and tail-call the matching "
+            "ParamExtensions.SetValue<T>. This proves a general typed Param "
+            "write, not a LevelScript-property writer or Story-order edge."
+        )
+    else:
+        findings.append(
+            "The concrete Set<bool>/Set<int> typed Param route did not pass "
+            "the current native-body guard; do not classify Set<T> as a "
+            "LevelScript-property writer."
         )
     for type_row, name in (
         (set_property_path, "SetPropertyPath"),
@@ -551,7 +659,9 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         "## Summary",
         "",
         f"- Metadata: `{md_escape(payload['metadata'].get('metadataPath', ''))}`",
+        f"- Metadata SHA-256: `{md_escape(payload['metadata'].get('metadataSha256', ''))}`",
         f"- GameAssembly: `{md_escape(payload['metadata'].get('gameAssembly', ''))}`",
+        f"- GameAssembly SHA-256: `{md_escape(payload['metadata'].get('gameAssemblySha256', ''))}`",
         f"- Catalog body targets: `{payload['summary'].get('catalogBodyTargetCount')}`",
         f"- Mapped body targets: `{payload['summary'].get('mappedTargetCount')}`",
         f"- Resolved direct calls: `{payload['summary'].get('resolvedDirectCallCount')}`",
@@ -617,6 +727,27 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
             lines.append("- direct calls:")
             for call in calls[:12]:
                 lines.append(f"  - `{md_escape(call_label(call))}`")
+        generic_candidates = row.get("genericBodyCandidates") or []
+        if generic_candidates:
+            lines.append("- generic body candidates:")
+            for candidate in generic_candidates:
+                argument_labels = []
+                for instantiation in candidate.get("instantiations") or []:
+                    arguments = []
+                    for kind in ("classInstantiation", "methodInstantiation"):
+                        decoded = instantiation.get(kind) or {}
+                        arguments.extend(
+                            str(argument.get("typeName") or argument.get("status") or "unknown")
+                            for argument in decoded.get("arguments") or []
+                        )
+                    argument_labels.append(
+                        f"spec {instantiation.get('methodSpecIndex')}: "
+                        f"{', '.join(arguments) or 'no generic arguments'}"
+                    )
+                lines.append(
+                    f"  - `{md_escape(candidate.get('methodPointerVa', ''))}` — "
+                    f"{md_escape('; '.join(argument_labels))}"
+                )
         lines.append("")
 
     write_text_if_changed(path, "\n".join(lines).rstrip() + "\n")
@@ -658,6 +789,12 @@ def main() -> int:
         code_registration=hex(body_helper.DEFAULT_CODE_REGISTRATION),
         head_bytes=32,
         max_scan_bytes=args.max_scan_bytes,
+        # Open generic IL2CPP method slots are commonly null. Resolve shipped
+        # MethodSpecs through MetadataRegistration before concluding that a
+        # generic action body is unavailable; ambiguous instantiations remain
+        # explicitly unresolved in the mapper.
+        include_generic_instantiations=True,
+        metadata_registration="",
         include_unresolved_calls=False,
         arg_context_window=96,
         body_summary_method_regex=BODY_SUMMARY_RE,

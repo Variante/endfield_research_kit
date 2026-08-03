@@ -15,6 +15,32 @@ import build_native_receiver_activation_frontier as frontier  # noqa: E402
 
 
 class NativeReceiverActivationFrontierTests(unittest.TestCase):
+    def test_authored_property_contract_separates_namespaces_and_observers(self) -> None:
+        contract = frontier.authored_property_contract(
+            [
+                {
+                    "briefData": {
+                        "propertyNames": [
+                            "lt:p:task:objective",
+                            "@2002_isFinished",
+                            "isFinished",
+                            "state",
+                        ]
+                    }
+                }
+            ],
+            [{"propertyKeys": ["isFinished", "missing"]}],
+        )
+
+        self.assertEqual(["isFinished", "state"], contract["authoredNames"])
+        self.assertEqual(["isFinished"], contract["missionObservedNames"])
+        self.assertEqual(
+            "authored_property_with_exact_mission_observer",
+            contract["classification"],
+        )
+        self.assertFalse(contract["ownership"])
+        self.assertFalse(contract["orderEvidence"])
+
     @staticmethod
     def encounter_host(script_id: str) -> dict:
         prefix = f"@{script_id}_"
@@ -599,9 +625,20 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                             "conditionTypes": [
                                 "CheckLevelScriptPropertyBool"
                             ],
+                            "propertyKeys": ["isFinished"],
                             "sourceFile": "fixture_mission.json",
                         }
                     ],
+                    "authoredPropertyContract": {
+                        "authoredNames": ["isFinished"],
+                        "missionObservedNames": ["isFinished"],
+                        "classification": (
+                            "authored_property_with_exact_mission_observer"
+                        ),
+                        "ownership": False,
+                        "orderEvidence": False,
+                        "evidenceBoundary": "observer only",
+                    },
                     "decodedTaskMap": {
                         "taskCount": 1,
                         "tasks": [
@@ -699,6 +736,11 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertEqual(
             ["CheckLevelScriptPropertyBool"],
             consumer["conditionTypes"],
+        )
+        self.assertEqual(["isFinished"], consumer["propertyKeys"])
+        self.assertEqual(
+            ["isFinished"],
+            annotation["authoredPropertyContract"]["missionObservedNames"],
         )
         self.assertFalse(consumer["ownership"])
         self.assertFalse(consumer["activation"])
