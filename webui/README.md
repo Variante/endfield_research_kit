@@ -90,6 +90,10 @@ Rebuild Story data after editing overrides.
   embedded root `GameCondition` unions and local getter references retain
   their nested type/operand details, while opaque or changed shapes remain
   visibly unresolved.
+- Exact native receiver cards recognize the reusable `EncounterBase<T>` /
+  `EncounterData` property contract structurally and show its validated
+  LevelData host and typed SpawnerConfig dependency. These remain explicitly
+  non-owning and add no branch or order edge.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and
