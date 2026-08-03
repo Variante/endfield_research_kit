@@ -360,6 +360,26 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             ),
         )
 
+    def test_same_with_active_uses_generic_validated_binary_policy(self) -> None:
+        self.assertEqual(
+            "same_with_active_binary_active_gate",
+            frontier.activation_class(
+                {"startTypeName": "SameWithActive"},
+                [],
+                [],
+                start_policy_validated=True,
+            ),
+        )
+        self.assertEqual(
+            "nonmanual_start_static_carrier_unresolved",
+            frontier.activation_class(
+                {"startTypeName": "SameWithActive"},
+                [],
+                [],
+                start_policy_validated=False,
+            ),
+        )
+
     def test_dungeon_scene_context_keeps_sibling_receiver_non_owning(
         self,
     ) -> None:
@@ -668,6 +688,15 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                         "missionQuestIdentityFields": [],
                         "validation": {"status": "validated"},
                     },
+                    "startRuntimePolicy": {
+                        "schema": "levelScriptStartPolicy.v1",
+                        "classification": (
+                            "same_with_active_enters_prestart_when_active"
+                        ),
+                        "finding": "Active unfinished script enters PreStart",
+                        "evidenceBoundary": "no mission owner",
+                        "validation": {"status": "validated"},
+                    },
                     "relatedOriginalFiles": [
                         {
                             "kind": "leveldata",
@@ -735,6 +764,10 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertEqual(
             1,
             annotation["missionRuntimeObjectiveConsumerCount"],
+        )
+        self.assertEqual(
+            "same_with_active_enters_prestart_when_active",
+            annotation["startRuntimePolicy"]["classification"],
         )
         consumer = annotation["missionRuntimeScriptConsumers"][0]
         self.assertEqual(

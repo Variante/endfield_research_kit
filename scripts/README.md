@@ -46,6 +46,13 @@ override those defaults for one run.
   every predecessor, flow-index, and main-path consumer. It fails closed on
   an active predecessor reader, a non-sort flow consumer, or any
   topology-driven lifecycle call.
+- The same hash-locked protocol audit discovers the generic LevelScript start
+  policy from metadata method signatures, enum constants, and decoded native
+  branch targets. It validates that an `Active`, unfinished
+  `SameWithActive` script reaches the common internal `PreStart` transition
+  without accepting any level/script/object id as a discovery input. This
+  closes the start-policy question, not the mission/server source of `Active`
+  state or cross-Story ordering.
 - LevelScript task recovery is corpus-driven rather than keyed to individual
   scenes. The builder validates the installed binary/protobuf task contract,
   joins every decoded task condition to its exact `lt:p` and `lt:mp` LevelData

@@ -126,6 +126,11 @@ Rebuild Story data after editing overrides.
   properties, and hashes for attached original binaries and data files. The
   panel keeps this server-backed task lifecycle separate from mission/quest
   ownership and scene-file ordering.
+- Every receiver whose serialized start type is `SameWithActive` also shows
+  the generic binary-validated `Active + unfinished -> PreStart` transition,
+  the discovered runtime method/enum values, and exact binary/metadata hashes.
+  The panel keeps the still-missing mission/server activation source and
+  cross-Story order visibly unresolved.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

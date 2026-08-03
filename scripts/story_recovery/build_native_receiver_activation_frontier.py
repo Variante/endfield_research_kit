@@ -61,7 +61,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v14"
+SCHEMA = "nativeReceiverActivationFrontier.v15"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -1609,6 +1609,8 @@ def activation_class(
     hosts: list[dict[str, Any]],
     incoming_manual_controls: list[dict[str, Any]],
     subgame_bindings: list[dict[str, Any]] | None = None,
+    *,
+    start_policy_validated: bool = False,
 ) -> str:
     """Classify only the static carriers that the audit actually decodes."""
     if subgame_bindings:
@@ -1623,6 +1625,8 @@ def activation_class(
     ]
     if cross_targets:
         return "literal_cross_script_manual_control"
+    if start_type == "SameWithActive" and start_policy_validated:
+        return "same_with_active_binary_active_gate"
     if start_type != "Manual":
         if (levelscript.get("startShapeListCount") or 0) > 0:
             return "nonmanual_start_with_shapes"
@@ -1675,6 +1679,21 @@ def build_report(
             "levelScriptTaskAuthorityAudit"
         )
         or {}
+    )
+    start_policy = (
+        (index_payload.get("runtimeContract") or {}).get(
+            "levelScriptStartPolicyAudit"
+        )
+        or {}
+    )
+    start_policy_validated = (
+        (start_policy.get("validation") or {}).get("status") == "validated"
+        and safe_text(start_policy.get("classification"))
+        == "same_with_active_enters_prestart_when_active"
+        and (start_policy.get("discoveryPattern") or {}).get(
+            "objectIdentityInputs"
+        )
+        == []
     )
     incoming_by_target = manual_control_targets(manual_control_payload)
     subgames_by_script = subgame_script_bindings(index_payload)
@@ -1824,6 +1843,7 @@ def build_report(
             hosts,
             incoming,
             subgames,
+            start_policy_validated=start_policy_validated,
         )
         classes[classification] += 1
         start_types[safe_text(levelscript.get("startTypeName")) or "[unresolved]"] += 1
@@ -1845,11 +1865,25 @@ def build_report(
             decoded_task_map,
         )
         row_task_authority = task_authority if decoded_task_map else {}
+        row_start_policy = (
+            start_policy
+            if start_policy_validated
+            and safe_text(levelscript.get("startTypeName")) == "SameWithActive"
+            else {}
+        )
         related_paths = {
             safe_text(related.get("sourceFile"))
             for related in related_original_files
         }
         for related in row_task_authority.get("relatedOriginalFiles") or []:
+            if (
+                isinstance(related, dict)
+                and safe_text(related.get("sourceFile"))
+                and safe_text(related.get("sourceFile")) not in related_paths
+            ):
+                related_original_files.append(dict(related))
+                related_paths.add(safe_text(related.get("sourceFile")))
+        for related in row_start_policy.get("relatedOriginalFiles") or []:
             if (
                 isinstance(related, dict)
                 and safe_text(related.get("sourceFile"))
@@ -1903,6 +1937,7 @@ def build_report(
                 "serializedMissionRuntimeIdTokens": serialized_mission_ids,
                 "decodedTaskMap": decoded_task_map,
                 "taskRuntimeAuthority": row_task_authority,
+                "startRuntimePolicy": row_start_policy,
                 "relatedOriginalFiles": related_original_files,
                 "activationClass": classification,
                 "missionOwnerStatus": "unresolved",
@@ -1932,6 +1967,17 @@ def build_report(
                     task_authority.get("classification")
                 ),
                 "validation": task_authority.get("validation") or {},
+            },
+            "startRuntimePolicy": {
+                "schema": safe_text(start_policy.get("schema")),
+                "source": safe_text(start_policy.get("source")),
+                "classification": safe_text(
+                    start_policy.get("classification")
+                ),
+                "validation": start_policy.get("validation") or {},
+                "objectIdentityInputs": (
+                    start_policy.get("discoveryPattern") or {}
+                ).get("objectIdentityInputs"),
             },
             "spawnerRoot": rel_path(spawner_root),
             "scriptTaskExtraInfo": rel_path(script_task_extra_info_path),
@@ -2021,6 +2067,13 @@ def build_report(
                 "task progress. They repeat task/condition identity only and do "
                 "not identify a mission owner or playback order."
             ),
+            "sameWithActiveBoundary": (
+                "The hash-validated current binary proves generically that an "
+                "Active, unfinished LevelScript with startType SameWithActive "
+                "enters the internal PreStart state without a start-area or "
+                "manual-start gate. It does not identify what mission/server "
+                "transition made the script Active, or order its Story actions."
+            ),
             "taskConditionBoundary": (
                 "A completely decoded task map proves authored task evaluation "
                 "requirements inside this LevelScript. Entity, spawner, dialog, "
@@ -2078,6 +2131,15 @@ def build_report(
                 ],
             },
             "startTypes": dict(sorted(start_types.items())),
+            "scriptsWithValidatedSameWithActivePolicy": sum(
+                bool(row.get("startRuntimePolicy")) for row in rows
+            ),
+            "storyKeysWithValidatedSameWithActivePolicy": len({
+                story_key
+                for row in rows
+                if row.get("startRuntimePolicy")
+                for story_key in row.get("storyKeys") or []
+            }),
             "levelDataHostShapes": dict(sorted(host_shapes.items())),
             "scriptsWithMissionNamedHost": sum(
                 any(host.get("missionNamedHost") for host in row["levelDataHosts"])
@@ -2582,6 +2644,7 @@ def publish_to_pipeline_index(
             ),
             "decodedTaskMap": row.get("decodedTaskMap"),
             "taskRuntimeAuthority": row.get("taskRuntimeAuthority") or {},
+            "startRuntimePolicy": row.get("startRuntimePolicy") or {},
             "relatedOriginalFiles": [
                 {
                     "kind": safe_text(related.get("kind")),
@@ -2627,6 +2690,11 @@ def markdown_report(payload: dict[str, Any]) -> str:
         ),
         f"- Unique Story keys: `{counts.get('storyKeys')}`",
         f"- Start types: `{counts.get('startTypes')}`",
+        (
+            "- Scripts / Story keys with binary-validated SameWithActive "
+            f"policy: `{counts.get('scriptsWithValidatedSameWithActivePolicy')}` / "
+            f"`{counts.get('storyKeysWithValidatedSameWithActivePolicy')}`"
+        ),
         f"- Activation classes: `{counts.get('activationClasses')}`",
         f"- LevelData host shapes: `{counts.get('levelDataHostShapes')}`",
         (

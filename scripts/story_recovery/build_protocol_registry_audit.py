@@ -944,6 +944,550 @@ def enum_members(
     raise RuntimeError(f"metadata type not found: {type_name}")
 
 
+def validate_levelscript_start_policy_observation(
+    observation: dict[str, Any],
+    *,
+    source_file: str,
+    source_hashes: dict[str, str],
+) -> dict[str, Any]:
+    """Fail closed on the generic native LevelScript start-policy shape."""
+    failures: list[dict[str, Any]] = []
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "levelscript_start_policy_contract",
+            "gate": gate,
+            "message": "LevelScriptRuntime SameWithActive start policy",
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": source_hashes,
+        })
+
+    enum_values = observation.get("enumValues") or {}
+    for enum_name, required_names in (
+        (
+            "Beyond.GEnums.LevelScriptState",
+            ("Active",),
+        ),
+        (
+            "Beyond.Gameplay.LevelScriptStartType",
+            ("ByEnterStartShape", "Manual", "SameWithActive", "Never"),
+        ),
+        (
+            "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",
+            ("PreStart",),
+        ),
+    ):
+        members = enum_values.get(enum_name) or {}
+        missing = [name for name in required_names if not isinstance(members.get(name), int)]
+        if missing:
+            fail(
+                "enumMembers",
+                {enum_name: list(required_names)},
+                {enum_name: {name: members.get(name) for name in required_names}},
+            )
+
+    methods = observation.get("methods") or {}
+    required_methods = (
+        "get_state",
+        "get_isDone",
+        "get_startType",
+        "UpdateWithinStartArea",
+        "set_runtimeState",
+        "UpdateRuntimeState",
+    )
+    unresolved_methods = [
+        name
+        for name in required_methods
+        if (methods.get(name) or {}).get("mappingStatus") != "mapped_unique"
+    ]
+    if unresolved_methods:
+        fail("uniqueMappedMethods", [], unresolved_methods)
+
+    active_gate = observation.get("activeStateGate") or {}
+    expected_active = (enum_values.get("Beyond.GEnums.LevelScriptState") or {}).get(
+        "Active"
+    )
+    if not (
+        active_gate.get("comparedValue") == expected_active
+        and active_gate.get("branchTargetIsDoneCheck") is True
+    ):
+        fail(
+            "activeStateGate",
+            {
+                "comparedValue": expected_active,
+                "branchTargetIsDoneCheck": True,
+            },
+            active_gate,
+        )
+
+    done_gate = observation.get("doneGate") or {}
+    if not (
+        done_gate.get("doneResultTested") is True
+        and done_gate.get("notDoneFallsThroughToStartPolicy") is True
+    ):
+        fail(
+            "notDoneStartPolicyGate",
+            {
+                "doneResultTested": True,
+                "notDoneFallsThroughToStartPolicy": True,
+            },
+            done_gate,
+        )
+
+    start_type_values = enum_values.get(
+        "Beyond.Gameplay.LevelScriptStartType"
+    ) or {}
+    start_gates = observation.get("startTypeGates") or {}
+    expected_start_gates = {
+        "Never": {
+            "comparedValue": start_type_values.get("Never"),
+            "branchesAwayFromPreStart": True,
+        },
+        "ByEnterStartShape": {
+            "comparedValue": start_type_values.get("ByEnterStartShape"),
+            "branchTargetIsStartAreaCheck": True,
+        },
+        "SameWithActive": {
+            "comparedValue": start_type_values.get("SameWithActive"),
+            "branchTargetIsCommonPreStart": True,
+        },
+    }
+    for name, expected in expected_start_gates.items():
+        actual = start_gates.get(name) or {}
+        if any(actual.get(key) != value for key, value in expected.items()):
+            fail(f"{name}Gate", expected, actual)
+
+    start_area_gate = observation.get("startAreaGate") or {}
+    if not (
+        start_area_gate.get("resultTested") is True
+        and start_area_gate.get("trueFallsThroughToCommonPreStart") is True
+    ):
+        fail(
+            "startAreaResultGate",
+            {
+                "resultTested": True,
+                "trueFallsThroughToCommonPreStart": True,
+            },
+            start_area_gate,
+        )
+
+    transition = observation.get("preStartTransition") or {}
+    expected_pre_start = (
+        enum_values.get(
+            "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState"
+        )
+        or {}
+    ).get("PreStart")
+    if not (
+        transition.get("runtimeStateValue") == expected_pre_start
+        and transition.get("setterReceivesValue") is True
+    ):
+        fail(
+            "commonPreStartTransition",
+            {
+                "runtimeStateValue": expected_pre_start,
+                "setterReceivesValue": True,
+            },
+            transition,
+        )
+
+    return {
+        "status": "validation_failed" if failures else "validated",
+        "failures": failures,
+    }
+
+
+def levelscript_start_policy_contract(
+    metadata: Any,
+    defaults: dict[int, tuple[int, int]],
+    helper: Any,
+    gameassembly_path: Path,
+    mapper_path: Path = NATIVE_MAPPER_HELPER,
+) -> dict[str, Any]:
+    """Discover SameWithActive semantics from names, enums, and native flow."""
+    mapper = load_native_mapper(mapper_path)
+    pe = mapper.PeImage(gameassembly_path)
+    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    ranges = mapper.image_method_ranges(metadata)
+    pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
+        pe, metadata, modules, ranges
+    )
+    sorted_pointers = sorted({
+        pointer
+        for pointers in pointers_by_image.values()
+        for pointer in pointers
+        if pointer
+    })
+    pointers_by_method_index: dict[int, set[int]] = {}
+    for pointer, aliases in method_by_pointer.items():
+        for alias in aliases:
+            method_index = alias.get("methodIndex")
+            if isinstance(method_index, int):
+                pointers_by_method_index.setdefault(method_index, set()).add(pointer)
+
+    enum_type_names = (
+        "Beyond.GEnums.LevelScriptState",
+        "Beyond.Gameplay.LevelScriptStartType",
+        "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",
+    )
+    enum_rows = {
+        type_name: enum_members(metadata, defaults, type_name)
+        for type_name in enum_type_names
+    }
+    enum_values = {
+        type_name: {row["name"]: row["id"] for row in rows}
+        for type_name, rows in enum_rows.items()
+    }
+
+    runtime_type_name = "Beyond.Gameplay.Core.LevelScriptRuntime"
+    runtime_types = [
+        type_def
+        for type_def in metadata.types
+        if metadata.type_full_name(type_def) == runtime_type_name
+    ]
+    method_specs = {
+        "get_state": ("get_state", (), "Beyond.GEnums.LevelScriptState"),
+        "get_isDone": ("get_isDone", (), "System.Boolean"),
+        "get_startType": (
+            "get_startType",
+            (),
+            "Beyond.Gameplay.LevelScriptStartType",
+        ),
+        "UpdateWithinStartArea": (
+            "UpdateWithinStartArea",
+            (),
+            "System.Boolean",
+        ),
+        "set_runtimeState": (
+            "set_runtimeState",
+            ("Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",),
+            "System.Void",
+        ),
+        "UpdateRuntimeState": (
+            "UpdateRuntimeState",
+            ("Beyond.Gameplay.Core.ScriptEndReason",),
+            "System.Void",
+        ),
+    }
+    method_rows: dict[str, dict[str, Any]] = {}
+    if len(runtime_types) == 1:
+        runtime_type = runtime_types[0]
+        for key, (name, parameter_types, return_type) in method_specs.items():
+            candidates: list[dict[str, Any]] = []
+            for method_def in metadata.methods_for(runtime_type):
+                info = helper.method_row(metadata, method_def)
+                actual_parameter_types = tuple(
+                    row.get("typeName")
+                    for row in info.get("parameterDetails") or []
+                )
+                if (
+                    info.get("name") == name
+                    and actual_parameter_types == parameter_types
+                    and info.get("returnTypeName") == return_type
+                ):
+                    method_index = method_def.index
+                    pointers = sorted(
+                        pointers_by_method_index.get(method_index) or []
+                    )
+                    candidates.append({
+                        "methodIndex": method_index,
+                        "token": info.get("token"),
+                        "parameterTypes": list(actual_parameter_types),
+                        "returnTypeName": info.get("returnTypeName"),
+                        "pointers": pointers,
+                    })
+            if len(candidates) == 1 and len(candidates[0]["pointers"]) == 1:
+                candidate = candidates[0]
+                pointer = candidate["pointers"][0]
+                method_rows[key] = {
+                    **candidate,
+                    "pointers": [f"0x{value:x}" for value in candidate["pointers"]],
+                    "methodPointerVa": f"0x{pointer:x}",
+                    "mappingStatus": "mapped_unique",
+                }
+            else:
+                method_rows[key] = {
+                    "mappingStatus": "unresolved",
+                    "candidateCount": len(candidates),
+                    "candidates": candidates,
+                }
+    else:
+        method_rows = {
+            key: {
+                "mappingStatus": "unresolved",
+                "candidateCount": 0,
+                "runtimeTypeCount": len(runtime_types),
+            }
+            for key in method_specs
+        }
+
+    observation: dict[str, Any] = {
+        "enumValues": enum_values,
+        "methods": method_rows,
+        "activeStateGate": {},
+        "doneGate": {},
+        "startTypeGates": {},
+        "startAreaGate": {},
+        "preStartTransition": {},
+    }
+    runtime_method = method_rows.get("UpdateRuntimeState") or {}
+    if runtime_method.get("mappingStatus") == "mapped_unique":
+        runtime_pointer = int(runtime_method["methodPointerVa"], 16)
+        scan_size, next_pointer = mapper.estimate_scan_size(
+            runtime_pointer, sorted_pointers, 65536
+        )
+        method_index = int(runtime_method["methodIndex"])
+        mapper_row = full_method_mapper_row(metadata, helper, method_index)
+        body_bytes = pe.bytes_at_va(runtime_pointer, scan_size)
+        body = mapper.build_method_body_summary(
+            mapper_row,
+            body_bytes,
+            runtime_pointer,
+            method_by_pointer,
+            pe=pe,
+            max_instructions=30000,
+        )
+        instructions = mapper.decode_x64_subset(
+            body_bytes, runtime_pointer, stop_offset=len(body_bytes)
+        )
+        calls = sorted(body.get("calls") or [], key=lambda row: row["offset"])
+
+        def calls_to(method_key: str) -> list[dict[str, Any]]:
+            expected_index = (method_rows.get(method_key) or {}).get("methodIndex")
+            return [
+                call
+                for call in calls
+                if any(
+                    target.get("methodIndex") == expected_index
+                    for target in call.get("resolved") or []
+                )
+            ]
+
+        def instructions_between(start: int, end: int) -> list[dict[str, Any]]:
+            return [
+                row
+                for row in instructions
+                if start < int(row.get("offset") or 0) < end
+            ]
+
+        def compared_value(rows: list[dict[str, Any]]) -> int | None:
+            for row in rows:
+                match = re.fullmatch(
+                    r"cmp eax, (?:0x([0-9a-f]+)|(-?\d+))",
+                    str(row.get("text") or ""),
+                )
+                if match:
+                    return int(match.group(1), 16) if match.group(1) else int(match.group(2))
+                if str(row.get("text") or "") == "test eax, eax":
+                    return 0
+            return None
+
+        def branch_target(rows: list[dict[str, Any]]) -> int | None:
+            for row in rows:
+                match = re.fullmatch(
+                    r"(?:je|jne|jcc) 0x([0-9a-f]+)",
+                    str(row.get("text") or ""),
+                )
+                if match:
+                    return int(match.group(1), 16)
+            return None
+
+        state_calls = calls_to("get_state")
+        done_calls = calls_to("get_isDone")
+        start_type_calls = calls_to("get_startType")
+        start_area_calls = calls_to("UpdateWithinStartArea")
+        state_setter_calls = calls_to("set_runtimeState")
+        first_done = done_calls[0] if done_calls else None
+        first_start_area = start_area_calls[0] if start_area_calls else None
+        start_policy_calls = (
+            [
+                call
+                for call in start_type_calls
+                if int(first_done["offset"]) < int(call["offset"])
+                < int(first_start_area["offset"])
+            ]
+            if first_done and first_start_area
+            else []
+        )
+        first_start_type = start_policy_calls[0] if start_policy_calls else None
+        if first_done and first_start_type:
+            active_gate_candidates: list[dict[str, Any]] = []
+            for state_call in state_calls:
+                if int(state_call["offset"]) >= int(first_done["offset"]):
+                    continue
+                rows = instructions_between(
+                    int(state_call["offset"]), int(first_done["offset"])
+                )
+                if compared_value(rows) == enum_values[
+                    "Beyond.GEnums.LevelScriptState"
+                ].get("Active"):
+                    candidate = {
+                        "callOffset": state_call["offset"],
+                        "comparedValue": compared_value(rows),
+                        "branchTargetVa": (
+                            f"0x{branch_target(rows):x}"
+                            if branch_target(rows) is not None
+                            else None
+                        ),
+                        "branchTargetIsDoneCheck": (
+                            branch_target(rows)
+                            == runtime_pointer + int(first_done["offset"])
+                        ),
+                    }
+                    active_gate_candidates.append(candidate)
+                    if candidate["branchTargetIsDoneCheck"]:
+                        observation["activeStateGate"] = candidate
+                        break
+            if not observation["activeStateGate"] and active_gate_candidates:
+                observation["activeStateGate"] = active_gate_candidates[0]
+            observation["activeStateGateCandidates"] = active_gate_candidates
+            done_rows = instructions_between(
+                int(first_done["offset"]), int(first_start_type["offset"])
+            )
+            observation["doneGate"] = {
+                "callOffset": first_done["offset"],
+                "doneResultTested": any(
+                    str(row.get("text") or "") == "test al, al"
+                    for row in done_rows
+                ),
+                "notDoneFallsThroughToStartPolicy": any(
+                    str(row.get("text") or "").startswith(("je ", "jne ", "jcc "))
+                    for row in done_rows
+                ),
+            }
+
+        common_pre_start_va: int | None = None
+        if len(start_policy_calls) == 3 and start_area_calls:
+            boundary_offsets = [
+                int(start_policy_calls[1]["offset"]),
+                int(start_policy_calls[2]["offset"]),
+                int(start_area_calls[0]["offset"]),
+            ]
+            gate_names = ("Never", "ByEnterStartShape", "SameWithActive")
+            for index, (name, call) in enumerate(zip(gate_names, start_policy_calls)):
+                rows = instructions_between(
+                    int(call["offset"]), boundary_offsets[index]
+                )
+                target = branch_target(rows)
+                gate = {
+                    "callOffset": call["offset"],
+                    "comparedValue": compared_value(rows),
+                    "branchTargetVa": f"0x{target:x}" if target is not None else None,
+                }
+                if name == "Never":
+                    gate["branchesAwayFromPreStart"] = target is not None
+                elif name == "ByEnterStartShape":
+                    gate["branchTargetIsStartAreaCheck"] = (
+                        target
+                        == runtime_pointer + int(start_area_calls[0]["offset"])
+                    )
+                else:
+                    common_pre_start_va = target
+                    gate["branchTargetIsCommonPreStart"] = target is not None
+                observation["startTypeGates"][name] = gate
+
+        if start_area_calls and common_pre_start_va is not None:
+            start_area_offset = int(start_area_calls[0]["offset"])
+            common_offset = common_pre_start_va - runtime_pointer
+            area_rows = instructions_between(start_area_offset, common_offset)
+            observation["startAreaGate"] = {
+                "callOffset": start_area_offset,
+                "resultTested": any(
+                    str(row.get("text") or "") == "test al, al"
+                    for row in area_rows
+                ),
+                "trueFallsThroughToCommonPreStart": any(
+                    str(row.get("text") or "").startswith(("je ", "jne ", "jcc "))
+                    for row in area_rows
+                ),
+            }
+            setter = next(
+                (
+                    call
+                    for call in state_setter_calls
+                    if int(call["offset"]) > common_offset
+                ),
+                None,
+            )
+            if setter:
+                transition_rows = [
+                    row
+                    for row in instructions
+                    if common_offset <= int(row.get("offset") or 0) < int(setter["offset"])
+                ]
+                pre_start_value = enum_values[
+                    "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState"
+                ].get("PreStart")
+                expected_move = f"mov edx, 0x{pre_start_value:x}"
+                observation["preStartTransition"] = {
+                    "commonTargetVa": f"0x{common_pre_start_va:x}",
+                    "setterCallOffset": setter["offset"],
+                    "runtimeStateValue": pre_start_value,
+                    "setterReceivesValue": any(
+                        str(row.get("text") or "") == expected_move
+                        for row in transition_rows
+                    ),
+                    "instructionWindow": [
+                        {
+                            "offset": row.get("offset"),
+                            "va": row.get("va"),
+                            "text": row.get("text"),
+                            "bytes": row.get("bytes"),
+                        }
+                        for row in transition_rows
+                    ],
+                }
+        observation["methodBody"] = {
+            "methodPointerVa": f"0x{runtime_pointer:x}",
+            "methodPointerRva": f"0x{runtime_pointer - pe.image_base:x}",
+            "scanBytes": scan_size,
+            "nextMethodPointerVa": f"0x{next_pointer:x}" if next_pointer else None,
+            "instructionCount": body.get("instructionCount"),
+            "unknownInstructionCount": body.get("unknownInstructionCount"),
+            "startTypeCallCount": len(start_type_calls),
+            "startPolicyCallCount": len(start_policy_calls),
+        }
+
+    source_hashes = {
+        "gameAssemblySha256": file_sha256(gameassembly_path),
+        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+    }
+    validation = validate_levelscript_start_policy_observation(
+        observation,
+        source_file=str(gameassembly_path.resolve()),
+        source_hashes=source_hashes,
+    )
+    return {
+        "schema": "levelScriptStartPolicy.v1",
+        "classification": "same_with_active_enters_prestart_when_active",
+        "discoveryPattern": {
+            "runtimeType": runtime_type_name,
+            "methodSelection": "exact metadata name, signature, and return type",
+            "enumSelection": "exact metadata enum types and constant values",
+            "nativeFlow": (
+                "decoded current-binary direct calls, comparisons, conditional "
+                "targets, and common runtime-state setter"
+            ),
+            "objectIdentityInputs": [],
+        },
+        **observation,
+        "finding": (
+            "When a LevelScript's public state is Active and it is not done, "
+            "startType SameWithActive branches directly to the same internal "
+            "PreStart transition used after a successful start-area check."
+        ),
+        "boundary": (
+            "This proves the generic client start policy for every serialized "
+            "SameWithActive LevelScript in this exact binary. It does not identify "
+            "which mission or server transition made the script Active, nor does it "
+            "order multiple Story actions inside or across scripts."
+        ),
+        "validation": validation,
+    }
+
+
 def message_schema(
     metadata: Any,
     defaults: dict[int, tuple[int, int]],
@@ -2581,6 +3125,13 @@ def build_report(
         gameassembly_path,
         mapper_path,
     )
+    start_policy_contract = levelscript_start_policy_contract(
+        metadata,
+        defaults,
+        helper,
+        gameassembly_path,
+        mapper_path,
+    )
     native_hooks_by_message_id: dict[int, list[str]] = {}
     for hook_name, hook in native_task_paths["hooks"].items():
         message_id = hook.get("messageId")
@@ -2620,7 +3171,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v7",
+        "_schema": "endfieldProtocolRegistryAudit.v8",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -2683,6 +3234,10 @@ def build_report(
             "topologyLifecycleCalls": len(state_application_census[
                 "questTopologyFieldConsumers"
             ].get("topologyLifecycleCalls") or []),
+            "levelScriptStartPolicyValidated": (
+                (start_policy_contract.get("validation") or {}).get("status")
+                == "validated"
+            ),
         },
         "evidencePolicy": {
             "registry": (
@@ -2709,6 +3264,7 @@ def build_report(
                 "separately by the runtime-hook manifest and disassembly. No packet "
                 "co-carries missionId or questId, so it still cannot attach Story to a mission."
             ),
+            "levelScriptStartPolicy": start_policy_contract["boundary"],
             "missionClientEvent": (
                 "Message 125 has a current-build native handler that interns its exact "
                 "missionId/eventName pair and publishes the resulting key through "
@@ -2749,6 +3305,7 @@ def build_report(
         "nativeLevelScriptEventPaths": NATIVE_LEVEL_SCRIPT_EVENT_PATHS,
         "protobufIdentityCarrierCensus": identity_carrier_census,
         "stateUpdateApplicationCensus": state_application_census,
+        "levelScriptStartPolicy": start_policy_contract,
         "message125EventBusSpecializations": event_bus_census,
         "missionEventConstructorXrefs": MISSION_EVENT_CONSTRUCTOR_XREF_FINDING,
         "missionEventAssetCoverage": mission_event_assets,
@@ -2807,6 +3364,10 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"**{summary['stateUpdateApplicationCandidatesValidated']}/"
             f"{summary['stateUpdateApplicationCandidates']}** validated; "
             f"**{summary['stateUpdateClientSuccessorSelectors']}** client successor selectors"
+        ),
+        (
+            "- LevelScript SameWithActive start policy: "
+            f"**{'validated' if summary['levelScriptStartPolicyValidated'] else 'failed'}**"
         ),
         f"- Runtime-hook manifest SHA-256: `{report['source']['runtimeHookManifestSha256']}`",
         "",
@@ -3029,6 +3590,10 @@ def render_markdown(report: dict[str, Any]) -> str:
     quest_consumer_census = topology.get("questInfoConsumers") or {}
     topology_rows = quest_consumer_census.get("rows") or []
     mission_topology_rows = topology.get("missionRuntimeConsumers") or []
+    start_policy = report.get("levelScriptStartPolicy") or {}
+    start_policy_methods = start_policy.get("methods") or {}
+    start_policy_gates = start_policy.get("startTypeGates") or {}
+    start_policy_transition = start_policy.get("preStartTransition") or {}
     lines.extend(
         [
             "",
@@ -3108,6 +3673,73 @@ def render_markdown(report: dict[str, Any]) -> str:
             ],
             "",
             topology.get("boundary") or "",
+            "",
+            "## Generic LevelScript start policy",
+            "",
+            start_policy.get("finding") or "[start-policy audit unavailable]",
+            "",
+            (
+                "The contract discovers methods by exact metadata name/signature and "
+                "then validates current-binary branch targets. It supplies no level, "
+                "script, mission, quest, or Story object id as a discovery input."
+            ),
+            "",
+            "| Gate | Enum value | Native call/target | Result |",
+            "|---|---:|---|---|",
+            (
+                "| public state `Active` | {value} | `+0x{offset:x}` -> `{target}` | "
+                "exact done-check block |"
+            ).format(
+                value=(start_policy.get("activeStateGate") or {}).get(
+                    "comparedValue", "?"
+                ),
+                offset=int(
+                    (start_policy.get("activeStateGate") or {}).get(
+                        "callOffset", 0
+                    )
+                ),
+                target=(start_policy.get("activeStateGate") or {}).get(
+                    "branchTargetVa", "?"
+                ),
+            ),
+            *[
+                "| startType `{name}` | {value} | `+0x{offset:x}` -> `{target}` | "
+                "{result} |".format(
+                    name=md_escape(name),
+                    value=gate.get("comparedValue", "?"),
+                    offset=int(gate.get("callOffset", 0)),
+                    target=md_escape(str(gate.get("branchTargetVa") or "?")),
+                    result=md_escape(
+                        "common PreStart"
+                        if name == "SameWithActive"
+                        else (
+                            "start-area check"
+                            if name == "ByEnterStartShape"
+                            else "skip start"
+                        )
+                    ),
+                )
+                for name, gate in start_policy_gates.items()
+            ],
+            (
+                "| internal runtime state `PreStart` | {value} | "
+                "`{target}` -> `{setter}` | exact `set_runtimeState` call |"
+            ).format(
+                value=start_policy_transition.get("runtimeStateValue", "?"),
+                target=md_escape(
+                    str(start_policy_transition.get("commonTargetVa") or "?")
+                ),
+                setter=md_escape(
+                    str(
+                        (start_policy_methods.get("set_runtimeState") or {}).get(
+                            "methodPointerVa"
+                        )
+                        or "?"
+                    )
+                ),
+            ),
+            "",
+            start_policy.get("boundary") or "",
             "",
             "## Story-facing message schemas",
             "",
@@ -3196,7 +3828,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v7 report when its original "
+            "Reuse an existing validated v8 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -3215,7 +3847,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v7":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v8":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}
@@ -3241,6 +3873,14 @@ def current_report_status(
         return False, (
             "topology-consumer validation is "
             f"{topology_validation.get('status')!r}"
+        )
+    start_policy_validation = (
+        (report.get("levelScriptStartPolicy") or {}).get("validation") or {}
+    )
+    if start_policy_validation.get("status") != "validated":
+        return False, (
+            "LevelScript start-policy validation is "
+            f"{start_policy_validation.get('status')!r}"
         )
     source = report.get("source") or {}
     checks = (
@@ -3332,12 +3972,24 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+    start_policy_validation = report["levelScriptStartPolicy"]["validation"]
+    if start_policy_validation["status"] != "validated":
+        first = start_policy_validation["failures"][0]
+        print(
+            "LevelScript start-policy validator failed: "
+            f"validator={first['validator']} gate={first['gate']} "
+            f"message={first.get('message')} expected={first['expected']!r} "
+            f"actual={first['actual']!r} source={first['sourceFile']}",
+            file=sys.stderr,
+        )
+        return 1
     print(
         f"wrote {args.json_output} and {args.markdown_output}: "
         f"{report['summary']['totalMessages']} messages, "
         f"{report['summary']['selectedSchemas']} selected schemas, "
         f"{report['summary']['stateUpdateApplicationCandidatesValidated']}/"
-        f"{report['summary']['stateUpdateApplicationCandidates']} state-update paths validated"
+        f"{report['summary']['stateUpdateApplicationCandidates']} state-update paths validated, "
+        "LevelScript start policy validated"
     )
     return 0
 
