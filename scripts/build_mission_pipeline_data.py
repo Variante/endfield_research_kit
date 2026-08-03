@@ -140,7 +140,7 @@ DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT = (
 DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT = (
     ROOT / "reports" / "story" / "recovery" / "cutscene_case_resolution_audit.json"
 )
-LUA_CONSUMER_REFERENCE_SCHEMA = "luaConsumerReferenceAudit.v2"
+LUA_CONSUMER_REFERENCE_SCHEMA = "luaConsumerReferenceAudit.v3"
 NATIVE_GAME_ACTION_TYPE = "Beyond.Gameplay.Actions.GameAction"
 DEFAULT_ACTIVITY_STAGE_TABLE = DEFAULT_TABLE_ROOT / "ActivityConditionalMultiStageTable.json"
 DEFAULT_ACTIVITY_DUNGEON_FIGHTING_STAGE_TABLE = (
@@ -3146,7 +3146,8 @@ def _lua_phase(module: str) -> str:
     parts = Path(module).as_posix().split("/")
     if len(parts) >= 2 and parts[0].casefold() == "phase":
         return re.sub(r"(?<!^)(?=[A-Z])", "_", parts[1]).lower()
-    return ""
+    scope = parts[-2] if len(parts) >= 2 else Path(module).stem
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", scope).lower()
 
 
 def load_lua_story_playback_evidence(
@@ -3208,6 +3209,38 @@ def load_lua_story_playback_evidence(
                     f"row={index} sourceHash expected={source_sha} actual={actual_sha} "
                     f"source={repo_path(source_path)}"
                 )
+        table_resolution = row.get("tableFieldResolution")
+        if isinstance(table_resolution, dict):
+            table_required = {
+                "table": table_resolution.get("table"),
+                "tableSourcePath": table_resolution.get("tableSourcePath"),
+                "tableSourceSha256": table_resolution.get("tableSourceSha256"),
+                "field": table_resolution.get("field"),
+            }
+            table_missing = [
+                key for key, value in table_required.items()
+                if value in (None, "")
+            ]
+            table_sha = str(table_resolution.get("tableSourceSha256") or "")
+            if not re.fullmatch(r"[0-9a-fA-F]{64}", table_sha):
+                table_missing.append("tableSourceSha256:sha256")
+            candidates = table_resolution.get("candidateRows") or []
+            if row.get("literalResolution") == "table_field_singleton":
+                if len(candidates) != 1 or not table_resolution.get("exactSingleton"):
+                    table_missing.append("candidateRows:exact_singleton")
+            if table_missing:
+                malformed.append(
+                    f"row={index} tableResolution={','.join(table_missing)}"
+                )
+                continue
+            table_source = ROOT / str(table_resolution["tableSourcePath"])
+            if table_source.is_file():
+                actual_table_sha = sha256_path(table_source)
+                if actual_table_sha.casefold() != table_sha.casefold():
+                    malformed.append(
+                        f"row={index} tableSourceHash expected={table_sha} "
+                        f"actual={actual_table_sha} source={repo_path(table_source)}"
+                    )
     if malformed:
         raise RuntimeError(
             f"validator={validator} failed: gate=row_provenance expected=complete_exact_rows "
@@ -3252,6 +3285,21 @@ def load_lua_story_playback_evidence(
                 continue
             module = str(row["module"])
             virtual_lua_file = f"Lua/Data/LuaScripts/{module}"
+            table_resolution = row.get("tableFieldResolution") or {}
+            table_candidates = table_resolution.get("candidateRows") or []
+            table_candidate = (
+                table_candidates[0]
+                if len(table_candidates) == 1
+                and row.get("literalResolution") == "table_field_singleton"
+                else {}
+            )
+            row_fields = table_candidate.get("rowFields") or {}
+            mission_id = str(row_fields.get("missionId") or "") or None
+            quest_id = str(row_fields.get("questId") or "") or None
+            table_source_path = str(
+                table_resolution.get("tableSourcePath") or ""
+            )
+            is_table_carrier = bool(table_candidate)
             accepted.append({
                 "storyKey": story_key,
                 "luaFile": virtual_lua_file,
@@ -3263,12 +3311,33 @@ def load_lua_story_playback_evidence(
                 "nativeEntry": native_entry,
                 "phase": _lua_phase(module),
                 "playbackKind": row.get("playbackKind"),
+                "literalResolution": str(row.get("literalResolution") or ""),
+                "missionId": mission_id,
+                "questId": quest_id,
+                "table": str(table_resolution.get("table") or ""),
+                "tableKey": str(table_candidate.get("tableKey") or ""),
+                "tableField": str(table_resolution.get("field") or ""),
+                "tableLookupKeyExpression": str(
+                    table_resolution.get("lookupKeyExpression") or ""
+                ),
+                "tableSourcePath": table_source_path,
+                "tableSourceSha256": str(
+                    table_resolution.get("tableSourceSha256") or ""
+                ).lower(),
                 "auditReport": repo_path(lua_audit_path),
                 "auditSha256": audit_sha,
                 "note": (
-                    "The complete shipped-Lua census found an exact-case literal at "
-                    "this typed GameAction playback call. The Lua controller owns "
-                    "playback; no mission or quest identity is serialized."
+                    (
+                        "The complete shipped-Lua census traced this typed GameAction "
+                        "call through one exact current-table row. That same row "
+                        "co-carries the published mission/quest identity."
+                    )
+                    if is_table_carrier and (mission_id or quest_id)
+                    else (
+                        "The complete shipped-Lua census found an exact-case literal at "
+                        "this typed GameAction playback call. The Lua controller owns "
+                        "playback; no mission or quest identity is serialized."
+                    )
                 ),
             })
             continue
@@ -3315,10 +3384,15 @@ def load_lua_story_playback_evidence(
         "acceptedExactPlaybackCalls": accepted,
         "rejectedCaseMismatchCalls": rejected,
         "unresolvedPlaybackCalls": len(calls) - len(accepted) - len(rejected),
+        "acceptedTableCarrierCalls": sum(
+            1 for row in accepted if row.get("literalResolution") == "table_field_singleton"
+        ),
         "binaryCaseAuditCount": len(case_audits),
         "evidenceBoundary": (
             "Exact shipped-Lua bytes and typed GameAction calls prove controller "
-            "playback only. They do not supply mission ownership or Story order. "
+            "playback. A mission/quest attachment is admitted only when the same "
+            "resolved original table row co-carries that identity; otherwise Lua "
+            "does not supply mission ownership or Story order. "
             "Case-folded matches create no route without matching installed-binary proof."
         ),
     }
@@ -5775,19 +5849,66 @@ def build_story_binding_coverage(
         story_trigger_routes[key][signature] = route
 
     for call_site in lua_playback_evidence["acceptedExactPlaybackCalls"]:
+        mission_id = call_site.get("missionId")
+        quest_id = call_site.get("questId")
+        table_source = str(call_site.get("tableSourcePath") or "")
+        has_table_owner = bool(table_source and (mission_id or quest_id))
+        lua_steps: list[dict[str, Any]] = []
+        if has_table_owner:
+            lua_steps.extend([
+                {
+                    "kind": "quest" if quest_id else "mission",
+                    "id": quest_id or mission_id,
+                },
+                {
+                    "kind": "originalTableRow",
+                    "id": f"{call_site['table']}:{call_site['tableKey']}",
+                    "summaries": [
+                        f"{call_site['tableField']} = {call_site['storyKey']}",
+                        f"SHA-256 {call_site['tableSourceSha256']}",
+                    ],
+                },
+            ])
+        lua_steps.extend([
+            {
+                "kind": "luaController",
+                "id": call_site["luaFile"],
+                "phase": call_site["phase"],
+                "summaries": [
+                    f"line {call_site['luaLine']}",
+                    f"SHA-256 {call_site['luaSourceSha256']}",
+                ],
+            },
+            {
+                "kind": "nativePlayback",
+                "id": call_site["nativeEntry"],
+            },
+        ])
         add_trigger_route({
             "storyKey": call_site["storyKey"],
-            "relation": "lua_controller_playback",
-            "causality": "playback_owner_unresolved",
+            "relation": (
+                "lua_table_controller_playback"
+                if has_table_owner
+                else "lua_controller_playback"
+            ),
+            "causality": "context" if has_table_owner else "playback_owner_unresolved",
             "direction": "playback",
-            "scope": "phase",
+            "scope": "quest" if quest_id else ("mission" if mission_id else "phase"),
             "phase": call_site["phase"],
             "evidenceTier": "direct",
-            "confidence": "corpus_scanned_shipped_lua_literal_plus_native_entry",
-            "ownerStatus": "unresolved",
-            "questTriggerStatus": "no_mission_or_quest_identity_serialized",
-            "missionId": None,
-            "questId": None,
+            "confidence": (
+                "corpus_scanned_shipped_lua_table_row_plus_native_entry"
+                if has_table_owner
+                else "corpus_scanned_shipped_lua_literal_plus_native_entry"
+            ),
+            "ownerStatus": "connected" if has_table_owner else "unresolved",
+            "questTriggerStatus": (
+                "exact_same_table_row_identity"
+                if has_table_owner
+                else "no_mission_or_quest_identity_serialized"
+            ),
+            "missionId": mission_id,
+            "questId": quest_id,
             "serverExchange": False,
             "luaFile": call_site["luaFile"],
             "luaSourcePath": call_site["luaSourcePath"],
@@ -5798,26 +5919,18 @@ def build_story_binding_coverage(
             "nativeEntry": call_site["nativeEntry"],
             "auditReport": call_site["auditReport"],
             "auditSha256": call_site["auditSha256"],
+            "table": call_site.get("table"),
+            "tableKey": call_site.get("tableKey"),
+            "tableField": call_site.get("tableField"),
+            "tableLookupKeyExpression": call_site.get("tableLookupKeyExpression"),
+            "tableSourceSha256": call_site.get("tableSourceSha256"),
             "sourceFiles": [
                 call_site["luaFile"],
+                *([table_source] if table_source else []),
                 call_site["auditReport"],
             ],
             "note": call_site["note"],
-            "steps": [
-                {
-                    "kind": "luaController",
-                    "id": call_site["luaFile"],
-                    "phase": call_site["phase"],
-                    "summaries": [
-                        f"line {call_site['luaLine']}",
-                        f"SHA-256 {call_site['luaSourceSha256']}",
-                    ],
-                },
-                {
-                    "kind": "nativePlayback",
-                    "id": call_site["nativeEntry"],
-                },
-            ],
+            "steps": lua_steps,
         })
 
     root_playback_alias_rows = [
@@ -6547,6 +6660,8 @@ def build_story_binding_coverage(
             "acceptedLuaExactPlaybackCalls": len(
                 lua_playback_evidence["acceptedExactPlaybackCalls"]
             ),
+            "acceptedLuaTableCarrierCalls":
+                lua_playback_evidence["acceptedTableCarrierCalls"],
             "rejectedLuaCaseMismatchCalls": len(
                 lua_playback_evidence["rejectedCaseMismatchCalls"]
             ),

@@ -49,6 +49,18 @@ GAME_ACTION_CALL_RE = re.compile(
 LUA_STRING_ASSIGNMENT_RE = re.compile(
     r"(?m)^\s*(?:local\s+)?([A-Za-z_]\w*)\s*=\s*([\"'])(.*?)\2\s*$"
 )
+LUA_TABLE_LOOKUP_RE = re.compile(
+    r"(?m)^\s*local\s+(?:(?P<ok>[A-Za-z_]\w*)\s*,\s*)?"
+    r"(?P<row>[A-Za-z_]\w*)\s*=\s*Tables\.(?P<table>[A-Za-z_]\w*)"
+    r"\s*:\s*(?:TryGetValue|GetValue)\s*\((?P<key>[^\r\n]*)\)\s*$"
+)
+LUA_TABLE_FIELD_ASSIGNMENT_RE = re.compile(
+    r"(?m)^\s*(?:local\s+)?(?P<value>[A-Za-z_]\w*)\s*=\s*"
+    r"(?P<row>[A-Za-z_]\w*)\.(?P<field>[A-Za-z_]\w*)\s*$"
+)
+LUA_TABLE_FIELD_EXPRESSION_RE = re.compile(
+    r"(?P<row>[A-Za-z_]\w*)\.(?P<field>[A-Za-z_]\w*)"
+)
 STORY_ID_RE = re.compile(
     r"^(?:dlg|cutscene|radio|remotecomm|sns|black|text)_[A-Za-z0-9_]+$",
     re.IGNORECASE,
@@ -208,11 +220,138 @@ def load_story_keys(path: Path) -> set[str]:
     }
 
 
+def load_table_payloads(
+    table_index: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Load one effective original JSON table per case-insensitive table name."""
+    payloads: dict[str, dict[str, Any]] = {}
+    for folded_name, index_row in sorted(table_index.items()):
+        paths = [ROOT / str(value) for value in index_row.get("paths") or []]
+        source_path = next((path for path in paths if path.is_file()), None)
+        if source_path is None:
+            continue
+        try:
+            raw = source_path.read_bytes()
+            payload = json.loads(raw.decode("utf-8-sig"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        payloads[folded_name] = {
+            "table": str(index_row.get("table") or source_path.stem),
+            "sourcePath": repo_rel(source_path),
+            "sourceSha256": hashlib.sha256(raw).hexdigest(),
+            "rows": payload,
+        }
+    return payloads
+
+
+def table_field_resolution(
+    text: str,
+    argument: str,
+    *,
+    table_payloads: dict[str, dict[str, Any]],
+    story_keys: set[str],
+) -> dict[str, Any] | None:
+    """Resolve a simple Lua table-row field flowing into a GameAction call.
+
+    The rule is structural rather than table-specific: a local row returned by
+    ``Tables.<name>:TryGetValue`` may flow either directly or through one local
+    field assignment into the first GameAction argument.  A Story id is exact
+    only when the current original table has one possible non-empty value for
+    that field. Multiple current rows remain candidates because the lookup key
+    has not been resolved.
+    """
+    row_origins = {
+        match.group("row"): {
+            "table": match.group("table"),
+            "keyExpression": match.group("key").strip(),
+        }
+        for match in LUA_TABLE_LOOKUP_RE.finditer(text)
+    }
+    value_origins = {
+        match.group("value"): {
+            "row": match.group("row"),
+            "field": match.group("field"),
+        }
+        for match in LUA_TABLE_FIELD_ASSIGNMENT_RE.finditer(text)
+    }
+    origin = value_origins.get(argument.strip())
+    if origin is None:
+        direct = LUA_TABLE_FIELD_EXPRESSION_RE.fullmatch(argument.strip())
+        if direct:
+            origin = {"row": direct.group("row"), "field": direct.group("field")}
+    if origin is None:
+        return None
+    lookup = row_origins.get(origin["row"])
+    if lookup is None:
+        return None
+    table = table_payloads.get(str(lookup["table"]).casefold())
+    if table is None:
+        return None
+
+    field = str(origin["field"])
+    folded_story_keys = {key.casefold(): key for key in story_keys}
+    candidates: list[dict[str, Any]] = []
+    nonempty_values: set[str] = set()
+    for table_key, raw_row in sorted((table.get("rows") or {}).items()):
+        if not isinstance(raw_row, dict):
+            continue
+        raw_value = raw_row.get(field)
+        if not isinstance(raw_value, str) or not raw_value:
+            continue
+        nonempty_values.add(raw_value)
+        canonical = (
+            raw_value if raw_value in story_keys
+            else folded_story_keys.get(raw_value.casefold(), "")
+        )
+        if not canonical:
+            continue
+        candidates.append({
+            "tableKey": str(table_key),
+            "rawValue": raw_value,
+            "canonicalStoryKey": canonical,
+            "registryStatus": (
+                "exact_registry_match"
+                if raw_value == canonical
+                else "case_mismatch_registry_match"
+            ),
+            "rowFields": {
+                str(key): value
+                for key, value in raw_row.items()
+                if isinstance(value, (str, int, float, bool)) or value is None
+            },
+        })
+    exact_singleton = (
+        len(nonempty_values) == 1
+        and len(candidates) == 1
+        and candidates[0]["registryStatus"] == "exact_registry_match"
+    )
+    mismatch_singleton = (
+        len(nonempty_values) == 1
+        and len(candidates) == 1
+        and candidates[0]["registryStatus"] == "case_mismatch_registry_match"
+    )
+    return {
+        "table": table["table"],
+        "tableSourcePath": table["sourcePath"],
+        "tableSourceSha256": table["sourceSha256"],
+        "rowVariable": origin["row"],
+        "field": field,
+        "lookupKeyExpression": lookup["keyExpression"],
+        "candidateRows": candidates,
+        "nonemptyValueCount": len(nonempty_values),
+        "exactSingleton": exact_singleton,
+        "caseMismatchSingleton": mismatch_singleton,
+    }
+
+
 def scan_game_action_calls(
     text: str,
     *,
     rel: str,
     story_keys: set[str],
+    table_payloads: dict[str, dict[str, Any]] | None = None,
     source_path: str = "",
     source_sha256: str = "",
 ) -> list[dict[str, Any]]:
@@ -234,6 +373,23 @@ def scan_game_action_calls(
         elif re.fullmatch(r"[A-Za-z_]\w*", argument or "") and argument in assignments:
             resolved = assignments[argument]
             resolution = "module_constant"
+
+        table_resolution = table_field_resolution(
+            text,
+            argument,
+            table_payloads=table_payloads or {},
+            story_keys=story_keys,
+        )
+        if not resolved and table_resolution:
+            candidates = table_resolution["candidateRows"]
+            if table_resolution["exactSingleton"]:
+                resolved = str(candidates[0]["rawValue"])
+                resolution = "table_field_singleton"
+            elif table_resolution["caseMismatchSingleton"]:
+                resolved = str(candidates[0]["rawValue"])
+                resolution = "table_field_singleton"
+            else:
+                resolution = "table_field_candidates"
 
         registry_status = "not_story_shaped"
         canonical_key = ""
@@ -266,6 +422,7 @@ def scan_game_action_calls(
                 "registryStatus": registry_status,
                 "canonicalStoryKey": canonical_key or None,
                 "nearbyTables": nearby_tables,
+                "tableFieldResolution": table_resolution,
                 "context": line_text(text, match.start()),
             }
         )
@@ -392,6 +549,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     story_index = args.story_index.resolve()
     story_keys = load_story_keys(story_index)
     table_index, table_root_summaries = build_table_index(table_roots)
+    table_payloads = load_table_payloads(table_index)
     modules: dict[str, dict[str, Any]] = {}
     root_summaries = []
     read_errors = []
@@ -457,6 +615,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
                 text,
                 rel=rel,
                 story_keys=story_keys,
+                table_payloads=table_payloads,
                 source_path=str(row.get("canonicalPath") or ""),
                 source_sha256=str(row.get("canonicalSha256") or ""),
             )
@@ -570,7 +729,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     playback_registry_counts = Counter(row["registryStatus"] for row in playback_calls)
 
     return {
-        "schemaVersion": "luaConsumerReferenceAudit.v2",
+        "schemaVersion": "luaConsumerReferenceAudit.v3",
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "metadata": {
             "luaRoots": [repo_rel(root) for root in lua_roots],
@@ -632,9 +791,11 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
                     "playback entry points."
                 ),
                 "literalResolution": (
-                    "Only a direct quoted first argument or a module-scope/simple local "
-                    "string assignment is resolved. Table fields, function parameters, "
-                    "handles, concatenation, and control flow remain unresolved."
+                    "Direct quoted arguments and simple local string assignments are "
+                    "resolved. A simple Tables.<name> row field is also resolved when "
+                    "the current original table has exactly one non-empty candidate; "
+                    "multi-row fields, function parameters, handles, concatenation, and "
+                    "general control flow remain unresolved."
                 ),
                 "case": (
                     "Exact registry spelling is proven separately from a case-folded "
