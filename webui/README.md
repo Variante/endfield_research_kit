@@ -87,7 +87,9 @@ Rebuild Story data after editing overrides.
   records without treating the rest of the file as mission chronology.
 - Native branch cards show typed predicate operands when the current binary
   union, formatter field order, payload shape, and runtime consumer all agree;
-  opaque or changed shapes remain visibly unresolved.
+  embedded root `GameCondition` unions and local getter references retain
+  their nested type/operand details, while opaque or changed shapes remain
+  visibly unresolved.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

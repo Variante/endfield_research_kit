@@ -1288,6 +1288,30 @@ def _levelscript_native_control_paths_to_record(
     def successors(record: dict) -> list[tuple[str, int]]:
         return _levelscript_native_action_successors(record, decoded(record))
 
+    getter_detail_kinds = (
+        "booleanCompare",
+        "checkLevelScriptStage",
+        "checkMissionOrQuestIsComplete",
+        "floatNewCompare",
+        "getConditionResult",
+        "intCompare",
+        "intEqual",
+        "intRandom",
+        "getterInt",
+        "getLevelScriptStage",
+        "getLevelScriptPropertyGenericBool",
+        "isEndminGender",
+    )
+
+    def semantic_getter_detail(
+        getter_detail: dict,
+    ) -> tuple[str, dict]:
+        for detail_kind in getter_detail_kinds:
+            detail = getter_detail.get(detail_kind)
+            if isinstance(detail, dict) and detail:
+                return detail_kind, detail
+        return "", {}
+
     def compact_step(record: dict, edge: str) -> dict:
         code = int(record.get("code") or 0)
         kind = int(record.get("kind") or 0)
@@ -1321,48 +1345,42 @@ def _levelscript_native_control_paths_to_record(
                     "getterTexts": _levelscript_record_texts(getter)[:8],
                     "nativeMappingId": LEVELSCRIPT_NATIVE_GETTER_MAPPING_ID,
                 })
-                for detail_kind in (
-                    "booleanCompare",
-                    "checkLevelScriptStage",
-                    "checkMissionOrQuestIsComplete",
-                    "floatNewCompare",
-                    "intCompare",
-                    "intEqual",
-                    "intRandom",
-                    "getterInt",
-                    "getLevelScriptStage",
-                    "getLevelScriptPropertyGenericBool",
-                    "isEndminGender",
-                ):
-                    predicate_detail = getter_detail.get(detail_kind)
-                    if predicate_detail:
-                        predicate["detailKind"] = detail_kind
-                        predicate["detail"] = predicate_detail
-                        source_getter_id = predicate_detail.get(
-                            "valueAGetterLocalId"
+                detail_kind, predicate_detail = semantic_getter_detail(
+                    getter_detail
+                )
+                if predicate_detail:
+                    predicate["detailKind"] = detail_kind
+                    predicate["detail"] = predicate_detail
+                    source_getter_id = predicate_detail.get(
+                        "valueAGetterLocalId"
+                    )
+                    source_getter = getter_by_local.get(source_getter_id)
+                    if source_getter:
+                        source_pair = levelscript_record_semantic_key(source_getter)
+                        source_decoded = decoded(source_getter)
+                        source_detail_kind, source_detail = semantic_getter_detail(
+                            source_decoded
                         )
-                        source_getter = getter_by_local.get(source_getter_id)
-                        if source_getter:
-                            source_pair = levelscript_record_semantic_key(source_getter)
-                            predicate["sourceGetter"] = {
-                                key: value
-                                for key, value in {
-                                    "getterLocalId": source_getter_id,
-                                    "getterName": LEVELSCRIPT_NATIVE_GETTER_NAMES.get(
-                                        source_pair, ""
-                                    ),
-                                    "getterUnionTag": f"0x{source_pair[0]:04x}",
-                                    "getterSerializedMemberCount": source_pair[1],
-                                    "getterTexts": _levelscript_record_texts(
-                                        source_getter
-                                    )[:8],
-                                    "getterInt": decoded(source_getter).get(
-                                        "getterInt"
-                                    ) or {},
-                                }.items()
-                                if value not in ("", None, [], {})
-                            }
-                        break
+                        predicate["sourceGetter"] = {
+                            key: value
+                            for key, value in {
+                                "getterLocalId": source_getter_id,
+                                "getterName": LEVELSCRIPT_NATIVE_GETTER_NAMES.get(
+                                    source_pair, ""
+                                ),
+                                "getterUnionTag": f"0x{source_pair[0]:04x}",
+                                "getterSerializedMemberCount": source_pair[1],
+                                "getterTexts": _levelscript_record_texts(
+                                    source_getter
+                                )[:8],
+                                "detailKind": source_detail_kind,
+                                "detail": source_detail,
+                                # Retained for existing consumers while the
+                                # generic detail pair covers every getter.
+                                "getterInt": source_decoded.get("getterInt") or {},
+                            }.items()
+                            if value not in ("", None, [], {})
+                        }
                 compare = getter_detail.get("compareMissionState") or {}
                 if compare:
                     predicate["compareMissionState"] = compare

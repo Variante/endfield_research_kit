@@ -2854,6 +2854,91 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertEqual(7, int_equal_detail["valueA"]["value"])
         self.assertEqual(3, int_equal_detail["valueB"]["value"])
 
+        int_equal_ref_blob = getter_record(
+            0x01AC,
+            9,
+            225,
+            b"f722f08a",
+            getter_ref + constant_i32(0),
+        )
+        int_equal_ref_record = extract_levelscript_uid_records(
+            int_equal_ref_blob
+        )[0]
+        int_equal_ref_detail = decode_levelscript_record_payload(
+            int_equal_ref_blob,
+            int_equal_ref_record,
+            next_start=len(int_equal_ref_blob),
+            action_map_role="getterList#5",
+        )["intEqual"]
+        self.assertEqual(221, int_equal_ref_detail["valueAGetterLocalId"])
+        self.assertEqual(
+            "localGetterRef",
+            int_equal_ref_detail["valueA"]["operandKind"],
+        )
+        self.assertEqual(0, int_equal_ref_detail["valueB"]["value"])
+
+        compact_string = lambda value: (
+            len(value).to_bytes(4, "little") + value
+        )
+        fmv_condition = (
+            b"\x39\x05"
+            + (1).to_bytes(4, "little", signed=True)
+            + compact_string(b"12345678")
+            + b"\x00\x01"
+            + b"\x04"
+            + compact_string(b"cs_video_fixture")
+            + default_tail
+        )
+        condition_blob = getter_record(
+            0x004E,
+            8,
+            226,
+            b"a722f08a",
+            fmv_condition,
+        )
+        condition_record = extract_levelscript_uid_records(condition_blob)[0]
+        condition_detail = decode_levelscript_record_payload(
+            condition_blob,
+            condition_record,
+            next_start=len(condition_blob),
+            action_map_role="getterList#6",
+        )["getConditionResult"]
+        self.assertEqual("CheckFMVFinish", condition_detail["condition"]["type"])
+        self.assertEqual(
+            "cs_video_fixture",
+            condition_detail["condition"]["fmvId"]["value"],
+        )
+
+        malformed_condition_blob = bytearray(condition_blob)
+        condition_offset = malformed_condition_blob.index(b"\x39\x05")
+        malformed_condition_blob[condition_offset + 1] = 6
+        malformed_condition_record = extract_levelscript_uid_records(
+            bytes(malformed_condition_blob)
+        )[0]
+        self.assertNotIn(
+            "getConditionResult",
+            decode_levelscript_record_payload(
+                bytes(malformed_condition_blob),
+                malformed_condition_record,
+                next_start=len(malformed_condition_blob),
+                action_map_role="getterList#6",
+            ),
+        )
+
+        malformed_ref_blob = int_equal_ref_blob[:-1]
+        malformed_ref_record = extract_levelscript_uid_records(
+            malformed_ref_blob
+        )[0]
+        self.assertNotIn(
+            "intEqual",
+            decode_levelscript_record_payload(
+                malformed_ref_blob,
+                malformed_ref_record,
+                next_start=len(malformed_ref_blob),
+                action_map_role="getterList#5",
+            ),
+        )
+
         random_blob = getter_record(
             0x01BA,
             9,

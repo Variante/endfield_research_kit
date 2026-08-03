@@ -185,6 +185,31 @@ def factory_task_entry() -> bytes:
     )
 
 
+def recovered_getter_condition_task_entry() -> bytes:
+    specs = [
+        (0x0023, 7, [i32_param(0), string_param("client_key"), u64_param(1)]),
+        (0x0039, 5, [string_param("cs_video_fixture")]),
+        (0x008F, 7, [i32_param(1), i32_param(100007), u64_param(2)]),
+    ]
+    conditions = []
+    for index, (tag, member_count, fields) in enumerate(specs):
+        key = f"{index + 0x31:08x}"
+        conditions.append(
+            condition_entry(
+                key,
+                bytes([tag, member_count]) + common(key) + b"".join(fields),
+            )
+        )
+    return (
+        compact_string("facefeed")
+        + b"\x04\x01"
+        + struct.pack("<I", len(conditions))
+        + b"".join(conditions)
+        + b"\x00"
+        + struct.pack("<i", 0)
+    )
+
+
 def levelscript_blob(entry: bytes) -> bytes:
     return (
         b"\x1b"
@@ -285,6 +310,42 @@ class LevelScriptTaskConditionTests(unittest.TestCase):
             "memorypack-null",
             conditions[-1]["conditionUnionTagEncoding"],
         )
+
+    def test_getter_condition_family_reuses_root_condition_decoder(self) -> None:
+        rows = decode_levelscript_task_conditions(
+            levelscript_blob(recovered_getter_condition_task_entry()),
+            SCRIPT_ID,
+        )
+        conditions = [
+            row["condition"]
+            for row in rows[0]["tasks"][0]["conditions"]
+        ]
+        self.assertEqual(
+            ["CheckClientGlobalVar", "CheckFMVFinish", "CheckServerGlobalVar"],
+            [row["type"] for row in conditions],
+        )
+        self.assertEqual("client_key", conditions[0]["key"]["value"])
+        self.assertEqual("cs_video_fixture", conditions[1]["fmvId"]["value"])
+        self.assertEqual(100007, conditions[2]["key"]["value"])
+        self.assertEqual("NotEqual", conditions[2]["comparerName"])
+
+    def test_getter_condition_member_count_drift_fails_closed(self) -> None:
+        valid = bytearray(
+            levelscript_blob(recovered_getter_condition_task_entry())
+        )
+        condition_offset = valid.index(b"\x39\x05")
+        valid[condition_offset + 1] = 6
+        diagnostics: list[dict[str, object]] = []
+        self.assertEqual(
+            [],
+            decode_levelscript_task_conditions(
+                bytes(valid),
+                SCRIPT_ID,
+                diagnostics=diagnostics,
+            ),
+        )
+        self.assertEqual("supportedConditionPayloadLayout", diagnostics[0]["gate"])
+        self.assertEqual("CheckFMVFinish", diagnostics[0]["expectedConditionType"])
 
     def test_factory_condition_member_count_drift_fails_closed(self) -> None:
         valid = bytearray(levelscript_blob(factory_task_entry()))

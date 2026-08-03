@@ -3056,7 +3056,9 @@
     const nativeBranchLabel = (kind) => t(kind === "splitFanout" ? "nativeSplitFanout" : kind === "ifElse" ? "nativeIfElseBranch" : "nativeSwitchBranch");
     const nativeParamText = (label, param) => {
       if (!param || typeof param !== "object") return "";
-      const source = param.path || (param.paramSource != null ? `source ${param.paramSource}` : "");
+      const source = param.getterLocalId != null
+        ? `getter #${param.getterLocalId}`
+        : (param.path || (param.paramSource != null ? `source ${param.paramSource}` : ""));
       const value = param.value != null ? String(param.value) : "";
       return [label, source, value].filter(Boolean).join(":");
     };
@@ -3078,7 +3080,9 @@
       const compare = predicate.compareMissionState || {};
       const missionState = predicate.sourceGetter?.getMissionState || {};
       const detail = predicate.detail || {};
+      const gameCondition = detail.condition || {};
       const sourceDetail = predicate.sourceGetter?.getterInt || {};
+      const sourceSemanticDetail = predicate.sourceGetter?.detail || {};
       const details = [
         predicate.getterName || "",
         predicate.getterLocalId != null ? `#${predicate.getterLocalId}` : "",
@@ -3093,6 +3097,14 @@
         detail.completedStateName || "",
         detail.genderName || "",
         detail.propertyKey || "",
+        gameCondition.type || "",
+        gameCondition.fmvId?.value || "",
+        gameCondition.key?.value != null ? String(gameCondition.key.value) : "",
+        gameCondition.comparerName || "",
+        gameCondition.targetValue?.value != null ? String(gameCondition.targetValue.value) : "",
+        gameCondition.scriptId?.mode || "",
+        gameCondition.scriptId?.scriptId || "",
+        gameCondition.value?.value != null ? String(gameCondition.value.value) : "",
         detail.scriptPtr?.mode || detail.targetScript?.mode || "",
         detail.scriptPtr?.scriptId || detail.targetScript?.scriptId || "",
         nativeParamText("A", detail.valueA),
@@ -3103,7 +3115,10 @@
         detail.expectedStage?.value != null ? `stage ${detail.expectedStage.value}` : "",
         nativeParamText("gender", detail.gender),
         predicate.sourceGetter?.getterName || "",
+        predicate.sourceGetter?.detailKind || "",
         nativeParamText("source", sourceDetail.value),
+        nativeParamText("source min", sourceSemanticDetail.minimum),
+        nativeParamText("source max", sourceSemanticDetail.maximum),
         nativeParamText("value", predicate.param),
         ...(predicate.getterTexts || predicate.texts || []),
         ...(predicate.sourceGetter?.getterTexts || []),
