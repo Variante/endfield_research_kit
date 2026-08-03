@@ -264,7 +264,14 @@ RELEVANT_MESSAGES: tuple[dict[str, Any], ...] = (
         "direction": "client_to_server",
         "enumName": "CsSceneSetLevelScriptActive",
         "expectedId": 94,
-        "classification": "native_sender_proven",
+        "classification": "native_sender_method_proven",
+    },
+    {
+        "type": "Proto.CS_SCENE_SET_LEVEL_SCRIPT_START",
+        "direction": "client_to_server",
+        "enumName": "CsSceneSetLevelScriptStart",
+        "expectedId": 101,
+        "classification": "native_sender_method_proven",
     },
     {
         "type": "Proto.SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY",
@@ -1985,6 +1992,7 @@ def validate_levelscript_activation_control_observation(
 
     expected_ids = {
         "CsSceneSetLevelScriptActive": 94,
+        "CsSceneSetLevelScriptStart": 101,
         "ScSceneLevelScriptStateNotify": 37,
     }
     actual_ids = {
@@ -1999,6 +2007,12 @@ def validate_levelscript_activation_control_observation(
             ("sceneNumId", 1),
             ("scriptId", 2),
             ("isActive", 3),
+            ("leaderPos", 4),
+        ],
+        "startRequest": [
+            ("sceneNumId", 1),
+            ("scriptId", 2),
+            ("isStart", 3),
             ("leaderPos", 4),
         ],
         "stateNotify": [
@@ -2027,6 +2041,7 @@ def validate_levelscript_activation_control_observation(
         "stateNotify.scriptId_": 0x20,
         "stateNotify.state_": 0x28,
         "stateNotify.isComplete_": 0x2C,
+        "levelScriptRuntime.m_manualStartTriggered": 0xF8,
     }
     actual_offsets = {
         key: (observation.get("fieldOffsets") or {}).get(key)
@@ -2042,6 +2057,7 @@ def validate_levelscript_activation_control_observation(
         "ContainerState",
         "UpdateState",
         "set_state",
+        "set_runtimeState",
         "UpdateRuntimeState",
         "ChallengeOnInteract",
         "SubGameTableTryGetValue",
@@ -2049,6 +2065,11 @@ def validate_levelscript_activation_control_observation(
         "TryGetLevelScript",
         "ManualStart",
         "ManualStartActionExecute",
+        "NetworkSetActive",
+        "NetworkSetStart",
+        "RuntimeSendActive",
+        "RuntimeSendStart",
+        "BaseSendMsg",
     }
     unresolved = sorted(
         name
@@ -2109,6 +2130,48 @@ def validate_levelscript_activation_control_observation(
     ]
     if actual_callers != expected_callers:
         fail("manualStartDirectCallers", expected_callers, actual_callers)
+
+    expected_request_flow = {
+        "networkActiveToSendMsg": 1,
+        "networkStartToSendMsg": 1,
+        "runtimeActiveToSendMsg": 1,
+        "runtimeStartToSendMsg": 1,
+        "networkActiveDirectCallerCount": 0,
+        "networkStartDirectCallerCount": 0,
+        "runtimeActiveDirectCallerCount": 2,
+        "runtimeStartDirectCallerCount": 2,
+        "runtimeActiveArguments": [True, False],
+        "runtimeStartArguments": [True, False],
+        "manualStartFlagWrite": True,
+        "manualStartFlagBeforeStateSetter": True,
+        "startTrueFollowedByPreStartActionRunning": True,
+    }
+    actual_request_flow = {
+        name: (observation.get("clientRequestFlow") or {}).get(name)
+        for name in expected_request_flow
+    }
+    if actual_request_flow != expected_request_flow:
+        fail("clientRequestFlow", expected_request_flow, actual_request_flow)
+
+    expected_runtime_callers = {
+        "RuntimeSendActive": [
+            ("Beyond.Gameplay.Core.LevelScriptRuntime", "UpdateRuntimeState", 2)
+        ],
+        "RuntimeSendStart": [
+            ("Beyond.Gameplay.Core.LevelScriptRuntime", "UpdateRuntimeState", 2)
+        ],
+        "NetworkSetActive": [],
+        "NetworkSetStart": [],
+    }
+    actual_runtime_callers = {
+        key: [
+            (row.get("type"), row.get("method"), len(row.get("callSites") or []))
+            for row in (observation.get("directCallers") or {}).get(key) or []
+        ]
+        for key in expected_runtime_callers
+    }
+    if actual_runtime_callers != expected_runtime_callers:
+        fail("requestDirectCallers", expected_runtime_callers, actual_runtime_callers)
 
     return {
         "status": "validation_failed" if failures else "validated",
@@ -2265,6 +2328,15 @@ def levelscript_activation_control_contract(
             "System.Void",
             parameter_types=("Beyond.GEnums.LevelScriptState",),
         ),
+        "set_runtimeState": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "set_runtimeState",
+            1,
+            "System.Void",
+            parameter_types=(
+                "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",
+            ),
+        ),
         "UpdateRuntimeState": mapped_method(
             "Beyond.Gameplay.Core.LevelScriptRuntime",
             "UpdateRuntimeState",
@@ -2311,6 +2383,40 @@ def levelscript_activation_control_contract(
             "System.Void",
             parameter_types=("System.Single",),
         ),
+        "NetworkSetActive": mapped_method(
+            "Beyond.Gameplay.GameplayNetwork",
+            "SendLevelScriptSetActive",
+            3,
+            "System.Void",
+            parameter_types=("System.UInt64", "System.Int32", "System.Boolean"),
+        ),
+        "NetworkSetStart": mapped_method(
+            "Beyond.Gameplay.GameplayNetwork",
+            "SendLevelScriptSetStart",
+            3,
+            "System.Void",
+            parameter_types=("System.UInt64", "System.Int32", "System.Boolean"),
+        ),
+        "RuntimeSendActive": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "_SendLevelScriptSetActive",
+            1,
+            "System.Void",
+            parameter_types=("System.Boolean",),
+        ),
+        "RuntimeSendStart": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "_SendLevelScriptSetStart",
+            1,
+            "System.Void",
+            parameter_types=("System.Boolean",),
+        ),
+        "BaseSendMsg": mapped_method(
+            "Beyond.Gameplay.BaseNetworkSystem",
+            "SendMsg",
+            2,
+            "System.Void",
+        ),
     }
 
     def method_body(method_key: str) -> dict[str, Any]:
@@ -2349,6 +2455,12 @@ def levelscript_activation_control_contract(
             "ContainerState",
             "UpdateState",
             "ChallengeOnInteract",
+            "UpdateRuntimeState",
+            "ManualStart",
+            "NetworkSetActive",
+            "NetworkSetStart",
+            "RuntimeSendActive",
+            "RuntimeSendStart",
         )
     }
 
@@ -2449,6 +2561,14 @@ def levelscript_activation_control_contract(
         )
         for name in ("sceneNumId_", "scriptId_", "state_", "isComplete_"):
             field_offsets[f"stateNotify.{name}"] = current.get(name)
+    runtime_fields = find_type("Beyond.Gameplay.Core.LevelScriptRuntime")
+    if len(runtime_fields) == 1:
+        current = runtime_type_field_offsets(
+            metadata, pe, metadata_summary, runtime_fields[0].index
+        )
+        field_offsets["levelScriptRuntime.m_manualStartTriggered"] = current.get(
+            "m_manualStartTriggered"
+        )
 
     challenge_body = bodies.get("ChallengeOnInteract") or {}
     field_accesses = challenge_body.get("fieldAccesses") or []
@@ -2480,14 +2600,22 @@ def levelscript_activation_control_contract(
         },
     })
 
-    manual_start_pointer = (
-        int(methods["ManualStart"]["methodPointerVa"], 16)
-        if methods["ManualStart"].get("mappingStatus") == "mapped_unique"
-        else None
-    )
-    caller_rows: dict[tuple[str, str, int], dict[str, Any]] = {}
+    target_pointers = {
+        int(methods[key]["methodPointerVa"], 16): key
+        for key in (
+            "ManualStart",
+            "NetworkSetActive",
+            "NetworkSetStart",
+            "RuntimeSendActive",
+            "RuntimeSendStart",
+        )
+        if methods[key].get("mappingStatus") == "mapped_unique"
+    }
+    caller_rows: dict[str, dict[tuple[str, str, int], dict[str, Any]]] = {
+        key: {} for key in target_pointers.values()
+    }
     caller_body_cache: dict[int, dict[str, Any]] = {}
-    if manual_start_pointer is not None:
+    if target_pointers:
         for section in pe.sections:
             if section["name"] not in {".text", "il2cpp"} or not section["rawSize"]:
                 continue
@@ -2500,7 +2628,9 @@ def levelscript_activation_control_contract(
             while 0 <= offset <= len(data) - 5:
                 relative = struct.unpack_from("<i", data, offset + 1)[0]
                 call_va = section_va + offset
-                if call_va + 5 + relative == manual_start_pointer:
+                target_pointer = call_va + 5 + relative
+                target_key = target_pointers.get(target_pointer)
+                if target_key is not None:
                     position = bisect_right(sorted_pointers, call_va) - 1
                     caller_pointer = (
                         sorted_pointers[position] if position >= 0 else 0
@@ -2545,7 +2675,7 @@ def levelscript_activation_control_contract(
                         if row.get("offset") == call_offset
                         and any(
                             target.get("methodIndex")
-                            == methods["ManualStart"].get("methodIndex")
+                            == methods[target_key].get("methodIndex")
                             for target in row.get("resolved") or []
                         )
                     ), None)
@@ -2558,27 +2688,129 @@ def levelscript_activation_control_contract(
                             str(alias.get("method") or ""),
                             int(alias.get("methodIndex") or -1),
                         )
-                        caller_rows[key] = {
+                        row = caller_rows[target_key].setdefault(key, {
                             "type": key[0],
                             "method": key[1],
                             "methodIndex": key[2],
                             "token": alias.get("token"),
                             "methodPointerVa": f"0x{caller_pointer:x}",
+                            "callSites": [],
+                        })
+                        row["callSites"].append({
                             "callVa": f"0x{call_va:x}",
                             "callOffset": call_offset,
                             "section": section["name"],
                             "decodedDirectCall": True,
-                        }
+                        })
                 offset = data.find(b"\xe8", offset + 1)
-    manual_start_callers = sorted(
-        caller_rows.values(), key=lambda row: (row["type"], row["method"])
+    direct_callers = {
+        key: sorted(rows.values(), key=lambda row: (row["type"], row["method"]))
+        for key, rows in caller_rows.items()
+    }
+    manual_start_callers = [
+        {
+            **row,
+            **((row.get("callSites") or [{}])[0]),
+        }
+        for row in direct_callers.get("ManualStart") or []
+    ]
+
+    def boolean_argument(call: dict[str, Any]) -> bool | None:
+        text = str(
+            (((call.get("argumentContext") or {}).get("argRegisterWrites") or {})
+             .get("rdx") or {}).get("text") or ""
+        ).lower()
+        if text in {"mov dl, 0x1", "mov edx, 0x1"}:
+            return True
+        if text in {"xor edx, edx", "xor rdx, rdx"}:
+            return False
+        return None
+
+    update_active_calls = calls_to("UpdateRuntimeState", "RuntimeSendActive")
+    update_start_calls = calls_to("UpdateRuntimeState", "RuntimeSendStart")
+    manual_body = bodies.get("ManualStart") or {}
+    manual_flag_offset = field_offsets.get(
+        "levelScriptRuntime.m_manualStartTriggered"
     )
+    manual_flag_writes = [
+        row for row in manual_body.get("fieldAccesses") or []
+        if isinstance(manual_flag_offset, int)
+        and row.get("kind") == "write"
+        and row.get("origin") == f"this+0x{manual_flag_offset:x}"
+    ]
+    manual_setter_calls = calls_to("ManualStart", "set_runtimeState")
+    start_true = [
+        row for row in update_start_calls if boolean_argument(row) is True
+    ]
+    update_setter_calls = calls_to("UpdateRuntimeState", "set_runtimeState")
+    prestart_action_running_calls = [
+        row for row in update_setter_calls
+        if str((((row.get("argumentContext") or {}).get("argRegisterWrites") or {})
+                .get("rdx") or {}).get("text") or "").lower()
+        in {"mov edx, 0x17", "mov dl, 0x17"}
+    ]
+    request_links = {
+        "networkActiveToSendMsg": calls_to("NetworkSetActive", "BaseSendMsg"),
+        "networkStartToSendMsg": calls_to("NetworkSetStart", "BaseSendMsg"),
+        "runtimeActiveToSendMsg": calls_to("RuntimeSendActive", "BaseSendMsg"),
+        "runtimeStartToSendMsg": calls_to("RuntimeSendStart", "BaseSendMsg"),
+    }
+    client_request_flow = {
+        name: len(rows) for name, rows in request_links.items()
+    }
+    client_request_flow.update({
+        "networkActiveDirectCallerCount": sum(
+            len(row.get("callSites") or [])
+            for row in direct_callers.get("NetworkSetActive") or []
+        ),
+        "networkStartDirectCallerCount": sum(
+            len(row.get("callSites") or [])
+            for row in direct_callers.get("NetworkSetStart") or []
+        ),
+        "runtimeActiveDirectCallerCount": sum(
+            len(row.get("callSites") or [])
+            for row in direct_callers.get("RuntimeSendActive") or []
+        ),
+        "runtimeStartDirectCallerCount": sum(
+            len(row.get("callSites") or [])
+            for row in direct_callers.get("RuntimeSendStart") or []
+        ),
+        "runtimeActiveArguments": [boolean_argument(row) for row in update_active_calls],
+        "runtimeStartArguments": [boolean_argument(row) for row in update_start_calls],
+        "manualStartFlagWrite": len(manual_flag_writes) == 1,
+        "manualStartFlagBeforeStateSetter": (
+            len(manual_flag_writes) == 1
+            and len(manual_setter_calls) == 1
+            and int(manual_flag_writes[0]["offset"])
+            < int(manual_setter_calls[0]["offset"])
+        ),
+        "startTrueFollowedByPreStartActionRunning": (
+            len(start_true) == 1
+            and len(prestart_action_running_calls) == 1
+            and int(start_true[0]["offset"])
+            < int(prestart_action_running_calls[0]["offset"])
+        ),
+        "callOffsets": {
+            **{name: [row.get("offset") for row in rows]
+               for name, rows in request_links.items()},
+            "runtimeActive": [row.get("offset") for row in update_active_calls],
+            "runtimeStart": [row.get("offset") for row in update_start_calls],
+            "manualStartFlag": [row.get("offset") for row in manual_flag_writes],
+            "manualStartSetter": [row.get("offset") for row in manual_setter_calls],
+            "preStartActionRunningSetter": [
+                row.get("offset") for row in prestart_action_running_calls
+            ],
+        },
+    })
 
     cs_by_name = {row["name"]: row["id"] for row in cs}
     sc_by_name = {row["name"]: row["id"] for row in sc}
     message_ids = {
         "CsSceneSetLevelScriptActive": cs_by_name.get(
             "CsSceneSetLevelScriptActive"
+        ),
+        "CsSceneSetLevelScriptStart": cs_by_name.get(
+            "CsSceneSetLevelScriptStart"
         ),
         "ScSceneLevelScriptStateNotify": sc_by_name.get(
             "ScSceneLevelScriptStateNotify"
@@ -2587,6 +2819,9 @@ def levelscript_activation_control_contract(
     message_schemas = {
         "activationRequest": message_schema(
             metadata, defaults, "Proto.CS_SCENE_SET_LEVEL_SCRIPT_ACTIVE"
+        ),
+        "startRequest": message_schema(
+            metadata, defaults, "Proto.CS_SCENE_SET_LEVEL_SCRIPT_START"
         ),
         "stateNotify": message_schema(
             metadata, defaults, "Proto.SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY"
@@ -2600,6 +2835,8 @@ def levelscript_activation_control_contract(
         "publicStateFlow": public_state_flow,
         "subGameInteractionFlow": subgame_interaction_flow,
         "manualStartDirectCallers": manual_start_callers,
+        "directCallers": direct_callers,
+        "clientRequestFlow": client_request_flow,
     }
     source_hashes = {
         "gameAssemblySha256": file_sha256(gameassembly_path),
@@ -2611,13 +2848,16 @@ def levelscript_activation_control_contract(
         source_hashes=source_hashes,
     )
     return {
-        "schema": "levelScriptActivationControl.v1",
-        "classification": "server_state_and_subgame_interaction_start_paths",
+        "schema": "levelScriptActivationControl.v2",
+        "classification": "server_state_subgame_and_runtime_request_paths",
         "discoveryPattern": {
             "methodSelection": "exact metadata type, name, signature, and return type",
             "messageSelection": "exact current enum IDs and protobuf fields",
             "fieldSelection": "MetadataRegistration instance offsets",
-            "callers": "complete current executable-code direct E8 caller census for ManualStart",
+            "callers": (
+                "complete current executable-code direct E8 caller census for "
+                "ManualStart and both public/runtime active/start sender methods"
+            ),
             "serializedObjectInputs": [
                 "SubGameInstanceData.id",
                 "SubGameInstanceData.bindScriptId",
@@ -2631,13 +2871,17 @@ def levelscript_activation_control_contract(
             "callers in the current AOT client are ManualStartLevelScript.Execute and "
             "InteractiveLogicChallengeStartPoint._OnInteract; the interaction path "
             "resolves the typed SubGame row by id, reads bindScriptId, looks up that "
-            "LevelScript, and calls ManualStart."
+            "LevelScript, and calls ManualStart. The same generic runtime records the "
+            "manual-start flag, enters PreStart, emits the typed client start request, "
+            "and enters PreStartActionRunning."
         ),
         "boundary": (
             "An exact SubGame id/bindScriptId row therefore proves an interaction "
             "ManualStart carrier for that bound script. The server state packet has no "
             "mission or quest field, and neither path proves which mission owns Story "
-            "playback, which server branch selected a state, or any cross-Story order."
+            "playback, which server branch selected a state, or any cross-Story order. "
+            "The public network sender methods have zero direct current-AOT callers; "
+            "indirect/IFix/server selection remains outside this evidence."
         ),
         "validation": validation,
     }
@@ -4342,7 +4586,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v10",
+        "_schema": "endfieldProtocolRegistryAudit.v11",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -4797,6 +5041,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     activation_methods = activation_control.get("methods") or {}
     activation_state_flow = activation_control.get("publicStateFlow") or {}
     subgame_flow = activation_control.get("subGameInteractionFlow") or {}
+    client_request_flow = activation_control.get("clientRequestFlow") or {}
     lines.extend(
         [
             "",
@@ -5006,6 +5251,27 @@ def render_markdown(report: dict[str, Any]) -> str:
             ),
             "",
             (
+                "The generic client start lifecycle is `ManualStart flag` -> "
+                "`PreStart` -> `CS_SCENE_SET_LEVEL_SCRIPT_START` ({message_id}) -> "
+                "`PreStartActionRunning`. Runtime start request arguments are "
+                "**{arguments}**; runtime sender direct calls are **{runtime_calls}**; "
+                "public network sender direct AOT calls are **{network_calls}**."
+            ).format(
+                message_id=(activation_control.get("messageIds") or {}).get(
+                    "CsSceneSetLevelScriptStart", "?"
+                ),
+                arguments=md_escape(str(
+                    client_request_flow.get("runtimeStartArguments") or []
+                )),
+                runtime_calls=client_request_flow.get(
+                    "runtimeStartDirectCallerCount", 0
+                ),
+                network_calls=client_request_flow.get(
+                    "networkStartDirectCallerCount", 0
+                ),
+            ),
+            "",
+            (
                 "Native entry points: state handler `{handler}`, runtime update "
                 "`{update}`, challenge interaction `{challenge}`, ManualStart `{start}`."
             ).format(
@@ -5131,7 +5397,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v10":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v11":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}

@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "_schema": "endfieldProtocolRegistryAudit.v11",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -301,6 +301,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         observation = {
             "messageIds": {
                 "CsSceneSetLevelScriptActive": 94,
+                "CsSceneSetLevelScriptStart": 101,
                 "ScSceneLevelScriptStateNotify": 37,
             },
             "messageSchemas": {
@@ -308,6 +309,12 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     {"name": "sceneNumId", "tag": 1},
                     {"name": "scriptId", "tag": 2},
                     {"name": "isActive", "tag": 3},
+                    {"name": "leaderPos", "tag": 4},
+                ]},
+                "startRequest": {"fields": [
+                    {"name": "sceneNumId", "tag": 1},
+                    {"name": "scriptId", "tag": 2},
+                    {"name": "isStart", "tag": 3},
                     {"name": "leaderPos", "tag": 4},
                 ]},
                 "stateNotify": {"fields": [
@@ -324,6 +331,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "stateNotify.scriptId_": 0x20,
                 "stateNotify.state_": 0x28,
                 "stateNotify.isComplete_": 0x2C,
+                "levelScriptRuntime.m_manualStartTriggered": 0xF8,
             },
             "methods": {
                 name: {"mappingStatus": "mapped_unique"}
@@ -334,6 +342,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     "ContainerState",
                     "UpdateState",
                     "set_state",
+                    "set_runtimeState",
                     "UpdateRuntimeState",
                     "ChallengeOnInteract",
                     "SubGameTableTryGetValue",
@@ -341,6 +350,11 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     "TryGetLevelScript",
                     "ManualStart",
                     "ManualStartActionExecute",
+                    "NetworkSetActive",
+                    "NetworkSetStart",
+                    "RuntimeSendActive",
+                    "RuntimeSendStart",
+                    "BaseSendMsg",
                 )
             },
             "publicStateFlow": {
@@ -373,6 +387,35 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     "method": "_OnInteract",
                 },
             ],
+            "clientRequestFlow": {
+                "networkActiveToSendMsg": 1,
+                "networkStartToSendMsg": 1,
+                "runtimeActiveToSendMsg": 1,
+                "runtimeStartToSendMsg": 1,
+                "networkActiveDirectCallerCount": 0,
+                "networkStartDirectCallerCount": 0,
+                "runtimeActiveDirectCallerCount": 2,
+                "runtimeStartDirectCallerCount": 2,
+                "runtimeActiveArguments": [True, False],
+                "runtimeStartArguments": [True, False],
+                "manualStartFlagWrite": True,
+                "manualStartFlagBeforeStateSetter": True,
+                "startTrueFollowedByPreStartActionRunning": True,
+            },
+            "directCallers": {
+                "NetworkSetActive": [],
+                "NetworkSetStart": [],
+                "RuntimeSendActive": [{
+                    "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+                    "method": "UpdateRuntimeState",
+                    "callSites": [{}, {}],
+                }],
+                "RuntimeSendStart": [{
+                    "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+                    "method": "UpdateRuntimeState",
+                    "callSites": [{}, {}],
+                }],
+            },
         }
 
         result = audit.validate_levelscript_activation_control_observation(
@@ -411,6 +454,8 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "publicStateFlow",
                 "subGameInteractionFlow",
                 "manualStartDirectCallers",
+                "clientRequestFlow",
+                "requestDirectCallers",
             ],
         )
 

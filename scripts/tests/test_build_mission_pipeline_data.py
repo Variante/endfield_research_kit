@@ -151,7 +151,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "_schema": "endfieldProtocolRegistryAudit.v11",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -203,7 +203,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "_schema": "endfieldProtocolRegistryAudit.v11",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": "0" * 64,
@@ -281,7 +281,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "_schema": "endfieldProtocolRegistryAudit.v11",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -310,7 +310,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "_schema": "endfieldProtocolRegistryAudit.v11",
                 "selectedSchemas": [],
                 "nativeTaskPaths": {},
             }), encoding="utf-8")
@@ -330,7 +330,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "_schema": "endfieldProtocolRegistryAudit.v11",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -378,7 +378,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "_schema": "endfieldProtocolRegistryAudit.v11",
                 "levelScriptStartPolicy": {
                     "schema": "levelScriptStartPolicy.v1",
                     "classification": (
@@ -410,7 +410,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "_schema": "endfieldProtocolRegistryAudit.v11",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -460,7 +460,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "_schema": "endfieldProtocolRegistryAudit.v11",
                 "levelScriptManualSelfControl": {
                     "schema": "levelScriptManualSelfControl.v1",
                     "classification": (
@@ -494,7 +494,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "_schema": "endfieldProtocolRegistryAudit.v11",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -506,9 +506,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     ).hexdigest(),
                 },
                 "levelScriptActivationControl": {
-                    "schema": "levelScriptActivationControl.v1",
+                    "schema": "levelScriptActivationControl.v2",
                     "classification": (
-                        "server_state_and_subgame_interaction_start_paths"
+                        "server_state_subgame_and_runtime_request_paths"
                     ),
                     "discoveryPattern": {
                         "serializedObjectInputs": [
@@ -540,7 +540,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(
             contract["classification"],
-            "server_state_and_subgame_interaction_start_paths",
+            "server_state_subgame_and_runtime_request_paths",
         )
         self.assertEqual(
             contract["messageIds"]["ScSceneLevelScriptStateNotify"], 37
@@ -551,11 +551,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "_schema": "endfieldProtocolRegistryAudit.v11",
                 "levelScriptActivationControl": {
-                    "schema": "levelScriptActivationControl.v1",
+                    "schema": "levelScriptActivationControl.v2",
                     "classification": (
-                        "server_state_and_subgame_interaction_start_paths"
+                        "server_state_subgame_and_runtime_request_paths"
                     ),
                     "discoveryPattern": {
                         "serializedObjectInputs": ["fixture-script-id"],

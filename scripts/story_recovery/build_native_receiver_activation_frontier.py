@@ -61,7 +61,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v17"
+SCHEMA = "nativeReceiverActivationFrontier.v18"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -1701,6 +1701,8 @@ def activation_class(
         and (levelscript.get("taskMapCount") or 0) == 0
     )
     if no_parent and no_shapes and no_task_map:
+        if activation_control_validated:
+            return "manual_start_runtime_request_no_static_carrier"
         return "manual_start_no_static_activation_carrier"
     return "manual_start_static_carrier_unresolved"
 
@@ -1775,7 +1777,7 @@ def build_report(
         (activation_control.get("validation") or {}).get("status")
         == "validated"
         and safe_text(activation_control.get("classification"))
-        == "server_state_and_subgame_interaction_start_paths"
+        == "server_state_subgame_and_runtime_request_paths"
         and (activation_control.get("discoveryPattern") or {}).get(
             "serializedObjectInputs"
         )
@@ -2005,6 +2007,37 @@ def build_report(
             if activation_control_validated
             else {}
         )
+        row_client_start_request_control = (
+            {
+                **row_activation_control,
+                "activeRequestMessageId": (
+                    activation_control.get("messageIds") or {}
+                ).get("CsSceneSetLevelScriptActive"),
+                "startRequestMessageId": (
+                    activation_control.get("messageIds") or {}
+                ).get("CsSceneSetLevelScriptStart"),
+                "fieldOffsets": activation_control.get("fieldOffsets") or {},
+                "networkSetStartMethod": activation_methods.get(
+                    "NetworkSetStart"
+                )
+                or {},
+                "manualStartMethod": activation_methods.get("ManualStart") or {},
+                "runtimeSendStartMethod": activation_methods.get(
+                    "RuntimeSendStart"
+                )
+                or {},
+                "updateRuntimeStateMethod": activation_methods.get(
+                    "UpdateRuntimeState"
+                )
+                or {},
+                "clientRequestFlow": (
+                    activation_control.get("clientRequestFlow") or {}
+                ),
+                "directCallers": activation_control.get("directCallers") or {},
+            }
+            if activation_control_validated
+            else {}
+        )
         row_subgame_start_control = (
             {
                 **row_activation_control,
@@ -2101,6 +2134,7 @@ def build_report(
                 "incomingLiteralManualControls": incoming,
                 "manualSelfControl": row_manual_self_control,
                 "publicStateControl": row_activation_control,
+                "clientStartRequestControl": row_client_start_request_control,
                 "subGameStartControl": row_subgame_start_control,
                 "subGameBindings": subgames,
                 "dungeonSceneContexts": dungeon_contexts,
@@ -2237,6 +2271,13 @@ def build_report(
                 "mission or quest identity and does not reveal the server-side "
                 "branch that selected the state."
             ),
+            "clientStartRequestBoundary": (
+                "The hash-validated current client records ManualStart, enters "
+                "PreStart, emits the typed CS start request, and enters "
+                "PreStartActionRunning. The public network sender methods have "
+                "zero direct current-AOT callers, and rows without an authored "
+                "static carrier remain unresolved for mission/server selection."
+            ),
             "dungeonSceneBoundary": (
                 "An exact Dungeon.sceneId -> SubGame row proves that the "
                 "receiver LevelScript lives in the scene loaded for that "
@@ -2362,6 +2403,14 @@ def build_report(
             }),
             "scriptsWithValidatedPublicStateControlContract": sum(
                 bool(row.get("publicStateControl")) for row in rows
+            ),
+            "scriptsWithValidatedClientStartRequestLifecycle": sum(
+                bool(row.get("clientStartRequestControl")) for row in rows
+            ),
+            "scriptsWithRuntimeRequestButNoStaticCarrier": sum(
+                row.get("activationClass")
+                == "manual_start_runtime_request_no_static_carrier"
+                for row in rows
             ),
             "scriptsWithValidatedSubGameInteractionStart": sum(
                 bool(row.get("subGameStartControl")) for row in rows
@@ -2900,6 +2949,9 @@ def publish_to_pipeline_index(
             "startRuntimePolicy": row.get("startRuntimePolicy") or {},
             "manualSelfControl": row.get("manualSelfControl") or {},
             "publicStateControl": row.get("publicStateControl") or {},
+            "clientStartRequestControl": (
+                row.get("clientStartRequestControl") or {}
+            ),
             "subGameStartControl": row.get("subGameStartControl") or {},
             "relatedOriginalFiles": [
                 {

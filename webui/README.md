@@ -143,6 +143,13 @@ Rebuild Story data after editing overrides.
   `SubGame id -> bindScriptId -> LevelScript -> ManualStart` interaction
   carrier. Both panels attach current binary/metadata hashes while keeping
   mission ownership, server branch selection, and cross-Story order unresolved.
+- Every receiver card also shows the binary-validated client start-request
+  lifecycle: `ManualStart flag -> PreStart -> CS start request ->
+  PreStartActionRunning`, including sender addresses, true/false runtime request
+  arguments, and the zero-direct-caller boundary on the public network API.
+  For the 54 manual receivers with no authored static carrier, this panel makes
+  the known runtime behavior and still-unknown mission/server selector visible
+  together; it does not promote the request path to ownership or ordering.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and
