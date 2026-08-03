@@ -1458,9 +1458,22 @@ contract. The three formerly static-unresolved taskless scripts are now
 classified as `same_with_active_binary_active_gate`: `17500000001`,
 `13000000035`, and `8700000004`. This closes how those scripts start once
 active, but not which mission or server transition made them active, and it
-adds no cross-Story order. The highest-value remaining activation gap is the
-55 manual-start receivers with no serialized static carrier; task authority,
-OCR, manual order, and native registration remain non-ownership evidence.
+adds no cross-Story order.
+
+Manual self-start is also recovered as one general current-binary contract.
+Metadata resolves `ManualStartLevelScript.levelId` and `.scriptId` as
+`Param<string>` and `Param<LevelScriptPtr>`, defines `CURRENT_LEVEL_ID=1000`
+and `CURRENT_SCRIPT_ID=1002`, and the decoded native path validates
+`Execute -> TryGetLevelScript -> ManualStart -> PreStart`. Applying that
+contract to every matching serialized row closes
+`map01_lv002/200000062` (`radio_e1m5_6d2`): its original leader-enter header
+links local 16 to ManualStart local 17 with both current-context operands.
+This proves local self-start but not the filename-derived `e1m5` mission owner
+or any cross-Story order; the same-level mission-named LevelData explicitly
+does not contain this receiver. The highest-value remaining activation gap is
+54 manual-start receivers with no serialized static carrier. Task authority,
+OCR, manual order, source-graph mission grouping, and native registration
+remain non-ownership evidence.
 
 ## Evidence rules
 

@@ -131,6 +131,12 @@ Rebuild Story data after editing overrides.
   the discovered runtime method/enum values, and exact binary/metadata hashes.
   The panel keeps the still-missing mission/server activation source and
   cross-Story order visibly unresolved.
+- Receiver cards with a matching serialized current-context ManualStart row
+  show the binary-validated `CURRENT_LEVEL_ID + CURRENT_SCRIPT_ID -> hosting
+  script -> ManualStart -> PreStart` carrier, its authored event/action local-id
+  link, native method addresses, and exact binary/metadata hashes. This is a
+  local self-start edge only; mission ownership, branch selection, and
+  cross-Story order remain explicitly unresolved.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

@@ -311,6 +311,81 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertTrue(indexed[("map_fixture", "1001")][0]["selfTarget"])
         self.assertFalse(indexed[("map_fixture", "1002")][0]["selfTarget"])
 
+    def test_manual_control_index_resolves_validated_current_context_self(self) -> None:
+        indexed = frontier.manual_control_targets(
+            {
+                "rows": [
+                    {
+                        "levelId": "map_fixture",
+                        "scriptId": "1001",
+                        "localId": 8,
+                        "action": "ManualStartLevelScript",
+                        "activationPair": True,
+                        "linkedEvent": {
+                            "localId": 7,
+                            "opcode": "0x12be/0x00",
+                        },
+                        "file": "source.json",
+                        "manualControl": {
+                            "parameterSources": {
+                                "levelId": 1000,
+                                "scriptId": 1002,
+                            },
+                        },
+                    }
+                ]
+            },
+            {
+                "classification": (
+                    "current_context_manual_start_self_target"
+                ),
+                "discoveryPattern": {"serializedObjectInputs": []},
+                "serializedOperandContract": {
+                    "levelIdParamSource": 1000,
+                    "scriptIdParamSource": 1002,
+                },
+                "validation": {"status": "validated"},
+            },
+        )
+
+        control = indexed[("map_fixture", "1001")][0]
+        self.assertTrue(control["selfTarget"])
+        self.assertEqual(control["targetResolution"], "current_context_self")
+        self.assertEqual(control["headerLinkedEvent"]["localId"], 7)
+
+    def test_manual_control_index_rejects_unvalidated_current_context_self(self) -> None:
+        indexed = frontier.manual_control_targets(
+            {
+                "rows": [
+                    {
+                        "levelId": "map_fixture",
+                        "scriptId": "1001",
+                        "action": "ManualStartLevelScript",
+                        "activationPair": True,
+                        "manualControl": {
+                            "parameterSources": {
+                                "levelId": 1000,
+                                "scriptId": 1002,
+                            },
+                        },
+                    }
+                ]
+            },
+            {
+                "classification": (
+                    "current_context_manual_start_self_target"
+                ),
+                "discoveryPattern": {"serializedObjectInputs": []},
+                "serializedOperandContract": {
+                    "levelIdParamSource": 1000,
+                    "scriptIdParamSource": 1002,
+                },
+                "validation": {"status": "validation_failed"},
+            },
+        )
+
+        self.assertEqual(indexed, {})
+
     def test_manual_null_shapes_task_and_parent_is_static_frontier(self) -> None:
         levelscript = {
             "startTypeName": "Manual",
@@ -346,6 +421,23 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 {"startTypeName": "Manual"},
                 [],
                 [{"selfTarget": False}],
+            ),
+        )
+
+    def test_header_linked_current_context_self_start_is_static_carrier(self) -> None:
+        self.assertEqual(
+            "header_linked_current_context_self_manual_start",
+            frontier.activation_class(
+                {"startTypeName": "Manual"},
+                [],
+                [
+                    {
+                        "action": "ManualStartLevelScript",
+                        "selfTarget": True,
+                        "targetResolution": "current_context_self",
+                        "headerLinkedEvent": {"localId": 7},
+                    }
+                ],
             ),
         )
 

@@ -133,6 +133,8 @@
       startPolicy: "LevelScript start policy",
       binaryStartPolicy: "binary-validated start transition",
       binaryStartPolicyBoundary: "The current binary proves that an Active, unfinished SameWithActive script enters PreStart without the area/manual gate. It does not identify the mission or server transition that activated the script, and it does not order Story files.",
+      binaryManualSelfControl: "binary-validated self-start carrier",
+      binaryManualSelfControlBoundary: "The current binary and metadata prove the CURRENT_LEVEL_ID/CURRENT_SCRIPT_ID target generally. This row also has an original serialized event-header link into ManualStart. It proves local self-start, not a mission owner, selected branch, or cross-Story order.",
       levelDataContainer: "validated LevelData container",
       encounterController: "binary-proven Encounter controller",
       encounterModuleNamespace: "Encounter LsmPtr module namespace",
@@ -909,6 +911,8 @@
       startPolicy: "LevelScript 启动策略",
       binaryStartPolicy: "二进制已验证的启动转换",
       binaryStartPolicyBoundary: "当前二进制证明：处于 Active 且尚未结束的 SameWithActive 脚本会绕过区域/手动门进入 PreStart。它不识别激活该脚本的使命或服务器转换，也不排列 Story 文件。",
+      binaryManualSelfControl: "二进制已验证的自启动载体",
+      binaryManualSelfControlBoundary: "当前二进制与元数据通用地证明 CURRENT_LEVEL_ID/CURRENT_SCRIPT_ID 目标；本行另有原始序列化事件头指向 ManualStart。它只证明本地自启动，不证明使命所有者、所选分支或跨 Story 顺序。",
       levelDataContainer: "已验证的 LevelData 容器",
       encounterController: "二进制已证实的遭遇战控制器",
       encounterModuleNamespace: "遭遇战 LsmPtr 模块命名空间",
@@ -4406,6 +4410,9 @@
             .filter((task) => task && task.taskKey);
           const taskRuntimeAuthority = activation.taskRuntimeAuthority || {};
           const startRuntimePolicy = activation.startRuntimePolicy || {};
+          const manualSelfControl = activation.manualSelfControl || {};
+          const manualSelfControls = (activation.incomingManualControls || [])
+            .filter((control) => control && control.targetResolution === "current_context_self");
           const activationConsumers = (activation.missionRuntimeScriptConsumers || [])
             .filter((consumer) => consumer && (consumer.missionId || consumer.questId));
           const propertyContract = activation.authoredPropertyContract || {};
@@ -4510,6 +4517,7 @@
               <div><span>${esc(t("activationClass"))}</span><i aria-hidden="true">→</i><code>${esc(String(activation.activationClass).replaceAll("_", " "))}</code><b>${esc(t("noMissionOwner"))}</b></div>
               <div><span>${esc(t("startPolicy"))}</span><i aria-hidden="true">→</i><code>${esc(`${activation.startTypeName || "unresolved"} · shapes ${activation.startShapeListStatus || "unresolved"}/${activation.startShapeListCount ?? 0} · taskMap ${activation.taskMapStatus || "unresolved"}/${activation.taskMapCount ?? 0}`)}</code></div>
               ${startRuntimePolicy.validation?.status === "validated" ? `<div><span>${esc(t("binaryStartPolicy"))}</span><i aria-hidden="true">→</i><code>Active + unfinished + SameWithActive</code><b>PreStart</b><small>${esc([startRuntimePolicy.finding || "", `UpdateRuntimeState ${startRuntimePolicy.methods?.UpdateRuntimeState?.methodPointerVa || ""}`, `startType=${startRuntimePolicy.startTypeGates?.SameWithActive?.comparedValue ?? "?"}`, `state=${startRuntimePolicy.activeStateGate?.comparedValue ?? "?"}`, `PreStart=${startRuntimePolicy.preStartTransition?.runtimeStateValue ?? "?"}`].filter(Boolean).join(" · "))}</small></div><small>${esc(startRuntimePolicy.evidenceBoundary || t("binaryStartPolicyBoundary"))}</small>` : ""}
+              ${manualSelfControl.validation?.status === "validated" && manualSelfControls.length ? manualSelfControls.map((control) => `<div><span>${esc(t("binaryManualSelfControl"))}</span><i aria-hidden="true">→</i><code>CURRENT_LEVEL_ID + CURRENT_SCRIPT_ID</code><b>ManualStart → PreStart</b><small>${esc([manualSelfControl.finding || "", `event local ${control.headerLinkedEvent?.localId ?? "?"} → action local ${control.localId ?? "?"}`, `sources=${control.parameterSources?.levelId ?? "?"}/${control.parameterSources?.scriptId ?? "?"}`, `Execute ${manualSelfControl.methods?.Execute?.methodPointerVa || ""}`, `ManualStart ${manualSelfControl.methods?.ManualStart?.methodPointerVa || ""}`].filter(Boolean).join(" · "))}</small></div>`).join("") + `<small>${esc(manualSelfControl.evidenceBoundary || t("binaryManualSelfControlBoundary"))}</small>` : ""}
               ${activationRelatedFiles.map((related) => `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(related.sourceFile)}</code><b>${esc(String(related.kind || "source").replaceAll("_", " "))}</b><small>${esc([String(related.relationship || "").replaceAll("_", " "), related.sha256 ? `SHA-256 ${related.sha256}` : ""].filter(Boolean).join(" · "))}</small></div>`).join("")}
               ${encounterContexts.flatMap((context) => [
                 `<div><span>${esc(t("encounterController"))}</span><i aria-hidden="true">→</i><code>${esc(context.runtimeType || "EncounterBase<T>")}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(`${context.dataType || "EncounterData"} · ${context.mappingId || ""}`)}</small></div>`,

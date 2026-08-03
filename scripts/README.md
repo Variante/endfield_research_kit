@@ -53,6 +53,14 @@ override those defaults for one run.
   without accepting any level/script/object id as a discovery input. This
   closes the start-policy question, not the mission/server source of `Active`
   state or cross-Story ordering.
+- The audit also resolves `ManualStartLevelScript` fields through the current
+  MetadataRegistration type table and validates the native
+  `Execute -> TryGetLevelScript -> ManualStart -> PreStart` path. Serialized
+  controls using the metadata-defined `CURRENT_LEVEL_ID` and
+  `CURRENT_SCRIPT_ID` operands are therefore recovered as hosting-script
+  self-targets for every matching row; no scene or script id participates in
+  discovery. Promotion still requires an authored event-header link and adds
+  no mission ownership or cross-Story order.
 - LevelScript task recovery is corpus-driven rather than keyed to individual
   scenes. The builder validates the installed binary/protobuf task contract,
   joins every decoded task condition to its exact `lt:p` and `lt:mp` LevelData
