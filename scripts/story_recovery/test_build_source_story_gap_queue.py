@@ -5143,6 +5143,177 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 {"schemaVersion": gap_queue.STORY_BINDING_COVERAGE_SCHEMA_VERSION},
             )
 
+    def test_exact_connected_context_closes_arbitrary_relation_shapes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            dialog_source = (
+                "export_full/recovered/TextAsset/"
+                "dlg_fixture_parent_p0123456789ABCDEF.json"
+            )
+            level_source = (
+                "export_full/structured/LevelScriptData/"
+                "map_fixture/4242.json"
+            )
+            for relative_path in (dialog_source, level_source):
+                path = root / relative_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("original game data", encoding="utf-8")
+
+            manifest = {
+                "dlg_fixture_multi_quest": {
+                    "key": "dlg_fixture_multi_quest",
+                    "nominalMissionId": "fixture",
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "storyKey": "dlg_fixture_multi_quest",
+                        "missionId": "fixture",
+                        "relation": "dialog_tree_reachable_story_playback",
+                        "questTriggerStatus":
+                            "exact_multi_quest_branch_dependency_not_unique_trigger",
+                        "confidence":
+                            "native_exact_cross_story_quest_state_context",
+                    }],
+                },
+                "dlg_fixture_child": {
+                    "key": "dlg_fixture_child",
+                    "nominalMissionId": "fixture",
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "storyKey": "dlg_fixture_child",
+                        "missionId": "fixture",
+                        "questId": "fixture_q#3",
+                        "scope": "quest",
+                        "ownerStatus": "connected",
+                        "relation": "dialog_tree_reachable_story_playback",
+                        "direction": "context",
+                        "phase": "dialog_tree_story_playback",
+                        "causality": "dependency",
+                        "confidence": "native_exact_parent_quest",
+                        "evidenceTier": "native_direct",
+                        "certainty": "authored_reachable",
+                        "nativeMappingId":
+                            "dialog-tree-reachable-story-playback-native-v1",
+                        "parentStoryKey": "dlg_fixture_parent",
+                        "questTriggerStatus":
+                            "exact_parent_quest_context_not_independent_trigger",
+                        "serverExchange": False,
+                        "clientRequest": False,
+                        "expectedClientReply": False,
+                        "runtimeReplacementPossible": True,
+                        "occurrenceCount": 1,
+                        "carrierKinds": ["trunk"],
+                        "parentScopeRelations": ["fixture_scope"],
+                        "sourcePathIds": ["0123456789ABCDEF"],
+                        "sourceFiles": [dialog_source],
+                        "steps": [
+                            {"kind": "quest", "id": "fixture_q#3",
+                             "phase": "dialog_tree_story_playback"},
+                            {"kind": "story", "id": "dlg_fixture_child"},
+                        ],
+                    }],
+                },
+                "radio_fixture_2": {
+                    "key": "radio_fixture_2",
+                    "nominalMissionId": "fixture",
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "storyKey": "radio_fixture_2",
+                        "missionId": "fixture",
+                        "questId": "fixture_q#9",
+                        "scope": "quest",
+                        "ownerStatus": "connected",
+                        "relation": "levelscript_quest_state_gate",
+                        "direction": "context",
+                        "phase": "processing_gate",
+                        "causality": "context",
+                        "confidence": "native_typed_gate",
+                        "nativeMappingId":
+                            gap_queue.LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
+                        "eventNames": ["ScriptEvent_OnLeaderEnterTriggerVolume"],
+                        "levelId": "map_fixture",
+                        "scriptIds": ["4242"],
+                        "actionNames": ["PlayRadio"],
+                        "conditionType": "CheckQuestState",
+                        "conditionComparer": "Equal",
+                        "conditionQuestState": 2,
+                        "headerLocalId": 7,
+                        "gateActionLocalId": 8,
+                        "actionLocalId": 10,
+                        "actionCode": "0x0363",
+                        "actionKind": "0x0d",
+                        "sourceFiles": [level_source],
+                        "steps": [
+                            {"kind": "quest", "id": "fixture_q#9",
+                             "phase": "processing_gate"},
+                            {"kind": "native_event"},
+                            {"kind": "levelscript"},
+                            {"kind": "native_action"},
+                            {"kind": "story", "id": "radio_fixture_2"},
+                        ],
+                    }],
+                },
+            }
+            failures: list[dict] = []
+            with patch.object(gap_queue, "ROOT", root):
+                rows = gap_queue._closed_exact_connected_context_isolated_scenes(
+                    manifest,
+                    {
+                        "dlg_fixture_child",
+                        "dlg_fixture_multi_quest",
+                        "radio_fixture_2",
+                    },
+                    "fixture",
+                    failures,
+                )
+
+        self.assertEqual(failures, [])
+        self.assertEqual(
+            {row["sceneKey"] for row in rows},
+            {"dlg_fixture_child", "radio_fixture_2"},
+        )
+        self.assertTrue(all(row["graphEffect"] == "none" for row in rows))
+
+    def test_exact_connected_context_fails_closed_with_bounded_diagnostic(self) -> None:
+        manifest = {
+            "radio_fixture_2": {
+                "key": "radio_fixture_2",
+                "nominalMissionId": "fixture",
+                "attachmentStatus": "connected",
+                "routes": [{
+                    "storyKey": "radio_fixture_2",
+                    "missionId": "fixture",
+                    "questId": "fixture_q#9",
+                    "scope": "quest",
+                    "ownerStatus": "connected",
+                    "relation": "levelscript_quest_state_gate",
+                    "direction": "context",
+                    "phase": "processing_gate",
+                    "causality": "context",
+                    "confidence": "native_typed_gate",
+                    "conditionQuestState": 3,
+                    "sourceFiles": ["missing/original.json"],
+                    "steps": [],
+                }],
+            },
+        }
+        failures: list[dict] = []
+        rows = gap_queue._closed_exact_connected_context_isolated_scenes(
+            manifest,
+            {"radio_fixture_2"},
+            "fixture",
+            failures,
+        )
+
+        self.assertEqual(rows, [])
+        self.assertEqual(len(failures), 1)
+        self.assertEqual(failures[0]["validator"], "exact_connected_story_context_v1")
+        self.assertEqual(
+            failures[0]["gate"],
+            "levelscript_quest_state_gate_contract",
+        )
+        self.assertEqual(failures[0]["storyKey"], "radio_fixture_2")
+        self.assertEqual(failures[0]["actual"]["existingSourceFileCount"], 0)
+
     def test_exact_composed_root_playback_closes_arbitrary_isolated_cutscene(
         self,
     ) -> None:

@@ -70,7 +70,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v125"
+SCHEMA = "sourceStoryGapQueue.v126"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 12
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -22606,6 +22606,260 @@ def _closed_exact_composed_root_playback_isolated_scenes(
     return closed
 
 
+def _closed_exact_connected_context_isolated_scenes(
+    story_trigger_manifest: dict[str, Any],
+    isolated_scene_keys: set[str],
+    owner_mission: str,
+    validation_failures: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Close exact connected context routes without asserting chronology.
+
+    This validator deliberately supports route *shapes*, not named Story
+    objects.  Each admitted relation has a separate fail-closed contract so a
+    generic ``connected`` label can never become evidence by itself.
+    """
+    closed: list[dict[str, Any]] = []
+    for scene_key in sorted(isolated_scene_keys, key=natural_key):
+        manifest_row = story_trigger_manifest.get(scene_key)
+        if not isinstance(manifest_row, dict):
+            continue
+        eligible_routes = [
+            route
+            for route in manifest_row.get("routes") or []
+            if isinstance(route, dict)
+            and (
+                safe_key(route.get("relation"))
+                == "levelscript_quest_state_gate"
+                or (
+                    safe_key(route.get("relation"))
+                    == "dialog_tree_reachable_story_playback"
+                    and safe_key(route.get("questTriggerStatus"))
+                    == "exact_parent_quest_context_not_independent_trigger"
+                )
+            )
+        ]
+        if not eligible_routes:
+            continue
+
+        source_files = sorted({
+            source_file
+            for route in eligible_routes
+            for source_file in _string_list(route.get("sourceFiles"))
+        }, key=natural_key)
+        source_hashes = {
+            source_file: _sha256_file(ROOT / source_file)
+            for source_file in source_files
+            if (ROOT / source_file).is_file()
+        }
+        route = eligible_routes[0] if len(eligible_routes) == 1 else {}
+        relation = safe_key(route.get("relation"))
+        quest_id = safe_key(route.get("questId"))
+        steps = route.get("steps")
+        common_valid = (
+            len(eligible_routes) == 1
+            and safe_key(manifest_row.get("key")) == scene_key
+            and safe_key(manifest_row.get("nominalMissionId")) == owner_mission
+            and safe_key(manifest_row.get("attachmentStatus")) == "connected"
+            and safe_key(route.get("storyKey")) == scene_key
+            and safe_key(route.get("missionId")) == owner_mission
+            and quest_id.startswith(f"{owner_mission}_q#")
+            and safe_key(route.get("scope")) == "quest"
+            and safe_key(route.get("ownerStatus")) == "connected"
+            and safe_key(route.get("direction")) == "context"
+            and source_files
+            and len(source_hashes) == len(source_files)
+            and isinstance(steps, list)
+            and len(steps) >= 2
+            and steps[0] == {
+                "kind": "quest",
+                "id": quest_id,
+                "phase": safe_key(route.get("phase")),
+            }
+            and steps[-1] == {"kind": "story", "id": scene_key}
+        )
+
+        if relation == "dialog_tree_reachable_story_playback":
+            path_ids = _string_list(route.get("sourcePathIds"))
+            parent_story_key = safe_key(route.get("parentStoryKey"))
+            relation_valid = (
+                common_valid
+                and safe_key(route.get("phase")) == "dialog_tree_story_playback"
+                and safe_key(route.get("causality")) == "dependency"
+                and safe_key(route.get("confidence")) == "native_exact_parent_quest"
+                and safe_key(route.get("evidenceTier")) == "native_direct"
+                and safe_key(route.get("certainty")) == "authored_reachable"
+                and safe_key(route.get("nativeMappingId"))
+                == "dialog-tree-reachable-story-playback-native-v1"
+                and parent_story_key
+                and parent_story_key != scene_key
+                and safe_key(route.get("questTriggerStatus"))
+                == "exact_parent_quest_context_not_independent_trigger"
+                and route.get("serverExchange") is False
+                and route.get("clientRequest") is False
+                and route.get("expectedClientReply") is False
+                and route.get("runtimeReplacementPossible") is True
+                and route.get("occurrenceCount") == 1
+                and bool(_string_list(route.get("carrierKinds")))
+                and set(_string_list(route.get("carrierKinds")))
+                <= {"trunk", "dialog"}
+                and bool(_string_list(route.get("parentScopeRelations")))
+                and len(path_ids) == 1
+                and bool(re.fullmatch(r"[0-9A-Fa-f]{16}", path_ids[0]))
+                and len(source_files) == 1
+                and source_files[0].lower().endswith(
+                    f"_p{path_ids[0].lower()}.json"
+                )
+                and len(steps) == 2
+            )
+            recovery_status = (
+                "closed_exact_connected_dialog_tree_playback_context_"
+                "no_relative_order"
+            )
+            closure = {
+                "sceneKey": scene_key,
+                "recoveryStatus": recovery_status,
+                "relation": relation,
+                "missionId": owner_mission,
+                "questId": quest_id,
+                "parentStoryKey": parent_story_key,
+                "carrierKinds": _string_list(route.get("carrierKinds")),
+                "sourcePathIds": path_ids,
+                "nativeMappingId": safe_key(route.get("nativeMappingId")),
+                "sourceFiles": source_files,
+                "sourceSha256": source_hashes,
+                "playbackBoundary": (
+                    "the installed-game DialogTree contains one exact typed "
+                    "carrier reachable from the registered quest-owned parent"
+                ),
+                "orderBoundary": (
+                    "the carrier proves quest context and local playback only; "
+                    "it supplies no relative Story-file edge"
+                ),
+                "graphEffect": "none",
+            }
+        elif relation == "levelscript_quest_state_gate":
+            expected_source_suffix = (
+                f"/{safe_key(route.get('levelId'))}/"
+                f"{safe_key((route.get('scriptIds') or [''])[0])}.json"
+            ).replace("\\", "/")
+            relation_valid = (
+                common_valid
+                and safe_key(route.get("phase")) == "processing_gate"
+                and safe_key(route.get("causality")) == "context"
+                and safe_key(route.get("confidence")) == "native_typed_gate"
+                and safe_key(route.get("nativeMappingId"))
+                == LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID
+                and _string_list(route.get("eventNames"))
+                == ["ScriptEvent_OnLeaderEnterTriggerVolume"]
+                and len(_string_list(route.get("scriptIds"))) == 1
+                and len(_string_list(route.get("actionNames"))) == 1
+                and _string_list(route.get("actionNames"))[0].startswith("Play")
+                and safe_key(route.get("conditionType")) == "CheckQuestState"
+                and safe_key(route.get("conditionComparer")) == "Equal"
+                and route.get("conditionQuestState") == 2
+                and all(
+                    isinstance(route.get(field), int)
+                    and not isinstance(route.get(field), bool)
+                    and route.get(field) > 0
+                    for field in (
+                        "headerLocalId",
+                        "gateActionLocalId",
+                        "actionLocalId",
+                    )
+                )
+                and bool(re.fullmatch(r"0x[0-9a-fA-F]{4}", safe_key(route.get("actionCode"))))
+                and bool(re.fullmatch(r"0x[0-9a-fA-F]{2}", safe_key(route.get("actionKind"))))
+                and len(source_files) == 1
+                and source_files[0].replace("\\", "/").endswith(
+                    expected_source_suffix
+                )
+                and [step.get("kind") for step in steps]
+                == ["quest", "native_event", "levelscript", "native_action", "story"]
+            )
+            recovery_status = (
+                "closed_exact_quest_state_gated_playback_context_"
+                "no_relative_order"
+            )
+            closure = {
+                "sceneKey": scene_key,
+                "recoveryStatus": recovery_status,
+                "relation": relation,
+                "missionId": owner_mission,
+                "questId": quest_id,
+                "levelId": safe_key(route.get("levelId")),
+                "scriptIds": _string_list(route.get("scriptIds")),
+                "eventNames": _string_list(route.get("eventNames")),
+                "actionNames": _string_list(route.get("actionNames")),
+                "conditionType": safe_key(route.get("conditionType")),
+                "conditionComparer": safe_key(route.get("conditionComparer")),
+                "conditionQuestState": route.get("conditionQuestState"),
+                "nativeMappingId": safe_key(route.get("nativeMappingId")),
+                "sourceFiles": source_files,
+                "sourceSha256": source_hashes,
+                "playbackBoundary": (
+                    "the installed-game LevelScript enters the trigger volume, "
+                    "waits for this quest to equal Processing, then executes "
+                    "the typed Story playback action"
+                ),
+                "orderBoundary": (
+                    "the quest-state gate proves activation context only; it "
+                    "does not order this Story file against other mission files"
+                ),
+                "graphEffect": "none",
+            }
+        else:
+            relation_valid = False
+            recovery_status = ""
+            closure = {}
+
+        if relation_valid:
+            closed.append(closure)
+            continue
+        if validation_failures is not None:
+            validation_failures.append({
+                "validator": "exact_connected_story_context_v1",
+                "gate": f"{relation or 'eligible_route_count'}_contract",
+                "missionId": owner_mission,
+                "storyKey": scene_key,
+                "sourcePaths": source_files,
+                "sourceSha256": source_hashes,
+                "expected": {
+                    "eligibleRouteCount": 1,
+                    "attachmentStatus": "connected",
+                    "missionId": owner_mission,
+                    "questIdPrefix": f"{owner_mission}_q#",
+                    "relation": relation or "one supported exact relation",
+                    "sourceFilesExist": True,
+                    "graphEffect": "none",
+                },
+                "actual": {
+                    "eligibleRouteCount": len(eligible_routes),
+                    "attachmentStatus": safe_key(
+                        manifest_row.get("attachmentStatus")
+                    ),
+                    "missionId": safe_key(route.get("missionId")),
+                    "questId": quest_id,
+                    "relation": relation,
+                    "phase": safe_key(route.get("phase")),
+                    "causality": safe_key(route.get("causality")),
+                    "confidence": safe_key(route.get("confidence")),
+                    "evidenceTier": safe_key(route.get("evidenceTier")),
+                    "nativeMappingId": safe_key(route.get("nativeMappingId")),
+                    "questTriggerStatus": safe_key(
+                        route.get("questTriggerStatus")
+                    ),
+                    "condition": {
+                        "type": safe_key(route.get("conditionType")),
+                        "comparer": safe_key(route.get("conditionComparer")),
+                        "questState": route.get("conditionQuestState"),
+                    },
+                    "sourceFileCount": len(source_files),
+                    "existingSourceFileCount": len(source_hashes),
+                },
+            })
+    return closed
+
+
 def _exact_typed_mission_state_transition_checks(
     story_key: str,
     mission_state_id: str,
@@ -25038,6 +25292,16 @@ def build_gap_row(
             row,
         )
     for row in _closed_exact_composed_root_playback_isolated_scenes(
+        story_trigger_manifest,
+        set(isolated_scene_keys),
+        safe_key(partial_row.get("mission")),
+        story_trigger_manifest_validation_failures,
+    ):
+        closed_exact_native_isolated_by_key.setdefault(
+            row["sceneKey"],
+            row,
+        )
+    for row in _closed_exact_connected_context_isolated_scenes(
         story_trigger_manifest,
         set(isolated_scene_keys),
         safe_key(partial_row.get("mission")),

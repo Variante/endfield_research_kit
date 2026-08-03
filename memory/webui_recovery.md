@@ -70,6 +70,10 @@ their inputs.
   expose the Lua controller/line/call or native event/action/root chain, every
   related original-data and audit file, and an explicit no-ownership/no-order
   boundary; OCR and manual order are not used as evidence.
+- Exact connected-context cards also expose quest-owned reachable DialogTree
+  playback and typed quest-state-gated LevelScript playback. The mission view
+  names the parent Story or decoded condition/event/action chain, quest anchor,
+  original source file, and explicit no-relative-order boundary.
 - BlackBox recovery cards expose exact SubGame/bound-LevelScript context,
   separate authored task lanes, complete decoded task/condition topology,
   condition formulas, objective display keys, exact parent playback, and the
