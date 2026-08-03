@@ -231,6 +231,7 @@ def method_signature(md: Any, method_index: int) -> dict[str, Any]:
         "type": md.type_full_name(type_def),
         "method": md.string(method.name_index),
         "token": f"0x{method.token:08x}",
+        "returnTypeName": md.metadata_type_name(method.return_type),
     }
 
 
@@ -1175,7 +1176,9 @@ def origin_for_memory_expr(expr: str, origins: dict[str, str]) -> str:
 
 
 def is_interesting_origin(origin: str) -> bool:
-    return origin.startswith(("this", "param:", "&this", "&param:"))
+    return origin.startswith(
+        ("this", "param:", "return:", "&this", "&param:", "&return:")
+    )
 
 
 def origin_for_value(value: str, origins: dict[str, str]) -> str:
@@ -2403,15 +2406,26 @@ def build_method_body_summary(
         call_match = re.match(r"call 0x([0-9a-f]+)$", text)
         if call_match:
             target_va = int(call_match.group(1), 16)
+            resolved_targets = method_by_pointer.get(target_va, [])
             argument_origins = {
                 register: origins[register]
                 for register in ("rcx", "rdx", "r8", "r9")
                 if register in origins
             }
-            call_rows.append({
+            return_types = {
+                str(target.get("returnTypeName") or "")
+                for target in resolved_targets
+                if str(target.get("returnTypeName") or "") not in {"", "System.Void"}
+            }
+            return_origin = (
+                f"return:{next(iter(return_types))}"
+                if len(return_types) == 1
+                else ""
+            )
+            call_row = {
                 "offset": offset,
                 "targetVa": f"0x{target_va:x}",
-                "resolved": method_by_pointer.get(target_va, []),
+                "resolved": resolved_targets,
                 "argumentOrigins": argument_origins,
                 "argumentContext": call_argument_context(
                     data,
@@ -2419,7 +2433,20 @@ def build_method_body_summary(
                     offset,
                     window=96,
                 ),
-            })
+            }
+            if return_origin:
+                call_row["returnOrigin"] = return_origin
+            call_rows.append(call_row)
+
+            # Windows x64 calls may clobber these volatile general-purpose
+            # registers. Preserve the captured argument origins above, then
+            # seed RAX only when all resolved aliases agree on one non-void
+            # metadata return type. This makes later field-flow recovery
+            # generic instead of teaching consumers about individual getters.
+            for register in ("rax", "rcx", "rdx", "r8", "r9", "r10", "r11"):
+                origins.pop(register, None)
+            if return_origin:
+                origins["rax"] = return_origin
 
         is_control_flow = text.startswith(("cmp ", "test ", "j", "call ", "ret"))
         if is_control_flow and len(control_flow) < max_instructions * 2:
@@ -2519,7 +2546,7 @@ def build_method_body_summary(
         "initialRegisterOrigins": initial_origins,
         "finalRegisterOrigins": {
             key: value for key, value in origins.items()
-            if value.startswith(("this", "param:"))
+            if value.startswith(("this", "param:", "return:"))
         },
         "instructionCount": len(instructions),
         "unknownInstructionCount": unknown_count,

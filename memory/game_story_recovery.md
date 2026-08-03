@@ -37,6 +37,7 @@ Latest CN reports:
 | Post-playback variable bridge | 66 typed setters (43 SetBool, 23 SetInt) / 50 exact listeners / 0 same-level, same-script, same-key joins |
 | Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
 | Binary state-update authority | 4 / 4 identity+state/control paths validated; 0 client successor selectors |
+| Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -1332,11 +1333,21 @@ identity: mission enable dispatches by its consumed `prevMissionState` to
 `DisableMission`, `StartMission`, or `AvailableMission`, while quest enable
 dispatches by `isEnable` to `StartQuest`, `PauseQuest`, or `DisableQuest`.
 None of the four schemas has a second identity or successor field.
+The same audit now follows the typed return value of the structurally discovered
+`MissionSystem.GetQuestInfo` call inside the lifecycle-discovered `StartQuest`
+body. Metadata fixes `QuestInfo.objectiveList`, `prevQuestIdList`, and
+`flowIndex` at `0x60`, `0x78`, and `0x80`. The current native body reads the
+objective list three times while initializing one selected quest, reads neither
+topology field, and calls no predecessor/successor traversal method. This is a
+general return-origin/field-offset analysis, not a quest-id or address allowlist;
+the exact token and address are validated outputs for the current build.
 The client therefore applies one server-selected identity/state update at a
-time; it does not choose the next quest in these paths. The validator records
+time and initializes only that selected quest; it does not choose the next quest
+in these paths. The validator records
 bounded schema, handler, field-layout, argument-flow, and source-hash failures,
 and Mission Pipeline re-hashes `GameAssembly.dll` and `global-metadata.dat`
-before publishing the contract and both related files. This closes the
+before publishing the contract and both related files beside every displayed
+quest fork. This closes the
 client-side successor-selector hypothesis without pretending to recover
 server-only policy. Authored predecessor forks and merges remain prerequisite
 topology, not proof of exclusive branch choice. OCR and manual overrides are

@@ -373,6 +373,10 @@
       dialogConditionalFalseArm: "condition false",
       dialogConditionalNativeProof: "Native branch selection",
       questFork: "quest fork",
+      questForkAuthority: "Quest fork authority",
+      serverSelectedStart: "server-selected start; prerequisite topology only",
+      questStartReadEvidence: "StartQuest field reads",
+      questForkAuthorityHint: "The client initializes the one quest identity selected by the server. This fan-out does not prove that every arm starts or that exactly one arm is exclusive.",
       questMerge: "quest join",
       nativeSplitFanout: "native Split fan-out",
       nativeIfElseBranch: "native If/Else branch",
@@ -1418,6 +1422,10 @@
       dialogConditionalFalseArm: "\u6761\u4ef6\u4e3a\u5047",
       dialogConditionalNativeProof: "\u539f\u751f\u5206\u652f\u9009\u62e9",
       questFork: "\u4efb\u52a1\u5206\u652f",
+      questForkAuthority: "\u4efb\u52a1\u5206\u652f\u6743\u5a01\u8fb9\u754c",
+      serverSelectedStart: "\u670d\u52a1\u7aef\u9009\u62e9\u542f\u52a8\uff1b\u4ec5\u8868\u793a\u524d\u7f6e\u62d3\u6251",
+      questStartReadEvidence: "StartQuest \u5b57\u6bb5\u8bfb\u53d6",
+      questForkAuthorityHint: "\u5ba2\u6237\u7aef\u53ea\u521d\u59cb\u5316\u670d\u52a1\u7aef\u5df2\u9009\u4e2d\u7684\u5355\u4e2a\u4efb\u52a1\u6807\u8bc6\u3002\u8be5\u5206\u6d41\u4e0d\u80fd\u8bc1\u660e\u6240\u6709\u5206\u652f\u90fd\u4f1a\u542f\u52a8\uff0c\u4e5f\u4e0d\u80fd\u8bc1\u660e\u5fc5\u7136\u53ea\u9009\u4e00\u6761\u3002",
       questMerge: "\u4efb\u52a1\u6c47\u5408",
       nativeSplitFanout: "\u539f\u751f Split \u5206\u6d41",
       nativeIfElseBranch: "\u539f\u751f If/Else \u5206\u652f",
@@ -3255,8 +3263,17 @@
     }).join("");
     const frontiers = (order.topologicalLayers || []).map((layer, index) => `<div class="mp-order-frontier"><b>${esc(t("partialFrontier"))} ${index + 1}</b><span>${(layer || []).map(componentHtml).join("")}</span></div>`).join("");
     const branches = order.branches || {};
+    const questForkAuthority = branches.questForkAuthority || null;
+    const questStartReads = questForkAuthority?.fieldReadCounts || {};
+    const questForkAuthorityHtml = questForkAuthority ? `<details open class="mp-quest-fork-authority"><summary><b>${esc(t("questForkAuthority"))}</b><span>${esc(t("serverSelectedStart"))}</span></summary>
+      <p>${esc(questForkAuthority.finding || t("questForkAuthorityHint"))}</p>
+      <p><strong>${esc(t("questStartReadEvidence"))}:</strong> <code>objectiveList=${Number(questStartReads.objectiveList || 0)}</code> <code>prevQuestIdList=${Number(questStartReads.prevQuestIdList || 0)}</code> <code>flowIndex=${Number(questStartReads.flowIndex || 0)}</code> <code>topology calls=${(questForkAuthority.topologyTraversalCalls || []).length}</code></p>
+      ${questForkAuthority.startQuest?.symbol ? `<p><code>${esc(questForkAuthority.startQuest.symbol)}</code> <code>${esc(questForkAuthority.startQuest.token || "")}</code> <code>${esc(questForkAuthority.startQuest.va || "")}</code></p>` : ""}
+      <small>${esc(questForkAuthority.boundary || t("questForkAuthorityHint"))}</small>
+      ${(questForkAuthority.relatedOriginalFiles || []).map((related) => `<small><strong>${esc(t("relatedOriginalFile"))}:</strong> <code>${esc(related.sourceFile || "")}</code> / SHA-256 <code>${esc(related.sha256 || "")}</code></small>`).join("")}
+    </details>` : "";
     const typedSelectors = (branches.typedStorySelectorGroups || []).map((row) => `<details><summary><b>${esc(t("typedStorySelectors"))}</b> <code>${esc(row.selectorGroupId || "?")}</code></summary><p>${esc(t("typedStorySelectorHint"))}</p>${(row.alternatives || []).map((alternative) => `<div><code>${esc(alternative.role || "?")}</code><i>&rarr;</i><a href="${esc(storyHref(alternative.key))}"><code>${esc(alternative.key || "?")}</code></a></div>`).join("")}${(row.sourceFiles || []).length ? `<small>${row.sourceFiles.map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</details>`).join("");
-    const questForks = (branches.questForks || []).map((row) => `<div><b>${esc(t("questFork"))}</b><code>${esc(row.questId || "?")}</code><i>&rarr;</i><span>${(row.successorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span></div>`).join("");
+    const questForks = (branches.questForks || []).map((row) => `<div><b>${esc(t("questFork"))}</b><code>${esc(row.questId || "?")}</code><i>&rarr;</i><span>${(row.successorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>${questForkAuthority ? `<small>${esc(t("serverSelectedStart"))}</small>` : ""}</div>`).join("");
     const questMerges = (branches.questMerges || []).map((row) => `<div><b>${esc(t("questMerge"))}</b><span>${(row.predecessorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span><i>&rarr;</i><code>${esc(row.questId || "?")}</code></div>`).join("");
     const nativeBranchLabel = (kind) => t(kind === "splitFanout" ? "nativeSplitFanout" : kind === "ifElse" ? "nativeIfElseBranch" : "nativeSwitchBranch");
     const nativeParamText = (label, param) => {
@@ -3846,7 +3863,7 @@
       ${containments ? `<section><h4>${esc(t("embeddedStory"))}</h4><p>${esc(t("embeddedStoryHint"))}</p><div class="mp-order-edges">${containments}</div></section>` : ""}
       ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}
-      ${questForks || questMerges || nativeBranches || nativeMerges || nativeSequences || sceneOptions || dialogConditionalBranches || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4><div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${nativeSequences}${sceneOptions}${dialogConditionalBranches}${typedSelectors}</div></section>` : ""}
+      ${questForks || questMerges || nativeBranches || nativeMerges || nativeSequences || sceneOptions || dialogConditionalBranches || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4>${questForkAuthorityHtml}<div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${nativeSequences}${sceneOptions}${dialogConditionalBranches}${typedSelectors}</div></section>` : ""}
       ${relatedActionTopologies ? `<section><h4>${esc(t("nativeRelatedActionGraphs"))}</h4><p>${esc(t("nativeRelatedActionGraphsHint"))}</p><div class="mp-order-branches">${relatedActionTopologies}</div></section>` : ""}
       ${dialogOptions ? `<section><h4>${esc(t("optionBranches"))}</h4><div class="mp-order-dialog-branches">${dialogOptions}</div></section>` : ""}
       ${offlineGaps ? `<details class="mp-order-recovery-gaps" open><summary>${esc(t("offlineRecoveryGaps"))} <span>${offlineRows.length.toLocaleString()}</span></summary><p>${esc(t("offlineRecoveryGapsHint"))}</p><div>${offlineGaps}</div></details>` : ""}

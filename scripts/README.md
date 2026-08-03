@@ -37,7 +37,10 @@ override those defaults for one run.
 - Mission Pipeline builds also ensure the protocol registry audit matches the
   exact installed `GameAssembly.dll` and metadata hashes. Its state-update
   census discovers message shapes, typed handlers, runtime field offsets, and
-  lifecycle argument flow generically; stale or missing reports are rebuilt.
+  lifecycle argument flow generically. Its quest-start audit extends the same
+  decoder with typed call-return provenance, structurally discovers
+  `QuestInfo`, and compares native field reads with metadata topology fields;
+  stale, invalid, or missing reports are rebuilt.
 - Mission Pipeline resolves exact native receiver playback gates generically
   through serialized `ActionHeader._validate` getter references. The resolver
   walks reusable AND/OR/NOT/ALL and comparison trees to exact leaves; unknown,

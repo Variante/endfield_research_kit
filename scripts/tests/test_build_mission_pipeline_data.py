@@ -18,6 +18,16 @@ STATE_UPDATE_CONTRACT_FIXTURE = {
     "validatedCandidateCount": 4,
     "clientSuccessorSelectors": 0,
     "allLifecycleCallsUsePacketIdentity": True,
+    "questStartApplication": {
+        "classification": "single_server_selected_quest_objective_initialization",
+        "fieldReadCounts": {
+            "objectiveList": 3,
+            "prevQuestIdList": 0,
+            "flowIndex": 0,
+        },
+        "topologyTraversalCalls": [],
+        "validation": {"status": "validated", "failures": []},
+    },
     "rows": [],
     "relatedOriginalFiles": [
         {"kind": "original_game_binary"},
@@ -41,7 +51,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v5",
+                "_schema": "endfieldProtocolRegistryAudit.v6",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -57,6 +67,16 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "finding": "fixture",
                     "boundary": "fixture boundary",
                     "rows": [],
+                    "questStartApplication": {
+                        "classification": "single_server_selected_quest_objective_initialization",
+                        "fieldReadCounts": {
+                            "objectiveList": 3,
+                            "prevQuestIdList": 0,
+                            "flowIndex": 0,
+                        },
+                        "topologyTraversalCalls": [],
+                        "validation": {"status": "validated", "failures": []},
+                    },
                     "validation": {"status": "validated", "failures": []},
                 },
             }), encoding="utf-8")
@@ -76,7 +96,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v5",
+                "_schema": "endfieldProtocolRegistryAudit.v6",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": "0" * 64,
@@ -84,6 +104,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "metadataSha256": hashlib.sha256(metadata.read_bytes()).hexdigest(),
                 },
                 "stateUpdateApplicationCensus": {
+                    "questStartApplication": {
+                        "validation": {"status": "validated", "failures": []},
+                    },
                     "validation": {"status": "validated", "failures": []},
                 },
             }), encoding="utf-8")
@@ -1618,6 +1641,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             pipeline.write_json(mission_root / "testm1.json", {"mission": {"id": "testm1"}})
             index = {
                 "missions": [{"id": "testm1", "file": "missions/testm1.json"}],
+                "runtimeContract": {
+                    "stateUpdateApplicationAudit": STATE_UPDATE_CONTRACT_FIXTURE,
+                },
             }
             order_row = {
                 "mission": "testm1",
@@ -1630,6 +1656,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 },
                 "nodes": [{"key": "dlg_testm1_1"}, {"key": "dlg_testm1_2"}],
                 "reducedComponentEdges": [{"from": "p1", "to": "p2"}],
+                "branches": {
+                    "questForks": [
+                        {"questId": "testm1_q#1", "successorQuestIds": ["testm1_q#2", "testm1_q#3"]},
+                    ],
+                },
             }
             report = {
                 "_schema": "sourceStoryPartialOrder.v5",
@@ -1659,6 +1690,14 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             self.assertIs(result, report)
             mission_payload = json.loads((mission_root / "testm1.json").read_text(encoding="utf-8"))
             self.assertEqual(mission_payload["storyOrder"], order_row)
+            authority = mission_payload["storyOrder"]["branches"]["questForkAuthority"]
+            self.assertEqual(
+                authority["classification"],
+                "server_selected_start_topology_only",
+            )
+            self.assertEqual(authority["fieldReadCounts"]["objectiveList"], 3)
+            self.assertEqual(authority["fieldReadCounts"]["prevQuestIdList"], 0)
+            self.assertEqual(len(authority["relatedOriginalFiles"]), 2)
             self.assertEqual(index["missions"][0]["storyOrderStrongEdgeCount"], 1)
             self.assertEqual(index["storyOrder"]["schema"], "sourceStoryPartialOrder.v5")
 
@@ -2853,6 +2892,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "stateUpdateApplicationCandidates": 4,
                 "stateUpdateApplicationCandidatesValidated": 4,
                 "stateUpdateClientSuccessorSelectors": 0,
+                "questStartPredecessorReads": 0,
+                "questStartFlowIndexReads": 0,
+                "questStartTopologyTraversalCalls": 0,
                 # The fixture has one mission with no cross-mission state
                 # condition and no envTalk consumer table, so both new lanes
                 # are legitimately empty rather than absent.

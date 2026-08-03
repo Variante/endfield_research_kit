@@ -1320,6 +1320,261 @@ def validate_state_update_application_rows(
     }
 
 
+def validate_quest_start_application_observation(
+    *,
+    field_reads: dict[str, int],
+    quest_info_getters: list[dict[str, Any]],
+    topology_calls: list[str],
+    source_file: str,
+    source_hashes: dict[str, str],
+    prior_failures: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Fail closed on the reusable single-object initialization pattern."""
+    failures = list(prior_failures or [])
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "quest_start_application_contract",
+            "gate": gate,
+            "message": "Beyond.Gameplay.MissionSystem.StartQuest",
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": source_hashes,
+        })
+
+    if len(quest_info_getters) != 1:
+        fail("uniqueQuestInfoGetter", 1, quest_info_getters)
+    if field_reads.get("objectiveList", 0) < 1:
+        fail("objectiveInitializationRead", ">=1 objectiveList read", field_reads)
+    topology_reads = {
+        name: field_reads.get(name, 0)
+        for name in ("prevQuestIdList", "flowIndex")
+    }
+    if any(topology_reads.values()):
+        fail(
+            "noClientTopologyReadDuringStart",
+            {"prevQuestIdList": 0, "flowIndex": 0},
+            topology_reads,
+        )
+    if topology_calls:
+        fail("noClientSuccessorTraversalCall", [], topology_calls)
+    return {
+        "status": "validation_failed" if failures else "validated",
+        "failures": failures,
+    }
+
+
+def quest_start_application_contract(
+    metadata: Any,
+    helper: Any,
+    mapper: Any,
+    pe: Any,
+    metadata_summary: dict[str, Any],
+    method_by_pointer: dict[int, list[dict[str, Any]]],
+    sorted_pointers: list[int],
+    state_rows: list[dict[str, Any]],
+    gameassembly_path: Path,
+) -> dict[str, Any]:
+    """Trace the selected quest into its fields without assuming a mission id."""
+    failures: list[dict[str, Any]] = []
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "quest_start_application_contract",
+            "gate": gate,
+            "message": "Beyond.Gameplay.MissionSystem.StartQuest",
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": str(gameassembly_path.resolve()),
+            "sourceHashes": {
+                "gameAssemblySha256": file_sha256(gameassembly_path),
+                "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+            },
+        })
+
+    required_fields = {
+        "questId",
+        "objectiveList",
+        "prevQuestIdList",
+        "flowIndex",
+    }
+    quest_info_candidates: list[Any] = []
+    for type_def in metadata.types:
+        fields = {
+            metadata.string(field.name_index)
+            for field in metadata.fields_for(type_def)
+        }
+        if required_fields <= fields:
+            quest_info_candidates.append(type_def)
+    if len(quest_info_candidates) != 1:
+        fail(
+            "uniqueQuestInfoShape",
+            1,
+            [metadata.type_full_name(row) for row in quest_info_candidates],
+        )
+        return {
+            "classification": "validation_failed",
+            "validation": {"status": "validation_failed", "failures": failures},
+        }
+    quest_info = quest_info_candidates[0]
+    quest_info_type = metadata.type_full_name(quest_info)
+
+    start_calls = {
+        (call.get("targetVa"), call.get("token"), call.get("symbol"))
+        for row in state_rows
+        if row.get("entityKind") == "quest"
+        for call in row.get("lifecycleCalls") or []
+        if call.get("method") == "StartQuest" and call.get("targetVa")
+    }
+    if len(start_calls) != 1:
+        fail("uniqueStartQuestLifecycleTarget", 1, sorted(start_calls))
+        return {
+            "classification": "validation_failed",
+            "questInfoType": quest_info_type,
+            "validation": {"status": "validation_failed", "failures": failures},
+        }
+    start_va_text, _start_token, start_symbol = next(iter(start_calls))
+    start_va = int(str(start_va_text), 16)
+    target_rows = [
+        row
+        for row in method_by_pointer.get(start_va, [])
+        if row.get("method") == "StartQuest"
+    ]
+    if len(target_rows) != 1:
+        fail("uniqueStartQuestMetadataTarget", 1, target_rows)
+        return {
+            "classification": "validation_failed",
+            "questInfoType": quest_info_type,
+            "validation": {"status": "validation_failed", "failures": failures},
+        }
+
+    method_index = int(target_rows[0]["methodIndex"])
+    method_def = metadata.methods[method_index]
+    owner_def = metadata.types[method_def.declaring_type]
+    method_info = helper.method_row(metadata, method_def)
+    mapper_row = {
+        "type": metadata.type_full_name(owner_def),
+        "image": metadata.image_name_by_type_index.get(owner_def.index, ""),
+        "method": method_info["name"],
+        "methodIndex": method_index,
+        "token": method_info["token"],
+        "parameters": method_info["parameters"],
+        "parameterDetails": method_info["parameterDetails"],
+        "flags": method_info["flags"],
+    }
+    scan_size, next_pointer = mapper.estimate_scan_size(
+        start_va, sorted_pointers, 8192
+    )
+    body = mapper.build_method_body_summary(
+        mapper_row,
+        pe.bytes_at_va(start_va, scan_size),
+        start_va,
+        method_by_pointer,
+        pe=pe,
+        max_instructions=2400,
+    )
+    offsets = runtime_type_field_offsets(
+        metadata,
+        pe,
+        metadata_summary,
+        quest_info.index,
+    )
+    selected_offsets = {
+        name: offsets.get(name)
+        for name in sorted(required_fields)
+    }
+    if any(offset is None for offset in selected_offsets.values()):
+        fail("questInfoFieldOffsets", sorted(required_fields), selected_offsets)
+
+    origin_counts = Counter(
+        str(row.get("origin") or "")
+        for row in body.get("fieldAccesses") or []
+    )
+    field_reads: dict[str, int] = {}
+    for name, offset in selected_offsets.items():
+        field_reads[name] = (
+            origin_counts.get(f"return:{quest_info_type}+0x{offset:x}", 0)
+            if isinstance(offset, int)
+            else 0
+        )
+    quest_info_getters = [
+        {
+            "offset": call.get("offset"),
+            "targetVa": call.get("targetVa"),
+            "symbol": f"{target.get('type')}.{target.get('method')}",
+            "returnOrigin": call.get("returnOrigin"),
+        }
+        for call in body.get("calls") or []
+        for target in call.get("resolved") or []
+        if target.get("returnTypeName") == quest_info_type
+    ]
+    topology_calls = sorted({
+        f"{target.get('type')}.{target.get('method')}"
+        for call in body.get("calls") or []
+        for target in call.get("resolved") or []
+        if re.search(
+            r"(?:next|successor|previous|predecessor).*(?:mission|quest)|"
+            r"(?:mission|quest).*(?:next|successor|previous|predecessor)",
+            str(target.get("method") or ""),
+            re.I,
+        )
+    })
+    validation = validate_quest_start_application_observation(
+        field_reads=field_reads,
+        quest_info_getters=quest_info_getters,
+        topology_calls=topology_calls,
+        source_file=str(gameassembly_path.resolve()),
+        source_hashes={
+            "gameAssemblySha256": file_sha256(gameassembly_path),
+            "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+        },
+        prior_failures=failures,
+    )
+
+    return {
+        "classification": "single_server_selected_quest_objective_initialization",
+        "questInfoType": quest_info_type,
+        "questInfoFieldOffsets": {
+            name: f"0x{offset:x}" if isinstance(offset, int) else None
+            for name, offset in selected_offsets.items()
+        },
+        "fieldReadCounts": field_reads,
+        "questInfoGetterCalls": quest_info_getters,
+        "topologyTraversalCalls": topology_calls,
+        "startQuest": {
+            "symbol": start_symbol,
+            "token": method_info["token"],
+            "va": f"0x{start_va:x}",
+            "scanBytes": scan_size,
+            "nextMethodPointerVa": f"0x{next_pointer:x}" if next_pointer else None,
+            "parameters": method_info["parameters"],
+        },
+        "sourceMessages": sorted({
+            row.get("type")
+            for row in state_rows
+            if row.get("entityKind") == "quest"
+            and any(
+                call.get("method") == "StartQuest"
+                for call in row.get("lifecycleCalls") or []
+            )
+        }),
+        "finding": (
+            "StartQuest receives one server-selected quest identity, resolves only that "
+            "QuestInfo, and reads its objectiveList while initializing client objective "
+            "state. It does not read prevQuestIdList or flowIndex and makes no native "
+            "predecessor/successor traversal call."
+        ),
+        "boundary": (
+            "A MissionRuntime fan-out therefore proves authored prerequisite topology, "
+            "not whether the server starts every arm, selects one exclusive arm, or "
+            "applies another server-only eligibility rule. Explicit typed conditions or "
+            "runtime branch carriers remain authoritative when present."
+        ),
+        "validation": validation,
+    }
+
+
 def state_update_application_census(
     metadata: Any,
     defaults: dict[int, tuple[int, int]],
@@ -1546,6 +1801,17 @@ def state_update_application_census(
         source_hashes=source_hashes,
         prior_failures=failures,
     )
+    quest_start = quest_start_application_contract(
+        metadata,
+        helper,
+        mapper,
+        pe,
+        metadata_summary,
+        method_by_pointer,
+        sorted_pointers,
+        rows,
+        gameassembly_path,
+    )
     return {
         "classification": "server_selected_identity_state_application",
         "discoveryPattern": {
@@ -1572,6 +1838,7 @@ def state_update_application_census(
         "clientSuccessorSelectors": sum(
             int(row["clientSuccessorSelectorPresent"]) for row in rows
         ),
+        "questStartApplication": quest_start,
         "finding": (
             "The current client receives one selected mission/quest identity and "
             "state/control value per update and forwards that same packet identity into "
@@ -1871,7 +2138,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v5",
+        "_schema": "endfieldProtocolRegistryAudit.v6",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -1919,6 +2186,12 @@ def build_report(
             "stateUpdateClientSuccessorSelectors": state_application_census[
                 "clientSuccessorSelectors"
             ],
+            "questStartPredecessorReads": state_application_census[
+                "questStartApplication"
+            ].get("fieldReadCounts", {}).get("prevQuestIdList", 0),
+            "questStartFlowIndexReads": state_application_census[
+                "questStartApplication"
+            ].get("fieldReadCounts", {}).get("flowIndex", 0),
         },
         "evidencePolicy": {
             "registry": (
@@ -2258,10 +2531,32 @@ def render_markdown(report: dict[str, Any]) -> str:
                 lifecycle=md_escape(lifecycle),
             )
         )
+    quest_start = state_census.get("questStartApplication") or {}
+    quest_fields = quest_start.get("questInfoFieldOffsets") or {}
+    quest_reads = quest_start.get("fieldReadCounts") or {}
     lines.extend(
         [
             "",
             state_census["boundary"],
+            "",
+            "### Quest-start fork authority",
+            "",
+            quest_start.get("finding") or "[quest-start audit unavailable]",
+            "",
+            (
+                "`objectiveList@{objective}` reads: **{objective_reads}**; "
+                "`prevQuestIdList@{previous}` reads: **{previous_reads}**; "
+                "`flowIndex@{flow}` reads: **{flow_reads}**."
+            ).format(
+                objective=quest_fields.get("objectiveList", "?"),
+                objective_reads=quest_reads.get("objectiveList", 0),
+                previous=quest_fields.get("prevQuestIdList", "?"),
+                previous_reads=quest_reads.get("prevQuestIdList", 0),
+                flow=quest_fields.get("flowIndex", "?"),
+                flow_reads=quest_reads.get("flowIndex", 0),
+            ),
+            "",
+            quest_start.get("boundary") or "",
             "",
             "## Story-facing message schemas",
             "",
@@ -2350,7 +2645,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v5 report when its original "
+            "Reuse an existing validated v6 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -2369,13 +2664,23 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v5":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v6":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}
     )
     if validation.get("status") != "validated":
         return False, f"validation is {validation.get('status')!r}"
+    quest_start_validation = (
+        ((report.get("stateUpdateApplicationCensus") or {}).get(
+            "questStartApplication"
+        ) or {}).get("validation") or {}
+    )
+    if quest_start_validation.get("status") != "validated":
+        return False, (
+            "quest-start validation is "
+            f"{quest_start_validation.get('status')!r}"
+        )
     source = report.get("source") or {}
     checks = (
         (metadata_path, "metadataSha256"),
@@ -2434,6 +2739,19 @@ def main() -> int:
         first = validation["failures"][0]
         print(
             "state-update validator failed: "
+            f"validator={first['validator']} gate={first['gate']} "
+            f"message={first.get('message')} expected={first['expected']!r} "
+            f"actual={first['actual']!r} source={first['sourceFile']}",
+            file=sys.stderr,
+        )
+        return 1
+    quest_start_validation = report["stateUpdateApplicationCensus"][
+        "questStartApplication"
+    ]["validation"]
+    if quest_start_validation["status"] != "validated":
+        first = quest_start_validation["failures"][0]
+        print(
+            "quest-start validator failed: "
             f"validator={first['validator']} gate={first['gate']} "
             f"message={first.get('message')} expected={first['expected']!r} "
             f"actual={first['actual']!r} source={first['sourceFile']}",
