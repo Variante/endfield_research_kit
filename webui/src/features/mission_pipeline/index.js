@@ -90,6 +90,10 @@
       playbackGate: "exact receiver playback gate",
       playbackGateTrue: "playback allowed when true",
       playbackGateBoundary: "This original-binary predicate controls only this receiver playback. It does not prove mission ownership, order between Story files, or a later server-side state write.",
+      postPlaybackControl: "exact post-playback control flow",
+      postPlaybackBranch: "typed local branch points",
+      postPlaybackServerHandoff: "server handoff (handler unresolved)",
+      postPlaybackBoundary: "Typed successor fields prove the local action graph after playback. Callback labels do not identify a server handler, mission/quest owner, state write, or cross-Story chronology.",
       activationFrontier: "offline activation frontier",
       nominalMissionHostCheck: "nominal-mission LevelData check",
       nominalMissionHostExcludes: "validated host excludes receiver script",
@@ -799,6 +803,10 @@
       playbackGate: "精确接收器播放条件",
       playbackGateTrue: "条件为真时允许播放",
       playbackGateBoundary: "该原始二进制条件只控制此接收器的播放；它不能证明任务归属、Story 文件之间的顺序或后续服务器状态写入。",
+      postPlaybackControl: "精确的播放后控制流",
+      postPlaybackBranch: "类型化本地分支点",
+      postPlaybackServerHandoff: "服务器交接（处理器未解析）",
+      postPlaybackBoundary: "类型化后继字段只证明播放后的本地动作图。回调标签不能识别服务器处理器、使命/任务归属、状态写入或跨 Story 时序。",
       exactReceiverNodesHint: "每个节点都来自原始 LevelScript 事件选择器，并有到剧情播放的精确控制路径；它能组织更多恢复文件，但不声明使命或任务所有者。",
       activationFrontier: "离线激活边界",
       nominalMissionHostCheck: "名义使命 LevelData 检查",
@@ -4136,6 +4144,8 @@
           const stories = (row.storyFiles || []).filter((story) => story && story.key);
           const producers = (row.localProducerRoutes || []).filter((producer) => producer && producer.producerAssetId);
           const playbackGates = (row.playbackGates || []).filter((gate) => gate && gate.summary);
+          const postPlaybackControls = (row.postPlaybackControls || [])
+            .filter((control) => control && control.storyKey && (control.maximalReachablePaths || []).length);
           const selectorRows = Object.entries(selector).filter(([, value]) => value !== "" && value !== null && value !== undefined);
           const selectorValue = (value) => typeof value === "object" ? JSON.stringify(value) : String(value);
           return `<article>
@@ -4202,11 +4212,20 @@
                   ? ` · objective ${consumer.objectiveIndex}`
                   : "";
                 const conditions = (consumer.conditionTypes || []).filter(Boolean).join(", ");
-                return `<div class="is-boundary"><span>${esc(t("questObserver"))}</span><i aria-hidden="true">⇢</i><code>${esc(`${identity}${objective}`)}</code><b>${esc(t("observationOnly"))}</b><small>${esc([conditions, consumer.evidenceBoundary || t("questObserverBoundary")].filter(Boolean).join(" · "))}</small></div>`;
+                return `<div class="is-boundary"><span>${esc(t("questObserver"))}</span><i aria-hidden="true">⇢</i><code>${esc(`${identity}${objective}`)}</code><b>${esc(t("observationOnly"))}</b><small>${esc([conditions, consumer.evidenceBoundary || t("questObserverBoundary")].filter(Boolean).join(" · "))}</small></div>${consumer.sourceFile ? `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(consumer.sourceFile)}</code><b>MissionRuntimeAsset</b><small>${esc(consumer.pipelineSourceFile || "")}</small></div>` : ""}`;
               }).join("")}
               <small>${esc(`${t("missionRuntimeConsumers")}: ${activation.missionRuntimeObjectiveConsumerCount ?? 0} · ${t("literalCrossScriptControls")}: ${activation.incomingLiteralCrossControlCount ?? 0} · ${t("exactStartShapeAreaMatches")}: ${activation.exactStartShapeMissionAreaMatchCount ?? 0}`)}</small>
             </div>` : ""}
             ${playbackGates.length ? `<div class="mp-runtime-associations mp-playback-gates"><strong>${esc(t("playbackGate"))}</strong>${playbackGates.map((gate) => `<div><span>${esc(t("playbackGateTrue"))}</span><i aria-hidden="true">?</i><code>${esc(gate.summary)}</code><b>${esc(String(gate.predicateType || "predicate").replaceAll(/([a-z])([A-Z])/g, "$1 $2"))}</b><small>${esc(`${gate.sourceFile || ""} · header #${gate.headerLocalId ?? "?"} → getter #${gate.getterLocalId ?? "constant"} → action #${gate.headerNextLocalId ?? "?"} · ${gate.predicateNodeCount ?? 1} getter node${gate.predicateNodeCount === 1 ? "" : "s"} · depth ${gate.predicateDepth ?? 1}`)}</small></div>`).join("")}<small>${esc(t("playbackGateBoundary"))}</small></div>` : ""}
+            ${postPlaybackControls.length ? `<div class="mp-runtime-associations mp-post-playback"><strong>${esc(t("postPlaybackControl"))}</strong>${postPlaybackControls.map((control) => {
+              const pathRows = (control.maximalReachablePaths || []).map((path) => {
+                const chain = (path || []).map((step) => `${step.actionName || step.recordClass || step.opcode || "action"} #${step.localId ?? "?"}`).join(" → ");
+                return `<div><span><a href="${esc(storyHref(control.storyKey))}"><code>${esc(control.storyKey)}</code></a> #${esc(control.playbackLocalId ?? "?")}</span><i aria-hidden="true">→</i><code>${esc(chain)}</code></div>`;
+              }).join("");
+              const branches = (control.branchPointLocalIds || []).length ? `<div><span>${esc(t("postPlaybackBranch"))}</span><i aria-hidden="true">→</i><code>${esc(control.branchPointLocalIds.map((id) => `#${id}`).join(", "))}</code></div>` : "";
+              const handoffs = (control.serverHandoffs || []).map((handoff) => `<div class="is-boundary"><span>${esc(t("postPlaybackServerHandoff"))}</span><i aria-hidden="true">→</i><code>${esc((handoff.callbackCorrelationLabels || []).join(", ") || `#${handoff.localId ?? "?"}`)}</code><b>${esc(t("noMissionOwner"))}</b></div>`).join("");
+              return `${pathRows}${branches}${handoffs}<small>${esc(control.sourceFile || "")}</small>`;
+            }).join("")}<small>${esc(t("postPlaybackBoundary"))}</small></div>` : ""}
             ${target ? `<div class="mp-runtime-associations mp-runtime-target"><strong>${esc(t("exactRuntimeTarget"))}</strong><div><span>${esc(t("modulePointer"))}</span><i aria-hidden="true">→</i><code>${esc(target.levelScriptVariablePtr)}</code><b>${esc(target.moduleType || t("encounterModule"))}</b><small>${esc(`${target.sourceFile || ""} @ ${target.dictionaryOffsetHex || "—"} · union ${target.moduleUnionTag || "—"}/${target.serializedMemberCount || "—"}`)}</small></div><div><span>${esc(t("activationSlot"))}</span><i aria-hidden="true">→</i><code>${esc(target.activateTriggerSlotId ?? "—")}</code><b>LOCAL</b><small>${esc(`${t("battleExitSlot")}: ${battlePart.exitTriggerSlotId ?? "—"}${enemySlots.length ? ` · ${t("localEntitySlots")}: ${enemySlots.join(", ")}` : ""}`)}</small></div><div class="is-boundary"><span>${esc(t("missingOwnershipBridge"))}</span><i aria-hidden="true">⇥</i><code>missionId / questId / MissionArea</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(row.ownershipBoundary || target.ownershipBoundary || "")}</small></div><small>${esc(t("noServerRequestOrReturn"))}</small></div>` : ""}
             ${producers.length ? `<div class="mp-runtime-associations"><strong>${esc(t("localProducerChain"))}</strong>${producers.map((producer) => `<div><span>${esc(`${t("abilityProducer")} · ${producer.producerDomain || "AbilityActionData"}`)}</span><i aria-hidden="true">→</i><code>${esc(producer.producerAssetId)}</code><b>LOCAL · ${esc(t("noServerRequestOrReturn"))}</b><small>${esc(`${t("literalSignal")}: ${producer.receiverSignalId || "—"} / ${producer.doubleValue?.value ?? "—"} · ${producer.actionUnionTag || ""}/${producer.serializedMemberCount || ""} · ${producer.producerSourceFile || ""} @ ${producer.actionOffset || "—"}`)}</small></div>`).join("")}<small>${esc(t("producerBoundaryHint"))}</small></div>` : ""}
             <div class="mp-missionless-story-links">${stories.map((story) => `<a href="${esc(storyHref(story.key))}"><span>${esc(story.kind || "story")}</span><code>${esc(story.key)}</code><b aria-hidden="true">→</b><small>${esc((story.nativeActions || []).join(" · "))}</small></a>`).join("")}</div>

@@ -186,6 +186,40 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             source,
         )
 
+    def test_mission_runtime_consumer_retains_original_and_pipeline_sources(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
+            tmp_root = Path(tmp)
+            original = tmp_root / "original.json"
+            original.write_text("{}", encoding="utf-8")
+            mission_root = tmp_root / "pipeline"
+            mission_root.mkdir()
+            pipeline_path = mission_root / "mission_fixture.json"
+            pipeline_path.write_text(
+                __import__("json").dumps({
+                    "mission": {
+                        "id": "mission_fixture",
+                        "source": frontier.rel_path(original),
+                    },
+                    "nodes": [{
+                        "id": "mission_fixture_q#1",
+                        "objectives": [{
+                            "index": 1,
+                            "levelScriptIds": ["1001"],
+                            "conditionTypes": ["CheckLevelScriptPropertyBool"],
+                        }],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            rows = frontier.mission_runtime_script_consumers(mission_root)
+        self.assertEqual(frontier.rel_path(original), rows["1001"][0]["sourceFile"])
+        self.assertEqual(
+            frontier.rel_path(pipeline_path),
+            rows["1001"][0]["pipelineSourceFile"],
+        )
+
     def test_receiver_nodes_collapse_by_exact_levelscript(self) -> None:
         payload = {
             "storyCoverage": {
@@ -621,7 +655,8 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertFalse(consumer["ownership"])
         self.assertFalse(consumer["activation"])
         self.assertFalse(consumer["storyPlayback"])
-        self.assertNotIn("sourceFile", consumer)
+        self.assertEqual("fixture_mission.json", consumer["sourceFile"])
+        self.assertEqual("", consumer["pipelineSourceFile"])
         self.assertEqual(
             1,
             index["storyCoverage"]["nativeReceiverActivationFrontier"][

@@ -61,7 +61,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v10"
+SCHEMA = "nativeReceiverActivationFrontier.v11"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -909,6 +909,9 @@ def mission_runtime_script_consumers(
         payload = read_json(path) or {}
         mission = payload.get("mission") or {}
         mission_id = safe_text(mission.get("id")) or path.stem
+        original_source = safe_text(mission.get("source"))
+        if not original_source or not (ROOT / original_source).is_file():
+            original_source = ""
         for node in payload.get("nodes") or []:
             if not isinstance(node, dict):
                 continue
@@ -926,7 +929,8 @@ def mission_runtime_script_consumers(
                             "questId": quest_id,
                             "objectiveIndex": objective.get("index"),
                             "conditionTypes": objective.get("conditionTypes") or [],
-                            "sourceFile": rel_path(path),
+                            "sourceFile": original_source,
+                            "pipelineSourceFile": rel_path(path),
                         }
                     )
     return consumers
@@ -2251,6 +2255,10 @@ def publish_to_pipeline_index(
                         for condition_type in consumer.get("conditionTypes") or []
                         if safe_text(condition_type)
                     ],
+                    "sourceFile": safe_text(consumer.get("sourceFile")),
+                    "pipelineSourceFile": safe_text(
+                        consumer.get("pipelineSourceFile")
+                    ),
                     "ownership": False,
                     "activation": False,
                     "storyPlayback": False,
