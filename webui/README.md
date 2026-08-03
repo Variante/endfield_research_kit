@@ -137,6 +137,12 @@ Rebuild Story data after editing overrides.
   link, native method addresses, and exact binary/metadata hashes. This is a
   local self-start edge only; mission ownership, branch selection, and
   cross-Story order remain explicitly unresolved.
+- Every receiver card shows the binary-validated public state application path
+  and its scene/script/state-only packet boundary. Cards with an exact typed
+  SubGame binding additionally show the original-data
+  `SubGame id -> bindScriptId -> LevelScript -> ManualStart` interaction
+  carrier. Both panels attach current binary/metadata hashes while keeping
+  mission ownership, server branch selection, and cross-Story order unresolved.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

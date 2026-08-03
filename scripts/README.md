@@ -61,6 +61,14 @@ override those defaults for one run.
   self-targets for every matching row; no scene or script id participates in
   discovery. Promotion still requires an authored event-header link and adds
   no mission ownership or cross-Story order.
+- A second general activation contract inventories every direct current-client
+  `ManualStart` caller and validates the public state-notify application chain.
+  It proves that `InteractiveLogicChallengeStartPoint` resolves the typed
+  `SubGameInstanceData` row by `m_subGameId`, reads `bindScriptId`, looks up the
+  LevelScript, and calls `ManualStart`. Exact SubGame bindings are therefore
+  interaction-start carriers. The public packet contains only scene, script,
+  state, and completion fields, so neither path supplies mission ownership,
+  server branch selection, or Story order.
 - LevelScript task recovery is corpus-driven rather than keyed to individual
   scenes. The builder validates the installed binary/protobuf task contract,
   joins every decoded task condition to its exact `lt:p` and `lt:mp` LevelData

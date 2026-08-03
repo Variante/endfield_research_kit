@@ -221,7 +221,7 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # LevelData AirWall mission/quest-state-gated radio playback contexts. v7
 # records the bounded MissionOptionData alternate-action carrier result. v8
 # closes the Mission property -> ParamVariable.m_scriptPtr nested-type
-# candidate as runtime LevelScript subscription context. v9 closes the
+# candidate as runtime LevelScript subscription context. v10 closes the
 # implicit ParamSource.CURRENT_MISSION_ID candidate across the complete
 # authored MissionRuntime and LevelScript action surfaces. v10 closes the
 # complete direct managed mission/quest identity co-carrier census and proves
@@ -263,7 +263,7 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # original TextAssets without using their names as mission/order evidence. v32
 # names the complete ActionBase surface through one hash-validated formatter
 # table recovered from the installed binary.
-SCHEMA_VERSION = 37
+SCHEMA_VERSION = 38
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -6492,10 +6492,10 @@ def load_state_update_application_contract(
             f"expected=file actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v9":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v10":
         raise RuntimeError(
             "validator=state_update_application_contract gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v9' "
+            "expected='endfieldProtocolRegistryAudit.v10' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     census = audit.get("stateUpdateApplicationCensus") or {}
@@ -6597,10 +6597,10 @@ def load_levelscript_task_authority_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v9":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v10":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v9' "
+            "expected='endfieldProtocolRegistryAudit.v10' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
 
@@ -6761,10 +6761,10 @@ def load_levelscript_start_policy_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v9":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v10":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v9' "
+            "expected='endfieldProtocolRegistryAudit.v10' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptStartPolicy") or {}
@@ -6855,10 +6855,10 @@ def load_levelscript_manual_self_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v9":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v10":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v9' "
+            "expected='endfieldProtocolRegistryAudit.v10' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptManualSelfControl") or {}
@@ -6933,6 +6933,108 @@ def load_levelscript_manual_self_control_contract(
         "methods": contract.get("methods") or {},
         "executeFlow": contract.get("executeFlow") or {},
         "manualStartFlow": contract.get("manualStartFlow") or {},
+        "finding": contract.get("finding") or "",
+        "evidenceBoundary": contract.get("boundary") or "",
+        "relatedOriginalFiles": related_files,
+        "validation": validation,
+    }
+
+
+def load_levelscript_activation_control_contract(
+    audit_path: Path = DEFAULT_PROTOCOL_REGISTRY_AUDIT,
+) -> dict[str, Any]:
+    """Revalidate server-state and SubGame ManualStart binary paths."""
+    validator = "levelscript_activation_control_contract"
+    if not audit_path.is_file():
+        raise RuntimeError(
+            f"validator={validator} gate=auditExists expected=file "
+            f"actual=missing source={audit_path}"
+        )
+    audit = read_json(audit_path)
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v10":
+        raise RuntimeError(
+            f"validator={validator} gate=auditSchema "
+            "expected='endfieldProtocolRegistryAudit.v10' "
+            f"actual={audit.get('_schema')!r} source={audit_path}"
+        )
+    contract = audit.get("levelScriptActivationControl") or {}
+    validation = contract.get("validation") or {}
+    if validation.get("status") != "validated":
+        failure = (validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            f"validator={validator} "
+            f"gate={failure.get('gate') or 'upstreamValidation'} "
+            f"message={failure.get('message')} "
+            f"expected={failure.get('expected')!r} "
+            f"actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    discovery = contract.get("discoveryPattern") or {}
+    expected_inputs = [
+        "SubGameInstanceData.id",
+        "SubGameInstanceData.bindScriptId",
+    ]
+    actual_shape = {
+        "schema": contract.get("schema"),
+        "classification": contract.get("classification"),
+        "serializedObjectInputs": discovery.get("serializedObjectInputs"),
+    }
+    expected_shape = {
+        "schema": "levelScriptActivationControl.v1",
+        "classification": "server_state_and_subgame_interaction_start_paths",
+        "serializedObjectInputs": expected_inputs,
+    }
+    if actual_shape != expected_shape:
+        raise RuntimeError(
+            f"validator={validator} gate=genericContractShape "
+            f"expected={expected_shape!r} actual={actual_shape!r} "
+            f"source={audit_path}"
+        )
+
+    source = audit.get("source") or {}
+    related_files: list[dict[str, Any]] = []
+    for path_key, hash_key, kind in (
+        ("gameAssembly", "gameAssemblySha256", "original_game_binary"),
+        ("metadata", "metadataSha256", "original_game_metadata"),
+    ):
+        source_text = str(source.get(path_key) or "")
+        expected_hash = str(source.get(hash_key) or "").lower()
+        source_path = Path(source_text)
+        if not source_text or not source_path.is_file():
+            raise RuntimeError(
+                f"validator={validator} gate=sourceExists expected=file "
+                f"actual=missing source={source_text or path_key}"
+            )
+        actual_hash = sha256_path(source_path)
+        if actual_hash != expected_hash:
+            raise RuntimeError(
+                f"validator={validator} gate=sourceHash "
+                f"expected={expected_hash!r} actual={actual_hash!r} "
+                f"source={source_path}"
+            )
+        related_files.append({
+            "kind": kind,
+            "sourceFile": str(source_path.resolve()),
+            "sha256": actual_hash,
+            "relationship": "native_levelscript_activation_control_contract",
+        })
+
+    return {
+        "schema": contract.get("schema"),
+        "source": repo_path(audit_path),
+        "classification": contract.get("classification"),
+        "discoveryPattern": discovery,
+        "messageIds": contract.get("messageIds") or {},
+        "messageSchemas": contract.get("messageSchemas") or {},
+        "fieldOffsets": contract.get("fieldOffsets") or {},
+        "methods": contract.get("methods") or {},
+        "publicStateFlow": contract.get("publicStateFlow") or {},
+        "subGameInteractionFlow": (
+            contract.get("subGameInteractionFlow") or {}
+        ),
+        "manualStartDirectCallers": (
+            contract.get("manualStartDirectCallers") or []
+        ),
         "finding": contract.get("finding") or "",
         "evidenceBoundary": contract.get("boundary") or "",
         "relatedOriginalFiles": related_files,
@@ -9867,12 +9969,16 @@ def build_all(
     manual_self_control_contract = (
         load_levelscript_manual_self_control_contract()
     )
+    activation_control_contract = (
+        load_levelscript_activation_control_contract()
+    )
     runtime_contract = {
         **RUNTIME_CONTRACT,
         "stateUpdateApplicationAudit": state_update_contract,
         "levelScriptTaskAuthorityAudit": task_authority_contract,
         "levelScriptStartPolicyAudit": start_policy_contract,
         "levelScriptManualSelfControlAudit": manual_self_control_contract,
+        "levelScriptActivationControlAudit": activation_control_contract,
     }
     index = {
         "schemaVersion": SCHEMA_VERSION,

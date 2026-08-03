@@ -260,6 +260,20 @@ MISSION_EVENT_CONSTRUCTOR_XREF_FINDING = {
 # Type names are the generated protobuf message class names.
 RELEVANT_MESSAGES: tuple[dict[str, Any], ...] = (
     {
+        "type": "Proto.CS_SCENE_SET_LEVEL_SCRIPT_ACTIVE",
+        "direction": "client_to_server",
+        "enumName": "CsSceneSetLevelScriptActive",
+        "expectedId": 94,
+        "classification": "native_sender_proven",
+    },
+    {
+        "type": "Proto.SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY",
+        "direction": "server_to_client",
+        "enumName": "ScSceneLevelScriptStateNotify",
+        "expectedId": 37,
+        "classification": "native_handler_proven",
+    },
+    {
         "type": "Proto.CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS",
         "direction": "client_to_server",
         "enumName": "CsSceneUpdateScriptTaskProgress",
@@ -382,6 +396,7 @@ RELEVANT_MESSAGES: tuple[dict[str, Any], ...] = (
 
 
 KNOWN_ID_CHECKS = {
+    "CsSceneSetLevelScriptActive": 94,
     "CsUpdateQuestObjective": 314,
     "CsAcceptMission": 315,
     "CsFinishDialog": 341,
@@ -391,6 +406,7 @@ KNOWN_ID_CHECKS = {
     "ScQuestObjectivesUpdate": 116,
     "ScFinishDialog": 131,
     "ScGameMechanicsSyncEnterGameInst": 1257,
+    "ScSceneLevelScriptStateNotify": 37,
 }
 
 
@@ -1942,6 +1958,686 @@ def levelscript_manual_self_control_contract(
             "ManualStart action has both current-context operands and an authored "
             "header link into that action. It does not supply a mission/quest owner, "
             "choose a Story branch, or order separate playback actions."
+        ),
+        "validation": validation,
+    }
+
+
+def validate_levelscript_activation_control_observation(
+    observation: dict[str, Any],
+    *,
+    source_file: str,
+    source_hashes: dict[str, str],
+) -> dict[str, Any]:
+    """Fail closed on public-state sync and SubGame interaction start flow."""
+    failures: list[dict[str, Any]] = []
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "levelscript_activation_control",
+            "gate": gate,
+            "message": "current-build LevelScript activation control",
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": source_hashes,
+        })
+
+    expected_ids = {
+        "CsSceneSetLevelScriptActive": 94,
+        "ScSceneLevelScriptStateNotify": 37,
+    }
+    actual_ids = {
+        name: (observation.get("messageIds") or {}).get(name)
+        for name in expected_ids
+    }
+    if actual_ids != expected_ids:
+        fail("messageIds", expected_ids, actual_ids)
+
+    expected_fields = {
+        "activationRequest": [
+            ("sceneNumId", 1),
+            ("scriptId", 2),
+            ("isActive", 3),
+            ("leaderPos", 4),
+        ],
+        "stateNotify": [
+            ("sceneNumId", 1),
+            ("scriptId", 2),
+            ("state", 3),
+            ("isComplete", 4),
+        ],
+    }
+    actual_fields = {
+        key: [
+            (row.get("name"), row.get("tag"))
+            for row in ((observation.get("messageSchemas") or {}).get(key) or {}).get(
+                "fields", []
+            )
+        ]
+        for key in expected_fields
+    }
+    if actual_fields != expected_fields:
+        fail("messageSchemas", expected_fields, actual_fields)
+
+    expected_offsets = {
+        "challengeStartPoint.m_subGameId": 0x68,
+        "subGameInstanceData.bindScriptId": 0x50,
+        "stateNotify.sceneNumId_": 0x18,
+        "stateNotify.scriptId_": 0x20,
+        "stateNotify.state_": 0x28,
+        "stateNotify.isComplete_": 0x2C,
+    }
+    actual_offsets = {
+        key: (observation.get("fieldOffsets") or {}).get(key)
+        for key in expected_offsets
+    }
+    if actual_offsets != expected_offsets:
+        fail("fieldOffsets", expected_offsets, actual_offsets)
+
+    expected_methods = {
+        "StateNotifyHandler",
+        "ManagerStateShort",
+        "ManagerStateFull",
+        "ContainerState",
+        "UpdateState",
+        "set_state",
+        "UpdateRuntimeState",
+        "ChallengeOnInteract",
+        "SubGameTableTryGetValue",
+        "LevelScriptPtrImplicit",
+        "TryGetLevelScript",
+        "ManualStart",
+        "ManualStartActionExecute",
+    }
+    unresolved = sorted(
+        name
+        for name in expected_methods
+        if ((observation.get("methods") or {}).get(name) or {}).get(
+            "mappingStatus"
+        )
+        != "mapped_unique"
+    )
+    if unresolved:
+        fail("methodMapping", "all mapped_unique", unresolved)
+
+    expected_state_flow = {
+        "handlerToManagerShort": 1,
+        "managerShortToManagerFull": 1,
+        "managerFullToContainer": 1,
+        "containerToUpdateState": 1,
+        "updateStateToSetter": 1,
+        "updateStateToRuntimeEvaluation": 1,
+        "setterBeforeRuntimeEvaluation": True,
+    }
+    actual_state_flow = {
+        name: (observation.get("publicStateFlow") or {}).get(name)
+        for name in expected_state_flow
+    }
+    if actual_state_flow != expected_state_flow:
+        fail("publicStateFlow", expected_state_flow, actual_state_flow)
+
+    expected_subgame_flow = {
+        "subGameLookupCallCount": 1,
+        "scriptPtrConversionCallCount": 1,
+        "tryGetLevelScriptCallCount": 1,
+        "manualStartCallCount": 1,
+        "callsInCarrierOrder": True,
+        "subGameIdFieldRead": True,
+        "bindScriptIdFieldRead": True,
+    }
+    actual_subgame_flow = {
+        name: (observation.get("subGameInteractionFlow") or {}).get(name)
+        for name in expected_subgame_flow
+    }
+    if actual_subgame_flow != expected_subgame_flow:
+        fail("subGameInteractionFlow", expected_subgame_flow, actual_subgame_flow)
+
+    expected_callers = [
+        {
+            "type": "Beyond.Gameplay.Actions.ManualStartLevelScript",
+            "method": "Execute",
+        },
+        {
+            "type": "Beyond.Gameplay.InteractiveLogicChallengeStartPoint",
+            "method": "_OnInteract",
+        },
+    ]
+    actual_callers = [
+        {"type": row.get("type"), "method": row.get("method")}
+        for row in observation.get("manualStartDirectCallers") or []
+    ]
+    if actual_callers != expected_callers:
+        fail("manualStartDirectCallers", expected_callers, actual_callers)
+
+    return {
+        "status": "validation_failed" if failures else "validated",
+        "failures": failures,
+    }
+
+
+def levelscript_activation_control_contract(
+    metadata: Any,
+    defaults: dict[int, tuple[int, int]],
+    helper: Any,
+    cs: list[dict[str, Any]],
+    sc: list[dict[str, Any]],
+    gameassembly_path: Path,
+    mapper_path: Path = NATIVE_MAPPER_HELPER,
+) -> dict[str, Any]:
+    """Recover general public-state and SubGame ManualStart producers."""
+    mapper = load_native_mapper(mapper_path)
+    pe = mapper.PeImage(gameassembly_path)
+    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    ranges = mapper.image_method_ranges(metadata)
+    pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
+        pe, metadata, modules, ranges
+    )
+    metadata_registration = mapper.find_metadata_registration(
+        pe, mapper.DEFAULT_CODE_REGISTRATION
+    )
+    if metadata_registration is None:
+        raise RuntimeError(
+            "LevelScript activation audit could not derive MetadataRegistration"
+        )
+    generic_index = mapper.build_generic_method_index(
+        pe,
+        metadata,
+        mapper.DEFAULT_CODE_REGISTRATION,
+        metadata_registration,
+    )
+    for pointer, aliases in generic_index.items():
+        if pointer not in method_by_pointer:
+            method_by_pointer[pointer] = aliases
+    sorted_pointers = sorted(method_by_pointer)
+    pointers_by_method_index: dict[int, set[int]] = {}
+    for pointer, aliases in method_by_pointer.items():
+        for alias in aliases:
+            method_index = alias.get("methodIndex")
+            if isinstance(method_index, int):
+                pointers_by_method_index.setdefault(method_index, set()).add(pointer)
+
+    metadata_summary = mapper.metadata_registration_summary(
+        pe, metadata_registration
+    )
+
+    def find_type(type_name: str) -> list[Any]:
+        return [
+            type_def
+            for type_def in metadata.types
+            if metadata.type_full_name(type_def) == type_name
+        ]
+
+    def mapped_method(
+        type_name: str,
+        method_name: str,
+        parameter_count: int,
+        return_type: str,
+        *,
+        parameter_types: tuple[str, ...] | None = None,
+    ) -> dict[str, Any]:
+        candidates: list[dict[str, Any]] = []
+        types = find_type(type_name)
+        if len(types) == 1:
+            for method_def in metadata.methods_for(types[0]):
+                info = helper.method_row(metadata, method_def)
+                actual_parameter_types = tuple(
+                    row.get("typeName")
+                    for row in info.get("parameterDetails") or []
+                )
+                if (
+                    info.get("name") != method_name
+                    or info.get("parameterCount") != parameter_count
+                    or info.get("returnTypeName") != return_type
+                    or (
+                        parameter_types is not None
+                        and actual_parameter_types != parameter_types
+                    )
+                ):
+                    continue
+                pointers = sorted(
+                    pointers_by_method_index.get(method_def.index) or []
+                )
+                candidates.append({
+                    "methodIndex": method_def.index,
+                    "token": info.get("token"),
+                    "parameterTypes": list(actual_parameter_types),
+                    "returnTypeName": info.get("returnTypeName"),
+                    "pointers": pointers,
+                })
+        if len(candidates) == 1 and len(candidates[0]["pointers"]) == 1:
+            candidate = candidates[0]
+            pointer = candidate["pointers"][0]
+            return {
+                **candidate,
+                "pointers": [f"0x{value:x}" for value in candidate["pointers"]],
+                "methodPointerVa": f"0x{pointer:x}",
+                "mappingStatus": "mapped_unique",
+            }
+        return {
+            "mappingStatus": "unresolved",
+            "candidateCount": len(candidates),
+            "declaringTypeCount": len(types),
+            "candidates": candidates,
+        }
+
+    methods = {
+        "StateNotifyHandler": mapped_method(
+            "Beyond.Gameplay.GameplayNetwork",
+            "_Handle_SceneLevelScriptStateNotify",
+            1,
+            "System.Void",
+            parameter_types=("Proto.SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY+<>c&",),
+        ),
+        "ManagerStateShort": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptManager",
+            "ServerSyncLevelScriptState",
+            4,
+            "System.Void",
+        ),
+        "ManagerStateFull": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptManager",
+            "ServerSyncLevelScriptState",
+            5,
+            "System.Void",
+        ),
+        "ContainerState": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptContainer",
+            "ServerSyncLevelScriptState",
+            4,
+            "System.Void",
+        ),
+        "UpdateState": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "UpdateState",
+            3,
+            "System.Void",
+            parameter_types=(
+                "Beyond.GEnums.LevelScriptState",
+                "Beyond.Gameplay.Core.ScriptEndReason",
+                "System.Boolean",
+            ),
+        ),
+        "set_state": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "set_state",
+            1,
+            "System.Void",
+            parameter_types=("Beyond.GEnums.LevelScriptState",),
+        ),
+        "UpdateRuntimeState": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "UpdateRuntimeState",
+            1,
+            "System.Void",
+            parameter_types=("Beyond.Gameplay.Core.ScriptEndReason",),
+        ),
+        "ChallengeOnInteract": mapped_method(
+            "Beyond.Gameplay.InteractiveLogicChallengeStartPoint",
+            "_OnInteract",
+            0,
+            "System.Void",
+            parameter_types=(),
+        ),
+        "SubGameTableTryGetValue": mapped_method(
+            "Beyond.Gameplay.Core.SubGameInstanceDataTable",
+            "TryGetValue",
+            2,
+            "System.Boolean",
+        ),
+        "LevelScriptPtrImplicit": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptPtr",
+            "op_Implicit",
+            1,
+            "Beyond.Gameplay.Core.LevelScriptPtr",
+        ),
+        "TryGetLevelScript": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptManager",
+            "TryGetLevelScript",
+            3,
+            "System.Boolean",
+        ),
+        "ManualStart": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "ManualStart",
+            0,
+            "System.Void",
+            parameter_types=(),
+        ),
+        "ManualStartActionExecute": mapped_method(
+            "Beyond.Gameplay.Actions.ManualStartLevelScript",
+            "Execute",
+            1,
+            "System.Void",
+            parameter_types=("System.Single",),
+        ),
+    }
+
+    def method_body(method_key: str) -> dict[str, Any]:
+        method = methods.get(method_key) or {}
+        if method.get("mappingStatus") != "mapped_unique":
+            return {}
+        pointer = int(method["methodPointerVa"], 16)
+        scan_size, next_pointer = mapper.estimate_scan_size(
+            pointer, sorted_pointers, 65536
+        )
+        mapper_row = full_method_mapper_row(
+            metadata, helper, int(method["methodIndex"])
+        )
+        body = mapper.build_method_body_summary(
+            mapper_row,
+            pe.bytes_at_va(pointer, scan_size),
+            pointer,
+            method_by_pointer,
+            pe=pe,
+            max_instructions=30000,
+        )
+        body["methodPointerVa"] = f"0x{pointer:x}"
+        body["methodPointerRva"] = f"0x{pointer - pe.image_base:x}"
+        body["scanBytes"] = scan_size
+        body["nextMethodPointerVa"] = (
+            f"0x{next_pointer:x}" if next_pointer else None
+        )
+        return body
+
+    bodies = {
+        name: method_body(name)
+        for name in (
+            "StateNotifyHandler",
+            "ManagerStateShort",
+            "ManagerStateFull",
+            "ContainerState",
+            "UpdateState",
+            "ChallengeOnInteract",
+        )
+    }
+
+    def calls_to(body_key: str, target_key: str) -> list[dict[str, Any]]:
+        expected = (methods.get(target_key) or {}).get("methodIndex")
+        return [
+            call
+            for call in sorted(
+                (bodies.get(body_key) or {}).get("calls") or [],
+                key=lambda row: row["offset"],
+            )
+            if any(
+                target.get("methodIndex") == expected
+                for target in call.get("resolved") or []
+            )
+        ]
+
+    state_links = {
+        "handlerToManagerShort": calls_to(
+            "StateNotifyHandler", "ManagerStateShort"
+        ),
+        "managerShortToManagerFull": calls_to(
+            "ManagerStateShort", "ManagerStateFull"
+        ),
+        "managerFullToContainer": calls_to(
+            "ManagerStateFull", "ContainerState"
+        ),
+        "containerToUpdateState": calls_to("ContainerState", "UpdateState"),
+        "updateStateToSetter": calls_to("UpdateState", "set_state"),
+        "updateStateToRuntimeEvaluation": calls_to(
+            "UpdateState", "UpdateRuntimeState"
+        ),
+    }
+    public_state_flow = {
+        name: len(calls) for name, calls in state_links.items()
+    }
+    setter_calls = state_links["updateStateToSetter"]
+    runtime_calls = state_links["updateStateToRuntimeEvaluation"]
+    public_state_flow["setterBeforeRuntimeEvaluation"] = (
+        len(setter_calls) == 1
+        and len(runtime_calls) == 1
+        and int(setter_calls[0]["offset"]) < int(runtime_calls[0]["offset"])
+    )
+    public_state_flow["callOffsets"] = {
+        name: [row.get("offset") for row in calls]
+        for name, calls in state_links.items()
+    }
+
+    subgame_links = {
+        "subGameLookupCallCount": calls_to(
+            "ChallengeOnInteract", "SubGameTableTryGetValue"
+        ),
+        "scriptPtrConversionCallCount": calls_to(
+            "ChallengeOnInteract", "LevelScriptPtrImplicit"
+        ),
+        "tryGetLevelScriptCallCount": calls_to(
+            "ChallengeOnInteract", "TryGetLevelScript"
+        ),
+        "manualStartCallCount": calls_to("ChallengeOnInteract", "ManualStart"),
+    }
+    ordered_calls = [
+        subgame_links[name]
+        for name in (
+            "subGameLookupCallCount",
+            "scriptPtrConversionCallCount",
+            "tryGetLevelScriptCallCount",
+            "manualStartCallCount",
+        )
+    ]
+    offsets = [
+        int(rows[0]["offset"]) for rows in ordered_calls if len(rows) == 1
+    ]
+    challenge_fields = find_type(
+        "Beyond.Gameplay.InteractiveLogicChallengeStartPoint"
+    )
+    subgame_fields = find_type("Beyond.Gameplay.Core.SubGameInstanceData")
+    state_notify_fields = find_type(
+        "Proto.SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY"
+    )
+    field_offsets: dict[str, int | None] = {}
+    if len(challenge_fields) == 1:
+        current = runtime_type_field_offsets(
+            metadata, pe, metadata_summary, challenge_fields[0].index
+        )
+        field_offsets["challengeStartPoint.m_subGameId"] = current.get(
+            "m_subGameId"
+        )
+    if len(subgame_fields) == 1:
+        current = runtime_type_field_offsets(
+            metadata, pe, metadata_summary, subgame_fields[0].index
+        )
+        field_offsets["subGameInstanceData.bindScriptId"] = current.get(
+            "bindScriptId"
+        )
+    if len(state_notify_fields) == 1:
+        current = runtime_type_field_offsets(
+            metadata, pe, metadata_summary, state_notify_fields[0].index
+        )
+        for name in ("sceneNumId_", "scriptId_", "state_", "isComplete_"):
+            field_offsets[f"stateNotify.{name}"] = current.get(name)
+
+    challenge_body = bodies.get("ChallengeOnInteract") or {}
+    field_accesses = challenge_body.get("fieldAccesses") or []
+    subgame_id_offset = field_offsets.get("challengeStartPoint.m_subGameId")
+    bind_script_offset = field_offsets.get("subGameInstanceData.bindScriptId")
+    subgame_interaction_flow = {
+        name: len(rows) for name, rows in subgame_links.items()
+    }
+    subgame_interaction_flow.update({
+        "callsInCarrierOrder": len(offsets) == 4 and offsets == sorted(offsets),
+        "subGameIdFieldRead": any(
+            row.get("kind") == "read"
+            and row.get("origin") == f"this+0x{subgame_id_offset:x}"
+            for row in field_accesses
+            if isinstance(subgame_id_offset, int)
+        ),
+        "bindScriptIdFieldRead": any(
+            (call.get("argumentContext") or {})
+            .get("argRegisterWrites", {})
+            .get("rdx", {})
+            .get("text")
+            == f"mov rdx, [rdx+0x{bind_script_offset:x}]"
+            for call in subgame_links["scriptPtrConversionCallCount"]
+            if isinstance(bind_script_offset, int)
+        ),
+        "callOffsets": {
+            name: [row.get("offset") for row in rows]
+            for name, rows in subgame_links.items()
+        },
+    })
+
+    manual_start_pointer = (
+        int(methods["ManualStart"]["methodPointerVa"], 16)
+        if methods["ManualStart"].get("mappingStatus") == "mapped_unique"
+        else None
+    )
+    caller_rows: dict[tuple[str, str, int], dict[str, Any]] = {}
+    caller_body_cache: dict[int, dict[str, Any]] = {}
+    if manual_start_pointer is not None:
+        for section in pe.sections:
+            if section["name"] not in {".text", "il2cpp"} or not section["rawSize"]:
+                continue
+            data = pe.buf[
+                section["rawPointer"] : section["rawPointer"]
+                + section["rawSize"]
+            ]
+            section_va = pe.image_base + section["virtualAddress"]
+            offset = data.find(b"\xe8")
+            while 0 <= offset <= len(data) - 5:
+                relative = struct.unpack_from("<i", data, offset + 1)[0]
+                call_va = section_va + offset
+                if call_va + 5 + relative == manual_start_pointer:
+                    position = bisect_right(sorted_pointers, call_va) - 1
+                    caller_pointer = (
+                        sorted_pointers[position] if position >= 0 else 0
+                    )
+                    aliases = method_by_pointer.get(caller_pointer) or []
+                    next_pointer = (
+                        sorted_pointers[position + 1]
+                        if 0 <= position + 1 < len(sorted_pointers)
+                        else 0
+                    )
+                    if (
+                        not caller_pointer
+                        or (next_pointer and call_va >= next_pointer)
+                        or not aliases
+                    ):
+                        offset = data.find(b"\xe8", offset + 1)
+                        continue
+                    if caller_pointer not in caller_body_cache:
+                        scan_size, _ = mapper.estimate_scan_size(
+                            caller_pointer, sorted_pointers, 65536
+                        )
+                        caller_body_cache[caller_pointer] = (
+                            mapper.build_method_body_summary(
+                                full_method_mapper_row(
+                                    metadata,
+                                    helper,
+                                    int(aliases[0]["methodIndex"]),
+                                ),
+                                pe.bytes_at_va(caller_pointer, scan_size),
+                                caller_pointer,
+                                method_by_pointer,
+                                pe=pe,
+                                max_instructions=30000,
+                            )
+                        )
+                    call_offset = call_va - caller_pointer
+                    decoded_call = next((
+                        row
+                        for row in (
+                            caller_body_cache[caller_pointer].get("calls") or []
+                        )
+                        if row.get("offset") == call_offset
+                        and any(
+                            target.get("methodIndex")
+                            == methods["ManualStart"].get("methodIndex")
+                            for target in row.get("resolved") or []
+                        )
+                    ), None)
+                    if decoded_call is None:
+                        offset = data.find(b"\xe8", offset + 1)
+                        continue
+                    for alias in aliases:
+                        key = (
+                            str(alias.get("type") or ""),
+                            str(alias.get("method") or ""),
+                            int(alias.get("methodIndex") or -1),
+                        )
+                        caller_rows[key] = {
+                            "type": key[0],
+                            "method": key[1],
+                            "methodIndex": key[2],
+                            "token": alias.get("token"),
+                            "methodPointerVa": f"0x{caller_pointer:x}",
+                            "callVa": f"0x{call_va:x}",
+                            "callOffset": call_offset,
+                            "section": section["name"],
+                            "decodedDirectCall": True,
+                        }
+                offset = data.find(b"\xe8", offset + 1)
+    manual_start_callers = sorted(
+        caller_rows.values(), key=lambda row: (row["type"], row["method"])
+    )
+
+    cs_by_name = {row["name"]: row["id"] for row in cs}
+    sc_by_name = {row["name"]: row["id"] for row in sc}
+    message_ids = {
+        "CsSceneSetLevelScriptActive": cs_by_name.get(
+            "CsSceneSetLevelScriptActive"
+        ),
+        "ScSceneLevelScriptStateNotify": sc_by_name.get(
+            "ScSceneLevelScriptStateNotify"
+        ),
+    }
+    message_schemas = {
+        "activationRequest": message_schema(
+            metadata, defaults, "Proto.CS_SCENE_SET_LEVEL_SCRIPT_ACTIVE"
+        ),
+        "stateNotify": message_schema(
+            metadata, defaults, "Proto.SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY"
+        ),
+    }
+    observation = {
+        "messageIds": message_ids,
+        "messageSchemas": message_schemas,
+        "fieldOffsets": field_offsets,
+        "methods": methods,
+        "publicStateFlow": public_state_flow,
+        "subGameInteractionFlow": subgame_interaction_flow,
+        "manualStartDirectCallers": manual_start_callers,
+    }
+    source_hashes = {
+        "gameAssemblySha256": file_sha256(gameassembly_path),
+        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+    }
+    validation = validate_levelscript_activation_control_observation(
+        observation,
+        source_file=str(gameassembly_path.resolve()),
+        source_hashes=source_hashes,
+    )
+    return {
+        "schema": "levelScriptActivationControl.v1",
+        "classification": "server_state_and_subgame_interaction_start_paths",
+        "discoveryPattern": {
+            "methodSelection": "exact metadata type, name, signature, and return type",
+            "messageSelection": "exact current enum IDs and protobuf fields",
+            "fieldSelection": "MetadataRegistration instance offsets",
+            "callers": "complete current executable-code direct E8 caller census for ManualStart",
+            "serializedObjectInputs": [
+                "SubGameInstanceData.id",
+                "SubGameInstanceData.bindScriptId",
+            ],
+        },
+        **observation,
+        "finding": (
+            "The server state notification applies its exact scene/script/state tuple "
+            "through LevelScriptManager and LevelScriptContainer into "
+            "LevelScriptRuntime.UpdateState. Separately, the only direct ManualStart "
+            "callers in the current AOT client are ManualStartLevelScript.Execute and "
+            "InteractiveLogicChallengeStartPoint._OnInteract; the interaction path "
+            "resolves the typed SubGame row by id, reads bindScriptId, looks up that "
+            "LevelScript, and calls ManualStart."
+        ),
+        "boundary": (
+            "An exact SubGame id/bindScriptId row therefore proves an interaction "
+            "ManualStart carrier for that bound script. The server state packet has no "
+            "mission or quest field, and neither path proves which mission owns Story "
+            "playback, which server branch selected a state, or any cross-Story order."
         ),
         "validation": validation,
     }
@@ -3598,6 +4294,15 @@ def build_report(
         gameassembly_path,
         mapper_path,
     )
+    activation_control_contract = levelscript_activation_control_contract(
+        metadata,
+        defaults,
+        helper,
+        cs,
+        sc,
+        gameassembly_path,
+        mapper_path,
+    )
     native_hooks_by_message_id: dict[int, list[str]] = {}
     for hook_name, hook in native_task_paths["hooks"].items():
         message_id = hook.get("messageId")
@@ -3637,7 +4342,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v9",
+        "_schema": "endfieldProtocolRegistryAudit.v10",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -3710,6 +4415,12 @@ def build_report(
                 )
                 == "validated"
             ),
+            "levelScriptActivationControlValidated": (
+                (activation_control_contract.get("validation") or {}).get(
+                    "status"
+                )
+                == "validated"
+            ),
         },
         "evidencePolicy": {
             "registry": (
@@ -3739,6 +4450,9 @@ def build_report(
             "levelScriptStartPolicy": start_policy_contract["boundary"],
             "levelScriptManualSelfControl": (
                 manual_self_control_contract["boundary"]
+            ),
+            "levelScriptActivationControl": (
+                activation_control_contract["boundary"]
             ),
             "missionClientEvent": (
                 "Message 125 has a current-build native handler that interns its exact "
@@ -3782,6 +4496,7 @@ def build_report(
         "stateUpdateApplicationCensus": state_application_census,
         "levelScriptStartPolicy": start_policy_contract,
         "levelScriptManualSelfControl": manual_self_control_contract,
+        "levelScriptActivationControl": activation_control_contract,
         "message125EventBusSpecializations": event_bus_census,
         "missionEventConstructorXrefs": MISSION_EVENT_CONSTRUCTOR_XREF_FINDING,
         "missionEventAssetCoverage": mission_event_assets,
@@ -3848,6 +4563,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         (
             "- LevelScript current-context ManualStart self control: "
             f"**{'validated' if summary['levelScriptManualSelfControlValidated'] else 'failed'}**"
+        ),
+        (
+            "- LevelScript public-state / SubGame interaction activation control: "
+            f"**{'validated' if summary['levelScriptActivationControlValidated'] else 'failed'}**"
         ),
         f"- Runtime-hook manifest SHA-256: `{report['source']['runtimeHookManifestSha256']}`",
         "",
@@ -4074,6 +4793,10 @@ def render_markdown(report: dict[str, Any]) -> str:
     start_policy_methods = start_policy.get("methods") or {}
     start_policy_gates = start_policy.get("startTypeGates") or {}
     start_policy_transition = start_policy.get("preStartTransition") or {}
+    activation_control = report.get("levelScriptActivationControl") or {}
+    activation_methods = activation_control.get("methods") or {}
+    activation_state_flow = activation_control.get("publicStateFlow") or {}
+    subgame_flow = activation_control.get("subGameInteractionFlow") or {}
     lines.extend(
         [
             "",
@@ -4221,6 +4944,87 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
             start_policy.get("boundary") or "",
             "",
+            "## Generic LevelScript activation control",
+            "",
+            activation_control.get("finding") or "[activation-control audit unavailable]",
+            "",
+            (
+                "Server state message `{message}` ({message_id}) carries only "
+                "`sceneNumId`, `scriptId`, `state`, and `isComplete`; its native "
+                "handler reaches `LevelScriptRuntime.UpdateState` through three "
+                "typed wrappers, then calls `set_state` before "
+                "`UpdateRuntimeState`."
+            ).format(
+                message="SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY",
+                message_id=(activation_control.get("messageIds") or {}).get(
+                    "ScSceneLevelScriptStateNotify", "?"
+                ),
+            ),
+            "",
+            (
+                "The exact SubGame interaction chain is "
+                "`SubGameInstanceDataTable.TryGetValue` +0x{lookup:x} -> "
+                "`LevelScriptPtr.op_Implicit(bindScriptId)` +0x{convert:x} -> "
+                "`LevelScriptManager.TryGetLevelScript` +0x{resolve:x} -> "
+                "`LevelScriptRuntime.ManualStart` +0x{start:x}."
+            ).format(
+                lookup=int((subgame_flow.get("callOffsets") or {}).get(
+                    "subGameLookupCallCount", [0]
+                )[:1][0] if (subgame_flow.get("callOffsets") or {}).get(
+                    "subGameLookupCallCount"
+                ) else 0),
+                convert=int((subgame_flow.get("callOffsets") or {}).get(
+                    "scriptPtrConversionCallCount", [0]
+                )[:1][0] if (subgame_flow.get("callOffsets") or {}).get(
+                    "scriptPtrConversionCallCount"
+                ) else 0),
+                resolve=int((subgame_flow.get("callOffsets") or {}).get(
+                    "tryGetLevelScriptCallCount", [0]
+                )[:1][0] if (subgame_flow.get("callOffsets") or {}).get(
+                    "tryGetLevelScriptCallCount"
+                ) else 0),
+                start=int((subgame_flow.get("callOffsets") or {}).get(
+                    "manualStartCallCount", [0]
+                )[:1][0] if (subgame_flow.get("callOffsets") or {}).get(
+                    "manualStartCallCount"
+                ) else 0),
+            ),
+            "",
+            (
+                "Whole-client direct ManualStart callers: **{count}**; "
+                "public-state setter precedes runtime evaluation: **{ordered}**; "
+                "SubGame id/bindScriptId field reads validated: **{fields}**."
+            ).format(
+                count=len(activation_control.get("manualStartDirectCallers") or []),
+                ordered=activation_state_flow.get(
+                    "setterBeforeRuntimeEvaluation", False
+                ),
+                fields=(
+                    subgame_flow.get("subGameIdFieldRead", False)
+                    and subgame_flow.get("bindScriptIdFieldRead", False)
+                ),
+            ),
+            "",
+            (
+                "Native entry points: state handler `{handler}`, runtime update "
+                "`{update}`, challenge interaction `{challenge}`, ManualStart `{start}`."
+            ).format(
+                handler=(activation_methods.get("StateNotifyHandler") or {}).get(
+                    "methodPointerVa", "?"
+                ),
+                update=(activation_methods.get("UpdateState") or {}).get(
+                    "methodPointerVa", "?"
+                ),
+                challenge=(activation_methods.get("ChallengeOnInteract") or {}).get(
+                    "methodPointerVa", "?"
+                ),
+                start=(activation_methods.get("ManualStart") or {}).get(
+                    "methodPointerVa", "?"
+                ),
+            ),
+            "",
+            activation_control.get("boundary") or "",
+            "",
             "## Story-facing message schemas",
             "",
             "| ID | Direction | Message | Fields by protobuf tag | Classification |",
@@ -4308,7 +5112,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v9 report when its original "
+            "Reuse an existing validated v10 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -4327,7 +5131,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v9":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v10":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}
@@ -4370,6 +5174,15 @@ def current_report_status(
         return False, (
             "LevelScript manual-self-control validation is "
             f"{manual_self_validation.get('status')!r}"
+        )
+    activation_control_validation = (
+        (report.get("levelScriptActivationControl") or {}).get("validation")
+        or {}
+    )
+    if activation_control_validation.get("status") != "validated":
+        return False, (
+            "LevelScript activation-control validation is "
+            f"{activation_control_validation.get('status')!r}"
         )
     source = report.get("source") or {}
     checks = (
@@ -4485,13 +5298,26 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+    activation_control_validation = report["levelScriptActivationControl"][
+        "validation"
+    ]
+    if activation_control_validation["status"] != "validated":
+        first = activation_control_validation["failures"][0]
+        print(
+            "LevelScript activation-control validator failed: "
+            f"validator={first['validator']} gate={first['gate']} "
+            f"message={first.get('message')} expected={first['expected']!r} "
+            f"actual={first['actual']!r} source={first['sourceFile']}",
+            file=sys.stderr,
+        )
+        return 1
     print(
         f"wrote {args.json_output} and {args.markdown_output}: "
         f"{report['summary']['totalMessages']} messages, "
         f"{report['summary']['selectedSchemas']} selected schemas, "
         f"{report['summary']['stateUpdateApplicationCandidatesValidated']}/"
         f"{report['summary']['stateUpdateApplicationCandidates']} state-update paths validated, "
-        "LevelScript start policy and manual self-control validated"
+        "LevelScript start policy, manual self-control, and activation control validated"
     )
     return 0
 

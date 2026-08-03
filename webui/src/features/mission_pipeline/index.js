@@ -135,6 +135,10 @@
       binaryStartPolicyBoundary: "The current binary proves that an Active, unfinished SameWithActive script enters PreStart without the area/manual gate. It does not identify the mission or server transition that activated the script, and it does not order Story files.",
       binaryManualSelfControl: "binary-validated self-start carrier",
       binaryManualSelfControlBoundary: "The current binary and metadata prove the CURRENT_LEVEL_ID/CURRENT_SCRIPT_ID target generally. This row also has an original serialized event-header link into ManualStart. It proves local self-start, not a mission owner, selected branch, or cross-Story order.",
+      binaryPublicStateControl: "binary-validated public state path",
+      binaryPublicStateControlBoundary: "The current server notification carries only sceneNumId, scriptId, state, and isComplete. It proves how a selected state reaches this LevelScript, but not which mission or server branch selected it, and it does not order Story files.",
+      binarySubGameManualStart: "binary-validated SubGame start carrier",
+      binarySubGameManualStartBoundary: "The current binary and typed original row prove SubGame id → bindScriptId → LevelScript lookup → ManualStart. This is an interaction start carrier, not mission ownership, selected branching, or cross-Story order.",
       levelDataContainer: "validated LevelData container",
       encounterController: "binary-proven Encounter controller",
       encounterModuleNamespace: "Encounter LsmPtr module namespace",
@@ -483,7 +487,7 @@
       missionStateDependenciesHint: "These exact local mission-state gates are shown independently from quest ownership. Reading synchronized state sends nothing; any separate interaction request is stated on its own evidence row.",
       missionStateDependencyBoundary: "Dependency evidence is counted separately from coverage bindings",
       subGameBindings: "Original-data SubGame runtime shell",
-      subGameBindingsHint: "The shipped typed row carries mission id and bound LevelScript id together. Native code proves WorldChallenge quit can use bindScriptId to end that script, but the audited start paths do not read it. No quest, scene, or Story identity is added from co-membership; OCR, manual, and gameplay cross-references cannot create this edge.",
+      subGameBindingsHint: "The shipped typed row carries mission id and bound LevelScript id together. The current binary proves that InteractiveLogicChallengeStartPoint resolves this row by SubGame id, reads bindScriptId, looks up the LevelScript, and calls ManualStart. That exact start carrier still does not establish mission or Story ownership; OCR, manual, and gameplay cross-references cannot create that edge.",
       subGameScript: "bound LevelScript",
       subGameMode: "runtime mode",
       subGameNetworkKey: "network-authored key",
@@ -823,7 +827,7 @@
       relationMissionTrackedWorldEntityLevelScriptStage: "服务器先同步该 LevelScript 阶段，再进入精确的本地 StageChanged 播放路径；类型化世界实体跟踪只确定唯一任务上下文，不证明任何候选任务节点写入了该阶段",
       relationQuestProgressLockedInteractive: "每个播放实例都由精确的交互实体事件路径触发；该实体的强类型进度锁等待此任务达到已完成状态（仅为本地上下文，不证明剧情归属，也不证明任务激活、播放或完成因果）",
       subGameBindings: "原始数据 SubGame 运行时外壳",
-      subGameBindingsHint: "游戏内置的类型化记录同时包含使命 ID 与绑定的 LevelScript ID。原生代码证明 WorldChallenge 退出时可用 bindScriptId 结束该脚本，但已审计的启动路径并不读取它。共同出现不会补出任务、场景或剧情身份；OCR、人工记录和实机交叉参考都不能创建这条边。",
+      subGameBindingsHint: "游戏内置的类型化记录同时包含使命 ID 与绑定的 LevelScript ID。当前二进制证明 InteractiveLogicChallengeStartPoint 会按 SubGame ID 解析该记录、读取 bindScriptId、查找 LevelScript 并调用 ManualStart。这个精确启动载体仍不证明使命或剧情所有权；OCR、人工记录和实机交叉参考都不能创建这条边。",
       subGameScript: "绑定的 LevelScript",
       subGameMode: "运行模式",
       subGameNetworkKey: "网络原始键",
@@ -913,6 +917,10 @@
       binaryStartPolicyBoundary: "当前二进制证明：处于 Active 且尚未结束的 SameWithActive 脚本会绕过区域/手动门进入 PreStart。它不识别激活该脚本的使命或服务器转换，也不排列 Story 文件。",
       binaryManualSelfControl: "二进制已验证的自启动载体",
       binaryManualSelfControlBoundary: "当前二进制与元数据通用地证明 CURRENT_LEVEL_ID/CURRENT_SCRIPT_ID 目标；本行另有原始序列化事件头指向 ManualStart。它只证明本地自启动，不证明使命所有者、所选分支或跨 Story 顺序。",
+      binaryPublicStateControl: "二进制已验证的公共状态路径",
+      binaryPublicStateControlBoundary: "当前服务器通知仅携带 sceneNumId、scriptId、state 与 isComplete。它证明已选择的状态如何到达该 LevelScript，但不证明哪个使命或服务器分支选择了它，也不排列 Story 文件。",
+      binarySubGameManualStart: "二进制已验证的 SubGame 启动载体",
+      binarySubGameManualStartBoundary: "当前二进制与类型化原始记录证明 SubGame ID → bindScriptId → LevelScript 查找 → ManualStart。它是交互启动载体，不证明使命所有权、所选分支或跨 Story 顺序。",
       levelDataContainer: "已验证的 LevelData 容器",
       encounterController: "二进制已证实的遭遇战控制器",
       encounterModuleNamespace: "遭遇战 LsmPtr 模块命名空间",
@@ -4411,11 +4419,16 @@
           const taskRuntimeAuthority = activation.taskRuntimeAuthority || {};
           const startRuntimePolicy = activation.startRuntimePolicy || {};
           const manualSelfControl = activation.manualSelfControl || {};
+          const publicStateControl = activation.publicStateControl || {};
+          const subGameStartControl = activation.subGameStartControl || {};
           const manualSelfControls = (activation.incomingManualControls || [])
             .filter((control) => control && control.targetResolution === "current_context_self");
           const activationConsumers = (activation.missionRuntimeScriptConsumers || [])
             .filter((consumer) => consumer && (consumer.missionId || consumer.questId));
           const propertyContract = activation.authoredPropertyContract || {};
+          const binaryOffset = (value) => Number.isInteger(value)
+            ? `0x${value.toString(16)}`
+            : (value || "?");
           const authoredPropertyNames = (propertyContract.authoredNames || []).filter(Boolean);
           const missionObservedPropertyNames = (propertyContract.missionObservedNames || []).filter(Boolean);
           const paramValue = (param) => {
@@ -4518,6 +4531,8 @@
               <div><span>${esc(t("startPolicy"))}</span><i aria-hidden="true">→</i><code>${esc(`${activation.startTypeName || "unresolved"} · shapes ${activation.startShapeListStatus || "unresolved"}/${activation.startShapeListCount ?? 0} · taskMap ${activation.taskMapStatus || "unresolved"}/${activation.taskMapCount ?? 0}`)}</code></div>
               ${startRuntimePolicy.validation?.status === "validated" ? `<div><span>${esc(t("binaryStartPolicy"))}</span><i aria-hidden="true">→</i><code>Active + unfinished + SameWithActive</code><b>PreStart</b><small>${esc([startRuntimePolicy.finding || "", `UpdateRuntimeState ${startRuntimePolicy.methods?.UpdateRuntimeState?.methodPointerVa || ""}`, `startType=${startRuntimePolicy.startTypeGates?.SameWithActive?.comparedValue ?? "?"}`, `state=${startRuntimePolicy.activeStateGate?.comparedValue ?? "?"}`, `PreStart=${startRuntimePolicy.preStartTransition?.runtimeStateValue ?? "?"}`].filter(Boolean).join(" · "))}</small></div><small>${esc(startRuntimePolicy.evidenceBoundary || t("binaryStartPolicyBoundary"))}</small>` : ""}
               ${manualSelfControl.validation?.status === "validated" && manualSelfControls.length ? manualSelfControls.map((control) => `<div><span>${esc(t("binaryManualSelfControl"))}</span><i aria-hidden="true">→</i><code>CURRENT_LEVEL_ID + CURRENT_SCRIPT_ID</code><b>ManualStart → PreStart</b><small>${esc([manualSelfControl.finding || "", `event local ${control.headerLinkedEvent?.localId ?? "?"} → action local ${control.localId ?? "?"}`, `sources=${control.parameterSources?.levelId ?? "?"}/${control.parameterSources?.scriptId ?? "?"}`, `Execute ${manualSelfControl.methods?.Execute?.methodPointerVa || ""}`, `ManualStart ${manualSelfControl.methods?.ManualStart?.methodPointerVa || ""}`].filter(Boolean).join(" · "))}</small></div>`).join("") + `<small>${esc(manualSelfControl.evidenceBoundary || t("binaryManualSelfControlBoundary"))}</small>` : ""}
+              ${publicStateControl.validation?.status === "validated" ? `<div class="is-boundary"><span>${esc(t("binaryPublicStateControl"))}</span><i aria-hidden="true">→</i><code>sceneNumId + scriptId + state + isComplete</code><b>SC ${esc(publicStateControl.stateNotifyMessageId ?? "?")}</b><small>${esc([`handler ${publicStateControl.handlerMethod?.methodPointerVa || "?"}`, `UpdateState ${publicStateControl.updateStateMethod?.methodPointerVa || "?"}`, publicStateControl.publicStateFlow?.setterBeforeRuntimeEvaluation ? "state setter → runtime evaluation" : "unresolved state application"].join(" · "))}</small></div><small>${esc(publicStateControl.evidenceBoundary || t("binaryPublicStateControlBoundary"))}</small>` : ""}
+              ${subGameStartControl.validation?.status === "validated" ? `<div><span>${esc(t("binarySubGameManualStart"))}</span><i aria-hidden="true">→</i><code>SubGame id → bindScriptId → LevelScript</code><b>ManualStart</b><small>${esc([`interaction ${subGameStartControl.challengeMethod?.methodPointerVa || "?"}`, `ManualStart ${subGameStartControl.manualStartMethod?.methodPointerVa || "?"}`, `fields ${binaryOffset(subGameStartControl.fieldOffsets?.["challengeStartPoint.m_subGameId"])}/${binaryOffset(subGameStartControl.fieldOffsets?.["subGameInstanceData.bindScriptId"])}`, subGameStartControl.subGameInteractionFlow?.callsInCarrierOrder ? "lookup calls ordered" : "lookup order unresolved"].join(" · "))}</small></div><small>${esc(subGameStartControl.evidenceBoundary || t("binarySubGameManualStartBoundary"))}</small>` : ""}
               ${activationRelatedFiles.map((related) => `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(related.sourceFile)}</code><b>${esc(String(related.kind || "source").replaceAll("_", " "))}</b><small>${esc([String(related.relationship || "").replaceAll("_", " "), related.sha256 ? `SHA-256 ${related.sha256}` : ""].filter(Boolean).join(" · "))}</small></div>`).join("")}
               ${encounterContexts.flatMap((context) => [
                 `<div><span>${esc(t("encounterController"))}</span><i aria-hidden="true">→</i><code>${esc(context.runtimeType || "EncounterBase<T>")}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(`${context.dataType || "EncounterData"} · ${context.mappingId || ""}`)}</small></div>`,

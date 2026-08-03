@@ -151,7 +151,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v9",
+                "_schema": "endfieldProtocolRegistryAudit.v10",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -203,7 +203,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v9",
+                "_schema": "endfieldProtocolRegistryAudit.v10",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": "0" * 64,
@@ -281,7 +281,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v9",
+                "_schema": "endfieldProtocolRegistryAudit.v10",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -310,7 +310,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v9",
+                "_schema": "endfieldProtocolRegistryAudit.v10",
                 "selectedSchemas": [],
                 "nativeTaskPaths": {},
             }), encoding="utf-8")
@@ -330,7 +330,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v9",
+                "_schema": "endfieldProtocolRegistryAudit.v10",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -378,7 +378,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v9",
+                "_schema": "endfieldProtocolRegistryAudit.v10",
                 "levelScriptStartPolicy": {
                     "schema": "levelScriptStartPolicy.v1",
                     "classification": (
@@ -410,7 +410,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v9",
+                "_schema": "endfieldProtocolRegistryAudit.v10",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -460,7 +460,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v9",
+                "_schema": "endfieldProtocolRegistryAudit.v10",
                 "levelScriptManualSelfControl": {
                     "schema": "levelScriptManualSelfControl.v1",
                     "classification": (
@@ -482,6 +482,97 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "gate=genericContractShape",
             ):
                 pipeline.load_levelscript_manual_self_control_contract(
+                    audit_path
+                )
+
+    def test_activation_control_revalidates_generic_binary_contract(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            gameassembly.write_bytes(b"fixture-gameassembly")
+            metadata.write_bytes(b"fixture-metadata")
+            audit_path = root / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "source": {
+                    "gameAssembly": str(gameassembly),
+                    "gameAssemblySha256": hashlib.sha256(
+                        gameassembly.read_bytes()
+                    ).hexdigest(),
+                    "metadata": str(metadata),
+                    "metadataSha256": hashlib.sha256(
+                        metadata.read_bytes()
+                    ).hexdigest(),
+                },
+                "levelScriptActivationControl": {
+                    "schema": "levelScriptActivationControl.v1",
+                    "classification": (
+                        "server_state_and_subgame_interaction_start_paths"
+                    ),
+                    "discoveryPattern": {
+                        "serializedObjectInputs": [
+                            "SubGameInstanceData.id",
+                            "SubGameInstanceData.bindScriptId",
+                        ],
+                    },
+                    "messageIds": {
+                        "CsSceneSetLevelScriptActive": 94,
+                        "ScSceneLevelScriptStateNotify": 37,
+                    },
+                    "subGameInteractionFlow": {
+                        "callsInCarrierOrder": True,
+                    },
+                    "finding": "fixture finding",
+                    "boundary": "fixture boundary",
+                    "validation": {
+                        "status": "validated",
+                        "failures": [],
+                    },
+                },
+            }), encoding="utf-8")
+
+            contract = (
+                pipeline.load_levelscript_activation_control_contract(
+                    audit_path
+                )
+            )
+
+        self.assertEqual(
+            contract["classification"],
+            "server_state_and_subgame_interaction_start_paths",
+        )
+        self.assertEqual(
+            contract["messageIds"]["ScSceneLevelScriptStateNotify"], 37
+        )
+        self.assertEqual(len(contract["relatedOriginalFiles"]), 2)
+
+    def test_activation_control_rejects_object_specific_discovery(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v10",
+                "levelScriptActivationControl": {
+                    "schema": "levelScriptActivationControl.v1",
+                    "classification": (
+                        "server_state_and_subgame_interaction_start_paths"
+                    ),
+                    "discoveryPattern": {
+                        "serializedObjectInputs": ["fixture-script-id"],
+                    },
+                    "validation": {
+                        "status": "validated",
+                        "failures": [],
+                    },
+                },
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "validator=levelscript_activation_control_contract "
+                "gate=genericContractShape",
+            ):
+                pipeline.load_levelscript_activation_control_contract(
                     audit_path
                 )
 
