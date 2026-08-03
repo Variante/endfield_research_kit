@@ -3590,6 +3590,18 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
                 )
             self.assertTrue(row["luaFile"].endswith(".lua"))
 
+    def test_handle_calls_are_one_binary_proven_runtime_family(self) -> None:
+        self.assertEqual(7, self.evidence["runtimeHandleDispatcherCallCount"])
+        self.assertEqual(1, self.evidence["runtimeHandleDispatcherFamilyCount"])
+        self.assertEqual(0, self.evidence["unresolvedPlaybackCalls"])
+        contract_methods = set(
+            self.evidence["runtimeHandleContract"]["dispatcherMethods"]
+        )
+        self.assertTrue({
+            row["method"]
+            for row in self.evidence["runtimeHandleDispatcherCalls"]
+        }.issubset(contract_methods))
+
     def test_case_sensitive_gender_select_cutscene_is_not_admitted(self) -> None:
         # The current native resolver preserves "Cutscene_e0m0_1" into
         # case-sensitive StringPathHash resource lookup, so it cannot prove

@@ -48,6 +48,27 @@ GameAction.StartDialog(row.bindDlgId)
             'resolve("a,b", value)',
         )
 
+    def test_binary_discovered_handle_method_is_runtime_dispatch_not_authored_reference(self):
+        text = """
+local queueItemType = handle.data.queueItemType
+if queueItemType == Const.CinematicQueueItemTypeEnum.Dialog then
+    GameAction.DoPlayDialogByHandle(handle)
+end
+"""
+        rows = audit.scan_game_action_calls(
+            text,
+            rel="LuaSystem/CinematicSystem.lua",
+            story_keys=set(),
+            cinematic_handle_dispatchers={"DoPlayDialogByHandle"},
+        )
+
+        self.assertEqual("runtime_queue_dispatcher", rows[0]["playbackRole"])
+        self.assertEqual("runtime_handle_payload", rows[0]["literalResolution"])
+        self.assertEqual(
+            "runtime_payload_not_static_story_id",
+            rows[0]["registryStatus"],
+        )
+
     def test_singleton_original_table_field_is_resolved_without_table_name_rules(self):
         text = """
 local ok, carrierRow = Tables.fixtureCarrierTable:TryGetValue(configId)

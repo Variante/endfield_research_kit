@@ -49,6 +49,7 @@
       luaPlaybackAccepted: "Lua playback admitted",
       luaTablePlaybackAccepted: "Lua table-owned playback",
       luaPlaybackRejected: "Lua case rejected",
+      luaHandleDispatchers: "Lua runtime dispatch branches",
       luaPlaybackAudit: "Shipped-Lua census",
       rootPlaybackAliases: "root playback aliases",
       exactDialogRootAlias: "exact DialogTree root alias",
@@ -747,6 +748,7 @@
       luaPlaybackAccepted: "已采纳 Lua 播放",
       luaTablePlaybackAccepted: "Lua 表归属播放",
       luaPlaybackRejected: "Lua 大小写拒绝",
+      luaHandleDispatchers: "Lua 运行时分派分支",
       luaPlaybackAudit: "随游戏发布的 Lua 普查",
       definitionOnlyStory: "仅有定义的黑屏文本",
       nonMissionContentStory: "非使命内容",
@@ -1749,6 +1751,7 @@
       [storyCounts.acceptedLuaExactPlaybackCalls, t("luaPlaybackAccepted")],
       [storyCounts.acceptedLuaTableCarrierCalls, t("luaTablePlaybackAccepted")],
       [storyCounts.rejectedLuaCaseMismatchCalls, t("luaPlaybackRejected")],
+      [storyCounts.runtimeLuaHandleDispatcherCalls, t("luaHandleDispatchers")],
       [storyCounts.rootPlaybackAliasRows, t("rootPlaybackAliases")],
       [storyCounts.missionlessSubGameStoryFiles, t("missionlessSubGameStory")],
       [storyCounts.missionlessNativeRuntimeStoryFiles, t("missionlessRuntimeStory")],
@@ -1787,7 +1790,7 @@
       <span>${esc(t("sourceChangedFiles"))}: ${Number(source.persistentChangedBaseFileCount || changedFiles.length).toLocaleString()} / ${Number(source.streamingFileCount || 0).toLocaleString()}</span>
       ${changedFiles.length ? `<code>${esc(changedFiles.join(", "))}</code>` : ""}
       <span>${esc(t("sourceMissingFiles"))}: ${Number(missingFiles.length).toLocaleString()}</span>
-      ${state.index?.storyCoverage?.luaStoryPlaybackEvidence?.status ? `<span>${esc(t("luaPlaybackAudit"))}: <strong>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.status)}</strong> · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.scannedPlaybackCalls || 0).toLocaleString()} calls · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.acceptedTableCarrierCalls || 0).toLocaleString()} table-owned · <code>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.auditSha256 || "")}</code></span>` : ""}
+      ${state.index?.storyCoverage?.luaStoryPlaybackEvidence?.status ? `<span>${esc(t("luaPlaybackAudit"))}: <strong>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.status)}</strong> · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.scannedPlaybackCalls || 0).toLocaleString()} calls · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.acceptedTableCarrierCalls || 0).toLocaleString()} table-owned · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherCallCount || 0).toLocaleString()} runtime branches / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherFamilyCount || 0).toLocaleString()} queue family · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.unresolvedPlaybackCalls || 0).toLocaleString()} authored unresolved · <code>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.auditSha256 || "")}</code></span>` : ""}
     `;
   }
 
