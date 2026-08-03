@@ -147,9 +147,15 @@ Rebuild Story data after editing overrides.
   lifecycle: `ManualStart flag -> PreStart -> CS start request ->
   PreStartActionRunning`, including sender addresses, true/false runtime request
   arguments, and the zero-direct-caller boundary on the public network API.
-  For the 54 manual receivers with no authored static carrier, this panel makes
-  the known runtime behavior and still-unknown mission/server selector visible
-  together; it does not promote the request path to ownership or ordering.
+  This remains the later Start lifecycle and does not promote the request path
+  to ownership or ordering.
+- Every exact receiver card now shows its original serialized header phase and
+  the generic binary-validated `Setup -> ActiveBegin -> enable Active(0)` path.
+  All 161 receiver headers are Active-phase, including validated runtime-
+  shadowed maps. The 54 manual scripts therefore do not need ManualStart for
+  receiver availability; the UI still labels the public-Active producer,
+  event occurrence, mission owner, branch choice, and cross-Story order as
+  unresolved.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

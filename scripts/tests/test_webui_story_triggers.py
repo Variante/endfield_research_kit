@@ -158,3 +158,10 @@ for (const [key, category] of [
         self.assertIn('t("missionObservedProperty")', source)
         self.assertIn("consumer.propertyKeys", source)
         self.assertIn("They do not identify the writer, Story owner, or scene-file order.", source)
+
+    def test_mission_pipeline_surfaces_exact_active_phase_receivers(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("activation.activePhaseReceiverControl", source)
+        self.assertIn('t("binaryActivePhaseReceiver")', source)
+        self.assertIn("Setup → ActiveBegin → Active(", source)
+        self.assertIn("not who selected public Active", source)

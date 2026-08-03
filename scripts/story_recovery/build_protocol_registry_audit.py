@@ -2059,6 +2059,9 @@ def validate_levelscript_activation_control_observation(
         "set_state",
         "set_runtimeState",
         "UpdateRuntimeState",
+        "Setup",
+        "RegisterTriggerFromLevelScript",
+        "SetAllTriggerActiveByPhase",
         "ChallengeOnInteract",
         "SubGameTableTryGetValue",
         "LevelScriptPtrImplicit",
@@ -2172,6 +2175,28 @@ def validate_levelscript_activation_control_observation(
     }
     if actual_runtime_callers != expected_runtime_callers:
         fail("requestDirectCallers", expected_runtime_callers, actual_runtime_callers)
+
+    expected_active_receiver_flow = {
+        "triggerActiveDuringValues": {"Active": 0, "Start": 1},
+        "setupRegisterTriggerCallCount": 1,
+        "activePhaseEnableArguments": [
+            {"active": True, "triggerActiveDuring": 0},
+            {"active": True, "triggerActiveDuring": 0},
+        ],
+        "activeBeginStateValue": 14,
+        "waitForSubEntityInitNewlyStateValue": 15,
+        "activePhaseEnableBetweenStateSetters": True,
+    }
+    actual_active_receiver_flow = {
+        name: (observation.get("activeReceiverFlow") or {}).get(name)
+        for name in expected_active_receiver_flow
+    }
+    if actual_active_receiver_flow != expected_active_receiver_flow:
+        fail(
+            "activeReceiverFlow",
+            expected_active_receiver_flow,
+            actual_active_receiver_flow,
+        )
 
     return {
         "status": "validation_failed" if failures else "validated",
@@ -2344,6 +2369,29 @@ def levelscript_activation_control_contract(
             "System.Void",
             parameter_types=("Beyond.Gameplay.Core.ScriptEndReason",),
         ),
+        "Setup": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "Setup",
+            1,
+            "System.Boolean",
+            parameter_types=("Beyond.Gameplay.LevelScriptData",),
+        ),
+        "RegisterTriggerFromLevelScript": mapped_method(
+            "Beyond.Gameplay.Core.LevelEventManager",
+            "RegisterTriggerFromLevelScript",
+            3,
+            "System.Void",
+        ),
+        "SetAllTriggerActiveByPhase": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "_SetAllTriggerActive",
+            2,
+            "System.Void",
+            parameter_types=(
+                "System.Boolean",
+                "Beyond.Gameplay.Actions.TriggerActiveDuring",
+            ),
+        ),
         "ChallengeOnInteract": mapped_method(
             "Beyond.Gameplay.InteractiveLogicChallengeStartPoint",
             "_OnInteract",
@@ -2456,6 +2504,7 @@ def levelscript_activation_control_contract(
             "UpdateState",
             "ChallengeOnInteract",
             "UpdateRuntimeState",
+            "Setup",
             "ManualStart",
             "NetworkSetActive",
             "NetworkSetStart",
@@ -2803,6 +2852,111 @@ def levelscript_activation_control_contract(
         },
     })
 
+    trigger_active_during_values = {
+        row["name"]: row["id"]
+        for row in enum_members(
+            metadata,
+            defaults,
+            "Beyond.Gameplay.Actions.TriggerActiveDuring",
+        )
+    }
+    runtime_state_values = {
+        row["name"]: row["id"]
+        for row in enum_members(
+            metadata,
+            defaults,
+            "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",
+        )
+    }
+    setup_register_calls = calls_to("Setup", "RegisterTriggerFromLevelScript")
+    phase_calls = calls_to("UpdateRuntimeState", "SetAllTriggerActiveByPhase")
+
+    def phase_call_arguments(call: dict[str, Any]) -> dict[str, Any]:
+        writes = (
+            (call.get("argumentContext") or {}).get("argRegisterWrites") or {}
+        )
+        active_text = str((writes.get("rdx") or {}).get("text") or "").lower()
+        phase_text = str((writes.get("r8") or {}).get("text") or "").lower()
+        active: bool | None = None
+        if active_text in {"mov dl, 0x1", "mov edx, 0x1"}:
+            active = True
+        elif active_text in {"xor edx, edx", "xor rdx, rdx"}:
+            active = False
+        phase: int | None = None
+        if phase_text in {"xor r8d, r8d", "xor r8, r8"}:
+            phase = 0
+        else:
+            match = re.fullmatch(r"mov r8d, 0x([0-9a-f]+)", phase_text)
+            if match:
+                phase = int(match.group(1), 16)
+        return {
+            "active": active,
+            "triggerActiveDuring": phase,
+            "callOffset": call.get("offset"),
+        }
+
+    active_phase_value = trigger_active_during_values.get("Active")
+    active_phase_enables = [
+        row
+        for row in (phase_call_arguments(call) for call in phase_calls)
+        if row["active"] is True
+        and row["triggerActiveDuring"] == active_phase_value
+    ]
+
+    def runtime_setter_with_value(value: int | None) -> list[dict[str, Any]]:
+        if not isinstance(value, int):
+            return []
+        expected = {f"mov edx, 0x{value:x}", f"mov dl, 0x{value:x}"}
+        return [
+            row
+            for row in update_setter_calls
+            if str(
+                ((((row.get("argumentContext") or {}).get("argRegisterWrites") or {})
+                 .get("rdx") or {}).get("text") or "")
+            ).lower()
+            in expected
+        ]
+
+    active_begin_setters = runtime_setter_with_value(
+        runtime_state_values.get("ActiveBegin")
+    )
+    wait_newly_setters = runtime_setter_with_value(
+        runtime_state_values.get("WaitForSubEntityInitNewly")
+    )
+    first_active_enable = active_phase_enables[0] if active_phase_enables else {}
+    active_receiver_flow = {
+        "triggerActiveDuringValues": trigger_active_during_values,
+        "setupRegisterTriggerCallCount": len(setup_register_calls),
+        "setupRegisterTriggerCallOffsets": [
+            row.get("offset") for row in setup_register_calls
+        ],
+        "activePhaseEnableArguments": [
+            {"active": row["active"], "triggerActiveDuring": row["triggerActiveDuring"]}
+            for row in active_phase_enables
+        ],
+        "activePhaseEnableCallOffsets": [
+            row.get("callOffset") for row in active_phase_enables
+        ],
+        "activeBeginStateValue": runtime_state_values.get("ActiveBegin"),
+        "waitForSubEntityInitNewlyStateValue": runtime_state_values.get(
+            "WaitForSubEntityInitNewly"
+        ),
+        "activeBeginSetterOffsets": [
+            row.get("offset") for row in active_begin_setters
+        ],
+        "waitForSubEntityInitNewlySetterOffsets": [
+            row.get("offset") for row in wait_newly_setters
+        ],
+        "activePhaseEnableBetweenStateSetters": (
+            len(active_begin_setters) == 1
+            and len(wait_newly_setters) == 1
+            and bool(first_active_enable)
+            and int(active_begin_setters[0]["offset"])
+            < int(first_active_enable["callOffset"])
+            < int(wait_newly_setters[0]["offset"])
+        ),
+    }
+
     cs_by_name = {row["name"]: row["id"] for row in cs}
     sc_by_name = {row["name"]: row["id"] for row in sc}
     message_ids = {
@@ -2837,6 +2991,7 @@ def levelscript_activation_control_contract(
         "manualStartDirectCallers": manual_start_callers,
         "directCallers": direct_callers,
         "clientRequestFlow": client_request_flow,
+        "activeReceiverFlow": active_receiver_flow,
     }
     source_hashes = {
         "gameAssemblySha256": file_sha256(gameassembly_path),
@@ -2848,7 +3003,7 @@ def levelscript_activation_control_contract(
         source_hashes=source_hashes,
     )
     return {
-        "schema": "levelScriptActivationControl.v2",
+        "schema": "levelScriptActivationControl.v3",
         "classification": "server_state_subgame_and_runtime_request_paths",
         "discoveryPattern": {
             "methodSelection": "exact metadata type, name, signature, and return type",
@@ -2862,6 +3017,10 @@ def levelscript_activation_control_contract(
                 "SubGameInstanceData.id",
                 "SubGameInstanceData.bindScriptId",
             ],
+            "receiverPhaseInput": (
+                "LevelScript action-header triggerActiveDuring from each original "
+                "serialized object"
+            ),
         },
         **observation,
         "finding": (
@@ -2873,7 +3032,10 @@ def levelscript_activation_control_contract(
             "resolves the typed SubGame row by id, reads bindScriptId, looks up that "
             "LevelScript, and calls ManualStart. The same generic runtime records the "
             "manual-start flag, enters PreStart, emits the typed client start request, "
-            "and enters PreStartActionRunning."
+            "and enters PreStartActionRunning. Independently, Setup registers the "
+            "serialized LevelScript trigger graph, and the ActiveBegin runtime path "
+            "enables the TriggerActiveDuring.Active group before advancing to the "
+            "next activation state."
         ),
         "boundary": (
             "An exact SubGame id/bindScriptId row therefore proves an interaction "
@@ -2881,7 +3043,9 @@ def levelscript_activation_control_contract(
             "mission or quest field, and neither path proves which mission owns Story "
             "playback, which server branch selected a state, or any cross-Story order. "
             "The public network sender methods have zero direct current-AOT callers; "
-            "indirect/IFix/server selection remains outside this evidence."
+            "indirect/IFix/server selection remains outside this evidence. An Active-"
+            "phase receiver proves availability after public activation, not the "
+            "producer of that activation or that the event fired."
         ),
         "validation": validation,
     }
@@ -4586,7 +4750,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v11",
+        "_schema": "endfieldProtocolRegistryAudit.v12",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -5397,7 +5561,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v11":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v12":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}

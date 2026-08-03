@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v11",
+                "_schema": "endfieldProtocolRegistryAudit.v12",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -344,6 +344,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     "set_state",
                     "set_runtimeState",
                     "UpdateRuntimeState",
+                    "Setup",
+                    "RegisterTriggerFromLevelScript",
+                    "SetAllTriggerActiveByPhase",
                     "ChallengeOnInteract",
                     "SubGameTableTryGetValue",
                     "LevelScriptPtrImplicit",
@@ -416,6 +419,17 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     "callSites": [{}, {}],
                 }],
             },
+            "activeReceiverFlow": {
+                "triggerActiveDuringValues": {"Active": 0, "Start": 1},
+                "setupRegisterTriggerCallCount": 1,
+                "activePhaseEnableArguments": [
+                    {"active": True, "triggerActiveDuring": 0},
+                    {"active": True, "triggerActiveDuring": 0},
+                ],
+                "activeBeginStateValue": 14,
+                "waitForSubEntityInitNewlyStateValue": 15,
+                "activePhaseEnableBetweenStateSetters": True,
+            },
         }
 
         result = audit.validate_levelscript_activation_control_observation(
@@ -456,6 +470,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "manualStartDirectCallers",
                 "clientRequestFlow",
                 "requestDirectCallers",
+                "activeReceiverFlow",
             ],
         )
 
