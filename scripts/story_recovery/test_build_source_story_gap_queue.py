@@ -327,6 +327,42 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "option_dlg_fixture_1_2_001",
         ]})
 
+    def test_generic_unregistered_dialog_accepts_authored_suffix_widths(
+        self,
+    ) -> None:
+        story_key = "dlg_fixture_short"
+        line = {
+            field: ""
+            for field in gap_queue.OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS
+        }
+        line["audioOverride"] = "0"
+        facts, failure = (
+            gap_queue._generic_unregistered_dialog_definition_facts(
+                story_key,
+                {
+                    "dlg_fixture_short_01": line,
+                    "dlg_fixture_short_002": line,
+                    "dlg_fixture_short_nested_01": line,
+                },
+                {
+                    "option_dlg_fixture_short_a_01": {
+                        "iconType": "Default",
+                        "optionText": {"id": 42, "text": ""},
+                    },
+                },
+                set(),
+            )
+        )
+
+        self.assertIsNone(failure)
+        self.assertEqual(facts["lineIds"], [
+            "dlg_fixture_short_01",
+            "dlg_fixture_short_002",
+        ])
+        self.assertEqual(facts["optionIds"], [
+            "option_dlg_fixture_short_a_01",
+        ])
+
     def test_generic_unregistered_dialog_resolves_misc_alias_generically(self) -> None:
         story_key = "misc_dlg_fixture_0d5"
         definition_root = "dlg_fixture_0d5"
@@ -11391,6 +11427,174 @@ class NonMissionContentClosureTests(unittest.TestCase):
         self.assertEqual(
             exclusion,
             "incompleteParentTreePartition",
+        )
+
+    def test_partial_dialog_rows_close_only_after_complete_consumer_absence(
+        self,
+    ) -> None:
+        missing_id = "dlg_opaque_mix_3_03"
+        facts = {
+            "partitionStatus": "partial",
+            "missingLineIds": [missing_id],
+            "parentDialogTrees": [{"sceneKey": "dlg_opaque_mix_3_1"}],
+            "parentLevelContexts": [{
+                "levelId": "opaque_mix_3",
+                "parentDialogTreeIds": ["dlg_opaque_mix_3_1"],
+                "subGameRuntime": {
+                    "runtimeType": (
+                        "Beyond.Gameplay.Core.BlackBoxSubGameData, "
+                        "Gameplay.Beyond"
+                    ),
+                    "bindScriptId": 42,
+                    "taskTopology": {"status": "exact_complete_task_map"},
+                    "parentDialogPlayback": [{
+                        "parentDialogTreeId": "dlg_opaque_mix_3_1",
+                    }],
+                    "definitionOnlyParentDialogTreeIds": [],
+                },
+            }],
+        }
+        empty_level_census = {
+            "literalIds": [missing_id, "dlg_other_batch_01"],
+            "matchesByLiteral": {},
+            "sourceFileCount": 1,
+            "sourceSetSha256": "A",
+        }
+        empty_binary_census = {
+            "literalIds": [missing_id, "dlg_other_batch_01"],
+            "matchesByLiteral": {},
+            "sourceFileCount": 2,
+            "sourceSetSha256": "B",
+        }
+        closure, failure, exclusion = (
+            gap_queue._generic_partial_dialog_row_consumer_exhaustion_facts(
+                "dlg_opaque_mix_3",
+                facts,
+                {"dlg_opaque_mix_3_1": {
+                    "lineIds": ["dlg_opaque_mix_3_01"],
+                }},
+                empty_level_census,
+                empty_binary_census,
+            )
+        )
+        self.assertIsNone(failure)
+        self.assertIsNone(exclusion)
+        self.assertEqual(
+            closure["unmatchedRowStatus"],
+            "definition_rows_without_current_consumer",
+        )
+        self.assertIn("not appended", closure["orderBoundary"])
+
+        invalid_facts = copy.deepcopy(facts)
+        invalid_facts["parentLevelContexts"][0]["subGameRuntime"][
+            "taskTopology"
+        ]["status"] = "partial"
+        closure, failure, exclusion = (
+            gap_queue._generic_partial_dialog_row_consumer_exhaustion_facts(
+                "dlg_opaque_mix_3",
+                invalid_facts,
+                {},
+                empty_level_census,
+                empty_binary_census,
+            )
+        )
+        self.assertIsNone(closure)
+        self.assertIsNone(exclusion)
+        self.assertEqual(
+            failure["gate"],
+            "exactTypedParentRuntimeCoverage",
+        )
+
+        incomplete_binary_census = {
+            **empty_binary_census,
+            "sourceFileCount": 1,
+        }
+        closure, failure, exclusion = (
+            gap_queue._generic_partial_dialog_row_consumer_exhaustion_facts(
+                "dlg_opaque_mix_3",
+                facts,
+                {"dlg_opaque_mix_3_1": {
+                    "lineIds": ["dlg_opaque_mix_3_01"],
+                }},
+                empty_level_census,
+                incomplete_binary_census,
+            )
+        )
+        self.assertIsNone(closure)
+        self.assertIsNone(exclusion)
+        self.assertEqual(failure["gate"], "completeConsumerCorpusCensus")
+        self.assertEqual(failure["actual"]["binarySourceFileCount"], 1)
+
+    def test_partial_dialog_row_consumer_census_rejects_any_literal_hit(
+        self,
+    ) -> None:
+        missing_id = "dlg_opaque_mix_3_03"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            absent = root / "absent.bin"
+            present = root / "present.bin"
+            absent.write_bytes(b"unrelated")
+            present.write_bytes(b"prefix" + missing_id.encode("utf-8") + b"suffix")
+            census = gap_queue._literal_absence_census(
+                [missing_id],
+                [absent, present],
+            )
+        self.assertEqual(census["sourceFileCount"], 2)
+        self.assertEqual(
+            list(census["matchesByLiteral"]),
+            [missing_id],
+        )
+        self.assertTrue(census["sourceSetSha256"])
+
+    def test_registered_parent_playback_alias_requires_exact_bound_source(
+        self,
+    ) -> None:
+        scene_key = "dlg_opaque_mix_3"
+        parent_key = "dlg_opaque_mix_3_1"
+        source_file = "LevelScriptData/opaque_mix_3/42.json"
+        evidence = {
+            "evidenceKind": (
+                "partial_registered_dialog_tree_rows_without_current_consumer"
+            ),
+            "parentLevelContexts": [{
+                "subGameRuntime": {
+                    "parentDialogPlayback": [{
+                        "parentDialogTreeId": parent_key,
+                        "sourceFile": source_file,
+                    }],
+                },
+            }],
+        }
+        route = {
+            "key": scene_key,
+            "relation": "native_story_playback_unscoped",
+            "confidence": "native_typed_direct_unscoped",
+            "storyOwnerMission": "opaque_mix",
+            "questTriggerStatus": "unresolved",
+            "occurrences": [{
+                "authoredStoryKey": parent_key,
+                "sourceFile": source_file,
+                "actionName": "StartDialogAction",
+                "recordClass": "play_dialog",
+            }],
+        }
+        self.assertTrue(
+            gap_queue._registered_parent_playback_routes_match(
+                scene_key,
+                "opaque_mix",
+                evidence,
+                [route],
+            )
+        )
+        wrong_source = copy.deepcopy(route)
+        wrong_source["occurrences"][0]["sourceFile"] = "other.json"
+        self.assertFalse(
+            gap_queue._registered_parent_playback_routes_match(
+                scene_key,
+                "opaque_mix",
+                evidence,
+                [wrong_source],
+            )
         )
 
     def test_parent_dialog_level_context_is_generic_and_binary_validated(

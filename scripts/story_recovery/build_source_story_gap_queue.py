@@ -70,7 +70,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v128"
+SCHEMA = "sourceStoryGapQueue.v129"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 12
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -7352,8 +7352,12 @@ def _generic_unregistered_dialog_definition_facts(
                 "dialogOptionTable": type(dialog_option_table).__name__,
             },
         }
+    # The authored suffix width is not a schema boundary. Most dialogs use
+    # three digits, while current BlackBox rows also use two. The anchored
+    # root and all-digit terminal component preserve the exact group boundary
+    # without encoding either content family in recovery logic.
     line_pattern = re.compile(
-        rf"^{re.escape(definition_root_key)}_(\d{{3}})$"
+        rf"^{re.escape(definition_root_key)}_(\d+)$"
     )
     line_rows = sorted(
         (
@@ -7369,7 +7373,7 @@ def _generic_unregistered_dialog_definition_facts(
             "gate": "exactDialogTextRoot",
             "storyKey": story_key,
             "expected": {
-                "lineIdPattern": f"{definition_root_key}_NNN",
+                "lineIdPattern": f"{definition_root_key}_<digits>",
                 "nonemptyLines": True,
             },
             "actual": {"lineIds": []},
@@ -7412,7 +7416,7 @@ def _generic_unregistered_dialog_definition_facts(
         }
 
     option_pattern = re.compile(
-        rf"^option_{re.escape(definition_root_key)}_([^_]+)_(\d{{3}})$"
+        rf"^option_{re.escape(definition_root_key)}_([^_]+)_(\d+)$"
     )
     option_rows = sorted(
         (
@@ -8833,6 +8837,262 @@ def _generic_registered_dialog_tree_trunk_group_facts(
     return facts, None, (
         "incompleteParentTreePartition" if missing else None
     )
+
+
+def _literal_absence_census(
+    literals: list[str],
+    source_paths: list[Path],
+) -> dict[str, Any]:
+    """Search immutable binary inputs without assuming their object names.
+
+    A byte-substring hit is deliberately conservative: it prevents an
+    absence-based closure even when the surrounding record is not decoded.
+    An absence is useful only because both UTF-8 and UTF-16LE encodings were
+    searched across the complete supplied file set.
+    """
+    normalized_literals = sorted({safe_key(value) for value in literals} - {""})
+    normalized_paths = sorted(
+        {path.resolve() for path in source_paths if path.is_file()},
+        key=lambda path: natural_key(str(path)),
+    )
+    digest = hashlib.sha256()
+    matches: dict[str, list[str]] = defaultdict(list)
+    for path in normalized_paths:
+        payload = path.read_bytes()
+        try:
+            display_path = str(path.relative_to(ROOT)).replace("\\", "/")
+        except ValueError:
+            display_path = str(path).replace("\\", "/")
+        digest.update(display_path.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(hashlib.sha256(payload).digest())
+        for literal in normalized_literals:
+            if (
+                literal.encode("utf-8") in payload
+                or literal.encode("utf-16le") in payload
+            ):
+                matches[literal].append(display_path)
+    return {
+        "mappingId": "complete-file-set-literal-absence-census-v1",
+        "literalIds": normalized_literals,
+        "sourceFileCount": len(normalized_paths),
+        "sourceSetSha256": digest.hexdigest().upper(),
+        "matchesByLiteral": {
+            literal: paths
+            for literal, paths in sorted(
+                matches.items(),
+                key=lambda item: natural_key(item[0]),
+            )
+        },
+        "encodingSearch": ["utf-8", "utf-16le"],
+        "matchSemantics": "conservative_byte_substring",
+    }
+
+
+def _generic_partial_dialog_row_consumer_exhaustion_facts(
+    story_key: str,
+    facts: dict[str, Any],
+    definitions_by_root: dict[str, dict[str, Any]],
+    level_script_census: dict[str, Any],
+    binary_census: dict[str, Any],
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, str | None]:
+    """Close unmatched table rows only after a typed runtime census.
+
+    This is intentionally content-identity agnostic. It recognizes a partial
+    registered DialogTree partition, verifies that every recovered parent is
+    accounted for by exact BlackBox SubGame playback or definition-only rows,
+    and then requires the unmatched line ids to be absent from every decoded
+    DialogTree, every exported LevelScript, and both original game binaries.
+    The result classifies the unmatched rows as surviving definitions without
+    a current consumer; it never appends them to a neighboring parent tree.
+    """
+    missing = _string_list(facts.get("missingLineIds"))
+    if facts.get("partitionStatus") != "partial" or not missing:
+        return None, None, "notPartialPartition"
+    missing_set = set(missing)
+    alternate_carriers = sorted(
+        (
+            {
+                "sceneKey": parent_key,
+                "lineIds": sorted(
+                    missing_set & set(_string_list(definition.get("lineIds"))),
+                    key=natural_key,
+                ),
+                "sourceFile": safe_key(definition.get("sourceFile")),
+            }
+            for parent_key, definition in definitions_by_root.items()
+            if missing_set & set(_string_list(definition.get("lineIds")))
+        ),
+        key=lambda row: natural_key(row["sceneKey"]),
+    )
+    if alternate_carriers:
+        return None, None, "missingRowsHaveDecodedDialogTreeCarrier"
+
+    parent_keys = {
+        safe_key(row.get("sceneKey"))
+        for row in facts.get("parentDialogTrees") or []
+        if isinstance(row, dict) and safe_key(row.get("sceneKey"))
+    }
+    contexts = [
+        row for row in facts.get("parentLevelContexts") or []
+        if isinstance(row, dict)
+    ]
+    accounted_parent_keys: set[str] = set()
+    context_failures: list[dict[str, Any]] = []
+    for context in contexts:
+        runtime = context.get("subGameRuntime")
+        topology = runtime.get("taskTopology") if isinstance(runtime, dict) else None
+        context_parent_keys = set(_string_list(context.get("parentDialogTreeIds")))
+        playback_keys = {
+            safe_key(
+                row.get("parentDialogTreeId")
+                or row.get("dialogTreeId")
+                or row.get("storyKey")
+            )
+            for row in (runtime.get("parentDialogPlayback") or [])
+            if isinstance(row, dict)
+        } if isinstance(runtime, dict) else set()
+        definition_only_keys = set(
+            _string_list(
+                runtime.get("definitionOnlyParentDialogTreeIds")
+                if isinstance(runtime, dict) else None
+            )
+        )
+        context_valid = (
+            isinstance(runtime, dict)
+            and runtime.get("runtimeType")
+            == "Beyond.Gameplay.Core.BlackBoxSubGameData, Gameplay.Beyond"
+            and safe_key(runtime.get("bindScriptId"))
+            and isinstance(topology, dict)
+            and topology.get("status") in {
+                "exact_complete_task_map",
+                "exact_null_task_map",
+            }
+            and context_parent_keys
+            and context_parent_keys == playback_keys | definition_only_keys
+        )
+        if context_valid:
+            accounted_parent_keys.update(context_parent_keys)
+        else:
+            context_failures.append({
+                "levelId": safe_key(context.get("levelId")),
+                "parentDialogTreeIds": sorted(context_parent_keys, key=natural_key),
+                "runtimeType": (
+                    safe_key(runtime.get("runtimeType"))
+                    if isinstance(runtime, dict) else ""
+                ),
+                "bindScriptId": (
+                    safe_key(runtime.get("bindScriptId"))
+                    if isinstance(runtime, dict) else ""
+                ),
+                "taskTopologyStatus": (
+                    safe_key(topology.get("status"))
+                    if isinstance(topology, dict) else ""
+                ),
+                "playedParentDialogTreeIds": sorted(playback_keys, key=natural_key),
+                "definitionOnlyParentDialogTreeIds": sorted(
+                    definition_only_keys,
+                    key=natural_key,
+                ),
+            })
+    if context_failures or accounted_parent_keys != parent_keys:
+        return None, {
+            "validator": "genericPartialDialogRowConsumerExhaustion",
+            "gate": "exactTypedParentRuntimeCoverage",
+            "storyKey": story_key,
+            "expected": {
+                "parentDialogTreeIds": sorted(parent_keys, key=natural_key),
+                "everyParentHasExactBlackBoxRuntimeDisposition": True,
+                "taskTopologyStatuses": [
+                    "exact_complete_task_map",
+                    "exact_null_task_map",
+                ],
+            },
+            "actual": {
+                "accountedParentDialogTreeIds": sorted(
+                    accounted_parent_keys,
+                    key=natural_key,
+                ),
+                "contextFailures": context_failures,
+            },
+        }, None
+
+    expected_literals = sorted(missing, key=natural_key)
+    expected_literal_set = set(expected_literals)
+    level_census_literal_set = set(
+        _string_list(level_script_census.get("literalIds"))
+    )
+    binary_census_literal_set = set(
+        _string_list(binary_census.get("literalIds"))
+    )
+    census_valid = (
+        expected_literal_set <= level_census_literal_set
+        and int(level_script_census.get("sourceFileCount") or 0) > 0
+        and safe_key(level_script_census.get("sourceSetSha256"))
+        and expected_literal_set <= binary_census_literal_set
+        and int(binary_census.get("sourceFileCount") or 0) == 2
+        and safe_key(binary_census.get("sourceSetSha256"))
+    )
+    if not census_valid:
+        return None, {
+            "validator": "genericPartialDialogRowConsumerExhaustion",
+            "gate": "completeConsumerCorpusCensus",
+            "storyKey": story_key,
+            "expected": {
+                "literalIds": expected_literals,
+                "nonemptyLevelScriptCorpus": True,
+                "originalGameBinaryCount": 2,
+                "nonemptySourceSetHashes": True,
+            },
+            "actual": {
+                "levelScriptLiteralIds": _string_list(
+                    level_script_census.get("literalIds")
+                ),
+                "levelScriptSourceFileCount": level_script_census.get(
+                    "sourceFileCount"
+                ),
+                "levelScriptSourceSetSha256": safe_key(
+                    level_script_census.get("sourceSetSha256")
+                ),
+                "binaryLiteralIds": _string_list(
+                    binary_census.get("literalIds")
+                ),
+                "binarySourceFileCount": binary_census.get("sourceFileCount"),
+                "binarySourceSetSha256": safe_key(
+                    binary_census.get("sourceSetSha256")
+                ),
+            },
+        }, None
+
+    level_matches = level_script_census.get("matchesByLiteral") or {}
+    binary_matches = binary_census.get("matchesByLiteral") or {}
+    if any(level_matches.get(line_id) for line_id in missing):
+        return None, None, "missingRowsOccurInExportedLevelScript"
+    if any(binary_matches.get(line_id) for line_id in missing):
+        return None, None, "missingRowsOccurInOriginalBinary"
+    return {
+        "unmatchedRowStatus": "definition_rows_without_current_consumer",
+        "unmatchedRowConsumerCensus": {
+            "dialogTreeCorpus": {
+                "decodedDefinitionCount": len(definitions_by_root),
+                "matchingDefinitions": alternate_carriers,
+            },
+            "levelScriptCorpus": level_script_census,
+            "originalGameBinaries": binary_census,
+        },
+        "consumerBoundary": (
+            "registered parent DialogTrees retain their exact internal lines and "
+            "typed BlackBox SubGame playback disposition; the unmatched "
+            "DialogText rows occur in no decoded DialogTree, exported "
+            "LevelScript, GameAssembly, or global metadata, so the current "
+            "original-data surface exposes definitions but no consumer"
+        ),
+        "orderBoundary": (
+            "unmatched row ids are not appended to a neighboring parent; "
+            "numeric position, table order, OCR, and manual overrides remain "
+            "cross-reference only and establish no playback or chronology"
+        ),
+    }, None, None
 
 
 def _generic_registered_table_dialog_definition_facts(
@@ -16506,7 +16766,25 @@ def build_offline_exhaustion_index(
         "invalidDefinition": [],
     }
     declared_dialog_keys = set(all_dialog_mission_by_key)
+    # Decode the registered DialogTree corpus once and index exact authored
+    # line identities. A table group is not "unregistered" merely because its
+    # runtime parent has a different root name such as ``dlg_gpl_*``.
+    registered_dialog_tree_definitions_by_root = {
+        dialog_key: definition
+        for dialog_key in sorted(dialog_id_index, key=natural_key)
+        if isinstance(
+            definition := recover_dialog_tree_definition_evidence(dialog_key),
+            dict,
+        )
+    } if isinstance(dialog_id_index, dict) else {}
+    registered_dialog_tree_carriers_by_line: dict[str, list[str]] = defaultdict(list)
+    for parent_key, definition in (
+        registered_dialog_tree_definitions_by_root.items()
+    ):
+        for line_id in _string_list(definition.get("lineIds")):
+            registered_dialog_tree_carriers_by_line[line_id].append(parent_key)
     generic_dialog_definition_facts: dict[str, dict[str, Any]] = {}
+    generic_dialog_line_carriers_by_key: dict[str, list[dict[str, Any]]] = {}
     if native_playback_index is not None and action_story_occurrences is not None:
         for story_key, missions in sorted(
             core_targets.items(),
@@ -16554,6 +16832,24 @@ def build_offline_exhaustion_index(
                     story_key
                 )
                 continue
+            line_pattern = re.compile(
+                rf"^{re.escape(definition_root_key)}_\d+$"
+            )
+            candidate_line_ids = sorted(
+                (
+                    line_id
+                    for line_id in dialog_text_table
+                    if line_pattern.fullmatch(line_id)
+                ),
+                key=natural_key,
+            )
+            line_carrier_keys = sorted({
+                parent_key
+                for line_id in candidate_line_ids
+                for parent_key in (
+                    registered_dialog_tree_carriers_by_line.get(line_id) or []
+                )
+            }, key=natural_key)
             text_assets = sorted({
                 path
                 for key in authored_keys
@@ -16565,13 +16861,7 @@ def build_offline_exhaustion_index(
                     story_key
                 )
                 continue
-            line_pattern = re.compile(
-                rf"^{re.escape(definition_root_key)}_\d{{3}}$"
-            )
-            if not any(
-                line_pattern.fullmatch(line_id)
-                for line_id in dialog_text_table
-            ):
+            if not candidate_line_ids:
                 generic_dialog_exclusions[
                     "missingDialogTextDefinition"
                 ].append(story_key)
@@ -16604,6 +16894,34 @@ def build_offline_exhaustion_index(
                 continue
             if facts is not None:
                 generic_dialog_definition_facts[story_key] = facts
+                generic_dialog_line_carriers_by_key[story_key] = [
+                    {
+                        "sceneKey": parent_key,
+                        "lineIds": sorted(
+                            set(candidate_line_ids)
+                            & set(_string_list(
+                                registered_dialog_tree_definitions_by_root[
+                                    parent_key
+                                ].get("lineIds")
+                            )),
+                            key=natural_key,
+                        ),
+                        "sourceFile": safe_key(
+                            registered_dialog_tree_definitions_by_root[
+                                parent_key
+                            ].get("sourceFile")
+                        ),
+                        "sourceSha256": safe_key(
+                            registered_dialog_tree_definitions_by_root[
+                                parent_key
+                            ].get("sourceSha256")
+                        ),
+                        "relation": "exact_dialog_text_row_reuse",
+                        "missionOwnership": False,
+                        "orderEvidence": False,
+                    }
+                    for parent_key in line_carrier_keys
+                ]
 
         generic_dialog_binary_present = {
             story_key
@@ -16629,13 +16947,21 @@ def build_offline_exhaustion_index(
             if story_key in generic_dialog_binary_present:
                 continue
             mission_id = next(iter(core_targets[story_key]))
+            line_carriers = generic_dialog_line_carriers_by_key.get(
+                story_key,
+                [],
+            )
             generic_dialog_evidence_by_key[story_key] = {
                 "sceneKey": story_key,
                 "missionId": mission_id,
                 "recoveryStatus":
                     "deferred_current_build_offline_surface_exhausted",
-                "evidenceKind":
-                    "unregistered_dialog_definition_binary_consumer_surface_exhausted",
+                "evidenceKind": (
+                    "dialog_text_rows_reused_by_registered_trees_without_"
+                    "emitted_root_consumer"
+                    if line_carriers else
+                    "unregistered_dialog_definition_binary_consumer_surface_exhausted"
+                ),
                 "definitionTables": [
                     "DialogTextTable",
                     "DialogOptionTable",
@@ -16653,7 +16979,11 @@ def build_offline_exhaustion_index(
                 ],
                 **facts,
                 "dialogIdRegistrationStatus": "absent",
-                "dialogTreeAssetStatus": "absent",
+                "dialogTreeAssetStatus": (
+                    "exact_line_carriers_present_without_emitted_root"
+                    if line_carriers else "absent"
+                ),
+                "registeredDialogTreeLineCarriers": line_carriers,
                 "timelineStatus": "absent",
                 "carrierAuditStatus":
                     "no_typed_story_owner_or_runtime_carrier",
@@ -16674,17 +17004,24 @@ def build_offline_exhaustion_index(
                     "global-metadata exact UTF-8/UTF-16 root tokens",
                 ],
                 "consumerBoundary": (
-                    (
-                        "the mechanical misc_dlg-to-dlg definition alias and "
-                        if story_key.startswith("misc_dlg_") else ""
+                    "the exact DialogText rows are reused inside the listed "
+                    "registered DialogTrees, but no current DialogId, Timeline, "
+                    "typed action, Story route, object carrier, GameAssembly, "
+                    "or metadata entry exposes the emitted root as a loadable "
+                    "consumer; row reuse proves content identity only"
+                    if line_carriers else (
+                        (
+                            "the mechanical misc_dlg-to-dlg definition alias and "
+                            if story_key.startswith("misc_dlg_") else ""
+                        )
+                        + "the exact current DialogTextTable line/audio group and "
+                        "any DialogOptionTable choices survive, but the complete "
+                        "generated Story-route census, typed native playback "
+                        "index, DialogId/Timeline registries, DialogTree/TextAsset "
+                        "corpus, hash-matched AnimeStudio object index, current "
+                        "GameAssembly, and current global metadata expose no "
+                        "loadable dialog root, activator, or owner carrier"
                     )
-                    + "the exact current DialogTextTable line/audio group and "
-                    "any DialogOptionTable choices survive, but the complete "
-                    "generated Story-route census, typed native playback "
-                    "index, DialogId/Timeline registries, DialogTree/TextAsset "
-                    "corpus, hash-matched AnimeStudio object index, current "
-                    "GameAssembly, and current global metadata expose no "
-                    "loadable dialog root, activator, or owner carrier"
                 ),
                 "orderBoundary": (
                     "line ids order only lines inside the definition; option "
@@ -17122,16 +17459,7 @@ def build_offline_exhaustion_index(
             source_paths["scriptTaskExtraInfoTable"],
             {},
         )
-        definitions_by_root = {
-            dialog_key: definition
-            for dialog_key in sorted(dialog_id_index, key=natural_key)
-            if isinstance(
-                definition := recover_dialog_tree_definition_evidence(
-                    dialog_key
-                ),
-                dict,
-            )
-        } if isinstance(dialog_id_index, dict) else {}
+        definitions_by_root = registered_dialog_tree_definitions_by_root
         for story_key, missions in sorted(
             core_targets.items(),
             key=lambda item: natural_key(item[0]),
@@ -17330,6 +17658,100 @@ def build_offline_exhaustion_index(
                 )
             else:
                 registered_trunk_group_evidence_by_key[story_key] = evidence
+
+        # A partial partition is actionable until the unmatched row ids have
+        # been checked as identities across every relevant current-build
+        # consumer surface. Run each immutable corpus once for the whole batch,
+        # then apply the same typed qualification to every candidate.
+        partial_missing_line_ids = sorted({
+            line_id
+            for evidence in (
+                registered_trunk_group_partial_evidence_by_key.values()
+            )
+            for line_id in _string_list(evidence.get("missingLineIds"))
+        }, key=natural_key)
+        if partial_missing_line_ids:
+            level_script_paths = sorted(
+                source_paths["levelScriptRoot"].rglob("*.json"),
+                key=lambda path: natural_key(str(path)),
+            )
+            level_script_census = _literal_absence_census(
+                partial_missing_line_ids,
+                level_script_paths,
+            )
+            binary_census = _literal_absence_census(
+                partial_missing_line_ids,
+                [
+                    source_paths["gameAssembly"],
+                    source_paths["globalMetadata"],
+                ],
+            )
+            for story_key, evidence in list(
+                registered_trunk_group_partial_evidence_by_key.items()
+            ):
+                closure, failure, exclusion = (
+                    _generic_partial_dialog_row_consumer_exhaustion_facts(
+                        story_key,
+                        evidence,
+                        definitions_by_root,
+                        level_script_census,
+                        binary_census,
+                    )
+                )
+                if failure is not None:
+                    failure["sourcePaths"] = [
+                        source_display_path(source_paths["dialogTextTable"]),
+                        source_display_path(source_paths["dialogIdSource"]),
+                        source_display_path(source_paths["dialogIdIndex"]),
+                        source_display_path(source_paths["levelScriptRoot"]),
+                        source_display_path(source_paths["gameAssembly"]),
+                        source_display_path(source_paths["globalMetadata"]),
+                    ]
+                    failure["sourceSha256"] = {
+                        "dialogTextTable": actual_hashes.get(
+                            "dialogTextTable", ""
+                        ),
+                        "dialogIdSource": actual_hashes.get(
+                            "dialogIdSource", ""
+                        ),
+                        "dialogIdIndex": actual_hashes.get(
+                            "dialogIdIndex", ""
+                        ),
+                        "levelScriptSourceSet": level_script_census.get(
+                            "sourceSetSha256", ""
+                        ),
+                        "gameBinarySourceSet": binary_census.get(
+                            "sourceSetSha256", ""
+                        ),
+                    }
+                    registered_trunk_group_validation_failures.append(failure)
+                    continue
+                if closure is None:
+                    registered_trunk_group_exclusions[
+                        exclusion or "partialConsumerSurfaceNotExhausted"
+                    ].append(story_key)
+                    continue
+                evidence.update(closure)
+                evidence.update({
+                    "recoveryStatus": (
+                        "deferred_current_build_offline_surface_exhausted"
+                    ),
+                    "evidenceKind": (
+                        "partial_registered_dialog_tree_rows_without_"
+                        "current_consumer"
+                    ),
+                    "carrierStatus": (
+                        "exact_registered_parent_partition_with_"
+                        "unmatched_definition_only_rows"
+                    ),
+                    "reopenWhen": (
+                        "the installed binary, DialogId registry, "
+                        "DialogTextTable, DialogTree assets, exported "
+                        "LevelScripts, or typed SubGame playback changes"
+                    ),
+                })
+                registered_trunk_group_evidence_by_key[story_key] = evidence
+                del registered_trunk_group_partial_evidence_by_key[story_key]
 
     num_id_table = read_json(source_paths["numIdStrTable"], {})
     timeline_ids = (
@@ -18612,16 +19034,10 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
-    for story_key, evidence in sorted(
-        generic_dialog_evidence_by_key.items(),
-        key=lambda item: natural_key(item[0]),
-    ):
-        index.setdefault(story_key, evidence)
-    for story_key, evidence in sorted(
-        registered_table_dialog_evidence_by_key.items(),
-        key=lambda item: natural_key(item[0]),
-    ):
-        index.setdefault(story_key, evidence)
+    # Registered tree partitions carry stronger exact internal structure and
+    # typed parent-runtime files than a table-row fallback, so install them
+    # first. The generic definition evidence remains a truthful fallback for
+    # row reuse that does not form a non-overlapping partition.
     for story_key, evidence in sorted(
         registered_trunk_group_evidence_by_key.items(),
         key=lambda item: natural_key(item[0]),
@@ -18629,6 +19045,16 @@ def build_offline_exhaustion_index(
         index.setdefault(story_key, evidence)
     for story_key, evidence in sorted(
         registered_trunk_group_partial_evidence_by_key.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        index.setdefault(story_key, evidence)
+    for story_key, evidence in sorted(
+        generic_dialog_evidence_by_key.items(),
+        key=lambda item: natural_key(item[0]),
+    ):
+        index.setdefault(story_key, evidence)
+    for story_key, evidence in sorted(
+        registered_table_dialog_evidence_by_key.items(),
         key=lambda item: natural_key(item[0]),
     ):
         index.setdefault(story_key, evidence)
@@ -19171,6 +19597,15 @@ def build_offline_exhaustion_index(
                 else "inactive_native_playback_index_unavailable"
             ),
             "qualifiedStoryKeys": len(generic_dialog_evidence_by_key),
+            "qualifiedRegisteredLineReuseStoryKeys": sum(
+                1
+                for row in generic_dialog_evidence_by_key.values()
+                if row.get("registeredDialogTreeLineCarriers")
+            ),
+            "qualifiedRegisteredLineReuseCarriers": sum(
+                len(row.get("registeredDialogTreeLineCarriers") or [])
+                for row in generic_dialog_evidence_by_key.values()
+            ),
             "qualifiedMissions": len({
                 row["missionId"]
                 for row in generic_dialog_evidence_by_key.values()
@@ -19271,6 +19706,18 @@ def build_offline_exhaustion_index(
             "qualifiedLines": sum(
                 int(row.get("lineCount") or 0)
                 for row in registered_trunk_group_evidence_by_key.values()
+            ),
+            "consumerExhaustedPartialStoryKeys": sum(
+                1
+                for row in registered_trunk_group_evidence_by_key.values()
+                if row.get("evidenceKind")
+                == "partial_registered_dialog_tree_rows_without_current_consumer"
+            ),
+            "consumerExhaustedUnmatchedDefinitionRows": sum(
+                int(row.get("missingLineCount") or 0)
+                for row in registered_trunk_group_evidence_by_key.values()
+                if row.get("evidenceKind")
+                == "partial_registered_dialog_tree_rows_without_current_consumer"
             ),
             "partialStoryKeys": len(
                 registered_trunk_group_partial_evidence_by_key
@@ -20156,6 +20603,75 @@ def _flow_story_connections(flow: dict[str, Any]) -> list[dict[str, Any]]:
             if isinstance(row, dict)
         )
     return rows
+
+
+def _registered_parent_playback_routes_match(
+    scene_key: str,
+    owner_mission: str,
+    evidence: dict[str, Any],
+    routed_rows: list[dict[str, Any]],
+) -> bool:
+    """Accept only the flow aliases reproduced by exact parent playback.
+
+    Story bundling may expose a played registered parent DialogTree under the
+    emitted aggregate key whose table rows it carries. That positive alias is
+    compatible with a graph-neutral trunk-group result, but only when every
+    routed occurrence resolves back to the exact typed parent playback already
+    validated from the bound SubGame LevelScript.
+    """
+    if safe_key(evidence.get("evidenceKind")) not in {
+        "registered_dialog_tree_trunk_group_exact_line_partition",
+        "partial_registered_dialog_tree_rows_without_current_consumer",
+    }:
+        return False
+    expected_sources_by_parent: dict[str, set[str]] = defaultdict(set)
+    for context in evidence.get("parentLevelContexts") or []:
+        if not isinstance(context, dict):
+            continue
+        runtime = context.get("subGameRuntime")
+        if not isinstance(runtime, dict):
+            continue
+        for playback in runtime.get("parentDialogPlayback") or []:
+            if not isinstance(playback, dict):
+                continue
+            parent_key = safe_key(playback.get("parentDialogTreeId"))
+            source_file = safe_key(playback.get("sourceFile"))
+            if parent_key and source_file:
+                expected_sources_by_parent[parent_key].add(source_file)
+    observed: dict[str, set[str]] = defaultdict(set)
+    if not routed_rows or not expected_sources_by_parent:
+        return False
+    for row in routed_rows:
+        if (
+            safe_key(row.get("key")) != scene_key
+            or safe_key(row.get("relation"))
+            != "native_story_playback_unscoped"
+            or safe_key(row.get("confidence"))
+            != "native_typed_direct_unscoped"
+            or safe_key(row.get("storyOwnerMission")) != owner_mission
+            or safe_key(row.get("questTriggerStatus")) != "unresolved"
+        ):
+            return False
+        occurrences = [
+            occurrence
+            for occurrence in row.get("occurrences") or []
+            if isinstance(occurrence, dict)
+        ]
+        if not occurrences:
+            return False
+        for occurrence in occurrences:
+            parent_key = safe_key(occurrence.get("authoredStoryKey"))
+            source_file = safe_key(occurrence.get("sourceFile"))
+            if (
+                parent_key not in expected_sources_by_parent
+                or source_file not in expected_sources_by_parent[parent_key]
+                or safe_key(occurrence.get("actionName"))
+                != "StartDialogAction"
+                or safe_key(occurrence.get("recordClass")) != "play_dialog"
+            ):
+                return False
+            observed[parent_key].add(source_file)
+    return observed == expected_sources_by_parent
 
 
 def _connection_native_occurrences(
@@ -21157,6 +21673,16 @@ def _deferred_offline_exhausted_isolated_scenes(
                         if isinstance(branch, dict)
                     )
                 )
+        if (
+            isinstance(evidence, dict)
+            and _registered_parent_playback_routes_match(
+                scene_key,
+                owner_mission,
+                evidence,
+                routed_rows,
+            )
+        ):
+            routed_rows_valid = True
         if (
             not isinstance(evidence, dict)
             or safe_key(evidence.get("missionId")) != owner_mission

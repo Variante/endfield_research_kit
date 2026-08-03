@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 601 (490 MissionRuntime + 111 Story-only recovery shells) |
+| Pipeline missions | 602 (490 MissionRuntime + 112 Story-only recovery shells) |
 | Unique Story files | 5,564 |
 | Connected files | 4,239 (76.2%) |
 | Files with a normalized trigger/context route | 4,462 (80.2%) |
@@ -17,7 +17,7 @@ Latest CN reports:
 | Unlinked files with exact native playback | 156 |
 | Encounter-controller contexts | 5 receiver scripts / 7 modules / 27 Story keys / 9 related source files |
 | Exact non-mission content | 281 (280 spacecraft/profile + 1 guide runtime) |
-| Actionable core-isolated files | 10, all in the other bucket |
+| Actionable core-isolated files | 3, all in the other bucket |
 | Partial-order mission rows | 487 |
 | Candidate scene placements | 8,877 |
 | Strong / supported / weak edges | 1,502 / 834 / 2,635 |
@@ -58,18 +58,24 @@ in five payloads.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
-The registered DialogTree trunk-group recovery handles both complete and
-partial emitted shapes with one fail-closed partition rule. Mechanical
+The registered DialogTree trunk-group recovery handles complete, partial, and
+row-reuse emitted shapes with fail-closed content-identity rules. Mechanical
 `misc_*` aggregates select their authored prefix namespace; direct unregistered
 `dlg_*` scenes select only exact `<scene>_<digits>` rows, preventing a shorter
 key from absorbing nested scenes such as `_1_2`. Each covered row must belong
 to exactly one current registered, hash-validated serialized DialogTree;
 duplicate carriers resolve only through the existing namespace tie-break, and
-naming never fills a missing row. Complete partitions close six direct
-black-box scenes covering 23 lines. The same general classifier now exposes
-five partial scenes through ten parents: 30 of 38 authored rows are covered,
-eight are explicitly unmatched, and the parents contain zero option-branch
-groups. A general parent-namespace resolver now attaches an exact authored
+naming never fills a missing row. Complete partitions include the speed-limit
+scene through its exact registered `_1` parent. Five partial scenes span ten
+parents: 30 of 38 authored rows are covered and eight are explicitly
+unmatched. A complete literal census checks every unmatched row against all
+decoded registered DialogTrees, all 4,512 exported LevelScripts,
+`GameAssembly.dll`, and `global-metadata.dat`. The rows occur in none of those
+consumer surfaces, so they remain current table definitions without consumers
+and are never appended to a neighboring parent. The separate two-digit
+`dlg_blackbox_shaper_2_2` group is an exact table-only definition; suffix width
+is authored data rather than a classifier constant. A general parent-namespace
+resolver now attaches an exact authored
 level/dungeon asset shell only when `LevelBasicInfoTable`, the unique
 `DungeonTable.sceneId`, LevelConfig, the 43-member LevelData MemoryPack, and any
 matching decoded map TextAsset all independently name the same level. It
@@ -88,8 +94,7 @@ failures. Exact nested `ScriptTaskExtraInfoTable` rows attach objective display
 keys; `CombineCondition` formulas retain their authored operands. The task
 dictionaries contain no task-successor or Story-file-order field, so the
 topology remains objective structure rather than chronology. All eight partial
-level contexts have an exact parent playback, but none of their loose row ids
-occurs in the decoded task maps. Pipe 1 plays `_1` from its bound script while
+level contexts have an exact parent playback. Pipe 1 plays `_1` from its bound script while
 `_2` and `_3` remain explicitly definition-only there; this partial coverage
 is preserved instead of forcing one uniform producer rule. Numbered
 missing-row positions remain table-row cross-reference diagnostics only. These
@@ -192,8 +197,8 @@ files.
 No current mission has Story
 targets on two different Branch sequence slots, so this adds zero Branch-derived
 Story-order edges rather than guessing them.
-The other-bucket queue is 10 and the current contract is
-`sourceStoryGapQueue.v128`; OCR and manual order remain comparison-only. The
+The other-bucket actionable core-isolated queue is 3 and the current contract is
+`sourceStoryGapQueue.v129`; OCR and manual order remain comparison-only. The
 queue now loads the current Story trigger manifest through an exact schema,
 language, source-hash, and object-shape gate instead of silently discarding a
 newer coverage schema. General closure contracts revalidate shipped-Lua
@@ -284,7 +289,7 @@ tie-breaker; it cannot fill missing rows. `misc_timeline_blackbox_miner` and
 `_pipe` remain open because authored rows lack serialized registered owners.
 Mission Pipeline exposes the parent files, hashes, and directed edges.
 Canonical mission-pipeline builds refresh and validate
-`sourceStoryGapQueue.v128` after current Story coverage
+`sourceStoryGapQueue.v129` after current Story coverage
 and partial order are published; data-only builds deliberately reuse it. OCR
 and manual order remain comparison-only.
 
@@ -1160,8 +1165,8 @@ only, never Story order; OCR and manual order do not participate.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
    typed attachments or bounded graph-neutral diagnostics. Main, event, major,
    and character missions have no actionable core-isolated files. Other
-   missions retain 32 actionable files and 17 missing mission bundles. Broad co-memberships
-   remain non-owning diagnostics.
+   missions retain three actionable core-isolated files and 17 missing mission
+   bundles. Broad co-memberships remain non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
    reopen only when a typed DialogTree/Timeline/runtime consumer appears.
@@ -1178,21 +1183,17 @@ existing LevelScript, DialogTree, Timeline, teleport, proxy, Encounter, or
 local carrier scans is unlikely to close ownership without a new foreign key
 or changed inputs.
 
-Next work should trace the eight explicitly unmatched black-box rows through a
-new binary or serialized producer/consumer surface, without deriving placement
-from numeric suffixes, dungeon sort ids, guide-hint names, task ids, or asset
-paths. Their exact level/dungeon and BlackBox SubGame runtime shells are now
-attached, including bound LevelScripts and typed parent playback, but no
-audited typed surface consumes the loose rows. Main/extra/fail task lanes are
-objective structure, not Story order. The partial set is
-`misc_timeline_blackbox_miner`, `dlg_blackbox_mix_3`,
-`dlg_blackbox_gaspump_1`, `misc_timeline_blackbox_pipe`, and
-`dlg_blackbox_xiraniteoven_3`. `dlg_blackbox_shaper_2_2` remains a distinct
-namespace mismatch rather than a partial partition, and the missionless
-speed-limit definition still needs a separately proven mission attachment.
-Extend the pattern-based classifier to branch-bearing consumers only when the
-typed schema and complete current consumer surface can be bounded without
-weakening the fail-closed rules.
+The eight unmatched BlackBox rows are now source-bounded current-build
+definitions, not open placement candidates. Reopen them only if a changed
+binary or serialized producer/consumer surface contains an exact row identity;
+numeric suffixes, dungeon sort ids, guide-hint names, task ids, asset paths,
+OCR, and manual order remain non-evidence. Highest-value next work is the 156
+exact native playback files that still lack a mission/quest activation bridge,
+especially repeated typed LevelData receiver contracts that may expose a new
+foreign key. The three remaining actionable isolated keys are
+`black_webui_secret_notice`, `test_sns_emojicomment`, and
+`test_sns_sticker`; audit them as non-production/test-definition classification
+gaps rather than weakening Story ownership rules.
 Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed
