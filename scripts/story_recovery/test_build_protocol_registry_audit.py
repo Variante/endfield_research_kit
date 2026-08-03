@@ -24,13 +24,16 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v5",
+                "_schema": "endfieldProtocolRegistryAudit.v6",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
                 },
                 "stateUpdateApplicationCensus": {
                     "validation": {"status": "validated", "failures": []},
+                    "questStartApplication": {
+                        "validation": {"status": "validated", "failures": []},
+                    },
                 },
             }), encoding="utf-8")
 
@@ -58,6 +61,54 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         self.assertEqual(audit.normalized_field_name("sceneNumId_"), "scenenumid")
         self.assertEqual(audit.normalized_field_name("TaskIdFieldNumber"), "taskid")
         self.assertEqual(audit.normalized_field_name("taskId_"), "taskid")
+
+    def test_quest_start_observation_accepts_single_object_initialization(self):
+        result = audit.validate_quest_start_application_observation(
+            field_reads={
+                "objectiveList": 3,
+                "prevQuestIdList": 0,
+                "flowIndex": 0,
+            },
+            quest_info_getters=[{"symbol": "Fixture.GetQuestInfo"}],
+            topology_calls=[],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "a" * 64},
+        )
+
+        self.assertEqual(result, {"status": "validated", "failures": []})
+
+    def test_quest_start_observation_reports_all_independent_failures(self):
+        result = audit.validate_quest_start_application_observation(
+            field_reads={
+                "objectiveList": 0,
+                "prevQuestIdList": 2,
+                "flowIndex": 1,
+            },
+            quest_info_getters=[],
+            topology_calls=["Fixture.GetNextQuest"],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "b" * 64},
+        )
+
+        self.assertEqual(result["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in result["failures"]],
+            [
+                "uniqueQuestInfoGetter",
+                "objectiveInitializationRead",
+                "noClientTopologyReadDuringStart",
+                "noClientSuccessorTraversalCall",
+            ],
+        )
+        self.assertEqual(
+            result["failures"][2]["expected"],
+            {"prevQuestIdList": 0, "flowIndex": 0},
+        )
+        self.assertEqual(
+            result["failures"][2]["actual"],
+            {"prevQuestIdList": 2, "flowIndex": 1},
+        )
+        self.assertEqual(result["failures"][0]["sourceFile"], "GameAssembly.dll")
 
     def test_relevant_task_schemas_reference_separately_proven_native_paths(self):
         task_rows = [

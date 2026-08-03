@@ -6492,10 +6492,10 @@ def load_state_update_application_contract(
             f"expected=file actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v5":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v6":
         raise RuntimeError(
             "validator=state_update_application_contract gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v5' "
+            "expected='endfieldProtocolRegistryAudit.v6' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     census = audit.get("stateUpdateApplicationCensus") or {}
@@ -6505,6 +6505,17 @@ def load_state_update_application_contract(
         raise RuntimeError(
             "validator=state_update_application_contract "
             f"gate={failure.get('gate') or 'upstreamValidation'} "
+            f"message={failure.get('message')} expected={failure.get('expected')!r} "
+            f"actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    quest_start = census.get("questStartApplication") or {}
+    quest_start_validation = quest_start.get("validation") or {}
+    if quest_start_validation.get("status") != "validated":
+        failure = (quest_start_validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            f"gate={failure.get('gate') or 'questStartApplication'} "
             f"message={failure.get('message')} expected={failure.get('expected')!r} "
             f"actual={failure.get('actual')!r} "
             f"source={failure.get('sourceFile') or audit_path}"
@@ -6539,7 +6550,7 @@ def load_state_update_application_contract(
                 ),
                 "sourceFile": str(source_path.resolve()),
                 "sha256": actual_hash,
-                "relationship": "native_state_application_contract",
+                "relationship": "native_mission_branch_authority_contract",
             }
         )
     return {
@@ -6551,6 +6562,7 @@ def load_state_update_application_contract(
         "candidateCount": census.get("candidateCount", 0),
         "validatedCandidateCount": census.get("validatedCandidateCount", 0),
         "clientSuccessorSelectors": census.get("clientSuccessorSelectors", 0),
+        "questStartApplication": quest_start,
         "allLifecycleCallsUsePacketIdentity": census.get(
             "allLifecycleCallsUsePacketIdentity", False
         ),
@@ -9349,6 +9361,17 @@ def build_all(
             "stateUpdateClientSuccessorSelectors": state_update_contract[
                 "clientSuccessorSelectors"
             ],
+            "questStartPredecessorReads": state_update_contract[
+                "questStartApplication"
+            ].get("fieldReadCounts", {}).get("prevQuestIdList", 0),
+            "questStartFlowIndexReads": state_update_contract[
+                "questStartApplication"
+            ].get("fieldReadCounts", {}).get("flowIndex", 0),
+            "questStartTopologyTraversalCalls": len(
+                state_update_contract["questStartApplication"].get(
+                    "topologyTraversalCalls", []
+                )
+            ),
         },
         "conditionTypeMissionCounts": dict(sorted(condition_counts.items())),
         "runtimeContract": runtime_contract,
@@ -9395,6 +9418,30 @@ def publish_source_story_partial_order(
         language,
         story_data_root=story_data_root,
     )
+    state_contract = (
+        (index.get("runtimeContract") or {}).get("stateUpdateApplicationAudit")
+        or {}
+    )
+    quest_start = state_contract.get("questStartApplication") or {}
+    quest_fork_authority = {
+        "classification": "server_selected_start_topology_only",
+        "questInfoType": quest_start.get("questInfoType"),
+        "questInfoFieldOffsets": quest_start.get("questInfoFieldOffsets") or {},
+        "fieldReadCounts": quest_start.get("fieldReadCounts") or {},
+        "topologyTraversalCalls": quest_start.get("topologyTraversalCalls") or [],
+        "startQuest": quest_start.get("startQuest") or {},
+        "sourceMessages": quest_start.get("sourceMessages") or [],
+        "finding": quest_start.get("finding") or "",
+        "boundary": quest_start.get("boundary") or "",
+        "relatedOriginalFiles": state_contract.get("relatedOriginalFiles") or [],
+        "validation": quest_start.get("validation") or {},
+    }
+    for row in report.get("missions") or []:
+        if not isinstance(row, dict):
+            continue
+        branches = row.get("branches") or {}
+        if branches.get("questForks"):
+            branches["questForkAuthority"] = quest_fork_authority
     report_root.mkdir(parents=True, exist_ok=True)
     report_json = report_root / f"source_story_partial_order_{language}.json"
     report_markdown = report_root / f"source_story_partial_order_{language}.md"

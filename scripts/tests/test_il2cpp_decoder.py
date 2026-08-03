@@ -59,6 +59,55 @@ class Il2CppDecoderTests(unittest.TestCase):
             "param:msg+0x18",
         )
 
+    def test_body_summary_tracks_typed_call_return_into_later_field_read(self) -> None:
+        helper = load_helper()
+        start_va = 0x180000000
+        getter_va = 0x180000100
+        consumer_va = 0x180000200
+        first_rel32 = getter_va - (start_va + 5)
+        second_call_offset = 5 + 3 + 4
+        second_rel32 = consumer_va - (start_va + second_call_offset + 5)
+        data = (
+            b"\xe8" + struct.pack("<i", first_rel32)
+            + bytes.fromhex("48 8b d8")
+            + bytes.fromhex("48 8b 4b 60")
+            + b"\xe8" + struct.pack("<i", second_rel32)
+            + b"\xc3"
+        )
+        summary = helper.build_method_body_summary(
+            {
+                "flags": "0x0000",
+                "parameterDetails": [],
+                "method": "ApplyFixture",
+                "type": "FixtureSystem",
+            },
+            data,
+            start_va,
+            {
+                getter_va: [{
+                    "type": "FixtureSystem",
+                    "method": "GetFixture",
+                    "returnTypeName": "Fixture",
+                }],
+                consumer_va: [{
+                    "type": "FixtureSystem",
+                    "method": "ConsumeFixtureField",
+                    "returnTypeName": "System.Void",
+                }],
+            },
+            max_instructions=64,
+        )
+
+        self.assertEqual(summary["calls"][0]["returnOrigin"], "return:Fixture")
+        self.assertEqual(
+            summary["calls"][1]["argumentOrigins"]["rcx"],
+            "return:Fixture+0x60",
+        )
+        self.assertTrue(any(
+            row["origin"] == "return:Fixture+0x60"
+            for row in summary["fieldAccesses"]
+        ))
+
 
 if __name__ == "__main__":
     unittest.main()
