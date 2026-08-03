@@ -1164,9 +1164,9 @@ only, never Story order; OCR and manual order do not participate.
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
    typed attachments or bounded graph-neutral diagnostics. Main, event, major,
-   and character missions have no actionable core-isolated files. Other
-   missions retain three actionable core-isolated files and 17 missing mission
-   bundles. Broad co-memberships remain non-owning diagnostics.
+   character, and other missions have no actionable core-isolated files. The
+   remaining 17 missing MissionRuntime bundles stay explicit Story-only shells;
+   broad co-memberships remain non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
    reopen only when a typed DialogTree/Timeline/runtime consumer appears.
@@ -1190,10 +1190,18 @@ numeric suffixes, dungeon sort ids, guide-hint names, task ids, asset paths,
 OCR, and manual order remain non-evidence. Highest-value next work is the 156
 exact native playback files that still lack a mission/quest activation bridge,
 especially repeated typed LevelData receiver contracts that may expose a new
-foreign key. The three remaining actionable isolated keys are
-`black_webui_secret_notice`, `test_sns_emojicomment`, and
-`test_sns_sticker`; audit them as non-production/test-definition classification
-gaps rather than weakening Story ownership rules.
+foreign key. The former final three isolated keys are now closed by general
+provenance rules: every exact `SNSDialogTable` identity, regardless of filename
+prefix, passes the same authored graph, route, typed playback, complete
+AnimeStudio carrier, and installed-binary token gates; this admits
+`test_sns_emojicomment` and `test_sns_sticker` as shipped definitions with no
+current consumer while retaining their internal SNS branches/options. Generated
+Story entries may be excluded only when index and conversation payloads carry
+matching `project_authored` provenance and the declared repository producer
+exists; this excludes `black_webui_secret_notice` without treating it as game
+evidence. Mission Pipeline publishes all three as graph-neutral Story-only
+shells with related table/carrier/binary or project-source files. Schema v130
+has zero validator failures and zero actionable core-isolated scenes.
 Within `gm02m23`, the
 remaining source-bounded activation gaps are `dlg_gm02m23_3`, `_10`, and
 `radio_gm02m23_2`; the former Timeline records `_1`, `_7`, and `_8` are closed

@@ -22950,6 +22950,13 @@ def build_language_bundle(
         out_key = "black_webui_secret_notice"
         title = "Open-source notice"
         mission = "webui_secret"
+        provenance = {
+            "scope": "project_authored",
+            "purpose": "webui_notice",
+            "producer": "story_builder.project_authored_story",
+            "sourceFile": "scripts/story_builder/language_bundle.py",
+            "gameDataEvidence": False,
+        }
         lines = [
             {
                 "id": f"{out_key}_001",
@@ -22981,6 +22988,7 @@ def build_language_bundle(
             "scene": "notice",
             "title": title,
             "lines": lines,
+            "provenance": provenance,
             "_debug": {
                 "source": {
                     "table": "WebUI synthetic notice",
@@ -23007,6 +23015,7 @@ def build_language_bundle(
             "n": len(lines),
             "p": preview(lines[0]["text"]),
             "tags": ["other", "webui"],
+            "provenance": provenance,
             "x": merge_search_text(
                 merge_search_text(title, indexed_line_haystack(lines, "text")),
                 "copyright open source free WebUI Variante endfield_research_kit GitHub Hypergryph Endfield",

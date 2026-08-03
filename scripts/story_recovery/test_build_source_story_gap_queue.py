@@ -838,6 +838,24 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(facts["contentIds"], [-1, 1])
         self.assertEqual(facts["authoredMissionLinkStatus"], "absent")
 
+        # Candidate selection follows the exact authored row identity, so a
+        # shipped fixture or future family does not need an sns_* filename.
+        nonstandard_key = "fixture_visual_dialog"
+        nonstandard_row = copy.deepcopy(row)
+        nonstandard_row["dialogId"] = nonstandard_key
+        self.assertTrue(
+            gap_queue._is_authored_sns_definition_candidate(
+                nonstandard_key,
+                {nonstandard_key: nonstandard_row},
+            )
+        )
+        self.assertFalse(
+            gap_queue._is_authored_sns_definition_candidate(
+                nonstandard_key,
+                {nonstandard_key: row},
+            )
+        )
+
         linked = copy.deepcopy(row)
         linked["relatedMissionId"] = "mission_fixture"
         linked["dialogContentData"]["1"].update({
@@ -10912,6 +10930,91 @@ class NonMissionContentClosureTests(unittest.TestCase):
                 json.dumps(payload), encoding="utf-8"
             )
         return root
+
+    def test_project_authored_story_provenance_is_generic_and_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "scripts" / "producer.py"
+            source.parent.mkdir(parents=True)
+            source.write_text("# fixture\n", encoding="utf-8")
+            conv_dir = root / "conv"
+            conv_dir.mkdir()
+            provenance = {
+                "scope": "project_authored",
+                "purpose": "fixture_notice",
+                "producer": "fixture.producer",
+                "sourceFile": "scripts/producer.py",
+                "gameDataEvidence": False,
+            }
+            entry = {
+                "k": "opaque_notice",
+                "m": "ui_shell",
+                "d": "black",
+                "provenance": provenance,
+            }
+            (conv_dir / "opaque_notice.json").write_text(
+                json.dumps({
+                    "key": "opaque_notice",
+                    "mission": "ui_shell",
+                    "provenance": provenance,
+                }),
+                encoding="utf-8",
+            )
+
+            found, status = gap_queue.project_authored_story_content_keys(
+                {"entries": [entry]},
+                conv_dir,
+                source_root=root,
+            )
+            self.assertEqual(status["status"], "validated")
+            self.assertIn("opaque_notice", found)
+            self.assertFalse(found["opaque_notice"].get("gameDataEvidence", False))
+
+            broken = copy.deepcopy(entry)
+            broken["provenance"]["sourceFile"] = "../outside.py"
+            found, status = gap_queue.project_authored_story_content_keys(
+                {"entries": [broken]},
+                conv_dir,
+                source_root=root,
+            )
+            self.assertEqual(found, {})
+            self.assertEqual(status["status"], "validation_failed")
+            self.assertEqual(
+                status["validationFailures"][0]["gate"],
+                "matchingGeneratedEntryAndExistingSource",
+            )
+
+    def test_project_authored_story_is_excluded_without_graph_evidence(self) -> None:
+        story_key = "opaque_notice"
+        partial = partial_mission(
+            "ui_shell",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        partial["nodes"][0]["kind"] = "black"
+        row = gap_queue.build_gap_row(
+            partial,
+            mission_payload(),
+            mission_bundle_exists=True,
+            non_mission_content={story_key: {
+                "evidenceKind": "project_authored_story_content",
+                "content": "fixture_notice",
+                "storyKind": "black",
+                "sourceScope": "project_authored",
+                "producer": "fixture.producer",
+                "sourceFiles": ["scripts/producer.py"],
+                "sourceSha256": {"scripts/producer.py": "abc"},
+            }},
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        closed = row["closedNonMissionContentIsolatedScenes"][0]
+        self.assertEqual(
+            closed["recoveryStatus"],
+            "excluded_project_authored_story_content",
+        )
+        self.assertFalse(closed["gameDataEvidence"])
+        self.assertEqual(closed["graphEffect"], "none")
 
     def test_speaker_keyed_radio_continuation_is_closed(self) -> None:
         root = self._table_root(AudioRadioContinueTable={

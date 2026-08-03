@@ -161,7 +161,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v129"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v130"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3477,6 +3477,7 @@ def publish_offline_story_recovery(
         "graphEffect": "none",
         "publishedStoryKeys": 0,
         "publishedRuntimeContextStoryKeys": 0,
+        "publishedProjectAuthoredStoryKeys": 0,
         "outsidePipelineCoverageStoryKeys": 0,
         "storyTriggerManifestOverlay": {},
         "questAttachmentDiagnosticStatus": "unavailable",
@@ -3508,6 +3509,7 @@ def publish_offline_story_recovery(
     published_keys: set[str] = set()
     published_partial_keys: set[str] = set()
     published_runtime_context_keys: set[str] = set()
+    published_project_authored_keys: set[str] = set()
     manifest_overlay: dict[str, dict[str, Any]] = {}
     diagnostic_status = payload.get("questAttachmentDiagnosticEvidence")
     diagnostic_active = (
@@ -3518,6 +3520,13 @@ def publish_offline_story_recovery(
         and not diagnostic_status.get("validationFailures")
     )
     quest_attachment_diagnostics: dict[str, dict[str, Any]] = {}
+    project_status = payload.get("projectAuthoredStoryEvidence")
+    project_active = (
+        isinstance(project_status, dict)
+        and project_status.get("status") == "validated"
+        and project_status.get("graphEffect") == "none"
+        and not project_status.get("validationFailures")
+    )
     for mission in payload.get("missions") or []:
         if not isinstance(mission, dict):
             continue
@@ -3554,7 +3563,8 @@ def publish_offline_story_recovery(
             else:
                 manifest_overlay[story_key] = {
                     "key": story_key,
-                    "kind": offline_story_kind(story_key),
+                    "kind": str(row.get("storyKind") or "")
+                        or offline_story_kind(story_key),
                     "nominalMissionId": str(row.get("missionId") or ""),
                     "attachmentStatus":
                         "offline_exhausted_outside_pipeline_coverage_denominator",
@@ -3592,6 +3602,44 @@ def publish_offline_story_recovery(
                 })
                 overlay["partialRecovery"] = recovery
             published_partial_keys.add(story_key)
+
+        if project_active:
+            for row in mission.get(
+                "closedNonMissionContentIsolatedScenes"
+            ) or []:
+                if (
+                    not isinstance(row, dict)
+                    or row.get("evidenceKind")
+                    != "project_authored_story_content"
+                    or row.get("recoveryStatus")
+                    != "excluded_project_authored_story_content"
+                    or row.get("graphEffect") != "none"
+                    or row.get("gameDataEvidence") is not False
+                ):
+                    continue
+                story_key = str(row.get("sceneKey") or "")
+                if not story_key:
+                    continue
+                recovery = {
+                    key: value
+                    for key, value in row.items()
+                    if key != "sceneKey"
+                }
+                manifest_row = story_trigger_manifest.get(story_key)
+                if isinstance(manifest_row, dict):
+                    manifest_row["contentProvenance"] = recovery
+                else:
+                    overlay = manifest_overlay.setdefault(story_key, {
+                        "key": story_key,
+                        "kind": str(row.get("storyKind") or "")
+                            or offline_story_kind(story_key),
+                        "nominalMissionId": str(mission.get("mission") or ""),
+                        "attachmentStatus":
+                            "project_authored_outside_game_coverage_denominator",
+                        "routes": [],
+                    })
+                    overlay["contentProvenance"] = recovery
+                published_project_authored_keys.add(story_key)
 
         approved_runtime_contexts = {
             (
@@ -3767,6 +3815,9 @@ def publish_offline_story_recovery(
         "publishedRuntimeContextStoryKeys": len(
             published_runtime_context_keys
         ),
+        "publishedProjectAuthoredStoryKeys": len(
+            published_project_authored_keys
+        ),
         "outsidePipelineCoverageStoryKeys": len(manifest_overlay),
         "storyTriggerManifestOverlay": manifest_overlay,
         "questAttachmentDiagnosticStatus": (
@@ -3811,8 +3862,11 @@ def publish_offline_recovery_mission_shells(
     }
     overlay = offline_recovery.get("storyTriggerManifestOverlay") or {}
     keys_by_mission: dict[str, list[str]] = defaultdict(list)
+    kind_by_key: dict[str, str] = {}
     for story_key, entry in overlay.items():
-        recovery = entry.get("offlineRecovery") if isinstance(entry, dict) else None
+        recovery = (
+            entry.get("offlineRecovery") or entry.get("contentProvenance")
+        ) if isinstance(entry, dict) else None
         mission_id = str(
             (recovery or {}).get("missionId")
             or (entry or {}).get("nominalMissionId")
@@ -3820,6 +3874,7 @@ def publish_offline_recovery_mission_shells(
         )
         if mission_id and mission_id not in existing:
             keys_by_mission[mission_id].append(str(story_key))
+            kind_by_key[str(story_key)] = str(entry.get("kind") or "")
 
     published: list[str] = []
     mission_output = output_root / "missions"
@@ -3855,7 +3910,8 @@ def publish_offline_recovery_mission_shells(
             "nodes": [
                 {
                     "key": story_key,
-                    "kind": offline_story_kind(story_key),
+                    "kind": kind_by_key.get(story_key)
+                        or offline_story_kind(story_key),
                     "membership": "index",
                     "component": component["id"],
                     "relationStatus": "isolated",
