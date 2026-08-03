@@ -21,6 +21,7 @@ Latest CN reports:
 | Partial-order mission rows | 487 |
 | Candidate scene placements | 8,877 |
 | Strong / supported / weak edges | 1,502 / 834 / 2,635 |
+| Exact native Story transitions | 380; 85 branch-bearing across 40 missions (77 Split, 7 conditional, 1 ordered-sequence) |
 | Source-comparable scene pairs | 3,791 / 249,695 (1.52%) |
 | Cyclic components | 0 |
 | Exact nested DialogTree containments | 49 across 44 child files |
@@ -143,6 +144,17 @@ missions have WebUI shells. Each attachment retains its selected active event
 listener, listener metadata, physical/active counts, shadowed slot counts, and
 the shared original-binary runtime mapping; the rest of each graph stays
 file-local context.
+The same general path-prefix recovery now preserves the complete typed action
+suffix for all 380 exact native Story-to-Story transitions rather than reducing
+the proof to local-id lists. Eighty-five transitions in 40 missions traverse a
+typed non-linear edge: 77 cross `Split.actions[*]`, seven cross an If/Else or
+Switch arm, and one enters `Branch.sequence[1]`; every transition also retains
+its linear steps. Mission Pipeline renders the source and target Story files,
+each exact successor field, decoded branch predicate when available, and all
+related original LevelScript/MissionRuntime files. This does not add or promote
+an edge—the same 380 path-prefix relations were already strong—but makes their
+branch semantics and provenance directly auditable without consulting OCR,
+manual order, record adjacency, or filename numbering.
 The current PureGetter and root `GameCondition` union registrations, generated
 MemoryPack setter order, and native `GetResult` bodies close all ten formerly
 opaque or class-only branch predicates without mission-specific rules.
@@ -209,9 +221,11 @@ LevelScript property, and its original Persistent
 `MissionRuntimeAsset/e3m5.json` is attached as a related file. This still does
 not prove that the quest starts playback or that the handoff writes
 `isFinished`, so the Story remains unowned.
-No current mission has Story
-targets on two different Branch sequence slots, so this adds zero Branch-derived
-Story-order edges rather than guessing them.
+No current mission has Story targets on two different Branch sequence slots,
+so there are still zero Story-to-Story edges derived from relative sequence-slot
+indices. One existing path-prefix edge enters `Branch.sequence[1]` after its
+source Story and now exposes that typed suffix without claiming a second Story
+sequence arm.
 The actionable core-isolated queue is empty and the current contract is
 `sourceStoryGapQueue.v130`; OCR and manual order remain comparison-only. The
 queue now loads the current Story trigger manifest through an exact schema,

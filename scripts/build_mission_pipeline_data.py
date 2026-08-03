@@ -217,8 +217,10 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v26 attaches hash-verified current-game DialogTree definitions to their exact
 # objective, repeatable-talk, and failed-dialog MissionRuntime observers. v27
 # exposes exact typed spaceship contexts whose complete table definition has
-# no carrier in any related typed DialogTree, without inventing playback.
-SCHEMA_VERSION = 28
+# no carrier in any related typed DialogTree, without inventing playback. v28
+# exposes typed receiver-local control after playback. v29 publishes exact
+# typed source-to-target Story transition suffixes and their branch classes.
+SCHEMA_VERSION = 29
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -8477,6 +8479,14 @@ def publish_source_story_partial_order(
         summary["storyOrderNativeMergeCount"] = int(
             order_summary.get("nativeControlMergeCount") or 0
         )
+        summary["storyOrderNativeTransitionCount"] = int(
+            order_summary.get("nativeControlPathTransitionEdgeCount") or 0
+        )
+        summary["storyOrderNativeBranchingTransitionCount"] = int(
+            order_summary.get(
+                "nativeControlPathBranchingTransitionEdgeCount"
+            ) or 0
+        )
         summary["storyOrderNativeOrderedSequenceCount"] = int(
             order_summary.get("nativeOrderedSequenceCount") or 0
         )
@@ -9253,6 +9263,8 @@ def main() -> int:
             f"{summary.get('questMerges', 0)} quest merges, "
             f"{summary.get('nativeControlBranches', 0)} native branch groups, "
             f"{summary.get('nativeControlMerges', 0)} native convergences, "
+            f"{summary.get('nativeControlPathTransitionEdges', 0)} exact native Story transitions "
+            f"({summary.get('nativeControlPathBranchingTransitionEdges', 0)} branch-bearing), "
             f"{summary.get('nativeOrderedSequences', 0)} native ordered sequences, "
             f"{summary.get('nativeRelatedActionTopologies', 0)} related action graphs, "
             f"{summary.get('nativeNamedPredicates', 0)} named predicates, "
