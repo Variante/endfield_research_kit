@@ -117,8 +117,9 @@ or local source edits.
 - 1,323 remain unlinked; 156 already have exact native playback but lack a
   mission/quest activation bridge.
 - A general original-binary Encounter contract now adds exact controller and
-  related LevelData/SpawnerConfig context for 23 of those Story keys without
-  inventing mission ownership or order.
+  related LevelData/SpawnerConfig context for 27 of those Story keys. Its
+  LsmPtr module namespace is shown separately from the receiver LevelScript,
+  without inventing mission ownership or order.
 - All 258 named native branch predicates are operand-decoded where their
   current binary layout is supported; the pipeline reports 263 semantic
   predicates including inline forms, with 0 class-only and 0 unresolved.

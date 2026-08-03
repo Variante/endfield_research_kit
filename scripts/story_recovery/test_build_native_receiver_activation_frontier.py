@@ -65,13 +65,93 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             rows[0]["classification"],
         )
         self.assertEqual("1002", rows[0]["spawnerId"])
+        self.assertEqual("1001", rows[0]["moduleId"])
+        self.assertTrue(rows[0]["moduleIdMatchesReceiverScript"])
         self.assertEqual(2, len(rows[0]["relatedFiles"]))
         self.assertFalse(rows[0]["storyBinding"])
         self.assertFalse(rows[0]["orderEvidence"])
 
+    def test_encounter_contract_uses_lsm_module_not_receiver_id(self) -> None:
+        rows = frontier.encounter_controller_contexts(
+            "map_fixture",
+            "1001",
+            [self.encounter_host("2002")],
+            spawner_root=Path("missing"),
+        )
+        self.assertEqual(1, len(rows))
+        self.assertEqual("2002", rows[0]["moduleId"])
+        self.assertEqual("1001", rows[0]["receiverScriptId"])
+        self.assertFalse(rows[0]["moduleIdMatchesReceiverScript"])
+
+    def test_encounter_contract_allows_native_zero_spawner(self) -> None:
+        host = self.encounter_host("2002")
+        host["briefData"]["properties"][-1]["atoms"][0]["valueBit64"] = 0
+        rows = frontier.encounter_controller_contexts(
+            "map_fixture",
+            "1001",
+            [host],
+            spawner_root=Path("missing"),
+        )
+        self.assertEqual(1, len(rows))
+        self.assertEqual("0", rows[0]["spawnerId"])
+        self.assertEqual(1, len(rows[0]["relatedFiles"]))
+
+    def test_encounter_contract_accepts_populated_entity_reference_list(
+        self,
+    ) -> None:
+        host = self.encounter_host("2002")
+        enemy_list = host["briefData"]["properties"][-2]
+        enemy_list.update({
+            "valueType": frontier.ENCOUNTER_POPULATED_ENEMY_LIST_VALUE_TYPE,
+            "atomCount": 3,
+            "atoms": [
+                {"valueBit64": value, "text": ""}
+                for value in (30001, 30002, 30003)
+            ],
+        })
+        rows = frontier.encounter_controller_contexts(
+            "map_fixture",
+            "1001",
+            [host],
+            spawner_root=Path("missing"),
+        )
+        self.assertEqual(1, len(rows))
+        self.assertEqual("2002", rows[0]["moduleId"])
+
+    def test_encounter_contract_rejects_malformed_populated_list(self) -> None:
+        host = self.encounter_host("2002")
+        enemy_list = host["briefData"]["properties"][-2]
+        enemy_list.update({
+            "valueType": frontier.ENCOUNTER_POPULATED_ENEMY_LIST_VALUE_TYPE,
+            "atomCount": 2,
+            "atoms": [{"valueBit64": 30001, "text": ""}],
+        })
+        self.assertEqual(
+            [],
+            frontier.encounter_controller_contexts(
+                "map_fixture",
+                "1001",
+                [host],
+                spawner_root=Path("missing"),
+            ),
+        )
+
     def test_encounter_contract_fails_closed_on_wrong_native_shape(self) -> None:
         host = self.encounter_host("1001")
         host["briefData"]["properties"][0]["valueType"] = 2
+        self.assertEqual(
+            [],
+            frontier.encounter_controller_contexts(
+                "map_fixture",
+                "1001",
+                [host],
+                spawner_root=Path("missing"),
+            ),
+        )
+
+    def test_encounter_contract_fails_closed_on_null_spawner_atom(self) -> None:
+        host = self.encounter_host("1001")
+        host["briefData"]["properties"][-1]["atoms"] = [None]
         self.assertEqual(
             [],
             frontier.encounter_controller_contexts(
@@ -392,6 +472,9 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                             "mappingId": "fixture-mapping",
                             "runtimeType": "EncounterBase<T>",
                             "dataType": "EncounterData",
+                            "moduleId": "2002",
+                            "receiverScriptId": "1001",
+                            "moduleIdMatchesReceiverScript": False,
                             "spawnerId": "1002",
                             "relatedFiles": [
                                 {
@@ -483,6 +566,8 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertNotIn("missionOwnerStatus", annotation)
         encounter = annotation["encounterControllerContexts"][0]
         self.assertEqual("1002", encounter["spawnerId"])
+        self.assertEqual("2002", encounter["moduleId"])
+        self.assertFalse(encounter["moduleIdMatchesReceiverScript"])
         self.assertEqual(
             "source/spawner.bin",
             encounter["relatedFiles"][0]["sourceFile"],

@@ -17,6 +17,7 @@ itself identify a mission, quest, playback order, or server-state producer.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -60,15 +61,18 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v9"
+SCHEMA = "nativeReceiverActivationFrontier.v10"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
-# because LevelData namespaces every property with its owning script id.  This
+# because LevelData namespaces every property with its owning LsmPtr module id.
+# GameAssembly's LevelScriptModule.GetSaveKeyPrefixed reads the module id at
+# this+0x18 before formatting the supplied save key; it is not necessarily the
+# hosting LevelScript id.  This
 # is deliberately a structural classifier: host filenames and Story-key names
 # never participate.
 ENCOUNTER_CONTROLLER_MAPPING_ID = (
-    "gameassembly-2026-08-02-encounterbase-lifecycle-property-contract"
+    "gameassembly-2026-08-02-levelscriptmodule-save-prefix-encounter-contract"
 )
 ENCOUNTER_REQUIRED_BOOL_SUFFIXES = (
     "is_enabled",
@@ -82,6 +86,12 @@ ENCOUNTER_REQUIRED_DATA_SUFFIXES = (
     "enemy_list",
     "spawner_id",
 )
+# The installed ParamRealType enum and current LevelData payloads expose two
+# valid enemy-list encodings: an empty entity-reference value and a populated
+# ScriptEntityPtrList.  Keep this shape rule independent of any level, script,
+# module, or enemy id.
+ENCOUNTER_EMPTY_ENEMY_VALUE_TYPE = 14
+ENCOUNTER_POPULATED_ENEMY_LIST_VALUE_TYPE = 61
 ENCOUNTER_RUNTIME_TYPE = "Beyond.Gameplay.Core.EncounterBase<T>"
 ENCOUNTER_DATA_TYPE = "Beyond.Gameplay.EncounterData"
 ENCOUNTER_GAMEASSEMBLY_SHA256 = (
@@ -1055,9 +1065,26 @@ def compact_leveldata_property(property_row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def single_native_atom_value(
+    property_row: dict[str, Any],
+    *,
+    value_type: int,
+) -> Any | None:
+    """Return one strictly shaped ParamValue atom, otherwise fail closed."""
+    atoms = property_row.get("atoms") or []
+    if (
+        property_row.get("valueType") != value_type
+        or property_row.get("atomCount") != 1
+        or len(atoms) != 1
+        or not isinstance(atoms[0], dict)
+    ):
+        return None
+    return atoms[0].get("valueBit64")
+
+
 def encounter_controller_contexts(
     level_id: str,
-    script_id: str,
+    receiver_script_id: str,
     hosts: list[dict[str, Any]],
     *,
     spawner_root: Path,
@@ -1065,11 +1092,12 @@ def encounter_controller_contexts(
     """Recognize the binary-proven Encounter contract without name guesses.
 
     EncounterBase<T> owns the six lifecycle properties and EncounterData owns
-    the enemy/spawner inputs.  All eight exact script-prefixed properties must
-    have their current native value shapes.  This proves controller type and
-    related source files only; it cannot identify a MissionRuntime owner.
+    the enemy/spawner inputs. All eight exact module-prefixed properties must
+    have their current native value shapes. The native prefix is the LsmPtr
+    module id, which can differ from the hosting LevelScript id. This proves
+    controller type and related source files only; it cannot identify a
+    MissionRuntime owner.
     """
-    prefix = f"@{script_id}_"
     contexts: list[dict[str, Any]] = []
     for host in hosts:
         brief = host.get("briefData") or {}
@@ -1078,85 +1106,126 @@ def encounter_controller_contexts(
             for row in brief.get("properties") or []
             if isinstance(row, dict) and safe_text(row.get("name"))
         }
-        required_names = [
-            prefix + suffix
-            for suffix in (
-                *ENCOUNTER_REQUIRED_BOOL_SUFFIXES,
-                *ENCOUNTER_REQUIRED_DATA_SUFFIXES,
+        module_ids = sorted({
+            match.group(1)
+            for name in properties
+            for match in [re.fullmatch(r"@(\d+)_.+", name)]
+            if match
+        }, key=int)
+        for module_id in module_ids:
+            prefix = f"@{module_id}_"
+            required_names = [
+                prefix + suffix
+                for suffix in (
+                    *ENCOUNTER_REQUIRED_BOOL_SUFFIXES,
+                    *ENCOUNTER_REQUIRED_DATA_SUFFIXES,
+                )
+            ]
+            if any(name not in properties for name in required_names):
+                continue
+            bool_rows = [
+                properties[prefix + suffix]
+                for suffix in ENCOUNTER_REQUIRED_BOOL_SUFFIXES
+            ]
+            if any(
+                single_native_atom_value(row, value_type=1) not in (0, 1)
+                for row in bool_rows
+            ):
+                continue
+            enemy_row = properties[prefix + "enemy_list"]
+            spawner_row = properties[prefix + "spawner_id"]
+            enemy_atoms = enemy_row.get("atoms") or []
+            enemy_atom_count = enemy_row.get("atomCount")
+            empty_enemy_list = (
+                enemy_row.get("valueType")
+                == ENCOUNTER_EMPTY_ENEMY_VALUE_TYPE
+                and enemy_atom_count == 0
+                and not enemy_atoms
             )
-        ]
-        if any(name not in properties for name in required_names):
-            continue
-        bool_rows = [
-            properties[prefix + suffix]
-            for suffix in ENCOUNTER_REQUIRED_BOOL_SUFFIXES
-        ]
-        if any(
-            row.get("valueType") != 1
-            or row.get("atomCount") != 1
-            or len(row.get("atoms") or []) != 1
-            or (row.get("atoms") or [{}])[0].get("valueBit64") not in (0, 1)
-            for row in bool_rows
-        ):
-            continue
-        enemy_row = properties[prefix + "enemy_list"]
-        spawner_row = properties[prefix + "spawner_id"]
-        if (
-            enemy_row.get("valueType") != 14
-            or spawner_row.get("valueType") != 50
-            or spawner_row.get("atomCount") != 1
-            or len(spawner_row.get("atoms") or []) != 1
-        ):
-            continue
-        spawner_id = safe_text(
-            (spawner_row.get("atoms") or [{}])[0].get("valueBit64")
-        )
-        if not spawner_id.isdigit() or int(spawner_id) <= 0:
-            continue
-        spawner_path = (
-            spawner_root / level_id / f"sc_{level_id}_{spawner_id}.json"
-        )
-        related_files = [
-            {
-                "kind": "leveldata_encounter_host",
-                "sourceFile": safe_text(host.get("sourceFile")),
-                "relationship": "serialized_controller_contract",
-            }
-        ]
-        if spawner_path.is_file():
-            related_files.append({
-                "kind": "encounter_spawner_config",
-                "sourceFile": rel_path(spawner_path),
-                "relationship": "typed_spawner_id_property",
+            populated_enemy_list = (
+                enemy_row.get("valueType")
+                == ENCOUNTER_POPULATED_ENEMY_LIST_VALUE_TYPE
+                and isinstance(enemy_atom_count, int)
+                and not isinstance(enemy_atom_count, bool)
+                and enemy_atom_count > 0
+                and len(enemy_atoms) == enemy_atom_count
+                and all(
+                    isinstance(atom.get("valueBit64"), int)
+                    and not isinstance(atom.get("valueBit64"), bool)
+                    and atom["valueBit64"] > 0
+                    for atom in enemy_atoms
+                    if isinstance(atom, dict)
+                )
+                and all(isinstance(atom, dict) for atom in enemy_atoms)
+            )
+            spawner_value = single_native_atom_value(
+                spawner_row,
+                value_type=50,
+            )
+            if not (empty_enemy_list or populated_enemy_list):
+                continue
+            if (
+                not isinstance(spawner_value, int)
+                or isinstance(spawner_value, bool)
+                or spawner_value < 0
+            ):
+                continue
+            spawner_id = str(spawner_value)
+            spawner_path = (
+                spawner_root / level_id / f"sc_{level_id}_{spawner_id}.json"
+            )
+            related_files = [
+                {
+                    "kind": "leveldata_encounter_host",
+                    "sourceFile": safe_text(host.get("sourceFile")),
+                    "relationship": "serialized_controller_contract",
+                }
+            ]
+            if int(spawner_id) > 0 and spawner_path.is_file():
+                related_files.append({
+                    "kind": "encounter_spawner_config",
+                    "sourceFile": rel_path(spawner_path),
+                    "relationship": "typed_spawner_id_property",
+                })
+            contexts.append({
+                "classification": "encounter_controller_property_contract",
+                "mappingId": ENCOUNTER_CONTROLLER_MAPPING_ID,
+                "runtimeType": ENCOUNTER_RUNTIME_TYPE,
+                "dataType": ENCOUNTER_DATA_TYPE,
+                "moduleId": module_id,
+                "receiverScriptId": receiver_script_id,
+                "moduleIdMatchesReceiverScript": (
+                    module_id == receiver_script_id
+                ),
+                "spawnerId": spawner_id,
+                "matchedPropertyNames": required_names,
+                "relatedFiles": related_files,
+                "binaryEvidence": {
+                    "gameAssemblySha256": ENCOUNTER_GAMEASSEMBLY_SHA256,
+                    "globalMetadataSha256": ENCOUNTER_METADATA_SHA256,
+                    "modulePrefixMethod": (
+                        "LevelScriptModule.GetSaveKeyPrefixed"
+                    ),
+                    "modulePrefixMethodVa": "0x183be6a50",
+                    "moduleIdFieldOffset": "this+0x18",
+                    "lifecycleMethods": [
+                        "ManuallyActivate",
+                        "_TriggerActivate",
+                        "OnBattleCompleted",
+                        "OnCompleted",
+                    ],
+                },
+                "missionOwnerStatus": "unresolved",
+                "storyBinding": False,
+                "orderEvidence": False,
+                "evidenceBoundary": (
+                    "The exact original-data property family identifies a "
+                    "native Encounter module namespace and its typed spawner "
+                    "dependency. The LsmPtr module id is not necessarily the "
+                    "hosting LevelScript id and identifies no MissionRuntime "
+                    "owner, Story activation edge, branch, or playback order."
+                ),
             })
-        contexts.append({
-            "classification": "encounter_controller_property_contract",
-            "mappingId": ENCOUNTER_CONTROLLER_MAPPING_ID,
-            "runtimeType": ENCOUNTER_RUNTIME_TYPE,
-            "dataType": ENCOUNTER_DATA_TYPE,
-            "spawnerId": spawner_id,
-            "matchedPropertyNames": required_names,
-            "relatedFiles": related_files,
-            "binaryEvidence": {
-                "gameAssemblySha256": ENCOUNTER_GAMEASSEMBLY_SHA256,
-                "globalMetadataSha256": ENCOUNTER_METADATA_SHA256,
-                "lifecycleMethods": [
-                    "ManuallyActivate",
-                    "_TriggerActivate",
-                    "OnBattleCompleted",
-                    "OnCompleted",
-                ],
-            },
-            "missionOwnerStatus": "unresolved",
-            "storyBinding": False,
-            "orderEvidence": False,
-            "evidenceBoundary": (
-                "The exact original-data property family identifies a native "
-                "Encounter controller and its typed spawner dependency. It "
-                "does not identify a MissionRuntime owner, Story activation "
-                "edge, branch, or playback order."
-            ),
-        })
     return contexts
 
 
@@ -1641,6 +1710,12 @@ def build_report(
                 "runtimeType": ENCOUNTER_RUNTIME_TYPE,
                 "dataType": ENCOUNTER_DATA_TYPE,
                 "mappingId": ENCOUNTER_CONTROLLER_MAPPING_ID,
+                "modulePrefixMethod": (
+                    "Beyond.Gameplay.Core.LevelScriptModule."
+                    "GetSaveKeyPrefixed"
+                ),
+                "modulePrefixMethodVa": "0x183be6a50",
+                "moduleIdFieldOffset": "this+0x18",
                 "gameAssemblySha256": ENCOUNTER_GAMEASSEMBLY_SHA256,
                 "globalMetadataSha256": ENCOUNTER_METADATA_SHA256,
             },
@@ -1665,11 +1740,12 @@ def build_report(
                 "ownership."
             ),
             "encounterBoundary": (
-                "The exact EncounterBase<T>/EncounterData property contract "
-                "and typed spawner id identify a reusable native encounter "
-                "controller and related original-data files. Encounter "
-                "activation is not a MissionRuntime ownership, Story branch, "
-                "or order edge."
+                "The exact LevelScriptModule LsmPtr-prefixed "
+                "EncounterBase<T>/EncounterData property contract and typed "
+                "spawner id identify a reusable native encounter module and "
+                "related original-data files. The module id can differ from "
+                "the hosting LevelScript id; neither identity supplies a "
+                "MissionRuntime owner, Story branch, or order edge."
             ),
             "subGameBoundary": (
                 "SubGame bindScriptId proves the runtime system that activates "
@@ -1743,6 +1819,15 @@ def build_report(
             ),
             "scriptsWithEncounterControllerContract": sum(
                 bool(row.get("encounterControllerContexts")) for row in rows
+            ),
+            "encounterControllerContracts": sum(
+                len(row.get("encounterControllerContexts") or [])
+                for row in rows
+            ),
+            "encounterControllerContractsWithForeignModuleId": sum(
+                not context.get("moduleIdMatchesReceiverScript")
+                for row in rows
+                for context in row.get("encounterControllerContexts") or []
             ),
             "storyKeysWithEncounterControllerContract": len({
                 story_key
@@ -2013,6 +2098,13 @@ def publish_to_pipeline_index(
                     "mappingId": safe_text(context.get("mappingId")),
                     "runtimeType": safe_text(context.get("runtimeType")),
                     "dataType": safe_text(context.get("dataType")),
+                    "moduleId": safe_text(context.get("moduleId")),
+                    "receiverScriptId": safe_text(
+                        context.get("receiverScriptId")
+                    ),
+                    "moduleIdMatchesReceiverScript": bool(
+                        context.get("moduleIdMatchesReceiverScript")
+                    ),
                     "spawnerId": safe_text(context.get("spawnerId")),
                     "relatedFiles": [
                         {
@@ -2218,10 +2310,15 @@ def markdown_report(payload: dict[str, Any]) -> str:
             f"`{counts.get('scriptsWithMissionNamedHost')}`"
         ),
         (
-            "- Scripts / Story keys with the binary-proven Encounter "
-            "controller contract: "
+            "- Receiver scripts / Encounter modules / Story keys with the "
+            "binary-proven controller contract: "
             f"`{counts.get('scriptsWithEncounterControllerContract')}` / "
+            f"`{counts.get('encounterControllerContracts')}` / "
             f"`{counts.get('storyKeysWithEncounterControllerContract')}`"
+        ),
+        (
+            "- Encounter module ids differing from the receiver script id: "
+            f"`{counts.get('encounterControllerContractsWithForeignModuleId')}`"
         ),
         (
             "- Distinct related Encounter source files: "
