@@ -497,6 +497,8 @@
       triggerPlaybackAliasConnected: "root playback alias · owner connected",
       triggerDefinition: "definition only · no consumer",
       offlineRecoveryBoundary: "Offline recovery boundary",
+      projectAuthoredBoundary: "Project-authored WebUI content",
+      projectAuthoredEvidence: "Excluded from original-game recovery",
       partialRecoveryBoundary: "Partial registered carrier",
       runtimeContextRecoveryBoundary: "Exact runtime context boundary",
       offlineRecoveryNoGraphEdge: "no ownership or order edge",
@@ -506,6 +508,7 @@
       offlineRecoveryOrder: "Order boundary",
       offlineRecoveryReopen: "Reopen when",
       offlineRecoverySources: "Original-data files",
+      projectAuthoredSources: "Project source files",
       runtimeRecoveryNominalMission: "Nominal Story mission",
       runtimeRecoveryContextMission: "Validated runtime shell",
       runtimeRecoveryContextMissions: "Validated runtime contexts",
@@ -528,7 +531,7 @@
       offlineRecoveryStoryRelation: "Story relation",
       offlineRecoveryMissionTextRows: "mission/objective text rows",
       offlineRecoveryGaps: "source-bounded activation gaps",
-      offlineRecoveryGapsHint: "These exact definitions or runtime contexts are recovered from the current game build, but no original-data mission activator and relative mission-order edge are both known. OCR and manual order are not used here.",
+      offlineRecoveryGapsHint: "These rows are source-bounded and add no mission-order edge. Original-game rows expose exact definitions or runtime contexts without a recovered mission activator; project-authored rows are explicitly not game data. OCR and manual order are not used here.",
       offlineRecoveryInternalTimeline: "internal Timeline",
       offlineRecoveryLines: "lines",
       offlineRecoveryDefinedOptions: "Defined options (route unresolved)",
@@ -1122,6 +1125,8 @@
       triggerPlaybackAliasConnected: "\u6839\u64ad\u653e\u522b\u540d \u00b7 \u5f52\u5c5e\u5df2\u8fde\u63a5",
       triggerDefinition: "\u4ec5\u5b9a\u4e49 \u00b7 \u65e0\u6d88\u8d39\u8005",
       offlineRecoveryBoundary: "\u79bb\u7ebf\u6062\u590d\u8fb9\u754c",
+      projectAuthoredBoundary: "WebUI \u9879\u76ee\u81ea\u5efa\u5185\u5bb9",
+      projectAuthoredEvidence: "\u5df2\u4ece\u539f\u59cb\u6e38\u620f\u6062\u590d\u4e2d\u6392\u9664",
       partialRecoveryBoundary: "\u90e8\u5206\u5df2\u6ce8\u518c\u8f7d\u4f53",
       runtimeContextRecoveryBoundary: "\u7cbe\u786e\u8fd0\u884c\u65f6\u4e0a\u4e0b\u6587\u8fb9\u754c",
       offlineRecoveryNoGraphEdge: "\u4e0d\u751f\u6210\u5f52\u5c5e\u6216\u987a\u5e8f\u8fb9",
@@ -1131,6 +1136,7 @@
       offlineRecoveryOrder: "\u987a\u5e8f\u8fb9\u754c",
       offlineRecoveryReopen: "\u91cd\u65b0\u8c03\u67e5\u6761\u4ef6",
       offlineRecoverySources: "\u539f\u59cb\u6570\u636e\u6587\u4ef6",
+      projectAuthoredSources: "\u9879\u76ee\u6e90\u6587\u4ef6",
       runtimeRecoveryNominalMission: "\u5267\u60c5\u6587\u4ef6\u540d\u4e49\u4efb\u52a1",
       runtimeRecoveryContextMission: "\u5df2\u9a8c\u8bc1\u8fd0\u884c\u65f6\u5916\u58f3",
       runtimeRecoveryContextMissions: "\u5df2\u9a8c\u8bc1\u8fd0\u884c\u65f6\u4e0a\u4e0b\u6587",
@@ -1153,7 +1159,7 @@
       offlineRecoveryStoryRelation: "\u5267\u60c5\u5173\u7cfb",
       offlineRecoveryMissionTextRows: "\u4f7f\u547d/\u76ee\u6807\u6587\u672c\u884c",
       offlineRecoveryGaps: "\u539f\u59cb\u6570\u636e\u9650\u5b9a\u7684\u6fc0\u6d3b\u7f3a\u53e3",
-      offlineRecoveryGapsHint: "\u8fd9\u4e9b\u7cbe\u786e\u5b9a\u4e49\u6216\u8fd0\u884c\u65f6\u4e0a\u4e0b\u6587\u5df2\u4ece\u5f53\u524d\u6e38\u620f\u7248\u672c\u6062\u590d\uff0c\u4f46\u5c1a\u672a\u540c\u65f6\u627e\u5230\u539f\u59cb\u6570\u636e\u4e2d\u7684\u4efb\u52a1\u6fc0\u6d3b\u5668\u4e0e\u4efb\u52a1\u5185\u76f8\u5bf9\u987a\u5e8f\u8fb9\u3002\u6b64\u5904\u4e0d\u4f7f\u7528 OCR \u6216\u624b\u52a8\u987a\u5e8f\u4f5c\u4e3a\u8bc1\u636e\u3002",
+      offlineRecoveryGapsHint: "\u8fd9\u4e9b\u8bb0\u5f55\u90fd\u6709\u660e\u786e\u7684\u6765\u6e90\u8fb9\u754c\uff0c\u4e14\u4e0d\u65b0\u589e\u4efb\u52a1\u987a\u5e8f\u8fb9\u3002\u539f\u59cb\u6e38\u620f\u8bb0\u5f55\u4ec5\u4fdd\u7559\u5df2\u9a8c\u8bc1\u7684\u5b9a\u4e49\u6216\u8fd0\u884c\u65f6\u4e0a\u4e0b\u6587\uff0c\u9879\u76ee\u81ea\u5efa\u8bb0\u5f55\u5219\u660e\u786e\u4e0d\u5c5e\u4e8e\u6e38\u620f\u6570\u636e\u3002\u6b64\u5904\u4e0d\u4f7f\u7528 OCR \u6216\u624b\u52a8\u987a\u5e8f\u4f5c\u4e3a\u8bc1\u636e\u3002",
       offlineRecoveryInternalTimeline: "\u5185\u90e8 Timeline",
       offlineRecoveryLines: "\u884c",
       offlineRecoveryDefinedOptions: "\u5df2\u5b9a\u4e49\u9009\u9879\uff08\u8def\u7531\u672a\u89e3\u6790\uff09",
@@ -2469,7 +2475,11 @@
       || overlay[row?.key]?.partialRecovery
     );
     const runtimeRecovery = manifest[row?.key]?.runtimeContextRecovery;
-    const recovery = offlineRecovery || partialRecovery || runtimeRecovery;
+    const contentProvenance = (
+      manifest[row?.key]?.contentProvenance
+      || overlay[row?.key]?.contentProvenance
+    );
+    const recovery = offlineRecovery || partialRecovery || runtimeRecovery || contentProvenance;
     if (!recovery || recovery.graphEffect !== "none") return "";
     const sourceFiles = [...new Set([
       ...(recovery.definitionSourceFiles || []),
@@ -2555,15 +2565,15 @@
         ? `<small><strong>${esc(t("partialRecoveryUnmatchedRows"))}:</strong> ${(recovery.missingLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</small>`
         : "",
       sourceFiles.length
-        ? `<small><strong>${esc(t("offlineRecoverySources"))}:</strong><br>${sourceFiles.map((path) => `<code>${esc(path)}</code>`).join("<br>")}</small>`
+        ? `<small><strong>${esc(t(contentProvenance ? "projectAuthoredSources" : "offlineRecoverySources"))}:</strong><br>${sourceFiles.map((path) => `<code>${esc(path)}</code>`).join("<br>")}</small>`
         : "",
       related
         ? `<small><strong>${esc(t("offlineRecoveryRelatedOriginalData"))}:</strong> <code>${esc(related.groupId || "?")}</code>${related.levelId ? ` · <code>${esc(related.levelId)}</code>` : ""}<br><strong>${esc(t("offlineRecoveryPrtsOrder"))}:</strong> ${relatedEntries}<br><strong>${esc(t("offlineRecoveryStoryRelation"))}:</strong> ${esc(related.storyRelationStatus || "")}<br>${esc(related.orderBoundary || "")}${relatedSources ? `<br>${relatedSources}` : ""}</small>`
         : "",
     ].filter(Boolean).join("");
     return `<div class="mp-playback-rejection mp-offline-recovery">
-      <header><strong>${esc(t(runtimeRecovery ? "runtimeContextRecoveryBoundary" : partialRecovery ? "partialRecoveryBoundary" : "offlineRecoveryBoundary"))}</strong><span>${esc(t("offlineRecoveryNoGraphEdge"))}</span></header>
-      <b>${esc(partialRecovery ? t("partialRecoveryEvidenceParentTreePartition") : runtimeRecoveryEvidenceLabel(recovery))}</b>
+      <header><strong>${esc(t(contentProvenance ? "projectAuthoredBoundary" : runtimeRecovery ? "runtimeContextRecoveryBoundary" : partialRecovery ? "partialRecoveryBoundary" : "offlineRecoveryBoundary"))}</strong><span>${esc(t("offlineRecoveryNoGraphEdge"))}</span></header>
+      <b>${esc(contentProvenance ? t("projectAuthoredEvidence") : partialRecovery ? t("partialRecoveryEvidenceParentTreePartition") : runtimeRecoveryEvidenceLabel(recovery))}</b>
       ${boundaries}
       ${recovery.nativeMappingId ? `<em><code>${esc(recovery.nativeMappingId)}</code></em>` : ""}
     </div>`;
@@ -2579,6 +2589,7 @@
       const offlineRecovery = entry?.offlineRecovery;
       const partialRecovery = entry?.partialRecovery;
       const runtimeRecovery = entry?.runtimeContextRecovery;
+      const contentProvenance = entry?.contentProvenance;
       const crossMissionRuntimeRecovery = runtimeRecovery
         && String(runtimeRecovery.nominalStoryMissionId || "") === missionId
         && String(runtimeRecovery.contextMissionId || "") !== missionId;
@@ -2611,7 +2622,7 @@
         || exactSameMissionRuntimeRecovery
         || exactNpcProxyRuntimeRecovery
         || exactConnectedContextRecovery;
-      const recovery = offlineRecovery || partialRecovery || (displayRuntimeRecovery ? runtimeRecovery : null);
+      const recovery = offlineRecovery || partialRecovery || contentProvenance || (displayRuntimeRecovery ? runtimeRecovery : null);
       if (!entry?.key || !recovery || recovery.graphEffect !== "none") return;
       const owner = String(recovery.missionId || recovery.nominalStoryMissionId || entry.nominalMissionId || "");
       if (owner !== missionId) return;
@@ -2621,6 +2632,7 @@
         ...recovery,
         runtimeContextRecovery: Boolean(displayRuntimeRecovery),
         partialRecovery: Boolean(partialRecovery),
+        contentProvenance: Boolean(contentProvenance),
       });
     });
     return [...rows.values()].sort((a, b) => String(a.key).localeCompare(
@@ -3697,6 +3709,7 @@
         dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),
         registered_dialog_tree_trunk_group_exact_line_partition: t("offlineRecoveryEvidenceParentTreePartition"),
         partial_registered_dialog_tree_trunk_group_line_partition: t("partialRecoveryEvidenceParentTreePartition"),
+        project_authored_story_content: t("projectAuthoredEvidence"),
       })[row.evidenceKind] || runtimeRecoveryEvidenceLabel(row);
       const cutsceneAliasContext = row.rootPlaybackAlias
         ? `<p><strong>${esc(t("offlineRecoveryCutsceneAlias"))}</strong><span><code>${esc(row.rootPlaybackAlias.rootStoryKey || "?")}</code> &rarr; <code>${esc(row.rootPlaybackAlias.playableAssetStoryKey || "?")}</code> · ${esc(t(row.cutsceneAliasRole === "cutscene_root" ? "offlineRecoveryCutsceneAliasRootRole" : "offlineRecoveryCutsceneAliasPlayableRole"))}</span></p>`

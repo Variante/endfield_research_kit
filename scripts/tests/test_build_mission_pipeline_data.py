@@ -19,7 +19,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v129",
+            "sourceStoryGapQueue.v130",
         )
 
     def test_trigger_route_preserves_exact_connected_context_evidence(self):
@@ -719,6 +719,62 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "rejected_stale_or_incompatible")
         self.assertNotIn("offlineRecovery", manifest["dlg_testm1_1"])
+
+    def test_project_authored_story_provenance_is_visible_but_graph_neutral(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            queue_path = Path(temporary) / "gap_queue.json"
+            queue_path.write_text(
+                json.dumps({
+                    "_schema": pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
+                    "offlineExhaustionEvidence": {
+                        "status": "active",
+                        "mappingId": "fixture-offline-v1",
+                        "graphEffect": "none",
+                        "sourceHashMismatches": [],
+                    },
+                    "projectAuthoredStoryEvidence": {
+                        "status": "validated",
+                        "graphEffect": "none",
+                        "validationFailures": [],
+                    },
+                    "missions": [{
+                        "mission": "ui_shell",
+                        "closedNonMissionContentIsolatedScenes": [{
+                            "sceneKey": "opaque_notice",
+                            "recoveryStatus":
+                                "excluded_project_authored_story_content",
+                            "evidenceKind":
+                                "project_authored_story_content",
+                            "storyKind": "black",
+                            "sourceFiles": ["scripts/producer.py"],
+                            "gameDataEvidence": False,
+                            "consumerBoundary": "not original game data",
+                            "orderBoundary": "no graph evidence",
+                            "graphEffect": "none",
+                        }],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            manifest = {
+                "opaque_notice": {
+                    "key": "opaque_notice",
+                    "attachmentStatus": "unlinked",
+                    "routes": [],
+                }
+            }
+
+            result = pipeline.publish_offline_story_recovery(
+                manifest,
+                queue_path,
+            )
+
+        provenance = manifest["opaque_notice"]["contentProvenance"]
+        self.assertEqual(provenance["sourceFiles"], ["scripts/producer.py"])
+        self.assertFalse(provenance["gameDataEvidence"])
+        self.assertEqual(provenance["graphEffect"], "none")
+        self.assertEqual(result["publishedProjectAuthoredStoryKeys"], 1)
+        self.assertEqual(manifest["opaque_notice"]["routes"], [])
 
     def test_offline_recovery_publishes_graph_neutral_missing_mission_shell(self):
         with tempfile.TemporaryDirectory() as temporary:

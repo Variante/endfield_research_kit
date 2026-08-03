@@ -70,7 +70,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v129"
+SCHEMA = "sourceStoryGapQueue.v130"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 12
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -9809,6 +9809,19 @@ def _generic_unlinked_sns_definition_facts(
     }, None, None
 
 
+def _is_authored_sns_definition_candidate(
+    story_key: str,
+    sns_dialog_table: Any,
+) -> bool:
+    """Select candidates by exact authored table identity, never key shape."""
+    return bool(
+        isinstance(sns_dialog_table, dict)
+        and isinstance(sns_dialog_table.get(story_key), dict)
+        and safe_key(sns_dialog_table[story_key].get("dialogId"))
+        == story_key
+    )
+
+
 def _offline_radio_definition_validation_failure(
     story_key: str,
     row: Any,
@@ -14870,7 +14883,13 @@ def build_offline_exhaustion_index(
             core_targets.items(),
             key=lambda item: natural_key(item[0]),
         ):
-            if not story_key.startswith("sns_"):
+            # Candidate identity comes from an exact SNSDialogTable row, not
+            # from a filename prefix. Shipped UI fixtures and future authored
+            # SNS families may use other namespaces.
+            if not _is_authored_sns_definition_candidate(
+                story_key,
+                sns_dialog_for_generic,
+            ):
                 continue
             if story_key in all_sns_keys:
                 generic_sns_exclusions["declaredSpecialCase"].append(
@@ -14988,6 +15007,7 @@ def build_offline_exhaustion_index(
                     "deferred_current_build_offline_surface_exhausted",
                 "evidenceKind":
                     "sns_definition_binary_consumer_surface_exhausted",
+                "storyKind": "sns",
                 "definitionTable": "SNSDialogTable",
                 "definitionSourceFiles": [
                     source_display_path(source_paths["snsDialogTable"]),
@@ -21452,7 +21472,34 @@ def _closed_non_mission_content_isolated_scenes(
         row = non_mission_content.get(scene_key)
         if row is None:
             continue
-        if row.get("evidenceKind") == "guide_runtime_asset":
+        if row.get("evidenceKind") == "project_authored_story_content":
+            closed.append({
+                "sceneKey": scene_key,
+                "recoveryStatus": "excluded_project_authored_story_content",
+                "evidenceKind": "project_authored_story_content",
+                "contentClass": row.get("content"),
+                "storyKind": row.get("storyKind"),
+                "sourceScope": row.get("sourceScope"),
+                "producer": row.get("producer"),
+                "sourceFiles": row.get("sourceFiles") or [],
+                "sourceSha256": row.get("sourceSha256") or {},
+                "gameDataEvidence": False,
+                "consumerBoundary": (
+                    "the generated Story entry and conversation carry matching "
+                    "project-authored provenance; this row is not original game "
+                    "content and cannot enter game consumer recovery"
+                ),
+                "orderBoundary": (
+                    "project-authored display placement creates no mission, "
+                    "playback, branch, ownership, or Story-order evidence"
+                ),
+                "reopenWhen": (
+                    "the entry is replaced by an exact original-game definition "
+                    "with independently recovered consumer evidence"
+                ),
+                "graphEffect": "none",
+            })
+        elif row.get("evidenceKind") == "guide_runtime_asset":
             closed.append({
                 "sceneKey": scene_key,
                 "recoveryStatus":
@@ -23129,6 +23176,124 @@ def _closed_exact_lua_controller_playback_isolated_scenes(
             "graphEffect": "none",
         })
     return closed
+
+
+def project_authored_story_content_keys(
+    index_payload: Any,
+    conversation_dir: Path,
+    *,
+    source_root: Path = ROOT,
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    """Validate explicit project-authored Story provenance, without key lists.
+
+    Classification requires the index and generated conversation to carry the
+    same provenance record and requires its repository source file to exist.
+    A malformed marker fails closed: it remains outside this exclusion map and
+    is reported with bounded expected/actual diagnostics.
+    """
+    entries = (
+        index_payload.get("entries")
+        if isinstance(index_payload, dict) else None
+    )
+    found: dict[str, dict[str, Any]] = {}
+    failures: list[dict[str, Any]] = []
+    for entry in entries if isinstance(entries, list) else []:
+        if not isinstance(entry, dict):
+            continue
+        provenance = entry.get("provenance")
+        if (
+            not isinstance(provenance, dict)
+            or safe_key(provenance.get("scope")) != "project_authored"
+        ):
+            continue
+        story_key = safe_key(entry.get("k"))
+        mission_id = safe_key(entry.get("m"))
+        story_kind = safe_key(entry.get("d"))
+        source_file = safe_key(provenance.get("sourceFile"))
+        source_path = Path(source_file) if source_file else Path()
+        resolved_source = source_root / source_path
+        conversation_path = conversation_dir / f"{story_key}.json"
+        conversation = read_json(conversation_path, {})
+        conversation_provenance = (
+            conversation.get("provenance")
+            if isinstance(conversation, dict) else None
+        )
+        valid_relative_source = bool(
+            source_file
+            and not source_path.is_absolute()
+            and ".." not in source_path.parts
+        )
+        valid = (
+            bool(story_key)
+            and bool(mission_id)
+            and bool(story_kind)
+            and safe_key(provenance.get("purpose"))
+            and safe_key(provenance.get("producer"))
+            and provenance.get("gameDataEvidence") is False
+            and valid_relative_source
+            and resolved_source.is_file()
+            and conversation_path.is_file()
+            and safe_key(conversation.get("key")) == story_key
+            and safe_key(conversation.get("mission")) == mission_id
+            and conversation_provenance == provenance
+        )
+        if not valid:
+            failures.append({
+                "validator": "projectAuthoredStoryProvenance",
+                "gate": "matchingGeneratedEntryAndExistingSource",
+                "storyKey": story_key,
+                "missionId": mission_id,
+                "sourcePaths": [
+                    source_file,
+                    conversation_path.as_posix(),
+                ],
+                "expected": {
+                    "nonemptyStoryAndMission": True,
+                    "nonemptyStoryKind": True,
+                    "scope": "project_authored",
+                    "nonemptyPurposeAndProducer": True,
+                    "gameDataEvidence": False,
+                    "safeExistingRepositorySource": True,
+                    "matchingConversationProvenance": True,
+                },
+                "actual": {
+                    "storyKey": story_key,
+                    "missionId": mission_id,
+                    "storyKind": story_kind,
+                    "provenance": provenance,
+                    "validRelativeSource": valid_relative_source,
+                    "sourceExists": resolved_source.is_file(),
+                    "conversationExists": conversation_path.is_file(),
+                    "conversationKey": safe_key(
+                        conversation.get("key")
+                        if isinstance(conversation, dict) else ""
+                    ),
+                    "conversationMission": safe_key(
+                        conversation.get("mission")
+                        if isinstance(conversation, dict) else ""
+                    ),
+                    "conversationProvenance": conversation_provenance,
+                },
+            })
+            continue
+        found[story_key] = {
+            "evidenceKind": "project_authored_story_content",
+            "content": safe_key(provenance.get("purpose")),
+            "storyKind": story_kind,
+            "sourceScope": "project_authored",
+            "producer": safe_key(provenance.get("producer")),
+            "sourceFiles": [source_file],
+            "sourceSha256": {
+                source_file: _sha256_file(resolved_source),
+            },
+        }
+    return found, {
+        "validator": "project_authored_story_provenance_v1",
+        "status": "validation_failed" if failures else "validated",
+        "qualifiedStoryKeys": sorted(found, key=natural_key),
+        "validationFailures": failures,
+        "graphEffect": "none",
+    }
 
 
 def _closed_exact_composed_root_playback_isolated_scenes(
@@ -27061,12 +27226,15 @@ def build_gap_report(
     quest_attachment_diagnostic_status: dict[str, Any] | None = None,
     story_trigger_manifest: dict[str, Any] | None = None,
     story_trigger_manifest_status: dict[str, Any] | None = None,
+    project_authored_content: dict[str, dict[str, Any]] | None = None,
+    project_authored_status: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     non_mission_content = (
         combined_non_mission_content_keys(table_root)
         if table_root is not None
         else {}
     )
+    non_mission_content.update(project_authored_content or {})
     cross_owner_connections: dict[str, list[dict[str, Any]]] = defaultdict(
         list
     )
@@ -27412,6 +27580,10 @@ def build_gap_report(
             "status": "not_supplied",
             "graphEffect": "none",
         },
+        "projectAuthoredStoryEvidence": project_authored_status or {
+            "status": "not_supplied",
+            "graphEffect": "none",
+        },
         "storyTriggerClosureValidation": {
             "validator": "story_trigger_closure_contracts_v2",
             "status": (
@@ -27515,6 +27687,12 @@ def render_markdown(report: dict[str, Any]) -> str:
             "exact playback closures remain non-ordering (`graphEffect=none`)."
         ),
         (
+            "Project-authored Story provenance: "
+            f"`{safe_key((report.get('projectAuthoredStoryEvidence') or {}).get('status')) or 'unknown'}`. "
+            "These generated WebUI rows are explicitly excluded from original-game "
+            "consumer and chronology recovery."
+        ),
+        (
             "Story trigger closure contract validation: "
             f"`{safe_key((report.get('storyTriggerClosureValidation') or {}).get('status')) or 'unknown'}`."
         ),
@@ -27523,6 +27701,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     for heading, status_key in (
         ("Story Trigger Manifest Validator Failures", "storyTriggerManifestEvidence"),
         ("Story Trigger Closure Validator Failures", "storyTriggerClosureValidation"),
+        ("Project-authored Story Provenance Failures", "projectAuthoredStoryEvidence"),
     ):
         failures = (report.get(status_key) or {}).get("validationFailures") or []
         if not failures:
@@ -27752,6 +27931,7 @@ def main(argv: list[str] | None = None) -> int:
     action_story_occurrences = build_levelscript_action_story_occurrences()
     native_playback_index = build_levelscript_native_story_playback_index()
     mission_dir = ROOT / "webui" / "data" / "lang" / args.language / "mission"
+    language_dir = mission_dir.parent
     mission_payloads: dict[str, dict[str, Any]] = {}
     mission_bundle_presence: set[str] = set()
     for partial_row in partial_report.get("missions") or []:
@@ -27776,6 +27956,13 @@ def main(argv: list[str] | None = None) -> int:
         payload = read_json(path, {})
         if isinstance(payload, dict):
             mission_payloads[mission] = payload
+
+    project_authored_content, project_authored_status = (
+        project_authored_story_content_keys(
+            read_json(language_dir / "index.json", {}),
+            language_dir / "conv",
+        )
+    )
 
     coverage_path = (
         ROOT
@@ -27844,6 +28031,8 @@ def main(argv: list[str] | None = None) -> int:
         ),
         story_trigger_manifest=story_trigger_manifest,
         story_trigger_manifest_status=story_trigger_manifest_status,
+        project_authored_content=project_authored_content,
+        project_authored_status=project_authored_status,
     )
     out_json = args.reports_dir / f"source_story_gap_queue_{args.language}.json"
     out_md = args.reports_dir / f"source_story_gap_queue_{args.language}.md"
@@ -27860,6 +28049,7 @@ def main(argv: list[str] | None = None) -> int:
     for label, status_key in (
         ("Story trigger manifest", "storyTriggerManifestEvidence"),
         ("Story trigger closure", "storyTriggerClosureValidation"),
+        ("Project-authored Story provenance", "projectAuthoredStoryEvidence"),
     ):
         failures = (
             report.get(status_key) or {}
