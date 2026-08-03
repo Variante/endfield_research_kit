@@ -57,7 +57,7 @@
       exactDialogRootAliasBoundary: "byte-identical payload; no activation or server branch-selection claim",
       definitionOnlyStory: "definition-only black text",
       nonMissionContentStory: "non-mission content",
-      nonMissionContentStoryHint: "Story ids proven to be authored non-mission content: speaker radio continuation, character SNS topics, factory tutorial actions, operator profile voices, or typed spacecraft DialogTrees. The evidence serializes no mission or quest owner. Authored fields and typed consumers admit a key; filenames never do.",
+      nonMissionContentStoryHint: "Story ids proven to be authored non-mission content: speaker radio continuation, character SNS topics, factory tutorial actions, operator profile voices, typed spacecraft DialogTrees, or complete actor/family definitions absent from every related typed tree. Definition gaps prove neither playback nor order. Authored fields and typed consumers admit a key; filenames never do.",
       missionGraph: "Cross-mission relations",
       missionGraphUpstream: "upstream",
       missionGraphDownstream: "downstream",
@@ -760,7 +760,7 @@
       cinematicProducer: "原始二进制播放生产者",
       definitionOnlyStory: "仅有定义的黑屏文本",
       nonMissionContentStory: "非使命内容",
-      nonMissionContentStoryHint: "这些剧情 ID 已由原生数据证明属于非使命内容：按说话人分的电台续播语音、角色 SNS 话题、工厂教程动作、干员档案语音，或舰船系统强类型对话树。证据没有序列化使命或任务归属。仅依据原生字段和强类型消费者判定，绝不依据文件名。",
+      nonMissionContentStoryHint: "这些剧情 ID 已由原生数据证明属于非使命内容：按说话人分的电台续播语音、角色 SNS 话题、工厂教程动作、干员档案语音、舰船系统强类型对话树，或在所有相关强类型树中均无载体的完整角色/类别定义。定义缺口不证明播放或顺序；仅依据原生字段和强类型消费者判定，绝不依据文件名。",
       missionGraph: "跨使命关系",
       missionGraphUpstream: "上游",
       missionGraphDownstream: "下游",
@@ -3039,7 +3039,10 @@
           const spaceshipRuntime = [
             "spaceship_dialog_tree",
             "character_profile_voice",
+            "spaceship_dialog_definition_without_tree_carrier",
           ].includes(row.evidenceKind);
+          const spaceshipDefinitionGap = row.evidenceKind
+            === "spaceship_dialog_definition_without_tree_carrier";
           const spaceshipConsumers = [
             ...(row.consumerClasses || []),
             ...(row.characterIds || []),
@@ -3049,8 +3052,10 @@
             key: row.key,
             relation: "non_mission_content",
             direction: "context",
-            confidence: spaceshipRuntime
-              ? "exact_typed_spaceship_non_mission_content"
+            confidence: spaceshipDefinitionGap
+              ? "exact_typed_spaceship_definition_gap"
+              : spaceshipRuntime
+                ? "exact_typed_spaceship_non_mission_content"
               : guideRuntime
                 ? "exact_typed_guide_runtime_non_mission_content"
                 : "table_backed_non_mission_content",

@@ -19,7 +19,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v126",
+            "sourceStoryGapQueue.v127",
         )
 
     def test_trigger_route_preserves_exact_connected_context_evidence(self):
@@ -4153,6 +4153,7 @@ class NonMissionContentTableTests(unittest.TestCase):
                 "guide_runtime_asset",
                 "spaceship_dialog_tree",
                 "character_profile_voice",
+                "spaceship_dialog_definition_without_tree_carrier",
             },
         )
 

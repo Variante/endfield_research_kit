@@ -161,7 +161,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v126"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v127"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -215,13 +215,16 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v25 admits an exact authored ``int_horn.properties.dialog_id`` consumer with
 # current-template/native provenance while preserving the ownership/order gap.
 # v26 attaches hash-verified current-game DialogTree definitions to their exact
-# objective, repeatable-talk, and failed-dialog MissionRuntime observers.
-SCHEMA_VERSION = 26
+# objective, repeatable-talk, and failed-dialog MissionRuntime observers. v27
+# exposes exact typed spaceship contexts whose complete table definition has
+# no carrier in any related typed DialogTree, without inventing playback.
+SCHEMA_VERSION = 27
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
     "spaceship_dialog_tree",
     "character_profile_voice",
+    "spaceship_dialog_definition_without_tree_carrier",
 }
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"

@@ -70,7 +70,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v126"
+SCHEMA = "sourceStoryGapQueue.v127"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 12
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -7330,8 +7330,11 @@ def _generic_unregistered_dialog_definition_facts(
     dialog_text_table: Any,
     dialog_option_table: Any,
     audio_stems: set[str],
+    *,
+    definition_root_key: str | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     """Validate one exact table-only dialog root without declarations."""
+    definition_root_key = definition_root_key or story_key
     if not isinstance(dialog_text_table, dict) or not isinstance(
         dialog_option_table,
         dict,
@@ -7349,7 +7352,9 @@ def _generic_unregistered_dialog_definition_facts(
                 "dialogOptionTable": type(dialog_option_table).__name__,
             },
         }
-    line_pattern = re.compile(rf"^{re.escape(story_key)}_(\d{{3}})$")
+    line_pattern = re.compile(
+        rf"^{re.escape(definition_root_key)}_(\d{{3}})$"
+    )
     line_rows = sorted(
         (
             (line_id, match, row)
@@ -7364,7 +7369,7 @@ def _generic_unregistered_dialog_definition_facts(
             "gate": "exactDialogTextRoot",
             "storyKey": story_key,
             "expected": {
-                "lineIdPattern": f"{story_key}_NNN",
+                "lineIdPattern": f"{definition_root_key}_NNN",
                 "nonemptyLines": True,
             },
             "actual": {"lineIds": []},
@@ -7407,7 +7412,7 @@ def _generic_unregistered_dialog_definition_facts(
         }
 
     option_pattern = re.compile(
-        rf"^option_{re.escape(story_key)}_(\d+)_(\d{{3}})$"
+        rf"^option_{re.escape(definition_root_key)}_([^_]+)_(\d{{3}})$"
     )
     option_rows = sorted(
         (
@@ -7415,7 +7420,10 @@ def _generic_unregistered_dialog_definition_facts(
             for option_id, row in dialog_option_table.items()
             if (match := option_pattern.fullmatch(option_id)) is not None
         ),
-        key=lambda item: (int(item[1].group(1)), int(item[1].group(2))),
+        key=lambda item: (
+            natural_key(item[1].group(1)),
+            int(item[1].group(2)),
+        ),
     )
     option_ids: list[str] = []
     options_by_group: dict[str, list[str]] = defaultdict(list)
@@ -7460,7 +7468,7 @@ def _generic_unregistered_dialog_definition_facts(
         audio_id for audio_id, matches in audio_membership.items() if matches
     }
     return {
-        "definitionRootKey": story_key,
+        "definitionRootKey": definition_root_key,
         "lineIds": line_ids,
         "lineNumbers": line_numbers,
         "audioIds": sorted(set(audio_ids), key=natural_key),
@@ -8471,9 +8479,13 @@ def _generic_parent_dialog_level_context_facts(
                 # Do not publish a partially decoded runtime shell.
                 return [], action_topology_failure
             subgame_sources = [
-                subgame_table_path,
-                script_path,
-                script_task_extra_info_table_path,
+                path
+                for path in (
+                    subgame_table_path,
+                    script_path,
+                    script_task_extra_info_table_path,
+                )
+                if isinstance(path, Path)
             ]
             context["subGameRuntime"] = {
                 "subGameId": dungeon_id,
@@ -16484,6 +16496,7 @@ def build_offline_exhaustion_index(
         "declaredSpecialCase": [],
         "ambiguousMission": [],
         "nativePlayback": [],
+        "typedLevelScriptAction": [],
         "typedObjectCarrier": [],
         "dialogRegistry": [],
         "timelineRegistration": [],
@@ -16494,14 +16507,23 @@ def build_offline_exhaustion_index(
     }
     declared_dialog_keys = set(all_dialog_mission_by_key)
     generic_dialog_definition_facts: dict[str, dict[str, Any]] = {}
-    if native_playback_index is not None:
+    if native_playback_index is not None and action_story_occurrences is not None:
         for story_key, missions in sorted(
             core_targets.items(),
             key=lambda item: natural_key(item[0]),
         ):
-            if not story_key.startswith("dlg_"):
+            if not (
+                story_key.startswith("dlg_")
+                or story_key.startswith("misc_dlg_")
+            ):
                 continue
-            if story_key in declared_dialog_keys:
+            definition_root_key = (
+                story_key.removeprefix("misc_")
+                if story_key.startswith("misc_dlg_")
+                else story_key
+            )
+            authored_keys = tuple(dict.fromkeys((story_key, definition_root_key)))
+            if any(key in declared_dialog_keys for key in authored_keys):
                 generic_dialog_exclusions["declaredSpecialCase"].append(
                     story_key
                 )
@@ -16511,32 +16533,40 @@ def build_offline_exhaustion_index(
                     story_key
                 )
                 continue
-            if native_playback_index.get(story_key) or []:
+            if any(native_playback_index.get(key) for key in authored_keys):
                 generic_dialog_exclusions["nativePlayback"].append(story_key)
+                continue
+            if any(action_story_occurrences.get(key) for key in authored_keys):
+                generic_dialog_exclusions["typedLevelScriptAction"].append(
+                    story_key
+                )
                 continue
             if story_key not in no_candidate_keys:
                 generic_dialog_exclusions["typedObjectCarrier"].append(
                     story_key
                 )
                 continue
-            if story_key in dialog_id_index:
+            if any(key in dialog_id_index for key in authored_keys):
                 generic_dialog_exclusions["dialogRegistry"].append(story_key)
                 continue
-            if story_key in timeline_line_orders:
+            if any(key in timeline_line_orders for key in authored_keys):
                 generic_dialog_exclusions["timelineRegistration"].append(
                     story_key
                 )
                 continue
-            text_assets = sorted(
-                cutscene_definition_root.glob(f"{story_key}_p*.json")
-            )
+            text_assets = sorted({
+                path
+                for key in authored_keys
+                for path in cutscene_definition_root.glob(f"{key}_p*.json")
+                if "_extra_config_p" not in path.name
+            })
             if text_assets:
                 generic_dialog_exclusions["textAssetCarrier"].append(
                     story_key
                 )
                 continue
             line_pattern = re.compile(
-                rf"^{re.escape(story_key)}_\d{{3}}$"
+                rf"^{re.escape(definition_root_key)}_\d{{3}}$"
             )
             if not any(
                 line_pattern.fullmatch(line_id)
@@ -16551,6 +16581,7 @@ def build_offline_exhaustion_index(
                 dialog_text_table,
                 dialog_option_table,
                 audio_stems,
+                definition_root_key=definition_root_key,
             )
             if failure is not None:
                 failure["sourcePaths"] = [
@@ -16574,32 +16605,19 @@ def build_offline_exhaustion_index(
             if facts is not None:
                 generic_dialog_definition_facts[story_key] = facts
 
-        generic_dialog_literals = {
-            story_key: story_key
-            for story_key in generic_dialog_definition_facts
+        generic_dialog_binary_present = {
+            story_key
+            for story_key, facts in generic_dialog_definition_facts.items()
+            if any(
+                literal.encode(encoding) in payload
+                for literal in tuple(dict.fromkeys((
+                    story_key,
+                    facts["definitionRootKey"],
+                )))
+                for encoding in ("utf-8", "utf-16le")
+                for payload in (game_assembly_bytes, global_metadata_bytes)
+            )
         }
-        generic_dialog_binary_present = (
-            _present_literal_keys(
-                game_assembly_bytes,
-                generic_dialog_literals,
-                "utf-8",
-            )
-            | _present_literal_keys(
-                game_assembly_bytes,
-                generic_dialog_literals,
-                "utf-16le",
-            )
-            | _present_literal_keys(
-                global_metadata_bytes,
-                generic_dialog_literals,
-                "utf-8",
-            )
-            | _present_literal_keys(
-                global_metadata_bytes,
-                generic_dialog_literals,
-                "utf-16le",
-            )
-        )
         generic_dialog_exclusions["binaryRootTokenPresent"] = sorted(
             generic_dialog_binary_present,
             key=natural_key,
@@ -16656,7 +16674,11 @@ def build_offline_exhaustion_index(
                     "global-metadata exact UTF-8/UTF-16 root tokens",
                 ],
                 "consumerBoundary": (
-                    "the exact current DialogTextTable line/audio group and "
+                    (
+                        "the mechanical misc_dlg-to-dlg definition alias and "
+                        if story_key.startswith("misc_dlg_") else ""
+                    )
+                    + "the exact current DialogTextTable line/audio group and "
                     "any DialogOptionTable choices survive, but the complete "
                     "generated Story-route census, typed native playback "
                     "index, DialogId/Timeline registries, DialogTree/TextAsset "
@@ -20733,11 +20755,20 @@ def _closed_non_mission_content_isolated_scenes(
         elif row.get("evidenceKind") in {
             "spaceship_dialog_tree",
             "character_profile_voice",
+            "spaceship_dialog_definition_without_tree_carrier",
         }:
+            definition_gap = (
+                row.get("evidenceKind")
+                == "spaceship_dialog_definition_without_tree_carrier"
+            )
             closed.append({
                 "sceneKey": scene_key,
-                "recoveryStatus":
-                    "closed_exact_spaceship_runtime_non_mission_content",
+                "recoveryStatus": (
+                    "deferred_current_build_spaceship_dialog_definition_"
+                    "without_tree_carrier"
+                    if definition_gap else
+                    "closed_exact_spaceship_runtime_non_mission_content"
+                ),
                 "evidenceKind": row.get("evidenceKind"),
                 "contentClass": row.get("content"),
                 "lineIds": row.get("lineIds") or [],
@@ -20745,6 +20776,10 @@ def _closed_non_mission_content_isolated_scenes(
                 "consumerClasses": row.get("consumerClasses") or [],
                 "characterIds": row.get("characterIds") or [],
                 "profileVoiceIds": row.get("profileVoiceIds") or [],
+                "dialogFamily": row.get("dialogFamily"),
+                "actorId": row.get("actorId"),
+                "carrierStatus": row.get("carrierStatus"),
+                "consumerBoundary": row.get("consumerBoundary"),
                 "sourceFiles": row.get("sourceFiles") or [],
                 "nativeMappingId": row.get("nativeMappingId"),
                 "orderBoundary": row.get("orderBoundary"),

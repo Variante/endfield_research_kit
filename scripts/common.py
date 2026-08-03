@@ -391,7 +391,7 @@ GUIDE_RUNTIME_NON_MISSION_SCHEMA = "animestudioStoryGuideConsumerAudit.v1"
 SPACESHIP_STORY_NON_MISSION_REPORT = (
     STORY_RECOVERY_REPORTS_DIR / "spaceship_story_content_audit.json"
 )
-SPACESHIP_STORY_NON_MISSION_SCHEMA = "spaceshipStoryContentAudit.v1"
+SPACESHIP_STORY_NON_MISSION_SCHEMA = "spaceshipStoryContentAudit.v2"
 SPACESHIP_STORY_NON_MISSION_MAPPING_ID = (
     "gameassembly-2026-08-02-spaceship-story-consumers-v1"
 )
@@ -642,13 +642,23 @@ def spaceship_story_non_mission_content_keys(
             for value in row.get("sourceFiles") or []
             if safe_key(value)
         ]
+        recovery_status = safe_key(row.get("recoveryStatus"))
+        expected_status = (
+            (
+                "deferred_current_build_spaceship_dialog_definition_"
+                "without_tree_carrier"
+            )
+            if evidence_kind
+            == "spaceship_dialog_definition_without_tree_carrier"
+            else "closed_exact_spaceship_runtime_non_mission_content"
+        )
         if (
             not story_key
-            or safe_key(row.get("recoveryStatus"))
-            != "closed_exact_spaceship_runtime_non_mission_content"
+            or recovery_status != expected_status
             or evidence_kind not in {
                 "spaceship_dialog_tree",
                 "character_profile_voice",
+                "spaceship_dialog_definition_without_tree_carrier",
             }
             or not source_files
             or any(
@@ -670,6 +680,19 @@ def spaceship_story_non_mission_content_keys(
                 and (
                     not row.get("characterIds")
                     or not row.get("profileVoiceIds")
+                )
+            )
+            or (
+                evidence_kind
+                == "spaceship_dialog_definition_without_tree_carrier"
+                and (
+                    not row.get("dialogTreeRoots")
+                    or not row.get("consumerClasses")
+                    or not safe_key(row.get("dialogFamily"))
+                    or not safe_key(row.get("actorId"))
+                    or safe_key(row.get("carrierStatus"))
+                    != "absent_from_all_related_typed_dialog_trees"
+                    or not safe_key(row.get("consumerBoundary"))
                 )
             )
         ):
@@ -702,6 +725,10 @@ def spaceship_story_non_mission_content_keys(
                 for value in row.get("profileVoiceIds") or []
                 if safe_key(value)
             ],
+            "dialogFamily": safe_key(row.get("dialogFamily")),
+            "actorId": safe_key(row.get("actorId")),
+            "carrierStatus": safe_key(row.get("carrierStatus")),
+            "consumerBoundary": safe_key(row.get("consumerBoundary")),
             "sourceFiles": source_files,
             "nativeMappingId": safe_key(row.get("nativeMappingId")),
             "orderBoundary": safe_key(row.get("orderBoundary")),
