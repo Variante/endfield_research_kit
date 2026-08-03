@@ -70,7 +70,7 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v127"
+SCHEMA = "sourceStoryGapQueue.v128"
 STORY_BINDING_COVERAGE_SCHEMA_VERSION = 12
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
@@ -17354,7 +17354,7 @@ def build_offline_exhaustion_index(
     reverse_pptr_audit_valid = (
         isinstance(reverse_pptr_audit, dict)
         and reverse_pptr_audit.get("_schema")
-        == "animestudioStoryReversePPtrAudit.v3"
+        == "animestudioStoryReversePPtrAudit.v4"
         and _audit_sources_match_current_indexes(reverse_pptr_audit)
         and safe_key(reverse_native.get("mappingId"))
         == OFFLINE_EXHAUSTION_REVERSE_PPTR_MAPPING_ID
@@ -17376,6 +17376,7 @@ def build_offline_exhaustion_index(
     # Timeline registries, TextAsset payload, GameObject hierarchy, and reverse
     # PPtr graph; filename shape is only used to locate the candidate payload.
     generic_cutscene_evidence_by_key: dict[str, dict[str, Any]] = {}
+    generic_cutscene_candidate_facts: dict[str, dict[str, Any]] = {}
     generic_cutscene_validation_failures: list[dict[str, Any]] = []
     generic_cutscene_qualification_diagnostics: list[dict[str, Any]] = []
     generic_cutscene_exclusions: dict[str, list[str]] = {
@@ -17612,6 +17613,23 @@ def build_offline_exhaustion_index(
                 for row in object_rows
             )
         )
+        embedded_root_graph_valid = (
+            bool(director_hosts)
+            and all(
+                safe_key(row.get("rootGameObjectName")) == story_key
+                and not row.get("unresolvedChildTransformPathIds")
+                and any(
+                    safe_key((component.get("type") or {}).get(
+                        "scriptFullName"
+                    )) == "Beyond.Gameplay.View.CutsceneRootComponent"
+                    and component.get("gameObjectPathId")
+                    == row.get("rootGameObjectPathId")
+                    for component in row.get("typedComponents") or []
+                    if isinstance(component, dict)
+                )
+                for row in director_hosts
+            )
+        )
         director_graph_valid = (
             bool(director_hosts)
             and all(
@@ -17643,7 +17661,23 @@ def build_offline_exhaustion_index(
                 "binaryRootTokenPresent"
             ].append(story_key)
             continue
-        if not (definition_valid and object_graph_valid and director_graph_valid):
+        generic_cutscene_candidate_facts[story_key] = {
+            "storyKey": story_key,
+            "missionId": mission_id,
+            "registryId": registry_id,
+            "definitionPath": definition_path,
+            "decodedDefinition": decoded_definition,
+            "definitionValid": definition_valid,
+            "objectRows": object_rows,
+            "objectGraphValid": object_graph_valid,
+            "embeddedRootGraphValid": embedded_root_graph_valid,
+            "directorHosts": director_hosts,
+        }
+        if not (
+            definition_valid
+            and (object_graph_valid or embedded_root_graph_valid)
+            and director_graph_valid
+        ):
             generic_cutscene_exclusions[
                 "invalidTypedRootGraph"
             ].append(story_key)
@@ -17666,6 +17700,7 @@ def build_offline_exhaustion_index(
                     "definitionValid": definition_valid,
                     "gameObjectRows": len(object_rows),
                     "objectGraphValid": object_graph_valid,
+                    "embeddedRootGraphValid": embedded_root_graph_valid,
                     "directorHosts": len(director_hosts),
                     "directorGraphValid": director_graph_valid,
                 },
@@ -17681,6 +17716,7 @@ def build_offline_exhaustion_index(
             "definitionRootNames": [story_key],
             "directorHostCount": len(director_hosts),
             "gameObjectRowCount": len(object_rows),
+            "embeddedRootGraph": embedded_root_graph_valid,
             "definitionSourceFiles": [
                 source_display_path(definition_path),
                 source_display_path(source_paths["strIdNumTable"]),
@@ -17695,6 +17731,15 @@ def build_offline_exhaustion_index(
                 source_display_path(source_paths["gameAssembly"]),
                 source_display_path(source_paths["globalMetadata"]),
             ],
+            "originalGameFiles": sorted({
+                safe_key((row.get("object") or {}).get("source"))
+                for row in director_hosts
+                if safe_key((row.get("object") or {}).get("source"))
+            } | {
+                safe_key((row.get("targetObject") or {}).get("source"))
+                for row in director_hosts
+                if safe_key((row.get("targetObject") or {}).get("source"))
+            }),
             "definitionSha256": _sha256_file(definition_path),
             "definitionPath": safe_key(decoded_definition.get("path")),
             "isTransition": decoded_definition.get("isTransition"),
@@ -17727,6 +17772,163 @@ def build_offline_exhaustion_index(
             ),
             "graphEffect": "none",
         }
+
+    # A CutsceneRoot can intentionally name one Story key while its exact
+    # director plays a TimelineAsset registered under another.  Discover these
+    # pairs from the original serialized pointer graph.  The relation proves
+    # root/playable identity only: it neither orders the two nominal mission
+    # memberships nor assigns an activator to either one.
+    qualified_alias_keys: set[str] = set()
+    for director_host in reverse_pptr_audit.get("directorHosts") or []:
+        if not isinstance(director_host, dict):
+            continue
+        aliases = [
+            row
+            for row in director_host.get("crossStoryPlaybackAliases") or []
+            if isinstance(row, dict)
+        ]
+        containments = [
+            row
+            for row in director_host.get("crossStoryContainments") or []
+            if isinstance(row, dict)
+        ]
+        if len(aliases) != 1 or len(containments) != 1:
+            continue
+        alias = aliases[0]
+        containment = containments[0]
+        root_key = safe_key(alias.get("rootStoryKey"))
+        playable_key = safe_key(alias.get("playableAssetStoryKey"))
+        root_facts = generic_cutscene_candidate_facts.get(root_key)
+        playable_facts = generic_cutscene_candidate_facts.get(playable_key)
+        if not root_facts or not playable_facts:
+            continue
+        bindings = [
+            row
+            for row in director_host.get("rootDirectorBindings") or []
+            if isinstance(row, dict)
+        ]
+        alias_valid = (
+            root_key != playable_key
+            and alias.get("relation")
+            == "cutscene_root_director_playable_asset"
+            and alias.get("edgeStatus")
+            == "exact_root_playback_alias_no_chronology_or_mission_owner"
+            and safe_key(containment.get("hostStoryKey")) == root_key
+            and safe_key(containment.get("embeddedStoryKey")) == playable_key
+            and containment.get("relation")
+            == "cutscene_root_embedded_timeline_asset"
+            and containment.get("edgeStatus")
+            == "exact_containment_no_chronology_or_mission_owner"
+            and set(_string_list(director_host.get("storyKeys")))
+            == {playable_key}
+            and set(_string_list(
+                director_host.get("expectedGapMissions")
+            )) == {playable_facts["missionId"]}
+            and safe_key(director_host.get("pointerPath"))
+            == "$.m_PlayableAsset"
+            and not director_host.get("candidateComponents")
+            and not director_host.get("unresolvedChildTransformPathIds")
+            and len(bindings) == 1
+            and safe_key(bindings[0].get("hostStoryKey")) == root_key
+            and safe_key(bindings[0].get("pointerPath")) == "$._director"
+            and safe_key(bindings[0].get("pointerStatus")) == "resolved"
+            and root_facts["definitionValid"]
+            and root_facts["objectGraphValid"]
+            and playable_facts["definitionValid"]
+            and playable_facts["embeddedRootGraphValid"]
+            and director_host in playable_facts["directorHosts"]
+        )
+        if not alias_valid:
+            continue
+        alias_summary = {
+            "rootStoryKey": root_key,
+            "playableAssetStoryKey": playable_key,
+            "relation": alias["relation"],
+            "edgeStatus": alias["edgeStatus"],
+        }
+        original_game_files = sorted({
+            safe_key((director_host.get("object") or {}).get("source")),
+            safe_key((director_host.get("targetObject") or {}).get("source")),
+        } - {""})
+        for role, facts in (
+            ("cutscene_root", root_facts),
+            ("playable_timeline_asset", playable_facts),
+        ):
+            key = facts["storyKey"]
+            decoded = facts["decodedDefinition"]
+            definition_path = facts["definitionPath"]
+            generic_cutscene_evidence_by_key[key] = {
+                "sceneKey": key,
+                "missionId": facts["missionId"],
+                "recoveryStatus":
+                    "deferred_current_build_offline_surface_exhausted",
+                "evidenceKind":
+                    "cutscene_root_playable_alias_without_recovered_activator",
+                "cutsceneAliasRole": role,
+                "rootPlaybackAlias": alias_summary,
+                "timelineRegistryId": facts["registryId"],
+                "definitionRootNames": [key],
+                "directorHostCount": len(facts["directorHosts"]),
+                "gameObjectRowCount": len(facts["objectRows"]),
+                "definitionSourceFiles": [
+                    source_display_path(definition_path),
+                    source_display_path(source_paths["strIdNumTable"]),
+                    source_display_path(source_paths["numIdStrTable"]),
+                ],
+                "sourceFiles": [
+                    source_display_path(carrier_audit_path),
+                    source_display_path(gameobject_audit_path),
+                    source_display_path(reverse_pptr_audit_path),
+                ],
+                "originalBinaryFiles": [
+                    source_display_path(source_paths["gameAssembly"]),
+                    source_display_path(source_paths["globalMetadata"]),
+                ],
+                "originalGameFiles": original_game_files,
+                "definitionSha256": _sha256_file(definition_path),
+                "definitionPath": safe_key(decoded.get("path")),
+                "isTransition": decoded.get("isTransition"),
+                "carrierAuditStatus":
+                    "no_typed_story_owner_or_runtime_carrier",
+                "candidateStatus":
+                    "no_typed_owner_or_runtime_sibling_or_descendant",
+                "binaryRootTokenStatus":
+                    "absent_utf8_and_utf16le_in_current_game_binaries",
+                "nativeMappingId": OFFLINE_EXHAUSTION_MAPPING_ID,
+                "playbackMappingId":
+                    OFFLINE_EXHAUSTION_REVERSE_PPTR_MAPPING_ID,
+                "gameAssemblySha256": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+                "globalMetadataSha256": OFFLINE_EXHAUSTION_METADATA_SHA256,
+                "consumerBoundary": (
+                    "the original CutsceneRoot _director pointer and the "
+                    "director's PlayableAsset pointer prove an exact cross-key "
+                    "root/playable alias; current typed carrier, playback-index, "
+                    "GameAssembly, and metadata surfaces expose no activator or "
+                    "mission/quest owner"
+                ),
+                "orderBoundary": (
+                    "the exact alias is playback composition, not evidence that "
+                    "either nominal mission precedes the other; registry order, "
+                    "filenames, OCR, and manual display order remain non-evidence"
+                ),
+                "reopenWhen": (
+                    "the installed binary, Timeline registries, TextAssets, "
+                    "object indexes, or typed playback route census changes"
+                ),
+                "graphEffect": "none",
+            }
+            qualified_alias_keys.add(key)
+    if qualified_alias_keys:
+        generic_cutscene_exclusions["invalidTypedRootGraph"] = [
+            key
+            for key in generic_cutscene_exclusions["invalidTypedRootGraph"]
+            if key not in qualified_alias_keys
+        ]
+        generic_cutscene_qualification_diagnostics = [
+            row
+            for row in generic_cutscene_qualification_diagnostics
+            if safe_key(row.get("storyKey")) not in qualified_alias_keys
+        ]
 
     gameobject_rows_by_key: dict[str, list[dict[str, Any]]] = {}
     reverse_hosts_by_key: dict[str, list[dict[str, Any]]] = {}

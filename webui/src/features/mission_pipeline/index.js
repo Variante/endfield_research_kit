@@ -620,6 +620,10 @@
       runtimeRecoveryLuaCall: "Typed Lua playback call",
       runtimeRecoveryEvidenceCrossMissionLevelDataPlayback: "Exact native playback in a related mission shell - ownership and order unknown",
       offlineRecoveryEvidenceCutsceneRoot: "Cutscene root resolved - mission activator unknown",
+      offlineRecoveryEvidenceCutsceneAlias: "Exact cutscene root/playable alias - mission activator unknown",
+      offlineRecoveryCutsceneAlias: "Exact root/playable identity",
+      offlineRecoveryCutsceneAliasRootRole: "root definition",
+      offlineRecoveryCutsceneAliasPlayableRole: "played timeline asset",
       offlineRecoveryNativeConsumer: "Original-binary consumer",
       offlineRecoverySnsDefinition: "SNS internal definition",
       offlineRecoveryMissingAudio: "audio ids absent",
@@ -1241,6 +1245,10 @@
       runtimeRecoveryLuaCall: "\u7c7b\u578b\u5316 Lua \u64ad\u653e\u8c03\u7528",
       runtimeRecoveryEvidenceCrossMissionLevelDataPlayback: "\u5df2\u7cbe\u786e\u6062\u590d\u76f8\u5173\u4efb\u52a1\u5916\u58f3\u5185\u7684\u539f\u751f\u64ad\u653e\uff0c\u5f52\u5c5e\u4e0e\u987a\u5e8f\u672a\u77e5",
       offlineRecoveryEvidenceCutsceneRoot: "\u5df2\u89e3\u6790\u8fc7\u573a\u6839\u8282\u70b9 \u2014 \u4efb\u52a1\u6fc0\u6d3b\u5668\u672a\u77e5",
+      offlineRecoveryEvidenceCutsceneAlias: "\u5df2\u786e\u8ba4\u8fc7\u573a\u6839\u8282\u70b9/\u64ad\u653e\u8d44\u4ea7\u522b\u540d \u2014 \u4efb\u52a1\u6fc0\u6d3b\u5668\u672a\u77e5",
+      offlineRecoveryCutsceneAlias: "\u7cbe\u786e\u6839\u8282\u70b9/\u64ad\u653e\u8d44\u4ea7\u8eab\u4efd",
+      offlineRecoveryCutsceneAliasRootRole: "\u6839\u5b9a\u4e49",
+      offlineRecoveryCutsceneAliasPlayableRole: "\u88ab\u64ad\u653e\u7684\u65f6\u95f4\u7ebf\u8d44\u4ea7",
       offlineRecoveryNativeConsumer: "\u539f\u59cb\u4e8c\u8fdb\u5236\u6d88\u8d39\u8005",
       offlineRecoverySnsDefinition: "SNS \u5185\u90e8\u5b9a\u4e49",
       offlineRecoveryMissingAudio: "\u4e2a\u97f3\u9891 ID \u7f3a\u5931",
@@ -2443,6 +2451,8 @@
         t("runtimeRecoveryEvidenceDialogTreePlaybackContext"),
       closed_exact_quest_state_gated_playback_context_no_relative_order:
         t("runtimeRecoveryEvidenceQuestStateGate"),
+      cutscene_root_playable_alias_without_recovered_activator:
+        t("offlineRecoveryEvidenceCutsceneAlias"),
     })[status] || status;
   }
 
@@ -2465,6 +2475,7 @@
       ...(recovery.definitionSourceFiles || []),
       ...(recovery.sourceFiles || []),
       ...(recovery.originalBinaryFiles || []),
+      ...(recovery.originalGameFiles || []),
     ].filter(Boolean))];
     const related = recovery.missionRelatedOriginalData;
     const relatedEntries = (related?.entries || []).map((entry) => (
@@ -2516,6 +2527,9 @@
     ].filter(Boolean).join("") : "";
     const boundaries = [
       runtimeDetails,
+      recovery.rootPlaybackAlias
+        ? `<small><strong>${esc(t("offlineRecoveryCutsceneAlias"))}:</strong> <code>${esc(recovery.rootPlaybackAlias.rootStoryKey || "?")}</code> &rarr; <code>${esc(recovery.rootPlaybackAlias.playableAssetStoryKey || "?")}</code> · ${esc(t(recovery.cutsceneAliasRole === "cutscene_root" ? "offlineRecoveryCutsceneAliasRootRole" : "offlineRecoveryCutsceneAliasPlayableRole"))}</small>`
+        : "",
       recovery.activationBoundary
         ? `<small><strong>${esc(t("runtimeRecoveryActivation"))}:</strong> ${esc(recovery.activationBoundary)}</small>`
         : "",
@@ -3277,6 +3291,7 @@
         ...(row.sourceFiles || []),
         ...(row.definitionSourceFiles || []),
         ...(row.originalBinaryFiles || []),
+        ...(row.originalGameFiles || []),
         ...(row.definitionAssets || []),
         ...(row.definitionTables || []),
         row.definitionTable,
@@ -3676,13 +3691,17 @@
         registered_dialog_tree_definition_binary_consumer_surface_exhausted: t("offlineRecoveryEvidenceBinaryRegisteredDialogTree"),
         exact_missionless_native_event_playback_path: t("offlineRecoveryEvidenceMissionlessNativePlayback"),
         cutscene_root_without_recovered_activator: t("offlineRecoveryEvidenceCutsceneRoot"),
+        cutscene_root_playable_alias_without_recovered_activator: t("offlineRecoveryEvidenceCutsceneAlias"),
         dialog_text_table_only_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         radio_definition_with_empty_levelscript_host: t("offlineRecoveryEvidenceEmptyHost"),
         dialog_text_table_only_without_registry_asset_or_consumer: t("offlineRecoveryEvidenceUnregistered"),
         registered_dialog_tree_trunk_group_exact_line_partition: t("offlineRecoveryEvidenceParentTreePartition"),
         partial_registered_dialog_tree_trunk_group_line_partition: t("partialRecoveryEvidenceParentTreePartition"),
       })[row.evidenceKind] || runtimeRecoveryEvidenceLabel(row);
-      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${parentDialogTreeContext}${parentLevelContext}${missingLineFragmentContext}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
+      const cutsceneAliasContext = row.rootPlaybackAlias
+        ? `<p><strong>${esc(t("offlineRecoveryCutsceneAlias"))}</strong><span><code>${esc(row.rootPlaybackAlias.rootStoryKey || "?")}</code> &rarr; <code>${esc(row.rootPlaybackAlias.playableAssetStoryKey || "?")}</code> · ${esc(t(row.cutsceneAliasRole === "cutscene_root" ? "offlineRecoveryCutsceneAliasRootRole" : "offlineRecoveryCutsceneAliasPlayableRole"))}</span></p>`
+        : "";
+      return `<article><header><a href="${esc(storyHref(row.key))}"><code>${esc(row.key)}</code></a><b>${esc(evidenceLabel)}</b></header>${runtimeContext}${cutsceneAliasContext}${timeline ? `<p><strong>${esc(t("offlineRecoveryInternalTimeline"))}</strong><code>${esc(timeline)}</code>${lineCount ? `<span>${lineCount.toLocaleString()} ${esc(t("offlineRecoveryLines"))}</span>` : ""}</p>` : ""}${facts}${parentDialogTreeContext}${parentLevelContext}${missingLineFragmentContext}${prtsCarrierContext}${dialogSummaryContext}${missionTrackingContext}${npcProxyConsumerContext}${nativeConsumerContext}${snsDefinitionContext}${missionBranchContext}${missionSequenceContext}${missionTopologyContext}${taskConsumerContext}${dialogResultBranchContext}${emptyHostContext}${runtimeTrackingContext}${relatedOriginalDataContext}${options}${printableTokenBoundary}${internalBranches}${terminalOptions}${popup}${nativePathEvidence}${evidenceBoundary}${sources.length ? `<small>${[...new Set(sources)].map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</article>`;
     }).join("");
     const containments = (order.containments || []).map((row) => {
       const after = (row.embeddedAfterLineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
