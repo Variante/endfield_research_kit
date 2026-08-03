@@ -129,63 +129,19 @@ DEFAULT_GAMEPLAY_CONFIG_ROOT = (
     ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json" / "GameplayConfig"
 )
 
-# Shipped-Lua Story playback call sites with a literal Story id.
-#
-# Story playback owners are not confined to LevelScript and MissionRuntime: Lua
-# phase/UI controllers call the native GameAction entry points through the XLua
-# wrappers. The Lua VFS corpus is not on the export path, so these recovered
-# call sites are pinned here with exact provenance, the same way recovered
-# native tags and RVAs are.
-#
-# Admission rule: the Lua literal must match the Story key EXACTLY, including
-# case. `Phase/GenderSelect/PhaseGenderSelect.lua` holds
-# `EnterCutsceneId = "Cutscene_e0m0_1"` with a capital C; that spelling occurs
-# zero times anywhere in export_full while `cutscene_e0m0_1` occurs once.
-# `reports/story/recovery/cutscene_case_resolution_audit.json` proves that the
-# current native chain preserves the spelling into case-sensitive
-# StringPathHash resource lookup. It is deliberately excluded as a rejected
-# playback edge, not merely held pending.
-LUA_STORY_PLAYBACK_CALL_SITES = (
-    {
-        "storyKey": "cutscene_e1m10_1",
-        "luaFile": "Lua/Data/LuaScripts/Phase/GenderChange/PhaseGenderChange.lua",
-        "luaSymbol": "CUT_SCENE_ID",
-        "luaCall": "GameAction.PlayCutscene",
-        "nativeEntry": "Beyond.Gameplay.Actions.GameAction::PlayCutscene",
-        "phase": "gender_change",
-        "note": (
-            "Exact-case literal in a shipped Lua phase controller; the phase "
-            "owns playback and no mission or quest identity is serialized."
-        ),
-    },
+# Shipped Lua is scanned as a corpus. No Story key, module, symbol, or phase is
+# admitted here by hand: the current audit enumerates bounded GameAction calls,
+# resolves only direct/module-constant first arguments, and fingerprints the
+# exact original Lua bytes. The installed-binary audit supplies the native
+# spelling boundary used for case-mismatch rejection.
+DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT = (
+    ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
 )
-
-# Shipped-Lua literals which look like Story playback ids but fail the exact
-# current-build admission rule above. Keep these visible as recovery boundaries
-# without creating routes or changing attachment status. Each rejection must be
-# backed by a build-fingerprint-pinned audit.
-LUA_STORY_PLAYBACK_REJECTIONS = (
-    {
-        "storyKey": "cutscene_e0m0_1",
-        "luaLiteral": "Cutscene_e0m0_1",
-        "luaFile": "Lua/Data/LuaScripts/Phase/GenderSelect/PhaseGenderSelect.lua",
-        "luaSymbol": "EnterCutsceneId",
-        "luaCall": "GameAction.PlayCutsceneAndGetHandle",
-        "nativeEntry": (
-            "Beyond.Gameplay.Actions.GameAction::PlayCutsceneAndGetHandle"
-        ),
-        "reason": "case_sensitive_native_resource_lookup",
-        "confidence": "binary_proven_rejection",
-        "auditReport": (
-            "reports/story/recovery/cutscene_case_resolution_audit.json"
-        ),
-        "note": (
-            "The current native resolver preserves the capitalized Lua literal "
-            "through StringPathHash resource lookup. It therefore does not "
-            "resolve the lowercase exported Story key."
-        ),
-    },
+DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT = (
+    ROOT / "reports" / "story" / "recovery" / "cutscene_case_resolution_audit.json"
 )
+LUA_CONSUMER_REFERENCE_SCHEMA = "luaConsumerReferenceAudit.v2"
+NATIVE_GAME_ACTION_TYPE = "Beyond.Gameplay.Actions.GameAction"
 DEFAULT_ACTIVITY_STAGE_TABLE = DEFAULT_TABLE_ROOT / "ActivityConditionalMultiStageTable.json"
 DEFAULT_ACTIVITY_DUNGEON_FIGHTING_STAGE_TABLE = (
     DEFAULT_TABLE_ROOT / "ActivityDungeonFightingStageTable.json"
@@ -2984,6 +2940,21 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--dungeon-table", type=Path, default=DEFAULT_DUNGEON_TABLE)
     parser.add_argument("--text-vo-id-table", type=Path, default=DEFAULT_TEXT_VO_ID_TABLE)
+    parser.add_argument(
+        "--lua-consumer-audit",
+        type=Path,
+        default=DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT,
+        help="complete shipped-Lua GameAction census used for exact Story playback",
+    )
+    parser.add_argument(
+        "--cutscene-case-audit",
+        type=Path,
+        action="append",
+        help=(
+            "installed-binary spelling audit used to reject a matching Lua "
+            "case mismatch; repeatable"
+        ),
+    )
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--story-data-root", type=Path, default=DEFAULT_STORY_DATA_ROOT)
     parser.add_argument("--story-language", default="CN")
@@ -3161,6 +3132,196 @@ def refresh_source_story_gap_queue(
 def repo_path(path: Path) -> str:
     path = path.resolve()
     return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
+
+
+def sha256_path(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _lua_phase(module: str) -> str:
+    parts = Path(module).as_posix().split("/")
+    if len(parts) >= 2 and parts[0].casefold() == "phase":
+        return re.sub(r"(?<!^)(?=[A-Z])", "_", parts[1]).lower()
+    return ""
+
+
+def load_lua_story_playback_evidence(
+    lua_audit_path: Path = DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT,
+    case_audit_paths: Iterable[Path] = (DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT,),
+) -> dict[str, Any]:
+    """Validate and normalize corpus-scanned shipped-Lua Story playback.
+
+    This is deliberately data-driven: every accepted/rejected row comes from
+    the complete Lua audit. Exact spelling is admitted; a spelling mismatch is
+    rejected only when a current installed-binary audit matches that exact call.
+    """
+    validator = "lua_story_playback_evidence"
+    lua_audit_path = lua_audit_path.resolve()
+    if not lua_audit_path.is_file():
+        raise RuntimeError(
+            f"validator={validator} failed: gate=audit_exists expected=file "
+            f"actual=missing source={repo_path(lua_audit_path)}"
+        )
+    audit_sha = sha256_path(lua_audit_path)
+    audit = read_json(lua_audit_path)
+    schema = str(audit.get("schemaVersion") or "")
+    if schema != LUA_CONSUMER_REFERENCE_SCHEMA:
+        raise RuntimeError(
+            f"validator={validator} failed: gate=schema expected={LUA_CONSUMER_REFERENCE_SCHEMA} "
+            f"actual={schema or '<missing>'} source={repo_path(lua_audit_path)}"
+        )
+    summary = audit.get("summary") or {}
+    if int(summary.get("readErrorCount") or 0):
+        raise RuntimeError(
+            f"validator={validator} failed: gate=complete_scan expected=readErrorCount:0 "
+            f"actual={summary.get('readErrorCount')} source={repo_path(lua_audit_path)}"
+        )
+
+    calls = list((audit.get("gameActionAudit") or {}).get("storyPlaybackCalls") or [])
+    malformed: list[str] = []
+    for index, row in enumerate(calls):
+        required = {
+            "module": row.get("module"),
+            "sourcePath": row.get("sourcePath"),
+            "sourceSha256": row.get("sourceSha256"),
+            "line": row.get("line"),
+            "method": row.get("method"),
+            "argumentSemantics": row.get("argumentSemantics"),
+            "registryStatus": row.get("registryStatus"),
+        }
+        missing = [key for key, value in required.items() if value in (None, "")]
+        source_sha = str(row.get("sourceSha256") or "")
+        if not re.fullmatch(r"[0-9a-fA-F]{64}", source_sha):
+            missing.append("sourceSha256:sha256")
+        if missing:
+            malformed.append(f"row={index} missing={','.join(missing)}")
+            continue
+        source_path = ROOT / str(row["sourcePath"])
+        if source_path.is_file():
+            actual_sha = sha256_path(source_path)
+            if actual_sha.casefold() != source_sha.casefold():
+                malformed.append(
+                    f"row={index} sourceHash expected={source_sha} actual={actual_sha} "
+                    f"source={repo_path(source_path)}"
+                )
+    if malformed:
+        raise RuntimeError(
+            f"validator={validator} failed: gate=row_provenance expected=complete_exact_rows "
+            f"actual={malformed[0]} source={repo_path(lua_audit_path)}"
+        )
+
+    case_audits: list[tuple[Path, dict[str, Any]]] = []
+    for path in case_audit_paths:
+        resolved = path.resolve()
+        if not resolved.is_file():
+            continue
+        case = read_json(resolved)
+        source = case.get("source") or {}
+        conclusion = case.get("conclusion") or {}
+        if (
+            int(case.get("schemaVersion") or 0) != 1
+            or str(source.get("luaAuditSha256") or "").casefold() != audit_sha.casefold()
+            or conclusion.get("caseResolution") != "case_sensitive"
+            or conclusion.get("literalResolvesToCanonicalKey") is not False
+            or not re.fullmatch(r"[0-9a-fA-F]{64}", str(source.get("gameAssemblySha256") or ""))
+            or not re.fullmatch(r"[0-9a-fA-F]{64}", str(source.get("metadataSha256") or ""))
+        ):
+            raise RuntimeError(
+                f"validator={validator} failed: gate=binary_case_audit expected=current_lua_hash+case_sensitive "
+                f"actual=invalid source={repo_path(resolved)}"
+            )
+        case_audits.append((resolved, case))
+
+    accepted: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    for row in calls:
+        status = str(row.get("registryStatus") or "")
+        method = str(row.get("method") or "")
+        native_entry = f"{NATIVE_GAME_ACTION_TYPE}::{method}"
+        if status == "exact_registry_match":
+            story_key = str(row.get("canonicalStoryKey") or "")
+            if (
+                not story_key
+                or row.get("argumentSemantics") != "story_id"
+                or row.get("resolvedLiteral") != story_key
+            ):
+                continue
+            module = str(row["module"])
+            virtual_lua_file = f"Lua/Data/LuaScripts/{module}"
+            accepted.append({
+                "storyKey": story_key,
+                "luaFile": virtual_lua_file,
+                "luaSourcePath": str(row["sourcePath"]),
+                "luaSourceSha256": str(row["sourceSha256"]).lower(),
+                "luaLine": int(row["line"]),
+                "luaSymbol": str(row.get("firstArgument") or ""),
+                "luaCall": f"GameAction.{method}",
+                "nativeEntry": native_entry,
+                "phase": _lua_phase(module),
+                "playbackKind": row.get("playbackKind"),
+                "auditReport": repo_path(lua_audit_path),
+                "auditSha256": audit_sha,
+                "note": (
+                    "The complete shipped-Lua census found an exact-case literal at "
+                    "this typed GameAction playback call. The Lua controller owns "
+                    "playback; no mission or quest identity is serialized."
+                ),
+            })
+            continue
+        if status != "case_mismatch_registry_match":
+            continue
+        for case_path, case in case_audits:
+            proof_row = case.get("luaPlayback") or {}
+            comparable = ("module", "line", "method", "resolvedLiteral", "canonicalStoryKey")
+            if not all(proof_row.get(key) == row.get(key) for key in comparable):
+                continue
+            source = case.get("source") or {}
+            rejected.append({
+                "storyKey": str(row.get("canonicalStoryKey") or ""),
+                "luaLiteral": str(row.get("resolvedLiteral") or ""),
+                "luaFile": f"Lua/Data/LuaScripts/{row['module']}",
+                "luaSourcePath": str(row["sourcePath"]),
+                "luaSourceSha256": str(row["sourceSha256"]).lower(),
+                "luaLine": int(row["line"]),
+                "luaSymbol": str(row.get("firstArgument") or ""),
+                "luaCall": f"GameAction.{method}",
+                "nativeEntry": native_entry,
+                "reason": "case_sensitive_native_resource_lookup",
+                "confidence": "binary_proven_rejection",
+                "auditReport": repo_path(case_path),
+                "gameAssemblySha256": str(source["gameAssemblySha256"]).lower(),
+                "metadataSha256": str(source["metadataSha256"]).lower(),
+                "note": (
+                    "The installed binary preserves this mismatched literal through "
+                    "StringPathHash lookup, so it cannot prove playback of the "
+                    "differently-cased Story registry key."
+                ),
+            })
+            break
+
+    accepted.sort(key=lambda row: (natural_quest_key(row["storyKey"]), row["luaFile"], row["luaLine"]))
+    rejected.sort(key=lambda row: (natural_quest_key(row["storyKey"]), row["luaFile"], row["luaLine"]))
+    return {
+        "validator": validator,
+        "status": "validated",
+        "schemaVersion": LUA_CONSUMER_REFERENCE_SCHEMA,
+        "auditReport": repo_path(lua_audit_path),
+        "auditSha256": audit_sha,
+        "scannedPlaybackCalls": len(calls),
+        "acceptedExactPlaybackCalls": accepted,
+        "rejectedCaseMismatchCalls": rejected,
+        "unresolvedPlaybackCalls": len(calls) - len(accepted) - len(rejected),
+        "binaryCaseAuditCount": len(case_audits),
+        "evidenceBoundary": (
+            "Exact shipped-Lua bytes and typed GameAction calls prove controller "
+            "playback only. They do not supply mission ownership or Story order. "
+            "Case-folded matches create no route without matching installed-binary proof."
+        ),
+    }
 
 
 def offline_story_kind(story_key: str) -> str:
@@ -5486,6 +5647,10 @@ def build_story_binding_coverage(
     game_mechanic_condition_table_path: Path | None = None,
     dungeon_table_path: Path | None = None,
     text_vo_id_table_path: Path | None = DEFAULT_TEXT_VO_ID_TABLE,
+    lua_consumer_audit_path: Path = DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT,
+    cutscene_case_audit_paths: Iterable[Path] = (
+        DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT,
+    ),
 ) -> dict[str, Any] | None:
     """Write a unique-file Story-to-pipeline coverage audit.
 
@@ -5590,6 +5755,10 @@ def build_story_binding_coverage(
     context_only_trigger_route_keys: set[str] = set()
     definition_only_interactive_config_keys: set[str] = set()
     sidecars_read = 0
+    lua_playback_evidence = load_lua_story_playback_evidence(
+        lua_consumer_audit_path,
+        cutscene_case_audit_paths,
+    )
 
     def add_trigger_route(route: dict[str, Any] | None) -> None:
         if not route:
@@ -5605,7 +5774,7 @@ def build_story_binding_coverage(
         )
         story_trigger_routes[key][signature] = route
 
-    for call_site in LUA_STORY_PLAYBACK_CALL_SITES:
+    for call_site in lua_playback_evidence["acceptedExactPlaybackCalls"]:
         add_trigger_route({
             "storyKey": call_site["storyKey"],
             "relation": "lua_controller_playback",
@@ -5614,23 +5783,35 @@ def build_story_binding_coverage(
             "scope": "phase",
             "phase": call_site["phase"],
             "evidenceTier": "direct",
-            "confidence": "shipped_lua_literal_plus_native_entry",
+            "confidence": "corpus_scanned_shipped_lua_literal_plus_native_entry",
             "ownerStatus": "unresolved",
             "questTriggerStatus": "no_mission_or_quest_identity_serialized",
             "missionId": None,
             "questId": None,
             "serverExchange": False,
             "luaFile": call_site["luaFile"],
+            "luaSourcePath": call_site["luaSourcePath"],
+            "luaSourceSha256": call_site["luaSourceSha256"],
+            "luaLine": call_site["luaLine"],
             "luaSymbol": call_site["luaSymbol"],
             "luaCall": call_site["luaCall"],
             "nativeEntry": call_site["nativeEntry"],
-            "sourceFiles": [call_site["luaFile"]],
+            "auditReport": call_site["auditReport"],
+            "auditSha256": call_site["auditSha256"],
+            "sourceFiles": [
+                call_site["luaFile"],
+                call_site["auditReport"],
+            ],
             "note": call_site["note"],
             "steps": [
                 {
                     "kind": "luaController",
                     "id": call_site["luaFile"],
                     "phase": call_site["phase"],
+                    "summaries": [
+                        f"line {call_site['luaLine']}",
+                        f"SHA-256 {call_site['luaSourceSha256']}",
+                    ],
                 },
                 {
                     "kind": "nativePlayback",
@@ -6139,7 +6320,7 @@ def build_story_binding_coverage(
     }
     story_trigger_manifest: dict[str, dict[str, Any]] = {}
     rejected_playback_by_key: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for candidate in LUA_STORY_PLAYBACK_REJECTIONS:
+    for candidate in lua_playback_evidence["rejectedCaseMismatchCalls"]:
         rejected_playback_by_key[str(candidate["storyKey"])].append(
             dict(candidate)
         )
@@ -6303,7 +6484,7 @@ def build_story_binding_coverage(
 
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 11,
+        "schemaVersion": 12,
         "generated": int(time.time()),
         "language": language,
         "policy": (
@@ -6317,6 +6498,8 @@ def build_story_binding_coverage(
             "storyIndex": repo_path(story_index_path),
             "missionSidecars": repo_path(mission_sidecar_root),
             "definitionOnlyAudioMetadata": definition_only_classification["source"],
+            "luaPlaybackAudit": lua_playback_evidence["auditReport"],
+            "luaPlaybackAuditSha256": lua_playback_evidence["auditSha256"],
         },
         "counts": {
             "pipelineMissions": len(mission_ids),
@@ -6358,6 +6541,14 @@ def build_story_binding_coverage(
                 len(rows)
                 for key, rows in rejected_playback_by_key.items()
                 if key in story_rows
+            ),
+            "scannedLuaStoryPlaybackCalls":
+                lua_playback_evidence["scannedPlaybackCalls"],
+            "acceptedLuaExactPlaybackCalls": len(
+                lua_playback_evidence["acceptedExactPlaybackCalls"]
+            ),
+            "rejectedLuaCaseMismatchCalls": len(
+                lua_playback_evidence["rejectedCaseMismatchCalls"]
             ),
             "missionStateDependencyStoryFiles": len(
                 mission_state_dependency_keys
@@ -6435,6 +6626,7 @@ def build_story_binding_coverage(
             ),
         ),
         "storyTriggerManifest": story_trigger_manifest,
+        "luaStoryPlaybackEvidence": lua_playback_evidence,
         "rootPlaybackAliases": root_playback_alias_rows,
         "composedRootPlaybackAliases":
             composed_root_playback_alias_rows,
@@ -6519,6 +6711,9 @@ def build_story_binding_coverage(
         f"- Normalized Story trigger/context routes: `{counts['storyTriggerRoutes']}`",
         f"- Story files with at least one normalized route: `{counts['storyFilesWithTriggerRoutes']}`",
         f"- Unlinked Story files with a known trigger/context route: `{counts['unlinkedStoryFilesWithTriggerRoutes']}`",
+        f"- Shipped-Lua Story playback calls scanned: `{counts['scannedLuaStoryPlaybackCalls']}`",
+        f"- Exact-case Lua playback calls admitted: `{counts['acceptedLuaExactPlaybackCalls']}`",
+        f"- Case-mismatched Lua calls rejected by installed-binary proof: `{counts['rejectedLuaCaseMismatchCalls']}`",
         f"- Exact root playback alias rows: `{counts['rootPlaybackAliasRows']}`",
         f"- TimelineAsset Story files reached by those aliases: `{counts['rootPlaybackAliasFiles']}`",
         f"- Alias rows composed with an independently connected root playback route: `{counts['composedRootPlaybackAliasRows']}`",
@@ -6556,6 +6751,28 @@ def build_story_binding_coverage(
     ]
     for kind, values in kind_counts.items():
         lines.append(f"| `{kind}` | {values['total']} | {values['connected']} | {values['unlinked']} |")
+    lines.extend([
+        "",
+        "## Shipped-Lua playback census",
+        "",
+        f"Validator: `{lua_playback_evidence['validator']}` / "
+        f"`{lua_playback_evidence['status']}`.",
+        "",
+        lua_playback_evidence["evidenceBoundary"],
+        "",
+        f"Audit: `{lua_playback_evidence['auditReport']}` "
+        f"SHA-256 `{lua_playback_evidence['auditSha256']}`.",
+    ])
+    for row in lua_playback_evidence["acceptedExactPlaybackCalls"]:
+        lines.append(
+            f"- admitted `{row['storyKey']}` from `{row['luaFile']}:{row['luaLine']}` "
+            f"(source SHA-256 `{row['luaSourceSha256']}`)"
+        )
+    for row in lua_playback_evidence["rejectedCaseMismatchCalls"]:
+        lines.append(
+            f"- rejected literal `{row['luaLiteral']}` for `{row['storyKey']}` "
+            f"via `{row['auditReport']}`"
+        )
     if root_playback_alias_rows:
         lines.extend([
             "",
@@ -8390,6 +8607,18 @@ def main() -> int:
         args.game_mechanic_condition_table.resolve(),
         args.dungeon_table.resolve(),
         getattr(args, "text_vo_id_table", DEFAULT_TEXT_VO_ID_TABLE).resolve(),
+        getattr(
+            args,
+            "lua_consumer_audit",
+            DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT,
+        ).resolve(),
+        tuple(
+            path.resolve()
+            for path in (
+                getattr(args, "cutscene_case_audit", None)
+                or [DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT]
+            )
+        ),
     )
     node_attachment = None
     if coverage:
@@ -8423,6 +8652,8 @@ def main() -> int:
             "counts": coverage["counts"],
             "nativePlaybackEventFamilies": coverage["nativePlaybackEventFamilies"],
             "storyTriggerManifest": coverage["storyTriggerManifest"],
+            "luaStoryPlaybackEvidence":
+                coverage.get("luaStoryPlaybackEvidence") or {},
             "offlineRecoveryEvidence": offline_recovery,
             "rootPlaybackAliases":
                 coverage.get("rootPlaybackAliases") or [],

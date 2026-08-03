@@ -3572,13 +3572,17 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
 
 class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
-    """The shipped-Lua playback lane is pinned evidence, so guard its rules."""
+    """The shipped-Lua playback lane is corpus-derived, so guard its gates."""
 
-    def test_every_pinned_call_site_has_full_provenance(self) -> None:
-        for row in pipeline.LUA_STORY_PLAYBACK_CALL_SITES:
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.evidence = pipeline.load_lua_story_playback_evidence()
+
+    def test_every_admitted_call_site_has_full_provenance(self) -> None:
+        for row in self.evidence["acceptedExactPlaybackCalls"]:
             for field in (
                 "storyKey", "luaFile", "luaSymbol", "luaCall", "nativeEntry",
-                "phase", "note",
+                "phase", "note", "luaSourceSha256", "luaLine", "auditReport",
             ):
                 self.assertTrue(
                     str(row.get(field) or "").strip(),
@@ -3586,19 +3590,23 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
                 )
             self.assertTrue(row["luaFile"].endswith(".lua"))
 
-    def test_case_sensitive_gender_select_cutscene_is_not_pinned(self) -> None:
+    def test_case_sensitive_gender_select_cutscene_is_not_admitted(self) -> None:
         # The current native resolver preserves "Cutscene_e0m0_1" into
         # case-sensitive StringPathHash resource lookup, so it cannot prove
         # playback of lowercase "cutscene_e0m0_1".
-        keys = {row["storyKey"] for row in pipeline.LUA_STORY_PLAYBACK_CALL_SITES}
+        keys = {
+            row["storyKey"]
+            for row in self.evidence["acceptedExactPlaybackCalls"]
+        }
         self.assertNotIn("cutscene_e0m0_1", keys)
         self.assertNotIn("Cutscene_e0m0_1", keys)
 
     def test_every_rejected_candidate_has_auditable_provenance(self) -> None:
         admitted = {
-            row["storyKey"] for row in pipeline.LUA_STORY_PLAYBACK_CALL_SITES
+            row["storyKey"]
+            for row in self.evidence["acceptedExactPlaybackCalls"]
         }
-        for row in pipeline.LUA_STORY_PLAYBACK_REJECTIONS:
+        for row in self.evidence["rejectedCaseMismatchCalls"]:
             for field in (
                 "storyKey", "luaLiteral", "luaFile", "luaSymbol", "luaCall",
                 "nativeEntry", "reason", "confidence", "auditReport", "note",
@@ -3614,6 +3622,64 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
                 "case_sensitive_native_resource_lookup",
             )
             self.assertTrue(row["auditReport"].endswith(".json"))
+
+    def test_corpus_rule_admits_an_arbitrary_exact_story_key(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "lua_audit.json"
+            audit_path.write_text(json.dumps({
+                "schemaVersion": pipeline.LUA_CONSUMER_REFERENCE_SCHEMA,
+                "summary": {"readErrorCount": 0},
+                "gameActionAudit": {"storyPlaybackCalls": [{
+                    "module": "Phase/Fixture/Fixture.lua",
+                    "sourcePath": "not-present/original-fixture.lua",
+                    "sourceSha256": "a" * 64,
+                    "line": 7,
+                    "method": "PlayCutscene",
+                    "playbackKind": "cutscene",
+                    "argumentSemantics": "story_id",
+                    "firstArgument": "STORY_ID",
+                    "resolvedLiteral": "cutscene_fixture_general_9",
+                    "registryStatus": "exact_registry_match",
+                    "canonicalStoryKey": "cutscene_fixture_general_9",
+                }]},
+            }), encoding="utf-8")
+
+            evidence = pipeline.load_lua_story_playback_evidence(
+                audit_path,
+                (),
+            )
+
+        self.assertEqual(
+            [row["storyKey"] for row in evidence["acceptedExactPlaybackCalls"]],
+            ["cutscene_fixture_general_9"],
+        )
+        self.assertEqual(
+            evidence["acceptedExactPlaybackCalls"][0]["phase"],
+            "fixture",
+        )
+
+    def test_corpus_rule_fails_closed_with_bounded_hash_diagnostic(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "lua_audit.json"
+            audit_path.write_text(json.dumps({
+                "schemaVersion": pipeline.LUA_CONSUMER_REFERENCE_SCHEMA,
+                "summary": {"readErrorCount": 0},
+                "gameActionAudit": {"storyPlaybackCalls": [{
+                    "module": "fixture.lua",
+                    "sourcePath": "not-present/fixture.lua",
+                    "sourceSha256": "bad",
+                    "line": 1,
+                    "method": "PlayCutscene",
+                    "argumentSemantics": "story_id",
+                    "registryStatus": "exact_registry_match",
+                }]},
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"validator.*gate=row_provenance.*sourceSha256:sha256",
+            ):
+                pipeline.load_lua_story_playback_evidence(audit_path, ())
 
     def test_rejected_candidate_is_published_without_a_trigger_route(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -3658,7 +3724,7 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
         self.assertEqual(row["routes"], [])
         self.assertEqual(
             row["rejectedPlaybackCandidates"],
-            list(pipeline.LUA_STORY_PLAYBACK_REJECTIONS),
+            self.evidence["rejectedCaseMismatchCalls"],
         )
         self.assertEqual(
             report["counts"]["rejectedStoryPlaybackCandidates"],
@@ -3879,8 +3945,8 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
             "fixture",
         )
 
-    def test_pinned_story_keys_are_lowercase_exact(self) -> None:
-        for row in pipeline.LUA_STORY_PLAYBACK_CALL_SITES:
+    def test_admitted_story_keys_are_lowercase_exact(self) -> None:
+        for row in self.evidence["acceptedExactPlaybackCalls"]:
             self.assertEqual(row["storyKey"], row["storyKey"].lower())
 
 

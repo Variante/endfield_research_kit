@@ -1064,13 +1064,25 @@ gaps, their exact related files, and the parallel rendezvous while keeping
 them graph-neutral. Manual/OCR sibling-route matches remain cross-reference
 only.
 
+Shipped-Lua Story playback is now recovered by one corpus rule rather than a
+per-cutscene list. The complete 1,290-module audit finds ten bounded
+`GameAction` playback calls: one exact registry literal is admitted
+(`cutscene_e1m10_1`), one case-mismatched literal is rejected only after the
+installed GameAssembly/metadata audit proves case-sensitive `StringPathHash`
+resolution, and eight handle/table expressions remain unresolved. Each
+published row carries the original Lua file SHA-256, line, typed native entry,
+audit hash, and a fail-closed validator result. This proves controller
+playback, not mission/quest ownership or Story order; OCR and manual order do
+not participate.
+
 ## Remaining gaps
 
 1. **Mission ownership:** 156 Story files have exact native playback but lack a
    mission/quest activation bridge. The unresolved surface is organized under
    161 runtime receiver nodes and 186 receiver-to-Story placements. Twenty-seven
    of those Story keys now have exact Encounter-controller and related-file
-   context, but remain unowned.
+   context, but remain unowned. `cutscene_e1m10_1` likewise has an exact
+   shipped-Lua phase owner but no serialized mission/quest identity.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
