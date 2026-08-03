@@ -165,3 +165,10 @@ for (const [key, category] of [
         self.assertIn('t("binaryActivePhaseReceiver")', source)
         self.assertIn("Setup → ActiveBegin → Active(", source)
         self.assertIn("not who selected public Active", source)
+
+    def test_mission_pipeline_surfaces_exact_client_active_request_selector(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("activation.clientActiveRequestControl", source)
+        self.assertIn('t("binaryClientActiveRequest")', source)
+        self.assertIn("clientActiveRequestControl.runtimePath", source)
+        self.assertIn("who supplied Enabled", source)

@@ -10,9 +10,10 @@ next narrower question for each hosting LevelScript:
 * whether that container names a MissionRuntime id;
 * whether any decoded ManualStartLevelScript row literally targets it.
 
-The result is a triage surface, not an attachment source.  A generic LevelData
-container, Manual start type, or incoming manual-control edge does not by
-itself identify a mission, quest, playback order, or server-state producer.
+The result is a typed Mission Pipeline context surface.  A generic LevelData
+container, activation request, Manual start type, or incoming manual-control
+edge does not by itself identify a mission, quest, playback order, or
+server-side state selector.
 """
 from __future__ import annotations
 
@@ -62,7 +63,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v19"
+SCHEMA = "nativeReceiverActivationFrontier.v20"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -1841,6 +1842,100 @@ def exact_active_phase_receiver_contract(
     }
 
 
+def exact_client_active_request_contract(
+    hosts: list[dict[str, Any]],
+    activation_control: dict[str, Any],
+) -> dict[str, Any]:
+    """Join one validated LevelData type to the generic binary selector.
+
+    This is intentionally type-driven.  Script ids, filenames, Story keys, and
+    mission candidates never select a branch.
+    """
+    selector = activation_control.get("activationSelectorFlow") or {}
+    type_values = selector.get("levelScriptTypeValues") or {}
+    validation = activation_control.get("validation") or {}
+    host_types = [
+        (host.get("briefData") or {}).get("levelScriptType")
+        for host in hosts
+        if isinstance((host.get("briefData") or {}).get("levelScriptType"), int)
+    ]
+    binary_validated = (
+        activation_control.get("schema") == "levelScriptActivationControl.v4"
+        and validation.get("status") == "validated"
+        and selector.get("nonSubLevelRequiresEnabledAndActiveArea") is True
+        and selector.get("subLevelRequiresPublicActive") is True
+        and selector.get("nonSubLevelSendsActiveTrueAfterPreActive") is True
+        and selector.get("subLevelSkipsActiveTrueRequest") is True
+        and type_values.get("SubLevelScript") == 4
+    )
+    exact_host = len(hosts) == 1 and len(host_types) == 1
+    level_script_type = host_types[0] if exact_host else None
+    type_name = next(
+        (
+            name for name, value in type_values.items()
+            if value == level_script_type
+        ),
+        "",
+    )
+    validated = binary_validated and exact_host and bool(type_name)
+    is_sublevel = validated and level_script_type == type_values.get(
+        "SubLevelScript"
+    )
+    classification = "activation_selector_unresolved"
+    if validated:
+        classification = (
+            "sublevel_waits_for_public_active"
+            if is_sublevel
+            else "client_runtime_active_request_after_enabled_area_gate"
+        )
+    return {
+        "schema": "exactClientActiveRequest.v1",
+        "status": "validated" if validated else "unresolved",
+        "classification": classification,
+        "validatedLevelDataHostCount": len(hosts),
+        "levelScriptType": level_script_type,
+        "levelScriptTypeName": type_name,
+        "clientProducesActiveRequest": validated and not is_sublevel,
+        "entryPublicState": (
+            "Active" if is_sublevel else "Enabled" if validated else ""
+        ),
+        "requiresActiveAreaGate": validated and not is_sublevel,
+        "runtimePath": (
+            [
+                "Enabled(2)",
+                "UpdateWithinActiveArea",
+                "PreActive(7)",
+                "PreActiveEndSendActiveState(9)",
+                "SendLevelScriptSetActive(true)",
+                "WaitForStateActive(10)",
+            ]
+            if validated and not is_sublevel
+            else ["Active(3)", "PreActive(7)", "WaitForStateActive(10)"]
+            if is_sublevel
+            else []
+        ),
+        "selectorFlow": selector if validated else {},
+        "finding": (
+            "The exact LevelData type selects the generic non-SubLevelScript "
+            "branch: after public Enabled and a successful active-area check, "
+            "the client runtime enters PreActive and emits active=true."
+            if validated and not is_sublevel
+            else "The exact LevelData type selects the SubLevelScript branch, "
+            "which waits for public Active and does not emit active=true."
+            if is_sublevel
+            else "The original LevelData type could not be joined uniquely to "
+            "the validated binary activation selector."
+        ),
+        "evidenceBoundary": (
+            "This proves the generic request-producing branch selected by the "
+            "original LevelData type. It does not prove who supplied public "
+            "Enabled, whether the spatial gate passed in a particular playthrough, "
+            "which server branch accepted Active, mission ownership, event firing, "
+            "or Story order."
+        ),
+    }
+
+
 def build_report(
     index_payload: dict[str, Any],
     manual_control_payload: dict[str, Any],
@@ -2074,6 +2169,10 @@ def build_report(
         active_phase_receiver_validated = (
             active_phase_receiver.get("status") == "validated"
         )
+        client_active_request = exact_client_active_request_contract(
+            hosts,
+            activation_control,
+        )
         classification = activation_class(
             levelscript,
             hosts,
@@ -2281,6 +2380,7 @@ def build_report(
                 "publicStateControl": row_activation_control,
                 "clientStartRequestControl": row_client_start_request_control,
                 "activePhaseReceiverControl": active_phase_receiver,
+                "clientActiveRequestControl": client_active_request,
                 "subGameStartControl": row_subgame_start_control,
                 "subGameBindings": subgames,
                 "dungeonSceneContexts": dungeon_contexts,
@@ -2295,9 +2395,10 @@ def build_report(
                 "activationClass": classification,
                 "missionOwnerStatus": "unresolved",
                 "evidenceBoundary": (
-                    "Static start/container/control fields narrow the missing "
-                    "activation carrier but do not identify a mission, quest, "
-                    "server-state producer, playback owner, or order."
+                    "The exact LevelData type now selects the generic client/public "
+                    "activation branch. This does not identify who supplied Enabled, "
+                    "a mission or quest owner, event firing, playback ownership, or "
+                    "Story order."
                 ),
             }
         )
@@ -2566,6 +2667,27 @@ def build_report(
                 == "validated"
                 for row in rows
             ),
+            "scriptsWithValidatedClientActiveRequestSelector": sum(
+                (row.get("clientActiveRequestControl") or {}).get("status")
+                == "validated"
+                for row in rows
+            ),
+            "scriptsWithClientProducedActiveRequest": sum(
+                (row.get("clientActiveRequestControl") or {}).get(
+                    "clientProducesActiveRequest"
+                )
+                is True
+                for row in rows
+            ),
+            "clientActiveRequestLevelScriptTypes": dict(sorted(Counter(
+                safe_text((row.get("clientActiveRequestControl") or {}).get(
+                    "levelScriptTypeName"
+                ))
+                for row in rows
+                if safe_text((row.get("clientActiveRequestControl") or {}).get(
+                    "levelScriptTypeName"
+                ))
+            ).items())),
             "activePhaseReceiverHeaders": sum(
                 (row.get("activePhaseReceiverControl") or {}).get(
                     "resolvedHeaderCount", 0
@@ -3129,6 +3251,9 @@ def publish_to_pipeline_index(
             "activePhaseReceiverControl": (
                 row.get("activePhaseReceiverControl") or {}
             ),
+            "clientActiveRequestControl": (
+                row.get("clientActiveRequestControl") or {}
+            ),
             "subGameStartControl": row.get("subGameStartControl") or {},
             "relatedOriginalFiles": [
                 {
@@ -3189,6 +3314,13 @@ def markdown_report(payload: dict[str, Any]) -> str:
         (
             "- Scripts with binary-validated public-state sync: "
             f"`{counts.get('scriptsWithValidatedPublicStateControlContract')}`"
+        ),
+        (
+            "- Scripts with exact activation selector / client-produced "
+            "active=true: "
+            f"`{counts.get('scriptsWithValidatedClientActiveRequestSelector')}` / "
+            f"`{counts.get('scriptsWithClientProducedActiveRequest')}` "
+            f"(`{counts.get('clientActiveRequestLevelScriptTypes')}`)"
         ),
         (
             "- Scripts / exact headers / Story keys with binary-validated "

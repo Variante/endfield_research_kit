@@ -153,9 +153,12 @@ Rebuild Story data after editing overrides.
   the generic binary-validated `Setup -> ActiveBegin -> enable Active(0)` path.
   All 161 receiver headers are Active-phase, including validated runtime-
   shadowed maps. The 54 manual scripts therefore do not need ManualStart for
-  receiver availability; the UI still labels the public-Active producer,
-  event occurrence, mission owner, branch choice, and cross-Story order as
-  unresolved.
+  receiver availability. Each card also joins its exact validated LevelData
+  type to the generic binary selector. All 95 current receivers are non-
+  `SubLevelScript` and visibly show `Enabled -> active-area gate -> PreActive ->
+  active=true -> WaitForStateActive`. The UI still labels the source of
+  Enabled, the playthrough-specific spatial result, server acceptance, event
+  occurrence, mission owner, branch choice, and cross-Story order unresolved.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

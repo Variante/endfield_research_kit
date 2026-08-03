@@ -40,7 +40,7 @@ Latest CN reports:
 | Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
 | Whole-client topology consumers | 42 / 43 direct `GetQuestInfo` call candidates verified; active predecessor consumers 0; non-sort flow consumers 0; topology lifecycle calls 0 |
 | Authored quest-fork semantics | 307 forks: 226 main-path + auxiliary, 78 all-auxiliary, 3 with multiple main-path arms; 97 guarded; 45 reconverging |
-| Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
+| Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; all 95 exact LevelData types select the non-SubLevel client `active=true` request branch; 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -1510,9 +1510,20 @@ graph once, then `UpdateRuntimeState` enables the Active group between
 `ActiveBegin` (14) and `WaitForSubEntityInitNewly` (15). Thus the 54 manual
 scripts, 95 receiver headers, and 99 Story keys are classified
 `manual_start_active_phase_receiver`: their Story receivers do not wait for or
-require a ManualStart carrier. The remaining gap is narrower but still
-fundamental: no audited client/original-data field identifies which mission or
-server branch selected public Active, nor whether a receiver event fired or
+require a ManualStart carrier.
+
+The upstream Active-request producer is also now recovered generically. The
+installed state machine compares `LevelScriptType.SubLevelScript=4`; every
+other type requires public `Enabled=2` plus `UpdateWithinActiveArea`, enters
+`PreActive=7`, finishes pre-active actions at state 9, emits active=true, and
+waits in state 10. `SubLevelScript` instead requires public `Active=3` and skips
+that request. Each of the 95 receiver scripts has exactly one validated
+original LevelData host: 39 World, 52 Mission, 1 Master, and 3 ControlledGame,
+so all 95 select the client request-producing branch without an object-specific
+rule. Mission Pipeline shows the type, state chain, method offsets, original
+LevelScript/LevelData files, and binary/metadata hashes. The remaining gap is
+now who supplies public Enabled, whether the spatial gate passed in a specific
+run, which server branch accepts Active, whether the receiver event fired, and
 how separate Story files are ordered. OCR, overrides, source-graph grouping,
 registration order, and code-address order remain cross-reference only.
 
