@@ -76,6 +76,53 @@ class SpaceshipStoryContentAuditTests(unittest.TestCase):
         )
         self.assertEqual([], rows)
 
+    def test_unconsumed_definition_uses_typed_actor_family_context(self) -> None:
+        dialog_rows = {
+            "sim_gift_fixture_recv_01": {
+                "audioOverride": "au_sim_gift_fixture_recv_01",
+            },
+            "sim_gift_fixture_recvbye_01": {
+                "audioOverride": "au_sim_gift_fixture_recvbye_01",
+            },
+        }
+        tree = dialog_tree("Beyond.Gameplay.SpaceshipOptionGiftData")
+        tree["_assetName"] = "dlg_npc_9999_fixture_spaceshipgift"
+        tree["nodes"][0]["_actorNodeData"]["mfTrunkActionData"][
+            "_trunkId"
+        ] = "sim_gift_fixture_recv_01"
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "fixture_tree.json"
+            source.write_text("{}", encoding="utf-8")
+            rows, paths = audit.collect_unconsumed_spaceship_dialog_definitions(
+                dialog_rows,
+                [(tree["_assetName"], source, tree)],
+                {"misc_sim_gift_fixture_recv"},
+            )
+        self.assertEqual(1, len(rows))
+        self.assertEqual(
+            "misc_sim_gift_fixture_recvbye",
+            rows[0]["storyKey"],
+        )
+        self.assertEqual("gift", rows[0]["dialogFamily"])
+        self.assertEqual("fixture", rows[0]["actorId"])
+        self.assertEqual({source}, paths)
+
+        tree["nodes"].append({
+            "$id": "2",
+            "$type": "Beyond.Gameplay.DialogTreeTrunkNode",
+            "_actorNodeData": {
+                "mfTrunkActionData": {
+                    "_trunkId": "sim_gift_fixture_recvbye_01",
+                },
+            },
+        })
+        rows, _paths = audit.collect_unconsumed_spaceship_dialog_definitions(
+            dialog_rows,
+            [(tree["_assetName"], source, tree)],
+            {"misc_sim_gift_fixture_recv"},
+        )
+        self.assertEqual([], rows)
+
     def test_profile_talk_requires_exact_audio_pair_and_complete_bucket(self) -> None:
         character_rows = {
             "chr_0013_aglina": {
@@ -175,13 +222,43 @@ class SpaceshipStoryContentAuditTests(unittest.TestCase):
             self.assertIn("misc_sim_work_aglina", loaded)
 
             payload = json.loads(report.read_text(encoding="utf-8"))
+            payload["classifications"].append({
+                "storyKey": "misc_sim_gift_fixture_recvbye",
+                "recoveryStatus": (
+                    "deferred_current_build_spaceship_dialog_definition_"
+                    "without_tree_carrier"
+                ),
+                "evidenceKind": (
+                    "spaceship_dialog_definition_without_tree_carrier"
+                ),
+                "contentClass": "operator_spaceship_dialog_definition",
+                "lineIds": ["sim_gift_fixture_recvbye_01"],
+                "dialogTreeRoots": ["dlg_npc_9999_fixture_spaceshipgift"],
+                "consumerClasses": [
+                    "Beyond.Gameplay.SpaceshipOptionGiftData",
+                ],
+                "dialogFamily": "gift",
+                "actorId": "fixture",
+                "carrierStatus": (
+                    "absent_from_all_related_typed_dialog_trees"
+                ),
+                "consumerBoundary": "fixture exact typed negative boundary",
+                "sourceFiles": ["source.json"],
+                "nativeMappingId": audit.NATIVE_MAPPING_ID,
+            })
+            report.write_text(json.dumps(payload), encoding="utf-8")
+            loaded = spaceship_story_non_mission_content_keys(
+                report,
+                source_root=root,
+            )
+            self.assertIn("misc_sim_gift_fixture_recvbye", loaded)
+
             payload["classifications"][0]["nativeMappingId"] = "stale"
             report.write_text(json.dumps(payload), encoding="utf-8")
-            self.assertEqual(
-                {},
+            self.assertNotIn(
+                "misc_sim_work_aglina",
                 spaceship_story_non_mission_content_keys(
-                    report,
-                    source_root=root,
+                    report, source_root=root
                 ),
             )
 
@@ -190,11 +267,10 @@ class SpaceshipStoryContentAuditTests(unittest.TestCase):
             )
             payload["classifications"][0]["sourceFiles"] = ["unhashed.json"]
             report.write_text(json.dumps(payload), encoding="utf-8")
-            self.assertEqual(
-                {},
+            self.assertNotIn(
+                "misc_sim_work_aglina",
                 spaceship_story_non_mission_content_keys(
-                    report,
-                    source_root=root,
+                    report, source_root=root
                 ),
             )
 

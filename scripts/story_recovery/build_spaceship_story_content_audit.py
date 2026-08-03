@@ -44,7 +44,7 @@ from story_builder.anime_assets import (  # noqa: E402
 )
 
 
-SCHEMA = "spaceshipStoryContentAudit.v1"
+SCHEMA = "spaceshipStoryContentAudit.v2"
 DEFAULT_TABLE_ROOT = (
     ROOT / "export_full" / "structured" / "StreamingAssets" / "Table"
 )
@@ -104,6 +104,9 @@ SPACESHIP_OPTION_TYPES = frozenset({
 LINE_SUFFIX_RE = re.compile(r"_[0-9]+(?:_[0-9]+)?$")
 PROFILE_TALK_RE = re.compile(
     r"^(?P<char>chr_[0-9]+_(?P<actor>[^_]+))_sim_talk_(?P<suffix>.+)$"
+)
+SPACESHIP_DIALOG_LINE_RE = re.compile(
+    r"^sim_(?P<family>[^_]+)_(?P<actor>[^_]+)_(?P<suffix>.+)$"
 )
 AUDIO_EQUALITY_FIELDS = (
     "codec",
@@ -240,6 +243,106 @@ def collect_dialog_tree_classifications(
                 "the typed DialogTree proves internal operator-spacecraft "
                 "content and branch membership, not mission ownership or "
                 "cross-file chronology"
+            ),
+        })
+    return classifications, used_paths
+
+
+def collect_unconsumed_spaceship_dialog_definitions(
+    dialog_rows: dict[str, Any],
+    tree_rows: Iterable[tuple[str, Path, dict[str, Any]]],
+    classified_story_keys: set[str],
+) -> tuple[list[dict[str, Any]], set[Path]]:
+    """Find complete ``sim_*`` buckets absent from related typed trees.
+
+    Actor/family relationships are derived from exact line ids carried by
+    typed spaceship DialogTrees. A filename or prefix alone cannot create a
+    row, and any target line carried by a related tree rejects the candidate.
+    """
+    typed_roots_by_context: dict[
+        tuple[str, str], list[tuple[str, Path, dict[str, Any]]]
+    ] = defaultdict(list)
+    for asset_name, path, payload in tree_rows:
+        facts = classify_dialog_tree_payload(payload, asset_name, dialog_rows)
+        if facts is None:
+            continue
+        contexts = {
+            (match.group("family"), match.group("actor"))
+            for line_id in facts["lineIds"]
+            if (match := SPACESHIP_DIALOG_LINE_RE.fullmatch(line_id)) is not None
+        }
+        for context in contexts:
+            typed_roots_by_context[context].append((asset_name, path, facts))
+
+    dialog_text_source = (
+        "export_full/structured/StreamingAssets/Table/DialogTextTable.json"
+    )
+    classifications: list[dict[str, Any]] = []
+    used_paths: set[Path] = set()
+    for story_key, line_ids in sorted(dialog_groups(dialog_rows).items()):
+        if story_key in classified_story_keys:
+            continue
+        matches = [
+            SPACESHIP_DIALOG_LINE_RE.fullmatch(line_id)
+            for line_id in sorted(line_ids)
+        ]
+        contexts = {
+            (match.group("family"), match.group("actor"))
+            for match in matches
+            if match is not None
+        }
+        if len(contexts) != 1 or any(match is None for match in matches):
+            continue
+        context = next(iter(contexts))
+        related = typed_roots_by_context.get(context) or []
+        if not related:
+            continue
+        carried_target_lines = sorted({
+            line_id
+            for _asset_name, _path, facts in related
+            for line_id in facts["lineIds"]
+            if line_id in line_ids
+        })
+        if carried_target_lines:
+            continue
+        roots = sorted({asset_name for asset_name, _path, _facts in related})
+        paths = {path for _asset_name, path, _facts in related}
+        consumers = sorted({
+            consumer
+            for _asset_name, _path, facts in related
+            for consumer in facts["consumerClasses"]
+        })
+        used_paths.update(paths)
+        classifications.append({
+            "storyKey": story_key,
+            "recoveryStatus": (
+                "deferred_current_build_spaceship_dialog_definition_"
+                "without_tree_carrier"
+            ),
+            "evidenceKind": (
+                "spaceship_dialog_definition_without_tree_carrier"
+            ),
+            "contentClass": "operator_spaceship_dialog_definition",
+            "lineIds": sorted(line_ids),
+            "dialogTreeRoots": roots,
+            "consumerClasses": consumers,
+            "dialogFamily": context[0],
+            "actorId": context[1],
+            "carrierStatus": "absent_from_all_related_typed_dialog_trees",
+            "sourceFiles": sorted({
+                dialog_text_source,
+                *(rel_path(path) for path in paths),
+            }),
+            "nativeMappingId": NATIVE_MAPPING_ID,
+            "consumerBoundary": (
+                "exact typed spaceship DialogTrees consume sibling lines for "
+                "the same authored actor/family pair, while no related typed "
+                "tree carries any line in this complete DialogText bucket"
+            ),
+            "orderBoundary": (
+                "the relation classifies an unconsumed spaceship definition; "
+                "it proves neither playback, mission ownership, nor relative "
+                "Story chronology"
             ),
         })
     return classifications, used_paths
@@ -395,20 +498,35 @@ def build_report(
         dialog_rows,
         tree_rows,
     )
+    unconsumed_classifications, unconsumed_tree_paths = (
+        collect_unconsumed_spaceship_dialog_definitions(
+            dialog_rows,
+            tree_rows,
+            {row["storyKey"] for row in tree_classifications},
+        )
+    )
     talk_classifications = collect_profile_talk_classifications(
         character_rows,
         dialog_rows,
         audio_rows,
     )
     classifications = sorted(
-        [*tree_classifications, *talk_classifications],
+        [
+            *tree_classifications,
+            *talk_classifications,
+            *unconsumed_classifications,
+        ],
         key=lambda row: row["storyKey"],
     )
     if len({row["storyKey"] for row in classifications}) != len(classifications):
         raise AuditError("a Story key matched multiple spaceship producer classes")
 
     source_paths = sorted(
-        {*table_paths.values(), *used_tree_paths},
+        {
+            *table_paths.values(),
+            *used_tree_paths,
+            *unconsumed_tree_paths,
+        },
         key=lambda path: rel_path(path),
     )
     return {
@@ -417,6 +535,9 @@ def build_report(
             "classifiedStoryKeys": len(classifications),
             "dialogTreeStoryKeys": len(tree_classifications),
             "profileTalkStoryKeys": len(talk_classifications),
+            "unconsumedDialogDefinitionStoryKeys": len(
+                unconsumed_classifications
+            ),
             "dialogTreeRoots": len(used_tree_paths),
         },
         "nativeEvidence": {
@@ -444,6 +565,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Classified Story keys: `{summary['classifiedStoryKeys']}`",
         f"- DialogTree-contained keys: `{summary['dialogTreeStoryKeys']}`",
         f"- Character profile-talk keys: `{summary['profileTalkStoryKeys']}`",
+        "- Unconsumed typed-context definitions: "
+        f"`{summary['unconsumedDialogDefinitionStoryKeys']}`",
         f"- Exact DialogTree roots: `{summary['dialogTreeRoots']}`",
         f"- Native mapping: `{md_escape(report['nativeEvidence']['mappingId'])}`",
         "",
@@ -491,7 +614,9 @@ def main(argv: list[str] | None = None) -> int:
         "[spaceship-story-content] classified "
         f"{report['summary']['classifiedStoryKeys']} non-mission Story keys "
         f"({report['summary']['dialogTreeStoryKeys']} DialogTree, "
-        f"{report['summary']['profileTalkStoryKeys']} profile talk)"
+        f"{report['summary']['profileTalkStoryKeys']} profile talk, "
+        f"{report['summary']['unconsumedDialogDefinitionStoryKeys']} "
+        "unconsumed definitions)"
     )
     return 0
 

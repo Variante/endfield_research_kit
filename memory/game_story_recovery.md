@@ -192,8 +192,8 @@ files.
 No current mission has Story
 targets on two different Branch sequence slots, so this adds zero Branch-derived
 Story-order edges rather than guessing them.
-The other-bucket queue is 30 and the current contract is
-`sourceStoryGapQueue.v126`; OCR and manual order remain comparison-only. The
+The other-bucket queue is 13 and the current contract is
+`sourceStoryGapQueue.v127`; OCR and manual order remain comparison-only. The
 queue now loads the current Story trigger manifest through an exact schema,
 language, source-hash, and object-shape gate instead of silently discarding a
 newer coverage schema. General closure contracts revalidate shipped-Lua
@@ -211,6 +211,21 @@ serialized leader-volume -> `CheckQuestState(Equal, Processing)` ->
 `PlayRadio` chain. Arbitrary Story ids using either shape are supported; the
 multi-quest DialogTree branch subtype remains separate. Both closures retain
 source hashes and quest context but add no relative Story-file edge.
+
+The latest batch removes two object-shaped blind spots with reusable negative
+consumer rules. Mechanical `misc_dlg_*` aliases now enter the same exact
+DialogText/DialogOption/audio, registry, Timeline, typed action/playback,
+object-carrier, GameAssembly, and metadata exhaustion gate as `dlg_*` roots;
+option-group tokens may be alphanumeric. This defers surviving table-only rows
+generically, including both `sm1l5m3` `0d5`/`4d5` definitions, without turning
+options into routes. Typed spaceship trees now establish actor/family contexts
+from carried line ids; a complete sibling DialogText bucket is deferred only
+when no related typed tree carries any target line. That rule finds exactly the
+two gift `recvbye` buckets, attaches their four related original DialogTrees
+plus `DialogTextTable`, and leaves playback, ownership, and chronology unknown.
+Together these rules reduce other-bucket actionable core rows from 30 to 13;
+main, event, major, and character remain zero. The partial-order graph is
+unchanged.
 
 The original metadata `BlackboxGuideHintController`, `FacGuideHintEnable`, and
 `LevelDataGuideHintConfig` surface is spatial factory guide-hint configuration,
@@ -292,13 +307,13 @@ when an exact typed `DialogTree` consumes every line through
 `SpaceshipOptionGiftData` or `SpaceshipOptionWorkData`, or when a mechanical
 `CharacterTable.profileVoice` mirror has an exact duplicated `AudioDialog`
 metadata pair. Current GameAssembly and metadata hashes pin the reviewed gift,
-work-state, dialog-selection, and NPC reaction consumers. This classifies 278
+work-state, dialog-selection, and NPC reaction consumers. This classifies 280
 non-mission Story keys: 194 typed DialogTree buckets (138 gift, 28 rest, 28
-work) and 84 profile-talk buckets. Mission Pipeline exposes all 279 exact
+work), 84 profile-talk buckets, and two current-build unconsumed gift
+definitions. Mission Pipeline exposes the exact
 non-mission records in one collapsible browser with their original DialogTree
-and table files. The other actionable queue falls from 381 to 103;
-`misc_sim_gift_ikut_recvbye` and `misc_sim_gift_wolfgd_recvbye` remain open
-because the current original corpus has no typed trunk consumer for either.
+and table files. The two `recvbye` rows remain explicitly absent-carrier
+definitions rather than being promoted to playback.
 These classifications prove content and internal branch membership, not mission
 ownership or cross-file chronology; OCR/manual order remains comparison-only.
 

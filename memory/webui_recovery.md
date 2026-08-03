@@ -74,6 +74,10 @@ their inputs.
   playback and typed quest-state-gated LevelScript playback. The mission view
   names the parent Story or decoded condition/event/action chain, quest anchor,
   original source file, and explicit no-relative-order boundary.
+- Non-mission spaceship cards distinguish exact carried content from complete
+  actor/family-matched definitions absent from all related typed DialogTrees;
+  the latter show a dedicated definition-gap confidence and attached original
+  tree/table files without implying playback, mission ownership, or order.
 - BlackBox recovery cards expose exact SubGame/bound-LevelScript context,
   separate authored task lanes, complete decoded task/condition topology,
   condition formulas, objective display keys, exact parent playback, and the

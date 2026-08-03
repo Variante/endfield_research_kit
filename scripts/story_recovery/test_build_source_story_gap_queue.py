@@ -327,6 +327,40 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "option_dlg_fixture_1_2_001",
         ]})
 
+    def test_generic_unregistered_dialog_resolves_misc_alias_generically(self) -> None:
+        story_key = "misc_dlg_fixture_0d5"
+        definition_root = "dlg_fixture_0d5"
+        line = {
+            field: ""
+            for field in gap_queue.OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS
+        }
+        line["audioOverride"] = "au_dlg_fixture_0d5_001"
+        facts, failure = (
+            gap_queue._generic_unregistered_dialog_definition_facts(
+                story_key,
+                {"dlg_fixture_0d5_001": line},
+                {
+                    "option_dlg_fixture_0d5_0d5_001": {
+                        "iconType": "Default",
+                        "optionText": {"id": 42, "text": ""},
+                    },
+                },
+                {"au_dlg_fixture_0d5_001"},
+                definition_root_key=definition_root,
+            )
+        )
+
+        self.assertIsNone(failure)
+        self.assertEqual(definition_root, facts["definitionRootKey"])
+        self.assertEqual(
+            ["option_dlg_fixture_0d5_0d5_001"],
+            facts["optionIds"],
+        )
+        self.assertEqual(
+            {"0d5": ["option_dlg_fixture_0d5_0d5_001"]},
+            facts["optionsByGroup"],
+        )
+
     def test_generic_registered_table_dialog_resolves_mechanical_alias(self) -> None:
         story_key = "misc_dlg_fixture_1d5"
         definition_root = "dlg_fixture_1d5"
@@ -10946,6 +10980,58 @@ class NonMissionContentClosureTests(unittest.TestCase):
             "tree.json",
             "DialogTextTable.json",
         ])
+
+    def test_spaceship_definition_gap_is_deferred_without_table_fallback(self) -> None:
+        story_key = "misc_sim_gift_fixture_recvbye"
+        partial = partial_mission(
+            "gift",
+            scenes=[story_key],
+            isolated=[story_key],
+        )
+        row = gap_queue.build_gap_row(
+            partial,
+            mission_payload(),
+            mission_bundle_exists=True,
+            non_mission_content={
+                story_key: {
+                    "evidenceKind": (
+                        "spaceship_dialog_definition_without_tree_carrier"
+                    ),
+                    "content": "operator_spaceship_dialog_definition",
+                    "lineIds": ["sim_gift_fixture_recvbye_01"],
+                    "dialogTreeRoots": [
+                        "dlg_npc_9999_fixture_spaceshipgift",
+                    ],
+                    "consumerClasses": [
+                        "Beyond.Gameplay.SpaceshipOptionGiftData",
+                    ],
+                    "dialogFamily": "gift",
+                    "actorId": "fixture",
+                    "carrierStatus": (
+                        "absent_from_all_related_typed_dialog_trees"
+                    ),
+                    "consumerBoundary": "typed related tree carries no target",
+                    "sourceFiles": ["tree.json", "DialogTextTable.json"],
+                    "nativeMappingId": "spaceship-mapping-v1",
+                    "orderBoundary": "no playback or Story order edge",
+                    "evidenceReport": "report.json",
+                },
+            },
+        )
+
+        self.assertEqual(row["metrics"]["actionableCoreIsolatedScenes"], 0)
+        closed = row["closedNonMissionContentIsolatedScenes"][0]
+        self.assertEqual(
+            closed["recoveryStatus"],
+            (
+                "deferred_current_build_spaceship_dialog_definition_"
+                "without_tree_carrier"
+            ),
+        )
+        self.assertEqual(
+            closed["carrierStatus"],
+            "absent_from_all_related_typed_dialog_trees",
+        )
 
     def test_lookalike_key_not_in_any_table_stays_actionable(self) -> None:
         # Same filename shape, absent from the tables: must NOT be closed.
