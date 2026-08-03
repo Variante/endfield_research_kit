@@ -235,13 +235,17 @@ def load_cinematic_runtime_contract(path: Path) -> dict[str, Any]:
     contract = payload.get("contract") or {}
     conclusion = payload.get("conclusion") or {}
     methods = contract.get("nativeDispatcherMethods") or []
+    producers = contract.get("nativeProducers") or []
+    action_routes = contract.get("actionProducerRoutes") or []
     source = payload.get("source") or {}
     if (
-        payload.get("schemaVersion") != "cinematicQueueRuntimeAudit.v1"
+        payload.get("schemaVersion") != "cinematicQueueRuntimeAudit.v2"
         or conclusion.get("luaCallsAreRuntimeDispatchers") is not True
         or conclusion.get("staticMissionOwnership") is not False
         or conclusion.get("staticStoryOrder") is not False
         or not methods
+        or not producers
+        or not action_routes
         or not all(isinstance(value, str) and value.endswith("ByHandle") for value in methods)
         or not re.fullmatch(r"[0-9a-f]{64}", str(source.get("gameAssemblySha256") or ""))
         or not re.fullmatch(r"[0-9a-f]{64}", str(source.get("metadataSha256") or ""))
@@ -259,6 +263,13 @@ def load_cinematic_runtime_contract(path: Path) -> dict[str, Any]:
         "queueBaseType": (contract.get("queueBase") or {}).get("type"),
         "dispatcherMethods": sorted(set(methods)),
         "payloadTypeCount": len(contract.get("payloadTypes") or []),
+        "nativeProducerCount": len(producers),
+        "typedActionProducerRouteCount": len(action_routes),
+        "typedActionProducerTypeCount": len({
+            str(row.get("actionFullType") or "") for row in action_routes
+            if row.get("actionFullType")
+        }),
+        "actionProducerRoutes": action_routes,
         "enqueueEdgeCount": len(contract.get("enqueueEdges") or []),
     }
 

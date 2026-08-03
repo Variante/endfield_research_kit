@@ -3326,6 +3326,22 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 [step["kind"] for step in connected_route["steps"]],
                 ["quest", "native_action", "story"],
             )
+            self.assertEqual(
+                connected_route["nativeCinematicProducerRoutes"][0]["producerMethod"],
+                "StartDialog",
+            )
+            self.assertIn(
+                "reports/story/recovery/cinematic_queue_runtime_audit.json",
+                connected_route["sourceFiles"],
+            )
+            self.assertEqual(
+                report["counts"]["nativeCinematicProducerStoryFiles"],
+                1,
+            )
+            self.assertEqual(
+                report["counts"]["nativeCinematicProducerRouteAttachments"],
+                1,
+            )
             unresolved_routes = trigger_manifest["radio_testm1_1"]["routes"]
             unresolved_route = next(
                 row for row in unresolved_routes
