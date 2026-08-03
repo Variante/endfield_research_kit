@@ -94,6 +94,13 @@
       postPlaybackBranch: "typed local branch points",
       postPlaybackServerHandoff: "server handoff (handler unresolved)",
       postPlaybackBoundary: "Typed successor fields prove the local action graph after playback. Callback labels do not identify a server handler, mission/quest owner, state write, or cross-Story chronology.",
+      postPlaybackLevelSequenceAudit: "Exact post-playback LevelSequence files",
+      postPlaybackLevelSequenceActions: "typed sequence action placements",
+      postPlaybackLevelSequenceAssets: "exact original TextAssets",
+      postPlaybackLevelSequenceUnresolved: "unresolved serialized sequence IDs",
+      postPlaybackLevelSequenceFile: "related original LevelSequence file",
+      postPlaybackLevelSequenceValidationFailure: "excluded source identity mismatch",
+      postPlaybackLevelSequenceBoundary: "The action class comes from the installed binary formatter and the file joins only when the serialized ID equals the exported m_Name, Name, and decoded cutsceneName. It does not prove mission ownership or order separate Story files.",
       postPlaybackVariableBridge: "Post-playback variable bridge audit",
       postPlaybackVariableSetterStat: "typed post-playback variable setters",
       postPlaybackVariableListeners: "exact variable-listener rows",
@@ -1821,6 +1828,7 @@
       [storyCounts.rootPlaybackAliasRows, t("rootPlaybackAliases")],
       [storyCounts.missionlessSubGameStoryFiles, t("missionlessSubGameStory")],
       [storyCounts.missionlessNativeRuntimeStoryFiles, t("missionlessRuntimeStory")],
+      [storyCounts.postPlaybackLevelSequenceExactAssets, t("postPlaybackLevelSequenceAssets")],
       [storyCounts.postPlaybackVariableSetters, t("postPlaybackVariableSetterStat")],
       [storyCounts.unlinkedDefinitionOnlyFiles, t("definitionOnlyStory")],
       [storyCounts.nonMissionContentFiles, t("nonMissionContentStory")],
@@ -3992,6 +4000,8 @@
       .filter((row) => row && row.eventName && row.selector && (row.storyFiles || []).length);
     const variableBridgeAudit = state.index?.storyCoverage?.postPlaybackVariableBridgeAudit || {};
     const variableBridgeSummary = variableBridgeAudit.summary || {};
+    const levelSequenceAudit = state.index?.storyCoverage?.postPlaybackLevelSequenceAssetAudit || {};
+    const levelSequenceSummary = levelSequenceAudit.summary || {};
     const rows = [...(contract.outbound || []), ...(contract.inbound || [])];
     const localRows = (contract.localOnly || []).filter((row) => row && row.event);
     const protocolOnlyRows = (contract.protocolOnly || []).filter((row) => row && row.message);
@@ -4092,6 +4102,16 @@
         <header><strong>${esc(t("nativeGapQueue"))}</strong><p>${esc(t("nativeGapQueueHint"))}</p></header>
         ${coveragePolicy ? `<p class="mp-gap-policy"><b>${esc(t("evidencePolicy"))}:</b> ${esc(coveragePolicy)}</p>` : ""}
         <div class="mp-gap-family-list">${eventFamilies.map(([eventName, count]) => `<div class="mp-gap-family-row"><code>${esc(eventName)}</code><span><i style="width:${Math.max(4, Math.round((Number(count) / maxEventFamilyCount) * 100))}%"></i></span><b>${Number(count).toLocaleString()}</b></div>`).join("")}</div>
+      </section>` : ""}
+      ${levelSequenceAudit.schema ? `<section class="mp-gap-queue mp-level-sequence-audit">
+        <header><strong>${esc(t("postPlaybackLevelSequenceAudit"))}</strong><p>${esc(t("postPlaybackLevelSequenceBoundary"))}</p></header>
+        <div class="mp-gap-family-list">
+          <div class="mp-gap-family-row"><code>${esc(t("postPlaybackLevelSequenceActions"))}</code><span></span><b>${Number(levelSequenceSummary.typedActionPlacements || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("postPlaybackLevelSequenceAssets"))}</code><span></span><b>${Number(levelSequenceSummary.exactResolvedLevelSequenceIds || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("postPlaybackLevelSequenceUnresolved"))}</code><span></span><b>${Number(levelSequenceSummary.unresolvedLevelSequenceIds || 0).toLocaleString()}</b></div>
+        </div>
+        ${(levelSequenceAudit.unresolvedLevelSequenceIds || []).length ? `<p class="mp-gap-policy"><code>${esc(levelSequenceAudit.unresolvedLevelSequenceIds.join(", "))}</code></p>` : ""}
+        ${(levelSequenceAudit.sourceIndex?.validationFailures || []).map((failure) => `<p class="mp-gap-policy"><b>${esc(t("postPlaybackLevelSequenceValidationFailure"))}:</b> <code>${esc(failure.sourceFile || "")}</code> · ${esc(failure.actual || failure.gate || "")}</p>`).join("")}
       </section>` : ""}
       ${variableBridgeAudit.schema ? `<section class="mp-gap-queue mp-variable-bridge-audit">
         <header><strong>${esc(t("postPlaybackVariableBridge"))}</strong><p>${esc(t("postPlaybackVariableBoundary"))}</p></header>
@@ -4295,7 +4315,11 @@
               }).join("");
               const branches = (control.branchPointLocalIds || []).length ? `<div><span>${esc(t("postPlaybackBranch"))}</span><i aria-hidden="true">→</i><code>${esc(control.branchPointLocalIds.map((id) => `#${id}`).join(", "))}</code></div>` : "";
               const handoffs = (control.serverHandoffs || []).map((handoff) => `<div class="is-boundary"><span>${esc(t("postPlaybackServerHandoff"))}</span><i aria-hidden="true">→</i><code>${esc((handoff.callbackCorrelationLabels || []).join(", ") || `#${handoff.localId ?? "?"}`)}</code><b>${esc(t("noMissionOwner"))}</b></div>`).join("");
-              return `${pathRows}${branches}${handoffs}<small>${esc(control.sourceFile || "")}</small>`;
+              const sequenceFiles = (control.actions || []).flatMap((action) => (action.levelSequenceReferences || []).map((reference) => ({action, reference})));
+              const sequenceRows = sequenceFiles.map(({action, reference}) => reference.sourceFile
+                ? `<div><span>${esc(t("postPlaybackLevelSequenceFile"))}</span><i aria-hidden="true">→</i><code>${esc(reference.levelSequenceId || "")}</code><b>${esc(action.actionName || "LevelSequence")}</b><small>${esc(`${reference.sourceFile}${reference.pathId ? ` · ${reference.pathId}` : ""}`)}</small></div>`
+                : `<div class="is-boundary"><span>${esc(t("postPlaybackLevelSequenceUnresolved"))}</span><i aria-hidden="true">⇥</i><code>${esc(reference.levelSequenceId || "")}</code><b>${esc(action.actionName || "LevelSequence")}</b></div>`).join("");
+              return `${pathRows}${branches}${handoffs}${sequenceRows}<small>${esc(control.sourceFile || "")}</small>`;
             }).join("")}<small>${esc(t("postPlaybackBoundary"))}</small></div>` : ""}
             ${target ? `<div class="mp-runtime-associations mp-runtime-target"><strong>${esc(t("exactRuntimeTarget"))}</strong><div><span>${esc(t("modulePointer"))}</span><i aria-hidden="true">→</i><code>${esc(target.levelScriptVariablePtr)}</code><b>${esc(target.moduleType || t("encounterModule"))}</b><small>${esc(`${target.sourceFile || ""} @ ${target.dictionaryOffsetHex || "—"} · union ${target.moduleUnionTag || "—"}/${target.serializedMemberCount || "—"}`)}</small></div><div><span>${esc(t("activationSlot"))}</span><i aria-hidden="true">→</i><code>${esc(target.activateTriggerSlotId ?? "—")}</code><b>LOCAL</b><small>${esc(`${t("battleExitSlot")}: ${battlePart.exitTriggerSlotId ?? "—"}${enemySlots.length ? ` · ${t("localEntitySlots")}: ${enemySlots.join(", ")}` : ""}`)}</small></div><div class="is-boundary"><span>${esc(t("missingOwnershipBridge"))}</span><i aria-hidden="true">⇥</i><code>missionId / questId / MissionArea</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(row.ownershipBoundary || target.ownershipBoundary || "")}</small></div><small>${esc(t("noServerRequestOrReturn"))}</small></div>` : ""}
             ${producers.length ? `<div class="mp-runtime-associations"><strong>${esc(t("localProducerChain"))}</strong>${producers.map((producer) => `<div><span>${esc(`${t("abilityProducer")} · ${producer.producerDomain || "AbilityActionData"}`)}</span><i aria-hidden="true">→</i><code>${esc(producer.producerAssetId)}</code><b>LOCAL · ${esc(t("noServerRequestOrReturn"))}</b><small>${esc(`${t("literalSignal")}: ${producer.receiverSignalId || "—"} / ${producer.doubleValue?.value ?? "—"} · ${producer.actionUnionTag || ""}/${producer.serializedMemberCount || ""} · ${producer.producerSourceFile || ""} @ ${producer.actionOffset || "—"}`)}</small></div>`).join("")}<small>${esc(t("producerBoundaryHint"))}</small></div>` : ""}
