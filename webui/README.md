@@ -98,7 +98,9 @@ Rebuild Story data after editing overrides.
   or order edge.
 - Exact native receiver cards also show generally decoded
   `ActionHeader._validate` playback gates. Predicate type, operands, local
-  header/getter/action ids, and the original LevelScript file stay visible;
+  header/getter/action ids, recursive getter-node count/depth, and the original
+  LevelScript file stay visible. AND/OR/NOT/ALL trees are rendered from typed
+  child references while missing, cyclic, or unknown children fail closed;
   the UI labels them as receiver-local branches, never mission ownership,
   cross-Story order, or proof of a later server write.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and

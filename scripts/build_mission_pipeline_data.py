@@ -5320,6 +5320,115 @@ def _playback_gate_operand_label(operand: Any) -> str:
     return ""
 
 
+def _playback_gate_child_summary(tree: dict[str, Any], path: str) -> str:
+    for child in tree.get("children") or []:
+        if str(child.get("path") or "") == path:
+            return _playback_gate_tree_summary(child.get("predicate") or {})
+    return ""
+
+
+def _playback_gate_tree_summary(tree: dict[str, Any]) -> str:
+    """Render an identity-agnostic exact predicate tree for the WebUI."""
+    if not isinstance(tree, dict):
+        return ""
+    predicate_type = str(tree.get("predicateType") or "")
+    predicate = tree.get("predicate") or {}
+
+    def operand(field: str) -> str:
+        nested = _playback_gate_child_summary(
+            tree,
+            f"{field}.getterLocalId",
+        )
+        return nested or _playback_gate_operand_label(predicate.get(field))
+
+    if predicate_type in {"boolGetterAnd", "boolGetterOr"}:
+        left = operand("valueA")
+        right = operand("valueB")
+        operator = "AND" if predicate_type == "boolGetterAnd" else "OR"
+        return f"({left} {operator} {right})" if left and right else ""
+    if predicate_type == "boolGetterInvert":
+        value = operand("value")
+        return f"NOT ({value})" if value else ""
+    if predicate_type == "boolGetterMultiAnd":
+        values = [
+            _playback_gate_child_summary(
+                tree,
+                f"values[{index}].getterLocalId",
+            )
+            for index, _value in enumerate(predicate.get("values") or [])
+        ]
+        return (
+            f"ALL ({' AND '.join(values)})"
+            if values and all(values)
+            else ""
+        )
+    if predicate_type == "booleanCompare":
+        left = operand("valueA")
+        right = operand("valueB")
+        operator = {"Equal": "==", "NotEqual": "!="}.get(
+            str(predicate.get("comparerName") or ""),
+            "",
+        )
+        return f"{left} {operator} {right}" if left and operator and right else ""
+    if predicate_type == "intEqual":
+        left = operand("valueA")
+        right = operand("valueB")
+        return f"{left} == {right}" if left and right else ""
+    if predicate_type in {"intCompare", "floatNewCompare"}:
+        left = _playback_gate_child_summary(tree, "valueAGetterLocalId")
+        right = _playback_gate_operand_label(predicate.get("valueB"))
+        operator = {
+            "Equal": "==",
+            "NotEqual": "!=",
+            "GreaterThan": ">",
+            "GreaterEqual": ">=",
+            "LessThan": "<",
+            "LessEqual": "<=",
+        }.get(str(predicate.get("comparerName") or ""), "")
+        return f"{left} {operator} {right}" if left and operator and right else ""
+    if predicate_type in {"getterBool", "getterInt"}:
+        return _playback_gate_operand_label(predicate.get("value"))
+    if predicate_type == "getLevelScriptStage":
+        script_ptr = predicate.get("scriptPtr") or {}
+        script_id = str(script_ptr.get("scriptId") or "current script")
+        return f"{script_id}.stage"
+    if predicate_type == "getLsmIsCompleted":
+        lsm_ptr = predicate.get("lsmPtr") or {}
+        identity = str(lsm_ptr.get("rawValueHex") or "LSM")
+        return f"LSM[{identity}].completed"
+    if predicate_type == "interactiveCheckState":
+        target = predicate.get("target") or {}
+        identity = (
+            f"slot {target.get('slotId')}"
+            if target.get("useSlotId")
+            else f"entity {target.get('logicId')}"
+        )
+        operator = {
+            "Equal": "==",
+            "NotEqual": "!=",
+            "GreaterThan": ">",
+            "GreaterEqual": ">=",
+            "LessThan": "<",
+            "LessEqual": "<=",
+        }.get(str(predicate.get("comparerName") or ""), "")
+        value = _playback_gate_operand_label(predicate.get("value"))
+        return f"{identity}.interactiveState {operator} {value}" if operator and value else ""
+    return ""
+
+
+def _playback_gate_tree_metrics(tree: dict[str, Any]) -> tuple[int, int]:
+    if not isinstance(tree, dict) or not tree:
+        return 0, 0
+    child_metrics = [
+        _playback_gate_tree_metrics(child.get("predicate") or {})
+        for child in tree.get("children") or []
+    ]
+    return (
+        1 + sum(count for count, _depth in child_metrics),
+        1 + max((depth for _count, depth in child_metrics), default=0),
+    )
+
+
 def exact_native_receiver_playback_gate(
     data: bytes,
     header_local_id: int,
@@ -5335,26 +5444,22 @@ def exact_native_receiver_playback_gate(
     predicate = validation.get("predicate")
     if not validation or not isinstance(predicate, dict):
         return {}
-    summary = ""
-    if predicate_type == "booleanCompare":
-        operator = {
-            "Equal": "==",
-            "NotEqual": "!=",
-        }.get(str(predicate.get("comparerName") or ""), "")
-        left = _playback_gate_operand_label(predicate.get("valueA"))
-        right = _playback_gate_operand_label(predicate.get("valueB"))
-        if operator and left and right:
-            summary = f"{left} {operator} {right}"
-    elif predicate_type == "intEqual":
-        left = _playback_gate_operand_label(predicate.get("valueA"))
-        right = _playback_gate_operand_label(predicate.get("valueB"))
-        if left and right:
-            summary = f"{left} == {right}"
+    predicate_tree = validation.get("predicateTree") or {
+        "predicateType": predicate_type,
+        "predicate": predicate,
+        "children": [],
+    }
+    summary = _playback_gate_tree_summary(predicate_tree)
     if not summary:
         return {}
+    predicate_node_count, predicate_depth = _playback_gate_tree_metrics(
+        predicate_tree
+    )
     return {
         **validation,
         "summary": summary,
+        "predicateNodeCount": predicate_node_count,
+        "predicateDepth": predicate_depth,
         "effect": "receiver_playback_allowed_when_true",
         "branchScope": "this_receiver_header_only",
         "sourceFile": source_file,

@@ -1681,6 +1681,62 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 ),
             )
 
+    def test_native_receiver_gate_formats_recursive_boolean_tree(self):
+        leaf = {
+            "predicateType": "getterBool",
+            "predicate": {
+                "value": {
+                    "value": False,
+                    "idRef": -1,
+                    "paramSource": 300,
+                    "path": "isFinished",
+                },
+            },
+            "children": [],
+        }
+        validation = {
+            "status": "exact_current_build_memorypack_fields",
+            "headerLocalId": 2,
+            "headerNextLocalId": 3,
+            "getterLocalId": 1,
+            "predicateType": "boolGetterInvert",
+            "predicate": {
+                "operation": "Not",
+                "value": {
+                    "operandKind": "localGetterRef",
+                    "getterLocalId": 0,
+                },
+            },
+            "predicateTree": {
+                "predicateType": "boolGetterInvert",
+                "predicate": {
+                    "operation": "Not",
+                    "value": {
+                        "operandKind": "localGetterRef",
+                        "getterLocalId": 0,
+                    },
+                },
+                "children": [{
+                    "path": "value.getterLocalId",
+                    "getterLocalId": 0,
+                    "predicate": leaf,
+                }],
+            },
+        }
+        with patch.object(
+            pipeline,
+            "decode_levelscript_action_header_validation",
+            return_value=validation,
+        ):
+            gate = pipeline.exact_native_receiver_playback_gate(
+                b"fixture",
+                2,
+                source_file="fixture/levelscript.json",
+            )
+        self.assertEqual("NOT (isFinished)", gate["summary"])
+        self.assertEqual(2, gate["predicateNodeCount"])
+        self.assertEqual(2, gate["predicateDepth"])
+
     def test_battle_signal_producer_route_revalidates_every_binary_identity(self):
         route = {
             "relation": "ability_battle_signal_local_causality",

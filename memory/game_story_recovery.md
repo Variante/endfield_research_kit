@@ -27,7 +27,7 @@ Latest CN reports:
 | Exact quest-observed DialogTree definitions | 434 definitions / 461 placements across 422 quests |
 | LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
 | Native branch predicates | 258 named; 263 semantic including 5 inline; 0 class-only; 0 unresolved |
-| Exact receiver playback gates | 15 Story files (11 Boolean comparisons + 4 integer equalities) |
+| Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -173,11 +173,19 @@ The same receiver surface now follows the general serialized
 special-casing Story ids. Installed `ActionHeader.DoProcess` reads the Boolean
 parameter through `Param<bool>.get_useGetter` and `ParamExtensions.GetValue`
 before proceeding. Of 30 receiver headers with local validation getters across
-20 LevelScripts, 15 currently consume fully decoded predicates: 11 Boolean
-comparisons and four integer equalities, controlling 15 Story files. The eight
+20 LevelScripts, all 30 now consume fully decoded predicates through one
+recursive getter-graph resolver: 15 Boolean comparisons, six NOT, four integer
+equalities, two AND, one OR, one counted ALL, and one direct Boolean leaf. The
+resolver follows typed local-getter references, selects the active final
+serialized runtime slot, and fails closed on unknown, missing, cyclic, or
+malformed children. Installed `BoolGetterAnd`, `BoolGetterOr`,
+`BoolGetterInvert`, and `BoolGetterMultiAnd.GetResult` bodies prove the logical
+operations; `GetterBool`, `GetLsmIsCompleted`, and `InteractiveCheckState`
+formatter fields and consumers prove the remaining leaves. The eight
 `indie_dg002/8700050001` radio gates are exact `*Played == false` checks. The
-other 15 getter unions remain unpublished until their consumers and payloads
-are decoded. These are receiver-local allow/block branches only: they do not
+newly exposed compound gates include property/stage expressions, one LSM
+completion inversion, and one six-child interactive-state conjunction. These
+are receiver-local allow/block branches only: they do not
 prove a post-play server write, mission ownership, or order between Story
 files.
 No current mission has Story
