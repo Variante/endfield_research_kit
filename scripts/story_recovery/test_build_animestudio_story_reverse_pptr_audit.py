@@ -46,6 +46,38 @@ def object_row(
 
 
 class AnimeStudioStoryReversePPtrAuditTests(unittest.TestCase):
+    def test_cutscene_root_identity_prefers_scalar_then_exact_root_name(self) -> None:
+        self.assertEqual(
+            audit.cutscene_root_story_identity(
+                {"cutscene_root"},
+                root_game_object_name="cutscene_asset",
+                component_game_object_path_id=10,
+                root_game_object_path_id=10,
+                all_story_keys={"cutscene_root", "cutscene_asset"},
+            ),
+            ({"cutscene_root"}, "cutscene_root_timeline_name"),
+        )
+        self.assertEqual(
+            audit.cutscene_root_story_identity(
+                set(),
+                root_game_object_name="cutscene_asset",
+                component_game_object_path_id=10,
+                root_game_object_path_id=10,
+                all_story_keys={"cutscene_asset"},
+            ),
+            ({"cutscene_asset"}, "root_game_object_name_fallback"),
+        )
+        self.assertEqual(
+            audit.cutscene_root_story_identity(
+                set(),
+                root_game_object_name="cutscene_asset",
+                component_game_object_path_id=11,
+                root_game_object_path_id=10,
+                all_story_keys={"cutscene_asset"},
+            ),
+            (set(), "unresolved"),
+        )
+
     def test_collects_gendered_cutscene_variant_as_canonical_target(
         self,
     ) -> None:

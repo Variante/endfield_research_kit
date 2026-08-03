@@ -29,7 +29,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import build_animestudio_story_carrier_audit as carrier  # noqa: E402
 import build_animestudio_story_gameobject_audit as gameobjects  # noqa: E402
 
-SCHEMA = "animestudioStoryReversePPtrAudit.v3"
+SCHEMA = "animestudioStoryReversePPtrAudit.v4"
 DEFAULT_OUTPUT_ROOT = ROOT / "export_full"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"
@@ -129,6 +129,32 @@ def resolved_game_object_ids(row: dict[str, Any]) -> list[int]:
         and pointer["pathId"]
         and str(pointer.get("status") or "").startswith("resolved")
     })
+
+
+def cutscene_root_story_identity(
+    component_story_keys: set[str],
+    *,
+    root_game_object_name: str,
+    component_game_object_path_id: int,
+    root_game_object_path_id: int,
+    all_story_keys: set[str],
+) -> tuple[set[str], str]:
+    """Resolve a cutscene root's authored Story identity without guessing.
+
+    ``_timelineName`` is normally the Story key.  Some original prefabs use a
+    runtime ``levelseq_*`` name there, while the root GameObject retains the
+    exact registered Story key.  The GameObject fallback is accepted only for
+    the component on the hierarchy root and only when no scalar Story key was
+    recovered, so it cannot overwrite a real cross-key playback alias.
+    """
+    if component_story_keys:
+        return component_story_keys, "cutscene_root_timeline_name"
+    if (
+        component_game_object_path_id == root_game_object_path_id
+        and root_game_object_name in all_story_keys
+    ):
+        return {root_game_object_name}, "root_game_object_name_fallback"
+    return set(), "unresolved"
 
 
 def story_index_keys(path: Path) -> set[str]:
@@ -405,6 +431,21 @@ def analyze_director_hosts(
                             ):
                                 host_story_keys.add(field["value"])
                                 component_story_keys.add(field["value"])
+                        component_story_keys, identity_source = (
+                            cutscene_root_story_identity(
+                                component_story_keys,
+                                root_game_object_name=row[
+                                    "rootGameObjectName"
+                                ],
+                                component_game_object_path_id=
+                                    game_object_path_id,
+                                root_game_object_path_id=row[
+                                    "rootGameObjectPathId"
+                                ],
+                                all_story_keys=all_story_keys,
+                            )
+                        )
+                        host_story_keys.update(component_story_keys)
                         director_pointers = [
                             pointer
                             for pointer in component.get("pptrs") or []
@@ -434,6 +475,7 @@ def analyze_director_hosts(
                                     "pointerPath": pointer["path"],
                                     "pointerStatus":
                                         pointer.get("status"),
+                                    "storyIdentitySource": identity_source,
                                     "directorObject": row["object"],
                                 })
                     typed_components.append({

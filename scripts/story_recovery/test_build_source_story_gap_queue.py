@@ -8173,7 +8173,44 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(generic_cutscene["graphEffect"], "none")
         cutscene_status = status["genericCutsceneDefinitionEvidence"]
         self.assertEqual(cutscene_status["validationFailures"], [])
-        self.assertEqual(cutscene_status["qualifiedStoryKeys"], 30)
+        self.assertEqual(cutscene_status["qualifiedStoryKeys"], 33)
+        root_alias = offline_index["cutscene_f1m9d3_1"]
+        playable_alias = offline_index["cutscene_f1m9d4_1"]
+        self.assertEqual(root_alias["cutsceneAliasRole"], "cutscene_root")
+        self.assertEqual(
+            playable_alias["cutsceneAliasRole"],
+            "playable_timeline_asset",
+        )
+        self.assertEqual(
+            root_alias["rootPlaybackAlias"],
+            playable_alias["rootPlaybackAlias"],
+        )
+        self.assertIn(
+            "VFS/7064D8E2/98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+            root_alias["originalGameFiles"],
+        )
+        map_cutscene = offline_index[
+            "cutscene_map02_lv001_TSZ_01_3_copy"
+        ]
+        self.assertTrue(map_cutscene["embeddedRootGraph"])
+        self.assertEqual(map_cutscene["gameObjectRowCount"], 0)
+        self.assertEqual(map_cutscene["directorHostCount"], 1)
+        invalid_graph = next(
+            row
+            for row in cutscene_status["qualificationDiagnostics"]
+            if row.get("storyKey") == "cutscene_gm02m4_1"
+        )
+        self.assertEqual(
+            invalid_graph["gate"],
+            "exactDefinitionRootDirectorGraph",
+        )
+        self.assertEqual(
+            invalid_graph["actual"]["directorHosts"],
+            2,
+        )
+        self.assertFalse(
+            invalid_graph["actual"]["directorGraphValid"],
+        )
         registered_tree_status = status[
             "genericRegisteredDialogTreeNegativeConsumerEvidence"
         ]

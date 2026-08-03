@@ -9,15 +9,15 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 591 (490 MissionRuntime + 101 Story-only recovery shells) |
-| Unique Story files | 5,562 |
+| Pipeline missions | 601 (490 MissionRuntime + 111 Story-only recovery shells) |
+| Unique Story files | 5,564 |
 | Connected files | 4,239 (76.2%) |
 | Files with a normalized trigger/context route | 4,462 (80.2%) |
-| Unlinked files | 1,323 |
+| Unlinked files | 1,325 |
 | Unlinked files with exact native playback | 156 |
 | Encounter-controller contexts | 5 receiver scripts / 7 modules / 27 Story keys / 9 related source files |
-| Exact non-mission content | 279 (278 spacecraft/profile + 1 guide runtime) |
-| Actionable core-isolated files | 30, all in the other bucket |
+| Exact non-mission content | 281 (280 spacecraft/profile + 1 guide runtime) |
+| Actionable core-isolated files | 10, all in the other bucket |
 | Partial-order mission rows | 487 |
 | Candidate scene placements | 8,877 |
 | Strong / supported / weak edges | 1,502 / 834 / 2,635 |
@@ -192,8 +192,8 @@ files.
 No current mission has Story
 targets on two different Branch sequence slots, so this adds zero Branch-derived
 Story-order edges rather than guessing them.
-The other-bucket queue is 13 and the current contract is
-`sourceStoryGapQueue.v127`; OCR and manual order remain comparison-only. The
+The other-bucket queue is 10 and the current contract is
+`sourceStoryGapQueue.v128`; OCR and manual order remain comparison-only. The
 queue now loads the current Story trigger manifest through an exact schema,
 language, source-hash, and object-shape gate instead of silently discarding a
 newer coverage schema. General closure contracts revalidate shipped-Lua
@@ -226,6 +226,28 @@ plus `DialogTextTable`, and leaves playback, ownership, and chronology unknown.
 Together these rules reduce other-bucket actionable core rows from 30 to 13;
 main, event, major, and character remain zero. The partial-order graph is
 unchanged.
+
+The latest cutscene batch removes the remaining root/director shape blind spots
+with two reusable identity rules. A typed `CutsceneRootComponent` normally
+identifies its Story root through `_timelineName`; when that field is a runtime
+`levelseq_*` token, the reverse-PPtr audit accepts the exact root GameObject
+name only if the component is on the hierarchy root, the name is a current
+Story key, and no scalar Story key resolved. Five current director hosts use
+this fallback. This closes `cutscene_map02_lv001_TSZ_01_3_copy` through its
+exact `_director -> PlayableDirector -> m_PlayableAsset` chain. A separate
+general pair classifier recognizes an exact cross-key root/playable alias only
+when both registered TextAssets round-trip through the Timeline dictionaries,
+the root object graph and played asset graph are complete, the current binary
+tokens/typed playback/carrier surfaces remain absent, and the unique pointer,
+containment, and mission sets agree. It closes `cutscene_f1m9d3_1` as the root
+definition and `cutscene_f1m9d4_1` as the played TimelineAsset. Both Mission
+Pipeline cards attach the exact TextAsset, registry tables, object audits,
+installed binary/metadata, and the two original VFS chunks. The alias proves
+playback composition only; it does not order `f1m9d3` against `f1m9d4` or
+identify either mission activator. The actionable queue falls from 13 to 10;
+main, event, major, and character remain zero, and the graph remains 1,502
+strong edges, 265 forks, 55 merges, 307 native branch groups, and 19
+convergences.
 
 The original metadata `BlackboxGuideHintController`, `FacGuideHintEnable`, and
 `LevelDataGuideHintConfig` surface is spatial factory guide-hint configuration,
@@ -262,7 +284,7 @@ tie-breaker; it cannot fill missing rows. `misc_timeline_blackbox_miner` and
 `_pipe` remain open because authored rows lack serialized registered owners.
 Mission Pipeline exposes the parent files, hashes, and directed edges.
 Canonical mission-pipeline builds refresh and validate
-`sourceStoryGapQueue.v123` after current Story coverage
+`sourceStoryGapQueue.v128` after current Story coverage
 and partial order are published; data-only builds deliberately reuse it. OCR
 and manual order remain comparison-only.
 

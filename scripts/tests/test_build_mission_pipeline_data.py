@@ -19,7 +19,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v127",
+            "sourceStoryGapQueue.v128",
         )
 
     def test_trigger_route_preserves_exact_connected_context_evidence(self):
