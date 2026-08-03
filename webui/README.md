@@ -96,6 +96,11 @@ Rebuild Story data after editing overrides.
   SpawnerConfig dependency. Module and receiver ids are kept distinct, zero
   spawners are labeled explicitly, and these remain non-owning with no branch
   or order edge.
+- Exact native receiver cards also show generally decoded
+  `ActionHeader._validate` playback gates. Predicate type, operands, local
+  header/getter/action ids, and the original LevelScript file stay visible;
+  the UI labels them as receiver-local branches, never mission ownership,
+  cross-Story order, or proof of a later server write.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

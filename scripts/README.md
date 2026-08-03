@@ -34,6 +34,9 @@ override those defaults for one run.
 - Canonical `export.bat` runs refresh and validate the source Story gap queue
   after current partial-order and coverage reports are published, before
   Mission Pipeline recovery cards are projected. Data-only runs reuse it.
+- Mission Pipeline resolves exact native receiver playback gates generically
+  through serialized `ActionHeader._validate` getter references; unsupported
+  getter unions fail closed instead of receiving object-specific rules.
 - Reuse Timeline/reference outputs only when their original inputs did not
   change.
 - The direct Story builder can take several minutes; allow 10–15 minutes for

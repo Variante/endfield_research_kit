@@ -27,6 +27,7 @@ Latest CN reports:
 | Exact quest-observed DialogTree definitions | 434 definitions / 461 placements across 422 quests |
 | LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
 | Native branch predicates | 258 named; 263 semantic including 5 inline; 0 class-only; 0 unresolved |
+| Exact receiver playback gates | 15 Story files (11 Boolean comparisons + 4 integer equalities) |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -167,6 +168,18 @@ SpawnerConfig files named by positive typed `spawner_id` values; the seventh
 contract has the valid zero/no-spawner form. Five module ids differ from their
 receiver script id. Encounter activation still supplies no MissionRuntime
 foreign key, Story branch, or order edge.
+The same receiver surface now follows the general serialized
+`ActionHeader._validate` parameter into its ActionMap getter rather than
+special-casing Story ids. Installed `ActionHeader.DoProcess` reads the Boolean
+parameter through `Param<bool>.get_useGetter` and `ParamExtensions.GetValue`
+before proceeding. Of 30 receiver headers with local validation getters across
+20 LevelScripts, 15 currently consume fully decoded predicates: 11 Boolean
+comparisons and four integer equalities, controlling 15 Story files. The eight
+`indie_dg002/8700050001` radio gates are exact `*Played == false` checks. The
+other 15 getter unions remain unpublished until their consumers and payloads
+are decoded. These are receiver-local allow/block branches only: they do not
+prove a post-play server write, mission ownership, or order between Story
+files.
 No current mission has Story
 targets on two different Branch sequence slots, so this adds zero Branch-derived
 Story-order edges rather than guessing them.

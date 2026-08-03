@@ -30,7 +30,10 @@ try:
         write_report_json,
         write_text_if_changed,
     )
-    from story_builder.levelscript_binary import decode_levelscript_encounter_module_target
+    from story_builder.levelscript_binary import (
+        decode_levelscript_action_header_validation,
+        decode_levelscript_encounter_module_target,
+    )
     from story_builder.mission_assets import (
         mission_runtime_source_summary,
         select_complete_mission_runtime_root,
@@ -68,6 +71,7 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
         write_text_if_changed,
     )
     from scripts.story_builder.levelscript_binary import (
+        decode_levelscript_action_header_validation,
         decode_levelscript_encounter_module_target,
     )
     from scripts.story_builder.mission_assets import (
@@ -5304,6 +5308,68 @@ def load_dynamic_scene_identity_cross_references(
     }
 
 
+def _playback_gate_operand_label(operand: Any) -> str:
+    if not isinstance(operand, dict):
+        return ""
+    if operand.get("path"):
+        return str(operand["path"])
+    if isinstance(operand.get("getterLocalId"), int):
+        return f"getter #{operand['getterLocalId']}"
+    if "value" in operand:
+        return json.dumps(operand.get("value"), ensure_ascii=False)
+    return ""
+
+
+def exact_native_receiver_playback_gate(
+    data: bytes,
+    header_local_id: int,
+    *,
+    source_file: str,
+) -> dict[str, Any]:
+    """Build a UI-safe exact gate without specializing Story ids or objects."""
+    validation = decode_levelscript_action_header_validation(
+        data,
+        header_local_id,
+    )
+    predicate_type = str(validation.get("predicateType") or "")
+    predicate = validation.get("predicate")
+    if not validation or not isinstance(predicate, dict):
+        return {}
+    summary = ""
+    if predicate_type == "booleanCompare":
+        operator = {
+            "Equal": "==",
+            "NotEqual": "!=",
+        }.get(str(predicate.get("comparerName") or ""), "")
+        left = _playback_gate_operand_label(predicate.get("valueA"))
+        right = _playback_gate_operand_label(predicate.get("valueB"))
+        if operator and left and right:
+            summary = f"{left} {operator} {right}"
+    elif predicate_type == "intEqual":
+        left = _playback_gate_operand_label(predicate.get("valueA"))
+        right = _playback_gate_operand_label(predicate.get("valueB"))
+        if left and right:
+            summary = f"{left} == {right}"
+    if not summary:
+        return {}
+    return {
+        **validation,
+        "summary": summary,
+        "effect": "receiver_playback_allowed_when_true",
+        "branchScope": "this_receiver_header_only",
+        "sourceFile": source_file,
+        "branchEvidence": True,
+        "missionOwnershipEvidence": False,
+        "crossStoryOrderEvidence": False,
+        "serverWriteEvidence": False,
+        "evidenceBoundary": (
+            "The installed client evaluates this ActionHeader validation before "
+            "the receiver proceeds. It does not identify a mission owner, order "
+            "different Story files, or prove any later server-side state write."
+        ),
+    }
+
+
 def build_story_binding_coverage(
     pipeline_index: dict[str, Any],
     pipeline_index_path: Path,
@@ -5414,6 +5480,7 @@ def build_story_binding_coverage(
     )
     missionless_subgame_nodes: dict[str, dict[str, Any]] = {}
     missionless_native_runtime_nodes: dict[str, dict[str, Any]] = {}
+    native_receiver_gate_cache: dict[tuple[str, int], dict[str, Any]] = {}
     story_trigger_routes: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
     context_only_trigger_route_keys: set[str] = set()
     definition_only_interactive_config_keys: set[str] = set()
@@ -5671,6 +5738,8 @@ def build_story_binding_coverage(
                         )
                         if not selector:
                             continue
+                        source_file = str(occurrence.get("sourceFile") or "")
+                        source_path = ROOT / source_file
                         runtime_target = (
                             owner.get("runtimeTarget")
                             if isinstance(owner.get("runtimeTarget"), dict)
@@ -5685,8 +5754,6 @@ def build_story_binding_coverage(
                                 int,
                             )
                         ):
-                            source_file = str(occurrence.get("sourceFile") or "")
-                            source_path = ROOT / source_file
                             try:
                                 runtime_target = (
                                     decode_levelscript_encounter_module_target(
@@ -5726,10 +5793,36 @@ def build_story_binding_coverage(
                                 "ownershipBoundary": str(
                                     runtime_target.get("ownershipBoundary") or ""
                                 ),
+                                "_playbackGates": {},
                                 "_localProducerRoutes": {},
                                 "storyFiles": {},
                             },
                         )
+                        header_local_id = selector.get("listenerHeaderLocalId")
+                        if source_file and isinstance(header_local_id, int):
+                            gate_cache_key = (source_file, header_local_id)
+                            if gate_cache_key not in native_receiver_gate_cache:
+                                try:
+                                    native_receiver_gate_cache[gate_cache_key] = (
+                                        exact_native_receiver_playback_gate(
+                                            read_bytes_cached(source_path),
+                                            header_local_id,
+                                            source_file=source_file,
+                                        )
+                                    )
+                                except OSError:
+                                    native_receiver_gate_cache[gate_cache_key] = {}
+                            playback_gate = native_receiver_gate_cache[gate_cache_key]
+                            if playback_gate:
+                                gate_signature = json.dumps(
+                                    playback_gate,
+                                    ensure_ascii=False,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                )
+                                runtime_node["_playbackGates"][gate_signature] = (
+                                    playback_gate
+                                )
                         if runtime_target and not runtime_node.get("runtimeTarget"):
                             runtime_node["runtimeTarget"] = runtime_target
                             runtime_node["ownershipBoundary"] = str(
@@ -6060,6 +6153,15 @@ def build_story_binding_coverage(
     missionless_runtime_story_keys: set[str] = set()
     missionless_runtime_story_placements = 0
     for node in missionless_native_runtime_nodes.values():
+        playback_gates = sorted(
+            node.pop("_playbackGates", {}).values(),
+            key=lambda row: (
+                str(row.get("sourceFile") or ""),
+                int(row.get("headerLocalId") or -1),
+            ),
+        )
+        if playback_gates:
+            node["playbackGates"] = playback_gates
         local_producer_routes = sorted(
             node.pop("_localProducerRoutes", {}).values(),
             key=lambda row: (
@@ -6096,7 +6198,7 @@ def build_story_binding_coverage(
 
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 10,
+        "schemaVersion": 11,
         "generated": int(time.time()),
         "language": language,
         "policy": (
@@ -6199,6 +6301,16 @@ def build_story_binding_coverage(
                 len(node.get("localProducerRoutes") or [])
                 for node in missionless_runtime_nodes
             ),
+            "missionlessNativeRuntimePlaybackGates": sum(
+                len(node.get("playbackGates") or [])
+                for node in missionless_runtime_nodes
+            ),
+            "missionlessNativeRuntimePlaybackGateStoryFiles": len({
+                story["key"]
+                for node in missionless_runtime_nodes
+                if node.get("playbackGates")
+                for story in node.get("storyFiles") or []
+            }),
             "partiallyConnectedDialogTreeNarrativeFiles": len(
                 unresolved_dialog_tree_containment & connected_keys
             ),
@@ -6328,6 +6440,8 @@ def build_story_binding_coverage(
         f"- Exact missionless native runtime receiver nodes: `{counts['missionlessNativeRuntimeRows']}`",
         f"- Unique Story files attached to exact runtime receivers: `{counts['missionlessNativeRuntimeStoryFiles']}`",
         f"- Exact runtime-receiver-to-Story placements: `{counts['missionlessNativeRuntimeStoryPlacements']}`",
+        f"- Exact receiver playback gates: `{counts['missionlessNativeRuntimePlaybackGates']}`",
+        f"- Story files controlled by those exact gates: `{counts['missionlessNativeRuntimePlaybackGateStoryFiles']}`",
         f"- Connected files with another unresolved DialogTree parent use: `{counts['partiallyConnectedDialogTreeNarrativeFiles']}`",
         "",
         "## By kind",
