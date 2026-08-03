@@ -451,6 +451,16 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 [{"subGameId": "fixture_game"}],
             ),
         )
+        self.assertEqual(
+            "subgame_interaction_manual_start",
+            frontier.activation_class(
+                {"startTypeName": "Manual"},
+                [],
+                [],
+                [{"subGameId": "fixture_game"}],
+                activation_control_validated=True,
+            ),
+        )
 
     def test_same_with_active_uses_generic_validated_binary_policy(self) -> None:
         self.assertEqual(

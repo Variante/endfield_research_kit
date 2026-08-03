@@ -61,7 +61,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v16"
+SCHEMA = "nativeReceiverActivationFrontier.v17"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -1651,9 +1651,12 @@ def activation_class(
     subgame_bindings: list[dict[str, Any]] | None = None,
     *,
     start_policy_validated: bool = False,
+    activation_control_validated: bool = False,
 ) -> str:
     """Classify only the static carriers that the audit actually decodes."""
     if subgame_bindings:
+        if activation_control_validated:
+            return "subgame_interaction_manual_start"
         return "subgame_bind_script_activation_scope"
     if not levelscript:
         return "levelscript_missing_or_undecoded"
@@ -1761,6 +1764,25 @@ def build_report(
             "serializedObjectInputs"
         )
         == []
+    )
+    activation_control = (
+        (index_payload.get("runtimeContract") or {}).get(
+            "levelScriptActivationControlAudit"
+        )
+        or {}
+    )
+    activation_control_validated = (
+        (activation_control.get("validation") or {}).get("status")
+        == "validated"
+        and safe_text(activation_control.get("classification"))
+        == "server_state_and_subgame_interaction_start_paths"
+        and (activation_control.get("discoveryPattern") or {}).get(
+            "serializedObjectInputs"
+        )
+        == [
+            "SubGameInstanceData.id",
+            "SubGameInstanceData.bindScriptId",
+        ]
     )
     incoming_by_target = manual_control_targets(
         manual_control_payload,
@@ -1914,6 +1936,7 @@ def build_report(
             incoming,
             subgames,
             start_policy_validated=start_policy_validated,
+            activation_control_validated=activation_control_validated,
         )
         classes[classification] += 1
         start_types[safe_text(levelscript.get("startTypeName")) or "[unresolved]"] += 1
@@ -1951,6 +1974,57 @@ def build_report(
             )
             else {}
         )
+        activation_methods = activation_control.get("methods") or {}
+        row_activation_control = (
+            {
+                "schema": safe_text(activation_control.get("schema")),
+                "source": safe_text(activation_control.get("source")),
+                "classification": safe_text(
+                    activation_control.get("classification")
+                ),
+                "stateNotifyMessageId": (
+                    activation_control.get("messageIds") or {}
+                ).get("ScSceneLevelScriptStateNotify"),
+                "handlerMethod": activation_methods.get(
+                    "StateNotifyHandler"
+                )
+                or {},
+                "updateStateMethod": activation_methods.get("UpdateState")
+                or {},
+                "publicStateFlow": activation_control.get("publicStateFlow")
+                or {},
+                "finding": safe_text(activation_control.get("finding")),
+                "evidenceBoundary": safe_text(
+                    activation_control.get("evidenceBoundary")
+                ),
+                "relatedOriginalFiles": (
+                    activation_control.get("relatedOriginalFiles") or []
+                ),
+                "validation": activation_control.get("validation") or {},
+            }
+            if activation_control_validated
+            else {}
+        )
+        row_subgame_start_control = (
+            {
+                **row_activation_control,
+                "challengeMethod": activation_methods.get(
+                    "ChallengeOnInteract"
+                )
+                or {},
+                "manualStartMethod": activation_methods.get("ManualStart")
+                or {},
+                "fieldOffsets": activation_control.get("fieldOffsets") or {},
+                "subGameInteractionFlow": (
+                    activation_control.get("subGameInteractionFlow") or {}
+                ),
+                "manualStartDirectCallers": (
+                    activation_control.get("manualStartDirectCallers") or []
+                ),
+            }
+            if activation_control_validated and subgames
+            else {}
+        )
         related_paths = {
             safe_text(related.get("sourceFile"))
             for related in related_original_files
@@ -1972,6 +2046,14 @@ def build_report(
                 related_original_files.append(dict(related))
                 related_paths.add(safe_text(related.get("sourceFile")))
         for related in row_manual_self_control.get("relatedOriginalFiles") or []:
+            if (
+                isinstance(related, dict)
+                and safe_text(related.get("sourceFile"))
+                and safe_text(related.get("sourceFile")) not in related_paths
+            ):
+                related_original_files.append(dict(related))
+                related_paths.add(safe_text(related.get("sourceFile")))
+        for related in row_activation_control.get("relatedOriginalFiles") or []:
             if (
                 isinstance(related, dict)
                 and safe_text(related.get("sourceFile"))
@@ -2018,6 +2100,8 @@ def build_report(
                 "nominalMissionHostComparison": nominal_host_comparison,
                 "incomingLiteralManualControls": incoming,
                 "manualSelfControl": row_manual_self_control,
+                "publicStateControl": row_activation_control,
+                "subGameStartControl": row_subgame_start_control,
                 "subGameBindings": subgames,
                 "dungeonSceneContexts": dungeon_contexts,
                 "missionRuntimeScriptConsumers": consumers,
@@ -2079,6 +2163,17 @@ def build_report(
                     manual_self_control.get("discoveryPattern") or {}
                 ).get("serializedObjectInputs"),
             },
+            "activationControl": {
+                "schema": safe_text(activation_control.get("schema")),
+                "source": safe_text(activation_control.get("source")),
+                "classification": safe_text(
+                    activation_control.get("classification")
+                ),
+                "validation": activation_control.get("validation") or {},
+                "serializedObjectInputs": (
+                    activation_control.get("discoveryPattern") or {}
+                ).get("serializedObjectInputs"),
+            },
             "spawnerRoot": rel_path(spawner_root),
             "scriptTaskExtraInfo": rel_path(script_task_extra_info_path),
             "worldEntityRegistry": rel_path(world_entity_registry_path),
@@ -2129,9 +2224,18 @@ def build_report(
                 "MissionRuntime owner, Story branch, or order edge."
             ),
             "subGameBoundary": (
-                "SubGame bindScriptId proves the runtime system that activates "
-                "the script shell, but a SubGame row without dungeonMissionId "
-                "does not identify a mission or quest owner."
+                "The hash-validated current binary proves that challenge-start "
+                "interaction resolves the typed SubGame row, reads bindScriptId, "
+                "looks up that LevelScript, and calls ManualStart. A SubGame row "
+                "without dungeonMissionId still does not identify a mission or "
+                "quest owner."
+            ),
+            "publicStateBoundary": (
+                "SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY applies its exact scene, "
+                "script, state, and completion tuple through the manager/container "
+                "chain into LevelScriptRuntime.UpdateState. The packet carries no "
+                "mission or quest identity and does not reveal the server-side "
+                "branch that selected the state."
             ),
             "dungeonSceneBoundary": (
                 "An exact Dungeon.sceneId -> SubGame row proves that the "
@@ -2254,6 +2358,18 @@ def build_report(
                 story_key
                 for row in rows
                 if row.get("manualSelfControl")
+                for story_key in row.get("storyKeys") or []
+            }),
+            "scriptsWithValidatedPublicStateControlContract": sum(
+                bool(row.get("publicStateControl")) for row in rows
+            ),
+            "scriptsWithValidatedSubGameInteractionStart": sum(
+                bool(row.get("subGameStartControl")) for row in rows
+            ),
+            "storyKeysWithValidatedSubGameInteractionStart": len({
+                story_key
+                for row in rows
+                if row.get("subGameStartControl")
                 for story_key in row.get("storyKeys") or []
             }),
             "levelDataHostShapes": dict(sorted(host_shapes.items())),
@@ -2783,6 +2899,8 @@ def publish_to_pipeline_index(
             "taskRuntimeAuthority": row.get("taskRuntimeAuthority") or {},
             "startRuntimePolicy": row.get("startRuntimePolicy") or {},
             "manualSelfControl": row.get("manualSelfControl") or {},
+            "publicStateControl": row.get("publicStateControl") or {},
+            "subGameStartControl": row.get("subGameStartControl") or {},
             "relatedOriginalFiles": [
                 {
                     "kind": safe_text(related.get("kind")),
@@ -2838,6 +2956,16 @@ def markdown_report(payload: dict[str, Any]) -> str:
             "ManualStart self control: "
             f"`{counts.get('scriptsWithValidatedManualSelfControl')}` / "
             f"`{counts.get('storyKeysWithValidatedManualSelfControl')}`"
+        ),
+        (
+            "- Scripts with binary-validated public-state sync: "
+            f"`{counts.get('scriptsWithValidatedPublicStateControlContract')}`"
+        ),
+        (
+            "- Scripts / Story keys with binary-validated SubGame interaction "
+            "ManualStart: "
+            f"`{counts.get('scriptsWithValidatedSubGameInteractionStart')}` / "
+            f"`{counts.get('storyKeysWithValidatedSubGameInteractionStart')}`"
         ),
         f"- Activation classes: `{counts.get('activationClasses')}`",
         f"- LevelData host shapes: `{counts.get('levelDataHostShapes')}`",

@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v9",
+                "_schema": "endfieldProtocolRegistryAudit.v10",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -42,6 +42,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     "validation": {"status": "validated", "failures": []},
                 },
                 "levelScriptManualSelfControl": {
+                    "validation": {"status": "validated", "failures": []},
+                },
+                "levelScriptActivationControl": {
                     "validation": {"status": "validated", "failures": []},
                 },
             }), encoding="utf-8")
@@ -291,6 +294,123 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "manualStartFieldTypes",
                 "executeFlow",
                 "manualStartTransition",
+            ],
+        )
+
+    def test_activation_control_accepts_generic_state_and_subgame_flows(self):
+        observation = {
+            "messageIds": {
+                "CsSceneSetLevelScriptActive": 94,
+                "ScSceneLevelScriptStateNotify": 37,
+            },
+            "messageSchemas": {
+                "activationRequest": {"fields": [
+                    {"name": "sceneNumId", "tag": 1},
+                    {"name": "scriptId", "tag": 2},
+                    {"name": "isActive", "tag": 3},
+                    {"name": "leaderPos", "tag": 4},
+                ]},
+                "stateNotify": {"fields": [
+                    {"name": "sceneNumId", "tag": 1},
+                    {"name": "scriptId", "tag": 2},
+                    {"name": "state", "tag": 3},
+                    {"name": "isComplete", "tag": 4},
+                ]},
+            },
+            "fieldOffsets": {
+                "challengeStartPoint.m_subGameId": 0x68,
+                "subGameInstanceData.bindScriptId": 0x50,
+                "stateNotify.sceneNumId_": 0x18,
+                "stateNotify.scriptId_": 0x20,
+                "stateNotify.state_": 0x28,
+                "stateNotify.isComplete_": 0x2C,
+            },
+            "methods": {
+                name: {"mappingStatus": "mapped_unique"}
+                for name in (
+                    "StateNotifyHandler",
+                    "ManagerStateShort",
+                    "ManagerStateFull",
+                    "ContainerState",
+                    "UpdateState",
+                    "set_state",
+                    "UpdateRuntimeState",
+                    "ChallengeOnInteract",
+                    "SubGameTableTryGetValue",
+                    "LevelScriptPtrImplicit",
+                    "TryGetLevelScript",
+                    "ManualStart",
+                    "ManualStartActionExecute",
+                )
+            },
+            "publicStateFlow": {
+                "handlerToManagerShort": 1,
+                "managerShortToManagerFull": 1,
+                "managerFullToContainer": 1,
+                "containerToUpdateState": 1,
+                "updateStateToSetter": 1,
+                "updateStateToRuntimeEvaluation": 1,
+                "setterBeforeRuntimeEvaluation": True,
+            },
+            "subGameInteractionFlow": {
+                "subGameLookupCallCount": 1,
+                "scriptPtrConversionCallCount": 1,
+                "tryGetLevelScriptCallCount": 1,
+                "manualStartCallCount": 1,
+                "callsInCarrierOrder": True,
+                "subGameIdFieldRead": True,
+                "bindScriptIdFieldRead": True,
+            },
+            "manualStartDirectCallers": [
+                {
+                    "type": "Beyond.Gameplay.Actions.ManualStartLevelScript",
+                    "method": "Execute",
+                },
+                {
+                    "type": (
+                        "Beyond.Gameplay.InteractiveLogicChallengeStartPoint"
+                    ),
+                    "method": "_OnInteract",
+                },
+            ],
+        }
+
+        result = audit.validate_levelscript_activation_control_observation(
+            observation,
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "e" * 64},
+        )
+
+        self.assertEqual(result, {"status": "validated", "failures": []})
+
+    def test_activation_control_reports_independent_contract_drift(self):
+        observation = {
+            "messageIds": {},
+            "messageSchemas": {},
+            "fieldOffsets": {},
+            "methods": {},
+            "publicStateFlow": {},
+            "subGameInteractionFlow": {},
+            "manualStartDirectCallers": [],
+        }
+
+        result = audit.validate_levelscript_activation_control_observation(
+            observation,
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "f" * 64},
+        )
+
+        self.assertEqual(result["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in result["failures"]],
+            [
+                "messageIds",
+                "messageSchemas",
+                "fieldOffsets",
+                "methodMapping",
+                "publicStateFlow",
+                "subGameInteractionFlow",
+                "manualStartDirectCallers",
             ],
         )
 

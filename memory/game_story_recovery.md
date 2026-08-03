@@ -40,6 +40,7 @@ Latest CN reports:
 | Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
 | Whole-client topology consumers | 42 / 43 direct `GetQuestInfo` call candidates verified; active predecessor consumers 0; non-sort flow consumers 0; topology lifecycle calls 0 |
 | Authored quest-fork semantics | 307 forks: 226 main-path + auxiliary, 78 all-auxiliary, 3 with multiple main-path arms; 97 guarded; 45 reconverging |
+| Binary LevelScript activation control | 95 receiver scripts carry the general public-state contract; 10 exact SubGame interaction-start carriers |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -1474,6 +1475,24 @@ does not contain this receiver. The highest-value remaining activation gap is
 54 manual-start receivers with no serialized static carrier. Task authority,
 OCR, manual order, source-graph mission grouping, and native registration
 remain non-ownership evidence.
+
+The remaining activation surface now has a second corpus-wide binary contract.
+The complete direct current-AOT caller census for `LevelScriptRuntime.ManualStart`
+contains only `ManualStartLevelScript.Execute` and
+`InteractiveLogicChallengeStartPoint._OnInteract`. The latter reads its
+metadata-defined `m_subGameId`, resolves the typed `SubGameInstanceData` row,
+reads `bindScriptId`, converts it to a LevelScript pointer, performs the runtime
+lookup, and calls `ManualStart`; this upgrades all 10 exact SubGame bindings to
+interaction-start carriers without object-specific rules. Separately, the
+server state notification flows through manager/container dispatch into
+`LevelScriptRuntime.UpdateState`, setting state before runtime evaluation. Its
+payload contains only `sceneNumId`, `scriptId`, `state`, and `isComplete`, so it
+still exposes no mission/quest owner or server-side branch choice. Mission
+Pipeline attaches the exact current `GameAssembly.dll`, metadata, and typed
+SubGame source to these panels. The 54 manual-start receivers without a static
+carrier remain the highest-value activation gap; OCR, overrides, source-graph
+grouping, registration order, and code-address order remain cross-reference
+only.
 
 ## Evidence rules
 
