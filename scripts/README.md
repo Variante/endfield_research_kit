@@ -46,6 +46,12 @@ override those defaults for one run.
   every predecessor, flow-index, and main-path consumer. It fails closed on
   an active predecessor reader, a non-sort flow consumer, or any
   topology-driven lifecycle call.
+- LevelScript task recovery is corpus-driven rather than keyed to individual
+  scenes. The builder validates the installed binary/protobuf task contract,
+  joins every decoded task condition to its exact `lt:p` and `lt:mp` LevelData
+  properties, and scans only actual original MissionRuntime filenames for
+  possible foreign-key tokens. Scene/script/task identity proves server-backed
+  task lifecycle, but does not supply mission ownership or Story order.
 - Mission Pipeline resolves exact native receiver playback gates generically
   through serialized `ActionHeader._validate` getter references. The resolver
   walks reusable AND/OR/NOT/ALL and comparison trees to exact leaves; unknown,

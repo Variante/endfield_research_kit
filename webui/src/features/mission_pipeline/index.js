@@ -158,6 +158,10 @@
       propertyContractBoundary: "Property names and exact mission reads are visible context only. They do not identify the writer, Story owner, or scene-file order.",
       taskConditionEvidence: "fully decoded task conditions",
       taskConditionBoundary: "task evaluation dependency, not mission ownership or execution order",
+      taskRuntimeAuthority: "binary-validated task lifecycle authority",
+      taskRuntimeAuthorityBoundary: "Server and client task traffic identifies only scene, LevelScript, task, and condition/progress state. It carries no mission, quest, or Story identity and therefore supplies no ownership or file-order edge.",
+      taskProgressProperties: "exact LevelData task progress properties",
+      taskProgressPropertiesBoundary: "The lt:p/lt:mp pair persists this task condition's progress. It repeats task identity but does not identify the mission owner or playback order.",
       taskOperandSources: "exact authored operand sources",
       taskMissionConsumers: "typed MissionRuntime operand consumers",
       exactRuntimeTarget: "exact original-data runtime target",
@@ -4396,6 +4400,7 @@
           })[relation] || t("nonOwningCrossReference");
           const activationTasks = (activation.decodedTaskMap?.tasks || [])
             .filter((task) => task && task.taskKey);
+          const taskRuntimeAuthority = activation.taskRuntimeAuthority || {};
           const activationConsumers = (activation.missionRuntimeScriptConsumers || [])
             .filter((consumer) => consumer && (consumer.missionId || consumer.questId));
           const propertyContract = activation.authoredPropertyContract || {};
@@ -4472,6 +4477,7 @@
               <strong>${esc(t("activationFrontier"))}</strong>
               ${activationTasks.flatMap((task) => (task.conditions || []).map((conditionRow) => {
                 const condition = conditionRow.condition || {};
+                const progressContract = task.progressPropertyContract || {};
                 const operandSources = (conditionRow.operandSources || [])
                   .map((source) => operandSourceDetail(source))
                   .filter(Boolean);
@@ -4487,14 +4493,18 @@
                   task.taskExtraInfo?.taskTitleKey || "",
                   ...(task.subGameMainTaskBindings || []).map((binding) => `SubGame ${binding.subGameId || "?"}`),
                   ...(task.missionRuntimeTaskConsumers || []).map((consumer) => `${t("taskMissionConsumers")} ${consumer.missionId || "?"}/${consumer.questId || "?"}`),
+                  progressContract.status === "validated"
+                    ? `${t("taskProgressProperties")} ${progressContract.matchedPropertyCount || 0}/${progressContract.expectedPropertyCount || 0}`
+                    : "",
                 ].filter(Boolean);
                 const taskLabel = `${t("taskConditionEvidence")} · ${task.taskKey} / objective ${conditionRow.objectiveEnum ?? "?"}${taskSources.length ? ` · ${taskSources.join(" · ")}` : ""}`;
                 return `<div><span>${esc(taskLabel)}</span><i aria-hidden="true">→</i><code>${esc(condition.type || "unresolved")}</code><b>${esc(condition.conditionUnionTag || "")}</b>${detail ? `<small>${esc(detail)}</small>` : ""}</div>`;
               })).join("")}
               ${activationTasks.length ? `<small>${esc(t("taskConditionBoundary"))}</small>` : ""}
+              ${taskRuntimeAuthority.validation?.status === "validated" ? `<div class="is-boundary"><span>${esc(t("taskRuntimeAuthority"))}</span><i aria-hidden="true">↔</i><code>${esc((taskRuntimeAuthority.identityFields || []).join(" + "))}</code><b>${esc((taskRuntimeAuthority.messages || []).map((message) => message.messageId).join(" / "))}</b><small>${esc(taskRuntimeAuthority.finding || t("taskRuntimeAuthorityBoundary"))}</small></div><small>${esc(taskRuntimeAuthority.evidenceBoundary || t("taskRuntimeAuthorityBoundary"))}</small>` : ""}
               <div><span>${esc(t("activationClass"))}</span><i aria-hidden="true">→</i><code>${esc(String(activation.activationClass).replaceAll("_", " "))}</code><b>${esc(t("noMissionOwner"))}</b></div>
               <div><span>${esc(t("startPolicy"))}</span><i aria-hidden="true">→</i><code>${esc(`${activation.startTypeName || "unresolved"} · shapes ${activation.startShapeListStatus || "unresolved"}/${activation.startShapeListCount ?? 0} · taskMap ${activation.taskMapStatus || "unresolved"}/${activation.taskMapCount ?? 0}`)}</code></div>
-              ${activationRelatedFiles.map((related) => `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(related.sourceFile)}</code><b>${esc(String(related.kind || "source").replaceAll("_", " "))}</b><small>${esc(String(related.relationship || "").replaceAll("_", " "))}</small></div>`).join("")}
+              ${activationRelatedFiles.map((related) => `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(related.sourceFile)}</code><b>${esc(String(related.kind || "source").replaceAll("_", " "))}</b><small>${esc([String(related.relationship || "").replaceAll("_", " "), related.sha256 ? `SHA-256 ${related.sha256}` : ""].filter(Boolean).join(" · "))}</small></div>`).join("")}
               ${encounterContexts.flatMap((context) => [
                 `<div><span>${esc(t("encounterController"))}</span><i aria-hidden="true">→</i><code>${esc(context.runtimeType || "EncounterBase<T>")}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(`${context.dataType || "EncounterData"} · ${context.mappingId || ""}`)}</small></div>`,
                 `<div><span>${esc(t("encounterModuleNamespace"))}</span><i aria-hidden="true">→</i><code>${esc(context.moduleId || "—")}</code><b>${esc(context.moduleIdMatchesReceiverScript ? t("moduleMatchesReceiver") : t("relatedModuleNamespace"))}</b><small>${esc(`receiver LevelScript ${context.receiverScriptId || selector.listenerScriptId || "—"}`)}</small></div>`,

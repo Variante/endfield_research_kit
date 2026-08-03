@@ -1434,6 +1434,22 @@ the mission-like filename or patrol registration order. Reopen a
 deferred row only when a new typed producer/consumer or changed source hash
 supplies an ownership or order edge.
 
+LevelScript task authority is now recovered as one general current-binary
+contract rather than scene-specific mappings. All 25 receiver scripts with a
+decoded task map validate against the protocol identity
+`(sceneNumId, scriptId, taskId)`; all 32 decoded tasks have complete typed
+progress persistence, totaling 110 exact `lt:p`/`lt:mp` LevelData placements.
+The 14 manual/static activation gaps therefore have a proven server-backed
+task lifecycle and 27 Story placements, but the four validated packet schemas
+and seven native paths co-carry no mission, quest, or Story identity. A prior
+token census incorrectly included Story-only mission shells; restricting it to
+actual original MissionRuntime filenames leaves one legitimate token-bearing
+LevelScript, already bound through SubGame, and zero non-SubGame candidates.
+Mission Pipeline displays these contracts, source hashes, and boundaries.
+The remaining three non-manual `SameWithActive` receiver gaps still need a
+separate binary activation-semantic contract; task authority must not be used
+as a substitute owner or chronology edge.
+
 ## Evidence rules
 
 Accepted chronology requires a typed authored relation such as quest

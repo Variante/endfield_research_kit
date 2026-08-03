@@ -121,6 +121,11 @@ Rebuild Story data after editing overrides.
   child references while missing, cyclic, or unknown children fail closed;
   the UI labels them as receiver-local branches, never mission ownership,
   cross-Story order, or proof of a later server write.
+- Receiver cards with decoded tasks show the binary-validated
+  scene/script/task protocol identity, exact `lt:p`/`lt:mp` LevelData progress
+  properties, and hashes for attached original binaries and data files. The
+  panel keeps this server-backed task lifecycle separate from mission/quest
+  ownership and scene-file ordering.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and
