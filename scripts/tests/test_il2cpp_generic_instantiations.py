@@ -86,6 +86,10 @@ def fake_metadata(names: dict[int, tuple[str, str]]):
     md = types.SimpleNamespace(methods=methods, types=methods)
     md.string = lambda index: methods[index]._method_name
     md.type_full_name = lambda type_def: type_def._type_name
+    md.metadata_type_name = lambda type_index: {
+        3: "System.Boolean",
+        4: "System.Int32",
+    }.get(type_index, f"<type-index:{type_index}>")
     return md
 
 
@@ -156,6 +160,11 @@ class GenericMethodIndexTests(unittest.TestCase):
         pointer_table = IMAGE_BASE + 0x1200
         generic_table = IMAGE_BASE + 0x1400
         spec_table = IMAGE_BASE + 0x1600
+        generic_insts = IMAGE_BASE + 0x1800
+        types_table = IMAGE_BASE + 0x1A00
+        class_inst = IMAGE_BASE + 0x1C00
+        class_args = IMAGE_BASE + 0x1D00
+        bool_type = IMAGE_BASE + 0x1E00
 
         # CodeRegistration.genericMethodPointers count/pointer at +0x10/+0x18.
         image.write_u32(code_reg + 0x10, slot + 1)
@@ -167,6 +176,16 @@ class GenericMethodIndexTests(unittest.TestCase):
         image.write_u64(meta_reg + 2 * 0x10 + 8, generic_table)
         image.write_u32(meta_reg + 4 * 0x10, spec_index + 1)
         image.write_u64(meta_reg + 4 * 0x10 + 8, spec_table)
+        image.write_u32(meta_reg + 1 * 0x10, 8)
+        image.write_u64(meta_reg + 1 * 0x10 + 8, generic_insts)
+        image.write_u32(meta_reg + 3 * 0x10, 8)
+        image.write_u64(meta_reg + 3 * 0x10 + 8, types_table)
+
+        image.write_u64(generic_insts + 7 * 8, class_inst)
+        image.write_u32(class_inst, 1)
+        image.write_u64(class_inst + 8, class_args)
+        image.write_u64(class_args, bool_type)
+        image.write_u64(types_table + 3 * 8, bool_type)
 
         image.write(generic_table, struct.pack("<iiii", spec_index, slot, 0, 0))
         image.write(spec_table + spec_index * helper.METHOD_SPEC_STRIDE,
@@ -191,6 +210,53 @@ class GenericMethodIndexTests(unittest.TestCase):
         self.assertTrue(row["genericInstantiation"])
         self.assertEqual(3, row["genericMethodPointerSlot"])
         self.assertEqual(2, row["methodSpecIndex"])
+        self.assertEqual("decoded", row["classInstantiation"]["status"])
+        self.assertEqual(
+            "System.Boolean",
+            row["classInstantiation"]["arguments"][0]["typeName"],
+        )
+        self.assertEqual("notPresent", row["methodInstantiation"]["status"])
+
+    def test_invalid_generic_inst_index_is_reported_fail_closed(self) -> None:
+        helper = load_helper()
+        image = FakeImage()
+        entry_va = IMAGE_BASE + 0x2000
+        code_reg, meta_reg = self._build(
+            helper, image, slot=3, spec_index=2, method_definition=1, entry_va=entry_va
+        )
+        spec_table = IMAGE_BASE + 0x1600
+        image.write(spec_table + 2 * helper.METHOD_SPEC_STRIDE, struct.pack("<iii", 1, 99, -1))
+        md = fake_metadata({1: ("Beyond.KeyGenerator`2", "GetKey")})
+
+        row = helper.build_generic_method_index(image, md, code_reg, meta_reg)[entry_va][0]
+
+        self.assertEqual("invalidGenericInstIndex", row["classInstantiation"]["status"])
+        self.assertEqual([], row["classInstantiation"]["arguments"])
+
+    def test_multiple_method_specs_sharing_one_slot_are_preserved(self) -> None:
+        helper = load_helper()
+        image = FakeImage()
+        entry_va = IMAGE_BASE + 0x2000
+        code_reg, meta_reg = self._build(
+            helper, image, slot=3, spec_index=2, method_definition=1, entry_va=entry_va
+        )
+        generic_table = IMAGE_BASE + 0x1400
+        spec_table = IMAGE_BASE + 0x1600
+        image.write_u32(meta_reg + 2 * 0x10, 2)
+        image.write_u32(meta_reg + 4 * 0x10, 4)
+        image.write(
+            generic_table + helper.GENERIC_METHOD_TABLE_STRIDE,
+            struct.pack("<iiii", 3, 3, 0, 0),
+        )
+        image.write(
+            spec_table + 3 * helper.METHOD_SPEC_STRIDE,
+            struct.pack("<iii", 1, 7, -1),
+        )
+        md = fake_metadata({1: ("Beyond.KeyGenerator`2", "GetKey")})
+
+        rows = helper.build_generic_method_index(image, md, code_reg, meta_reg)[entry_va]
+
+        self.assertEqual([2, 3], [row["methodSpecIndex"] for row in rows])
 
     def test_null_entry_pointer_is_skipped(self) -> None:
         helper = load_helper()

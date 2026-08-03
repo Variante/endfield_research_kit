@@ -61,7 +61,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v12"
+SCHEMA = "nativeReceiverActivationFrontier.v13"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -984,11 +984,65 @@ def mission_runtime_script_consumers(
                             "questId": quest_id,
                             "objectiveIndex": objective.get("index"),
                             "conditionTypes": objective.get("conditionTypes") or [],
+                            "propertyKeys": objective.get("propertyKeys") or [],
                             "sourceFile": original_source,
                             "pipelineSourceFile": rel_path(path),
                         }
                     )
     return consumers
+
+
+def authored_property_contract(
+    hosts: list[dict[str, Any]],
+    consumers: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Classify LevelData properties without treating names as ownership.
+
+    ``lt:`` keys are generated task/lifecycle slots and ``@<id>_`` keys are
+    typed module namespaces. Remaining names are authored contracts, but only
+    an exact MissionRuntime property operand is an observed mission-side read.
+    Neither category proves who writes the property or orders Story playback.
+    """
+    names = sorted({
+        safe_text(name)
+        for host in hosts
+        for name in (host.get("briefData") or {}).get("propertyNames") or []
+        if safe_text(name)
+    })
+    generated_names = [name for name in names if name.startswith("lt:")]
+    module_names = [name for name in names if re.fullmatch(r"@\d+_.+", name)]
+    authored_names = [
+        name for name in names
+        if name not in generated_names and name not in module_names
+    ]
+    observed_names = sorted({
+        safe_text(key)
+        for consumer in consumers
+        for key in consumer.get("propertyKeys") or []
+        if safe_text(key) in authored_names
+    })
+    return {
+        "authoredNames": authored_names,
+        "generatedLifecycleNames": generated_names,
+        "typedModuleNames": module_names,
+        "missionObservedNames": observed_names,
+        "classification": (
+            "authored_property_with_exact_mission_observer"
+            if observed_names
+            else "authored_property_unobserved_by_mission"
+            if authored_names
+            else "generated_or_typed_module_properties_only"
+            if names
+            else "no_leveldata_properties"
+        ),
+        "ownership": False,
+        "orderEvidence": False,
+        "evidenceBoundary": (
+            "An authored LevelData property name is a script-local contract. "
+            "An exact MissionRuntime property operand proves a mission-side "
+            "read only; neither identifies the writer, playback owner, or order."
+        ),
+    }
 
 
 def mission_areas_by_level(
@@ -1571,6 +1625,7 @@ def build_report(
     task_condition_types: Counter[str] = Counter()
     task_operand_source_types: Counter[str] = Counter()
     task_mission_consumer_types: Counter[str] = Counter()
+    authored_property_scripts: Counter[str] = Counter()
     task_conditions_with_operand_sources = 0
     task_conditions_with_mission_consumers = 0
     tasks_with_mission_consumers = 0
@@ -1620,6 +1675,10 @@ def build_report(
             for context in dungeon_contexts_by_scene.get(level_id, [])
         ]
         consumers = consumers_by_script.get(script_id, [])
+        property_contract = authored_property_contract(hosts, consumers)
+        authored_property_scripts.update(
+            set(property_contract["authoredNames"])
+        )
         start_shape_area_matches = exact_start_shape_mission_area_matches(
             levelscript.get("startShapeListShapes") or [],
             mission_areas.get(level_id, []),
@@ -1745,6 +1804,7 @@ def build_report(
                 "subGameBindings": subgames,
                 "dungeonSceneContexts": dungeon_contexts,
                 "missionRuntimeScriptConsumers": consumers,
+                "authoredPropertyContract": property_contract,
                 "startShapeMissionAreaMatches": start_shape_area_matches,
                 "serializedMissionRuntimeIdTokens": serialized_mission_ids,
                 "decodedTaskMap": decoded_task_map,
@@ -1882,6 +1942,24 @@ def build_report(
                 {story_key for row in rows for story_key in row["storyKeys"]}
             ),
             "activationClasses": dict(sorted(classes.items())),
+            "authoredPropertyContracts": {
+                "scriptsWithAuthoredProperties": sum(
+                    bool(row["authoredPropertyContract"]["authoredNames"])
+                    for row in rows
+                ),
+                "scriptsWithExactMissionObservedProperties": sum(
+                    bool(row["authoredPropertyContract"]["missionObservedNames"])
+                    for row in rows
+                ),
+                "recurringNames": [
+                    {"name": name, "scriptCount": count}
+                    for name, count in sorted(
+                        authored_property_scripts.items(),
+                        key=lambda item: (-item[1], item[0]),
+                    )
+                    if count > 1
+                ],
+            },
             "startTypes": dict(sorted(start_types.items())),
             "levelDataHostShapes": dict(sorted(host_shapes.items())),
             "scriptsWithMissionNamedHost": sum(
@@ -2318,6 +2396,7 @@ def publish_to_pipeline_index(
             "missionRuntimeObjectiveConsumerCount": len(
                 row.get("missionRuntimeScriptConsumers") or []
             ),
+            "authoredPropertyContract": row.get("authoredPropertyContract") or {},
             "missionRuntimeScriptConsumers": [
                 {
                     "relation": (
@@ -2330,6 +2409,11 @@ def publish_to_pipeline_index(
                         safe_text(condition_type)
                         for condition_type in consumer.get("conditionTypes") or []
                         if safe_text(condition_type)
+                    ],
+                    "propertyKeys": [
+                        safe_text(key)
+                        for key in consumer.get("propertyKeys") or []
+                        if safe_text(key)
                     ],
                     "sourceFile": safe_text(consumer.get("sourceFile")),
                     "pipelineSourceFile": safe_text(

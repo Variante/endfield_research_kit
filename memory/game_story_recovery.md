@@ -16,6 +16,7 @@ Latest CN reports:
 | Unlinked files | 1,325 |
 | Unlinked files with exact native playback | 156 |
 | Encounter-controller contexts | 5 receiver scripts / 7 modules / 27 Story keys / 9 related source files |
+| Authored receiver-property contracts | 63 scripts; 16 carry `isFinished`; 1 has an exact MissionRuntime observer |
 | Exact non-mission content | 281 (280 spacecraft/profile + 1 guide runtime) |
 | Actionable core-isolated files | 0 |
 | Partial-order mission rows | 487 |
@@ -1283,6 +1284,21 @@ consumers, but publish them first as related system/file context. Repeating
 existing LevelScript, DialogTree, Timeline, teleport, proxy, Encounter, or
 local carrier scans is unlikely to close ownership without a new foreign key
 or changed inputs.
+
+The general generic-method audit now resolves shipped IL2CPP `MethodSpec`
+class/method arguments through `MetadataRegistration` and decodes every
+distinct candidate body without choosing by address. On the current binary,
+concrete `Set<bool>.Execute` and `Set<int>.Execute` both read `_key`/`_value`,
+call `ParamExtensions.GetValue<T>`, and tail-call the matching
+`ParamExtensions.SetValue<T>`; the latter dispatches through the contextual
+`Param<T>.SetterSetValue`. This proves a polymorphic parameter-write contract,
+not a LevelScript-property writer. Among the 161 unresolved receiver nodes,
+63 scripts have ordinary authored LevelData property names and `isFinished`
+recurs in 16 scripts, but only `map01_lv007/2800010051` has an exact typed
+MissionRuntime observer (`e3m5/e3m5_q#1`). The observer and its original
+MissionRuntime file are now attached in Mission Pipeline as read-only context.
+Raw property-literal adjacency is explicitly non-ordering and cannot identify
+the writer, playback owner, or chronology.
 
 The repeated module-property census is now bounded: seven full Encounter
 families use the existing typed controller contract, while eight

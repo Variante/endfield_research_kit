@@ -151,3 +151,10 @@ for (const [key, category] of [
         self.assertIn('t("cinematicProducer")', source)
         self.assertIn("nativeCinematicProducerRouteAttachments", source)
         self.assertIn("route.sourceFiles", source)
+
+    def test_mission_pipeline_surfaces_property_contract_as_non_ordering_context(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("activation.authoredPropertyContract", source)
+        self.assertIn('t("missionObservedProperty")', source)
+        self.assertIn("consumer.propertyKeys", source)
+        self.assertIn("They do not identify the writer, Story owner, or scene-file order.", source)

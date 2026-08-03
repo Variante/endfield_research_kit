@@ -15,6 +15,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import re
@@ -26,7 +27,7 @@ from pathlib import Path
 from typing import Any
 
 
-if hasattr(sys.stdout, "reconfigure"):
+if hasattr(sys.stdout, "reconfigure") and not sys.stdout.closed:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
@@ -272,6 +273,7 @@ METADATA_REGISTRATION_FIELDS = (
 GENERIC_METHOD_TABLE_STRIDE = 16
 # Il2CppMethodSpec is (methodDefinitionIndex, classIndexIndex, methodIndexIndex).
 METHOD_SPEC_STRIDE = 12
+MAX_GENERIC_ARGUMENTS = 64
 
 
 def metadata_registration_summary(pe: PeImage, metadata_registration_va: int) -> dict[str, Any]:
@@ -362,29 +364,86 @@ def build_generic_method_index(
         return {}
 
     table = pe.buf[table_offset: table_offset + table_count * GENERIC_METHOD_TABLE_STRIDE]
-    slot_to_spec: dict[int, int] = {}
+    slot_to_specs: dict[int, list[int]] = {}
     for index in range(table_count):
         generic_method_index, slot = struct.unpack_from(
             "<ii", table, index * GENERIC_METHOD_TABLE_STRIDE
         )
         if 0 <= generic_method_index < spec_count and 0 <= slot < pointer_count:
-            slot_to_spec.setdefault(slot, generic_method_index)
+            specs = slot_to_specs.setdefault(slot, [])
+            if generic_method_index not in specs:
+                specs.append(generic_method_index)
+
+    type_pointer_to_index: dict[int, int] = {}
+    types_pointer = int(meta_summary["types"], 16)
+    types_count = meta_summary["typesCount"]
+    if types_pointer:
+        for type_index in range(types_count):
+            type_pointer = pe.u64_at_va(types_pointer + type_index * 8)
+            if type_pointer:
+                type_pointer_to_index.setdefault(type_pointer, type_index)
+
+    def decode_generic_instantiation(inst_index: int) -> dict[str, Any]:
+        result: dict[str, Any] = {"genericInstIndex": inst_index, "arguments": []}
+        generic_insts_pointer = int(meta_summary["genericInsts"], 16)
+        generic_insts_count = meta_summary["genericInstsCount"]
+        if inst_index < 0:
+            result["status"] = "notPresent"
+            return result
+        if not generic_insts_pointer or inst_index >= generic_insts_count:
+            result["status"] = "invalidGenericInstIndex"
+            return result
+        inst_pointer = pe.u64_at_va(generic_insts_pointer + inst_index * 8)
+        if not inst_pointer:
+            result["status"] = "nullGenericInstPointer"
+            return result
+        argument_count = pe.u32_at_va(inst_pointer)
+        argument_vector = pe.u64_at_va(inst_pointer + 8)
+        result["argumentCount"] = argument_count
+        if argument_count > MAX_GENERIC_ARGUMENTS:
+            result["status"] = "implausibleArgumentCount"
+            return result
+        if argument_count and not argument_vector:
+            result["status"] = "nullArgumentVector"
+            return result
+        arguments: list[dict[str, Any]] = []
+        for argument_index in range(argument_count):
+            type_pointer = pe.u64_at_va(argument_vector + argument_index * 8)
+            type_index = type_pointer_to_index.get(type_pointer)
+            argument: dict[str, Any] = {"typePointerVa": f"0x{type_pointer:x}"}
+            if type_index is None:
+                argument["status"] = "unregisteredTypePointer"
+            else:
+                argument["typeIndex"] = type_index
+                argument["typeName"] = md.metadata_type_name(type_index)
+                argument["status"] = "decoded"
+            arguments.append(argument)
+        result["arguments"] = arguments
+        result["status"] = (
+            "decoded"
+            if all(argument["status"] == "decoded" for argument in arguments)
+            else "partiallyDecoded"
+        )
+        return result
 
     index: dict[int, list[dict[str, Any]]] = {}
-    for slot, generic_method_index in slot_to_spec.items():
+    for slot, generic_method_indices in slot_to_specs.items():
         pointer = pe.u64_at_va(pointer_base + slot * 8)
         if not pointer:
             continue
-        method_definition_index = struct.unpack_from(
-            "<i", pe.buf, spec_offset + generic_method_index * METHOD_SPEC_STRIDE
-        )[0]
-        if not 0 <= method_definition_index < len(md.methods):
-            continue
-        row = method_signature(md, method_definition_index)
-        row["genericInstantiation"] = True
-        row["genericMethodPointerSlot"] = slot
-        row["methodSpecIndex"] = generic_method_index
-        index.setdefault(pointer, []).append(row)
+        for generic_method_index in generic_method_indices:
+            method_definition_index, class_inst_index, method_inst_index = struct.unpack_from(
+                "<iii", pe.buf, spec_offset + generic_method_index * METHOD_SPEC_STRIDE
+            )
+            if not 0 <= method_definition_index < len(md.methods):
+                continue
+            row = method_signature(md, method_definition_index)
+            row["genericInstantiation"] = True
+            row["genericMethodPointerSlot"] = slot
+            row["methodSpecIndex"] = generic_method_index
+            row["classInstantiation"] = decode_generic_instantiation(class_inst_index)
+            row["methodInstantiation"] = decode_generic_instantiation(method_inst_index)
+            index.setdefault(pointer, []).append(row)
     return index
 
 
@@ -2367,8 +2426,11 @@ def build_method_body_summary(
             target = branch_target_from_text(text)
             if target:
                 row_out["targetVa"] = target
-                if call_match:
-                    row_out["resolved"] = method_by_pointer.get(int(target, 16), [])
+                # Tail calls are commonly emitted as an unconditional jump,
+                # especially for compact generic instantiations. Resolve all
+                # direct branch targets so those calls do not disappear from
+                # the native contract merely because the compiler used jmp.
+                row_out["resolved"] = method_by_pointer.get(int(target, 16), [])
             if used_origins:
                 row_out["originUses"] = used_origins
             if memory_origins:
@@ -2626,6 +2688,54 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             mapped["genericBodyCandidate"] = generic_candidates[0]
             mapping_status = "mappedGenericInstantiation"
         elif len(generic_candidates) > 1:
+            for candidate in generic_candidates:
+                candidate_pointer = int(candidate["methodPointerVa"], 16)
+                candidate_file_offset, candidate_section, candidate_rva = pe.file_offset_for_va(
+                    candidate_pointer
+                )
+                candidate_scan_size, candidate_next_pointer = estimate_scan_size(
+                    candidate_pointer,
+                    sorted_all_pointers,
+                    args.max_scan_bytes,
+                )
+                candidate_calls, candidate_unresolved_count = scan_direct_calls(
+                    pe,
+                    candidate_pointer,
+                    candidate_scan_size,
+                    method_by_pointer,
+                    catalog_target_keys,
+                    include_unresolved=args.include_unresolved_calls,
+                    arg_context_window=args.arg_context_window,
+                )
+                candidate_body: dict[str, Any] = {
+                    "methodPointerRva": f"0x{candidate_rva:x}",
+                    "fileOffset": (
+                        f"0x{candidate_file_offset:x}"
+                        if candidate_file_offset is not None
+                        else ""
+                    ),
+                    "section": candidate_section,
+                    "scanBytes": candidate_scan_size,
+                    "nextMethodPointerVa": (
+                        f"0x{candidate_next_pointer:x}" if candidate_next_pointer else ""
+                    ),
+                    "headBytes": pe.bytes_at_va(candidate_pointer, args.head_bytes).hex(" "),
+                    "directCalls": candidate_calls,
+                    "unresolvedDirectCallCount": candidate_unresolved_count,
+                }
+                if body_summary_re and (
+                    body_summary_re.search(str(row.get("method") or ""))
+                    or body_summary_re.search(str(row.get("type") or ""))
+                ):
+                    candidate_body["methodBodySummary"] = build_method_body_summary(
+                        row,
+                        pe.bytes_at_va(candidate_pointer, candidate_scan_size),
+                        candidate_pointer,
+                        method_by_pointer,
+                        pe=pe,
+                        max_instructions=args.body_summary_max_instructions,
+                    )
+                candidate["body"] = candidate_body
             mapped["mappingStatus"] = "ambiguousGenericInstantiations"
             mapped["genericBodyCandidates"] = generic_candidates
             mapped_targets.append(mapped)
@@ -2675,7 +2785,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "metadata": {
             "metadataPath": str(metadata_path),
+            "metadataSha256": hashlib.sha256(md.buf).hexdigest().upper(),
             "gameAssembly": str(args.gameassembly),
+            "gameAssemblySha256": hashlib.sha256(pe.buf).hexdigest().upper(),
             "imageBase": f"0x{pe.image_base:x}",
             "catalog": str(args.catalog),
         },
