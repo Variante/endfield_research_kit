@@ -38,6 +38,7 @@ Latest CN reports:
 | Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
 | Binary state-update authority | 4 / 4 identity+state/control paths validated; 0 client successor selectors |
 | Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
+| Whole-client topology consumers | 42 / 43 direct `GetQuestInfo` call candidates verified; active predecessor consumers 0; non-sort flow consumers 0; topology lifecycle calls 0 |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -1360,6 +1361,18 @@ catalogs or the now-closed state-update application paths cannot add an edge.
 Server-only successor policy, quest forks selected only by that server, and
 unrelated Story pairs remain unknowable from the installed client's static
 data unless a new client-visible carrier appears.
+
+The current-binary topology-consumer census closes the remaining obvious
+`QuestInfo`/`MissionRuntimeAsset` field paths without object-specific address
+rules. All direct `GetQuestInfo` call candidates are re-decoded inside bounded
+metadata methods (42 valid calls, one rejected byte-pattern false positive).
+The sole `prevQuestIdList` read is a deprecated description fallback; both
+`flowIndex` reads form a two-value display-sort comparator. Structurally
+discovered `mainPathQuests` consumers only build its membership cache or choose
+level/description context. None of these consumers reaches a quest lifecycle
+transition. The decoder now follows entry-relative Windows x64 stack slots
+through control flow, including adjusted stack spills/reloads, so this result
+is a reusable typed field-consumer analysis rather than a per-method override.
 
 The client-side `CallServer.callClientOutputUIDs` callback-header route is also
 closed generically for this build. Reopen its five dangling UIDs only if a

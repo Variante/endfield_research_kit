@@ -6492,10 +6492,10 @@ def load_state_update_application_contract(
             f"expected=file actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v6":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v7":
         raise RuntimeError(
             "validator=state_update_application_contract gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v6' "
+            "expected='endfieldProtocolRegistryAudit.v7' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     census = audit.get("stateUpdateApplicationCensus") or {}
@@ -6516,6 +6516,17 @@ def load_state_update_application_contract(
         raise RuntimeError(
             "validator=state_update_application_contract "
             f"gate={failure.get('gate') or 'questStartApplication'} "
+            f"message={failure.get('message')} expected={failure.get('expected')!r} "
+            f"actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    topology_consumers = census.get("questTopologyFieldConsumers") or {}
+    topology_validation = topology_consumers.get("validation") or {}
+    if topology_validation.get("status") != "validated":
+        failure = (topology_validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            f"gate={failure.get('gate') or 'questTopologyFieldConsumers'} "
             f"message={failure.get('message')} expected={failure.get('expected')!r} "
             f"actual={failure.get('actual')!r} "
             f"source={failure.get('sourceFile') or audit_path}"
@@ -6563,6 +6574,7 @@ def load_state_update_application_contract(
         "validatedCandidateCount": census.get("validatedCandidateCount", 0),
         "clientSuccessorSelectors": census.get("clientSuccessorSelectors", 0),
         "questStartApplication": quest_start,
+        "questTopologyFieldConsumers": topology_consumers,
         "allLifecycleCallsUsePacketIdentity": census.get(
             "allLifecycleCallsUsePacketIdentity", False
         ),
@@ -9372,6 +9384,17 @@ def build_all(
                     "topologyTraversalCalls", []
                 )
             ),
+            "questTopologyActivePredecessorConsumers": state_update_contract[
+                "questTopologyFieldConsumers"
+            ].get("activePredecessorConsumerCount", 0),
+            "questTopologyFlowIndexNonSortConsumers": state_update_contract[
+                "questTopologyFieldConsumers"
+            ].get("flowIndexNonSortConsumerCount", 0),
+            "questTopologyLifecycleCalls": len(
+                state_update_contract["questTopologyFieldConsumers"].get(
+                    "topologyLifecycleCalls", []
+                )
+            ),
         },
         "conditionTypeMissionCounts": dict(sorted(condition_counts.items())),
         "runtimeContract": runtime_contract,
@@ -9423,6 +9446,7 @@ def publish_source_story_partial_order(
         or {}
     )
     quest_start = state_contract.get("questStartApplication") or {}
+    topology_consumers = state_contract.get("questTopologyFieldConsumers") or {}
     quest_fork_authority = {
         "classification": "server_selected_start_topology_only",
         "questInfoType": quest_start.get("questInfoType"),
@@ -9431,6 +9455,7 @@ def publish_source_story_partial_order(
         "topologyTraversalCalls": quest_start.get("topologyTraversalCalls") or [],
         "startQuest": quest_start.get("startQuest") or {},
         "sourceMessages": quest_start.get("sourceMessages") or [],
+        "topologyFieldConsumers": topology_consumers,
         "finding": quest_start.get("finding") or "",
         "boundary": quest_start.get("boundary") or "",
         "relatedOriginalFiles": state_contract.get("relatedOriginalFiles") or [],

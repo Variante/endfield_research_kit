@@ -377,6 +377,16 @@
       serverSelectedStart: "server-selected start; prerequisite topology only",
       questStartReadEvidence: "StartQuest field reads",
       questForkAuthorityHint: "The client initializes the one quest identity selected by the server. This fan-out does not prove that every arm starts or that exactly one arm is exclusive.",
+      wholeClientTopologyConsumers: "Whole-client topology consumers",
+      verifiedQuestInfoCalls: "verified GetQuestInfo calls",
+      activePredecessorConsumers: "active predecessor consumers",
+      nonSortFlowConsumers: "non-sort flowIndex consumers",
+      topologyLifecycleCalls: "topology-driven lifecycle calls",
+      topologyConsumerMethods: "Native field-consumer methods",
+      displaySortOnly: "two-row display sort",
+      deprecatedDescriptionOnly: "deprecated description fallback",
+      mainPathContextOnly: "level/description context selection",
+      mainPathCacheOnly: "derived main-path membership cache",
       questMerge: "quest join",
       nativeSplitFanout: "native Split fan-out",
       nativeIfElseBranch: "native If/Else branch",
@@ -1426,6 +1436,16 @@
       serverSelectedStart: "\u670d\u52a1\u7aef\u9009\u62e9\u542f\u52a8\uff1b\u4ec5\u8868\u793a\u524d\u7f6e\u62d3\u6251",
       questStartReadEvidence: "StartQuest \u5b57\u6bb5\u8bfb\u53d6",
       questForkAuthorityHint: "\u5ba2\u6237\u7aef\u53ea\u521d\u59cb\u5316\u670d\u52a1\u7aef\u5df2\u9009\u4e2d\u7684\u5355\u4e2a\u4efb\u52a1\u6807\u8bc6\u3002\u8be5\u5206\u6d41\u4e0d\u80fd\u8bc1\u660e\u6240\u6709\u5206\u652f\u90fd\u4f1a\u542f\u52a8\uff0c\u4e5f\u4e0d\u80fd\u8bc1\u660e\u5fc5\u7136\u53ea\u9009\u4e00\u6761\u3002",
+      wholeClientTopologyConsumers: "\u5168\u5ba2\u6237\u7aef\u62d3\u6251\u5b57\u6bb5\u6d88\u8d39\u8005",
+      verifiedQuestInfoCalls: "\u5df2\u9a8c\u8bc1 GetQuestInfo \u8c03\u7528",
+      activePredecessorConsumers: "\u6d3b\u52a8\u524d\u7f6e\u6d88\u8d39\u8005",
+      nonSortFlowConsumers: "\u975e\u6392\u5e8f flowIndex \u6d88\u8d39\u8005",
+      topologyLifecycleCalls: "\u62d3\u6251\u9a71\u52a8\u7684\u4efb\u52a1\u751f\u547d\u5468\u671f\u8c03\u7528",
+      topologyConsumerMethods: "\u539f\u751f\u5b57\u6bb5\u6d88\u8d39\u65b9\u6cd5",
+      displaySortOnly: "\u4e24\u884c\u663e\u793a\u6392\u5e8f",
+      deprecatedDescriptionOnly: "\u5df2\u5e9f\u5f03\u7684\u63cf\u8ff0\u56de\u9000",
+      mainPathContextOnly: "\u5173\u5361/\u63cf\u8ff0\u4e0a\u4e0b\u6587\u9009\u62e9",
+      mainPathCacheOnly: "\u6d3e\u751f\u4e3b\u8def\u5f84\u6210\u5458\u7f13\u5b58",
       questMerge: "\u4efb\u52a1\u6c47\u5408",
       nativeSplitFanout: "\u539f\u751f Split \u5206\u6d41",
       nativeIfElseBranch: "\u539f\u751f If/Else \u5206\u652f",
@@ -3265,11 +3285,34 @@
     const branches = order.branches || {};
     const questForkAuthority = branches.questForkAuthority || null;
     const questStartReads = questForkAuthority?.fieldReadCounts || {};
+    const topologyConsumers = questForkAuthority?.topologyFieldConsumers || null;
+    const questConsumerCensus = topologyConsumers?.questInfoConsumers || {};
+    const topologyConsumerRows = [
+      ...(questConsumerCensus.rows || []),
+      ...(topologyConsumers?.missionRuntimeConsumers || []),
+    ];
+    const topologyClassificationLabel = (classification) => ({
+      two_value_display_sort_comparator: t("displaySortOnly"),
+      deprecated_description_fallback: t("deprecatedDescriptionOnly"),
+      level_or_description_context_selection: t("mainPathContextOnly"),
+      derived_main_path_membership_cache: t("mainPathCacheOnly"),
+    })[classification] || String(classification || "typed field consumer").replaceAll("_", " ");
+    const topologyConsumerFields = (row) => {
+      const questReads = Object.entries(row.fieldReads || {}).map(([name, reads]) => `${name}:${(reads || []).length}`);
+      const missionAccesses = Object.entries(row.fieldAccesses || {}).map(([name, kinds]) => `${name}:${Object.entries(kinds || {}).map(([kind, accesses]) => `${kind}=${(accesses || []).length}`).join("/")}`);
+      return [...questReads, ...missionAccesses];
+    };
+    const topologyConsumersHtml = topologyConsumers ? `<section class="mp-topology-consumer-audit">
+      <p><strong>${esc(t("wholeClientTopologyConsumers"))}:</strong> <code>${Number(questConsumerCensus.verifiedDirectCallCount || 0)} / ${Number(questConsumerCensus.rawE8CandidateCount || 0)}</code> ${esc(t("verifiedQuestInfoCalls"))} <code>${esc(t("activePredecessorConsumers"))}=${Number(topologyConsumers.activePredecessorConsumerCount || 0)}</code> <code>${esc(t("nonSortFlowConsumers"))}=${Number(topologyConsumers.flowIndexNonSortConsumerCount || 0)}</code> <code>${esc(t("topologyLifecycleCalls"))}=${(topologyConsumers.topologyLifecycleCalls || []).length}</code></p>
+      ${topologyConsumerRows.length ? `<details><summary><strong>${esc(t("topologyConsumerMethods"))}</strong> <span>${topologyConsumerRows.length}</span></summary>${topologyConsumerRows.map((row) => `<p><code>${esc(row.caller?.type || "")}.${esc(row.caller?.method || "")}</code> <code>${esc(row.caller?.token || "")}</code> <b>${esc(topologyClassificationLabel(row.classification))}</b>${topologyConsumerFields(row).map((field) => `<code>${esc(field)}</code>`).join(" ")}</p>`).join("")}</details>` : ""}
+      <small>${esc(topologyConsumers.finding || "")}</small><small>${esc(topologyConsumers.boundary || "")}</small>
+    </section>` : "";
     const questForkAuthorityHtml = questForkAuthority ? `<details open class="mp-quest-fork-authority"><summary><b>${esc(t("questForkAuthority"))}</b><span>${esc(t("serverSelectedStart"))}</span></summary>
       <p>${esc(questForkAuthority.finding || t("questForkAuthorityHint"))}</p>
       <p><strong>${esc(t("questStartReadEvidence"))}:</strong> <code>objectiveList=${Number(questStartReads.objectiveList || 0)}</code> <code>prevQuestIdList=${Number(questStartReads.prevQuestIdList || 0)}</code> <code>flowIndex=${Number(questStartReads.flowIndex || 0)}</code> <code>topology calls=${(questForkAuthority.topologyTraversalCalls || []).length}</code></p>
       ${questForkAuthority.startQuest?.symbol ? `<p><code>${esc(questForkAuthority.startQuest.symbol)}</code> <code>${esc(questForkAuthority.startQuest.token || "")}</code> <code>${esc(questForkAuthority.startQuest.va || "")}</code></p>` : ""}
       <small>${esc(questForkAuthority.boundary || t("questForkAuthorityHint"))}</small>
+      ${topologyConsumersHtml}
       ${(questForkAuthority.relatedOriginalFiles || []).map((related) => `<small><strong>${esc(t("relatedOriginalFile"))}:</strong> <code>${esc(related.sourceFile || "")}</code> / SHA-256 <code>${esc(related.sha256 || "")}</code></small>`).join("")}
     </details>` : "";
     const typedSelectors = (branches.typedStorySelectorGroups || []).map((row) => `<details><summary><b>${esc(t("typedStorySelectors"))}</b> <code>${esc(row.selectorGroupId || "?")}</code></summary><p>${esc(t("typedStorySelectorHint"))}</p>${(row.alternatives || []).map((alternative) => `<div><code>${esc(alternative.role || "?")}</code><i>&rarr;</i><a href="${esc(storyHref(alternative.key))}"><code>${esc(alternative.key || "?")}</code></a></div>`).join("")}${(row.sourceFiles || []).length ? `<small>${row.sourceFiles.map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</details>`).join("");

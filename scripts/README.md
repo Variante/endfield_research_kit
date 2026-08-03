@@ -40,7 +40,12 @@ override those defaults for one run.
   lifecycle argument flow generically. Its quest-start audit extends the same
   decoder with typed call-return provenance, structurally discovers
   `QuestInfo`, and compares native field reads with metadata topology fields;
-  stale, invalid, or missing reports are rebuilt.
+  stale, invalid, or missing reports are rebuilt. The whole-client topology
+  census re-decodes direct-call candidates inside metadata method bounds and
+  uses general register plus entry-relative stack-slot provenance to classify
+  every predecessor, flow-index, and main-path consumer. It fails closed on
+  an active predecessor reader, a non-sort flow consumer, or any
+  topology-driven lifecycle call.
 - Mission Pipeline resolves exact native receiver playback gates generically
   through serialized `ActionHeader._validate` getter references. The resolver
   walks reusable AND/OR/NOT/ALL and comparison trees to exact leaves; unknown,
