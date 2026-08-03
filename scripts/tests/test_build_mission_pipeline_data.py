@@ -151,7 +151,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v8",
+                "_schema": "endfieldProtocolRegistryAudit.v9",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -203,7 +203,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v8",
+                "_schema": "endfieldProtocolRegistryAudit.v9",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": "0" * 64,
@@ -281,7 +281,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v8",
+                "_schema": "endfieldProtocolRegistryAudit.v9",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -310,7 +310,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v8",
+                "_schema": "endfieldProtocolRegistryAudit.v9",
                 "selectedSchemas": [],
                 "nativeTaskPaths": {},
             }), encoding="utf-8")
@@ -330,7 +330,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v8",
+                "_schema": "endfieldProtocolRegistryAudit.v9",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -378,7 +378,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v8",
+                "_schema": "endfieldProtocolRegistryAudit.v9",
                 "levelScriptStartPolicy": {
                     "schema": "levelScriptStartPolicy.v1",
                     "classification": (
@@ -400,6 +400,90 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "gate=genericContractShape",
             ):
                 pipeline.load_levelscript_start_policy_contract(audit_path)
+
+    def test_manual_self_control_revalidates_generic_binary_contract(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            gameassembly.write_bytes(b"fixture-gameassembly")
+            metadata.write_bytes(b"fixture-metadata")
+            audit_path = root / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v9",
+                "source": {
+                    "gameAssembly": str(gameassembly),
+                    "gameAssemblySha256": hashlib.sha256(
+                        gameassembly.read_bytes()
+                    ).hexdigest(),
+                    "metadata": str(metadata),
+                    "metadataSha256": hashlib.sha256(
+                        metadata.read_bytes()
+                    ).hexdigest(),
+                },
+                "levelScriptManualSelfControl": {
+                    "schema": "levelScriptManualSelfControl.v1",
+                    "classification": (
+                        "current_context_manual_start_self_target"
+                    ),
+                    "discoveryPattern": {"serializedObjectInputs": []},
+                    "serializedOperandContract": {
+                        "levelIdParamSource": 1000,
+                        "scriptIdParamSource": 1002,
+                    },
+                    "finding": "fixture finding",
+                    "boundary": "fixture boundary",
+                    "validation": {
+                        "status": "validated",
+                        "failures": [],
+                    },
+                },
+            }), encoding="utf-8")
+
+            contract = (
+                pipeline.load_levelscript_manual_self_control_contract(
+                    audit_path
+                )
+            )
+
+        self.assertEqual(
+            contract["classification"],
+            "current_context_manual_start_self_target",
+        )
+        self.assertEqual(
+            contract["serializedOperandContract"]["scriptIdParamSource"],
+            1002,
+        )
+        self.assertEqual(len(contract["relatedOriginalFiles"]), 2)
+
+    def test_manual_self_control_rejects_object_specific_discovery(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v9",
+                "levelScriptManualSelfControl": {
+                    "schema": "levelScriptManualSelfControl.v1",
+                    "classification": (
+                        "current_context_manual_start_self_target"
+                    ),
+                    "discoveryPattern": {
+                        "serializedObjectInputs": ["fixture-script-id"],
+                    },
+                    "validation": {
+                        "status": "validated",
+                        "failures": [],
+                    },
+                },
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "validator=levelscript_manual_self_control_contract "
+                "gate=genericContractShape",
+            ):
+                pipeline.load_levelscript_manual_self_control_contract(
+                    audit_path
+                )
 
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(

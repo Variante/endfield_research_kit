@@ -1488,6 +1488,465 @@ def levelscript_start_policy_contract(
     }
 
 
+def validate_levelscript_manual_self_control_observation(
+    observation: dict[str, Any],
+    *,
+    source_file: str,
+    source_hashes: dict[str, str],
+) -> dict[str, Any]:
+    """Fail closed on the generic current-context ManualStart contract."""
+    failures: list[dict[str, Any]] = []
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "levelscript_manual_self_control_contract",
+            "gate": gate,
+            "message": "current-context ManualStartLevelScript self target",
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": source_hashes,
+        })
+
+    enum_values = observation.get("paramSourceValues") or {}
+    expected_sources = {
+        "CURRENT_LEVEL_ID": 1000,
+        "CURRENT_SCRIPT_ID": 1002,
+    }
+    actual_sources = {
+        name: enum_values.get(name) for name in expected_sources
+    }
+    if actual_sources != expected_sources:
+        fail("paramSourceEnum", expected_sources, actual_sources)
+
+    expected_fields = {
+        "levelId": "Beyond.Gameplay.Actions.Param`1<string>",
+        "scriptId": (
+            "Beyond.Gameplay.Actions.Param`1<"
+            "Beyond.Gameplay.Core.LevelScriptPtr>"
+        ),
+    }
+    actual_fields = {
+        name: (observation.get("actionFields") or {}).get(name, {}).get(
+            "runtimeType"
+        )
+        for name in expected_fields
+    }
+    if actual_fields != expected_fields:
+        fail("manualStartFieldTypes", expected_fields, actual_fields)
+
+    methods = observation.get("methods") or {}
+    required_methods = (
+        "Execute",
+        "TryGetLevelScript",
+        "ManualStart",
+        "set_runtimeState",
+        "UpdateRuntimeState",
+    )
+    unresolved_methods = {
+        name: (methods.get(name) or {}).get("mappingStatus")
+        for name in required_methods
+        if (methods.get(name) or {}).get("mappingStatus") != "mapped_unique"
+    }
+    if unresolved_methods:
+        fail("methodMapping", "all mapped_unique", unresolved_methods)
+
+    execute = observation.get("executeFlow") or {}
+    expected_execute = {
+        "tryGetLevelScriptCallCount": 1,
+        "manualStartCallCount": 1,
+        "tryGetBeforeManualStart": True,
+    }
+    actual_execute = {
+        name: execute.get(name) for name in expected_execute
+    }
+    if actual_execute != expected_execute:
+        fail("executeFlow", expected_execute, actual_execute)
+
+    manual_start = observation.get("manualStartFlow") or {}
+    expected_transition = {
+        "runtimeStateValue": (
+            (observation.get("runtimeStateValues") or {}).get("PreStart")
+        ),
+        "setterReceivesValue": True,
+        "updateRuntimeStateCallCount": 1,
+        "setterBeforeUpdate": True,
+    }
+    actual_transition = {
+        name: manual_start.get(name) for name in expected_transition
+    }
+    if actual_transition != expected_transition:
+        fail("manualStartTransition", expected_transition, actual_transition)
+
+    return {
+        "status": "validation_failed" if failures else "validated",
+        "failures": failures,
+    }
+
+
+def levelscript_manual_self_control_contract(
+    metadata: Any,
+    defaults: dict[int, tuple[int, int]],
+    helper: Any,
+    gameassembly_path: Path,
+    mapper_path: Path = NATIVE_MAPPER_HELPER,
+) -> dict[str, Any]:
+    """Discover current-level/current-script ManualStart semantics generically."""
+    mapper = load_native_mapper(mapper_path)
+    pe = mapper.PeImage(gameassembly_path)
+    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    ranges = mapper.image_method_ranges(metadata)
+    pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
+        pe, metadata, modules, ranges
+    )
+    sorted_pointers = sorted({
+        pointer
+        for pointers in pointers_by_image.values()
+        for pointer in pointers
+        if pointer
+    })
+    pointers_by_method_index: dict[int, set[int]] = {}
+    for pointer, aliases in method_by_pointer.items():
+        for alias in aliases:
+            method_index = alias.get("methodIndex")
+            if isinstance(method_index, int):
+                pointers_by_method_index.setdefault(method_index, set()).add(
+                    pointer
+                )
+
+    metadata_registration = mapper.find_metadata_registration(
+        pe, mapper.DEFAULT_CODE_REGISTRATION
+    )
+    if metadata_registration is None:
+        raise RuntimeError(
+            "ManualStart audit could not derive MetadataRegistration"
+        )
+    metadata_summary = mapper.metadata_registration_summary(
+        pe, metadata_registration
+    )
+    runtime_types_va = int(metadata_summary["types"], 16)
+
+    def resolved_field_type(type_index: int) -> tuple[int, str]:
+        type_va = pe.u64_at_va(runtime_types_va + type_index * 8)
+        return type_va, runtime_type_name(pe, metadata, type_va)
+
+    def find_type(type_name: str) -> list[Any]:
+        return [
+            type_def
+            for type_def in metadata.types
+            if metadata.type_full_name(type_def) == type_name
+        ]
+
+    def mapped_method(
+        type_name: str,
+        method_name: str,
+        parameter_count: int,
+        return_type: str,
+        *,
+        parameter_types: tuple[str, ...] | None = None,
+    ) -> dict[str, Any]:
+        candidates: list[dict[str, Any]] = []
+        types = find_type(type_name)
+        if len(types) == 1:
+            for method_def in metadata.methods_for(types[0]):
+                info = helper.method_row(metadata, method_def)
+                actual_parameter_types = tuple(
+                    row.get("typeName")
+                    for row in info.get("parameterDetails") or []
+                )
+                if (
+                    info.get("name") != method_name
+                    or info.get("parameterCount") != parameter_count
+                    or info.get("returnTypeName") != return_type
+                    or (
+                        parameter_types is not None
+                        and actual_parameter_types != parameter_types
+                    )
+                ):
+                    continue
+                pointers = sorted(
+                    pointers_by_method_index.get(method_def.index) or []
+                )
+                candidates.append({
+                    "methodIndex": method_def.index,
+                    "token": info.get("token"),
+                    "parameterTypes": list(actual_parameter_types),
+                    "returnTypeName": info.get("returnTypeName"),
+                    "pointers": pointers,
+                })
+        if len(candidates) == 1 and len(candidates[0]["pointers"]) == 1:
+            candidate = candidates[0]
+            pointer = candidate["pointers"][0]
+            return {
+                **candidate,
+                "pointers": [f"0x{value:x}" for value in candidate["pointers"]],
+                "methodPointerVa": f"0x{pointer:x}",
+                "mappingStatus": "mapped_unique",
+            }
+        return {
+            "mappingStatus": "unresolved",
+            "candidateCount": len(candidates),
+            "declaringTypeCount": len(types),
+            "candidates": candidates,
+        }
+
+    param_sources = {
+        row["name"]: row["id"]
+        for row in enum_members(
+            metadata, defaults, "Beyond.Gameplay.Actions.ParamSource"
+        )
+    }
+    runtime_state_values = {
+        row["name"]: row["id"]
+        for row in enum_members(
+            metadata,
+            defaults,
+            "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",
+        )
+    }
+
+    action_type_name = "Beyond.Gameplay.Actions.ManualStartLevelScript"
+    action_fields: dict[str, dict[str, Any]] = {}
+    action_types = find_type(action_type_name)
+    if len(action_types) == 1:
+        for field in metadata.fields_for(action_types[0]):
+            name = metadata.string(field.name_index)
+            if name not in {"levelId", "scriptId"}:
+                continue
+            type_va, type_name = resolved_field_type(field.type_index)
+            action_fields[name] = {
+                "fieldIndex": field.index,
+                "token": f"0x{field.token:08x}",
+                "metadataTypeIndex": field.type_index,
+                "runtimeTypeVa": f"0x{type_va:x}",
+                "runtimeType": type_name,
+            }
+
+    methods = {
+        "Execute": mapped_method(
+            action_type_name,
+            "Execute",
+            1,
+            "System.Void",
+            parameter_types=("System.Single",),
+        ),
+        "TryGetLevelScript": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptManager",
+            "TryGetLevelScript",
+            3,
+            "System.Boolean",
+        ),
+        "ManualStart": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "ManualStart",
+            0,
+            "System.Void",
+            parameter_types=(),
+        ),
+        "set_runtimeState": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "set_runtimeState",
+            1,
+            "System.Void",
+            parameter_types=(
+                "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",
+            ),
+        ),
+        "UpdateRuntimeState": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "UpdateRuntimeState",
+            1,
+            "System.Void",
+            parameter_types=("Beyond.Gameplay.Core.ScriptEndReason",),
+        ),
+    }
+
+    def method_body(method_key: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        method = methods.get(method_key) or {}
+        if method.get("mappingStatus") != "mapped_unique":
+            return {}, []
+        pointer = int(method["methodPointerVa"], 16)
+        scan_size, next_pointer = mapper.estimate_scan_size(
+            pointer, sorted_pointers, 65536
+        )
+        mapper_row = full_method_mapper_row(
+            metadata, helper, int(method["methodIndex"])
+        )
+        body_bytes = pe.bytes_at_va(pointer, scan_size)
+        body = mapper.build_method_body_summary(
+            mapper_row,
+            body_bytes,
+            pointer,
+            method_by_pointer,
+            pe=pe,
+            max_instructions=30000,
+        )
+        body["methodPointerVa"] = f"0x{pointer:x}"
+        body["methodPointerRva"] = f"0x{pointer - pe.image_base:x}"
+        body["scanBytes"] = scan_size
+        body["nextMethodPointerVa"] = (
+            f"0x{next_pointer:x}" if next_pointer else None
+        )
+        instructions = mapper.decode_x64_subset(
+            body_bytes, pointer, stop_offset=len(body_bytes)
+        )
+        return body, instructions
+
+    def calls_to(body: dict[str, Any], method_key: str) -> list[dict[str, Any]]:
+        expected_index = (methods.get(method_key) or {}).get("methodIndex")
+        return [
+            call
+            for call in sorted(body.get("calls") or [], key=lambda row: row["offset"])
+            if any(
+                target.get("methodIndex") == expected_index
+                for target in call.get("resolved") or []
+            )
+        ]
+
+    execute_body, _execute_instructions = method_body("Execute")
+    try_get_calls = calls_to(execute_body, "TryGetLevelScript")
+    manual_start_calls = calls_to(execute_body, "ManualStart")
+    execute_flow = {
+        "tryGetLevelScriptCallCount": len(try_get_calls),
+        "manualStartCallCount": len(manual_start_calls),
+        "tryGetBeforeManualStart": (
+            len(try_get_calls) == 1
+            and len(manual_start_calls) == 1
+            and int(try_get_calls[0]["offset"])
+            < int(manual_start_calls[0]["offset"])
+        ),
+        "tryGetLevelScriptCallOffset": (
+            try_get_calls[0]["offset"] if len(try_get_calls) == 1 else None
+        ),
+        "manualStartCallOffset": (
+            manual_start_calls[0]["offset"]
+            if len(manual_start_calls) == 1
+            else None
+        ),
+        "methodBody": {
+            key: execute_body.get(key)
+            for key in (
+                "methodPointerVa",
+                "methodPointerRva",
+                "scanBytes",
+                "nextMethodPointerVa",
+                "instructionCount",
+                "unknownInstructionCount",
+            )
+        },
+    }
+
+    start_body, start_instructions = method_body("ManualStart")
+    setter_calls = calls_to(start_body, "set_runtimeState")
+    update_calls = calls_to(start_body, "UpdateRuntimeState")
+    pre_start_value = runtime_state_values.get("PreStart")
+    setter_receives_pre_start = False
+    setter_window: list[dict[str, Any]] = []
+    if len(setter_calls) == 1 and isinstance(pre_start_value, int):
+        setter_offset = int(setter_calls[0]["offset"])
+        setter_window = [
+            row
+            for row in start_instructions
+            if setter_offset - 24 <= int(row.get("offset") or 0) < setter_offset
+        ]
+        texts = {str(row.get("text") or "") for row in setter_window}
+        setter_receives_pre_start = (
+            f"mov edx, 0x{pre_start_value:x}" in texts
+            or (
+                "xor r8d, r8d" in texts
+                and f"lea rdx, [r8+0x{pre_start_value:x}]" in texts
+            )
+        )
+    manual_start_flow = {
+        "runtimeStateValue": pre_start_value,
+        "setterCallCount": len(setter_calls),
+        "setterReceivesValue": setter_receives_pre_start,
+        "updateRuntimeStateCallCount": len(update_calls),
+        "setterBeforeUpdate": (
+            len(setter_calls) == 1
+            and len(update_calls) == 1
+            and int(setter_calls[0]["offset"]) < int(update_calls[0]["offset"])
+        ),
+        "setterCallOffset": (
+            setter_calls[0]["offset"] if len(setter_calls) == 1 else None
+        ),
+        "updateRuntimeStateCallOffset": (
+            update_calls[0]["offset"] if len(update_calls) == 1 else None
+        ),
+        "setterInstructionWindow": [
+            {
+                "offset": row.get("offset"),
+                "va": row.get("va"),
+                "text": row.get("text"),
+                "bytes": row.get("bytes"),
+            }
+            for row in setter_window
+        ],
+        "methodBody": {
+            key: start_body.get(key)
+            for key in (
+                "methodPointerVa",
+                "methodPointerRva",
+                "scanBytes",
+                "nextMethodPointerVa",
+                "instructionCount",
+                "unknownInstructionCount",
+            )
+        },
+    }
+
+    observation = {
+        "paramSourceValues": param_sources,
+        "runtimeStateValues": runtime_state_values,
+        "actionFields": action_fields,
+        "methods": methods,
+        "executeFlow": execute_flow,
+        "manualStartFlow": manual_start_flow,
+    }
+    source_hashes = {
+        "gameAssemblySha256": file_sha256(gameassembly_path),
+        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+    }
+    validation = validate_levelscript_manual_self_control_observation(
+        observation,
+        source_file=str(gameassembly_path.resolve()),
+        source_hashes=source_hashes,
+    )
+    return {
+        "schema": "levelScriptManualSelfControl.v1",
+        "classification": "current_context_manual_start_self_target",
+        "discoveryPattern": {
+            "actionType": action_type_name,
+            "fieldSelection": "exact metadata field names and runtime generic types",
+            "enumSelection": "exact ParamSource metadata constants",
+            "nativeFlow": (
+                "decoded current-binary calls from Execute through "
+                "TryGetLevelScript and ManualStart into PreStart"
+            ),
+            "serializedObjectInputs": [],
+        },
+        "serializedOperandContract": {
+            "levelIdParamSource": param_sources.get("CURRENT_LEVEL_ID"),
+            "scriptIdParamSource": param_sources.get("CURRENT_SCRIPT_ID"),
+            "targetResolution": "hosting_level_and_script",
+        },
+        **observation,
+        "finding": (
+            "A ManualStartLevelScript action whose serialized levelId and scriptId "
+            "parameters use CURRENT_LEVEL_ID and CURRENT_SCRIPT_ID resolves the "
+            "hosting LevelScript, looks it up, and calls ManualStart; ManualStart "
+            "enters PreStart before continuing runtime-state evaluation."
+        ),
+        "boundary": (
+            "This proves a self-start carrier only when an original serialized "
+            "ManualStart action has both current-context operands and an authored "
+            "header link into that action. It does not supply a mission/quest owner, "
+            "choose a Story branch, or order separate playback actions."
+        ),
+        "validation": validation,
+    }
+
+
 def message_schema(
     metadata: Any,
     defaults: dict[int, tuple[int, int]],
@@ -3132,6 +3591,13 @@ def build_report(
         gameassembly_path,
         mapper_path,
     )
+    manual_self_control_contract = levelscript_manual_self_control_contract(
+        metadata,
+        defaults,
+        helper,
+        gameassembly_path,
+        mapper_path,
+    )
     native_hooks_by_message_id: dict[int, list[str]] = {}
     for hook_name, hook in native_task_paths["hooks"].items():
         message_id = hook.get("messageId")
@@ -3171,7 +3637,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v8",
+        "_schema": "endfieldProtocolRegistryAudit.v9",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -3238,6 +3704,12 @@ def build_report(
                 (start_policy_contract.get("validation") or {}).get("status")
                 == "validated"
             ),
+            "levelScriptManualSelfControlValidated": (
+                (manual_self_control_contract.get("validation") or {}).get(
+                    "status"
+                )
+                == "validated"
+            ),
         },
         "evidencePolicy": {
             "registry": (
@@ -3265,6 +3737,9 @@ def build_report(
                 "co-carries missionId or questId, so it still cannot attach Story to a mission."
             ),
             "levelScriptStartPolicy": start_policy_contract["boundary"],
+            "levelScriptManualSelfControl": (
+                manual_self_control_contract["boundary"]
+            ),
             "missionClientEvent": (
                 "Message 125 has a current-build native handler that interns its exact "
                 "missionId/eventName pair and publishes the resulting key through "
@@ -3306,6 +3781,7 @@ def build_report(
         "protobufIdentityCarrierCensus": identity_carrier_census,
         "stateUpdateApplicationCensus": state_application_census,
         "levelScriptStartPolicy": start_policy_contract,
+        "levelScriptManualSelfControl": manual_self_control_contract,
         "message125EventBusSpecializations": event_bus_census,
         "missionEventConstructorXrefs": MISSION_EVENT_CONSTRUCTOR_XREF_FINDING,
         "missionEventAssetCoverage": mission_event_assets,
@@ -3368,6 +3844,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         (
             "- LevelScript SameWithActive start policy: "
             f"**{'validated' if summary['levelScriptStartPolicyValidated'] else 'failed'}**"
+        ),
+        (
+            "- LevelScript current-context ManualStart self control: "
+            f"**{'validated' if summary['levelScriptManualSelfControlValidated'] else 'failed'}**"
         ),
         f"- Runtime-hook manifest SHA-256: `{report['source']['runtimeHookManifestSha256']}`",
         "",
@@ -3828,7 +4308,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v8 report when its original "
+            "Reuse an existing validated v9 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -3847,7 +4327,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v8":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v9":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}
@@ -3881,6 +4361,15 @@ def current_report_status(
         return False, (
             "LevelScript start-policy validation is "
             f"{start_policy_validation.get('status')!r}"
+        )
+    manual_self_validation = (
+        (report.get("levelScriptManualSelfControl") or {}).get("validation")
+        or {}
+    )
+    if manual_self_validation.get("status") != "validated":
+        return False, (
+            "LevelScript manual-self-control validation is "
+            f"{manual_self_validation.get('status')!r}"
         )
     source = report.get("source") or {}
     checks = (
@@ -3983,13 +4472,26 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+    manual_self_validation = report["levelScriptManualSelfControl"][
+        "validation"
+    ]
+    if manual_self_validation["status"] != "validated":
+        first = manual_self_validation["failures"][0]
+        print(
+            "LevelScript manual-self-control validator failed: "
+            f"validator={first['validator']} gate={first['gate']} "
+            f"message={first.get('message')} expected={first['expected']!r} "
+            f"actual={first['actual']!r} source={first['sourceFile']}",
+            file=sys.stderr,
+        )
+        return 1
     print(
         f"wrote {args.json_output} and {args.markdown_output}: "
         f"{report['summary']['totalMessages']} messages, "
         f"{report['summary']['selectedSchemas']} selected schemas, "
         f"{report['summary']['stateUpdateApplicationCandidatesValidated']}/"
         f"{report['summary']['stateUpdateApplicationCandidates']} state-update paths validated, "
-        "LevelScript start policy validated"
+        "LevelScript start policy and manual self-control validated"
     )
     return 0
 

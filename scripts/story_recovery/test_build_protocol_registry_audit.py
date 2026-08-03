@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v8",
+                "_schema": "endfieldProtocolRegistryAudit.v9",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -39,6 +39,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     },
                 },
                 "levelScriptStartPolicy": {
+                    "validation": {"status": "validated", "failures": []},
+                },
+                "levelScriptManualSelfControl": {
                     "validation": {"status": "validated", "failures": []},
                 },
             }), encoding="utf-8")
@@ -190,6 +193,106 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             ["SameWithActiveGate", "commonPreStartTransition"],
         )
         self.assertEqual(result["failures"][0]["sourceFile"], "GameAssembly.dll")
+
+    def test_manual_self_control_accepts_generic_current_context_flow(self):
+        observation = {
+            "paramSourceValues": {
+                "CURRENT_LEVEL_ID": 1000,
+                "CURRENT_SCRIPT_ID": 1002,
+            },
+            "runtimeStateValues": {"PreStart": 22},
+            "actionFields": {
+                "levelId": {
+                    "runtimeType": "Beyond.Gameplay.Actions.Param`1<string>",
+                },
+                "scriptId": {
+                    "runtimeType": (
+                        "Beyond.Gameplay.Actions.Param`1<"
+                        "Beyond.Gameplay.Core.LevelScriptPtr>"
+                    ),
+                },
+            },
+            "methods": {
+                name: {"mappingStatus": "mapped_unique"}
+                for name in (
+                    "Execute",
+                    "TryGetLevelScript",
+                    "ManualStart",
+                    "set_runtimeState",
+                    "UpdateRuntimeState",
+                )
+            },
+            "executeFlow": {
+                "tryGetLevelScriptCallCount": 1,
+                "manualStartCallCount": 1,
+                "tryGetBeforeManualStart": True,
+            },
+            "manualStartFlow": {
+                "runtimeStateValue": 22,
+                "setterReceivesValue": True,
+                "updateRuntimeStateCallCount": 1,
+                "setterBeforeUpdate": True,
+            },
+        }
+
+        result = audit.validate_levelscript_manual_self_control_observation(
+            observation,
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "c" * 64},
+        )
+
+        self.assertEqual(result, {"status": "validated", "failures": []})
+
+    def test_manual_self_control_reports_independent_contract_drift(self):
+        observation = {
+            "paramSourceValues": {
+                "CURRENT_LEVEL_ID": 1000,
+                "CURRENT_SCRIPT_ID": 9999,
+            },
+            "runtimeStateValues": {"PreStart": 22},
+            "actionFields": {
+                "levelId": {"runtimeType": "wrong"},
+                "scriptId": {"runtimeType": "wrong"},
+            },
+            "methods": {
+                name: {"mappingStatus": "mapped_unique"}
+                for name in (
+                    "Execute",
+                    "TryGetLevelScript",
+                    "ManualStart",
+                    "set_runtimeState",
+                    "UpdateRuntimeState",
+                )
+            },
+            "executeFlow": {
+                "tryGetLevelScriptCallCount": 1,
+                "manualStartCallCount": 0,
+                "tryGetBeforeManualStart": False,
+            },
+            "manualStartFlow": {
+                "runtimeStateValue": 22,
+                "setterReceivesValue": False,
+                "updateRuntimeStateCallCount": 1,
+                "setterBeforeUpdate": True,
+            },
+        }
+
+        result = audit.validate_levelscript_manual_self_control_observation(
+            observation,
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "d" * 64},
+        )
+
+        self.assertEqual(result["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in result["failures"]],
+            [
+                "paramSourceEnum",
+                "manualStartFieldTypes",
+                "executeFlow",
+                "manualStartTransition",
+            ],
+        )
 
     def test_compressed_signed_integer_decoding(self):
         self.assertEqual(audit.read_compressed_int32(bytes([0x00]), 0), (0, 1))

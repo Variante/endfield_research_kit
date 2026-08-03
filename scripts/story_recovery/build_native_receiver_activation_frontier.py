@@ -61,7 +61,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v15"
+SCHEMA = "nativeReceiverActivationFrontier.v16"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -259,14 +259,53 @@ def receiver_script_rows(index_payload: dict[str, Any]) -> list[dict[str, Any]]:
 
 def manual_control_targets(
     payload: dict[str, Any],
+    self_control_contract: dict[str, Any] | None = None,
 ) -> dict[tuple[str, str], list[dict[str, Any]]]:
-    """Index literal manual-control targets without treating defaults as edges."""
+    """Index literal and binary-validated current-context manual targets."""
     targets: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    contract = self_control_contract or {}
+    operand_contract = contract.get("serializedOperandContract") or {}
+    self_contract_validated = (
+        (contract.get("validation") or {}).get("status") == "validated"
+        and safe_text(contract.get("classification"))
+        == "current_context_manual_start_self_target"
+        and (contract.get("discoveryPattern") or {}).get(
+            "serializedObjectInputs"
+        )
+        == []
+        and operand_contract.get("levelIdParamSource") is not None
+        and operand_contract.get("scriptIdParamSource") is not None
+    )
     for row in payload.get("rows") or []:
         if not isinstance(row, dict):
             continue
         source_level = safe_text(row.get("levelId"))
         source_script = safe_text(row.get("scriptId"))
+        manual_control = row.get("manualControl") or {}
+        parameter_sources = manual_control.get("parameterSources") or {}
+        if (
+            self_contract_validated
+            and safe_text(row.get("action")) == "ManualStartLevelScript"
+            and bool(row.get("activationPair"))
+            and parameter_sources
+            == {
+                "levelId": operand_contract.get("levelIdParamSource"),
+                "scriptId": operand_contract.get("scriptIdParamSource"),
+            }
+            and source_level
+            and source_script
+        ):
+            targets[(source_level, source_script)].append({
+                "sourceLevelId": source_level,
+                "sourceScriptId": source_script,
+                "localId": row.get("localId"),
+                "action": "ManualStartLevelScript",
+                "selfTarget": True,
+                "targetResolution": "current_context_self",
+                "parameterSources": parameter_sources,
+                "headerLinkedEvent": row.get("linkedEvent") or {},
+                "sourceFile": safe_text(row.get("file")),
+            })
         for target in row.get("literalTargets") or []:
             if not isinstance(target, dict):
                 continue
@@ -283,6 +322,7 @@ def manual_control_targets(
                     "selfTarget": (
                         source_level == level_id and source_script == script_id
                     ),
+                    "targetResolution": "literal_serialized_identity",
                     "sourceFile": safe_text(row.get("file")),
                 }
             )
@@ -1625,6 +1665,17 @@ def activation_class(
     ]
     if cross_targets:
         return "literal_cross_script_manual_control"
+    current_context_self_starts = [
+        row
+        for row in incoming_manual_controls
+        if row.get("selfTarget")
+        and safe_text(row.get("action")) == "ManualStartLevelScript"
+        and safe_text(row.get("targetResolution"))
+        == "current_context_self"
+        and bool(row.get("headerLinkedEvent"))
+    ]
+    if current_context_self_starts:
+        return "header_linked_current_context_self_manual_start"
     if start_type == "SameWithActive" and start_policy_validated:
         return "same_with_active_binary_active_gate"
     if start_type != "Manual":
@@ -1695,7 +1746,26 @@ def build_report(
         )
         == []
     )
-    incoming_by_target = manual_control_targets(manual_control_payload)
+    manual_self_control = (
+        (index_payload.get("runtimeContract") or {}).get(
+            "levelScriptManualSelfControlAudit"
+        )
+        or {}
+    )
+    manual_self_control_validated = (
+        (manual_self_control.get("validation") or {}).get("status")
+        == "validated"
+        and safe_text(manual_self_control.get("classification"))
+        == "current_context_manual_start_self_target"
+        and (manual_self_control.get("discoveryPattern") or {}).get(
+            "serializedObjectInputs"
+        )
+        == []
+    )
+    incoming_by_target = manual_control_targets(
+        manual_control_payload,
+        manual_self_control,
+    )
     subgames_by_script = subgame_script_bindings(index_payload)
     consumers_by_script = mission_runtime_script_consumers(mission_root)
     task_extra_info = script_task_extra_info_rows(
@@ -1871,6 +1941,16 @@ def build_report(
             and safe_text(levelscript.get("startTypeName")) == "SameWithActive"
             else {}
         )
+        row_manual_self_control = (
+            manual_self_control
+            if manual_self_control_validated
+            and any(
+                safe_text(control.get("targetResolution"))
+                == "current_context_self"
+                for control in incoming
+            )
+            else {}
+        )
         related_paths = {
             safe_text(related.get("sourceFile"))
             for related in related_original_files
@@ -1884,6 +1964,14 @@ def build_report(
                 related_original_files.append(dict(related))
                 related_paths.add(safe_text(related.get("sourceFile")))
         for related in row_start_policy.get("relatedOriginalFiles") or []:
+            if (
+                isinstance(related, dict)
+                and safe_text(related.get("sourceFile"))
+                and safe_text(related.get("sourceFile")) not in related_paths
+            ):
+                related_original_files.append(dict(related))
+                related_paths.add(safe_text(related.get("sourceFile")))
+        for related in row_manual_self_control.get("relatedOriginalFiles") or []:
             if (
                 isinstance(related, dict)
                 and safe_text(related.get("sourceFile"))
@@ -1929,6 +2017,7 @@ def build_report(
                 "encounterControllerContexts": encounter_contexts,
                 "nominalMissionHostComparison": nominal_host_comparison,
                 "incomingLiteralManualControls": incoming,
+                "manualSelfControl": row_manual_self_control,
                 "subGameBindings": subgames,
                 "dungeonSceneContexts": dungeon_contexts,
                 "missionRuntimeScriptConsumers": consumers,
@@ -1978,6 +2067,17 @@ def build_report(
                 "objectIdentityInputs": (
                     start_policy.get("discoveryPattern") or {}
                 ).get("objectIdentityInputs"),
+            },
+            "manualSelfControl": {
+                "schema": safe_text(manual_self_control.get("schema")),
+                "source": safe_text(manual_self_control.get("source")),
+                "classification": safe_text(
+                    manual_self_control.get("classification")
+                ),
+                "validation": manual_self_control.get("validation") or {},
+                "serializedObjectInputs": (
+                    manual_self_control.get("discoveryPattern") or {}
+                ).get("serializedObjectInputs"),
             },
             "spawnerRoot": rel_path(spawner_root),
             "scriptTaskExtraInfo": rel_path(script_task_extra_info_path),
@@ -2074,6 +2174,13 @@ def build_report(
                 "manual-start gate. It does not identify what mission/server "
                 "transition made the script Active, or order its Story actions."
             ),
+            "manualSelfControlBoundary": (
+                "The hash-validated binary and metadata prove the generic "
+                "CURRENT_LEVEL_ID/CURRENT_SCRIPT_ID ManualStart target. It is "
+                "promoted only when the original serialized row carries both "
+                "operands and an authored event-header link; this proves local "
+                "self-start, not mission ownership or cross-Story order."
+            ),
             "taskConditionBoundary": (
                 "A completely decoded task map proves authored task evaluation "
                 "requirements inside this LevelScript. Entity, spawner, dialog, "
@@ -2138,6 +2245,15 @@ def build_report(
                 story_key
                 for row in rows
                 if row.get("startRuntimePolicy")
+                for story_key in row.get("storyKeys") or []
+            }),
+            "scriptsWithValidatedManualSelfControl": sum(
+                bool(row.get("manualSelfControl")) for row in rows
+            ),
+            "storyKeysWithValidatedManualSelfControl": len({
+                story_key
+                for row in rows
+                if row.get("manualSelfControl")
                 for story_key in row.get("storyKeys") or []
             }),
             "levelDataHostShapes": dict(sorted(host_shapes.items())),
@@ -2597,6 +2713,27 @@ def publish_to_pipeline_index(
                 for control in row.get("incomingLiteralManualControls") or []
                 if isinstance(control, dict)
             ),
+            "incomingManualControls": [
+                {
+                    "sourceLevelId": safe_text(
+                        control.get("sourceLevelId")
+                    ),
+                    "sourceScriptId": safe_text(
+                        control.get("sourceScriptId")
+                    ),
+                    "localId": control.get("localId"),
+                    "action": safe_text(control.get("action")),
+                    "selfTarget": bool(control.get("selfTarget")),
+                    "targetResolution": safe_text(
+                        control.get("targetResolution")
+                    ),
+                    "parameterSources": control.get("parameterSources") or {},
+                    "headerLinkedEvent": control.get("headerLinkedEvent") or {},
+                    "sourceFile": safe_text(control.get("sourceFile")),
+                }
+                for control in row.get("incomingLiteralManualControls") or []
+                if isinstance(control, dict)
+            ],
             "missionRuntimeObjectiveConsumerCount": len(
                 row.get("missionRuntimeScriptConsumers") or []
             ),
@@ -2645,6 +2782,7 @@ def publish_to_pipeline_index(
             "decodedTaskMap": row.get("decodedTaskMap"),
             "taskRuntimeAuthority": row.get("taskRuntimeAuthority") or {},
             "startRuntimePolicy": row.get("startRuntimePolicy") or {},
+            "manualSelfControl": row.get("manualSelfControl") or {},
             "relatedOriginalFiles": [
                 {
                     "kind": safe_text(related.get("kind")),
@@ -2694,6 +2832,12 @@ def markdown_report(payload: dict[str, Any]) -> str:
             "- Scripts / Story keys with binary-validated SameWithActive "
             f"policy: `{counts.get('scriptsWithValidatedSameWithActivePolicy')}` / "
             f"`{counts.get('storyKeysWithValidatedSameWithActivePolicy')}`"
+        ),
+        (
+            "- Scripts / Story keys with binary-validated current-context "
+            "ManualStart self control: "
+            f"`{counts.get('scriptsWithValidatedManualSelfControl')}` / "
+            f"`{counts.get('storyKeysWithValidatedManualSelfControl')}`"
         ),
         f"- Activation classes: `{counts.get('activationClasses')}`",
         f"- LevelData host shapes: `{counts.get('levelDataHostShapes')}`",

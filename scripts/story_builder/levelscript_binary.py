@@ -5435,6 +5435,16 @@ def _decode_manual_levelscript_control(payload: bytes, role: str) -> dict[str, A
         "scriptIdCandidate": str(script_id_candidate) if script_id_candidate is not None else "",
         "constantTargetStatus": "script-id-only" if script_id_candidate is not None else "absent",
     }
+    if canonical_prefix:
+        # Both operands are serialized Param<T> values.  Current MemoryPack
+        # metadata and generated Deserialize bodies establish the member order
+        # as constValue, idRef, paramSource, path.  Keep the numeric sources
+        # here; their build-specific enum names are supplied by the validated
+        # original-binary contract rather than hardcoded into this parser.
+        out["parameterSources"] = {
+            "levelId": struct.unpack_from("<i", payload, 9)[0],
+            "scriptId": struct.unpack_from("<i", payload, 38)[0],
+        }
     if script_id_candidate is not None:
         out["payloadShape"] = "manual-levelscript-script-id-operand"
     if len(payload) > 46 and canonical_prefix:
