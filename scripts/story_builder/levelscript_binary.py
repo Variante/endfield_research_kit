@@ -2612,6 +2612,44 @@ def _decode_local_getter_ref(payload: bytes, cursor: int) -> tuple[int, int] | N
     return local_id, cursor + 17
 
 
+def _decode_pure_bool_getter_ref(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode one exact ``PureGetter<bool>`` local-reference envelope.
+
+    Boolean getter combinators serialize their child nodes directly rather
+    than through the 17-byte ``Param<T>`` reference used by integer operands.
+    The installed formatter writes tag 04/00, the local getter id, and two
+    null i32 sentinels.  Constants remain distinguishable because their
+    ``idRef`` is -1.
+    """
+    if (
+        cursor + 14 > len(payload)
+        or payload[cursor : cursor + 2] != b"\x04\x00"
+        or payload[cursor + 6 : cursor + 14] != b"\xff" * 8
+    ):
+        return None
+    local_id = struct.unpack_from("<i", payload, cursor + 2)[0]
+    if local_id < 0 or local_id > 0x10000:
+        return None
+    return {
+        "operandKind": "localGetterRef",
+        "getterLocalId": local_id,
+    }, cursor + 14
+
+
+def _decode_bool_operand(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode a polymorphic boolean constant/path or local getter operand."""
+    getter_ref = _decode_pure_bool_getter_ref(payload, cursor)
+    if getter_ref is not None:
+        return getter_ref
+    return _decode_bool_param(payload, cursor)
+
+
 def _finish_getter_fields(
     payload: bytes,
     end: int,
@@ -2696,10 +2734,10 @@ def _decode_boolean_compare_getter(payload: bytes) -> dict[str, Any]:
     comparer = _decode_i32_param(payload, 0)
     if comparer is None:
         return {}
-    value_a = _decode_bool_param(payload, comparer[1])
+    value_a = _decode_bool_operand(payload, comparer[1])
     if value_a is None:
         return {}
-    value_b = _decode_bool_param(payload, value_a[1])
+    value_b = _decode_bool_operand(payload, value_a[1])
     if value_b is None:
         return {}
     comparer_raw = comparer[0]["value"]
@@ -2708,7 +2746,127 @@ def _decode_boolean_compare_getter(payload: bytes) -> dict[str, Any]:
         "comparerName": {0: "Equal", 1: "NotEqual"}.get(comparer_raw, ""),
         "valueA": value_a[0],
         "valueB": value_b[0],
-        "payloadShape": "bool-comparer-two-bool-params-exact-eof",
+        "payloadShape": "bool-comparer-two-polymorphic-bool-operands-exact-fields",
+    })
+
+
+def _decode_bool_binary_getter(
+    payload: bytes,
+    *,
+    operation: str,
+) -> dict[str, Any]:
+    value_a = _decode_pure_bool_getter_ref(payload, 0)
+    if value_a is None:
+        return {}
+    value_b = _decode_pure_bool_getter_ref(payload, value_a[1])
+    if value_b is None:
+        return {}
+    return _finish_getter_fields(payload, value_b[1], {
+        "operation": operation,
+        "valueA": value_a[0],
+        "valueB": value_b[0],
+        "payloadShape": "two-pure-bool-getter-refs-exact-fields",
+    })
+
+
+def _decode_bool_invert_getter(payload: bytes) -> dict[str, Any]:
+    value = _decode_pure_bool_getter_ref(payload, 0)
+    if value is None:
+        return {}
+    return _finish_getter_fields(payload, value[1], {
+        "operation": "Not",
+        "value": value[0],
+        "payloadShape": "one-pure-bool-getter-ref-exact-fields",
+    })
+
+
+def _decode_bool_multi_and_getter(payload: bytes) -> dict[str, Any]:
+    if len(payload) < 4:
+        return {}
+    count = struct.unpack_from("<I", payload, 0)[0]
+    if count == 0 or count > 256:
+        return {}
+    cursor = 4
+    values: list[dict[str, Any]] = []
+    for _index in range(count):
+        value = _decode_pure_bool_getter_ref(payload, cursor)
+        if value is None:
+            return {}
+        values.append(value[0])
+        cursor = value[1]
+    return _finish_getter_fields(payload, cursor, {
+        "operation": "All",
+        "values": values,
+        "payloadShape": "counted-pure-bool-getter-refs-exact-fields",
+    })
+
+
+def _decode_getter_bool(payload: bytes) -> dict[str, Any]:
+    value = _decode_bool_param(payload, 0)
+    if value is None:
+        return {}
+    return _finish_getter_fields(payload, value[1], {
+        "value": value[0],
+        "payloadShape": "one-bool-param-exact-fields",
+    })
+
+
+def _decode_interactive_check_state_getter(payload: bytes) -> dict[str, Any]:
+    """Decode comparer, ScriptEntityPtr target, and expected state exactly."""
+    comparer = _decode_i32_param(payload, 0)
+    if comparer is None:
+        return {}
+    target = _decode_constant_entity_ptr_param(payload, comparer[1])
+    if target is None:
+        return {}
+    value = _decode_i32_param(payload, target[1])
+    if value is None:
+        return {}
+    comparer_raw = comparer[0]["value"]
+    return _finish_getter_fields(payload, value[1], {
+        "type": "InteractiveCheckState",
+        "comparer": comparer[0],
+        "comparerName": {
+            0: "Equal",
+            1: "NotEqual",
+            2: "GreaterThan",
+            3: "GreaterEqual",
+            4: "LessThan",
+            5: "LessEqual",
+        }.get(comparer_raw, ""),
+        "target": target[0],
+        "value": value[0],
+        "payloadShape": "comparer-entity-ptr-state-exact-fields",
+        "nativeMappingId": "gameassembly-2026-08-02-interactive-check-state",
+    })
+
+
+def _decode_get_lsm_is_completed_getter(payload: bytes) -> dict[str, Any]:
+    """Decode the two formatter fields used by ``GetLsmIsCompleted``.
+
+    The first field is the current fixed-width ``Param<LsmPtr>`` value.  Its
+    inner eight-byte value is retained losslessly because the pointer's bit
+    allocation is not needed to establish the predicate.  The second field is
+    the already-proven ``Param<LevelScriptPtr>`` representation.
+    """
+    if len(payload) < 21 or payload[:2] != b"\x04\x03":
+        return {}
+    lsm_tail = _decode_param_tail(payload, 9)
+    if lsm_tail is None or lsm_tail[1] != 21:
+        return {}
+    script_ptr = _decode_levelscript_ptr_param(payload, 21)
+    if script_ptr is None:
+        return {}
+    return _finish_getter_fields(payload, script_ptr[1], {
+        "type": "GetLsmIsCompleted",
+        "lsmPtr": {
+            "rawValueHex": payload[1:9].hex(),
+            **lsm_tail[0],
+        },
+        "scriptPtr": script_ptr[0],
+        "resultField": "LevelScriptModule.isCompleted",
+        "payloadShape": "lsm-ptr-and-level-script-ptr-exact-fields",
+        "nativeMappingId": "gameassembly-2026-08-02-get-lsm-is-completed",
     })
 
 
@@ -5297,6 +5455,10 @@ def _decode_action_header_prefix(payload: bytes) -> dict[str, Any]:
 
 LEVELSCRIPT_EXACT_GETTER_FIELDS = (
     "booleanCompare",
+    "boolGetterAnd",
+    "boolGetterInvert",
+    "boolGetterMultiAnd",
+    "boolGetterOr",
     "checkLevelScriptStage",
     "checkMissionOrQuestIsComplete",
     "compareMissionState",
@@ -5305,13 +5467,50 @@ LEVELSCRIPT_EXACT_GETTER_FIELDS = (
     "getLevelScriptPropertyGenericBool",
     "getLevelScriptStage",
     "getMissionState",
+    "getLsmIsCompleted",
+    "getterBool",
     "getterInt",
     "getterString",
     "intCompare",
     "intEqual",
     "intRandom",
+    "interactiveCheckState",
     "isEndminGender",
 )
+
+
+def _predicate_local_getter_refs(
+    value: Any,
+    path: str = "",
+) -> list[dict[str, Any]]:
+    """Collect explicitly typed local-getter references from exact fields."""
+    refs: list[dict[str, Any]] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{path}.{key}" if path else key
+            if (
+                isinstance(child, int)
+                and (
+                    key == "getterLocalId"
+                    or key.endswith("GetterLocalId")
+                )
+            ):
+                shorthand_base = key[: -len("GetterLocalId")]
+                canonical_operand = value.get(shorthand_base)
+                if (
+                    shorthand_base
+                    and isinstance(canonical_operand, dict)
+                    and canonical_operand.get("getterLocalId") == child
+                ):
+                    continue
+                refs.append({"path": child_path, "getterLocalId": child})
+            else:
+                refs.extend(_predicate_local_getter_refs(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            child_path = f"{path}[{index}]"
+            refs.extend(_predicate_local_getter_refs(child, child_path))
+    return refs
 
 
 def decode_levelscript_action_header_validation(
@@ -5373,47 +5572,98 @@ def decode_levelscript_action_header_validation(
             "predicateType": "constant",
             "predicate": {"value": bool(validate_param.get("value"))},
         }
-    matching_getters = [
-        (index, record)
-        for index, record in enumerate(records)
-        if record.get("localId") == getter_local_id
-        and str(memberships.get(_record_start(record)) or "").startswith("getterList")
-    ]
-    if not matching_getters:
+    getter_rows_by_id: dict[int, list[tuple[int, dict[str, Any]]]] = {}
+    for index, record in enumerate(records):
+        local_id = record.get("localId")
+        if not isinstance(local_id, int):
+            continue
+        if not str(memberships.get(_record_start(record)) or "").startswith(
+            "getterList"
+        ):
+            continue
+        getter_rows_by_id.setdefault(local_id, []).append((index, record))
+
+    def resolve_getter(
+        local_id: int,
+        stack: tuple[int, ...] = (),
+    ) -> dict[str, Any]:
+        if local_id in stack or len(stack) >= 64:
+            return {}
+        matching_getters = getter_rows_by_id.get(local_id) or []
+        if not matching_getters:
+            return {}
+        getter_index, getter_record = matching_getters[-1]
+        getter_next_start = (
+            _record_start(records[getter_index + 1])
+            if getter_index + 1 < len(records)
+            else len(data)
+        )
+        getter_detail = decode_levelscript_record_payload(
+            data,
+            getter_record,
+            next_start=getter_next_start,
+            action_map_role=memberships.get(_record_start(getter_record)),
+        )
+        decoded_fields = [
+            field
+            for field in LEVELSCRIPT_EXACT_GETTER_FIELDS
+            if isinstance(getter_detail.get(field), dict)
+        ]
+        if len(decoded_fields) != 1:
+            return {}
+        predicate_type = decoded_fields[0]
+        predicate = getter_detail[predicate_type]
+        children: list[dict[str, Any]] = []
+        seen_refs: set[tuple[str, int]] = set()
+        for ref in _predicate_local_getter_refs(predicate):
+            ref_path = str(ref.get("path") or "")
+            child_id = ref.get("getterLocalId")
+            identity = (ref_path, child_id)
+            if not isinstance(child_id, int) or identity in seen_refs:
+                continue
+            seen_refs.add(identity)
+            child = resolve_getter(child_id, (*stack, local_id))
+            if not child:
+                return {}
+            children.append({
+                "path": ref_path,
+                "getterLocalId": child_id,
+                "predicate": child,
+            })
+        return {
+            "predicateType": predicate_type,
+            "predicate": predicate,
+            "getterLocalId": local_id,
+            "getterUnionTag": getter_detail.get("memoryPackUnionTag"),
+            "getterSerializedMemberCount": getter_detail.get(
+                "serializedMemberCount"
+            ),
+            "runtimeSlotStatus": "active-final-serialized-slot",
+            "shadowedGetterRecordCount": len(matching_getters) - 1,
+            "children": children,
+        }
+
+    predicate_tree = resolve_getter(getter_local_id)
+    if not predicate_tree:
         return {}
-    getter_index, getter_record = matching_getters[-1]
-    getter_next_start = (
-        _record_start(records[getter_index + 1])
-        if getter_index + 1 < len(records)
-        else len(data)
-    )
-    getter_detail = decode_levelscript_record_payload(
-        data,
-        getter_record,
-        next_start=getter_next_start,
-        action_map_role=memberships.get(_record_start(getter_record)),
-    )
-    decoded_fields = [
-        field
-        for field in LEVELSCRIPT_EXACT_GETTER_FIELDS
-        if isinstance(getter_detail.get(field), dict)
-    ]
-    if len(decoded_fields) != 1:
-        return {}
-    predicate_type = decoded_fields[0]
     return {
         "status": "exact_current_build_memorypack_fields",
         "headerLocalId": header_local_id,
         "headerNextLocalId": action_header.get("nextId"),
         "validateParam": validate_param,
         "getterLocalId": getter_local_id,
-        "getterUnionTag": getter_detail.get("memoryPackUnionTag"),
-        "getterSerializedMemberCount": getter_detail.get("serializedMemberCount"),
+        "getterUnionTag": predicate_tree.get("getterUnionTag"),
+        "getterSerializedMemberCount": predicate_tree.get(
+            "getterSerializedMemberCount"
+        ),
         "runtimeSlotStatus": "active-final-serialized-slot",
         "shadowedHeaderRecordCount": len(matching_headers) - 1,
-        "shadowedGetterRecordCount": len(matching_getters) - 1,
-        "predicateType": predicate_type,
-        "predicate": getter_detail[predicate_type],
+        "shadowedGetterRecordCount": predicate_tree.get(
+            "shadowedGetterRecordCount", 0
+        ),
+        "predicateType": predicate_tree["predicateType"],
+        "predicate": predicate_tree["predicate"],
+        "predicateTree": predicate_tree,
     }
 
 
@@ -6018,6 +6268,10 @@ def decode_levelscript_record_payload(
             out["entityCompare"] = entity_compare
     if getter_role and semantic_key in {
         (0x0004, 0x0A),
+        (0x0006, 0x09),
+        (0x000A, 0x08),
+        (0x000B, 0x08),
+        (0x000D, 0x09),
         (0x0013, 0x0A),
         (0x0016, 0x09),
         (0x001F, 0x0A),
@@ -6025,11 +6279,14 @@ def decode_levelscript_record_payload(
         (0x0049, 0x0A),
         (0x0100, 0x09),
         (0x012F, 0x08),
+        (0x0133, 0x09),
         (0x013A, 0x08),
+        (0x017C, 0x08),
         (0x0184, 0x08),
         (0x01A5, 0x08),
         (0x01AA, 0x0A),
         (0x01AC, 0x09),
+        (0x01AD, 0x0A),
         (0x01BA, 0x09),
         (0x01C2, 0x08),
     }:
@@ -6058,6 +6315,28 @@ def decode_levelscript_record_payload(
             boolean_compare = _decode_boolean_compare_getter(getter_payload)
             if boolean_compare:
                 out["booleanCompare"] = boolean_compare
+        elif semantic_key == (0x0006, 0x09):
+            boolean_and = _decode_bool_binary_getter(
+                getter_payload,
+                operation="And",
+            )
+            if boolean_and:
+                out["boolGetterAnd"] = boolean_and
+        elif semantic_key == (0x000A, 0x08):
+            boolean_invert = _decode_bool_invert_getter(getter_payload)
+            if boolean_invert:
+                out["boolGetterInvert"] = boolean_invert
+        elif semantic_key == (0x000B, 0x08):
+            boolean_all = _decode_bool_multi_and_getter(getter_payload)
+            if boolean_all:
+                out["boolGetterMultiAnd"] = boolean_all
+        elif semantic_key == (0x000D, 0x09):
+            boolean_or = _decode_bool_binary_getter(
+                getter_payload,
+                operation="Or",
+            )
+            if boolean_or:
+                out["boolGetterOr"] = boolean_or
         elif semantic_key == (0x004E, 0x08):
             condition_result = _decode_get_condition_result_getter(
                 getter_payload
@@ -6083,6 +6362,14 @@ def decode_levelscript_record_payload(
             )
             if levelscript_stage:
                 out["getLevelScriptStage"] = levelscript_stage
+        elif semantic_key == (0x0133, 0x09):
+            lsm_completed = _decode_get_lsm_is_completed_getter(getter_payload)
+            if lsm_completed:
+                out["getLsmIsCompleted"] = lsm_completed
+        elif semantic_key == (0x017C, 0x08):
+            getter_bool = _decode_getter_bool(getter_payload)
+            if getter_bool:
+                out["getterBool"] = getter_bool
         elif semantic_key == (0x0184, 0x08):
             getter_int = _decode_getter_int(getter_payload)
             if getter_int:
@@ -6102,6 +6389,12 @@ def decode_levelscript_record_payload(
             int_equal = _decode_int_equal_getter(getter_payload)
             if int_equal:
                 out["intEqual"] = int_equal
+        elif semantic_key == (0x01AD, 0x0A):
+            interactive_state = _decode_interactive_check_state_getter(
+                getter_payload
+            )
+            if interactive_state:
+                out["interactiveCheckState"] = interactive_state
         elif semantic_key == (0x01BA, 0x09):
             int_random = _decode_int_random_getter(getter_payload)
             if int_random:
