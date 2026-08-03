@@ -1307,6 +1307,38 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertFalse(callbacks[0]["missionOwnershipEvidence"])
         self.assertFalse(callbacks[0]["orderEvidence"])
 
+    def test_call_server_decodes_non_null_callback_uid_list_generically(self):
+        payload = bytes.fromhex(
+            "02 00 00 00 "
+            "08 00 00 00 33 30 33 65 34 35 32 62 "
+            "08 00 00 00 62 38 37 34 37 63 30 30 "
+            "04 01 0a 00 00 00 65 76 65 6e 74 5f 61 72 67 73 "
+            "ff ff ff ff 00 00 00 00 ff ff ff ff "
+            "04 09 00 00 00 23 65 65 63 39 35 63 35 37 "
+            "ff ff ff ff 00 00 00 00 ff ff ff ff 00 01 00"
+        )
+        record = {
+            "code": 0x0E34,
+            "kind": 0,
+            "unionTag": 0x0034,
+            "serializedMemberCount": 14,
+            "payloadStart": 0,
+            "uid": "eec95c57",
+        }
+
+        detail = decode_levelscript_record_payload(
+            payload,
+            record,
+            next_start=len(payload),
+            action_map_role="actionList#49 linked",
+        )["callServer"]
+
+        self.assertEqual(["303e452b", "b8747c00"], detail["callClientOutputUIDs"])
+        self.assertEqual("#eec95c57", detail["eventName"])
+        self.assertTrue(detail["waitForCallback"])
+        self.assertEqual(len(payload), detail["consumedBytes"])
+        self.assertEqual(0, detail["trailingBytes"])
+
     def test_play_dialog_hide_punctuation_payload_is_not_a_graph_node(self):
         step = {
             "payloads": [

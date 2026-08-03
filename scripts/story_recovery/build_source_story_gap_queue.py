@@ -71,7 +71,7 @@ from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
 SCHEMA = "sourceStoryGapQueue.v130"
-STORY_BINDING_COVERAGE_SCHEMA_VERSION = 16
+STORY_BINDING_COVERAGE_SCHEMA_VERSION = 17
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )

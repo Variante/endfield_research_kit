@@ -90,6 +90,11 @@ Important Story components:
   complete ActionBase MemoryPack formatter table from installed
   GameAssembly/metadata and refreshes the compact hash-pinned runtime name
   contract under `reports/mission_order/`.
+- `story_recovery/build_callserver_callback_contract.py` and
+  `build_callserver_callback_audit.py`: hash-pin the installed native
+  `CallServer` possible-subexecutor contract, then recover every exact
+  same-file callback-header control graph across the LevelScript corpus without
+  mission, object, or Story allowlists.
 - `story_recovery/build_cinematic_queue_runtime_audit.py`: repeatable installed
   metadata/GameAssembly audit that structurally discovers the cinematic handle,
   enqueue/producer call graph, and typed action-to-producer routes without

@@ -1987,6 +1987,78 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             invalid_audit["validationFailures"][0]["gate"],
         )
 
+    def test_callserver_callback_contract_loader_fails_closed(self):
+        canonical = json.loads(
+            level_bindings.DEFAULT_CALLSERVER_CALLBACK_CONTRACT.read_text(
+                encoding="utf-8"
+            )
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            valid_path = Path(temporary) / "valid.json"
+            valid_path.write_text(json.dumps(canonical), encoding="utf-8")
+            valid = level_bindings.load_callserver_callback_contract(valid_path)
+
+            canonical["callServer"]["outputFieldOffset"] = "this+0x00"
+            invalid_path = Path(temporary) / "invalid.json"
+            invalid_path.write_text(json.dumps(canonical), encoding="utf-8")
+            invalid = level_bindings.load_callserver_callback_contract(
+                invalid_path
+            )
+
+        self.assertEqual("validated", valid["status"])
+        self.assertEqual("validation_failed", invalid["status"])
+        self.assertEqual(
+            "output_field_offset",
+            invalid["validationFailures"][0]["gate"],
+        )
+
+    def test_callserver_callback_successor_requires_exact_header_contract(self):
+        call_server_record = {
+            "start": 10,
+            "unionTag": 0x0034,
+            "serializedMemberCount": 14,
+        }
+        header = {"start": 20, "uid": "b8747c00"}
+        detail = {
+            "callServer": {"callClientOutputUIDs": ["b8747c00"]},
+        }
+
+        def decode_valid(record):
+            self.assertIs(record, header)
+            return {
+                "nativeEventDetail": {
+                    "type": "ScriptEvent_OnCustomEvent",
+                    "eventKey": "#b8747c00",
+                },
+                "actionHeader": {"nextId": 47},
+            }
+
+        with patch.dict(
+            level_bindings.CALLSERVER_CALLBACK_CONTRACT_AUDIT,
+            {"status": "validated"},
+            clear=True,
+        ):
+            edges = level_bindings._levelscript_native_callserver_callback_successors(
+                call_server_record,
+                detail,
+                records_by_uid={"b8747c00": [header]},
+                membership={20: "headerList#3"},
+                decode_record=decode_valid,
+            )
+            missing = level_bindings._levelscript_native_callserver_callback_successors(
+                call_server_record,
+                detail,
+                records_by_uid={},
+                membership={20: "headerList#3"},
+                decode_record=decode_valid,
+            )
+
+        self.assertEqual(
+            [("CallServer.callClientOutputUIDs[0]#b8747c00", 47)],
+            edges,
+        )
+        self.assertEqual([], missing)
+
     def test_post_playback_action_name_audit_keeps_outside_union_raw(self):
         nodes = [{
             "postPlaybackControls": [{
@@ -3807,9 +3879,51 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 dungeon_table,
                 text_vo_id_table,
                 native_story_playback_index={},
+                callserver_callback_audit={
+                    "schema": "levelScriptCallServerCallbackAudit.v1",
+                    "status": "validated_complete_corpus",
+                    "summary": {
+                        "callServerActions": 4,
+                        "callbackOutputUids": 2,
+                        "exactCallbackHeaders": 1,
+                        "callbackHeadersReachingStory": 1,
+                        "unresolvedCallbackOutputs": 1,
+                    },
+                    "sources": {
+                        "nativeContract": {"status": "validated"},
+                    },
+                    "rows": [{
+                        "levelId": "map_fixture",
+                        "scriptId": "42",
+                        "sourceFile": "fixture/42.json",
+                        "callServerLocalId": 7,
+                        "callServerUid": "01020304",
+                        "callbackOutputs": [{
+                            "headerUid": "aabbccdd",
+                            "headerLocalId": 8,
+                            "controlGraph": {
+                                "storyKeys": ["radio_testm1_1"],
+                                "actionCount": 3,
+                                "branchPointCount": 1,
+                            },
+                        }],
+                    }],
+                    "unresolvedCallbackOutputs": [{
+                        "headerUid": "deadbeef",
+                    }],
+                    "validationFailures": [],
+                    "evidenceBoundary": "fixture boundary",
+                },
             )
             self.assertIsNotNone(report)
             self.assertEqual(report["counts"]["uniqueStoryFiles"], 4)
+            self.assertEqual(report["counts"]["callServerActions"], 4)
+            self.assertEqual(
+                report["callServerCallbackAudit"]["storyCallbackRoutes"][0][
+                    "storyKeys"
+                ],
+                ["radio_testm1_1"],
+            )
             self.assertEqual(report["counts"]["connectedUniqueStoryFiles"], 3)
             self.assertEqual(report["counts"]["connectedCrossOwnerStoryFiles"], 1)
             self.assertEqual(

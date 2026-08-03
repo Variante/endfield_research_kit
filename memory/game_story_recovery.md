@@ -30,7 +30,8 @@ Latest CN reports:
 | Native branch predicates | 258 named; 263 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
 | Exact post-playback control | 128 graphs / 105 Story files / 348 actions and edges / 18 branch points / 76 unresolved server handoffs |
-| Binary ActionBase naming | 1,313 validated formatter tags / 348 of 348 post-playback actions / 2,562 of 2,562 native-transition endpoints named |
+| Binary ActionBase naming | 1,313 validated formatter tags / 348 of 348 post-playback actions / 2,564 of 2,564 native-transition endpoints named |
+| Binary CallServer callback topology | 4,746 / 4,746 decoded / 132 output UIDs / 127 exact callback headers / 10 Story-bearing headers (11 targets) / 5 dangling UIDs |
 | Exact post-playback LevelSequence files | 15 typed action placements / 7 serialized ids / 6 exact original TextAssets / 1 unresolved root handle |
 | Post-playback variable bridge | 66 typed setters (43 SetBool, 23 SetInt) / 50 exact listeners / 0 same-level, same-script, same-key joins |
 | Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
@@ -235,12 +236,31 @@ Runtime lookup uses each record's compact `unionTag` plus
 provenance. This distinction explains apparent high codes such as
 `0x0e34/0x00` as union tag `0x0034` / 14 members (`CallServer`) without a
 per-object rule. All 348 actions on the unresolved post-playback surface and
-both endpoints of all 1,281 exact native transition steps (2,562/2,562) now
+both endpoints of all 1,282 exact native transition steps (2,564/2,564) now
 have formatter-backed class names. The existing 380 transition edges and 85
 branch-bearing edges are unchanged. The WebUI exposes formatter source/hash,
 coverage, and any unresolved shapes; the current count is zero. Names explain
 local control flow but do not choose a branch, identify a mission owner, or
 create chronology, and OCR/manual order are not inputs.
+The general `CallServer` decoder now consumes its nullable MemoryPack
+`List<string>` before the remaining generated fields instead of assuming the
+common null prefix. A hash-pinned installed-binary contract proves
+`CallServer.Execute` passes that exact list to
+`ActionBase.SetResultWaitForPossibleSubExecutor`, whose values are possible
+callback header UIDs. The complete 4,512-file census decodes all 4,746 actions:
+122 have non-empty output lists containing 132 UIDs; 127 resolve through an
+exact same-file UID, `ScriptEvent_OnCustomEvent` key, and typed header
+successor. Ten headers reach 11 Story targets, while five missing UIDs all
+remain explicit dangling references in `dung01_cdg005/7700000010.json`.
+Recursive callback traversal uses the same resolver, with no file, object, or
+Story allowlist. None of the corresponding `CallServer` actions is downstream
+of an earlier Story playback, and all 76 handoffs on the 156 unowned native
+playback files have null callback lists, so this recovery adds local branch and
+related-file context but no Story-order or ownership edge. The strong/native
+order counts therefore correctly remain 1,502 / 380 (85 branch-bearing).
+Mission Pipeline exposes the callback routes, original LevelScript files,
+binary address/contract, five dangling UIDs, and the zero-hit unresolved
+surface. OCR and manual overrides are not inputs.
 The same general action-family projection resolves original LevelSequence files
 without a sequence-id allowlist. Action class names come from the installed
 `ActionBaseForMemoryPack` formatter table; this additionally identifies union
@@ -1280,6 +1300,12 @@ typed selector operand, server successor policy, or mission-to-receiver foreign
 key; repeating opcode-name catalogs cannot add an edge. Quest forks whose next
 state is selected only by the server and unrelated Story pairs still remain
 unknowable from the installed client's static data.
+
+The client-side `CallServer.callClientOutputUIDs` callback-header route is also
+closed generically for this build. Reopen its five dangling UIDs only if a
+changed LevelScript corpus supplies the missing headers; closing mission
+ownership still requires a server/runtime registry that co-carries receiver
+and mission/quest identity, not callback labels or registration order.
 
 The eight unmatched BlackBox rows are now source-bounded current-build
 definitions, not open placement candidates. Reopen them only if a changed

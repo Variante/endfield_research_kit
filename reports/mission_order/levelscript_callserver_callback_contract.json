@@ -1,0 +1,57 @@
+{
+  "schema": "callServerCallbackNativeContract.v1",
+  "status": "validated",
+  "sources": {
+    "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
+    "globalMetadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+  },
+  "callServer": {
+    "type": "Beyond.Gameplay.Actions.CallServer",
+    "typeToken": "0x02001861",
+    "executeMethodToken": "0x06008f04",
+    "executeMethodVa": "0x1845f6000",
+    "outputField": "_callClientOutputUIDs",
+    "outputFieldToken": "0x040069fe",
+    "outputFieldOffset": "this+0xd8",
+    "memoryPackSetterMethodToken": "0x0600c1e1",
+    "memoryPackSetterMethodVa": "0x1841adeb0",
+    "callbackColdBranchVa": "0x1852f012a"
+  },
+  "actionBase": {
+    "type": "Beyond.Gameplay.Actions.ActionBase",
+    "typeToken": "0x0200124e",
+    "setWaitMethod": "SetResultWaitForPossibleSubExecutor",
+    "setWaitMethodToken": "0x06007e87",
+    "setWaitMethodVa": "0x1875f1180",
+    "waitHeaderUidListOffset": "this+0x80"
+  },
+  "validation": {
+    "byteGates": [
+      {
+        "label": "MemoryPack setter stores _callClientOutputUIDs at this+0xd8",
+        "va": "0x1841adecc",
+        "bytes": "48 89 98 d8 00 00 00"
+      },
+      {
+        "label": "CallServer.Execute reads _callClientOutputUIDs from this+0xd8",
+        "va": "0x1845f6148",
+        "bytes": "48 8b 8b d8 00 00 00"
+      },
+      {
+        "label": "callback cold branch forwards the same list as argument two",
+        "va": "0x1852f012a",
+        "bytes": "48 8b 93 d8 00 00 00 45 33 c0 48 8b cb e8"
+      },
+      {
+        "label": "ActionBase stores the header UID wait list at this+0x80",
+        "va": "0x1875f11a0",
+        "bytes": "48 8d 8b 80 00 00 00 48 89 bb 80 00 00 00"
+      }
+    ],
+    "callbackColdBranchTarget": "0x1852f012a",
+    "setWaitCallTarget": "0x1875f1180",
+    "validationFailures": []
+  },
+  "evidenceBoundary": "The installed binary proves that non-empty CallServer output strings are possible sub-executor header UIDs. They define callback control topology inside one LevelScript; they do not identify a mission owner or imply that every possible callback executes.",
+  "usesOcrOrManualOrder": false
+}
