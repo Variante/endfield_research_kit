@@ -19,7 +19,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v124",
+            "sourceStoryGapQueue.v125",
         )
 
     def test_gap_queue_refresh_validates_current_generated_contract(self):
@@ -203,6 +203,20 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "playbackBoundary": "exact composed playback",
                             "orderBoundary": "alias does not order files",
                         }, {
+                            "sceneKey": "cutscene_testm1_lua",
+                            "missionId": "testm1",
+                            "relation": "lua_controller_playback",
+                            "recoveryStatus":
+                                "closed_exact_lua_controller_playback_no_mission_owner_or_relative_order",
+                            "luaFile": "Lua/Phase/Test.lua",
+                            "luaCall": "GameAction.PlayCutscene",
+                            "sourceFiles": [
+                                "Lua/Phase/Test.lua",
+                                "reports/mission_order/lua_consumer_reference_audit.json",
+                            ],
+                            "playbackBoundary": "exact shipped Lua playback",
+                            "graphEffect": "none",
+                        }, {
                             "sceneKey": "black_testm1_timeline",
                             "nominalStoryMissionId": "testm1",
                             "relation": "timeline_dialog_contains_black",
@@ -350,6 +364,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "cutscene_root_playback_alias_composed",
                     }],
                 },
+                "cutscene_testm1_lua": {
+                    "attachmentStatus": "trigger_known_owner_unresolved",
+                    "nominalMissionId": "testm1",
+                    "routes": [{"relation": "lua_controller_playback"}],
+                },
                 "black_testm1_timeline": {
                     "attachmentStatus": "unlinked_no_trigger_route",
                     "routes": [],
@@ -400,7 +419,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
         self.assertEqual(result["publishedPartialStoryKeys"], 1)
-        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 14)
+        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 15)
         self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 3)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
@@ -503,6 +522,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "relation"
             ],
             "npc_proxy_lazy_destroy_dialog_context",
+        )
+        self.assertEqual(
+            manifest["cutscene_testm1_lua"]["runtimeContextRecovery"][
+                "luaCall"
+            ],
+            "GameAction.PlayCutscene",
         )
         self.assertEqual(
             manifest["dlg_testm1_multi"]["runtimeContextRecovery"][

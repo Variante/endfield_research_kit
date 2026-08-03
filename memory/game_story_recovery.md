@@ -193,7 +193,16 @@ No current mission has Story
 targets on two different Branch sequence slots, so this adds zero Branch-derived
 Story-order edges rather than guessing them.
 The other-bucket queue remains 32 and the current contract is
-`sourceStoryGapQueue.v124`; OCR and manual order remain comparison-only.
+`sourceStoryGapQueue.v125`; OCR and manual order remain comparison-only. The
+queue now loads the current Story trigger manifest through an exact schema,
+language, source-hash, and object-shape gate instead of silently discarding a
+newer coverage schema. General closure contracts revalidate shipped-Lua
+`GameAction.<method>` calls against their matching native entry and exact
+Lua/audit hashes, and revalidate composed CutsceneRoot playback aliases against
+their independently connected native route. This closes the former top
+false-positive gaps `cutscene_e1m10_1` and `cutscene_gm02m4_1` without adding
+ownership or chronology edges. Validator drift now reports the mission, Story
+key, failed gate, bounded expected/actual values, source paths, and hashes.
 
 The original metadata `BlackboxGuideHintController`, `FacGuideHintEnable`, and
 `LevelDataGuideHintConfig` surface is spatial factory guide-hint configuration,

@@ -161,7 +161,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v124"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v125"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3679,6 +3679,10 @@ def publish_offline_story_recovery(
             (
                 "cutscene_root_playback_alias_composed",
                 "closed_exact_composed_root_playback_context_no_relative_order",
+            ),
+            (
+                "lua_controller_playback",
+                "closed_exact_lua_controller_playback_no_mission_owner_or_relative_order",
             ),
             (
                 "timeline_dialog_contains_black",

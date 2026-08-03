@@ -70,8 +70,8 @@ from story_builder.anime_assets import (  # noqa: E402
 from story_builder.mission_recovery import natural_key  # noqa: E402
 
 
-SCHEMA = "sourceStoryGapQueue.v124"
-STORY_BINDING_COVERAGE_SCHEMA_VERSION = 10
+SCHEMA = "sourceStoryGapQueue.v125"
+STORY_BINDING_COVERAGE_SCHEMA_VERSION = 12
 LEVELSCRIPT_INTERACTIVE_NARRATIVE_MAPPING_ID = (
     "levelscript-interactive-narrative-config-v1"
 )
@@ -10247,6 +10247,87 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest().upper()
+
+
+def load_story_trigger_manifest_evidence(
+    coverage_path: Path,
+    language: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Load the current trigger manifest or expose the exact rejected gate."""
+    source_path = _repo_source_path(coverage_path)
+    source_sha256 = _sha256_file(coverage_path)
+    base = {
+        "validator": "story_trigger_manifest_coverage_v1",
+        "sourcePath": source_path,
+        "sourceSha256": source_sha256,
+        "expectedSchemaVersion": STORY_BINDING_COVERAGE_SCHEMA_VERSION,
+        "expectedLanguage": language,
+        "graphEffect": "none",
+    }
+    if not coverage_path.is_file():
+        failure = {
+            "validator": base["validator"],
+            "gate": "coverage_report_exists",
+            "sourcePath": source_path,
+            "sourceSha256": source_sha256,
+            "expected": {"exists": True},
+            "actual": {"exists": False},
+        }
+        return {}, {
+            **base,
+            "status": "validation_failed",
+            "rowCount": 0,
+            "validationFailures": [failure],
+        }
+    report = read_json(coverage_path, {})
+    failures: list[dict[str, Any]] = []
+
+    def reject(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": base["validator"],
+            "gate": gate,
+            "sourcePath": source_path,
+            "sourceSha256": source_sha256,
+            "expected": expected,
+            "actual": actual,
+        })
+
+    if not isinstance(report, dict):
+        reject("coverage_report_object", {"type": "object"}, {
+            "type": type(report).__name__,
+        })
+        manifest: dict[str, Any] = {}
+    else:
+        if report.get("schemaVersion") != STORY_BINDING_COVERAGE_SCHEMA_VERSION:
+            reject(
+                "schema_version",
+                {"schemaVersion": STORY_BINDING_COVERAGE_SCHEMA_VERSION},
+                {"schemaVersion": report.get("schemaVersion")},
+            )
+        if safe_key(report.get("language")) != language:
+            reject(
+                "language",
+                {"language": language},
+                {"language": safe_key(report.get("language"))},
+            )
+        raw_manifest = report.get("storyTriggerManifest")
+        if not isinstance(raw_manifest, dict):
+            reject(
+                "story_trigger_manifest_object",
+                {"type": "object"},
+                {"type": type(raw_manifest).__name__},
+            )
+            manifest = {}
+        else:
+            manifest = raw_manifest
+    if failures:
+        manifest = {}
+    return manifest, {
+        **base,
+        "status": "validation_failed" if failures else "validated",
+        "rowCount": len(manifest),
+        "validationFailures": failures,
+    }
 
 
 def _generic_missionless_native_playback_facts(
@@ -22136,65 +22217,128 @@ def _closed_exact_lua_controller_playback_isolated_scenes(
     story_trigger_manifest: dict[str, Any],
     isolated_scene_keys: set[str],
     owner_mission: str,
+    validation_failures: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Close exact shipped-Lua playback with deliberately unresolved owner."""
     closed: list[dict[str, Any]] = []
     for scene_key in sorted(isolated_scene_keys, key=natural_key):
         row = story_trigger_manifest.get(scene_key)
-        if (
-            not isinstance(row, dict)
-            or safe_key(row.get("key")) != scene_key
-            or safe_key(row.get("nominalMissionId")) != owner_mission
-            or safe_key(row.get("attachmentStatus"))
-            != "trigger_known_owner_unresolved"
-        ):
+        if not isinstance(row, dict):
+            continue
+        if safe_key(row.get("attachmentStatus")) != "trigger_known_owner_unresolved":
             continue
         routes = [
             route
             for route in row.get("routes") or []
-            if isinstance(route, dict)
+            if (
+                isinstance(route, dict)
+                and safe_key(route.get("relation"))
+                == "lua_controller_playback"
+            )
         ]
-        if len(routes) != 1:
+        if not routes:
             continue
-        route = routes[0]
+        route = routes[0] if len(routes) == 1 else {}
         lua_file = safe_key(route.get("luaFile"))
         phase = safe_key(route.get("phase"))
+        lua_call = safe_key(route.get("luaCall"))
+        lua_symbol = safe_key(route.get("luaSymbol"))
+        lua_line = route.get("luaLine")
+        lua_source_path = safe_key(route.get("luaSourcePath"))
+        lua_source_sha256 = safe_key(route.get("luaSourceSha256")).lower()
+        audit_report = safe_key(route.get("auditReport"))
+        audit_sha256 = safe_key(route.get("auditSha256")).lower()
+        method_match = re.fullmatch(r"GameAction\.([A-Za-z][A-Za-z0-9_]*)", lua_call)
+        native_entry = (
+            f"Beyond.Gameplay.Actions.GameAction::{method_match.group(1)}"
+            if method_match else ""
+        )
         expected_steps = [
             {
                 "id": lua_file,
                 "kind": "luaController",
                 "phase": phase,
+                "summaries": [
+                    f"line {lua_line}",
+                    f"SHA-256 {lua_source_sha256}",
+                ],
             },
             {
-                "id": "Beyond.Gameplay.Actions.GameAction::PlayCutscene",
+                "id": native_entry,
                 "kind": "nativePlayback",
             },
         ]
-        if (
-            safe_key(route.get("storyKey")) != scene_key
-            or safe_key(route.get("relation")) != "lua_controller_playback"
-            or safe_key(route.get("direction")) != "playback"
-            or safe_key(route.get("causality"))
-            != "playback_owner_unresolved"
-            or safe_key(route.get("confidence"))
-            != "shipped_lua_literal_plus_native_entry"
-            or safe_key(route.get("evidenceTier")) != "direct"
-            or safe_key(route.get("ownerStatus")) != "unresolved"
-            or route.get("missionId") is not None
-            or route.get("questId") is not None
-            or safe_key(route.get("questTriggerStatus"))
-            != "no_mission_or_quest_identity_serialized"
-            or safe_key(route.get("scope")) != "phase"
-            or not phase
-            or safe_key(route.get("luaCall")) != "GameAction.PlayCutscene"
-            or safe_key(route.get("luaSymbol")) != "CUT_SCENE_ID"
-            or safe_key(route.get("nativeEntry"))
-            != "Beyond.Gameplay.Actions.GameAction::PlayCutscene"
-            or not lua_file
-            or _string_list(route.get("sourceFiles")) != [lua_file]
-            or route.get("serverExchange") is not False
-            or route.get("steps") != expected_steps
-        ):
+        valid = (
+            len(routes) == 1
+            and safe_key(row.get("key")) == scene_key
+            and safe_key(row.get("nominalMissionId")) == owner_mission
+            and safe_key(route.get("storyKey")) == scene_key
+            and safe_key(route.get("relation")) == "lua_controller_playback"
+            and safe_key(route.get("direction")) == "playback"
+            and safe_key(route.get("causality")) == "playback_owner_unresolved"
+            and safe_key(route.get("confidence"))
+            == "corpus_scanned_shipped_lua_literal_plus_native_entry"
+            and safe_key(route.get("evidenceTier")) == "direct"
+            and safe_key(route.get("ownerStatus")) == "unresolved"
+            and route.get("missionId") is None
+            and route.get("questId") is None
+            and safe_key(route.get("questTriggerStatus"))
+            == "no_mission_or_quest_identity_serialized"
+            and safe_key(route.get("scope")) == "phase"
+            and bool(phase)
+            and bool(method_match)
+            and bool(lua_symbol)
+            and safe_key(route.get("nativeEntry")) == native_entry
+            and bool(lua_file)
+            and bool(lua_source_path)
+            and isinstance(lua_line, int)
+            and not isinstance(lua_line, bool)
+            and lua_line > 0
+            and bool(re.fullmatch(r"[0-9a-f]{64}", lua_source_sha256))
+            and bool(audit_report)
+            and bool(re.fullmatch(r"[0-9a-f]{64}", audit_sha256))
+            and _string_list(route.get("sourceFiles"))
+            == [lua_file, audit_report]
+            and route.get("serverExchange") is False
+            and route.get("steps") == expected_steps
+        )
+        if not valid:
+            if validation_failures is not None:
+                validation_failures.append({
+                    "validator": "exact_lua_controller_playback_closure_v2",
+                    "gate": "route_contract",
+                    "missionId": owner_mission,
+                    "storyKey": scene_key,
+                    "sourcePaths": _string_list(route.get("sourceFiles")),
+                    "sourceSha256": {
+                        lua_source_path: lua_source_sha256,
+                        audit_report: audit_sha256,
+                    },
+                    "expected": {
+                        "manifestKey": scene_key,
+                        "nominalMissionId": owner_mission,
+                        "routeCount": 1,
+                        "relation": "lua_controller_playback",
+                        "confidence": (
+                            "corpus_scanned_shipped_lua_literal_plus_native_entry"
+                        ),
+                        "luaCallPattern": "GameAction.<method>",
+                        "nativeEntryPattern": (
+                            "Beyond.Gameplay.Actions.GameAction::<method>"
+                        ),
+                        "exactSourceHashes": True,
+                    },
+                    "actual": {
+                        "manifestKey": safe_key(row.get("key")),
+                        "nominalMissionId": safe_key(row.get("nominalMissionId")),
+                        "routeCount": len(routes),
+                        "relation": safe_key(route.get("relation")),
+                        "confidence": safe_key(route.get("confidence")),
+                        "luaCall": lua_call,
+                        "nativeEntry": safe_key(route.get("nativeEntry")),
+                        "sourceFileCount": len(_string_list(route.get("sourceFiles"))),
+                    },
+                })
             continue
         closed.append({
             "sceneKey": scene_key,
@@ -22204,10 +22348,15 @@ def _closed_exact_lua_controller_playback_isolated_scenes(
             "relation": "lua_controller_playback",
             "phase": phase,
             "luaFile": lua_file,
-            "luaSymbol": "CUT_SCENE_ID",
-            "luaCall": "GameAction.PlayCutscene",
-            "nativeEntry":
-                "Beyond.Gameplay.Actions.GameAction::PlayCutscene",
+            "luaSymbol": lua_symbol,
+            "luaCall": lua_call,
+            "luaLine": lua_line,
+            "luaSourcePath": lua_source_path,
+            "luaSourceSha256": lua_source_sha256,
+            "auditReport": audit_report,
+            "auditSha256": audit_sha256,
+            "nativeEntry": native_entry,
+            "sourceFiles": _string_list(route.get("sourceFiles")),
             "ownerStatus": "unresolved",
             "playbackBoundary": (
                 "the shipped phase controller proves exact cutscene playback; "
@@ -22223,6 +22372,7 @@ def _closed_exact_composed_root_playback_isolated_scenes(
     story_trigger_manifest: dict[str, Any],
     isolated_scene_keys: set[str],
     owner_mission: str,
+    validation_failures: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Close exact owned CutsceneRoot aliases without inventing chronology.
 
@@ -22235,12 +22385,9 @@ def _closed_exact_composed_root_playback_isolated_scenes(
     closed: list[dict[str, Any]] = []
     for scene_key in sorted(isolated_scene_keys, key=natural_key):
         manifest_row = story_trigger_manifest.get(scene_key)
-        if (
-            not isinstance(manifest_row, dict)
-            or safe_key(manifest_row.get("key")) != scene_key
-            or safe_key(manifest_row.get("nominalMissionId")) != owner_mission
-            or safe_key(manifest_row.get("attachmentStatus")) != "connected"
-        ):
+        if not isinstance(manifest_row, dict):
+            continue
+        if safe_key(manifest_row.get("attachmentStatus")) != "connected":
             continue
         composed_routes = [
             route
@@ -22256,7 +22403,7 @@ def _closed_exact_composed_root_playback_isolated_scenes(
             and safe_key(route.get("relation"))
             == "cutscene_root_playback_alias"
         ]
-        if not composed_routes or not alias_routes:
+        if not composed_routes and not alias_routes:
             continue
         validated: list[dict[str, Any]] = []
         for route in composed_routes:
@@ -22371,7 +22518,48 @@ def _closed_exact_composed_root_playback_isolated_scenes(
                 validated = []
                 break
             validated.append(route)
-        if not validated:
+        manifest_shape_valid = (
+            safe_key(manifest_row.get("key")) == scene_key
+            and safe_key(manifest_row.get("nominalMissionId")) == owner_mission
+            and bool(composed_routes)
+            and bool(alias_routes)
+            and len(validated) == len(composed_routes)
+        )
+        if not manifest_shape_valid:
+            if validation_failures is not None:
+                source_files = sorted({
+                    source_file
+                    for route in [*composed_routes, *alias_routes]
+                    for source_file in _string_list(route.get("sourceFiles"))
+                }, key=natural_key)
+                validation_failures.append({
+                    "validator": "exact_composed_root_playback_closure_v2",
+                    "gate": "route_contract",
+                    "missionId": owner_mission,
+                    "storyKey": scene_key,
+                    "sourcePaths": source_files,
+                    "sourceSha256": {
+                        source_file: _sha256_file(ROOT / source_file)
+                        for source_file in source_files
+                        if (ROOT / source_file).is_file()
+                    },
+                    "expected": {
+                        "manifestKey": scene_key,
+                        "nominalMissionId": owner_mission,
+                        "composedRouteCountAtLeast": 1,
+                        "aliasRouteCountAtLeast": 1,
+                        "allComposedRoutesValidated": True,
+                    },
+                    "actual": {
+                        "manifestKey": safe_key(manifest_row.get("key")),
+                        "nominalMissionId": safe_key(
+                            manifest_row.get("nominalMissionId")
+                        ),
+                        "composedRouteCount": len(composed_routes),
+                        "aliasRouteCount": len(alias_routes),
+                        "validatedComposedRouteCount": len(validated),
+                    },
+                })
             continue
         closed.append({
             "sceneKey": scene_key,
@@ -24838,10 +25026,12 @@ def build_gap_row(
             row["sceneKey"],
             row,
         )
+    story_trigger_manifest_validation_failures: list[dict[str, Any]] = []
     for row in _closed_exact_lua_controller_playback_isolated_scenes(
         story_trigger_manifest,
         set(isolated_scene_keys),
         safe_key(partial_row.get("mission")),
+        story_trigger_manifest_validation_failures,
     ):
         closed_exact_native_isolated_by_key.setdefault(
             row["sceneKey"],
@@ -24851,6 +25041,7 @@ def build_gap_row(
         story_trigger_manifest,
         set(isolated_scene_keys),
         safe_key(partial_row.get("mission")),
+        story_trigger_manifest_validation_failures,
     ):
         closed_exact_native_isolated_by_key.setdefault(
             row["sceneKey"],
@@ -25244,6 +25435,8 @@ def build_gap_row(
             exact_runtime_config_validation_failures,
         "exactSystemSelectorValidationFailures":
             exact_system_selector_validation_failures,
+        "storyTriggerManifestValidationFailures":
+            story_trigger_manifest_validation_failures,
         "timelineUnresolvedKinds": dict(sorted(unresolved_kinds.items())),
         "diagnosticQuestAttachmentSources": dict(sorted(diagnostic_source_counts.items())),
         "unresolvedSourceNodes": partial_row.get("unresolvedSourceNodes") or [],
@@ -25840,6 +26033,7 @@ def build_gap_report(
         dict[str, dict[str, Any]] | None = None,
     quest_attachment_diagnostic_status: dict[str, Any] | None = None,
     story_trigger_manifest: dict[str, Any] | None = None,
+    story_trigger_manifest_status: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     non_mission_content = (
         combined_non_mission_content_keys(table_root)
@@ -26146,6 +26340,14 @@ def build_gap_report(
         ) or []
         if isinstance(failure, dict)
     ]
+    story_trigger_manifest_validation_failures = [
+        failure
+        for row in rows
+        for failure in row.get(
+            "storyTriggerManifestValidationFailures"
+        ) or []
+        if isinstance(failure, dict)
+    ]
 
     bucket_totals: dict[str, Counter[str]] = {bucket: Counter() for bucket in BUCKET_ORDER}
     frontier_totals: dict[str, Counter[str]] = {bucket: Counter() for bucket in BUCKET_ORDER}
@@ -26179,6 +26381,21 @@ def build_gap_report(
                 "graphEffect": "none",
             }
         ),
+        "storyTriggerManifestEvidence": story_trigger_manifest_status or {
+            "status": "not_supplied",
+            "graphEffect": "none",
+        },
+        "storyTriggerClosureValidation": {
+            "validator": "story_trigger_closure_contracts_v2",
+            "status": (
+                "validation_failed"
+                if story_trigger_manifest_validation_failures
+                else "validated"
+            ),
+            "validationFailures":
+                story_trigger_manifest_validation_failures,
+            "graphEffect": "none",
+        },
         "exactBlackCarrierValidation": {
             "validator": "exact_black_carrier_context_v1",
             "status": (
@@ -26265,8 +26482,43 @@ def render_markdown(report: dict[str, Any]) -> str:
             "These rows close broad co-membership as non-owning only; they add "
             "no quest-to-Story or order edge."
         ),
+        (
+            "Current-build Story trigger manifest evidence: "
+            f"`{safe_key((report.get('storyTriggerManifestEvidence') or {}).get('status')) or 'unknown'}`; "
+            "exact playback closures remain non-ordering (`graphEffect=none`)."
+        ),
+        (
+            "Story trigger closure contract validation: "
+            f"`{safe_key((report.get('storyTriggerClosureValidation') or {}).get('status')) or 'unknown'}`."
+        ),
         "",
     ]
+    for heading, status_key in (
+        ("Story Trigger Manifest Validator Failures", "storyTriggerManifestEvidence"),
+        ("Story Trigger Closure Validator Failures", "storyTriggerClosureValidation"),
+    ):
+        failures = (report.get(status_key) or {}).get("validationFailures") or []
+        if not failures:
+            continue
+        lines.extend([
+            f"## {heading}",
+            "",
+            "| mission | Story | gate | source | expected | actual |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ])
+        for failure in failures:
+            source_paths = failure.get("sourcePaths") or [
+                safe_key(failure.get("sourcePath"))
+            ]
+            lines.append(
+                f"| `{md_escape(safe_key(failure.get('missionId')) or '-')}` | "
+                f"`{md_escape(safe_key(failure.get('storyKey')) or '-')}` | "
+                f"`{md_escape(safe_key(failure.get('gate')))}` | "
+                f"`{md_escape('; '.join(filter(None, map(str, source_paths))))}` | "
+                f"`{md_escape(json.dumps(failure.get('expected') or {}, ensure_ascii=False, sort_keys=True)[:500])}` | "
+                f"`{md_escape(json.dumps(failure.get('actual') or {}, ensure_ascii=False, sort_keys=True)[:500])}` |"
+            )
+        lines.append("")
     offline_failures = (
         report.get("offlineExhaustionEvidence") or {}
     ).get("validationFailures") or []
@@ -26498,23 +26750,17 @@ def main(argv: list[str] | None = None) -> int:
         if isinstance(payload, dict):
             mission_payloads[mission] = payload
 
-    coverage_report = read_json(
+    coverage_path = (
         ROOT
         / "reports"
         / "story"
         / "build"
-        / f"mission_pipeline_story_binding_coverage_{args.language}.json",
-        {},
+        / f"mission_pipeline_story_binding_coverage_{args.language}.json"
     )
-    story_trigger_manifest = {}
-    if (
-        isinstance(coverage_report, dict)
-        and coverage_report.get("schemaVersion")
-        == STORY_BINDING_COVERAGE_SCHEMA_VERSION
-        and safe_key(coverage_report.get("language")) == args.language
-        and isinstance(coverage_report.get("storyTriggerManifest"), dict)
-    ):
-        story_trigger_manifest = coverage_report["storyTriggerManifest"]
+    (
+        story_trigger_manifest,
+        story_trigger_manifest_status,
+    ) = load_story_trigger_manifest_evidence(coverage_path, args.language)
 
     offline_exhaustion_index, offline_exhaustion_status = (
         build_offline_exhaustion_index(
@@ -26570,6 +26816,7 @@ def main(argv: list[str] | None = None) -> int:
             quest_attachment_diagnostic_status
         ),
         story_trigger_manifest=story_trigger_manifest,
+        story_trigger_manifest_status=story_trigger_manifest_status,
     )
     out_json = args.reports_dir / f"source_story_gap_queue_{args.language}.json"
     out_md = args.reports_dir / f"source_story_gap_queue_{args.language}.md"
@@ -26583,6 +26830,25 @@ def main(argv: list[str] | None = None) -> int:
             f"Top main-story mission: {main_rows[0]['mission']} "
             f"score={main_rows[0]['score']} frontier={main_rows[0]['primaryFrontier']}"
         )
+    for label, status_key in (
+        ("Story trigger manifest", "storyTriggerManifestEvidence"),
+        ("Story trigger closure", "storyTriggerClosureValidation"),
+    ):
+        failures = (
+            report.get(status_key) or {}
+        ).get("validationFailures") or []
+        if failures:
+            first = failures[0]
+            source_paths = first.get("sourcePaths") or [
+                safe_key(first.get("sourcePath"))
+            ]
+            print(
+                f"{label} validator failure: "
+                f"mission={safe_key(first.get('missionId')) or '-'} "
+                f"story={safe_key(first.get('storyKey')) or '-'} "
+                f"gate={safe_key(first.get('gate'))} "
+                f"source={safe_key(source_paths[0]) if source_paths else '-'}"
+            )
     offline_status = report.get("offlineExhaustionEvidence") or {}
     offline_failures = offline_status.get("validationFailures") or []
     if offline_failures:
