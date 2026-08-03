@@ -612,6 +612,9 @@
       offlineRecoveryEvidenceBinaryRegisteredDialogTree: "Registered DialogTree definition - no activator on current original-data surfaces",
       offlineRecoveryEvidenceMissionlessNativePlayback: "Exact local playback - mission bridge and order unknown",
       runtimeRecoveryEvidenceSameMissionLevelDataPlayback: "Exact native playback in this mission shell - quest trigger and order unknown",
+      runtimeRecoveryEvidenceLuaControllerPlayback: "Exact shipped-Lua playback - mission owner and order unknown",
+      runtimeRecoveryLuaController: "Shipped Lua controller",
+      runtimeRecoveryLuaCall: "Typed Lua playback call",
       runtimeRecoveryEvidenceCrossMissionLevelDataPlayback: "Exact native playback in a related mission shell - ownership and order unknown",
       offlineRecoveryEvidenceCutsceneRoot: "Cutscene root resolved - mission activator unknown",
       offlineRecoveryNativeConsumer: "Original-binary consumer",
@@ -1227,6 +1230,9 @@
       offlineRecoveryEvidenceBinaryRegisteredDialogTree: "\u5df2\u6ce8\u518c DialogTree \u5b9a\u4e49 \u2014 \u5f53\u524d\u539f\u59cb\u6570\u636e\u8868\u9762\u672a\u627e\u5230\u6fc0\u6d3b\u5668",
       offlineRecoveryEvidenceMissionlessNativePlayback: "\u5df2\u7cbe\u786e\u6062\u590d\u672c\u5730\u64ad\u653e\uff0c\u4efb\u52a1\u6865\u63a5\u4e0e\u987a\u5e8f\u672a\u77e5",
       runtimeRecoveryEvidenceSameMissionLevelDataPlayback: "\u5df2\u7cbe\u786e\u6062\u590d\u672c\u4efb\u52a1\u5916\u58f3\u5185\u7684\u539f\u751f\u64ad\u653e\uff0c\u4efb\u52a1\u8282\u70b9\u4e0e\u987a\u5e8f\u672a\u77e5",
+      runtimeRecoveryEvidenceLuaControllerPlayback: "\u5df2\u7cbe\u786e\u6062\u590d\u968f\u6e38\u620f\u53d1\u5e03\u7684 Lua \u64ad\u653e\uff0c\u4efb\u52a1\u5f52\u5c5e\u4e0e\u987a\u5e8f\u672a\u77e5",
+      runtimeRecoveryLuaController: "\u968f\u6e38\u620f\u53d1\u5e03\u7684 Lua \u63a7\u5236\u5668",
+      runtimeRecoveryLuaCall: "\u7c7b\u578b\u5316 Lua \u64ad\u653e\u8c03\u7528",
       runtimeRecoveryEvidenceCrossMissionLevelDataPlayback: "\u5df2\u7cbe\u786e\u6062\u590d\u76f8\u5173\u4efb\u52a1\u5916\u58f3\u5185\u7684\u539f\u751f\u64ad\u653e\uff0c\u5f52\u5c5e\u4e0e\u987a\u5e8f\u672a\u77e5",
       offlineRecoveryEvidenceCutsceneRoot: "\u5df2\u89e3\u6790\u8fc7\u573a\u6839\u8282\u70b9 \u2014 \u4efb\u52a1\u6fc0\u6d3b\u5668\u672a\u77e5",
       offlineRecoveryNativeConsumer: "\u539f\u59cb\u4e8c\u8fdb\u5236\u6d88\u8d39\u8005",
@@ -2419,6 +2425,10 @@
         t("runtimeRecoveryNpcCrossMissionContext"),
       closed_exact_multi_mission_runtime_config_no_relative_order:
         t("runtimeRecoveryNpcMultiMissionContext"),
+      closed_exact_lua_controller_playback_no_mission_owner_or_relative_order:
+        t("runtimeRecoveryEvidenceLuaControllerPlayback"),
+      closed_exact_composed_root_playback_context_no_relative_order:
+        t("relationRootPlaybackAliasComposed"),
     })[status] || status;
   }
 
@@ -2456,6 +2466,9 @@
       return `<code>${esc([header, ...actions].join(" → "))}</code>`;
     }).join("<br>");
     const runtimeDetails = runtimeRecovery ? [
+      recovery.relation === "lua_controller_playback"
+        ? `<small><strong>${esc(t("runtimeRecoveryLuaController"))}:</strong> <code>${esc(recovery.luaFile || "?")}</code>${recovery.luaLine ? `:${Number(recovery.luaLine)}` : ""}</small><small><strong>${esc(t("runtimeRecoveryLuaCall"))}:</strong> <code>${esc(recovery.luaCall || "?")}</code></small>`
+        : "",
       recovery.nominalStoryMissionId
         ? `<small><strong>${esc(t("runtimeRecoveryNominalMission"))}:</strong> <code>${esc(recovery.nominalStoryMissionId)}</code></small>`
         : "",
@@ -2538,6 +2551,9 @@
       const composedRootPlaybackRecovery = runtimeRecovery
         && runtimeRecovery.relation === "cutscene_root_playback_alias_composed"
         && String(runtimeRecovery.missionId || "") === missionId;
+      const luaControllerPlaybackRecovery = runtimeRecovery
+        && runtimeRecovery.relation === "lua_controller_playback"
+        && String(entry.nominalMissionId || "") === missionId;
       const exactBlackCarrierRecovery = runtimeRecovery
         && exactBlackCarrierRelations.has(runtimeRecovery.relation)
         && String(runtimeRecovery.nominalStoryMissionId || "") === missionId;
@@ -2550,6 +2566,7 @@
       const displayRuntimeRecovery = crossMissionRuntimeRecovery
         || authoredSnsMissionRecovery
         || composedRootPlaybackRecovery
+        || luaControllerPlaybackRecovery
         || exactBlackCarrierRecovery
         || exactSameMissionRuntimeRecovery
         || exactNpcProxyRuntimeRecovery;
@@ -3602,6 +3619,8 @@
           ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoverySnsLink"))}: <code>${esc(row.missionId || "?")}</code></span>${(row.snsContentIds || []).length ? `<span>content ${(row.snsContentIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}</p>`
           : row.relation === "cutscene_root_playback_alias_composed"
             ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.missionId || "?")}</code></span>${(row.rootStoryKeys || []).length ? `<span>${esc(t("runtimeRecoveryPlaybackRoots"))}: ${(row.rootStoryKeys || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${nativePaths ? `<span>${esc(t("runtimeRecoveryNativePaths"))}: ${nativePaths}</span>` : ""}</p>`
+            : row.relation === "lua_controller_playback"
+              ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryLuaController"))}: <code>${esc(row.luaFile || "?")}</code>${row.luaLine ? `:${Number(row.luaLine)}` : ""}</span><span>${esc(t("runtimeRecoveryLuaCall"))}: <code>${esc(row.luaCall || "?")}</code></span></p>`
             : exactBlackCarrierRelations.has(row.relation)
               ? `<p><strong>${esc(t("runtimeContextRecoveryBoundary"))}</strong><span>${esc(t("runtimeRecoveryNominalMission"))}: <code>${esc(row.nominalStoryMissionId || "?")}</code></span>${(row.parentStoryKeys || []).length ? `<span>${esc(t("runtimeRecoveryCarrierParents"))}: ${(row.parentStoryKeys || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}${(row.timelineIds || []).length ? `<span>${esc(t("offlineRecoveryInternalTimeline"))}: ${(row.timelineIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>` : ""}</p>`
               : exactSameMissionRuntimeRelations.has(row.relation)

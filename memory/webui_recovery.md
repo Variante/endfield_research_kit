@@ -65,6 +65,11 @@ their inputs.
 - Exact typed cinematic actions show their original-binary producer method and
   both the decoded original-data file and binary audit file; the provenance
   header reports native producer/action and mission-route attachment counts.
+- Source-bounded recovery cards show generalized shipped-Lua playback and
+  composed CutsceneRoot playback directly in the owning mission view. They
+  expose the Lua controller/line/call or native event/action/root chain, every
+  related original-data and audit file, and an explicit no-ownership/no-order
+  boundary; OCR and manual order are not used as evidence.
 - BlackBox recovery cards expose exact SubGame/bound-LevelScript context,
   separate authored task lanes, complete decoded task/condition topology,
   condition formulas, objective display keys, exact parent playback, and the

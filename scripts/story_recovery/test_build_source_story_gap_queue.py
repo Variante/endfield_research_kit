@@ -5015,6 +5015,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
             "Lua/Data/LuaScripts/Phase/GenderChange/"
             "PhaseGenderChange.lua"
         )
+        audit_report = "reports/mission_order/lua_consumer_reference_audit.json"
+        lua_source_path = "scratch/story/lua/PhaseGenderChange.lua"
+        lua_sha256 = "a" * 64
+        audit_sha256 = "b" * 64
         manifest = {
             "cutscene_e1m10_1": {
                 "attachmentStatus": "trigger_known_owner_unresolved",
@@ -5022,12 +5026,19 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 "nominalMissionId": "e1m10",
                 "routes": [{
                     "causality": "playback_owner_unresolved",
-                    "confidence": "shipped_lua_literal_plus_native_entry",
+                    "confidence": (
+                        "corpus_scanned_shipped_lua_literal_plus_native_entry"
+                    ),
                     "direction": "playback",
                     "evidenceTier": "direct",
                     "luaCall": "GameAction.PlayCutscene",
                     "luaFile": lua_file,
+                    "luaLine": 104,
+                    "luaSourcePath": lua_source_path,
+                    "luaSourceSha256": lua_sha256,
                     "luaSymbol": "CUT_SCENE_ID",
+                    "auditReport": audit_report,
+                    "auditSha256": audit_sha256,
                     "missionId": None,
                     "nativeEntry":
                         "Beyond.Gameplay.Actions.GameAction::PlayCutscene",
@@ -5039,12 +5050,16 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                     "relation": "lua_controller_playback",
                     "scope": "phase",
                     "serverExchange": False,
-                    "sourceFiles": [lua_file],
+                    "sourceFiles": [lua_file, audit_report],
                     "steps": [
                         {
                             "id": lua_file,
                             "kind": "luaController",
                             "phase": "gender_change",
+                            "summaries": [
+                                "line 104",
+                                f"SHA-256 {lua_sha256}",
+                            ],
                         },
                         {
                             "id":
@@ -5068,7 +5083,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["sceneKey"], "cutscene_e1m10_1")
         self.assertEqual(rows[0]["relation"], "lua_controller_playback")
+        self.assertEqual(rows[0]["luaSourceSha256"], lua_sha256)
+        self.assertEqual(rows[0]["auditReport"], audit_report)
         self.assertEqual(rows[0]["graphEffect"], "none")
+        failures: list[dict] = []
         self.assertEqual(
             gap_queue
             ._closed_exact_lua_controller_playback_isolated_scenes(
@@ -5083,9 +5101,47 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 },
                 {"cutscene_e1m10_1"},
                 "e1m10",
+                failures,
             ),
             [],
         )
+        self.assertEqual(len(failures), 1)
+        self.assertEqual(failures[0]["gate"], "route_contract")
+        self.assertEqual(failures[0]["storyKey"], "cutscene_e1m10_1")
+
+    def test_story_trigger_manifest_loader_validates_schema_and_drift(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "coverage.json"
+            payload = {
+                "schemaVersion": gap_queue.STORY_BINDING_COVERAGE_SCHEMA_VERSION,
+                "language": "CN",
+                "storyTriggerManifest": {"cutscene_test_1": {"key": "cutscene_test_1"}},
+            }
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            manifest, status = gap_queue.load_story_trigger_manifest_evidence(
+                path,
+                "CN",
+            )
+            self.assertEqual(set(manifest), {"cutscene_test_1"})
+            self.assertEqual(status["status"], "validated")
+            self.assertEqual(status["rowCount"], 1)
+            self.assertEqual(status["validationFailures"], [])
+
+            payload["schemaVersion"] -= 1
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            manifest, status = gap_queue.load_story_trigger_manifest_evidence(
+                path,
+                "CN",
+            )
+            self.assertEqual(manifest, {})
+            self.assertEqual(status["status"], "validation_failed")
+            self.assertEqual(status["validationFailures"][0]["gate"], "schema_version")
+            self.assertEqual(
+                status["validationFailures"][0]["expected"],
+                {"schemaVersion": gap_queue.STORY_BINDING_COVERAGE_SCHEMA_VERSION},
+            )
 
     def test_exact_composed_root_playback_closes_arbitrary_isolated_cutscene(
         self,
@@ -5285,6 +5341,7 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         }
         for label, mutation in mutations.items():
             with self.subTest(label=label):
+                failures: list[dict] = []
                 candidate = {**route, **mutation}
                 manifest = {
                     story_key: {
@@ -5300,9 +5357,14 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                         manifest,
                         {story_key},
                         "testm2",
+                        failures,
                     ),
                     [],
                 )
+                self.assertEqual(len(failures), 1)
+                self.assertEqual(failures[0]["gate"], "route_contract")
+                self.assertEqual(failures[0]["storyKey"], story_key)
+        missing_alias_failures: list[dict] = []
         self.assertEqual(
             gap_queue._closed_exact_composed_root_playback_isolated_scenes(
                 {
@@ -5315,8 +5377,14 @@ class SourceStoryGapQueueTests(unittest.TestCase):
                 },
                 {story_key},
                 "testm2",
+                missing_alias_failures,
             ),
             [],
+        )
+        self.assertEqual(len(missing_alias_failures), 1)
+        self.assertEqual(
+            missing_alias_failures[0]["actual"]["aliasRouteCount"],
+            0,
         )
 
     def test_declared_e6m2_offline_frontier_is_exact(self) -> None:
