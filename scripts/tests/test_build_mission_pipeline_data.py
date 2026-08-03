@@ -12,11 +12,92 @@ from scripts import build_mission_pipeline_data as pipeline
 from scripts.story_builder import level_bindings, mission_flow, source_links
 
 
+STATE_UPDATE_CONTRACT_FIXTURE = {
+    "classification": "server_selected_identity_state_application",
+    "candidateCount": 4,
+    "validatedCandidateCount": 4,
+    "clientSuccessorSelectors": 0,
+    "allLifecycleCallsUsePacketIdentity": True,
+    "rows": [],
+    "relatedOriginalFiles": [
+        {"kind": "original_game_binary"},
+        {"kind": "original_game_metadata"},
+    ],
+    "validation": {"status": "validated", "failures": []},
+}
+
+
 def condition(kind, **values):
     return {"$type": f"Beyond.Gameplay.{kind}, Gameplay.Beyond", "uniqueId": f"id_{kind}", **values}
 
 
 class MissionPipelineBuilderTests(unittest.TestCase):
+    def test_state_update_contract_revalidates_original_binary_sources(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            gameassembly.write_bytes(b"fixture-gameassembly")
+            metadata.write_bytes(b"fixture-metadata")
+            audit_path = root / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v5",
+                "source": {
+                    "gameAssembly": str(gameassembly),
+                    "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
+                    "metadata": str(metadata),
+                    "metadataSha256": hashlib.sha256(metadata.read_bytes()).hexdigest(),
+                },
+                "stateUpdateApplicationCensus": {
+                    "classification": "server_selected_identity_state_application",
+                    "candidateCount": 2,
+                    "validatedCandidateCount": 2,
+                    "clientSuccessorSelectors": 0,
+                    "allLifecycleCallsUsePacketIdentity": True,
+                    "finding": "fixture",
+                    "boundary": "fixture boundary",
+                    "rows": [],
+                    "validation": {"status": "validated", "failures": []},
+                },
+            }), encoding="utf-8")
+
+            contract = pipeline.load_state_update_application_contract(audit_path)
+
+        self.assertEqual(contract["validatedCandidateCount"], 2)
+        self.assertEqual(contract["clientSuccessorSelectors"], 0)
+        self.assertEqual(len(contract["relatedOriginalFiles"]), 2)
+
+    def test_state_update_contract_reports_hash_drift(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            gameassembly.write_bytes(b"changed")
+            metadata.write_bytes(b"fixture")
+            audit_path = root / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v5",
+                "source": {
+                    "gameAssembly": str(gameassembly),
+                    "gameAssemblySha256": "0" * 64,
+                    "metadata": str(metadata),
+                    "metadataSha256": hashlib.sha256(metadata.read_bytes()).hexdigest(),
+                },
+                "stateUpdateApplicationCensus": {
+                    "validation": {"status": "validated", "failures": []},
+                },
+            }), encoding="utf-8")
+
+            with self.assertRaises(RuntimeError) as raised:
+                pipeline.load_state_update_application_contract(audit_path)
+
+        message = str(raised.exception)
+        self.assertIn("validator=state_update_application_contract", message)
+        self.assertIn("gate=sourceHash", message)
+        self.assertIn("expected=", message)
+        self.assertIn("actual=", message)
+        self.assertIn("GameAssembly.dll", message)
+
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
@@ -2728,7 +2809,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "relation": "same_authored_and_objective",
         }])
 
-    def test_build_all_writes_lazy_index_and_mission_payload(self):
+    @patch.object(
+        pipeline,
+        "load_state_update_application_contract",
+        return_value=STATE_UPDATE_CONTRACT_FIXTURE,
+    )
+    def test_build_all_writes_lazy_index_and_mission_payload(self, _contract_loader):
         self.maxDiff = None
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -2764,6 +2850,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "trackingObjectives": 0,
                 "missionPropertyRows": 0,
                 "missionsWithProperties": 0,
+                "stateUpdateApplicationCandidates": 4,
+                "stateUpdateApplicationCandidatesValidated": 4,
+                "stateUpdateClientSuccessorSelectors": 0,
                 # The fixture has one mission with no cross-mission state
                 # condition and no envTalk consumer table, so both new lanes
                 # are legitimately empty rather than absent.
@@ -2786,11 +2875,23 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 },
             )
             self.assertEqual(index["runtimeContract"]["outbound"][1]["message"], "CS_UPDATE_QUEST_OBJECTIVE")
+            state_contract = index["runtimeContract"]["stateUpdateApplicationAudit"]
+            self.assertEqual(state_contract["validatedCandidateCount"], 4)
+            self.assertEqual(state_contract["clientSuccessorSelectors"], 0)
+            self.assertEqual(len(state_contract["relatedOriginalFiles"]), 2)
             payload = json.loads((output_root / "missions" / "testm1.json").read_text(encoding="utf-8"))
             self.assertEqual(payload["missionGraph"], {"upstream": {}, "downstream": {}})
             self.assertEqual(payload["envTalkContext"], [])
 
-    def test_activity_stage_tables_add_typed_quest_level_hosts_only(self):
+    @patch.object(
+        pipeline,
+        "load_state_update_application_contract",
+        return_value=STATE_UPDATE_CONTRACT_FIXTURE,
+    )
+    def test_activity_stage_tables_add_typed_quest_level_hosts_only(
+        self,
+        _contract_loader,
+    ):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             mission_root = root / "input"
@@ -2847,7 +2948,15 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 0,
             )
 
-    def test_subgame_registry_adds_mission_shell_runtime_binding_only(self):
+    @patch.object(
+        pipeline,
+        "load_state_update_application_contract",
+        return_value=STATE_UPDATE_CONTRACT_FIXTURE,
+    )
+    def test_subgame_registry_adds_mission_shell_runtime_binding_only(
+        self,
+        _contract_loader,
+    ):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             mission_root = root / "input"

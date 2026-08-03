@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -13,6 +15,38 @@ import build_protocol_registry_audit as audit  # noqa: E402
 
 
 class ProtocolRegistryAuditTests(unittest.TestCase):
+    def test_current_report_status_requires_validated_matching_original_inputs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            metadata = root / "global-metadata.dat"
+            gameassembly = root / "GameAssembly.dll"
+            report_path = root / "audit.json"
+            metadata.write_bytes(b"metadata")
+            gameassembly.write_bytes(b"gameassembly")
+            report_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v5",
+                "source": {
+                    "metadataSha256": audit.file_sha256(metadata),
+                    "gameAssemblySha256": audit.file_sha256(gameassembly),
+                },
+                "stateUpdateApplicationCensus": {
+                    "validation": {"status": "validated", "failures": []},
+                },
+            }), encoding="utf-8")
+
+            self.assertEqual(
+                audit.current_report_status(report_path, metadata, gameassembly),
+                (True, "validated report hashes match original inputs"),
+            )
+            metadata.write_bytes(b"changed")
+            current, reason = audit.current_report_status(
+                report_path,
+                metadata,
+                gameassembly,
+            )
+            self.assertFalse(current)
+            self.assertIn("metadataSha256 differs", reason)
+
     def test_compressed_signed_integer_decoding(self):
         self.assertEqual(audit.read_compressed_int32(bytes([0x00]), 0), (0, 1))
         self.assertEqual(audit.read_compressed_int32(bytes([0x02]), 0), (1, 1))
@@ -189,6 +223,56 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             ),
             ["Proto.MISSION", "Proto.QUEST"],
         )
+
+    def test_state_update_application_validation_accepts_generic_same_identity_flow(self):
+        validation = audit.validate_state_update_application_rows(
+            1,
+            [{
+                "type": "Proto.SC_FIXTURE_STATE_UPDATE",
+                "samePacketIdentityForwardedToEveryLifecycleCall": True,
+                "clientSuccessorSelectorPresent": False,
+                "lifecycleCalls": [{
+                    "method": "StartFixture",
+                    "samePacketIdentity": True,
+                    "observedArgumentOrigin": "param:msg+0x18",
+                }],
+            }],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "fixture"},
+        )
+
+        self.assertEqual(validation, {"status": "validated", "failures": []})
+
+    def test_state_update_application_validation_reports_bounded_drift(self):
+        validation = audit.validate_state_update_application_rows(
+            1,
+            [{
+                "type": "Proto.SC_FIXTURE_STATE_UPDATE",
+                "samePacketIdentityForwardedToEveryLifecycleCall": False,
+                "clientSuccessorSelectorPresent": True,
+                "successorLikeFields": ["nextFixtureId"],
+                "lifecycleCalls": [{
+                    "method": "StartFixture",
+                    "samePacketIdentity": False,
+                    "observedArgumentOrigin": "param:msg+0x30",
+                }],
+            }],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "fixture"},
+        )
+
+        self.assertEqual(validation["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in validation["failures"]],
+            ["sameIdentityForwarding", "noClientSuccessorSelector"],
+        )
+        self.assertEqual(validation["failures"][0]["message"], "Proto.SC_FIXTURE_STATE_UPDATE")
+        self.assertEqual(validation["failures"][0]["expected"], True)
+        self.assertEqual(
+            validation["failures"][0]["actual"],
+            [{"method": "StartFixture", "origin": "param:msg+0x30"}],
+        )
+        self.assertEqual(validation["failures"][0]["sourceFile"], "GameAssembly.dll")
 
 
 if __name__ == "__main__":

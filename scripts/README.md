@@ -34,6 +34,10 @@ override those defaults for one run.
 - Canonical `export.bat` runs refresh and validate the source Story gap queue
   after current partial-order and coverage reports are published, before
   Mission Pipeline recovery cards are projected. Data-only runs reuse it.
+- Mission Pipeline builds also ensure the protocol registry audit matches the
+  exact installed `GameAssembly.dll` and metadata hashes. Its state-update
+  census discovers message shapes, typed handlers, runtime field offsets, and
+  lifecycle argument flow generically; stale or missing reports are rebuilt.
 - Mission Pipeline resolves exact native receiver playback gates generically
   through serialized `ActionHeader._validate` getter references. The resolver
   walks reusable AND/OR/NOT/ALL and comparison trees to exact leaves; unknown,
