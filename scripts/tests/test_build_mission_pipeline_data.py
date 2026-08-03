@@ -1853,6 +1853,71 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 ),
             )
 
+    def test_native_receiver_post_playback_control_is_identity_agnostic(self):
+        owner = {
+            "status": "exact_serialized_control_path",
+            "downstreamControlStatus": "exact_serialized_typed_reachability",
+            "downstreamControlPaths": [
+                [{
+                    "edge": "ActionBase.nextId",
+                    "localId": 5,
+                    "actionName": "Split",
+                }],
+                [
+                    {
+                        "edge": "ActionBase.nextId",
+                        "localId": 5,
+                        "actionName": "Split",
+                    },
+                    {
+                        "edge": "Split.actions[0]",
+                        "localId": 6,
+                        "actionName": "CallServer",
+                        "recordClass": "server_handoff",
+                        "texts": ["#callback_a", "event_args"],
+                    },
+                ],
+                [
+                    {
+                        "edge": "ActionBase.nextId",
+                        "localId": 5,
+                        "actionName": "Split",
+                    },
+                    {
+                        "edge": "Split.actions[1]",
+                        "localId": 7,
+                        "actionName": "WaitForSeconds",
+                    },
+                ],
+            ],
+        }
+        control = pipeline.exact_native_receiver_post_playback_control(
+            owner,
+            story_key="story_fixture",
+            playback_local_id=4,
+            source_file="fixture/levelscript.json",
+        )
+        self.assertEqual("exactNativePostPlaybackControl.v1", control["schema"])
+        self.assertEqual([5], control["branchPointLocalIds"])
+        self.assertEqual(2, len(control["maximalReachablePaths"]))
+        self.assertEqual(
+            ["#callback_a"],
+            control["serverHandoffs"][0]["callbackCorrelationLabels"],
+        )
+        self.assertFalse(control["missionOwnershipEvidence"])
+        self.assertFalse(control["serverHandlerIdentityEvidence"])
+
+    def test_native_receiver_post_playback_control_fails_closed(self):
+        self.assertEqual(
+            {},
+            pipeline.exact_native_receiver_post_playback_control(
+                {"status": "text_scan_only", "downstreamControlPaths": []},
+                story_key="story_fixture",
+                playback_local_id=4,
+                source_file="fixture/levelscript.json",
+            ),
+        )
+
     def test_native_receiver_gate_formats_recursive_boolean_tree(self):
         leaf = {
             "predicateType": "getterBool",

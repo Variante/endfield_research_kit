@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 602 (490 MissionRuntime + 112 Story-only recovery shells) |
+| Pipeline missions | 605 (490 MissionRuntime + 115 Story-only recovery shells) |
 | Unique Story files | 5,564 |
 | Connected files | 4,239 (76.2%) |
 | Files with a normalized trigger/context route | 4,462 (80.2%) |
@@ -17,7 +17,7 @@ Latest CN reports:
 | Unlinked files with exact native playback | 156 |
 | Encounter-controller contexts | 5 receiver scripts / 7 modules / 27 Story keys / 9 related source files |
 | Exact non-mission content | 281 (280 spacecraft/profile + 1 guide runtime) |
-| Actionable core-isolated files | 3, all in the other bucket |
+| Actionable core-isolated files | 0 |
 | Partial-order mission rows | 487 |
 | Candidate scene placements | 8,877 |
 | Strong / supported / weak edges | 1,502 / 834 / 2,635 |
@@ -28,6 +28,7 @@ Latest CN reports:
 | LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
 | Native branch predicates | 258 named; 263 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
+| Exact post-playback control | 128 graphs / 105 Story files / 348 actions and edges / 18 branch points / 76 unresolved server handoffs |
 | Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
@@ -194,11 +195,25 @@ completion inversion, and one six-child interactive-state conjunction. These
 are receiver-local allow/block branches only: they do not
 prove a post-play server write, mission ownership, or order between Story
 files.
+The identity-agnostic control decoder now also publishes typed successors after
+any exact receiver Story action instead of truncating the visible path at
+playback. The current unresolved receiver surface contains 128 exact
+post-playback graphs across 105 Story files, with 348 unique local actions and
+edges, 18 typed branch points, and 76 `CallServer` handoffs. Mission Pipeline
+renders maximal reachable paths, branch points, callback correlation labels,
+and the original LevelScript file. Callback labels identify neither a server
+handler nor a mission/quest or state write. For `cutscene_e3m5_4`, the exact
+client path is now visible as `isFinished == false` -> FMV -> fade-in ->
+`CallServer #27b725be`; the separate `e3m5_q#1` objective observes the same
+LevelScript property, and its original Persistent
+`MissionRuntimeAsset/e3m5.json` is attached as a related file. This still does
+not prove that the quest starts playback or that the handoff writes
+`isFinished`, so the Story remains unowned.
 No current mission has Story
 targets on two different Branch sequence slots, so this adds zero Branch-derived
 Story-order edges rather than guessing them.
-The other-bucket actionable core-isolated queue is 3 and the current contract is
-`sourceStoryGapQueue.v129`; OCR and manual order remain comparison-only. The
+The actionable core-isolated queue is empty and the current contract is
+`sourceStoryGapQueue.v130`; OCR and manual order remain comparison-only. The
 queue now loads the current Story trigger manifest through an exact schema,
 language, source-hash, and object-shape gate instead of silently discarding a
 newer coverage schema. General closure contracts revalidate shipped-Lua

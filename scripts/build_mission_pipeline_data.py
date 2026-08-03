@@ -218,7 +218,7 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # objective, repeatable-talk, and failed-dialog MissionRuntime observers. v27
 # exposes exact typed spaceship contexts whose complete table definition has
 # no carrier in any related typed DialogTree, without inventing playback.
-SCHEMA_VERSION = 27
+SCHEMA_VERSION = 28
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -5842,6 +5842,162 @@ def exact_native_receiver_playback_gate(
     }
 
 
+def exact_native_receiver_post_playback_control(
+    owner: dict[str, Any],
+    *,
+    story_key: str,
+    playback_local_id: int,
+    source_file: str,
+) -> dict[str, Any]:
+    """Compact exact typed successors after any native Story action.
+
+    ``_levelscript_native_control_paths_to_record`` already walks the current
+    runtime action slots and every typed successor field.  This projection is
+    deliberately identity-agnostic: it accepts any Story/action/header and
+    preserves only serialized control-flow.  It never interprets a callback
+    label as a server handler, mission id, or quest id.
+    """
+    if (
+        not isinstance(owner, dict)
+        or owner.get("status") not in {
+            "exact_serialized_control_path",
+            "exact_serialized_control_path_equivalent_duplicates",
+            "exact_serialized_control_path_runtime_shadowing",
+        }
+        or owner.get("downstreamControlStatus")
+        != "exact_serialized_typed_reachability"
+        or not story_key
+        or not isinstance(playback_local_id, int)
+        or not source_file
+    ):
+        return {}
+    paths: list[list[dict[str, Any]]] = []
+    seen_paths: set[tuple[tuple[str, int], ...]] = set()
+    for raw_path in owner.get("downstreamControlPaths") or []:
+        if not isinstance(raw_path, list) or not raw_path:
+            continue
+        path: list[dict[str, Any]] = []
+        signature: list[tuple[str, int]] = []
+        for raw_step in raw_path:
+            if not isinstance(raw_step, dict):
+                path = []
+                break
+            edge = str(raw_step.get("edge") or "")
+            local_id = raw_step.get("localId")
+            if not edge or not isinstance(local_id, int):
+                path = []
+                break
+            step = compact_dict({
+                "edge": edge,
+                "localId": local_id,
+                "opcode": str(raw_step.get("opcode") or ""),
+                "unionTag": str(raw_step.get("unionTag") or ""),
+                "serializedMemberCount": raw_step.get(
+                    "serializedMemberCount"
+                ),
+                "actionName": str(raw_step.get("actionName") or ""),
+                "recordClass": str(raw_step.get("recordClass") or ""),
+                "texts": [
+                    str(value)
+                    for value in raw_step.get("texts") or []
+                    if str(value)
+                ][:8],
+                "branchPredicate": raw_step.get("branchPredicate") or None,
+            })
+            path.append(step)
+            signature.append((edge, local_id))
+        path_signature = tuple(signature)
+        if path and path_signature not in seen_paths:
+            seen_paths.add(path_signature)
+            paths.append(path)
+    if not paths:
+        return {}
+
+    # The producer publishes every reachable prefix. Keep only maximal paths
+    # for display while deriving a de-duplicated edge/node graph from all of
+    # them. This is structural and works for linear, split, conditional,
+    # switch, loop, and wait-success/failure successor families.
+    signatures = [
+        tuple((str(step["edge"]), int(step["localId"])) for step in path)
+        for path in paths
+    ]
+    maximal_paths = [
+        path
+        for index, path in enumerate(paths)
+        if not any(
+            len(other) > len(signatures[index])
+            and other[: len(signatures[index])] == signatures[index]
+            for other in signatures
+        )
+    ]
+    action_nodes: dict[int, dict[str, Any]] = {}
+    edges: dict[tuple[int, int, str], dict[str, Any]] = {}
+    outgoing: dict[int, set[tuple[int, str]]] = defaultdict(set)
+    for path in paths:
+        source_local_id = playback_local_id
+        for step in path:
+            local_id = int(step["localId"])
+            action_nodes.setdefault(local_id, {
+                key: value for key, value in step.items() if key != "edge"
+            })
+            edge = str(step["edge"])
+            edge_key = (source_local_id, local_id, edge)
+            edges[edge_key] = {
+                "sourceLocalId": source_local_id,
+                "targetLocalId": local_id,
+                "edge": edge,
+            }
+            outgoing[source_local_id].add((local_id, edge))
+            source_local_id = local_id
+    branch_points = sorted(
+        source for source, targets in outgoing.items() if len(targets) > 1
+    )
+    server_handoffs = []
+    for node in action_nodes.values():
+        if node.get("recordClass") != "server_handoff":
+            continue
+        labels = [
+            value
+            for value in node.get("texts") or []
+            if isinstance(value, str) and value.startswith("#")
+        ]
+        server_handoffs.append({
+            "localId": node.get("localId"),
+            "actionName": node.get("actionName") or "CallServer",
+            "callbackCorrelationLabels": labels,
+            "serverHandlerIdentity": False,
+        })
+    return {
+        "schema": "exactNativePostPlaybackControl.v1",
+        "status": "exact_serialized_typed_reachability",
+        "storyKey": story_key,
+        "playbackLocalId": playback_local_id,
+        "sourceFile": source_file,
+        "actions": sorted(action_nodes.values(), key=lambda row: row["localId"]),
+        "edges": sorted(
+            edges.values(),
+            key=lambda row: (
+                row["sourceLocalId"],
+                row["targetLocalId"],
+                row["edge"],
+            ),
+        ),
+        "maximalReachablePaths": maximal_paths,
+        "branchPointLocalIds": branch_points,
+        "serverHandoffs": server_handoffs,
+        "intraScriptControlFlowEvidence": True,
+        "missionOwnershipEvidence": False,
+        "crossStoryOrderEvidence": False,
+        "serverHandlerIdentityEvidence": False,
+        "evidenceBoundary": (
+            "Typed successor fields prove only the exact local action graph "
+            "after this Story action. Callback labels do not identify a "
+            "server handler, mission/quest owner, state write, or cross-Story "
+            "chronology."
+        ),
+    }
+
+
 def build_story_binding_coverage(
     pipeline_index: dict[str, Any],
     pipeline_index_path: Path,
@@ -6361,6 +6517,7 @@ def build_story_binding_coverage(
                                     runtime_target.get("ownershipBoundary") or ""
                                 ),
                                 "_playbackGates": {},
+                                "_postPlaybackControls": {},
                                 "_localProducerRoutes": {},
                                 "storyFiles": {},
                             },
@@ -6390,6 +6547,31 @@ def build_story_binding_coverage(
                                 runtime_node["_playbackGates"][gate_signature] = (
                                     playback_gate
                                 )
+                        playback_local_id = occurrence.get("localId")
+                        if isinstance(playback_local_id, int):
+                            post_playback = (
+                                exact_native_receiver_post_playback_control(
+                                    owner,
+                                    story_key=key,
+                                    playback_local_id=playback_local_id,
+                                    source_file=source_file,
+                                )
+                            )
+                            if post_playback:
+                                post_signature = json.dumps(
+                                    [
+                                        source_file,
+                                        key,
+                                        playback_local_id,
+                                        post_playback.get("edges") or [],
+                                    ],
+                                    ensure_ascii=False,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                )
+                                runtime_node["_postPlaybackControls"][
+                                    post_signature
+                                ] = post_playback
                         if runtime_target and not runtime_node.get("runtimeTarget"):
                             runtime_node["runtimeTarget"] = runtime_target
                             runtime_node["ownershipBoundary"] = str(
@@ -6729,6 +6911,16 @@ def build_story_binding_coverage(
         )
         if playback_gates:
             node["playbackGates"] = playback_gates
+        post_playback_controls = sorted(
+            node.pop("_postPlaybackControls", {}).values(),
+            key=lambda row: (
+                str(row.get("sourceFile") or ""),
+                str(row.get("storyKey") or ""),
+                int(row.get("playbackLocalId") or -1),
+            ),
+        )
+        if post_playback_controls:
+            node["postPlaybackControls"] = post_playback_controls
         local_producer_routes = sorted(
             node.pop("_localProducerRoutes", {}).values(),
             key=lambda row: (
@@ -6765,7 +6957,7 @@ def build_story_binding_coverage(
 
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 12,
+        "schemaVersion": 13,
         "generated": int(time.time()),
         "language": language,
         "policy": (
@@ -6906,6 +7098,20 @@ def build_story_binding_coverage(
                 if node.get("playbackGates")
                 for story in node.get("storyFiles") or []
             }),
+            "missionlessNativeRuntimePostPlaybackControls": sum(
+                len(node.get("postPlaybackControls") or [])
+                for node in missionless_runtime_nodes
+            ),
+            "missionlessNativeRuntimePostPlaybackBranchPoints": sum(
+                len(control.get("branchPointLocalIds") or [])
+                for node in missionless_runtime_nodes
+                for control in node.get("postPlaybackControls") or []
+            ),
+            "missionlessNativeRuntimePostPlaybackServerHandoffs": sum(
+                len(control.get("serverHandoffs") or [])
+                for node in missionless_runtime_nodes
+                for control in node.get("postPlaybackControls") or []
+            ),
             "partiallyConnectedDialogTreeNarrativeFiles": len(
                 unresolved_dialog_tree_containment & connected_keys
             ),
@@ -7043,6 +7249,9 @@ def build_story_binding_coverage(
         f"- Exact runtime-receiver-to-Story placements: `{counts['missionlessNativeRuntimeStoryPlacements']}`",
         f"- Exact receiver playback gates: `{counts['missionlessNativeRuntimePlaybackGates']}`",
         f"- Story files controlled by those exact gates: `{counts['missionlessNativeRuntimePlaybackGateStoryFiles']}`",
+        f"- Exact post-playback control graphs: `{counts['missionlessNativeRuntimePostPlaybackControls']}`",
+        f"- Typed branch points in those graphs: `{counts['missionlessNativeRuntimePostPlaybackBranchPoints']}`",
+        f"- Server handoffs with unresolved handler identity: `{counts['missionlessNativeRuntimePostPlaybackServerHandoffs']}`",
         f"- Connected files with another unresolved DialogTree parent use: `{counts['partiallyConnectedDialogTreeNarrativeFiles']}`",
         "",
         "## By kind",
