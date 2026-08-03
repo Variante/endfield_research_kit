@@ -18,6 +18,7 @@ Output:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import re
@@ -35,6 +36,7 @@ for _path in (_REPO_ROOT / "scripts",):
 from common import ROOT, md_escape, write_report_json, write_text_if_changed  # noqa: E402
 
 REPORT_DIR = ROOT / "reports" / "mission_order"
+DEFAULT_NAME_CONTRACT = REPORT_DIR / "levelscript_actionbase_formatter_names.json"
 CATALOG_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 BODY_HELPER = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
@@ -106,6 +108,14 @@ def repo_rel(path: Path | str) -> str:
         return p.resolve().relative_to(ROOT.resolve()).as_posix()
     except (OSError, ValueError):
         return str(path).replace("\\", "/")
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest().upper()
 
 
 def load_module(path: Path, module_name: str) -> Any:
@@ -621,7 +631,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "metadata": {
             "metadataPath": str(metadata_path),
+            "metadataSha256": sha256_file(metadata_path),
             "gameAssembly": str(args.gameassembly),
+            "gameAssemblySha256": sha256_file(args.gameassembly),
             "imageBase": f"0x{pe.image_base:x}",
             "codeRegistration": f"0x{code_reg:x}",
         },
@@ -769,6 +781,35 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     write_text_if_changed(path, "\n".join(lines).rstrip() + "\n")
 
 
+def build_name_contract(payload: dict[str, Any], audit_path: Path) -> dict[str, Any]:
+    metadata = payload.get("metadata") or {}
+    return {
+        "schema": "levelScriptActionBaseFormatterNames.v1",
+        "sourceAudit": repo_rel(audit_path),
+        "metadata": {
+            key: metadata.get(key)
+            for key in (
+                "metadataSha256",
+                "gameAssemblySha256",
+                "imageBase",
+                "codeRegistration",
+            )
+        },
+        "targetMethod": payload.get("targetMethod") or {},
+        "summary": payload.get("summary") or {},
+        "actionNames": [
+            str(row.get("actionName") or "")
+            for row in payload.get("formatterTags") or []
+        ],
+        "evidenceBoundary": (
+            "Indexed names come from the installed ActionBaseForMemoryPack "
+            "formatter cctor. Consumers must validate every source/table gate "
+            "and use compact unionTag plus serializedMemberCount; raw combined "
+            "opcodes, filenames, OCR, and manual order are not tag evidence."
+        ),
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--metadata", type=Path, default=None)
@@ -790,6 +831,11 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=REPORT_DIR / "levelscript_actionbase_formatter_tags.md",
     )
+    parser.add_argument(
+        "--name-contract",
+        type=Path,
+        default=DEFAULT_NAME_CONTRACT,
+    )
     return parser.parse_args()
 
 
@@ -798,10 +844,15 @@ def main() -> None:
     payload = build_report(args)
     write_report_json(args.json, payload)
     write_markdown(args.markdown, payload)
+    write_report_json(
+        args.name_contract,
+        build_name_contract(payload, args.json),
+    )
     summary = payload.get("summary") or {}
     print(
         "wrote "
-        f"{repo_rel(args.json)} and {repo_rel(args.markdown)} "
+        f"{repo_rel(args.json)}, {repo_rel(args.markdown)}, and "
+        f"{repo_rel(args.name_contract)} "
         f"(tags={summary.get('tagCount')}, matchedRows={summary.get('opcodeAuditMatchedRows')})"
     )
 

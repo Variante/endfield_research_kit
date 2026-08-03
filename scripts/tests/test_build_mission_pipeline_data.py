@@ -113,8 +113,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         "validationFailures": [{
                             "gate": "fixtureGate",
                             "storyKey": "opaque_story",
-                            "expected": {"schemaVersion": 15},
-                            "actual": {"schemaVersion": 14},
+                            "expected": {"schemaVersion": 16},
+                            "actual": {"schemaVersion": 15},
                             "sourceFile": "reports/fixture.json",
                         }],
                     },
@@ -135,8 +135,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         message = str(raised.exception)
         self.assertIn("validator=report.crossOwnerValidation", message)
         self.assertIn("story=opaque_story", message)
-        self.assertIn("expected={'schemaVersion': 15}", message)
-        self.assertIn("actual={'schemaVersion': 14}", message)
+        self.assertIn("expected={'schemaVersion': 16}", message)
+        self.assertIn("actual={'schemaVersion': 15}", message)
         self.assertIn("source=reports/fixture.json", message)
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
@@ -1931,6 +1931,105 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "LoadLevelSequenceAction",
             level_bindings.LEVELSCRIPT_NATIVE_ACTION_NAMES[(0x02FA, 0x09)],
         )
+
+    def test_actionbase_formatter_loader_recovers_every_tag_and_fails_closed(self):
+        rows = [
+            {
+                "tag": tag,
+                "tagHex": f"0x{tag:04x}",
+                "actionName": f"GenericAction{tag}",
+            }
+            for tag in range(1313)
+        ]
+        payload = {
+            "metadata": {
+                "gameAssemblySha256":
+                    level_bindings.ACTIONBASE_FORMATTER_GAMEASSEMBLY_SHA256,
+                "metadataSha256":
+                    level_bindings.ACTIONBASE_FORMATTER_METADATA_SHA256,
+                "codeRegistration": "0x18b9217d0",
+            },
+            "targetMethod": {
+                "typeToken": "0x02000c1c",
+                "methodToken": "0x0600488f",
+                "methodPointerVa": "0x183998700",
+            },
+            "summary": {
+                "tagCount": 1313,
+                "minTag": 0,
+                "maxTag": 1312,
+                "duplicateTagCount": 0,
+                "missingTagCountInsideRange": 0,
+                "unknownInstructionCount": 0,
+            },
+            "actionNames": [row["actionName"] for row in rows],
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            valid_path = Path(temporary) / "valid.json"
+            valid_path.write_text(json.dumps(payload), encoding="utf-8")
+            names, audit = level_bindings.load_actionbase_formatter_names(
+                valid_path
+            )
+            payload["actionNames"][42] = ""
+            invalid_path = Path(temporary) / "invalid.json"
+            invalid_path.write_text(json.dumps(payload), encoding="utf-8")
+            invalid_names, invalid_audit = (
+                level_bindings.load_actionbase_formatter_names(invalid_path)
+            )
+
+        self.assertEqual(1313, len(names))
+        self.assertEqual("GenericAction42", names[42])
+        self.assertEqual("validated", audit["status"])
+        self.assertEqual({}, invalid_names)
+        self.assertEqual("validation_failed", invalid_audit["status"])
+        self.assertEqual(
+            "nonempty_action_name",
+            invalid_audit["validationFailures"][0]["gate"],
+        )
+
+    def test_post_playback_action_name_audit_keeps_outside_union_raw(self):
+        nodes = [{
+            "postPlaybackControls": [{
+                "sourceFile": "fixture.bin",
+                "storyKey": "story_fixture",
+                "actions": [{
+                    "localId": 1,
+                    "opcode": "0x0a10/0x00",
+                    "unionTag": "0x0010",
+                    "serializedMemberCount": 10,
+                    "actionName": "GenericAction",
+                }, {
+                    "localId": 2,
+                    "opcode": "0x1000/0x00",
+                    "unionTag": "",
+                    "serializedMemberCount": 0,
+                    "actionName": "",
+                }],
+            }],
+        }]
+        audit = pipeline.build_post_playback_action_name_audit(
+            nodes,
+            formatter_names={0x0010: "GenericAction"},
+            formatter_audit={
+                "status": "validated",
+                "validationFailures": [],
+            },
+        )
+
+        self.assertEqual(
+            "validated_actionbase_complete_outside_families_retained",
+            audit["status"],
+        )
+        self.assertEqual(1, audit["summary"]["formatterNamedActionPlacements"])
+        self.assertEqual(
+            1,
+            audit["summary"]["unresolvedOutsideActionBasePlacements"],
+        )
+        self.assertEqual(
+            [{"opcode": "0x1000/0x00", "count": 1}],
+            audit["unresolvedActionShapes"],
+        )
+        self.assertFalse(audit["missionOwnershipEvidence"])
 
     def test_level_sequence_textasset_index_requires_three_way_identity(self):
         with tempfile.TemporaryDirectory() as temporary:

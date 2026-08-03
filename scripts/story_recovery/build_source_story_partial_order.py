@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v24"
+SCHEMA = "sourceStoryPartialOrder.v25"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -4080,6 +4080,19 @@ def build_mission_partial_order(
         for edge in native_transition_edges
         for kind in edge.get("transitionKinds") or []
     )
+    native_transition_steps = [
+        step
+        for edge in native_transition_edges
+        for event in edge.get("events") or []
+        if isinstance(event, dict)
+        for step in event.get("transitionSteps") or []
+        if isinstance(step, dict)
+    ]
+    native_transition_named_endpoints = sum(
+        bool(step.get(field))
+        for step in native_transition_steps
+        for field in ("sourceActionName", "targetActionName")
+    )
     warnings: list[str] = []
     if not mission_payload:
         warnings.append("missingMissionBundle")
@@ -4123,6 +4136,19 @@ def build_mission_partial_order(
             ),
             "nativeControlPathTransitionKinds": dict(
                 sorted(native_transition_kind_counts.items())
+            ),
+            "nativeControlPathTransitionStepCount": len(
+                native_transition_steps
+            ),
+            "nativeControlPathTransitionActionEndpointCount": (
+                len(native_transition_steps) * 2
+            ),
+            "nativeControlPathNamedActionEndpointCount": (
+                native_transition_named_endpoints
+            ),
+            "nativeControlPathUnresolvedActionEndpointCount": (
+                len(native_transition_steps) * 2
+                - native_transition_named_endpoints
             ),
             "nativeOrderedSequenceCount": len(native_ordered_sequences),
             "nativeOrderedSequenceEdgeCount": len(native_ordered_sequence_edges),
@@ -4445,6 +4471,18 @@ def build_report(
         totals["nativeControlPathBranchingTransitionEdges"] += summary[
             "nativeControlPathBranchingTransitionEdgeCount"
         ]
+        totals["nativeControlPathTransitionSteps"] += summary[
+            "nativeControlPathTransitionStepCount"
+        ]
+        totals["nativeControlPathTransitionActionEndpoints"] += summary[
+            "nativeControlPathTransitionActionEndpointCount"
+        ]
+        totals["nativeControlPathNamedActionEndpoints"] += summary[
+            "nativeControlPathNamedActionEndpointCount"
+        ]
+        totals["nativeControlPathUnresolvedActionEndpoints"] += summary[
+            "nativeControlPathUnresolvedActionEndpointCount"
+        ]
         native_transition_kind_totals.update(
             summary["nativeControlPathTransitionKinds"]
         )
@@ -4560,6 +4598,11 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"`{summary.get('nativeControlPathTransitionEdges', 0)}` typed path-prefix edges, "
         f"including `{summary.get('nativeControlPathBranchingTransitionEdges', 0)}` "
         "whose source-to-target suffix traverses a typed branch or ordered fan-out",
+        f"- exact native transition action names: "
+        f"`{summary.get('nativeControlPathNamedActionEndpoints', 0)}` / "
+        f"`{summary.get('nativeControlPathTransitionActionEndpoints', 0)}` step endpoints "
+        f"across `{summary.get('nativeControlPathTransitionSteps', 0)}` steps; "
+        f"`{summary.get('nativeControlPathUnresolvedActionEndpoints', 0)}` unresolved",
         f"- native ordered topology: `{summary.get('nativeOrderedSequences', 0)}` exact "
         f"Branch iterators creating `{summary.get('nativeOrderedSequenceEdges', 0)}` "
         "Story-order edges",
