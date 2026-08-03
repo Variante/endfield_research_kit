@@ -373,6 +373,24 @@
       dialogConditionalFalseArm: "condition false",
       dialogConditionalNativeProof: "Native branch selection",
       questFork: "quest fork",
+      questForkStructure: "Authored quest-fork structure",
+      questForkStructureHint: "Arm roles, guards, terminal shape, and reconvergence come from the original MissionRuntime file. Server activation and exclusivity remain unresolved.",
+      questForkMainPathArm: "main-path arm",
+      questForkAuxiliaryArm: "auxiliary arm",
+      questForkGuardedArm: "typed failure guard",
+      questForkObjectiveConditions: "completion conditions",
+      questForkReconverges: "first common descendant",
+      questForkTerminal: "terminal",
+      questForkContinues: "continues",
+      questForkFlowSort: "display flow",
+      questForkServerPolicy: "server activation unresolved",
+      questForkMainPathAuxiliary: "main path + auxiliary",
+      questForkAllAuxiliary: "all auxiliary",
+      questForkMultipleMainPath: "multiple main-path arms",
+      questForkOpenDivergence: "open divergence",
+      questForkDivergentTerminals: "divergent terminals",
+      questForkMixedTerminal: "terminal + continuing",
+      questForkReconverging: "reconverging",
       questForkAuthority: "Quest fork authority",
       serverSelectedStart: "server-selected start; prerequisite topology only",
       questStartReadEvidence: "StartQuest field reads",
@@ -1432,6 +1450,24 @@
       dialogConditionalFalseArm: "\u6761\u4ef6\u4e3a\u5047",
       dialogConditionalNativeProof: "\u539f\u751f\u5206\u652f\u9009\u62e9",
       questFork: "\u4efb\u52a1\u5206\u652f",
+      questForkStructure: "\u539f\u59cb\u4efb\u52a1\u5206\u652f\u7ed3\u6784",
+      questForkStructureHint: "\u5206\u652f\u89d2\u8272\u3001\u5b88\u536b\u6761\u4ef6\u3001\u7ec8\u70b9\u5f62\u72b6\u548c\u518d\u6c47\u5408\u5747\u6765\u81ea\u539f\u59cb MissionRuntime \u6587\u4ef6\uff1b\u670d\u52a1\u7aef\u542f\u52a8\u4e0e\u4e92\u65a5\u7b56\u7565\u4ecd\u672a\u77e5\u3002",
+      questForkMainPathArm: "\u4e3b\u8def\u5f84\u5206\u652f",
+      questForkAuxiliaryArm: "\u8f85\u52a9\u5206\u652f",
+      questForkGuardedArm: "\u7c7b\u578b\u5316\u5931\u8d25\u5b88\u536b",
+      questForkObjectiveConditions: "\u5b8c\u6210\u6761\u4ef6",
+      questForkReconverges: "\u9996\u4e2a\u516c\u5171\u540e\u7ee7",
+      questForkTerminal: "\u7ec8\u70b9",
+      questForkContinues: "\u7ee7\u7eed",
+      questForkFlowSort: "\u663e\u793a\u987a\u5e8f",
+      questForkServerPolicy: "\u670d\u52a1\u7aef\u542f\u52a8\u7b56\u7565\u672a\u89e3",
+      questForkMainPathAuxiliary: "\u4e3b\u8def\u5f84 + \u8f85\u52a9\u5206\u652f",
+      questForkAllAuxiliary: "\u5168\u90e8\u4e3a\u8f85\u52a9\u5206\u652f",
+      questForkMultipleMainPath: "\u591a\u4e2a\u4e3b\u8def\u5f84\u5206\u652f",
+      questForkOpenDivergence: "\u5f00\u653e\u5206\u6d41",
+      questForkDivergentTerminals: "\u5206\u6d41\u7ec8\u70b9",
+      questForkMixedTerminal: "\u7ec8\u70b9 + \u7ee7\u7eed",
+      questForkReconverging: "\u518d\u6c47\u5408",
       questForkAuthority: "\u4efb\u52a1\u5206\u652f\u6743\u5a01\u8fb9\u754c",
       serverSelectedStart: "\u670d\u52a1\u7aef\u9009\u62e9\u542f\u52a8\uff1b\u4ec5\u8868\u793a\u524d\u7f6e\u62d3\u6251",
       questStartReadEvidence: "StartQuest \u5b57\u6bb5\u8bfb\u53d6",
@@ -3265,6 +3301,45 @@
     </details>${nonMissionContentHtml(nonMissionRows)}`;
   }
 
+  function questTopologyHtml() {
+    const topology = state.mission?.questTopology;
+    const forks = topology?.forks || [];
+    if (!forks.length) return "";
+    const structureLabel = (value) => t(({
+      main_path_plus_auxiliary: "questForkMainPathAuxiliary",
+      all_auxiliary: "questForkAllAuxiliary",
+      multiple_main_path_successors: "questForkMultipleMainPath",
+      multiple_main_path_plus_auxiliary: "questForkMultipleMainPath",
+    })[value] || "questForkStructure");
+    const outcomeLabel = (value) => t(({
+      reconverging: "questForkReconverging",
+      divergent_terminals: "questForkDivergentTerminals",
+      mixed_terminal_and_continuing: "questForkMixedTerminal",
+      open_divergence: "questForkOpenDivergence",
+    })[value] || "questForkOpenDivergence");
+    const armHtml = (arm) => {
+      const conditions = arm.objectiveConditionTypes || [];
+      const guard = arm.failedCondition || null;
+      return `<section class="mp-quest-fork-arm ${arm.role === "main_path" ? "is-main-path" : "is-auxiliary"}">
+        <header><code>${esc(arm.questId || "?")}</code><b>${esc(t(arm.role === "main_path" ? "questForkMainPathArm" : "questForkAuxiliaryArm"))}</b><span>${esc(t(arm.terminal ? "questForkTerminal" : "questForkContinues"))}</span></header>
+        <p><code>${esc(t("questForkFlowSort"))}=${Number(arm.flowIndex || 0)}</code>${arm.mainPathOrder != null ? `<code>mainPath #${Number(arm.mainPathOrder) + 1}</code>` : ""}${(arm.successorQuestIds || []).map((id) => `<code>&rarr; ${esc(id)}</code>`).join(" ")}</p>
+        ${conditions.length ? `<p><strong>${esc(t("questForkObjectiveConditions"))}:</strong>${conditions.map((name) => `<code>${esc(name)}</code>`).join(" ")}</p>` : ""}
+        ${guard ? `<div class="mp-quest-fork-guard"><strong>${esc(t("questForkGuardedArm"))}:</strong>${renderConditionTree(guard)}</div>` : ""}
+      </section>`;
+    };
+    return `<details class="mp-mission-story mp-quest-topology" data-weight="strong" open>
+      <summary>${esc(t("questForkStructure"))} <span>${forks.length}</span></summary>
+      <p>${esc(t("questForkStructureHint"))}</p>
+      <div class="mp-quest-fork-list">${forks.map((fork) => `<details class="mp-quest-fork-detail"><summary><code>${esc(fork.questId || "?")}</code><i>&rarr;</i>${(fork.successorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}<b>${esc(structureLabel(fork.structure))}</b><b>${esc(outcomeLabel(fork.outcome))}</b></summary>
+        <div class="mp-quest-fork-arms">${(fork.arms || []).map(armHtml).join("")}</div>
+        ${fork.firstCommonDescendant ? `<p><strong>${esc(t("questForkReconverges"))}:</strong><code>${esc(fork.firstCommonDescendant.questId || "?")}</code>${Object.entries(fork.firstCommonDescendant.distanceByArm || {}).map(([id, distance]) => `<code>${esc(id)} +${Number(distance)}</code>`).join(" ")}</p>` : ""}
+        <small>${esc(t("questForkServerPolicy"))}</small>
+        ${(fork.relatedOriginalFiles || []).map((related) => `<small><strong>${esc(t("relatedOriginalFile"))}:</strong> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("")}
+        <small>${esc(fork.evidenceBoundary || topology.evidenceBoundary || "")}</small>
+      </details>`).join("")}</div>
+    </details>`;
+  }
+
   function storyOrderHtml() {
     const order = state.mission?.storyOrder;
     if (!order?.summary) return "";
@@ -4023,7 +4098,7 @@
   // keeps its own summary, hints and boundary notes verbatim, and the order
   // inside each band is the order it had in the flat stack.
   const SUMMARY_SECTIONS = [
-    ["structure", "summarySectionStructure", () => [missionGraphHtml(), storyOrderHtml(), missionPropertiesHtml()]],
+    ["structure", "summarySectionStructure", () => [missionGraphHtml(), questTopologyHtml(), storyOrderHtml(), missionPropertiesHtml()]],
     ["runtime", "summarySectionRuntime", () => [nativeRuntimeBindingsHtml(), runtimeTraceHtml()]],
     ["story", "summarySectionStory", () => [
       missionStoryConnectionsHtml(),

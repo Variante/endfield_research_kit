@@ -17,7 +17,7 @@ import re
 import subprocess
 import sys
 import time
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -263,7 +263,7 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # original TextAssets without using their names as mission/order evidence. v32
 # names the complete ActionBase surface through one hash-validated formatter
 # table recovered from the installed binary.
-SCHEMA_VERSION = 33
+SCHEMA_VERSION = 34
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -8830,6 +8830,204 @@ def action_rows(mission: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     return dict(output)
 
 
+def _quest_reachability_distances(
+    start: str,
+    successors: dict[str, list[str]],
+) -> dict[str, int]:
+    """Return shortest authored-predecessor distances from one quest arm."""
+    distances = {start: 0}
+    pending = deque([start])
+    while pending:
+        current = pending.popleft()
+        for target in successors.get(current, []):
+            if target in distances:
+                continue
+            distances[target] = distances[current] + 1
+            pending.append(target)
+    return distances
+
+
+def build_quest_fork_semantics(
+    nodes: list[dict[str, Any]],
+    source_path: Path,
+) -> dict[str, Any]:
+    """Describe every authored quest fan-out without guessing activation policy.
+
+    This is intentionally data-driven. It derives arm roles, typed completion
+    conditions, terminal status, and first common descendants from normalized
+    MissionRuntime nodes. The original MissionRuntime file is attached to each
+    fork. Main-path membership and flowIndex are descriptive fields only; the
+    installed binary audit remains the authority that neither selects arms.
+    """
+    nodes_by_id = {
+        str(node.get("id") or ""): node
+        for node in nodes
+        if isinstance(node, dict) and node.get("id")
+    }
+    successors = {
+        quest_id: [
+            str(target)
+            for target in node.get("successors") or []
+            if str(target)
+        ]
+        for quest_id, node in nodes_by_id.items()
+    }
+    source_file = repo_path(source_path)
+    source_hash = sha256_path(source_path) if source_path.is_file() else ""
+    related_files = [{
+        "kind": "mission_runtime",
+        "sourceFile": source_file,
+        "relationship": "authored_quest_fork_topology",
+        "sha256": source_hash,
+    }]
+    failures: list[dict[str, Any]] = []
+
+    def fail(
+        gate: str,
+        quest_id: str,
+        expected: Any,
+        actual: Any,
+    ) -> None:
+        failures.append({
+            "validator": "quest_fork_semantics",
+            "gate": gate,
+            "mission": source_path.stem,
+            "questId": quest_id,
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": {"missionRuntimeSha256": source_hash},
+        })
+
+    forks: list[dict[str, Any]] = []
+    for quest_id in sorted(nodes_by_id, key=natural_quest_key):
+        arm_ids = successors.get(quest_id, [])
+        if len(arm_ids) < 2:
+            continue
+        missing = [arm_id for arm_id in arm_ids if arm_id not in nodes_by_id]
+        if missing:
+            fail("allForkArmsResolve", quest_id, [], missing)
+            continue
+        arm_distances = [
+            _quest_reachability_distances(arm_id, successors)
+            for arm_id in arm_ids
+        ]
+        common_descendants = (
+            set.intersection(*(set(row) for row in arm_distances))
+            if arm_distances else set()
+        )
+        first_common = None
+        if common_descendants:
+            common_id = min(
+                common_descendants,
+                key=lambda candidate: (
+                    max(row[candidate] for row in arm_distances),
+                    sum(row[candidate] for row in arm_distances),
+                    natural_quest_key(candidate),
+                ),
+            )
+            first_common = {
+                "questId": common_id,
+                "distanceByArm": {
+                    arm_id: arm_distances[index][common_id]
+                    for index, arm_id in enumerate(arm_ids)
+                },
+                "predecessorQuestIds": list(
+                    nodes_by_id[common_id].get("prev") or []
+                ),
+            }
+
+        arms: list[dict[str, Any]] = []
+        for arm_id in arm_ids:
+            node = nodes_by_id[arm_id]
+            failed_condition = node.get("failedCondition") or None
+            objective_condition_types = sorted({
+                str(condition_type)
+                for objective in node.get("objectives") or []
+                if isinstance(objective, dict)
+                for condition_type in objective.get("conditionTypes") or []
+                if str(condition_type)
+            })
+            arms.append({
+                "questId": arm_id,
+                "role": "main_path" if node.get("mainPath") else "auxiliary",
+                "mainPathOrder": node.get("mainPathOrder"),
+                "flowIndex": node.get("flowIndex", 0),
+                "flowIndexRole": "display_sort_only",
+                "questType": node.get("questType"),
+                "showMode": node.get("showMode"),
+                "objectiveConditionTypes": objective_condition_types,
+                "failedCondition": failed_condition,
+                "terminal": not bool(successors.get(arm_id)),
+                "successorQuestIds": successors.get(arm_id, []),
+            })
+
+        main_path_count = sum(arm["role"] == "main_path" for arm in arms)
+        if main_path_count == 1:
+            structure = "main_path_plus_auxiliary"
+        elif main_path_count == 0:
+            structure = "all_auxiliary"
+        elif main_path_count == len(arms):
+            structure = "multiple_main_path_successors"
+        else:
+            structure = "multiple_main_path_plus_auxiliary"
+        terminal_count = sum(bool(arm["terminal"]) for arm in arms)
+        if first_common:
+            outcome = "reconverging"
+        elif terminal_count == len(arms):
+            outcome = "divergent_terminals"
+        elif terminal_count:
+            outcome = "mixed_terminal_and_continuing"
+        else:
+            outcome = "open_divergence"
+        forks.append({
+            "questId": quest_id,
+            "successorQuestIds": arm_ids,
+            "source": "MissionRuntimeAsset.questDic[*].prevQuestIdList",
+            "structure": structure,
+            "outcome": outcome,
+            "arms": arms,
+            "guardedArmCount": sum(bool(arm["failedCondition"]) for arm in arms),
+            "firstCommonDescendant": first_common,
+            "activationPolicy": "server_selected_unresolved",
+            "relatedOriginalFiles": related_files,
+            "evidenceBoundary": (
+                "Main-path membership, predecessor topology, typed completion "
+                "conditions, and reconvergence are authored facts. They do not "
+                "prove that arms start in parallel or are mutually exclusive; "
+                "flowIndex is display sorting in the current binary."
+            ),
+        })
+
+    expected_forks = sum(
+        len(node.get("successors") or []) > 1 for node in nodes_by_id.values()
+    )
+    if len(forks) != expected_forks:
+        fail("allForksClassified", "", expected_forks, len(forks))
+    validation = {
+        "status": "validation_failed" if failures else "validated",
+        "failures": failures,
+    }
+    counts = Counter(fork["structure"] for fork in forks)
+    outcomes = Counter(fork["outcome"] for fork in forks)
+    return {
+        "schema": "missionQuestForkSemantics.v1",
+        "forks": forks,
+        "counts": {
+            "forks": len(forks),
+            "guardedForks": sum(bool(fork["guardedArmCount"]) for fork in forks),
+            "structures": dict(sorted(counts.items())),
+            "outcomes": dict(sorted(outcomes.items())),
+        },
+        "validation": validation,
+        "evidenceBoundary": (
+            "This graph describes original MissionRuntime structure and exact "
+            "arm-local conditions. Server-only activation and exclusivity remain "
+            "unknown unless an explicit typed selector is present."
+        ),
+    }
+
+
 def build_mission(
     mission: dict[str, Any],
     source_path: Path,
@@ -8985,6 +9183,17 @@ def build_mission(
                     edge["externalSource"] = True
                 edges.append(edge)
 
+    quest_topology = build_quest_fork_semantics(nodes, source_path)
+    if quest_topology["validation"]["status"] != "validated":
+        first = quest_topology["validation"]["failures"][0]
+        raise RuntimeError(
+            "validator=quest_fork_semantics "
+            f"gate={first['gate']} mission={first['mission']} "
+            f"quest={first.get('questId') or '-'} "
+            f"expected={first['expected']!r} actual={first['actual']!r} "
+            f"source={first['sourceFile']} "
+            f"sourceHashes={first['sourceHashes']!r}"
+        )
     roots = [node["id"] for node in nodes if not node["prev"]]
     fanouts = [node["id"] for node in nodes if len(node["successors"]) > 1]
     multi_prev = [node["id"] for node in nodes if len(node["prev"]) > 1]
@@ -9015,6 +9224,7 @@ def build_mission(
         # relations are co-active or mutually exclusive and must not be read as
         # ordering. See build_mission_dependency_graph.py.
         "missionGraph": mission_graph_entry or {"upstream": {}, "downstream": {}},
+        "questTopology": quest_topology,
         # Ambient envTalk lines configured on an NPC proxy that a quest of this
         # mission tracks. Navigation/configuration context only -- never
         # playback ownership. See build_envtalk_attachment.py.
@@ -9040,6 +9250,10 @@ def build_mission(
         "serverPlaceholderCount": server_placeholder_count,
         "serverPlaceholderQuestCount": server_placeholder_quest_count,
         "failureConditionCount": failure_count,
+        "questForkSemanticCount": quest_topology["counts"]["forks"],
+        "questForkGuardedCount": quest_topology["counts"]["guardedForks"],
+        "questForkStructureCounts": quest_topology["counts"]["structures"],
+        "questForkOutcomeCounts": quest_topology["counts"]["outcomes"],
         "externalDependencyCount": external_dependency_count,
         "submitItemConditionCount": submit_item_count,
         "submitItemQuestCount": submit_item_quest_count,
@@ -9364,6 +9578,35 @@ def build_all(
             "missionsWithProperties": sum(
                 1 for row in summaries if row["missionPropertyCount"]
             ),
+            "questForkSemantics": sum(
+                row["questForkSemanticCount"] for row in summaries
+            ),
+            "questForkGuarded": sum(
+                row["questForkGuardedCount"] for row in summaries
+            ),
+            "questForkMainPathPlusAuxiliary": sum(
+                row["questForkStructureCounts"].get(
+                    "main_path_plus_auxiliary", 0
+                )
+                for row in summaries
+            ),
+            "questForkAllAuxiliary": sum(
+                row["questForkStructureCounts"].get("all_auxiliary", 0)
+                for row in summaries
+            ),
+            "questForkMultipleMainPath": sum(
+                row["questForkStructureCounts"].get(
+                    "multiple_main_path_successors", 0
+                )
+                + row["questForkStructureCounts"].get(
+                    "multiple_main_path_plus_auxiliary", 0
+                )
+                for row in summaries
+            ),
+            "questForkReconverging": sum(
+                row["questForkOutcomeCounts"].get("reconverging", 0)
+                for row in summaries
+            ),
             "stateUpdateApplicationCandidates": state_update_contract[
                 "candidateCount"
             ],
@@ -9461,12 +9704,55 @@ def publish_source_story_partial_order(
         "relatedOriginalFiles": state_contract.get("relatedOriginalFiles") or [],
         "validation": quest_start.get("validation") or {},
     }
+    semantic_forks_by_id: dict[str, dict[str, Any]] = {}
+    for mission_summary in index.get("missions") or []:
+        if not isinstance(mission_summary, dict):
+            continue
+        semantic_path = output_root / str(mission_summary.get("file") or "")
+        semantic_payload = (
+            read_json(semantic_path) if semantic_path.is_file() else {}
+        )
+        for fork in (
+            (semantic_payload.get("questTopology") or {}).get("forks") or []
+        ):
+            if not isinstance(fork, dict) or not fork.get("questId"):
+                continue
+            quest_id = str(fork["questId"])
+            existing = semantic_forks_by_id.get(quest_id)
+            if existing and existing != fork:
+                raise RuntimeError(
+                    "validator=quest_fork_semantics_publication "
+                    "gate=globallyUniqueQuestForkId "
+                    f"quest={quest_id} expected=unique actual=duplicate "
+                    f"source={semantic_path}"
+                )
+            semantic_forks_by_id[quest_id] = fork
     for row in report.get("missions") or []:
         if not isinstance(row, dict):
             continue
         branches = row.get("branches") or {}
         if branches.get("questForks"):
             branches["questForkAuthority"] = quest_fork_authority
+            missing_semantics = [
+                str(fork.get("questId") or "")
+                for fork in branches["questForks"]
+                if isinstance(fork, dict)
+                and str(fork.get("questId") or "") not in semantic_forks_by_id
+            ]
+            if missing_semantics:
+                raise RuntimeError(
+                    "validator=quest_fork_semantics_publication "
+                    "gate=allStoryOrderForksHaveSemantics "
+                    f"mission={row.get('mission') or '-'} "
+                    "expected=[] "
+                    f"actual={missing_semantics!r} "
+                    f"source={output_root / 'missions'}"
+                )
+            branches["questForks"] = [
+                semantic_forks_by_id[str(fork.get("questId") or "")]
+                for fork in branches["questForks"]
+                if isinstance(fork, dict)
+            ]
     report_root.mkdir(parents=True, exist_ok=True)
     report_json = report_root / f"source_story_partial_order_{language}.json"
     report_markdown = report_root / f"source_story_partial_order_{language}.md"
