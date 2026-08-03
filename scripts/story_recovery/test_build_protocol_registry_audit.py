@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v7",
+                "_schema": "endfieldProtocolRegistryAudit.v8",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -37,6 +37,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     "questTopologyFieldConsumers": {
                         "validation": {"status": "validated", "failures": []},
                     },
+                },
+                "levelScriptStartPolicy": {
+                    "validation": {"status": "validated", "failures": []},
                 },
             }), encoding="utf-8")
 
@@ -52,6 +55,141 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             )
             self.assertFalse(current)
             self.assertIn("metadataSha256 differs", reason)
+
+    def test_levelscript_start_policy_observation_accepts_generic_native_flow(self):
+        observation = {
+            "enumValues": {
+                "Beyond.GEnums.LevelScriptState": {"Active": 3},
+                "Beyond.Gameplay.LevelScriptStartType": {
+                    "ByEnterStartShape": 0,
+                    "Manual": 1,
+                    "SameWithActive": 2,
+                    "Never": 3,
+                },
+                "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState": {
+                    "PreStart": 22,
+                },
+            },
+            "methods": {
+                name: {"mappingStatus": "mapped_unique"}
+                for name in (
+                    "get_state",
+                    "get_isDone",
+                    "get_startType",
+                    "UpdateWithinStartArea",
+                    "set_runtimeState",
+                    "UpdateRuntimeState",
+                )
+            },
+            "activeStateGate": {
+                "comparedValue": 3,
+                "branchTargetIsDoneCheck": True,
+            },
+            "doneGate": {
+                "doneResultTested": True,
+                "notDoneFallsThroughToStartPolicy": True,
+            },
+            "startTypeGates": {
+                "Never": {
+                    "comparedValue": 3,
+                    "branchesAwayFromPreStart": True,
+                },
+                "ByEnterStartShape": {
+                    "comparedValue": 0,
+                    "branchTargetIsStartAreaCheck": True,
+                },
+                "SameWithActive": {
+                    "comparedValue": 2,
+                    "branchTargetIsCommonPreStart": True,
+                },
+            },
+            "startAreaGate": {
+                "resultTested": True,
+                "trueFallsThroughToCommonPreStart": True,
+            },
+            "preStartTransition": {
+                "runtimeStateValue": 22,
+                "setterReceivesValue": True,
+            },
+        }
+
+        result = audit.validate_levelscript_start_policy_observation(
+            observation,
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "a" * 64},
+        )
+
+        self.assertEqual(result, {"status": "validated", "failures": []})
+
+    def test_levelscript_start_policy_observation_reports_branch_drift(self):
+        observation = {
+            "enumValues": {
+                "Beyond.GEnums.LevelScriptState": {"Active": 3},
+                "Beyond.Gameplay.LevelScriptStartType": {
+                    "ByEnterStartShape": 0,
+                    "Manual": 1,
+                    "SameWithActive": 2,
+                    "Never": 3,
+                },
+                "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState": {
+                    "PreStart": 22,
+                },
+            },
+            "methods": {
+                name: {"mappingStatus": "mapped_unique"}
+                for name in (
+                    "get_state",
+                    "get_isDone",
+                    "get_startType",
+                    "UpdateWithinStartArea",
+                    "set_runtimeState",
+                    "UpdateRuntimeState",
+                )
+            },
+            "activeStateGate": {
+                "comparedValue": 3,
+                "branchTargetIsDoneCheck": True,
+            },
+            "doneGate": {
+                "doneResultTested": True,
+                "notDoneFallsThroughToStartPolicy": True,
+            },
+            "startTypeGates": {
+                "Never": {
+                    "comparedValue": 3,
+                    "branchesAwayFromPreStart": True,
+                },
+                "ByEnterStartShape": {
+                    "comparedValue": 0,
+                    "branchTargetIsStartAreaCheck": True,
+                },
+                "SameWithActive": {
+                    "comparedValue": 2,
+                    "branchTargetIsCommonPreStart": False,
+                },
+            },
+            "startAreaGate": {
+                "resultTested": True,
+                "trueFallsThroughToCommonPreStart": True,
+            },
+            "preStartTransition": {
+                "runtimeStateValue": 22,
+                "setterReceivesValue": False,
+            },
+        }
+
+        result = audit.validate_levelscript_start_policy_observation(
+            observation,
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "b" * 64},
+        )
+
+        self.assertEqual(result["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in result["failures"]],
+            ["SameWithActiveGate", "commonPreStartTransition"],
+        )
+        self.assertEqual(result["failures"][0]["sourceFile"], "GameAssembly.dll")
 
     def test_compressed_signed_integer_decoding(self):
         self.assertEqual(audit.read_compressed_int32(bytes([0x00]), 0), (0, 1))

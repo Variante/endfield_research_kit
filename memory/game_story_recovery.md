@@ -1446,9 +1446,21 @@ token census incorrectly included Story-only mission shells; restricting it to
 actual original MissionRuntime filenames leaves one legitimate token-bearing
 LevelScript, already bound through SubGame, and zero non-SubGame candidates.
 Mission Pipeline displays these contracts, source hashes, and boundaries.
-The remaining three non-manual `SameWithActive` receiver gaps still need a
-separate binary activation-semantic contract; task authority must not be used
-as a substitute owner or chronology edge.
+
+`SameWithActive` is now recovered through one general current-binary contract,
+not three receiver-specific rules. Metadata discovers the exact
+`LevelScriptRuntime` methods and enum constants; decoded control flow proves
+that public state `Active` (3), when the script is not done, evaluates the
+start policy, and `SameWithActive` (2) branches directly to the same internal
+`PreStart` (22) transition reached after a successful start-area check. All
+10 matching receiver scripts and six Story keys carry the hash-validated
+contract. The three formerly static-unresolved taskless scripts are now
+classified as `same_with_active_binary_active_gate`: `17500000001`,
+`13000000035`, and `8700000004`. This closes how those scripts start once
+active, but not which mission or server transition made them active, and it
+adds no cross-Story order. The highest-value remaining activation gap is the
+55 manual-start receivers with no serialized static carrier; task authority,
+OCR, manual order, and native registration remain non-ownership evidence.
 
 ## Evidence rules
 
