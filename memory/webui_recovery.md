@@ -62,6 +62,9 @@ their inputs.
 - Reset returns to Story sort while preserving expanded mission groups.
 - Disabling debug while a hidden page is active returns to a visible page.
 - Mission Pipeline links show evidence-typed trigger chains.
+- Exact typed cinematic actions show their original-binary producer method and
+  both the decoded original-data file and binary audit file; the provenance
+  header reports native producer/action and mission-route attachment counts.
 - BlackBox recovery cards expose exact SubGame/bound-LevelScript context,
   separate authored task lanes, complete decoded task/condition topology,
   condition formulas, objective display keys, exact parent playback, and the

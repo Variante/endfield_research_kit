@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "cinematicQueueRuntimeAudit.v1",
+  "schemaVersion": "cinematicQueueRuntimeAudit.v2",
   "source": {
     "gameAssembly": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
@@ -28,7 +28,10 @@
     "payloadTypeCount": 7,
     "nativeDispatcherCount": 7,
     "mappedNativeDispatcherCount": 7,
-    "enqueueEdgeCount": 1
+    "enqueueEdgeCount": 10,
+    "nativeProducerCount": 10,
+    "typedActionProducerRouteCount": 16,
+    "typedActionProducerTypeCount": 16
   },
   "contract": {
     "queueBase": {
@@ -1589,6 +1592,4500 @@
       "ShowUIReadingPopPanelByHandle",
       "StartRemoteCommByHandle"
     ],
+    "enqueueSink": {
+      "type": "Beyond.Gameplay.Core.CinematicQueueManager",
+      "method": "AddCinematicQueueItem",
+      "methodIndex": 60635,
+      "token": "0x0600ecdc",
+      "parameters": [
+        {
+          "index": 47166,
+          "name": "item",
+          "typeIndex": 133794,
+          "typeName": "Beyond.Gameplay.Core.CinematicQueueItemDataBase",
+          "token": "0x0800b7d5"
+        },
+        {
+          "index": 47167,
+          "name": "handle",
+          "typeIndex": 115067,
+          "typeName": "<type-index:115067>",
+          "token": "0x0800b7d6"
+        }
+      ],
+      "mappingStatus": "mapped",
+      "va": "0x186dae0f4",
+      "rva": "0x6dae0f4",
+      "fileOffset": "0x6dac6f4",
+      "bodyEvidence": {
+        "instructionCount": 90,
+        "firstRetOffset": 367,
+        "fieldLikeOrigins": [
+          {
+            "origin": "param:handle",
+            "count": 3
+          },
+          {
+            "origin": "this+0x70",
+            "count": 2
+          },
+          {
+            "origin": "param:item+0x10",
+            "count": 2
+          },
+          {
+            "origin": "this+0x70+0x18",
+            "count": 2
+          },
+          {
+            "origin": "this+0x70+0x14",
+            "count": 1
+          },
+          {
+            "origin": "this+0x70+0xef0",
+            "count": 1
+          }
+        ],
+        "fieldAccesses": [
+          {
+            "offset": 132,
+            "va": "0x186dae178",
+            "text": "and [rdi], 0x0",
+            "bytes": "48 83 27 00",
+            "operand": "[rdi]",
+            "origin": "param:handle",
+            "kind": "read"
+          },
+          {
+            "offset": 149,
+            "va": "0x186dae189",
+            "text": "mov eax, [rsi+0x70]",
+            "bytes": "8b 46 70",
+            "operand": "[rsi+0x70]",
+            "origin": "this+0x70",
+            "kind": "read"
+          },
+          {
+            "offset": 154,
+            "va": "0x186dae18e",
+            "text": "mov [rsi+0x70], eax",
+            "bytes": "89 46 70",
+            "operand": "[rsi+0x70]",
+            "origin": "this+0x70",
+            "kind": "write"
+          },
+          {
+            "offset": 157,
+            "va": "0x186dae191",
+            "text": "mov [rbx+0x10], eax",
+            "bytes": "89 43 10",
+            "operand": "[rbx+0x10]",
+            "origin": "param:item+0x10",
+            "kind": "write"
+          },
+          {
+            "offset": 184,
+            "va": "0x186dae1ac",
+            "text": "mov ecx, [rbx+0x10]",
+            "bytes": "8b 4b 10",
+            "operand": "[rbx+0x10]",
+            "origin": "param:item+0x10",
+            "kind": "read"
+          },
+          {
+            "offset": 187,
+            "va": "0x186dae1af",
+            "text": "mov [rax+0x14], ecx",
+            "bytes": "89 48 14",
+            "operand": "[rax+0x14]",
+            "origin": "this+0x70+0x14",
+            "kind": "write"
+          },
+          {
+            "offset": 190,
+            "va": "0x186dae1b2",
+            "text": "lea rcx, [rax+0x18]",
+            "bytes": "48 8d 48 18",
+            "operand": "[rax+0x18]",
+            "origin": "this+0x70+0x18",
+            "kind": "read"
+          },
+          {
+            "offset": 194,
+            "va": "0x186dae1b6",
+            "text": "mov [rax+0x18], rbx",
+            "bytes": "48 89 58 18",
+            "operand": "[rax+0x18]",
+            "origin": "this+0x70+0x18",
+            "kind": "write"
+          },
+          {
+            "offset": 206,
+            "va": "0x186dae1c2",
+            "text": "mov [rdi], r9",
+            "bytes": "4c 89 0f",
+            "operand": "[rdi]",
+            "origin": "param:handle",
+            "kind": "write"
+          },
+          {
+            "offset": 238,
+            "va": "0x186dae1e2",
+            "text": "mov ebx, [rax+0xef0]",
+            "bytes": "8b 98 f0 0e 00 00",
+            "operand": "[rax+0xef0]",
+            "origin": "this+0x70+0xef0",
+            "kind": "read"
+          },
+          {
+            "offset": 244,
+            "va": "0x186dae1e8",
+            "text": "mov rdi, [rdi]",
+            "bytes": "48 8b 3f",
+            "operand": "[rdi]",
+            "origin": "param:handle",
+            "kind": "read"
+          }
+        ],
+        "paramFlow": {
+          "param:handle": [
+            {
+              "offset": 22,
+              "va": "0x186dae10a",
+              "text": "mov rdi, r8",
+              "bytes": "49 8b f8"
+            },
+            {
+              "offset": 132,
+              "va": "0x186dae178",
+              "text": "and [rdi], 0x0",
+              "bytes": "48 83 27 00"
+            },
+            {
+              "offset": 136,
+              "va": "0x186dae17c",
+              "text": "mov rcx, rdi",
+              "bytes": "48 8b cf"
+            },
+            {
+              "offset": 203,
+              "va": "0x186dae1bf",
+              "text": "mov rcx, rdi",
+              "bytes": "48 8b cf"
+            },
+            {
+              "offset": 206,
+              "va": "0x186dae1c2",
+              "text": "mov [rdi], r9",
+              "bytes": "4c 89 0f"
+            },
+            {
+              "offset": 244,
+              "va": "0x186dae1e8",
+              "text": "mov rdi, [rdi]",
+              "bytes": "48 8b 3f"
+            },
+            {
+              "offset": 259,
+              "va": "0x186dae1f7",
+              "text": "mov rdx, rdi",
+              "bytes": "48 8b d7"
+            },
+            {
+              "offset": 335,
+              "va": "0x186dae243",
+              "text": "mov r9, rdi",
+              "bytes": "4c 8b cf"
+            }
+          ],
+          "param:item": [
+            {
+              "offset": 25,
+              "va": "0x186dae10d",
+              "text": "mov rbx, rdx",
+              "bytes": "48 8b da"
+            },
+            {
+              "offset": 144,
+              "va": "0x186dae184",
+              "text": "test rbx, rbx",
+              "bytes": "48 85 db"
+            },
+            {
+              "offset": 157,
+              "va": "0x186dae191",
+              "text": "mov [rbx+0x10], eax",
+              "bytes": "89 43 10"
+            },
+            {
+              "offset": 184,
+              "va": "0x186dae1ac",
+              "text": "mov ecx, [rbx+0x10]",
+              "bytes": "8b 4b 10"
+            },
+            {
+              "offset": 194,
+              "va": "0x186dae1b6",
+              "text": "mov [rax+0x18], rbx",
+              "bytes": "48 89 58 18"
+            }
+          ],
+          "this": [
+            {
+              "offset": 28,
+              "va": "0x186dae110",
+              "text": "mov rsi, rcx",
+              "bytes": "48 8b f1"
+            },
+            {
+              "offset": 149,
+              "va": "0x186dae189",
+              "text": "mov eax, [rsi+0x70]",
+              "bytes": "8b 46 70"
+            },
+            {
+              "offset": 154,
+              "va": "0x186dae18e",
+              "text": "mov [rsi+0x70], eax",
+              "bytes": "89 46 70"
+            },
+            {
+              "offset": 341,
+              "va": "0x186dae249",
+              "text": "mov rdx, rsi",
+              "bytes": "48 8b d6"
+            }
+          ],
+          "this+0x70": [
+            {
+              "offset": 149,
+              "va": "0x186dae189",
+              "text": "mov eax, [rsi+0x70]",
+              "bytes": "8b 46 70"
+            },
+            {
+              "offset": 152,
+              "va": "0x186dae18c",
+              "text": "inc rax",
+              "bytes": "ff c0"
+            },
+            {
+              "offset": 154,
+              "va": "0x186dae18e",
+              "text": "mov [rsi+0x70], eax",
+              "bytes": "89 46 70"
+            },
+            {
+              "offset": 157,
+              "va": "0x186dae191",
+              "text": "mov [rbx+0x10], eax",
+              "bytes": "89 43 10"
+            },
+            {
+              "offset": 172,
+              "va": "0x186dae1a0",
+              "text": "mov r9, rax",
+              "bytes": "4c 8b c8"
+            },
+            {
+              "offset": 175,
+              "va": "0x186dae1a3",
+              "text": "test rax, rax",
+              "bytes": "48 85 c0"
+            },
+            {
+              "offset": 187,
+              "va": "0x186dae1af",
+              "text": "mov [rax+0x14], ecx",
+              "bytes": "89 48 14"
+            },
+            {
+              "offset": 190,
+              "va": "0x186dae1b2",
+              "text": "lea rcx, [rax+0x18]",
+              "bytes": "48 8d 48 18"
+            },
+            {
+              "offset": 194,
+              "va": "0x186dae1b6",
+              "text": "mov [rax+0x18], rbx",
+              "bytes": "48 89 58 18"
+            },
+            {
+              "offset": 206,
+              "va": "0x186dae1c2",
+              "text": "mov [rdi], r9",
+              "bytes": "4c 89 0f"
+            },
+            {
+              "offset": 226,
+              "va": "0x186dae1d6",
+              "text": "test rax, rax",
+              "bytes": "48 85 c0"
+            },
+            {
+              "offset": 238,
+              "va": "0x186dae1e2",
+              "text": "mov ebx, [rax+0xef0]",
+              "bytes": "8b 98 f0 0e 00 00"
+            }
+          ],
+          "param:item+0x10": [
+            {
+              "offset": 157,
+              "va": "0x186dae191",
+              "text": "mov [rbx+0x10], eax",
+              "bytes": "89 43 10"
+            },
+            {
+              "offset": 184,
+              "va": "0x186dae1ac",
+              "text": "mov ecx, [rbx+0x10]",
+              "bytes": "8b 4b 10"
+            },
+            {
+              "offset": 187,
+              "va": "0x186dae1af",
+              "text": "mov [rax+0x14], ecx",
+              "bytes": "89 48 14"
+            }
+          ],
+          "this+0x70+0x14": [
+            {
+              "offset": 187,
+              "va": "0x186dae1af",
+              "text": "mov [rax+0x14], ecx",
+              "bytes": "89 48 14"
+            }
+          ],
+          "this+0x70+0x18": [
+            {
+              "offset": 190,
+              "va": "0x186dae1b2",
+              "text": "lea rcx, [rax+0x18]",
+              "bytes": "48 8d 48 18"
+            },
+            {
+              "offset": 194,
+              "va": "0x186dae1b6",
+              "text": "mov [rax+0x18], rbx",
+              "bytes": "48 89 58 18"
+            }
+          ],
+          "this+0x70+0xef0": [
+            {
+              "offset": 238,
+              "va": "0x186dae1e2",
+              "text": "mov ebx, [rax+0xef0]",
+              "bytes": "8b 98 f0 0e 00 00"
+            },
+            {
+              "offset": 262,
+              "va": "0x186dae1fa",
+              "text": "mov ecx, ebx",
+              "bytes": "8b cb"
+            },
+            {
+              "offset": 338,
+              "va": "0x186dae246",
+              "text": "mov r8, rbx",
+              "bytes": "4c 8b c3"
+            }
+          ]
+        },
+        "calls": [
+          {
+            "offset": 40,
+            "targetVa": "0x180035ed0",
+            "resolved": []
+          },
+          {
+            "offset": 52,
+            "targetVa": "0x180035ed0",
+            "resolved": []
+          },
+          {
+            "offset": 64,
+            "targetVa": "0x180035ed0",
+            "resolved": []
+          },
+          {
+            "offset": 76,
+            "targetVa": "0x180035ed0",
+            "resolved": []
+          },
+          {
+            "offset": 88,
+            "targetVa": "0x180035ed0",
+            "resolved": []
+          },
+          {
+            "offset": 100,
+            "targetVa": "0x180035ed0",
+            "resolved": []
+          },
+          {
+            "offset": 119,
+            "targetVa": "0x182efe6c0",
+            "resolved": [
+              {
+                "methodIndex": 98314,
+                "type": "IFix.WrappersManagerImpl",
+                "method": "IsPatched",
+                "token": "0x0601800b"
+              }
+            ]
+          },
+          {
+            "offset": 139,
+            "targetVa": "0x18002d1b0",
+            "resolved": []
+          },
+          {
+            "offset": 167,
+            "targetVa": "0x1800368d0",
+            "resolved": []
+          },
+          {
+            "offset": 198,
+            "targetVa": "0x18002d1b0",
+            "resolved": []
+          },
+          {
+            "offset": 209,
+            "targetVa": "0x18002d1b0",
+            "resolved": []
+          },
+          {
+            "offset": 221,
+            "targetVa": "0x1832f1d80",
+            "resolved": []
+          },
+          {
+            "offset": 247,
+            "targetVa": "0x1800036a0",
+            "resolved": []
+          },
+          {
+            "offset": 264,
+            "targetVa": "0x183194740",
+            "resolved": []
+          },
+          {
+            "offset": 280,
+            "targetVa": "0x1800036a0",
+            "resolved": []
+          },
+          {
+            "offset": 297,
+            "targetVa": "0x18374c520",
+            "resolved": [
+              {
+                "methodIndex": 483141,
+                "type": "Beyond.DLogger",
+                "method": "LogError",
+                "token": "0x0600008f"
+              }
+            ]
+          },
+          {
+            "offset": 313,
+            "targetVa": "0x1871c7e18",
+            "resolved": [
+              {
+                "methodIndex": 98313,
+                "type": "IFix.WrappersManagerImpl",
+                "method": "GetPatch",
+                "token": "0x0601800a"
+              }
+            ]
+          },
+          {
+            "offset": 323,
+            "targetVa": "0x1800d8260",
+            "resolved": []
+          },
+          {
+            "offset": 347,
+            "targetVa": "0x181f5e730",
+            "resolved": [
+              {
+                "methodIndex": 88869,
+                "type": "IFix.ILFixDynamicMethodWrapper",
+                "method": "__Gen_Wrap_554",
+                "token": "0x06015b26"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "nativeProducers": [
+      {
+        "type": "Beyond.Gameplay.Actions.GameAction",
+        "method": "AddCinematicItem2Queue",
+        "methodIndex": 32842,
+        "token": "0x0600804b",
+        "parameters": [
+          {
+            "index": 29392,
+            "name": "item",
+            "typeIndex": 133794,
+            "typeName": "Beyond.Gameplay.Core.CinematicQueueItemDataBase",
+            "token": "0x080072ad"
+          },
+          {
+            "index": 29393,
+            "name": "handle",
+            "typeIndex": 115067,
+            "typeName": "<type-index:115067>",
+            "token": "0x080072ae"
+          }
+        ],
+        "mappingStatus": "mapped",
+        "va": "0x1875dcf58",
+        "rva": "0x75dcf58",
+        "fileOffset": "0x75db558",
+        "bodyEvidence": {
+          "instructionCount": 45,
+          "firstRetOffset": 161,
+          "fieldLikeOrigins": {},
+          "fieldAccesses": [],
+          "paramFlow": {
+            "param:handle": [
+              {
+                "offset": 17,
+                "va": "0x1875dcf69",
+                "text": "mov rbx, rdx",
+                "bytes": "48 8b da"
+              },
+              {
+                "offset": 98,
+                "va": "0x1875dcfba",
+                "text": "mov r8, rbx",
+                "bytes": "4c 8b c3"
+              },
+              {
+                "offset": 137,
+                "va": "0x1875dcfe1",
+                "text": "mov r8, rbx",
+                "bytes": "4c 8b c3"
+              }
+            ],
+            "param:item": [
+              {
+                "offset": 20,
+                "va": "0x1875dcf6c",
+                "text": "mov rdi, rcx",
+                "bytes": "48 8b f9"
+              },
+              {
+                "offset": 101,
+                "va": "0x1875dcfbd",
+                "text": "mov rdx, rdi",
+                "bytes": "48 8b d7"
+              },
+              {
+                "offset": 140,
+                "va": "0x1875dcfe4",
+                "text": "mov rdx, rdi",
+                "bytes": "48 8b d7"
+              }
+            ]
+          },
+          "calls": [
+            {
+              "offset": 32,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 51,
+              "targetVa": "0x182efe6c0",
+              "resolved": [
+                {
+                  "methodIndex": 98314,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "IsPatched",
+                  "token": "0x0601800b"
+                }
+              ]
+            },
+            {
+              "offset": 67,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 104,
+              "targetVa": "0x186dae0f4",
+              "resolved": [
+                {
+                  "methodIndex": 60635,
+                  "type": "Beyond.Gameplay.Core.CinematicQueueManager",
+                  "method": "AddCinematicQueueItem",
+                  "token": "0x0600ecdc"
+                }
+              ]
+            },
+            {
+              "offset": 118,
+              "targetVa": "0x1871c7e18",
+              "resolved": [
+                {
+                  "methodIndex": 98313,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "GetPatch",
+                  "token": "0x0601800a"
+                }
+              ]
+            },
+            {
+              "offset": 128,
+              "targetVa": "0x1800d8260",
+              "resolved": []
+            },
+            {
+              "offset": 146,
+              "targetVa": "0x181f65910",
+              "resolved": [
+                {
+                  "methodIndex": 88870,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_555",
+                  "token": "0x06015b27"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "Beyond.Gameplay.Actions.GameAction",
+        "method": "PlayCutscene",
+        "methodIndex": 32852,
+        "token": "0x06008055",
+        "parameters": [
+          {
+            "index": 29414,
+            "name": "cutsceneId",
+            "typeIndex": 165254,
+            "typeName": "System.String+TrimType&",
+            "token": "0x080072c3"
+          },
+          {
+            "index": 29415,
+            "name": "callback",
+            "typeIndex": 120978,
+            "typeName": "<type-index:120978>",
+            "token": "0x080072c4"
+          },
+          {
+            "index": 29416,
+            "name": "existingEntities",
+            "typeIndex": 66430,
+            "typeName": "<type-index:66430>",
+            "token": "0x080072c5"
+          },
+          {
+            "index": 29417,
+            "name": "existingEnemies",
+            "typeIndex": 66430,
+            "typeName": "<type-index:66430>",
+            "token": "0x080072c6"
+          },
+          {
+            "index": 29418,
+            "name": "existingSceneObjects",
+            "typeIndex": 67968,
+            "typeName": "<type-index:67968>",
+            "token": "0x080072c7"
+          },
+          {
+            "index": 29419,
+            "name": "playParam",
+            "typeIndex": 133793,
+            "typeName": "<type-index:133793>",
+            "token": "0x080072c8"
+          },
+          {
+            "index": 29420,
+            "name": "playImmediately",
+            "typeIndex": 130844,
+            "typeName": "<type-index:130844>",
+            "token": "0x080072c9"
+          },
+          {
+            "index": 29421,
+            "name": "ignoreCinematicQueue",
+            "typeIndex": 130844,
+            "typeName": "<type-index:130844>",
+            "token": "0x080072ca"
+          }
+        ],
+        "mappingStatus": "mapped",
+        "va": "0x1875e6c44",
+        "rva": "0x75e6c44",
+        "fileOffset": "0x75e5244",
+        "bodyEvidence": {
+          "instructionCount": 307,
+          "firstRetOffset": 1233,
+          "fieldLikeOrigins": [
+            {
+              "origin": "param:existingEntities+0x18",
+              "count": 1
+            },
+            {
+              "origin": "param:existingEnemies+0x18",
+              "count": 1
+            }
+          ],
+          "fieldAccesses": [
+            {
+              "offset": 298,
+              "va": "0x1875e6d6e",
+              "text": "cmp ebx, [r14+0x18]",
+              "bytes": "41 3b 5e 18",
+              "operand": "[r14+0x18]",
+              "origin": "param:existingEntities+0x18",
+              "kind": "read"
+            },
+            {
+              "offset": 454,
+              "va": "0x1875e6e0a",
+              "text": "cmp ebx, [rsi+0x18]",
+              "bytes": "3b 5e 18",
+              "operand": "[rsi+0x18]",
+              "origin": "param:existingEnemies+0x18",
+              "kind": "read"
+            }
+          ],
+          "paramFlow": {
+            "param:existingEnemies": [
+              {
+                "offset": 38,
+                "va": "0x1875e6c6a",
+                "text": "mov rsi, r9",
+                "bytes": "49 8b f1"
+              },
+              {
+                "offset": 442,
+                "va": "0x1875e6dfe",
+                "text": "test rsi, rsi",
+                "bytes": "48 85 f6"
+              },
+              {
+                "offset": 454,
+                "va": "0x1875e6e0a",
+                "text": "cmp ebx, [rsi+0x18]",
+                "bytes": "3b 5e 18"
+              },
+              {
+                "offset": 478,
+                "va": "0x1875e6e22",
+                "text": "mov rdx, rsi",
+                "bytes": "48 8b d6"
+              },
+              {
+                "offset": 556,
+                "va": "0x1875e6e70",
+                "text": "mov rcx, rsi",
+                "bytes": "48 8b ce"
+              },
+              {
+                "offset": 865,
+                "va": "0x1875e6fa5",
+                "text": "mov [rbx+0x58], rsi",
+                "bytes": "48 89 73 58"
+              },
+              {
+                "offset": 1191,
+                "va": "0x1875e70eb",
+                "text": "mov [rsp+0x20], rsi",
+                "bytes": "48 89 74 24 20"
+              }
+            ],
+            "param:existingEntities": [
+              {
+                "offset": 48,
+                "va": "0x1875e6c74",
+                "text": "mov r14, r8",
+                "bytes": "4d 8b f0"
+              },
+              {
+                "offset": 286,
+                "va": "0x1875e6d62",
+                "text": "test r14, r14",
+                "bytes": "4d 85 f6"
+              },
+              {
+                "offset": 298,
+                "va": "0x1875e6d6e",
+                "text": "cmp ebx, [r14+0x18]",
+                "bytes": "41 3b 5e 18"
+              },
+              {
+                "offset": 323,
+                "va": "0x1875e6d87",
+                "text": "mov rdx, r14",
+                "bytes": "49 8b d6"
+              },
+              {
+                "offset": 401,
+                "va": "0x1875e6dd5",
+                "text": "mov rcx, r14",
+                "bytes": "49 8b ce"
+              },
+              {
+                "offset": 852,
+                "va": "0x1875e6f98",
+                "text": "mov [rbx+0x50], r14",
+                "bytes": "4c 89 73 50"
+              },
+              {
+                "offset": 1148,
+                "va": "0x1875e70c0",
+                "text": "mov r9, r14",
+                "bytes": "4d 8b ce"
+              }
+            ],
+            "param:callback": [
+              {
+                "offset": 51,
+                "va": "0x1875e6c77",
+                "text": "mov r13, rdx",
+                "bytes": "4c 8b ea"
+              },
+              {
+                "offset": 826,
+                "va": "0x1875e6f7e",
+                "text": "mov [rbx+0x28], r13",
+                "bytes": "4c 89 6b 28"
+              },
+              {
+                "offset": 1156,
+                "va": "0x1875e70c8",
+                "text": "mov r8, r13",
+                "bytes": "4d 8b c5"
+              }
+            ],
+            "param:cutsceneId": [
+              {
+                "offset": 54,
+                "va": "0x1875e6c7a",
+                "text": "mov r15, rcx",
+                "bytes": "4c 8b f9"
+              },
+              {
+                "offset": 270,
+                "va": "0x1875e6d52",
+                "text": "mov rdx, r15",
+                "bytes": "49 8b d7"
+              },
+              {
+                "offset": 813,
+                "va": "0x1875e6f71",
+                "text": "mov [rax+0x18], r15",
+                "bytes": "4c 89 78 18"
+              },
+              {
+                "offset": 1101,
+                "va": "0x1875e7091",
+                "text": "mov r8, r15",
+                "bytes": "4d 8b c7"
+              },
+              {
+                "offset": 1163,
+                "va": "0x1875e70cf",
+                "text": "mov rdx, r15",
+                "bytes": "49 8b d7"
+              }
+            ],
+            "param:existingEntities+0x18": [
+              {
+                "offset": 298,
+                "va": "0x1875e6d6e",
+                "text": "cmp ebx, [r14+0x18]",
+                "bytes": "41 3b 5e 18"
+              }
+            ],
+            "param:existingEnemies+0x18": [
+              {
+                "offset": 454,
+                "va": "0x1875e6e0a",
+                "text": "cmp ebx, [rsi+0x18]",
+                "bytes": "3b 5e 18"
+              }
+            ]
+          },
+          "calls": [
+            {
+              "offset": 66,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 78,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 90,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 102,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 114,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 126,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 138,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 150,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 162,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 174,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 220,
+              "targetVa": "0x182efe6c0",
+              "resolved": [
+                {
+                  "methodIndex": 98314,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "IsPatched",
+                  "token": "0x0601800b"
+                }
+              ]
+            },
+            {
+              "offset": 273,
+              "targetVa": "0x186db8a94",
+              "resolved": [
+                {
+                  "methodIndex": 61164,
+                  "type": "Beyond.Gameplay.Core.CutsceneManager",
+                  "method": "CheckCanPlay",
+                  "token": "0x0600eeed"
+                }
+              ]
+            },
+            {
+              "offset": 326,
+              "targetVa": "0x184ca7460",
+              "resolved": []
+            },
+            {
+              "offset": 367,
+              "targetVa": "0x18301a410",
+              "resolved": [
+                {
+                  "methodIndex": 79265,
+                  "type": "Beyond.Gameplay.Core.EntityPtr",
+                  "method": "GetEntity",
+                  "token": "0x060135a2"
+                }
+              ]
+            },
+            {
+              "offset": 382,
+              "targetVa": "0x183039ad0",
+              "resolved": [
+                {
+                  "methodIndex": 79284,
+                  "type": "Beyond.Gameplay.Core.EntityPtr",
+                  "method": "op_Implicit",
+                  "token": "0x060135b5"
+                }
+              ]
+            },
+            {
+              "offset": 430,
+              "targetVa": "0x180488930",
+              "resolved": []
+            },
+            {
+              "offset": 481,
+              "targetVa": "0x184ca7460",
+              "resolved": []
+            },
+            {
+              "offset": 522,
+              "targetVa": "0x18301a410",
+              "resolved": [
+                {
+                  "methodIndex": 79265,
+                  "type": "Beyond.Gameplay.Core.EntityPtr",
+                  "method": "GetEntity",
+                  "token": "0x060135a2"
+                }
+              ]
+            },
+            {
+              "offset": 537,
+              "targetVa": "0x183039ad0",
+              "resolved": [
+                {
+                  "methodIndex": 79284,
+                  "type": "Beyond.Gameplay.Core.EntityPtr",
+                  "method": "op_Implicit",
+                  "token": "0x060135b5"
+                }
+              ]
+            },
+            {
+              "offset": 585,
+              "targetVa": "0x180488930",
+              "resolved": []
+            },
+            {
+              "offset": 664,
+              "targetVa": "0x184ca7460",
+              "resolved": []
+            },
+            {
+              "offset": 705,
+              "targetVa": "0x18301a410",
+              "resolved": [
+                {
+                  "methodIndex": 79265,
+                  "type": "Beyond.Gameplay.Core.EntityPtr",
+                  "method": "GetEntity",
+                  "token": "0x060135a2"
+                }
+              ]
+            },
+            {
+              "offset": 720,
+              "targetVa": "0x183039ad0",
+              "resolved": [
+                {
+                  "methodIndex": 79284,
+                  "type": "Beyond.Gameplay.Core.EntityPtr",
+                  "method": "op_Implicit",
+                  "token": "0x060135b5"
+                }
+              ]
+            },
+            {
+              "offset": 769,
+              "targetVa": "0x180488930",
+              "resolved": []
+            },
+            {
+              "offset": 792,
+              "targetVa": "0x1800368d0",
+              "resolved": []
+            },
+            {
+              "offset": 817,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 830,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 843,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 856,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 869,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 886,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 926,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 943,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 959,
+              "targetVa": "0x18309bc10",
+              "resolved": [
+                {
+                  "methodIndex": 316710,
+                  "type": "System.Delegate",
+                  "method": "Combine",
+                  "token": "0x0600111d"
+                }
+              ]
+            },
+            {
+              "offset": 1013,
+              "targetVa": "0x18031e1f4",
+              "resolved": []
+            },
+            {
+              "offset": 1023,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 1040,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 1052,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 1067,
+              "targetVa": "0x1875dcf58",
+              "resolved": [
+                {
+                  "methodIndex": 32842,
+                  "type": "Beyond.Gameplay.Actions.GameAction",
+                  "method": "AddCinematicItem2Queue",
+                  "token": "0x0600804b"
+                }
+              ]
+            },
+            {
+              "offset": 1076,
+              "targetVa": "0x18031e1f4",
+              "resolved": []
+            },
+            {
+              "offset": 1089,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 1113,
+              "targetVa": "0x184403c80",
+              "resolved": []
+            },
+            {
+              "offset": 1126,
+              "targetVa": "0x1871c7e18",
+              "resolved": [
+                {
+                  "methodIndex": 98313,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "GetPatch",
+                  "token": "0x0601800a"
+                }
+              ]
+            },
+            {
+              "offset": 1139,
+              "targetVa": "0x1800d8260",
+              "resolved": []
+            },
+            {
+              "offset": 1196,
+              "targetVa": "0x1822208c0",
+              "resolved": [
+                {
+                  "methodIndex": 94912,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_6597",
+                  "token": "0x060172c1"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "Beyond.Gameplay.Actions.GameAction",
+        "method": "PlayFmv",
+        "methodIndex": 32861,
+        "token": "0x0600805e",
+        "parameters": [
+          {
+            "index": 29454,
+            "name": "videoName",
+            "typeIndex": 165254,
+            "typeName": "System.String+TrimType&",
+            "token": "0x080072eb"
+          },
+          {
+            "index": 29455,
+            "name": "callback",
+            "typeIndex": 120978,
+            "typeName": "<type-index:120978>",
+            "token": "0x080072ec"
+          },
+          {
+            "index": 29456,
+            "name": "beforeMaskData",
+            "typeIndex": 134446,
+            "typeName": "<type-index:134446>",
+            "token": "0x080072ed"
+          },
+          {
+            "index": 29457,
+            "name": "playParam",
+            "typeIndex": 133793,
+            "typeName": "<type-index:133793>",
+            "token": "0x080072ee"
+          }
+        ],
+        "mappingStatus": "mapped",
+        "va": "0x1875e7408",
+        "rva": "0x75e7408",
+        "fileOffset": "0x75e5a08",
+        "bodyEvidence": {
+          "instructionCount": 115,
+          "firstRetOffset": 410,
+          "fieldLikeOrigins": [
+            {
+              "origin": "param:playParam+0x10",
+              "count": 1
+            },
+            {
+              "origin": "param:playParam+0x18",
+              "count": 1
+            }
+          ],
+          "fieldAccesses": [
+            {
+              "offset": 240,
+              "va": "0x1875e74f8",
+              "text": "mov rax, [rsi+0x10]",
+              "bytes": "48 8b 46 10",
+              "operand": "[rsi+0x10]",
+              "origin": "param:playParam+0x10",
+              "kind": "read"
+            },
+            {
+              "offset": 270,
+              "va": "0x1875e7516",
+              "text": "mov rbx, [rsi+0x18]",
+              "bytes": "48 8b 5e 18",
+              "operand": "[rsi+0x18]",
+              "origin": "param:playParam+0x18",
+              "kind": "read"
+            }
+          ],
+          "paramFlow": {
+            "param:playParam": [
+              {
+                "offset": 26,
+                "va": "0x1875e7422",
+                "text": "mov rsi, r9",
+                "bytes": "49 8b f1"
+              },
+              {
+                "offset": 235,
+                "va": "0x1875e74f3",
+                "text": "test rsi, rsi",
+                "bytes": "48 85 f6"
+              },
+              {
+                "offset": 240,
+                "va": "0x1875e74f8",
+                "text": "mov rax, [rsi+0x10]",
+                "bytes": "48 8b 46 10"
+              },
+              {
+                "offset": 265,
+                "va": "0x1875e7511",
+                "text": "test rsi, rsi",
+                "bytes": "48 85 f6"
+              },
+              {
+                "offset": 270,
+                "va": "0x1875e7516",
+                "text": "mov rbx, [rsi+0x18]",
+                "bytes": "48 8b 5e 18"
+              },
+              {
+                "offset": 370,
+                "va": "0x1875e757a",
+                "text": "mov [rsp+0x20], rsi",
+                "bytes": "48 89 74 24 20"
+              }
+            ],
+            "param:beforeMaskData": [
+              {
+                "offset": 35,
+                "va": "0x1875e742b",
+                "text": "mov r14, r8",
+                "bytes": "4d 8b f0"
+              },
+              {
+                "offset": 249,
+                "va": "0x1875e7501",
+                "text": "mov rax, r14",
+                "bytes": "49 8b c6"
+              },
+              {
+                "offset": 256,
+                "va": "0x1875e7508",
+                "text": "mov [rdi+0x38], rax",
+                "bytes": "48 89 47 38"
+              },
+              {
+                "offset": 364,
+                "va": "0x1875e7574",
+                "text": "mov r9, r14",
+                "bytes": "4d 8b ce"
+              }
+            ],
+            "param:callback": [
+              {
+                "offset": 38,
+                "va": "0x1875e742e",
+                "text": "mov rbp, rdx",
+                "bytes": "48 8b ea"
+              }
+            ],
+            "param:videoName": [
+              {
+                "offset": 41,
+                "va": "0x1875e7431",
+                "text": "mov rdi, rcx",
+                "bytes": "48 8b f9"
+              },
+              {
+                "offset": 138,
+                "va": "0x1875e7492",
+                "text": "mov rdx, rdi",
+                "bytes": "48 8b d7"
+              }
+            ],
+            "param:playParam+0x10": [
+              {
+                "offset": 240,
+                "va": "0x1875e74f8",
+                "text": "mov rax, [rsi+0x10]",
+                "bytes": "48 8b 46 10"
+              },
+              {
+                "offset": 244,
+                "va": "0x1875e74fc",
+                "text": "test rax, rax",
+                "bytes": "48 85 c0"
+              }
+            ],
+            "param:playParam+0x18": [
+              {
+                "offset": 270,
+                "va": "0x1875e7516",
+                "text": "mov rbx, [rsi+0x18]",
+                "bytes": "48 8b 5e 18"
+              },
+              {
+                "offset": 278,
+                "va": "0x1875e751e",
+                "text": "mov [rdi+0x40], rbx",
+                "bytes": "48 89 5f 40"
+              },
+              {
+                "offset": 359,
+                "va": "0x1875e756f",
+                "text": "mov [rsp+0x28], rbx",
+                "bytes": "48 89 5c 24 28"
+              }
+            ]
+          },
+          "calls": [
+            {
+              "offset": 53,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 65,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 77,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 110,
+              "targetVa": "0x182efe6c0",
+              "resolved": [
+                {
+                  "methodIndex": 98314,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "IsPatched",
+                  "token": "0x0601800b"
+                }
+              ]
+            },
+            {
+              "offset": 130,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 143,
+              "targetVa": "0x186df2508",
+              "resolved": [
+                {
+                  "methodIndex": 6531,
+                  "type": "Beyond.Gameplay.NarrativeUtils",
+                  "method": "GetGenderedFMVId",
+                  "token": "0x06001984"
+                }
+              ]
+            },
+            {
+              "offset": 156,
+              "targetVa": "0x186df22fc",
+              "resolved": [
+                {
+                  "methodIndex": 6521,
+                  "type": "Beyond.Gameplay.NarrativeUtils",
+                  "method": "GetCSVideoAssetSubPath",
+                  "token": "0x0600197a"
+                }
+              ]
+            },
+            {
+              "offset": 172,
+              "targetVa": "0x186c69ae8",
+              "resolved": [
+                {
+                  "methodIndex": 50711,
+                  "type": "Beyond.Gameplay.View.VideoManager",
+                  "method": "CheckCanPlay",
+                  "token": "0x0600c618"
+                }
+              ]
+            },
+            {
+              "offset": 192,
+              "targetVa": "0x1800368d0",
+              "resolved": []
+            },
+            {
+              "offset": 217,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 230,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 260,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 282,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 294,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 310,
+              "targetVa": "0x1875dcf58",
+              "resolved": [
+                {
+                  "methodIndex": 32842,
+                  "type": "Beyond.Gameplay.Actions.GameAction",
+                  "method": "AddCinematicItem2Queue",
+                  "token": "0x0600804b"
+                }
+              ]
+            },
+            {
+              "offset": 329,
+              "targetVa": "0x182ee41f0",
+              "resolved": []
+            },
+            {
+              "offset": 343,
+              "targetVa": "0x1871c7e18",
+              "resolved": [
+                {
+                  "methodIndex": 98313,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "GetPatch",
+                  "token": "0x0601800a"
+                }
+              ]
+            },
+            {
+              "offset": 353,
+              "targetVa": "0x1800d8260",
+              "resolved": []
+            },
+            {
+              "offset": 381,
+              "targetVa": "0x181cd9b70",
+              "resolved": [
+                {
+                  "methodIndex": 88750,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_435",
+                  "token": "0x06015aaf"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "Beyond.Gameplay.Actions.GameAction",
+        "method": "ShowNarrativeBlackScreen",
+        "methodIndex": 32810,
+        "token": "0x0600802b",
+        "parameters": [
+          {
+            "index": 29324,
+            "name": "data",
+            "typeIndex": 167877,
+            "typeName": "Beyond.Gameplay.UICommonMaskData",
+            "token": "0x08007269"
+          }
+        ],
+        "mappingStatus": "mapped",
+        "va": "0x1875ec4b0",
+        "rva": "0x75ec4b0",
+        "fileOffset": "0x75eaab0",
+        "bodyEvidence": {
+          "instructionCount": 53,
+          "firstRetOffset": 207,
+          "fieldLikeOrigins": {},
+          "fieldAccesses": [],
+          "paramFlow": {
+            "param:data": [
+              {
+                "offset": 17,
+                "va": "0x1875ec4c1",
+                "text": "mov rdi, rcx",
+                "bytes": "48 8b f9"
+              },
+              {
+                "offset": 101,
+                "va": "0x1875ec515",
+                "text": "mov [rax+0x48], rdi",
+                "bytes": "48 89 78 48"
+              },
+              {
+                "offset": 186,
+                "va": "0x1875ec56a",
+                "text": "mov rdx, rdi",
+                "bytes": "48 8b d7"
+              }
+            ]
+          },
+          "calls": [
+            {
+              "offset": 29,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 41,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 68,
+              "targetVa": "0x182efe6c0",
+              "resolved": [
+                {
+                  "methodIndex": 98314,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "IsPatched",
+                  "token": "0x0601800b"
+                }
+              ]
+            },
+            {
+              "offset": 84,
+              "targetVa": "0x18002c620",
+              "resolved": []
+            },
+            {
+              "offset": 105,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 117,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 156,
+              "targetVa": "0x186dae0f4",
+              "resolved": [
+                {
+                  "methodIndex": 60635,
+                  "type": "Beyond.Gameplay.Core.CinematicQueueManager",
+                  "method": "AddCinematicQueueItem",
+                  "token": "0x0600ecdc"
+                }
+              ]
+            },
+            {
+              "offset": 167,
+              "targetVa": "0x1871c7e18",
+              "resolved": [
+                {
+                  "methodIndex": 98313,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "GetPatch",
+                  "token": "0x0601800a"
+                }
+              ]
+            },
+            {
+              "offset": 177,
+              "targetVa": "0x1800d8260",
+              "resolved": []
+            },
+            {
+              "offset": 192,
+              "targetVa": "0x1863633b4",
+              "resolved": [
+                {
+                  "methodIndex": 480287,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_4",
+                  "token": "0x06000174"
+                },
+                {
+                  "methodIndex": 386781,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_0",
+                  "token": "0x06000ca6"
+                },
+                {
+                  "methodIndex": 483476,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_2",
+                  "token": "0x060001de"
+                },
+                {
+                  "methodIndex": 443613,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_13",
+                  "token": "0x0600065e"
+                },
+                {
+                  "methodIndex": 396846,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_6",
+                  "token": "0x06000ea6"
+                },
+                {
+                  "methodIndex": 88315,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_0",
+                  "token": "0x060158fc"
+                },
+                {
+                  "methodIndex": 494777,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_0",
+                  "token": "0x0600000e"
+                },
+                {
+                  "methodIndex": 290853,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_12",
+                  "token": "0x06001ea1"
+                },
+                {
+                  "methodIndex": 494084,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_7",
+                  "token": "0x0600003a"
+                },
+                {
+                  "methodIndex": 482201,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_5",
+                  "token": "0x060000d2"
+                },
+                {
+                  "methodIndex": 464665,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_2",
+                  "token": "0x060002b7"
+                },
+                {
+                  "methodIndex": 484394,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_3",
+                  "token": "0x060000fe"
+                },
+                {
+                  "methodIndex": 467952,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_9",
+                  "token": "0x060002bb"
+                },
+                {
+                  "methodIndex": 455891,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_1",
+                  "token": "0x060002db"
+                },
+                {
+                  "methodIndex": 478936,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_13",
+                  "token": "0x060001a1"
+                },
+                {
+                  "methodIndex": 401321,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_1",
+                  "token": "0x06000dca"
+                },
+                {
+                  "methodIndex": 426771,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_5",
+                  "token": "0x06000709"
+                },
+                {
+                  "methodIndex": 494479,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_7",
+                  "token": "0x06000017"
+                },
+                {
+                  "methodIndex": 463948,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_4",
+                  "token": "0x0600043b"
+                },
+                {
+                  "methodIndex": 485526,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_10",
+                  "token": "0x060000cf"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "Beyond.Gameplay.Actions.GameAction",
+        "method": "ShowUIReadingPopPanel",
+        "methodIndex": 32940,
+        "token": "0x060080ad",
+        "parameters": [
+          {
+            "index": 29632,
+            "name": "id",
+            "typeIndex": 165254,
+            "typeName": "System.String+TrimType&",
+            "token": "0x0800739d"
+          }
+        ],
+        "mappingStatus": "mapped",
+        "va": "0x1875ec8b8",
+        "rva": "0x75ec8b8",
+        "fileOffset": "0x75eaeb8",
+        "bodyEvidence": {
+          "instructionCount": 53,
+          "firstRetOffset": 207,
+          "fieldLikeOrigins": {},
+          "fieldAccesses": [],
+          "paramFlow": {
+            "param:id": [
+              {
+                "offset": 17,
+                "va": "0x1875ec8c9",
+                "text": "mov rdi, rcx",
+                "bytes": "48 8b f9"
+              },
+              {
+                "offset": 101,
+                "va": "0x1875ec91d",
+                "text": "mov [rax+0x18], rdi",
+                "bytes": "48 89 78 18"
+              },
+              {
+                "offset": 186,
+                "va": "0x1875ec972",
+                "text": "mov rdx, rdi",
+                "bytes": "48 8b d7"
+              }
+            ]
+          },
+          "calls": [
+            {
+              "offset": 29,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 41,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 68,
+              "targetVa": "0x182efe6c0",
+              "resolved": [
+                {
+                  "methodIndex": 98314,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "IsPatched",
+                  "token": "0x0601800b"
+                }
+              ]
+            },
+            {
+              "offset": 84,
+              "targetVa": "0x18002c620",
+              "resolved": []
+            },
+            {
+              "offset": 105,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 117,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 156,
+              "targetVa": "0x186dae0f4",
+              "resolved": [
+                {
+                  "methodIndex": 60635,
+                  "type": "Beyond.Gameplay.Core.CinematicQueueManager",
+                  "method": "AddCinematicQueueItem",
+                  "token": "0x0600ecdc"
+                }
+              ]
+            },
+            {
+              "offset": 167,
+              "targetVa": "0x1871c7e18",
+              "resolved": [
+                {
+                  "methodIndex": 98313,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "GetPatch",
+                  "token": "0x0601800a"
+                }
+              ]
+            },
+            {
+              "offset": 177,
+              "targetVa": "0x1800d8260",
+              "resolved": []
+            },
+            {
+              "offset": 192,
+              "targetVa": "0x1863633b4",
+              "resolved": [
+                {
+                  "methodIndex": 480287,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_4",
+                  "token": "0x06000174"
+                },
+                {
+                  "methodIndex": 386781,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_0",
+                  "token": "0x06000ca6"
+                },
+                {
+                  "methodIndex": 483476,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_2",
+                  "token": "0x060001de"
+                },
+                {
+                  "methodIndex": 443613,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_13",
+                  "token": "0x0600065e"
+                },
+                {
+                  "methodIndex": 396846,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_6",
+                  "token": "0x06000ea6"
+                },
+                {
+                  "methodIndex": 88315,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_0",
+                  "token": "0x060158fc"
+                },
+                {
+                  "methodIndex": 494777,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_0",
+                  "token": "0x0600000e"
+                },
+                {
+                  "methodIndex": 290853,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_12",
+                  "token": "0x06001ea1"
+                },
+                {
+                  "methodIndex": 494084,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_7",
+                  "token": "0x0600003a"
+                },
+                {
+                  "methodIndex": 482201,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_5",
+                  "token": "0x060000d2"
+                },
+                {
+                  "methodIndex": 464665,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_2",
+                  "token": "0x060002b7"
+                },
+                {
+                  "methodIndex": 484394,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_3",
+                  "token": "0x060000fe"
+                },
+                {
+                  "methodIndex": 467952,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_9",
+                  "token": "0x060002bb"
+                },
+                {
+                  "methodIndex": 455891,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_1",
+                  "token": "0x060002db"
+                },
+                {
+                  "methodIndex": 478936,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_13",
+                  "token": "0x060001a1"
+                },
+                {
+                  "methodIndex": 401321,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_1",
+                  "token": "0x06000dca"
+                },
+                {
+                  "methodIndex": 426771,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_5",
+                  "token": "0x06000709"
+                },
+                {
+                  "methodIndex": 494479,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_7",
+                  "token": "0x06000017"
+                },
+                {
+                  "methodIndex": 463948,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_4",
+                  "token": "0x0600043b"
+                },
+                {
+                  "methodIndex": 485526,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_10",
+                  "token": "0x060000cf"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "Beyond.Gameplay.Actions.GameAction",
+        "method": "StartDialog",
+        "methodIndex": 32823,
+        "token": "0x06008038",
+        "parameters": [
+          {
+            "index": 29346,
+            "name": "dialogId",
+            "typeIndex": 165254,
+            "typeName": "System.String+TrimType&",
+            "token": "0x0800727f"
+          },
+          {
+            "index": 29347,
+            "name": "pos",
+            "typeIndex": 84131,
+            "typeName": "<type-index:84131>",
+            "token": "0x08007280"
+          },
+          {
+            "index": 29348,
+            "name": "rot",
+            "typeIndex": 84131,
+            "typeName": "<type-index:84131>",
+            "token": "0x08007281"
+          },
+          {
+            "index": 29349,
+            "name": "playParam",
+            "typeIndex": 133793,
+            "typeName": "<type-index:133793>",
+            "token": "0x08007282"
+          },
+          {
+            "index": 29350,
+            "name": "playImmediately",
+            "typeIndex": 130844,
+            "typeName": "<type-index:130844>",
+            "token": "0x08007283"
+          }
+        ],
+        "mappingStatus": "mapped",
+        "va": "0x1875ed524",
+        "rva": "0x75ed524",
+        "fileOffset": "0x75ebb24",
+        "bodyEvidence": {
+          "instructionCount": 129,
+          "firstRetOffset": 473,
+          "fieldLikeOrigins": [
+            {
+              "origin": "param:pos",
+              "count": 2
+            },
+            {
+              "origin": "param:dialogId+0x10",
+              "count": 1
+            },
+            {
+              "origin": "param:playParam+0x10",
+              "count": 1
+            },
+            {
+              "origin": "param:playParam+0x18",
+              "count": 1
+            },
+            {
+              "origin": "param:playParam+0x20",
+              "count": 1
+            },
+            {
+              "origin": "param:playParam+0x28",
+              "count": 1
+            }
+          ],
+          "fieldAccesses": [
+            {
+              "offset": 138,
+              "va": "0x1875ed5ae",
+              "text": "cmp [rsi+0x10], 0x0",
+              "bytes": "83 7e 10 00",
+              "operand": "[rsi+0x10]",
+              "origin": "param:dialogId+0x10",
+              "kind": "read"
+            },
+            {
+              "offset": 195,
+              "va": "0x1875ed5e7",
+              "text": "movaps xmm0, [r14]",
+              "bytes": "41 0f 10 06",
+              "operand": "[r14]",
+              "origin": "param:pos",
+              "kind": "read"
+            },
+            {
+              "offset": 218,
+              "va": "0x1875ed5fe",
+              "text": "mov rax, [rdi+0x10]",
+              "bytes": "48 8b 47 10",
+              "operand": "[rdi+0x10]",
+              "origin": "param:playParam+0x10",
+              "kind": "read"
+            },
+            {
+              "offset": 235,
+              "va": "0x1875ed60f",
+              "text": "mov r9, [rdi+0x18]",
+              "bytes": "4c 8b 4f 18",
+              "operand": "[rdi+0x18]",
+              "origin": "param:playParam+0x18",
+              "kind": "read"
+            },
+            {
+              "offset": 252,
+              "va": "0x1875ed620",
+              "text": "mov r9, [rdi+0x20]",
+              "bytes": "4c 8b 4f 20",
+              "operand": "[rdi+0x20]",
+              "origin": "param:playParam+0x20",
+              "kind": "read"
+            },
+            {
+              "offset": 269,
+              "va": "0x1875ed631",
+              "text": "mov r9, [rdi+0x28]",
+              "bytes": "4c 8b 4f 28",
+              "operand": "[rdi+0x28]",
+              "origin": "param:playParam+0x28",
+              "kind": "read"
+            },
+            {
+              "offset": 414,
+              "va": "0x1875ed6c2",
+              "text": "movaps xmm1, [r14]",
+              "bytes": "41 0f 10 0e",
+              "operand": "[r14]",
+              "origin": "param:pos",
+              "kind": "read"
+            }
+          ],
+          "paramFlow": {
+            "param:playParam": [
+              {
+                "offset": 32,
+                "va": "0x1875ed544",
+                "text": "mov rdi, r9",
+                "bytes": "49 8b f9"
+              },
+              {
+                "offset": 213,
+                "va": "0x1875ed5f9",
+                "text": "test rdi, rdi",
+                "bytes": "48 85 ff"
+              },
+              {
+                "offset": 218,
+                "va": "0x1875ed5fe",
+                "text": "mov rax, [rdi+0x10]",
+                "bytes": "48 8b 47 10"
+              },
+              {
+                "offset": 235,
+                "va": "0x1875ed60f",
+                "text": "mov r9, [rdi+0x18]",
+                "bytes": "4c 8b 4f 18"
+              },
+              {
+                "offset": 252,
+                "va": "0x1875ed620",
+                "text": "mov r9, [rdi+0x20]",
+                "bytes": "4c 8b 4f 20"
+              },
+              {
+                "offset": 269,
+                "va": "0x1875ed631",
+                "text": "mov r9, [rdi+0x28]",
+                "bytes": "4c 8b 4f 28"
+              },
+              {
+                "offset": 290,
+                "va": "0x1875ed646",
+                "text": "mov [rbx+0x68], rdi",
+                "bytes": "48 89 7b 68"
+              },
+              {
+                "offset": 431,
+                "va": "0x1875ed6d3",
+                "text": "mov [rsp+0x20], rdi",
+                "bytes": "48 89 7c 24 20"
+              }
+            ],
+            "param:rot": [
+              {
+                "offset": 35,
+                "va": "0x1875ed547",
+                "text": "mov rbp, r8",
+                "bytes": "49 8b e8"
+              }
+            ],
+            "param:pos": [
+              {
+                "offset": 38,
+                "va": "0x1875ed54a",
+                "text": "mov r14, rdx",
+                "bytes": "4c 8b f2"
+              },
+              {
+                "offset": 195,
+                "va": "0x1875ed5e7",
+                "text": "movaps xmm0, [r14]",
+                "bytes": "41 0f 10 06"
+              },
+              {
+                "offset": 414,
+                "va": "0x1875ed6c2",
+                "text": "movaps xmm1, [r14]",
+                "bytes": "41 0f 10 0e"
+              }
+            ],
+            "param:dialogId": [
+              {
+                "offset": 41,
+                "va": "0x1875ed54d",
+                "text": "mov rsi, rcx",
+                "bytes": "48 8b f1"
+              },
+              {
+                "offset": 129,
+                "va": "0x1875ed5a5",
+                "text": "test rsi, rsi",
+                "bytes": "48 85 f6"
+              },
+              {
+                "offset": 138,
+                "va": "0x1875ed5ae",
+                "text": "cmp [rsi+0x10], 0x0",
+                "bytes": "83 7e 10 00"
+              },
+              {
+                "offset": 176,
+                "va": "0x1875ed5d4",
+                "text": "mov [rax+0x18], rsi",
+                "bytes": "48 89 70 18"
+              },
+              {
+                "offset": 422,
+                "va": "0x1875ed6ca",
+                "text": "mov rdx, rsi",
+                "bytes": "48 8b d6"
+              }
+            ],
+            "param:dialogId+0x10": [
+              {
+                "offset": 138,
+                "va": "0x1875ed5ae",
+                "text": "cmp [rsi+0x10], 0x0",
+                "bytes": "83 7e 10 00"
+              }
+            ],
+            "param:playParam+0x10": [
+              {
+                "offset": 218,
+                "va": "0x1875ed5fe",
+                "text": "mov rax, [rdi+0x10]",
+                "bytes": "48 8b 47 10"
+              },
+              {
+                "offset": 226,
+                "va": "0x1875ed606",
+                "text": "mov [rbx+0x38], rax",
+                "bytes": "48 89 43 38"
+              }
+            ],
+            "param:playParam+0x18": [
+              {
+                "offset": 235,
+                "va": "0x1875ed60f",
+                "text": "mov r9, [rdi+0x18]",
+                "bytes": "4c 8b 4f 18"
+              },
+              {
+                "offset": 243,
+                "va": "0x1875ed617",
+                "text": "mov [rbx+0x40], r9",
+                "bytes": "4c 89 4b 40"
+              }
+            ],
+            "param:playParam+0x20": [
+              {
+                "offset": 252,
+                "va": "0x1875ed620",
+                "text": "mov r9, [rdi+0x20]",
+                "bytes": "4c 8b 4f 20"
+              },
+              {
+                "offset": 260,
+                "va": "0x1875ed628",
+                "text": "mov [rbx+0x20], r9",
+                "bytes": "4c 89 4b 20"
+              }
+            ],
+            "param:playParam+0x28": [
+              {
+                "offset": 269,
+                "va": "0x1875ed631",
+                "text": "mov r9, [rdi+0x28]",
+                "bytes": "4c 8b 4f 28"
+              },
+              {
+                "offset": 277,
+                "va": "0x1875ed639",
+                "text": "mov [rbx+0x28], r9",
+                "bytes": "4c 89 4b 28"
+              }
+            ]
+          },
+          "calls": [
+            {
+              "offset": 53,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 65,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 77,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 89,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 116,
+              "targetVa": "0x182efe6c0",
+              "resolved": [
+                {
+                  "methodIndex": 98314,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "IsPatched",
+                  "token": "0x0601800b"
+                }
+              ]
+            },
+            {
+              "offset": 155,
+              "targetVa": "0x1800368d0",
+              "resolved": []
+            },
+            {
+              "offset": 180,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 230,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 247,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 264,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 281,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 294,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 306,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 322,
+              "targetVa": "0x1875dcf58",
+              "resolved": [
+                {
+                  "methodIndex": 32842,
+                  "type": "Beyond.Gameplay.Actions.GameAction",
+                  "method": "AddCinematicItem2Queue",
+                  "token": "0x0600804b"
+                }
+              ]
+            },
+            {
+              "offset": 338,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 355,
+              "targetVa": "0x18374c520",
+              "resolved": [
+                {
+                  "methodIndex": 483141,
+                  "type": "Beyond.DLogger",
+                  "method": "LogError",
+                  "token": "0x0600008f"
+                }
+              ]
+            },
+            {
+              "offset": 368,
+              "targetVa": "0x1871c7e18",
+              "resolved": [
+                {
+                  "methodIndex": 98313,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "GetPatch",
+                  "token": "0x0601800a"
+                }
+              ]
+            },
+            {
+              "offset": 381,
+              "targetVa": "0x1800d8260",
+              "resolved": []
+            },
+            {
+              "offset": 442,
+              "targetVa": "0x181f6d370",
+              "resolved": [
+                {
+                  "methodIndex": 88871,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_556",
+                  "token": "0x06015b28"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "Beyond.Gameplay.Actions.GameAction",
+        "method": "StartDialogFromInteractive",
+        "methodIndex": 32824,
+        "token": "0x06008039",
+        "parameters": [
+          {
+            "index": 29351,
+            "name": "dialogId",
+            "typeIndex": 165254,
+            "typeName": "System.String+TrimType&",
+            "token": "0x08007284"
+          },
+          {
+            "index": 29352,
+            "name": "fromInteractiveId",
+            "typeIndex": 168269,
+            "typeName": "System.UInt64",
+            "token": "0x08007285"
+          },
+          {
+            "index": 29353,
+            "name": "pos",
+            "typeIndex": 84131,
+            "typeName": "<type-index:84131>",
+            "token": "0x08007286"
+          },
+          {
+            "index": 29354,
+            "name": "rot",
+            "typeIndex": 84131,
+            "typeName": "<type-index:84131>",
+            "token": "0x08007287"
+          },
+          {
+            "index": 29355,
+            "name": "playParam",
+            "typeIndex": 133793,
+            "typeName": "<type-index:133793>",
+            "token": "0x08007288"
+          },
+          {
+            "index": 29356,
+            "name": "playImmediately",
+            "typeIndex": 130844,
+            "typeName": "<type-index:130844>",
+            "token": "0x08007289"
+          }
+        ],
+        "mappingStatus": "mapped",
+        "va": "0x1875ed3e4",
+        "rva": "0x75ed3e4",
+        "fileOffset": "0x75eb9e4",
+        "bodyEvidence": {
+          "instructionCount": 93,
+          "firstRetOffset": 318,
+          "fieldLikeOrigins": [
+            {
+              "origin": "param:rot",
+              "count": 2
+            },
+            {
+              "origin": "param:pos",
+              "count": 2
+            }
+          ],
+          "fieldAccesses": [
+            {
+              "offset": 142,
+              "va": "0x1875ed472",
+              "text": "movaps xmm0, [rdi]",
+              "bytes": "0f 10 07",
+              "operand": "[rdi]",
+              "origin": "param:rot",
+              "kind": "read"
+            },
+            {
+              "offset": 155,
+              "va": "0x1875ed47f",
+              "text": "movaps xmm1, [rsi]",
+              "bytes": "0f 10 0e",
+              "operand": "[rsi]",
+              "origin": "param:pos",
+              "kind": "read"
+            },
+            {
+              "offset": 247,
+              "va": "0x1875ed4db",
+              "text": "movaps xmm0, [rdi]",
+              "bytes": "0f 10 07",
+              "operand": "[rdi]",
+              "origin": "param:rot",
+              "kind": "read"
+            },
+            {
+              "offset": 259,
+              "va": "0x1875ed4e7",
+              "text": "movaps xmm1, [rsi]",
+              "bytes": "0f 10 0e",
+              "operand": "[rsi]",
+              "origin": "param:pos",
+              "kind": "read"
+            }
+          ],
+          "paramFlow": {
+            "param:rot": [
+              {
+                "offset": 32,
+                "va": "0x1875ed404",
+                "text": "mov rdi, r9",
+                "bytes": "49 8b f9"
+              },
+              {
+                "offset": 142,
+                "va": "0x1875ed472",
+                "text": "movaps xmm0, [rdi]",
+                "bytes": "0f 10 07"
+              },
+              {
+                "offset": 247,
+                "va": "0x1875ed4db",
+                "text": "movaps xmm0, [rdi]",
+                "bytes": "0f 10 07"
+              }
+            ],
+            "param:pos": [
+              {
+                "offset": 43,
+                "va": "0x1875ed40f",
+                "text": "mov rsi, r8",
+                "bytes": "49 8b f0"
+              },
+              {
+                "offset": 155,
+                "va": "0x1875ed47f",
+                "text": "movaps xmm1, [rsi]",
+                "bytes": "0f 10 0e"
+              },
+              {
+                "offset": 259,
+                "va": "0x1875ed4e7",
+                "text": "movaps xmm1, [rsi]",
+                "bytes": "0f 10 0e"
+              }
+            ],
+            "param:fromInteractiveId": [
+              {
+                "offset": 46,
+                "va": "0x1875ed412",
+                "text": "mov rbp, rdx",
+                "bytes": "48 8b ea"
+              }
+            ],
+            "param:dialogId": [
+              {
+                "offset": 49,
+                "va": "0x1875ed415",
+                "text": "mov r14, rcx",
+                "bytes": "4c 8b f1"
+              },
+              {
+                "offset": 178,
+                "va": "0x1875ed496",
+                "text": "mov rcx, r14",
+                "bytes": "49 8b ce"
+              },
+              {
+                "offset": 267,
+                "va": "0x1875ed4ef",
+                "text": "mov rdx, r14",
+                "bytes": "49 8b d6"
+              }
+            ]
+          },
+          "calls": [
+            {
+              "offset": 61,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 73,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 92,
+              "targetVa": "0x182efe6c0",
+              "resolved": [
+                {
+                  "methodIndex": 98314,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "IsPatched",
+                  "token": "0x0601800b"
+                }
+              ]
+            },
+            {
+              "offset": 113,
+              "targetVa": "0x18002c620",
+              "resolved": []
+            },
+            {
+              "offset": 137,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 193,
+              "targetVa": "0x1875ed524",
+              "resolved": [
+                {
+                  "methodIndex": 32823,
+                  "type": "Beyond.Gameplay.Actions.GameAction",
+                  "method": "StartDialog",
+                  "token": "0x06008038"
+                }
+              ]
+            },
+            {
+              "offset": 207,
+              "targetVa": "0x1871c7e18",
+              "resolved": [
+                {
+                  "methodIndex": 98313,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "GetPatch",
+                  "token": "0x0601800a"
+                }
+              ]
+            },
+            {
+              "offset": 220,
+              "targetVa": "0x1800d8260",
+              "resolved": []
+            },
+            {
+              "offset": 286,
+              "targetVa": "0x18195cbe0",
+              "resolved": [
+                {
+                  "methodIndex": 90955,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_2640",
+                  "token": "0x0601634c"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "Beyond.Gameplay.Actions.GameAction",
+        "method": "StartForceSNS",
+        "methodIndex": 32840,
+        "token": "0x06008049",
+        "parameters": [
+          {
+            "index": 29387,
+            "name": "chatId",
+            "typeIndex": 165254,
+            "typeName": "System.String+TrimType&",
+            "token": "0x080072a8"
+          },
+          {
+            "index": 29388,
+            "name": "dialogId",
+            "typeIndex": 165254,
+            "typeName": "System.String+TrimType&",
+            "token": "0x080072a9"
+          },
+          {
+            "index": 29389,
+            "name": "showToast",
+            "typeIndex": 130818,
+            "typeName": "System.Boolean",
+            "token": "0x080072aa"
+          },
+          {
+            "index": 29390,
+            "name": "callback",
+            "typeIndex": 120965,
+            "typeName": "System.Action",
+            "token": "0x080072ab"
+          }
+        ],
+        "mappingStatus": "mapped",
+        "va": "0x1875ed938",
+        "rva": "0x75ed938",
+        "fileOffset": "0x75ebf38",
+        "bodyEvidence": {
+          "instructionCount": 70,
+          "firstRetOffset": 270,
+          "fieldLikeOrigins": {},
+          "fieldAccesses": [],
+          "paramFlow": {
+            "param:callback": [
+              {
+                "offset": 32,
+                "va": "0x1875ed958",
+                "text": "mov rdi, r9",
+                "bytes": "49 8b f9"
+              },
+              {
+                "offset": 155,
+                "va": "0x1875ed9d3",
+                "text": "mov [rbx+0x28], rdi",
+                "bytes": "48 89 7b 28"
+              },
+              {
+                "offset": 228,
+                "va": "0x1875eda1c",
+                "text": "mov [rsp+0x20], rdi",
+                "bytes": "48 89 7c 24 20"
+              }
+            ],
+            "param:dialogId": [
+              {
+                "offset": 38,
+                "va": "0x1875ed95e",
+                "text": "mov rbp, rdx",
+                "bytes": "48 8b ea"
+              }
+            ],
+            "param:chatId": [
+              {
+                "offset": 41,
+                "va": "0x1875ed961",
+                "text": "mov r14, rcx",
+                "bytes": "4c 8b f1"
+              },
+              {
+                "offset": 125,
+                "va": "0x1875ed9b5",
+                "text": "mov [rax+0x18], r14",
+                "bytes": "4c 89 70 18"
+              },
+              {
+                "offset": 233,
+                "va": "0x1875eda21",
+                "text": "mov rdx, r14",
+                "bytes": "49 8b d6"
+              }
+            ],
+            "param:showToast": [
+              {
+                "offset": 151,
+                "va": "0x1875ed9cf",
+                "text": "mov [rbx+0x50], sil",
+                "bytes": "40 88 73 50"
+              },
+              {
+                "offset": 222,
+                "va": "0x1875eda16",
+                "text": "mov r9b, sil",
+                "bytes": "44 8a ce"
+              }
+            ]
+          },
+          "calls": [
+            {
+              "offset": 53,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 65,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 92,
+              "targetVa": "0x182efe6c0",
+              "resolved": [
+                {
+                  "methodIndex": 98314,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "IsPatched",
+                  "token": "0x0601800b"
+                }
+              ]
+            },
+            {
+              "offset": 108,
+              "targetVa": "0x1800368d0",
+              "resolved": []
+            },
+            {
+              "offset": 129,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 142,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 159,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 171,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 187,
+              "targetVa": "0x1875dcf58",
+              "resolved": [
+                {
+                  "methodIndex": 32842,
+                  "type": "Beyond.Gameplay.Actions.GameAction",
+                  "method": "AddCinematicItem2Queue",
+                  "token": "0x0600804b"
+                }
+              ]
+            },
+            {
+              "offset": 200,
+              "targetVa": "0x1871c7e18",
+              "resolved": [
+                {
+                  "methodIndex": 98313,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "GetPatch",
+                  "token": "0x0601800a"
+                }
+              ]
+            },
+            {
+              "offset": 210,
+              "targetVa": "0x1800d8260",
+              "resolved": []
+            },
+            {
+              "offset": 239,
+              "targetVa": "0x181d52630",
+              "resolved": [
+                {
+                  "methodIndex": 92846,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_4531",
+                  "token": "0x06016aaf"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "Beyond.Gameplay.Actions.GameAction",
+        "method": "StartRemoteComm",
+        "methodIndex": 32867,
+        "token": "0x06008064",
+        "parameters": [
+          {
+            "index": 29477,
+            "name": "remoteCommId",
+            "typeIndex": 165254,
+            "typeName": "System.String+TrimType&",
+            "token": "0x08007302"
+          },
+          {
+            "index": 29478,
+            "name": "beforeData",
+            "typeIndex": 167880,
+            "typeName": "<type-index:167880>",
+            "token": "0x08007303"
+          },
+          {
+            "index": 29479,
+            "name": "afterData",
+            "typeIndex": 167880,
+            "typeName": "<type-index:167880>",
+            "token": "0x08007304"
+          },
+          {
+            "index": 29480,
+            "name": "callback",
+            "typeIndex": 26254,
+            "typeName": "<type-index:26254>",
+            "token": "0x08007305"
+          }
+        ],
+        "mappingStatus": "mapped",
+        "va": "0x1875edd90",
+        "rva": "0x75edd90",
+        "fileOffset": "0x75ec390",
+        "bodyEvidence": {
+          "instructionCount": 133,
+          "firstRetOffset": 587,
+          "fieldLikeOrigins": [
+            {
+              "origin": "param:remoteCommId+0x10",
+              "count": 1
+            }
+          ],
+          "fieldAccesses": [
+            {
+              "offset": 186,
+              "va": "0x1875ede4a",
+              "text": "cmp [rbx+0x10], 0x0",
+              "bytes": "83 7b 10 00",
+              "operand": "[rbx+0x10]",
+              "origin": "param:remoteCommId+0x10",
+              "kind": "read"
+            }
+          ],
+          "paramFlow": {
+            "param:callback": [
+              {
+                "offset": 32,
+                "va": "0x1875eddb0",
+                "text": "mov rsi, r9",
+                "bytes": "49 8b f1"
+              },
+              {
+                "offset": 365,
+                "va": "0x1875edefd",
+                "text": "mov [r9+0x28], rsi",
+                "bytes": "49 89 71 28"
+              },
+              {
+                "offset": 545,
+                "va": "0x1875edfb1",
+                "text": "mov [rsp+0x20], rsi",
+                "bytes": "48 89 74 24 20"
+              }
+            ],
+            "param:afterData": [
+              {
+                "offset": 35,
+                "va": "0x1875eddb3",
+                "text": "mov rbp, r8",
+                "bytes": "49 8b e8"
+              }
+            ],
+            "param:beforeData": [
+              {
+                "offset": 38,
+                "va": "0x1875eddb6",
+                "text": "mov r14, rdx",
+                "bytes": "4c 8b f2"
+              },
+              {
+                "offset": 326,
+                "va": "0x1875eded6",
+                "text": "mov [rax+0x18], r14",
+                "bytes": "4c 89 70 18"
+              },
+              {
+                "offset": 542,
+                "va": "0x1875edfae",
+                "text": "mov r8, r14",
+                "bytes": "4d 8b c6"
+              }
+            ],
+            "param:remoteCommId": [
+              {
+                "offset": 41,
+                "va": "0x1875eddb9",
+                "text": "mov rbx, rcx",
+                "bytes": "48 8b d9"
+              },
+              {
+                "offset": 177,
+                "va": "0x1875ede41",
+                "text": "test rbx, rbx",
+                "bytes": "48 85 db"
+              },
+              {
+                "offset": 186,
+                "va": "0x1875ede4a",
+                "text": "cmp [rbx+0x10], 0x0",
+                "bytes": "83 7b 10 00"
+              },
+              {
+                "offset": 245,
+                "va": "0x1875ede85",
+                "text": "mov rdx, rbx",
+                "bytes": "48 8b d3"
+              },
+              {
+                "offset": 289,
+                "va": "0x1875edeb1",
+                "text": "mov [rax+0x18], rbx",
+                "bytes": "48 89 58 18"
+              },
+              {
+                "offset": 352,
+                "va": "0x1875edef0",
+                "text": "mov [r9+0x10], rbx",
+                "bytes": "49 89 59 10"
+              },
+              {
+                "offset": 461,
+                "va": "0x1875edf5d",
+                "text": "mov r8, rbx",
+                "bytes": "4c 8b c3"
+              },
+              {
+                "offset": 550,
+                "va": "0x1875edfb6",
+                "text": "mov rdx, rbx",
+                "bytes": "48 8b d3"
+              }
+            ],
+            "param:remoteCommId+0x10": [
+              {
+                "offset": 186,
+                "va": "0x1875ede4a",
+                "text": "cmp [rbx+0x10], 0x0",
+                "bytes": "83 7b 10 00"
+              }
+            ]
+          },
+          "calls": [
+            {
+              "offset": 53,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 65,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 77,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 89,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 101,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 113,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 125,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 137,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 164,
+              "targetVa": "0x182efe6c0",
+              "resolved": [
+                {
+                  "methodIndex": 98314,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "IsPatched",
+                  "token": "0x0601800b"
+                }
+              ]
+            },
+            {
+              "offset": 248,
+              "targetVa": "0x1870f2bd8",
+              "resolved": [
+                {
+                  "methodIndex": 83175,
+                  "type": "Beyond.Gameplay.Core.GameMech.MainCharRemoteCommBrain",
+                  "method": "CheckCanPlay",
+                  "token": "0x060144e8"
+                }
+              ]
+            },
+            {
+              "offset": 268,
+              "targetVa": "0x18002c620",
+              "resolved": []
+            },
+            {
+              "offset": 293,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 305,
+              "targetVa": "0x18002c620",
+              "resolved": []
+            },
+            {
+              "offset": 330,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 343,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 356,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 369,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 382,
+              "targetVa": "0x18002d1b0",
+              "resolved": []
+            },
+            {
+              "offset": 394,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 433,
+              "targetVa": "0x186dae0f4",
+              "resolved": [
+                {
+                  "methodIndex": 60635,
+                  "type": "Beyond.Gameplay.Core.CinematicQueueManager",
+                  "method": "AddCinematicQueueItem",
+                  "token": "0x0600ecdc"
+                }
+              ]
+            },
+            {
+              "offset": 449,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 473,
+              "targetVa": "0x184403c80",
+              "resolved": []
+            },
+            {
+              "offset": 487,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 504,
+              "targetVa": "0x18374c520",
+              "resolved": [
+                {
+                  "methodIndex": 483141,
+                  "type": "Beyond.DLogger",
+                  "method": "LogError",
+                  "token": "0x0600008f"
+                }
+              ]
+            },
+            {
+              "offset": 517,
+              "targetVa": "0x1871c7e18",
+              "resolved": [
+                {
+                  "methodIndex": 98313,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "GetPatch",
+                  "token": "0x0601800a"
+                }
+              ]
+            },
+            {
+              "offset": 527,
+              "targetVa": "0x1800d8260",
+              "resolved": []
+            },
+            {
+              "offset": 556,
+              "targetVa": "0x181cd9b70",
+              "resolved": [
+                {
+                  "methodIndex": 88750,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_435",
+                  "token": "0x06015aaf"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "Beyond.Gameplay.Actions.GameAction",
+        "method": "StartRemoteCommWithDefaultBlackScreen",
+        "methodIndex": 32869,
+        "token": "0x06008066",
+        "parameters": [
+          {
+            "index": 29482,
+            "name": "remoteCommId",
+            "typeIndex": 165254,
+            "typeName": "System.String+TrimType&",
+            "token": "0x08007307"
+          }
+        ],
+        "mappingStatus": "mapped",
+        "va": "0x1875edc94",
+        "rva": "0x75edc94",
+        "fileOffset": "0x75ec294",
+        "bodyEvidence": {
+          "instructionCount": 64,
+          "firstRetOffset": 250,
+          "fieldLikeOrigins": {},
+          "fieldAccesses": [],
+          "paramFlow": {
+            "param:remoteCommId": [
+              {
+                "offset": 22,
+                "va": "0x1875edcaa",
+                "text": "mov rsi, rcx",
+                "bytes": "48 8b f1"
+              },
+              {
+                "offset": 191,
+                "va": "0x1875edd53",
+                "text": "mov rcx, rsi",
+                "bytes": "48 8b ce"
+              },
+              {
+                "offset": 224,
+                "va": "0x1875edd74",
+                "text": "mov rdx, rsi",
+                "bytes": "48 8b d6"
+              }
+            ]
+          },
+          "calls": [
+            {
+              "offset": 34,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 46,
+              "targetVa": "0x180035ed0",
+              "resolved": []
+            },
+            {
+              "offset": 67,
+              "targetVa": "0x182efe6c0",
+              "resolved": [
+                {
+                  "methodIndex": 98314,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "IsPatched",
+                  "token": "0x0601800b"
+                }
+              ]
+            },
+            {
+              "offset": 83,
+              "targetVa": "0x18002c620",
+              "resolved": []
+            },
+            {
+              "offset": 101,
+              "targetVa": "0x1849d2dc0",
+              "resolved": [
+                {
+                  "methodIndex": 3722,
+                  "type": "Beyond.Gameplay.UICommonMaskData",
+                  "method": ".ctor",
+                  "token": "0x06000e8b"
+                }
+              ]
+            },
+            {
+              "offset": 127,
+              "targetVa": "0x18002c620",
+              "resolved": []
+            },
+            {
+              "offset": 145,
+              "targetVa": "0x1849d2dc0",
+              "resolved": [
+                {
+                  "methodIndex": 3722,
+                  "type": "Beyond.Gameplay.UICommonMaskData",
+                  "method": ".ctor",
+                  "token": "0x06000e8b"
+                }
+              ]
+            },
+            {
+              "offset": 171,
+              "targetVa": "0x1800036a0",
+              "resolved": []
+            },
+            {
+              "offset": 194,
+              "targetVa": "0x1875edd90",
+              "resolved": [
+                {
+                  "methodIndex": 32867,
+                  "type": "Beyond.Gameplay.Actions.GameAction",
+                  "method": "StartRemoteComm",
+                  "token": "0x06008064"
+                }
+              ]
+            },
+            {
+              "offset": 205,
+              "targetVa": "0x1871c7e18",
+              "resolved": [
+                {
+                  "methodIndex": 98313,
+                  "type": "IFix.WrappersManagerImpl",
+                  "method": "GetPatch",
+                  "token": "0x0601800a"
+                }
+              ]
+            },
+            {
+              "offset": 215,
+              "targetVa": "0x1800d8260",
+              "resolved": []
+            },
+            {
+              "offset": 230,
+              "targetVa": "0x1863632e4",
+              "resolved": [
+                {
+                  "methodIndex": 480332,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_49",
+                  "token": "0x060001a1"
+                },
+                {
+                  "methodIndex": 386785,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_4",
+                  "token": "0x06000caa"
+                },
+                {
+                  "methodIndex": 311095,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_0",
+                  "token": "0x060048d2"
+                },
+                {
+                  "methodIndex": 443614,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_14",
+                  "token": "0x0600065f"
+                },
+                {
+                  "methodIndex": 396915,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_75",
+                  "token": "0x06000eeb"
+                },
+                {
+                  "methodIndex": 88317,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_2",
+                  "token": "0x060158fe"
+                },
+                {
+                  "methodIndex": 290936,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_95",
+                  "token": "0x06001ef4"
+                },
+                {
+                  "methodIndex": 482197,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_1",
+                  "token": "0x060000ce"
+                },
+                {
+                  "methodIndex": 464663,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_0",
+                  "token": "0x060002b5"
+                },
+                {
+                  "methodIndex": 484405,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_14",
+                  "token": "0x06000109"
+                },
+                {
+                  "methodIndex": 467945,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_2",
+                  "token": "0x060002b4"
+                },
+                {
+                  "methodIndex": 455915,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_25",
+                  "token": "0x060002f3"
+                },
+                {
+                  "methodIndex": 478929,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_6",
+                  "token": "0x0600019a"
+                },
+                {
+                  "methodIndex": 401357,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_37",
+                  "token": "0x06000dee"
+                },
+                {
+                  "methodIndex": 426767,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_1",
+                  "token": "0x06000705"
+                },
+                {
+                  "methodIndex": 463952,
+                  "type": "IFix.ILFixDynamicMethodWrapper",
+                  "method": "__Gen_Wrap_8",
+                  "token": "0x0600043f"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "actionProducerRoutes": [
+      {
+        "actionType": "ComplexNarrativeBlackScreenAction",
+        "actionFullType": "Beyond.Gameplay.Actions.ComplexNarrativeBlackScreenAction",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008ca9",
+        "actionVa": "0x187660bf0",
+        "declaredFields": [
+          "_fadeInTime",
+          "_fadeOutTime",
+          "_isBlack",
+          "_textBeforeTime",
+          "_textAfterTime",
+          "_textDataList",
+          "_presetAudioBehaviour",
+          "_customAudioFlags",
+          "isOverrideFadeInTime",
+          "overrideFadeInTimeSeconds",
+          "isOverrideFadeOutTime",
+          "overrideFadeOutTimeSeconds"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "ShowNarrativeBlackScreen",
+        "producerToken": "0x0600802b",
+        "producerVa": "0x1875ec4b0",
+        "callOffset": 725,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 722,
+            "va": "0x187660ec2",
+            "bytes": "48 8b cb",
+            "text": "mov rcx, rbx",
+            "write": {
+              "register": "rcx",
+              "value": "rbx"
+            }
+          },
+          "rdx": {
+            "offset": 720,
+            "va": "0x187660ec0",
+            "bytes": "33 d2",
+            "text": "xor edx, edx",
+            "write": {
+              "register": "edx",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "NarrativeBlackScreenAction",
+        "actionFullType": "Beyond.Gameplay.Actions.NarrativeBlackScreenAction",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008ce9",
+        "actionVa": "0x187668c84",
+        "declaredFields": [
+          "_fadeInTime",
+          "_fadeOutTime",
+          "_isBlack",
+          "_textBeforeTime",
+          "_textAfterTime",
+          "_texts",
+          "_presetAudioBehaviour",
+          "_customAudioFlags",
+          "isOverrideFadeInTime",
+          "overrideFadeInTimeSeconds",
+          "isOverrideFadeOutTime",
+          "overrideFadeOutTimeSeconds"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "ShowNarrativeBlackScreen",
+        "producerToken": "0x0600802b",
+        "producerVa": "0x1875ec4b0",
+        "callOffset": 1539,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 1536,
+            "va": "0x187669284",
+            "bytes": "48 8b ce",
+            "text": "mov rcx, rsi",
+            "write": {
+              "register": "rcx",
+              "value": "rsi"
+            }
+          },
+          "rdx": {
+            "offset": 1534,
+            "va": "0x187669282",
+            "bytes": "33 d2",
+            "text": "xor edx, edx",
+            "write": {
+              "register": "edx",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "PlayCutsceneAction",
+        "actionFullType": "Beyond.Gameplay.Actions.PlayCutsceneAction",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008e19",
+        "actionVa": "0x187675ea4",
+        "declaredFields": [
+          "_cutsceneId",
+          "_shouldWaitForFinish",
+          "_needLoadExtraStream",
+          "_extraStreamPosition",
+          "_existingInteractives",
+          "_existingEnemy",
+          "_existingSceneObjects",
+          "overrideBeforeMaskConfig",
+          "beforeMask",
+          "overrideAfterMaskConfig",
+          "afterMask",
+          "m_existingInteractives",
+          "m_existingEnemies",
+          "m_preloadedKey",
+          "_nodeEnablePreload"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "PlayCutscene",
+        "producerToken": "0x06008055",
+        "producerVa": "0x1875e6c44",
+        "callOffset": 963,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 955,
+            "va": "0x18767625f",
+            "bytes": "48 8b cd",
+            "text": "mov rcx, rbp",
+            "write": {
+              "register": "rcx",
+              "value": "rbp"
+            }
+          },
+          "rdx": {
+            "offset": 948,
+            "va": "0x187676258",
+            "bytes": "33 d2",
+            "text": "xor edx, edx",
+            "write": {
+              "register": "edx",
+              "value": "0"
+            }
+          },
+          "r8": {
+            "offset": 940,
+            "va": "0x187676250",
+            "bytes": "4d 8b c6",
+            "text": "mov r8, r14",
+            "write": {
+              "register": "r8",
+              "value": "r14"
+            }
+          },
+          "r9": {
+            "offset": 932,
+            "va": "0x187676248",
+            "bytes": "4d 8b cf",
+            "text": "mov r9, r15",
+            "write": {
+              "register": "r9",
+              "value": "r15"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "PlayCutsceneIgnoreCinematicQueue",
+        "actionFullType": "Beyond.Gameplay.Actions.PlayCutsceneIgnoreCinematicQueue",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008e23",
+        "actionVa": "0x187676618",
+        "declaredFields": [
+          "m_handle"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "PlayCutscene",
+        "producerToken": "0x06008055",
+        "producerVa": "0x1875e6c44",
+        "callOffset": 854,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 846,
+            "va": "0x187676966",
+            "bytes": "48 8b cd",
+            "text": "mov rcx, rbp",
+            "write": {
+              "register": "rcx",
+              "value": "rbp"
+            }
+          },
+          "rdx": {
+            "offset": 838,
+            "va": "0x18767695e",
+            "bytes": "48 8b d6",
+            "text": "mov rdx, rsi",
+            "write": {
+              "register": "rdx",
+              "value": "rsi"
+            }
+          },
+          "r8": {
+            "offset": 830,
+            "va": "0x187676956",
+            "bytes": "4d 8b c6",
+            "text": "mov r8, r14",
+            "write": {
+              "register": "r8",
+              "value": "r14"
+            }
+          },
+          "r9": {
+            "offset": 822,
+            "va": "0x18767694e",
+            "bytes": "4d 8b cf",
+            "text": "mov r9, r15",
+            "write": {
+              "register": "r9",
+              "value": "r15"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "PlayDialogAndHideSceneObjectAction",
+        "actionFullType": "Beyond.Gameplay.Actions.PlayDialogAndHideSceneObjectAction",
+        "actionMethod": "PlayCinematic",
+        "actionMethodSlot": 20,
+        "actionToken": "0x06008cf2",
+        "actionVa": "0x187669a84",
+        "declaredFields": [
+          "_dialogId",
+          "m_isSceneRecovered"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "StartDialog",
+        "producerToken": "0x06008038",
+        "producerVa": "0x1875ed524",
+        "callOffset": 240,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 232,
+            "va": "0x187669b6c",
+            "bytes": "48 8b ce",
+            "text": "mov rcx, rsi",
+            "write": {
+              "register": "rcx",
+              "value": "rsi"
+            }
+          },
+          "rdx": {
+            "offset": 221,
+            "va": "0x187669b61",
+            "bytes": "48 8d 54 24 40",
+            "text": "lea rdx, [rsp+0x40]",
+            "write": {
+              "register": "rdx",
+              "value": "&[rsp+0x40]"
+            }
+          },
+          "r8": {
+            "offset": 207,
+            "va": "0x187669b53",
+            "bytes": "4c 8d 44 24 30",
+            "text": "lea r8, [rsp+0x30]",
+            "write": {
+              "register": "r8",
+              "value": "&[rsp+0x30]"
+            }
+          },
+          "r9": {
+            "offset": 212,
+            "va": "0x187669b58",
+            "bytes": "4c 8b cb",
+            "text": "mov r9, rbx",
+            "write": {
+              "register": "r9",
+              "value": "rbx"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "PlayFmvAction",
+        "actionFullType": "Beyond.Gameplay.Actions.PlayFmvAction",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008e2b",
+        "actionVa": "0x187676be4",
+        "declaredFields": [
+          "_shouldWaitForFinish",
+          "_moviePath",
+          "beforeMask",
+          "_param",
+          "overrideAfterMaskConfig",
+          "afterMask"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "PlayFmv",
+        "producerToken": "0x0600805e",
+        "producerVa": "0x1875e7408",
+        "callOffset": 520,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 514,
+            "va": "0x187676de6",
+            "bytes": "48 8b cd",
+            "text": "mov rcx, rbp",
+            "write": {
+              "register": "rcx",
+              "value": "rbp"
+            }
+          },
+          "rdx": {
+            "offset": 508,
+            "va": "0x187676de0",
+            "bytes": "48 8b d6",
+            "text": "mov rdx, rsi",
+            "write": {
+              "register": "rdx",
+              "value": "rsi"
+            }
+          },
+          "r8": {
+            "offset": 511,
+            "va": "0x187676de3",
+            "bytes": "45 33 c0",
+            "text": "xor r8d, r8d",
+            "write": {
+              "register": "r8d",
+              "value": "0"
+            }
+          },
+          "r9": {
+            "offset": 517,
+            "va": "0x187676de9",
+            "bytes": "4c 8b cf",
+            "text": "mov r9, rdi",
+            "write": {
+              "register": "r9",
+              "value": "rdi"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "PlayRemoteComm",
+        "actionFullType": "Beyond.Gameplay.Actions.PlayRemoteComm",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008e64",
+        "actionVa": "0x187678a84",
+        "declaredFields": [
+          "_remoteCommId",
+          "_useBlackScreenBefore",
+          "maskTypeBefore",
+          "_fadeInTimeBefore",
+          "_fadeOutTimeBefore",
+          "_useBlackScreenAfter",
+          "maskTypeAfter",
+          "_fadeInTimeAfter",
+          "_fadeOutTimeAfter",
+          "m_remoteCommId"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "StartRemoteComm",
+        "producerToken": "0x06008064",
+        "producerVa": "0x1875edd90",
+        "callOffset": 629,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 626,
+            "va": "0x187678cf6",
+            "bytes": "49 8b ce",
+            "text": "mov rcx, r14",
+            "write": {
+              "register": "rcx",
+              "value": "r14"
+            }
+          },
+          "rdx": {
+            "offset": 623,
+            "va": "0x187678cf3",
+            "bytes": "48 8b d7",
+            "text": "mov rdx, rdi",
+            "write": {
+              "register": "rdx",
+              "value": "rdi"
+            }
+          },
+          "r8": {
+            "offset": 620,
+            "va": "0x187678cf0",
+            "bytes": "4c 8b c6",
+            "text": "mov r8, rsi",
+            "write": {
+              "register": "r8",
+              "value": "rsi"
+            }
+          },
+          "r9": {
+            "offset": 617,
+            "va": "0x187678ced",
+            "bytes": "4c 8b cd",
+            "text": "mov r9, rbp",
+            "write": {
+              "register": "r9",
+              "value": "rbp"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "ShowUIReadingPopPanel",
+        "actionFullType": "Beyond.Gameplay.Actions.ShowUIReadingPopPanel",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x060090f6",
+        "actionVa": "0x186aac0b8",
+        "declaredFields": [
+          "_readingPopId"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "ShowUIReadingPopPanel",
+        "producerToken": "0x060080ad",
+        "producerVa": "0x1875ec8b8",
+        "callOffset": 117,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 114,
+            "va": "0x186aac12a",
+            "bytes": "48 8b cb",
+            "text": "mov rcx, rbx",
+            "write": {
+              "register": "rcx",
+              "value": "rbx"
+            }
+          },
+          "rdx": {
+            "offset": 112,
+            "va": "0x186aac128",
+            "bytes": "33 d2",
+            "text": "xor edx, edx",
+            "write": {
+              "register": "edx",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "StartCutsceneAndControlSceneObjectAction",
+        "actionFullType": "Beyond.Gameplay.Actions.StartCutsceneAndControlSceneObjectAction",
+        "actionMethod": "PlayCinematic",
+        "actionMethodSlot": 20,
+        "actionToken": "0x06008e8b",
+        "actionVa": "0x18767cff4",
+        "declaredFields": [
+          "_cutsceneId",
+          "_needLoadExtraStream",
+          "_extraStreamPosition",
+          "m_preloadedKey",
+          "_nodeEnablePreload"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "PlayCutscene",
+        "producerToken": "0x06008055",
+        "producerVa": "0x1875e6c44",
+        "callOffset": 298,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 290,
+            "va": "0x18767d116",
+            "bytes": "49 8b ce",
+            "text": "mov rcx, r14",
+            "write": {
+              "register": "rcx",
+              "value": "r14"
+            }
+          },
+          "rdx": {
+            "offset": 283,
+            "va": "0x18767d10f",
+            "bytes": "33 d2",
+            "text": "xor edx, edx",
+            "write": {
+              "register": "edx",
+              "value": "0"
+            }
+          },
+          "r8": {
+            "offset": 275,
+            "va": "0x18767d107",
+            "bytes": "4c 8b c5",
+            "text": "mov r8, rbp",
+            "write": {
+              "register": "r8",
+              "value": "rbp"
+            }
+          },
+          "r9": {
+            "offset": 267,
+            "va": "0x18767d0ff",
+            "bytes": "4c 8b ce",
+            "text": "mov r9, rsi",
+            "write": {
+              "register": "r9",
+              "value": "rsi"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "StartCutsceneAndHideSceneObjectAction",
+        "actionFullType": "Beyond.Gameplay.Actions.StartCutsceneAndHideSceneObjectAction",
+        "actionMethod": "PlayCinematic",
+        "actionMethodSlot": 20,
+        "actionToken": "0x06008ea7",
+        "actionVa": "0x18767dd14",
+        "declaredFields": [
+          "_cutsceneId",
+          "_needLoadExtraStream",
+          "_extraStreamPosition",
+          "m_preloadedKey",
+          "_nodeEnablePreload"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "PlayCutscene",
+        "producerToken": "0x06008055",
+        "producerVa": "0x1875e6c44",
+        "callOffset": 219,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 210,
+            "va": "0x18767dde6",
+            "bytes": "48 8b cf",
+            "text": "mov rcx, rdi",
+            "write": {
+              "register": "rcx",
+              "value": "rdi"
+            }
+          },
+          "rdx": {
+            "offset": 203,
+            "va": "0x18767dddf",
+            "bytes": "33 d2",
+            "text": "xor edx, edx",
+            "write": {
+              "register": "edx",
+              "value": "0"
+            }
+          },
+          "r8": {
+            "offset": 195,
+            "va": "0x18767ddd7",
+            "bytes": "45 33 c0",
+            "text": "xor r8d, r8d",
+            "write": {
+              "register": "r8d",
+              "value": "0"
+            }
+          },
+          "r9": {
+            "offset": 187,
+            "va": "0x18767ddcf",
+            "bytes": "45 33 c9",
+            "text": "xor r9d, r9d",
+            "write": {
+              "register": "r9d",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "StartCutsceneAndTeleportAction",
+        "actionFullType": "Beyond.Gameplay.Actions.StartCutsceneAndTeleportAction",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008ec7",
+        "actionVa": "0x18767e1ec",
+        "declaredFields": [
+          "_cutsceneId",
+          "_needLoadExtraStream",
+          "_extraStreamPosition",
+          "_existingInteractives",
+          "_existingEnemy",
+          "_existingSceneObjects",
+          "m_existingInteractives",
+          "m_existingEnemies",
+          "m_preloadedKey",
+          "_nodeEnablePreload"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "PlayCutscene",
+        "producerToken": "0x06008055",
+        "producerVa": "0x1875e6c44",
+        "callOffset": 574,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 566,
+            "va": "0x18767e422",
+            "bytes": "48 8b ce",
+            "text": "mov rcx, rsi",
+            "write": {
+              "register": "rcx",
+              "value": "rsi"
+            }
+          },
+          "rdx": {
+            "offset": 558,
+            "va": "0x18767e41a",
+            "bytes": "48 8b d5",
+            "text": "mov rdx, rbp",
+            "write": {
+              "register": "rdx",
+              "value": "rbp"
+            }
+          },
+          "r8": {
+            "offset": 550,
+            "va": "0x18767e412",
+            "bytes": "4d 8b c6",
+            "text": "mov r8, r14",
+            "write": {
+              "register": "r8",
+              "value": "r14"
+            }
+          },
+          "r9": {
+            "offset": 542,
+            "va": "0x18767e40a",
+            "bytes": "4d 8b cf",
+            "text": "mov r9, r15",
+            "write": {
+              "register": "r9",
+              "value": "r15"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "StartDialogAction",
+        "actionFullType": "Beyond.Gameplay.Actions.StartDialogAction",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008ed7",
+        "actionVa": "0x18767e920",
+        "declaredFields": [
+          "_shouldWaitForFinish",
+          "_dialogId",
+          "overrideBeforeMaskConfig",
+          "beforeMask",
+          "overrideAfterMaskConfig",
+          "afterMask",
+          "_existingEnemy",
+          "m_existingEnemies",
+          "m_fStartWaitNpcTime",
+          "MAX_WAIT_NPC_TIME",
+          "m_registerDialogEndAction"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "StartDialog",
+        "producerToken": "0x06008038",
+        "producerVa": "0x1875ed524",
+        "callOffset": 1810,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 1807,
+            "va": "0x18767f02f",
+            "bytes": "49 8b ce",
+            "text": "mov rcx, r14",
+            "write": {
+              "register": "rcx",
+              "value": "r14"
+            }
+          },
+          "rdx": {
+            "offset": 1802,
+            "va": "0x18767f02a",
+            "bytes": "48 8d 54 24 40",
+            "text": "lea rdx, [rsp+0x40]",
+            "write": {
+              "register": "rdx",
+              "value": "&[rsp+0x40]"
+            }
+          },
+          "r8": {
+            "offset": 1797,
+            "va": "0x18767f025",
+            "bytes": "4c 8d 44 24 50",
+            "text": "lea r8, [rsp+0x50]",
+            "write": {
+              "register": "r8",
+              "value": "&[rsp+0x50]"
+            }
+          },
+          "r9": {
+            "offset": 1794,
+            "va": "0x18767f022",
+            "bytes": "4c 8b cb",
+            "text": "mov r9, rbx",
+            "write": {
+              "register": "r9",
+              "value": "rbx"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "StartDialogAndTeleportAction",
+        "actionFullType": "Beyond.Gameplay.Actions.StartDialogAndTeleportAction",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008ede",
+        "actionVa": "0x18767f6b0",
+        "declaredFields": [
+          "_dialogId"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "StartDialog",
+        "producerToken": "0x06008038",
+        "producerVa": "0x1875ed524",
+        "callOffset": 401,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 393,
+            "va": "0x18767f839",
+            "bytes": "48 8b ce",
+            "text": "mov rcx, rsi",
+            "write": {
+              "register": "rcx",
+              "value": "rsi"
+            }
+          },
+          "rdx": {
+            "offset": 384,
+            "va": "0x18767f830",
+            "bytes": "48 8d 55 d0",
+            "text": "lea rdx, [rbp-0x30]",
+            "write": {
+              "register": "rdx",
+              "value": "&[rbp-0x30]"
+            }
+          },
+          "r8": {
+            "offset": 372,
+            "va": "0x18767f824",
+            "bytes": "4c 8d 45 e0",
+            "text": "lea r8, [rbp-0x20]",
+            "write": {
+              "register": "r8",
+              "value": "&[rbp-0x20]"
+            }
+          },
+          "r9": {
+            "offset": 376,
+            "va": "0x18767f828",
+            "bytes": "4c 8b cb",
+            "text": "mov r9, rbx",
+            "write": {
+              "register": "r9",
+              "value": "rbx"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "StartFmvAndTeleportAction",
+        "actionFullType": "Beyond.Gameplay.Actions.StartFmvAndTeleportAction",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008ee5",
+        "actionVa": "0x18767fbe8",
+        "declaredFields": [
+          "_fmvId"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "PlayFmv",
+        "producerToken": "0x0600805e",
+        "producerVa": "0x1875e7408",
+        "callOffset": 287,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 284,
+            "va": "0x18767fd04",
+            "bytes": "48 8b ce",
+            "text": "mov rcx, rsi",
+            "write": {
+              "register": "rcx",
+              "value": "rsi"
+            }
+          },
+          "rdx": {
+            "offset": 281,
+            "va": "0x18767fd01",
+            "bytes": "48 8b d5",
+            "text": "mov rdx, rbp",
+            "write": {
+              "register": "rdx",
+              "value": "rbp"
+            }
+          },
+          "r8": {
+            "offset": 278,
+            "va": "0x18767fcfe",
+            "bytes": "45 33 c0",
+            "text": "xor r8d, r8d",
+            "write": {
+              "register": "r8d",
+              "value": "0"
+            }
+          },
+          "r9": {
+            "offset": 275,
+            "va": "0x18767fcfb",
+            "bytes": "4c 8b cb",
+            "text": "mov r9, rbx",
+            "write": {
+              "register": "r9",
+              "value": "rbx"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "StartNarrativeBlackScreenAndTeleport",
+        "actionFullType": "Beyond.Gameplay.Actions.StartNarrativeBlackScreenAndTeleport",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008d45",
+        "actionVa": "0x18766e494",
+        "declaredFields": [
+          "_fadeInTime",
+          "_fadeOutTime",
+          "_isBlack",
+          "_textBeforeTime",
+          "_textAfterTime",
+          "_texts",
+          "_presetAudioBehaviour",
+          "_customAudioFlags",
+          "isOverrideFadeInTime",
+          "overrideFadeInTimeSeconds",
+          "isOverrideFadeOutTime",
+          "overrideFadeOutTimeSeconds",
+          "m_maskFadeOutData"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "ShowNarrativeBlackScreen",
+        "producerToken": "0x0600802b",
+        "producerVa": "0x1875ec4b0",
+        "callOffset": 1670,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 1667,
+            "va": "0x18766eb17",
+            "bytes": "48 8b ce",
+            "text": "mov rcx, rsi",
+            "write": {
+              "register": "rcx",
+              "value": "rsi"
+            }
+          },
+          "rdx": {
+            "offset": 1665,
+            "va": "0x18766eb15",
+            "bytes": "33 d2",
+            "text": "xor edx, edx",
+            "write": {
+              "register": "edx",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "actionType": "StartRemoteCommAndTeleport",
+        "actionFullType": "Beyond.Gameplay.Actions.StartRemoteCommAndTeleport",
+        "actionMethod": "Execute",
+        "actionMethodSlot": 15,
+        "actionToken": "0x06008eed",
+        "actionVa": "0x18768008c",
+        "declaredFields": [
+          "_remoteCommId"
+        ],
+        "producerType": "Beyond.Gameplay.Actions.GameAction",
+        "producerMethod": "StartRemoteComm",
+        "producerToken": "0x06008064",
+        "producerVa": "0x1875edd90",
+        "callOffset": 490,
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 487,
+            "va": "0x187680273",
+            "bytes": "48 8b ce",
+            "text": "mov rcx, rsi",
+            "write": {
+              "register": "rcx",
+              "value": "rsi"
+            }
+          },
+          "rdx": {
+            "offset": 484,
+            "va": "0x187680270",
+            "bytes": "49 8b d6",
+            "text": "mov rdx, r14",
+            "write": {
+              "register": "rdx",
+              "value": "r14"
+            }
+          },
+          "r8": {
+            "offset": 481,
+            "va": "0x18768026d",
+            "bytes": "4c 8b c5",
+            "text": "mov r8, rbp",
+            "write": {
+              "register": "r8",
+              "value": "rbp"
+            }
+          },
+          "r9": {
+            "offset": 478,
+            "va": "0x18768026a",
+            "bytes": "4c 8b cb",
+            "text": "mov r9, rbx",
+            "write": {
+              "register": "r9",
+              "value": "rbx"
+            }
+          }
+        }
+      }
+    ],
     "enqueueEdges": [
       {
         "caller": "Beyond.Gameplay.Actions.GameAction::AddCinematicItem2Queue",
@@ -1637,6 +6134,418 @@
             }
           }
         }
+      },
+      {
+        "caller": "Beyond.Gameplay.Actions.GameAction::PlayCutscene",
+        "callee": "Beyond.Gameplay.Actions.GameAction::AddCinematicItem2Queue",
+        "callerOffset": 1067,
+        "targetVa": "0x1875dcf58",
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 1064,
+            "va": "0x1875e706c",
+            "bytes": "48 8b cb",
+            "text": "mov rcx, rbx",
+            "write": {
+              "register": "rcx",
+              "value": "rbx"
+            }
+          },
+          "rdx": {
+            "offset": 1060,
+            "va": "0x1875e7068",
+            "bytes": "48 8d 55 df",
+            "text": "lea rdx, [rbp-0x21]",
+            "write": {
+              "register": "rdx",
+              "value": "&[rbp-0x21]"
+            }
+          },
+          "r8": {
+            "offset": 1057,
+            "va": "0x1875e7065",
+            "bytes": "45 33 c0",
+            "text": "xor r8d, r8d",
+            "write": {
+              "register": "r8d",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "caller": "Beyond.Gameplay.Actions.GameAction::PlayFmv",
+        "callee": "Beyond.Gameplay.Actions.GameAction::AddCinematicItem2Queue",
+        "callerOffset": 310,
+        "targetVa": "0x1875dcf58",
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 307,
+            "va": "0x1875e753b",
+            "bytes": "48 8b cf",
+            "text": "mov rcx, rdi",
+            "write": {
+              "register": "rcx",
+              "value": "rdi"
+            }
+          },
+          "rdx": {
+            "offset": 302,
+            "va": "0x1875e7536",
+            "bytes": "48 8d 54 24 38",
+            "text": "lea rdx, [rsp+0x38]",
+            "write": {
+              "register": "rdx",
+              "value": "&[rsp+0x38]"
+            }
+          },
+          "r8": {
+            "offset": 299,
+            "va": "0x1875e7533",
+            "bytes": "45 33 c0",
+            "text": "xor r8d, r8d",
+            "write": {
+              "register": "r8d",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "caller": "Beyond.Gameplay.Actions.GameAction::ShowNarrativeBlackScreen",
+        "callee": "Beyond.Gameplay.Core.CinematicQueueManager::AddCinematicQueueItem",
+        "callerOffset": 156,
+        "targetVa": "0x186dae0f4",
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 136,
+            "va": "0x1875ec538",
+            "bytes": "48 8b 4a 70",
+            "text": "mov rcx, [rdx+0x70]",
+            "write": {
+              "register": "rcx",
+              "value": "[rdx+0x70]"
+            }
+          },
+          "rdx": {
+            "offset": 153,
+            "va": "0x1875ec549",
+            "bytes": "48 8b d3",
+            "text": "mov rdx, rbx",
+            "write": {
+              "register": "rdx",
+              "value": "rbx"
+            }
+          },
+          "r8": {
+            "offset": 148,
+            "va": "0x1875ec544",
+            "bytes": "4c 8d 44 24 40",
+            "text": "lea r8, [rsp+0x40]",
+            "write": {
+              "register": "r8",
+              "value": "&[rsp+0x40]"
+            }
+          },
+          "r9": {
+            "offset": 145,
+            "va": "0x1875ec541",
+            "bytes": "45 33 c9",
+            "text": "xor r9d, r9d",
+            "write": {
+              "register": "r9d",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "caller": "Beyond.Gameplay.Actions.GameAction::ShowUIReadingPopPanel",
+        "callee": "Beyond.Gameplay.Core.CinematicQueueManager::AddCinematicQueueItem",
+        "callerOffset": 156,
+        "targetVa": "0x186dae0f4",
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 136,
+            "va": "0x1875ec940",
+            "bytes": "48 8b 4a 70",
+            "text": "mov rcx, [rdx+0x70]",
+            "write": {
+              "register": "rcx",
+              "value": "[rdx+0x70]"
+            }
+          },
+          "rdx": {
+            "offset": 153,
+            "va": "0x1875ec951",
+            "bytes": "48 8b d3",
+            "text": "mov rdx, rbx",
+            "write": {
+              "register": "rdx",
+              "value": "rbx"
+            }
+          },
+          "r8": {
+            "offset": 148,
+            "va": "0x1875ec94c",
+            "bytes": "4c 8d 44 24 40",
+            "text": "lea r8, [rsp+0x40]",
+            "write": {
+              "register": "r8",
+              "value": "&[rsp+0x40]"
+            }
+          },
+          "r9": {
+            "offset": 145,
+            "va": "0x1875ec949",
+            "bytes": "45 33 c9",
+            "text": "xor r9d, r9d",
+            "write": {
+              "register": "r9d",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "caller": "Beyond.Gameplay.Actions.GameAction::StartDialog",
+        "callee": "Beyond.Gameplay.Actions.GameAction::AddCinematicItem2Queue",
+        "callerOffset": 322,
+        "targetVa": "0x1875dcf58",
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 319,
+            "va": "0x1875ed663",
+            "bytes": "48 8b cb",
+            "text": "mov rcx, rbx",
+            "write": {
+              "register": "rcx",
+              "value": "rbx"
+            }
+          },
+          "rdx": {
+            "offset": 314,
+            "va": "0x1875ed65e",
+            "bytes": "48 8d 54 24 40",
+            "text": "lea rdx, [rsp+0x40]",
+            "write": {
+              "register": "rdx",
+              "value": "&[rsp+0x40]"
+            }
+          },
+          "r8": {
+            "offset": 311,
+            "va": "0x1875ed65b",
+            "bytes": "45 33 c0",
+            "text": "xor r8d, r8d",
+            "write": {
+              "register": "r8d",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "caller": "Beyond.Gameplay.Actions.GameAction::StartDialogFromInteractive",
+        "callee": "Beyond.Gameplay.Actions.GameAction::StartDialog",
+        "callerOffset": 193,
+        "targetVa": "0x1875ed524",
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 178,
+            "va": "0x1875ed496",
+            "bytes": "49 8b ce",
+            "text": "mov rcx, r14",
+            "write": {
+              "register": "rcx",
+              "value": "r14"
+            }
+          },
+          "rdx": {
+            "offset": 169,
+            "va": "0x1875ed48d",
+            "bytes": "48 8d 54 24 50",
+            "text": "lea rdx, [rsp+0x50]",
+            "write": {
+              "register": "rdx",
+              "value": "&[rsp+0x50]"
+            }
+          },
+          "r8": {
+            "offset": 164,
+            "va": "0x1875ed488",
+            "bytes": "4c 8d 44 24 40",
+            "text": "lea r8, [rsp+0x40]",
+            "write": {
+              "register": "r8",
+              "value": "&[rsp+0x40]"
+            }
+          },
+          "r9": {
+            "offset": 152,
+            "va": "0x1875ed47c",
+            "bytes": "4c 8b cb",
+            "text": "mov r9, rbx",
+            "write": {
+              "register": "r9",
+              "value": "rbx"
+            }
+          },
+          "xmm0": {
+            "offset": 142,
+            "va": "0x1875ed472",
+            "bytes": "0f 10 07",
+            "text": "movaps xmm0, [rdi]",
+            "write": {
+              "register": "xmm0",
+              "value": "[rdi]"
+            }
+          },
+          "xmm1": {
+            "offset": 155,
+            "va": "0x1875ed47f",
+            "bytes": "0f 10 0e",
+            "text": "movaps xmm1, [rsi]",
+            "write": {
+              "register": "xmm1",
+              "value": "[rsi]"
+            }
+          }
+        }
+      },
+      {
+        "caller": "Beyond.Gameplay.Actions.GameAction::StartForceSNS",
+        "callee": "Beyond.Gameplay.Actions.GameAction::AddCinematicItem2Queue",
+        "callerOffset": 187,
+        "targetVa": "0x1875dcf58",
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 184,
+            "va": "0x1875ed9f0",
+            "bytes": "48 8b cb",
+            "text": "mov rcx, rbx",
+            "write": {
+              "register": "rcx",
+              "value": "rbx"
+            }
+          },
+          "rdx": {
+            "offset": 179,
+            "va": "0x1875ed9eb",
+            "bytes": "48 8d 54 24 30",
+            "text": "lea rdx, [rsp+0x30]",
+            "write": {
+              "register": "rdx",
+              "value": "&[rsp+0x30]"
+            }
+          },
+          "r8": {
+            "offset": 176,
+            "va": "0x1875ed9e8",
+            "bytes": "45 33 c0",
+            "text": "xor r8d, r8d",
+            "write": {
+              "register": "r8d",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "caller": "Beyond.Gameplay.Actions.GameAction::StartRemoteComm",
+        "callee": "Beyond.Gameplay.Core.CinematicQueueManager::AddCinematicQueueItem",
+        "callerOffset": 433,
+        "targetVa": "0x186dae0f4",
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 413,
+            "va": "0x1875edf2d",
+            "bytes": "48 8b 4a 70",
+            "text": "mov rcx, [rdx+0x70]",
+            "write": {
+              "register": "rcx",
+              "value": "[rdx+0x70]"
+            }
+          },
+          "rdx": {
+            "offset": 430,
+            "va": "0x1875edf3e",
+            "bytes": "48 8b d7",
+            "text": "mov rdx, rdi",
+            "write": {
+              "register": "rdx",
+              "value": "rdi"
+            }
+          },
+          "r8": {
+            "offset": 425,
+            "va": "0x1875edf39",
+            "bytes": "4c 8d 44 24 30",
+            "text": "lea r8, [rsp+0x30]",
+            "write": {
+              "register": "r8",
+              "value": "&[rsp+0x30]"
+            }
+          },
+          "r9": {
+            "offset": 422,
+            "va": "0x1875edf36",
+            "bytes": "45 33 c9",
+            "text": "xor r9d, r9d",
+            "write": {
+              "register": "r9d",
+              "value": "0"
+            }
+          }
+        }
+      },
+      {
+        "caller": "Beyond.Gameplay.Actions.GameAction::StartRemoteCommWithDefaultBlackScreen",
+        "callee": "Beyond.Gameplay.Actions.GameAction::StartRemoteComm",
+        "callerOffset": 194,
+        "targetVa": "0x1875edd90",
+        "argumentRegisterWrites": {
+          "rcx": {
+            "offset": 191,
+            "va": "0x1875edd53",
+            "bytes": "48 8b ce",
+            "text": "mov rcx, rsi",
+            "write": {
+              "register": "rcx",
+              "value": "rsi"
+            }
+          },
+          "rdx": {
+            "offset": 188,
+            "va": "0x1875edd50",
+            "bytes": "48 8b d3",
+            "text": "mov rdx, rbx",
+            "write": {
+              "register": "rdx",
+              "value": "rbx"
+            }
+          },
+          "r8": {
+            "offset": 185,
+            "va": "0x1875edd4d",
+            "bytes": "4c 8b c7",
+            "text": "mov r8, rdi",
+            "write": {
+              "register": "r8",
+              "value": "rdi"
+            }
+          },
+          "r9": {
+            "offset": 182,
+            "va": "0x1875edd4a",
+            "bytes": "45 33 c9",
+            "text": "xor r9d, r9d",
+            "write": {
+              "register": "r9d",
+              "value": "0"
+            }
+          }
+        }
       }
     ]
   },
@@ -1644,6 +6553,6 @@
     "luaCallsAreRuntimeDispatchers": true,
     "staticMissionOwnership": false,
     "staticStoryOrder": false,
-    "nextEvidence": "Trace native queue-item producers back to original table/LevelScript rows that co-carry cinematicId and mission/quest identity."
+    "nextEvidence": "Join each structurally discovered action type to exact decoded LevelScript rows; attach mission ownership only from those original rows and their authored event/control paths."
   }
 }

@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MODULE = ROOT / "webui" / "src" / "features" / "story_triggers.js"
 APP = ROOT / "webui" / "app.js"
 APP_TREE = ROOT / "webui" / "app_tree.js"
+MISSION_PIPELINE = ROOT / "webui" / "src" / "features" / "mission_pipeline" / "index.js"
 
 
 @unittest.skipUnless(shutil.which("node"), "Node.js is required for WebUI JavaScript tests")
@@ -143,3 +144,10 @@ for (const [key, category] of [
             "rebuildTree({ resetScroll: false });",
             app_tree_source,
         )
+
+    def test_mission_pipeline_surfaces_native_producer_and_attached_files(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("route.nativeCinematicProducerRoutes", source)
+        self.assertIn('t("cinematicProducer")', source)
+        self.assertIn("nativeCinematicProducerRouteAttachments", source)
+        self.assertIn("route.sourceFiles", source)

@@ -3381,6 +3381,7 @@ def load_lua_story_playback_evidence(
     runtime_contract = (audit.get("gameActionAudit") or {}).get(
         "runtimeHandleContract"
     ) or {}
+    action_producer_routes = runtime_contract.get("actionProducerRoutes") or []
     if runtime_dispatchers and (
         not runtime_contract.get("report")
         or not re.fullmatch(
@@ -3390,6 +3391,13 @@ def load_lua_story_playback_evidence(
         or not {
             str(row.get("method") or "") for row in runtime_dispatchers
         }.issubset(set(runtime_contract.get("dispatcherMethods") or []))
+        or not action_producer_routes
+        or any(
+            not row.get("actionType")
+            or not row.get("producerMethod")
+            or not row.get("actionToken")
+            for row in action_producer_routes
+        )
     ):
         raise RuntimeError(
             f"validator={validator} failed: gate=runtime_handle_contract "
@@ -3423,6 +3431,9 @@ def load_lua_story_playback_evidence(
             "does not supply mission ownership or Story order. "
             "Binary-proven cinematic-handle calls are one polymorphic runtime "
             "dispatcher family and are not counted as unresolved authored references. "
+            "A binary-discovered typed action-to-producer route can annotate an exact "
+            "LevelScript playback route and attach its audit file, but cannot supply "
+            "mission ownership or order by itself. "
             "Case-folded matches create no route without matching installed-binary proof."
         ),
     }
@@ -5863,6 +5874,13 @@ def build_story_binding_coverage(
         lua_consumer_audit_path,
         cutscene_case_audit_paths,
     )
+    cinematic_contract = lua_playback_evidence.get("runtimeHandleContract") or {}
+    cinematic_report = str(cinematic_contract.get("report") or "")
+    cinematic_producers_by_action: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for producer_route in cinematic_contract.get("actionProducerRoutes") or []:
+        action_type = str(producer_route.get("actionType") or "")
+        if action_type:
+            cinematic_producers_by_action[action_type].append(producer_route)
 
     def add_trigger_route(route: dict[str, Any] | None) -> None:
         if not route:
@@ -5870,6 +5888,35 @@ def build_story_binding_coverage(
         key = str(route.get("storyKey") or "")
         if not key:
             return
+        matched_producers: list[dict[str, Any]] = []
+        for action_name in route.get("actionNames") or []:
+            for producer in cinematic_producers_by_action.get(
+                str(action_name),
+                [],
+            ):
+                compact = {
+                    field: producer.get(field)
+                    for field in (
+                        "actionType",
+                        "actionFullType",
+                        "actionMethod",
+                        "actionToken",
+                        "actionVa",
+                        "producerType",
+                        "producerMethod",
+                        "producerToken",
+                        "producerVa",
+                    )
+                    if producer.get(field) not in (None, "")
+                }
+                if compact not in matched_producers:
+                    matched_producers.append(compact)
+        if matched_producers:
+            route["nativeCinematicProducerRoutes"] = matched_producers
+            route["sourceFiles"] = _unique_route_strings(
+                route.get("sourceFiles"),
+                cinematic_report,
+            )
         signature = json.dumps(
             route,
             ensure_ascii=False,
@@ -6643,6 +6690,7 @@ def build_story_binding_coverage(
             "definitionOnlyAudioMetadata": definition_only_classification["source"],
             "luaPlaybackAudit": lua_playback_evidence["auditReport"],
             "luaPlaybackAuditSha256": lua_playback_evidence["auditSha256"],
+            "cinematicQueueRuntimeAudit": cinematic_report,
         },
         "counts": {
             "pipelineMissions": len(mission_ids),
@@ -6655,6 +6703,15 @@ def build_story_binding_coverage(
             "connectionEvidenceRows": evidence_row_count,
             "storyTriggerRoutes": trigger_route_count,
             "storyFilesWithTriggerRoutes": story_files_with_trigger_routes,
+            "nativeCinematicProducerStoryFiles": sum(
+                any(route.get("nativeCinematicProducerRoutes") for route in row.get("routes") or [])
+                for row in story_trigger_manifest.values()
+            ),
+            "nativeCinematicProducerRouteAttachments": sum(
+                len(route.get("nativeCinematicProducerRoutes") or [])
+                for row in story_trigger_manifest.values()
+                for route in row.get("routes") or []
+            ),
             "contextOnlyTriggerRouteFiles":
                 context_only_trigger_route_files,
             "contextOnlyTriggerRoutes": context_only_trigger_route_count,

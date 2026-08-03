@@ -51,6 +51,7 @@
       luaPlaybackRejected: "Lua case rejected",
       luaHandleDispatchers: "Lua runtime dispatch branches",
       luaPlaybackAudit: "Shipped-Lua census",
+      cinematicProducer: "Original-binary producer",
       rootPlaybackAliases: "root playback aliases",
       exactDialogRootAlias: "exact DialogTree root alias",
       exactDialogRootAliasBoundary: "byte-identical payload; no activation or server branch-selection claim",
@@ -750,6 +751,7 @@
       luaPlaybackRejected: "Lua 大小写拒绝",
       luaHandleDispatchers: "Lua 运行时分派分支",
       luaPlaybackAudit: "随游戏发布的 Lua 普查",
+      cinematicProducer: "原始二进制播放生产者",
       definitionOnlyStory: "仅有定义的黑屏文本",
       nonMissionContentStory: "非使命内容",
       nonMissionContentStoryHint: "这些剧情 ID 已由原生数据证明属于非使命内容：按说话人分的电台续播语音、角色 SNS 话题、工厂教程动作、干员档案语音，或舰船系统强类型对话树。证据没有序列化使命或任务归属。仅依据原生字段和强类型消费者判定，绝不依据文件名。",
@@ -1790,7 +1792,7 @@
       <span>${esc(t("sourceChangedFiles"))}: ${Number(source.persistentChangedBaseFileCount || changedFiles.length).toLocaleString()} / ${Number(source.streamingFileCount || 0).toLocaleString()}</span>
       ${changedFiles.length ? `<code>${esc(changedFiles.join(", "))}</code>` : ""}
       <span>${esc(t("sourceMissingFiles"))}: ${Number(missingFiles.length).toLocaleString()}</span>
-      ${state.index?.storyCoverage?.luaStoryPlaybackEvidence?.status ? `<span>${esc(t("luaPlaybackAudit"))}: <strong>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.status)}</strong> · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.scannedPlaybackCalls || 0).toLocaleString()} calls · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.acceptedTableCarrierCalls || 0).toLocaleString()} table-owned · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherCallCount || 0).toLocaleString()} runtime branches / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherFamilyCount || 0).toLocaleString()} queue family · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.unresolvedPlaybackCalls || 0).toLocaleString()} authored unresolved · <code>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.auditSha256 || "")}</code></span>` : ""}
+      ${state.index?.storyCoverage?.luaStoryPlaybackEvidence?.status ? `<span>${esc(t("luaPlaybackAudit"))}: <strong>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.status)}</strong> · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.scannedPlaybackCalls || 0).toLocaleString()} calls · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.acceptedTableCarrierCalls || 0).toLocaleString()} table-owned · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherCallCount || 0).toLocaleString()} runtime branches / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherFamilyCount || 0).toLocaleString()} queue family · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleContract?.nativeProducerCount || 0).toLocaleString()} native producers / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleContract?.typedActionProducerTypeCount || 0).toLocaleString()} typed actions · ${Number(state.index.storyCoverage.counts?.nativeCinematicProducerRouteAttachments || 0).toLocaleString()} mission-route attachments · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.unresolvedPlaybackCalls || 0).toLocaleString()} authored unresolved · <code>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.auditSha256 || "")}</code></span>` : ""}
     `;
   }
 
@@ -2746,11 +2748,15 @@
   function triggerRouteHtml(route) {
     const steps = (route.steps || []).filter((step) => step && step.kind);
     const paths = (route.nativePaths || []).filter(Boolean);
+    const producers = (route.nativeCinematicProducerRoutes || []).filter(Boolean);
+    const sources = (route.sourceFiles || []).filter(Boolean);
     if (!steps.length) return "";
     return `<div class="mp-trigger-route is-${esc(route.causality || "context")}">
       <header><strong>${esc(t("triggerRoute"))}</strong><span>${esc(triggerCausalityLabel(route.causality))}</span>${route.controlPathCount ? `<b>${esc(route.controlPathCount)} ${esc(t("triggerExactPaths"))}</b>` : ""}</header>
       <div class="mp-trigger-chain">${steps.map((step, index) => `${index ? '<i aria-hidden="true">&rarr;</i>' : ""}${triggerStepHtml(step)}`).join("")}</div>
       ${paths.length ? `<section class="mp-trigger-events"><header><strong>${esc(t("triggerEvents"))}</strong><small>${esc(t("triggerEventsHint"))}</small></header><div>${paths.map(nativePathHtml).join("")}</div></section>` : ""}
+      ${producers.length ? `<small><strong>${esc(t("cinematicProducer"))}:</strong> ${producers.map((row) => `<code>${esc(`${row.actionType || "action"}::${row.actionMethod || "?"} -> ${row.producerType || "producer"}::${row.producerMethod || "?"}`)}</code>`).join(" ")}</small>` : ""}
+      ${sources.length ? `<small><strong>${esc(t("source"))}:</strong> ${sources.map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}
     </div>`;
   }
 

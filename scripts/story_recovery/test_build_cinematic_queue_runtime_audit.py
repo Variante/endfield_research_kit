@@ -13,6 +13,17 @@ import build_cinematic_queue_runtime_audit as audit  # noqa: E402
 
 
 class CinematicQueueRuntimeAuditTests(unittest.TestCase):
+    def test_missing_enqueue_sink_names_failed_gate(self):
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"validator=cinematic_queue_runtime failed: gate=enqueue_sink .*actual=0",
+        ):
+            audit.discover_enqueue_family(
+                "Fixture.Runtime.QueueDataBase",
+                "Fixture.Runtime+QueueHandle",
+                [],
+            )
+
     def test_structural_contract_discovers_new_payloads_without_name_allowlist(self):
         handle_type = "Fixture.Runtime+QueueHandle"
         catalog = {"matchedTypes": [
@@ -39,31 +50,74 @@ class CinematicQueueRuntimeAuditTests(unittest.TestCase):
             },
         ]}
         body_map = {
-            "bodyTargets": [{
-                "type": "Fixture.Actions",
-                "method": "PlayBrandNewByHandle",
-                "methodIndex": 12,
-                "token": "0x0600000c",
-                "parameterDetails": [{"name": "handle", "typeName": handle_type}],
-                "mappingStatus": "mapped",
-                "methodPointerVa": "0x1000",
-                "methodPointerRva": "0x1000",
-                "fileOffset": "0x800",
-            }],
-            "directCallEdges": [{
-                "caller": {"type": "Fixture.Actions", "method": "AddCinematicItem2Queue"},
-                "callees": [{"type": "Fixture.Runtime", "method": "AddCinematicQueueItem"}],
-                "offset": 8,
-                "targetVa": "0x2000",
-            }],
+            "bodyTargets": [
+                {
+                    "type": "Fixture.Actions",
+                    "method": "PlayBrandNewByHandle",
+                    "methodIndex": 12,
+                    "token": "0x0600000c",
+                    "parameterDetails": [{"name": "handle", "typeName": handle_type}],
+                    "mappingStatus": "mapped",
+                    "methodPointerVa": "0x1000",
+                    "methodPointerRva": "0x1000",
+                    "fileOffset": "0x800",
+                },
+                {
+                    "type": "Fixture.Runtime",
+                    "method": "Enqueue",
+                    "methodIndex": 13,
+                    "token": "0x0600000d",
+                    "parameterDetails": [{
+                        "name": "item",
+                        "typeName": "Fixture.Runtime.QueueDataBase",
+                    }],
+                    "mappingStatus": "mapped",
+                    "methodPointerVa": "0x2000",
+                    "directCalls": [],
+                },
+                {
+                    "type": "Fixture.Actions",
+                    "method": "ProduceBrandNew",
+                    "methodIndex": 14,
+                    "token": "0x0600000e",
+                    "parameterDetails": [{"name": "storyIdentity", "typeName": "System.String"}],
+                    "mappingStatus": "mapped",
+                    "methodPointerVa": "0x3000",
+                    "directCalls": [{
+                        "offset": 8,
+                        "targetVa": "0x2000",
+                        "resolved": [{"type": "Fixture.Runtime", "method": "Enqueue"}],
+                    }],
+                },
+            ],
         }
+        action_rows = [{
+            "type": "Fixture.Actions.BrandNewAction",
+            "method": "Execute",
+            "slot": 15,
+            "token": "0x0600000f",
+            "methodPointerVa": "0x4000",
+            "typeFields": [{"name": "_storyIdentity"}],
+            "directCalls": [{
+                "offset": 12,
+                "targetVa": "0x3000",
+                "resolved": [{"type": "Fixture.Actions", "method": "ProduceBrandNew"}],
+            }],
+        }]
 
-        contract = audit.analyze_contract(catalog, body_map)
+        contract = audit.analyze_contract(catalog, body_map, action_rows)
 
         self.assertEqual(["PlayBrandNewByHandle"], contract["nativeDispatcherMethods"])
         self.assertEqual(
             ["get_storyIdentity"],
             contract["payloadTypes"][0]["idGetters"],
+        )
+        self.assertEqual(["ProduceBrandNew"], [
+            row["method"] for row in contract["nativeProducers"]
+        ])
+        self.assertEqual(
+            "BrandNewAction",
+            contract["actionProducerRoutes"][0]["actionType"],
         )
 
 

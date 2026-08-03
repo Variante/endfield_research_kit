@@ -87,7 +87,9 @@ Important Story components:
 - `mission_recovery.py`: mission and quest relationships.
 - `build_source_story_gap_queue.py`: actionable source-only recovery queue.
 - `story_recovery/build_cinematic_queue_runtime_audit.py`: repeatable installed
-  metadata/GameAssembly audit of the general cinematic handle family.
+  metadata/GameAssembly audit that structurally discovers the cinematic handle,
+  enqueue/producer call graph, and typed action-to-producer routes without
+  per-object allowlists.
 - `build_spaceship_story_content_audit.py`: exact typed spacecraft DialogTree
   and character profile-voice non-mission classification, refreshed by
   `refresh_evidence.py`.

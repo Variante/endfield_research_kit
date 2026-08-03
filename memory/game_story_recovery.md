@@ -28,6 +28,7 @@ Latest CN reports:
 | LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
 | Native branch predicates | 258 named; 263 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
+| Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -1079,14 +1080,18 @@ native audit proves they are branches of the same polymorphic cinematic queue.
 `CinematicQueueItemDataBase` carries `cinematicId`, the handle carries `id` plus
 `data`, and seven typed payload classes expose their identity through getters
 selected by `queueItemType`. Current GameAssembly bodies map all seven
-dispatchers and the direct enqueue edge. Lua therefore contributes one runtime
-dispatcher family with zero unresolved authored playback references. The next
-ownership step is generic producer tracing from native queue-item construction
-back to an original row that co-carries mission/quest identity. Multi-row table
-fields stay candidates unless their lookup key is proven. Every row carries
-source hashes, line, typed native entry, audit hash, and a fail-closed validator
-result. Lua without a same-row mission/quest foreign key still proves controller
-playback only, never Story order; OCR and manual order do not participate.
+dispatchers. The audit now discovers the enqueue sink by its queue-base
+parameter, walks callers transitively, and scans the complete action-framework
+virtual surface plus same-type helper closure. It finds ten native producers
+(eight direct entry points plus two wrappers) and 16 typed serialized action
+routes without payload, action, or Story-id allowlists. Mission Pipeline joins
+those types only onto already exact LevelScript playback routes, attaching the
+original LevelScript and binary-audit files to 1,682 routes across 1,332 Story
+files. This annotation adds no ownership or ordering edge: mission/quest scope
+still comes only from the serialized action row and its authored event/control
+path. Multi-row table fields stay candidates unless their lookup key is proven.
+Lua without a same-row mission/quest foreign key proves controller playback
+only, never Story order; OCR and manual order do not participate.
 
 ## Remaining gaps
 
