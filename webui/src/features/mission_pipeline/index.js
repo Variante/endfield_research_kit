@@ -94,6 +94,12 @@
       postPlaybackBranch: "typed local branch points",
       postPlaybackServerHandoff: "server handoff (handler unresolved)",
       postPlaybackBoundary: "Typed successor fields prove the local action graph after playback. Callback labels do not identify a server handler, mission/quest owner, state write, or cross-Story chronology.",
+      postPlaybackActionNameAudit: "Complete binary ActionBase naming",
+      postPlaybackFormatterTags: "validated formatter union tags",
+      postPlaybackFormatterNamed: "formatter-named action placements",
+      nativeTransitionNamedEndpoints: "named native transition endpoints",
+      postPlaybackOutsideActionBase: "unresolved action shapes",
+      postPlaybackActionNameBoundary: "Action names come from all 1,313 contiguous union tags recovered from the installed MemoryPack formatter. The compact unionTag plus serialized member count is authoritative; legacy combined raw opcodes remain provenance only. Class names do not select branches, establish mission ownership, or order Story files.",
       postPlaybackLevelSequenceAudit: "Exact post-playback LevelSequence files",
       postPlaybackLevelSequenceActions: "typed sequence action placements",
       postPlaybackLevelSequenceAssets: "exact original TextAssets",
@@ -1828,6 +1834,7 @@
       [storyCounts.rootPlaybackAliasRows, t("rootPlaybackAliases")],
       [storyCounts.missionlessSubGameStoryFiles, t("missionlessSubGameStory")],
       [storyCounts.missionlessNativeRuntimeStoryFiles, t("missionlessRuntimeStory")],
+      [storyCounts.postPlaybackFormatterNamedActions, t("postPlaybackFormatterNamed")],
       [storyCounts.postPlaybackLevelSequenceExactAssets, t("postPlaybackLevelSequenceAssets")],
       [storyCounts.postPlaybackVariableSetters, t("postPlaybackVariableSetterStat")],
       [storyCounts.unlinkedDefinitionOnlyFiles, t("definitionOnlyStory")],
@@ -4000,6 +4007,9 @@
       .filter((row) => row && row.eventName && row.selector && (row.storyFiles || []).length);
     const variableBridgeAudit = state.index?.storyCoverage?.postPlaybackVariableBridgeAudit || {};
     const variableBridgeSummary = variableBridgeAudit.summary || {};
+    const actionNameAudit = state.index?.storyCoverage?.postPlaybackActionNameAudit || {};
+    const actionNameSummary = actionNameAudit.summary || {};
+    const storyOrderSummary = state.index?.storyOrder?.summary || {};
     const levelSequenceAudit = state.index?.storyCoverage?.postPlaybackLevelSequenceAssetAudit || {};
     const levelSequenceSummary = levelSequenceAudit.summary || {};
     const rows = [...(contract.outbound || []), ...(contract.inbound || [])];
@@ -4102,6 +4112,17 @@
         <header><strong>${esc(t("nativeGapQueue"))}</strong><p>${esc(t("nativeGapQueueHint"))}</p></header>
         ${coveragePolicy ? `<p class="mp-gap-policy"><b>${esc(t("evidencePolicy"))}:</b> ${esc(coveragePolicy)}</p>` : ""}
         <div class="mp-gap-family-list">${eventFamilies.map(([eventName, count]) => `<div class="mp-gap-family-row"><code>${esc(eventName)}</code><span><i style="width:${Math.max(4, Math.round((Number(count) / maxEventFamilyCount) * 100))}%"></i></span><b>${Number(count).toLocaleString()}</b></div>`).join("")}</div>
+      </section>` : ""}
+      ${actionNameAudit.schema ? `<section class="mp-gap-queue mp-action-name-audit">
+        <header><strong>${esc(t("postPlaybackActionNameAudit"))}</strong><p>${esc(t("postPlaybackActionNameBoundary"))}</p></header>
+        <div class="mp-gap-family-list">
+          <div class="mp-gap-family-row"><code>${esc(t("postPlaybackFormatterTags"))}</code><span></span><b>${Number(actionNameAudit.formatterTable?.summary?.recoveredTags || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("postPlaybackFormatterNamed"))}</code><span></span><b>${Number(actionNameSummary.formatterNamedActionPlacements || 0).toLocaleString()} / ${Number(actionNameSummary.actionPlacements || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("nativeTransitionNamedEndpoints"))}</code><span></span><b>${Number(storyOrderSummary.nativeControlPathNamedActionEndpoints || 0).toLocaleString()} / ${Number(storyOrderSummary.nativeControlPathTransitionActionEndpoints || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("postPlaybackOutsideActionBase"))}</code><span></span><b>${Number(actionNameSummary.unresolvedOutsideActionBaseShapes || 0).toLocaleString()}</b></div>
+        </div>
+        ${(actionNameAudit.unresolvedActionShapes || []).length ? `<p class="mp-gap-policy">${actionNameAudit.unresolvedActionShapes.map((row) => `<code>${esc(`${row.opcode} ×${row.count}`)}</code>`).join(" ")}</p>` : ""}
+        <p class="mp-gap-policy"><code>${esc(actionNameAudit.formatterTable?.sourceFile || "")}</code> · SHA-256 <code>${esc(actionNameAudit.formatterTable?.sourceSha256 || "")}</code></p>
       </section>` : ""}
       ${levelSequenceAudit.schema ? `<section class="mp-gap-queue mp-level-sequence-audit">
         <header><strong>${esc(t("postPlaybackLevelSequenceAudit"))}</strong><p>${esc(t("postPlaybackLevelSequenceBoundary"))}</p></header>

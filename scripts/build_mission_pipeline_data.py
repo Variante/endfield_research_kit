@@ -36,6 +36,8 @@ try:
         decode_levelscript_encounter_module_target,
     )
     from story_builder.level_bindings import (
+        ACTIONBASE_FORMATTER_ACTION_NAMES,
+        ACTIONBASE_FORMATTER_NAME_AUDIT,
         build_levelscript_native_story_playback_index,
     )
     from story_builder.mission_assets import (
@@ -79,6 +81,8 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
         decode_levelscript_encounter_module_target,
     )
     from scripts.story_builder.level_bindings import (
+        ACTIONBASE_FORMATTER_ACTION_NAMES,
+        ACTIONBASE_FORMATTER_NAME_AUDIT,
         build_levelscript_native_story_playback_index,
     )
     from scripts.story_builder.mission_assets import (
@@ -239,8 +243,10 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v30 closes the post-playback variable-setter route against every exact
 # property/blackboard Story receiver and publishes the bounded result. v31
 # resolves typed post-playback LevelSequence action ids to internally validated
-# original TextAssets without using their names as mission/order evidence.
-SCHEMA_VERSION = 31
+# original TextAssets without using their names as mission/order evidence. v32
+# names the complete ActionBase surface through one hash-validated formatter
+# table recovered from the installed binary.
+SCHEMA_VERSION = 32
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -6220,6 +6226,118 @@ def attach_exact_level_sequence_assets(
     }
 
 
+def build_post_playback_action_name_audit(
+    runtime_nodes: list[dict[str, Any]],
+    *,
+    formatter_names: dict[int, str] | None = None,
+    formatter_audit: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Measure binary formatter naming across the complete control surface."""
+    formatter_names = (
+        ACTIONBASE_FORMATTER_ACTION_NAMES
+        if formatter_names is None
+        else formatter_names
+    )
+    formatter_audit = (
+        ACTIONBASE_FORMATTER_NAME_AUDIT
+        if formatter_audit is None
+        else formatter_audit
+    )
+    shape_counts: Counter[tuple[str, str]] = Counter()
+    formatter_named_actions = 0
+    fallback_named_actions = 0
+    unresolved_actions = 0
+    mismatches: list[dict[str, Any]] = []
+    opcode_pattern = re.compile(r"^0x([0-9a-f]+)/0x([0-9a-f]+)$", re.IGNORECASE)
+    for node in runtime_nodes:
+        for control in node.get("postPlaybackControls") or []:
+            for action in control.get("actions") or []:
+                opcode = str(action.get("opcode") or "")
+                action_name = str(action.get("actionName") or "")
+                shape_counts[(opcode, action_name)] += 1
+                match = opcode_pattern.match(opcode)
+                union_tag_text = str(action.get("unionTag") or "")
+                try:
+                    union_tag = int(union_tag_text, 16)
+                except ValueError:
+                    union_tag = int(match.group(1), 16) if match else -1
+                serialized_member_count = action.get("serializedMemberCount")
+                if not isinstance(serialized_member_count, int):
+                    serialized_member_count = (
+                        int(match.group(2), 16) if match else 0
+                    )
+                if union_tag < 0:
+                    unresolved_actions += 1
+                    continue
+                formatter_name = (
+                    str(formatter_names.get(union_tag) or "")
+                    if serialized_member_count > 0
+                    else ""
+                )
+                if formatter_name:
+                    if action_name == formatter_name:
+                        formatter_named_actions += 1
+                    else:
+                        mismatches.append({
+                            "validator": "postPlaybackActionFormatterName",
+                            "gate": "action_name_equals_formatter_tag",
+                            "sourceFile": str(control.get("sourceFile") or ""),
+                            "storyKey": str(control.get("storyKey") or ""),
+                            "actionLocalId": action.get("localId"),
+                            "expected": {
+                                "opcode": opcode,
+                                "unionTag": f"0x{union_tag:04x}",
+                                "serializedMemberCount": serialized_member_count,
+                                "actionName": formatter_name,
+                            },
+                            "actual": {"actionName": action_name},
+                        })
+                elif action_name:
+                    fallback_named_actions += 1
+                else:
+                    unresolved_actions += 1
+    total_actions = sum(shape_counts.values())
+    unresolved_shapes = [
+        {"opcode": opcode, "count": count}
+        for (opcode, action_name), count in sorted(shape_counts.items())
+        if not action_name
+    ]
+    source_failures = list(formatter_audit.get("validationFailures") or [])
+    failures = source_failures + mismatches
+    return {
+        "schema": "postPlaybackActionNameAudit.v1",
+        "status": (
+            "validated_complete_actionbase_surface"
+            if not failures and not unresolved_actions
+            else "validated_actionbase_complete_outside_families_retained"
+            if not failures
+            else "validation_failed"
+        ),
+        "formatterTable": formatter_audit,
+        "summary": {
+            "actionPlacements": total_actions,
+            "formatterNamedActionPlacements": formatter_named_actions,
+            "fallbackNamedActionPlacements": fallback_named_actions,
+            "unresolvedOutsideActionBasePlacements": unresolved_actions,
+            "distinctActionShapes": len(shape_counts),
+            "unresolvedOutsideActionBaseShapes": len(unresolved_shapes),
+            "validationFailures": len(failures),
+        },
+        "unresolvedActionShapes": unresolved_shapes,
+        "validationFailures": failures,
+        "usesOcrOrManualOrder": False,
+        "missionOwnershipEvidence": False,
+        "crossStoryOrderEvidence": False,
+        "evidenceBoundary": (
+            "The installed ActionBase MemoryPack formatter names action classes "
+            "from the compact unionTag plus serializedMemberCount. Legacy combined "
+            "raw opcodes remain display provenance and are never used as the tag. "
+            "A class name does not identify a mission owner, select a branch, or "
+            "order separate Story files."
+        ),
+    }
+
+
 POST_PLAYBACK_VARIABLE_SETTER_ACTIONS = {
     "SetBool",
     "SetInt",
@@ -7379,6 +7497,10 @@ def build_story_binding_coverage(
     )
 
     level_sequence_textasset_index = build_level_sequence_textasset_index()
+    post_playback_action_name_audit = build_post_playback_action_name_audit(
+        missionless_runtime_nodes
+    )
+    action_name_summary = post_playback_action_name_audit.get("summary") or {}
     post_playback_level_sequence_asset_audit = attach_exact_level_sequence_assets(
         missionless_runtime_nodes,
         level_sequence_textasset_index,
@@ -7398,7 +7520,7 @@ def build_story_binding_coverage(
     )
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 15,
+        "schemaVersion": 16,
         "generated": int(time.time()),
         "language": language,
         "policy": (
@@ -7417,6 +7539,9 @@ def build_story_binding_coverage(
             "cinematicQueueRuntimeAudit": cinematic_report,
             "levelSequenceTextAssets": repo_path(
                 DEFAULT_LEVEL_SEQUENCE_TEXTASSET_ROOT
+            ),
+            "actionBaseFormatterTable": str(
+                ACTIONBASE_FORMATTER_NAME_AUDIT.get("sourceFile") or ""
             ),
         },
         "counts": {
@@ -7571,6 +7696,18 @@ def build_story_binding_coverage(
             "postPlaybackLevelSequenceRelatedOriginalFiles": (
                 level_sequence_asset_summary.get("relatedOriginalFiles", 0)
             ),
+            "postPlaybackActionPlacements": action_name_summary.get(
+                "actionPlacements", 0
+            ),
+            "postPlaybackFormatterNamedActions": action_name_summary.get(
+                "formatterNamedActionPlacements", 0
+            ),
+            "postPlaybackFallbackNamedActions": action_name_summary.get(
+                "fallbackNamedActionPlacements", 0
+            ),
+            "postPlaybackUnresolvedActionShapes": action_name_summary.get(
+                "unresolvedOutsideActionBaseShapes", 0
+            ),
             "postPlaybackVariableSetters": variable_bridge_summary.get(
                 "postPlaybackVariableSetters", 0
             ),
@@ -7601,6 +7738,7 @@ def build_story_binding_coverage(
             ),
         ),
         "storyTriggerManifest": story_trigger_manifest,
+        "postPlaybackActionNameAudit": post_playback_action_name_audit,
         "postPlaybackLevelSequenceAssetAudit": (
             post_playback_level_sequence_asset_audit
         ),
@@ -7728,6 +7866,8 @@ def build_story_binding_coverage(
         f"- Exact post-playback control graphs: `{counts['missionlessNativeRuntimePostPlaybackControls']}`",
         f"- Typed branch points in those graphs: `{counts['missionlessNativeRuntimePostPlaybackBranchPoints']}`",
         f"- Server handoffs with unresolved handler identity: `{counts['missionlessNativeRuntimePostPlaybackServerHandoffs']}`",
+        f"- Post-playback ActionBase placements named by the complete binary formatter: `{counts['postPlaybackFormatterNamedActions']}` / `{counts['postPlaybackActionPlacements']}`",
+        f"- Remaining action shapes outside ActionBase: `{counts['postPlaybackUnresolvedActionShapes']}`",
         f"- Typed post-playback LevelSequence action placements: `{counts['postPlaybackLevelSequenceActions']}`",
         f"- Unique serialized LevelSequence ids: `{counts['postPlaybackLevelSequenceIds']}`",
         f"- Exact internally validated original LevelSequence TextAssets: `{counts['postPlaybackLevelSequenceExactAssets']}`",
@@ -8963,6 +9103,15 @@ def publish_source_story_partial_order(
         summary["storyOrderNativeTransitionCount"] = int(
             order_summary.get("nativeControlPathTransitionEdgeCount") or 0
         )
+        summary["storyOrderNativeTransitionStepCount"] = int(
+            order_summary.get("nativeControlPathTransitionStepCount") or 0
+        )
+        summary["storyOrderNativeNamedActionEndpointCount"] = int(
+            order_summary.get("nativeControlPathNamedActionEndpointCount") or 0
+        )
+        summary["storyOrderNativeUnresolvedActionEndpointCount"] = int(
+            order_summary.get("nativeControlPathUnresolvedActionEndpointCount") or 0
+        )
         summary["storyOrderNativeBranchingTransitionCount"] = int(
             order_summary.get(
                 "nativeControlPathBranchingTransitionEdgeCount"
@@ -9663,6 +9812,9 @@ def main() -> int:
             "nonMissionContentKeys": coverage.get("nonMissionContentKeys") or [],
             "missionlessSubGamePlaybackNodes": coverage["missionlessSubGamePlaybackNodes"],
             "missionlessNativeRuntimeNodes": coverage["missionlessNativeRuntimeNodes"],
+            "postPlaybackActionNameAudit": (
+                coverage.get("postPlaybackActionNameAudit") or {}
+            ),
             "postPlaybackLevelSequenceAssetAudit": (
                 coverage.get("postPlaybackLevelSequenceAssetAudit") or {}
             ),
@@ -9752,6 +9904,8 @@ def main() -> int:
             f"{summary.get('nativeControlMerges', 0)} native convergences, "
             f"{summary.get('nativeControlPathTransitionEdges', 0)} exact native Story transitions "
             f"({summary.get('nativeControlPathBranchingTransitionEdges', 0)} branch-bearing), "
+            f"{summary.get('nativeControlPathNamedActionEndpoints', 0)}/"
+            f"{summary.get('nativeControlPathTransitionActionEndpoints', 0)} named transition endpoints, "
             f"{summary.get('nativeOrderedSequences', 0)} native ordered sequences, "
             f"{summary.get('nativeRelatedActionTopologies', 0)} related action graphs, "
             f"{summary.get('nativeNamedPredicates', 0)} named predicates, "

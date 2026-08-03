@@ -30,8 +30,9 @@ Latest CN reports:
 | Native branch predicates | 258 named; 263 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
 | Exact post-playback control | 128 graphs / 105 Story files / 348 actions and edges / 18 branch points / 76 unresolved server handoffs |
+| Binary ActionBase naming | 1,313 validated formatter tags / 348 of 348 post-playback actions / 2,562 of 2,562 native-transition endpoints named |
 | Exact post-playback LevelSequence files | 15 typed action placements / 7 serialized ids / 6 exact original TextAssets / 1 unresolved root handle |
-| Post-playback variable bridge | 23 typed setters / 50 exact listeners / 0 same-level, same-script, same-key joins |
+| Post-playback variable bridge | 66 typed setters (43 SetBool, 23 SetInt) / 50 exact listeners / 0 same-level, same-script, same-key joins |
 | Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
@@ -223,6 +224,23 @@ LevelScript property, and its original Persistent
 `MissionRuntimeAsset/e3m5.json` is attached as a related file. This still does
 not prove that the quest starts playback or that the handoff writes
 `isFinished`, so the Story remains unowned.
+Action naming now follows the complete installed-binary formatter rather than
+an expanding hand-maintained action subset. The general audit disassembles the
+`ActionBaseForMemoryPackFormatter` cctor and validates the current
+`GameAssembly.dll` and `global-metadata.dat` hashes, code-registration address,
+formatter type/method tokens and address, all 1,313 contiguous tags
+`0x0000..0x0520`, and zero missing, duplicate, or unknown-instruction rows.
+Runtime lookup uses each record's compact `unionTag` plus
+`serializedMemberCount`; the legacy combined raw opcode is preserved only as
+provenance. This distinction explains apparent high codes such as
+`0x0e34/0x00` as union tag `0x0034` / 14 members (`CallServer`) without a
+per-object rule. All 348 actions on the unresolved post-playback surface and
+both endpoints of all 1,281 exact native transition steps (2,562/2,562) now
+have formatter-backed class names. The existing 380 transition edges and 85
+branch-bearing edges are unchanged. The WebUI exposes formatter source/hash,
+coverage, and any unresolved shapes; the current count is zero. Names explain
+local control flow but do not choose a branch, identify a mission owner, or
+create chronology, and OCR/manual order are not inputs.
 The same general action-family projection resolves original LevelSequence files
 without a sequence-id allowlist. Action class names come from the installed
 `ActionBaseForMemoryPack` formatter table; this additionally identifies union
@@ -243,7 +261,8 @@ The complete current-build native playback index now also feeds one general
 post-playback variable-bridge audit. It discovers setter and listener classes
 from their exact serialized contracts, extracts keys without Story/object-name
 rules, and joins only `(levelId, scriptId, key)`. Across 3,188 native Story keys
-and 3,816 playback occurrences, 23 typed post-playback setters (`SetInt`) and
+and 3,816 playback occurrences, 66 typed post-playback setters (43 `SetBool`
+and 23 `SetInt`) and
 50 exact listener rows (38 property, 12 blackboard; 33 unique selectors) have
 zero joins. The installed formatter and metadata prove the key/value and
 listener payload shapes; the generic `Set<T>.Execute` body is unavailable in
@@ -1254,6 +1273,13 @@ mission/quest identity, so it must not be promoted to an owner type. The next
 ownership pass should require a new co-carried foreign key in another typed
 controller payload or native registry, not a module id, LevelSequence name,
 file address, or registration order.
+
+Action-class naming is no longer a recovery gap on the current native Story
+transition/post-playback surfaces. Further branch work should target a new
+typed selector operand, server successor policy, or mission-to-receiver foreign
+key; repeating opcode-name catalogs cannot add an edge. Quest forks whose next
+state is selected only by the server and unrelated Story pairs still remain
+unknowable from the installed client's static data.
 
 The eight unmatched BlackBox rows are now source-bounded current-build
 definitions, not open placement candidates. Reopen them only if a changed

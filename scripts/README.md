@@ -86,6 +86,10 @@ Important Story components:
 - `timeline_action_evidence.py`: typed action/control evidence.
 - `mission_recovery.py`: mission and quest relationships.
 - `build_source_story_gap_queue.py`: actionable source-only recovery queue.
+- `story_recovery/build_levelscript_actionbase_tag_audit.py`: recovers the
+  complete ActionBase MemoryPack formatter table from installed
+  GameAssembly/metadata and refreshes the compact hash-pinned runtime name
+  contract under `reports/mission_order/`.
 - `story_recovery/build_cinematic_queue_runtime_audit.py`: repeatable installed
   metadata/GameAssembly audit that structurally discovers the cinematic handle,
   enqueue/producer call graph, and typed action-to-producer routes without
