@@ -39,6 +39,7 @@ Latest CN reports:
 | Binary state-update authority | 4 / 4 identity+state/control paths validated; 0 client successor selectors |
 | Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
 | Whole-client topology consumers | 42 / 43 direct `GetQuestInfo` call candidates verified; active predecessor consumers 0; non-sort flow consumers 0; topology lifecycle calls 0 |
+| Authored quest-fork semantics | 307 forks: 226 main-path + auxiliary, 78 all-auxiliary, 3 with multiple main-path arms; 97 guarded; 45 reconverging |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -48,6 +49,10 @@ in five payloads.
 ## What is recovered
 
 - Mission and quest graphs, predecessor relations, forks, and merges.
+- All 307 authored quest forks are classified from normalized MissionRuntime
+  nodes, including arm roles, objective/failure guards, terminals, and exact
+  first common descendants. Every fork retains its hash-validated original
+  MissionRuntime file.
 - Story cards for dialog, radio, SNS, cutscenes, black screens, and remote
   communication.
 - Typed LevelScript, DialogTree, Timeline, FMV, quest-state, interactive, and
@@ -1353,6 +1358,24 @@ client-side successor-selector hypothesis without pretending to recover
 server-only policy. Authored predecessor forks and merges remain prerequisite
 topology, not proof of exclusive branch choice. OCR and manual overrides are
 not inputs.
+
+Quest-fork presentation is now generated from the normalized graph rather than
+mission names or per-object rules. The current corpus contains 226
+main-path-plus-auxiliary forks, 78 all-auxiliary forks, two forks with multiple
+main-path successors, and one with multiple main-path plus auxiliary arms;
+45 reconverge at an exact first common descendant. All 265 forks projected into
+Story partial-order views resolve through global quest identity, including 15
+forks whose Story shell belongs to a parent mission while the authored topology
+comes from a variant MissionRuntime file. This topology does not prove arm
+exclusivity or client-side selection; every fork retains the
+`server_selected_unresolved` boundary.
+
+For `e3m5_q#1`, the exact MissionRuntime observer of
+`map01_lv007/2800010051.isFinished` now combines with the receiver's typed
+`OnLeaderEnterTriggerVolume` gate (`isFinished == false`), FMV playback, and
+post-playback server handoff. This establishes mission completion context, not
+activation ownership: no client-visible writer for the property has been
+recovered.
 
 Action-class naming is no longer a recovery gap on the current native Story
 transition/post-playback surfaces. Further branch work should target a new

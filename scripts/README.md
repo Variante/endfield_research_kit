@@ -51,6 +51,12 @@ override those defaults for one run.
   walks reusable AND/OR/NOT/ALL and comparison trees to exact leaves; unknown,
   missing, cyclic, and malformed children fail closed instead of receiving
   object-specific rules.
+- Authored quest forks are recovered generically from normalized
+  MissionRuntime predecessor graphs. The builder classifies main/auxiliary
+  arms, guards, terminals, and shortest common descendants, attaches the exact
+  hashed source file, and fails closed on unresolved arms. Story projections
+  resolve variant MissionRuntime forks through globally unique quest identity,
+  not filename conventions or mission-specific mappings.
 - Shipped-Lua Story playback is likewise corpus-driven: the Lua consumer audit
   enumerates typed `GameAction` calls, exact literals, and simple
   `Tables.<name>` row-field flows. A table field resolves only when the current

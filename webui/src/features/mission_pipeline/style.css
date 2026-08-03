@@ -2019,6 +2019,42 @@ body:not(.show-debug) .mp-playback-rejection {
 .mp-topology-consumer-audit details > summary { cursor: pointer; }
 .mp-topology-consumer-audit small { display: block; margin-top: .35rem; color: var(--muted); }
 
+.mp-quest-topology > p { color: var(--muted); }
+.mp-quest-fork-list { display: grid; gap: .6rem; }
+.mp-quest-fork-detail {
+  border: 1px solid var(--border);
+  border-radius: .55rem;
+  background: color-mix(in srgb, var(--panel) 94%, var(--accent) 6%);
+}
+.mp-quest-fork-detail > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem;
+  padding: .55rem .65rem;
+  cursor: pointer;
+}
+.mp-quest-fork-detail > p,
+.mp-quest-fork-detail > small { margin: .5rem .65rem; }
+.mp-quest-fork-detail > small { display: block; color: var(--muted); }
+.mp-quest-fork-arms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: .5rem;
+  margin: .25rem .65rem .65rem;
+}
+.mp-quest-fork-arm {
+  padding: .5rem .6rem;
+  border-left: 3px solid var(--border);
+  border-radius: .35rem;
+  background: var(--panel);
+}
+.mp-quest-fork-arm.is-main-path { border-left-color: var(--accent); }
+.mp-quest-fork-arm > header,
+.mp-quest-fork-arm > p { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.mp-quest-fork-arm > p { margin: .35rem 0 0; }
+.mp-quest-fork-guard { margin-top: .45rem; }
+
 /* These lists used to be one full-width row per entry, which wasted most of
    the pane on wide viewports. auto-fit keeps a single entry full width but
    packs many short entries into columns. */

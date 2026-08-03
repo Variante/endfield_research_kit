@@ -55,6 +55,81 @@ def condition(kind, **values):
 
 
 class MissionPipelineBuilderTests(unittest.TestCase):
+    def test_quest_fork_semantics_recovers_roles_guards_and_reconvergence(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "m1.json"
+            source.write_text('{"missionId":"m1"}', encoding="utf-8")
+            nodes = [
+                {
+                    "id": "m1_q#1", "successors": ["m1_q#2", "m1_q#3"],
+                    "prev": [], "mainPath": True, "mainPathOrder": 0,
+                },
+                {
+                    "id": "m1_q#2", "successors": ["m1_q#4"],
+                    "prev": ["m1_q#1"], "mainPath": True,
+                    "mainPathOrder": 1, "flowIndex": 0, "questType": 0,
+                    "showMode": 1, "objectives": [{"conditionTypes": ["ReachDestination"]}],
+                    "failedCondition": None,
+                },
+                {
+                    "id": "m1_q#3", "successors": ["m1_q#4"],
+                    "prev": ["m1_q#1"], "mainPath": False,
+                    "mainPathOrder": None, "flowIndex": 7, "questType": 1,
+                    "showMode": 1000, "objectives": [{"conditionTypes": ["CheckQuestState"]}],
+                    "failedCondition": {"type": "CheckMissionState"},
+                },
+                {
+                    "id": "m1_q#4", "successors": [],
+                    "prev": ["m1_q#2", "m1_q#3"], "mainPath": True,
+                    "mainPathOrder": 2,
+                },
+            ]
+
+            result = pipeline.build_quest_fork_semantics(nodes, source)
+
+        self.assertEqual(result["validation"]["status"], "validated")
+        self.assertEqual(result["counts"]["forks"], 1)
+        fork = result["forks"][0]
+        self.assertEqual(fork["structure"], "main_path_plus_auxiliary")
+        self.assertEqual(fork["outcome"], "reconverging")
+        self.assertEqual(fork["guardedArmCount"], 1)
+        self.assertEqual(
+            fork["firstCommonDescendant"]["distanceByArm"],
+            {"m1_q#2": 1, "m1_q#3": 1},
+        )
+        self.assertEqual([arm["role"] for arm in fork["arms"]], [
+            "main_path", "auxiliary",
+        ])
+        self.assertEqual(fork["arms"][1]["flowIndexRole"], "display_sort_only")
+        self.assertEqual(
+            fork["relatedOriginalFiles"][0]["sha256"],
+            hashlib.sha256(b'{"missionId":"m1"}').hexdigest(),
+        )
+
+    def test_quest_fork_semantics_fails_closed_with_source_diagnostic(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "m_bad.json"
+            source.write_text("{}", encoding="utf-8")
+            result = pipeline.build_quest_fork_semantics([
+                {
+                    "id": "m_bad_q#1",
+                    "successors": ["m_bad_q#2", "m_bad_q#missing"],
+                    "prev": [],
+                },
+                {
+                    "id": "m_bad_q#2", "successors": [],
+                    "prev": ["m_bad_q#1"],
+                },
+            ], source)
+
+        self.assertEqual(result["validation"]["status"], "validation_failed")
+        first = result["validation"]["failures"][0]
+        self.assertEqual(first["gate"], "allForkArmsResolve")
+        self.assertEqual(first["questId"], "m_bad_q#1")
+        self.assertEqual(first["actual"], ["m_bad_q#missing"])
+        self.assertTrue(first["sourceFile"].endswith("m_bad.json"))
+        self.assertIn("missionRuntimeSha256", first["sourceHashes"])
+
     def test_state_update_contract_revalidates_original_binary_sources(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -1661,7 +1736,16 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             mission_root.mkdir(parents=True)
             (story_root / "CN").mkdir(parents=True)
             (story_root / "CN" / "index.json").write_text("{}", encoding="utf-8")
-            pipeline.write_json(mission_root / "testm1.json", {"mission": {"id": "testm1"}})
+            semantic_fork = {
+                "questId": "testm1_q#1",
+                "successorQuestIds": ["testm1_q#2", "testm1_q#3"],
+                "structure": "main_path_plus_auxiliary",
+                "arms": [{"questId": "testm1_q#2"}, {"questId": "testm1_q#3"}],
+            }
+            pipeline.write_json(mission_root / "testm1.json", {
+                "mission": {"id": "testm1"},
+                "questTopology": {"forks": [semantic_fork]},
+            })
             index = {
                 "missions": [{"id": "testm1", "file": "missions/testm1.json"}],
                 "runtimeContract": {
@@ -1725,8 +1809,56 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 authority["topologyFieldConsumers"]["classification"],
                 "client_display_and_context_topology_only",
             )
+            self.assertEqual(
+                mission_payload["storyOrder"]["branches"]["questForks"],
+                [semantic_fork],
+            )
             self.assertEqual(index["missions"][0]["storyOrderStrongEdgeCount"], 1)
             self.assertEqual(index["storyOrder"]["schema"], "sourceStoryPartialOrder.v5")
+
+    def test_publish_source_story_partial_order_fails_on_unclassified_fork(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output_root = root / "mission_pipeline"
+            mission_root = output_root / "missions"
+            story_root = root / "lang"
+            mission_root.mkdir(parents=True)
+            (story_root / "CN").mkdir(parents=True)
+            (story_root / "CN" / "index.json").write_text("{}", encoding="utf-8")
+            pipeline.write_json(mission_root / "testm1.json", {
+                "mission": {"id": "testm1"},
+                "questTopology": {"forks": []},
+            })
+            index = {
+                "missions": [{"id": "testm1", "file": "missions/testm1.json"}],
+                "runtimeContract": {
+                    "stateUpdateApplicationAudit": STATE_UPDATE_CONTRACT_FIXTURE,
+                },
+            }
+            report = {
+                "_schema": "sourceStoryPartialOrder.v5",
+                "summary": {},
+                "evidencePolicy": {},
+                "missions": [{
+                    "mission": "testm1",
+                    "branches": {"questForks": [{
+                        "questId": "testm1_q#missing",
+                        "successorQuestIds": ["testm1_q#2", "testm1_q#3"],
+                    }]},
+                }],
+            }
+            with patch.object(
+                pipeline,
+                "build_source_story_partial_order_report",
+                return_value=report,
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "gate=allStoryOrderForksHaveSemantics.*testm1_q#missing",
+                ):
+                    pipeline.publish_source_story_partial_order(
+                        index, output_root, story_root, "CN", root / "reports"
+                    )
 
     def test_publish_quest_objective_story_scope_is_exact_non_owning_context(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -2916,6 +3048,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "trackingObjectives": 0,
                 "missionPropertyRows": 0,
                 "missionsWithProperties": 0,
+                "questForkSemantics": 1,
+                "questForkGuarded": 0,
+                "questForkMainPathPlusAuxiliary": 1,
+                "questForkAllAuxiliary": 0,
+                "questForkMultipleMainPath": 0,
+                "questForkReconverging": 0,
                 "stateUpdateApplicationCandidates": 4,
                 "stateUpdateApplicationCandidatesValidated": 4,
                 "stateUpdateClientSuccessorSelectors": 0,
@@ -2954,6 +3092,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             payload = json.loads((output_root / "missions" / "testm1.json").read_text(encoding="utf-8"))
             self.assertEqual(payload["missionGraph"], {"upstream": {}, "downstream": {}})
             self.assertEqual(payload["envTalkContext"], [])
+            self.assertEqual(payload["questTopology"]["validation"]["status"], "validated")
+            self.assertEqual(
+                payload["questTopology"]["forks"][0]["structure"],
+                "main_path_plus_auxiliary",
+            )
 
     @patch.object(
         pipeline,
