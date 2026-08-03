@@ -1065,15 +1065,20 @@ them graph-neutral. Manual/OCR sibling-route matches remain cross-reference
 only.
 
 Shipped-Lua Story playback is now recovered by one corpus rule rather than a
-per-cutscene list. The complete 1,290-module audit finds ten bounded
-`GameAction` playback calls: one exact registry literal is admitted
-(`cutscene_e1m10_1`), one case-mismatched literal is rejected only after the
-installed GameAssembly/metadata audit proves case-sensitive `StringPathHash`
-resolution, and eight handle/table expressions remain unresolved. Each
-published row carries the original Lua file SHA-256, line, typed native entry,
-audit hash, and a fail-closed validator result. This proves controller
-playback, not mission/quest ownership or Story order; OCR and manual order do
-not participate.
+per-cutscene or per-table list. The complete 1,290-module audit finds ten
+bounded `GameAction` playback calls. It admits the exact literal
+`cutscene_e1m10_1`, and a general `Tables.<name>` row-field dataflow now also
+traces `SkipChapterTable[skip_chapter_1].bindDlgId` through the shipped
+`ActivitySkipChapter1ConfirmCtrl` to `GameAction.StartDialog`. That same exact
+row co-carries `missionId=e5m1`, so `dlg_e5m0d5_1` gains a mission-level Lua
+playback attachment and both the Lua and original table files appear in Mission
+Pipeline. One case-mismatched literal remains rejected only after the installed
+GameAssembly/metadata audit proves case-sensitive `StringPathHash` resolution;
+seven handle expressions remain unresolved. Multi-row table fields stay
+candidates unless their lookup key is proven. Every row carries source hashes,
+line, typed native entry, audit hash, and a fail-closed validator result. Lua
+without a same-row mission/quest foreign key still proves controller playback
+only, never Story order; OCR and manual order do not participate.
 
 ## Remaining gaps
 

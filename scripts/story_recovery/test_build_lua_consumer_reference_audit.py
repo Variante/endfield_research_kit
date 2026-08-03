@@ -48,6 +48,75 @@ GameAction.StartDialog(row.bindDlgId)
             'resolve("a,b", value)',
         )
 
+    def test_singleton_original_table_field_is_resolved_without_table_name_rules(self):
+        text = """
+local ok, carrierRow = Tables.fixtureCarrierTable:TryGetValue(configId)
+local storyId = carrierRow.storyField
+GameAction.StartDialog(storyId)
+"""
+        rows = audit.scan_game_action_calls(
+            text,
+            rel="fixture.lua",
+            story_keys={"dlg_fixture_general_1"},
+            table_payloads={
+                "fixturecarriertable": {
+                    "table": "FixtureCarrierTable",
+                    "sourcePath": "fixture/FixtureCarrierTable.json",
+                    "sourceSha256": "a" * 64,
+                    "rows": {
+                        "carrier_1": {
+                            "storyField": "dlg_fixture_general_1",
+                            "missionId": "fixture_mission",
+                        },
+                    },
+                },
+            },
+        )
+
+        self.assertEqual("table_field_singleton", rows[0]["literalResolution"])
+        self.assertEqual("exact_registry_match", rows[0]["registryStatus"])
+        self.assertEqual("dlg_fixture_general_1", rows[0]["canonicalStoryKey"])
+        resolution = rows[0]["tableFieldResolution"]
+        self.assertEqual("FixtureCarrierTable", resolution["table"])
+        self.assertEqual("storyField", resolution["field"])
+        self.assertEqual(
+            "fixture_mission",
+            resolution["candidateRows"][0]["rowFields"]["missionId"],
+        )
+
+    def test_multirow_table_field_remains_candidates_without_lookup_key_proof(self):
+        text = """
+local carrierRow = Tables.fixtureCarrierTable:GetValue(configId)
+GameAction.StartDialog(carrierRow.storyField)
+"""
+        rows = audit.scan_game_action_calls(
+            text,
+            rel="fixture.lua",
+            story_keys={"dlg_fixture_1", "dlg_fixture_2"},
+            table_payloads={
+                "fixturecarriertable": {
+                    "table": "FixtureCarrierTable",
+                    "sourcePath": "fixture/FixtureCarrierTable.json",
+                    "sourceSha256": "b" * 64,
+                    "rows": {
+                        "one": {"storyField": "dlg_fixture_1"},
+                        "two": {"storyField": "dlg_fixture_2"},
+                    },
+                },
+            },
+        )
+
+        self.assertEqual("table_field_candidates", rows[0]["literalResolution"])
+        self.assertEqual("not_story_shaped", rows[0]["registryStatus"])
+        self.assertIsNone(rows[0]["canonicalStoryKey"])
+        self.assertEqual(
+            ["dlg_fixture_1", "dlg_fixture_2"],
+            [
+                row["canonicalStoryKey"]
+                for row in rows[0]["tableFieldResolution"]["candidateRows"]
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

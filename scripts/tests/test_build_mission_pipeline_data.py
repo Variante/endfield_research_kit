@@ -3658,6 +3658,57 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
             "fixture",
         )
 
+    def test_corpus_rule_admits_a_general_same_row_mission_carrier(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "lua_audit.json"
+            audit_path.write_text(json.dumps({
+                "schemaVersion": pipeline.LUA_CONSUMER_REFERENCE_SCHEMA,
+                "summary": {"readErrorCount": 0},
+                "gameActionAudit": {"storyPlaybackCalls": [{
+                    "module": "UI/Panels/Fixture/FixtureCtrl.lua",
+                    "sourcePath": "not-present/original-fixture.lua",
+                    "sourceSha256": "a" * 64,
+                    "line": 17,
+                    "method": "StartDialog",
+                    "playbackKind": "dialog",
+                    "argumentSemantics": "story_id",
+                    "firstArgument": "storyId",
+                    "literalResolution": "table_field_singleton",
+                    "resolvedLiteral": "dlg_fixture_general_9",
+                    "registryStatus": "exact_registry_match",
+                    "canonicalStoryKey": "dlg_fixture_general_9",
+                    "tableFieldResolution": {
+                        "table": "FixtureCarrierTable",
+                        "tableSourcePath": "not-present/FixtureCarrierTable.json",
+                        "tableSourceSha256": "b" * 64,
+                        "field": "storyId",
+                        "lookupKeyExpression": "configId",
+                        "exactSingleton": True,
+                        "candidateRows": [{
+                            "tableKey": "fixture_carrier",
+                            "rawValue": "dlg_fixture_general_9",
+                            "canonicalStoryKey": "dlg_fixture_general_9",
+                            "registryStatus": "exact_registry_match",
+                            "rowFields": {
+                                "storyId": "dlg_fixture_general_9",
+                                "missionId": "fixture_mission",
+                            },
+                        }],
+                    },
+                }]},
+            }), encoding="utf-8")
+
+            evidence = pipeline.load_lua_story_playback_evidence(
+                audit_path,
+                (),
+            )
+
+        row = evidence["acceptedExactPlaybackCalls"][0]
+        self.assertEqual("dlg_fixture_general_9", row["storyKey"])
+        self.assertEqual("fixture_mission", row["missionId"])
+        self.assertEqual("FixtureCarrierTable", row["table"])
+        self.assertEqual(1, evidence["acceptedTableCarrierCalls"])
+
     def test_corpus_rule_fails_closed_with_bounded_hash_diagnostic(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "lua_audit.json"

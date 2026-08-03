@@ -47,6 +47,7 @@
       unlinkedStory: "Story unassigned",
       nativePlaybackGaps: "exact-native gaps",
       luaPlaybackAccepted: "Lua playback admitted",
+      luaTablePlaybackAccepted: "Lua table-owned playback",
       luaPlaybackRejected: "Lua case rejected",
       luaPlaybackAudit: "Shipped-Lua census",
       rootPlaybackAliases: "root playback aliases",
@@ -676,6 +677,9 @@
       triggerDialogTimeline: "dialog Timeline",
       triggerStoryRoot: "CutsceneRoot Story key",
       triggerStory: "Story file",
+      triggerLuaController: "Lua controller",
+      triggerNativePlayback: "native playback",
+      triggerOriginalTableRow: "original table row",
       triggerExactPaths: "exact native paths",
       triggerEvents: "Triggering events",
       triggerEventsHint: "Each row is one exact serialized event-to-action path. Multiple rows are alternatives or distinct occurrences; they are not a guessed sequence.",
@@ -740,6 +744,10 @@
       connectedStory: "已连接剧情",
       unlinkedStory: "未分配剧情",
       nativePlaybackGaps: "原生路径缺口",
+      luaPlaybackAccepted: "已采纳 Lua 播放",
+      luaTablePlaybackAccepted: "Lua 表归属播放",
+      luaPlaybackRejected: "Lua 大小写拒绝",
+      luaPlaybackAudit: "随游戏发布的 Lua 普查",
       definitionOnlyStory: "仅有定义的黑屏文本",
       nonMissionContentStory: "非使命内容",
       nonMissionContentStoryHint: "这些剧情 ID 已由原生数据证明属于非使命内容：按说话人分的电台续播语音、角色 SNS 话题、工厂教程动作、干员档案语音，或舰船系统强类型对话树。证据没有序列化使命或任务归属。仅依据原生字段和强类型消费者判定，绝不依据文件名。",
@@ -1282,6 +1290,9 @@
       triggerDialogTimeline: "\u5bf9\u8bdd Timeline",
       triggerStoryRoot: "CutsceneRoot \u5267\u60c5\u952e",
       triggerStory: "\u5267\u60c5\u6587\u4ef6",
+      triggerLuaController: "Lua \u63a7\u5236\u5668",
+      triggerNativePlayback: "\u539f\u751f\u64ad\u653e",
+      triggerOriginalTableRow: "\u539f\u59cb\u8868\u884c",
       triggerExactPaths: "\u7cbe\u786e\u539f\u751f\u8def\u5f84",
       triggerEvents: "\u89e6\u53d1\u4e8b\u4ef6",
       triggerEventsHint: "\u6bcf\u884c\u90fd\u662f\u4e00\u6761\u7cbe\u786e\u7684\u5e8f\u5217\u5316\u4e8b\u4ef6\u5230\u52a8\u4f5c\u8def\u5f84\u3002\u591a\u884c\u8868\u793a\u5907\u9009\u8def\u5f84\u6216\u4e0d\u540c\u53d1\u751f\u4f4d\u7f6e\uff0c\u4e0d\u4ee3\u8868\u731c\u6d4b\u7684\u987a\u5e8f\u3002",
@@ -1736,6 +1747,7 @@
       [storyCounts.unlinkedUniqueStoryFiles, t("unlinkedStory")],
       [storyCounts.unlinkedNativePlaybackFiles, t("nativePlaybackGaps")],
       [storyCounts.acceptedLuaExactPlaybackCalls, t("luaPlaybackAccepted")],
+      [storyCounts.acceptedLuaTableCarrierCalls, t("luaTablePlaybackAccepted")],
       [storyCounts.rejectedLuaCaseMismatchCalls, t("luaPlaybackRejected")],
       [storyCounts.rootPlaybackAliasRows, t("rootPlaybackAliases")],
       [storyCounts.missionlessSubGameStoryFiles, t("missionlessSubGameStory")],
@@ -1775,7 +1787,7 @@
       <span>${esc(t("sourceChangedFiles"))}: ${Number(source.persistentChangedBaseFileCount || changedFiles.length).toLocaleString()} / ${Number(source.streamingFileCount || 0).toLocaleString()}</span>
       ${changedFiles.length ? `<code>${esc(changedFiles.join(", "))}</code>` : ""}
       <span>${esc(t("sourceMissingFiles"))}: ${Number(missingFiles.length).toLocaleString()}</span>
-      ${state.index?.storyCoverage?.luaStoryPlaybackEvidence?.status ? `<span>${esc(t("luaPlaybackAudit"))}: <strong>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.status)}</strong> 路 ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.scannedPlaybackCalls || 0).toLocaleString()} calls 路 <code>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.auditSha256 || "")}</code></span>` : ""}
+      ${state.index?.storyCoverage?.luaStoryPlaybackEvidence?.status ? `<span>${esc(t("luaPlaybackAudit"))}: <strong>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.status)}</strong> · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.scannedPlaybackCalls || 0).toLocaleString()} calls · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.acceptedTableCarrierCalls || 0).toLocaleString()} table-owned · <code>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.auditSha256 || "")}</code></span>` : ""}
     `;
   }
 
@@ -2646,6 +2658,9 @@
       dialog_timeline: "triggerDialogTimeline",
       story_root: "triggerStoryRoot",
       story: "triggerStory",
+      luaController: "triggerLuaController",
+      nativePlayback: "triggerNativePlayback",
+      originalTableRow: "triggerOriginalTableRow",
     })[kind] || "triggerContext");
   }
 
@@ -2751,7 +2766,7 @@
     </a>`;
   }
 
-  function composedRootPlaybackAliasRowsForMission() {
+  function manifestOwnedStoryRowsForMission() {
     const missionId = String(
       state.missionId || state.mission?.mission?.id || "",
     );
@@ -2760,8 +2775,7 @@
     Object.values(manifest).forEach((entry) => {
       (entry?.routes || []).forEach((route) => {
         if (
-          route?.causality !== "playback_alias_owner_connected"
-          || route.ownerStatus !== "connected"
+          route?.ownerStatus !== "connected"
           || route.missionId !== missionId
         ) return;
         rows.push({
@@ -2780,18 +2794,18 @@
   }
 
   function missionUnassignedStoryKeys() {
-    const connectedAliasKeys = new Set(
-      composedRootPlaybackAliasRowsForMission().map((row) => row.key),
+    const connectedManifestKeys = new Set(
+      manifestOwnedStoryRowsForMission().map((row) => row.key),
     );
     return (state.localized?.flow?.unlinked || [])
-      .filter((key) => key && !connectedAliasKeys.has(key));
+      .filter((key) => key && !connectedManifestKeys.has(key));
   }
 
   function missionStoryConnectionsHtml() {
     const unique = new Map();
     [
       ...(state.localized?.flow?.missionStoryConnections || []),
-      ...composedRootPlaybackAliasRowsForMission(),
+      ...manifestOwnedStoryRowsForMission(),
     ].filter((row) => row && row.key).forEach((row) => {
       const signature = `${row.key}\u0000${row.relation || ""}`;
       if (!unique.has(signature)) unique.set(signature, row);

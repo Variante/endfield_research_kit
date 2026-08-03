@@ -40,8 +40,11 @@ override those defaults for one run.
   missing, cyclic, and malformed children fail closed instead of receiving
   object-specific rules.
 - Shipped-Lua Story playback is likewise corpus-driven: the Lua consumer audit
-  enumerates typed `GameAction` calls and exact literals, while Mission Pipeline
-  validates source hashes and admits no case-folded match without a matching
+  enumerates typed `GameAction` calls, exact literals, and simple
+  `Tables.<name>` row-field flows. A table field resolves only when the current
+  original table has one possible non-empty value; mission/quest ownership is
+  admitted only from the same resolved row. Mission Pipeline validates Lua and
+  table hashes and admits no case-folded match without a matching
   installed-binary case-resolution audit.
 - Reuse Timeline/reference outputs only when their original inputs did not
   change.

@@ -29,8 +29,8 @@
 - Story-playback calls: `10` across `4` modules
 - registry keys used for exact-case validation: `10895`
 - `case_mismatch_registry_match`: `1`
-- `exact_registry_match`: `1`
-- `not_story_shaped`: `8`
+- `exact_registry_match`: `2`
+- `not_story_shaped`: `7`
 
 | module | line | GameAction | first argument | resolution | registry | nearby tables |
 | --- | ---: | --- | --- | --- | --- | --- |
@@ -43,12 +43,12 @@
 | `LuaSystem/CinematicSystem.lua` | 86 | `DoPlayForceSNSByHandle` | `handle` | `unresolved_expression` | `not_story_shaped` |  |
 | `Phase/GenderChange/PhaseGenderChange.lua` | 104 | `PlayCutscene` | `CUT_SCENE_ID` | `module_constant` | `exact_registry_match` |  |
 | `Phase/GenderSelect/PhaseGenderSelect.lua` | 75 | `PlayCutsceneAndGetHandle` | `EnterCutsceneId` | `module_constant` | `case_mismatch_registry_match` |  |
-| `UI/Panels/ActivitySkipChapter1Confirm/ActivitySkipChapter1ConfirmCtrl.lua` | 97 | `StartDialog` | `bindDlgId` | `unresolved_expression` | `not_story_shaped` | skipChapterTable |
+| `UI/Panels/ActivitySkipChapter1Confirm/ActivitySkipChapter1ConfirmCtrl.lua` | 97 | `StartDialog` | `bindDlgId` | `table_field_singleton` | `exact_registry_match` | skipChapterTable |
 
 Evidence boundary:
 
 - **scope:** All direct GameAction.* calls in each unique Lua module are enumerated. The Story subset is a bounded allowlist of native playback entry points.
-- **literalResolution:** Only a direct quoted first argument or a module-scope/simple local string assignment is resolved. Table fields, function parameters, handles, concatenation, and control flow remain unresolved.
+- **literalResolution:** Direct quoted arguments and simple local string assignments are resolved. A simple Tables.<name> row field is also resolved when the current original table has exactly one non-empty candidate; multi-row fields, function parameters, handles, concatenation, and general control flow remain unresolved.
 - **case:** Exact registry spelling is proven separately from a case-folded candidate. A case mismatch is never promoted to a Story binding.
 - **ownership:** A Lua call proves that the controller owns playback. It creates no mission/quest attachment unless the same consumed route carries an exact mission or quest identity.
 - **nearbyTables:** Table names within a bounded source window are triage hints, not data-flow proof.

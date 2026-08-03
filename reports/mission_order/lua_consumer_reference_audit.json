@@ -1,6 +1,6 @@
 {
-  "schemaVersion": "luaConsumerReferenceAudit.v2",
-  "generatedAt": "2026-08-03T02:54:56.995291+00:00",
+  "schemaVersion": "luaConsumerReferenceAudit.v3",
+  "generatedAt": "2026-08-03T03:20:36.779695+00:00",
   "metadata": {
     "luaRoots": [
       "scratch/animestudio/zhuangfy_lizi_lua_dither_20260724/Lua/Data/LuaScripts"
@@ -74,12 +74,13 @@
     },
     "storyPlaybackResolutionCounts": {
       "module_constant": 2,
-      "unresolved_expression": 8
+      "table_field_singleton": 1,
+      "unresolved_expression": 7
     },
     "storyPlaybackRegistryCounts": {
       "case_mismatch_registry_match": 1,
-      "exact_registry_match": 1,
-      "not_story_shaped": 8
+      "exact_registry_match": 2,
+      "not_story_shaped": 7
     }
   },
   "rootSummaries": [
@@ -61126,7 +61127,7 @@
   "gameActionAudit": {
     "evidencePolicy": {
       "scope": "All direct GameAction.* calls in each unique Lua module are enumerated. The Story subset is a bounded allowlist of native playback entry points.",
-      "literalResolution": "Only a direct quoted first argument or a module-scope/simple local string assignment is resolved. Table fields, function parameters, handles, concatenation, and control flow remain unresolved.",
+      "literalResolution": "Direct quoted arguments and simple local string assignments are resolved. A simple Tables.<name> row field is also resolved when the current original table has exactly one non-empty candidate; multi-row fields, function parameters, handles, concatenation, and general control flow remain unresolved.",
       "case": "Exact registry spelling is proven separately from a case-folded candidate. A case mismatch is never promoted to a Story binding.",
       "ownership": "A Lua call proves that the controller owns playback. It creates no mission/quest attachment unless the same consumed route carries an exact mission or quest identity.",
       "nearbyTables": "Table names within a bounded source window are triage hints, not data-flow proof."
@@ -61185,6 +61186,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.DoPlayDialogByHandle(handle)"
       },
       {
@@ -61202,6 +61204,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.DoPlayCutsceneByHandle(handle)"
       },
       {
@@ -61219,6 +61222,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.PlayCGByHandle(handle)"
       },
       {
@@ -61236,6 +61240,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.StartRemoteCommByHandle(handle)"
       },
       {
@@ -61253,6 +61258,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.ShowNarrativeBlackScreenByHandle(handle)"
       },
       {
@@ -61270,6 +61276,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.ShowUIReadingPopPanelByHandle(handle)"
       },
       {
@@ -61287,6 +61294,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.DoPlayForceSNSByHandle(handle)"
       },
       {
@@ -61304,6 +61312,7 @@
         "registryStatus": "exact_registry_match",
         "canonicalStoryKey": "cutscene_e1m10_1",
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "local res = GameAction.PlayCutscene(CUT_SCENE_ID, function() self:_StartGenderChange() end, nil, nil, nil, nil, true)"
       },
       {
@@ -61321,6 +61330,7 @@
         "registryStatus": "case_mismatch_registry_match",
         "canonicalStoryKey": "cutscene_e0m0_1",
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "self.m_timelineHandle = GameAction.PlayCutsceneAndGetHandle(EnterCutsceneId, function()"
       },
       {
@@ -61333,13 +61343,39 @@
         "playbackKind": "dialog",
         "argumentSemantics": "story_id",
         "firstArgument": "bindDlgId",
-        "literalResolution": "unresolved_expression",
-        "resolvedLiteral": null,
-        "registryStatus": "not_story_shaped",
-        "canonicalStoryKey": null,
+        "literalResolution": "table_field_singleton",
+        "resolvedLiteral": "dlg_e5m0d5_1",
+        "registryStatus": "exact_registry_match",
+        "canonicalStoryKey": "dlg_e5m0d5_1",
         "nearbyTables": [
           "skipChapterTable"
         ],
+        "tableFieldResolution": {
+          "table": "SkipChapterTable",
+          "tableSourcePath": "export_full/structured/StreamingAssets/Table/SkipChapterTable.json",
+          "tableSourceSha256": "46b564c1ed244cea6a6e0510cf9a21e2a39190e0928ca436686c9cc2f3e383c9",
+          "rowVariable": "skipChapterData",
+          "field": "bindDlgId",
+          "lookupKeyExpression": "skipChapterConfigId",
+          "candidateRows": [
+            {
+              "tableKey": "skip_chapter_1",
+              "rawValue": "dlg_e5m0d5_1",
+              "canonicalStoryKey": "dlg_e5m0d5_1",
+              "registryStatus": "exact_registry_match",
+              "rowFields": {
+                "bindActivityId": "activity_skipchapter_1",
+                "bindDlgId": "dlg_e5m0d5_1",
+                "missionId": "e5m1",
+                "rewardId": "",
+                "skipChapterConfigId": "skip_chapter_1"
+              }
+            }
+          ],
+          "nonemptyValueCount": 1,
+          "exactSingleton": true,
+          "caseMismatchSingleton": false
+        },
         "context": "GameAction.StartDialog(bindDlgId)"
       }
     ],
@@ -61362,6 +61398,7 @@
           "activityRacingDungeonMilestoneTable",
           "activityRacingDungeonRoomTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.ManuallyStartGuideGroup(guideGroupId)"
       },
       {
@@ -61383,6 +61420,7 @@
           "dungeonCharTutorialTable",
           "dungeonTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.ManuallyStartGuideGroup(stageCfg.guideGroupId)"
       },
       {
@@ -61404,6 +61442,7 @@
           "dungeonCharTutorialTable",
           "dungeonTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.ManuallyStartGuideGroup(charTrialCfg.guideGroupId)"
       },
       {
@@ -61424,6 +61463,7 @@
           "facSTTGroupTable",
           "factoryMachineCrafterTable"
         ],
+        "tableFieldResolution": null,
         "context": "return GameAction.AddCameraControlState(stateName)"
       },
       {
@@ -61444,6 +61484,7 @@
           "facSTTGroupTable",
           "factoryMachineCrafterTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.RemoveCameraControlState(state)"
       },
       {
@@ -61461,6 +61502,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.TeleportToPositionByValidationId(teleportValidationId, callback)"
       },
       {
@@ -61478,6 +61520,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.TeleportToPosition(teleportReason, sceneId, position, rotation, uiType, tpOptions, callback, hubNodeId)"
       },
       {
@@ -61495,6 +61538,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.TeleportToPosition(teleportReason, sceneId, position, Vector3.zero, uiType, tpOptions, callback, hubNodeId)"
       },
       {
@@ -61514,6 +61558,7 @@
         "nearbyTables": [
           "domainDataTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.TeleportToPositionByValidationId(teleportValidationId, callback)"
       },
       {
@@ -61534,6 +61579,7 @@
           "factoryManualCraftTable",
           "wikiDefaultCraftTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(dynamicFadeData)"
       },
       {
@@ -61551,6 +61597,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.DoPlayDialogByHandle(handle)"
       },
       {
@@ -61568,6 +61615,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.DoPlayCutsceneByHandle(handle)"
       },
       {
@@ -61585,6 +61633,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.PlayCGByHandle(handle)"
       },
       {
@@ -61602,6 +61651,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.StartRemoteCommByHandle(handle)"
       },
       {
@@ -61619,6 +61669,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.ShowNarrativeBlackScreenByHandle(handle)"
       },
       {
@@ -61636,6 +61687,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.ShowUIReadingPopPanelByHandle(handle)"
       },
       {
@@ -61653,6 +61705,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "res = GameAction.DoPlayForceSNSByHandle(handle)"
       },
       {
@@ -61670,6 +61723,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(maskData)"
       },
       {
@@ -61687,6 +61741,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(maskData)"
       },
       {
@@ -61704,6 +61759,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.BlendToRelativeCamera(blendCamCfg)"
       },
       {
@@ -61721,6 +61777,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "Notify(MessageConst.SHOW_RADIO, { GameAction.RadioRuntimeData(forbidReason.radioId, true, 0) })"
       },
       {
@@ -61738,6 +61795,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "local cameraController = GameAction.SwitchToCamera("
       },
       {
@@ -61755,6 +61813,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.UnloadCamera("
       },
       {
@@ -61772,6 +61831,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.UnloadCamera(\"TrackedCamera\", true)"
       },
       {
@@ -61789,6 +61849,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.BlackScreenFadeOut(1, true, false)"
       },
       {
@@ -61806,6 +61867,7 @@
         "registryStatus": "exact_registry_match",
         "canonicalStoryKey": "cutscene_e1m10_1",
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "local res = GameAction.PlayCutscene(CUT_SCENE_ID, function() self:_StartGenderChange() end, nil, nil, nil, nil, true)"
       },
       {
@@ -61823,6 +61885,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(maskData)"
       },
       {
@@ -61840,6 +61903,7 @@
         "registryStatus": "case_mismatch_registry_match",
         "canonicalStoryKey": "cutscene_e0m0_1",
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "self.m_timelineHandle = GameAction.PlayCutsceneAndGetHandle(EnterCutsceneId, function()"
       },
       {
@@ -61857,6 +61921,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.SetInSafeZone(0, true)"
       },
       {
@@ -61874,6 +61939,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.SetInSafeZone(0, inMainRegion)"
       },
       {
@@ -61891,6 +61957,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.EndRemoteComm(skip)"
       },
       {
@@ -61908,6 +61975,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(maskData)"
       },
       {
@@ -61925,6 +61993,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.BlendToRelativeCamera(blendCamCfg)"
       },
       {
@@ -61937,13 +62006,39 @@
         "playbackKind": "dialog",
         "argumentSemantics": "story_id",
         "firstArgument": "bindDlgId",
-        "literalResolution": "unresolved_expression",
-        "resolvedLiteral": null,
-        "registryStatus": "not_story_shaped",
-        "canonicalStoryKey": null,
+        "literalResolution": "table_field_singleton",
+        "resolvedLiteral": "dlg_e5m0d5_1",
+        "registryStatus": "exact_registry_match",
+        "canonicalStoryKey": "dlg_e5m0d5_1",
         "nearbyTables": [
           "skipChapterTable"
         ],
+        "tableFieldResolution": {
+          "table": "SkipChapterTable",
+          "tableSourcePath": "export_full/structured/StreamingAssets/Table/SkipChapterTable.json",
+          "tableSourceSha256": "46b564c1ed244cea6a6e0510cf9a21e2a39190e0928ca436686c9cc2f3e383c9",
+          "rowVariable": "skipChapterData",
+          "field": "bindDlgId",
+          "lookupKeyExpression": "skipChapterConfigId",
+          "candidateRows": [
+            {
+              "tableKey": "skip_chapter_1",
+              "rawValue": "dlg_e5m0d5_1",
+              "canonicalStoryKey": "dlg_e5m0d5_1",
+              "registryStatus": "exact_registry_match",
+              "rowFields": {
+                "bindActivityId": "activity_skipchapter_1",
+                "bindDlgId": "dlg_e5m0d5_1",
+                "missionId": "e5m1",
+                "rewardId": "",
+                "skipChapterConfigId": "skip_chapter_1"
+              }
+            }
+          ],
+          "nonemptyValueCount": 1,
+          "exactSingleton": true,
+          "caseMismatchSingleton": false
+        },
         "context": "GameAction.StartDialog(bindDlgId)"
       },
       {
@@ -61961,6 +62056,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowUIToast(\"已切换到\" .. (self.m_isGPUMode and \"GPU模式\" or \"CPU模式\"))"
       },
       {
@@ -61973,13 +62069,25 @@
         "playbackKind": null,
         "argumentSemantics": null,
         "firstArgument": "dungeonFactoryCfg.afterDirectlyGetRewardGuideGroupId",
-        "literalResolution": "unresolved_expression",
+        "literalResolution": "table_field_candidates",
         "resolvedLiteral": null,
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [
           "dungeonFactoryTable"
         ],
+        "tableFieldResolution": {
+          "table": "DungeonFactoryTable",
+          "tableSourcePath": "export_full/structured/StreamingAssets/Table/DungeonFactoryTable.json",
+          "tableSourceSha256": "5b12fd79a44a3abed861ab1da0b2de8b43decc54d98bfa2882649e4e36baa1f0",
+          "rowVariable": "dungeonFactoryCfg",
+          "field": "afterDirectlyGetRewardGuideGroupId",
+          "lookupKeyExpression": "self.m_curSelectedBlackboxId",
+          "candidateRows": [],
+          "nonemptyValueCount": 3,
+          "exactSingleton": false,
+          "caseMismatchSingleton": false
+        },
         "context": "GameAction.ManuallyStartGuideGroup(dungeonFactoryCfg.afterDirectlyGetRewardGuideGroupId)"
       },
       {
@@ -61997,6 +62105,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShutdownBlackScreen(UIConst.UI_COMMON_MASK_LAYER_TYPE.High)"
       },
       {
@@ -62014,6 +62123,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(dynamicMaskData)"
       },
       {
@@ -62031,6 +62141,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(dynamicMaskData)"
       },
       {
@@ -62048,6 +62159,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(dynamicMaskData)"
       },
       {
@@ -62065,6 +62177,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(shotDownMaskData)"
       },
       {
@@ -62082,6 +62195,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(dynamicMaskData)"
       },
       {
@@ -62101,6 +62215,7 @@
         "nearbyTables": [
           "activityRacingDungeonRoomTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.ManuallyStartGuideGroup(guideGroupId)"
       },
       {
@@ -62118,6 +62233,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.PostAIBarkEvent(REVIVE_AI_BARK)"
       },
       {
@@ -62135,6 +62251,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.PostAIBarkEvent(REVIVE_AI_BARK)"
       },
       {
@@ -62152,6 +62269,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.NotifyDramaticPerformanceBagFinish()"
       },
       {
@@ -62169,6 +62287,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "CS.Beyond.Gameplay.Actions.GameAction.FacShowForceUpdate(true)"
       },
       {
@@ -62186,6 +62305,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "CS.Beyond.Gameplay.Actions.GameAction.FacShowForceUpdate(false)"
       },
       {
@@ -62205,6 +62325,7 @@
         "nearbyTables": [
           "globalConst"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(dynamicFadeData)"
       },
       {
@@ -62222,6 +62343,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowUIToast(Language.LUA_INTERACT_OPTION_IN_FIGHT)"
       },
       {
@@ -62239,6 +62361,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "Notify(MessageConst.SHOW_RADIO, { GameAction.RadioRuntimeData(forbidReason.radioId, true, 0) })"
       },
       {
@@ -62258,6 +62381,7 @@
         "nearbyTables": [
           "itemTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowUIToast(string.format(Language.LUA_INGREDIENT_NOT_ENOUGH, itemName))"
       },
       {
@@ -62278,6 +62402,7 @@
           "factoryManualCraftTable",
           "itemTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowUIToast(Language.LUA_BAG_FULL)"
       },
       {
@@ -62297,6 +62422,7 @@
         "nearbyTables": [
           "factoryManualCraftFormulaUnlockTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowUIToast(Language.LUA_MANUAL_WORK_HAS_BEEN_CANCELLED)"
       },
       {
@@ -62314,6 +62440,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.SaveCheckpointToCampfire(self.m_logicIdGlobal)"
       },
       {
@@ -62331,6 +62458,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowUIToast(\"已切换到\" .. (self.m_isGPUMode and \"GPU模式\" or \"CPU模式\"))"
       },
       {
@@ -62348,6 +62476,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.StopAudio(self.m_playingId)"
       },
       {
@@ -62365,6 +62494,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.StopAudio(self.m_playingId)"
       },
       {
@@ -62384,6 +62514,7 @@
         "nearbyTables": [
           "actorImageTable"
         ],
+        "tableFieldResolution": null,
         "context": "self.m_playingId = GameAction.PlayAudio(audioId)"
       },
       {
@@ -62403,6 +62534,7 @@
         "nearbyTables": [
           "actorImageTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.PostAudioCue(musicId)"
       },
       {
@@ -62420,6 +62552,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.PauseAudio(self.m_playingId)"
       },
       {
@@ -62437,6 +62570,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ResumeAudio(self.m_playingId)"
       },
       {
@@ -62454,6 +62588,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(maskData)"
       },
       {
@@ -62471,6 +62606,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.BlackScreenFadeOut(0.2, true, false)"
       },
       {
@@ -62488,6 +62624,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(maskData)"
       },
       {
@@ -62505,6 +62642,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.BlackScreenFadeOut(0.2, true, false)"
       },
       {
@@ -62522,6 +62660,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowUIToast(\"已切换到\" .. (self.m_gpuiBuffEnabled and \"GPUI Buff模式\" or \"普通Buff模式\"))"
       },
       {
@@ -62539,6 +62678,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(dynamicFadeData)"
       },
       {
@@ -62558,6 +62698,7 @@
         "nearbyTables": [
           "itemTable"
         ],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(dynamicFadeData)"
       },
       {
@@ -62575,6 +62716,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.FacToggleSystemEnabled(true, CS.Beyond.Gameplay.Factory.FacSystemTickSkipSource.UI)"
       },
       {
@@ -62592,6 +62734,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.FacScheduleUISystemSkipAfterGraceFrames()"
       },
       {
@@ -62609,6 +62752,7 @@
         "registryStatus": "not_story_shaped",
         "canonicalStoryKey": null,
         "nearbyTables": [],
+        "tableFieldResolution": null,
         "context": "GameAction.ShowBlackScreen(dynamicFadeData)"
       }
     ]

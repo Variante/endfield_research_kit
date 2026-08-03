@@ -8,7 +8,7 @@
     "metadataBytes": 62925560,
     "metadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
     "luaAudit": "D:\\fluffy-dump\\reports\\mission_order\\lua_consumer_reference_audit.json",
-    "luaAuditSha256": "69320a1db95bb02de24880fc90e61e0828bd952d701cb2a3d9beef0513a954ee",
+    "luaAuditSha256": "967386730ed30c8e9619a0b05f093a8e9f5d1689ee4ea91530a90d00ac242648",
     "ifixAudit": "D:\\fluffy-dump\\reports\\story\\recovery\\current_ifix_mission_graph_audit.json",
     "ifixPatchSha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21"
   },
@@ -27,6 +27,7 @@
     "registryStatus": "case_mismatch_registry_match",
     "canonicalStoryKey": "cutscene_e0m0_1",
     "nearbyTables": [],
+    "tableFieldResolution": null,
     "context": "self.m_timelineHandle = GameAction.PlayCutsceneAndGetHandle(EnterCutsceneId, function()"
   },
   "canonicalRegistryKey": "cutscene_e0m0_1",
