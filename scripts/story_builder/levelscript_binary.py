@@ -5258,8 +5258,28 @@ def _decode_action_header_prefix(payload: bytes) -> dict[str, Any]:
         return {}
     if not (-1000 <= trigger_active_during <= 100000):
         return {}
-    return _drop_empty(
-        {
+    validate_param: dict[str, Any] = {}
+    if len(payload) >= 31 and payload[17] == 0x04 and payload[18] in (0, 1):
+        id_ref = struct.unpack_from("<i", payload, 19)[0]
+        param_source = struct.unpack_from("<i", payload, 23)[0]
+        path_size = struct.unpack_from("<i", payload, 27)[0]
+        if path_size == -1 and (
+            (id_ref == -1 and param_source == 0)
+            or (0 < id_ref <= 0x10000 and param_source == -1)
+        ):
+            validate_param = {
+                "value": bool(payload[18]),
+                "idRef": id_ref,
+                "paramSource": param_source,
+                "path": None,
+                "payloadOffset": "0x11",
+                "payloadShape": (
+                    "action-header-validate-constant"
+                    if id_ref == -1
+                    else "action-header-validate-local-getter"
+                ),
+            }
+    detail = {
             "payloadShape": "action-header-prefix",
             "filterMask": filter_mask,
             "filterMode": filter_mode,
@@ -5267,8 +5287,134 @@ def _decode_action_header_prefix(payload: bytes) -> dict[str, Any]:
             "priority": priority,
             "triggerActiveDuring": trigger_active_during,
             "nextIdOffset": "0x5",
-        }
+    }
+    if validate_param:
+        detail["validateParam"] = validate_param
+        if validate_param["payloadShape"] == "action-header-validate-local-getter":
+            detail["validateGetterLocalId"] = validate_param["idRef"]
+    return _drop_empty(detail)
+
+
+LEVELSCRIPT_EXACT_GETTER_FIELDS = (
+    "booleanCompare",
+    "checkLevelScriptStage",
+    "checkMissionOrQuestIsComplete",
+    "compareMissionState",
+    "getConditionResult",
+    "floatNewCompare",
+    "getLevelScriptPropertyGenericBool",
+    "getLevelScriptStage",
+    "getMissionState",
+    "getterInt",
+    "getterString",
+    "intCompare",
+    "intEqual",
+    "intRandom",
+    "isEndminGender",
+)
+
+
+def decode_levelscript_action_header_validation(
+    data: bytes,
+    header_local_id: int,
+) -> dict[str, Any]:
+    """Resolve one ActionHeader's exact serialized playback predicate.
+
+    The resolver is deliberately identity-agnostic: it follows the header's
+    ``_validate`` local getter reference through the decoded ActionMap and
+    returns only an already exact getter family. Repeated local ids follow the
+    installed ActionMapRuntime rule (the final serialized row owns the indexed
+    runtime slot); unknown getter unions still fail closed.
+    """
+    if not data or not isinstance(header_local_id, int):
+        return {}
+    tagged_strings = _extract_levelscript_tagged_ascii_strings(data)
+    plain_strings = _extract_levelscript_plain_ascii_strings(
+        data,
+        tagged_offsets={int(hit.get("offset") or 0) for hit in tagged_strings},
     )
+    records = extract_levelscript_uid_records(data, tagged_strings, plain_strings)
+    _action_map, memberships = levelscript_action_map_membership(data, records)
+    matching_headers = [
+        (index, record)
+        for index, record in enumerate(records)
+        if record.get("localId") == header_local_id
+        and str(memberships.get(_record_start(record)) or "").startswith("headerList")
+    ]
+    if not matching_headers:
+        return {}
+    header_index, header_record = matching_headers[-1]
+    header_next_start = (
+        _record_start(records[header_index + 1])
+        if header_index + 1 < len(records)
+        else len(data)
+    )
+    header_detail = decode_levelscript_record_payload(
+        data,
+        header_record,
+        next_start=header_next_start,
+        action_map_role=memberships.get(_record_start(header_record)),
+    )
+    action_header = header_detail.get("actionHeader")
+    if not isinstance(action_header, dict):
+        return {}
+    validate_param = action_header.get("validateParam")
+    if not isinstance(validate_param, dict):
+        return {}
+    getter_local_id = action_header.get("validateGetterLocalId")
+    if not isinstance(getter_local_id, int):
+        if validate_param.get("payloadShape") != "action-header-validate-constant":
+            return {}
+        return {
+            "status": "exact_current_build_memorypack_fields",
+            "headerLocalId": header_local_id,
+            "headerNextLocalId": action_header.get("nextId"),
+            "validateParam": validate_param,
+            "predicateType": "constant",
+            "predicate": {"value": bool(validate_param.get("value"))},
+        }
+    matching_getters = [
+        (index, record)
+        for index, record in enumerate(records)
+        if record.get("localId") == getter_local_id
+        and str(memberships.get(_record_start(record)) or "").startswith("getterList")
+    ]
+    if not matching_getters:
+        return {}
+    getter_index, getter_record = matching_getters[-1]
+    getter_next_start = (
+        _record_start(records[getter_index + 1])
+        if getter_index + 1 < len(records)
+        else len(data)
+    )
+    getter_detail = decode_levelscript_record_payload(
+        data,
+        getter_record,
+        next_start=getter_next_start,
+        action_map_role=memberships.get(_record_start(getter_record)),
+    )
+    decoded_fields = [
+        field
+        for field in LEVELSCRIPT_EXACT_GETTER_FIELDS
+        if isinstance(getter_detail.get(field), dict)
+    ]
+    if len(decoded_fields) != 1:
+        return {}
+    predicate_type = decoded_fields[0]
+    return {
+        "status": "exact_current_build_memorypack_fields",
+        "headerLocalId": header_local_id,
+        "headerNextLocalId": action_header.get("nextId"),
+        "validateParam": validate_param,
+        "getterLocalId": getter_local_id,
+        "getterUnionTag": getter_detail.get("memoryPackUnionTag"),
+        "getterSerializedMemberCount": getter_detail.get("serializedMemberCount"),
+        "runtimeSlotStatus": "active-final-serialized-slot",
+        "shadowedHeaderRecordCount": len(matching_headers) - 1,
+        "shadowedGetterRecordCount": len(matching_getters) - 1,
+        "predicateType": predicate_type,
+        "predicate": getter_detail[predicate_type],
+    }
 
 
 def _decode_entity_hp_changed_event(payload: bytes) -> dict[str, Any]:

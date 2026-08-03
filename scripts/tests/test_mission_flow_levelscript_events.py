@@ -2108,6 +2108,7 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
             + struct.pack("<f", 0.01)
             + tail
         )
+
         hp = decode_levelscript_record_payload(
             bytes(hp_payload),
             {
@@ -2226,6 +2227,45 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertNotIn("waveKeyFilter", lifecycle)
         self.assertEqual("$35@_entityOutput", lifecycle["entityOutputParam"]["path"])
         self.assertFalse(lifecycle["serverExchange"])
+
+    def test_action_header_decodes_exact_local_validation_getter(self):
+        payload = bytearray(31)
+        payload[5:9] = (102).to_bytes(4, "little", signed=True)
+        payload[17] = 4
+        payload[18] = 1
+        payload[19:23] = (100).to_bytes(4, "little", signed=True)
+        payload[23:27] = (-1).to_bytes(4, "little", signed=True)
+        payload[27:31] = (-1).to_bytes(4, "little", signed=True)
+        record = {
+            "code": 0x104C,
+            "kind": 0,
+            "unionTag": 0x4C,
+            "serializedMemberCount": 16,
+            "payloadStart": 0,
+            "nextId": -1,
+        }
+        decoded = decode_levelscript_record_payload(
+            bytes(payload),
+            record,
+            next_start=len(payload),
+            action_map_role="headerList#1",
+        )
+        header = decoded["actionHeader"]
+        self.assertEqual(102, header["nextId"])
+        self.assertEqual(100, header["validateGetterLocalId"])
+        self.assertEqual(
+            "action-header-validate-local-getter",
+            header["validateParam"]["payloadShape"],
+        )
+
+        payload[23:27] = (7).to_bytes(4, "little", signed=True)
+        rejected = decode_levelscript_record_payload(
+            bytes(payload),
+            record,
+            next_start=len(payload),
+            action_map_role="headerList#1",
+        )
+        self.assertNotIn("validateParam", rejected["actionHeader"])
 
     def test_npc_patrol_checkpoint_decodes_exact_dynamic_selector(self):
         tail = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"

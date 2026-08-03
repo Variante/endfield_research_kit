@@ -120,6 +120,9 @@ or local source edits.
   related LevelData/SpawnerConfig context for 27 of those Story keys. Its
   LsmPtr module namespace is shown separately from the receiver LevelScript,
   without inventing mission ownership or order.
+- A general ActionHeader validator now exposes 15 exact receiver playback
+  gates (11 Boolean comparisons and 4 integer equalities) without treating
+  those local predicates as mission ownership or cross-Story order.
 - All 258 named native branch predicates are operand-decoded where their
   current binary layout is supported; the pipeline reports 263 semantic
   predicates including inline forms, with 0 class-only and 0 unresolved.

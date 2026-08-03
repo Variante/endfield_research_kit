@@ -1227,6 +1227,14 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
 .mp-runtime-target > .is-boundary > i,
 .mp-runtime-target > .is-boundary > b { color: var(--mp-server); }
 
+.mp-playback-gates {
+  border-color: color-mix(in srgb, var(--mp-client) 45%, var(--mp-line));
+}
+
+.mp-playback-gates > strong,
+.mp-playback-gates > div > i,
+.mp-playback-gates > div > b { color: var(--mp-client); }
+
 .mp-contract-boundary {
   margin: 0;
   padding: 8px 20px 12px;

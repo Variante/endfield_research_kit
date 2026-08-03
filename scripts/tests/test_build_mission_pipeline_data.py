@@ -1624,6 +1624,63 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "listenerHeaderLocalId": 36,
         })
 
+    def test_native_receiver_gate_formats_exact_generic_predicate(self):
+        validation = {
+            "status": "exact_current_build_memorypack_fields",
+            "headerLocalId": 101,
+            "headerNextLocalId": 102,
+            "getterLocalId": 100,
+            "predicateType": "booleanCompare",
+            "predicate": {
+                "comparerName": "Equal",
+                "valueA": {
+                    "value": False,
+                    "idRef": -1,
+                    "paramSource": 300,
+                    "path": "radio_fixturePlayed",
+                },
+                "valueB": {
+                    "value": False,
+                    "idRef": -1,
+                    "paramSource": 0,
+                    "path": None,
+                },
+            },
+        }
+        with patch.object(
+            pipeline,
+            "decode_levelscript_action_header_validation",
+            return_value=validation,
+        ):
+            gate = pipeline.exact_native_receiver_playback_gate(
+                b"fixture",
+                101,
+                source_file="fixture/levelscript.json",
+            )
+        self.assertEqual("radio_fixturePlayed == false", gate["summary"])
+        self.assertEqual(
+            "receiver_playback_allowed_when_true",
+            gate["effect"],
+        )
+        self.assertTrue(gate["branchEvidence"])
+        self.assertFalse(gate["crossStoryOrderEvidence"])
+        self.assertFalse(gate["serverWriteEvidence"])
+
+    def test_native_receiver_gate_rejects_unproven_getter_family(self):
+        with patch.object(
+            pipeline,
+            "decode_levelscript_action_header_validation",
+            return_value={},
+        ):
+            self.assertEqual(
+                {},
+                pipeline.exact_native_receiver_playback_gate(
+                    b"fixture",
+                    9,
+                    source_file="fixture/levelscript.json",
+                ),
+            )
+
     def test_battle_signal_producer_route_revalidates_every_binary_identity(self):
         route = {
             "relation": "ability_battle_signal_local_causality",
