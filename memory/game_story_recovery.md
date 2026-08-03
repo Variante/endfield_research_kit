@@ -40,7 +40,7 @@ Latest CN reports:
 | Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
 | Whole-client topology consumers | 42 / 43 direct `GetQuestInfo` call candidates verified; active predecessor consumers 0; non-sort flow consumers 0; topology lifecycle calls 0 |
 | Authored quest-fork semantics | 307 forks: 226 main-path + auxiliary, 78 all-auxiliary, 3 with multiple main-path arms; 97 guarded; 45 reconverging |
-| Binary LevelScript activation control | 95 receiver scripts carry the general public-state contract; 10 exact SubGame interaction-start carriers |
+| Binary LevelScript activation control | 95 receiver scripts carry public-state and client-request contracts; 10 exact SubGame interaction-start carriers; 54 runtime-request/no-static-carrier gaps |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -1489,8 +1489,21 @@ server state notification flows through manager/container dispatch into
 payload contains only `sceneNumId`, `scriptId`, `state`, and `isComplete`, so it
 still exposes no mission/quest owner or server-side branch choice. Mission
 Pipeline attaches the exact current `GameAssembly.dll`, metadata, and typed
-SubGame source to these panels. The 54 manual-start receivers without a static
-carrier remain the highest-value activation gap; OCR, overrides, source-graph
+SubGame source to these panels.
+
+The same corpus-wide contract now recovers the client request lifecycle without
+object-specific rules. Metadata fixes CS active/start to IDs 94/101 and their
+exact scene/script/boolean/leader-position fields. Decoded bodies prove one
+`BaseNetworkSystem.SendMsg` call in each public and runtime active/start sender;
+the only direct callers of both runtime senders are two true/false sites in
+`LevelScriptRuntime.UpdateRuntimeState`. `ManualStart` writes
+`m_manualStartTriggered` at `0xf8`, enters `PreStart` (22), emits start=true,
+then enters `PreStartActionRunning` (23). Both public network sender methods
+have zero direct current-AOT callers, so indirect/IFix and server-side selection
+remain outside the evidence. The 54 manual receivers (99 Story keys) are now
+classified `manual_start_runtime_request_no_static_carrier`: runtime behavior
+is proven, while the authored carrier, mission owner, server selector, and
+cross-Story order remain the highest-value gap. OCR, overrides, source-graph
 grouping, registration order, and code-address order remain cross-reference
 only.
 

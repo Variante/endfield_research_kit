@@ -396,8 +396,13 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         }
         hosts = [{"briefData": {"parentLevelScriptId": "0"}}]
         self.assertEqual(
-            "manual_start_no_static_activation_carrier",
-            frontier.activation_class(levelscript, hosts, []),
+            "manual_start_runtime_request_no_static_carrier",
+            frontier.activation_class(
+                levelscript,
+                hosts,
+                [],
+                activation_control_validated=True,
+            ),
         )
 
     def test_missing_leveldata_host_fails_closed(self) -> None:
@@ -670,7 +675,7 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 {
                     "levelId": "map_fixture",
                     "scriptId": "1001",
-                    "activationClass": "manual_start_no_static_activation_carrier",
+                    "activationClass": "manual_start_runtime_request_no_static_carrier",
                     "levelScript": {
                         "startTypeName": "Manual",
                         "startShapeListStatus": "null",
