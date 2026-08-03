@@ -345,6 +345,15 @@
       nativeSwitchBranch: "native Switch branch",
       nativeControlMerge: "native branch convergence",
       nativeOrderedSequence: "native ordered action sequence",
+      nativeStoryTransitions: "Exact native Story transitions",
+      nativeStoryTransitionsHint: "Each edge is an original LevelScript path-prefix relation. The typed suffix shows whether playback continues linearly or crosses a parallel, conditional, outcome, or ordered branch.",
+      nativeStoryTransitionLinear: "linear",
+      nativeStoryTransitionParallel: "parallel fan-out",
+      nativeStoryTransitionConditional: "conditional branch",
+      nativeStoryTransitionOutcome: "success/failure branch",
+      nativeStoryTransitionOrdered: "ordered sequence",
+      nativeStoryTransitionOrderedExit: "after ordered sequence",
+      nativeStoryTransitionBranching: "branch-bearing transitions",
       nativeRelatedActionGraphs: "Related original LevelScript graphs",
       nativeRelatedActionGraphsHint: "Each file is attached only because an exact serialized event-to-Story path reaches a Story file already in this mission. Its remaining actions are file-local context, not extra mission order.",
       nativeControlReachability: "exact typed downstream reachability",
@@ -1365,6 +1374,15 @@
       nativeSwitchBranch: "\u539f\u751f Switch \u5206\u652f",
       nativeControlMerge: "\u539f\u751f\u5206\u652f\u6c47\u5408",
       nativeOrderedSequence: "\u539f\u751f\u6709\u5e8f\u52a8\u4f5c\u5e8f\u5217",
+      nativeStoryTransitions: "\u7cbe\u786e\u539f\u751f Story \u8f6c\u79fb",
+      nativeStoryTransitionsHint: "\u6bcf\u6761\u8fb9\u90fd\u662f\u539f\u59cb LevelScript \u8def\u5f84\u524d\u7f00\u5173\u7cfb\u3002\u7c7b\u578b\u5316\u540e\u7f00\u4f1a\u663e\u793a\u64ad\u653e\u662f\u7ebf\u6027\u7ee7\u7eed\uff0c\u8fd8\u662f\u7ecf\u8fc7\u5e76\u884c\u3001\u6761\u4ef6\u3001\u6210\u529f/\u5931\u8d25\u6216\u6709\u5e8f\u5206\u652f\u3002",
+      nativeStoryTransitionLinear: "\u7ebf\u6027",
+      nativeStoryTransitionParallel: "\u5e76\u884c\u5206\u6d41",
+      nativeStoryTransitionConditional: "\u6761\u4ef6\u5206\u652f",
+      nativeStoryTransitionOutcome: "\u6210\u529f/\u5931\u8d25\u5206\u652f",
+      nativeStoryTransitionOrdered: "\u6709\u5e8f\u5e8f\u5217",
+      nativeStoryTransitionOrderedExit: "\u6709\u5e8f\u5e8f\u5217\u4e4b\u540e",
+      nativeStoryTransitionBranching: "\u542b\u5206\u652f\u7684\u8f6c\u79fb",
       nativeRelatedActionGraphs: "\u76f8\u5173\u539f\u59cb LevelScript \u56fe",
       nativeRelatedActionGraphsHint: "\u4ec5\u5f53\u7cbe\u786e\u5e8f\u5217\u5316\u4e8b\u4ef6\u5230\u5267\u60c5\u8def\u5f84\u5230\u8fbe\u672c\u4efb\u52a1\u7684\u5267\u60c5\u6587\u4ef6\u65f6\u624d\u9644\u52a0\u6b64\u6587\u4ef6\uff1b\u5176\u4f59\u52a8\u4f5c\u53ea\u662f\u6587\u4ef6\u5185\u4e0a\u4e0b\u6587\uff0c\u4e0d\u662f\u989d\u5916\u4efb\u52a1\u987a\u5e8f\u3002",
       nativeControlReachability: "\u7cbe\u786e\u7c7b\u578b\u5316\u4e0b\u6e38\u53ef\u8fbe\u6027",
@@ -3262,6 +3280,28 @@
     const nativeSourcesHtml = (row) => (row.sourceFiles || []).length
       ? `<small><strong>${esc(t("source"))}:</strong> ${(row.sourceFiles || []).map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>`
       : "";
+    const nativeTransitionKindLabel = (kind) => t(({
+      linear: "nativeStoryTransitionLinear",
+      parallelFanout: "nativeStoryTransitionParallel",
+      conditionalBranch: "nativeStoryTransitionConditional",
+      outcomeBranch: "nativeStoryTransitionOutcome",
+      orderedSequence: "nativeStoryTransitionOrdered",
+      orderedSequenceExit: "nativeStoryTransitionOrderedExit",
+    })[kind] || "nativeStoryTransitionLinear");
+    const nativeTransitions = directEdges
+      .filter((row) => row.kind === "levelscriptNativeControlPath")
+      .map((row) => {
+        const kinds = row.transitionKinds || [];
+        const evidence = (row.events || []).map((event) => {
+          const steps = (event.transitionSteps || []).map((step) => {
+            const source = `${step.sourceActionName || step.sourceActionClass || "action"} #${step.sourceLocalId ?? "?"}`;
+            const target = `${step.targetActionName || step.targetActionClass || "action"} #${step.targetLocalId ?? "?"}`;
+            return `<div><code>${esc(source)}</code><i>&rarr;</i><code>${esc(step.edge || "?")}</code><i>&rarr;</i><code>${esc(target)}</code><b>${esc(nativeTransitionKindLabel(step.transitionKind))}</b>${nativePredicateHtml(step.predicate)}</div>`;
+          }).join("");
+          return `<section><small><code>${esc(event.levelId || "?")}/${esc(event.scriptId || "?")}#${esc(event.headerLocalId ?? "?")}</code> ${esc(event.eventName || "")}</small>${nativeEventDetailHtml((event.eventDetails || [])[0])}${steps}</section>`;
+        }).join("");
+        return `<details${row.branchingTransition ? " open" : ""}><summary><a href="${esc(storyHref(row.from))}"><code>${esc(row.from || "?")}</code></a><i>&rarr;</i><a href="${esc(storyHref(row.to))}"><code>${esc(row.to || "?")}</code></a>${kinds.map((kind) => `<b>${esc(nativeTransitionKindLabel(kind))}</b>`).join("")}</summary>${evidence}${nativeSourcesHtml(row)}</details>`;
+      }).join("");
     const nativeBranches = (branches.nativeControlBranches || []).map((row) => `<details><summary><b>${esc(nativeBranchLabel(row.kind))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code></summary><small>${esc(row.eventName || "")}</small>${nativeEventDetailHtml(row.eventDetail)}${nativePredicateHtml(row.predicate)}${(row.arms || []).map((arm) => `<div><code>${esc(arm.edge || "?")} &rarr; #${esc(arm.entryLocalId ?? "?")}</code><span>${(arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("")}${nativeSourcesHtml(row)}</details>`).join("");
     const nativeMerges = (branches.nativeControlMerges || []).map((row) => `<details><summary><b>${esc(t("nativeControlMerge"))}</b><code>#${esc(row.branchLocalId ?? "?")}</code><i>&rarr;</i><code>#${esc(row.mergeLocalId ?? "?")}</code></summary><small>${esc(row.convergenceStatus === "exact_serialized_downstream_control_convergence" ? t("nativeControlReachability") : row.convergenceStatus || "")}</small><span>${(row.downstreamStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span>${(row.mergePaths || []).map((path) => `<div><b>${esc(t("nativeControlPath"))}</b>${path.map((localId) => `<code>#${esc(localId)}</code>`).join(" &rarr; ")}</div>`).join("")}${nativeSourcesHtml(row)}</details>`).join("");
     const nativeSequences = (branches.nativeOrderedSequences || []).map((row) => `<details open><summary><b>${esc(t("nativeOrderedSequence"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code></summary><small>${esc(row.eventName || "")}</small>${(row.arms || []).map((arm, index) => `<div><code>${index + 1}. ${esc(arm.edge || "?")}</code><span>${(arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("")}${(row.nativeConsumers || []).map((consumer) => `<small><code>${esc(consumer.method || "?")} @ ${esc(consumer.address || "?")}</code> ${esc(consumer.contract || "")}</small>`).join("")}${nativeSourcesHtml(row)}</details>`).join("");
@@ -3747,8 +3787,9 @@
     return `<details class="mp-mission-story mp-story-order" data-weight="${Number(summary.strongEdgeCount) ? "strong" : "context"}"${Number(summary.strongEdgeCount) || offlineRows.length ? " open" : ""}>
       <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
       <p>${esc(t("storyOrderHint"))}</p>
-      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
+      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span><span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
       ${causalEdges ? `<section><h4>${esc(t("causalEdges"))}</h4><div class="mp-order-edges">${causalEdges}</div></section>` : ""}
+      ${nativeTransitions ? `<section><h4>${esc(t("nativeStoryTransitions"))}</h4><p>${esc(t("nativeStoryTransitionsHint"))}</p><div class="mp-order-branches">${nativeTransitions}</div></section>` : ""}
       ${containments ? `<section><h4>${esc(t("embeddedStory"))}</h4><p>${esc(t("embeddedStoryHint"))}</p><div class="mp-order-edges">${containments}</div></section>` : ""}
       ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}

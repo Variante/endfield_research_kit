@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v23"
+SCHEMA = "sourceStoryPartialOrder.v24"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -2198,6 +2198,78 @@ def _strict_native_path_prefix(
     )
 
 
+def _native_transition_kind(edge: str, source_action_name: str) -> str:
+    """Classify one exact typed successor without interpreting identifiers."""
+    if edge.startswith("Split.actions["):
+        return "parallelFanout"
+    if edge in {"IfElseAction.trueAction", "IfElseAction.falseAction"}:
+        return "conditionalBranch"
+    if (
+        edge.startswith("SwitchInt.case[")
+        or edge == "SwitchInt.default"
+        or edge.startswith("SwitchString.case[")
+        or edge == "SwitchString.default"
+    ):
+        return "conditionalBranch"
+    if edge in {
+        "WaitForSecondsInTriggerVolume.successAction",
+        "WaitForSecondsInTriggerVolume.failAction",
+    }:
+        return "outcomeBranch"
+    if edge.startswith("Branch.sequence["):
+        return "orderedSequence"
+    if edge == "ActionBase.nextId" and source_action_name == "Branch":
+        return "orderedSequenceExit"
+    return "linear"
+
+
+def _native_story_transition_steps(
+    source_path: tuple[tuple[Any, ...], ...],
+    target_path: tuple[tuple[Any, ...], ...],
+) -> list[dict[str, Any]]:
+    """Return the exact typed suffix between two prefix-comparable Story actions.
+
+    Each path tuple is already admitted by the current runtime's serialized
+    action-slot and successor-field contract.  This projection keeps edge
+    labels, action identities, and any predicate on the controlling source
+    action so the UI can distinguish linear continuation, parallel fan-out,
+    conditional selection, ordered Branch iteration, and outcome branches.
+    """
+    if not _strict_native_path_prefix(source_path, target_path):
+        return []
+    steps: list[dict[str, Any]] = []
+    for index in range(len(source_path), len(target_path)):
+        source_step = target_path[index - 1]
+        target_step = target_path[index]
+        edge = safe_key(target_step[1])
+        source_action_name = safe_key(source_step[2])
+        predicate_json = safe_key(source_step[4])
+        predicate = (
+            json.loads(predicate_json)
+            if predicate_json not in {"", "{}"}
+            else {}
+        )
+        steps.append({
+            key: value
+            for key, value in {
+                "sourceLocalId": int(source_step[0]),
+                "targetLocalId": int(target_step[0]),
+                "edge": edge,
+                "transitionKind": _native_transition_kind(
+                    edge,
+                    source_action_name,
+                ),
+                "sourceActionName": source_action_name,
+                "sourceActionClass": safe_key(source_step[3]),
+                "targetActionName": safe_key(target_step[2]),
+                "targetActionClass": safe_key(target_step[3]),
+                "predicate": predicate,
+            }.items()
+            if value not in ("", None, [], {})
+        })
+    return steps
+
+
 def _expand_native_control_path_candidates(
     flow: dict[str, Any],
     candidate_kinds: dict[str, str],
@@ -2256,6 +2328,12 @@ def _native_control_path_story_edges(
                     continue
                 source_path_ids = tuple(step[0] for step in source_path)
                 target_path_ids = tuple(step[0] for step in target_path)
+                transition_steps = _native_story_transition_steps(
+                    source_path,
+                    target_path,
+                )
+                if not transition_steps:
+                    continue
                 evidence_by_pair[(source_key, target_key)].append({
                     "levelId": signature[0],
                     "scriptId": signature[1],
@@ -2270,6 +2348,11 @@ def _native_control_path_story_edges(
                     ],
                     "sourcePath": list(source_path_ids),
                     "targetPath": list(target_path_ids),
+                    "transitionSteps": transition_steps,
+                    "transitionKinds": sorted({
+                        step["transitionKind"]
+                        for step in transition_steps
+                    }),
                     "sourceFiles": sorted(
                         {*source_files, *target_files},
                         key=natural_key,
@@ -2288,12 +2371,21 @@ def _native_control_path_story_edges(
     ):
         if pair in conflicts:
             continue
+        transition_kinds = sorted({
+            kind
+            for evidence in evidence_rows
+            for kind in evidence.get("transitionKinds") or []
+        })
         edges.append({
             "from": pair[0],
             "to": pair[1],
             "kind": "levelscriptNativeControlPath",
             "tier": "strong",
             "source": "exact serialized event-to-action local-id path prefix",
+            "transitionKinds": transition_kinds,
+            "branchingTransition": any(
+                kind != "linear" for kind in transition_kinds
+            ),
             "sourceFiles": sorted({
                 source_file
                 for evidence in evidence_rows
@@ -3978,6 +4070,16 @@ def build_mission_partial_order(
     cycles = [component for component in components if component["cyclic"]]
     tier_counts = Counter(edge["tier"] for edge in direct_edges)
     kind_counts = Counter(edge["kind"] for edge in direct_edges)
+    native_transition_edges = [
+        edge
+        for edge in direct_edges
+        if edge.get("kind") == "levelscriptNativeControlPath"
+    ]
+    native_transition_kind_counts = Counter(
+        kind
+        for edge in native_transition_edges
+        for kind in edge.get("transitionKinds") or []
+    )
     warnings: list[str] = []
     if not mission_payload:
         warnings.append("missingMissionBundle")
@@ -4012,6 +4114,16 @@ def build_mission_partial_order(
             "sceneGraphOptionGroupCount": len(scene_graph_option_branches),
             "nativeControlBranchCount": len(native_control_branches),
             "nativeControlMergeCount": len(native_control_merges),
+            "nativeControlPathTransitionEdgeCount": len(
+                native_transition_edges
+            ),
+            "nativeControlPathBranchingTransitionEdgeCount": sum(
+                bool(edge.get("branchingTransition"))
+                for edge in native_transition_edges
+            ),
+            "nativeControlPathTransitionKinds": dict(
+                sorted(native_transition_kind_counts.items())
+            ),
             "nativeOrderedSequenceCount": len(native_ordered_sequences),
             "nativeOrderedSequenceEdgeCount": len(native_ordered_sequence_edges),
             "nativeRelatedActionTopologyCount": len(
@@ -4231,6 +4343,7 @@ def build_report(
     rows: list[dict[str, Any]] = []
     totals: Counter[str] = Counter()
     edge_kind_totals: Counter[str] = Counter()
+    native_transition_kind_totals: Counter[str] = Counter()
     for mission in missions:
         candidate_kinds = build_scene_order_candidate_kinds(index_entries, mission, None)
         if not candidate_kinds:
@@ -4326,6 +4439,15 @@ def build_report(
         totals["sceneGraphOptionGroups"] += summary["sceneGraphOptionGroupCount"]
         totals["nativeControlBranches"] += summary["nativeControlBranchCount"]
         totals["nativeControlMerges"] += summary["nativeControlMergeCount"]
+        totals["nativeControlPathTransitionEdges"] += summary[
+            "nativeControlPathTransitionEdgeCount"
+        ]
+        totals["nativeControlPathBranchingTransitionEdges"] += summary[
+            "nativeControlPathBranchingTransitionEdgeCount"
+        ]
+        native_transition_kind_totals.update(
+            summary["nativeControlPathTransitionKinds"]
+        )
         totals["nativeOrderedSequences"] += summary["nativeOrderedSequenceCount"]
         totals["nativeOrderedSequenceEdges"] += summary[
             "nativeOrderedSequenceEdgeCount"
@@ -4377,6 +4499,9 @@ def build_report(
         round(totals["comparableScenePairs"] / total_pairs, 6) if total_pairs else 0.0
     )
     summary_payload["edgeKinds"] = dict(sorted(edge_kind_totals.items()))
+    summary_payload["nativeControlPathTransitionKinds"] = dict(
+        sorted(native_transition_kind_totals.items())
+    )
     summary_payload["dialogLineOptionProvenance"] = dict(sorted(dialog_provenance_totals.items()))
     return {
         "_schema": SCHEMA,
@@ -4431,6 +4556,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- native control topology: `{summary.get('nativeControlBranches', 0)}` exact "
         f"Split/IfElse/Switch Story fan-outs and `{summary.get('nativeControlMerges', 0)}` "
         "observed convergences",
+        f"- exact native Story transitions: "
+        f"`{summary.get('nativeControlPathTransitionEdges', 0)}` typed path-prefix edges, "
+        f"including `{summary.get('nativeControlPathBranchingTransitionEdges', 0)}` "
+        "whose source-to-target suffix traverses a typed branch or ordered fan-out",
         f"- native ordered topology: `{summary.get('nativeOrderedSequences', 0)}` exact "
         f"Branch iterators creating `{summary.get('nativeOrderedSequenceEdges', 0)}` "
         "Story-order edges",
@@ -4532,8 +4661,8 @@ def main(argv: list[str] | None = None) -> int:
     write_report_json(out_json, report)
     write_text_if_changed(out_md, render_markdown(report))
     summary = report["summary"]
-    print(f"Source-only partial order: {out_md.relative_to(ROOT)}")
-    print(f"Source-only partial-order data: {out_json.relative_to(ROOT)}")
+    print(f"Source-only partial order: {_repo_path(out_md)}")
+    print(f"Source-only partial-order data: {_repo_path(out_json)}")
     print(
         f"{summary.get('missions', 0)} missions; {summary.get('scenes', 0)} scenes; "
         f"{summary.get('strongEdges', 0)} strong edges; "

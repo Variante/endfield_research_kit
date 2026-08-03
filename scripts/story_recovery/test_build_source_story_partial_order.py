@@ -973,7 +973,148 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             },
         )
         self.assertTrue(all(edge["tier"] == "strong" for edge in native_edges))
+        self.assertTrue(
+            all(edge["transitionKinds"] == ["linear"] for edge in native_edges)
+        )
+        self.assertEqual(
+            native_edges[0]["events"][0]["transitionSteps"][0][
+                "transitionKind"
+            ],
+            "linear",
+        )
+        self.assertEqual(
+            result["summary"]["nativeControlPathTransitionEdgeCount"],
+            3,
+        )
+        self.assertEqual(
+            result["summary"][
+                "nativeControlPathBranchingTransitionEdgeCount"
+            ],
+            0,
+        )
         self.assertEqual(result["summary"]["comparableScenePairs"], 3)
+
+    def test_native_story_transition_suffix_preserves_typed_branch(self) -> None:
+        predicate = json.dumps({
+            "status": "exact_unique_getter",
+            "getterLocalId": 20,
+            "getterName": "BooleanCompare",
+        }, sort_keys=True, separators=(",", ":"))
+        source_path = (
+            (5, "ActionHeader.nextId", "PlayRadio", "play_radio", "{}"),
+        )
+        target_path = (
+            *source_path,
+            (6, "ActionBase.nextId", "IfElseAction", "branch", predicate),
+            (
+                7,
+                "IfElseAction.trueAction",
+                "StartDialogAction",
+                "play_dialog",
+                "{}",
+            ),
+        )
+
+        steps = partial_order._native_story_transition_steps(
+            source_path,
+            target_path,
+        )
+
+        self.assertEqual(
+            [step["transitionKind"] for step in steps],
+            ["linear", "conditionalBranch"],
+        )
+        self.assertEqual(
+            steps[1]["predicate"]["getterName"],
+            "BooleanCompare",
+        )
+        self.assertEqual(steps[1]["sourceLocalId"], 6)
+        self.assertEqual(steps[1]["targetLocalId"], 7)
+        self.assertEqual(
+            partial_order._native_story_transition_steps(
+                target_path,
+                source_path,
+            ),
+            [],
+        )
+
+    def test_native_control_edge_reports_branching_transition(self) -> None:
+        candidates = {"radio_m1_1": "radio", "dlg_m1_1": "dlg"}
+        predicate = {
+            "status": "exact_unique_getter",
+            "getterLocalId": 20,
+            "getterName": "BooleanCompare",
+        }
+
+        def connection(key: str, path: list[dict]) -> dict:
+            return {
+                "key": key,
+                "levelScriptOccurrences": [{
+                    "levelId": "map_test",
+                    "scriptId": "70000000001",
+                    "sourceFile": "LevelScriptData/map_test/70000000001.json",
+                    "nativeEventOwners": [{
+                        "status": "exact_serialized_control_path",
+                        "headerName": "ScriptEvent_OnCustomEvent",
+                        "headerLocalId": 4,
+                        "path": path,
+                    }],
+                }],
+            }
+
+        source_step = {
+            "localId": 5,
+            "edge": "ActionHeader.nextId",
+            "actionName": "PlayRadio",
+            "recordClass": "play_radio",
+        }
+        payload = mission_payload([])
+        payload["flow"]["missionStoryConnections"] = [
+            connection("radio_m1_1", [source_step]),
+            connection("dlg_m1_1", [
+                source_step,
+                {
+                    "localId": 6,
+                    "edge": "ActionBase.nextId",
+                    "actionName": "IfElseAction",
+                    "recordClass": "branch",
+                    "branchPredicate": predicate,
+                },
+                {
+                    "localId": 7,
+                    "edge": "IfElseAction.trueAction",
+                    "actionName": "StartDialogAction",
+                    "recordClass": "play_dialog",
+                },
+            ]),
+        ]
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            candidates,
+            payload,
+        )
+
+        edge = next(
+            edge
+            for edge in result["directEdges"]
+            if edge["kind"] == "levelscriptNativeControlPath"
+        )
+        self.assertTrue(edge["branchingTransition"])
+        self.assertEqual(
+            edge["transitionKinds"],
+            ["conditionalBranch", "linear"],
+        )
+        self.assertEqual(
+            edge["events"][0]["transitionSteps"][1]["predicate"],
+            predicate,
+        )
+        self.assertEqual(
+            result["summary"][
+                "nativeControlPathBranchingTransitionEdgeCount"
+            ],
+            1,
+        )
 
     def test_while_action_path_is_reachability_not_global_story_order(self) -> None:
         candidates = {"radio_m1_1": "radio", "radio_m1_2": "radio"}
