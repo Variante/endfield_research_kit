@@ -34,6 +34,9 @@ try:
         decode_levelscript_action_header_validation,
         decode_levelscript_encounter_module_target,
     )
+    from story_builder.level_bindings import (
+        build_levelscript_native_story_playback_index,
+    )
     from story_builder.mission_assets import (
         mission_runtime_source_summary,
         select_complete_mission_runtime_root,
@@ -73,6 +76,9 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
     from scripts.story_builder.levelscript_binary import (
         decode_levelscript_action_header_validation,
         decode_levelscript_encounter_module_target,
+    )
+    from scripts.story_builder.level_bindings import (
+        build_levelscript_native_story_playback_index,
     )
     from scripts.story_builder.mission_assets import (
         mission_runtime_source_summary,
@@ -220,7 +226,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # no carrier in any related typed DialogTree, without inventing playback. v28
 # exposes typed receiver-local control after playback. v29 publishes exact
 # typed source-to-target Story transition suffixes and their branch classes.
-SCHEMA_VERSION = 29
+# v30 closes the post-playback variable-setter route against every exact
+# property/blackboard Story receiver and publishes the bounded result.
+SCHEMA_VERSION = 30
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -3102,20 +3110,36 @@ def refresh_source_story_gap_queue(
             or "fail" in state
             or "mismatch" in state
         ):
+            first_validation_failure = (
+                validation_failures[0] if validation_failures else None
+            )
+            first_hash_mismatch = (
+                hash_mismatches[0] if hash_mismatches else None
+            )
+            diagnostic = (
+                first_validation_failure
+                if isinstance(first_validation_failure, dict)
+                else first_hash_mismatch
+                if isinstance(first_hash_mismatch, dict)
+                else {}
+            )
             failures.append({
                 "gate": "validator",
                 "validator": validator,
                 "status": state,
                 "validationFailureCount": len(validation_failures),
                 "sourceHashMismatchCount": len(hash_mismatches),
-                "firstFailure": (
-                    validation_failures[0]
-                    if validation_failures
-                    else None
+                "expected": diagnostic.get("expected"),
+                "actual": diagnostic.get("actual"),
+                "missionId": diagnostic.get("missionId"),
+                "storyKey": diagnostic.get("storyKey"),
+                "sourceFile": (
+                    diagnostic.get("sourceFile")
+                    or diagnostic.get("source")
+                    or status.get("source")
                 ),
-                "firstSourceHashMismatch": (
-                    hash_mismatches[0] if hash_mismatches else None
-                ),
+                "firstFailure": first_validation_failure,
+                "firstSourceHashMismatch": first_hash_mismatch,
             })
     if failures:
         first = failures[0]
@@ -3123,8 +3147,11 @@ def refresh_source_story_gap_queue(
             "source Story gap validation failed: "
             f"gate={first.get('gate')} "
             f"validator={first.get('validator') or '-'} "
+            f"mission={first.get('missionId') or '-'} "
+            f"story={first.get('storyKey') or '-'} "
             f"expected={first.get('expected')} "
             f"actual={first.get('actual')} "
+            f"source={first.get('sourceFile') or '-'} "
             f"queue={repo_path(queue_path)}"
         )
     print(
@@ -6000,6 +6027,205 @@ def exact_native_receiver_post_playback_control(
     }
 
 
+POST_PLAYBACK_VARIABLE_SETTER_ACTIONS = {
+    "SetBool",
+    "SetInt",
+    "SetIntIncrease",
+}
+POST_PLAYBACK_VARIABLE_LISTENER_FIELDS = {
+    "blackboardKeyFilter": "blackboard",
+    "propertyKeyFilter": "property",
+}
+
+
+def build_post_playback_variable_bridge_audit(
+    native_story_playback_index: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    """Census exact Story setter-to-listener candidates without promoting them.
+
+    The installed ActionBase formatter identifies the three setter classes and
+    their MemoryPack runtime shape carries a key/value pair. Exact native event
+    payloads independently identify property and blackboard listener keys. A
+    candidate requires the same level, same LevelScript, and exact key; class
+    names, file order, Story names, and numeric ids never participate.
+
+    Even a candidate remains context-only until the installed generic
+    ``Set<T>.Execute`` body proves which notification family it emits. The
+    current build has no candidate, which closes this route more strongly: no
+    execution-semantics assumption could create a Story-to-Story edge.
+    """
+    listeners: dict[tuple[str, str, str], dict[tuple[Any, ...], dict[str, Any]]] = (
+        defaultdict(dict)
+    )
+    setters: dict[tuple[Any, ...], dict[str, Any]] = {}
+    occurrence_count = 0
+    for story_key, occurrences in sorted(native_story_playback_index.items()):
+        for occurrence in occurrences:
+            occurrence_count += 1
+            level_id = str(occurrence.get("levelId") or "")
+            script_id = str(occurrence.get("scriptId") or "")
+            source_file = str(occurrence.get("sourceFile") or "")
+            playback_local_id = occurrence.get("localId")
+            if not level_id or not script_id or not source_file:
+                continue
+            for owner in occurrence.get("nativeEventOwners") or []:
+                if not isinstance(owner, dict):
+                    continue
+                detail = owner.get("eventDetail") or {}
+                if (
+                    owner.get("status") not in {
+                        "exact_serialized_control_path",
+                        "exact_serialized_control_path_equivalent_duplicates",
+                        "exact_serialized_control_path_runtime_shadowing",
+                    }
+                    or detail.get("payloadSchemaStatus")
+                    != "exact_current_build_memorypack_fields"
+                ):
+                    continue
+                for field, listener_kind in (
+                    POST_PLAYBACK_VARIABLE_LISTENER_FIELDS.items()
+                ):
+                    variable_key = str(detail.get(field) or "")
+                    if not variable_key:
+                        continue
+                    listener = compact_dict({
+                        "storyKey": story_key,
+                        "listenerKind": listener_kind,
+                        "eventName": str(owner.get("headerName") or ""),
+                        "headerLocalId": owner.get("headerLocalId"),
+                        "levelId": level_id,
+                        "scriptId": script_id,
+                        "variableKey": variable_key,
+                        "sourceFile": source_file,
+                    })
+                    signature = (
+                        story_key,
+                        listener_kind,
+                        listener.get("eventName"),
+                        listener.get("headerLocalId"),
+                        source_file,
+                    )
+                    listeners[(level_id, script_id, variable_key)][signature] = (
+                        listener
+                    )
+                if not isinstance(playback_local_id, int):
+                    continue
+                control = exact_native_receiver_post_playback_control(
+                    owner,
+                    story_key=story_key,
+                    playback_local_id=playback_local_id,
+                    source_file=source_file,
+                )
+                for action in control.get("actions") or []:
+                    action_name = str(action.get("actionName") or "")
+                    if action_name not in POST_PLAYBACK_VARIABLE_SETTER_ACTIONS:
+                        continue
+                    keys = sorted({
+                        str(value)
+                        for value in action.get("texts") or []
+                        if str(value) and not str(value).startswith(("$", "#"))
+                    })
+                    if len(keys) != 1:
+                        continue
+                    variable_key = keys[0]
+                    setter = {
+                        "storyKey": story_key,
+                        "levelId": level_id,
+                        "scriptId": script_id,
+                        "playbackLocalId": playback_local_id,
+                        "setterLocalId": action.get("localId"),
+                        "setterAction": action_name,
+                        "variableKey": variable_key,
+                        "sourceFile": source_file,
+                    }
+                    signature = (
+                        story_key,
+                        level_id,
+                        script_id,
+                        playback_local_id,
+                        action.get("localId"),
+                        action_name,
+                        variable_key,
+                        source_file,
+                    )
+                    setters[signature] = setter
+
+    setter_rows: list[dict[str, Any]] = []
+    exact_match_count = 0
+    cross_story_match_count = 0
+    for setter in setters.values():
+        matches = sorted(
+            listeners.get((
+                setter["levelId"],
+                setter["scriptId"],
+                setter["variableKey"],
+            ), {}).values(),
+            key=lambda row: (
+                str(row.get("storyKey") or ""),
+                str(row.get("listenerKind") or ""),
+                int(row.get("headerLocalId") or -1),
+            ),
+        )
+        exact_match_count += len(matches)
+        cross_story_matches = [
+            match
+            for match in matches
+            if match.get("storyKey") != setter.get("storyKey")
+        ]
+        cross_story_match_count += len(cross_story_matches)
+        setter_rows.append({
+            **setter,
+            "exactListenerMatches": matches,
+            "crossStoryListenerMatchCount": len(cross_story_matches),
+            "orderEvidence": False,
+            "missionOwnershipEvidence": False,
+        })
+    setter_rows.sort(key=lambda row: (
+        str(row.get("levelId") or ""),
+        str(row.get("scriptId") or ""),
+        int(row.get("setterLocalId") or -1),
+        str(row.get("storyKey") or ""),
+    ))
+    listener_rows = [
+        row
+        for bucket in listeners.values()
+        for row in bucket.values()
+    ]
+    return {
+        "schema": "postPlaybackVariableBridgeAudit.v1",
+        "summary": {
+            "nativeStoryKeys": len(native_story_playback_index),
+            "nativePlaybackOccurrences": occurrence_count,
+            "exactVariableListenerSelectors": len(listeners),
+            "exactVariableListenerRows": len(listener_rows),
+            "postPlaybackVariableSetters": len(setter_rows),
+            "exactSetterListenerMatches": exact_match_count,
+            "crossStorySetterListenerMatches": cross_story_match_count,
+            "setterActions": dict(sorted(Counter(
+                row["setterAction"] for row in setter_rows
+            ).items())),
+            "listenerKinds": dict(sorted(Counter(
+                row["listenerKind"] for row in listener_rows
+            ).items())),
+        },
+        "status": (
+            "closed_no_exact_same_script_key_match"
+            if exact_match_count == 0
+            else "context_only_execute_notification_family_unproven"
+        ),
+        "setters": setter_rows,
+        "evidenceBoundary": (
+            "The installed formatter and exact MemoryPack payloads prove the "
+            "setter classes, serialized keys, listener classes, and listener "
+            "keys. They do not prove that generic Set<T>.Execute emits the "
+            "property or blackboard notification family. No current setter "
+            "matches any exact same-level, same-script, same-key Story listener, "
+            "so this route creates no ownership, branch, or order edge."
+        ),
+        "usesOcrOrManualOrder": False,
+    }
+
+
 def build_story_binding_coverage(
     pipeline_index: dict[str, Any],
     pipeline_index_path: Path,
@@ -6015,6 +6241,8 @@ def build_story_binding_coverage(
     cutscene_case_audit_paths: Iterable[Path] = (
         DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT,
     ),
+    *,
+    native_story_playback_index: dict[str, list[dict[str, Any]]] | None = None,
 ) -> dict[str, Any] | None:
     """Write a unique-file Story-to-pipeline coverage audit.
 
@@ -6957,9 +7185,19 @@ def build_story_binding_coverage(
         )
     )
 
+    post_playback_variable_bridge_audit = (
+        build_post_playback_variable_bridge_audit(
+            native_story_playback_index
+            if native_story_playback_index is not None
+            else build_levelscript_native_story_playback_index()
+        )
+    )
+    variable_bridge_summary = (
+        post_playback_variable_bridge_audit.get("summary") or {}
+    )
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 13,
+        "schemaVersion": 14,
         "generated": int(time.time()),
         "language": language,
         "policy": (
@@ -7114,6 +7352,17 @@ def build_story_binding_coverage(
                 for node in missionless_runtime_nodes
                 for control in node.get("postPlaybackControls") or []
             ),
+            "postPlaybackVariableSetters": variable_bridge_summary.get(
+                "postPlaybackVariableSetters", 0
+            ),
+            "postPlaybackVariableExactListenerMatches": (
+                variable_bridge_summary.get("exactSetterListenerMatches", 0)
+            ),
+            "postPlaybackVariableCrossStoryListenerMatches": (
+                variable_bridge_summary.get(
+                    "crossStorySetterListenerMatches", 0
+                )
+            ),
             "partiallyConnectedDialogTreeNarrativeFiles": len(
                 unresolved_dialog_tree_containment & connected_keys
             ),
@@ -7191,6 +7440,9 @@ def build_story_binding_coverage(
         ],
         "missionlessSubGamePlaybackNodes": missionless_nodes,
         "missionlessNativeRuntimeNodes": missionless_runtime_nodes,
+        "postPlaybackVariableBridgeAudit": (
+            post_playback_variable_bridge_audit
+        ),
         "dynamicSceneIdentityCrossReferences": dynamic_scene_identity,
         "partiallyConnectedDialogTreeNarrativeKeys": sorted(
             unresolved_dialog_tree_containment & connected_keys,
@@ -7254,6 +7506,9 @@ def build_story_binding_coverage(
         f"- Exact post-playback control graphs: `{counts['missionlessNativeRuntimePostPlaybackControls']}`",
         f"- Typed branch points in those graphs: `{counts['missionlessNativeRuntimePostPlaybackBranchPoints']}`",
         f"- Server handoffs with unresolved handler identity: `{counts['missionlessNativeRuntimePostPlaybackServerHandoffs']}`",
+        f"- Typed variable setters after any native Story playback: `{counts['postPlaybackVariableSetters']}`",
+        f"- Exact same-level/script/key Story listener matches: `{counts['postPlaybackVariableExactListenerMatches']}`",
+        f"- Cross-Story matches eligible for a future execution-semantics bridge: `{counts['postPlaybackVariableCrossStoryListenerMatches']}`",
         f"- Connected files with another unresolved DialogTree parent use: `{counts['partiallyConnectedDialogTreeNarrativeFiles']}`",
         "",
         "## By kind",
@@ -9182,6 +9437,9 @@ def main() -> int:
             "nonMissionContentKeys": coverage.get("nonMissionContentKeys") or [],
             "missionlessSubGamePlaybackNodes": coverage["missionlessSubGamePlaybackNodes"],
             "missionlessNativeRuntimeNodes": coverage["missionlessNativeRuntimeNodes"],
+            "postPlaybackVariableBridgeAudit": (
+                coverage.get("postPlaybackVariableBridgeAudit") or {}
+            ),
             "dynamicSceneIdentityCrossReferences":
                 coverage.get("dynamicSceneIdentityCrossReferences"),
             "reportJson": repo_path(coverage_report),

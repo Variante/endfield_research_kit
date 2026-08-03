@@ -464,6 +464,42 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             ),
         )
 
+    def test_related_original_files_are_recursive_exact_and_deduplicated(
+        self,
+    ) -> None:
+        rows = frontier.collect_related_original_files(
+            {
+                "sourceFile": (
+                    "export_full/structured/LevelScriptData/map_fixture/1001.bin"
+                ),
+                "nested": [{
+                    "sourceFiles": [
+                        "export_full/structured/LevelData/map_fixture/data.bin",
+                        "export_full/structured/LevelData/map_fixture/data.bin",
+                    ],
+                    "pipelineSourceFile": "webui/data/mission_pipeline/index.json",
+                }],
+            },
+            {
+                "registrySourceFile": (
+                    "export_full/structured/SpawnerConfigData/fixture.bin"
+                )
+            },
+        )
+
+        self.assertEqual(3, len(rows))
+        self.assertEqual(
+            ["leveldata", "levelscript", "spawner_config"],
+            sorted(row["kind"] for row in rows),
+        )
+        self.assertTrue(all(
+            row["relationship"] == "exact_typed_activation_frontier_context"
+            for row in rows
+        ))
+        self.assertFalse(any(
+            "webui/" in row["sourceFile"] for row in rows
+        ))
+
     def test_pipeline_publication_is_compact_and_non_owning(self) -> None:
         index = {
             "storyCoverage": {
@@ -586,6 +622,18 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                             }
                         ],
                     },
+                    "relatedOriginalFiles": [
+                        {
+                            "kind": "leveldata",
+                            "sourceFile": (
+                                "export_full/structured/LevelData/"
+                                "map_fixture/data.bin"
+                            ),
+                            "relationship": (
+                                "exact_typed_activation_frontier_context"
+                            ),
+                        }
+                    ],
                 }
             ],
         }
@@ -657,6 +705,10 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertFalse(consumer["storyPlayback"])
         self.assertEqual("fixture_mission.json", consumer["sourceFile"])
         self.assertEqual("", consumer["pipelineSourceFile"])
+        self.assertEqual(
+            "export_full/structured/LevelData/map_fixture/data.bin",
+            annotation["relatedOriginalFiles"][0]["sourceFile"],
+        )
         self.assertEqual(
             1,
             index["storyCoverage"]["nativeReceiverActivationFrontier"][

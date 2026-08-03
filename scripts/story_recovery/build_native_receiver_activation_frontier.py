@@ -61,7 +61,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v11"
+SCHEMA = "nativeReceiverActivationFrontier.v12"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -136,6 +136,61 @@ DEFAULT_DUNGEON_TABLE = (
 
 def safe_text(value: Any) -> str:
     return str(value if value is not None else "").strip()
+
+
+def _original_file_kind(source_file: str) -> str:
+    normalized = source_file.replace("\\", "/")
+    for marker, kind in (
+        ("/LevelScriptData/", "levelscript"),
+        ("/LevelData/", "leveldata"),
+        ("/MissionRuntimeAsset/", "mission_runtime"),
+        ("/SpawnerConfigData/", "spawner_config"),
+        ("/SpawnerConfig/", "spawner_config"),
+        ("/GameplayConfig/", "gameplay_config"),
+        ("/Table/", "table"),
+    ):
+        if marker in normalized:
+            return kind
+    return "original_game_data"
+
+
+def collect_related_original_files(*values: Any) -> list[dict[str, str]]:
+    """Collect exact original-data sources from nested evidence structures."""
+    paths: set[str] = set()
+
+    def walk(value: Any, field: str = "") -> None:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                walk(item, safe_text(key))
+            return
+        if isinstance(value, (list, tuple, set)):
+            for item in value:
+                walk(item, field)
+            return
+        if not isinstance(value, str):
+            return
+        path = safe_text(value).replace("\\", "/")
+        if (
+            path.startswith("export_full/")
+            and field.lower() in {
+                "source",
+                "sourcefile",
+                "sourcefiles",
+                "registrysourcefile",
+            }
+        ):
+            paths.add(path)
+
+    for value in values:
+        walk(value)
+    return [
+        {
+            "kind": _original_file_kind(path),
+            "sourceFile": path,
+            "relationship": "exact_typed_activation_frontier_context",
+        }
+        for path in sorted(paths)
+    ]
 
 
 def receiver_script_rows(index_payload: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1639,6 +1694,17 @@ def build_report(
         else:
             host_shapes["includes_multi_script_host"] += 1
 
+        related_original_files = collect_related_original_files(
+            {"sourceFile": rel_path(script_path)},
+            receiver,
+            hosts,
+            encounter_contexts,
+            subgames,
+            dungeon_contexts,
+            consumers,
+            decoded_task_map,
+        )
+
         rows.append(
             {
                 **receiver,
@@ -1682,6 +1748,7 @@ def build_report(
                 "startShapeMissionAreaMatches": start_shape_area_matches,
                 "serializedMissionRuntimeIdTokens": serialized_mission_ids,
                 "decodedTaskMap": decoded_task_map,
+                "relatedOriginalFiles": related_original_files,
                 "activationClass": classification,
                 "missionOwnerStatus": "unresolved",
                 "evidenceBoundary": (
@@ -1978,6 +2045,15 @@ def build_report(
             "scriptsWithMissionRuntimeObjectiveConsumer": sum(
                 bool(row["missionRuntimeScriptConsumers"]) for row in rows
             ),
+            "relatedOriginalFilePlacements": sum(
+                len(row.get("relatedOriginalFiles") or []) for row in rows
+            ),
+            "distinctRelatedOriginalFiles": len({
+                related.get("sourceFile")
+                for row in rows
+                for related in row.get("relatedOriginalFiles") or []
+                if related.get("sourceFile")
+            }),
             "scriptsWithStartShapes": sum(
                 bool((row.get("levelScript") or {}).get("startShapeListShapes"))
                 for row in rows
@@ -2279,6 +2355,18 @@ def publish_to_pipeline_index(
                 row.get("serializedMissionRuntimeIdTokens") or []
             ),
             "decodedTaskMap": row.get("decodedTaskMap"),
+            "relatedOriginalFiles": [
+                {
+                    "kind": safe_text(related.get("kind")),
+                    "sourceFile": safe_text(related.get("sourceFile")),
+                    "relationship": safe_text(
+                        related.get("relationship")
+                    ),
+                }
+                for related in row.get("relatedOriginalFiles") or []
+                if isinstance(related, dict)
+                and safe_text(related.get("sourceFile"))
+            ],
         }
         annotated += 1
 
@@ -2383,6 +2471,12 @@ def markdown_report(payload: dict[str, Any]) -> str:
         (
             "- Scripts named by a typed MissionRuntime objective operand: "
             f"`{counts.get('scriptsWithMissionRuntimeObjectiveConsumer')}`"
+        ),
+        (
+            "- Related original-file placements / distinct files attached to "
+            "receiver nodes: "
+            f"`{counts.get('relatedOriginalFilePlacements')}` / "
+            f"`{counts.get('distinctRelatedOriginalFiles')}`"
         ),
         (
             "- Scripts with authored start shapes / exact complete MissionArea "

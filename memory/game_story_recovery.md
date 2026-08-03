@@ -30,6 +30,7 @@ Latest CN reports:
 | Native branch predicates | 258 named; 263 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
 | Exact post-playback control | 128 graphs / 105 Story files / 348 actions and edges / 18 branch points / 76 unresolved server handoffs |
+| Post-playback variable bridge | 23 typed setters / 50 exact listeners / 0 same-level, same-script, same-key joins |
 | Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
@@ -221,6 +222,17 @@ LevelScript property, and its original Persistent
 `MissionRuntimeAsset/e3m5.json` is attached as a related file. This still does
 not prove that the quest starts playback or that the handoff writes
 `isFinished`, so the Story remains unowned.
+The complete current-build native playback index now also feeds one general
+post-playback variable-bridge audit. It discovers setter and listener classes
+from their exact serialized contracts, extracts keys without Story/object-name
+rules, and joins only `(levelId, scriptId, key)`. Across 3,188 native Story keys
+and 3,816 playback occurrences, 23 typed post-playback setters (`SetInt`) and
+50 exact listener rows (38 property, 12 blackboard; 33 unique selectors) have
+zero joins. The installed formatter and metadata prove the key/value and
+listener payload shapes; the generic `Set<T>.Execute` body is unavailable in
+the current native body table, but the zero overlap closes this route without
+assuming which notification family it emits. It therefore creates no
+ownership, branch, or order edge and uses neither OCR nor manual order.
 No current mission has Story targets on two different Branch sequence slots,
 so there are still zero Story-to-Story edges derived from relative sequence-slot
 indices. One existing path-prefix edge enters `Branch.sequence[1]` after its
@@ -1187,7 +1199,11 @@ only, never Story order; OCR and manual order do not participate.
    mission/quest activation bridge. The unresolved surface is organized under
    161 runtime receiver nodes and 186 receiver-to-Story placements. Twenty-seven
    of those Story keys now have exact Encounter-controller and related-file
-   context, but remain unowned. `cutscene_e1m10_1` likewise has an exact
+   context, but remain unowned. The general activation-frontier publisher now
+   attaches 237 placements of 141 distinct authoritative LevelScript,
+   LevelData, MissionRuntime, SpawnerConfig, gameplay-config, and table files
+   found recursively in the typed evidence; these are related context, not
+   inferred owners. `cutscene_e1m10_1` likewise has an exact
    shipped-Lua phase owner but no serialized mission/quest identity.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.

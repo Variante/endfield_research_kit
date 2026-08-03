@@ -94,6 +94,12 @@
       postPlaybackBranch: "typed local branch points",
       postPlaybackServerHandoff: "server handoff (handler unresolved)",
       postPlaybackBoundary: "Typed successor fields prove the local action graph after playback. Callback labels do not identify a server handler, mission/quest owner, state write, or cross-Story chronology.",
+      postPlaybackVariableBridge: "Post-playback variable bridge audit",
+      postPlaybackVariableSetterStat: "typed post-playback variable setters",
+      postPlaybackVariableListeners: "exact variable-listener rows",
+      postPlaybackVariableMatches: "exact same-script/key matches",
+      postPlaybackVariableClosed: "route closed",
+      postPlaybackVariableBoundary: "Setter and listener keys come from exact current-build serialization. A join still cannot become Story order until Set<T>.Execute proves its notification family; this build has no exact same-level, same-script, same-key join at all.",
       activationFrontier: "offline activation frontier",
       nominalMissionHostCheck: "nominal-mission LevelData check",
       nominalMissionHostExcludes: "validated host excludes receiver script",
@@ -816,6 +822,12 @@
       postPlaybackBranch: "类型化本地分支点",
       postPlaybackServerHandoff: "服务器交接（处理器未解析）",
       postPlaybackBoundary: "类型化后继字段只证明播放后的本地动作图。回调标签不能识别服务器处理器、使命/任务归属、状态写入或跨 Story 时序。",
+      postPlaybackVariableBridge: "播放后变量桥接审计",
+      postPlaybackVariableSetterStat: "类型化播放后变量写入",
+      postPlaybackVariableListeners: "精确变量监听器行",
+      postPlaybackVariableMatches: "同脚本/键精确匹配",
+      postPlaybackVariableClosed: "路径已关闭",
+      postPlaybackVariableBoundary: "写入器和监听器键来自当前版本的精确序列化。在 Set<T>.Execute 的通知类型得到证明前，连接仍不能成为 Story 顺序证据；当前版本完全没有同关卡、同脚本、同键的精确连接。",
       exactReceiverNodesHint: "每个节点都来自原始 LevelScript 事件选择器，并有到剧情播放的精确控制路径；它能组织更多恢复文件，但不声明使命或任务所有者。",
       activationFrontier: "离线激活边界",
       nominalMissionHostCheck: "名义使命 LevelData 检查",
@@ -1809,6 +1821,7 @@
       [storyCounts.rootPlaybackAliasRows, t("rootPlaybackAliases")],
       [storyCounts.missionlessSubGameStoryFiles, t("missionlessSubGameStory")],
       [storyCounts.missionlessNativeRuntimeStoryFiles, t("missionlessRuntimeStory")],
+      [storyCounts.postPlaybackVariableSetters, t("postPlaybackVariableSetterStat")],
       [storyCounts.unlinkedDefinitionOnlyFiles, t("definitionOnlyStory")],
       [storyCounts.nonMissionContentFiles, t("nonMissionContentStory")],
       [counts.missionGraphPrecedenceEdges, t("missionGraphEdgesStat")],
@@ -3977,6 +3990,8 @@
     const missionlessAudit = contract.subGameMissionRegistry?.missionlessPlaybackAudit || {};
     const receiverNodes = (state.index?.storyCoverage?.missionlessNativeRuntimeNodes || [])
       .filter((row) => row && row.eventName && row.selector && (row.storyFiles || []).length);
+    const variableBridgeAudit = state.index?.storyCoverage?.postPlaybackVariableBridgeAudit || {};
+    const variableBridgeSummary = variableBridgeAudit.summary || {};
     const rows = [...(contract.outbound || []), ...(contract.inbound || [])];
     const localRows = (contract.localOnly || []).filter((row) => row && row.event);
     const protocolOnlyRows = (contract.protocolOnly || []).filter((row) => row && row.message);
@@ -4078,6 +4093,15 @@
         ${coveragePolicy ? `<p class="mp-gap-policy"><b>${esc(t("evidencePolicy"))}:</b> ${esc(coveragePolicy)}</p>` : ""}
         <div class="mp-gap-family-list">${eventFamilies.map(([eventName, count]) => `<div class="mp-gap-family-row"><code>${esc(eventName)}</code><span><i style="width:${Math.max(4, Math.round((Number(count) / maxEventFamilyCount) * 100))}%"></i></span><b>${Number(count).toLocaleString()}</b></div>`).join("")}</div>
       </section>` : ""}
+      ${variableBridgeAudit.schema ? `<section class="mp-gap-queue mp-variable-bridge-audit">
+        <header><strong>${esc(t("postPlaybackVariableBridge"))}</strong><p>${esc(t("postPlaybackVariableBoundary"))}</p></header>
+        <div class="mp-gap-family-list">
+          <div class="mp-gap-family-row"><code>${esc(t("postPlaybackVariableSetterStat"))}</code><span></span><b>${Number(variableBridgeSummary.postPlaybackVariableSetters || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("postPlaybackVariableListeners"))}</code><span></span><b>${Number(variableBridgeSummary.exactVariableListenerRows || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("postPlaybackVariableMatches"))}</code><span></span><b>${Number(variableBridgeSummary.exactSetterListenerMatches || 0).toLocaleString()}</b></div>
+        </div>
+        <p class="mp-gap-policy"><b>${esc(t("postPlaybackVariableClosed"))}:</b> <code>${esc(variableBridgeAudit.status || "")}</code></p>
+      </section>` : ""}
       ${missionlessNodes.length ? `<section class="mp-missionless-runtime">
         <header><strong>${esc(t("missionlessSubGameNodes"))} <span>${missionlessNodes.length}</span></strong><p>${esc(t("missionlessSubGameNodesHint"))}${missionlessAudit.finding ? ` ${esc(missionlessAudit.finding)}` : ""}</p></header>
         <div class="mp-missionless-runtime-grid">${missionlessNodes.map((row) => {
@@ -4108,6 +4132,11 @@
         <div class="mp-missionless-runtime-grid">${receiverNodes.map((row) => {
           const selector = row.selector || {};
           const activation = row.activationFrontier || {};
+          const activationRelatedFiles = [...new Map(
+            (activation.relatedOriginalFiles || [])
+              .filter((related) => related && related.sourceFile)
+              .map((related) => [related.sourceFile, related]),
+          ).values()];
           const activationHosts = (activation.levelDataHosts || [])
             .filter((host) => host && host.fileName);
           const encounterContexts = (activation.encounterControllerContexts || [])
@@ -4221,6 +4250,7 @@
               ${activationTasks.length ? `<small>${esc(t("taskConditionBoundary"))}</small>` : ""}
               <div><span>${esc(t("activationClass"))}</span><i aria-hidden="true">→</i><code>${esc(String(activation.activationClass).replaceAll("_", " "))}</code><b>${esc(t("noMissionOwner"))}</b></div>
               <div><span>${esc(t("startPolicy"))}</span><i aria-hidden="true">→</i><code>${esc(`${activation.startTypeName || "unresolved"} · shapes ${activation.startShapeListStatus || "unresolved"}/${activation.startShapeListCount ?? 0} · taskMap ${activation.taskMapStatus || "unresolved"}/${activation.taskMapCount ?? 0}`)}</code></div>
+              ${activationRelatedFiles.map((related) => `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(related.sourceFile)}</code><b>${esc(String(related.kind || "source").replaceAll("_", " "))}</b><small>${esc(String(related.relationship || "").replaceAll("_", " "))}</small></div>`).join("")}
               ${encounterContexts.flatMap((context) => [
                 `<div><span>${esc(t("encounterController"))}</span><i aria-hidden="true">→</i><code>${esc(context.runtimeType || "EncounterBase<T>")}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(`${context.dataType || "EncounterData"} · ${context.mappingId || ""}`)}</small></div>`,
                 `<div><span>${esc(t("encounterModuleNamespace"))}</span><i aria-hidden="true">→</i><code>${esc(context.moduleId || "—")}</code><b>${esc(context.moduleIdMatchesReceiverScript ? t("moduleMatchesReceiver") : t("relatedModuleNamespace"))}</b><small>${esc(`receiver LevelScript ${context.receiverScriptId || selector.listenerScriptId || "—"}`)}</small></div>`,

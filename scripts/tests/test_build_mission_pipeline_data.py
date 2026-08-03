@@ -112,6 +112,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         "validationFailures": [{
                             "gate": "fixtureGate",
                             "storyKey": "opaque_story",
+                            "expected": {"schemaVersion": 14},
+                            "actual": {"schemaVersion": 13},
+                            "sourceFile": "reports/fixture.json",
                         }],
                     },
                 }),
@@ -122,14 +125,18 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "run",
                 return_value=subprocess.CompletedProcess([], 0),
             ):
-                with self.assertRaisesRegex(
-                    RuntimeError,
-                    "validator=report.crossOwnerValidation",
-                ):
+                with self.assertRaises(RuntimeError) as raised:
                     pipeline.refresh_source_story_gap_queue(
                         "CN",
                         queue_path,
                     )
+
+        message = str(raised.exception)
+        self.assertIn("validator=report.crossOwnerValidation", message)
+        self.assertIn("story=opaque_story", message)
+        self.assertIn("expected={'schemaVersion': 14}", message)
+        self.assertIn("actual={'schemaVersion': 13}", message)
+        self.assertIn("source=reports/fixture.json", message)
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -1918,6 +1925,72 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             ),
         )
 
+    def test_post_playback_variable_bridge_is_generic_and_non_promoting(self):
+        exact_owner = {
+            "status": "exact_serialized_control_path",
+            "headerName": "ScriptEvent_OnPropertyChanged",
+            "headerLocalId": 2,
+            "eventDetail": {
+                "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                "propertyKeyFilter": "other_key",
+            },
+            "downstreamControlStatus": "exact_serialized_typed_reachability",
+            "downstreamControlPaths": [[{
+                "edge": "ActionBase.nextId",
+                "localId": 5,
+                "actionName": "SetBool",
+                "texts": ["shared_key"],
+            }]],
+        }
+        listener_owner = {
+            "status": "exact_serialized_control_path",
+            "headerName": "ScriptEvent_OnBlackboardValueChanged",
+            "headerLocalId": 7,
+            "eventDetail": {
+                "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                "blackboardKeyFilter": "shared_key",
+            },
+        }
+        native_index = {
+            "story_setter": [{
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "sourceFile": "export_full/LevelScriptData/map_fixture/1001.bin",
+                "localId": 4,
+                "nativeEventOwners": [exact_owner],
+            }],
+            "story_listener": [{
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "sourceFile": "export_full/LevelScriptData/map_fixture/1001.bin",
+                "localId": 8,
+                "nativeEventOwners": [listener_owner],
+            }],
+        }
+
+        audit = pipeline.build_post_playback_variable_bridge_audit(native_index)
+
+        self.assertEqual(
+            "context_only_execute_notification_family_unproven",
+            audit["status"],
+        )
+        self.assertEqual(1, audit["summary"]["postPlaybackVariableSetters"])
+        self.assertEqual(1, audit["summary"]["exactSetterListenerMatches"])
+        self.assertEqual(1, audit["summary"]["crossStorySetterListenerMatches"])
+        self.assertEqual(
+            "story_listener",
+            audit["setters"][0]["exactListenerMatches"][0]["storyKey"],
+        )
+        self.assertFalse(audit["setters"][0]["orderEvidence"])
+        self.assertFalse(audit["setters"][0]["missionOwnershipEvidence"])
+        self.assertFalse(audit["usesOcrOrManualOrder"])
+
+    def test_post_playback_variable_bridge_closes_zero_overlap(self):
+        audit = pipeline.build_post_playback_variable_bridge_audit({})
+
+        self.assertEqual("closed_no_exact_same_script_key_match", audit["status"])
+        self.assertEqual(0, audit["summary"]["exactSetterListenerMatches"])
+
     def test_native_receiver_gate_formats_recursive_boolean_tree(self):
         leaf = {
             "predicateType": "getterBool",
@@ -3527,6 +3600,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 game_mechanic_condition_table,
                 dungeon_table,
                 text_vo_id_table,
+                native_story_playback_index={},
             )
             self.assertIsNotNone(report)
             self.assertEqual(report["counts"]["uniqueStoryFiles"], 4)
@@ -4033,6 +4107,7 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
                 "CN",
                 report_root,
                 *table_paths,
+                native_story_playback_index={},
             )
 
         row = report["storyTriggerManifest"]["cutscene_e0m0_1"]
@@ -4113,6 +4188,7 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
                     "CN",
                     report_root,
                     *table_paths,
+                    native_story_playback_index={},
                 )
 
         manifest = report["storyTriggerManifest"][
@@ -4224,6 +4300,7 @@ class LuaStoryPlaybackCallSiteTests(unittest.TestCase):
                     "CN",
                     report_root,
                     *table_paths,
+                    native_story_playback_index={},
                 )
 
         manifest = report["storyTriggerManifest"][
