@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import json
 import subprocess
@@ -8,7 +9,7 @@ from unittest.mock import patch
 
 
 from scripts import build_mission_pipeline_data as pipeline
-from scripts.story_builder import mission_flow, source_links
+from scripts.story_builder import level_bindings, mission_flow, source_links
 
 
 def condition(kind, **values):
@@ -112,8 +113,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         "validationFailures": [{
                             "gate": "fixtureGate",
                             "storyKey": "opaque_story",
-                            "expected": {"schemaVersion": 14},
-                            "actual": {"schemaVersion": 13},
+                            "expected": {"schemaVersion": 15},
+                            "actual": {"schemaVersion": 14},
                             "sourceFile": "reports/fixture.json",
                         }],
                     },
@@ -134,8 +135,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         message = str(raised.exception)
         self.assertIn("validator=report.crossOwnerValidation", message)
         self.assertIn("story=opaque_story", message)
-        self.assertIn("expected={'schemaVersion': 14}", message)
-        self.assertIn("actual={'schemaVersion': 13}", message)
+        self.assertIn("expected={'schemaVersion': 15}", message)
+        self.assertIn("actual={'schemaVersion': 14}", message)
         self.assertIn("source=reports/fixture.json", message)
 
     def test_offline_story_recovery_annotates_without_creating_graph_evidence(self):
@@ -1924,6 +1925,112 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 source_file="fixture/levelscript.json",
             ),
         )
+
+    def test_level_sequence_action_name_comes_from_binary_formatter_mapping(self):
+        self.assertEqual(
+            "LoadLevelSequenceAction",
+            level_bindings.LEVELSCRIPT_NATIVE_ACTION_NAMES[(0x02FA, 0x09)],
+        )
+
+    def test_level_sequence_textasset_index_requires_three_way_identity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            valid_payload = {
+                "cutsceneName": "levelseq_fixture_valid",
+                "path": "fixture/path",
+                "version": 3,
+                "targetFrameRate": 30,
+            }
+            (root / "levelseq_fixture_valid_pABCD.json").write_text(
+                json.dumps({
+                    "m_Name": "levelseq_fixture_valid",
+                    "Name": "levelseq_fixture_valid",
+                    "m_Script": base64.b64encode(
+                        json.dumps(valid_payload).encode("utf-8")
+                    ).decode("ascii"),
+                }),
+                encoding="utf-8",
+            )
+            invalid_payload = {"cutsceneName": "levelseq_other"}
+            (root / "levelseq_fixture_invalid_p1234.json").write_text(
+                json.dumps({
+                    "m_Name": "levelseq_fixture_invalid",
+                    "Name": "levelseq_fixture_invalid",
+                    "m_Script": base64.b64encode(
+                        json.dumps(invalid_payload).encode("utf-8")
+                    ).decode("ascii"),
+                }),
+                encoding="utf-8",
+            )
+
+            index = pipeline.build_level_sequence_textasset_index(root)
+
+        self.assertEqual("degraded_fail_closed", index["status"])
+        self.assertEqual(
+            ["levelseq_fixture_valid"],
+            list(index["assetsById"]),
+        )
+        self.assertEqual(
+            "exact_m_name_name_cutscene_name_match",
+            index["assetsById"]["levelseq_fixture_valid"]["identityStatus"],
+        )
+        self.assertEqual(1, index["summary"]["validationFailures"])
+        self.assertEqual(
+            "m_Name_equals_Name_equals_decoded_cutsceneName",
+            index["validationFailures"][0]["gate"],
+        )
+
+    def test_level_sequence_asset_join_is_type_and_identity_driven(self):
+        nodes = [{
+            "postPlaybackControls": [{
+                "actions": [{
+                    "localId": 5,
+                    "actionName": "LoadLevelSequenceAction",
+                    "texts": ["levelseq_fixture"],
+                }, {
+                    "localId": 6,
+                    "actionName": "SetString",
+                    "texts": ["levelseq_fixture"],
+                }, {
+                    "localId": 7,
+                    "actionName": "StopLevelSequenceAction",
+                    "texts": ["levelseq_missing"],
+                }],
+            }],
+        }]
+        index = {
+            "schema": "exactLevelSequenceTextAssetIndex.v1",
+            "root": "fixture",
+            "status": "exact_complete",
+            "summary": {},
+            "validationFailures": [],
+            "ambiguousLevelSequenceIds": [],
+            "assetsById": {
+                "levelseq_fixture": {
+                    "levelSequenceId": "levelseq_fixture",
+                    "sourceFile": "export/fixture.json",
+                    "identityStatus": "exact_m_name_name_cutscene_name_match",
+                },
+            },
+        }
+
+        audit = pipeline.attach_exact_level_sequence_assets(nodes, index)
+
+        actions = nodes[0]["postPlaybackControls"][0]["actions"]
+        self.assertEqual(
+            "export/fixture.json",
+            actions[0]["levelSequenceReferences"][0]["sourceFile"],
+        )
+        self.assertNotIn("levelSequenceReferences", actions[1])
+        self.assertEqual(
+            "no_exact_validated_textasset",
+            actions[2]["levelSequenceReferences"][0]["identityStatus"],
+        )
+        self.assertEqual(2, audit["summary"]["typedActionPlacements"])
+        self.assertEqual(1, audit["summary"]["exactResolvedLevelSequenceIds"])
+        self.assertEqual(["levelseq_missing"], audit["unresolvedLevelSequenceIds"])
+        self.assertFalse(audit["missionOwnershipEvidence"])
+        self.assertFalse(audit["crossStoryOrderEvidence"])
 
     def test_post_playback_variable_bridge_is_generic_and_non_promoting(self):
         exact_owner = {

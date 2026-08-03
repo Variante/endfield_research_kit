@@ -30,6 +30,7 @@ Latest CN reports:
 | Native branch predicates | 258 named; 263 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
 | Exact post-playback control | 128 graphs / 105 Story files / 348 actions and edges / 18 branch points / 76 unresolved server handoffs |
+| Exact post-playback LevelSequence files | 15 typed action placements / 7 serialized ids / 6 exact original TextAssets / 1 unresolved root handle |
 | Post-playback variable bridge | 23 typed setters / 50 exact listeners / 0 same-level, same-script, same-key joins |
 | Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
 
@@ -222,6 +223,22 @@ LevelScript property, and its original Persistent
 `MissionRuntimeAsset/e3m5.json` is attached as a related file. This still does
 not prove that the quest starts playback or that the handoff writes
 `isFinished`, so the Story remains unowned.
+The same general action-family projection resolves original LevelSequence files
+without a sequence-id allowlist. Action class names come from the installed
+`ActionBaseForMemoryPack` formatter table; this additionally identifies union
+tag `0x02fa` / 9 members as `LoadLevelSequenceAction`. A candidate action text
+joins only when the exported TextAsset's `m_Name` and `Name` and its decoded
+`m_Script.cutsceneName` are all exactly equal. On the current receiver surface,
+15 typed action placements carry seven serialized ids; six ids resolve to six
+original TextAssets across ten placements. The remaining
+`levelseq_e11m1_dg011` is retained as an unresolved root/control handle rather
+than expanded by name. The complete 400-file source census admits 399 exact
+identities and fails closed on
+`levelseq_map01_lv007_CM_pC5E4AF1F6301DEFF.json`, whose internal
+`cutsceneName` is `cutscene_c33m1_1`. Mission Pipeline shows each matched file,
+PathID, action type, unresolved id, and the bounded validator diagnostic. These
+links are local cinematic context only and add no mission owner or Story-order
+edge; OCR and manual order are not consulted.
 The complete current-build native playback index now also feeds one general
 post-playback variable-bridge audit. It discovers setter and listener classes
 from their exact serialized contracts, extracts keys without Story/object-name
@@ -1227,6 +1244,16 @@ consumers, but publish them first as related system/file context. Repeating
 existing LevelScript, DialogTree, Timeline, teleport, proxy, Encounter, or
 local carrier scans is unlikely to close ownership without a new foreign key
 or changed inputs.
+
+The repeated module-property census is now bounded: seven full Encounter
+families use the existing typed controller contract, while eight
+`map02_lv006` families expose only base `LevelScriptModule.is_enabled` and
+`is_completed` state. The installed `LevelScriptModule` layout/consumers show
+that the two-field shape is generic lifecycle plumbing and carries no
+mission/quest identity, so it must not be promoted to an owner type. The next
+ownership pass should require a new co-carried foreign key in another typed
+controller payload or native registry, not a module id, LevelSequence name,
+file address, or registration order.
 
 The eight unmatched BlackBox rows are now source-bounded current-build
 definitions, not open placement candidates. Reopen them only if a changed

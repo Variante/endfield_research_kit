@@ -10,6 +10,7 @@ Run from the repository root:
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import re
@@ -160,6 +161,15 @@ DEFAULT_DUNGEON_TABLE = DEFAULT_TABLE_ROOT / "DungeonTable.json"
 DEFAULT_TEXT_VO_ID_TABLE = DEFAULT_TABLE_ROOT / "TextVoIdTable.json"
 DEFAULT_SUBMIT_ITEM_TABLE = DEFAULT_TABLE_ROOT / "SubmitItem.json"
 DEFAULT_OUTPUT_ROOT = ROOT / "webui" / "data" / "mission_pipeline"
+DEFAULT_LEVEL_SEQUENCE_TEXTASSET_ROOT = (
+    ROOT
+    / "export_full"
+    / "recovered"
+    / "AnimeStudio-cli"
+    / "StreamingAssets"
+    / "json_by_type"
+    / "TextAsset"
+)
 DEFAULT_STORY_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "build"
 DEFAULT_ORDER_REPORT_ROOT = ROOT / "reports" / "mission_order"
@@ -227,8 +237,10 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # exposes typed receiver-local control after playback. v29 publishes exact
 # typed source-to-target Story transition suffixes and their branch classes.
 # v30 closes the post-playback variable-setter route against every exact
-# property/blackboard Story receiver and publishes the bounded result.
-SCHEMA_VERSION = 30
+# property/blackboard Story receiver and publishes the bounded result. v31
+# resolves typed post-playback LevelSequence action ids to internally validated
+# original TextAssets without using their names as mission/order evidence.
+SCHEMA_VERSION = 31
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -6027,6 +6039,187 @@ def exact_native_receiver_post_playback_control(
     }
 
 
+def build_level_sequence_textasset_index(
+    root: Path = DEFAULT_LEVEL_SEQUENCE_TEXTASSET_ROOT,
+) -> dict[str, Any]:
+    """Index original LevelSequence TextAssets by three-way exact identity.
+
+    A filename is only an enumeration aid. A row is eligible for a join when
+    the exported Unity ``m_Name`` and ``Name`` fields and the decoded payload's
+    ``cutsceneName`` all agree. This keeps the resolver reusable across maps,
+    missions, and sequence ids while failing closed on malformed or ambiguous
+    exports.
+    """
+    assets_by_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    failures: list[dict[str, Any]] = []
+    source_files = sorted(root.glob("levelseq_*.json")) if root.is_dir() else []
+    for source_path in source_files:
+        try:
+            raw = source_path.read_bytes()
+            outer = json.loads(raw.decode("utf-8-sig"))
+            if not isinstance(outer, dict):
+                raise ValueError("outer JSON is not an object")
+            unity_name = str(outer.get("m_Name") or "")
+            exported_name = str(outer.get("Name") or "")
+            encoded_payload = outer.get("m_Script")
+            if not unity_name or unity_name != exported_name:
+                raise ValueError(
+                    f"outer identity mismatch m_Name={unity_name!r} Name={exported_name!r}"
+                )
+            if not isinstance(encoded_payload, str) or not encoded_payload:
+                raise ValueError("m_Script is not a non-empty base64 string")
+            decoded = base64.b64decode(encoded_payload, validate=True)
+            payload = json.loads(decoded.decode("utf-8-sig"))
+            if not isinstance(payload, dict):
+                raise ValueError("decoded m_Script JSON is not an object")
+            payload_name = str(payload.get("cutsceneName") or "")
+            if payload_name != unity_name:
+                raise ValueError(
+                    f"payload identity mismatch cutsceneName={payload_name!r} m_Name={unity_name!r}"
+                )
+            path_id_match = re.search(r"_p([0-9A-Fa-f]+)\.json$", source_path.name)
+            assets_by_id[unity_name].append(compact_dict({
+                "levelSequenceId": unity_name,
+                "sourceFile": repo_path(source_path),
+                "pathId": (
+                    f"0x{path_id_match.group(1).upper()}"
+                    if path_id_match
+                    else ""
+                ),
+                "sha256": hashlib.sha256(raw).hexdigest(),
+                "payloadPath": str(payload.get("path") or ""),
+                "payloadVersion": payload.get("version"),
+                "targetFrameRate": payload.get("targetFrameRate"),
+                "identityStatus": "exact_m_name_name_cutscene_name_match",
+            }))
+        except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as error:
+            failures.append({
+                "validator": "levelSequenceTextAssetIdentity",
+                "gate": "m_Name_equals_Name_equals_decoded_cutsceneName",
+                "sourceFile": repo_path(source_path),
+                "actual": str(error)[:400],
+            })
+
+    ambiguous_ids = sorted(
+        sequence_id
+        for sequence_id, rows in assets_by_id.items()
+        if len(rows) != 1
+    )
+    exact_assets = {
+        sequence_id: rows[0]
+        for sequence_id, rows in sorted(assets_by_id.items())
+        if len(rows) == 1
+    }
+    return {
+        "schema": "exactLevelSequenceTextAssetIndex.v1",
+        "root": repo_path(root),
+        "status": (
+            "exact_complete"
+            if source_files and not failures and not ambiguous_ids
+            else "degraded_fail_closed"
+        ),
+        "assetsById": exact_assets,
+        "summary": {
+            "sourceFilesScanned": len(source_files),
+            "exactUniqueIdentities": len(exact_assets),
+            "validationFailures": len(failures),
+            "ambiguousIdentities": len(ambiguous_ids),
+        },
+        "validationFailures": failures,
+        "ambiguousLevelSequenceIds": ambiguous_ids,
+    }
+
+
+def attach_exact_level_sequence_assets(
+    runtime_nodes: list[dict[str, Any]],
+    asset_index: dict[str, Any],
+) -> dict[str, Any]:
+    """Attach exact original files to typed LevelSequence control actions.
+
+    Action classes come from the installed ActionBase formatter table. The
+    family test is intentionally type-based (``LevelSeq`` in that recovered
+    class name); no mission, map, object, or sequence identifier is hardcoded.
+    """
+    assets_by_id = asset_index.get("assetsById") or {}
+    action_placements = 0
+    exact_placements = 0
+    serialized_ids: set[str] = set()
+    exact_ids: set[str] = set()
+    unresolved_ids: set[str] = set()
+    related_files: set[str] = set()
+    for node in runtime_nodes:
+        for control in node.get("postPlaybackControls") or []:
+            for action in control.get("actions") or []:
+                action_name = str(action.get("actionName") or "")
+                if "LevelSeq" not in action_name:
+                    continue
+                sequence_ids = sorted({
+                    str(value)
+                    for value in action.get("texts") or []
+                    if str(value).startswith("levelseq_")
+                })
+                if not sequence_ids:
+                    continue
+                action_placements += 1
+                references = []
+                for sequence_id in sequence_ids:
+                    serialized_ids.add(sequence_id)
+                    asset = assets_by_id.get(sequence_id)
+                    if isinstance(asset, dict):
+                        exact_placements += 1
+                        exact_ids.add(sequence_id)
+                        related_files.add(str(asset.get("sourceFile") or ""))
+                        references.append({
+                            **asset,
+                            "relation": "exact_serialized_action_id_to_textasset_identity",
+                            "missionOwnershipEvidence": False,
+                            "crossStoryOrderEvidence": False,
+                        })
+                    else:
+                        unresolved_ids.add(sequence_id)
+                        references.append({
+                            "levelSequenceId": sequence_id,
+                            "identityStatus": "no_exact_validated_textasset",
+                            "missionOwnershipEvidence": False,
+                            "crossStoryOrderEvidence": False,
+                        })
+                action["levelSequenceReferences"] = references
+
+    return {
+        "schema": "postPlaybackLevelSequenceAssetAudit.v1",
+        "status": (
+            "exact_matches_with_unresolved_ids"
+            if unresolved_ids
+            else "all_serialized_ids_resolved"
+        ),
+        "sourceIndex": {
+            key: asset_index.get(key)
+            for key in (
+                "schema", "root", "status", "summary",
+                "validationFailures", "ambiguousLevelSequenceIds",
+            )
+        },
+        "summary": {
+            "typedActionPlacements": action_placements,
+            "serializedLevelSequenceIds": len(serialized_ids),
+            "exactAssetPlacements": exact_placements,
+            "exactResolvedLevelSequenceIds": len(exact_ids),
+            "unresolvedLevelSequenceIds": len(unresolved_ids),
+            "relatedOriginalFiles": len({value for value in related_files if value}),
+        },
+        "unresolvedLevelSequenceIds": sorted(unresolved_ids),
+        "usesOcrOrManualOrder": False,
+        "missionOwnershipEvidence": False,
+        "crossStoryOrderEvidence": False,
+        "evidenceBoundary": (
+            "The installed formatter type and serialized action id identify a local "
+            "LevelSequence reference; the original TextAsset is attached only after "
+            "m_Name, Name, and decoded cutsceneName agree. This does not identify a "
+            "mission owner or order separate Story files."
+        ),
+    }
+
+
 POST_PLAYBACK_VARIABLE_SETTER_ACTIONS = {
     "SetBool",
     "SetInt",
@@ -7185,6 +7378,14 @@ def build_story_binding_coverage(
         )
     )
 
+    level_sequence_textasset_index = build_level_sequence_textasset_index()
+    post_playback_level_sequence_asset_audit = attach_exact_level_sequence_assets(
+        missionless_runtime_nodes,
+        level_sequence_textasset_index,
+    )
+    level_sequence_asset_summary = (
+        post_playback_level_sequence_asset_audit.get("summary") or {}
+    )
     post_playback_variable_bridge_audit = (
         build_post_playback_variable_bridge_audit(
             native_story_playback_index
@@ -7197,7 +7398,7 @@ def build_story_binding_coverage(
     )
     dynamic_scene_identity = load_dynamic_scene_identity_cross_references()
     report = {
-        "schemaVersion": 14,
+        "schemaVersion": 15,
         "generated": int(time.time()),
         "language": language,
         "policy": (
@@ -7214,6 +7415,9 @@ def build_story_binding_coverage(
             "luaPlaybackAudit": lua_playback_evidence["auditReport"],
             "luaPlaybackAuditSha256": lua_playback_evidence["auditSha256"],
             "cinematicQueueRuntimeAudit": cinematic_report,
+            "levelSequenceTextAssets": repo_path(
+                DEFAULT_LEVEL_SEQUENCE_TEXTASSET_ROOT
+            ),
         },
         "counts": {
             "pipelineMissions": len(mission_ids),
@@ -7352,6 +7556,21 @@ def build_story_binding_coverage(
                 for node in missionless_runtime_nodes
                 for control in node.get("postPlaybackControls") or []
             ),
+            "postPlaybackLevelSequenceActions": level_sequence_asset_summary.get(
+                "typedActionPlacements", 0
+            ),
+            "postPlaybackLevelSequenceIds": level_sequence_asset_summary.get(
+                "serializedLevelSequenceIds", 0
+            ),
+            "postPlaybackLevelSequenceExactAssets": level_sequence_asset_summary.get(
+                "exactResolvedLevelSequenceIds", 0
+            ),
+            "postPlaybackLevelSequenceUnresolvedIds": level_sequence_asset_summary.get(
+                "unresolvedLevelSequenceIds", 0
+            ),
+            "postPlaybackLevelSequenceRelatedOriginalFiles": (
+                level_sequence_asset_summary.get("relatedOriginalFiles", 0)
+            ),
             "postPlaybackVariableSetters": variable_bridge_summary.get(
                 "postPlaybackVariableSetters", 0
             ),
@@ -7382,6 +7601,9 @@ def build_story_binding_coverage(
             ),
         ),
         "storyTriggerManifest": story_trigger_manifest,
+        "postPlaybackLevelSequenceAssetAudit": (
+            post_playback_level_sequence_asset_audit
+        ),
         "luaStoryPlaybackEvidence": lua_playback_evidence,
         "rootPlaybackAliases": root_playback_alias_rows,
         "composedRootPlaybackAliases":
@@ -7506,6 +7728,10 @@ def build_story_binding_coverage(
         f"- Exact post-playback control graphs: `{counts['missionlessNativeRuntimePostPlaybackControls']}`",
         f"- Typed branch points in those graphs: `{counts['missionlessNativeRuntimePostPlaybackBranchPoints']}`",
         f"- Server handoffs with unresolved handler identity: `{counts['missionlessNativeRuntimePostPlaybackServerHandoffs']}`",
+        f"- Typed post-playback LevelSequence action placements: `{counts['postPlaybackLevelSequenceActions']}`",
+        f"- Unique serialized LevelSequence ids: `{counts['postPlaybackLevelSequenceIds']}`",
+        f"- Exact internally validated original LevelSequence TextAssets: `{counts['postPlaybackLevelSequenceExactAssets']}`",
+        f"- Unresolved serialized LevelSequence ids: `{counts['postPlaybackLevelSequenceUnresolvedIds']}`",
         f"- Typed variable setters after any native Story playback: `{counts['postPlaybackVariableSetters']}`",
         f"- Exact same-level/script/key Story listener matches: `{counts['postPlaybackVariableExactListenerMatches']}`",
         f"- Cross-Story matches eligible for a future execution-semantics bridge: `{counts['postPlaybackVariableCrossStoryListenerMatches']}`",
@@ -9437,6 +9663,9 @@ def main() -> int:
             "nonMissionContentKeys": coverage.get("nonMissionContentKeys") or [],
             "missionlessSubGamePlaybackNodes": coverage["missionlessSubGamePlaybackNodes"],
             "missionlessNativeRuntimeNodes": coverage["missionlessNativeRuntimeNodes"],
+            "postPlaybackLevelSequenceAssetAudit": (
+                coverage.get("postPlaybackLevelSequenceAssetAudit") or {}
+            ),
             "postPlaybackVariableBridgeAudit": (
                 coverage.get("postPlaybackVariableBridgeAudit") or {}
             ),

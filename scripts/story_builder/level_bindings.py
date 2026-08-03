@@ -352,6 +352,7 @@ LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {
     (0x00D5, 0x0B): "FacSetInteractLockedState",
     (0x00FD, 0x09): "HelloWorld_DevOnly",
     (0x00FF, 0x0B): "IfElseAction",
+    (0x02FA, 0x09): "LoadLevelSequenceAction",
     (0x0410, 0x0A): "SetInt",
     (0x0310, 0x14): "NarrativeBlackScreenAction",
     (0x031E, 0x0C): "NpcPatrolStart",
