@@ -108,6 +108,39 @@ class Il2CppDecoderTests(unittest.TestCase):
             for row in summary["fieldAccesses"]
         ))
 
+    def test_body_summary_restores_this_across_adjusted_stack_slot(self) -> None:
+        helper = load_helper()
+        start_va = 0x180000000
+        data = bytes.fromhex(
+            "48 89 4c 24 08 "  # mov [rsp+8], rcx
+            "53 "              # push rbx
+            "48 83 ec 20 "     # sub rsp, 20h
+            "48 8b 74 24 30 "  # mov rsi, [rsp+30h] => entry rsp+8
+            "48 8b 86 b8 00 00 00 "  # mov rax, [rsi+b8h]
+            "48 83 c4 20 "     # add rsp, 20h
+            "5b "              # pop rbx
+            "c3"
+        )
+        summary = helper.build_method_body_summary(
+            {
+                "flags": "0x0000",
+                "parameterDetails": [],
+                "method": "ReadAfterSpill",
+                "type": "FixtureAsset",
+            },
+            data,
+            start_va,
+            {},
+            max_instructions=64,
+        )
+
+        self.assertTrue(any(
+            row["origin"] == "this+0xb8"
+            for row in summary["fieldAccesses"]
+        ))
+        self.assertEqual(summary["stackOriginFlow"]["spillCount"], 1)
+        self.assertEqual(summary["stackOriginFlow"]["restoreCount"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

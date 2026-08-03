@@ -78,8 +78,11 @@ Rebuild Story data after editing overrides.
   `GameAssembly.dll` and `global-metadata.dat` sources. Each displayed quest
   fork also shows the binary-derived `StartQuest` boundary: objective-list
   reads, zero predecessor/flow reads, zero topology traversal calls, and both
-  exact related original files. Predecessor forks remain topology rather than
-  claimed server branch choice.
+  exact related original files. The same card exposes the whole-client
+  topology-field census: verified direct `GetQuestInfo` callers, the deprecated
+  predecessor-description reader, display-only flow comparator, main-path
+  context/cache consumers, and zero topology-driven lifecycle calls.
+  Predecessor forks remain topology rather than claimed server branch choice.
 - Post-playback `CallServer` rows show their complete binary-decoded serialized
   contract and exact related `LevelScriptData` file, while keeping correlation
   labels and argument parameters explicitly non-owning.

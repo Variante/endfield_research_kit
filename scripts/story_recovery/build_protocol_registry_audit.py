@@ -13,6 +13,7 @@ Outputs:
 from __future__ import annotations
 
 import argparse
+from bisect import bisect_right
 import hashlib
 import importlib.util
 import json
@@ -1365,6 +1366,475 @@ def validate_quest_start_application_observation(
     }
 
 
+def full_method_mapper_row(metadata: Any, helper: Any, method_index: int) -> dict[str, Any]:
+    method_def = metadata.methods[method_index]
+    owner_def = metadata.types[method_def.declaring_type]
+    method_info = helper.method_row(metadata, method_def)
+    return {
+        "type": metadata.type_full_name(owner_def),
+        "image": metadata.image_name_by_type_index.get(owner_def.index, ""),
+        "method": method_info["name"],
+        "methodIndex": method_index,
+        "token": method_info["token"],
+        "returnTypeName": method_info["returnTypeName"],
+        "parameters": method_info["parameters"],
+        "parameterDetails": method_info["parameterDetails"],
+        "flags": method_info["flags"],
+    }
+
+
+def direct_rel32_call_candidates(
+    pe: Any,
+    target_va: int,
+    section_names: frozenset[str] = frozenset({".text", "il2cpp"}),
+) -> list[int]:
+    """Find raw E8 candidates; callers must re-decode them before admission."""
+    sites: list[int] = []
+    for section in pe.sections:
+        if section.get("name") not in section_names:
+            continue
+        start = int(section["rawPointer"])
+        data = pe.buf[start:start + int(section["rawSize"])]
+        base_va = pe.image_base + int(section["virtualAddress"])
+        offset = 0
+        while True:
+            offset = data.find(b"\xe8", offset)
+            if offset < 0:
+                break
+            if offset + 5 <= len(data):
+                relative = struct.unpack_from("<i", data, offset + 1)[0]
+                if base_va + offset + 5 + relative == target_va:
+                    sites.append(base_va + offset)
+            offset += 1
+    return sites
+
+
+def lifecycle_symbols_from_body(body: dict[str, Any]) -> list[str]:
+    targets = [
+        target
+        for row in [*(body.get("calls") or []), *(body.get("controlFlow") or [])]
+        for target in row.get("resolved") or []
+    ]
+    return sorted({
+        f"{target.get('type')}.{target.get('method')}"
+        for target in targets
+        if STATE_LIFECYCLE_METHOD_RE.fullmatch(str(target.get("method") or ""))
+    })
+
+
+def typed_getter_field_consumer_census(
+    metadata: Any,
+    helper: Any,
+    mapper: Any,
+    pe: Any,
+    method_by_pointer: dict[int, list[dict[str, Any]]],
+    sorted_pointers: list[int],
+    *,
+    getter_va: int,
+    return_type: str,
+    field_offsets: dict[str, int],
+    max_method_bytes: int = 65536,
+) -> dict[str, Any]:
+    """Decode every direct typed-getter caller and census exact root fields."""
+    raw_sites = direct_rel32_call_candidates(pe, getter_va)
+    sites_by_pointer: dict[int, list[int]] = {}
+    rejected_sites: list[dict[str, Any]] = []
+    for site in raw_sites:
+        position = bisect_right(sorted_pointers, site) - 1
+        if position < 0:
+            rejected_sites.append({"va": f"0x{site:x}", "reason": "noPrecedingMethod"})
+            continue
+        pointer = sorted_pointers[position]
+        span = site - pointer
+        if span > max_method_bytes:
+            rejected_sites.append({
+                "va": f"0x{site:x}",
+                "reason": "outsideBoundedMethodSpan",
+                "precedingMethodVa": f"0x{pointer:x}",
+                "span": span,
+            })
+            continue
+        sites_by_pointer.setdefault(pointer, []).append(site)
+
+    rows: list[dict[str, Any]] = []
+    verified_sites: list[int] = []
+    return_prefix = f"return:{return_type}"
+    for pointer, candidate_sites in sorted(sites_by_pointer.items()):
+        aliases = method_by_pointer.get(pointer) or []
+        method_indexes = sorted({
+            int(row["methodIndex"])
+            for row in aliases
+            if row.get("methodIndex") is not None
+        })
+        if len(method_indexes) != 1:
+            rejected_sites.extend({
+                "va": f"0x{site:x}",
+                "reason": "ambiguousCallerMethod",
+                "methodIndexes": method_indexes,
+            } for site in candidate_sites)
+            continue
+        mapper_row = full_method_mapper_row(metadata, helper, method_indexes[0])
+        scan_size, next_pointer = mapper.estimate_scan_size(
+            pointer, sorted_pointers, max_method_bytes
+        )
+        body = mapper.build_method_body_summary(
+            mapper_row,
+            pe.bytes_at_va(pointer, scan_size),
+            pointer,
+            method_by_pointer,
+            pe=pe,
+            max_instructions=30000,
+        )
+        decoded_call_offsets = {
+            int(call.get("offset") or 0)
+            for call in body.get("calls") or []
+            if call.get("targetVa") == f"0x{getter_va:x}"
+        }
+        local_verified = [
+            site for site in candidate_sites if site - pointer in decoded_call_offsets
+        ]
+        verified_sites.extend(local_verified)
+        rejected_sites.extend({
+            "va": f"0x{site:x}",
+            "reason": "rawE8NotDecodedAsCallInstruction",
+            "callerVa": f"0x{pointer:x}",
+        } for site in candidate_sites if site not in local_verified)
+        if not local_verified:
+            continue
+        reads: dict[str, list[dict[str, Any]]] = {}
+        for name, field_offset in field_offsets.items():
+            origin = f"{return_prefix}+0x{field_offset:x}"
+            matches = [
+                {
+                    "offset": access.get("offset"),
+                    "va": access.get("va"),
+                    "text": access.get("text"),
+                }
+                for access in body.get("fieldAccesses") or []
+                if access.get("origin") == origin and access.get("kind") == "read"
+            ]
+            if matches:
+                reads[name] = matches
+        if not reads:
+            continue
+        parameter_details = mapper_row.get("parameterDetails") or []
+        is_two_value_comparator = (
+            mapper_row.get("returnTypeName") == "System.Int32"
+            and len(parameter_details) == 2
+            and parameter_details[0].get("typeName")
+            == parameter_details[1].get("typeName")
+        )
+        if reads.get("flowIndex") and is_two_value_comparator:
+            classification = "two_value_display_sort_comparator"
+        elif reads.get("prevQuestIdList") and "deprecated" in str(
+            mapper_row.get("method") or ""
+        ).lower():
+            classification = "deprecated_description_fallback"
+        else:
+            classification = "typed_field_consumer"
+        rows.append({
+            "caller": {
+                "type": mapper_row["type"],
+                "method": mapper_row["method"],
+                "methodIndex": mapper_row["methodIndex"],
+                "token": mapper_row["token"],
+                "va": f"0x{pointer:x}",
+                "returnTypeName": mapper_row.get("returnTypeName"),
+                "parameterTypes": [
+                    row.get("typeName") for row in parameter_details
+                ],
+                "scanBytes": scan_size,
+                "nextMethodPointerVa": (
+                    f"0x{next_pointer:x}" if next_pointer else None
+                ),
+            },
+            "getterCallOffsets": [site - pointer for site in local_verified],
+            "fieldReads": reads,
+            "classification": classification,
+            "lifecycleCalls": lifecycle_symbols_from_body(body),
+        })
+    return {
+        "getterVa": f"0x{getter_va:x}",
+        "returnType": return_type,
+        "rawE8CandidateCount": len(raw_sites),
+        "verifiedDirectCallCount": len(verified_sites),
+        "rejectedRawCandidates": rejected_sites,
+        "fieldConsumerMethodCount": len(rows),
+        "fieldReadCounts": {
+            name: sum(len(row["fieldReads"].get(name) or []) for row in rows)
+            for name in field_offsets
+        },
+        "rows": rows,
+    }
+
+
+def validate_quest_topology_consumer_observation(
+    *,
+    verified_direct_calls: int,
+    active_predecessor_rows: list[dict[str, Any]],
+    non_sort_flow_rows: list[dict[str, Any]],
+    main_path_read_rows: list[dict[str, Any]],
+    lifecycle_calls: list[str],
+    source_file: str,
+    source_hashes: dict[str, str],
+    prior_failures: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    failures = list(prior_failures or [])
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "quest_topology_field_consumer_census",
+            "gate": gate,
+            "message": "client quest topology consumers",
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": source_hashes,
+        })
+
+    if verified_direct_calls < 1:
+        fail("verifiedQuestInfoCallers", ">=1", verified_direct_calls)
+    if active_predecessor_rows:
+        fail("noActivePredecessorRuntimeConsumer", [], active_predecessor_rows)
+    if non_sort_flow_rows:
+        fail("flowIndexOnlyDisplayComparator", [], non_sort_flow_rows)
+    if not main_path_read_rows:
+        fail("mainPathConsumerDiscovery", ">=1", main_path_read_rows)
+    if lifecycle_calls:
+        fail("noTopologyDrivenLifecycleCall", [], lifecycle_calls)
+    return {
+        "status": "validation_failed" if failures else "validated",
+        "failures": failures,
+    }
+
+
+def quest_topology_field_consumer_census(
+    metadata: Any,
+    helper: Any,
+    mapper: Any,
+    pe: Any,
+    metadata_summary: dict[str, Any],
+    method_by_pointer: dict[int, list[dict[str, Any]]],
+    sorted_pointers: list[int],
+    quest_start: dict[str, Any],
+    gameassembly_path: Path,
+) -> dict[str, Any]:
+    """Classify all discovered client consumers of authored quest topology."""
+    quest_fields = {
+        name: int(str(value), 16)
+        for name, value in (quest_start.get("questInfoFieldOffsets") or {}).items()
+        if name in {"prevQuestIdList", "flowIndex"} and value
+    }
+    getter_rows = quest_start.get("questInfoGetterCalls") or []
+    getter_va = int(str(getter_rows[0]["targetVa"]), 16)
+    quest_consumers = typed_getter_field_consumer_census(
+        metadata,
+        helper,
+        mapper,
+        pe,
+        method_by_pointer,
+        sorted_pointers,
+        getter_va=getter_va,
+        return_type=str(quest_start.get("questInfoType") or ""),
+        field_offsets=quest_fields,
+    )
+
+    required_mission_fields = {
+        "missionId",
+        "questDic",
+        "mainPathQuests",
+        "m_mainPathQuestsHashSet",
+        "overrideDescOnlyConsiderMainPath",
+    }
+    mission_candidates = []
+    for type_def in metadata.types:
+        names = {
+            metadata.string(field.name_index)
+            for field in metadata.fields_for(type_def)
+        }
+        if required_mission_fields <= names:
+            mission_candidates.append(type_def)
+    failures: list[dict[str, Any]] = []
+    source_hashes = {
+        "gameAssemblySha256": file_sha256(gameassembly_path),
+        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+    }
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "quest_topology_field_consumer_census",
+            "gate": gate,
+            "message": "client quest topology consumers",
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": str(gameassembly_path.resolve()),
+            "sourceHashes": source_hashes,
+        })
+
+    mission_rows: list[dict[str, Any]] = []
+    mission_type = ""
+    mission_offsets: dict[str, int] = {}
+    if len(mission_candidates) != 1:
+        fail(
+            "uniqueMissionRuntimeShape",
+            1,
+            [metadata.type_full_name(row) for row in mission_candidates],
+        )
+    else:
+        mission_def = mission_candidates[0]
+        mission_type = metadata.type_full_name(mission_def)
+        all_offsets = runtime_type_field_offsets(
+            metadata, pe, metadata_summary, mission_def.index
+        )
+        mission_offsets = {
+            name: all_offsets.get(name)
+            for name in ("mainPathQuests", "m_mainPathQuestsHashSet")
+        }
+        if any(value is None for value in mission_offsets.values()):
+            fail(
+                "missionTopologyFieldOffsets",
+                ["mainPathQuests", "m_mainPathQuestsHashSet"],
+                mission_offsets,
+            )
+        methods_by_index: dict[int, list[int]] = {}
+        for pointer, aliases in method_by_pointer.items():
+            for alias in aliases:
+                method_index = int(alias.get("methodIndex", -1))
+                if method_index >= 0:
+                    methods_by_index.setdefault(method_index, []).append(pointer)
+        for method_offset, method_def in enumerate(metadata.methods_for(mission_def)):
+            method_index = mission_def.method_start + method_offset
+            pointers = sorted(set(methods_by_index.get(method_index) or []))
+            if len(pointers) != 1:
+                continue
+            pointer = pointers[0]
+            mapper_row = full_method_mapper_row(metadata, helper, method_index)
+            scan_size, next_pointer = mapper.estimate_scan_size(
+                pointer, sorted_pointers, 65536
+            )
+            body = mapper.build_method_body_summary(
+                mapper_row,
+                pe.bytes_at_va(pointer, scan_size),
+                pointer,
+                method_by_pointer,
+                pe=pe,
+                max_instructions=30000,
+            )
+            accesses: dict[str, dict[str, list[dict[str, Any]]]] = {}
+            for name, field_offset in mission_offsets.items():
+                if not isinstance(field_offset, int):
+                    continue
+                origin = f"this+0x{field_offset:x}"
+                for access in body.get("fieldAccesses") or []:
+                    if access.get("origin") != origin:
+                        continue
+                    kind = str(access.get("kind") or "read")
+                    accesses.setdefault(name, {}).setdefault(kind, []).append({
+                        "offset": access.get("offset"),
+                        "va": access.get("va"),
+                        "text": access.get("text"),
+                    })
+            if not accesses:
+                continue
+            reads_main = bool((accesses.get("mainPathQuests") or {}).get("read"))
+            writes_cache = bool(
+                (accesses.get("m_mainPathQuestsHashSet") or {}).get("write")
+            )
+            if reads_main and writes_cache:
+                classification = "derived_main_path_membership_cache"
+            elif reads_main and "String" in str(mapper_row.get("returnTypeName") or ""):
+                classification = "level_or_description_context_selection"
+            elif all(
+                not kinds.get("read") or name == "m_mainPathQuestsHashSet"
+                for name, kinds in accesses.items()
+            ):
+                classification = "storage_initialization"
+            else:
+                classification = "typed_field_consumer"
+            mission_rows.append({
+                "caller": {
+                    "type": mapper_row["type"],
+                    "method": mapper_row["method"],
+                    "methodIndex": method_index,
+                    "token": mapper_row["token"],
+                    "va": f"0x{pointer:x}",
+                    "returnTypeName": mapper_row.get("returnTypeName"),
+                    "scanBytes": scan_size,
+                    "nextMethodPointerVa": (
+                        f"0x{next_pointer:x}" if next_pointer else None
+                    ),
+                },
+                "fieldAccesses": accesses,
+                "classification": classification,
+                "lifecycleCalls": lifecycle_symbols_from_body(body),
+                "stackOriginFlow": body.get("stackOriginFlow") or {},
+            })
+
+    topology_rows = [
+        row for row in quest_consumers["rows"]
+        if row["fieldReads"].get("prevQuestIdList")
+        or row["fieldReads"].get("flowIndex")
+    ]
+    active_predecessor_rows = [
+        row for row in topology_rows
+        if row["fieldReads"].get("prevQuestIdList")
+        and row["classification"] != "deprecated_description_fallback"
+    ]
+    non_sort_flow_rows = [
+        row for row in topology_rows
+        if row["fieldReads"].get("flowIndex")
+        and row["classification"] != "two_value_display_sort_comparator"
+    ]
+    lifecycle_calls = sorted({
+        call
+        for row in [*topology_rows, *mission_rows]
+        for call in row.get("lifecycleCalls") or []
+    })
+    main_path_read_rows = [
+        row for row in mission_rows
+        if (row.get("fieldAccesses", {}).get("mainPathQuests") or {}).get("read")
+    ]
+    validation = validate_quest_topology_consumer_observation(
+        verified_direct_calls=quest_consumers["verifiedDirectCallCount"],
+        active_predecessor_rows=active_predecessor_rows,
+        non_sort_flow_rows=non_sort_flow_rows,
+        main_path_read_rows=main_path_read_rows,
+        lifecycle_calls=lifecycle_calls,
+        source_file=str(gameassembly_path.resolve()),
+        source_hashes=source_hashes,
+        prior_failures=failures,
+    )
+
+    return {
+        "classification": "client_display_and_context_topology_only",
+        "questInfoConsumers": quest_consumers,
+        "missionRuntimeType": mission_type,
+        "missionRuntimeFieldOffsets": {
+            name: f"0x{value:x}" if isinstance(value, int) else None
+            for name, value in mission_offsets.items()
+        },
+        "missionRuntimeConsumers": mission_rows,
+        "activePredecessorConsumerCount": len(active_predecessor_rows),
+        "flowIndexNonSortConsumerCount": len(non_sort_flow_rows),
+        "topologyLifecycleCalls": lifecycle_calls,
+        "finding": (
+            "Across every verified direct GetQuestInfo caller, flowIndex is consumed "
+            "only by a two-value MissionShowData comparator and prevQuestIdList only "
+            "by a binary-named deprecated description fallback. Structurally discovered "
+            "MissionRuntime mainPathQuests builds a membership cache and selects level "
+            "or description context. None of these field consumers calls a quest "
+            "lifecycle transition."
+        ),
+        "boundary": (
+            "This is the current direct AOT consumer surface. Indirect native calls, "
+            "active IFix replacement bodies, and server-only eligibility remain outside "
+            "the proof. These fields therefore cannot by themselves label a fork as "
+            "parallel or exclusive."
+        ),
+        "validation": validation,
+    }
+
+
 def quest_start_application_contract(
     metadata: Any,
     helper: Any,
@@ -1812,6 +2282,17 @@ def state_update_application_census(
         rows,
         gameassembly_path,
     )
+    topology_consumers = quest_topology_field_consumer_census(
+        metadata,
+        helper,
+        mapper,
+        pe,
+        metadata_summary,
+        method_by_pointer,
+        sorted_pointers,
+        quest_start,
+        gameassembly_path,
+    )
     return {
         "classification": "server_selected_identity_state_application",
         "discoveryPattern": {
@@ -1839,6 +2320,7 @@ def state_update_application_census(
             int(row["clientSuccessorSelectorPresent"]) for row in rows
         ),
         "questStartApplication": quest_start,
+        "questTopologyFieldConsumers": topology_consumers,
         "finding": (
             "The current client receives one selected mission/quest identity and "
             "state/control value per update and forwards that same packet identity into "
@@ -2138,7 +2620,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v6",
+        "_schema": "endfieldProtocolRegistryAudit.v7",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -2192,6 +2674,15 @@ def build_report(
             "questStartFlowIndexReads": state_application_census[
                 "questStartApplication"
             ].get("fieldReadCounts", {}).get("flowIndex", 0),
+            "topologyActivePredecessorConsumers": state_application_census[
+                "questTopologyFieldConsumers"
+            ].get("activePredecessorConsumerCount", 0),
+            "topologyFlowIndexNonSortConsumers": state_application_census[
+                "questTopologyFieldConsumers"
+            ].get("flowIndexNonSortConsumerCount", 0),
+            "topologyLifecycleCalls": len(state_application_census[
+                "questTopologyFieldConsumers"
+            ].get("topologyLifecycleCalls") or []),
         },
         "evidencePolicy": {
             "registry": (
@@ -2534,6 +3025,10 @@ def render_markdown(report: dict[str, Any]) -> str:
     quest_start = state_census.get("questStartApplication") or {}
     quest_fields = quest_start.get("questInfoFieldOffsets") or {}
     quest_reads = quest_start.get("fieldReadCounts") or {}
+    topology = state_census.get("questTopologyFieldConsumers") or {}
+    quest_consumer_census = topology.get("questInfoConsumers") or {}
+    topology_rows = quest_consumer_census.get("rows") or []
+    mission_topology_rows = topology.get("missionRuntimeConsumers") or []
     lines.extend(
         [
             "",
@@ -2557,6 +3052,62 @@ def render_markdown(report: dict[str, Any]) -> str:
             ),
             "",
             quest_start.get("boundary") or "",
+            "",
+            "### Whole-client topology-field consumers",
+            "",
+            topology.get("finding") or "[topology consumer audit unavailable]",
+            "",
+            (
+                "Verified direct `GetQuestInfo` calls: "
+                f"**{quest_consumer_census.get('verifiedDirectCallCount', 0)}** / "
+                f"{quest_consumer_census.get('rawE8CandidateCount', 0)} raw E8 candidates; "
+                f"active predecessor consumers: "
+                f"**{topology.get('activePredecessorConsumerCount', 0)}**; "
+                f"non-sort flow-index consumers: "
+                f"**{topology.get('flowIndexNonSortConsumerCount', 0)}**; "
+                f"topology-driven lifecycle calls: "
+                f"**{len(topology.get('topologyLifecycleCalls') or [])}**."
+            ),
+            "",
+            "| Native consumer | Classification | Fields | Lifecycle calls |",
+            "|---|---|---|---|",
+            *[
+                "| `{type}.{method}` `{token}` @ `{va}` | `{classification}` | "
+                "{fields} | {calls} |".format(
+                    type=md_escape(row["caller"]["type"]),
+                    method=md_escape(row["caller"]["method"]),
+                    token=md_escape(row["caller"]["token"]),
+                    va=md_escape(row["caller"]["va"]),
+                    classification=md_escape(row["classification"]),
+                    fields=md_escape(", ".join(
+                        f"{name}:{len(reads)} read(s)"
+                        for name, reads in row.get("fieldReads", {}).items()
+                    )),
+                    calls=md_escape(", ".join(row.get("lifecycleCalls") or []) or "none"),
+                )
+                for row in topology_rows
+            ],
+            *[
+                "| `{type}.{method}` `{token}` @ `{va}` | `{classification}` | "
+                "{fields} | {calls} |".format(
+                    type=md_escape(row["caller"]["type"]),
+                    method=md_escape(row["caller"]["method"]),
+                    token=md_escape(row["caller"]["token"]),
+                    va=md_escape(row["caller"]["va"]),
+                    classification=md_escape(row["classification"]),
+                    fields=md_escape(", ".join(
+                        f"{name}:" + "/".join(
+                            f"{kind}={len(accesses)}"
+                            for kind, accesses in kinds.items()
+                        )
+                        for name, kinds in row.get("fieldAccesses", {}).items()
+                    )),
+                    calls=md_escape(", ".join(row.get("lifecycleCalls") or []) or "none"),
+                )
+                for row in mission_topology_rows
+            ],
+            "",
+            topology.get("boundary") or "",
             "",
             "## Story-facing message schemas",
             "",
@@ -2645,7 +3196,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v6 report when its original "
+            "Reuse an existing validated v7 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -2664,7 +3215,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v6":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v7":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}
@@ -2680,6 +3231,16 @@ def current_report_status(
         return False, (
             "quest-start validation is "
             f"{quest_start_validation.get('status')!r}"
+        )
+    topology_validation = (
+        ((report.get("stateUpdateApplicationCensus") or {}).get(
+            "questTopologyFieldConsumers"
+        ) or {}).get("validation") or {}
+    )
+    if topology_validation.get("status") != "validated":
+        return False, (
+            "topology-consumer validation is "
+            f"{topology_validation.get('status')!r}"
         )
     source = report.get("source") or {}
     checks = (
@@ -2752,6 +3313,19 @@ def main() -> int:
         first = quest_start_validation["failures"][0]
         print(
             "quest-start validator failed: "
+            f"validator={first['validator']} gate={first['gate']} "
+            f"message={first.get('message')} expected={first['expected']!r} "
+            f"actual={first['actual']!r} source={first['sourceFile']}",
+            file=sys.stderr,
+        )
+        return 1
+    topology_validation = report["stateUpdateApplicationCensus"][
+        "questTopologyFieldConsumers"
+    ]["validation"]
+    if topology_validation["status"] != "validated":
+        first = topology_validation["failures"][0]
+        print(
+            "topology-consumer validator failed: "
             f"validator={first['validator']} gate={first['gate']} "
             f"message={first.get('message')} expected={first['expected']!r} "
             f"actual={first['actual']!r} source={first['sourceFile']}",

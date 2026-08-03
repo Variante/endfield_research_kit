@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v6",
+                "_schema": "endfieldProtocolRegistryAudit.v7",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -32,6 +32,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "stateUpdateApplicationCensus": {
                     "validation": {"status": "validated", "failures": []},
                     "questStartApplication": {
+                        "validation": {"status": "validated", "failures": []},
+                    },
+                    "questTopologyFieldConsumers": {
                         "validation": {"status": "validated", "failures": []},
                     },
                 },
@@ -109,6 +112,46 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             {"prevQuestIdList": 2, "flowIndex": 1},
         )
         self.assertEqual(result["failures"][0]["sourceFile"], "GameAssembly.dll")
+
+    def test_topology_consumer_observation_accepts_display_only_uses(self):
+        result = audit.validate_quest_topology_consumer_observation(
+            verified_direct_calls=42,
+            active_predecessor_rows=[],
+            non_sort_flow_rows=[],
+            main_path_read_rows=[{"caller": "fixture"}],
+            lifecycle_calls=[],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "c" * 64},
+        )
+
+        self.assertEqual(result, {"status": "validated", "failures": []})
+
+    def test_topology_consumer_observation_reports_independent_gates(self):
+        result = audit.validate_quest_topology_consumer_observation(
+            verified_direct_calls=0,
+            active_predecessor_rows=[{"caller": "active-prev"}],
+            non_sort_flow_rows=[{"caller": "runtime-flow"}],
+            main_path_read_rows=[],
+            lifecycle_calls=["Fixture.StartQuest"],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "d" * 64},
+        )
+
+        self.assertEqual(result["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in result["failures"]],
+            [
+                "verifiedQuestInfoCallers",
+                "noActivePredecessorRuntimeConsumer",
+                "flowIndexOnlyDisplayComparator",
+                "mainPathConsumerDiscovery",
+                "noTopologyDrivenLifecycleCall",
+            ],
+        )
+        self.assertEqual(
+            result["failures"][-1]["actual"],
+            ["Fixture.StartQuest"],
+        )
 
     def test_relevant_task_schemas_reference_separately_proven_native_paths(self):
         task_rows = [

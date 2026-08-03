@@ -1988,6 +1988,37 @@ body:not(.show-debug) .mp-playback-rejection {
 .mp-story-order section { margin: .85rem 0; }
 .mp-story-order h4 { margin: 0 0 .45rem; }
 
+.mp-quest-fork-authority {
+  margin: .55rem 0;
+  padding: .65rem .75rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-left: 4px solid var(--accent);
+  border-radius: .6rem;
+  background: color-mix(in srgb, var(--panel) 88%, var(--accent) 12%);
+}
+
+.mp-quest-fork-authority > summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: .45rem;
+  cursor: pointer;
+}
+
+.mp-quest-fork-authority > p { margin: .55rem 0; }
+.mp-quest-fork-authority > small { display: block; margin: .45rem 0; color: var(--muted); }
+
+.mp-topology-consumer-audit {
+  margin: .65rem 0;
+  padding: .55rem .65rem;
+  border-radius: .5rem;
+  background: color-mix(in srgb, var(--panel) 88%, var(--accent) 12%);
+}
+
+.mp-topology-consumer-audit p { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.mp-topology-consumer-audit details > summary { cursor: pointer; }
+.mp-topology-consumer-audit small { display: block; margin-top: .35rem; color: var(--muted); }
+
 /* These lists used to be one full-width row per entry, which wasted most of
    the pane on wide viewports. auto-fit keeps a single entry full width but
    packs many short entries into columns. */

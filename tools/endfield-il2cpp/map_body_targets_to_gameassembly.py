@@ -1181,7 +1181,97 @@ def is_interesting_origin(origin: str) -> bool:
     )
 
 
-def origin_for_value(value: str, origins: dict[str, str]) -> str:
+def stack_slot_for_memory_expr(expr: str, stack_delta: int) -> int | None:
+    """Normalize a simple RSP-relative operand to its entry-stack slot."""
+    clean = expr.split("=>", 1)[0].replace(" ", "")
+    match = re.fullmatch(r"(?:rsp|esp)([+-]0x[0-9a-f]+)?", clean)
+    if not match:
+        return None
+    disp_text = match.group(1) or "+0x0"
+    sign = -1 if disp_text.startswith("-") else 1
+    return stack_delta + sign * int(disp_text[1:], 16)
+
+
+def instruction_stack_deltas(
+    instructions: list[dict[str, Any]],
+    start_va: int,
+) -> tuple[dict[int, int], int]:
+    """Recover entry-relative RSP deltas across direct native control flow.
+
+    Optimized IL2CPP methods commonly have several epilogues followed by blocks
+    reached from earlier conditional branches. A linear scan would apply one
+    epilogue's ``add rsp``/``pop`` operations to those sibling blocks. Propagate
+    deltas over direct CFG edges instead, with the primary prologue delta as a
+    conservative fallback for blocks reached only through an indirect switch.
+    """
+    if not instructions:
+        return {}, 0
+    by_offset = {int(row.get("offset") or 0): row for row in instructions}
+    offsets = sorted(by_offset)
+    next_offset = {
+        offset: offsets[index + 1]
+        for index, offset in enumerate(offsets[:-1])
+    }
+
+    def adjusted(delta: int, text: str) -> int:
+        if re.fullmatch(r"push [a-z][a-z0-9]*", text):
+            return delta - 8
+        if re.fullmatch(r"pop [a-z][a-z0-9]*", text):
+            return delta + 8
+        match = re.fullmatch(r"(add|sub) (?:rsp|esp), (0x[0-9a-f]+)", text)
+        if match:
+            amount = int(match.group(2), 16)
+            return delta + amount if match.group(1) == "add" else delta - amount
+        return delta
+
+    prologue_delta = 0
+    for offset in offsets:
+        text = str(by_offset[offset].get("text") or "")
+        if text.startswith(("j", "call ", "ret", "int3")):
+            break
+        prologue_delta = adjusted(prologue_delta, text)
+
+    deltas: dict[int, int] = {offsets[0]: 0}
+    pending = [offsets[0]]
+    while pending:
+        offset = pending.pop()
+        text = str(by_offset[offset].get("text") or "")
+        outgoing = adjusted(deltas[offset], text)
+        successors: list[int] = []
+        target_text = branch_target_from_text(text)
+        target_offset = (
+            int(target_text, 16) - start_va if target_text else None
+        )
+        if text.startswith("jmp "):
+            if target_offset in by_offset:
+                successors.append(target_offset)
+        elif text.startswith(("ret", "int3")):
+            pass
+        else:
+            following = next_offset.get(offset)
+            if following is not None:
+                successors.append(following)
+            if text.startswith("j") and target_offset in by_offset:
+                successors.append(target_offset)
+        for successor in successors:
+            if successor not in deltas:
+                deltas[successor] = outgoing
+                pending.append(successor)
+            elif deltas[successor] != outgoing:
+                # Keep the first deterministic path. Valid compiler-generated
+                # block joins normally agree; disagreement is surfaced by the
+                # caller's missing provenance rather than guessed here.
+                continue
+    return deltas, prologue_delta
+
+
+def origin_for_value(
+    value: str,
+    origins: dict[str, str],
+    *,
+    stack_slots: dict[int, str] | None = None,
+    stack_delta: int = 0,
+) -> str:
     value = str(value or "").strip()
     if not value:
         return ""
@@ -1203,6 +1293,10 @@ def origin_for_value(value: str, origins: dict[str, str]) -> str:
         return f"&{origin}" if origin else value
     if value.startswith("[") and value.endswith("]"):
         inner = value[1:-1]
+        if stack_slots is not None:
+            slot = stack_slot_for_memory_expr(inner, stack_delta)
+            if slot is not None:
+                return stack_slots.get(slot, value)
         origin = origin_for_memory_expr(inner, origins)
         return origin or value
     if is_register_name(value):
@@ -2360,6 +2454,12 @@ def build_method_body_summary(
     )
     origins = param_origin_registers(row)
     initial_origins = dict(origins)
+    stack_slots: dict[int, str] = {}
+    stack_deltas, prologue_stack_delta = instruction_stack_deltas(
+        instructions, start_va
+    )
+    stack_spills: list[dict[str, Any]] = []
+    stack_restores: list[dict[str, Any]] = []
     memory_counter: Counter[str] = Counter()
     field_counter: Counter[str] = Counter()
     param_flow: dict[str, list[dict[str, Any]]] = {}
@@ -2381,6 +2481,7 @@ def build_method_body_summary(
     for instr in instructions:
         text = str(instr.get("text") or "")
         offset = int(instr.get("offset") or 0)
+        stack_delta = stack_deltas.get(offset, prologue_stack_delta)
         used_origins = instruction_uses_origin(instr, origins)
         for origin in used_origins:
             remember_flow(origin, instr)
@@ -2488,18 +2589,95 @@ def build_method_body_summary(
                 row_out["memoryOrigins"] = memory_origins
             interesting.append(row_out)
 
+        stack_store = re.match(
+            r"mov \[(?P<slot>(?:rsp|esp)(?:[+-]0x[0-9a-f]+)?)\], (?P<source>.+)$",
+            text,
+        )
+        if stack_store:
+            slot = stack_slot_for_memory_expr(
+                stack_store.group("slot"), stack_delta
+            )
+            if slot is not None:
+                stored_origin = origin_for_value(
+                    stack_store.group("source"),
+                    origins,
+                    stack_slots=stack_slots,
+                    stack_delta=stack_delta,
+                )
+                if is_interesting_origin(stored_origin):
+                    stack_slots[slot] = stored_origin
+                    stack_spills.append({
+                        "offset": offset,
+                        "slot": signed_hex(slot),
+                        "origin": stored_origin,
+                    })
+                else:
+                    stack_slots.pop(slot, None)
+
+        push_match = re.fullmatch(r"push ([a-z][a-z0-9]*)", text)
+        if push_match:
+            pushed_origin = origins.get(
+                canonical_register(push_match.group(1)), ""
+            )
+            pushed_slot = stack_delta - 8
+            if is_interesting_origin(pushed_origin):
+                stack_slots[pushed_slot] = pushed_origin
+                stack_spills.append({
+                    "offset": offset,
+                    "slot": signed_hex(pushed_slot),
+                    "origin": pushed_origin,
+                })
+            else:
+                stack_slots.pop(pushed_slot, None)
+
         write = instr.get("write")
         if write:
             dst = canonical_register(str(write.get("register") or ""))
             if dst in {"rsp", "rbp"}:
                 origins.pop(dst, None)
-                continue
-            if dst:
-                value_origin = origin_for_value(str(write.get("value") or ""), origins)
+            elif dst:
+                value_origin = origin_for_value(
+                    str(write.get("value") or ""),
+                    origins,
+                    stack_slots=stack_slots,
+                    stack_delta=stack_delta,
+                )
                 if value_origin:
                     origins[dst] = value_origin
+                    written_value = str(write.get("value") or "")
+                    stack_restore_slot = (
+                        stack_slot_for_memory_expr(
+                            written_value[1:-1], stack_delta
+                        )
+                        if written_value.startswith("[")
+                        and written_value.endswith("]")
+                        else None
+                    )
+                    if (
+                        is_interesting_origin(value_origin)
+                        and stack_restore_slot is not None
+                    ):
+                        stack_restores.append({
+                            "offset": offset,
+                            "register": dst,
+                            "origin": value_origin,
+                        })
                 elif dst in origins:
                     origins.pop(dst, None)
+
+        pop_match = re.fullmatch(r"pop ([a-z][a-z0-9]*)", text)
+        if pop_match:
+            dst = canonical_register(pop_match.group(1))
+            restored_origin = stack_slots.get(stack_delta, "")
+            if is_interesting_origin(restored_origin):
+                origins[dst] = restored_origin
+                stack_restores.append({
+                    "offset": offset,
+                    "register": dst,
+                    "origin": restored_origin,
+                })
+            else:
+                origins.pop(dst, None)
 
     window_specs: list[tuple[int, str]] = []
     seen_window_offsets: set[int] = set()
@@ -2547,6 +2725,12 @@ def build_method_body_summary(
         "finalRegisterOrigins": {
             key: value for key, value in origins.items()
             if value.startswith(("this", "param:", "return:"))
+        },
+        "stackOriginFlow": {
+            "spillCount": len(stack_spills),
+            "restoreCount": len(stack_restores),
+            "spills": stack_spills[:max_instructions],
+            "restores": stack_restores[:max_instructions],
         },
         "instructionCount": len(instructions),
         "unknownInstructionCount": unknown_count,

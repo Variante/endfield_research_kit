@@ -28,6 +28,19 @@ STATE_UPDATE_CONTRACT_FIXTURE = {
         "topologyTraversalCalls": [],
         "validation": {"status": "validated", "failures": []},
     },
+    "questTopologyFieldConsumers": {
+        "classification": "client_display_and_context_topology_only",
+        "activePredecessorConsumerCount": 0,
+        "flowIndexNonSortConsumerCount": 0,
+        "topologyLifecycleCalls": [],
+        "questInfoConsumers": {
+            "verifiedDirectCallCount": 42,
+            "rawE8CandidateCount": 43,
+            "rows": [],
+        },
+        "missionRuntimeConsumers": [],
+        "validation": {"status": "validated", "failures": []},
+    },
     "rows": [],
     "relatedOriginalFiles": [
         {"kind": "original_game_binary"},
@@ -51,7 +64,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v6",
+                "_schema": "endfieldProtocolRegistryAudit.v7",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -77,6 +90,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         "topologyTraversalCalls": [],
                         "validation": {"status": "validated", "failures": []},
                     },
+                    "questTopologyFieldConsumers": {
+                        "classification": "client_display_and_context_topology_only",
+                        "activePredecessorConsumerCount": 0,
+                        "flowIndexNonSortConsumerCount": 0,
+                        "topologyLifecycleCalls": [],
+                        "validation": {"status": "validated", "failures": []},
+                    },
                     "validation": {"status": "validated", "failures": []},
                 },
             }), encoding="utf-8")
@@ -96,7 +116,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v6",
+                "_schema": "endfieldProtocolRegistryAudit.v7",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": "0" * 64,
@@ -105,6 +125,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 },
                 "stateUpdateApplicationCensus": {
                     "questStartApplication": {
+                        "validation": {"status": "validated", "failures": []},
+                    },
+                    "questTopologyFieldConsumers": {
                         "validation": {"status": "validated", "failures": []},
                     },
                     "validation": {"status": "validated", "failures": []},
@@ -1698,6 +1721,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             self.assertEqual(authority["fieldReadCounts"]["objectiveList"], 3)
             self.assertEqual(authority["fieldReadCounts"]["prevQuestIdList"], 0)
             self.assertEqual(len(authority["relatedOriginalFiles"]), 2)
+            self.assertEqual(
+                authority["topologyFieldConsumers"]["classification"],
+                "client_display_and_context_topology_only",
+            )
             self.assertEqual(index["missions"][0]["storyOrderStrongEdgeCount"], 1)
             self.assertEqual(index["storyOrder"]["schema"], "sourceStoryPartialOrder.v5")
 
@@ -2895,6 +2922,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "questStartPredecessorReads": 0,
                 "questStartFlowIndexReads": 0,
                 "questStartTopologyTraversalCalls": 0,
+                "questTopologyActivePredecessorConsumers": 0,
+                "questTopologyFlowIndexNonSortConsumers": 0,
+                "questTopologyLifecycleCalls": 0,
                 # The fixture has one mission with no cross-mission state
                 # condition and no envTalk consumer table, so both new lanes
                 # are legitimately empty rather than absent.
