@@ -15,6 +15,7 @@ from .levelscript_binary import (
     LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
     LEVELSCRIPT_NATIVE_HEADER_NAMES,
     LEVELSCRIPT_TASK_MISSION_STATE_MAPPING_ID,
+    compact_callserver_serialized_contract,
     decode_levelscript_binary_file,
     decode_levelscript_encounter_module_target,
     decode_levelscript_record_payload,
@@ -1754,6 +1755,13 @@ def _levelscript_native_control_paths_to_record(
                 "actionName": levelscript_native_action_name_from_pair(pair),
                 "recordClass": LEVELSCRIPT_OPCODE_TABLE.get(pair, ""),
                 "texts": texts[:8],
+                "callServerContract": (
+                    compact_callserver_serialized_contract(
+                        detail.get("callServer") or {}
+                    ) or None
+                    if pair == (0x0034, 0x0E)
+                    else None
+                ),
                 "callServerCallbackOutputUIDs": (
                     (detail.get("callServer") or {}).get(
                         "callClientOutputUIDs"

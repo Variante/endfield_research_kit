@@ -30,7 +30,7 @@ Latest CN reports:
 | LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
 | Native branch predicates | 258 named; 263 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
-| Exact post-playback control | 128 graphs / 105 Story files / 348 actions and edges / 18 branch points / 76 unresolved server handoffs |
+| Exact post-playback control | 128 graphs / 105 Story files / 348 actions and edges / 18 branch points / 76 exact serialized handoff contracts with unresolved server handlers |
 | Binary ActionBase naming | 1,313 validated formatter tags / 348 of 348 post-playback actions / 2,564 of 2,564 native-transition endpoints named |
 | Binary CallServer callback topology | 4,746 / 4,746 decoded / 132 output UIDs / 127 exact callback headers / 10 Story-bearing headers (11 targets) / 5 dangling UIDs |
 | Exact post-playback LevelSequence files | 15 typed action placements / 7 serialized ids / 6 exact original TextAssets / 1 unresolved root handle |
@@ -243,7 +243,9 @@ branch-bearing edges are unchanged. The WebUI exposes formatter source/hash,
 coverage, and any unresolved shapes; the current count is zero. Names explain
 local control flow but do not choose a branch, identify a mission owner, or
 create chronology, and OCR/manual order are not inputs.
-The general `CallServer` decoder now consumes its nullable MemoryPack
+The general `CallServer` decoder and audit now retain all six serialized fields
+for every action, including rows with a null callback list; the former report
+only published callback-bearing rows. It consumes the nullable MemoryPack
 `List<string>` before the remaining generated fields instead of assuming the
 common null prefix. A hash-pinned installed-binary contract proves
 `CallServer.Execute` passes that exact list to
@@ -253,12 +255,17 @@ callback header UIDs. The complete 4,512-file census decodes all 4,746 actions:
 exact same-file UID, `ScriptEvent_OnCustomEvent` key, and typed header
 successor. Ten headers reach 11 Story targets, while five missing UIDs all
 remain explicit dangling references in `dung01_cdg005/7700000010.json`.
-Recursive callback traversal uses the same resolver, with no file, object, or
-Story allowlist. None of the corresponding `CallServer` actions is downstream
-of an earlier Story playback, and all 76 handoffs on the 156 unowned native
-playback files have null callback lists, so this recovery adds local branch and
-related-file context but no Story-order or ownership edge. The strong/native
-order counts therefore correctly remain 1,502 / 380 (85 branch-bearing).
+Recursive callback traversal and the Mission Pipeline attachment use exact
+source-file/local-action identities, with no file, object, mission, or Story
+allowlist. All 76 post-playback handoffs match their complete-corpus audit row
+and attach the authoritative `LevelScriptData` file. All have the literal
+`event_args` parameter name, null parameter path, and null callback list; 75
+use the action's own UID as a correlation event, while
+`map01_lv005/3400010000` action 9 uses the custom event `tos2`. Thus no handoff
+co-carries a mission/quest foreign key, so this recovery adds exact local
+contract and related-file context but no Story-order or ownership edge. The
+strong/native order counts therefore correctly remain 1,502 / 380 (85
+branch-bearing).
 Mission Pipeline exposes the callback routes, original LevelScript files,
 binary address/contract, five dangling UIDs, and the zero-hit unresolved
 surface. OCR and manual overrides are not inputs.
@@ -1278,9 +1285,10 @@ only, never Story order; OCR and manual order do not participate.
    evidence. A display order must remain separate from source proof.
 
 The highest-value missing source is a serialized server/runtime registry that
-contains both LevelScript and mission/quest identity. Next inspect other
-repeated typed LevelData property contracts and their native controller
-consumers, but publish them first as related system/file context. Repeating
+contains both LevelScript and mission/quest identity. Next inspect a new typed
+selector operand or server successor policy that could expose such a foreign
+key; repeated LevelData property and CallServer payload patterns are now
+bounded and visible as related context. Repeating
 existing LevelScript, DialogTree, Timeline, teleport, proxy, Encounter, or
 local carrier scans is unlikely to close ownership without a new foreign key
 or changed inputs.

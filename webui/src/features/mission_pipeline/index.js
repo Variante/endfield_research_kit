@@ -106,7 +106,11 @@
       callServerStoryCallbacks: "Story-bearing callback headers",
       callServerDanglingCallbacks: "dangling callback UIDs",
       callServerUnownedSurface: "callback UIDs on unresolved post-playback handoffs",
-      callServerCallbackBoundary: "The installed binary proves that each non-empty output string is a possible subexecutor header UID. Exact same-file UID, custom-event key, and typed successor matches recover conditional callback topology; they do not prove execution or mission ownership. These Story-bearing callbacks have no typed predecessor from an earlier Story playback, so they add no Story-to-Story order edge.",
+      callServerPostPlaybackContracts: "exact post-playback handoff contracts",
+      callServerSelfUidContracts: "self-UID correlation labels",
+      callServerArgumentPaths: "mission/quest argument paths",
+      callServerSerializedContract: "serialized handoff contract",
+      callServerCallbackBoundary: "The installed binary proves the complete six-field CallServer shape and that each non-empty output string is a possible subexecutor header UID. Exact source/local-action joins recover every post-playback handoff contract; event names and argument parameters do not become mission ownership or Story order without an independent original-data foreign key.",
       postPlaybackLevelSequenceAudit: "Exact post-playback LevelSequence files",
       postPlaybackLevelSequenceActions: "typed sequence action placements",
       postPlaybackLevelSequenceAssets: "exact original TextAssets",
@@ -4023,6 +4027,8 @@
     const callServerCallbackAudit = state.index?.storyCoverage?.callServerCallbackAudit || {};
     const callServerCallbackSummary = callServerCallbackAudit.summary || {};
     const callServerCallbackRoutes = callServerCallbackAudit.storyCallbackRoutes || [];
+    const postPlaybackCallServerAudit = callServerCallbackAudit.postPlaybackContractAudit || {};
+    const postPlaybackCallServerSummary = postPlaybackCallServerAudit.summary || {};
     const storyCoverageCounts = state.index?.storyCoverage?.counts || {};
     const storyOrderSummary = state.index?.storyOrder?.summary || {};
     const levelSequenceAudit = state.index?.storyCoverage?.postPlaybackLevelSequenceAssetAudit || {};
@@ -4147,6 +4153,9 @@
           <div class="mp-gap-family-row"><code>${esc(t("callServerStoryCallbacks"))}</code><span></span><b>${Number(callServerCallbackSummary.callbackHeadersReachingStory || 0).toLocaleString()} / ${Number(callServerCallbackSummary.callbackStoryTargets || 0).toLocaleString()} Story targets</b></div>
           <div class="mp-gap-family-row"><code>${esc(t("callServerDanglingCallbacks"))}</code><span></span><b>${Number(callServerCallbackSummary.unresolvedCallbackOutputs || 0).toLocaleString()}</b></div>
           <div class="mp-gap-family-row"><code>${esc(t("callServerUnownedSurface"))}</code><span></span><b>${Number(storyCoverageCounts.missionlessNativeRuntimePostPlaybackCallbackHeaderUids || 0).toLocaleString()} / ${Number(storyCoverageCounts.missionlessNativeRuntimePostPlaybackServerHandoffs || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("callServerPostPlaybackContracts"))}</code><span></span><b>${Number(postPlaybackCallServerSummary.exactContracts || 0).toLocaleString()} / ${Number(postPlaybackCallServerSummary.handoffs || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("callServerSelfUidContracts"))}</code><span></span><b>${Number(postPlaybackCallServerSummary.eventNameIdentityDistribution?.["record-uid-prefixed"] || 0).toLocaleString()}</b></div>
+          <div class="mp-gap-family-row"><code>${esc(t("callServerArgumentPaths"))}</code><span></span><b>${Number(Object.entries(postPlaybackCallServerSummary.eventArgsParamPathDistribution || {}).filter(([path]) => path !== "<null>").reduce((total, [, count]) => total + Number(count || 0), 0)).toLocaleString()}</b></div>
         </div>
         ${callServerCallbackRoutes.length ? `<div class="mp-missionless-story-links">${callServerCallbackRoutes.map((route) => `<a href="${esc(storyHref((route.storyKeys || [])[0] || ""))}"><span><code>${esc(`${route.levelId || ""}/${route.scriptId || ""}`)}</code> / <code>#${esc(route.callbackHeaderUid || "")}</code></span><small>${esc(route.sourceFile || "")}</small><b aria-hidden="true">-&gt;</b><strong>${esc((route.storyKeys || []).join(", "))}</strong></a>`).join("")}</div>` : ""}
         <p class="mp-gap-policy"><code>${esc(callServerCallbackAudit.nativeContract?.callServer?.executeMethodVa || "")}</code> / <code>${esc(callServerCallbackAudit.source || "")}</code></p>
@@ -4367,7 +4376,15 @@
                 return `<div><span><a href="${esc(storyHref(control.storyKey))}"><code>${esc(control.storyKey)}</code></a> #${esc(control.playbackLocalId ?? "?")}</span><i aria-hidden="true">→</i><code>${esc(chain)}</code></div>`;
               }).join("");
               const branches = (control.branchPointLocalIds || []).length ? `<div><span>${esc(t("postPlaybackBranch"))}</span><i aria-hidden="true">→</i><code>${esc(control.branchPointLocalIds.map((id) => `#${id}`).join(", "))}</code></div>` : "";
-              const handoffs = (control.serverHandoffs || []).map((handoff) => `<div class="is-boundary"><span>${esc(t("postPlaybackServerHandoff"))}</span><i aria-hidden="true">→</i><code>${esc((handoff.callbackCorrelationLabels || []).join(", ") || `#${handoff.localId ?? "?"}`)}</code><b>${esc(t("noMissionOwner"))}</b></div>`).join("");
+              const handoffs = (control.serverHandoffs || []).map((handoff) => {
+                const handoffContract = handoff.serializedContract || {};
+                const eventArgs = handoffContract.eventArgsPtr || {};
+                const contractDetail = handoffContract.eventName
+                  ? `${handoffContract.eventName} · args=${eventArgs.pathValue || "none"}/${eventArgs.path || "no foreign path"} · custom=${Number(Boolean(handoffContract.useCustomEvent))} wait=${Number(Boolean(handoffContract.waitForCallback))} payload=${Number(Boolean(handoffContract.withEventArgs))}`
+                  : (handoff.callbackCorrelationLabels || []).join(", ") || `#${handoff.localId ?? "?"}`;
+                const sources = (handoff.relatedOriginalFiles || []).filter((related) => related?.sourceFile);
+                return `<div class="is-boundary"><span>${esc(t("postPlaybackServerHandoff"))}</span><i aria-hidden="true">→</i><code>${esc(contractDetail)}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(`${t("callServerSerializedContract")} · ${handoff.contractStatus || "unresolved"}`)}</small></div>${sources.map((related) => `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(related.sourceFile)}</code><b>CallServer #${esc(handoff.localId ?? "?")}</b><small>${esc(String(related.relationship || "").replaceAll("_", " "))}</small></div>`).join("")}`;
+              }).join("");
               const sequenceFiles = (control.actions || []).flatMap((action) => (action.levelSequenceReferences || []).map((reference) => ({action, reference})));
               const sequenceRows = sequenceFiles.map(({action, reference}) => reference.sourceFile
                 ? `<div><span>${esc(t("postPlaybackLevelSequenceFile"))}</span><i aria-hidden="true">→</i><code>${esc(reference.levelSequenceId || "")}</code><b>${esc(action.actionName || "LevelSequence")}</b><small>${esc(`${reference.sourceFile}${reference.pathId ? ` · ${reference.pathId}` : ""}`)}</small></div>`

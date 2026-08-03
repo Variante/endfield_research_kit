@@ -36,13 +36,14 @@ from story_builder.level_bindings import (  # noqa: E402
     levelscript_record_semantic_key,
 )
 from story_builder.levelscript_binary import (  # noqa: E402
+    compact_callserver_serialized_contract,
     decode_levelscript_record_payload,
     extract_levelscript_uid_records,
     levelscript_action_map_membership,
 )
 
 
-SCHEMA = "levelScriptCallServerCallbackAudit.v1"
+SCHEMA = "levelScriptCallServerCallbackAudit.v2"
 CONTRACT_SCHEMA = "callServerCallbackNativeContract.v1"
 CALLSERVER_PAIR = (0x0034, 14)
 HEX_UID_RE = re.compile(r"[0-9a-fA-F]{8}")
@@ -267,6 +268,90 @@ def _callback_control_graph(
     }
 
 
+def validate_callserver_serialized_contract(
+    call_server: dict[str, Any],
+    *,
+    source_file: str,
+    local_id: Any,
+    uid: Any,
+) -> list[dict[str, Any]]:
+    """Fail closed when any of the six decoded CallServer fields is incomplete.
+
+    This validates the reusable serialized action shape, not any particular
+    LevelScript object or event value. Value distributions are reported by the
+    corpus audit instead of being promoted into mission/order evidence.
+    """
+    failures: list[dict[str, Any]] = []
+    common = {
+        "source": source_file,
+        "localId": local_id,
+        "uid": uid,
+    }
+    expected_fields = {
+        "callClientOutputUIDs",
+        "eventArgsPtr",
+        "eventName",
+        "useCustomEvent",
+        "waitForCallback",
+        "withEventArgs",
+        "consumedBytes",
+        "trailingBytes",
+    }
+    missing = sorted(expected_fields - set(call_server))
+    if missing:
+        failures.append({
+            "gate": "callserver_serialized_fields_present",
+            **common,
+            "expected": sorted(expected_fields),
+            "actualMissing": missing,
+        })
+        return failures
+    output_uids = call_server.get("callClientOutputUIDs")
+    if output_uids is not None and not isinstance(output_uids, list):
+        failures.append({
+            "gate": "callserver_output_list_type",
+            **common,
+            "expected": "null-or-list",
+            "actual": type(output_uids).__name__,
+        })
+    event_args = call_server.get("eventArgsPtr")
+    if not isinstance(event_args, dict) or not isinstance(
+        event_args.get("pathValue") if isinstance(event_args, dict) else None,
+        str,
+    ):
+        failures.append({
+            "gate": "callserver_event_args_param_shape",
+            **common,
+            "expected": "object-with-string-pathValue",
+            "actual": event_args,
+        })
+    if not isinstance(call_server.get("eventName"), str):
+        failures.append({
+            "gate": "callserver_event_name_type",
+            **common,
+            "expected": "string",
+            "actual": type(call_server.get("eventName")).__name__,
+        })
+    for field in ("useCustomEvent", "waitForCallback", "withEventArgs"):
+        if not isinstance(call_server.get(field), bool):
+            failures.append({
+                "gate": f"callserver_{field}_type",
+                **common,
+                "expected": "bool",
+                "actual": type(call_server.get(field)).__name__,
+            })
+    for field in ("consumedBytes", "trailingBytes"):
+        value = call_server.get(field)
+        if not isinstance(value, int) or value < 0:
+            failures.append({
+                "gate": f"callserver_{field}_range",
+                **common,
+                "expected": "non-negative-int",
+                "actual": value,
+            })
+    return failures
+
+
 def build_report(
     *,
     level_script_root: Path = LEVELSCRIPT_DIR,
@@ -282,6 +367,12 @@ def build_report(
     output_count_distribution: Counter[str] = Counter()
     callback_event_types: Counter[str] = Counter()
     downstream_action_names: Counter[str] = Counter()
+    event_name_identity_distribution: Counter[str] = Counter()
+    event_args_path_value_distribution: Counter[str] = Counter()
+    event_args_param_source_distribution: Counter[str] = Counter()
+    event_args_param_path_distribution: Counter[str] = Counter()
+    flag_distribution: Counter[str] = Counter()
+    trailing_bytes_distribution: Counter[str] = Counter()
 
     files = sorted(level_script_root.rglob("*.json"))
     for path in files:
@@ -348,24 +439,49 @@ def build_report(
                 })
                 continue
             counts["decodedCallServerActions"] += 1
+            contract_failures = validate_callserver_serialized_contract(
+                call_server,
+                source_file=source_file,
+                local_id=record.get("localId"),
+                uid=record.get("uid"),
+            )
+            if contract_failures:
+                validation_failures.extend(contract_failures)
+                continue
+            event_args = call_server["eventArgsPtr"]
+            event_name_identity_distribution[
+                str(call_server.get("eventNameIdentity") or "other")
+            ] += 1
+            event_args_path_value_distribution[
+                str(event_args.get("pathValue") or "<empty>")
+            ] += 1
+            event_args_param_source_distribution[
+                str(event_args.get("paramSource"))
+            ] += 1
+            event_args_param_path_distribution[
+                str(event_args.get("path") or "<null>")
+            ] += 1
+            flag_distribution[
+                "custom={custom},wait={wait},args={args}".format(
+                    custom=int(call_server["useCustomEvent"]),
+                    wait=int(call_server["waitForCallback"]),
+                    args=int(call_server["withEventArgs"]),
+                )
+            ] += 1
+            trailing_bytes_distribution[str(call_server["trailingBytes"])] += 1
             output_uids = call_server.get("callClientOutputUIDs")
             if output_uids is None:
                 counts["nullOutputLists"] += 1
-                continue
-            if not isinstance(output_uids, list):
-                validation_failures.append({
-                    "gate": "callserver_output_list_type",
-                    "source": source_file,
-                    "localId": record.get("localId"),
-                    "actual": type(output_uids).__name__,
-                })
-                continue
-            counts["nonNullOutputLists"] += 1
-            output_count_distribution[str(len(output_uids))] += 1
-            if output_uids:
-                counts["callServerActionsWithOutputs"] += 1
+                output_count_distribution["null"] += 1
+                callback_output_uids: list[Any] = []
+            else:
+                counts["nonNullOutputLists"] += 1
+                output_count_distribution[str(len(output_uids))] += 1
+                if output_uids:
+                    counts["callServerActionsWithOutputs"] += 1
+                callback_output_uids = output_uids
             callback_rows: list[dict[str, Any]] = []
-            for index, output_uid in enumerate(output_uids):
+            for index, output_uid in enumerate(callback_output_uids):
                 counts["callbackOutputUids"] += 1
                 callback: dict[str, Any] = {
                     "index": index,
@@ -467,6 +583,9 @@ def build_report(
                 "sourceFile": source_file,
                 "callServerLocalId": record.get("localId"),
                 "callServerUid": record.get("uid"),
+                "serializedContract": compact_callserver_serialized_contract(
+                    call_server
+                ),
                 "eventName": call_server.get("eventName"),
                 "waitForCallback": bool(call_server.get("waitForCallback")),
                 "callbackOutputs": callback_rows,
@@ -493,6 +612,22 @@ def build_report(
             **dict(sorted(counts.items())),
             "outputCountDistribution": dict(sorted(output_count_distribution.items())),
             "callbackEventTypes": dict(sorted(callback_event_types.items())),
+            "eventNameIdentityDistribution": dict(
+                sorted(event_name_identity_distribution.items())
+            ),
+            "eventArgsPathValueDistribution": dict(
+                sorted(event_args_path_value_distribution.items())
+            ),
+            "eventArgsParamSourceDistribution": dict(
+                sorted(event_args_param_source_distribution.items())
+            ),
+            "eventArgsParamPathDistribution": dict(
+                sorted(event_args_param_path_distribution.items())
+            ),
+            "flagDistribution": dict(sorted(flag_distribution.items())),
+            "trailingBytesDistribution": dict(
+                sorted(trailing_bytes_distribution.items(), key=lambda row: int(row[0]))
+            ),
             "downstreamActionNames": dict(
                 sorted(downstream_action_names.items(), key=lambda row: (-row[1], row[0]))
             ),
@@ -509,7 +644,10 @@ def build_report(
             "owner. Ten exact callback headers do reach Story playback actions, but "
             "none of their CallServer actions are themselves downstream of an earlier "
             "Story playback in the local typed graph, so they do not create a recovered "
-            "Story-to-Story order edge."
+            "Story-to-Story order edge. The audit retains all six serialized "
+            "CallServer fields for every decoded action; their exact values are "
+            "runtime handoff parameters, not mission identity unless an independent "
+            "original-data contract proves that interpretation."
         ),
         "usesOcrOrManualOrder": False,
     }
@@ -529,6 +667,10 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- unresolved callback outputs: `{summary.get('unresolvedCallbackOutputs', 0)}`",
         f"- callback headers reaching Story playback: `{summary.get('callbackHeadersReachingStory', 0)}`",
         f"- validation failures: `{summary.get('validationFailures', 0)}`",
+        f"- event-name identities: `{json.dumps(summary.get('eventNameIdentityDistribution', {}), sort_keys=True)}`",
+        f"- event argument path values: `{json.dumps(summary.get('eventArgsPathValueDistribution', {}), sort_keys=True)}`",
+        f"- flag combinations: `{json.dumps(summary.get('flagDistribution', {}), sort_keys=True)}`",
+        f"- trailing-byte lengths: `{json.dumps(summary.get('trailingBytesDistribution', {}), sort_keys=True)}`",
         "",
         "## Evidence boundary",
         "",

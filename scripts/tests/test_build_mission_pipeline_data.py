@@ -1926,6 +1926,73 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             ),
         )
 
+    def test_post_playback_callserver_contracts_join_by_source_and_local_id(self):
+        contract = {
+            "eventArgsPtr": {
+                "pathValue": "event_args",
+                "idRef": -1,
+                "paramSource": 0,
+                "path": None,
+            },
+            "eventName": "#01020304",
+            "eventNameIdentity": "record-uid-prefixed",
+            "useCustomEvent": False,
+            "waitForCallback": True,
+            "withEventArgs": False,
+            "callClientOutputUIDs": None,
+            "consumedBytes": 61,
+            "trailingBytes": 0,
+        }
+        nodes = [{
+            "postPlaybackControls": [{
+                "sourceFile": "LevelScriptData/map_fixture/42.json",
+                "serverHandoffs": [{
+                    "localId": 7,
+                    "serializedContract": {
+                        **contract,
+                        "missionOwnershipEvidence": False,
+                        "storyGraphRole": "diagnostic-only",
+                    },
+                }],
+            }],
+        }]
+        result = pipeline.attach_post_playback_callserver_contracts(
+            nodes,
+            {"rows": [{
+                "sourceFile": "LevelScriptData/map_fixture/42.json",
+                "callServerLocalId": 7,
+                "serializedContract": contract,
+            }]},
+        )
+
+        self.assertEqual("validated", result["status"])
+        self.assertEqual(1, result["summary"]["exactContracts"])
+        self.assertEqual(
+            contract,
+            nodes[0]["postPlaybackControls"][0]["serverHandoffs"][0][
+                "serializedContract"
+            ],
+        )
+        self.assertFalse(result["missionOwnershipEvidence"])
+
+    def test_post_playback_callserver_contract_join_fails_closed(self):
+        nodes = [{
+            "postPlaybackControls": [{
+                "sourceFile": "LevelScriptData/map_fixture/42.json",
+                "serverHandoffs": [{"localId": 7}],
+            }],
+        }]
+        result = pipeline.attach_post_playback_callserver_contracts(
+            nodes,
+            {"rows": []},
+        )
+
+        self.assertEqual("validation_failed", result["status"])
+        self.assertEqual(
+            "post_playback_callserver_exact_identity",
+            result["validationFailures"][0]["gate"],
+        )
+
     def test_level_sequence_action_name_comes_from_binary_formatter_mapping(self):
         self.assertEqual(
             "LoadLevelSequenceAction",
