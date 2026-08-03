@@ -40,7 +40,7 @@ Latest CN reports:
 | Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
 | Whole-client topology consumers | 42 / 43 direct `GetQuestInfo` call candidates verified; active predecessor consumers 0; non-sort flow consumers 0; topology lifecycle calls 0 |
 | Authored quest-fork semantics | 307 forks: 226 main-path + auxiliary, 78 all-auxiliary, 3 with multiple main-path arms; 97 guarded; 45 reconverging |
-| Binary LevelScript activation control | 95 receiver scripts carry public-state and client-request contracts; 10 exact SubGame interaction-start carriers; 54 runtime-request/no-static-carrier gaps |
+| Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -1471,10 +1471,8 @@ contract to every matching serialized row closes
 links local 16 to ManualStart local 17 with both current-context operands.
 This proves local self-start but not the filename-derived `e1m5` mission owner
 or any cross-Story order; the same-level mission-named LevelData explicitly
-does not contain this receiver. The highest-value remaining activation gap is
-54 manual-start receivers with no serialized static carrier. Task authority,
-OCR, manual order, source-graph mission grouping, and native registration
-remain non-ownership evidence.
+does not contain this receiver. Task authority, OCR, manual order, source-graph
+mission grouping, and native registration remain non-ownership evidence.
 
 The remaining activation surface now has a second corpus-wide binary contract.
 The complete direct current-AOT caller census for `LevelScriptRuntime.ManualStart`
@@ -1500,12 +1498,23 @@ the only direct callers of both runtime senders are two true/false sites in
 `m_manualStartTriggered` at `0xf8`, enters `PreStart` (22), emits start=true,
 then enters `PreStartActionRunning` (23). Both public network sender methods
 have zero direct current-AOT callers, so indirect/IFix and server-side selection
-remain outside the evidence. The 54 manual receivers (99 Story keys) are now
-classified `manual_start_runtime_request_no_static_carrier`: runtime behavior
-is proven, while the authored carrier, mission owner, server selector, and
-cross-Story order remain the highest-value gap. OCR, overrides, source-graph
-grouping, registration order, and code-address order remain cross-reference
-only.
+remain outside the evidence.
+
+The receiver timing question is now closed by one corpus-wide rule rather than
+per-script exceptions. The original serialized `ActionHeader` enum defines
+`TriggerActiveDuring.Active=0` and `Start=1`; all 161 exact receiver header ids
+across all 95 scripts resolve uniquely to Active (0), including runtime-
+shadowed action maps under the decoder's validated last-write view. Current
+binary control flow proves `LevelScriptRuntime.Setup` registers the trigger
+graph once, then `UpdateRuntimeState` enables the Active group between
+`ActiveBegin` (14) and `WaitForSubEntityInitNewly` (15). Thus the 54 manual
+scripts, 95 receiver headers, and 99 Story keys are classified
+`manual_start_active_phase_receiver`: their Story receivers do not wait for or
+require a ManualStart carrier. The remaining gap is narrower but still
+fundamental: no audited client/original-data field identifies which mission or
+server branch selected public Active, nor whether a receiver event fired or
+how separate Story files are ordered. OCR, overrides, source-graph grouping,
+registration order, and code-address order remain cross-reference only.
 
 ## Evidence rules
 

@@ -49,6 +49,7 @@ from story_builder.context import (  # noqa: E402
 from story_builder.level_bindings import (  # noqa: E402
     _native_vector_close,
     _parse_leveldata_mission_host_name,
+    decode_levelscript_native_action_topology,
     parse_leveldata_levelscript_brief_dictionary,
 )
 from story_builder.levelscript_binary import (  # noqa: E402
@@ -61,7 +62,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v18"
+SCHEMA = "nativeReceiverActivationFrontier.v19"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -222,12 +223,16 @@ def receiver_script_rows(index_payload: dict[str, Any]) -> list[dict[str, Any]]:
                 "storyKeys": set(),
                 "storyKinds": set(),
                 "sourceFiles": set(),
+                "listenerHeaderLocalIds": set(),
             },
         )
         slot["receiverNodeCount"] += 1
         event_name = safe_text(node.get("eventName"))
         if event_name:
             slot["eventNames"].add(event_name)
+        header_local_id = selector.get("listenerHeaderLocalId")
+        if isinstance(header_local_id, int):
+            slot["listenerHeaderLocalIds"].add(header_local_id)
         for story_file in node.get("storyFiles") or []:
             if not isinstance(story_file, dict):
                 continue
@@ -251,6 +256,9 @@ def receiver_script_rows(index_payload: dict[str, Any]) -> list[dict[str, Any]]:
                 "storyKeys": sorted(slot["storyKeys"]),
                 "storyKinds": sorted(slot["storyKinds"]),
                 "sourceFiles": sorted(slot["sourceFiles"]),
+                "listenerHeaderLocalIds": sorted(
+                    slot["listenerHeaderLocalIds"]
+                ),
             }
         )
     rows.sort(key=lambda row: (row["levelId"], int(row["scriptId"])))
@@ -1652,6 +1660,7 @@ def activation_class(
     *,
     start_policy_validated: bool = False,
     activation_control_validated: bool = False,
+    active_phase_receiver_validated: bool = False,
 ) -> str:
     """Classify only the static carriers that the audit actually decodes."""
     if subgame_bindings:
@@ -1701,10 +1710,135 @@ def activation_class(
         and (levelscript.get("taskMapCount") or 0) == 0
     )
     if no_parent and no_shapes and no_task_map:
+        if active_phase_receiver_validated:
+            return "manual_start_active_phase_receiver"
         if activation_control_validated:
             return "manual_start_runtime_request_no_static_carrier"
         return "manual_start_no_static_activation_carrier"
     return "manual_start_static_carrier_unresolved"
+
+
+def exact_active_phase_receiver_contract(
+    script_data: bytes,
+    receiver: dict[str, Any],
+    activation_control: dict[str, Any],
+) -> dict[str, Any]:
+    """Join exact receiver header ids to their original serialized phase."""
+    header_ids = sorted({
+        value
+        for value in receiver.get("listenerHeaderLocalIds") or []
+        if isinstance(value, int)
+    })
+    topology, diagnostic = decode_levelscript_native_action_topology(script_data)
+    roots_by_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    if isinstance(topology, dict):
+        for root in topology.get("eventRoots") or []:
+            if isinstance(root, dict) and isinstance(root.get("localId"), int):
+                roots_by_id[root["localId"]].append(root)
+    rows: list[dict[str, Any]] = []
+    missing: list[int] = []
+    ambiguous: list[int] = []
+    for header_id in header_ids:
+        candidates = roots_by_id.get(header_id) or []
+        if not candidates:
+            missing.append(header_id)
+            continue
+        if len(candidates) != 1:
+            ambiguous.append(header_id)
+            continue
+        root = candidates[0]
+        rows.append({
+            "listenerHeaderLocalId": header_id,
+            "headerName": safe_text(root.get("headerName")),
+            "recordOffset": root.get("recordOffset"),
+            "triggerActiveDuring": root.get("triggerActiveDuring"),
+            "nextActionLocalId": root.get("nextActionLocalId"),
+        })
+    flow = activation_control.get("activeReceiverFlow") or {}
+    active_value = (flow.get("triggerActiveDuringValues") or {}).get("Active")
+    binary_validated = (
+        (activation_control.get("validation") or {}).get("status") == "validated"
+        and flow.get("setupRegisterTriggerCallCount") == 1
+        and flow.get("activePhaseEnableBetweenStateSetters") is True
+        and isinstance(active_value, int)
+    )
+    all_active = (
+        bool(rows)
+        and len(rows) == len(header_ids)
+        and all(row.get("triggerActiveDuring") == active_value for row in rows)
+    )
+    validated = (
+        bool(header_ids)
+        and isinstance(topology, dict)
+        and safe_text(topology.get("status")).startswith(
+            "exact_complete_action_map"
+        )
+        and not missing
+        and not ambiguous
+        and all_active
+        and binary_validated
+    )
+    return {
+        "schema": "exactActivePhaseReceiver.v1",
+        "status": "validated" if validated else "unresolved",
+        "classification": (
+            "registered_active_phase_story_receivers"
+            if validated
+            else "receiver_phase_unresolved"
+        ),
+        "listenerHeaderCount": len(header_ids),
+        "resolvedHeaderCount": len(rows),
+        "missingHeaderLocalIds": missing,
+        "ambiguousHeaderLocalIds": ambiguous,
+        "allReceiversActivePhase": all_active,
+        "triggerActiveDuringValues": flow.get("triggerActiveDuringValues") or {},
+        "receiverHeaders": rows,
+        "topologySchema": (
+            topology.get("schema") if isinstance(topology, dict) else None
+        ),
+        "topologyStatus": (
+            topology.get("status") if isinstance(topology, dict) else None
+        ),
+        "topologyDiagnostic": diagnostic,
+        "runtimeFlow": {
+            key: flow.get(key)
+            for key in (
+                "setupRegisterTriggerCallCount",
+                "setupRegisterTriggerCallOffsets",
+                "activePhaseEnableArguments",
+                "activePhaseEnableCallOffsets",
+                "activeBeginStateValue",
+                "waitForSubEntityInitNewlyStateValue",
+                "activeBeginSetterOffsets",
+                "waitForSubEntityInitNewlySetterOffsets",
+                "activePhaseEnableBetweenStateSetters",
+            )
+        },
+        "methods": {
+            key: (activation_control.get("methods") or {}).get(key) or {}
+            for key in (
+                "Setup",
+                "RegisterTriggerFromLevelScript",
+                "SetAllTriggerActiveByPhase",
+                "UpdateRuntimeState",
+            )
+        },
+        "finding": (
+            "Every exact Story receiver header in this LevelScript is serialized "
+            "for TriggerActiveDuring.Active. The current binary registers the "
+            "LevelScript trigger graph during Setup and enables the Active phase "
+            "while advancing through ActiveBegin."
+            if validated
+            else "The exact serialized receiver phase could not be validated."
+        ),
+        "evidenceBoundary": (
+            "This proves receiver availability in the LevelScript Active phase. "
+            "It does not prove who selected public Active state, that an event "
+            "fired, mission ownership, branch choice, or cross-Story order. A "
+            "Manual start policy governs the later Start phase and is not itself "
+            "a missing carrier for these Active-phase receiver headers."
+        ),
+    }
 
 
 def build_report(
@@ -1932,6 +2066,14 @@ def build_report(
                     consumer_type = safe_text(consumer.get("conditionType"))
                     if consumer_type:
                         task_mission_consumer_types[consumer_type] += 1
+        active_phase_receiver = exact_active_phase_receiver_contract(
+            script_data,
+            receiver,
+            activation_control,
+        )
+        active_phase_receiver_validated = (
+            active_phase_receiver.get("status") == "validated"
+        )
         classification = activation_class(
             levelscript,
             hosts,
@@ -1939,6 +2081,9 @@ def build_report(
             subgames,
             start_policy_validated=start_policy_validated,
             activation_control_validated=activation_control_validated,
+            active_phase_receiver_validated=(
+                active_phase_receiver_validated
+            ),
         )
         classes[classification] += 1
         start_types[safe_text(levelscript.get("startTypeName")) or "[unresolved]"] += 1
@@ -2135,6 +2280,7 @@ def build_report(
                 "manualSelfControl": row_manual_self_control,
                 "publicStateControl": row_activation_control,
                 "clientStartRequestControl": row_client_start_request_control,
+                "activePhaseReceiverControl": active_phase_receiver,
                 "subGameStartControl": row_subgame_start_control,
                 "subGameBindings": subgames,
                 "dungeonSceneContexts": dungeon_contexts,
@@ -2326,6 +2472,14 @@ def build_report(
                 "operands and an authored event-header link; this proves local "
                 "self-start, not mission ownership or cross-Story order."
             ),
+            "activePhaseReceiverBoundary": (
+                "An exact receiver-header id is joined only to the matching "
+                "header in that original LevelScript. The current binary proves "
+                "Setup registration and Active-phase enabling as a general "
+                "runtime rule. This establishes availability, not the public-"
+                "Active producer, event occurrence, mission owner, branch, or "
+                "cross-Story chronology."
+            ),
             "taskConditionBoundary": (
                 "A completely decoded task map proves authored task evaluation "
                 "requirements inside this LevelScript. Entity, spawner, dialog, "
@@ -2407,6 +2561,26 @@ def build_report(
             "scriptsWithValidatedClientStartRequestLifecycle": sum(
                 bool(row.get("clientStartRequestControl")) for row in rows
             ),
+            "scriptsWithValidatedActivePhaseReceivers": sum(
+                (row.get("activePhaseReceiverControl") or {}).get("status")
+                == "validated"
+                for row in rows
+            ),
+            "activePhaseReceiverHeaders": sum(
+                (row.get("activePhaseReceiverControl") or {}).get(
+                    "resolvedHeaderCount", 0
+                )
+                for row in rows
+                if (row.get("activePhaseReceiverControl") or {}).get("status")
+                == "validated"
+            ),
+            "storyKeysWithValidatedActivePhaseReceivers": len({
+                story_key
+                for row in rows
+                if (row.get("activePhaseReceiverControl") or {}).get("status")
+                == "validated"
+                for story_key in row.get("storyKeys") or []
+            }),
             "scriptsWithRuntimeRequestButNoStaticCarrier": sum(
                 row.get("activationClass")
                 == "manual_start_runtime_request_no_static_carrier"
@@ -2952,6 +3126,9 @@ def publish_to_pipeline_index(
             "clientStartRequestControl": (
                 row.get("clientStartRequestControl") or {}
             ),
+            "activePhaseReceiverControl": (
+                row.get("activePhaseReceiverControl") or {}
+            ),
             "subGameStartControl": row.get("subGameStartControl") or {},
             "relatedOriginalFiles": [
                 {
@@ -3012,6 +3189,13 @@ def markdown_report(payload: dict[str, Any]) -> str:
         (
             "- Scripts with binary-validated public-state sync: "
             f"`{counts.get('scriptsWithValidatedPublicStateControlContract')}`"
+        ),
+        (
+            "- Scripts / exact headers / Story keys with binary-validated "
+            "Active-phase receivers: "
+            f"`{counts.get('scriptsWithValidatedActivePhaseReceivers')}` / "
+            f"`{counts.get('activePhaseReceiverHeaders')}` / "
+            f"`{counts.get('storyKeysWithValidatedActivePhaseReceivers')}`"
         ),
         (
             "- Scripts / Story keys with binary-validated SubGame interaction "

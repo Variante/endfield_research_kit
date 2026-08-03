@@ -70,14 +70,19 @@ override those defaults for one run.
   network sender implementations each call `BaseNetworkSystem.SendMsg`, but
   have zero direct callers in the current AOT corpus, so indirect/IFix/server
   selection remains outside the contract.
+  The same contract generically validates receiver timing: `Setup` registers
+  the serialized trigger graph, and `UpdateRuntimeState` enables
+  `TriggerActiveDuring.Active` while advancing from `ActiveBegin`. Mission
+  Pipeline joins exact receiver header ids back to the original LevelScript;
+  it never uses scene ids or filenames as rules. Active-phase receivers do not
+  require the later ManualStart/Start transition, but the producer of public
+  Active, event occurrence, mission ownership, and Story order remain unknown.
   It proves that `InteractiveLogicChallengeStartPoint` resolves the typed
   `SubGameInstanceData` row by `m_subGameId`, reads `bindScriptId`, looks up the
   LevelScript, and calls `ManualStart`. Exact SubGame bindings are therefore
   interaction-start carriers. The public packet contains only scene, script,
   state, and completion fields, so neither path supplies mission ownership,
-  server branch selection, or Story order. Manual receivers without a decoded
-  authored carrier are classified as a proven runtime request lifecycle with
-  an unresolved static carrier, never as recovered mission ownership.
+  server branch selection, or Story order.
 - LevelScript task recovery is corpus-driven rather than keyed to individual
   scenes. The builder validates the installed binary/protobuf task contract,
   joins every decoded task condition to its exact `lt:p` and `lt:mp` LevelData

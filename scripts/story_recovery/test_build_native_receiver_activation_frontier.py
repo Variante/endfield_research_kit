@@ -255,6 +255,7 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                         "selector": {
                             "levelId": "map_fixture",
                             "listenerScriptId": "1001",
+                            "listenerHeaderLocalId": 11,
                         },
                         "storyFiles": [
                             {
@@ -269,6 +270,7 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                         "selector": {
                             "levelId": "map_fixture",
                             "listenerScriptId": "1001",
+                            "listenerHeaderLocalId": 15,
                         },
                         "storyFiles": [
                             {
@@ -289,6 +291,91 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             ["black_fixture_1", "radio_fixture_1"],
             rows[0]["storyKeys"],
         )
+        self.assertEqual([11, 15], rows[0]["listenerHeaderLocalIds"])
+
+    def test_exact_active_phase_receiver_contract_is_corpus_driven(self) -> None:
+        original = frontier.decode_levelscript_native_action_topology
+        frontier.decode_levelscript_native_action_topology = lambda _data: ({
+            "schema": "levelScriptNativeActionTopology.v4",
+            "status": "exact_complete_action_map_with_runtime_shadowing",
+            "eventRoots": [
+                {
+                    "localId": 11,
+                    "headerName": "LevelEvent_OnCustomEvent",
+                    "recordOffset": 100,
+                    "triggerActiveDuring": 0,
+                    "nextActionLocalId": 12,
+                },
+                {
+                    "localId": 15,
+                    "headerName": "ScriptEvent_OnCustomEvent",
+                    "recordOffset": 200,
+                    "triggerActiveDuring": 0,
+                    "nextActionLocalId": 16,
+                },
+            ],
+        }, None)
+        try:
+            contract = frontier.exact_active_phase_receiver_contract(
+                b"original-levelscript",
+                {"listenerHeaderLocalIds": [15, 11]},
+                {
+                    "validation": {"status": "validated"},
+                    "activeReceiverFlow": {
+                        "triggerActiveDuringValues": {"Active": 0, "Start": 1},
+                        "setupRegisterTriggerCallCount": 1,
+                        "activePhaseEnableBetweenStateSetters": True,
+                    },
+                },
+            )
+        finally:
+            frontier.decode_levelscript_native_action_topology = original
+
+        self.assertEqual("validated", contract["status"])
+        self.assertEqual(
+            "exact_complete_action_map_with_runtime_shadowing",
+            contract["topologyStatus"],
+        )
+        self.assertEqual(2, contract["resolvedHeaderCount"])
+        self.assertTrue(contract["allReceiversActivePhase"])
+        self.assertEqual(
+            [11, 15],
+            [row["listenerHeaderLocalId"] for row in contract["receiverHeaders"]],
+        )
+
+    def test_exact_active_phase_receiver_contract_fails_closed_on_start_header(
+        self,
+    ) -> None:
+        original = frontier.decode_levelscript_native_action_topology
+        frontier.decode_levelscript_native_action_topology = lambda _data: ({
+            "schema": "levelScriptNativeActionTopology.v4",
+            "status": "exact_complete_action_map",
+            "eventRoots": [{
+                "localId": 11,
+                "headerName": "LevelEvent_OnCustomEvent",
+                "recordOffset": 100,
+                "triggerActiveDuring": 1,
+                "nextActionLocalId": 12,
+            }],
+        }, None)
+        try:
+            contract = frontier.exact_active_phase_receiver_contract(
+                b"original-levelscript",
+                {"listenerHeaderLocalIds": [11]},
+                {
+                    "validation": {"status": "validated"},
+                    "activeReceiverFlow": {
+                        "triggerActiveDuringValues": {"Active": 0, "Start": 1},
+                        "setupRegisterTriggerCallCount": 1,
+                        "activePhaseEnableBetweenStateSetters": True,
+                    },
+                },
+            )
+        finally:
+            frontier.decode_levelscript_native_action_topology = original
+
+        self.assertEqual("unresolved", contract["status"])
+        self.assertFalse(contract["allReceiversActivePhase"])
 
     def test_manual_control_index_preserves_self_boundary(self) -> None:
         indexed = frontier.manual_control_targets(
@@ -402,6 +489,16 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 hosts,
                 [],
                 activation_control_validated=True,
+            ),
+        )
+        self.assertEqual(
+            "manual_start_active_phase_receiver",
+            frontier.activation_class(
+                levelscript,
+                hosts,
+                [],
+                activation_control_validated=True,
+                active_phase_receiver_validated=True,
             ),
         )
 
@@ -804,6 +901,17 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                         "evidenceBoundary": "no mission owner",
                         "validation": {"status": "validated"},
                     },
+                    "activePhaseReceiverControl": {
+                        "schema": "exactActivePhaseReceiver.v1",
+                        "status": "validated",
+                        "classification": (
+                            "registered_active_phase_story_receivers"
+                        ),
+                        "receiverHeaders": [{
+                            "listenerHeaderLocalId": 11,
+                            "triggerActiveDuring": 0,
+                        }],
+                    },
                     "relatedOriginalFiles": [
                         {
                             "kind": "leveldata",
@@ -828,6 +936,10 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             "activationFrontier"
         ]
         self.assertEqual("Manual", annotation["startTypeName"])
+        self.assertEqual(
+            "validated",
+            annotation["activePhaseReceiverControl"]["status"],
+        )
         self.assertNotIn("missionOwnerStatus", annotation)
         encounter = annotation["encounterControllerContexts"][0]
         self.assertEqual("1002", encounter["spawnerId"])
