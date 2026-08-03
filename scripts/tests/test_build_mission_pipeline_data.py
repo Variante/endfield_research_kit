@@ -49,6 +49,18 @@ STATE_UPDATE_CONTRACT_FIXTURE = {
     "validation": {"status": "validated", "failures": []},
 }
 
+TASK_AUTHORITY_CONTRACT_FIXTURE = {
+    "schema": "levelScriptTaskAuthority.v1",
+    "classification": "server_selected_scene_script_task_identity",
+    "identityFields": ["sceneNumId", "scriptId", "taskId"],
+    "missionQuestIdentityFields": [],
+    "relatedOriginalFiles": [
+        {"kind": "original_game_binary"},
+        {"kind": "original_game_metadata"},
+    ],
+    "validation": {"status": "validated"},
+}
+
 
 def condition(kind, **values):
     return {"$type": f"Beyond.Gameplay.{kind}, Gameplay.Beyond", "uniqueId": f"id_{kind}", **values}
@@ -218,6 +230,96 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertIn("expected=", message)
         self.assertIn("actual=", message)
         self.assertIn("GameAssembly.dll", message)
+
+    def test_levelscript_task_authority_validates_general_packet_family(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            gameassembly.write_bytes(b"fixture-gameassembly")
+            metadata.write_bytes(b"fixture-metadata")
+            schemas = []
+            for type_name, message_id, direction, fields in (
+                (
+                    "Proto.CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS", 105,
+                    "client_to_server",
+                    ["sceneNumId", "scriptId", "taskId", "objectiveValueOps"],
+                ),
+                (
+                    "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE", 813,
+                    "server_to_client",
+                    ["sceneNumId", "scriptId", "taskId", "taskState"],
+                ),
+                (
+                    "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE", 815,
+                    "server_to_client",
+                    ["sceneNumId", "scriptId", "taskId", "conditionCompletedMap"],
+                ),
+                (
+                    "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH", 816,
+                    "server_to_client",
+                    ["sceneNumId", "scriptId", "taskId"],
+                ),
+            ):
+                schemas.append({
+                    "type": type_name,
+                    "messageId": message_id,
+                    "direction": direction,
+                    "idMatches": True,
+                    "fields": [{"name": name} for name in fields],
+                })
+            native_paths = {
+                "conditionResultChanged": {"symbol": "condition"},
+                "sendProgress": {"symbol": "send", "messageId": 105},
+                "stateUpdate": {"symbol": "state", "messageId": 813},
+                "progressUpdate": {"symbol": "progress", "messageId": 815},
+                "conditionCompletionChanged": {
+                    "symbol": "completion", "messageId": 815,
+                },
+                "startFinish": {"symbol": "start", "messageId": 816},
+                "scriptSetDone": {"symbol": "done", "messageId": 823},
+            }
+            audit_path = root / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v7",
+                "source": {
+                    "gameAssembly": str(gameassembly),
+                    "gameAssemblySha256": hashlib.sha256(
+                        gameassembly.read_bytes()
+                    ).hexdigest(),
+                    "metadata": str(metadata),
+                    "metadataSha256": hashlib.sha256(
+                        metadata.read_bytes()
+                    ).hexdigest(),
+                },
+                "selectedSchemas": schemas,
+                "nativeTaskPaths": native_paths,
+            }), encoding="utf-8")
+
+            contract = pipeline.load_levelscript_task_authority_contract(
+                audit_path
+            )
+
+        self.assertEqual(contract["validation"]["status"], "validated")
+        self.assertEqual(contract["validation"]["packetSchemas"], 4)
+        self.assertEqual(contract["validation"]["nativePaths"], 7)
+        self.assertEqual(contract["missionQuestIdentityFields"], [])
+        self.assertEqual(len(contract["relatedOriginalFiles"]), 2)
+
+    def test_levelscript_task_authority_fails_closed_on_schema_drift(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v7",
+                "selectedSchemas": [],
+                "nativeTaskPaths": {},
+            }), encoding="utf-8")
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "validator=levelscript_task_authority_contract "
+                "gate=taskPacketSchema",
+            ):
+                pipeline.load_levelscript_task_authority_contract(audit_path)
 
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
@@ -3009,10 +3111,17 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
     @patch.object(
         pipeline,
+        "load_levelscript_task_authority_contract",
+        return_value=TASK_AUTHORITY_CONTRACT_FIXTURE,
+    )
+    @patch.object(
+        pipeline,
         "load_state_update_application_contract",
         return_value=STATE_UPDATE_CONTRACT_FIXTURE,
     )
-    def test_build_all_writes_lazy_index_and_mission_payload(self, _contract_loader):
+    def test_build_all_writes_lazy_index_and_mission_payload(
+        self, _state_loader, _task_loader
+    ):
         self.maxDiff = None
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -3089,6 +3198,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             self.assertEqual(state_contract["validatedCandidateCount"], 4)
             self.assertEqual(state_contract["clientSuccessorSelectors"], 0)
             self.assertEqual(len(state_contract["relatedOriginalFiles"]), 2)
+            self.assertEqual(
+                index["runtimeContract"]["levelScriptTaskAuthorityAudit"]
+                ["classification"],
+                "server_selected_scene_script_task_identity",
+            )
             payload = json.loads((output_root / "missions" / "testm1.json").read_text(encoding="utf-8"))
             self.assertEqual(payload["missionGraph"], {"upstream": {}, "downstream": {}})
             self.assertEqual(payload["envTalkContext"], [])
@@ -3100,12 +3214,18 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
     @patch.object(
         pipeline,
+        "load_levelscript_task_authority_contract",
+        return_value=TASK_AUTHORITY_CONTRACT_FIXTURE,
+    )
+    @patch.object(
+        pipeline,
         "load_state_update_application_contract",
         return_value=STATE_UPDATE_CONTRACT_FIXTURE,
     )
     def test_activity_stage_tables_add_typed_quest_level_hosts_only(
         self,
-        _contract_loader,
+        _state_loader,
+        _task_loader,
     ):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -3165,12 +3285,18 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
     @patch.object(
         pipeline,
+        "load_levelscript_task_authority_contract",
+        return_value=TASK_AUTHORITY_CONTRACT_FIXTURE,
+    )
+    @patch.object(
+        pipeline,
         "load_state_update_application_contract",
         return_value=STATE_UPDATE_CONTRACT_FIXTURE,
     )
     def test_subgame_registry_adds_mission_shell_runtime_binding_only(
         self,
-        _contract_loader,
+        _state_loader,
+        _task_loader,
     ):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -263,7 +263,7 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # original TextAssets without using their names as mission/order evidence. v32
 # names the complete ActionBase surface through one hash-validated formatter
 # table recovered from the installed binary.
-SCHEMA_VERSION = 34
+SCHEMA_VERSION = 35
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -6584,6 +6584,172 @@ def load_state_update_application_contract(
         "relatedOriginalFiles": related_files,
         "validation": validation,
     }
+
+
+def load_levelscript_task_authority_contract(
+    audit_path: Path = DEFAULT_PROTOCOL_REGISTRY_AUDIT,
+) -> dict[str, Any]:
+    """Validate the generic binary/protobuf identity boundary for script tasks."""
+    validator = "levelscript_task_authority_contract"
+    if not audit_path.is_file():
+        raise RuntimeError(
+            f"validator={validator} gate=auditExists expected=file "
+            f"actual=missing source={audit_path}"
+        )
+    audit = read_json(audit_path)
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v7":
+        raise RuntimeError(
+            f"validator={validator} gate=auditSchema "
+            "expected='endfieldProtocolRegistryAudit.v7' "
+            f"actual={audit.get('_schema')!r} source={audit_path}"
+        )
+
+    expected_schemas = {
+        "Proto.CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS": (
+            105,
+            "client_to_server",
+            ["sceneNumId", "scriptId", "taskId", "objectiveValueOps"],
+        ),
+        "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE": (
+            813,
+            "server_to_client",
+            ["sceneNumId", "scriptId", "taskId", "taskState"],
+        ),
+        "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE": (
+            815,
+            "server_to_client",
+            ["sceneNumId", "scriptId", "taskId", "conditionCompletedMap"],
+        ),
+        "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH": (
+            816,
+            "server_to_client",
+            ["sceneNumId", "scriptId", "taskId"],
+        ),
+    }
+    schemas = {
+        str(row.get("type") or ""): row
+        for row in audit.get("selectedSchemas") or []
+        if isinstance(row, dict) and row.get("type")
+    }
+    messages: list[dict[str, Any]] = []
+    for schema_name, (message_id, direction, field_names) in expected_schemas.items():
+        row = schemas.get(schema_name)
+        actual = {
+            "messageId": row.get("messageId") if row else None,
+            "direction": row.get("direction") if row else None,
+            "fields": [
+                str(field.get("name") or "")
+                for field in (row or {}).get("fields") or []
+                if isinstance(field, dict)
+            ],
+            "idMatches": row.get("idMatches") if row else None,
+        }
+        expected = {
+            "messageId": message_id,
+            "direction": direction,
+            "fields": field_names,
+            "idMatches": True,
+        }
+        if actual != expected:
+            raise RuntimeError(
+                f"validator={validator} gate=taskPacketSchema "
+                f"message={schema_name} expected={expected!r} actual={actual!r} "
+                f"source={audit_path}"
+            )
+        if {"missionId", "questId", "storyId"} & set(actual["fields"]):
+            raise RuntimeError(
+                f"validator={validator} gate=noMissionQuestStoryIdentity "
+                f"message={schema_name} expected=[] actual={actual['fields']!r} "
+                f"source={audit_path}"
+            )
+        messages.append({
+            "type": schema_name,
+            "messageId": message_id,
+            "direction": direction,
+            "fields": field_names,
+        })
+
+    native_paths = audit.get("nativeTaskPaths") or {}
+    expected_native_paths = {
+        "conditionResultChanged": None,
+        "sendProgress": 105,
+        "stateUpdate": 813,
+        "progressUpdate": 815,
+        "conditionCompletionChanged": 815,
+        "startFinish": 816,
+        "scriptSetDone": 823,
+    }
+    for path_name, message_id in expected_native_paths.items():
+        row = native_paths.get(path_name)
+        actual_id = row.get("messageId") if isinstance(row, dict) else None
+        if not isinstance(row, dict) or not row.get("symbol") or (
+            message_id is not None and actual_id != message_id
+        ):
+            raise RuntimeError(
+                f"validator={validator} gate=nativeTaskPath path={path_name} "
+                f"expected={{'symbol': 'nonempty', 'messageId': {message_id!r}}} "
+                f"actual={{'symbol': {(row or {}).get('symbol')!r}, "
+                f"'messageId': {actual_id!r}}} source={audit_path}"
+            )
+
+    source = audit.get("source") or {}
+    related_files: list[dict[str, Any]] = []
+    for path_key, hash_key, kind in (
+        ("gameAssembly", "gameAssemblySha256", "original_game_binary"),
+        ("metadata", "metadataSha256", "original_game_metadata"),
+    ):
+        source_text = str(source.get(path_key) or "")
+        expected_hash = str(source.get(hash_key) or "").lower()
+        source_path = Path(source_text)
+        if not source_text or not source_path.is_file():
+            raise RuntimeError(
+                f"validator={validator} gate=sourceExists expected=file "
+                f"actual=missing source={source_text or path_key}"
+            )
+        actual_hash = sha256_path(source_path)
+        if actual_hash != expected_hash:
+            raise RuntimeError(
+                f"validator={validator} gate=sourceHash "
+                f"expected={expected_hash!r} actual={actual_hash!r} "
+                f"source={source_path}"
+            )
+        related_files.append({
+            "kind": kind,
+            "sourceFile": str(source_path.resolve()),
+            "sha256": actual_hash,
+            "relationship": "native_levelscript_task_authority_contract",
+        })
+
+    return {
+        "schema": "levelScriptTaskAuthority.v1",
+        "source": repo_path(audit_path),
+        "classification": "server_selected_scene_script_task_identity",
+        "identityFields": ["sceneNumId", "scriptId", "taskId"],
+        "messages": messages,
+        "nativePaths": {
+            name: native_paths[name] for name in expected_native_paths
+        },
+        "missionQuestIdentityFields": [],
+        "relatedOriginalFiles": related_files,
+        "validation": {
+            "status": "validated",
+            "validator": validator,
+            "packetSchemas": len(messages),
+            "nativePaths": len(expected_native_paths),
+        },
+        "finding": (
+            "The current client and protobuf schemas identify LevelScript task "
+            "traffic only by scene, script, task, and condition/progress data. "
+            "No validated packet co-carries missionId, questId, or Story identity."
+        ),
+        "evidenceBoundary": (
+            "This proves a server-authored LevelScript task lifecycle and exact "
+            "task identity. It does not identify a MissionRuntime owner, select a "
+            "Story branch, or order playback files."
+        ),
+    }
+
+
 POST_PLAYBACK_VARIABLE_LISTENER_FIELDS = {
     "blackboardKeyFilter": "blackboard",
     "propertyKeyFilter": "property",
@@ -9506,9 +9672,11 @@ def build_all(
             "selection": "explicit_mission_root",
         }
     state_update_contract = load_state_update_application_contract()
+    task_authority_contract = load_levelscript_task_authority_contract()
     runtime_contract = {
         **RUNTIME_CONTRACT,
         "stateUpdateApplicationAudit": state_update_contract,
+        "levelScriptTaskAuthorityAudit": task_authority_contract,
     }
     index = {
         "schemaVersion": SCHEMA_VERSION,

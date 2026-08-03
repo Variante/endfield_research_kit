@@ -659,6 +659,15 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                             }
                         ],
                     },
+                    "taskRuntimeAuthority": {
+                        "schema": "levelScriptTaskAuthority.v1",
+                        "classification": (
+                            "server_selected_scene_script_task_identity"
+                        ),
+                        "identityFields": ["sceneNumId", "scriptId", "taskId"],
+                        "missionQuestIdentityFields": [],
+                        "validation": {"status": "validated"},
+                    },
                     "relatedOriginalFiles": [
                         {
                             "kind": "leveldata",
@@ -669,6 +678,7 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                             "relationship": (
                                 "exact_typed_activation_frontier_context"
                             ),
+                            "sha256": "a" * 64,
                         }
                     ],
                 }
@@ -752,6 +762,14 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             annotation["relatedOriginalFiles"][0]["sourceFile"],
         )
         self.assertEqual(
+            "a" * 64,
+            annotation["relatedOriginalFiles"][0]["sha256"],
+        )
+        self.assertEqual(
+            "server_selected_scene_script_task_identity",
+            annotation["taskRuntimeAuthority"]["classification"],
+        )
+        self.assertEqual(
             1,
             index["storyCoverage"]["nativeReceiverActivationFrontier"][
                 "annotatedReceiverNodes"
@@ -813,6 +831,57 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             task["subGameMainTaskBindings"][0]["subGameId"],
         )
         self.assertNotIn("taskExtraInfo", task_map["tasks"][1])
+
+    def test_task_progress_properties_require_complete_exact_pairs(self) -> None:
+        task_map = {
+            "tasks": [{
+                "taskKey": "fixture_task",
+                "conditions": [
+                    {"conditionKey": "condition_a"},
+                    {"conditionKey": "condition_b"},
+                ],
+            }]
+        }
+        hosts = [{
+            "sourceFile": "fixture_leveldata.json",
+            "briefData": {
+                "properties": [
+                    {
+                        "name": f"lt:{prefix}:fixture_task:{condition}",
+                        "valueType": 3,
+                        "atomCount": 1,
+                        "atoms": [{"valueBit64": int(prefix == "mp")}],
+                    }
+                    for condition in ("condition_a", "condition_b")
+                    for prefix in ("p", "mp")
+                ]
+            },
+        }]
+        frontier.annotate_task_progress_property_contract(task_map, hosts)
+        contract = task_map["tasks"][0]["progressPropertyContract"]
+        self.assertEqual(contract["status"], "validated")
+        self.assertEqual(contract["expectedPropertyCount"], 4)
+        self.assertEqual(contract["matchedPropertyCount"], 4)
+        self.assertEqual(contract["missingProperties"], [])
+
+        hosts[0]["briefData"]["properties"].pop()
+        frontier.annotate_task_progress_property_contract(task_map, hosts)
+        contract = task_map["tasks"][0]["progressPropertyContract"]
+        self.assertEqual(contract["status"], "incomplete")
+        self.assertEqual(
+            contract["missingProperties"],
+            ["lt:mp:fixture_task:condition_b"],
+        )
+
+    def test_mission_runtime_ids_exclude_story_only_shells(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "authored_mission.json").write_text("{}", encoding="utf-8")
+            (root / "story_shell.txt").write_text("", encoding="utf-8")
+            self.assertEqual(
+                frontier.mission_runtime_ids(root),
+                {"authored_mission"},
+            )
 
     def test_mission_runtime_operand_consumers_require_exact_typed_operands(
         self,

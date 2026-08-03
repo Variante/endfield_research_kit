@@ -61,7 +61,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v13"
+SCHEMA = "nativeReceiverActivationFrontier.v14"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -1153,6 +1153,79 @@ def exact_memorypack_string_tokens(
     return hits
 
 
+def mission_runtime_ids(root: Path) -> set[str]:
+    """Return only ids backed by original MissionRuntimeAsset files."""
+    return {
+        path.stem
+        for path in root.glob("*.json")
+        if path.is_file() and path.stem
+    }
+
+
+def annotate_task_progress_property_contract(
+    decoded_task_map: dict[str, Any] | None,
+    hosts: list[dict[str, Any]],
+) -> None:
+    """Match task/condition ids to their exact LevelData progress properties.
+
+    The current LevelData payload persists one ``lt:p`` and one ``lt:mp`` key
+    for every serialized task condition. This is a structural task-runtime
+    identity contract; it is not a mission owner or activation selector.
+    """
+    if not decoded_task_map:
+        return
+    properties: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for host in hosts:
+        source_file = safe_text(host.get("sourceFile"))
+        for row in (host.get("briefData") or {}).get("properties") or []:
+            if not isinstance(row, dict):
+                continue
+            name = safe_text(row.get("name"))
+            if name:
+                properties[name].append({
+                    "sourceFile": source_file,
+                    "valueType": row.get("valueType"),
+                    "atomCount": row.get("atomCount"),
+                    "atoms": row.get("atoms") or [],
+                })
+    for task in decoded_task_map.get("tasks") or []:
+        task_key = safe_text(task.get("taskKey"))
+        condition_keys = [
+            safe_text(row.get("conditionKey"))
+            for row in task.get("conditions") or []
+            if isinstance(row, dict) and safe_text(row.get("conditionKey"))
+        ]
+        expected = sorted({
+            f"lt:{prefix}:{task_key}:{condition_key}"
+            for condition_key in condition_keys
+            for prefix in ("p", "mp")
+        }) if task_key else []
+        matched = [
+            {
+                "name": name,
+                "placements": properties.get(name) or [],
+            }
+            for name in expected
+            if properties.get(name)
+        ]
+        missing = [name for name in expected if not properties.get(name)]
+        task["progressPropertyContract"] = {
+            "schema": "levelScriptTaskProgressProperties.v1",
+            "status": "validated" if expected and not missing else "incomplete",
+            "expectedPropertyCount": len(expected),
+            "matchedPropertyCount": len(matched),
+            "conditionCount": len(condition_keys),
+            "properties": matched,
+            "missingProperties": missing,
+            "missionOwnerStatus": "unresolved",
+            "evidenceBoundary": (
+                "The exact lt:p/lt:mp property pair persists progress for this "
+                "serialized task condition inside its LevelData host. It carries "
+                "no missionId, questId, Story identity, or playback order."
+            ),
+        }
+
+
 def compact_leveldata_property(property_row: dict[str, Any]) -> dict[str, Any]:
     """Preserve the typed value needed by structural contract classifiers."""
     value = property_row.get("value")
@@ -1591,11 +1664,18 @@ def build_report(
     ),
     dungeon_table_path: Path = DEFAULT_DUNGEON_TABLE,
 ) -> dict[str, Any]:
-    mission_ids = {
+    known_mission_ids = {
         safe_text(row.get("id"))
         for row in index_payload.get("missions") or []
         if isinstance(row, dict) and safe_text(row.get("id"))
     }
+    authored_mission_ids = mission_runtime_ids(mission_runtime_root)
+    task_authority = (
+        (index_payload.get("runtimeContract") or {}).get(
+            "levelScriptTaskAuthorityAudit"
+        )
+        or {}
+    )
     incoming_by_target = manual_control_targets(manual_control_payload)
     subgames_by_script = subgame_script_bindings(index_payload)
     consumers_by_script = mission_runtime_script_consumers(mission_root)
@@ -1642,7 +1722,7 @@ def build_report(
         hosts = validated_leveldata_hosts(
             level_id,
             script_id,
-            mission_ids,
+            known_mission_ids,
             leveldata_root=leveldata_root,
             levelscript_root=levelscript_root,
         )
@@ -1685,7 +1765,7 @@ def build_report(
         )
         serialized_mission_ids = exact_memorypack_string_tokens(
             script_data,
-            mission_ids,
+            authored_mission_ids,
         )
         decoded_task_maps = decode_levelscript_task_conditions(
             script_data,
@@ -1701,6 +1781,7 @@ def build_report(
             subgames=subgames,
             extra_info=task_extra_info,
         )
+        annotate_task_progress_property_contract(decoded_task_map, hosts)
         annotate_task_condition_operands(
             decoded_task_map,
             level_id=level_id,
@@ -1763,6 +1844,19 @@ def build_report(
             consumers,
             decoded_task_map,
         )
+        row_task_authority = task_authority if decoded_task_map else {}
+        related_paths = {
+            safe_text(related.get("sourceFile"))
+            for related in related_original_files
+        }
+        for related in row_task_authority.get("relatedOriginalFiles") or []:
+            if (
+                isinstance(related, dict)
+                and safe_text(related.get("sourceFile"))
+                and safe_text(related.get("sourceFile")) not in related_paths
+            ):
+                related_original_files.append(dict(related))
+                related_paths.add(safe_text(related.get("sourceFile")))
 
         rows.append(
             {
@@ -1808,6 +1902,7 @@ def build_report(
                 "startShapeMissionAreaMatches": start_shape_area_matches,
                 "serializedMissionRuntimeIdTokens": serialized_mission_ids,
                 "decodedTaskMap": decoded_task_map,
+                "taskRuntimeAuthority": row_task_authority,
                 "relatedOriginalFiles": related_original_files,
                 "activationClass": classification,
                 "missionOwnerStatus": "unresolved",
@@ -1829,6 +1924,15 @@ def build_report(
             "levelScriptRoot": rel_path(levelscript_root),
             "missionPipelineMissionRoot": rel_path(mission_root),
             "missionRuntimeRoot": rel_path(mission_runtime_root),
+            "missionRuntimeIdCount": len(authored_mission_ids),
+            "taskRuntimeAuthority": {
+                "schema": safe_text(task_authority.get("schema")),
+                "source": safe_text(task_authority.get("source")),
+                "classification": safe_text(
+                    task_authority.get("classification")
+                ),
+                "validation": task_authority.get("validation") or {},
+            },
             "spawnerRoot": rel_path(spawner_root),
             "scriptTaskExtraInfo": rel_path(script_task_extra_info_path),
             "worldEntityRegistry": rel_path(world_entity_registry_path),
@@ -1900,9 +2004,22 @@ def build_report(
             ),
             "literalMissionIdBoundary": (
                 "An exact MemoryPack string token proves only that the literal "
-                "mission id exists somewhere in the LevelScript blob. Absence "
+                "id of an original MissionRuntimeAsset exists somewhere in the "
+                "LevelScript blob. Story-only shell ids are excluded. Absence "
                 "closes literal-constant carriers, not dynamic, indirect, or "
                 "server-authored activation."
+            ),
+            "taskRuntimeAuthorityBoundary": (
+                "The hash-validated current binary and protobuf schemas prove "
+                "that LevelScript task traffic is keyed by sceneNumId, scriptId, "
+                "taskId, and condition/progress data. No packet co-carries a "
+                "mission, quest, or Story identity, so server task lifecycle "
+                "does not supply the missing ownership edge."
+            ),
+            "taskProgressPropertyBoundary": (
+                "Exact lt:p/lt:mp LevelData property pairs persist per-condition "
+                "task progress. They repeat task/condition identity only and do "
+                "not identify a mission owner or playback order."
             ),
             "taskConditionBoundary": (
                 "A completely decoded task map proves authored task evaluation "
@@ -2147,9 +2264,34 @@ def build_report(
             "scriptsWithFullyDecodedTaskMap": sum(
                 bool(row.get("decodedTaskMap")) for row in rows
             ),
+            "scriptsWithValidatedTaskRuntimeAuthority": sum(
+                bool(row.get("decodedTaskMap"))
+                and (
+                    (row.get("taskRuntimeAuthority") or {}).get(
+                        "validation", {}
+                    ).get("status")
+                    == "validated"
+                )
+                for row in rows
+            ),
             "decodedTaskCount": sum(
                 len((row.get("decodedTaskMap") or {}).get("tasks") or [])
                 for row in rows
+            ),
+            "decodedTasksWithCompleteProgressPropertyContract": sum(
+                (
+                    task.get("progressPropertyContract") or {}
+                ).get("status")
+                == "validated"
+                for row in rows
+                for task in (row.get("decodedTaskMap") or {}).get("tasks") or []
+            ),
+            "decodedTaskProgressPropertyPlacements": sum(
+                (
+                    task.get("progressPropertyContract") or {}
+                ).get("matchedPropertyCount", 0)
+                for row in rows
+                for task in (row.get("decodedTaskMap") or {}).get("tasks") or []
             ),
             "decodedTaskConditionCount": sum(task_condition_types.values()),
             "decodedTaskConditionTypes": dict(
@@ -2439,6 +2581,7 @@ def publish_to_pipeline_index(
                 row.get("serializedMissionRuntimeIdTokens") or []
             ),
             "decodedTaskMap": row.get("decodedTaskMap"),
+            "taskRuntimeAuthority": row.get("taskRuntimeAuthority") or {},
             "relatedOriginalFiles": [
                 {
                     "kind": safe_text(related.get("kind")),
@@ -2446,6 +2589,7 @@ def publish_to_pipeline_index(
                     "relationship": safe_text(
                         related.get("relationship")
                     ),
+                    "sha256": safe_text(related.get("sha256")),
                 }
                 for related in row.get("relatedOriginalFiles") or []
                 if isinstance(related, dict)
@@ -2577,6 +2721,16 @@ def markdown_report(payload: dict[str, Any]) -> str:
             f"`{counts.get('scriptsWithFullyDecodedTaskMap')}` / "
             f"`{counts.get('decodedTaskCount')}` / "
             f"`{counts.get('decodedTaskConditionCount')}`"
+        ),
+        (
+            "- Task-map scripts with hash-validated binary task authority: "
+            f"`{counts.get('scriptsWithValidatedTaskRuntimeAuthority')}`"
+        ),
+        (
+            "- Tasks with complete LevelData `lt:p`/`lt:mp` progress pairs / "
+            "property placements: "
+            f"`{counts.get('decodedTasksWithCompleteProgressPropertyContract')}` / "
+            f"`{counts.get('decodedTaskProgressPropertyPlacements')}`"
         ),
         (
             "- Decoded task condition types: "
