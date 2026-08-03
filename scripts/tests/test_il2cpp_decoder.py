@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import struct
 import sys
 import unittest
 from pathlib import Path
@@ -29,6 +30,34 @@ class Il2CppDecoderTests(unittest.TestCase):
         self.assertEqual([0, 1, 2], [row["offset"] for row in rows])
         self.assertTrue(all(row.get("truncatedTerminal") for row in rows))
         self.assertEqual("db 0x48", rows[0]["text"])
+
+    def test_body_summary_tracks_parameter_field_origin_into_call_arguments(self) -> None:
+        helper = load_helper()
+        start_va = 0x180000000
+        target_va = 0x180000100
+        prefix = bytes.fromhex("48 8b da 48 8b 53 18")
+        call_offset = len(prefix)
+        rel32 = target_va - (start_va + call_offset + 5)
+        data = prefix + b"\xe8" + struct.pack("<i", rel32) + b"\xc3"
+        row = {
+            "flags": "0x0000",
+            "parameterDetails": [{"name": "msg", "typeName": "Fixture"}],
+            "method": "Handle_Fixture",
+            "type": "FixtureSystem",
+        }
+
+        summary = helper.build_method_body_summary(
+            row,
+            data,
+            start_va,
+            {target_va: [{"type": "FixtureSystem", "method": "StartFixture"}]},
+            max_instructions=64,
+        )
+
+        self.assertEqual(
+            summary["calls"][0]["argumentOrigins"]["rdx"],
+            "param:msg+0x18",
+        )
 
 
 if __name__ == "__main__":

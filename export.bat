@@ -113,6 +113,7 @@ if /I "%~1"=="--game-root" (
   set "EXPORT_ARGS=%EXPORT_ARGS% "%~1" "%~2""
   set "AUDIO_ARGS=%AUDIO_ARGS% "%~1" "%~2""
   set "FRESHNESS_ARGS=--game-root "%~2""
+  set "ENDFIELD_GAME_ROOT=%~2"
   shift
   shift
   goto :parse_args
@@ -217,6 +218,9 @@ if errorlevel 1 exit /b %errorlevel%
 python .\scripts\build_character_data.py --languages CN --default-language CN
 if errorlevel 1 exit /b %errorlevel%
 
+python .\scripts\story_recovery\build_protocol_registry_audit.py --ensure-current
+if errorlevel 1 exit /b %errorlevel%
+
 python .\scripts\build_mission_pipeline_data.py --refresh-source-story-gap-queue
 if errorlevel 1 exit /b %errorlevel%
 if "%MISSION_PIPELINE_ONLY%"=="1" (
@@ -281,6 +285,9 @@ exit /b 0
 
 :build_mission_pipeline_data_only
 echo [export.bat] Reusing current generated Story bundles and evidence.
+python .\scripts\story_recovery\build_protocol_registry_audit.py --ensure-current
+if errorlevel 1 exit /b %errorlevel%
+
 python .\scripts\build_mission_pipeline_data.py
 if errorlevel 1 exit /b %errorlevel%
 echo [export.bat] Mission Pipeline data refresh complete; no Story, evidence, semantic-view, or source-graph rebuild was run.

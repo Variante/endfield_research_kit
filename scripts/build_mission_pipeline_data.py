@@ -162,6 +162,9 @@ DEFAULT_GAMEPLAY_CONFIG_ROOT = (
 DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT = (
     ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
 )
+DEFAULT_PROTOCOL_REGISTRY_AUDIT = (
+    ROOT / "reports" / "story" / "recovery" / "protocol_registry_audit.json"
+)
 DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT = (
     ROOT / "reports" / "story" / "recovery" / "cutscene_case_resolution_audit.json"
 )
@@ -6477,6 +6480,86 @@ POST_PLAYBACK_VARIABLE_SETTER_ACTIONS = {
     "SetInt",
     "SetIntIncrease",
 }
+
+
+def load_state_update_application_contract(
+    audit_path: Path = DEFAULT_PROTOCOL_REGISTRY_AUDIT,
+) -> dict[str, Any]:
+    """Load and revalidate the binary-derived branch-authority contract."""
+    if not audit_path.is_file():
+        raise RuntimeError(
+            "validator=state_update_application_contract gate=auditExists "
+            f"expected=file actual=missing source={audit_path}"
+        )
+    audit = read_json(audit_path)
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v5":
+        raise RuntimeError(
+            "validator=state_update_application_contract gate=auditSchema "
+            "expected='endfieldProtocolRegistryAudit.v5' "
+            f"actual={audit.get('_schema')!r} source={audit_path}"
+        )
+    census = audit.get("stateUpdateApplicationCensus") or {}
+    validation = census.get("validation") or {}
+    if validation.get("status") != "validated":
+        failure = (validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            f"gate={failure.get('gate') or 'upstreamValidation'} "
+            f"message={failure.get('message')} expected={failure.get('expected')!r} "
+            f"actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    source = audit.get("source") or {}
+    source_checks = [
+        ("gameAssembly", "gameAssemblySha256"),
+        ("metadata", "metadataSha256"),
+    ]
+    related_files: list[dict[str, Any]] = []
+    for path_key, hash_key in source_checks:
+        source_text = str(source.get(path_key) or "")
+        expected_hash = str(source.get(hash_key) or "").lower()
+        source_path = Path(source_text)
+        if not source_text or not source_path.is_file():
+            raise RuntimeError(
+                "validator=state_update_application_contract gate=sourceExists "
+                f"expected=file actual=missing source={source_text or path_key}"
+            )
+        actual_hash = sha256_path(source_path)
+        if actual_hash != expected_hash:
+            raise RuntimeError(
+                "validator=state_update_application_contract gate=sourceHash "
+                f"expected={expected_hash!r} actual={actual_hash!r} source={source_path}"
+            )
+        related_files.append(
+            {
+                "kind": (
+                    "original_game_binary"
+                    if path_key == "gameAssembly"
+                    else "original_game_metadata"
+                ),
+                "sourceFile": str(source_path.resolve()),
+                "sha256": actual_hash,
+                "relationship": "native_state_application_contract",
+            }
+        )
+    return {
+        "source": audit_path.relative_to(ROOT).as_posix()
+        if audit_path.is_relative_to(ROOT)
+        else audit_path.as_posix(),
+        "classification": census.get("classification"),
+        "discoveryPattern": census.get("discoveryPattern") or {},
+        "candidateCount": census.get("candidateCount", 0),
+        "validatedCandidateCount": census.get("validatedCandidateCount", 0),
+        "clientSuccessorSelectors": census.get("clientSuccessorSelectors", 0),
+        "allLifecycleCallsUsePacketIdentity": census.get(
+            "allLifecycleCallsUsePacketIdentity", False
+        ),
+        "finding": census.get("finding") or "",
+        "boundary": census.get("boundary") or "",
+        "rows": census.get("rows") or [],
+        "relatedOriginalFiles": related_files,
+        "validation": validation,
+    }
 POST_PLAYBACK_VARIABLE_LISTENER_FIELDS = {
     "blackboardKeyFilter": "blackboard",
     "propertyKeyFilter": "property",
@@ -9184,6 +9267,11 @@ def build_all(
             "selectedRoot": repo_path(mission_root),
             "selection": "explicit_mission_root",
         }
+    state_update_contract = load_state_update_application_contract()
+    runtime_contract = {
+        **RUNTIME_CONTRACT,
+        "stateUpdateApplicationAudit": state_update_contract,
+    }
     index = {
         "schemaVersion": SCHEMA_VERSION,
         "generated": int(time.time()),
@@ -9252,9 +9340,18 @@ def build_all(
             "missionsWithProperties": sum(
                 1 for row in summaries if row["missionPropertyCount"]
             ),
+            "stateUpdateApplicationCandidates": state_update_contract[
+                "candidateCount"
+            ],
+            "stateUpdateApplicationCandidatesValidated": state_update_contract[
+                "validatedCandidateCount"
+            ],
+            "stateUpdateClientSuccessorSelectors": state_update_contract[
+                "clientSuccessorSelectors"
+            ],
         },
         "conditionTypeMissionCounts": dict(sorted(condition_counts.items())),
-        "runtimeContract": RUNTIME_CONTRACT,
+        "runtimeContract": runtime_contract,
         "nativeRuntimeRegistry": subgame_registry,
         "activityQuestLevelRegistry": activity_host_registry,
         "missionGraph": {

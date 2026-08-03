@@ -2403,10 +2403,16 @@ def build_method_body_summary(
         call_match = re.match(r"call 0x([0-9a-f]+)$", text)
         if call_match:
             target_va = int(call_match.group(1), 16)
+            argument_origins = {
+                register: origins[register]
+                for register in ("rcx", "rdx", "r8", "r9")
+                if register in origins
+            }
             call_rows.append({
                 "offset": offset,
                 "targetVa": f"0x{target_va:x}",
                 "resolved": method_by_pointer.get(target_va, []),
+                "argumentOrigins": argument_origins,
                 "argumentContext": call_argument_context(
                     data,
                     start_va,

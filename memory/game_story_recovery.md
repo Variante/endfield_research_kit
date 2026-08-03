@@ -36,6 +36,7 @@ Latest CN reports:
 | Exact post-playback LevelSequence files | 15 typed action placements / 7 serialized ids / 6 exact original TextAssets / 1 unresolved root handle |
 | Post-playback variable bridge | 66 typed setters (43 SetBool, 23 SetInt) / 50 exact listeners / 0 same-level, same-script, same-key joins |
 | Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
+| Binary state-update authority | 4 / 4 identity+state/control paths validated; 0 client successor selectors |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -1318,12 +1319,36 @@ ownership pass should require a new co-carried foreign key in another typed
 controller payload or native registry, not a module id, LevelSequence name,
 file address, or registration order.
 
+The general state-update audit now discovers enum-backed `Proto.SC_*` messages
+by shape: exactly one `missionId` or `questId` plus either the matching state
+field or the `isEnable`/previous-state control pair.
+It locates each handler by protobuf parameter type, reads field offsets from
+the installed `MetadataRegistration`, and traces the packet identity through
+typed lifecycle calls. All four current paths validate: message 111 forwards its
+single `questId@0x18` to `SucceedQuest` and `StartQuest`; message 112 forwards
+its single `missionId@0x18` to `CompleteMission`, `StartMission`, and
+`AvailableMission`. The enable lanes likewise forward only their packet
+identity: mission enable dispatches by its consumed `prevMissionState` to
+`DisableMission`, `StartMission`, or `AvailableMission`, while quest enable
+dispatches by `isEnable` to `StartQuest`, `PauseQuest`, or `DisableQuest`.
+None of the four schemas has a second identity or successor field.
+The client therefore applies one server-selected identity/state update at a
+time; it does not choose the next quest in these paths. The validator records
+bounded schema, handler, field-layout, argument-flow, and source-hash failures,
+and Mission Pipeline re-hashes `GameAssembly.dll` and `global-metadata.dat`
+before publishing the contract and both related files. This closes the
+client-side successor-selector hypothesis without pretending to recover
+server-only policy. Authored predecessor forks and merges remain prerequisite
+topology, not proof of exclusive branch choice. OCR and manual overrides are
+not inputs.
+
 Action-class naming is no longer a recovery gap on the current native Story
 transition/post-playback surfaces. Further branch work should target a new
-typed selector operand, server successor policy, or mission-to-receiver foreign
-key; repeating opcode-name catalogs cannot add an edge. Quest forks whose next
-state is selected only by the server and unrelated Story pairs still remain
-unknowable from the installed client's static data.
+typed selector operand or mission-to-receiver foreign key; repeating opcode
+catalogs or the now-closed state-update application paths cannot add an edge.
+Server-only successor policy, quest forks selected only by that server, and
+unrelated Story pairs remain unknowable from the installed client's static
+data unless a new client-visible carrier appears.
 
 The client-side `CallServer.callClientOutputUIDs` callback-header route is also
 closed generically for this build. Reopen its five dangling UIDs only if a
@@ -1392,6 +1417,7 @@ reports/story/build/mission_pipeline_story_binding_coverage_CN.md
 reports/mission_order/source_story_partial_order_CN.md
 reports/mission_order/source_story_gap_queue_CN.md
 reports/story/recovery/native_receiver_activation_frontier.md
+reports/story/recovery/protocol_registry_audit.md
 reports/story/build/narrative_videos_CN.md
 ```
 

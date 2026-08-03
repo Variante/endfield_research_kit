@@ -407,6 +407,11 @@
       serverPlaceholders: "server gates",
       graph: "Quest graph",
       nativeBoundary: "Native boundary",
+      stateApplicationContract: "Who selects the next quest?",
+      serverSelectedIdentity: "server-selected identity/state control",
+      stateApplicationValidated: "typed paths validated",
+      noClientSuccessorSelector: "no client successor selector",
+      lifecycleIdentityFlow: "same packet identity",
       exchanges: "exchanges",
       asynchronousExchange: "asynchronous",
       boundaryOnly: "native boundary only",
@@ -1069,6 +1074,11 @@
       serverPlaceholders: "服务端条件",
       graph: "任务节点图",
       nativeBoundary: "原生实现边界",
+      stateApplicationContract: "下一任务由谁选择？",
+      serverSelectedIdentity: "服务端选择的标识与状态控制",
+      stateApplicationValidated: "已验证类型路径",
+      noClientSuccessorSelector: "客户端无后继选择器",
+      lifecycleIdentityFlow: "同一数据包标识",
       exchanges: "项消息",
       asynchronousExchange: "异步",
       boundaryOnly: "仅原生边界",
@@ -4001,6 +4011,7 @@
 
   function runtimeContractHtml() {
     const contract = state.index?.runtimeContract || {};
+    const stateApplication = contract.stateUpdateApplicationAudit || null;
     const coveragePolicy = state.index?.storyCoverage?.policy || "";
     const dynamicSceneAudit = state.index?.storyCoverage?.dynamicSceneIdentityCrossReferences || {};
     const currentMissionId = String(state.missionId || state.mission?.mission?.id || "");
@@ -4073,6 +4084,24 @@
         <code>${esc(row.handler)}${row.address ? ` @ ${esc(row.address)}` : ""}</code>
         <p>${esc(row.effect)}</p>
       </article>`; }).join("")}</div>
+      ${stateApplication ? `<section class="mp-local-only mp-state-application-contract">
+        <header><strong>${esc(t("stateApplicationContract"))}</strong><span>${Number(stateApplication.validatedCandidateCount || 0).toLocaleString()} / ${Number(stateApplication.candidateCount || 0).toLocaleString()} ${esc(t("stateApplicationValidated"))}</span></header>
+        <div>${(stateApplication.rows || []).map((row) => {
+          const identityOffset = row.fieldOffsets?.[row.identityField] || "?";
+          const stateOffset = row.fieldOffsets?.[row.stateField] || "?";
+          const lifecycle = (row.lifecycleCalls || []).map((call) => `${call.method}(${call.identityArgumentOrigin || "?"})`).join(" / ");
+          return `<article class="mp-contract-card is-server_to_client">
+            <span>${esc(t("serverSelectedIdentity"))} / ${esc(row.handler?.token || "")}</span>
+            <strong>${esc(`${row.type || ""} (${row.messageId ?? "?"})`)}</strong>
+            <div class="mp-contract-tags"><b>${esc(`${row.identityField}@${identityOffset}`)}</b><b>${esc(`${row.stateField}@${stateOffset}`)}</b>${row.clientSuccessorSelectorPresent ? "" : `<b>${esc(t("noClientSuccessorSelector"))}</b>`}</div>
+            <code>${esc(`${row.handler?.symbol || ""} @ ${row.handler?.va || ""}`)}</code>
+            <p><b>${esc(t("lifecycleIdentityFlow"))}:</b> ${esc(lifecycle)}</p>
+          </article>`;
+        }).join("")}</div>
+        <p class="mp-gap-policy">${esc(stateApplication.finding || "")}</p>
+        ${(stateApplication.relatedOriginalFiles || []).map((related) => `<p class="mp-gap-policy"><b>${esc(t("relatedOriginalFile"))}:</b> <code>${esc(related.sourceFile || "")}</code> / SHA-256 <code>${esc(related.sha256 || "")}</code></p>`).join("")}
+        <p class="mp-contract-boundary">${esc(stateApplication.boundary || "")}</p>
+      </section>` : ""}
       ${localRows.length ? `<section class="mp-local-only"><header><strong>${esc(t("localOnlyPaths"))}</strong><span>${esc(t("noServerExchange"))}</span></header><div>${localRows.map((row) => `<article class="mp-contract-card is-local-only"><span>LOCAL · ${esc(row.confidence || "native_proven")}</span><strong>${esc(row.event)}</strong><div class="mp-contract-tags"><b>${esc(t("noServerExchange"))}</b></div>${(row.fields || []).length ? `<small><b>${esc(t("protocolFields"))}:</b> ${(row.fields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</small>` : ""}<code>${esc(row.handler || "")}${row.address ? ` @ ${esc(row.address)}` : ""}</code><p>${esc(row.effect || "")}</p></article>`).join("")}</div></section>` : ""}
       ${protocolOnlyRows.length ? `<section class="mp-local-only mp-protocol-capabilities"><header><strong>${esc(protocolLabel("capability"))}</strong><span>${esc(protocolLabel("schemaOnly"))}</span></header><div>${protocolOnlyRows.map((row) => `<article class="mp-contract-card"><span>${esc(protocolLabel(row.boundary === "runtime_unconfirmed" ? "runtimeUnconfirmed" : "senderUnconfirmed"))}</span><strong>${esc(row.message)}</strong><div class="mp-contract-tags"><b>${esc(row.confidence || "protocol_schema_only")}</b></div>${(row.fields || []).length ? `<small><b>${esc(t("protocolFields"))}:</b> ${(row.fields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</small>` : ""}${row.possibleServerPush ? `<small><b>${esc(protocolLabel("possible"))}:</b> <code>${esc(row.possibleServerPush)}</code></small>` : ""}<p>${esc(row.effect || "")}</p></article>`).join("")}</div></section>` : ""}
       ${missionOptionAudit?.finding || missionPropertyAudit?.finding || paramSourceAudit?.finding || managedCarrierCensus?.finding || nestedCarrierCensus?.finding ? `<section class="mp-local-only mp-carrier-audits"><header><strong>${esc(t("carrierAudit"))}</strong><span>${esc(t("noGraphEdges"))}</span></header><div>

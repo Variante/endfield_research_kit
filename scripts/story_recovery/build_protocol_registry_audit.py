@@ -16,6 +16,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import re
 import struct
 import sys
@@ -33,10 +34,14 @@ from common import ROOT, md_escape, write_report_json, write_text_if_changed  # 
 from story_builder.mission_assets import select_complete_mission_runtime_root  # noqa: E402
 
 
-DEFAULT_METADATA = Path(
-    r"D:\Program Files\Endfield Game\Endfield_Data\il2cpp_data\Metadata\global-metadata.dat"
+DEFAULT_GAME_DATA_ROOT = Path(
+    os.environ.get(
+        "ENDFIELD_GAME_ROOT",
+        r"D:\Program Files\Endfield Game\Endfield_Data",
+    )
 )
-DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
+DEFAULT_METADATA = DEFAULT_GAME_DATA_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
+DEFAULT_GAMEASSEMBLY = DEFAULT_GAME_DATA_ROOT.parent / "GameAssembly.dll"
 METADATA_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 NATIVE_MAPPER_HELPER = (
     ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
@@ -331,6 +336,13 @@ RELEVANT_MESSAGES: tuple[dict[str, Any], ...] = (
         "classification": "native_handler_proven_elsewhere",
     },
     {
+        "type": "Proto.SC_QUEST_STATE_UPDATE",
+        "direction": "server_to_client",
+        "enumName": "ScQuestStateUpdate",
+        "expectedId": 111,
+        "classification": "native_handler_proven",
+    },
+    {
         "type": "Proto.SC_MISSION_STATE_UPDATE",
         "direction": "server_to_client",
         "enumName": "ScMissionStateUpdate",
@@ -356,14 +368,14 @@ RELEVANT_MESSAGES: tuple[dict[str, Any], ...] = (
         "direction": "server_to_client",
         "enumName": "ScSetMissionEnable",
         "expectedId": 121,
-        "classification": "schema_only",
+        "classification": "native_handler_proven",
     },
     {
         "type": "Proto.SC_SET_QUEST_ENABLE",
         "direction": "server_to_client",
         "enumName": "ScSetQuestEnable",
         "expectedId": 122,
-        "classification": "schema_only",
+        "classification": "native_handler_proven",
     },
 )
 
@@ -1071,6 +1083,521 @@ def protobuf_identity_carrier_census(
         normalized_field_name(row["name"]): row
         for row in registry_rows
     }
+    return finish_protobuf_identity_carrier_census(
+        metadata_registration=metadata_registration,
+        runtime_types_va=runtime_types_va,
+        runtime_type_count=runtime_type_count,
+        proto_types=proto_types,
+        cs_sc_type_count=cs_sc_type_count,
+        registry_rows=registry_rows,
+        registry_by_normalized_name=registry_by_normalized_name,
+    )
+
+
+STATE_LIFECYCLE_METHOD_RE = re.compile(
+    r"^(?:Available|Start|Complete|Succeed|Fail|Cancel|Abort|Pause|Disable)"
+    r"(?:Mission|Quest)$"
+)
+
+
+def state_update_candidate_schemas(
+    metadata: Any,
+    defaults: dict[int, tuple[int, int]],
+    server_registry: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Discover enum-backed mission/quest state messages from their field shape."""
+    registry_by_normalized_name = {
+        normalized_field_name(row["name"]): row
+        for row in server_registry
+    }
+    candidates: list[dict[str, Any]] = []
+    for type_def in metadata.types:
+        type_name = metadata.type_full_name(type_def)
+        if not type_name.startswith("Proto.SC_"):
+            continue
+        storage_names = {
+            normalized_field_name(metadata.string(field.name_index))
+            for field in metadata.fields_for(type_def)
+            if metadata.string(field.name_index).endswith("_")
+        }
+        matches: list[tuple[str, list[str], str]] = []
+        for stem in ("mission", "quest"):
+            if f"{stem}id" not in storage_names:
+                continue
+            if f"{stem}state" in storage_names:
+                matches.append((stem, [f"{stem}State"], "state_update"))
+            elif "isenable" in storage_names and f"prev{stem}state" in storage_names:
+                matches.append(
+                    (stem, ["isEnable", f"prev{stem.title()}State"], "enable_update")
+                )
+        if len(matches) != 1:
+            continue
+        stem, control_names, control_kind = matches[0]
+        registry_key = normalized_field_name(type_name.removeprefix("Proto."))
+        registry_row = registry_by_normalized_name.get(registry_key)
+        if registry_row is None:
+            continue
+        schema = message_schema(metadata, defaults, type_name)
+        identity_name = f"{stem}Id"
+        candidates.append(
+            {
+                "type": type_name,
+                "typeIndex": type_def.index,
+                "typeToken": f"0x{type_def.token:08x}",
+                "entityKind": stem,
+                "controlKind": control_kind,
+                "messageId": registry_row["id"],
+                "enumName": registry_row["name"],
+                "identityField": identity_name,
+                "controlFields": control_names,
+                "schema": schema,
+            }
+        )
+    return sorted(candidates, key=lambda row: (row["messageId"], row["type"]))
+
+
+def runtime_type_field_offsets(
+    metadata: Any,
+    pe: Any,
+    metadata_registration_summary: dict[str, Any],
+    type_index: int,
+) -> dict[str, int]:
+    """Read one type's current-build instance offsets from MetadataRegistration."""
+    table_count = int(metadata_registration_summary["fieldOffsetsCount"])
+    if not 0 <= type_index < table_count:
+        raise RuntimeError(
+            f"field-offset type index {type_index} outside current table count {table_count}"
+        )
+    table_va = int(metadata_registration_summary["fieldOffsets"], 16)
+    type_offsets_va = pe.u64_at_va(table_va + type_index * 8)
+    if not type_offsets_va:
+        raise RuntimeError(f"type {type_index} has no runtime field-offset row")
+    type_def = metadata.types[type_index]
+    return {
+        metadata.string(field.name_index): pe.u32_at_va(type_offsets_va + index * 4)
+        for index, field in enumerate(metadata.fields_for(type_def))
+    }
+
+
+def discover_state_update_handlers(
+    metadata: Any,
+    helper: Any,
+    candidates: list[dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Find native handler metadata by protobuf parameter type, not method token."""
+    by_type = {row["type"]: [] for row in candidates}
+    for type_def in metadata.types:
+        owner_name = metadata.type_full_name(type_def)
+        image_name = metadata.image_name_by_type_index.get(type_def.index, "")
+        for method_offset, method in enumerate(metadata.methods_for(type_def)):
+            method_info = helper.method_row(metadata, method)
+            if not str(method_info["name"]).startswith(("Handle_", "_Handle_")):
+                continue
+            parameter_types = [
+                str(param.get("typeName") or "")
+                for param in method_info.get("parameterDetails") or []
+            ]
+            for candidate_type in by_type:
+                if not any(
+                    param_type == candidate_type
+                    or param_type.startswith(candidate_type + "+")
+                    for param_type in parameter_types
+                ):
+                    continue
+                by_type[candidate_type].append(
+                    {
+                        "type": owner_name,
+                        "image": image_name,
+                        "typeIndex": type_def.index,
+                        "method": method_info["name"],
+                        "methodIndex": method_info["index"],
+                        "methodOffsetInType": method_offset,
+                        "token": method_info["token"],
+                        "parameters": method_info["parameters"],
+                        "parameterDetails": method_info["parameterDetails"],
+                        "flags": method_info["flags"],
+                    }
+                )
+    return by_type
+
+
+def map_state_update_handler(
+    row: dict[str, Any],
+    mapper: Any,
+    pe: Any,
+    ranges: dict[str, dict[str, Any]],
+    pointers_by_image: dict[str, list[int]],
+    method_by_pointer: dict[int, list[dict[str, Any]]],
+    sorted_pointers: list[int],
+) -> dict[str, Any]:
+    image_range = ranges.get(row["image"])
+    pointers = pointers_by_image.get(row["image"], [])
+    if not image_range:
+        raise RuntimeError(f"missing image method range for {row['image']}")
+    slot = row["methodIndex"] - image_range["methodStart"]
+    if not 0 <= slot < len(pointers):
+        raise RuntimeError(
+            f"method slot {slot} outside {row['image']} pointer table ({len(pointers)})"
+        )
+    pointer = pointers[slot]
+    if not pointer:
+        raise RuntimeError(f"null native pointer for {row['type']}.{row['method']}")
+    scan_size, next_pointer = mapper.estimate_scan_size(
+        pointer, sorted_pointers, 4096
+    )
+    summary = mapper.build_method_body_summary(
+        row,
+        pe.bytes_at_va(pointer, scan_size),
+        pointer,
+        method_by_pointer,
+        pe=pe,
+        max_instructions=1200,
+    )
+    return {
+        "symbol": f"{row['type']}.{row['method']}",
+        "token": row["token"],
+        "methodIndex": row["methodIndex"],
+        "va": f"0x{pointer:x}",
+        "rva": f"0x{pe.file_offset_for_va(pointer)[2]:x}",
+        "scanBytes": scan_size,
+        "nextMethodPointerVa": f"0x{next_pointer:x}" if next_pointer else None,
+        "bodySummary": summary,
+    }
+
+
+def validate_state_update_application_rows(
+    candidate_count: int,
+    rows: list[dict[str, Any]],
+    *,
+    source_file: str,
+    source_hashes: dict[str, str],
+    prior_failures: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Fail closed with bounded diagnostics for the recovered application pattern."""
+    failures = list(prior_failures or [])
+
+    def add(gate: str, message: str | None, expected: Any, actual: Any) -> None:
+        failures.append(
+            {
+                "validator": "state_update_application_census",
+                "gate": gate,
+                "message": message,
+                "expected": expected,
+                "actual": actual,
+                "sourceFile": source_file,
+                "sourceHashes": source_hashes,
+            }
+        )
+
+    if len(rows) != candidate_count:
+        add("validatedCandidateCount", None, candidate_count, len(rows))
+    for row in rows:
+        message = str(row.get("type") or "")
+        if not row.get("samePacketIdentityForwardedToEveryLifecycleCall"):
+            add(
+                "sameIdentityForwarding",
+                message,
+                True,
+                [
+                    {
+                        "method": call.get("method"),
+                        "origin": call.get("observedArgumentOrigin"),
+                    }
+                    for call in row.get("lifecycleCalls") or []
+                    if not call.get("samePacketIdentity")
+                ],
+            )
+        if row.get("clientSuccessorSelectorPresent"):
+            add(
+                "noClientSuccessorSelector",
+                message,
+                [],
+                row.get("successorLikeFields") or row.get("identityFields"),
+            )
+    return {
+        "status": "validated" if not failures else "validation_failed",
+        "failures": failures,
+    }
+
+
+def state_update_application_census(
+    metadata: Any,
+    defaults: dict[int, tuple[int, int]],
+    helper: Any,
+    server_registry: list[dict[str, Any]],
+    gameassembly_path: Path,
+    mapper_path: Path = NATIVE_MAPPER_HELPER,
+) -> dict[str, Any]:
+    """Recover the general server-selected mission/quest state application pattern."""
+    mapper = load_native_mapper(mapper_path)
+    pe = mapper.PeImage(gameassembly_path)
+    metadata_registration = mapper.find_metadata_registration(
+        pe, mapper.DEFAULT_CODE_REGISTRATION
+    )
+    if metadata_registration is None:
+        raise RuntimeError("state-update audit could not derive MetadataRegistration")
+    metadata_summary = mapper.metadata_registration_summary(pe, metadata_registration)
+    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    ranges = mapper.image_method_ranges(metadata)
+    pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
+        pe, metadata, modules, ranges
+    )
+    sorted_pointers = sorted(
+        {
+            pointer
+            for pointers in pointers_by_image.values()
+            for pointer in pointers
+            if pointer
+        }
+    )
+    candidates = state_update_candidate_schemas(metadata, defaults, server_registry)
+    handlers_by_type = discover_state_update_handlers(metadata, helper, candidates)
+    failures: list[dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
+
+    def fail(gate: str, candidate: dict[str, Any] | None, expected: Any, actual: Any) -> None:
+        failures.append(
+            {
+                "validator": "state_update_application_census",
+                "gate": gate,
+                "message": candidate.get("type") if candidate else None,
+                "expected": expected,
+                "actual": actual,
+                "sourceFile": str(gameassembly_path.resolve()),
+                "sourceHashes": {
+                    "gameAssemblySha256": file_sha256(gameassembly_path),
+                    "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+                },
+            }
+        )
+
+    if not candidates:
+        fail("candidateDiscovery", None, ">=1 enum-backed identity+state schema", 0)
+    for candidate in candidates:
+        handlers = handlers_by_type.get(candidate["type"], [])
+        if len(handlers) != 1:
+            fail(
+                "uniqueTypedHandler",
+                candidate,
+                1,
+                [f"{row['type']}.{row['method']}" for row in handlers],
+            )
+            continue
+        try:
+            mapped = map_state_update_handler(
+                handlers[0],
+                mapper,
+                pe,
+                ranges,
+                pointers_by_image,
+                method_by_pointer,
+                sorted_pointers,
+            )
+            all_offsets = runtime_type_field_offsets(
+                metadata, pe, metadata_summary, candidate["typeIndex"]
+            )
+        except RuntimeError as exc:
+            fail("nativeMapping", candidate, "mapped typed handler and fields", str(exc))
+            continue
+        schema_fields = candidate["schema"]["fields"]
+        field_offsets = {
+            field["name"]: all_offsets.get(field["storageName"])
+            for field in schema_fields
+        }
+        identity_offset = field_offsets.get(candidate["identityField"])
+        control_offsets = {
+            name: field_offsets.get(name) for name in candidate["controlFields"]
+        }
+        if identity_offset is None or any(
+            offset is None for offset in control_offsets.values()
+        ):
+            fail(
+                "identityStateOffsets",
+                candidate,
+                [candidate["identityField"], *candidate["controlFields"]],
+                field_offsets,
+            )
+            continue
+        expected_identity_origin = f"param:msg+0x{identity_offset:x}"
+        expected_control_origins = {
+            name: f"param:msg+0x{offset:x}"
+            for name, offset in control_offsets.items()
+            if isinstance(offset, int)
+        }
+        body = mapped["bodySummary"]
+        field_origins = {
+            row.get("origin") for row in body.get("fieldLikeOrigins") or []
+        }
+        identity_operands = {
+            row.get("operand")
+            for row in body.get("fieldAccesses") or []
+            if row.get("origin") == expected_identity_origin and row.get("operand")
+        }
+        consumed_control_fields = [
+            name
+            for name, origin in expected_control_origins.items()
+            if origin in field_origins
+        ]
+        if expected_identity_origin not in field_origins or not consumed_control_fields:
+            fail(
+                "handlerFieldReads",
+                candidate,
+                {
+                    "identity": expected_identity_origin,
+                    "oneOfControls": expected_control_origins,
+                },
+                sorted(field_origins),
+            )
+        lifecycle_calls: list[dict[str, Any]] = []
+        entity_suffix = candidate["entityKind"].title()
+        for call in body.get("calls") or []:
+            for target in call.get("resolved") or []:
+                method_name = str(target.get("method") or "")
+                if not STATE_LIFECYCLE_METHOD_RE.fullmatch(method_name):
+                    continue
+                if not method_name.endswith(entity_suffix):
+                    continue
+                observed_origin = (call.get("argumentOrigins") or {}).get("rdx")
+                same_packet_identity = (
+                    observed_origin == expected_identity_origin
+                    or observed_origin in identity_operands
+                )
+                lifecycle_calls.append(
+                    {
+                        "method": method_name,
+                        "symbol": f"{target.get('type')}.{method_name}",
+                        "token": target.get("token"),
+                        "callOffset": call.get("offset"),
+                        "targetVa": call.get("targetVa"),
+                        "identityArgumentRegister": "rdx",
+                        "identityArgumentOrigin": expected_identity_origin,
+                        "observedArgumentOrigin": observed_origin,
+                        "samePacketIdentity": same_packet_identity,
+                    }
+                )
+        if len(lifecycle_calls) < 2:
+            fail(
+                "lifecycleCalls",
+                candidate,
+                ">=2 typed lifecycle calls",
+                [row["method"] for row in lifecycle_calls],
+            )
+        mismatched_calls = [
+            row for row in lifecycle_calls if not row["samePacketIdentity"]
+        ]
+        if mismatched_calls:
+            fail(
+                "sameIdentityForwarding",
+                candidate,
+                expected_identity_origin,
+                [
+                    {
+                        "method": row["method"],
+                        "origin": row["observedArgumentOrigin"],
+                    }
+                    for row in mismatched_calls
+                ],
+            )
+        identity_fields = [
+            field["name"]
+            for field in schema_fields
+            if normalized_field_name(field["name"]) in {"missionid", "questid"}
+        ]
+        successor_like_fields = [
+            field["name"]
+            for field in schema_fields
+            if re.search(r"(?:next|successor|prev)(?:mission|quest)?id", field["name"], re.I)
+        ]
+        rows.append(
+            {
+                **{key: value for key, value in candidate.items() if key != "schema"},
+                "fields": [field["name"] for field in schema_fields],
+                "stateField": consumed_control_fields[0]
+                if consumed_control_fields
+                else candidate["controlFields"][0],
+                "consumedControlFields": consumed_control_fields,
+                "fieldOffsets": {
+                    name: f"0x{offset:x}" if isinstance(offset, int) else None
+                    for name, offset in field_offsets.items()
+                },
+                "identityFields": identity_fields,
+                "successorLikeFields": successor_like_fields,
+                "handler": {
+                    key: value for key, value in mapped.items() if key != "bodySummary"
+                },
+                "handlerFieldOrigins": sorted(field_origins),
+                "lifecycleCalls": lifecycle_calls,
+                "samePacketIdentityForwardedToEveryLifecycleCall": (
+                    bool(lifecycle_calls) and not mismatched_calls
+                ),
+                "clientSuccessorSelectorPresent": bool(
+                    len(identity_fields) > 1 or successor_like_fields
+                ),
+            }
+        )
+    source_hashes = {
+        "gameAssemblySha256": file_sha256(gameassembly_path),
+        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+    }
+    validation = validate_state_update_application_rows(
+        len(candidates),
+        rows,
+        source_file=str(gameassembly_path.resolve()),
+        source_hashes=source_hashes,
+        prior_failures=failures,
+    )
+    return {
+        "classification": "server_selected_identity_state_application",
+        "discoveryPattern": {
+            "message": (
+                "enum-backed Proto.SC_* schema with exactly one missionId or questId "
+                "plus either its matching state field or the isEnable/previous-state "
+                "control pair"
+            ),
+            "handler": (
+                "Handle_/_Handle_ method discovered by exact protobuf parameter type"
+            ),
+            "fieldLayout": "MetadataRegistration field-offset table",
+            "nativeFlow": (
+                "method-body origin tracking from the packet parameter into typed "
+                "mission/quest lifecycle call arguments"
+            ),
+        },
+        "candidateCount": len(candidates),
+        "validatedCandidateCount": len(rows),
+        "rows": rows,
+        "allLifecycleCallsUsePacketIdentity": bool(rows) and all(
+            row["samePacketIdentityForwardedToEveryLifecycleCall"] for row in rows
+        ),
+        "clientSuccessorSelectors": sum(
+            int(row["clientSuccessorSelectorPresent"]) for row in rows
+        ),
+        "finding": (
+            "The current client receives one selected mission/quest identity and "
+            "state/control value per update and forwards that same packet identity into "
+            "its lifecycle calls. "
+            "The audited update paths contain no second identity or successor field, so "
+            "they apply server-selected state rather than choosing a successor branch."
+        ),
+        "boundary": (
+            "This proves the current client update-application paths. It does not recover "
+            "server-only successor policy, and prerequisite edges remain topology rather "
+            "than proof of exclusive branch selection."
+        ),
+        "validation": validation,
+    }
+
+
+def finish_protobuf_identity_carrier_census(
+    *,
+    metadata_registration: int,
+    runtime_types_va: int,
+    runtime_type_count: int,
+    proto_types: dict[str, list[dict[str, str]]],
+    cs_sc_type_count: int,
+    registry_rows: list[dict[str, Any]],
+    registry_by_normalized_name: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
     roots: list[dict[str, Any]] = []
     for type_name in sorted(proto_types):
         if not type_name.startswith(("Proto.CS_", "Proto.SC_")):
@@ -1297,6 +1824,14 @@ def build_report(
         [*cs, *sc],
         mapper_path,
     )
+    state_application_census = state_update_application_census(
+        metadata,
+        defaults,
+        helper,
+        sc,
+        gameassembly_path,
+        mapper_path,
+    )
     native_hooks_by_message_id: dict[int, list[str]] = {}
     for hook_name, hook in native_task_paths["hooks"].items():
         message_id = hook.get("messageId")
@@ -1336,7 +1871,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v4",
+        "_schema": "endfieldProtocolRegistryAudit.v5",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -1375,6 +1910,15 @@ def build_report(
             "protobufWeakMissionSceneCoCarriers": identity_carrier_census[
                 "weakMissionSceneCandidateCount"
             ],
+            "stateUpdateApplicationCandidates": state_application_census[
+                "candidateCount"
+            ],
+            "stateUpdateApplicationCandidatesValidated": state_application_census[
+                "validatedCandidateCount"
+            ],
+            "stateUpdateClientSuccessorSelectors": state_application_census[
+                "clientSuccessorSelectors"
+            ],
         },
         "evidencePolicy": {
             "registry": (
@@ -1394,6 +1938,7 @@ def build_report(
                 "curMainMissionId is synchronized current-main selection/state. It is not "
                 "a chronological predecessor or successor edge."
             ),
+            "questSuccessorPolicy": state_application_census["boundary"],
             "levelScriptTasks": (
                 "The task packet family exposes exact (sceneNumId, scriptId, taskId) "
                 "identity, and current-build native sender/handler paths are proven "
@@ -1439,6 +1984,7 @@ def build_report(
         "nativeMissionEventPaths": NATIVE_MISSION_EVENT_PATHS,
         "nativeLevelScriptEventPaths": NATIVE_LEVEL_SCRIPT_EVENT_PATHS,
         "protobufIdentityCarrierCensus": identity_carrier_census,
+        "stateUpdateApplicationCensus": state_application_census,
         "message125EventBusSpecializations": event_bus_census,
         "missionEventConstructorXrefs": MISSION_EVENT_CONSTRUCTOR_XREF_FINDING,
         "missionEventAssetCoverage": mission_event_assets,
@@ -1491,6 +2037,12 @@ def render_markdown(report: dict[str, Any]) -> str:
         (
             "- Weaker protobuf mission/quest + scene carriers requiring review: "
             f"**{summary['protobufWeakMissionSceneCoCarriers']}**"
+        ),
+        (
+            "- Typed state-update application paths: "
+            f"**{summary['stateUpdateApplicationCandidatesValidated']}/"
+            f"{summary['stateUpdateApplicationCandidates']}** validated; "
+            f"**{summary['stateUpdateClientSuccessorSelectors']}** client successor selectors"
         ),
         f"- Runtime-hook manifest SHA-256: `{report['source']['runtimeHookManifestSha256']}`",
         "",
@@ -1671,6 +2223,46 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
             carrier_census["coverage"],
             "",
+            "## Server-selected state application",
+            "",
+        ]
+    )
+    state_census = report["stateUpdateApplicationCensus"]
+    lines.extend(
+        [
+            state_census["finding"],
+            "",
+            "| Message | Identity/state layout | Native handler | Lifecycle calls |",
+            "|---|---|---|---|",
+        ]
+    )
+    for row in state_census["rows"]:
+        layout = ", ".join(
+            f"{name}@{offset}"
+            for name, offset in row["fieldOffsets"].items()
+            if name in {row["identityField"], row["stateField"]}
+        )
+        lifecycle = ", ".join(
+            f"{call['method']}({call['identityArgumentOrigin']})"
+            for call in row["lifecycleCalls"]
+        )
+        lines.append(
+            "| `{message}` ({message_id}) | {layout} | `{handler}` `{token}` @ `{va}` | "
+            "{lifecycle} |".format(
+                message=md_escape(row["type"].removeprefix("Proto.")),
+                message_id=row["messageId"],
+                layout=md_escape(layout),
+                handler=md_escape(row["handler"]["symbol"]),
+                token=md_escape(row["handler"]["token"]),
+                va=md_escape(row["handler"]["va"]),
+                lifecycle=md_escape(lifecycle),
+            )
+        )
+    lines.extend(
+        [
+            "",
+            state_census["boundary"],
+            "",
             "## Story-facing message schemas",
             "",
             "| ID | Direction | Message | Fields by protobuf tag | Classification |",
@@ -1754,7 +2346,49 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=REPORT_ROOT / "protocol_registry_audit.md",
     )
+    parser.add_argument(
+        "--ensure-current",
+        action="store_true",
+        help=(
+            "Reuse an existing validated v5 report when its original "
+            "GameAssembly and metadata hashes still match; otherwise rebuild it."
+        ),
+    )
     return parser.parse_args()
+
+
+def current_report_status(
+    report_path: Path,
+    metadata_path: Path,
+    gameassembly_path: Path,
+) -> tuple[bool, str]:
+    """Fail closed unless a report describes these exact original inputs."""
+    if not report_path.is_file():
+        return False, "report missing"
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return False, f"report unreadable: {exc}"
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v5":
+        return False, f"schema is {report.get('_schema')!r}"
+    validation = (
+        (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}
+    )
+    if validation.get("status") != "validated":
+        return False, f"validation is {validation.get('status')!r}"
+    source = report.get("source") or {}
+    checks = (
+        (metadata_path, "metadataSha256"),
+        (gameassembly_path, "gameAssemblySha256"),
+    )
+    for source_path, hash_key in checks:
+        if not source_path.is_file():
+            return False, f"source missing: {source_path}"
+        expected = str(source.get(hash_key) or "").lower()
+        actual = file_sha256(source_path)
+        if actual != expected:
+            return False, f"{hash_key} differs: expected={expected!r} actual={actual!r}"
+    return True, "validated report hashes match original inputs"
 
 
 def main() -> int:
@@ -1767,6 +2401,24 @@ def main() -> int:
         raise SystemExit(f"GameAssembly file not found: {args.gameassembly}")
     if not args.native_mapper.is_file():
         raise SystemExit(f"native mapper not found: {args.native_mapper}")
+    if args.ensure_current:
+        is_current, reason = current_report_status(
+            args.json_output,
+            args.metadata,
+            args.gameassembly,
+        )
+        if is_current:
+            if not args.markdown_output.is_file():
+                existing_report = json.loads(
+                    args.json_output.read_text(encoding="utf-8")
+                )
+                write_text_if_changed(
+                    args.markdown_output,
+                    render_markdown(existing_report),
+                )
+            print(f"protocol registry audit current: {reason}")
+            return 0
+        print(f"protocol registry audit refresh required: {reason}")
     report = build_report(
         args.metadata,
         args.helper,
@@ -1777,10 +2429,23 @@ def main() -> int:
     )
     write_report_json(args.json_output, report)
     write_text_if_changed(args.markdown_output, render_markdown(report))
+    validation = report["stateUpdateApplicationCensus"]["validation"]
+    if validation["status"] != "validated":
+        first = validation["failures"][0]
+        print(
+            "state-update validator failed: "
+            f"validator={first['validator']} gate={first['gate']} "
+            f"message={first.get('message')} expected={first['expected']!r} "
+            f"actual={first['actual']!r} source={first['sourceFile']}",
+            file=sys.stderr,
+        )
+        return 1
     print(
         f"wrote {args.json_output} and {args.markdown_output}: "
         f"{report['summary']['totalMessages']} messages, "
-        f"{report['summary']['selectedSchemas']} selected schemas"
+        f"{report['summary']['selectedSchemas']} selected schemas, "
+        f"{report['summary']['stateUpdateApplicationCandidatesValidated']}/"
+        f"{report['summary']['stateUpdateApplicationCandidates']} state-update paths validated"
     )
     return 0
 

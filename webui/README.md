@@ -72,6 +72,11 @@ Rebuild Story data after editing overrides.
 - Disabling debug from a hidden page returns to a visible page and URL.
 - Mission Pipeline distinguishes ownership, context, definition-only rows, and
   unresolved native playback.
+- Its native-boundary panel shows the generally discovered mission/quest
+  identity+state application paths, the exact lifecycle identity flow, the
+  absence of a client successor selector, and the hash-validated original
+  `GameAssembly.dll` and `global-metadata.dat` sources. Predecessor forks remain
+  topology rather than claimed server branch choice.
 - Post-playback `CallServer` rows show their complete binary-decoded serialized
   contract and exact related `LevelScriptData` file, while keeping correlation
   labels and argument parameters explicitly non-owning.
