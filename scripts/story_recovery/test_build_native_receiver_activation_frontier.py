@@ -377,6 +377,51 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertEqual("unresolved", contract["status"])
         self.assertFalse(contract["allReceiversActivePhase"])
 
+    @staticmethod
+    def activation_selector_fixture() -> dict:
+        return {
+            "schema": "levelScriptActivationControl.v4",
+            "validation": {"status": "validated"},
+            "activationSelectorFlow": {
+                "levelScriptTypeValues": {
+                    "World": 0,
+                    "Mission": 1,
+                    "SubLevelScript": 4,
+                },
+                "nonSubLevelRequiresEnabledAndActiveArea": True,
+                "subLevelRequiresPublicActive": True,
+                "nonSubLevelSendsActiveTrueAfterPreActive": True,
+                "subLevelSkipsActiveTrueRequest": True,
+            },
+        }
+
+    def test_client_active_request_contract_uses_only_exact_host_type(self) -> None:
+        contract = frontier.exact_client_active_request_contract(
+            [{"briefData": {"levelScriptType": 1}}],
+            self.activation_selector_fixture(),
+        )
+
+        self.assertEqual("validated", contract["status"])
+        self.assertEqual("Mission", contract["levelScriptTypeName"])
+        self.assertTrue(contract["clientProducesActiveRequest"])
+        self.assertEqual("Enabled", contract["entryPublicState"])
+        self.assertIn("SendLevelScriptSetActive(true)", contract["runtimePath"])
+
+    def test_client_active_request_contract_fails_closed_on_ambiguous_hosts(
+        self,
+    ) -> None:
+        contract = frontier.exact_client_active_request_contract(
+            [
+                {"briefData": {"levelScriptType": 0}},
+                {"briefData": {"levelScriptType": 1}},
+            ],
+            self.activation_selector_fixture(),
+        )
+
+        self.assertEqual("unresolved", contract["status"])
+        self.assertFalse(contract["clientProducesActiveRequest"])
+        self.assertEqual([], contract["runtimePath"])
+
     def test_manual_control_index_preserves_self_boundary(self) -> None:
         indexed = frontier.manual_control_targets(
             {

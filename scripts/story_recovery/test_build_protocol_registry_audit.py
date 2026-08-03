@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v12",
+                "_schema": "endfieldProtocolRegistryAudit.v13",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -332,6 +332,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "stateNotify.state_": 0x28,
                 "stateNotify.isComplete_": 0x2C,
                 "levelScriptRuntime.m_manualStartTriggered": 0xF8,
+                "levelScriptRuntime.withinActiveArea": 0x68,
+                "levelScriptRuntime.activeShapeList": 0x70,
+                "levelScriptRuntime.activeShapeOutsideList": 0x78,
             },
             "methods": {
                 name: {"mappingStatus": "mapped_unique"}
@@ -344,6 +347,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     "set_state",
                     "set_runtimeState",
                     "UpdateRuntimeState",
+                    "get_state",
+                    "get_levelScriptType",
+                    "UpdateWithinActiveArea",
                     "Setup",
                     "RegisterTriggerFromLevelScript",
                     "SetAllTriggerActiveByPhase",
@@ -430,6 +436,33 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "waitForSubEntityInitNewlyStateValue": 15,
                 "activePhaseEnableBetweenStateSetters": True,
             },
+            "activationSelectorFlow": {
+                "levelScriptTypeValues": {
+                    "World": 0,
+                    "Mission": 1,
+                    "Game": 2,
+                    "Master": 3,
+                    "SubLevelScript": 4,
+                    "ControlledGame": 5,
+                },
+                "enabledStateValue": 2,
+                "activeStateValue": 3,
+                "preActiveStateValue": 7,
+                "preActiveEndSendActiveStateValue": 9,
+                "waitForStateActiveValue": 10,
+                "inactiveLevelScriptTypeCallOffset": 1240,
+                "nonSubLevelEnabledStateCallOffset": 1255,
+                "activeAreaGateCallOffset": 1274,
+                "subLevelActiveStateCallOffset": 1288,
+                "preActiveSetterCallOffset": 1313,
+                "preActiveLevelScriptTypeCallOffset": 2106,
+                "activeTrueRequestCallOffset": 2124,
+                "waitForStateActiveSetterOffsets": [2140, 2155],
+                "nonSubLevelRequiresEnabledAndActiveArea": True,
+                "subLevelRequiresPublicActive": True,
+                "nonSubLevelSendsActiveTrueAfterPreActive": True,
+                "subLevelSkipsActiveTrueRequest": True,
+            },
         }
 
         result = audit.validate_levelscript_activation_control_observation(
@@ -470,6 +503,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "manualStartDirectCallers",
                 "clientRequestFlow",
                 "requestDirectCallers",
+                "activationSelectorFlow",
                 "activeReceiverFlow",
             ],
         )

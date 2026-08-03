@@ -265,7 +265,10 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # table recovered from the installed binary. v40 joins exact receiver headers
 # to their serialized Active/Start phase and the binary-validated registration
 # lifecycle while preserving the unresolved public-Active producer boundary.
-SCHEMA_VERSION = 40
+# v41 joins the exact LevelData LevelScriptType to the binary activation
+# selector and exposes the client-produced active=true branch without treating
+# public Enabled, its spatial outcome, or server acceptance as mission evidence.
+SCHEMA_VERSION = 41
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -6494,10 +6497,10 @@ def load_state_update_application_contract(
             f"expected=file actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v12":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v13":
         raise RuntimeError(
             "validator=state_update_application_contract gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v12' "
+            "expected='endfieldProtocolRegistryAudit.v13' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     census = audit.get("stateUpdateApplicationCensus") or {}
@@ -6599,10 +6602,10 @@ def load_levelscript_task_authority_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v12":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v13":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v12' "
+            "expected='endfieldProtocolRegistryAudit.v13' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
 
@@ -6763,10 +6766,10 @@ def load_levelscript_start_policy_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v12":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v13":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v12' "
+            "expected='endfieldProtocolRegistryAudit.v13' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptStartPolicy") or {}
@@ -6857,10 +6860,10 @@ def load_levelscript_manual_self_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v12":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v13":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v12' "
+            "expected='endfieldProtocolRegistryAudit.v13' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptManualSelfControl") or {}
@@ -6953,10 +6956,10 @@ def load_levelscript_activation_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v12":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v13":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v12' "
+            "expected='endfieldProtocolRegistryAudit.v13' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptActivationControl") or {}
@@ -6982,7 +6985,7 @@ def load_levelscript_activation_control_contract(
         "serializedObjectInputs": discovery.get("serializedObjectInputs"),
     }
     expected_shape = {
-        "schema": "levelScriptActivationControl.v3",
+        "schema": "levelScriptActivationControl.v4",
         "classification": "server_state_subgame_and_runtime_request_paths",
         "serializedObjectInputs": expected_inputs,
     }
@@ -7040,6 +7043,9 @@ def load_levelscript_activation_control_contract(
         "directCallers": contract.get("directCallers") or {},
         "clientRequestFlow": contract.get("clientRequestFlow") or {},
         "activeReceiverFlow": contract.get("activeReceiverFlow") or {},
+        "activationSelectorFlow": (
+            contract.get("activationSelectorFlow") or {}
+        ),
         "finding": contract.get("finding") or "",
         "evidenceBoundary": contract.get("boundary") or "",
         "relatedOriginalFiles": related_files,

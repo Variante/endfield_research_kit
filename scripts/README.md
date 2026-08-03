@@ -75,8 +75,13 @@ override those defaults for one run.
   `TriggerActiveDuring.Active` while advancing from `ActiveBegin`. Mission
   Pipeline joins exact receiver header ids back to the original LevelScript;
   it never uses scene ids or filenames as rules. Active-phase receivers do not
-  require the later ManualStart/Start transition, but the producer of public
-  Active, event occurrence, mission ownership, and Story order remain unknown.
+  require the later ManualStart/Start transition. The same decoded state
+  machine separates `SubLevelScript` from every other metadata-defined type.
+  Joining the exact LevelData brief type proves that all 95 current receivers
+  use `Enabled -> UpdateWithinActiveArea -> PreActive -> active=true ->
+  WaitForStateActive`; no script-id exception exists. Who supplied Enabled,
+  the playthrough-specific area result, server acceptance, event occurrence,
+  mission ownership, and Story order remain unknown.
   It proves that `InteractiveLogicChallengeStartPoint` resolves the typed
   `SubGameInstanceData` row by `m_subGameId`, reads `bindScriptId`, looks up the
   LevelScript, and calls `ManualStart`. Exact SubGame bindings are therefore

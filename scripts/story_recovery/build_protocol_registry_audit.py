@@ -2042,6 +2042,9 @@ def validate_levelscript_activation_control_observation(
         "stateNotify.state_": 0x28,
         "stateNotify.isComplete_": 0x2C,
         "levelScriptRuntime.m_manualStartTriggered": 0xF8,
+        "levelScriptRuntime.withinActiveArea": 0x68,
+        "levelScriptRuntime.activeShapeList": 0x70,
+        "levelScriptRuntime.activeShapeOutsideList": 0x78,
     }
     actual_offsets = {
         key: (observation.get("fieldOffsets") or {}).get(key)
@@ -2059,6 +2062,9 @@ def validate_levelscript_activation_control_observation(
         "set_state",
         "set_runtimeState",
         "UpdateRuntimeState",
+        "get_state",
+        "get_levelScriptType",
+        "UpdateWithinActiveArea",
         "Setup",
         "RegisterTriggerFromLevelScript",
         "SetAllTriggerActiveByPhase",
@@ -2175,6 +2181,44 @@ def validate_levelscript_activation_control_observation(
     }
     if actual_runtime_callers != expected_runtime_callers:
         fail("requestDirectCallers", expected_runtime_callers, actual_runtime_callers)
+
+    expected_activation_selector_flow = {
+        "levelScriptTypeValues": {
+            "World": 0,
+            "Mission": 1,
+            "Game": 2,
+            "Master": 3,
+            "SubLevelScript": 4,
+            "ControlledGame": 5,
+        },
+        "enabledStateValue": 2,
+        "activeStateValue": 3,
+        "preActiveStateValue": 7,
+        "preActiveEndSendActiveStateValue": 9,
+        "waitForStateActiveValue": 10,
+        "inactiveLevelScriptTypeCallOffset": 1240,
+        "nonSubLevelEnabledStateCallOffset": 1255,
+        "activeAreaGateCallOffset": 1274,
+        "subLevelActiveStateCallOffset": 1288,
+        "preActiveSetterCallOffset": 1313,
+        "preActiveLevelScriptTypeCallOffset": 2106,
+        "activeTrueRequestCallOffset": 2124,
+        "waitForStateActiveSetterOffsets": [2140, 2155],
+        "nonSubLevelRequiresEnabledAndActiveArea": True,
+        "subLevelRequiresPublicActive": True,
+        "nonSubLevelSendsActiveTrueAfterPreActive": True,
+        "subLevelSkipsActiveTrueRequest": True,
+    }
+    actual_activation_selector_flow = {
+        name: (observation.get("activationSelectorFlow") or {}).get(name)
+        for name in expected_activation_selector_flow
+    }
+    if actual_activation_selector_flow != expected_activation_selector_flow:
+        fail(
+            "activationSelectorFlow",
+            expected_activation_selector_flow,
+            actual_activation_selector_flow,
+        )
 
     expected_active_receiver_flow = {
         "triggerActiveDuringValues": {"Active": 0, "Start": 1},
@@ -2368,6 +2412,27 @@ def levelscript_activation_control_contract(
             1,
             "System.Void",
             parameter_types=("Beyond.Gameplay.Core.ScriptEndReason",),
+        ),
+        "get_state": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "get_state",
+            0,
+            "Beyond.GEnums.LevelScriptState",
+            parameter_types=(),
+        ),
+        "get_levelScriptType": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "get_levelScriptType",
+            0,
+            "Beyond.GEnums.LevelScriptType",
+            parameter_types=(),
+        ),
+        "UpdateWithinActiveArea": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "UpdateWithinActiveArea",
+            0,
+            "System.Boolean",
+            parameter_types=(),
         ),
         "Setup": mapped_method(
             "Beyond.Gameplay.Core.LevelScriptRuntime",
@@ -2618,6 +2683,12 @@ def levelscript_activation_control_contract(
         field_offsets["levelScriptRuntime.m_manualStartTriggered"] = current.get(
             "m_manualStartTriggered"
         )
+        for name in (
+            "withinActiveArea",
+            "activeShapeList",
+            "activeShapeOutsideList",
+        ):
+            field_offsets[f"levelScriptRuntime.{name}"] = current.get(name)
 
     challenge_body = bodies.get("ChallengeOnInteract") or {}
     field_accesses = challenge_body.get("fieldAccesses") or []
@@ -2868,6 +2939,140 @@ def levelscript_activation_control_contract(
             "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",
         )
     }
+    level_script_type_values = {
+        row["name"]: row["id"]
+        for row in enum_members(
+            metadata,
+            defaults,
+            "Beyond.GEnums.LevelScriptType",
+        )
+    }
+
+    runtime_pointer = int(methods["UpdateRuntimeState"]["methodPointerVa"], 16)
+    runtime_instructions = mapper.decode_x64_subset(
+        pe.bytes_at_va(runtime_pointer, int(bodies["UpdateRuntimeState"]["scanBytes"])),
+        runtime_pointer,
+        stop_offset=int(bodies["UpdateRuntimeState"]["scanBytes"]),
+    )
+
+    def instruction_texts(start: int, end: int) -> list[str]:
+        return [
+            str(row.get("text") or "").lower()
+            for row in runtime_instructions
+            if start < int(row.get("offset") or 0) < end
+        ]
+
+    level_type_calls = calls_to("UpdateRuntimeState", "get_levelScriptType")
+    active_area_calls = calls_to("UpdateRuntimeState", "UpdateWithinActiveArea")
+    get_state_calls = calls_to("UpdateRuntimeState", "get_state")
+
+    inactive_type_call = next(
+        (call for call in level_type_calls if int(call["offset"]) < 1500), None
+    )
+    active_area_call = next(
+        (call for call in active_area_calls if int(call["offset"]) < 1500), None
+    )
+    non_sub_state_call = next(
+        (
+            call for call in get_state_calls
+            if inactive_type_call
+            and active_area_call
+            and int(inactive_type_call["offset"]) < int(call["offset"])
+            < int(active_area_call["offset"])
+        ),
+        None,
+    )
+    sublevel_state_call = next(
+        (
+            call for call in get_state_calls
+            if active_area_call
+            and int(active_area_call["offset"]) < int(call["offset"]) < 1350
+        ),
+        None,
+    )
+    def selector_runtime_setters(value: int | None) -> list[dict[str, Any]]:
+        if not isinstance(value, int):
+            return []
+        expected = {f"mov edx, 0x{value:x}", f"mov dl, 0x{value:x}"}
+        return [
+            row
+            for row in update_setter_calls
+            if str(
+                ((((row.get("argumentContext") or {}).get("argRegisterWrites") or {})
+                 .get("rdx") or {}).get("text") or "")
+            ).lower()
+            in expected
+        ]
+
+    preactive_setters = selector_runtime_setters(runtime_state_values.get("PreActive"))
+    preactive_end_setters = selector_runtime_setters(
+        runtime_state_values.get("PreActiveEndSendActiveState")
+    )
+    wait_active_setters = selector_runtime_setters(
+        runtime_state_values.get("WaitForStateActive")
+    )
+    preactive_type_call = next(
+        (
+            call for call in level_type_calls
+            if preactive_end_setters
+            and int(call["offset"]) > int(preactive_end_setters[0]["offset"])
+        ),
+        None,
+    )
+    active_true_call = next(
+        (call for call in update_active_calls if boolean_argument(call) is True),
+        None,
+    )
+    inactive_type_offset = int(inactive_type_call["offset"]) if inactive_type_call else -1
+    non_sub_state_offset = int(non_sub_state_call["offset"]) if non_sub_state_call else -1
+    active_area_offset = int(active_area_call["offset"]) if active_area_call else -1
+    sublevel_state_offset = int(sublevel_state_call["offset"]) if sublevel_state_call else -1
+    preactive_setter_offset = int(preactive_setters[0]["offset"]) if preactive_setters else -1
+    preactive_type_offset = int(preactive_type_call["offset"]) if preactive_type_call else -1
+    active_true_offset = int(active_true_call["offset"]) if active_true_call else -1
+    activation_selector_flow = {
+        "levelScriptTypeValues": level_script_type_values,
+        "enabledStateValue": 2,
+        "activeStateValue": 3,
+        "preActiveStateValue": runtime_state_values.get("PreActive"),
+        "preActiveEndSendActiveStateValue": runtime_state_values.get(
+            "PreActiveEndSendActiveState"
+        ),
+        "waitForStateActiveValue": runtime_state_values.get("WaitForStateActive"),
+        "inactiveLevelScriptTypeCallOffset": inactive_type_offset,
+        "nonSubLevelEnabledStateCallOffset": non_sub_state_offset,
+        "activeAreaGateCallOffset": active_area_offset,
+        "subLevelActiveStateCallOffset": sublevel_state_offset,
+        "preActiveSetterCallOffset": preactive_setter_offset,
+        "preActiveLevelScriptTypeCallOffset": preactive_type_offset,
+        "activeTrueRequestCallOffset": active_true_offset,
+        "waitForStateActiveSetterOffsets": [
+            int(call["offset"]) for call in wait_active_setters
+        ],
+        "nonSubLevelRequiresEnabledAndActiveArea": (
+            "cmp eax, 0x4" in instruction_texts(inactive_type_offset, non_sub_state_offset)
+            and "cmp eax, 0x2" in instruction_texts(non_sub_state_offset, active_area_offset)
+            and "test al, al" in instruction_texts(active_area_offset, preactive_setter_offset)
+        ),
+        "subLevelRequiresPublicActive": (
+            "cmp eax, 0x3" in instruction_texts(
+                sublevel_state_offset, preactive_setter_offset
+            )
+        ),
+        "nonSubLevelSendsActiveTrueAfterPreActive": (
+            preactive_end_setters
+            and preactive_type_offset < active_true_offset
+            and level_script_type_values.get("SubLevelScript") == 4
+            and "cmp eax, 0x4" in instruction_texts(
+                preactive_type_offset, active_true_offset
+            )
+        ),
+        "subLevelSkipsActiveTrueRequest": (
+            len(wait_active_setters) == 2
+            and active_true_offset < int(wait_active_setters[0]["offset"])
+            < int(wait_active_setters[1]["offset"])
+        ),
+    }
     setup_register_calls = calls_to("Setup", "RegisterTriggerFromLevelScript")
     phase_calls = calls_to("UpdateRuntimeState", "SetAllTriggerActiveByPhase")
 
@@ -2992,6 +3197,7 @@ def levelscript_activation_control_contract(
         "directCallers": direct_callers,
         "clientRequestFlow": client_request_flow,
         "activeReceiverFlow": active_receiver_flow,
+        "activationSelectorFlow": activation_selector_flow,
     }
     source_hashes = {
         "gameAssemblySha256": file_sha256(gameassembly_path),
@@ -3003,7 +3209,7 @@ def levelscript_activation_control_contract(
         source_hashes=source_hashes,
     )
     return {
-        "schema": "levelScriptActivationControl.v3",
+        "schema": "levelScriptActivationControl.v4",
         "classification": "server_state_subgame_and_runtime_request_paths",
         "discoveryPattern": {
             "methodSelection": "exact metadata type, name, signature, and return type",
@@ -3021,6 +3227,10 @@ def levelscript_activation_control_contract(
                 "LevelScript action-header triggerActiveDuring from each original "
                 "serialized object"
             ),
+            "activationSelectorInput": (
+                "LevelScriptData.levelScriptType from each exact validated LevelData "
+                "brief dictionary; no per-script selector table"
+            ),
         },
         **observation,
         "finding": (
@@ -3035,7 +3245,11 @@ def levelscript_activation_control_contract(
             "and enters PreStartActionRunning. Independently, Setup registers the "
             "serialized LevelScript trigger graph, and the ActiveBegin runtime path "
             "enables the TriggerActiveDuring.Active group before advancing to the "
-            "next activation state."
+            "next activation state. The Inactive runtime path treats SubLevelScript "
+            "separately: every other LevelScript type enters PreActive from public "
+            "Enabled only after UpdateWithinActiveArea succeeds, then emits the typed "
+            "active=true request after pre-active actions; SubLevelScript instead waits "
+            "for public Active and skips that client request."
         ),
         "boundary": (
             "An exact SubGame id/bindScriptId row therefore proves an interaction "
@@ -3045,7 +3259,9 @@ def levelscript_activation_control_contract(
             "The public network sender methods have zero direct current-AOT callers; "
             "indirect/IFix/server selection remains outside this evidence. An Active-"
             "phase receiver proves availability after public activation, not the "
-            "producer of that activation or that the event fired."
+            "producer of that activation or that the event fired. For non-SubLevelScript "
+            "types the client request producer is now exact, but the source of public "
+            "Enabled and the spatial gate outcome remain separate questions."
         ),
         "validation": validation,
     }
@@ -4750,7 +4966,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v12",
+        "_schema": "endfieldProtocolRegistryAudit.v13",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -5542,7 +5758,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v10 report when its original "
+            "Reuse an existing validated v13 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -5561,7 +5777,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v12":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v13":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}
