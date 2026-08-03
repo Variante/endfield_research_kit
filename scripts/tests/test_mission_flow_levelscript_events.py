@@ -3380,6 +3380,10 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertEqual(rows[0]["relation"], "levelscript_quest_state_gate")
         self.assertEqual(rows[0]["direction"], "context")
         self.assertEqual(rows[0]["conditionQuestState"], 2)
+        self.assertEqual(
+            rows[0]["sourceFile"],
+            "LevelScriptData/map01_lv002/200190001.json",
+        )
 
 
 if __name__ == "__main__":

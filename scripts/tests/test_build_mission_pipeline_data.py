@@ -19,7 +19,50 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     def test_offline_story_recovery_schema_tracks_source_queue(self):
         self.assertEqual(
             pipeline.SOURCE_STORY_GAP_QUEUE_SCHEMA,
-            "sourceStoryGapQueue.v125",
+            "sourceStoryGapQueue.v126",
+        )
+
+    def test_trigger_route_preserves_exact_connected_context_evidence(self):
+        route = pipeline.build_story_trigger_route(
+            {
+                "key": "radio_arbitrary_2",
+                "relation": "levelscript_quest_state_gate",
+                "direction": "context",
+                "phase": "processing_gate",
+                "confidence": "native_typed_gate",
+                "event": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                "levelId": "map_fixture",
+                "scriptId": "4242",
+                "sourceFile": "LevelScriptData/map_fixture/4242.json",
+                "nativeMappingId": "mapping-v1",
+                "headerLocalId": 7,
+                "gateActionLocalId": 8,
+                "conditionType": "CheckQuestState",
+                "conditionComparer": "Equal",
+                "conditionQuestState": 2,
+                "actionLocalId": 10,
+                "actionCode": "0x0363",
+                "actionKind": "0x0d",
+                "actionName": "PlayRadio",
+            },
+            mission_id="arbitrary",
+            quest_id="arbitrary_q#9",
+            scope="quest",
+        )
+
+        self.assertEqual(
+            route["sourceFiles"],
+            ["LevelScriptData/map_fixture/4242.json"],
+        )
+        self.assertEqual(
+            route["eventNames"],
+            ["ScriptEvent_OnLeaderEnterTriggerVolume"],
+        )
+        self.assertEqual(route["nativeMappingId"], "mapping-v1")
+        self.assertEqual(route["conditionQuestState"], 2)
+        self.assertEqual(
+            [step["kind"] for step in route["steps"]],
+            ["quest", "native_event", "levelscript", "native_action", "story"],
         )
 
     def test_gap_queue_refresh_validates_current_generated_contract(self):
@@ -170,6 +213,30 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "orderBoundary": "selection does not order files",
                         }],
                         "closedExactNativeIsolatedScenes": [{
+                            "sceneKey": "dlg_testm1_reachable",
+                            "missionId": "testm1",
+                            "questId": "testm1_q#3",
+                            "parentStoryKey": "dlg_testm1_parent",
+                            "relation": "dialog_tree_reachable_story_playback",
+                            "recoveryStatus":
+                                "closed_exact_connected_dialog_tree_playback_context_no_relative_order",
+                            "sourceFiles": ["TextAsset/parent.json"],
+                            "orderBoundary": "context does not order files",
+                        }, {
+                            "sceneKey": "radio_testm1_gate",
+                            "missionId": "testm1",
+                            "questId": "testm1_q#4",
+                            "relation": "levelscript_quest_state_gate",
+                            "recoveryStatus":
+                                "closed_exact_quest_state_gated_playback_context_no_relative_order",
+                            "conditionType": "CheckQuestState",
+                            "conditionComparer": "Equal",
+                            "conditionQuestState": 2,
+                            "eventNames": ["ScriptEvent_OnLeaderEnterTriggerVolume"],
+                            "actionNames": ["PlayRadio"],
+                            "sourceFiles": ["LevelScriptData/gate.json"],
+                            "orderBoundary": "gate does not order files",
+                        }, {
                             "sceneKey": "misc_dlg_testm1_local_shell",
                             "nominalStoryMissionId": "testm1",
                             "contextMissionId": "testm1",
@@ -390,6 +457,18 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "cross_owner_levelscript_quest_playback_context",
                     }],
                 },
+                "dlg_testm1_reachable": {
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "relation": "dialog_tree_reachable_story_playback",
+                    }],
+                },
+                "radio_testm1_gate": {
+                    "attachmentStatus": "connected",
+                    "routes": [{
+                        "relation": "levelscript_quest_state_gate",
+                    }],
+                },
                 "dlg_testm1_tracking": {
                     "attachmentStatus": "connected",
                     "routes": [{
@@ -419,7 +498,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(result["status"], "active")
         self.assertEqual(result["publishedStoryKeys"], 1)
         self.assertEqual(result["publishedPartialStoryKeys"], 1)
-        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 15)
+        self.assertEqual(result["publishedRuntimeContextStoryKeys"], 17)
         self.assertEqual(result["outsidePipelineCoverageStoryKeys"], 3)
         self.assertEqual(
             manifest["dlg_testm1_1"]["attachmentStatus"],
@@ -510,6 +589,18 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "contextQuestId"
             ],
             "testm2_q#1",
+        )
+        self.assertEqual(
+            manifest["dlg_testm1_reachable"]["runtimeContextRecovery"][
+                "parentStoryKey"
+            ],
+            "dlg_testm1_parent",
+        )
+        self.assertEqual(
+            manifest["radio_testm1_gate"]["runtimeContextRecovery"][
+                "conditionQuestState"
+            ],
+            2,
         )
         self.assertEqual(
             manifest["dlg_testm1_tracking"]["runtimeContextRecovery"][

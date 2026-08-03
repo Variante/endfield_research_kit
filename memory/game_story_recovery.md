@@ -17,7 +17,7 @@ Latest CN reports:
 | Unlinked files with exact native playback | 156 |
 | Encounter-controller contexts | 5 receiver scripts / 7 modules / 27 Story keys / 9 related source files |
 | Exact non-mission content | 279 (278 spacecraft/profile + 1 guide runtime) |
-| Actionable core-isolated files | 32, all in the other bucket |
+| Actionable core-isolated files | 30, all in the other bucket |
 | Partial-order mission rows | 487 |
 | Candidate scene placements | 8,877 |
 | Strong / supported / weak edges | 1,502 / 834 / 2,635 |
@@ -192,8 +192,8 @@ files.
 No current mission has Story
 targets on two different Branch sequence slots, so this adds zero Branch-derived
 Story-order edges rather than guessing them.
-The other-bucket queue remains 32 and the current contract is
-`sourceStoryGapQueue.v125`; OCR and manual order remain comparison-only. The
+The other-bucket queue is 30 and the current contract is
+`sourceStoryGapQueue.v126`; OCR and manual order remain comparison-only. The
 queue now loads the current Story trigger manifest through an exact schema,
 language, source-hash, and object-shape gate instead of silently discarding a
 newer coverage schema. General closure contracts revalidate shipped-Lua
@@ -203,6 +203,14 @@ their independently connected native route. This closes the former top
 false-positive gaps `cutscene_e1m10_1` and `cutscene_gm02m4_1` without adding
 ownership or chronology edges. Validator drift now reports the mission, Story
 key, failed gate, bounded expected/actual values, source paths, and hashes.
+The same trigger-manifest layer now preserves `sourceFile`, native event,
+mapping, carrier, PathID, and typed quest-gate fields generically. Separate
+fail-closed relation contracts close `dlg_sm1l1m1_16` only from its exact
+quest-owned reachable DialogTree carrier and `radio_f1m5_2` only from its
+serialized leader-volume -> `CheckQuestState(Equal, Processing)` ->
+`PlayRadio` chain. Arbitrary Story ids using either shape are supported; the
+multi-quest DialogTree branch subtype remains separate. Both closures retain
+source hashes and quest context but add no relative Story-file edge.
 
 The original metadata `BlackboxGuideHintController`, `FacGuideHintEnable`, and
 `LevelDataGuideHintConfig` surface is spatial factory guide-hint configuration,

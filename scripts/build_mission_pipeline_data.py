@@ -161,7 +161,7 @@ DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
-SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v125"
+SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v126"
 DEFAULT_DYNAMIC_SCENE_MISSION_CONTROL_AUDIT = (
     ROOT
     / "reports"
@@ -3704,6 +3704,14 @@ def publish_offline_story_recovery(
                 "cross_owner_levelscript_quest_playback_context",
                 "closed_exact_cross_mission_quest_playback_context_no_relative_order",
             ),
+            (
+                "dialog_tree_reachable_story_playback",
+                "closed_exact_connected_dialog_tree_playback_context_no_relative_order",
+            ),
+            (
+                "levelscript_quest_state_gate",
+                "closed_exact_quest_state_gated_playback_context_no_relative_order",
+            ),
         }
         for row in mission.get("closedExactNativeIsolatedScenes") or []:
             if not isinstance(row, dict):
@@ -4407,6 +4415,7 @@ def build_story_trigger_route(
     native_paths = _compact_native_trigger_paths(row)
     native_occurrences = _native_occurrence_rows(row)
     event_names = _unique_route_strings(
+        row.get("event"),
         row.get("nativeEventNames"),
         [path.get("eventName") for path in native_paths],
     )
@@ -4433,6 +4442,7 @@ def build_story_trigger_route(
         [path.get("scriptId") for path in native_paths],
     )
     source_files = _unique_route_strings(
+        row.get("sourceFile"),
         row.get("sourceFiles"),
         row.get("assetPaths"),
         row.get("trackPaths"),
@@ -4612,10 +4622,28 @@ def build_story_trigger_route(
         "causality": causality,
         "confidence": str(row.get("confidence") or ""),
         "evidenceTier": str(row.get("evidenceTier") or ""),
+        "nativeMappingId": str(row.get("nativeMappingId") or ""),
+        "certainty": str(row.get("certainty") or ""),
         "eventNames": event_names,
         "eventSummaries": event_summaries,
         "actionNames": action_names,
         "scriptIds": script_ids,
+        "levelId": str(row.get("levelId") or ""),
+        "sourcePathIds": _unique_route_strings(row.get("sourcePathIds")),
+        "parentScopeRelations": _unique_route_strings(
+            row.get("parentScopeRelations")
+        ),
+        "carrierKinds": _unique_route_strings(row.get("carrierKinds")),
+        "occurrenceCount": row.get("occurrenceCount"),
+        "runtimeReplacementPossible": row.get("runtimeReplacementPossible"),
+        "headerLocalId": row.get("headerLocalId"),
+        "gateActionLocalId": row.get("gateActionLocalId"),
+        "conditionType": str(row.get("conditionType") or ""),
+        "conditionComparer": str(row.get("conditionComparer") or ""),
+        "conditionQuestState": row.get("conditionQuestState"),
+        "actionLocalId": row.get("actionLocalId"),
+        "actionCode": str(row.get("actionCode") or ""),
+        "actionKind": str(row.get("actionKind") or ""),
         "levelDataAssets":
             _unique_route_strings(row.get("levelDataAssets")),
         "localInteractiveId": row.get("localInteractiveId"),

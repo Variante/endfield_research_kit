@@ -421,6 +421,7 @@ def _levelscript_quest_state_gate_connections_from_file(
                         "direction": "context",
                         "phase": "processing_gate",
                         "confidence": "native_typed_gate",
+                        "sourceFile": source_file,
                         "source": (
                             f"{source_file} {header_role} LeaderEnterTriggerVolume -> "
                             f"WaitForCondition CheckQuestState({quest_id} == Processing) -> "
