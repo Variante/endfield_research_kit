@@ -1270,6 +1270,34 @@ RUNTIME_CONTRACT = {
                 "full_mission_runtime_surface_reviewed_no_activation_bridge"
             ),
         },
+        "managedCallableSurface": {
+            "counts": {
+                "callableFields": 13,
+                "missionRuntimeCallableFields": 9,
+                "levelScriptCallableFields": 4,
+                "crossIdentityCallableFields": 0,
+                "callableEntryMethods": 5,
+                "callableEntryTargetPointers": 5,
+                "directBindingCalls": 5,
+                "missionLevelScriptBindings": 0,
+                "unreviewedBindingCallers": 0,
+            },
+            "finding": (
+                "The complete managed callable surface contains 13 fields and five "
+                "callable-parameter binding entry points. MissionSystem binds only "
+                "MissionAcceptMode, while LevelScriptRuntime binds only its local task "
+                "condition notifications; no binding joins the two families."
+            ),
+            "boundary": (
+                "Typed managed fields and direct native calls to their binding entry "
+                "points are closed for this build. Runtime field mutation, reflection, "
+                "XLua, IFix, native-only registries, and server selection remain outside "
+                "the bound."
+            ),
+            "classification": (
+                "managed_callable_carriers_reviewed_no_activation_bridge"
+            ),
+        },
         "finding": (
             "Four native DynamicSceneMissionControlSystem paths read exact mission or "
             "quest state and update cared DynamicScene components. Their fixed-point "
@@ -6722,10 +6750,10 @@ def load_native_cross_system_consumer_contract(
     if not audit_path.is_file():
         return fallback
     audit = read_json(audit_path)
-    if audit.get("schemaVersion") != "nativeCrossSystemConsumerCensus.v3":
+    if audit.get("schemaVersion") != "nativeCrossSystemConsumerCensus.v4":
         raise RuntimeError(
             "validator=nativeCrossSystemConsumerCensus gate=auditSchema "
-            "expected='nativeCrossSystemConsumerCensus.v3' "
+            "expected='nativeCrossSystemConsumerCensus.v4' "
             f"actual={audit.get('schemaVersion')!r} source={audit_path}"
         )
     validation = audit.get("validation") or {}
@@ -6742,6 +6770,7 @@ def load_native_cross_system_consumer_contract(
     closure_counts = closure.get("counts") or {}
     deferred = audit.get("deferredRefreshClosure") or {}
     mission_runtime_surface = audit.get("missionRuntimeSurface") or {}
+    managed_callable_surface = audit.get("managedCallableSurface") or {}
     source = audit.get("source") or {}
     classifications = summary.get("classificationCounts") or {}
     return {
@@ -6771,6 +6800,7 @@ def load_native_cross_system_consumer_contract(
         },
         "deferredRefreshClosure": deferred,
         "missionRuntimeSurface": mission_runtime_surface,
+        "managedCallableSurface": managed_callable_surface,
         "finding": audit.get("finding"),
         "boundary": audit.get("boundary"),
         "relatedOriginalFiles": [{

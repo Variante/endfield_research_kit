@@ -6429,7 +6429,7 @@ class MissionDialogTreeDefinitionPublisherTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "census.json"
             audit_path.write_text(json.dumps({
-                "schemaVersion": "nativeCrossSystemConsumerCensus.v3",
+                "schemaVersion": "nativeCrossSystemConsumerCensus.v4",
                 "source": {
                     "gameAssembly": "GameAssembly.dll",
                     "gameAssemblySha256": "a" * 64,
@@ -6456,6 +6456,10 @@ class MissionDialogTreeDefinitionPublisherTests(unittest.TestCase):
                     "counts": {"missionIdentityTypes": 174},
                     "finding": "no broad activation bridge",
                 },
+                "managedCallableSurface": {
+                    "counts": {"callableFields": 13, "directBindingCalls": 5},
+                    "finding": "no callable activation bridge",
+                },
                 "finding": "binary finding",
                 "boundary": "binary boundary",
                 "validation": {"status": "passed", "failures": []},
@@ -6469,6 +6473,10 @@ class MissionDialogTreeDefinitionPublisherTests(unittest.TestCase):
             self.assertEqual(
                 contract["missionRuntimeSurface"]["counts"]["missionIdentityTypes"],
                 174,
+            )
+            self.assertEqual(
+                contract["managedCallableSurface"]["counts"]["callableFields"],
+                13,
             )
             self.assertEqual(contract["classification"], "availability_refresh")
 

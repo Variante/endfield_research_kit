@@ -108,8 +108,11 @@ Rebuild Story data after editing overrides.
   update -> RefreshEntityStatus`. The same card shows the complete managed
   mission/quest runtime surface and the tracking-only LevelScript caller: it
   writes `sceneId` but never `missionId`. It links the original binary and
-  metadata hashes and keeps these runtime contexts distinct from LevelScript
-  activation, Story ownership, playback causality, and order.
+  metadata hashes. The same card exposes all 13 managed callable fields, five
+  typed binding entry methods, and five current native binding calls: each
+  stays within MissionSystem or LevelScriptRuntime, with zero cross-family
+  bindings. These runtime contexts remain distinct from LevelScript activation,
+  Story ownership, playback causality, and order.
 - Story-order panels show binary-proven quest-success lifecycle edges as
   `objective Story completed -> server success state -> succeed client action`.
   Each edge links its exact quest relations and expands the hash-checked

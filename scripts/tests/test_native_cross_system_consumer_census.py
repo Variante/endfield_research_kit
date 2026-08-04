@@ -146,6 +146,39 @@ class NativeCrossSystemConsumerCensusTests(unittest.TestCase):
             "missionRuntimeSurface.crossFamilyMethodSignatures",
         )
 
+    def test_callable_type_recognition_is_semantic_and_value_agnostic(self):
+        for type_name in (
+            "System.Action",
+            "System.Action`2<bool,Beyond.Gameplay.LevelScriptData>",
+            "System.Func`2<Beyond.Gameplay.Entity,bool>",
+            "Beyond.Gameplay.MissionAcceptMode+AcceptModeCallback",
+            "Beyond.Gameplay.ExampleDelegate",
+        ):
+            with self.subTest(type_name=type_name):
+                self.assertTrue(census.is_callable_type_name(type_name))
+        self.assertFalse(census.is_callable_type_name("Beyond.Gameplay.MissionRuntimeAsset"))
+
+    def test_callable_binding_requires_both_runtime_families(self):
+        self.assertFalse(census.callable_binding_crosses_mission_levelscript({
+            "callerFamilies": ["mission_runtime"],
+            "targetFamilies": ["mission_runtime"],
+        }))
+        self.assertTrue(census.callable_binding_crosses_mission_levelscript({
+            "callerFamilies": ["mission_runtime"],
+            "targetFamilies": ["level_script"],
+        }))
+
+    def test_callable_surface_validator_reports_bounded_drift(self):
+        counts = dict(census.EXPECTED_CALLABLE_CARRIER_SURFACE)
+        self.assertEqual(census.validate_callable_carrier_surface(counts, "binary"), [])
+        counts["directBindingCalls"] += 1
+        failures = census.validate_callable_carrier_surface(counts, "binary")
+        self.assertEqual(
+            failures[0]["gate"], "managedCallableSurface.directBindingCalls"
+        )
+        self.assertEqual(failures[0]["expected"], 5)
+        self.assertEqual(failures[0]["actual"], 6)
+
     def test_validator_names_failed_gate_and_bounded_counts(self):
         rows = [
             {"classification": key}
