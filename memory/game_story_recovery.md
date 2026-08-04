@@ -40,6 +40,7 @@ Latest CN reports:
 | Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
 | Whole-client topology consumers | 42 / 43 direct `GetQuestInfo` call candidates verified; active predecessor consumers 0; non-sort flow consumers 0; topology lifecycle calls 0 |
 | Authored quest-fork semantics | 307 forks: 226 main-path + auxiliary, 78 all-auxiliary, 3 with multiple main-path arms; 97 guarded; 45 reconverging |
+| Quest-fork arm evidence | 740 sibling arms; 349 carry 2,053 exact typed Story placements covering 741 Story keys and 318 arm-related original files; 307 placements use binary-named action types |
 | Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; all 95 exact LevelData types select the non-SubLevel client `active=true` request branch; all 95 original scripts have one uniquely decoded active volume (86 sphere / 9 box); 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
 | Binary public-state entry closure | 2 server-derived handlers: full-scene `SC_SELF_SCENE_INFO` snapshots and incremental `SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY`; 4 direct public-state setter callers split into 2 zero initializers and 2 server-parameter writers |
 
@@ -53,8 +54,13 @@ in five payloads.
 - Mission and quest graphs, predecessor relations, forks, and merges.
 - All 307 authored quest forks are classified from normalized MissionRuntime
   nodes, including arm roles, objective/failure guards, terminals, and exact
-  first common descendants. Every fork retains its hash-validated original
-  MissionRuntime file.
+  first common descendants. Each immediate successor now expands to the quests
+  reachable from that successor but not its siblings; exact typed Story
+  relations and hash-checked original files on that corridor are shown without
+  claiming server selection or exclusivity. Every fork retains its
+  hash-validated original MissionRuntime file. The action-name surface is gated
+  by the complete 1,313-tag installed-binary formatter audit; OCR and manual
+  order are not inputs.
 - Story cards for dialog, radio, SNS, cutscenes, black screens, and remote
   communication.
 - Typed LevelScript, DialogTree, Timeline, FMV, quest-state, interactive, and
@@ -1293,6 +1299,14 @@ only, never Story order; OCR and manual order do not participate.
    `cs_video_e1m3_3`, `remotecomm_e1m2_2`, and `remotecomm_e1m2_3`.
 6. **Total ordering:** most scene pairs are unknowable from current static
    evidence. A display order must remain separate from source proof.
+
+Quest-fork presentation no longer hides arm-local content behind the immediate
+successor. Across 307 forks, the general predecessor-reachability rule expands
+740 sibling arms and attaches 2,053 exact Story relations to 349 arms, with 318
+distinct arm-related original files re-hashed at publication. The other 391
+arms remain explicitly empty. These corridors are sibling-relative authored
+topology: nested forks may legitimately repeat downstream evidence, and no row
+proves which arm the server selected or whether siblings are exclusive.
 
 The highest-value missing source is a serialized server/runtime registry that
 contains both LevelScript and mission/quest identity. Next inspect a new typed

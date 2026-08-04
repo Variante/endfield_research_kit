@@ -403,6 +403,10 @@
       questForkTerminal: "terminal",
       questForkContinues: "continues",
       questForkFlowSort: "display flow",
+      questForkArmCorridor: "sibling-exclusive quest corridor",
+      questForkArmStoryEvidence: "exact related Story evidence",
+      questForkArmOriginalFiles: "arm-related original files",
+      questForkArmEvidenceBoundary: "These files and Story relations occur on quests reachable only from this sibling arm. They do not prove that the server selected the arm or that sibling arms are mutually exclusive.",
       questForkServerPolicy: "server activation unresolved",
       questForkMainPathAuxiliary: "main path + auxiliary",
       questForkAllAuxiliary: "all auxiliary",
@@ -1496,6 +1500,10 @@
       questForkTerminal: "\u7ec8\u70b9",
       questForkContinues: "\u7ee7\u7eed",
       questForkFlowSort: "\u663e\u793a\u987a\u5e8f",
+      questForkArmCorridor: "\u540c\u7ea7\u5206\u652f\u72ec\u6709\u4efb\u52a1\u8d70\u5eca",
+      questForkArmStoryEvidence: "\u7cbe\u786e\u76f8\u5173 Story \u8bc1\u636e",
+      questForkArmOriginalFiles: "\u5206\u652f\u76f8\u5173\u539f\u59cb\u6587\u4ef6",
+      questForkArmEvidenceBoundary: "\u8fd9\u4e9b\u6587\u4ef6\u4e0e Story \u5173\u7cfb\u4f4d\u4e8e\u4ec5\u80fd\u4ece\u8be5\u540c\u7ea7\u5206\u652f\u5230\u8fbe\u7684\u4efb\u52a1\u4e0a\uff1b\u5b83\u4eec\u4e0d\u8bc1\u660e\u670d\u52a1\u7aef\u9009\u4e2d\u4e86\u8be5\u5206\u652f\uff0c\u4e5f\u4e0d\u8bc1\u660e\u540c\u7ea7\u5206\u652f\u4e92\u65a5\u3002",
       questForkServerPolicy: "\u670d\u52a1\u7aef\u542f\u52a8\u7b56\u7565\u672a\u89e3",
       questForkMainPathAuxiliary: "\u4e3b\u8def\u5f84 + \u8f85\u52a9\u5206\u652f",
       questForkAllAuxiliary: "\u5168\u90e8\u4e3a\u8f85\u52a9\u5206\u652f",
@@ -3356,11 +3364,18 @@
     const armHtml = (arm) => {
       const conditions = arm.objectiveConditionTypes || [];
       const guard = arm.failedCondition || null;
+      const corridor = arm.siblingExclusiveQuestIds || [];
+      const storyEvidence = arm.storyEvidence || [];
+      const relatedOriginalFiles = arm.relatedOriginalFiles || [];
       return `<section class="mp-quest-fork-arm ${arm.role === "main_path" ? "is-main-path" : "is-auxiliary"}">
         <header><code>${esc(arm.questId || "?")}</code><b>${esc(t(arm.role === "main_path" ? "questForkMainPathArm" : "questForkAuxiliaryArm"))}</b><span>${esc(t(arm.terminal ? "questForkTerminal" : "questForkContinues"))}</span></header>
         <p><code>${esc(t("questForkFlowSort"))}=${Number(arm.flowIndex || 0)}</code>${arm.mainPathOrder != null ? `<code>mainPath #${Number(arm.mainPathOrder) + 1}</code>` : ""}${(arm.successorQuestIds || []).map((id) => `<code>&rarr; ${esc(id)}</code>`).join(" ")}</p>
+        ${corridor.length ? `<div class="mp-quest-fork-corridor"><strong>${esc(t("questForkArmCorridor"))}:</strong>${corridor.map((id) => `<code>${esc(id)}</code>`).join(" ")}</div>` : ""}
         ${conditions.length ? `<p><strong>${esc(t("questForkObjectiveConditions"))}:</strong>${conditions.map((name) => `<code>${esc(name)}</code>`).join(" ")}</p>` : ""}
         ${guard ? `<div class="mp-quest-fork-guard"><strong>${esc(t("questForkGuardedArm"))}:</strong>${renderConditionTree(guard)}</div>` : ""}
+        ${storyEvidence.length ? `<details class="mp-quest-fork-story"><summary>${esc(t("questForkArmStoryEvidence"))} <span>${storyEvidence.length}</span></summary>${storyEvidence.map((row) => `<div><a href="${esc(storyHref(row.key || ""))}"><code>${esc(row.key || "?")}</code></a><code>${esc(row.questId || "?")}</code><b>${esc(row.relation || row.confidence || "typed relation")}</b><small>${esc([row.confidence, row.actionType, row.conditionType, row.direction].filter(Boolean).join(" · "))}</small></div>`).join("")}</details>` : ""}
+        ${relatedOriginalFiles.length ? `<details class="mp-quest-fork-files"><summary>${esc(t("questForkArmOriginalFiles"))} <span>${relatedOriginalFiles.length}</span></summary>${relatedOriginalFiles.map((related) => `<small><code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("")}</details>` : ""}
+        ${(corridor.length || storyEvidence.length) ? `<small class="mp-quest-fork-arm-boundary">${esc(arm.storyEvidenceBoundary || arm.corridorEvidenceBoundary || t("questForkArmEvidenceBoundary"))}</small>` : ""}
       </section>`;
     };
     return `<details class="mp-mission-story mp-quest-topology" data-weight="strong" open>

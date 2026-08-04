@@ -184,3 +184,12 @@ for (const [key, category] of [
         self.assertIn("publicStateControl.selfSceneInfoMessageId", source)
         self.assertIn("levelScripts[] → ServerSync", source)
         self.assertIn("They prove that Enabled is server-supplied", source)
+
+    def test_mission_pipeline_surfaces_fork_arm_story_and_original_files(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("arm.siblingExclusiveQuestIds", source)
+        self.assertIn("arm.storyEvidence", source)
+        self.assertIn("arm.relatedOriginalFiles", source)
+        self.assertIn('t("questForkArmCorridor")', source)
+        self.assertIn('t("questForkArmStoryEvidence")', source)
+        self.assertIn("They do not prove that the server selected the arm", source)

@@ -111,7 +111,11 @@ override those defaults for one run.
   arms, guards, terminals, and shortest common descendants, attaches the exact
   hashed source file, and fails closed on unresolved arms. Story projections
   resolve variant MissionRuntime forks through globally unique quest identity,
-  not filename conventions or mission-specific mappings.
+  not filename conventions or mission-specific mappings. Each arm also expands
+  to its sibling-exclusive reachable quest corridor and publishes every typed
+  quest Story relation plus hash-checked original source files. Action types
+  require the complete installed-binary ActionBase formatter audit; context
+  relations remain non-owning, and OCR/manual order never participate.
 - Shipped-Lua Story playback is likewise corpus-driven: the Lua consumer audit
   enumerates typed `GameAction` calls, exact literals, and simple
   `Tables.<name>` row-field flows. A table field resolves only when the current

@@ -2054,6 +2054,47 @@ body:not(.show-debug) .mp-playback-rejection {
 .mp-quest-fork-arm > p { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
 .mp-quest-fork-arm > p { margin: .35rem 0 0; }
 .mp-quest-fork-guard { margin-top: .45rem; }
+.mp-quest-fork-corridor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+  align-items: center;
+  margin-top: .45rem;
+  padding: .4rem .45rem;
+  border-radius: .35rem;
+  background: color-mix(in srgb, var(--panel) 88%, var(--accent) 12%);
+}
+.mp-quest-fork-story,
+.mp-quest-fork-files { margin-top: .5rem; }
+.mp-quest-fork-story > summary,
+.mp-quest-fork-files > summary {
+  display: flex;
+  justify-content: space-between;
+  gap: .4rem;
+  cursor: pointer;
+  font-weight: 650;
+}
+.mp-quest-fork-story > div {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) minmax(8rem, auto) 1fr;
+  gap: .25rem .4rem;
+  align-items: center;
+  margin-top: .35rem;
+  padding: .35rem .4rem;
+  border: 1px solid var(--border);
+  border-radius: .35rem;
+}
+.mp-quest-fork-story > div small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+}
+.mp-quest-fork-files > small,
+.mp-quest-fork-arm-boundary {
+  display: block;
+  margin-top: .35rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
 
 /* These lists used to be one full-width row per entry, which wasted most of
    the pane on wide viewports. auto-fit keeps a single entry full width but
