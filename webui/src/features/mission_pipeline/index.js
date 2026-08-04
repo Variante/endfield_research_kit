@@ -470,6 +470,15 @@
       nativeCrossBoundaryExternal: "outside nominal mission",
       nativeCrossBoundaryParallelHint: "The original LevelScript paths and installed Split scheduler prove Story-bearing sibling fan-out from one event. Nominal mission grouping does not prove ownership, and sibling slots are not chronological order.",
       nativeCrossBoundaryConditionalHint: "The original LevelScript cases and installed native control mapping prove Story-bearing alternatives from one event. Nominal mission grouping does not prove ownership or order among alternatives.",
+      nativeFullArmCoverage: "complete serialized arms",
+      nativeSerializedArms: "serialized arms",
+      nativeNonStoryArm: "non-Story action arm",
+      nativeInactiveArm: "inactive serialized target",
+      nativeRuntimeTerminalArm: "runtime terminal",
+      nativeArmEntryAction: "entry action",
+      nativeArmExclusiveActions: "arm-exclusive actions",
+      nativeSharedDownstream: "shared downstream actions",
+      nativeFullArmHint: "Every slot is decoded from the runtime-active action map in the original LevelScript and checked against the installed binary mapping. Non-Story sibling actions do not establish Story ownership, chronology, or mission membership.",
       nativeOrderedSequence: "native ordered action sequence",
       nativeStoryTransitions: "Exact native Story transitions",
       nativeStoryTransitionsHint: "Each edge is an original LevelScript path-prefix relation. The typed suffix shows whether playback continues linearly or crosses a parallel, conditional, outcome, or ordered branch.",
@@ -1611,6 +1620,15 @@
       nativeCrossBoundaryExternal: "\u540d\u4e49\u4efb\u52a1\u5916",
       nativeCrossBoundaryParallelHint: "\u539f\u59cb LevelScript \u8def\u5f84\u4e0e\u5df2\u5b89\u88c5\u5ba2\u6237\u7aef\u7684 Split \u8c03\u5ea6\u5668\u8bc1\u660e\u540c\u4e00\u4e8b\u4ef6\u542f\u52a8\u542b Story \u7684\u540c\u7ea7\u5206\u6d41\u3002\u540d\u4e49\u4efb\u52a1\u5206\u7ec4\u4e0d\u8bc1\u660e\u5f52\u5c5e\uff0c\u540c\u7ea7\u69fd\u4f4d\u4e5f\u4e0d\u662f\u65f6\u95f4\u987a\u5e8f\u3002",
       nativeCrossBoundaryConditionalHint: "\u539f\u59cb LevelScript \u5206\u652f\u503c\u4e0e\u5df2\u5b89\u88c5\u5ba2\u6237\u7aef\u7684\u539f\u751f\u63a7\u5236\u6620\u5c04\u8bc1\u660e\u540c\u4e00\u4e8b\u4ef6\u7684 Story \u5019\u9009\u5206\u652f\u3002\u540d\u4e49\u4efb\u52a1\u5206\u7ec4\u4e0d\u8bc1\u660e\u5f52\u5c5e\u6216\u5019\u9009\u987a\u5e8f\u3002",
+      nativeFullArmCoverage: "\u5b8c\u6574\u5e8f\u5217\u5316\u5206\u652f",
+      nativeSerializedArms: "\u5e8f\u5217\u5316\u5206\u652f",
+      nativeNonStoryArm: "\u975e Story \u52a8\u4f5c\u5206\u652f",
+      nativeInactiveArm: "\u672a\u542f\u7528\u7684\u5e8f\u5217\u5316\u76ee\u6807",
+      nativeRuntimeTerminalArm: "\u8fd0\u884c\u65f6\u7ec8\u70b9",
+      nativeArmEntryAction: "\u5165\u53e3\u52a8\u4f5c",
+      nativeArmExclusiveActions: "\u5206\u652f\u72ec\u6709\u52a8\u4f5c",
+      nativeSharedDownstream: "\u5171\u4eab\u4e0b\u6e38\u52a8\u4f5c",
+      nativeFullArmHint: "\u6bcf\u4e2a\u69fd\u4f4d\u90fd\u6765\u81ea\u539f\u59cb LevelScript \u7684\u8fd0\u884c\u65f6\u6709\u6548\u52a8\u4f5c\u8868\uff0c\u5e76\u4e0e\u5df2\u5b89\u88c5\u5ba2\u6237\u7aef\u7684\u4e8c\u8fdb\u5236\u6620\u5c04\u6821\u9a8c\u3002\u975e Story \u540c\u7ea7\u52a8\u4f5c\u4e0d\u8bc1\u660e Story \u5f52\u5c5e\u3001\u65f6\u5e8f\u6216\u4efb\u52a1\u6210\u5458\u5173\u7cfb\u3002",
       nativeOrderedSequence: "\u539f\u751f\u6709\u5e8f\u52a8\u4f5c\u5e8f\u5217",
       nativeStoryTransitions: "\u7cbe\u786e\u539f\u751f Story \u8f6c\u79fb",
       nativeStoryTransitionsHint: "\u6bcf\u6761\u8fb9\u90fd\u662f\u539f\u59cb LevelScript \u8def\u5f84\u524d\u7f00\u5173\u7cfb\u3002\u7c7b\u578b\u5316\u540e\u7f00\u4f1a\u663e\u793a\u64ad\u653e\u662f\u7ebf\u6027\u7ee7\u7eed\uff0c\u8fd8\u662f\u7ecf\u8fc7\u5e76\u884c\u3001\u6761\u4ef6\u3001\u6210\u529f/\u5931\u8d25\u6216\u6709\u5e8f\u5206\u652f\u3002",
@@ -3675,7 +3693,34 @@
       const boundary = row.crossBoundary
         ? t(row.branchSemantics === "binary_validated_parallel_story_fanout" ? "nativeCrossBoundaryParallelHint" : "nativeCrossBoundaryConditionalHint")
         : "";
-      return `<details${row.crossBoundary ? " open" : ""}><summary><b>${esc(nativeBranchLabel(row.kind))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code>${row.crossBoundary ? `<b>${esc(t("nativeCrossBoundaryBranch"))}</b>` : ""}</summary><small>${esc(row.eventName || "")}</small>${nativeEventDetailHtml(row.eventDetail)}${nativePredicateHtml(row.predicate)}${row.nativeMappingId ? `<small><code>${esc(row.nativeMappingId)}</code></small>` : ""}${(row.arms || []).map((arm) => `<div><code>${esc(arm.edge || "?")} &rarr; #${esc(arm.entryLocalId ?? "?")}</code><span>${(arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>${external.has(key) ? `<b>${esc(t("nativeCrossBoundaryExternal"))}</b>` : ""}`).join(" ")}</span></div>`).join("")}${boundary ? `<small>${esc(boundary)}</small>` : ""}${nativeSourcesHtml(row)}${relatedOriginalFilesHtml(row)}</details>`;
+      const displayArms = row.fullArms || row.arms || [];
+      const armRows = displayArms.map((arm) => {
+        const storyLinks = (arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>${external.has(key) ? `<b>${esc(t("nativeCrossBoundaryExternal"))}</b>` : ""}`).join(" ");
+        const entry = arm.entryAction
+          ? `<span><b>${esc(t("nativeArmEntryAction"))}</b> <code>#${esc(arm.entryAction.localId ?? "?")} ${esc(arm.entryAction.actionName || arm.entryAction.recordClass || "?")}</code></span>`
+          : "";
+        const status = !storyLinks && arm.targetStatus === "exact_active_action"
+          ? `<b>${esc(t("nativeNonStoryArm"))}</b>`
+          : arm.targetStatus === "inactive_serialized_target"
+            ? `<b>${esc(t("nativeInactiveArm"))}</b>`
+            : arm.targetStatus === "missing_runtime_action_slot"
+              ? `<b>${esc(t("nativeRuntimeTerminalArm"))}</b>`
+              : "";
+        const exclusive = (arm.exclusiveActions || []).length
+          ? `<details><summary>${esc(t("nativeArmExclusiveActions"))}: ${Number(arm.exclusiveActionCount || 0).toLocaleString()}</summary>${(arm.exclusiveActions || []).map((action) => `<code>#${esc(action.localId ?? "?")} ${esc(action.actionName || action.recordClass || "?")}</code>`).join(" ")}</details>`
+          : "";
+        return `<div><code>${esc(arm.edge || "?")} &rarr; #${esc(arm.entryLocalId ?? "inactive")}</code><span>${storyLinks}${status}</span>${entry}${exclusive}</div>`;
+      }).join("");
+      const coverage = row.fullArmCoverageStatus === "exact_complete_active_action_map"
+        ? `<p><b>${esc(t("nativeFullArmCoverage"))}</b><span>${Number(row.serializedArmCount || 0).toLocaleString()} ${esc(t("nativeSerializedArms"))}</span>${row.nonStoryArmCount ? `<span>${Number(row.nonStoryArmCount).toLocaleString()} ${esc(t("nativeNonStoryArm"))}</span>` : ""}${row.inactiveTargetArmCount ? `<span>${Number(row.inactiveTargetArmCount).toLocaleString()} ${esc(t("nativeInactiveArm"))}</span>` : ""}${row.runtimeTerminalArmCount ? `<span>${Number(row.runtimeTerminalArmCount).toLocaleString()} ${esc(t("nativeRuntimeTerminalArm"))}</span>` : ""}</p>`
+        : "";
+      const shared = (row.sharedDownstreamActionLocalIds || []).length
+        ? `<small><b>${esc(t("nativeSharedDownstream"))}</b> ${(row.sharedDownstreamActionLocalIds || []).map((localId) => `<code>#${esc(localId)}</code>`).join(" ")}</small>`
+        : "";
+      const fullBoundary = row.fullArmCoverageStatus === "exact_complete_active_action_map"
+        ? `<small>${esc(t("nativeFullArmHint"))}</small>`
+        : "";
+      return `<details${row.crossBoundary ? " open" : ""}><summary><b>${esc(nativeBranchLabel(row.kind))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code>${row.crossBoundary ? `<b>${esc(t("nativeCrossBoundaryBranch"))}</b>` : ""}</summary><small>${esc(row.eventName || "")}</small>${nativeEventDetailHtml(row.eventDetail)}${nativePredicateHtml(row.predicate)}${row.nativeMappingId ? `<small><code>${esc(row.nativeMappingId)}</code></small>` : ""}${coverage}${armRows}${shared}${fullBoundary}${boundary ? `<small>${esc(boundary)}</small>` : ""}${nativeSourcesHtml(row)}${relatedOriginalFilesHtml(row)}</details>`;
     }).join("");
     const nativeMissionStateBranches = (branches.nativeMissionStateBranches || []).map((row) => {
       const external = new Set(row.externalStoryKeys || []);
@@ -4166,7 +4211,7 @@
     return `<details class="mp-mission-story mp-story-order" data-weight="${Number(summary.strongEdgeCount) ? "strong" : "context"}"${Number(summary.strongEdgeCount) || offlineRows.length ? " open" : ""}>
       <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
       <p>${esc(t("storyOrderHint"))}</p>
-      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.questStartActionDefinitionCount || 0).toLocaleString()}</b>${esc(t("questStartDefinitions"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span>${summary.nativeControlCrossBoundaryBranchCount ? `<span><b>${Number(summary.nativeControlCrossBoundaryBranchCount).toLocaleString()}</b>${esc(t("nativeCrossBoundaryStories"))}</span>` : ""}<span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
+      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.questStartActionDefinitionCount || 0).toLocaleString()}</b>${esc(t("questStartDefinitions"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span>${summary.nativeControlNonStoryArmCount ? `<span><b>${Number(summary.nativeControlNonStoryArmCount).toLocaleString()}</b>${esc(t("nativeNonStoryArm"))}</span>` : ""}${summary.nativeControlCrossBoundaryBranchCount ? `<span><b>${Number(summary.nativeControlCrossBoundaryBranchCount).toLocaleString()}</b>${esc(t("nativeCrossBoundaryStories"))}</span>` : ""}<span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
       ${missionObservedContexts ? `<section><h4>${esc(t("missionObservedScriptContexts"))}</h4><p>${esc(t("missionObservedScriptContextsHint"))}</p><div class="mp-order-branches">${missionObservedContexts}</div></section>` : ""}
       ${causalEdges ? `<section><h4>${esc(t("causalEdges"))}</h4><div class="mp-order-edges">${causalEdges}</div></section>` : ""}
       ${nativeTransitions ? `<section><h4>${esc(t("nativeStoryTransitions"))}</h4><p>${esc(t("nativeStoryTransitionsHint"))}</p><div class="mp-order-branches">${nativeTransitions}</div></section>` : ""}

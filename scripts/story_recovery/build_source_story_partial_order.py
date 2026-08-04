@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v30"
+SCHEMA = "sourceStoryPartialOrder.v31"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -3822,6 +3822,364 @@ def _native_branch_runtime_mapping(
     return dict(LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS.get(pair) or {})
 
 
+def _serialized_native_control_arm_slots(
+    action: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Project every configured arm from a decoded typed control action.
+
+    This is deliberately family/schema driven.  Object ids and mission names
+    never participate, and non-positive targets remain visible as inactive
+    serialized slots instead of silently disappearing from the branch shape.
+    """
+    detail = action.get("controlDetail") or {}
+    action_name = safe_key(action.get("actionName"))
+    slots: list[dict[str, Any]] = []
+    if action_name == "Split":
+        slots.extend({
+            "edge": f"Split.actions[{index}]",
+            "entryLocalId": local_id,
+            "serializedIndex": index,
+        } for index, local_id in enumerate(detail.get("splitActionLocalIds") or []))
+    elif action_name == "IfElseAction":
+        slots.extend({
+            "edge": edge,
+            "entryLocalId": detail.get(field),
+            "serializedField": field,
+            "serializedFieldPresent": field in detail,
+        } for field, edge in (
+            ("trueActionLocalId", "IfElseAction.trueAction"),
+            ("falseActionLocalId", "IfElseAction.falseAction"),
+        ))
+    elif action_name in {"SwitchInt", "SwitchString"}:
+        prefix = "switch" if action_name == "SwitchInt" else "switchString"
+        case_ids = detail.get(f"{prefix}CaseActionLocalIds") or []
+        case_values = detail.get(f"{prefix}CaseValues") or []
+        slots.extend({
+            "edge": f"{action_name}.case[{index}]={case_value}",
+            "entryLocalId": local_id,
+            "serializedIndex": index,
+            "caseValue": case_value,
+        } for index, (case_value, local_id) in enumerate(zip(case_values, case_ids)))
+        slots.append({
+            "edge": f"{action_name}.default",
+            "entryLocalId": detail.get(f"{prefix}DefaultActionLocalId"),
+            "serializedField": f"{prefix}DefaultActionLocalId",
+            "serializedFieldPresent": f"{prefix}DefaultActionLocalId" in detail,
+        })
+    return slots
+
+
+def _compact_native_action(action: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: action[key]
+        for key in (
+            "localId",
+            "actionName",
+            "recordClass",
+            "unionTag",
+            "serializedMemberCount",
+            "texts",
+            "nextActionLocalId",
+            "controlKind",
+            "controlRuntimeMappingId",
+        )
+        if action.get(key) not in (None, "", [], {})
+    }
+
+
+def _full_native_branch_arm_context(
+    mission: str,
+    branches: list[dict[str, Any]],
+    original_binary_contract: dict[str, Any] | None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Validate and attach the complete serialized shape of Story branches.
+
+    Story paths anchor the branch to a mission card.  The original LevelScript
+    then supplies *all* configured arms, including non-Story actions and
+    inactive targets.  The installed binary mapping validates semantics; no
+    extra Story ownership or chronology is inferred from sibling topology.
+    """
+    annotated: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
+    for source_branch in branches:
+        branch = dict(source_branch)
+        level_sources = []
+        for source_file in branch.get("sourceFiles") or []:
+            if "LevelScriptData" not in source_file:
+                continue
+            source_path = Path(source_file)
+            if not source_path.is_absolute():
+                source_path = ROOT / source_path
+            if source_path.is_file():
+                level_sources.append((source_file, source_path))
+        # Synthetic/unit fixtures and old degraded inputs retain the existing
+        # Story-only view.  Present original files are always validated.
+        if not level_sources:
+            annotated.append(branch)
+            continue
+
+        matches: list[tuple[str, Path, dict[str, Any], dict[str, Any]]] = []
+        source_failures: list[dict[str, Any]] = []
+        for source_file, source_path in level_sources:
+            cache_key = source_path.resolve().as_posix()
+            if cache_key not in _NATIVE_ACTION_TOPOLOGY_CACHE:
+                try:
+                    _NATIVE_ACTION_TOPOLOGY_CACHE[cache_key] = (
+                        decode_levelscript_native_action_topology(
+                            source_path.read_bytes()
+                        )
+                    )
+                except OSError as error:
+                    source_failures.append({
+                        "sourceFile": source_file,
+                        "error": type(error).__name__,
+                    })
+                    continue
+            topology, topology_diagnostic = _NATIVE_ACTION_TOPOLOGY_CACHE[cache_key]
+            if topology_diagnostic or not str(topology.get("status") or "").startswith(
+                "exact_complete_action_map"
+            ):
+                source_failures.append({
+                    "sourceFile": source_file,
+                    "topologyStatus": topology.get("status"),
+                    "topologyDiagnostic": topology_diagnostic,
+                })
+                continue
+            for action in topology.get("actions") or []:
+                if (
+                    action.get("localId") == branch.get("branchLocalId")
+                    and action.get("controlRuntimeMappingId")
+                    == branch.get("nativeMappingId")
+                ):
+                    matches.append((source_file, source_path, topology, action))
+
+        if len(matches) != 1:
+            diagnostic = {
+                "validator": "nativeBranchFullArmCoverage",
+                "gate": "uniqueRuntimeMappedControlAction",
+                "mission": mission,
+                "branchLocalId": branch.get("branchLocalId"),
+                "expected": {
+                    "matchingActionCount": 1,
+                    "nativeMappingId": branch.get("nativeMappingId"),
+                },
+                "actual": {
+                    "matchingActionCount": len(matches),
+                    "sourceFailures": source_failures[:8],
+                },
+                "sourcePaths": [row[0] for row in level_sources],
+                "sourceSha256": {
+                    source_file: hashlib.sha256(source_path.read_bytes()).hexdigest()
+                    for source_file, source_path in level_sources
+                },
+            }
+            diagnostics.append(diagnostic)
+            branch["fullArmCoverageStatus"] = "unavailable_fail_closed"
+            branch["fullArmValidatorDiagnostic"] = diagnostic
+            annotated.append(branch)
+            continue
+
+        source_file, source_path, topology, action = matches[0]
+        slots = _serialized_native_control_arm_slots(action)
+        detail = action.get("controlDetail") or {}
+        action_name = safe_key(action.get("actionName"))
+        slot_schema_failures: list[dict[str, Any]] = []
+        if action_name == "Split" and "splitActionLocalIds" not in detail:
+            slot_schema_failures.append({
+                "check": "splitActionListPresent",
+                "expected": True,
+                "actual": False,
+            })
+        if action_name == "IfElseAction":
+            missing_fields = [
+                field
+                for field in ("trueActionLocalId", "falseActionLocalId")
+                if field not in detail
+            ]
+            if missing_fields:
+                slot_schema_failures.append({
+                    "check": "ifElseArmFieldsPresent",
+                    "expected": ["trueActionLocalId", "falseActionLocalId"],
+                    "actualMissing": missing_fields,
+                })
+        if action_name in {"SwitchInt", "SwitchString"}:
+            prefix = "switch" if action_name == "SwitchInt" else "switchString"
+            case_values = detail.get(f"{prefix}CaseValues") or []
+            case_ids = detail.get(f"{prefix}CaseActionLocalIds") or []
+            if len(case_values) != len(case_ids):
+                slot_schema_failures.append({
+                    "check": "switchCaseValueTargetCardinality",
+                    "expected": len(case_values),
+                    "actual": len(case_ids),
+                })
+            default_field = f"{prefix}DefaultActionLocalId"
+            if default_field not in detail:
+                slot_schema_failures.append({
+                    "check": "switchDefaultFieldPresent",
+                    "expected": True,
+                    "actual": False,
+                })
+        story_arms = {
+            (safe_key(row.get("edge")), row.get("entryLocalId")): row
+            for row in branch.get("arms") or []
+        }
+        edge_rows = {
+            (safe_key(row.get("relation")), row.get("targetActionLocalId")): row
+            for row in topology.get("edges") or []
+            if row.get("sourceKind") == "action"
+            and row.get("sourceLocalId") == branch.get("branchLocalId")
+        }
+        terminal_rows = {
+            (safe_key(row.get("relation")), row.get("targetActionLocalId")): row
+            for row in topology.get("runtimeTerminalTargets") or []
+            if row.get("sourceKind") == "action"
+            and row.get("sourceLocalId") == branch.get("branchLocalId")
+        }
+        action_by_id = {
+            row.get("localId"): row
+            for row in topology.get("actions") or []
+            if isinstance(row.get("localId"), int)
+        }
+        adjacency: dict[int, set[int]] = defaultdict(set)
+        for row in topology.get("edges") or []:
+            if row.get("sourceKind") != "action":
+                continue
+            src = row.get("sourceLocalId")
+            dst = row.get("targetActionLocalId")
+            if isinstance(src, int) and isinstance(dst, int):
+                adjacency[src].add(dst)
+
+        positive_slots = [
+            (safe_key(slot.get("edge")), slot.get("entryLocalId"))
+            for slot in slots
+            if isinstance(slot.get("entryLocalId"), int)
+            and slot.get("entryLocalId") > 0
+        ]
+        reachable_by_slot: dict[tuple[str, Any], set[int]] = {}
+        for slot_key in positive_slots:
+            target = slot_key[1]
+            pending = [target]
+            reached: set[int] = set()
+            while pending:
+                current = pending.pop()
+                if current in reached or current == branch.get("branchLocalId"):
+                    continue
+                reached.add(current)
+                pending.extend(adjacency.get(current) or [])
+            reachable_by_slot[slot_key] = reached
+        reach_frequency = Counter(
+            local_id
+            for reached in reachable_by_slot.values()
+            for local_id in reached
+        )
+
+        full_arms: list[dict[str, Any]] = []
+        invalid_slots: list[dict[str, Any]] = []
+        for slot in slots:
+            edge = safe_key(slot.get("edge"))
+            target = slot.get("entryLocalId")
+            key = (edge, target)
+            story_arm = story_arms.get(key) or {}
+            full_arm = {**slot, "storyKeys": list(story_arm.get("storyKeys") or [])}
+            if slot.get("serializedFieldPresent") is False:
+                full_arm["targetStatus"] = "unavailable_fail_closed"
+                invalid_slots.append({"edge": edge, "entryLocalId": target})
+            elif not isinstance(target, int) or target <= 0:
+                full_arm["targetStatus"] = "inactive_serialized_target"
+            elif key in edge_rows and target in action_by_id:
+                full_arm["targetStatus"] = "exact_active_action"
+                full_arm["entryAction"] = _compact_native_action(action_by_id[target])
+                exclusive = sorted(
+                    local_id
+                    for local_id in reachable_by_slot.get(key) or set()
+                    if reach_frequency[local_id] == 1
+                )
+                full_arm["exclusiveActionCount"] = len(exclusive)
+                full_arm["exclusiveActions"] = [
+                    _compact_native_action(action_by_id[local_id])
+                    for local_id in exclusive
+                    if local_id in action_by_id
+                ]
+            elif key in terminal_rows:
+                full_arm["targetStatus"] = "missing_runtime_action_slot"
+                full_arm["runtimeTerminal"] = terminal_rows[key]
+            else:
+                full_arm["targetStatus"] = "unavailable_fail_closed"
+                invalid_slots.append({"edge": edge, "entryLocalId": target})
+            full_arms.append(full_arm)
+
+        if not slots or slot_schema_failures or invalid_slots or not set(story_arms).issubset({
+            (safe_key(row.get("edge")), row.get("entryLocalId"))
+            for row in slots
+        }):
+            diagnostic = {
+                "validator": "nativeBranchFullArmCoverage",
+                "gate": "allStoryAndSerializedArmsMatchActiveActionMap",
+                "mission": mission,
+                "branchLocalId": branch.get("branchLocalId"),
+                "expected": {
+                    "storyArmKeys": [list(value) for value in sorted(story_arms)],
+                    "invalidSerializedSlots": [],
+                    "slotSchemaFailures": [],
+                },
+                "actual": {
+                    "serializedArmKeys": [
+                        [safe_key(row.get("edge")), row.get("entryLocalId")]
+                        for row in slots
+                    ],
+                    "invalidSerializedSlots": invalid_slots,
+                    "slotSchemaFailures": slot_schema_failures,
+                },
+                "sourcePaths": [source_file],
+                "sourceSha256": {
+                    source_file: hashlib.sha256(source_path.read_bytes()).hexdigest()
+                },
+            }
+            diagnostics.append(diagnostic)
+            branch["fullArmCoverageStatus"] = "unavailable_fail_closed"
+            branch["fullArmValidatorDiagnostic"] = diagnostic
+            annotated.append(branch)
+            continue
+
+        branch.update({
+            "fullArmCoverageStatus": "exact_complete_active_action_map",
+            "serializedArmCount": len(full_arms),
+            "storyBearingArmCount": sum(bool(row["storyKeys"]) for row in full_arms),
+            "nonStoryArmCount": sum(
+                row["targetStatus"] == "exact_active_action" and not row["storyKeys"]
+                for row in full_arms
+            ),
+            "inactiveTargetArmCount": sum(
+                row["targetStatus"] == "inactive_serialized_target"
+                for row in full_arms
+            ),
+            "runtimeTerminalArmCount": sum(
+                row["targetStatus"] == "missing_runtime_action_slot"
+                for row in full_arms
+            ),
+            "sharedDownstreamActionLocalIds": sorted(
+                local_id for local_id, count in reach_frequency.items() if count > 1
+            ),
+            "fullArms": full_arms,
+            "relatedOriginalFiles": _related_original_branch_files(
+                mission,
+                [source_file],
+                original_binary_contract,
+                level_relationship="complete_serialized_native_branch_arms",
+                mission_relationship="mission_story_branch_anchor_context",
+                binary_relationship="native_branch_runtime_semantics_authority",
+            ),
+            "fullArmEvidenceBoundary": (
+                "Every configured slot comes from the original LevelScript's runtime-active "
+                "action map and is checked against the installed native control mapping. "
+                "Non-Story arms describe sibling action topology only; they do not add Story "
+                "ownership, chronology, or mission membership."
+            ),
+        })
+        annotated.append(branch)
+    return annotated, diagnostics
+
+
 def _native_control_branches_and_merges(
     flow: dict[str, Any],
     candidate_keys: set[str] | None,
@@ -4548,6 +4906,14 @@ def build_mission_partial_order(
     native_control_branches, native_control_merges = _native_control_branches_and_merges(
         flow, candidate_keys
     )
+    (
+        native_control_branches,
+        native_branch_arm_coverage_diagnostics,
+    ) = _full_native_branch_arm_context(
+        mission,
+        native_control_branches,
+        extra_thread_scheduler_contract,
+    )
     native_control_branches = _attach_cross_boundary_native_branch_context(
         mission,
         native_control_branches,
@@ -4739,6 +5105,30 @@ def build_mission_partial_order(
             "cyclicInternalPairs": cyclic_internal_pairs,
             "sceneGraphOptionGroupCount": len(scene_graph_option_branches),
             "nativeControlBranchCount": len(native_control_branches),
+            "nativeControlFullArmBranchCount": sum(
+                row.get("fullArmCoverageStatus")
+                == "exact_complete_active_action_map"
+                for row in native_control_branches
+            ),
+            "nativeControlSerializedArmCount": sum(
+                int(row.get("serializedArmCount") or 0)
+                for row in native_control_branches
+            ),
+            "nativeControlNonStoryArmCount": sum(
+                int(row.get("nonStoryArmCount") or 0)
+                for row in native_control_branches
+            ),
+            "nativeControlInactiveTargetArmCount": sum(
+                int(row.get("inactiveTargetArmCount") or 0)
+                for row in native_control_branches
+            ),
+            "nativeControlRuntimeTerminalArmCount": sum(
+                int(row.get("runtimeTerminalArmCount") or 0)
+                for row in native_control_branches
+            ),
+            "nativeControlFullArmValidationFailureCount": len(
+                native_branch_arm_coverage_diagnostics
+            ),
             "nativeControlCrossBoundaryBranchCount": sum(
                 bool(row.get("crossBoundary"))
                 for row in native_control_branches
@@ -4892,6 +5282,7 @@ def build_mission_partial_order(
             *narrative_containment_warnings,
             *open_ui_containment_warnings,
             *lifecycle_warnings,
+            *native_branch_arm_coverage_diagnostics,
         ],
     }
 
@@ -5121,6 +5512,24 @@ def build_report(
         totals["unorderedScenePairs"] += summary["unorderedScenePairs"]
         totals["sceneGraphOptionGroups"] += summary["sceneGraphOptionGroupCount"]
         totals["nativeControlBranches"] += summary["nativeControlBranchCount"]
+        totals["nativeControlFullArmBranches"] += summary[
+            "nativeControlFullArmBranchCount"
+        ]
+        totals["nativeControlSerializedArms"] += summary[
+            "nativeControlSerializedArmCount"
+        ]
+        totals["nativeControlNonStoryArms"] += summary[
+            "nativeControlNonStoryArmCount"
+        ]
+        totals["nativeControlInactiveTargetArms"] += summary[
+            "nativeControlInactiveTargetArmCount"
+        ]
+        totals["nativeControlRuntimeTerminalArms"] += summary[
+            "nativeControlRuntimeTerminalArmCount"
+        ]
+        totals["nativeControlFullArmValidationFailures"] += summary[
+            "nativeControlFullArmValidationFailureCount"
+        ]
         totals["nativeControlCrossBoundaryBranches"] += summary[
             "nativeControlCrossBoundaryBranchCount"
         ]
@@ -5320,6 +5729,13 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- native control topology: `{summary.get('nativeControlBranches', 0)}` exact "
         f"Split/IfElse/Switch Story fan-outs and `{summary.get('nativeControlMerges', 0)}` "
         "observed convergences",
+        f"- complete native branch arms: "
+        f"`{summary.get('nativeControlFullArmBranches', 0)}` branch placements expose "
+        f"`{summary.get('nativeControlSerializedArms', 0)}` serialized slots, including "
+        f"`{summary.get('nativeControlNonStoryArms', 0)}` active non-Story arms, "
+        f"`{summary.get('nativeControlInactiveTargetArms', 0)}` inactive slots, and "
+        f"`{summary.get('nativeControlRuntimeTerminalArms', 0)}` runtime terminals; "
+        f"`{summary.get('nativeControlFullArmValidationFailures', 0)}` validation failures",
         f"- complete cross-boundary native topology: "
         f"`{summary.get('nativeControlCrossBoundaryBranches', 0)}` branch groups retain "
         f"`{summary.get('nativeControlCrossBoundaryExternalStories', 0)}` exact Story "

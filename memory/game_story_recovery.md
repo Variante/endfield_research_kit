@@ -33,6 +33,7 @@ Latest CN reports:
 | Exact quest-observed DialogTree definitions | 434 definitions / 461 placements across 422 quests |
 | LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
 | Native branch predicates | 259 named; 264 semantic including 5 inline; 0 class-only; 0 unresolved |
+| Complete native branch-arm topology | Global audit: 312 / 312 placements, 880 serialized slots, 43 active non-Story arms, 155 inactive slots, 0 runtime terminals, 0 validator failures. Mission Pipeline: 95 / 95 placements, 272 slots, 30 active non-Story arms, 27 inactive slots |
 | Complete cross-boundary native branches | 5 groups / 5 exact external Story references (4 Split fan-outs, 1 SwitchInt choice); no ownership or order promotion |
 | Exact mission-state Story alternatives | 3 branch groups / 2 cross-mission Story references; selection only, never chronology or ownership |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
@@ -76,6 +77,14 @@ in five payloads.
   many event families.
 - 312 native branch groups and 20 native convergences, kept as a partial
   graph instead of flattened into a guessed file list.
+- Every Story-anchored native branch is now expanded from the original
+  LevelScript's runtime-active action map rather than a per-object list. A
+  table-driven Split/IfElse/Switch projector retains active non-Story arms,
+  non-positive inactive slots, arm-exclusive action topology, and shared
+  downstream nodes. It requires the decoded control action to match the
+  installed-binary runtime mapping and fails closed with source hashes and
+  expected/actual diagnostics. These sibling actions describe file-local
+  topology only; they do not add Story ownership, order, or mission membership.
 - Native branch grouping now uses mission Story files only as anchors, then
   retains every exact Story-bearing arm under the same serialized event and
   branch. This generically restores five cross-boundary references across four
