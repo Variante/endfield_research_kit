@@ -6505,10 +6505,10 @@ def load_state_update_application_contract(
             f"expected=file actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
         raise RuntimeError(
             "validator=state_update_application_contract gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v19' "
+            "expected='endfieldProtocolRegistryAudit.v20' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     census = audit.get("stateUpdateApplicationCensus") or {}
@@ -6543,6 +6543,29 @@ def load_state_update_application_contract(
             f"message={failure.get('message')} expected={failure.get('expected')!r} "
             f"actual={failure.get('actual')!r} "
             f"source={failure.get('sourceFile') or audit_path}"
+        )
+    quest_dispatch_shape = {
+        "schema": quest_succeed.get("schema"),
+        "classification": quest_succeed.get("classification"),
+        "startActionDispatchers": quest_succeed.get("startActionDispatchers") or [],
+        "sharedPendingCarrier": (
+            (quest_succeed.get("runQuestActionFlow") or {}).get(
+                "sharedPendingCarrier"
+            )
+        ),
+    }
+    expected_dispatch_shape = {
+        "schema": "questLifecycleClientAction.v2",
+        "classification": "bounded_current_aot_quest_action_dispatch",
+        "startActionDispatchers": [],
+        "sharedPendingCarrier": True,
+    }
+    if quest_dispatch_shape != expected_dispatch_shape:
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            "gate=questActionDispatchShape "
+            f"expected={expected_dispatch_shape!r} "
+            f"actual={quest_dispatch_shape!r} source={audit_path}"
         )
     topology_consumers = census.get("questTopologyFieldConsumers") or {}
     topology_validation = topology_consumers.get("validation") or {}
@@ -6629,7 +6652,15 @@ def load_state_update_application_contract(
         "validatedCandidateCount": census.get("validatedCandidateCount", 0),
         "clientSuccessorSelectors": census.get("clientSuccessorSelectors", 0),
         "questStartApplication": quest_start,
-        "questSucceedActionApplication": quest_succeed,
+        "questSucceedActionApplication": {
+            **quest_succeed,
+            "source": (
+                audit_path.relative_to(ROOT).as_posix()
+                if audit_path.is_relative_to(ROOT)
+                else audit_path.as_posix()
+            ),
+            "relatedOriginalFiles": related_files,
+        },
         "questTopologyFieldConsumers": topology_consumers,
         "allLifecycleCallsUsePacketIdentity": census.get(
             "allLifecycleCallsUsePacketIdentity", False
@@ -6653,10 +6684,10 @@ def load_action_extra_thread_scheduler_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v19' "
+            "expected='endfieldProtocolRegistryAudit.v20' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("actionExtraThreadSchedulerCensus") or {}
@@ -6737,10 +6768,10 @@ def load_levelscript_task_authority_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v19' "
+            "expected='endfieldProtocolRegistryAudit.v20' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
 
@@ -6901,10 +6932,10 @@ def load_levelscript_start_policy_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v19' "
+            "expected='endfieldProtocolRegistryAudit.v20' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptStartPolicy") or {}
@@ -6995,10 +7026,10 @@ def load_levelscript_manual_self_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v19' "
+            "expected='endfieldProtocolRegistryAudit.v20' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptManualSelfControl") or {}
@@ -7091,10 +7122,10 @@ def load_levelscript_activation_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v19' "
+            "expected='endfieldProtocolRegistryAudit.v20' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptActivationControl") or {}
@@ -9438,6 +9469,49 @@ def action_rows(mission: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     return dict(output)
 
 
+def annotate_quest_action_dispatch(
+    payload: dict[str, Any],
+    contract: dict[str, Any],
+) -> Counter[str]:
+    """Apply the corpus-wide binary dispatcher census to authored action rows."""
+    dispatched = {
+        int(row["questActionValue"]): row
+        for row in contract.get("safeRunDirectCallers") or []
+        if isinstance(row, dict) and isinstance(row.get("questActionValue"), int)
+    }
+    start_value = int(
+        (contract.get("questActionEnum") or {}).get("OnStartClientAction", 1)
+    )
+    start_dispatchers = contract.get("startActionDispatchers") or []
+    counts: Counter[str] = Counter()
+    for node in payload.get("nodes") or []:
+        if not isinstance(node, dict):
+            continue
+        for action in node.get("clientActions") or []:
+            if not isinstance(action, dict):
+                continue
+            value = action.get("trigger")
+            if value in dispatched:
+                caller = dispatched[value]
+                status = (
+                    "binary_proven_server_success_dispatch"
+                    if value == 2
+                    else "binary_proven_server_failure_dispatch"
+                )
+                action["runtimeDispatchHandler"] = caller.get("symbol") or ""
+            elif value == start_value and not start_dispatchers:
+                status = "authored_definition_no_current_aot_dispatch"
+            else:
+                status = "runtime_dispatch_unresolved"
+            action["runtimeDispatchStatus"] = status
+            action["runtimeDispatchSource"] = contract.get("source") or ""
+            action["runtimeDispatchBoundary"] = contract.get("boundary") or ""
+            counts[f"rows:{status}"] += 1
+            if action.get("chainIndex") == 0:
+                counts[f"roots:{status}"] += 1
+    return counts
+
+
 def _quest_reachability_distances(
     start: str,
     successors: dict[str, list[str]],
@@ -10153,6 +10227,19 @@ def build_all(
         "levelScriptManualSelfControlAudit": manual_self_control_contract,
         "levelScriptActivationControlAudit": activation_control_contract,
     }
+    quest_action_dispatch = (
+        state_update_contract.get("questSucceedActionApplication") or {}
+    )
+    quest_action_dispatch_counts: Counter[str] = Counter()
+    for summary in summaries:
+        mission_path = mission_output / f"{summary['id']}.json"
+        payload = read_json(mission_path)
+        if not isinstance(payload, dict):
+            continue
+        quest_action_dispatch_counts.update(
+            annotate_quest_action_dispatch(payload, quest_action_dispatch)
+        )
+        write_json(mission_path, payload)
     index = {
         "schemaVersion": SCHEMA_VERSION,
         "generated": int(time.time()),
@@ -10326,6 +10413,22 @@ def build_all(
             ),
             "actionExtraThreadDirectCalls": len(
                 extra_thread_scheduler_contract.get("directCalls", [])
+            ),
+            "questActionStartDefinitionRoots": quest_action_dispatch_counts[
+                "roots:authored_definition_no_current_aot_dispatch"
+            ],
+            "questActionStartDefinitionRows": quest_action_dispatch_counts[
+                "rows:authored_definition_no_current_aot_dispatch"
+            ],
+            "questActionBinaryDispatchedRoots": sum(
+                count
+                for key, count in quest_action_dispatch_counts.items()
+                if key.startswith("roots:binary_proven_")
+            ),
+            "questActionBinaryDispatchedRows": sum(
+                count
+                for key, count in quest_action_dispatch_counts.items()
+                if key.startswith("rows:binary_proven_")
             ),
         },
         "conditionTypeMissionCounts": dict(sorted(condition_counts.items())),

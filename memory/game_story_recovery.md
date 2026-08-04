@@ -23,6 +23,8 @@ Latest CN reports:
 | Candidate scene placements | 8,877 |
 | Strong / supported / weak edges | 1,524 / 834 / 2,635 |
 | Binary-proven quest-success Story order | 22 edges / 21 quests / 18 missions |
+| Binary quest-action dispatch | Fail=4 and Succeed=2 validated through the only 2 SafeRun callers; RunQuestAction has only SafeRun + pending replay callers; 0 current AOT Start=1 dispatchers |
+| Authored start-action boundary | 60 root definitions / 57 typed Story references / 53 candidate-scene definition cards across 41 missions; never order edges |
 | Exact native Story transitions | 380; 85 branch-bearing across 40 missions (77 Split, 7 conditional, 1 ordered-sequence) |
 | Binary parallel-fan-out authority | 1 structural scheduler carrier / 2 admitted writer methods / 3 decoded direct calls / 44 Split branch groups / 77 transitions / 104 evidence rows |
 | Source-comparable scene pairs | 3,845 / 249,695 (1.54%) |
@@ -88,6 +90,18 @@ in five payloads.
   dispatches `OnSucceedClientAction`; no mission, Story, condition, or action
   allowlist participates. It does not prove success occurrence, successor-arm
   selection, or order within one action graph.
+- The same corpus-wide audit now closes the fallback quest-action dispatcher
+  surface. `FailQuest` and `SucceedQuest` are the only direct
+  `SafeRunQuestAction` callers and pass enum values 4 and 2;
+  `ProcessPendingQuestAction` only replays the shared
+  `m_pendingQuestActionList` into `RunQuestAction`. The complete current AOT
+  direct-caller census finds no value-1 producer. All 60 authored start roots,
+  including 57 typed Story references, therefore remain visible definition
+  evidence. The 53 references that also pass candidate-scene membership become
+  order-panel definition cards across 41 missions with their original
+  MissionRuntime/binary/metadata hashes, but add no order edge. Indirect
+  invocation, runtime mutation, future IFix, server
+  behavior, and future builds remain outside this static proof.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
 The registered DialogTree trunk-group recovery handles complete, partial, and

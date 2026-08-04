@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v19",
+                "_schema": "endfieldProtocolRegistryAudit.v20",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -136,13 +136,73 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             succeed_action_calls=[{"questActionValue": 2}],
             safe_run_action_flow={"preservesQuestActionArgument": True},
             safe_run_direct_callers=[
-                {"symbol": "Beyond.Gameplay.MissionSystem.FailQuest"},
-                {"symbol": "Beyond.Gameplay.MissionSystem.SucceedQuest"},
+                {"symbol": "Beyond.Gameplay.MissionSystem.FailQuest", "questActionValue": 4},
+                {"symbol": "Beyond.Gameplay.MissionSystem.SucceedQuest", "questActionValue": 2},
             ],
+            run_quest_action_flow={
+                "preservesQuestActionArgument": True,
+                "sharedPendingCarrier": True,
+            },
+            run_quest_action_direct_callers=[
+                {"symbol": "Beyond.Gameplay.MissionSystem.ProcessPendingQuestAction"},
+                {"symbol": "Beyond.Gameplay.MissionSystem.SafeRunQuestAction"},
+            ],
+            start_action_dispatchers=[],
             source_file="GameAssembly.dll",
             source_hashes={"gameAssemblySha256": "a" * 64},
         )
         self.assertEqual(result, {"status": "validated", "failures": []})
+
+    def test_direct_enum_argument_does_not_treat_stack_offset_as_value(self):
+        call = {
+            "argumentOrigins": {"r8": "[rsp+0x60]"},
+            "argumentContext": {
+                "argRegisterWrites": {
+                    "r8": {"write": {"value": "[rsp+0x60]"}},
+                },
+            },
+        }
+        result = audit.decode_direct_enum_argument(
+            call,
+            "r8",
+            {"OnStartClientAction": 1, "OnSucceedClientAction": 2},
+        )
+        self.assertIsNone(result["questActionValue"])
+        self.assertIsNone(result["questActionName"])
+
+    def test_direct_enum_argument_accepts_immediate_value(self):
+        result = audit.decode_direct_enum_argument(
+            {"argumentOrigins": {"r8": "0x2"}},
+            "r8",
+            {"OnSucceedClientAction": 2},
+        )
+        self.assertEqual(result["questActionValue"], 2)
+        self.assertEqual(result["questActionName"], "OnSucceedClientAction")
+
+    def test_direct_enum_argument_accepts_lea_only_with_zero_base(self):
+        proven = audit.decode_direct_enum_argument(
+            {
+                "argumentOrigins": {"r8": "&[r9+0x4]"},
+                "argumentContext": {
+                    "argRegisterWrites": {
+                        "r8": {"write": {"value": "&[r9+0x4]"}},
+                        "r9": {"write": {"value": "0"}},
+                    },
+                },
+            },
+            "r8",
+            {"OnFailedClientAction": 4},
+        )
+        unresolved = audit.decode_direct_enum_argument(
+            {
+                "argumentOrigins": {"r8": "&[r9+0x4]"},
+                "argumentContext": {"argRegisterWrites": {}},
+            },
+            "r8",
+            {"OnFailedClientAction": 4},
+        )
+        self.assertEqual(proven["questActionValue"], 4)
+        self.assertIsNone(unresolved["questActionValue"])
 
     def test_quest_succeed_action_observation_reports_independent_drift(self):
         result = audit.validate_quest_succeed_action_observation(
@@ -150,8 +210,16 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             succeed_action_calls=[{"questActionValue": 3}],
             safe_run_action_flow={"preservesQuestActionArgument": False},
             safe_run_direct_callers=[
-                {"symbol": "Beyond.Gameplay.MissionSystem.SucceedQuest"},
+                {"symbol": "Beyond.Gameplay.MissionSystem.SucceedQuest", "questActionValue": 3},
             ],
+            run_quest_action_flow={
+                "preservesQuestActionArgument": False,
+                "sharedPendingCarrier": False,
+            },
+            run_quest_action_direct_callers=[
+                {"symbol": "Beyond.Gameplay.MissionSystem.SafeRunQuestAction"},
+            ],
+            start_action_dispatchers=[{"symbol": "fixture", "questActionValue": 1}],
             source_file="GameAssembly.dll",
             source_hashes={"gameAssemblySha256": "b" * 64},
         )
@@ -162,7 +230,11 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "questActionEnum",
                 "succeedActionValue",
                 "safeRunPreservesQuestAction",
-                "safeRunDirectCallerCensus",
+                "safeRunDirectCallerActionCensus",
+                "runQuestActionDirectCallerCensus",
+                "runQuestActionPreservesQuestAction",
+                "pendingReplayUsesSafeRunCarrier",
+                "noCurrentAotStartActionDispatcher",
             ],
         )
         self.assertTrue(all(failure["sourceHashes"] for failure in result["failures"]))

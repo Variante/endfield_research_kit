@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v27"
+SCHEMA = "sourceStoryPartialOrder.v28"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -411,6 +411,7 @@ EVIDENCE_POLICY = {
         "LevelData quest references and PRTS collection order",
         "related LevelScript action graphs attached through exact Story paths but not promoted wholesale to mission order",
         "divergent Split/IfElseAction/SwitchInt/SwitchString Story arms as topology only",
+        "authored quest-start Story actions when the complete current AOT dispatcher census has no slot-1 producer",
     ],
     "rejects": [
         "webui/overrides/story_order.json",
@@ -2228,10 +2229,10 @@ def load_current_parallel_fanout_authority(
     """Fail closed unless the scheduler contract matches its original inputs."""
     validator = "parallel_fanout_authority"
     audit = read_json(audit_path, {})
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v19' "
+            "expected='endfieldProtocolRegistryAudit.v20' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = dict(audit.get("actionExtraThreadSchedulerCensus") or {})
@@ -2742,6 +2743,83 @@ def _quest_succeed_lifecycle_story_edges(
         signature = (edge["from"], edge["to"], tuple(edge["questIds"]))
         unique[signature] = edge
     return sorted(unique.values(), key=_edge_sort_key), []
+
+
+def _quest_lifecycle_definition_rows(
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+    lifecycle_contract: dict[str, Any] | None,
+    mission_source: str,
+) -> list[dict[str, Any]]:
+    """Expose authored lifecycle definitions whose binary dispatcher is absent.
+
+    These are evidence-bearing rows, never order edges. The rule is applied to
+    the entire mission corpus and is admitted only after the binary contract
+    validates that the corresponding current-build AOT dispatcher set is empty.
+    """
+    contract = lifecycle_contract or {}
+    if (
+        (contract.get("validation") or {}).get("status") != "validated"
+        or contract.get("startActionDispatchers")
+    ):
+        return []
+    mission_path = ROOT / mission_source if mission_source else Path()
+    if not mission_source or not mission_path.is_file():
+        return []
+    mission_sha256 = hashlib.sha256(mission_path.read_bytes()).hexdigest().upper()
+    related_original_files = [{
+        "kind": "original_mission_runtime",
+        "sourceFile": mission_source,
+        "sha256": mission_sha256,
+        "relationship": "authored_quest_lifecycle_definition",
+    }, *[
+        dict(row)
+        for row in contract.get("relatedOriginalFiles") or []
+        if isinstance(row, dict)
+    ]]
+    rows: list[dict[str, Any]] = []
+    for quest in flow.get("quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        quest_id = safe_key(quest.get("id") or quest.get("questId"))
+        for relation in quest.get("storyConnections") or []:
+            if not isinstance(relation, dict):
+                continue
+            story_key = safe_key(relation.get("key"))
+            if (
+                story_key not in candidate_keys
+                or safe_key(relation.get("relation")) != "client_action_start"
+                or safe_key(relation.get("direction")) != "quest_to_story"
+                or safe_key(relation.get("phase")) != "start"
+                or safe_key(relation.get("confidence")) != "native_typed_direct"
+            ):
+                continue
+            rows.append({
+                "kind": "questLifecycleDefinition",
+                "questId": quest_id,
+                "storyKey": story_key,
+                "actionSlot": relation.get("actionSlot"),
+                "actionId": relation.get("actionId"),
+                "actionType": relation.get("actionType"),
+                "runtimeDispatchStatus": (
+                    "authored_definition_no_current_aot_dispatch"
+                ),
+                "source": contract.get("source") or "",
+                "boundary": contract.get("boundary") or "",
+                "relatedOriginalFiles": related_original_files,
+            })
+    unique = {
+        (row["questId"], row["storyKey"], row.get("actionId")): row
+        for row in rows
+    }
+    return sorted(
+        unique.values(),
+        key=lambda row: (
+            natural_key(row["questId"]),
+            natural_key(row["storyKey"]),
+            int(row.get("actionId") or -1),
+        ),
+    )
 
 
 def _repo_path(path: Path) -> str:
@@ -4031,6 +4109,12 @@ def build_mission_partial_order(
         quest_succeed_lifecycle_contract,
         mission_source,
     )
+    lifecycle_definition_rows = _quest_lifecycle_definition_rows(
+        flow,
+        candidate_keys,
+        quest_succeed_lifecycle_contract,
+        mission_source,
+    )
     existing_strong_pairs = {
         (safe_key(edge.get("from")), safe_key(edge.get("to")))
         for edge in direct_edges
@@ -4426,6 +4510,13 @@ def build_mission_partial_order(
                 for edge in admitted_lifecycle_edges
                 for quest_id in edge.get("questIds") or []
             }),
+            "questStartActionDefinitionCount": len(lifecycle_definition_rows),
+            "questStartActionDefinitionStoryCount": len({
+                row["storyKey"] for row in lifecycle_definition_rows
+            }),
+            "questStartActionDefinitionQuestCount": len({
+                row["questId"] for row in lifecycle_definition_rows
+            }),
             "nativeRelatedActionTopologyCount": len(
                 native_related_action_topologies
             ),
@@ -4463,6 +4554,7 @@ def build_mission_partial_order(
         "reducedComponentEdges": reduced_component_edges,
         "topologicalLayers": layers,
         "directEdges": direct_edges,
+        "questLifecycleDefinitions": lifecycle_definition_rows,
         "containments": all_containments,
         "cycles": cycles,
         "branches": {
@@ -4723,6 +4815,15 @@ def build_report(
             "exactLevelScriptPlaybackContextSceneCount"
         ]
         totals["directEdges"] += summary["directEdgeCount"]
+        totals["questStartActionDefinitions"] += summary[
+            "questStartActionDefinitionCount"
+        ]
+        totals["questStartActionDefinitionStories"] += summary[
+            "questStartActionDefinitionStoryCount"
+        ]
+        totals["questStartActionDefinitionQuests"] += summary[
+            "questStartActionDefinitionQuestCount"
+        ]
         totals["strongEdges"] += summary["strongEdgeCount"]
         totals["supportedEdges"] += summary["supportedEdgeCount"]
         totals["weakEdges"] += summary["weakEdgeCount"]

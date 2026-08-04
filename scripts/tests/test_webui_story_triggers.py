@@ -203,6 +203,14 @@ for (const [key, category] of [
         self.assertIn('t("questSucceedLifecyclePath")', source)
         self.assertIn("does not prove that the quest succeeds", source)
 
+    def test_mission_pipeline_exposes_undispatched_start_definitions(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("order.questLifecycleDefinitions", source)
+        self.assertIn("questStartActionDefinitionCount", source)
+        self.assertIn("authored_definition_no_current_aot_dispatch", source)
+        self.assertIn('t("questActionStartNoDispatch")', source)
+        self.assertIn("row.relatedOriginalFiles", source)
+
     def test_mission_pipeline_names_binary_quest_semantic_fields(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("?.questTopologyFieldConsumers?.questSemanticFields", source)

@@ -134,6 +134,11 @@ or local source edits.
 - A general installed-binary quest-lifecycle rule adds 22 exact same-quest
   objective-to-succeed-action Story edges across 18 missions; each carries its
   original MissionRuntime and binary hashes without inferring server branch choice.
+- The same general dispatcher census proves Fail=4 and Succeed=2 across every
+  current AOT fallback path, while finding no Start=1 producer. The WebUI keeps
+  60 authored start roots visible in quest inspectors; 57 have typed Story
+  references, and the 53 candidate-scene matches appear as attached definition
+  cards without turning them into scene order.
 - Installed metadata now names every authored fork arm's numeric `questType`
   (`Normal`, `Block`, or `Optional`) and `showMode` (`AlwaysShow` or
   `AlwaysHide`). The complete direct-consumer audit finds seven quest-type

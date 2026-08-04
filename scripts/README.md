@@ -54,8 +54,12 @@ override those defaults for one run.
   corridors. It fails closed if visibility reaches lifecycle code, a quest-type
   read interleaves with state application, or a bounded native back-edge could
   revisit lifecycle calls. None of these paths selects a successor arm.
-- The protocol audit also recovers the `QuestAction` enum and validates the
-  bounded `SucceedQuest -> SafeRunQuestAction -> RunQuestAction` flow. The
+- The protocol audit also recovers the `QuestAction` enum and validates every
+  current AOT fallback dispatcher and pending replay into `RunQuestAction`.
+  `FailQuest` and `SucceedQuest` are the complete direct `SafeRunQuestAction`
+  caller set; the shared pending list is the only replay carrier. The complete
+  bounded census currently finds no `OnStartClientAction` producer, so authored
+  start rows are published as definition evidence and never order edges. The
   partial-order builder may then join only same-quest objective Story
   completion and native-typed succeed Story actions. This is a corpus rule,
   not a mission/Story allowlist; reverse strong conflicts fail closed, and

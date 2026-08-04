@@ -102,6 +102,12 @@ Rebuild Story data after editing overrides.
   MissionRuntime, `GameAssembly.dll`, and metadata files. This proves relative
   order only for the matching same-quest pair, not that success occurred or
   which successor branch the server selected.
+- The same panel lists authored quest-start Story actions separately when the
+  current installed-binary census has no slot-1 dispatcher. Each row exposes
+  its quest, action, Story file, boundary, and hash-checked MissionRuntime,
+  `GameAssembly.dll`, and metadata files. These definition rows are counted
+  visibly but never become order edges; quest inspectors use the same dispatch
+  badge on every client action.
 - Post-playback `CallServer` rows show their complete binary-decoded serialized
   contract and exact related `LevelScriptData` file, while keeping correlation
   labels and argument parameters explicitly non-owning.
