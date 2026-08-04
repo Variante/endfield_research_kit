@@ -52,6 +52,12 @@ override those defaults for one run.
   projects that one corpus contract onto every authored fork arm. Message IDs,
   addresses, enum values, and quest IDs are recovered inputs rather than
   per-object rules; server-only selection and exclusivity remain unresolved.
+- The same solver follows corpus-discovered Boolean field values into native
+  zero/nonzero branches. It resolves the quest-enable packet control and the
+  current runtime pause field from metadata, validates the complete four-route
+  matrix (`StartQuest`, `PauseQuest`, or `DisableQuest`), and reports serialized
+  but unread controls. Mission IDs, quest IDs, packet IDs, native addresses,
+  and object allowlists are not discovery inputs.
 - The same corpus-wide census recovers `QuestType` and `QuestShowMode` enum
   values and follows both `QuestInfo` fields through every verified direct
   getter caller. Its field-driven branch analyzer validates the sole

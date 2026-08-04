@@ -6889,6 +6889,79 @@ def load_state_update_application_contract(
             f"actual={{'transitions': {transitions!r}, "
             f"'successorLikeFields': {successor_fields!r}}} source={audit_path}"
         )
+    quest_enable_lifecycle = census.get("questEnableLifecycleApplication") or {}
+    quest_enable_validation = quest_enable_lifecycle.get("validation") or {}
+    if quest_enable_validation.get("status") != "validated":
+        failure = (quest_enable_validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            f"gate={failure.get('gate') or 'questEnableLifecycleApplication'} "
+            f"message={failure.get('message')} expected={failure.get('expected')!r} "
+            f"actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    enable_message = quest_enable_lifecycle.get("message") or {}
+    enable_routes = quest_enable_lifecycle.get("routes") or []
+    packet_fields = enable_message.get("consumedControlFields") or []
+    runtime_field = str(
+        (quest_enable_lifecycle.get("runtimeControl") or {}).get("field") or ""
+    )
+    route_values = sorted({
+        (
+            (route.get("values") or {}).get(packet_fields[0]),
+            (route.get("values") or {}).get(runtime_field),
+        )
+        for route in enable_routes
+    }) if len(packet_fields) == 1 and runtime_field else []
+    route_calls = [
+        route.get("reachableLifecycleCalls") or [] for route in enable_routes
+    ]
+    enable_shape = {
+        "schema": quest_enable_lifecycle.get("schema"),
+        "identityField": enable_message.get("identityField"),
+        "packetControlFieldCount": len(packet_fields),
+        "runtimeControlField": runtime_field,
+        "routeValues": route_values,
+        "oneCallPerRoute": bool(route_calls)
+        and all(len(calls) == 1 for calls in route_calls),
+        "distinctLifecycleMethods": len({
+            calls[0].get("method")
+            for calls in route_calls
+            if len(calls) == 1
+        }),
+        "samePacketIdentity": bool(route_calls)
+        and all(
+            calls[0].get("samePacketIdentity") is True
+            for calls in route_calls
+            if len(calls) == 1
+        ),
+        "unreadControlFieldCount": len(
+            enable_message.get("unreadControlFields") or []
+        ),
+        "successorLikeFields": enable_message.get("successorLikeFields") or [],
+    }
+    expected_route_values = [
+        (False, False), (False, True), (True, False), (True, True)
+    ]
+    if (
+        enable_shape["schema"] != "questEnableLifecycleApplication.v1"
+        or not enable_shape["identityField"]
+        or enable_shape["packetControlFieldCount"] != 1
+        or not enable_shape["runtimeControlField"]
+        or enable_shape["routeValues"] != expected_route_values
+        or not enable_shape["oneCallPerRoute"]
+        or enable_shape["distinctLifecycleMethods"] < 3
+        or not enable_shape["samePacketIdentity"]
+        or enable_shape["unreadControlFieldCount"] < 1
+        or enable_shape["successorLikeFields"]
+    ):
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            "gate=questEnableLifecycleShape "
+            "expected='generic complete two-boolean matrix, one identity-preserving "
+            "lifecycle call per route, >=3 methods, unread context, no successor field' "
+            f"actual={enable_shape!r} source={audit_path}"
+        )
     quest_start = census.get("questStartApplication") or {}
     quest_start_validation = quest_start.get("validation") or {}
     if quest_start_validation.get("status") != "validated":
@@ -7020,6 +7093,15 @@ def load_state_update_application_contract(
         "clientSuccessorSelectors": census.get("clientSuccessorSelectors", 0),
         "questStateLifecycleApplication": {
             **quest_state_lifecycle,
+            "source": (
+                audit_path.relative_to(ROOT).as_posix()
+                if audit_path.is_relative_to(ROOT)
+                else audit_path.as_posix()
+            ),
+            "relatedOriginalFiles": related_files,
+        },
+        "questEnableLifecycleApplication": {
+            **quest_enable_lifecycle,
             "source": (
                 audit_path.relative_to(ROOT).as_posix()
                 if audit_path.is_relative_to(ROOT)
@@ -10075,6 +10157,104 @@ def annotate_quest_fork_state_application(
     return counts
 
 
+def annotate_quest_fork_enable_application(
+    payload: dict[str, Any],
+    contract: dict[str, Any],
+) -> Counter[str]:
+    """Attach a corpus-derived boolean lifecycle matrix to every quest fork."""
+    validator = "quest_fork_enable_application"
+    if contract.get("schema") != "questEnableLifecycleApplication.v1":
+        raise RuntimeError(
+            f"validator={validator} gate=contractSchema "
+            "expected='questEnableLifecycleApplication.v1' "
+            f"actual={contract.get('schema')!r}"
+        )
+    if (contract.get("validation") or {}).get("status") != "validated":
+        failure = ((contract.get("validation") or {}).get("failures") or [{}])[0]
+        raise RuntimeError(
+            f"validator={validator} gate={failure.get('gate') or 'contractValidation'} "
+            f"expected={failure.get('expected')!r} actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or contract.get('source') or ''}"
+        )
+    message = contract.get("message") or {}
+    runtime_control = contract.get("runtimeControl") or {}
+    identity_field = str(message.get("identityField") or "")
+    packet_fields = message.get("consumedControlFields") or []
+    runtime_field = str(runtime_control.get("field") or "")
+    routes = contract.get("routes") or []
+    matrix = sorted({
+        (
+            (route.get("values") or {}).get(packet_fields[0]),
+            (route.get("values") or {}).get(runtime_field),
+        )
+        for route in routes
+    }) if len(packet_fields) == 1 and runtime_field else []
+    expected_matrix = [
+        (False, False), (False, True), (True, False), (True, True)
+    ]
+    route_calls = [
+        route.get("reachableLifecycleCalls") or [] for route in routes
+    ]
+    if (
+        not identity_field
+        or matrix != expected_matrix
+        or not route_calls
+        or not all(len(calls) == 1 for calls in route_calls)
+        or len({calls[0].get("method") for calls in route_calls}) < 3
+        or not all(calls[0].get("samePacketIdentity") is True for calls in route_calls)
+        or message.get("successorLikeFields")
+    ):
+        raise RuntimeError(
+            f"validator={validator} gate=applicationShape "
+            "expected='complete generic two-boolean identity-preserving matrix, "
+            "one call per route, >=3 methods, no successor fields' "
+            f"actual={{'identityField': {identity_field!r}, 'matrix': {matrix!r}, "
+            f"'routeCalls': {route_calls!r}, "
+            f"'successorLikeFields': {message.get('successorLikeFields') or []!r}}}"
+        )
+    compact_contract = {
+        "schema": contract.get("schema"),
+        "classification": contract.get("classification"),
+        "message": {
+            "type": message.get("type"),
+            "messageId": message.get("messageId"),
+            "identityField": identity_field,
+            "consumedControlFields": packet_fields,
+            "unreadControlFields": message.get("unreadControlFields") or [],
+            "successorLikeFields": [],
+            "handler": message.get("handler") or {},
+        },
+        "runtimeControl": runtime_control,
+        "routes": routes,
+        "source": contract.get("source") or "",
+        "relatedOriginalFiles": contract.get("relatedOriginalFiles") or [],
+        "finding": contract.get("finding") or "",
+        "boundary": contract.get("boundary") or "",
+    }
+    counts: Counter[str] = Counter()
+    for fork in ((payload.get("questTopology") or {}).get("forks") or []):
+        if not isinstance(fork, dict):
+            continue
+        fork["serverQuestEnableApplication"] = compact_contract
+        counts["forks"] += 1
+        for arm in fork.get("arms") or []:
+            if not isinstance(arm, dict) or not arm.get("questId"):
+                raise RuntimeError(
+                    f"validator={validator} gate=armQuestIdentity "
+                    f"expected=non-empty actual={arm!r}"
+                )
+            arm["serverEnableApplicationIdentity"] = {
+                "field": identity_field,
+                "value": str(arm["questId"]),
+                "contractReference": (
+                    "runtimeContract.stateUpdateApplicationAudit."
+                    "questEnableLifecycleApplication"
+                ),
+            }
+            counts["arms"] += 1
+    return counts
+
+
 def _quest_reachability_distances(
     start: str,
     successors: dict[str, list[str]],
@@ -10827,8 +11007,12 @@ def build_all(
     quest_state_application = (
         state_update_contract.get("questStateLifecycleApplication") or {}
     )
+    quest_enable_application = (
+        state_update_contract.get("questEnableLifecycleApplication") or {}
+    )
     quest_action_dispatch_counts: Counter[str] = Counter()
     quest_state_application_counts: Counter[str] = Counter()
+    quest_enable_application_counts: Counter[str] = Counter()
     for summary in summaries:
         mission_path = mission_output / f"{summary['id']}.json"
         payload = read_json(mission_path)
@@ -10841,6 +11025,12 @@ def build_all(
             annotate_quest_fork_state_application(
                 payload,
                 quest_state_application,
+            )
+        )
+        quest_enable_application_counts.update(
+            annotate_quest_fork_enable_application(
+                payload,
+                quest_enable_application,
             )
         )
         write_json(mission_path, payload)
@@ -10951,6 +11141,12 @@ def build_all(
                 "forks"
             ],
             "questForkServerStateApplicationArms": quest_state_application_counts[
+                "arms"
+            ],
+            "questForkServerEnableApplications": quest_enable_application_counts[
+                "forks"
+            ],
+            "questForkServerEnableApplicationArms": quest_enable_application_counts[
                 "arms"
             ],
             "stateUpdateApplicationCandidates": state_update_contract[

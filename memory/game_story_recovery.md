@@ -45,6 +45,7 @@ Latest CN reports:
 | Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
 | Binary state-update authority | 4 / 4 identity+state/control paths validated; 0 client successor selectors |
 | Binary quest-state fork application | Generic field-constrained CFG recovery: `Processing` (2) -> `StartQuest`, `Completed` (3) -> `SucceedQuest`; published on all 307 forks / 740 arms with binary+metadata hashes; server selection policy remains unknown |
+| Binary quest-enable fork application | Generic live-field CFG recovery: enable + unpaused -> `StartQuest`, enable + paused -> `PauseQuest`, disable + either pause value -> `DisableQuest`; `prevQuestState` is unread; published on all 307 forks / 740 arms with binary+metadata hashes |
 | Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
 | Whole-client topology consumers | 42 / 43 direct `GetQuestInfo` call candidates verified; active predecessor consumers 0; non-sort flow consumers 0; topology lifecycle calls 0 |
 | Binary quest semantic fields | `questType`: 7 consumers / 6 Block comparisons / 1 Optional comparison; 2 post-lifecycle Block notifications; `showMode`: 5 consumers / 0 lifecycle; 676 Normal and 64 Optional fork arms, 0 Block |
@@ -81,6 +82,16 @@ in five payloads.
   hash-locked binary/metadata contract to every fork and exact arm identity.
   This proves client application after server selection, not the server's
   choice policy, sibling exclusivity, or Story-file order.
+- The shared constrained-CFG solver now also accepts corpus-discovered Boolean
+  field predicates. For the unique quest identity+enable update it follows the
+  live packet enable register and the exact metadata-resolved
+  `QuestData.isPaused@0x28` read, then validates all four combinations without
+  message IDs, addresses, quest IDs, or object allowlists. Enable routes to
+  `StartQuest` or `PauseQuest` according to current pause state; disable routes
+  to `DisableQuest` for either pause value, always with the same packet
+  `questId`. The packet's `prevQuestState` field is not read by this handler.
+  This is client application after server selection, not arm eligibility,
+  successor selection, sibling exclusivity, or Story-file order.
 - Story cards for dialog, radio, SNS, cutscenes, black screens, and remote
   communication.
 - Typed LevelScript, DialogTree, Timeline, FMV, quest-state, interactive, and

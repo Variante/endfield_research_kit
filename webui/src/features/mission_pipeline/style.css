@@ -2091,6 +2091,17 @@ body:not(.show-debug) .mp-playback-rejection {
   margin-top: .4rem;
   color: var(--muted);
 }
+.mp-quest-enable-routes {
+  margin-top: .55rem;
+  padding-top: .5rem;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+.mp-quest-enable-routes > p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin: .4rem 0;
+}
 .mp-quest-fork-arms {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));

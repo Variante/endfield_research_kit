@@ -39,6 +39,52 @@ QUEST_STATE_LIFECYCLE_FIXTURE = {
 }
 
 
+QUEST_ENABLE_LIFECYCLE_FIXTURE = {
+    "schema": "questEnableLifecycleApplication.v1",
+    "classification": "server_selected_quest_enable_local_pause_application",
+    "message": {
+        "type": "Proto.SC_FIXTURE_QUEST_ENABLE",
+        "messageId": 122,
+        "identityField": "questId",
+        "consumedControlFields": ["enabled"],
+        "unreadControlFields": ["previousState"],
+        "successorLikeFields": [],
+    },
+    "runtimeControl": {
+        "ownerType": "Fixture.RuntimeQuestData",
+        "field": "paused",
+        "offset": "0x28",
+    },
+    "routes": [
+        {
+            "values": {"enabled": False, "paused": False},
+            "reachableLifecycleCalls": [{
+                "method": "DisableThing", "samePacketIdentity": True,
+            }],
+        },
+        {
+            "values": {"enabled": False, "paused": True},
+            "reachableLifecycleCalls": [{
+                "method": "DisableThing", "samePacketIdentity": True,
+            }],
+        },
+        {
+            "values": {"enabled": True, "paused": False},
+            "reachableLifecycleCalls": [{
+                "method": "BeginThing", "samePacketIdentity": True,
+            }],
+        },
+        {
+            "values": {"enabled": True, "paused": True},
+            "reachableLifecycleCalls": [{
+                "method": "PauseThing", "samePacketIdentity": True,
+            }],
+        },
+    ],
+    "validation": {"status": "validated", "failures": []},
+}
+
+
 STATE_UPDATE_CONTRACT_FIXTURE = {
     "classification": "server_selected_identity_state_application",
     "candidateCount": 4,
@@ -46,6 +92,7 @@ STATE_UPDATE_CONTRACT_FIXTURE = {
     "clientSuccessorSelectors": 0,
     "allLifecycleCallsUsePacketIdentity": True,
     "questStateLifecycleApplication": QUEST_STATE_LIFECYCLE_FIXTURE,
+    "questEnableLifecycleApplication": QUEST_ENABLE_LIFECYCLE_FIXTURE,
     "questStartApplication": {
         "classification": "single_server_selected_quest_objective_initialization",
         "fieldReadCounts": {
@@ -209,6 +256,62 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             r"validator=quest_fork_state_application gate=applicationShape",
         ):
             pipeline.annotate_quest_fork_state_application(
+                {"questTopology": {"forks": []}},
+                contract,
+            )
+
+    def test_quest_fork_enable_application_annotation_is_corpus_wide(self):
+        payload = {
+            "questTopology": {
+                "forks": [{
+                    "questId": "m1_q#1",
+                    "arms": [
+                        {"questId": "m1_q#2"},
+                        {"questId": "m1_q#3"},
+                    ],
+                }],
+            },
+        }
+        contract = {
+            **QUEST_ENABLE_LIFECYCLE_FIXTURE,
+            "source": "reports/story/recovery/protocol_registry_audit.json",
+            "relatedOriginalFiles": [
+                {"kind": "original_game_binary", "sha256": "binary"},
+                {"kind": "original_game_metadata", "sha256": "metadata"},
+            ],
+        }
+
+        counts = pipeline.annotate_quest_fork_enable_application(payload, contract)
+
+        fork = payload["questTopology"]["forks"][0]
+        self.assertEqual(counts, {"forks": 1, "arms": 2})
+        self.assertEqual(
+            fork["serverQuestEnableApplication"]["runtimeControl"]["field"],
+            "paused",
+        )
+        self.assertEqual(
+            fork["arms"][1]["serverEnableApplicationIdentity"],
+            {
+                "field": "questId",
+                "value": "m1_q#3",
+                "contractReference": (
+                    "runtimeContract.stateUpdateApplicationAudit."
+                    "questEnableLifecycleApplication"
+                ),
+            },
+        )
+
+    def test_quest_fork_enable_application_fails_closed_on_incomplete_matrix(self):
+        contract = {
+            **QUEST_ENABLE_LIFECYCLE_FIXTURE,
+            "routes": QUEST_ENABLE_LIFECYCLE_FIXTURE["routes"][:-1],
+        }
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"validator=quest_fork_enable_application gate=applicationShape",
+        ):
+            pipeline.annotate_quest_fork_enable_application(
                 {"questTopology": {"forks": []}},
                 contract,
             )
@@ -510,6 +613,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 },
                 "stateUpdateApplicationCensus": {
                     "questStateLifecycleApplication": QUEST_STATE_LIFECYCLE_FIXTURE,
+                    "questEnableLifecycleApplication": QUEST_ENABLE_LIFECYCLE_FIXTURE,
                     "classification": "server_selected_identity_state_application",
                     "candidateCount": 2,
                     "validatedCandidateCount": 2,
@@ -580,6 +684,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 },
                 "stateUpdateApplicationCensus": {
                     "questStateLifecycleApplication": QUEST_STATE_LIFECYCLE_FIXTURE,
+                    "questEnableLifecycleApplication": QUEST_ENABLE_LIFECYCLE_FIXTURE,
                     "questStartApplication": {
                         "validation": {"status": "validated", "failures": []},
                     },
@@ -635,6 +740,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 },
                 "stateUpdateApplicationCensus": {
                     "questStateLifecycleApplication": QUEST_STATE_LIFECYCLE_FIXTURE,
+                    "questEnableLifecycleApplication": QUEST_ENABLE_LIFECYCLE_FIXTURE,
                     "questStartApplication": {
                         "validation": {"status": "validated", "failures": []},
                     },
@@ -4218,6 +4324,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "questForkReconverging": 0,
                 "questForkServerStateApplications": 1,
                 "questForkServerStateApplicationArms": 2,
+                "questForkServerEnableApplications": 1,
+                "questForkServerEnableApplicationArms": 2,
                 "stateUpdateApplicationCandidates": 4,
                 "stateUpdateApplicationCandidatesValidated": 4,
                 "stateUpdateClientSuccessorSelectors": 0,
@@ -4282,6 +4390,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 payload["questTopology"]["forks"][0]
                 ["serverQuestStateApplication"]["schema"],
                 "questStateLifecycleApplication.v1",
+            )
+            self.assertEqual(
+                payload["questTopology"]["forks"][0]
+                ["serverQuestEnableApplication"]["schema"],
+                "questEnableLifecycleApplication.v1",
             )
 
     @patch.object(
