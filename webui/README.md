@@ -143,6 +143,12 @@ Rebuild Story data after editing overrides.
   the nominal mission group, show the installed runtime mapping, and attach the
   hashed LevelScript, MissionRuntime, binary, and metadata inputs. Parallel
   Split arms and conditional alternatives remain explicitly non-chronological.
+- Native branch cards show the complete original serialized arm shape when its
+  runtime-active action map matches the installed binary mapping. Story arms,
+  active non-Story entry actions, inactive target slots, arm-exclusive action
+  topology, shared downstream actions, and related hash-addressed original
+  files remain visibly distinct; non-Story arms never imply Story ownership,
+  chronology, or mission membership.
 - Mission-state alternative cards preserve every Story file on both exact
   serialized arms, including cross-mission nominal groupings, and expose the
   related original LevelScript, MissionRuntime, binary, and metadata files.

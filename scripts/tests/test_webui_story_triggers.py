@@ -168,6 +168,17 @@ for (const [key, category] of [
         self.assertIn("nativeCrossBoundaryParallelHint", source)
         self.assertIn("summary.nativeControlCrossBoundaryBranchCount", source)
 
+    def test_mission_pipeline_surfaces_complete_serialized_native_arms(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("row.fullArms || row.arms", source)
+        self.assertIn("exact_complete_active_action_map", source)
+        self.assertIn("arm.entryAction", source)
+        self.assertIn("arm.exclusiveActions", source)
+        self.assertIn("row.sharedDownstreamActionLocalIds", source)
+        self.assertIn("nativeInactiveArm", source)
+        self.assertIn("summary.nativeControlNonStoryArmCount", source)
+        self.assertIn("Non-Story sibling actions do not establish", source)
+
     def test_mission_pipeline_surfaces_property_contract_as_non_ordering_context(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("activation.authoredPropertyContract", source)

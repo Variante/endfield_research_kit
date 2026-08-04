@@ -146,6 +146,12 @@ override those defaults for one run.
   arm is retained, including nominally external files. Split fan-outs require
   the current binary scheduler contract; all such cross-boundary rows remain
   non-owning and non-ordering and carry hashed original files.
+- Story-anchored native branches are also expanded generically from the
+  runtime-active original LevelScript action map. The typed control schema
+  exposes every Split/IfElse/Switch slot, including active non-Story actions,
+  inactive targets, runtime terminals, arm-exclusive actions, and shared
+  downstream nodes. Runtime-mapping or topology mismatches fail closed with
+  bounded source/hash diagnostics; no mission/object allowlist is used.
 - MissionRuntime-to-receiver context joins are likewise corpus-driven and
   require the exact typed `(mapId, scriptId)` operand from the recursive
   objective condition tree. Flat script-id summaries cannot attach a mission.

@@ -1663,6 +1663,156 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             "native_cross_boundary_branch_authority",
         )
 
+    def test_full_native_branch_arm_context_projects_non_story_and_inactive_slots(self) -> None:
+        branch = {
+            "kind": "switch",
+            "branchLocalId": 4,
+            "nativeMappingId": (
+                "gameassembly-2026-08-02-switchint-execute-0x1849dcca0"
+            ),
+            "sourceFiles": [
+                "LevelScriptData/map_test/70000000001.json",
+            ],
+            "arms": [{
+                "edge": "SwitchInt.case[0]=0",
+                "entryLocalId": 5,
+                "storyKeys": ["cutscene_m1_1"],
+            }],
+        }
+        topology = {
+            "status": "exact_complete_action_map",
+            "actions": [
+                {
+                    "localId": 4,
+                    "actionName": "SwitchInt",
+                    "controlRuntimeMappingId": branch["nativeMappingId"],
+                    "controlDetail": {
+                        "switchCaseValues": [0, 1],
+                        "switchCaseActionLocalIds": [5, 6],
+                        "switchDefaultActionLocalId": 0,
+                    },
+                },
+                {"localId": 5, "actionName": "PlayTimeline", "nextActionLocalId": 7},
+                {"localId": 6, "actionName": "WaitForSeconds", "nextActionLocalId": 7},
+                {"localId": 7, "actionName": "CallServer"},
+            ],
+            "edges": [
+                {
+                    "sourceKind": "action",
+                    "sourceLocalId": 4,
+                    "relation": "SwitchInt.case[0]=0",
+                    "targetActionLocalId": 5,
+                },
+                {
+                    "sourceKind": "action",
+                    "sourceLocalId": 4,
+                    "relation": "SwitchInt.case[1]=1",
+                    "targetActionLocalId": 6,
+                },
+                {
+                    "sourceKind": "action",
+                    "sourceLocalId": 5,
+                    "relation": "ActionBase.nextId",
+                    "targetActionLocalId": 7,
+                },
+                {
+                    "sourceKind": "action",
+                    "sourceLocalId": 6,
+                    "relation": "ActionBase.nextId",
+                    "targetActionLocalId": 7,
+                },
+            ],
+            "runtimeTerminalTargets": [],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source_path = (
+                Path(temp_dir) / "LevelScriptData" / "map_test"
+                / "70000000001.json"
+            )
+            source_path.parent.mkdir(parents=True)
+            source_path.write_bytes(b"original-levelscript")
+            partial_order._NATIVE_ACTION_TOPOLOGY_CACHE.clear()
+            with patch.object(partial_order, "ROOT", Path(temp_dir)), patch.object(
+                partial_order,
+                "decode_levelscript_native_action_topology",
+                return_value=(topology, None),
+            ):
+                rows, diagnostics = partial_order._full_native_branch_arm_context(
+                    "m1", [branch], None
+                )
+
+        self.assertEqual(diagnostics, [])
+        recovered = rows[0]
+        self.assertEqual(
+            recovered["fullArmCoverageStatus"],
+            "exact_complete_active_action_map",
+        )
+        self.assertEqual(recovered["serializedArmCount"], 3)
+        self.assertEqual(recovered["storyBearingArmCount"], 1)
+        self.assertEqual(recovered["nonStoryArmCount"], 1)
+        self.assertEqual(recovered["inactiveTargetArmCount"], 1)
+        self.assertEqual(
+            recovered["fullArms"][1]["entryAction"]["actionName"],
+            "WaitForSeconds",
+        )
+        self.assertEqual(recovered["sharedDownstreamActionLocalIds"], [7])
+        self.assertEqual(recovered["fullArms"][0]["exclusiveActionCount"], 1)
+        self.assertEqual(recovered["fullArms"][2]["targetStatus"],
+                         "inactive_serialized_target")
+        self.assertEqual(
+            recovered["relatedOriginalFiles"][0]["relationship"],
+            "complete_serialized_native_branch_arms",
+        )
+
+    def test_full_native_branch_arm_context_fails_closed_on_mapping_mismatch(self) -> None:
+        branch = {
+            "kind": "splitFanout",
+            "branchLocalId": 4,
+            "nativeMappingId": "expected-binary-mapping",
+            "sourceFiles": ["LevelScriptData/map_test/70000000001.json"],
+            "arms": [{
+                "edge": "Split.actions[0]",
+                "entryLocalId": 5,
+                "storyKeys": ["radio_m1_1"],
+            }],
+        }
+        topology = {
+            "status": "exact_complete_action_map",
+            "actions": [{
+                "localId": 4,
+                "actionName": "Split",
+                "controlRuntimeMappingId": "different-binary-mapping",
+                "controlDetail": {"splitActionLocalIds": [5]},
+            }],
+            "edges": [],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source_path = (
+                Path(temp_dir) / "LevelScriptData" / "map_test"
+                / "70000000001.json"
+            )
+            source_path.parent.mkdir(parents=True)
+            source_path.write_bytes(b"original-levelscript")
+            partial_order._NATIVE_ACTION_TOPOLOGY_CACHE.clear()
+            with patch.object(partial_order, "ROOT", Path(temp_dir)), patch.object(
+                partial_order,
+                "decode_levelscript_native_action_topology",
+                return_value=(topology, None),
+            ):
+                rows, diagnostics = partial_order._full_native_branch_arm_context(
+                    "m1", [branch], None
+                )
+
+        self.assertEqual(rows[0]["fullArmCoverageStatus"], "unavailable_fail_closed")
+        self.assertEqual(len(diagnostics), 1)
+        self.assertEqual(
+            diagnostics[0]["gate"], "uniqueRuntimeMappedControlAction"
+        )
+        self.assertEqual(diagnostics[0]["mission"], "m1")
+        self.assertEqual(diagnostics[0]["expected"]["matchingActionCount"], 1)
+        self.assertEqual(diagnostics[0]["actual"]["matchingActionCount"], 0)
+        self.assertIn("sourceSha256", diagnostics[0])
+
     def test_mission_state_projection_keeps_cross_mission_alternatives_without_order(self) -> None:
         candidates = {"dlg_m1_true": "dialog"}
         payload = mission_payload([])
