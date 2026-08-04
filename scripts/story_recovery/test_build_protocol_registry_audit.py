@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v17",
+                "_schema": "endfieldProtocolRegistryAudit.v18",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -758,15 +758,32 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         )
 
     def test_quest_semantic_fields_accept_post_lifecycle_consumption(self):
+        block_branch = {
+            "field": "questType",
+            "value": 1,
+            "enumName": "Block",
+            "fallthroughCondition": "equal",
+            "fallthroughResolvedSymbols": ["Beyond.EventManager.SendGlobal"],
+        }
         result = audit.validate_quest_semantic_field_observation(
             quest_type_values={"Normal": 0, "Block": 1, "Optional": 2},
             show_mode_values={"AlwaysShow": 1, "AlwaysHide": 1000},
-            quest_type_rows=[{
-                "classification": "post_lifecycle_quest_type_behavior",
-                "lifecycleCallSites": [{"offset": 20}],
-                "semanticFieldReadOffsets": [30],
-                "backwardLifecycleBranches": [],
-            }],
+            quest_type_rows=[
+                {
+                    "classification": "post_lifecycle_block_notification",
+                    "lifecycleCallSites": [{"offset": 20}],
+                    "semanticFieldReadOffsets": [30],
+                    "semanticEnumBranches": [block_branch],
+                    "backwardLifecycleBranches": [],
+                },
+                {
+                    "classification": "post_lifecycle_block_notification",
+                    "lifecycleCallSites": [{"offset": 40}],
+                    "semanticFieldReadOffsets": [50],
+                    "semanticEnumBranches": [block_branch],
+                    "backwardLifecycleBranches": [],
+                },
+            ],
             show_mode_rows=[{
                 "classification": "quest_visibility_or_tracker_presentation",
                 "lifecycleCallSites": [],
@@ -802,10 +819,56 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "questTypeEnum",
                 "questShowModeEnum",
                 "showModeHasNoLifecycleConsumer",
-                "questTypeLifecycleReadsArePostApplication",
+                "questTypeLifecycleReadsArePostApplicationBlockNotifications",
+                "postLifecycleBlockNotificationConsumers",
                 "noSemanticFieldBackEdgeToLifecycle",
             ],
         )
+
+    def test_semantic_enum_branch_observation_is_field_driven(self):
+        body = {
+            "controlFlow": [{
+                "offset": 14,
+                "text": "jne 0x1060",
+                "targetVa": "0x1060",
+            }],
+            "calls": [
+                {"offset": 30, "targetVa": "0x2000", "resolved": []},
+                {
+                    "offset": 45,
+                    "targetVa": "0x3000",
+                    "resolved": [{
+                        "type": "Beyond.EventManager",
+                        "method": "SendGlobal",
+                    }],
+                },
+                {
+                    "offset": 100,
+                    "targetVa": "0x4000",
+                    "resolved": [{"type": "Fixture", "method": "AfterJoin"}],
+                },
+            ],
+        }
+        result = audit.semantic_enum_branch_observations(
+            body,
+            {"questType": [{
+                "offset": 10,
+                "text": "cmp [rax+0x18], 0x1",
+            }]},
+            method_pointer=0x1000,
+            method_size=0x200,
+            enum_names={"questType": {1: "Block"}},
+        )
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["enumName"], "Block")
+        self.assertEqual(result[0]["fallthroughCondition"], "equal")
+        self.assertEqual(result[0]["branchTargetOffset"], 0x60)
+        self.assertEqual(
+            result[0]["fallthroughResolvedSymbols"],
+            ["Beyond.EventManager.SendGlobal"],
+        )
+        self.assertEqual(len(result[0]["fallthroughCalls"]), 2)
 
     def test_relevant_task_schemas_reference_separately_proven_native_paths(self):
         task_rows = [

@@ -18,6 +18,7 @@ server-side state selector.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from collections import Counter, defaultdict
@@ -63,7 +64,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v22"
+SCHEMA = "nativeReceiverActivationFrontier.v23"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -134,6 +135,22 @@ DEFAULT_DUNGEON_TABLE = (
     / "Table"
     / "DungeonTable.json"
 )
+DEFAULT_STRUCTURED_JSON_ROOT = MRA_DIR.parent
+STRUCTURED_SCRIPT_IDENTITY_KEYS = frozenset({
+    "scriptId",
+    "scriptIdGlobal",
+    "bindScriptId",
+    "_scriptId",
+    "levelScriptId",
+    "targetScriptId",
+})
+STRUCTURED_MISSION_IDENTITY_KEYS = frozenset({
+    "missionId",
+    "questId",
+    "_missionId",
+    "_questId",
+    "dungeonMissionId",
+})
 
 
 def safe_text(value: Any) -> str:
@@ -193,6 +210,205 @@ def collect_related_original_files(*values: Any) -> list[dict[str, str]]:
         }
         for path in sorted(paths)
     ]
+
+
+def structured_identity_cocarrier_census(
+    receiver_rows: list[dict[str, Any]],
+    *,
+    structured_json_root: Path = DEFAULT_STRUCTURED_JSON_ROOT,
+) -> dict[str, Any]:
+    """Census direct authored LevelScript + mission/quest identity records.
+
+    The scan is schema-key driven and covers every JSON file under the selected
+    original structured-data root.  It admits no filename-derived identities
+    and fails closed when a new direct key-pair shape appears.
+    """
+    receiver_ids = {
+        safe_text(row.get("scriptId"))
+        for row in receiver_rows
+        if safe_text(row.get("scriptId"))
+    }
+    candidate_files = 0
+    parsed_files = 0
+    visited_records = 0
+    parse_failures: list[dict[str, str]] = []
+    rows: list[dict[str, Any]] = []
+    key_pairs: Counter[str] = Counter()
+    key_tokens = [
+        f'"{key}"'.encode("utf-8")
+        for key in sorted(STRUCTURED_SCRIPT_IDENTITY_KEYS)
+    ]
+
+    def scalar_values(value: Any) -> list[str]:
+        if isinstance(value, bool):
+            return []
+        if isinstance(value, (str, int)):
+            return [safe_text(value)] if safe_text(value) else []
+        if isinstance(value, list):
+            return sorted({
+                safe_text(item)
+                for item in value
+                if not isinstance(item, bool)
+                and isinstance(item, (str, int))
+                and safe_text(item)
+            })
+        return []
+
+    def walk(value: Any, path: str, source_file: str) -> None:
+        nonlocal visited_records
+        if isinstance(value, dict):
+            visited_records += 1
+            script_fields = {
+                key: scalar_values(item)
+                for key, item in value.items()
+                if key in STRUCTURED_SCRIPT_IDENTITY_KEYS
+                and scalar_values(item)
+            }
+            mission_fields = {
+                key: scalar_values(item)
+                for key, item in value.items()
+                if key in STRUCTURED_MISSION_IDENTITY_KEYS
+                and scalar_values(item)
+            }
+            if script_fields and mission_fields:
+                for script_key in script_fields:
+                    for mission_key in mission_fields:
+                        key_pairs[f"{script_key}+{mission_key}"] += 1
+                matched_receivers = sorted({
+                    script_id
+                    for values in script_fields.values()
+                    for script_id in values
+                    if script_id in receiver_ids
+                })
+                key_pair_set = {
+                    (script_key, mission_key)
+                    for script_key in script_fields
+                    for mission_key in mission_fields
+                }
+                classification = (
+                    "subgame_dungeon_mission_binding"
+                    if key_pair_set == {("bindScriptId", "dungeonMissionId")}
+                    else "unreviewed_direct_identity_carrier"
+                )
+                rows.append({
+                    "sourceFile": source_file,
+                    "recordPath": path,
+                    "scriptFields": script_fields,
+                    "missionFields": mission_fields,
+                    "receiverScriptIds": matched_receivers,
+                    "classification": classification,
+                    "ownershipAction": (
+                        "existing_subgame_binding_contract"
+                        if classification == "subgame_dungeon_mission_binding"
+                        else "review_required"
+                    ),
+                })
+            for key, item in value.items():
+                walk(item, f"{path}.{key}" if path else safe_text(key), source_file)
+        elif isinstance(value, list):
+            for index, item in enumerate(value):
+                walk(item, f"{path}[{index}]", source_file)
+
+    if structured_json_root.is_dir():
+        for path in sorted(structured_json_root.rglob("*.json")):
+            try:
+                data = read_bytes_cached(path)
+            except OSError as exc:
+                parse_failures.append({
+                    "sourceFile": rel_path(path),
+                    "error": f"read failed: {exc}",
+                })
+                continue
+            if not any(token in data for token in key_tokens):
+                continue
+            candidate_files += 1
+            try:
+                payload = json.loads(data.decode("utf-8-sig"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                parse_failures.append({
+                    "sourceFile": rel_path(path),
+                    "error": f"JSON parse failed: {exc}",
+                })
+                continue
+            parsed_files += 1
+            walk(payload, "", rel_path(path))
+
+    unreviewed = [
+        row for row in rows
+        if row["classification"] == "unreviewed_direct_identity_carrier"
+    ]
+    receiver_matches = [row for row in rows if row["receiverScriptIds"]]
+    failures: list[dict[str, Any]] = []
+    if not structured_json_root.is_dir():
+        failures.append({
+            "validator": "structured_identity_cocarrier_census",
+            "gate": "structuredJsonRoot",
+            "expected": "directory",
+            "actual": "missing",
+            "sourceFile": rel_path(structured_json_root),
+        })
+    if candidate_files == 0 or parsed_files == 0:
+        failures.append({
+            "validator": "structured_identity_cocarrier_census",
+            "gate": "candidateDiscovery",
+            "expected": ">=1 parsed script-identity JSON file",
+            "actual": {
+                "candidateFiles": candidate_files,
+                "parsedFiles": parsed_files,
+            },
+            "sourceFile": rel_path(structured_json_root),
+        })
+    if parse_failures:
+        failures.append({
+            "validator": "structured_identity_cocarrier_census",
+            "gate": "completeJsonParse",
+            "expected": [],
+            "actual": parse_failures,
+            "sourceFile": rel_path(structured_json_root),
+        })
+    if unreviewed:
+        failures.append({
+            "validator": "structured_identity_cocarrier_census",
+            "gate": "allDirectCarrierShapesReviewed",
+            "expected": [],
+            "actual": unreviewed,
+            "sourceFile": unreviewed[0]["sourceFile"],
+        })
+    validation = {
+        "status": "validation_failed" if failures else "validated",
+        "failures": failures,
+    }
+    return {
+        "schema": "structuredLevelScriptMissionIdentityCensus.v1",
+        "sourceRoot": rel_path(structured_json_root),
+        "scriptIdentityKeys": sorted(STRUCTURED_SCRIPT_IDENTITY_KEYS),
+        "missionIdentityKeys": sorted(STRUCTURED_MISSION_IDENTITY_KEYS),
+        "candidateFileCount": candidate_files,
+        "parsedFileCount": parsed_files,
+        "visitedRecordCount": visited_records,
+        "directCarrierCount": len(rows),
+        "keyPairCounts": dict(sorted(key_pairs.items())),
+        "receiverMatchCount": len(receiver_matches),
+        "receiverScriptIds": sorted({
+            script_id
+            for row in receiver_matches
+            for script_id in row["receiverScriptIds"]
+        }),
+        "rows": rows,
+        "finding": (
+            "The complete selected structured-data corpus exposes direct "
+            "LevelScript plus mission/quest identities only through reviewed "
+            "SubGame bindScriptId+dungeonMissionId records; none currently names "
+            "an unresolved native Story receiver script."
+        ),
+        "boundary": (
+            "This covers exact keys co-carried in one authored JSON record. "
+            "Ancestor-container proximity, filenames, numeric adjacency, OCR, and "
+            "manual overrides are not identity evidence. A future new key-pair "
+            "shape fails validation instead of being promoted automatically."
+        ),
+        "validation": validation,
+    }
 
 
 def receiver_script_rows(index_payload: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1980,6 +2196,7 @@ def build_report(
         DEFAULT_GAME_MECHANIC_CONDITION_TABLE
     ),
     dungeon_table_path: Path = DEFAULT_DUNGEON_TABLE,
+    structured_json_root: Path = DEFAULT_STRUCTURED_JSON_ROOT,
 ) -> dict[str, Any]:
     known_mission_ids = {
         safe_text(row.get("id"))
@@ -2068,6 +2285,11 @@ def build_report(
         dungeon_source=rel_path(dungeon_table_path),
         condition_source=rel_path(game_mechanic_condition_table_path),
     )
+    receiver_sources = receiver_script_rows(index_payload)
+    structured_identity_census = structured_identity_cocarrier_census(
+        receiver_sources,
+        structured_json_root=structured_json_root,
+    )
     rows: list[dict[str, Any]] = []
     classes: Counter[str] = Counter()
     start_types: Counter[str] = Counter()
@@ -2080,7 +2302,7 @@ def build_report(
     task_conditions_with_mission_consumers = 0
     tasks_with_mission_consumers = 0
 
-    for receiver in receiver_script_rows(index_payload):
+    for receiver in receiver_sources:
         level_id = receiver["levelId"]
         script_id = receiver["scriptId"]
         script_path = levelscript_root / level_id / f"{script_id}.json"
@@ -2515,6 +2737,7 @@ def build_report(
                 game_mechanic_condition_table_path
             ),
             "dungeonTable": rel_path(dungeon_table_path),
+            "structuredJsonRoot": rel_path(structured_json_root),
             "encounterRuntimeEvidence": {
                 "runtimeType": ENCOUNTER_RUNTIME_TYPE,
                 "dataType": ENCOUNTER_DATA_TYPE,
@@ -2599,6 +2822,12 @@ def build_report(
                 "closes literal-constant carriers, not dynamic, indirect, or "
                 "server-authored activation."
             ),
+            "structuredIdentityBoundary": (
+                "Only exact LevelScript-identity and mission/quest-identity "
+                "fields carried by the same authored JSON record are counted. "
+                "Filename, ancestor, neighboring-record, OCR, and manual-name "
+                "proximity create no identity or ownership edge."
+            ),
             "taskRuntimeAuthorityBoundary": (
                 "The hash-validated current binary and protobuf schemas prove "
                 "that LevelScript task traffic is keyed by sceneNumId, scriptId, "
@@ -2662,6 +2891,23 @@ def build_report(
             ),
         },
         "counts": {
+            "structuredIdentityCandidateFiles": (
+                structured_identity_census["candidateFileCount"]
+            ),
+            "structuredIdentityVisitedRecords": (
+                structured_identity_census["visitedRecordCount"]
+            ),
+            "structuredDirectIdentityCarriers": (
+                structured_identity_census["directCarrierCount"]
+            ),
+            "structuredReceiverIdentityMatches": (
+                structured_identity_census["receiverMatchCount"]
+            ),
+            "structuredUnreviewedIdentityCarriers": sum(
+                row.get("classification")
+                == "unreviewed_direct_identity_carrier"
+                for row in structured_identity_census.get("rows") or []
+            ),
             "receiverNodes": sum(row["receiverNodeCount"] for row in rows),
             "receiverScripts": len(rows),
             "receiverToStoryPlacements": sum(
@@ -3058,6 +3304,7 @@ def build_report(
                 for row in rows
             ),
         },
+        "structuredIdentityCarrierCensus": structured_identity_census,
         "manualControlAuditSummary": manual_control_payload.get("summary") or {},
         "rows": rows,
     }
@@ -3360,6 +3607,13 @@ def publish_to_pipeline_index(
         "generated": report.get("generated"),
         "counts": report.get("counts") or {},
         "evidencePolicy": report.get("evidencePolicy") or {},
+        "structuredIdentityCarrierCensus": {
+            key: value
+            for key, value in (
+                report.get("structuredIdentityCarrierCensus") or {}
+            ).items()
+            if key != "rows"
+        },
         "reportJson": rel_path(DEFAULT_JSON),
         "reportMarkdown": rel_path(DEFAULT_MARKDOWN),
         "annotatedReceiverNodes": annotated,
@@ -3369,6 +3623,7 @@ def publish_to_pipeline_index(
 
 def markdown_report(payload: dict[str, Any]) -> str:
     counts = payload.get("counts") or {}
+    identity_census = payload.get("structuredIdentityCarrierCensus") or {}
     lines = [
         "# Native Receiver Activation Frontier",
         "",
@@ -3384,6 +3639,18 @@ def markdown_report(payload: dict[str, Any]) -> str:
         ),
         f"- Unique Story keys: `{counts.get('storyKeys')}`",
         f"- Start types: `{counts.get('startTypes')}`",
+        (
+            "- Structured JSON candidate files / records / direct carriers: "
+            f"`{identity_census.get('candidateFileCount')}` / "
+            f"`{identity_census.get('visitedRecordCount')}` / "
+            f"`{identity_census.get('directCarrierCount')}`"
+        ),
+        (
+            "- Direct structured carriers matching unresolved receiver scripts "
+            f"/ unreviewed carrier shapes: "
+            f"`{identity_census.get('receiverMatchCount')}` / "
+            f"`{sum(1 for row in identity_census.get('rows') or [] if row.get('classification') == 'unreviewed_direct_identity_carrier')}`"
+        ),
         (
             "- Scripts / Story keys with binary-validated SameWithActive "
             f"policy: `{counts.get('scriptsWithValidatedSameWithActivePolicy')}` / "
@@ -3701,6 +3968,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MARKDOWN)
+    parser.add_argument(
+        "--structured-json-root",
+        type=Path,
+        default=DEFAULT_STRUCTURED_JSON_ROOT,
+    )
     return parser.parse_args()
 
 
@@ -3710,10 +3982,14 @@ def main() -> None:
         read_json(args.pipeline_index) or {},
         read_json(args.manual_control_audit) or {},
         mission_root=args.mission_root,
+        structured_json_root=args.structured_json_root,
     )
     payload["sources"]["missionPipelineIndex"] = rel_path(args.pipeline_index)
     payload["sources"]["manualControlAudit"] = rel_path(args.manual_control_audit)
     payload["sources"]["missionPipelineMissionRoot"] = rel_path(args.mission_root)
+    payload["sources"]["structuredJsonRoot"] = rel_path(
+        args.structured_json_root
+    )
     write_report_json(args.json, payload)
     write_text_if_changed(args.markdown, markdown_report(payload))
     counts = payload["counts"]
@@ -3722,6 +3998,19 @@ def main() -> None:
         f"(scripts={counts['receiverScripts']}, "
         f"classes={counts['activationClasses']})"
     )
+    validation = (
+        payload.get("structuredIdentityCarrierCensus") or {}
+    ).get("validation") or {}
+    if validation.get("status") != "validated":
+        failure = (validation.get("failures") or [{}])[0]
+        raise SystemExit(
+            "structured identity census failed: "
+            f"validator={failure.get('validator')}; "
+            f"gate={failure.get('gate')}; "
+            f"source={failure.get('sourceFile')}; "
+            f"expected={failure.get('expected')!r}; "
+            f"actual={failure.get('actual')!r}"
+        )
 
 
 if __name__ == "__main__":

@@ -412,6 +412,12 @@
       questForkShowMode: "binary visibility mode",
       questSemanticFields: "Quest type and visibility semantics",
       questSemanticFieldsHint: "These installed-binary enum names describe client presentation and post-state behavior. They do not select a successor arm.",
+      questEnumComparisons: "exact enum comparisons",
+      questBlockNotification: "post-lifecycle Block notification",
+      questOptionalObjectiveFlag: "Optional objective presentation flag",
+      structuredIdentityCensus: "Original structured identity census",
+      structuredIdentityCensusCounts: "candidate files / records / direct carriers",
+      structuredIdentityReceiverMatches: "receiver matches / unreviewed shapes",
       questForkArmCorridor: "sibling-exclusive quest corridor",
       questForkArmStoryEvidence: "exact related Story evidence",
       questForkArmOriginalFiles: "arm-related original files",
@@ -441,6 +447,7 @@
       questVisibilityPresentation: "visibility/tracker presentation",
       questTypePresentation: "quest-type query/presentation",
       questTypePostLifecycle: "quest type read after lifecycle application",
+      questTypeBlockNotification: "Block notification after lifecycle application",
       questMerge: "quest join",
       nativeSplitFanout: "native Split fan-out",
       nativeIfElseBranch: "native If/Else branch",
@@ -1521,6 +1528,12 @@
       questForkShowMode: "\u539f\u751f\u53ef\u89c1\u6a21\u5f0f",
       questSemanticFields: "\u4efb\u52a1\u7c7b\u578b\u4e0e\u53ef\u89c1\u6027\u8bed\u4e49",
       questSemanticFieldsHint: "\u8fd9\u4e9b\u539f\u59cb\u5ba2\u6237\u7aef\u679a\u4e3e\u540d\u79f0\u4ec5\u63cf\u8ff0\u663e\u793a\u4e0e\u72b6\u6001\u5e94\u7528\u540e\u884c\u4e3a\uff0c\u4e0d\u9009\u62e9\u540e\u7ee7\u5206\u652f\u3002",
+      questEnumComparisons: "\u7cbe\u786e\u679a\u4e3e\u6bd4\u8f83",
+      questBlockNotification: "\u751f\u547d\u5468\u671f\u5e94\u7528\u540e\u7684 Block \u901a\u77e5",
+      questOptionalObjectiveFlag: "Optional \u76ee\u6807\u663e\u793a\u6807\u5fd7",
+      structuredIdentityCensus: "\u539f\u59cb\u7ed3\u6784\u5316\u8eab\u4efd\u5168\u91cf\u5ba1\u8ba1",
+      structuredIdentityCensusCounts: "\u5019\u9009\u6587\u4ef6 / \u8bb0\u5f55 / \u76f4\u63a5\u8f7d\u4f53",
+      structuredIdentityReceiverMatches: "\u63a5\u6536\u811a\u672c\u5339\u914d / \u672a\u5ba1\u6838\u5f62\u72b6",
       questForkArmCorridor: "\u540c\u7ea7\u5206\u652f\u72ec\u6709\u4efb\u52a1\u8d70\u5eca",
       questForkArmStoryEvidence: "\u7cbe\u786e\u76f8\u5173 Story \u8bc1\u636e",
       questForkArmOriginalFiles: "\u5206\u652f\u76f8\u5173\u539f\u59cb\u6587\u4ef6",
@@ -1550,6 +1563,7 @@
       questVisibilityPresentation: "\u53ef\u89c1\u6027/\u8ddf\u8e2a\u663e\u793a",
       questTypePresentation: "\u4efb\u52a1\u7c7b\u578b\u67e5\u8be2/\u663e\u793a",
       questTypePostLifecycle: "\u751f\u547d\u5468\u671f\u72b6\u6001\u5e94\u7528\u540e\u8bfb\u53d6\u4efb\u52a1\u7c7b\u578b",
+      questTypeBlockNotification: "\u751f\u547d\u5468\u671f\u72b6\u6001\u5e94\u7528\u540e\u53d1\u9001 Block \u901a\u77e5",
       questMerge: "\u4efb\u52a1\u6c47\u5408",
       nativeSplitFanout: "\u539f\u751f Split \u5206\u6d41",
       nativeIfElseBranch: "\u539f\u751f If/Else \u5206\u652f",
@@ -3460,13 +3474,16 @@
       quest_visibility_or_tracker_presentation: t("questVisibilityPresentation"),
       quest_type_query_or_presentation: t("questTypePresentation"),
       post_lifecycle_quest_type_behavior: t("questTypePostLifecycle"),
+      post_lifecycle_block_notification: t("questTypeBlockNotification"),
     })[classification] || String(classification || "typed field consumer").replaceAll("_", " ");
     const topologyConsumerFields = (row) => {
       const questReads = Object.entries(row.fieldReads || {}).map(([name, reads]) => `${name}:${(reads || []).length}`);
       const missionAccesses = Object.entries(row.fieldAccesses || {}).map(([name, kinds]) => `${name}:${Object.entries(kinds || {}).map(([kind, accesses]) => `${kind}=${(accesses || []).length}`).join("/")}`);
       return [...questReads, ...missionAccesses];
     };
-    const semanticFieldsHtml = semanticFields ? `<section class="mp-quest-semantic-fields"><p><strong>${esc(t("questSemanticFields"))}:</strong> ${(semanticFields.questType?.values || []).map((row) => `<code>${esc(row.name || "?")}=${Number(row.id)}</code>`).join(" ")} ${(semanticFields.showMode?.values || []).map((row) => `<code>${esc(row.name || "?")}=${Number(row.id)}</code>`).join(" ")}</p><p><code>questType consumers=${Number(semanticFields.questType?.consumerCount || 0)}</code> <code>post-lifecycle=${Number(semanticFields.questType?.postLifecycleConsumerCount || 0)}</code> <code>showMode consumers=${Number(semanticFields.showMode?.consumerCount || 0)}</code> <code>lifecycle=${Number(semanticFields.showMode?.lifecycleConsumerCount || 0)}</code></p><small>${esc(semanticFields.finding || t("questSemanticFieldsHint"))}</small><small>${esc(semanticFields.boundary || "")}</small></section>` : "";
+    const optionalFlag = semanticFields?.optionalObjectiveFlag || null;
+    const optionalObservation = optionalFlag?.observation || {};
+    const semanticFieldsHtml = semanticFields ? `<section class="mp-quest-semantic-fields"><p><strong>${esc(t("questSemanticFields"))}:</strong> ${(semanticFields.questType?.values || []).map((row) => `<code>${esc(row.name || "?")}=${Number(row.id)}</code>`).join(" ")} ${(semanticFields.showMode?.values || []).map((row) => `<code>${esc(row.name || "?")}=${Number(row.id)}</code>`).join(" ")}</p><p><code>questType consumers=${Number(semanticFields.questType?.consumerCount || 0)}</code> <code>post-lifecycle=${Number(semanticFields.questType?.postLifecycleConsumerCount || 0)}</code> <code>${esc(t("questBlockNotification"))}=${Number(semanticFields.questType?.blockNotificationConsumerCount || 0)}</code> <code>showMode consumers=${Number(semanticFields.showMode?.consumerCount || 0)}</code> <code>lifecycle=${Number(semanticFields.showMode?.lifecycleConsumerCount || 0)}</code></p><p><strong>${esc(t("questEnumComparisons"))}:</strong> ${Object.entries(semanticFields.questType?.comparisonCounts || {}).map(([name, count]) => `<code>${esc(name)}=${Number(count)}</code>`).join(" ")} ${Object.entries(semanticFields.showMode?.comparisonCounts || {}).map(([name, count]) => `<code>${esc(name)}=${Number(count)}</code>`).join(" ")}</p>${optionalFlag ? `<div class="mp-quest-optional-flag"><strong>${esc(t("questOptionalObjectiveFlag"))}</strong><code>${esc(optionalFlag.validation?.status || "unvalidated")}</code>${optionalObservation.objectiveShowDataType ? `<code>${esc(optionalObservation.objectiveShowDataType)}.optional @ ${esc(optionalObservation.optionalFieldOffset || "?")}</code>` : ""}${optionalObservation.caller?.token ? `<code>${esc(optionalObservation.caller.token)} @ ${esc(optionalObservation.caller.va || "?")}</code>` : ""}${optionalObservation.comparison?.readText ? `<code>${esc(optionalObservation.comparison.readText)}</code>` : ""}${optionalObservation.optionalFieldWrite?.text ? `<code>${esc(optionalObservation.optionalFieldWrite.text)}</code>` : ""}<small>${esc(optionalFlag.finding || "")}</small><small>${esc(optionalFlag.boundary || "")}</small></div>` : ""}<small>${esc(semanticFields.finding || t("questSemanticFieldsHint"))}</small><small>${esc(semanticFields.boundary || "")}</small></section>` : "";
     const topologyConsumersHtml = topologyConsumers ? `<section class="mp-topology-consumer-audit">
       <p><strong>${esc(t("wholeClientTopologyConsumers"))}:</strong> <code>${Number(questConsumerCensus.verifiedDirectCallCount || 0)} / ${Number(questConsumerCensus.rawE8CandidateCount || 0)}</code> ${esc(t("verifiedQuestInfoCalls"))} <code>${esc(t("activePredecessorConsumers"))}=${Number(topologyConsumers.activePredecessorConsumerCount || 0)}</code> <code>${esc(t("nonSortFlowConsumers"))}=${Number(topologyConsumers.flowIndexNonSortConsumerCount || 0)}</code> <code>${esc(t("topologyLifecycleCalls"))}=${(topologyConsumers.topologyLifecycleCalls || []).length}</code></p>
       ${topologyConsumerRows.length ? `<details><summary><strong>${esc(t("topologyConsumerMethods"))}</strong> <span>${topologyConsumerRows.length}</span></summary>${topologyConsumerRows.map((row) => `<p><code>${esc(row.caller?.type || "")}.${esc(row.caller?.method || "")}</code> <code>${esc(row.caller?.token || "")}</code> <b>${esc(topologyClassificationLabel(row.classification))}</b>${topologyConsumerFields(row).map((field) => `<code>${esc(field)}</code>`).join(" ")}</p>`).join("")}</details>` : ""}
@@ -4272,6 +4289,8 @@
     const missionlessNodes = (state.index?.storyCoverage?.missionlessSubGamePlaybackNodes || [])
       .filter((row) => row && row.subGameId && row.bindScriptId);
     const missionlessAudit = contract.subGameMissionRegistry?.missionlessPlaybackAudit || {};
+    const receiverFrontier = state.index?.storyCoverage?.nativeReceiverActivationFrontier || {};
+    const structuredIdentityCensus = receiverFrontier.structuredIdentityCarrierCensus || {};
     const receiverNodes = (state.index?.storyCoverage?.missionlessNativeRuntimeNodes || [])
       .filter((row) => row && row.eventName && row.selector && (row.storyFiles || []).length);
     const variableBridgeAudit = state.index?.storyCoverage?.postPlaybackVariableBridgeAudit || {};
@@ -4478,6 +4497,12 @@
       </section>` : ""}
       ${receiverNodes.length ? `<section class="mp-missionless-runtime mp-native-receiver-runtime">
         <header><strong>${esc(t("exactReceiverNodes"))} <span>${receiverNodes.length}</span></strong><p>${esc(t("exactReceiverNodesHint"))}</p></header>
+        ${structuredIdentityCensus.schema ? `<aside class="mp-structured-identity-census">
+          <strong>${esc(t("structuredIdentityCensus"))}</strong><code>${esc(structuredIdentityCensus.validation?.status || "unvalidated")}</code>
+          <span>${esc(t("structuredIdentityCensusCounts"))}: <b>${Number(structuredIdentityCensus.candidateFileCount || 0).toLocaleString()} / ${Number(structuredIdentityCensus.visitedRecordCount || 0).toLocaleString()} / ${Number(structuredIdentityCensus.directCarrierCount || 0).toLocaleString()}</b></span>
+          <span>${esc(t("structuredIdentityReceiverMatches"))}: <b>${Number(structuredIdentityCensus.receiverMatchCount || 0).toLocaleString()} / ${Number(receiverFrontier.counts?.structuredUnreviewedIdentityCarriers || 0).toLocaleString()}</b></span>
+          <small>${esc(structuredIdentityCensus.finding || "")}</small><small>${esc(structuredIdentityCensus.boundary || "")}</small>
+        </aside>` : ""}
         <div class="mp-missionless-runtime-grid">${receiverNodes.map((row) => {
           const selector = row.selector || {};
           const activation = row.activationFrontier || {};

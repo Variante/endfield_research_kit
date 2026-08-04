@@ -49,7 +49,7 @@ STATE_UPDATE_CONTRACT_FIXTURE = {
         },
         "missionRuntimeConsumers": [],
         "questSemanticFields": {
-            "schema": "questSemanticFieldConsumers.v1",
+            "schema": "questSemanticFieldConsumers.v2",
             "classification": "client_presentation_and_post_application_only",
             "questType": {
                 "values": [
@@ -59,6 +59,7 @@ STATE_UPDATE_CONTRACT_FIXTURE = {
                 ],
                 "consumerCount": 7,
                 "postLifecycleConsumerCount": 2,
+                "blockNotificationConsumerCount": 2,
             },
             "showMode": {
                 "values": [
@@ -67,6 +68,11 @@ STATE_UPDATE_CONTRACT_FIXTURE = {
                 ],
                 "consumerCount": 5,
                 "lifecycleConsumerCount": 0,
+            },
+            "optionalObjectiveFlag": {
+                "schema": "questOptionalObjectiveFlag.v1",
+                "classification": "optional_objective_presentation_flag",
+                "validation": {"status": "validated", "failures": []},
             },
             "validation": {"status": "validated", "failures": []},
         },
@@ -343,7 +349,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v17",
+                "_schema": "endfieldProtocolRegistryAudit.v18",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -379,6 +385,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         "flowIndexNonSortConsumerCount": 0,
                         "topologyLifecycleCalls": [],
                         "questSemanticFields": {
+                            "schema": "questSemanticFieldConsumers.v2",
+                            "optionalObjectiveFlag": {
+                                "validation": {
+                                    "status": "validated",
+                                    "failures": [],
+                                },
+                            },
                             "validation": {"status": "validated", "failures": []},
                         },
                         "validation": {"status": "validated", "failures": []},
@@ -402,7 +415,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v17",
+                "_schema": "endfieldProtocolRegistryAudit.v18",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": "0" * 64,
@@ -418,6 +431,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     },
                     "questTopologyFieldConsumers": {
                         "questSemanticFields": {
+                            "schema": "questSemanticFieldConsumers.v2",
+                            "optionalObjectiveFlag": {
+                                "validation": {
+                                    "status": "validated",
+                                    "failures": [],
+                                },
+                            },
                             "validation": {"status": "validated", "failures": []},
                         },
                         "validation": {"status": "validated", "failures": []},
@@ -435,6 +455,57 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertIn("expected=", message)
         self.assertIn("actual=", message)
         self.assertIn("GameAssembly.dll", message)
+
+    def test_state_update_contract_fails_closed_on_optional_flag_contract(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            gameassembly.write_bytes(b"fixture-gameassembly")
+            metadata.write_bytes(b"fixture-metadata")
+            audit_path = root / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v18",
+                "source": {
+                    "gameAssembly": str(gameassembly),
+                    "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
+                    "metadata": str(metadata),
+                    "metadataSha256": hashlib.sha256(metadata.read_bytes()).hexdigest(),
+                },
+                "stateUpdateApplicationCensus": {
+                    "questStartApplication": {
+                        "validation": {"status": "validated", "failures": []},
+                    },
+                    "questSucceedActionApplication": {
+                        "validation": {"status": "validated", "failures": []},
+                    },
+                    "questTopologyFieldConsumers": {
+                        "questSemanticFields": {
+                            "schema": "questSemanticFieldConsumers.v2",
+                            "optionalObjectiveFlag": {
+                                "validation": {
+                                    "status": "validation_failed",
+                                    "failures": [{
+                                        "gate": "optionalFieldWrite",
+                                        "expected": "[object+0x50] = 1",
+                                        "actual": "missing",
+                                        "sourceFile": str(gameassembly),
+                                    }],
+                                },
+                            },
+                            "validation": {"status": "validated", "failures": []},
+                        },
+                        "validation": {"status": "validated", "failures": []},
+                    },
+                    "validation": {"status": "validated", "failures": []},
+                },
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"gate=optionalFieldWrite.*expected='\[object\+0x50\] = 1'.*actual='missing'",
+            ):
+                pipeline.load_state_update_application_contract(audit_path)
 
     def test_levelscript_task_authority_validates_general_packet_family(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -486,7 +557,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v17",
+                "_schema": "endfieldProtocolRegistryAudit.v18",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -515,7 +586,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v17",
+                "_schema": "endfieldProtocolRegistryAudit.v18",
                 "selectedSchemas": [],
                 "nativeTaskPaths": {},
             }), encoding="utf-8")
@@ -535,7 +606,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v17",
+                "_schema": "endfieldProtocolRegistryAudit.v18",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -583,7 +654,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v17",
+                "_schema": "endfieldProtocolRegistryAudit.v18",
                 "levelScriptStartPolicy": {
                     "schema": "levelScriptStartPolicy.v1",
                     "classification": (
@@ -615,7 +686,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v17",
+                "_schema": "endfieldProtocolRegistryAudit.v18",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -665,7 +736,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v17",
+                "_schema": "endfieldProtocolRegistryAudit.v18",
                 "levelScriptManualSelfControl": {
                     "schema": "levelScriptManualSelfControl.v1",
                     "classification": (
@@ -699,7 +770,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v17",
+                "_schema": "endfieldProtocolRegistryAudit.v18",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -788,7 +859,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v17",
+                "_schema": "endfieldProtocolRegistryAudit.v18",
                 "levelScriptActivationControl": {
                     "schema": "levelScriptActivationControl.v6",
                     "classification": (
@@ -3675,6 +3746,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "questTopologyLifecycleCalls": 0,
                 "questTypeConsumers": 7,
                 "questTypePostLifecycleConsumers": 2,
+                "questTypeBlockNotificationConsumers": 2,
+                "questOptionalObjectiveFlagValidated": True,
                 "questShowModeConsumers": 5,
                 "questShowModeLifecycleConsumers": 0,
                 # The fixture has one mission with no cross-mission state

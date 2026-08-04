@@ -6505,10 +6505,10 @@ def load_state_update_application_contract(
             f"expected=file actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v17":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v18":
         raise RuntimeError(
             "validator=state_update_application_contract gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v17' "
+            "expected='endfieldProtocolRegistryAudit.v18' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     census = audit.get("stateUpdateApplicationCensus") or {}
@@ -6556,12 +6556,32 @@ def load_state_update_application_contract(
             f"source={failure.get('sourceFile') or audit_path}"
         )
     semantic_fields = topology_consumers.get("questSemanticFields") or {}
+    if semantic_fields.get("schema") != "questSemanticFieldConsumers.v2":
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            "gate=questSemanticFieldsSchema "
+            "expected='questSemanticFieldConsumers.v2' "
+            f"actual={semantic_fields.get('schema')!r} source={audit_path}"
+        )
     semantic_validation = semantic_fields.get("validation") or {}
     if semantic_validation.get("status") != "validated":
         failure = (semantic_validation.get("failures") or [{}])[0]
         raise RuntimeError(
             "validator=state_update_application_contract "
             f"gate={failure.get('gate') or 'questSemanticFields'} "
+            f"message={failure.get('message')} expected={failure.get('expected')!r} "
+            f"actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    optional_validation = (
+        (semantic_fields.get("optionalObjectiveFlag") or {}).get("validation")
+        or {}
+    )
+    if optional_validation.get("status") != "validated":
+        failure = (optional_validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            f"gate={failure.get('gate') or 'optionalObjectiveFlag'} "
             f"message={failure.get('message')} expected={failure.get('expected')!r} "
             f"actual={failure.get('actual')!r} "
             f"source={failure.get('sourceFile') or audit_path}"
@@ -6633,10 +6653,10 @@ def load_levelscript_task_authority_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v17":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v18":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v17' "
+            "expected='endfieldProtocolRegistryAudit.v18' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
 
@@ -6797,10 +6817,10 @@ def load_levelscript_start_policy_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v17":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v18":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v17' "
+            "expected='endfieldProtocolRegistryAudit.v18' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptStartPolicy") or {}
@@ -6891,10 +6911,10 @@ def load_levelscript_manual_self_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v17":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v18":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v17' "
+            "expected='endfieldProtocolRegistryAudit.v18' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptManualSelfControl") or {}
@@ -6987,10 +7007,10 @@ def load_levelscript_activation_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v17":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v18":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v17' "
+            "expected='endfieldProtocolRegistryAudit.v18' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptActivationControl") or {}
@@ -10185,6 +10205,20 @@ def build_all(
                 .get("questType", {})
                 .get("postLifecycleConsumerCount", 0)
             ),
+            "questTypeBlockNotificationConsumers": (
+                state_update_contract["questTopologyFieldConsumers"]
+                .get("questSemanticFields", {})
+                .get("questType", {})
+                .get("blockNotificationConsumerCount", 0)
+            ),
+            "questOptionalObjectiveFlagValidated": (
+                state_update_contract["questTopologyFieldConsumers"]
+                .get("questSemanticFields", {})
+                .get("optionalObjectiveFlag", {})
+                .get("validation", {})
+                .get("status")
+                == "validated"
+            ),
             "questShowModeConsumers": (
                 state_update_contract["questTopologyFieldConsumers"]
                 .get("questSemanticFields", {})
@@ -11434,6 +11468,19 @@ def main() -> int:
             ),
             dungeon_table_path=args.dungeon_table.resolve(),
         )
+        identity_validation = (
+            activation_frontier.get("structuredIdentityCarrierCensus") or {}
+        ).get("validation") or {}
+        if identity_validation.get("status") != "validated":
+            failure = (identity_validation.get("failures") or [{}])[0]
+            raise RuntimeError(
+                "structured identity census failed: "
+                f"validator={failure.get('validator')}; "
+                f"gate={failure.get('gate')}; "
+                f"source={failure.get('sourceFile')}; "
+                f"expected={failure.get('expected')!r}; "
+                f"actual={failure.get('actual')!r}"
+            )
         # Fixture/test builds use temporary output roots and must not overwrite
         # the canonical recovery report with their reduced corpus.
         if output_root == DEFAULT_OUTPUT_ROOT.resolve():
@@ -11481,9 +11528,13 @@ def main() -> int:
         "Quest semantic fields: "
         f"{index['counts'].get('questTypeConsumers', 0)} questType consumers "
         f"({index['counts'].get('questTypePostLifecycleConsumers', 0)} "
-        "post-lifecycle), "
+        "post-lifecycle / "
+        f"{index['counts'].get('questTypeBlockNotificationConsumers', 0)} "
+        "Block notifications), "
         f"{index['counts'].get('questShowModeConsumers', 0)} showMode consumers "
-        f"({index['counts'].get('questShowModeLifecycleConsumers', 0)} lifecycle)"
+        f"({index['counts'].get('questShowModeLifecycleConsumers', 0)} lifecycle), "
+        "Optional objective flag="
+        f"{index['counts'].get('questOptionalObjectiveFlagValidated', False)}"
     )
     if coverage:
         counts = coverage["counts"]

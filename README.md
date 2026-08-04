@@ -133,9 +133,11 @@ or local source edits.
 - Installed metadata now names every authored fork arm's numeric `questType`
   (`Normal`, `Block`, or `Optional`) and `showMode` (`AlwaysShow` or
   `AlwaysHide`). The complete direct-consumer audit finds seven quest-type
-  methods, two reading the field only after lifecycle application, and five
-  visibility methods with zero lifecycle calls. These labels explain arm
-  presentation but do not select or exclude a successor.
+  methods: the sole `Optional` comparison sets the exact objective-display
+  `optional` flag, while two `Block` comparisons emit a global notification
+  only after lifecycle application. Five visibility methods make zero
+  lifecycle calls. These labels explain client presentation and notification,
+  but do not select or exclude a successor.
 - The source-only graph is cycle-free, but proves order for only **1.54%** of
   possible within-mission scene pairs. It is a partial order, not a canonical
   full playthrough.
