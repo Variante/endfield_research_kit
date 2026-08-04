@@ -136,6 +136,11 @@ override those defaults for one run.
   walks reusable AND/OR/NOT/ALL and comparison trees to exact leaves; unknown,
   missing, cyclic, and malformed children fail closed instead of receiving
   object-specific rules.
+- Mission-state Story alternatives are projected corpus-wide from exact typed
+  `CompareMissionState` / `GetMissionState` control paths. Complete serialized
+  arms may cross nominal mission Story groups, but remain non-owning and add no
+  chronology edge; original LevelScript, MissionRuntime, binary, and metadata
+  files are attached with hashes.
 - MissionRuntime-to-receiver context joins are likewise corpus-driven and
   require the exact typed `(mapId, scriptId)` operand from the recursive
   objective condition tree. Flat script-id summaries cannot attach a mission.

@@ -11781,6 +11781,8 @@ def main() -> int:
             f"{summary.get('questMerges', 0)} quest merges, "
             f"{summary.get('nativeControlBranches', 0)} native branch groups, "
             f"{summary.get('nativeControlMerges', 0)} native convergences, "
+            f"{summary.get('nativeMissionStateBranches', 0)} mission-state alternative groups "
+            f"({summary.get('nativeMissionStateBranchExternalStories', 0)} cross-mission references), "
             f"{summary.get('nativeControlPathTransitionEdges', 0)} exact native Story transitions "
             f"({summary.get('nativeControlPathBranchingTransitionEdges', 0)} branch-bearing), "
             f"{summary.get('nativeControlPathNamedActionEndpoints', 0)}/"

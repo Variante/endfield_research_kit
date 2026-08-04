@@ -152,6 +152,14 @@ for (const [key, category] of [
         self.assertIn("nativeCinematicProducerRouteAttachments", source)
         self.assertIn("route.sourceFiles", source)
 
+    def test_mission_pipeline_surfaces_complete_mission_state_alternatives(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("branches.nativeMissionStateBranches", source)
+        self.assertIn("row.externalStoryKeys", source)
+        self.assertIn('data-mission-state-branch=', source)
+        self.assertIn("row.relatedOriginalFiles", source)
+        self.assertIn("alternatives, not Story order or ownership", source)
+
     def test_mission_pipeline_surfaces_property_contract_as_non_ordering_context(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("activation.authoredPropertyContract", source)

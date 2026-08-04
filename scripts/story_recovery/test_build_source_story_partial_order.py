@@ -1581,6 +1581,84 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(result["summary"]["nativeSemanticPredicateCount"], 1)
         self.assertEqual(result["summary"]["nativeClassOnlyPredicateCount"], 0)
 
+    def test_mission_state_projection_keeps_cross_mission_alternatives_without_order(self) -> None:
+        candidates = {"dlg_m1_true": "dialog"}
+        payload = mission_payload([])
+        predicate = {
+            "status": "exact_unique_getter",
+            "getterName": "CompareMissionState",
+            "getterUnionTag": "0x001f",
+            "getterSerializedMemberCount": 10,
+            "compareMissionState": {
+                "comparerName": "NotEqual",
+                "valueBStateName": "Completed",
+                "nativeMappingId": "gameassembly-2026-07-11-puregetter-mission-state",
+                "pureGetterUnionTag": "0x001f",
+                "serializedMemberCount": 10,
+            },
+            "sourceGetter": {"getMissionState": {
+                "missionId": "m1",
+                "nativeMappingId": "gameassembly-2026-07-11-puregetter-mission-state",
+                "pureGetterUnionTag": "0x013a",
+                "serializedMemberCount": 8,
+            }},
+        }
+
+        def dependency(key: str, edge: str, entry_id: int) -> dict:
+            return {
+                "key": key,
+                "missionStateGatePaths": [{
+                    "levelId": "map_test",
+                    "scriptId": "70000000001",
+                    "sourceFile": "fixture.json",
+                    "controlPath": {
+                        "status": "exact_serialized_control_path",
+                        "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                        "headerLocalId": 4,
+                        "path": [
+                            {
+                                "localId": 5,
+                                "edge": "ActionHeader.nextId",
+                                "actionName": "IfElseAction",
+                                "branchPredicate": predicate,
+                            },
+                            {"localId": entry_id, "edge": edge},
+                        ],
+                    },
+                }],
+            }
+
+        payload["flow"]["missionStateStoryDependencies"] = [
+            dependency("dlg_m1_true", "IfElseAction.trueAction", 6),
+            dependency("dlg_m2_false", "IfElseAction.falseAction", 7),
+        ]
+        result = partial_order.build_mission_partial_order("m1", candidates, payload)
+
+        self.assertEqual(result["directEdges"], [])
+        self.assertEqual(result["summary"]["nativeMissionStateBranchCount"], 1)
+        self.assertEqual(
+            result["summary"]["nativeMissionStateBranchExternalStoryCount"], 1
+        )
+        branch = result["branches"]["nativeMissionStateBranches"][0]
+        self.assertEqual(branch["missionStoryKeys"], ["dlg_m1_true"])
+        self.assertEqual(branch["externalStoryKeys"], ["dlg_m2_false"])
+        self.assertFalse(branch["ownership"])
+        self.assertFalse(branch["orderEvidence"])
+        self.assertEqual(
+            {arm["edge"] for arm in branch["arms"]},
+            {"IfElseAction.trueAction", "IfElseAction.falseAction"},
+        )
+
+        rejected = partial_order.build_mission_partial_order("m2", candidates, payload)
+        self.assertEqual(rejected["branches"]["nativeMissionStateBranches"], [])
+        payload["flow"]["missionStateStoryDependencies"][0][
+            "missionStateGatePaths"
+        ][0]["controlPath"]["path"][0]["branchPredicate"][
+            "getterSerializedMemberCount"
+        ] = 9
+        malformed = partial_order.build_mission_partial_order("m1", candidates, payload)
+        self.assertEqual(malformed["branches"]["nativeMissionStateBranches"], [])
+
     def test_native_branch_sequence_creates_exact_story_order(self) -> None:
         candidates = {
             "radio_m1_first": "radio",

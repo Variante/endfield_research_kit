@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v28"
+SCHEMA = "sourceStoryPartialOrder.v29"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -75,6 +75,7 @@ PROTOCOL_REGISTRY_AUDIT_PATH = (
 )
 VARIANT_FLOW_LIST_FIELDS = (
     "missionStoryConnections",
+    "missionStateStoryDependencies",
     "quests",
     "unlinkedNativePlayback",
     "unlinkedDefinitionOnly",
@@ -1407,7 +1408,11 @@ NATIVE_OCCURRENCE_FIELDS = (
 )
 
 
-def _story_connection_rows(flow: dict[str, Any]) -> Iterable[dict[str, Any]]:
+def _story_connection_rows(
+    flow: dict[str, Any],
+    *,
+    include_mission_state_dependencies: bool = False,
+) -> Iterable[dict[str, Any]]:
     for row in flow.get("missionStoryConnections") or []:
         if isinstance(row, dict):
             yield row
@@ -1419,6 +1424,10 @@ def _story_connection_rows(flow: dict[str, Any]) -> Iterable[dict[str, Any]]:
                 yield row
     for field in ("unlinkedNativePlayback", "unlinkedDefinitionOnly"):
         for row in flow.get(field) or []:
+            if isinstance(row, dict):
+                yield row
+    if include_mission_state_dependencies:
+        for row in flow.get("missionStateStoryDependencies") or []:
             if isinstance(row, dict):
                 yield row
 
@@ -2094,6 +2103,18 @@ def _connection_native_occurrences(row: dict[str, Any]) -> list[dict[str, Any]]:
             for occurrence in row.get(field) or []
             if isinstance(occurrence, dict)
         )
+    for gate_path in row.get("missionStateGatePaths") or []:
+        if not isinstance(gate_path, dict):
+            continue
+        control_path = gate_path.get("controlPath")
+        if not isinstance(control_path, dict):
+            continue
+        occurrences.append({
+            "levelId": gate_path.get("levelId"),
+            "scriptId": gate_path.get("scriptId"),
+            "sourceFile": gate_path.get("sourceFile"),
+            "nativeEventOwners": [control_path],
+        })
     if not occurrences and isinstance(row.get("nativeEventOwners"), list):
         occurrences.append({
             "levelId": next(iter(row.get("levelIds") or []), ""),
@@ -2108,6 +2129,8 @@ def _connection_native_occurrences(row: dict[str, Any]) -> list[dict[str, Any]]:
 def _native_event_story_paths(
     flow: dict[str, Any],
     candidate_keys: set[str] | None,
+    *,
+    include_mission_state_dependencies: bool = False,
 ) -> dict[
     tuple[str, str, int, str],
     set[tuple[str, tuple[tuple[Any, ...], ...], tuple[str, ...], str, str]],
@@ -2116,7 +2139,10 @@ def _native_event_story_paths(
         tuple[str, str, int, str],
         set[tuple[str, tuple[tuple[Any, ...], ...], tuple[str, ...], str, str]],
     ] = defaultdict(set)
-    for row in _story_connection_rows(flow):
+    for row in _story_connection_rows(
+        flow,
+        include_mission_state_dependencies=include_mission_state_dependencies,
+    ):
         story_key = safe_key(row.get("key"))
         if candidate_keys is not None and story_key not in candidate_keys:
             continue
@@ -3775,12 +3801,18 @@ def _native_branch_kind(edge: str) -> str:
 
 def _native_control_branches_and_merges(
     flow: dict[str, Any],
-    candidate_keys: set[str],
+    candidate_keys: set[str] | None,
+    *,
+    include_mission_state_dependencies: bool = False,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Expose exact serialized native branch arms and observed convergence."""
     branches: list[dict[str, Any]] = []
     merges: list[dict[str, Any]] = []
-    for signature, routes in _native_event_story_paths(flow, candidate_keys).items():
+    for signature, routes in _native_event_story_paths(
+        flow,
+        candidate_keys,
+        include_mission_state_dependencies=include_mission_state_dependencies,
+    ).items():
         groups: dict[
             tuple[tuple[int, ...], str],
             dict[
@@ -3960,6 +3992,106 @@ def _native_control_branches_and_merges(
     branches.sort(key=sort_key)
     merges.sort(key=sort_key)
     return branches, merges
+
+
+def _native_mission_state_story_branches(
+    mission: str,
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+    original_binary_contract: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Project complete exact mission-state alternatives without ordering them.
+
+    Mission bundles group Story files nominally, while one serialized branch can
+    choose files from several such groups.  Read every exact dependency row for
+    the bundle, then retain only branches controlled by this mission's constant
+    GetMissionState id and the current installed-build native mapping.
+    """
+    mapping_id = "gameassembly-2026-07-11-puregetter-mission-state"
+    all_branches, _all_merges = _native_control_branches_and_merges(
+        flow,
+        None,
+        include_mission_state_dependencies=True,
+    )
+    projected: list[dict[str, Any]] = []
+    for branch in all_branches:
+        predicate = branch.get("predicate") or {}
+        compare = predicate.get("compareMissionState") or {}
+        state_getter = (
+            (predicate.get("sourceGetter") or {}).get("getMissionState") or {}
+        )
+        if not (
+            branch.get("kind") == "ifElse"
+            and predicate.get("status") == "exact_unique_getter"
+            and predicate.get("getterName") == "CompareMissionState"
+            and predicate.get("getterUnionTag") == "0x001f"
+            and predicate.get("getterSerializedMemberCount") == 10
+            and compare.get("nativeMappingId") == mapping_id
+            and compare.get("pureGetterUnionTag") == "0x001f"
+            and compare.get("serializedMemberCount") == 10
+            and state_getter.get("nativeMappingId") == mapping_id
+            and state_getter.get("pureGetterUnionTag") == "0x013a"
+            and state_getter.get("serializedMemberCount") == 8
+            and safe_key(state_getter.get("missionId")) == mission
+        ):
+            continue
+
+        source_files = list(branch.get("sourceFiles") or [])
+        related_original_files: list[dict[str, Any]] = []
+        for source_file in source_files:
+            source_path = ROOT / source_file
+            if source_path.is_file():
+                related_original_files.append({
+                    "kind": "original_level_script",
+                    "sourceFile": source_file,
+                    "sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
+                    "relationship": "serialized_mission_state_story_branch",
+                })
+        for root_name in ("Persistent", "StreamingAssets"):
+            mission_source = (
+                ROOT / "export_full" / "structured" / root_name / "Data"
+                / "Json" / "MissionRuntimeAsset" / f"{mission}.json"
+            )
+            if mission_source.is_file():
+                related_original_files.append({
+                    "kind": "original_mission_runtime",
+                    "sourceFile": mission_source.relative_to(ROOT).as_posix(),
+                    "sha256": hashlib.sha256(mission_source.read_bytes()).hexdigest(),
+                    "relationship": "mission_state_identity_context",
+                })
+                break
+        related_original_files.extend({
+            **dict(row),
+            "relationship": "native_mission_state_branch_authority",
+        } for row in (original_binary_contract or {}).get("relatedOriginalFiles") or [])
+
+        all_story_keys = sorted({
+            safe_key(story_key)
+            for arm in branch.get("arms") or []
+            for story_key in arm.get("storyKeys") or []
+            if safe_key(story_key)
+        }, key=natural_key)
+        projected.append({
+            **branch,
+            "missionStateId": mission,
+            "missionStoryKeys": [
+                key for key in all_story_keys if key in candidate_keys
+            ],
+            "externalStoryKeys": [
+                key for key in all_story_keys if key not in candidate_keys
+            ],
+            "selectionSemantics": "alternative_client_story_selection",
+            "ownership": False,
+            "orderEvidence": False,
+            "relatedOriginalFiles": related_original_files,
+            "evidenceBoundary": (
+                "The serialized LevelScript and installed native getter/comparer "
+                "mapping prove client-side alternative selection from synchronized "
+                "mission state. They do not prove Story ownership, quest identity, "
+                "server transition timing, or order among alternative arms."
+            ),
+        })
+    return projected
 
 
 def build_mission_partial_order(
@@ -4298,6 +4430,12 @@ def build_mission_partial_order(
     native_control_branches, native_control_merges = _native_control_branches_and_merges(
         flow, candidate_keys
     )
+    native_mission_state_branches = _native_mission_state_story_branches(
+        mission,
+        flow,
+        candidate_keys,
+        extra_thread_scheduler_contract,
+    )
     native_related_action_topologies = _native_related_action_topologies(
         flow, candidate_keys
     )
@@ -4478,6 +4616,12 @@ def build_mission_partial_order(
             "cyclicInternalPairs": cyclic_internal_pairs,
             "sceneGraphOptionGroupCount": len(scene_graph_option_branches),
             "nativeControlBranchCount": len(native_control_branches),
+            "nativeMissionStateBranchCount": len(native_mission_state_branches),
+            "nativeMissionStateBranchExternalStoryCount": len({
+                key
+                for row in native_mission_state_branches
+                for key in row.get("externalStoryKeys") or []
+            }),
             "nativeControlMergeCount": len(native_control_merges),
             "nativeControlPathTransitionEdgeCount": len(
                 native_transition_edges
@@ -4560,6 +4704,7 @@ def build_mission_partial_order(
         "branches": {
             "sceneGraphOptions": scene_graph_option_branches,
             "nativeControlBranches": native_control_branches,
+            "nativeMissionStateBranches": native_mission_state_branches,
             "nativeControlMerges": native_control_merges,
             "nativeOrderedSequences": native_ordered_sequences,
             "nativeRelatedActionTopologies": native_related_action_topologies,
@@ -4844,6 +4989,12 @@ def build_report(
         totals["unorderedScenePairs"] += summary["unorderedScenePairs"]
         totals["sceneGraphOptionGroups"] += summary["sceneGraphOptionGroupCount"]
         totals["nativeControlBranches"] += summary["nativeControlBranchCount"]
+        totals["nativeMissionStateBranches"] += summary[
+            "nativeMissionStateBranchCount"
+        ]
+        totals["nativeMissionStateBranchExternalStories"] += summary[
+            "nativeMissionStateBranchExternalStoryCount"
+        ]
         totals["nativeControlMerges"] += summary["nativeControlMergeCount"]
         totals["nativeControlPathTransitionEdges"] += summary[
             "nativeControlPathTransitionEdgeCount"
@@ -5031,6 +5182,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- native control topology: `{summary.get('nativeControlBranches', 0)}` exact "
         f"Split/IfElse/Switch Story fan-outs and `{summary.get('nativeControlMerges', 0)}` "
         "observed convergences",
+        f"- native mission-state alternatives: "
+        f"`{summary.get('nativeMissionStateBranches', 0)}` exact branch groups exposing "
+        f"`{summary.get('nativeMissionStateBranchExternalStories', 0)}` cross-mission "
+        "Story references (selection evidence only, never chronology)",
         f"- exact native Story transitions: "
         f"`{summary.get('nativeControlPathTransitionEdges', 0)}` typed path-prefix edges, "
         f"including `{summary.get('nativeControlPathBranchingTransitionEdges', 0)}` "

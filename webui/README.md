@@ -139,6 +139,11 @@ Rebuild Story data after editing overrides.
   embedded root `GameCondition` unions and local getter references retain
   their nested type/operand details, while opaque or changed shapes remain
   visibly unresolved.
+- Mission-state alternative cards preserve every Story file on both exact
+  serialized arms, including cross-mission nominal groupings, and expose the
+  related original LevelScript, MissionRuntime, binary, and metadata files.
+  They are labeled as alternative selection rather than Story order or
+  ownership.
 - Exact native receiver cards recognize the reusable `EncounterBase<T>` /
   `EncounterData` property contract structurally and show its validated
   LevelData host, LsmPtr module namespace, receiver LevelScript, and typed
