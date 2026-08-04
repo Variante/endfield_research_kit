@@ -96,6 +96,11 @@ Rebuild Story data after editing overrides.
   post-application notification semantics, not evidence of arm activation or
   exclusivity.
   Predecessor forks remain topology rather than claimed server branch choice.
+- The managed-carrier card shows the cycle-safe fixed-point census, maximum
+  shortest type path, Entity/shared-runtime aggregate closures, zero exact
+  indexed Entity/component type labels plus the truncated-scalar boundary, and the binary, metadata, and two
+  original-object-index files used for that boundary. Type-graph reachability
+  alone never creates a mission ownership or order edge.
 - Story-order panels show binary-proven quest-success lifecycle edges as
   `objective Story completed -> server success state -> succeed client action`.
   Each edge links its exact quest relations and expands the hash-checked

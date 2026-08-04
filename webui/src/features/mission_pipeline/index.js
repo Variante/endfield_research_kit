@@ -228,7 +228,13 @@
       directManagedCandidates: "direct managed candidates",
       nestedManagedCandidates: "typed managed candidates",
       nestedDependentCandidates: "nested-dependent candidates",
-      maxTypedDepth: "maximum custom-type depth",
+      maxTypedDepth: "maximum shortest type path",
+      fixedPointTraversal: "cycle-safe fixed point",
+      runtimeEntityHubCandidates: "runtime Entity-hub candidates",
+      sharedAggregateCandidates: "mixed runtime-aggregate candidates",
+      exactSerializedInstances: "exact indexed type labels",
+      indexedOriginalObjects: "indexed original objects",
+      truncatedScalarObjects: "truncated scalar projections",
       shippedLuaProducer: "shipped XLua producer",
       authoredSubmitItemActions: "typed SubmitItem actions",
       concreteQuestIds: "concrete authored quest ids",
@@ -1056,7 +1062,13 @@
       directManagedCandidates: "直接托管候选",
       nestedManagedCandidates: "托管类型路径候选",
       nestedDependentCandidates: "依赖嵌套路径的候选",
-      maxTypedDepth: "最大自定义类型深度",
+      maxTypedDepth: "最短类型路径最大深度",
+      fixedPointTraversal: "循环安全不动点",
+      runtimeEntityHubCandidates: "运行时实体枢纽候选",
+      sharedAggregateCandidates: "混合运行时聚合候选",
+      exactSerializedInstances: "精确索引类型标签",
+      indexedOriginalObjects: "已索引原始对象",
+      truncatedScalarObjects: "标量投影截断对象",
       shippedLuaProducer: "已发布 XLua 生产者",
       authoredSubmitItemActions: "类型化提交物品动作",
       concreteQuestIds: "具体原始 questId",
@@ -4519,8 +4531,14 @@
           <strong>${esc(t("nestedManagedCandidates"))}: ${Number(nestedCarrierCensus.metadata?.candidateTypes || 0).toLocaleString()}</strong>
           <div class="mp-contract-tags">
             <b>${esc(t("nestedDependentCandidates"))}: ${Number(nestedCarrierCensus.metadata?.nestedDependentCandidateTypes || 0).toLocaleString()}</b>
-            <b>${esc(t("maxTypedDepth"))}: ${Number(nestedCarrierCensus.metadata?.maxCustomTypeDepth || 0).toLocaleString()}</b>
+            <b>${esc(t("maxTypedDepth"))}: ${Number(nestedCarrierCensus.metadata?.maximumShortestPathDepth || 0).toLocaleString()}</b>
+            <b>${esc(t("fixedPointTraversal"))}</b>
             <b>${esc(t("unreviewedCandidates"))}: ${Number(nestedCarrierCensus.metadata?.unreviewedCandidateTypes || 0).toLocaleString()}</b>
+            <b>${esc(t("runtimeEntityHubCandidates"))}: ${Number(nestedCarrierCensus.runtimeEntityHubClosure?.candidateTypes || 0).toLocaleString()}</b>
+            <b>${esc(t("sharedAggregateCandidates"))}: ${Number(nestedCarrierCensus.sharedRuntimeAggregateClosure?.candidateTypes || 0).toLocaleString()}</b>
+            <b>${esc(t("exactSerializedInstances"))}: ${Number(nestedCarrierCensus.runtimeEntityHubClosure?.exactIndexedTypeLabels || 0).toLocaleString()}</b>
+            <b>${esc(t("indexedOriginalObjects"))}: ${Number(nestedCarrierCensus.runtimeEntityHubClosure?.indexedOriginalObjects || 0).toLocaleString()}</b>
+            <b>${esc(t("truncatedScalarObjects"))}: ${Number(nestedCarrierCensus.runtimeEntityHubClosure?.objectsWithTruncatedScalars || 0).toLocaleString()}</b>
             <b>${esc(t("shippedLuaProducer"))}: ${Number(nestedCarrierCensus.pendingItemSubmitterClosure?.shippedLuaProducer?.constructorAndRegistrationCalls || 0).toLocaleString()}</b>
             <b>${esc(t("authoredSubmitItemActions"))}: ${Number(nestedCarrierCensus.pendingItemSubmitterClosure?.authoredOpenUiActions?.submitItemActions || 0).toLocaleString()}</b>
             <b>${esc(t("concreteQuestIds"))}: ${Number(nestedCarrierCensus.pendingItemSubmitterClosure?.authoredOpenUiActions?.concreteQuestIdActions || 0).toLocaleString()}</b>
@@ -4534,7 +4552,10 @@
           <small><code>${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.shippedLuaProducer?.logicalPath || "")}</code></small>
           <small><code>${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.fallbackParamFlow?.shippedLuaConsumer?.logicalPath || "")}</code> · ${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.fallbackParamFlow?.finding || "")}</small>
           <p>${esc(nestedCarrierCensus.finding)}</p>
+          <small>${esc(nestedCarrierCensus.runtimeEntityHubClosure?.finding || "")}</small>
+          <small>${esc(nestedCarrierCensus.sharedRuntimeAggregateClosure?.finding || "")}</small>
           <small>${esc(nestedCarrierCensus.pendingItemSubmitterClosure?.finding || "")}</small>
+          ${(nestedCarrierCensus.relatedOriginalFiles || []).map((related) => `<small><b>${esc(t("relatedOriginalFile"))}:</b> <code>${esc(related.sourceFile || "")}</code> / SHA-256 <code>${esc(related.sha256 || "")}</code> / ${esc(related.role || "")}</small>`).join("")}
           <small>${esc(nestedCarrierCensus.boundary || "")}</small>
         </article>` : ""}
       </div></section>` : ""}

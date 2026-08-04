@@ -85,6 +85,14 @@ override those defaults for one run.
   self-targets for every matching row; no scene or script id participates in
   discovery. Promotion still requires an authored event-header link and adds
   no mission ownership or cross-Story order.
+- `story_recovery/build_nested_managed_identity_carrier_census.py` follows the
+  installed MetadataRegistration custom-type graph with cycle-safe shortest-
+  path traversal to a fixed point; it has no per-object ids or arbitrary depth
+  cutoff. Shared runtime Entity/component and MissionRuntime aggregate paths
+  remain non-owning unless an exact serialized instance joins their values.
+  The validator scans both complete original-object indexes and fails closed on
+  a new exact type label, an incomplete index, or an unclassified path family;
+  truncated scalar projections stay visible as a bounded limitation.
 - A second general activation contract inventories every direct current-client
   `ManualStart` caller, validates the public state-notify application chain,
   and recovers the generic client request lifecycle. Exact metadata schemas,
