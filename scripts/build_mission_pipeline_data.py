@@ -1165,6 +1165,72 @@ RUNTIME_CONTRACT = {
         "missionOrderEdgesAdded": 0,
         "confidence": "metadata_registration_and_native_consumers_bounded",
     },
+    "nativeCrossSystemConsumerCensus": {
+        "source": (
+            "reports/story/recovery/native_cross_system_consumer_census.json"
+        ),
+        "method": (
+            "Complete current-build E8 rel32 census across GameAssembly .text and "
+            "il2cpp sections, mapped through current IL2CPP method and generic-method "
+            "pointers. Shared pointers with more than eight aliases or mixed API-family "
+            "aliases are rejected. No mission, quest, Story, scene, or object id is seeded."
+        ),
+        "counts": {
+            "mappedMethodPointers": 500976,
+            "familyTargetPointers": 7214,
+            "crossSystemCallers": 17,
+            "missionStateDynamicSceneCallers": 4,
+            "dynamicSceneLevelScriptCallers": 4,
+            "dynamicSceneStoryCallers": 8,
+            "missionStoryCallers": 1,
+            "missionLevelScriptCallers": 0,
+            "tripleOrGreaterFamilyCallers": 0,
+            "unreviewedCallers": 0,
+        },
+        "classifications": {
+            "missionStateControlsDynamicComponentAvailability": 4,
+            "sharedTriggerGeometryAdapters": 3,
+            "globalLevelLoadSynchronization": 1,
+            "storyDynamicSceneVisualContext": 8,
+            "missionOrDialogAlternateActionConsumer": 1,
+        },
+        "finding": (
+            "Four native DynamicSceneMissionControlSystem paths read exact mission or "
+            "quest state and update cared DynamicScene components. The full direct-call "
+            "census finds no MissionSystem-to-LevelScript consumer and no caller joining "
+            "mission state, DynamicScene, and Story or LevelScript. The remaining routes "
+            "are shared trigger geometry, global level-load synchronization, Story visual "
+            "override/actor context, or the separately audited MissionOption alternate "
+            "mission/dialog actions."
+        ),
+        "boundary": (
+            "This proves direct mapped calls in the hash-pinned installed binary only. "
+            "Virtual/interface dispatch, reflection, XLua, server-only logic, runtime-created "
+            "delegates, and future builds remain outside the census. Mission-controlled "
+            "DynamicScene rows are availability context, not LevelScript activation, Story "
+            "ownership, playback causality, or mission order."
+        ),
+        "relatedOriginalFiles": [{
+            "sourceFile": "D:/Program Files/Endfield Game/GameAssembly.dll",
+            "sha256": (
+                "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+            ),
+            "role": "complete native direct-call consumer corpus",
+        }, {
+            "sourceFile": (
+                "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/"
+                "global-metadata.dat"
+            ),
+            "sha256": (
+                "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+            ),
+            "role": "managed method, type, and generic-instantiation mapping",
+        }],
+        "classification": "binary_cross_system_consumers_reviewed_no_activation_bridge",
+        "storyBindingsAdded": 0,
+        "missionOrderEdgesAdded": 0,
+        "confidence": "complete_hash_locked_direct_call_census",
+    },
     "airWallMissionRadioContext": {
         "managedCarrier": {
             "manager": "Beyond.Gameplay.AirWallManager",

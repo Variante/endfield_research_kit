@@ -51,6 +51,7 @@ Latest CN reports:
 | Quest-fork arm evidence | 740 sibling arms; 349 carry 2,053 exact typed Story placements covering 741 Story keys and 318 arm-related original files; 307 placements use binary-named action types |
 | Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; all 95 exact LevelData types select the non-SubLevel client `active=true` request branch; all 95 original scripts have one uniquely decoded active volume (86 sphere / 9 box); 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
 | Binary public-state entry closure | 2 server-derived handlers: full-scene `SC_SELF_SCENE_INFO` snapshots and incremental `SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY`; 4 direct public-state setter callers split into 2 zero initializers and 2 server-parameter writers |
+| Native cross-system consumer census | 500,976 mapped methods / 7,214 unambiguous family targets / 17 reviewed callers: 4 mission-state→DynamicScene, 4 DynamicScene↔LevelScript infrastructure, 8 Story↔DynamicScene visual context, 1 separately audited mission/dialog alternate action; 0 MissionSystem→LevelScript, 0 three-system, 0 unreviewed |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -73,6 +74,16 @@ in five payloads.
   communication.
 - Typed LevelScript, DialogTree, Timeline, FMV, quest-state, interactive, and
   selected runtime receiver evidence.
+- A general, id-free direct-call census now maps the complete hash-pinned
+  `GameAssembly.dll`/metadata method corpus and classifies every caller crossing
+  MissionSystem, DynamicScene, LevelScript, or Story API families. Four
+  `DynamicSceneMissionControlSystem` paths prove that exact mission/quest state
+  controls cared component availability. The remaining callers are trigger
+  geometry, global level loading, Story visual override/actor recovery, or the
+  separately audited `MissionOption` alternate-action path. No direct
+  MissionSystem-to-LevelScript consumer and no three-system activation bridge
+  exists in the current corpus, so DynamicScene identity matches remain
+  mission-scoped context rather than Story ownership, playback, or order.
 - Exact native control paths for Split, If/Else, Switch, ordered Branch, playback, and
   many event families.
 - 312 native branch groups and 20 native convergences, kept as a partial
