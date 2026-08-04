@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v29"
+SCHEMA = "sourceStoryPartialOrder.v30"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -3799,6 +3799,29 @@ def _native_branch_kind(edge: str) -> str:
     return ""
 
 
+def _native_branch_runtime_mapping(
+    branch_kind: str,
+    arms: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Resolve a typed branch family to its installed-binary runtime mapping."""
+    pair: tuple[int, int] | None = None
+    if branch_kind == "splitFanout":
+        pair = (0x0495, 0x09)
+    elif branch_kind == "ifElse":
+        pair = (0x00FF, 0x0B)
+    elif branch_kind == "switch":
+        edges = {
+            safe_key(arm.get("edge"))
+            for arm in arms
+            if isinstance(arm, dict)
+        }
+        if edges and all(edge.startswith("SwitchInt.") for edge in edges):
+            pair = (0x04BD, 0x0C)
+        elif edges and all(edge.startswith("SwitchString.") for edge in edges):
+            pair = (0x04BF, 0x0C)
+    return dict(LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS.get(pair) or {})
+
+
 def _native_control_branches_and_merges(
     flow: dict[str, Any],
     candidate_keys: set[str] | None,
@@ -3810,7 +3833,7 @@ def _native_control_branches_and_merges(
     merges: list[dict[str, Any]] = []
     for signature, routes in _native_event_story_paths(
         flow,
-        candidate_keys,
+        None,
         include_mission_state_dependencies=include_mission_state_dependencies,
     ).items():
         groups: dict[
@@ -3880,6 +3903,18 @@ def _native_control_branches_and_merges(
                 json.loads(value)
                 for value in sorted({route[3] for route in all_routes})
             ]
+            all_story_keys = sorted(
+                {route[0] for route in all_routes},
+                key=natural_key,
+            )
+            if candidate_keys is not None and not (
+                set(all_story_keys) & candidate_keys
+            ):
+                continue
+            runtime_mapping = _native_branch_runtime_mapping(
+                branch_kind,
+                arm_rows,
+            )
             branch = {
                 "kind": branch_kind,
                 "levelId": signature[0],
@@ -3891,6 +3926,16 @@ def _native_control_branches_and_merges(
                 "arms": arm_rows,
                 "sourceFiles": source_files,
             }
+            if runtime_mapping:
+                branch["runtimeSemantics"] = runtime_mapping.get("kind")
+                branch["nativeMappingId"] = runtime_mapping.get("mappingId")
+            if candidate_keys is not None:
+                branch["missionStoryKeys"] = [
+                    key for key in all_story_keys if key in candidate_keys
+                ]
+                branch["externalStoryKeys"] = [
+                    key for key in all_story_keys if key not in candidate_keys
+                ]
             if len(event_details) == 1:
                 branch["eventDetail"] = event_details[0]
             elif event_details:
@@ -4036,34 +4081,14 @@ def _native_mission_state_story_branches(
         ):
             continue
 
-        source_files = list(branch.get("sourceFiles") or [])
-        related_original_files: list[dict[str, Any]] = []
-        for source_file in source_files:
-            source_path = ROOT / source_file
-            if source_path.is_file():
-                related_original_files.append({
-                    "kind": "original_level_script",
-                    "sourceFile": source_file,
-                    "sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
-                    "relationship": "serialized_mission_state_story_branch",
-                })
-        for root_name in ("Persistent", "StreamingAssets"):
-            mission_source = (
-                ROOT / "export_full" / "structured" / root_name / "Data"
-                / "Json" / "MissionRuntimeAsset" / f"{mission}.json"
-            )
-            if mission_source.is_file():
-                related_original_files.append({
-                    "kind": "original_mission_runtime",
-                    "sourceFile": mission_source.relative_to(ROOT).as_posix(),
-                    "sha256": hashlib.sha256(mission_source.read_bytes()).hexdigest(),
-                    "relationship": "mission_state_identity_context",
-                })
-                break
-        related_original_files.extend({
-            **dict(row),
-            "relationship": "native_mission_state_branch_authority",
-        } for row in (original_binary_contract or {}).get("relatedOriginalFiles") or [])
+        related_original_files = _related_original_branch_files(
+            mission,
+            list(branch.get("sourceFiles") or []),
+            original_binary_contract,
+            level_relationship="serialized_mission_state_story_branch",
+            mission_relationship="mission_state_identity_context",
+            binary_relationship="native_mission_state_branch_authority",
+        )
 
         all_story_keys = sorted({
             safe_key(story_key)
@@ -4092,6 +4117,99 @@ def _native_mission_state_story_branches(
             ),
         })
     return projected
+
+
+def _related_original_branch_files(
+    mission: str,
+    source_files: list[str],
+    original_binary_contract: dict[str, Any] | None,
+    *,
+    level_relationship: str,
+    mission_relationship: str,
+    binary_relationship: str,
+) -> list[dict[str, Any]]:
+    """Attach hash-addressed original branch inputs without identity guessing."""
+    related: list[dict[str, Any]] = []
+    for source_file in source_files:
+        source_path = ROOT / source_file
+        if source_path.is_file():
+            related.append({
+                "kind": "original_level_script",
+                "sourceFile": source_file,
+                "sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
+                "relationship": level_relationship,
+            })
+    for root_name in ("Persistent", "StreamingAssets"):
+        mission_source = (
+            ROOT / "export_full" / "structured" / root_name / "Data"
+            / "Json" / "MissionRuntimeAsset" / f"{mission}.json"
+        )
+        if mission_source.is_file():
+            related.append({
+                "kind": "original_mission_runtime",
+                "sourceFile": mission_source.relative_to(ROOT).as_posix(),
+                "sha256": hashlib.sha256(mission_source.read_bytes()).hexdigest(),
+                "relationship": mission_relationship,
+            })
+            break
+    related.extend({
+        **dict(row),
+        "relationship": binary_relationship,
+    } for row in (original_binary_contract or {}).get("relatedOriginalFiles") or [])
+    return related
+
+
+def _attach_cross_boundary_native_branch_context(
+    mission: str,
+    branches: list[dict[str, Any]],
+    original_binary_contract: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Annotate full native branch groups that cross nominal mission grouping."""
+    parallel_names = _parallel_action_names(original_binary_contract)
+    annotated: list[dict[str, Any]] = []
+    for source_branch in branches:
+        branch = dict(source_branch)
+        external_story_keys = list(branch.get("externalStoryKeys") or [])
+        if not external_story_keys:
+            annotated.append(branch)
+            continue
+        runtime_semantics = safe_key(branch.get("runtimeSemantics"))
+        is_parallel = (
+            branch.get("kind") == "splitFanout"
+            and runtime_semantics == "parallel_fanout"
+            and "Split" in parallel_names
+        )
+        branch.update({
+            "crossBoundary": True,
+            "ownership": False,
+            "orderEvidence": False,
+            "branchSemantics": (
+                "binary_validated_parallel_story_fanout"
+                if is_parallel
+                else "binary_mapped_conditional_story_alternatives"
+            ),
+            "relatedOriginalFiles": _related_original_branch_files(
+                mission,
+                list(branch.get("sourceFiles") or []),
+                original_binary_contract,
+                level_relationship="serialized_cross_boundary_story_branch",
+                mission_relationship="mission_candidate_anchor_context",
+                binary_relationship="native_cross_boundary_branch_authority",
+            ),
+            "evidenceBoundary": (
+                "The exact serialized paths and installed Split scheduler prove "
+                "Story-bearing sibling fan-out from one event. Nominal mission "
+                "grouping does not prove ownership, and sibling slots are not "
+                "chronological order."
+                if is_parallel
+                else
+                "The exact serialized cases and installed native control mapping "
+                "prove alternative Story-bearing arms from one event. Nominal "
+                "mission grouping does not prove ownership or order among arms."
+            ),
+        })
+        annotated.append(branch)
+    return annotated
 
 
 def build_mission_partial_order(
@@ -4430,6 +4548,11 @@ def build_mission_partial_order(
     native_control_branches, native_control_merges = _native_control_branches_and_merges(
         flow, candidate_keys
     )
+    native_control_branches = _attach_cross_boundary_native_branch_context(
+        mission,
+        native_control_branches,
+        extra_thread_scheduler_contract,
+    )
     native_mission_state_branches = _native_mission_state_story_branches(
         mission,
         flow,
@@ -4616,6 +4739,15 @@ def build_mission_partial_order(
             "cyclicInternalPairs": cyclic_internal_pairs,
             "sceneGraphOptionGroupCount": len(scene_graph_option_branches),
             "nativeControlBranchCount": len(native_control_branches),
+            "nativeControlCrossBoundaryBranchCount": sum(
+                bool(row.get("crossBoundary"))
+                for row in native_control_branches
+            ),
+            "nativeControlCrossBoundaryExternalStoryCount": len({
+                key
+                for row in native_control_branches
+                for key in row.get("externalStoryKeys") or []
+            }),
             "nativeMissionStateBranchCount": len(native_mission_state_branches),
             "nativeMissionStateBranchExternalStoryCount": len({
                 key
@@ -4989,6 +5121,12 @@ def build_report(
         totals["unorderedScenePairs"] += summary["unorderedScenePairs"]
         totals["sceneGraphOptionGroups"] += summary["sceneGraphOptionGroupCount"]
         totals["nativeControlBranches"] += summary["nativeControlBranchCount"]
+        totals["nativeControlCrossBoundaryBranches"] += summary[
+            "nativeControlCrossBoundaryBranchCount"
+        ]
+        totals["nativeControlCrossBoundaryExternalStories"] += summary[
+            "nativeControlCrossBoundaryExternalStoryCount"
+        ]
         totals["nativeMissionStateBranches"] += summary[
             "nativeMissionStateBranchCount"
         ]
@@ -5182,6 +5320,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- native control topology: `{summary.get('nativeControlBranches', 0)}` exact "
         f"Split/IfElse/Switch Story fan-outs and `{summary.get('nativeControlMerges', 0)}` "
         "observed convergences",
+        f"- complete cross-boundary native topology: "
+        f"`{summary.get('nativeControlCrossBoundaryBranches', 0)}` branch groups retain "
+        f"`{summary.get('nativeControlCrossBoundaryExternalStories', 0)}` exact Story "
+        "references outside nominal mission grouping (never ownership or order)",
         f"- native mission-state alternatives: "
         f"`{summary.get('nativeMissionStateBranches', 0)}` exact branch groups exposing "
         f"`{summary.get('nativeMissionStateBranchExternalStories', 0)}` cross-mission "
