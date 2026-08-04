@@ -31,6 +31,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 },
                 "stateUpdateApplicationCensus": {
                     "validation": {"status": "validated", "failures": []},
+                    "questStateLifecycleApplication": {
+                        "validation": {"status": "validated", "failures": []},
+                    },
                     "questStartApplication": {
                         "validation": {"status": "validated", "failures": []},
                     },
@@ -1212,6 +1215,84 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         self.assertEqual(
             validation["failures"][0]["actual"],
             [{"method": "StartFixture", "origin": "param:msg+0x30"}],
+        )
+        self.assertEqual(validation["failures"][0]["sourceFile"], "GameAssembly.dll")
+
+    def test_enum_lifecycle_routes_are_field_constrained_not_object_specific(self):
+        method_va = 0x1000
+        instructions = [
+            {"offset": 0, "text": "cmp [r15+0x20], 0x2"},
+            {"offset": 4, "text": "je 0x1020", "targetVa": "0x1020"},
+            {"offset": 6, "text": "cmp [r15+0x20], 0x3"},
+            {"offset": 10, "text": "jne 0x1030", "targetVa": "0x1030"},
+            {"offset": 12, "text": "call 0x2000"},
+            {"offset": 17, "text": "ret"},
+            {"offset": 32, "text": "call 0x3000"},
+            {"offset": 37, "text": "ret"},
+            {"offset": 48, "text": "ret"},
+        ]
+        comparisons = [
+            {"offset": 0, "value": 2},
+            {"offset": 6, "value": 3},
+        ]
+        calls = [
+            {"method": "FinishThing", "callOffset": 12, "samePacketIdentity": True},
+            {"method": "BeginThing", "callOffset": 32, "samePacketIdentity": True},
+        ]
+        enum_values = [
+            {"id": 2, "name": "Running"},
+            {"id": 3, "name": "Done"},
+            {"id": 4, "name": "Stopped"},
+        ]
+
+        routes = audit.constrained_enum_lifecycle_routes(
+            instructions,
+            comparisons,
+            calls,
+            enum_values,
+            method_va=method_va,
+        )
+
+        self.assertEqual(
+            {
+                row["stateName"]: [
+                    call["method"] for call in row["reachableLifecycleCalls"]
+                ]
+                for row in routes
+            },
+            {"Running": ["BeginThing"], "Done": ["FinishThing"], "Stopped": []},
+        )
+        validation = audit.validate_quest_state_lifecycle_application(
+            candidate_rows=[{"type": "Proto.SC_GENERIC_STATE_UPDATE"}],
+            enum_values=enum_values,
+            comparisons=comparisons,
+            routes=routes,
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "fixture"},
+        )
+        self.assertEqual(validation, {"status": "validated", "failures": []})
+
+    def test_enum_lifecycle_validator_reports_missing_state_branches(self):
+        validation = audit.validate_quest_state_lifecycle_application(
+            candidate_rows=[{"type": "Proto.SC_GENERIC_STATE_UPDATE"}],
+            enum_values=[{"id": 2, "name": "Running"}, {"id": 3, "name": "Done"}],
+            comparisons=[{"offset": 0, "value": 2}],
+            routes=[{
+                "state": 2,
+                "stateName": "Running",
+                "reachableLifecycleCalls": [{
+                    "method": "BeginThing",
+                    "samePacketIdentity": True,
+                }],
+            }],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "fixture"},
+        )
+
+        self.assertEqual(validation["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in validation["failures"]],
+            ["stateFieldComparisons", "stateConstrainedLifecycleRoutes"],
         )
         self.assertEqual(validation["failures"][0]["sourceFile"], "GameAssembly.dll")
 

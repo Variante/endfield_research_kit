@@ -44,6 +44,7 @@ Latest CN reports:
 | Post-playback variable bridge | 66 typed setters (43 SetBool, 23 SetInt) / 50 exact listeners / 0 same-level, same-script, same-key joins |
 | Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
 | Binary state-update authority | 4 / 4 identity+state/control paths validated; 0 client successor selectors |
+| Binary quest-state fork application | Generic field-constrained CFG recovery: `Processing` (2) -> `StartQuest`, `Completed` (3) -> `SucceedQuest`; published on all 307 forks / 740 arms with binary+metadata hashes; server selection policy remains unknown |
 | Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
 | Whole-client topology consumers | 42 / 43 direct `GetQuestInfo` call candidates verified; active predecessor consumers 0; non-sort flow consumers 0; topology lifecycle calls 0 |
 | Binary quest semantic fields | `questType`: 7 consumers / 6 Block comparisons / 1 Optional comparison; 2 post-lifecycle Block notifications; `showMode`: 5 consumers / 0 lifecycle; 676 Normal and 64 Optional fork arms, 0 Block |
@@ -71,6 +72,15 @@ in five payloads.
   hash-validated original MissionRuntime file. The action-name surface is gated
   by the complete 1,313-tag installed-binary formatter audit; OCR and manual
   order are not inputs.
+- A general enum-field CFG validator now discovers the unique quest
+  identity+state server packet, its metadata enum, exact field comparisons, and
+  state-gated lifecycle calls without message IDs, addresses, enum constants,
+  or quest IDs in code. `SC_QUEST_STATE_UPDATE` applies `Processing` through
+  `StartQuest` and `Completed` through `SucceedQuest` to the same packet
+  `questId`; it carries no successor field. Mission Pipeline attaches this
+  hash-locked binary/metadata contract to every fork and exact arm identity.
+  This proves client application after server selection, not the server's
+  choice policy, sibling exclusivity, or Story-file order.
 - Story cards for dialog, radio, SNS, cutscenes, black screens, and remote
   communication.
 - Typed LevelScript, DialogTree, Timeline, FMV, quest-state, interactive, and
