@@ -29,12 +29,14 @@ STATE_UPDATE_CONTRACT_FIXTURE = {
         "validation": {"status": "validated", "failures": []},
     },
     "questSucceedActionApplication": {
-        "schema": "questSucceedClientAction.v1",
-        "classification": "quest_success_dispatches_succeed_client_action",
+        "schema": "questLifecycleClientAction.v2",
+        "classification": "bounded_current_aot_quest_action_dispatch",
         "action": {
             "name": "OnSucceedClientAction",
             "value": 2,
         },
+        "startActionDispatchers": [],
+        "runQuestActionFlow": {"sharedPendingCarrier": True},
         "validation": {"status": "validated", "failures": []},
     },
     "questTopologyFieldConsumers": {
@@ -118,6 +120,49 @@ def condition(kind, **values):
 
 
 class MissionPipelineBuilderTests(unittest.TestCase):
+    def test_quest_action_dispatch_annotation_is_corpus_driven(self):
+        payload = {
+            "nodes": [{
+                "clientActions": [
+                    {"id": 10, "trigger": 1, "chainIndex": 0},
+                    {"id": 11, "trigger": 2, "chainIndex": 0},
+                    {"id": 12, "trigger": 2, "chainIndex": 1},
+                ],
+            }],
+        }
+        contract = {
+            "source": "reports/story/recovery/protocol_registry_audit.json",
+            "questActionEnum": {"OnStartClientAction": 1},
+            "safeRunDirectCallers": [{
+                "symbol": "Beyond.Gameplay.MissionSystem.SucceedQuest",
+                "questActionValue": 2,
+            }],
+            "startActionDispatchers": [],
+            "boundary": "fixture boundary",
+        }
+
+        counts = pipeline.annotate_quest_action_dispatch(payload, contract)
+
+        actions = payload["nodes"][0]["clientActions"]
+        self.assertEqual(
+            actions[0]["runtimeDispatchStatus"],
+            "authored_definition_no_current_aot_dispatch",
+        )
+        self.assertEqual(
+            actions[1]["runtimeDispatchStatus"],
+            "binary_proven_server_success_dispatch",
+        )
+        self.assertEqual(
+            actions[1]["runtimeDispatchHandler"],
+            "Beyond.Gameplay.MissionSystem.SucceedQuest",
+        )
+        self.assertEqual(
+            counts["roots:authored_definition_no_current_aot_dispatch"], 1
+        )
+        self.assertEqual(
+            counts["rows:binary_proven_server_success_dispatch"], 2
+        )
+
     def test_quest_fork_semantics_recovers_roles_guards_and_reconvergence(self):
         with tempfile.TemporaryDirectory() as temporary:
             source = Path(temporary) / "m1.json"
@@ -363,7 +408,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-            "_schema": "endfieldProtocolRegistryAudit.v19",
+            "_schema": "endfieldProtocolRegistryAudit.v20",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -390,7 +435,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         "validation": {"status": "validated", "failures": []},
                     },
                     "questSucceedActionApplication": {
-                        "schema": "questSucceedClientAction.v1",
+                        "schema": "questLifecycleClientAction.v2",
+                        "classification": "bounded_current_aot_quest_action_dispatch",
+                        "startActionDispatchers": [],
+                        "runQuestActionFlow": {"sharedPendingCarrier": True},
                         "validation": {"status": "validated", "failures": []},
                     },
                     "questTopologyFieldConsumers": {
@@ -429,7 +477,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-            "_schema": "endfieldProtocolRegistryAudit.v19",
+            "_schema": "endfieldProtocolRegistryAudit.v20",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": "0" * 64,
@@ -441,6 +489,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         "validation": {"status": "validated", "failures": []},
                     },
                     "questSucceedActionApplication": {
+                        "schema": "questLifecycleClientAction.v2",
+                        "classification": "bounded_current_aot_quest_action_dispatch",
+                        "startActionDispatchers": [],
+                        "runQuestActionFlow": {"sharedPendingCarrier": True},
                         "validation": {"status": "validated", "failures": []},
                     },
                     "questTopologyFieldConsumers": {
@@ -479,7 +531,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-            "_schema": "endfieldProtocolRegistryAudit.v19",
+            "_schema": "endfieldProtocolRegistryAudit.v20",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -491,6 +543,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         "validation": {"status": "validated", "failures": []},
                     },
                     "questSucceedActionApplication": {
+                        "schema": "questLifecycleClientAction.v2",
+                        "classification": "bounded_current_aot_quest_action_dispatch",
+                        "startActionDispatchers": [],
+                        "runQuestActionFlow": {"sharedPendingCarrier": True},
                         "validation": {"status": "validated", "failures": []},
                     },
                     "questTopologyFieldConsumers": {
@@ -530,7 +586,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v19",
+                "_schema": "endfieldProtocolRegistryAudit.v20",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -567,7 +623,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v19",
+                "_schema": "endfieldProtocolRegistryAudit.v20",
                 "actionExtraThreadSchedulerCensus": {
                     "validation": {
                         "status": "validation_failed",
@@ -639,7 +695,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-            "_schema": "endfieldProtocolRegistryAudit.v19",
+            "_schema": "endfieldProtocolRegistryAudit.v20",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -668,7 +724,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-            "_schema": "endfieldProtocolRegistryAudit.v19",
+            "_schema": "endfieldProtocolRegistryAudit.v20",
                 "selectedSchemas": [],
                 "nativeTaskPaths": {},
             }), encoding="utf-8")
@@ -688,7 +744,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-            "_schema": "endfieldProtocolRegistryAudit.v19",
+            "_schema": "endfieldProtocolRegistryAudit.v20",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -736,7 +792,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-            "_schema": "endfieldProtocolRegistryAudit.v19",
+            "_schema": "endfieldProtocolRegistryAudit.v20",
                 "levelScriptStartPolicy": {
                     "schema": "levelScriptStartPolicy.v1",
                     "classification": (
@@ -768,7 +824,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-            "_schema": "endfieldProtocolRegistryAudit.v19",
+            "_schema": "endfieldProtocolRegistryAudit.v20",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -818,7 +874,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-            "_schema": "endfieldProtocolRegistryAudit.v19",
+            "_schema": "endfieldProtocolRegistryAudit.v20",
                 "levelScriptManualSelfControl": {
                     "schema": "levelScriptManualSelfControl.v1",
                     "classification": (
@@ -852,7 +908,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v19",
+                "_schema": "endfieldProtocolRegistryAudit.v20",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -941,7 +997,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v19",
+                "_schema": "endfieldProtocolRegistryAudit.v20",
                 "levelScriptActivationControl": {
                     "schema": "levelScriptActivationControl.v6",
                     "classification": (
@@ -2562,7 +2618,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             ]
             self.assertEqual(
                 lifecycle_contract["classification"],
-                "quest_success_dispatches_succeed_client_action",
+                "bounded_current_aot_quest_action_dispatch",
             )
             self.assertEqual(lifecycle_contract["action"]["value"], 2)
             self.assertEqual(len(lifecycle_contract["relatedOriginalFiles"]), 2)
@@ -3864,6 +3920,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "questOptionalObjectiveFlagValidated": True,
                 "questShowModeConsumers": 5,
                 "questShowModeLifecycleConsumers": 0,
+                "questActionStartDefinitionRoots": 0,
+                "questActionStartDefinitionRows": 0,
+                "questActionBinaryDispatchedRoots": 0,
+                "questActionBinaryDispatchedRows": 0,
                 "actionExtraThreadWriterMethods": 1,
                 "actionExtraThreadDirectCalls": 0,
                 # The fixture has one mission with no cross-mission state

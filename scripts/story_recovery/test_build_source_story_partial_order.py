@@ -149,7 +149,7 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
                 ],
             }]
             contract = {
-                "schema": "questSucceedClientAction.v1",
+                "schema": "questLifecycleClientAction.v2",
                 "validation": {"status": "validated", "failures": []},
                 "succeedActionCalls": [{"questActionValue": 2}],
                 "relatedOriginalFiles": [{
@@ -174,6 +174,58 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(edge["questIds"], ["m1_q#1"])
         self.assertEqual(len(edge["relatedOriginalFiles"]), 2)
         self.assertEqual(result["summary"]["questSucceedLifecycleEdgeCount"], 1)
+
+    def test_start_action_definition_is_visible_but_never_orders(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "m1.json"
+            source.write_text('{"missionId":"m1"}', encoding="utf-8")
+            payload = mission_payload()
+            payload["timelineRecovery"]["metadata"] = {
+                "source": {"file": "m1.json"},
+            }
+            payload["flow"]["quests"] = [{
+                "id": "m1_q#1",
+                "storyConnections": [{
+                    "key": "dlg_m1_start",
+                    "relation": "client_action_start",
+                    "direction": "quest_to_story",
+                    "phase": "start",
+                    "confidence": "native_typed_direct",
+                    "actionSlot": "OnStartClientAction",
+                    "actionId": 17,
+                    "actionType": "PlayDialog",
+                }],
+            }]
+            contract = {
+                "schema": "questLifecycleClientAction.v2",
+                "source": "protocol_registry_audit.json",
+                "startActionDispatchers": [],
+                "boundary": "no current AOT slot-1 producer",
+                "validation": {"status": "validated", "failures": []},
+                "relatedOriginalFiles": [{
+                    "kind": "original_game_binary",
+                    "sourceFile": "GameAssembly.dll",
+                    "sha256": "A" * 64,
+                }],
+            }
+            with patch.object(partial_order, "ROOT", root):
+                result = partial_order.build_mission_partial_order(
+                    "m1",
+                    {"dlg_m1_start": "dlg"},
+                    payload,
+                    quest_succeed_lifecycle_contract=contract,
+                )
+
+        self.assertEqual(result["directEdges"], [])
+        self.assertEqual(result["summary"]["questStartActionDefinitionCount"], 1)
+        definition = result["questLifecycleDefinitions"][0]
+        self.assertEqual(definition["storyKey"], "dlg_m1_start")
+        self.assertEqual(
+            definition["runtimeDispatchStatus"],
+            "authored_definition_no_current_aot_dispatch",
+        )
+        self.assertEqual(len(definition["relatedOriginalFiles"]), 2)
 
     def test_quest_succeed_lifecycle_rejects_reverse_strong_conflict(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

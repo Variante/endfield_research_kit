@@ -4089,6 +4089,9 @@ def validate_quest_succeed_action_observation(
     succeed_action_calls: list[dict[str, Any]],
     safe_run_action_flow: dict[str, Any],
     safe_run_direct_callers: list[dict[str, Any]],
+    run_quest_action_flow: dict[str, Any],
+    run_quest_action_direct_callers: list[dict[str, Any]],
+    start_action_dispatchers: list[dict[str, Any]],
     source_file: str,
     source_hashes: dict[str, str],
     prior_failures: list[dict[str, Any]] | None = None,
@@ -4124,20 +4127,86 @@ def validate_quest_succeed_action_observation(
         )
     if not safe_run_action_flow.get("preservesQuestActionArgument"):
         fail("safeRunPreservesQuestAction", True, safe_run_action_flow)
-    caller_names = sorted({
-        str(row.get("symbol") or "")
+    caller_actions = {
+        str(row.get("symbol") or ""): row.get("questActionValue")
         for row in safe_run_direct_callers
         if row.get("symbol")
+    }
+    expected_caller_actions = {
+        "Beyond.Gameplay.MissionSystem.FailQuest": 4,
+        "Beyond.Gameplay.MissionSystem.SucceedQuest": 2,
+    }
+    if caller_actions != expected_caller_actions:
+        fail(
+            "safeRunDirectCallerActionCensus",
+            expected_caller_actions,
+            caller_actions,
+        )
+    run_callers = sorted({
+        str(row.get("symbol") or "")
+        for row in run_quest_action_direct_callers
+        if row.get("symbol")
     })
-    expected_callers = [
-        "Beyond.Gameplay.MissionSystem.FailQuest",
-        "Beyond.Gameplay.MissionSystem.SucceedQuest",
+    expected_run_callers = [
+        "Beyond.Gameplay.MissionSystem.ProcessPendingQuestAction",
+        "Beyond.Gameplay.MissionSystem.SafeRunQuestAction",
     ]
-    if caller_names != expected_callers:
-        fail("safeRunDirectCallerCensus", expected_callers, caller_names)
+    if run_callers != expected_run_callers:
+        fail("runQuestActionDirectCallerCensus", expected_run_callers, run_callers)
+    if not run_quest_action_flow.get("preservesQuestActionArgument"):
+        fail("runQuestActionPreservesQuestAction", True, run_quest_action_flow)
+    if not run_quest_action_flow.get("sharedPendingCarrier"):
+        fail("pendingReplayUsesSafeRunCarrier", True, run_quest_action_flow)
+    if start_action_dispatchers:
+        fail("noCurrentAotStartActionDispatcher", [], start_action_dispatchers)
     return {
         "status": "validation_failed" if failures else "validated",
         "failures": failures,
+    }
+
+
+def decode_direct_enum_argument(
+    call: dict[str, Any],
+    register: str,
+    enum_values: dict[str, int],
+) -> dict[str, Any]:
+    """Decode immediates or zero-base LEA constants, never stack offsets."""
+    write = (
+        ((call.get("argumentContext") or {}).get("argRegisterWrites") or {})
+        .get(register, {})
+        .get("write", {})
+        .get("value")
+    )
+    origin = (call.get("argumentOrigins") or {}).get(register)
+    register_writes = (
+        (call.get("argumentContext") or {}).get("argRegisterWrites") or {}
+    )
+    value = None
+    for text in (write, origin):
+        rendered = str(text or "")
+        match = re.fullmatch(r"0x([0-9a-f]+)", rendered, re.I)
+        if match:
+            value = int(match.group(1), 16)
+            break
+        lea_match = re.fullmatch(
+            r"&\[([a-z][a-z0-9]*)\+0x([0-9a-f]+)\]",
+            rendered,
+            re.I,
+        )
+        if lea_match:
+            base_register = lea_match.group(1).lower()
+            base_write = (register_writes.get(base_register) or {}).get("write") or {}
+            if str(base_write.get("value") or "") in {"0", "0x0"}:
+                value = int(lea_match.group(2), 16)
+                break
+    return {
+        "questActionValue": value,
+        "questActionName": next(
+            (name for name, enum_value in enum_values.items() if enum_value == value),
+            None,
+        ),
+        "argumentOrigin": origin,
+        "argumentWrite": write,
     }
 
 
@@ -5860,12 +5929,13 @@ def quest_succeed_action_contract(
     helper: Any,
     mapper: Any,
     pe: Any,
+    metadata_summary: dict[str, Any],
     method_by_pointer: dict[int, list[dict[str, Any]]],
     sorted_pointers: list[int],
     state_rows: list[dict[str, Any]],
     gameassembly_path: Path,
 ) -> dict[str, Any]:
-    """Recover the typed quest-success -> client-action execution chain."""
+    """Recover every current AOT path into the typed quest-action dispatcher."""
     failures: list[dict[str, Any]] = []
     source_hashes = {
         "gameAssemblySha256": file_sha256(gameassembly_path),
@@ -5950,29 +6020,10 @@ def quest_succeed_action_contract(
     ]
     succeed_action_calls: list[dict[str, Any]] = []
     for call in safe_calls:
-        r8_write = (
-            ((call.get("argumentContext") or {}).get("argRegisterWrites") or {})
-            .get("r8", {})
-            .get("write", {})
-            .get("value")
-        )
-        action_value = None
-        match = re.search(r"\+0x([0-9a-f]+)\]$", str(r8_write or ""), re.I)
-        if match:
-            action_value = int(match.group(1), 16)
         succeed_action_calls.append({
             "callOffset": call.get("offset"),
             "targetVa": call.get("targetVa"),
-            "questActionValue": action_value,
-            "questActionName": next(
-                (
-                    name for name, value in enum_values.items()
-                    if value == action_value
-                ),
-                None,
-            ),
-            "argumentOrigin": (call.get("argumentOrigins") or {}).get("r8"),
-            "argumentWrite": r8_write,
+                **decode_direct_enum_argument(call, "r8", enum_values),
         })
 
     safe_va_values = {
@@ -5983,6 +6034,8 @@ def quest_succeed_action_contract(
     safe_run_action_flow: dict[str, Any] = {}
     safe_run_direct_callers: list[dict[str, Any]] = []
     rejected_direct_calls: list[dict[str, Any]] = []
+    safe_body: dict[str, Any] = {}
+    run_va = 0
     safe_next = None
     if len(safe_va_values) != 1:
         fail("uniqueSafeRunQuestActionTarget", 1, sorted(safe_va_values))
@@ -6007,6 +6060,15 @@ def quest_succeed_action_contract(
                     for target in call.get("resolved") or []
                 )
             ]
+            run_va_values = {
+                int(str(call["targetVa"]), 16)
+                for call in run_calls
+                if call.get("targetVa")
+            }
+            if len(run_va_values) != 1:
+                fail("uniqueRunQuestActionTarget", 1, sorted(run_va_values))
+            else:
+                run_va = next(iter(run_va_values))
             flow_text = [str(row.get("text") or "") for row in quest_action_flow]
             safe_run_action_flow = {
                 "symbol": "Beyond.Gameplay.MissionSystem.SafeRunQuestAction",
@@ -6073,39 +6135,168 @@ def quest_succeed_action_contract(
                 pe=pe,
                 max_instructions=30000,
             )
-            decoded_call_offsets = {
-                int(call.get("offset") or 0)
-                for call in caller_body.get("calls") or []
+            decoded_calls = [
+                call for call in caller_body.get("calls") or []
                 if call.get("targetVa") == f"0x{safe_va:x}"
-            }
-            if site - pointer not in decoded_call_offsets:
+                and int(call.get("offset") or 0) == site - pointer
+            ]
+            if len(decoded_calls) != 1:
                 rejected_direct_calls.append({
                     "va": f"0x{site:x}",
                     "precedingMethodVa": f"0x{pointer:x}",
                     "reason": "rawE8NotDecodedAsCallInstruction",
                 })
                 continue
-            symbols = [f"{caller_row['type']}.{caller_row['method']}"]
-            for symbol in symbols:
-                safe_run_direct_callers.append({
+            safe_run_direct_callers.append({
+                "symbol": f"{caller_row['type']}.{caller_row['method']}",
+                "callerVa": f"0x{pointer:x}",
+                "callVa": f"0x{site:x}",
+                "callOffset": site - pointer,
+                **decode_direct_enum_argument(decoded_calls[0], "r8", enum_values),
+            })
+
+    run_quest_action_flow: dict[str, Any] = {}
+    run_quest_action_direct_callers: list[dict[str, Any]] = []
+    rejected_run_direct_calls: list[dict[str, Any]] = []
+    start_action_dispatchers: list[dict[str, Any]] = [
+        row for row in safe_run_direct_callers
+        if row.get("questActionValue") == enum_values.get("OnStartClientAction")
+    ]
+    if run_va:
+        run_aliases = [
+            row for row in method_by_pointer.get(run_va, [])
+            if row.get("method") == "RunQuestAction"
+            and row.get("type") == "Beyond.Gameplay.MissionSystem"
+        ]
+        if len(run_aliases) != 1:
+            fail("uniqueRunQuestActionMetadataTarget", 1, run_aliases)
+        else:
+            run_body, run_next = decode(run_va, run_aliases[0])
+            run_param_flow = (
+                run_body.get("paramFlow") or {}
+            ).get("param:action") or []
+            run_flow_text = [str(row.get("text") or "") for row in run_param_flow]
+            mission_system_def = metadata.types[
+                metadata.methods[int(run_aliases[0]["methodIndex"])].declaring_type
+            ]
+            field_offsets = runtime_type_field_offsets(
+                metadata, pe, metadata_summary, mission_system_def.index
+            )
+            field_names_by_origin = {
+                f"this+0x{offset:x}": name
+                for name, offset in field_offsets.items()
+                if isinstance(offset, int) and offset > 0
+            }
+            decoded_caller_bodies: dict[str, dict[str, Any]] = {}
+            for site in direct_rel32_call_candidates(pe, run_va):
+                position = bisect_right(sorted_pointers, site) - 1
+                pointer = sorted_pointers[position] if position >= 0 else 0
+                aliases = method_by_pointer.get(pointer) or []
+                scan_size, _next_pointer = mapper.estimate_scan_size(
+                    pointer, sorted_pointers, 65536
+                ) if pointer else (0, None)
+                if not aliases or site - pointer >= scan_size:
+                    rejected_run_direct_calls.append({
+                        "va": f"0x{site:x}",
+                        "precedingMethodVa": f"0x{pointer:x}" if pointer else None,
+                        "reason": "outsideBoundedMappedMethod",
+                    })
+                    continue
+                method_indexes = sorted({
+                    int(row["methodIndex"])
+                    for row in aliases if row.get("methodIndex") is not None
+                })
+                if len(method_indexes) != 1:
+                    rejected_run_direct_calls.append({
+                        "va": f"0x{site:x}",
+                        "reason": "ambiguousCallerMethod",
+                        "methodIndexes": method_indexes,
+                    })
+                    continue
+                caller_row = full_method_mapper_row(metadata, helper, method_indexes[0])
+                caller_body = mapper.build_method_body_summary(
+                    caller_row,
+                    pe.bytes_at_va(pointer, scan_size),
+                    pointer,
+                    method_by_pointer,
+                    pe=pe,
+                    max_instructions=30000,
+                )
+                decoded_calls = [
+                    call for call in caller_body.get("calls") or []
+                    if call.get("targetVa") == f"0x{run_va:x}"
+                    and int(call.get("offset") or 0) == site - pointer
+                ]
+                if len(decoded_calls) != 1:
+                    rejected_run_direct_calls.append({
+                        "va": f"0x{site:x}",
+                        "reason": "rawE8NotDecodedAsCallInstruction",
+                    })
+                    continue
+                symbol = f"{caller_row['type']}.{caller_row['method']}"
+                decoded_caller_bodies[symbol] = caller_body
+                caller = {
                     "symbol": symbol,
                     "callerVa": f"0x{pointer:x}",
                     "callVa": f"0x{site:x}",
                     "callOffset": site - pointer,
-                })
+                    **decode_direct_enum_argument(decoded_calls[0], "r8", enum_values),
+                }
+                run_quest_action_direct_callers.append(caller)
+                if caller.get("questActionValue") == enum_values.get(
+                    "OnStartClientAction"
+                ):
+                    start_action_dispatchers.append(caller)
+            safe_origins = {
+                str(row.get("origin") or "")
+                for row in safe_body.get("fieldAccesses") or []
+                if str(row.get("origin") or "").startswith("this+")
+            }
+            pending_body = decoded_caller_bodies.get(
+                "Beyond.Gameplay.MissionSystem.ProcessPendingQuestAction", {}
+            )
+            pending_origins = {
+                str(row.get("origin") or "")
+                for row in pending_body.get("fieldAccesses") or []
+                if str(row.get("origin") or "").startswith("this+")
+            }
+            shared_origins = sorted(safe_origins & pending_origins)
+            shared_fields = [
+                {"origin": origin, "field": field_names_by_origin.get(origin)}
+                for origin in shared_origins
+            ]
+            run_quest_action_flow = {
+                "symbol": "Beyond.Gameplay.MissionSystem.RunQuestAction",
+                "token": run_aliases[0].get("token"),
+                "va": f"0x{run_va:x}",
+                "scanBytes": run_next - run_va if isinstance(run_next, int) else None,
+                "paramQuestActionFlow": run_param_flow,
+                "preservesQuestActionArgument": (
+                    any("mov edi, r8d" in text for text in run_flow_text)
+                    and any("mov r8d, edi" in text for text in run_flow_text)
+                ),
+                "sharedPendingCarrier": (
+                    len(shared_fields) == 1
+                    and shared_fields[0].get("field") == "m_pendingQuestActionList"
+                ),
+                "sharedPendingFields": shared_fields,
+            }
 
     validation = validate_quest_succeed_action_observation(
         enum_values=enum_values,
         succeed_action_calls=succeed_action_calls,
         safe_run_action_flow=safe_run_action_flow,
         safe_run_direct_callers=safe_run_direct_callers,
+        run_quest_action_flow=run_quest_action_flow,
+        run_quest_action_direct_callers=run_quest_action_direct_callers,
+        start_action_dispatchers=start_action_dispatchers,
         source_file=str(gameassembly_path.resolve()),
         source_hashes=source_hashes,
         prior_failures=failures,
     )
     return {
-        "schema": "questSucceedClientAction.v1",
-        "classification": "server_success_state_runs_typed_client_action",
+        "schema": "questLifecycleClientAction.v2",
+        "classification": "bounded_current_aot_quest_action_dispatch",
         "questActionEnum": enum_values,
         "succeedQuest": {
             "symbol": "Beyond.Gameplay.MissionSystem.SucceedQuest",
@@ -6120,18 +6311,24 @@ def quest_succeed_action_contract(
         "succeedActionCalls": succeed_action_calls,
         "safeRunActionFlow": safe_run_action_flow,
         "safeRunDirectCallers": safe_run_direct_callers,
+        "runQuestActionFlow": run_quest_action_flow,
+        "runQuestActionDirectCallers": run_quest_action_direct_callers,
+        "startActionDispatchers": start_action_dispatchers,
         "rejectedDirectCallCandidates": rejected_direct_calls,
+        "rejectedRunDirectCallCandidates": rejected_run_direct_calls,
         "finding": (
-            "The current fallback SucceedQuest path passes QuestAction value 2 "
-            "(OnSucceedClientAction) through SafeRunQuestAction and into the "
-            "MissionRuntime quest-action map. The complete bounded direct-caller "
-            "census separates the success and failure callers."
+            "The current fallback SucceedQuest and FailQuest paths pass QuestAction "
+            "values 2 and 4 through SafeRunQuestAction. ProcessPendingQuestAction "
+            "only replays that same typed pending carrier into RunQuestAction. The "
+            "complete bounded direct-caller census finds no current AOT producer for "
+            "OnStartClientAction value 1."
         ),
         "boundary": (
-            "This proves when an authored succeed client action is dispatched after "
-            "the server-selected quest-success state. It does not prove that a quest "
-            "succeeds, choose a successor arm, or order Story rows within one action "
-            "graph unless an independent typed action path does so."
+            "Authored slot-1 rows remain definitions without a current fallback AOT "
+            "dispatch path; indirect native invocation, reflection, runtime memory "
+            "mutation, future IFix, server behavior, and future builds remain outside "
+            "this static proof. Success/failure dispatch does not choose a successor "
+            "arm or order Story rows without an independent typed action path."
         ),
         "validation": validation,
     }
@@ -6380,6 +6577,7 @@ def state_update_application_census(
         helper,
         mapper,
         pe,
+        metadata_summary,
         method_by_pointer,
         sorted_pointers,
         rows,
@@ -6754,7 +6952,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v19",
+        "_schema": "endfieldProtocolRegistryAudit.v20",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -6808,11 +7006,16 @@ def build_report(
             "questStartFlowIndexReads": state_application_census[
                 "questStartApplication"
             ].get("fieldReadCounts", {}).get("flowIndex", 0),
-            "questSucceedActionValidated": (
+            "questActionDispatchValidated": (
                 (state_application_census["questSucceedActionApplication"].get(
                     "validation"
                 ) or {}).get("status")
                 == "validated"
+            ),
+            "questActionStartDispatchers": len(
+                state_application_census["questSucceedActionApplication"].get(
+                    "startActionDispatchers"
+                ) or []
             ),
             "topologyActivePredecessorConsumers": state_application_census[
                 "questTopologyFieldConsumers"
@@ -6898,7 +7101,7 @@ def build_report(
                 "a chronological predecessor or successor edge."
             ),
             "questSuccessorPolicy": state_application_census["boundary"],
-            "questSucceedClientAction": state_application_census[
+            "questClientActionDispatch": state_application_census[
                 "questSucceedActionApplication"
             ]["boundary"],
             "questSemanticFields": state_application_census[
@@ -7020,6 +7223,11 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"**{summary['stateUpdateApplicationCandidatesValidated']}/"
             f"{summary['stateUpdateApplicationCandidates']}** validated; "
             f"**{summary['stateUpdateClientSuccessorSelectors']}** client successor selectors"
+        ),
+        (
+            "- Quest lifecycle dispatch census: "
+            f"**{'validated' if summary['questActionDispatchValidated'] else 'failed'}**; "
+            f"**{summary['questActionStartDispatchers']}** current AOT start-action dispatchers"
         ),
         (
             "- Action extra-thread composite writers: "
@@ -7328,19 +7536,23 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
             quest_start.get("boundary") or "",
             "",
-            "### Quest-success client-action lifecycle",
+            "### Quest client-action dispatch",
             "",
-            quest_succeed.get("finding") or "[quest-success action audit unavailable]",
+            quest_succeed.get("finding") or "[quest action audit unavailable]",
             "",
             (
-                "Validated action: **{action}**; bounded direct callers: **{callers}**."
+                "Validated success action: **{action}**; SafeRun callers: **{safe_callers}**; "
+                "RunQuestAction callers: **{run_callers}**; start-action dispatchers: "
+                "**{start_callers}**."
             ).format(
                 action=(
                     (quest_succeed.get("succeedActionCalls") or [{}])[0].get(
                         "questActionName", "?"
                     )
                 ),
-                callers=len(quest_succeed.get("safeRunDirectCallers") or []),
+                safe_callers=len(quest_succeed.get("safeRunDirectCallers") or []),
+                run_callers=len(quest_succeed.get("runQuestActionDirectCallers") or []),
+                start_callers=len(quest_succeed.get("startActionDispatchers") or []),
             ),
             "",
             quest_succeed.get("boundary") or "",
@@ -7705,7 +7917,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v19 report when its original "
+            "Reuse an existing validated v20 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -7724,7 +7936,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v19":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v20":
         return False, f"schema is {report.get('_schema')!r}"
     scheduler_validation = (
         (report.get("actionExtraThreadSchedulerCensus") or {}).get("validation")
@@ -7757,7 +7969,7 @@ def current_report_status(
     )
     if quest_succeed_validation.get("status") != "validated":
         return False, (
-            "quest-succeed-action validation is "
+            "quest-action-dispatch validation is "
             f"{quest_succeed_validation.get('status')!r}"
         )
     topology_validation = (
