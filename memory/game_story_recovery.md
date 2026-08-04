@@ -33,6 +33,7 @@ Latest CN reports:
 | Exact quest-observed DialogTree definitions | 434 definitions / 461 placements across 422 quests |
 | LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
 | Native branch predicates | 259 named; 264 semantic including 5 inline; 0 class-only; 0 unresolved |
+| Complete cross-boundary native branches | 5 groups / 5 exact external Story references (4 Split fan-outs, 1 SwitchInt choice); no ownership or order promotion |
 | Exact mission-state Story alternatives | 3 branch groups / 2 cross-mission Story references; selection only, never chronology or ownership |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
 | Exact post-playback control | 128 graphs / 105 Story files / 348 actions and edges / 18 branch points / 76 exact serialized handoff contracts with unresolved server handlers |
@@ -73,8 +74,14 @@ in five payloads.
   selected runtime receiver evidence.
 - Exact native control paths for Split, If/Else, Switch, ordered Branch, playback, and
   many event families.
-- 308 native branch groups and 20 native convergences, kept as a partial
+- 312 native branch groups and 20 native convergences, kept as a partial
   graph instead of flattened into a guessed file list.
+- Native branch grouping now uses mission Story files only as anchors, then
+  retains every exact Story-bearing arm under the same serialized event and
+  branch. This generically restores five cross-boundary references across four
+  missions: four binary-validated `Split` fan-outs and one binary-mapped
+  `SwitchInt` choice. They attach hashed LevelScript, MissionRuntime, binary,
+  and metadata files while remaining non-owning and non-ordering.
 - The same generic control-path projection now retains complete
   `CompareMissionState(GetMissionState(constant id), constant state)` arms even
   when an alternative Story file is nominally grouped under another mission.

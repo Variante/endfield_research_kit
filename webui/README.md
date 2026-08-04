@@ -139,6 +139,10 @@ Rebuild Story data after editing overrides.
   embedded root `GameCondition` unions and local getter references retain
   their nested type/operand details, while opaque or changed shapes remain
   visibly unresolved.
+- Cross-boundary native branch cards open by default, badge Story files outside
+  the nominal mission group, show the installed runtime mapping, and attach the
+  hashed LevelScript, MissionRuntime, binary, and metadata inputs. Parallel
+  Split arms and conditional alternatives remain explicitly non-chronological.
 - Mission-state alternative cards preserve every Story file on both exact
   serialized arms, including cross-mission nominal groupings, and expose the
   related original LevelScript, MissionRuntime, binary, and metadata files.

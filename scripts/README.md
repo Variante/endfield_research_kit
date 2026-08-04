@@ -141,6 +141,11 @@ override those defaults for one run.
   arms may cross nominal mission Story groups, but remain non-owning and add no
   chronology edge; original LevelScript, MissionRuntime, binary, and metadata
   files are attached with hashes.
+- Native branch grouping is anchor-based rather than mission-filtered: once an
+  exact event/branch contains a mission Story file, every exact Story-bearing
+  arm is retained, including nominally external files. Split fan-outs require
+  the current binary scheduler contract; all such cross-boundary rows remain
+  non-owning and non-ordering and carry hashed original files.
 - MissionRuntime-to-receiver context joins are likewise corpus-driven and
   require the exact typed `(mapId, scriptId)` operand from the recursive
   objective condition tree. Flat script-id summaries cannot attach a mission.

@@ -160,6 +160,14 @@ for (const [key, category] of [
         self.assertIn("row.relatedOriginalFiles", source)
         self.assertIn("alternatives, not Story order or ownership", source)
 
+    def test_mission_pipeline_marks_complete_cross_boundary_native_branches(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("row.externalStoryKeys", source)
+        self.assertIn("row.crossBoundary", source)
+        self.assertIn("nativeCrossBoundaryExternal", source)
+        self.assertIn("nativeCrossBoundaryParallelHint", source)
+        self.assertIn("summary.nativeControlCrossBoundaryBranchCount", source)
+
     def test_mission_pipeline_surfaces_property_contract_as_non_ordering_context(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("activation.authoredPropertyContract", source)

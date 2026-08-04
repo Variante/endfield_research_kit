@@ -1568,6 +1568,10 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(branch["kind"], "ifElse")
         self.assertEqual(branch["branchLocalId"], 5)
         self.assertEqual(branch["predicate"]["getterName"], "BooleanCompare")
+        self.assertEqual(
+            branch["nativeMappingId"],
+            "gameassembly-2026-08-02-ifelse-execute-0x183d3ad50",
+        )
         self.assertEqual(branch["eventDetail"]["eventKey"], "branch_test")
         self.assertEqual(
             {arm["edge"] for arm in branch["arms"]},
@@ -1580,6 +1584,84 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(result["summary"]["nativeNamedPredicateCount"], 1)
         self.assertEqual(result["summary"]["nativeSemanticPredicateCount"], 1)
         self.assertEqual(result["summary"]["nativeClassOnlyPredicateCount"], 0)
+
+    def test_native_branch_group_keeps_exact_external_story_arms(self) -> None:
+        candidates = {"cutscene_m1_1": "cutscene"}
+        payload = mission_payload([])
+
+        def connection(key: str, edge: str, entry_id: int) -> dict:
+            return {
+                "key": key,
+                "levelScriptOccurrences": [{
+                    "levelId": "map_test",
+                    "scriptId": "70000000001",
+                    "sourceFile": "fixture.json",
+                    "nativeEventOwners": [{
+                        "status": "exact_serialized_control_path",
+                        "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                        "headerLocalId": 4,
+                        "path": [
+                            {
+                                "localId": 5,
+                                "edge": "ActionHeader.nextId",
+                                "actionName": "Split",
+                            },
+                            {"localId": entry_id, "edge": edge},
+                        ],
+                    }],
+                }],
+            }
+
+        payload["flow"]["missionStoryConnections"] = [
+            connection("cutscene_m1_1", "Split.actions[0]", 6),
+        ]
+        payload["flow"]["unlinkedNativePlayback"] = [
+            connection("radio_m2_1", "Split.actions[1]", 7),
+        ]
+        contract = {
+            "extraThreadExecuteMethods": [{
+                "symbol": "HG.LevelScript.Split.Execute",
+                "writerShape": "direct_scheduler_calls_from_typed_fields",
+            }],
+            "relatedOriginalFiles": [{
+                "kind": "original_game_binary",
+                "sourceFile": "GameAssembly.dll",
+                "sha256": "binary-hash",
+            }],
+        }
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            candidates,
+            payload,
+            extra_thread_scheduler_contract=contract,
+        )
+
+        self.assertEqual(result["directEdges"], [])
+        self.assertEqual(result["summary"]["nativeControlBranchCount"], 1)
+        self.assertEqual(
+            result["summary"]["nativeControlCrossBoundaryBranchCount"], 1
+        )
+        self.assertEqual(
+            result["summary"]["nativeControlCrossBoundaryExternalStoryCount"],
+            1,
+        )
+        branch = result["branches"]["nativeControlBranches"][0]
+        self.assertEqual(branch["missionStoryKeys"], ["cutscene_m1_1"])
+        self.assertEqual(branch["externalStoryKeys"], ["radio_m2_1"])
+        self.assertEqual(
+            branch["nativeMappingId"],
+            "gameassembly-2026-08-02-split-execute-0x18464b110",
+        )
+        self.assertEqual(
+            branch["branchSemantics"],
+            "binary_validated_parallel_story_fanout",
+        )
+        self.assertFalse(branch["ownership"])
+        self.assertFalse(branch["orderEvidence"])
+        self.assertEqual(
+            branch["relatedOriginalFiles"][0]["relationship"],
+            "native_cross_boundary_branch_authority",
+        )
 
     def test_mission_state_projection_keeps_cross_mission_alternatives_without_order(self) -> None:
         candidates = {"dlg_m1_true": "dialog"}
