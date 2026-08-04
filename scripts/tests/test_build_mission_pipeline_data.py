@@ -4632,12 +4632,26 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         metadata = audit["metadata"]
         self.assertEqual(metadata["managedTypeRecords"], 63987)
         self.assertEqual(metadata["runtimeTypeEntries"], 272743)
-        self.assertEqual(metadata["maxCustomTypeDepth"], 3)
-        self.assertEqual(metadata["candidateTypes"], 25)
+        self.assertEqual(
+            metadata["traversalMode"],
+            "cycle_safe_shortest_path_fixed_point",
+        )
+        self.assertEqual(metadata["maximumShortestPathDepth"], 10)
+        self.assertEqual(metadata["maximumTraversedDepth"], 10)
+        self.assertEqual(metadata["candidateTypes"], 112)
         self.assertEqual(metadata["directExactCandidateTypes"], 11)
-        self.assertEqual(metadata["nestedDependentCandidateTypes"], 14)
-        self.assertEqual(metadata["reviewedCandidateTypes"], 25)
+        self.assertEqual(metadata["nestedDependentCandidateTypes"], 101)
+        self.assertEqual(metadata["reviewedCandidateTypes"], 112)
         self.assertEqual(metadata["unreviewedCandidateTypes"], 0)
+        entity_hub = audit["runtimeEntityHubClosure"]
+        self.assertEqual(entity_hub["candidateTypes"], 86)
+        self.assertEqual(entity_hub["exactIndexedTypeLabels"], 0)
+        self.assertEqual(entity_hub["indexedOriginalObjects"], 1335450)
+        self.assertEqual(entity_hub["objectsWithTruncatedScalars"], 1384)
+        self.assertIn("no exact Entity/component script", entity_hub["finding"])
+        shared_aggregate = audit["sharedRuntimeAggregateClosure"]
+        self.assertEqual(shared_aggregate["candidateTypes"], 1)
+        self.assertEqual(len(audit["relatedOriginalFiles"]), 4)
         submitter = audit["pendingItemSubmitterClosure"]
         self.assertEqual(
             submitter["classification"],

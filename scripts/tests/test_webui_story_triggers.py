@@ -152,6 +152,17 @@ for (const [key, category] of [
         self.assertIn("nativeCinematicProducerRouteAttachments", source)
         self.assertIn("route.sourceFiles", source)
 
+    def test_mission_pipeline_surfaces_fixed_point_carrier_closure(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("metadata?.maximumShortestPathDepth", source)
+        self.assertIn('t("fixedPointTraversal")', source)
+        self.assertIn("nestedCarrierCensus.runtimeEntityHubClosure", source)
+        self.assertIn("nestedCarrierCensus.sharedRuntimeAggregateClosure", source)
+        self.assertIn("nestedCarrierCensus.relatedOriginalFiles", source)
+        self.assertIn('t("exactSerializedInstances")', source)
+        self.assertIn("exactIndexedTypeLabels", source)
+        self.assertIn("objectsWithTruncatedScalars", source)
+
     def test_mission_pipeline_surfaces_complete_mission_state_alternatives(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("branches.nativeMissionStateBranches", source)

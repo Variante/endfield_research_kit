@@ -931,13 +931,88 @@ RUNTIME_CONTRACT = {
         "metadata": {
             "managedTypeRecords": 63987,
             "runtimeTypeEntries": 272743,
-            "maxCustomTypeDepth": 3,
-            "candidateTypes": 25,
+            "traversalMode": "cycle_safe_shortest_path_fixed_point",
+            "maximumShortestPathDepth": 10,
+            "maximumTraversedDepth": 10,
+            "candidateTypes": 112,
             "directExactCandidateTypes": 11,
-            "nestedDependentCandidateTypes": 14,
-            "reviewedCandidateTypes": 25,
+            "nestedDependentCandidateTypes": 101,
+            "reviewedCandidateTypes": 112,
             "unreviewedCandidateTypes": 0,
         },
+        "runtimeEntityHubClosure": {
+            "classification": (
+                "closed_runtime_entity_graph_reachability_without_serialized_instance_join"
+            ),
+            "hubType": "Beyond.Gameplay.Core.Entity",
+            "candidateTypes": 86,
+            "targetTypes": [
+                "Beyond.Gameplay.Core.Entity",
+                "Beyond.Gameplay.Core.InteractiveRootComponent",
+                "Beyond.Gameplay.Core.NpcInteractComponent",
+            ],
+            "exactIndexedTypeLabels": 0,
+            "indexedOriginalObjects": 1335450,
+            "objectsWithTruncatedScalars": 1384,
+            "finding": (
+                "Eighty-six newly visible candidates reach their missing identity "
+                "only through the mutable Entity/component graph. Installed metadata "
+                "proves the type paths, while the complete original-object indexes "
+                "expose no exact Entity/component script or scalar type label that "
+                "can populate a mission/Story ownership join. The 1,384 rows with "
+                "truncated scalar projections remain an explicit boundary."
+            ),
+        },
+        "sharedRuntimeAggregateClosure": {
+            "classification": (
+                "closed_shared_runtime_aggregate_reachability_without_same_record_join"
+            ),
+            "candidateTypes": 1,
+            "hubFamilies": [
+                "runtime_entity_component_graph",
+                "mission_runtime_property_or_action_graph",
+            ],
+            "finding": (
+                "One mixed candidate reaches different identities through the "
+                "Entity and MissionRuntime aggregate graphs; graph reachability "
+                "does not make the independent manager records one authored row."
+            ),
+        },
+        "relatedOriginalFiles": [{
+            "sourceFile": (
+                r"D:\Program Files\Endfield Game\GameAssembly.dll"
+            ),
+            "sha256": (
+                "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+            ),
+            "role": "native managed-field consumers",
+        }, {
+            "sourceFile": (
+                r"D:\Program Files\Endfield Game\Endfield_Data\il2cpp_data\Metadata\global-metadata.dat"
+            ),
+            "sha256": (
+                "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+            ),
+            "role": "installed managed type graph",
+        }, {
+            "sourceFile": (
+                "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
+                "object_index/objects.jsonl.gz"
+            ),
+            "sha256": (
+                "6f59db82177cd1abd027bfed385145337403a5b0791bcb628287b53e1ad341cd"
+            ),
+            "role": "original StreamingAssets serialized-object census",
+        }, {
+            "sourceFile": (
+                "export_full/recovered/AnimeStudio-cli/Persistent/"
+                "object_index/objects.jsonl.gz"
+            ),
+            "sha256": (
+                "65cd90a9f99d0da09ebcbd9de01e0b69960d513a857c5438de4272f5de1dd3bd"
+            ),
+            "role": "original Persistent serialized-object census",
+        }],
         "pendingItemSubmitterClosure": {
             "classification": (
                 "active_shipped_xlua_producer_with_exact_submission_context_without_ui_join"
@@ -1072,20 +1147,18 @@ RUNTIME_CONTRACT = {
             ),
         },
         "finding": (
-            "All 25 current managed identity candidates reachable through generic "
-            "or custom typed fields to depth three are reviewed. Productive contexts "
-            "were already recovered; remaining joins are global aggregate managers, "
-            "previously closed paths, static registries, or the active XLua pending-"
-            "submission bridge with exact quest-to-submission context but no "
-            "quest-to-OpenUI join."
+            "All 112 managed identity candidates reachable at the cycle-safe type-"
+            "graph fixed point are reviewed. Productive contexts were already "
+            "recovered; remaining joins are shared runtime aggregates, previously "
+            "closed paths, static registries, or the active XLua pending-submission "
+            "bridge with exact quest-to-submission context but no quest-to-OpenUI join."
         ),
         "boundary": (
             "The exact shipped SubmitItem XLua producer, fallback OpenUI parameter "
             "pass-through, and authored submission objectives are included. "
             "Dynamic mutation or reflection outside this path, native-only opaque "
-            "objects, server-only state, paths deeper than three custom-type hops, "
-            "unexported asset kinds, future IFix, and future builds remain outside "
-            "the bound."
+            "objects, server-only state, unexported asset kinds, future IFix, and "
+            "future builds remain outside the bound."
         ),
         "classification": "all_nested_managed_identity_carriers_reviewed",
         "storyBindingsAdded": 0,

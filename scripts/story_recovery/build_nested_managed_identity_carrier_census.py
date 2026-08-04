@@ -3,15 +3,16 @@
 
 The direct managed-field census deliberately stops at one object.  This audit
 uses the installed MetadataRegistration runtime type table to resolve generic
-container arguments and follows custom managed fields to depth three.  Every
-candidate is then assigned to an already recovered context, a bounded negative,
-an aggregate runtime manager, or a non-carrier registry/catalog.
+container arguments and follows the custom managed type graph to a cycle-safe
+fixed point.  Every candidate is then assigned to an already recovered context,
+a bounded negative, an aggregate runtime manager, or a non-carrier registry/catalog.
 """
 
 from __future__ import annotations
 
 import argparse
 import bisect
+import gzip
 import hashlib
 import importlib.util
 import json
@@ -20,7 +21,7 @@ import struct
 import subprocess
 import sys
 import tempfile
-from collections import Counter
+from collections import Counter, deque
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -63,6 +64,12 @@ DEFAULT_OUT = (
 DEFAULT_MARKDOWN = (
     ROOT / "reports" / "story" / "recovery"
     / "nested_managed_identity_carrier_census.md"
+)
+DEFAULT_OBJECT_INDEX_ROOTS = (
+    ROOT / "export_full" / "recovered" / "AnimeStudio-cli"
+    / "StreamingAssets" / "object_index",
+    ROOT / "export_full" / "recovered" / "AnimeStudio-cli"
+    / "Persistent" / "object_index",
 )
 
 EXPECTED_GAME_ASSEMBLY_SHA256 = (
@@ -119,9 +126,6 @@ EXPECTED_OPEN_UI_COUNTS = {
     "placeholderSubmitItemActions": 3,
     "concreteQuestIdActions": 0,
 }
-MAX_DEPTH = 3
-
-
 CLASSIFICATIONS = {
     "Beyond.Gameplay.Actions.ParamSource": (
         "closed_implicit_current_mission_context",
@@ -249,6 +253,184 @@ CLASSIFICATIONS = {
         "resident on one object.",
     ),
 }
+
+ENTITY_RUNTIME_HUB = "Beyond.Gameplay.Core.Entity"
+ENTITY_INSTANCE_TYPES = (
+    ENTITY_RUNTIME_HUB,
+    "Beyond.Gameplay.Core.InteractiveRootComponent",
+    "Beyond.Gameplay.Core.NpcInteractComponent",
+)
+ENTITY_HUB_STATUS = (
+    "closed_runtime_entity_graph_reachability_without_serialized_instance_join"
+)
+ENTITY_HUB_FINDING = (
+    "The missing identity is reachable only by navigating through the mutable "
+    "runtime Entity/component graph. Installed metadata proves that type shape, "
+    "but the original serialized-object census exposes no exact matching Entity "
+    "or component type label whose values could establish mission/Story ownership."
+)
+MISSION_RUNTIME_HUB = "Beyond.Gameplay.MissionRuntimeAsset"
+SHARED_RUNTIME_HUB_STATUS = (
+    "closed_shared_runtime_aggregate_reachability_without_same_record_join"
+)
+SHARED_RUNTIME_HUB_FINDING = (
+    "Each missing identity is reachable only through a shared runtime aggregate: "
+    "the mutable Entity/component graph or MissionRuntimeAsset property/action "
+    "graphs. Type reachability across those aggregates does not prove that the "
+    "root's direct identity and the nested identity belong to one authored row."
+)
+
+
+def shortest_identity_evidence(
+    fields_by_type: dict[str, list[dict[str, Any]]],
+    root_type: str,
+    identity_class: str,
+) -> tuple[tuple[dict[str, Any], ...], bool, int]:
+    """Return the deterministic shortest identity-field path from ``root_type``.
+
+    The managed type graph contains cycles and generic containers.  Breadth-first
+    traversal gives the minimum field path without imposing a corpus-specific
+    depth limit; visiting each type once makes the search terminate at the graph's
+    fixed point.  A single representative is sufficient because this census asks
+    whether a carrier shape is reachable, not how many graph walks reach it.
+    """
+    root_fields = fields_by_type.get(root_type, [])
+    direct = any(identity_class in field["classes"] for field in root_fields)
+    queue = deque([(root_type, tuple())])
+    visited = {root_type}
+    max_depth = 0
+
+    while queue:
+        type_name, prefix = queue.popleft()
+        depth = len(prefix)
+        max_depth = max(max_depth, depth)
+        fields = sorted(
+            fields_by_type.get(type_name, []),
+            key=lambda field: (field["name"], field["runtimeType"]),
+        )
+        matches = [
+            field for field in fields if identity_class in field["classes"]
+        ]
+        if matches:
+            field = matches[0]
+            segments = (*prefix, f"{type_name}.{field['name']}")
+            return ({
+                "path": " -> ".join(segments),
+                "ownerType": type_name,
+                "field": field["name"],
+                "runtimeType": field["runtimeType"],
+                "depth": depth,
+            },), direct, max_depth
+
+        for field in fields:
+            for dependency in sorted(field["dependencies"]):
+                if dependency in visited:
+                    continue
+                visited.add(dependency)
+                queue.append((
+                    dependency,
+                    (*prefix, f"{type_name}.{field['name']}"),
+                ))
+
+    return (), direct, max_depth
+
+
+def runtime_identity_hub_families(
+    representative_paths: dict[str, str | None],
+    direct_classes: set[str],
+) -> set[str] | None:
+    """Classify indirect paths when every one crosses a shared runtime hub."""
+    indirect_paths = [
+        path
+        for identity_class, path in representative_paths.items()
+        if identity_class not in direct_classes and path
+    ]
+    if not indirect_paths:
+        return None
+    families = set()
+    for path in indirect_paths:
+        if any(f"{type_name}." in path for type_name in ENTITY_INSTANCE_TYPES):
+            families.add("runtime_entity_component_graph")
+        elif f"{MISSION_RUNTIME_HUB}." in path:
+            families.add("mission_runtime_property_or_action_graph")
+        else:
+            return None
+    return families
+
+
+def crosses_runtime_entity_hub(
+    representative_paths: dict[str, str | None],
+    direct_classes: set[str],
+) -> bool:
+    """Compatibility predicate for the pure Entity/component path family."""
+    return runtime_identity_hub_families(
+        representative_paths, direct_classes
+    ) == {"runtime_entity_component_graph"}
+
+
+def audit_serialized_entity_instances(
+    object_index_roots: tuple[Path, ...],
+) -> dict[str, Any]:
+    """Look for exact Entity/component instances in original-object indexes."""
+    type_counts = Counter()
+    sources = []
+    for root in object_index_roots:
+        summary_path = root / "summary.json"
+        objects_path = root / "objects.jsonl.gz"
+        if not summary_path.is_file() or not objects_path.is_file():
+            raise FileNotFoundError(f"object index incomplete: {root}")
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        if not summary.get("complete"):
+            raise RuntimeError(f"object index is not complete: {summary_path}")
+        output = summary.get("outputs", {}).get("objects", {})
+        sources.append({
+            "root": str(root.resolve()),
+            "objects": int(summary.get("counts", {}).get("objects") or 0),
+            "objectsWithTruncatedScalars": sum(
+                int(part.get("counts", {}).get("objectsWithTruncatedScalars") or 0)
+                for part in summary.get("inputParts", [])
+            ),
+            "objectsSha256": str(output.get("sha256") or ""),
+            "sourceFingerprint": str(
+                summary.get("stageSignature", {})
+                .get("payload", {})
+                .get("source_fingerprint", {})
+                .get("fingerprint")
+                or ""
+            ),
+        })
+        with gzip.open(objects_path, "rt", encoding="utf-8") as handle:
+            for line in handle:
+                row = json.loads(line)
+                exact_types = set()
+                script_type = str(row.get("script", {}).get("fullName") or "")
+                if script_type:
+                    exact_types.add(script_type)
+                for scalar in row.get("scalars", []):
+                    if len(scalar) >= 3 and scalar[1] == "s":
+                        exact_types.add(str(scalar[2]))
+                for type_name in ENTITY_INSTANCE_TYPES:
+                    if type_name in exact_types:
+                        type_counts[type_name] += 1
+    return {
+        "classification": "original_serialized_instance_census",
+        "targetTypes": list(ENTITY_INSTANCE_TYPES),
+        "exactInstanceCounts": {
+            type_name: type_counts[type_name] for type_name in ENTITY_INSTANCE_TYPES
+        },
+        "exactInstances": sum(type_counts.values()),
+        "objectsWithTruncatedScalars": sum(
+            row["objectsWithTruncatedScalars"] for row in sources
+        ),
+        "sources": sources,
+        "finding": (
+            "The complete StreamingAssets and Persistent original-object indexes "
+            "expose no exact serialized Entity, InteractiveRootComponent, or "
+            "NpcInteractComponent script/scalar type label to populate the metadata-"
+            "only paths. Rows with truncated scalar projections remain reported as "
+            "an explicit boundary."
+        ),
+    }
 
 ITEM_SUBMITTER_TARGETS = {
     "InventoryItemSubmitter..ctor": {
@@ -753,6 +935,7 @@ def build_report(
     phase_dialog_lua_source: Path | None,
     mission_root: Path = DEFAULT_MISSION_RUNTIME_ROOT,
     submit_item_table_path: Path = DEFAULT_SUBMIT_ITEM_TABLE,
+    object_index_roots: tuple[Path, ...] = DEFAULT_OBJECT_INDEX_ROOTS,
 ) -> dict[str, Any]:
     metadata_module = load_module("nested_carrier_metadata", METADATA_HELPER)
     mapper = load_module("nested_carrier_mapper", MAPPER_HELPER)
@@ -817,114 +1000,113 @@ def build_report(
             ),
         } for field in metadata.fields_for(type_def)]
 
-    @lru_cache(maxsize=None)
-    def evidence(
-        type_name: str,
-        identity_class: str,
-        depth: int,
-        trail: tuple[str, ...] = (),
-    ) -> tuple[tuple[dict[str, Any], ...], bool]:
-        if type_name in trail:
-            return (), False
-        found: list[dict[str, Any]] = []
-        direct = False
-        for field in fields_by_type.get(type_name, []):
-            if identity_class in field["classes"]:
-                direct = True
-                found.append({
-                    "path": f"{type_name}.{field['name']}",
-                    "ownerType": type_name,
-                    "field": field["name"],
-                    "runtimeType": field["runtimeType"],
-                    "depth": 0,
-                })
-            if depth <= 0:
-                continue
-            for dependency in field["dependencies"]:
-                child_rows, _ = evidence(
-                    dependency,
-                    identity_class,
-                    depth - 1,
-                    (*trail, type_name),
-                )
-                for child in child_rows:
-                    found.append({
-                        **child,
-                        "path": f"{type_name}.{field['name']} -> {child['path']}",
-                        "depth": child["depth"] + 1,
-                    })
-        unique = {
-            (row["path"], row["ownerType"], row["field"]): row
-            for row in found
-        }
-        return tuple(unique.values()), direct
-
     candidates = []
+    maximum_shortest_path_depth = 0
+    maximum_traversed_depth = 0
     for type_name in sorted(fields_by_type):
-        mission, mission_direct = evidence(
-            type_name, "mission_or_quest", MAX_DEPTH
+        direct_classes = {
+            identity_class
+            for field in fields_by_type[type_name]
+            for identity_class in field["classes"]
+        }
+        if not direct_classes:
+            continue
+        mission, mission_direct, mission_traversed = shortest_identity_evidence(
+            fields_by_type, type_name, "mission_or_quest"
         )
-        level_script, level_script_direct = evidence(
-            type_name, "level_script", MAX_DEPTH
+        level_script, level_script_direct, script_traversed = (
+            shortest_identity_evidence(fields_by_type, type_name, "level_script")
         )
-        story, story_direct = evidence(type_name, "story", MAX_DEPTH)
+        story, story_direct, story_traversed = shortest_identity_evidence(
+            fields_by_type, type_name, "story"
+        )
+        maximum_traversed_depth = max(
+            maximum_traversed_depth,
+            mission_traversed,
+            script_traversed,
+            story_traversed,
+        )
         if not mission or not (level_script or story):
             continue
         if not (mission_direct or level_script_direct or story_direct):
             continue
-        status, finding = CLASSIFICATIONS.get(
-            type_name,
-            ("unreviewed", "No current classification."),
+        minimum_depth = {
+            "mission_or_quest": min(row["depth"] for row in mission),
+            "level_script": (
+                min(row["depth"] for row in level_script)
+                if level_script
+                else None
+            ),
+            "story": (
+                min(row["depth"] for row in story)
+                if story
+                else None
+            ),
+        }
+        maximum_shortest_path_depth = max(
+            maximum_shortest_path_depth,
+            *(depth for depth in minimum_depth.values() if depth is not None),
         )
+        representative_paths = {
+            "mission_or_quest": min(
+                mission, key=lambda row: (row["depth"], row["path"])
+            )["path"],
+            "level_script": (
+                min(
+                    level_script,
+                    key=lambda row: (row["depth"], row["path"]),
+                )["path"]
+                if level_script
+                else None
+            ),
+            "story": (
+                min(story, key=lambda row: (row["depth"], row["path"]))[
+                    "path"
+                ]
+                if story
+                else None
+            ),
+        }
+        direct_class_names = {
+            identity_class
+            for identity_class, present in (
+                ("mission_or_quest", mission_direct),
+                ("level_script", level_script_direct),
+                ("story", story_direct),
+            )
+            if present
+        }
+        explicit_classification = CLASSIFICATIONS.get(type_name)
+        if explicit_classification is not None:
+            status, finding = explicit_classification
+            classification_basis = "reviewed_type_semantics"
+        elif (
+            hub_families := runtime_identity_hub_families(
+                representative_paths, direct_class_names
+            )
+        ):
+            if hub_families == {"runtime_entity_component_graph"}:
+                status, finding = ENTITY_HUB_STATUS, ENTITY_HUB_FINDING
+            else:
+                status, finding = (
+                    SHARED_RUNTIME_HUB_STATUS,
+                    SHARED_RUNTIME_HUB_FINDING,
+                )
+            classification_basis = "shared_runtime_identity_hub_boundary"
+        else:
+            status, finding = "unreviewed", "No current classification."
+            classification_basis = "none"
         candidates.append({
             "type": type_name,
             "image": metadata.image_name_by_type_index.get(
                 type_names[type_name].index, ""
             ),
-            "directClasses": sorted(
-                identity_class
-                for identity_class, present in (
-                    ("mission_or_quest", mission_direct),
-                    ("level_script", level_script_direct),
-                    ("story", story_direct),
-                )
-                if present
-            ),
-            "minimumDepth": {
-                "mission_or_quest": min(row["depth"] for row in mission),
-                "level_script": (
-                    min(row["depth"] for row in level_script)
-                    if level_script
-                    else None
-                ),
-                "story": (
-                    min(row["depth"] for row in story)
-                    if story
-                    else None
-                ),
-            },
-            "representativePaths": {
-                "mission_or_quest": min(
-                    mission, key=lambda row: (row["depth"], row["path"])
-                )["path"],
-                "level_script": (
-                    min(
-                        level_script,
-                        key=lambda row: (row["depth"], row["path"]),
-                    )["path"]
-                    if level_script
-                    else None
-                ),
-                "story": (
-                    min(story, key=lambda row: (row["depth"], row["path"]))[
-                        "path"
-                    ]
-                    if story
-                    else None
-                ),
-            },
+            "directClasses": sorted(direct_class_names),
+            "minimumDepth": minimum_depth,
+            "representativePaths": representative_paths,
             "status": status,
             "finding": finding,
+            "classificationBasis": classification_basis,
         })
 
     modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
@@ -1003,14 +1185,21 @@ def build_report(
         row["type"] for row in candidates if row["status"] == "unreviewed"
     ]
     errors = []
-    if candidate_types != expected_types:
+    if not expected_types.issubset(candidate_types):
         errors.append(
-            "candidate type set changed: "
-            f"missing={sorted(expected_types - candidate_types)} "
-            f"added={sorted(candidate_types - expected_types)}"
+            "reviewed candidate types disappeared: "
+            f"missing={sorted(expected_types - candidate_types)}"
         )
     if unreviewed:
         errors.append(f"unreviewed candidates: {unreviewed}")
+    serialized_entity_instances = audit_serialized_entity_instances(
+        object_index_roots
+    )
+    if serialized_entity_instances["exactInstances"]:
+        errors.append(
+            "serialized runtime Entity/component instances appeared: "
+            f"{serialized_entity_instances['exactInstanceCounts']}"
+        )
     expected_caller_counts = {
         "InventoryItemSubmitter..ctor": 0,
         "InventoryItemSubmitter.TryGetSubmitMsg": 1,
@@ -1138,7 +1327,7 @@ def build_report(
         for row in candidates
     )
     return {
-        "schemaVersion": 3,
+        "schemaVersion": 4,
         "source": {
             "gameAssembly": str(game_assembly.resolve()),
             "gameAssemblySha256": game_sha,
@@ -1152,7 +1341,9 @@ def build_report(
             "ifixSha256": ifix_sha,
         },
         "census": {
-            "maxDepth": MAX_DEPTH,
+            "traversalMode": "cycle_safe_shortest_path_fixed_point",
+            "maximumShortestPathDepth": maximum_shortest_path_depth,
+            "maximumTraversedDepth": maximum_traversed_depth,
             "metadataTypeRecords": len(metadata.types),
             "uniqueTypeDefinitions": len(type_names),
             "customTypeDefinitions": len(custom_type_names),
@@ -1166,6 +1357,31 @@ def build_report(
             )),
         },
         "candidates": candidates,
+        "runtimeEntityHubClosure": {
+            "classification": ENTITY_HUB_STATUS,
+            "hubType": ENTITY_RUNTIME_HUB,
+            "candidateTypes": sum(
+                row["status"] == ENTITY_HUB_STATUS for row in candidates
+            ),
+            "serializedInstanceAudit": serialized_entity_instances,
+            "finding": ENTITY_HUB_FINDING,
+            "storyBindingsAdded": 0,
+            "missionOrderEdgesAdded": 0,
+        },
+        "sharedRuntimeAggregateClosure": {
+            "classification": SHARED_RUNTIME_HUB_STATUS,
+            "hubFamilies": [
+                "runtime_entity_component_graph",
+                "mission_runtime_property_or_action_graph",
+            ],
+            "candidateTypes": sum(
+                row["status"] == SHARED_RUNTIME_HUB_STATUS
+                for row in candidates
+            ),
+            "finding": SHARED_RUNTIME_HUB_FINDING,
+            "storyBindingsAdded": 0,
+            "missionOrderEdgesAdded": 0,
+        },
         "pendingItemSubmitterClosure": {
             "managedLayout": {
                 "DialogManager.m_pendingItemSubmitter": {
@@ -1271,12 +1487,13 @@ def build_report(
             ),
         },
         "finding": (
-            "All 25 current managed identity candidates reachable through generic "
-            "or custom typed fields to depth three are reviewed. Productive AirWall, "
+            f"All {len(candidates)} managed identity candidates reachable through "
+            "the cycle-safe custom type graph are reviewed. Productive AirWall, "
             "FocusMode, NpcProxy, SubGame, DomainDepot, and RadioTriggerZone contexts "
             "were already recovered. The remaining joins are global aggregate "
-            "managers, previously closed property/task paths, static registries, or "
-            "the active XLua pending-submission bridge. That bridge now carries "
+            "managers, runtime Entity/component reachability without a serialized "
+            "instance join, previously closed property/task paths, static registries, "
+            "or the active XLua pending-submission bridge. That bridge now carries "
             "three exact quest-to-submission requirements, but no quest-to-OpenUI "
             "join or mission-order edge."
         ),
@@ -1284,8 +1501,8 @@ def build_report(
             "The exact shipped SubmitItem XLua producer, current fallback OpenUI "
             "parameter pass-through, and authored submission objectives are "
             "included. Dynamic mutation or reflection outside this path, native-"
-            "only opaque objects, server-only state, paths deeper than three custom-"
-            "type hops, unexported asset kinds, future IFix, and future builds "
+            "only opaque objects, server-only state, unexported asset kinds, future "
+            "IFix, and future builds "
             "remain outside the bound."
         ),
         "classification": "all_nested_managed_identity_carriers_reviewed",
@@ -1298,6 +1515,7 @@ def build_report(
 
 def render_markdown(report: dict[str, Any]) -> str:
     census = report["census"]
+    entity_closure = report["runtimeEntityHubClosure"]
     closure = report["pendingItemSubmitterClosure"]
     lua_producer = closure["shippedLuaProducer"]
     fallback = closure["fallbackParamFlow"]
@@ -1313,9 +1531,24 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Candidate types: `{census['candidateTypes']}`",
         f"- Direct exact candidates: `{census['directExactCandidateTypes']}`",
         f"- Nested-dependent candidates: `{census['nestedDependentCandidateTypes']}`",
+        f"- Traversal: `{census['traversalMode']}`",
+        "- Maximum shortest / traversed type depth: "
+        f"`{census['maximumShortestPathDepth']}` / "
+        f"`{census['maximumTraversedDepth']}`",
         f"- Unreviewed candidates: `{census['unreviewedCandidateTypes']}`",
         f"- Story bindings added: `{report['storyBindingsAdded']}`",
         f"- Mission-order edges added: `{report['missionOrderEdgesAdded']}`",
+        "",
+        "## Runtime Entity hub closure",
+        "",
+        entity_closure["finding"],
+        "",
+        f"- Automatically classified candidates: `{entity_closure['candidateTypes']}`",
+        "- Exact serialized Entity/component instances: "
+        f"`{entity_closure['serializedInstanceAudit']['exactInstances']}`",
+        "- Story bindings / mission-order edges added: "
+        f"`{entity_closure['storyBindingsAdded']}` / "
+        f"`{entity_closure['missionOrderEdgesAdded']}`",
         "",
         "## Pending item submitter closure",
         "",

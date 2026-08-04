@@ -1388,6 +1388,23 @@ existing LevelScript, DialogTree, Timeline, teleport, proxy, Encounter, or
 local carrier scans is unlikely to close ownership without a new foreign key
 or changed inputs.
 
+The nested managed-carrier census no longer stops at an arbitrary depth. A
+cycle-safe shortest-path traversal of all 49,789 installed custom managed types
+reaches a fixed point with 112 identity candidates (101 nested-dependent), a
+maximum shortest path of ten, and zero unreviewed candidates. The 87 candidates
+newly exposed beyond the former depth-three bound collapse by path semantics,
+not root ids: 86 reach their missing identity only through the mutable
+`Beyond.Gameplay.Core.Entity`/component graph, and one crosses that graph plus
+the already-audited `MissionRuntimeAsset` property/action aggregate. Complete
+original-object indexes cover 1,335,450 StreamingAssets/Persistent objects and
+expose zero exact `Entity`, `InteractiveRootComponent`, or
+`NpcInteractComponent` script/scalar type labels; 1,384 rows with truncated
+scalar projections remain an explicit boundary. Metadata therefore proves
+runtime type reachability but not populated same-record ownership; this batch adds zero
+Story bindings and zero order edges. Mission Pipeline exposes the fixed-point
+counts, both generic closures, binary/metadata hashes, and both object-index
+sources. OCR and overrides are not inputs.
+
 The general generic-method audit now resolves shipped IL2CPP `MethodSpec`
 class/method arguments through `MetadataRegistration` and decodes every
 distinct candidate body without choosing by address. On the current binary,
