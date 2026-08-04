@@ -163,6 +163,13 @@ DEFAULT_GAMEPLAY_CONFIG_ROOT = (
 DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT = (
     ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
 )
+DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE = (
+    DEFAULT_GAMEPLAY_CONFIG_ROOT / "ScriptTaskExtraInfoTable.json"
+)
+DEFAULT_LEVEL_SCRIPT_DATA_ROOT = (
+    ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json"
+    / "LevelScriptData"
+)
 DEFAULT_PROTOCOL_REGISTRY_AUDIT = (
     ROOT / "reports" / "story" / "recovery" / "protocol_registry_audit.json"
 )
@@ -278,10 +285,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # inside/outside gate while keeping the runtime player-position result unknown.
 # v43 distinguishes the full-scene LevelScript snapshot from incremental public
 # state notifications and publishes their closed current-AOT application paths.
-# v44 expands each authored quest fork into sibling-exclusive quest corridors
-# and attaches the exact typed Story relations and hash-checked original files
-# carried by those corridors.
-SCHEMA_VERSION = 44
+# v45 retains every complete authored scene/script/task condition tuple and
+# fail-closed joins it to the original task table and LevelScript source.
+SCHEMA_VERSION = 45
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -9369,6 +9375,8 @@ FACT_KEYS = (
     "entityId",
     "_scriptId",
     "scriptId",
+    "_taskId",
+    "taskId",
     "missionId",
     "missionVarName",
     "compareOperator",
@@ -9675,6 +9683,117 @@ def get_const(row: dict[str, Any], *keys: str) -> Any:
     return None
 
 
+def level_script_task_dependencies(condition: Any) -> list[dict[str, Any]]:
+    """Recover every exact scene/script/task tuple by authored field shape.
+
+    This deliberately does not enumerate missions, scripts, tasks, or condition
+    classes. A condition joins the task corpus only when all three serialized
+    identity fields are present and scalar after const-wrapper decoding.
+    """
+    dependencies: list[dict[str, Any]] = []
+    for row in condition_objects(condition):
+        level_id = get_const(row, "_sceneId", "sceneId", "_levelId", "levelId")
+        script_id = get_const(row, "_scriptId", "scriptId")
+        task_id = get_const(row, "_taskId", "taskId")
+        if isinstance(script_id, dict):
+            script_id = script_id.get("scriptId")
+        if not all(isinstance(value, (str, int)) and str(value) for value in (
+            level_id, script_id, task_id
+        )):
+            continue
+        dependencies.append({
+            "conditionType": type_name(row.get("$type")) or "UnknownCondition",
+            "conditionId": str(row.get("uniqueId") or ""),
+            "levelId": str(level_id),
+            "scriptId": str(script_id),
+            "taskId": str(task_id),
+            "relation": "mission_objective_waits_for_levelscript_task",
+            "runtimeAuthorityReference": "runtimeContract.levelScriptTaskAuthorityAudit",
+            "evidenceBoundary": (
+                "The authored mission objective waits for this exact LevelScript "
+                "task. This does not prove that the mission activates the script, "
+                "owns its Story playback, or selects a Story branch."
+            ),
+        })
+    return dependencies
+
+
+def validate_level_script_task_dependency(
+    dependency: dict[str, Any],
+    *,
+    mission_id: str,
+    quest_id: str,
+    mission_source: Path,
+    task_table_path: Path = DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE,
+    level_script_root: Path = DEFAULT_LEVEL_SCRIPT_DATA_ROOT,
+) -> dict[str, Any]:
+    """Fail closed while joining an authored tuple to original serialized files."""
+    validator = "level_script_task_dependency"
+    level_id = str(dependency.get("levelId") or "")
+    script_id = str(dependency.get("scriptId") or "")
+    task_id = str(dependency.get("taskId") or "")
+    identity = f"{level_id}/{script_id}/{task_id}"
+    if not task_table_path.is_file():
+        raise RuntimeError(
+            f"validator={validator} gate=taskTableExists mission={mission_id} "
+            f"quest={quest_id} identity={identity} expected=file actual=missing "
+            f"source={task_table_path}"
+        )
+    table_payload = read_json(task_table_path)
+    table = table_payload.get("dataTable") if isinstance(table_payload, dict) else None
+    task_row = (
+        (((table or {}).get(level_id) or {}).get(script_id) or {}).get(task_id)
+        if isinstance(table, dict) else None
+    )
+    if not isinstance(task_row, dict):
+        raise RuntimeError(
+            f"validator={validator} gate=taskTuple mission={mission_id} "
+            f"quest={quest_id} identity={identity} expected=authored_task_row "
+            f"actual=missing source={task_table_path} "
+            f"sourceHashes={{'taskTable':'{sha256_path(task_table_path)}'}}"
+        )
+    level_script_path = level_script_root / level_id / f"{script_id}.json"
+    if not level_script_path.is_file():
+        raise RuntimeError(
+            f"validator={validator} gate=levelScriptExists mission={mission_id} "
+            f"quest={quest_id} identity={identity} expected=file actual=missing "
+            f"source={level_script_path} "
+            f"sourceHashes={{'taskTable':'{sha256_path(task_table_path)}'}}"
+        )
+
+    related: list[dict[str, Any]] = []
+    for kind, path, relationship in (
+        ("mission_runtime", mission_source, "authored_objective_condition"),
+        ("level_script", level_script_path, "exact_task_host"),
+        ("script_task_extra_info_table", task_table_path, "exact_task_metadata"),
+    ):
+        if not path.is_file():
+            raise RuntimeError(
+                f"validator={validator} gate=relatedOriginalFile mission={mission_id} "
+                f"quest={quest_id} identity={identity} expected=file actual=missing "
+                f"source={path}"
+            )
+        related.append({
+            "kind": kind,
+            "sourceFile": repo_path(path),
+            "relationship": relationship,
+            "sha256": sha256_path(path),
+        })
+    result = dict(dependency)
+    result.update({
+        "taskMetadata": {
+            "titleKey": ((task_row.get("taskTitle") or {}).get("key") or ""),
+            "descriptionKey": (
+                (task_row.get("singleDescription") or {}).get("key") or ""
+            ),
+            "objectiveCount": task_row.get("objectiveCount"),
+        },
+        "relatedOriginalFiles": related,
+        "validation": {"status": "validated", "validator": validator},
+    })
+    return result
+
+
 def objective_row(objective: dict[str, Any], index: int) -> dict[str, Any]:
     condition = objective.get("condition")
     objects = condition_objects(condition)
@@ -9742,6 +9861,7 @@ def objective_row(objective: dict[str, Any], index: int) -> dict[str, Any]:
         ),
         "questStateRefs": quest_state_refs,
         "levelScriptIds": sorted(level_scripts),
+        "levelScriptTaskDependencies": level_script_task_dependencies(condition),
         "propertyKeys": sorted(properties),
         "tracking": tracking,
     }
@@ -10090,6 +10210,7 @@ def build_mission(
     submit_item_quest_count = 0
     submit_item_dialog_co_gate_count = 0
     submit_item_level_script_co_gate_count = 0
+    level_script_task_dependency_count = 0
     annotations = (CASE_STUDIES.get(mission_id) or {}).get("nodes") or {}
 
     ordered_quests = sorted(
@@ -10115,6 +10236,24 @@ def build_mission(
             for objective in objectives
             for item in objective["submissionChecks"]
         ]
+        for objective in objectives:
+            objective["levelScriptTaskDependencies"] = [
+                validate_level_script_task_dependency(
+                    dependency,
+                    mission_id=mission_id,
+                    quest_id=quest_id,
+                    mission_source=source_path,
+                )
+                for dependency in objective.get("levelScriptTaskDependencies") or []
+            ]
+        level_script_task_dependencies_for_quest = [
+            dependency
+            for objective in objectives
+            for dependency in objective.get("levelScriptTaskDependencies") or []
+        ]
+        level_script_task_dependency_count += len(
+            level_script_task_dependencies_for_quest
+        )
         submission_dialog_co_gates = [
             item
             for objective in objectives
@@ -10162,6 +10301,7 @@ def build_mission(
             "submissionChecks": submission_checks,
             "submissionDialogCoGates": submission_dialog_co_gates,
             "submissionLevelScriptCoGates": submission_level_script_co_gates,
+            "levelScriptTaskDependencies": level_script_task_dependencies_for_quest,
             "serverPlaceholderKeys": [
                 {"questId": quest_id, "conditionId": condition_id}
                 for condition_id in placeholder_condition_ids
@@ -10226,6 +10366,12 @@ def build_mission(
     multi_prev = [node["id"] for node in nodes if len(node["prev"]) > 1]
     mission_name = mission.get("missionName") or {}
     mission_desc = mission.get("missionDescription") or {}
+    mission_task_dependencies = [
+        {**dependency, "questId": node["id"], "objectiveIndex": objective["index"]}
+        for node in nodes
+        for objective in node.get("objectives") or []
+        for dependency in objective.get("levelScriptTaskDependencies") or []
+    ]
     payload = {
         "schemaVersion": SCHEMA_VERSION,
         "mission": {
@@ -10241,6 +10387,7 @@ def build_mission(
             "onMissionCompletedId": mission.get("onMissionCompletedId"),
             "onMissionFailedId": mission.get("onMissionFailedId"),
             "nativeRuntimeBindings": list(native_runtime_bindings or []),
+            "levelScriptTaskDependencies": mission_task_dependencies,
             "source": source_path.relative_to(ROOT).as_posix() if source_path.is_relative_to(ROOT) else source_path.as_posix(),
         },
         "nodes": nodes,
@@ -10288,6 +10435,7 @@ def build_mission(
         "submitItemLevelScriptCoGateCount": (
             submit_item_level_script_co_gate_count
         ),
+        "levelScriptTaskDependencyCount": level_script_task_dependency_count,
         "nativeRuntimeBindingCount": len(native_runtime_bindings or []),
         "activityStageHostCount": sum(
             len(node.get("activityStageHosts") or []) for node in nodes
@@ -10616,6 +10764,12 @@ def build_all(
             ),
             "submitItemLevelScriptCoGates": sum(
                 row["submitItemLevelScriptCoGateCount"] for row in summaries
+            ),
+            "levelScriptTaskDependencies": sum(
+                row["levelScriptTaskDependencyCount"] for row in summaries
+            ),
+            "missionsWithLevelScriptTaskDependencies": sum(
+                1 for row in summaries if row["levelScriptTaskDependencyCount"]
             ),
             "nativeRuntimeBindings": subgame_registry["missionBindingCount"],
             "nativeRuntimeBoundMissions": subgame_registry["boundMissionCount"],
