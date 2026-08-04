@@ -284,17 +284,55 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                             "index": 1,
                             "levelScriptIds": ["1001"],
                             "conditionTypes": ["CheckLevelScriptPropertyBool"],
+                            "condition": {
+                                "type": "CombineCondition",
+                                "children": [{
+                                    "type": "CheckLevelScriptPropertyBool",
+                                    "facts": {
+                                        "mapId": "map_fixture",
+                                        "scriptId": {"scriptId": 1001},
+                                        "key": "isFinished",
+                                    },
+                                }],
+                            },
                         }],
                     }],
                 }),
                 encoding="utf-8",
             )
             rows = frontier.mission_runtime_script_consumers(mission_root)
-        self.assertEqual(frontier.rel_path(original), rows["1001"][0]["sourceFile"])
+        consumer = rows[("map_fixture", "1001")][0]
+        self.assertEqual(frontier.rel_path(original), consumer["sourceFile"])
         self.assertEqual(
             frontier.rel_path(pipeline_path),
-            rows["1001"][0]["pipelineSourceFile"],
+            consumer["pipelineSourceFile"],
         )
+        self.assertEqual(["isFinished"], consumer["propertyKeys"])
+        self.assertNotIn(("different_map", "1001"), rows)
+
+    def test_mission_runtime_consumer_rejects_flat_script_id_without_level(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
+            mission_root = Path(tmp)
+            (mission_root / "mission_fixture.json").write_text(
+                __import__("json").dumps({
+                    "mission": {"id": "mission_fixture"},
+                    "nodes": [{
+                        "id": "mission_fixture_q#1",
+                        "objectives": [{
+                            "index": 1,
+                            "levelScriptIds": ["1001"],
+                            "conditionTypes": [
+                                "CheckLevelScriptPropertyBool"
+                            ],
+                        }],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            rows = frontier.mission_runtime_script_consumers(mission_root)
+        self.assertEqual({}, dict(rows))
 
     def test_receiver_nodes_collapse_by_exact_levelscript(self) -> None:
         payload = {
@@ -1152,6 +1190,75 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             1,
             index["storyCoverage"]["nativeReceiverActivationFrontier"][
                 "annotatedReceiverNodes"
+            ],
+        )
+
+    def test_publish_attaches_exact_mission_levelscript_context_without_edge(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
+            mission_root = Path(tmp)
+            mission_path = mission_root / "fixture_mission.json"
+            mission_path.write_text(
+                __import__("json").dumps({
+                    "mission": {"id": "fixture_mission"},
+                    "storyOrder": {
+                        "directEdges": [],
+                        "summary": {"strongEdgeCount": 0},
+                    },
+                }),
+                encoding="utf-8",
+            )
+            index = {
+                "missions": [{"id": "fixture_mission"}],
+                "storyCoverage": {"missionlessNativeRuntimeNodes": []},
+            }
+            report = {
+                "schemaVersion": frontier.SCHEMA,
+                "counts": {},
+                "rows": [{
+                    "levelId": "map_fixture",
+                    "scriptId": "1001",
+                    "storyKeys": ["cutscene_fixture_1"],
+                    "eventNames": ["ScriptEvent_OnCustomEvent"],
+                    "listenerHeaderLocalIds": [11],
+                    "relatedOriginalFiles": [{
+                        "kind": "levelscript",
+                        "sourceFile": "source/1001.json",
+                        "relationship": "exact context",
+                    }],
+                    "missionRuntimeScriptConsumers": [{
+                        "missionId": "fixture_mission",
+                        "questId": "fixture_mission_q#1",
+                        "objectiveIndex": 1,
+                        "conditionTypes": [
+                            "CheckLevelScriptPropertyBool"
+                        ],
+                        "propertyKeys": ["isFinished"],
+                    }],
+                }],
+            }
+            frontier.publish_to_pipeline_index(
+                index,
+                report,
+                mission_root=mission_root,
+            )
+            mission = __import__("json").loads(
+                mission_path.read_text(encoding="utf-8")
+            )
+        contexts = mission["storyOrder"][
+            "missionObservedLevelScriptContexts"
+        ]
+        self.assertEqual(1, len(contexts))
+        self.assertEqual("map_fixture", contexts[0]["levelId"])
+        self.assertEqual(["cutscene_fixture_1"], contexts[0]["storyKeys"])
+        self.assertFalse(contexts[0]["ownership"])
+        self.assertFalse(contexts[0]["orderEvidence"])
+        self.assertEqual([], mission["storyOrder"]["directEdges"])
+        self.assertEqual(
+            1,
+            index["missions"][0][
+                "storyOrderMissionObservedLevelScriptContextCount"
             ],
         )
 

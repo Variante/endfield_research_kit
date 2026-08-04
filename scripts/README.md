@@ -136,6 +136,11 @@ override those defaults for one run.
   walks reusable AND/OR/NOT/ALL and comparison trees to exact leaves; unknown,
   missing, cyclic, and malformed children fail closed instead of receiving
   object-specific rules.
+- MissionRuntime-to-receiver context joins are likewise corpus-driven and
+  require the exact typed `(mapId, scriptId)` operand from the recursive
+  objective condition tree. Flat script-id summaries cannot attach a mission.
+  Exact matches publish related files as context only and never create
+  ownership, activation, property-writer, or Story-order edges.
 - Authored quest forks are recovered generically from normalized
   MissionRuntime predecessor graphs. The builder classifies main/auxiliary
   arms, guards, terminals, and shortest common descendants, attaches the exact
