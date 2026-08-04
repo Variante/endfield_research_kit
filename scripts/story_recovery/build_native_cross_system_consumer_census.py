@@ -14,9 +14,10 @@ import bisect
 import hashlib
 import importlib.util
 import json
+import re
 import struct
 import sys
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -38,6 +39,21 @@ EXPECTED_CLASS_COUNTS = {
     "global_level_load_synchronization": 1,
     "story_dynamic_scene_visual_context": 8,
     "mission_or_dialog_alternate_action_consumer": 1,
+}
+EXPECTED_DIRECT_CLOSURE = {
+    "seedMethods": 4,
+    "reachableMethods": 23,
+    "directEdges": 30,
+    "maximumDepth": 2,
+    "levelScriptMethods": 0,
+    "storyMethods": 0,
+    "reviewedIndirectSites": 1,
+    "unreviewedIndirectSites": 0,
+}
+EXPECTED_PENDING_FIELD = {
+    "name": "m_pendingRefreshCompSet",
+    "token": "0x0400e5f9",
+    "offset": "0x48",
 }
 
 
@@ -172,6 +188,185 @@ def validate_counts(rows: list[dict[str, Any]], source_file: str) -> list[dict[s
     return failures
 
 
+def method_body(pe: Any, pointers: list[int], pointer: int) -> bytes:
+    """Return a bounded native body using the next mapped method as its end."""
+    index = bisect.bisect_right(pointers, pointer)
+    end = pointers[index] if index < len(pointers) else pointer + 0x10000
+    return pe.bytes_at_va(pointer, min(max(0, end - pointer), 0x10000))
+
+
+def direct_gameplay_targets(
+    pe: Any,
+    pointers: list[int],
+    methods_by_pointer: dict[int, list[dict[str, Any]]],
+    pointer: int,
+) -> set[int]:
+    """Find unambiguous managed gameplay targets without seeding content ids."""
+    data = method_body(pe, pointers, pointer)
+    targets: set[int] = set()
+    position = data.find(b"\xe8")
+    while position >= 0:
+        if position + 5 <= len(data):
+            target = pointer + position + 5 + struct.unpack_from("<i", data, position + 1)[0]
+            aliases = methods_by_pointer.get(target) or []
+            if admissible_pointer_aliases(aliases) and any(
+                str(row.get("type") or "").startswith("Beyond.Gameplay") for row in aliases
+            ):
+                targets.add(target)
+        position = data.find(b"\xe8", position + 1)
+    return targets
+
+
+def build_direct_closure(
+    pe: Any,
+    pointers: list[int],
+    methods_by_pointer: dict[int, list[dict[str, Any]]],
+    seeds: Iterable[int],
+) -> tuple[set[int], set[tuple[int, int]], dict[int, int]]:
+    """Follow direct gameplay calls to a deterministic fixed point."""
+    seed_set = set(seeds)
+    seen = set(seed_set)
+    depths = {pointer: 0 for pointer in seed_set}
+    queue = deque(sorted(seed_set))
+    edges: set[tuple[int, int]] = set()
+    while queue:
+        source = queue.popleft()
+        for target in sorted(direct_gameplay_targets(pe, pointers, methods_by_pointer, source)):
+            edges.add((source, target))
+            if target not in seen:
+                seen.add(target)
+                depths[target] = depths[source] + 1
+                queue.append(target)
+    return seen, edges, depths
+
+
+def classify_indirect_call_window(texts: list[str], index: int) -> str:
+    """Review decoded indirect-call shapes; anything unfamiliar stays unreviewed."""
+    current = texts[index]
+    window = texts[max(0, index - 20):index]
+    if current == "call [rax]" and any(
+        re.fullmatch(r"cmp \[rax\+0x20\], 0x0", text) for text in window
+    ) and sum("+0xb0]" in text for text in window) >= 2:
+        return "il2cpp_class_initializer_guard"
+    return "unreviewed_indirect_call_shape"
+
+
+def decoded_indirect_sites(mapper: Any, body: bytes, pointer: int) -> list[dict[str, Any]]:
+    instructions = mapper.decode_x64_subset(body, pointer, stop_offset=len(body))
+    texts = [str(row.get("text") or "") for row in instructions]
+    rows: list[dict[str, Any]] = []
+    for index, instruction in enumerate(instructions):
+        text = texts[index]
+        if not re.match(r"call (?!0x)", text):
+            continue
+        rows.append({
+            "va": f"0x{pointer + int(instruction.get('offset') or 0):x}",
+            "instruction": text,
+            "classification": classify_indirect_call_window(texts, index),
+            "window": texts[max(0, index - 8):index + 1],
+        })
+    return rows
+
+
+def runtime_field_rows(
+    metadata: Any,
+    pe: Any,
+    registration_summary: dict[str, Any],
+    type_index: int,
+) -> list[dict[str, Any]]:
+    """Read current instance-field layout directly from MetadataRegistration."""
+    count = int(registration_summary["fieldOffsetsCount"])
+    if not 0 <= type_index < count:
+        raise AuditError(f"field layout type index {type_index} outside table count {count}")
+    table_va = int(registration_summary["fieldOffsets"], 16)
+    offsets_va = pe.u64_at_va(table_va + type_index * 8)
+    if not offsets_va:
+        raise AuditError(f"type {type_index} has no runtime field-offset row")
+    type_def = metadata.types[type_index]
+    return [
+        {
+            "name": metadata.string(field.name_index),
+            "token": f"0x{field.token:08x}",
+            "offset": f"0x{pe.u32_at_va(offsets_va + index * 4):x}",
+        }
+        for index, field in enumerate(metadata.fields_for(type_def))
+    ]
+
+
+def select_instance_field_references(
+    method_groups: list[dict[str, Any]],
+    method_suffix: str,
+    field_offset: str,
+) -> tuple[str | None, list[dict[str, Any]]]:
+    """Derive the stable ``this`` base register from a semantic method role."""
+    candidates: list[tuple[str, dict[str, Any]]] = []
+    pattern = re.compile(rf"\[([a-z][a-z0-9]*)\+{re.escape(field_offset)}\]")
+    for group in method_groups:
+        if not any(symbol.endswith(method_suffix) for symbol in group.get("symbols") or []):
+            continue
+        for reference in group.get("references") or []:
+            match = pattern.search(str(reference.get("instruction") or ""))
+            if match and match.group(1) not in {"rax", "rsp"}:
+                candidates.append((match.group(1), reference))
+    counts = Counter(register for register, _reference in candidates)
+    if not counts:
+        return None, []
+    maximum = max(counts.values())
+    bases = [register for register, count in counts.items() if count == maximum]
+    if len(bases) != 1:
+        return None, []
+    base = bases[0]
+    return base, [reference for register, reference in candidates if register == base]
+
+
+def validate_closure(
+    counts: dict[str, int],
+    pending_field: dict[str, Any] | None,
+    deferred: dict[str, Any],
+    source_file: str,
+) -> list[dict[str, Any]]:
+    failures: list[dict[str, Any]] = []
+    for gate, expected in EXPECTED_DIRECT_CLOSURE.items():
+        actual = counts.get(gate, 0)
+        if actual != expected:
+            failures.append({
+                "validator": "nativeCrossSystemConsumerCensus",
+                "gate": f"directClosure.{gate}",
+                "expected": expected,
+                "actual": actual,
+                "sourceFile": source_file,
+            })
+    for key, expected in EXPECTED_PENDING_FIELD.items():
+        actual = (pending_field or {}).get(key)
+        if actual != expected:
+            failures.append({
+                "validator": "nativeCrossSystemConsumerCensus",
+                "gate": f"deferredRefresh.pendingField.{key}",
+                "expected": expected,
+                "actual": actual,
+                "sourceFile": source_file,
+            })
+    expected_methods = {
+        "enqueueWriters": 2,
+        "scheduledReaders": 1,
+        "fieldWriterReferences": 1,
+        "fieldReaderReferences": 3,
+        "refreshEntityStatusTargets": 1,
+        "conditionUpdateTargets": 1,
+    }
+    for gate, expected in expected_methods.items():
+        actual = int(deferred.get(gate) or 0)
+        if actual != expected:
+            failures.append({
+                "validator": "nativeCrossSystemConsumerCensus",
+                "gate": f"deferredRefresh.{gate}",
+                "expected": expected,
+                "actual": actual,
+                "sourceFile": source_file,
+            })
+    return failures
+
+
 def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
     if not gameassembly.is_file() or not metadata_path.is_file():
         raise AuditError(f"missing original binary input: {gameassembly} / {metadata_path}")
@@ -273,7 +468,151 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
         })
     rows.sort(key=lambda row: (row["families"], row["callerVa"]))
 
+    seeds = {
+        int(row["callerVa"], 16)
+        for row in rows
+        if row["classification"] == "mission_state_controls_dynamic_component_availability"
+    }
+    reachable, closure_edges, depths = build_direct_closure(
+        pe, method_pointers, methods_by_pointer, seeds
+    )
+    indirect_sites: list[dict[str, Any]] = []
+    for pointer in sorted(reachable):
+        for site in decoded_indirect_sites(
+            mapper, method_body(pe, method_pointers, pointer), pointer
+        ):
+            indirect_sites.append({
+                "callerVa": f"0x{pointer:x}",
+                "callers": sorted({method_symbol(row) for row in methods_by_pointer[pointer]}),
+                **site,
+            })
+    reachable_family_counts = Counter(
+        family
+        for pointer in reachable
+        for family in {
+            family
+            for alias in methods_by_pointer[pointer]
+            for family in api_families(alias)
+        }
+    )
+    closure_counts = {
+        "seedMethods": len(seeds),
+        "reachableMethods": len(reachable),
+        "directEdges": len(closure_edges),
+        "maximumDepth": max(depths.values(), default=0),
+        "levelScriptMethods": reachable_family_counts.get("level_script", 0),
+        "storyMethods": reachable_family_counts.get("story", 0),
+        "reviewedIndirectSites": sum(
+            site["classification"] != "unreviewed_indirect_call_shape"
+            for site in indirect_sites
+        ),
+        "unreviewedIndirectSites": sum(
+            site["classification"] == "unreviewed_indirect_call_shape"
+            for site in indirect_sites
+        ),
+    }
+
+    seed_owner_names = {
+        str(alias.get("type") or "")
+        for pointer in seeds
+        for alias in methods_by_pointer[pointer]
+    }
+    if len(seed_owner_names) != 1:
+        raise AuditError(
+            "nativeCrossSystemConsumerCensus failed deferredRefresh.seedOwnerType: "
+            f"expected 1, actual {len(seed_owner_names)}; source={source_path(gameassembly)}"
+        )
+    seed_owner = next(iter(seed_owner_names))
+    owner_types = [
+        type_def for type_def in metadata.types
+        if metadata.type_full_name(type_def) == seed_owner
+    ]
+    if len(owner_types) != 1:
+        raise AuditError(
+            "nativeCrossSystemConsumerCensus failed deferredRefresh.metadataOwnerType: "
+            f"expected 1, actual {len(owner_types)}; source={source_path(metadata_path)}"
+        )
+    registration_summary = mapper.metadata_registration_summary(pe, registration)
+    field_rows = runtime_field_rows(
+        metadata, pe, registration_summary, owner_types[0].index
+    )
+    pending_candidates = [
+        row for row in field_rows
+        if "pending" in row["name"].lower() and "refresh" in row["name"].lower()
+    ]
+    pending_field = pending_candidates[0] if len(pending_candidates) == 1 else None
+
+    owner_methods: dict[str, list[int]] = defaultdict(list)
+    for pointer, aliases in methods_by_pointer.items():
+        for alias in aliases:
+            if str(alias.get("type") or "") == seed_owner:
+                owner_methods[str(alias.get("method") or "")].append(pointer)
+    enqueue_methods = sorted({
+        pointer
+        for method_name, method_rows in owner_methods.items()
+        if "Enqueue" in method_name and "Comp" in method_name
+        for pointer in method_rows
+    })
+    before_tick_methods = sorted(set(owner_methods.get("BeforeTick") or []))
+    field_offset_text = (pending_field or {}).get("offset", "")
+
+    def method_field_references(pointer: int) -> list[dict[str, Any]]:
+        body = method_body(pe, method_pointers, pointer)
+        instructions = mapper.decode_x64_subset(body, pointer, stop_offset=len(body))
+        marker = f"+{field_offset_text}]"
+        return [
+            {"va": f"0x{pointer + int(row.get('offset') or 0):x}", "instruction": row["text"]}
+            for row in instructions
+            if field_offset_text and marker in str(row.get("text") or "")
+        ]
+
+    writer_references = [
+        {"va": f"0x{pointer:x}", "symbols": sorted({method_symbol(row) for row in methods_by_pointer[pointer]}),
+         "references": method_field_references(pointer)}
+        for pointer in enqueue_methods
+    ]
+    reader_references = [
+        {"va": f"0x{pointer:x}", "symbols": sorted({method_symbol(row) for row in methods_by_pointer[pointer]}),
+         "references": method_field_references(pointer)}
+        for pointer in before_tick_methods
+    ]
+    writer_base, writer_instance_references = select_instance_field_references(
+        writer_references, "._EnqueueOwnerComps", field_offset_text
+    )
+    reader_base, reader_instance_references = select_instance_field_references(
+        reader_references, ".BeforeTick", field_offset_text
+    )
+    scheduled_targets = {
+        target
+        for pointer in before_tick_methods
+        for target in direct_gameplay_targets(pe, method_pointers, methods_by_pointer, pointer)
+    }
+    scheduled_target_symbols = sorted({
+        method_symbol(alias)
+        for pointer in scheduled_targets
+        for alias in methods_by_pointer[pointer]
+    })
+    deferred_counts = {
+        "enqueueWriters": len(enqueue_methods),
+        "scheduledReaders": len(before_tick_methods),
+        "fieldWriterReferences": sum(
+            1 for _reference in writer_instance_references
+        ),
+        "fieldReaderReferences": sum(
+            1 for _reference in reader_instance_references
+        ),
+        "refreshEntityStatusTargets": sum(
+            symbol.endswith(".RefreshEntityStatus") for symbol in scheduled_target_symbols
+        ),
+        "conditionUpdateTargets": sum(
+            symbol.endswith("._UpdateConditionValue") for symbol in scheduled_target_symbols
+        ),
+    }
+
     failures = validate_counts(rows, source_path(gameassembly))
+    failures.extend(validate_closure(
+        closure_counts, pending_field, deferred_counts, source_path(gameassembly)
+    ))
     if failures:
         first = failures[0]
         raise AuditError(
@@ -284,7 +623,7 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
     class_counts = Counter(row["classification"] for row in rows)
     family_sets = Counter("+".join(row["families"]) for row in rows)
     return {
-        "schemaVersion": "nativeCrossSystemConsumerCensus.v1",
+        "schemaVersion": "nativeCrossSystemConsumerCensus.v2",
         "source": {
             "gameAssembly": source_path(gameassembly),
             "gameAssemblySha256": game_hash,
@@ -313,6 +652,59 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
             "storyBindingsAdded": 0,
             "missionOrderEdgesAdded": 0,
         },
+        "directConsumerClosure": {
+            "method": (
+                "Fixed-point traversal from every mission-state/DynamicScene caller through "
+                "unambiguous Beyond.Gameplay direct calls; no content identity is seeded."
+            ),
+            "counts": closure_counts,
+            "reachableFamilyCounts": dict(sorted(reachable_family_counts.items())),
+            "seeds": [f"0x{pointer:x}" for pointer in sorted(seeds)],
+            "reachableMethods": [
+                {
+                    "va": f"0x{pointer:x}",
+                    "depth": depths[pointer],
+                    "symbols": sorted({method_symbol(row) for row in methods_by_pointer[pointer]}),
+                }
+                for pointer in sorted(reachable)
+            ],
+            "directEdges": [
+                {
+                    "sourceVa": f"0x{source:x}",
+                    "sourceSymbols": sorted({method_symbol(row) for row in methods_by_pointer[source]}),
+                    "targetVa": f"0x{target:x}",
+                    "targetSymbols": sorted({method_symbol(row) for row in methods_by_pointer[target]}),
+                }
+                for source, target in sorted(closure_edges)
+            ],
+            "indirectCallSites": indirect_sites,
+        },
+        "deferredRefreshClosure": {
+            "ownerType": seed_owner,
+            "ownerTypeToken": f"0x{owner_types[0].token:08x}",
+            "pendingField": pending_field,
+            "counts": deferred_counts,
+            "enqueueWriters": writer_references,
+            "scheduledReaders": reader_references,
+            "instanceFieldAccess": {
+                "writerBaseRegister": writer_base,
+                "writerReferences": writer_instance_references,
+                "readerBaseRegister": reader_base,
+                "readerReferences": reader_instance_references,
+            },
+            "scheduledTargets": scheduled_target_symbols,
+            "chain": [
+                "MissionSystem mission/quest state",
+                "DynamicScene cared component enqueue",
+                f"{(pending_field or {}).get('name', '?')}@{field_offset_text or '?'}",
+                f"{seed_owner}.BeforeTick",
+                "DynamicSceneMissionControlSystem._UpdateConditionValue",
+                "DynamicSceneEntitySystem.RefreshEntityStatus",
+            ],
+            "classification": "mission_state_drives_deferred_dynamic_scene_availability_refresh",
+            "storyBindingsAdded": 0,
+            "missionOrderEdgesAdded": 0,
+        },
         "rows": rows,
         "finding": (
             "The current binary exposes mission-state consumers for DynamicScene component "
@@ -321,8 +713,11 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
             "callers are shared geometry, global loading, or Story visual context."
         ),
         "boundary": (
-            "Direct mapped calls only: virtual/interface dispatch, reflection, XLua, server-only "
-            "logic, runtime-created delegates, and future builds remain outside this census. "
+            "The mission-state consumer closure includes every unambiguous managed gameplay "
+            "direct call and reviews decoded indirect call instructions; its sole indirect site "
+            "is an IL2CPP class-initializer guard. The bundled partial decoder is not a general "
+            "x64 proof, so reflection, XLua, server-only logic, opaque dynamic dispatch, and "
+            "future builds remain outside this census. "
             "The MissionOption mission/dialog row relies on its separate pinned control-flow "
             "audit before interpreting the two calls as alternate actions."
         ),

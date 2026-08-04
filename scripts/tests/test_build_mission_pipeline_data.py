@@ -6425,6 +6425,45 @@ class MissionDialogTreeDefinitionPublisherTests(unittest.TestCase):
                         "CN",
                     )
 
+    def test_native_cross_system_contract_loads_generic_closure(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "census.json"
+            audit_path.write_text(json.dumps({
+                "schemaVersion": "nativeCrossSystemConsumerCensus.v2",
+                "source": {
+                    "gameAssembly": "GameAssembly.dll",
+                    "gameAssemblySha256": "a" * 64,
+                    "globalMetadata": "global-metadata.dat",
+                    "globalMetadataSha256": "b" * 64,
+                },
+                "method": {"selection": "all direct calls", "mappedMethodPointers": 9},
+                "summary": {
+                    "crossSystemCallers": 4,
+                    "classificationCounts": {
+                        "mission_state_controls_dynamic_component_availability": 4,
+                    },
+                },
+                "directConsumerClosure": {
+                    "method": "fixed point",
+                    "counts": {"reachableMethods": 23, "directEdges": 30},
+                },
+                "deferredRefreshClosure": {
+                    "pendingField": {"name": "pending", "offset": "0x48"},
+                    "chain": ["state", "refresh"],
+                    "classification": "availability_refresh",
+                },
+                "finding": "binary finding",
+                "boundary": "binary boundary",
+                "validation": {"status": "passed", "failures": []},
+            }), encoding="utf-8")
+
+            contract = pipeline.load_native_cross_system_consumer_contract(audit_path)
+
+            self.assertEqual(contract["counts"]["closureReachableMethods"], 23)
+            self.assertEqual(contract["counts"]["closureDirectEdges"], 30)
+            self.assertEqual(contract["deferredRefreshClosure"]["chain"], ["state", "refresh"])
+            self.assertEqual(contract["classification"], "availability_refresh")
+
 
 if __name__ == "__main__":
     unittest.main()

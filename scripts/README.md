@@ -98,9 +98,12 @@ override those defaults for one run.
   sections for direct callers crossing MissionSystem, DynamicScene,
   LevelScript, or Story API families. Discovery uses no content ids, rejects
   ambiguous shared generic pointers, and fails closed on new call shapes or
-  changed class counts. It distinguishes mission-controlled DynamicScene
-  availability from shared geometry, global loading, and Story visual context;
-  none of those classifications creates ownership or order.
+  changed class counts. From every mission-state/DynamicScene consumer it also
+  follows unambiguous gameplay calls to a fixed point, reviews decoded indirect
+  call shapes, and validates the metadata field/native writer-reader bridge
+  through the deferred `BeforeTick` availability refresh. It distinguishes
+  mission-controlled DynamicScene availability from shared geometry, global
+  loading, and Story visual context; none creates ownership or order.
 - A second general activation contract inventories every direct current-client
   `ManualStart` caller, validates the public state-notify application chain,
   and recovers the generic client request lifecycle. Exact metadata schemas,
