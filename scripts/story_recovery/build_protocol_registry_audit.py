@@ -4028,6 +4028,193 @@ def validate_state_update_application_rows(
     }
 
 
+def constrained_enum_lifecycle_routes(
+    instructions: list[dict[str, Any]],
+    comparisons: list[dict[str, Any]],
+    lifecycle_calls: list[dict[str, Any]],
+    enum_values: list[dict[str, Any]],
+    *,
+    method_va: int,
+) -> list[dict[str, Any]]:
+    """Follow native CFG edges while constraining one discovered enum field.
+
+    The caller supplies comparisons already proven to read the selected packet
+    field. All other conditional branches remain possible. This makes the
+    routine reusable for any enum-backed state packet without encoding message
+    IDs, object IDs, method addresses, enum constants, or lifecycle names.
+    """
+    def conditional_kind(row: dict[str, Any]) -> str:
+        text = str(row.get("text") or "").lower()
+        mnemonic = text.split(" ", 1)[0]
+        if mnemonic in {"je", "jne"}:
+            return mnemonic
+        raw = str(row.get("bytes") or "").lower().split()
+        if raw[:2] == ["0f", "84"] or raw[:1] == ["74"]:
+            return "je"
+        if raw[:2] == ["0f", "85"] or raw[:1] == ["75"]:
+            return "jne"
+        return ""
+
+    def target_offset_for(row: dict[str, Any]) -> int | None:
+        target_text = str(row.get("targetVa") or "")
+        if not target_text:
+            match = re.search(r"\b0x[0-9a-f]+\b", str(row.get("text") or ""), re.I)
+            target_text = match.group(0) if match else ""
+        return (
+            int(target_text, 16) - method_va
+            if target_text.startswith("0x")
+            else None
+        )
+
+    ordered = sorted(
+        instructions,
+        key=lambda row: int(row.get("offset") or 0),
+    )
+    by_offset = {int(row.get("offset") or 0): row for row in ordered}
+    offsets = sorted(by_offset)
+    next_offset = {
+        offset: offsets[index + 1]
+        for index, offset in enumerate(offsets[:-1])
+    }
+    state_branch_by_offset: dict[int, dict[str, Any]] = {}
+    for comparison in comparisons:
+        comparison_offset = int(comparison.get("offset") or 0)
+        branch = next(
+            (
+                row for row in ordered
+                if comparison_offset < int(row.get("offset") or 0)
+                <= comparison_offset + 16
+                and conditional_kind(row)
+            ),
+            None,
+        )
+        if branch is not None:
+            state_branch_by_offset[int(branch.get("offset") or 0)] = comparison
+
+    calls_by_offset: dict[int, list[dict[str, Any]]] = {}
+    for call in lifecycle_calls:
+        calls_by_offset.setdefault(int(call.get("callOffset") or 0), []).append(call)
+
+    routes: list[dict[str, Any]] = []
+    for enum_row in enum_values:
+        state_value = int(enum_row["id"])
+        pending = [offsets[0]] if offsets else []
+        visited: set[int] = set()
+        reached_calls: dict[tuple[str, int], dict[str, Any]] = {}
+        while pending:
+            offset = pending.pop()
+            if offset in visited or offset not in by_offset:
+                continue
+            visited.add(offset)
+            for call in calls_by_offset.get(offset, []):
+                reached_calls[(str(call.get("method") or ""), offset)] = call
+            instruction = by_offset[offset]
+            text = str(instruction.get("text") or "").lower()
+            following = next_offset.get(offset)
+            target_offset = target_offset_for(instruction)
+            successors: list[int] = []
+            if text.startswith("jmp "):
+                if target_offset in by_offset:
+                    successors.append(target_offset)
+            elif text.startswith(("ret", "int3")):
+                pass
+            elif re.match(r"^j[a-z]+\b", text):
+                comparison = state_branch_by_offset.get(offset)
+                if comparison is None:
+                    if following is not None:
+                        successors.append(following)
+                    if target_offset in by_offset:
+                        successors.append(target_offset)
+                else:
+                    equal = state_value == int(comparison["value"])
+                    taken = equal if conditional_kind(instruction) == "je" else not equal
+                    selected = target_offset if taken else following
+                    if selected in by_offset:
+                        successors.append(selected)
+            elif following is not None:
+                successors.append(following)
+            pending.extend(reversed(successors))
+        calls = sorted(
+            reached_calls.values(),
+            key=lambda row: (int(row.get("callOffset") or 0), str(row.get("method") or "")),
+        )
+        routes.append({
+            "state": state_value,
+            "stateName": enum_row.get("name"),
+            "reachableLifecycleCalls": [
+                {
+                    "method": call.get("method"),
+                    "symbol": call.get("symbol"),
+                    "token": call.get("token"),
+                    "callOffset": call.get("callOffset"),
+                    "samePacketIdentity": call.get("samePacketIdentity"),
+                }
+                for call in calls
+            ],
+        })
+    return routes
+
+
+def validate_quest_state_lifecycle_application(
+    *,
+    candidate_rows: list[dict[str, Any]],
+    enum_values: list[dict[str, Any]],
+    comparisons: list[dict[str, Any]],
+    routes: list[dict[str, Any]],
+    source_file: str,
+    source_hashes: dict[str, str],
+    prior_failures: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Fail closed on a field-shaped quest state-to-lifecycle application."""
+    failures = list(prior_failures or [])
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "quest_state_lifecycle_application",
+            "gate": gate,
+            "message": (
+                candidate_rows[0].get("type") if len(candidate_rows) == 1 else None
+            ),
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": source_hashes,
+        })
+
+    if len(candidate_rows) != 1:
+        fail("uniqueQuestStateUpdate", 1, [row.get("type") for row in candidate_rows])
+    if len(enum_values) < 2:
+        fail("enumMembers", ">=2", enum_values)
+    compared_values = sorted({int(row["value"]) for row in comparisons})
+    if len(compared_values) < 2:
+        fail("stateFieldComparisons", ">=2 distinct enum values", compared_values)
+    lifecycle_routes = [
+        row for row in routes if row.get("reachableLifecycleCalls")
+    ]
+    distinct_shapes = {
+        tuple(call.get("method") for call in row["reachableLifecycleCalls"])
+        for row in lifecycle_routes
+    }
+    if len(lifecycle_routes) < 2 or len(distinct_shapes) < 2:
+        fail(
+            "stateConstrainedLifecycleRoutes",
+            ">=2 states with distinct lifecycle-call sets",
+            routes,
+        )
+    mismatched = [
+        {"state": row.get("state"), "method": call.get("method")}
+        for row in lifecycle_routes
+        for call in row.get("reachableLifecycleCalls") or []
+        if call.get("samePacketIdentity") is not True
+    ]
+    if mismatched:
+        fail("samePacketIdentity", [], mismatched)
+    return {
+        "status": "validated" if not failures else "validation_failed",
+        "failures": failures,
+    }
+
+
 def validate_quest_start_application_observation(
     *,
     field_reads: dict[str, int],
@@ -6334,6 +6521,142 @@ def quest_succeed_action_contract(
     }
 
 
+def quest_state_lifecycle_application_contract(
+    metadata: Any,
+    defaults: dict[int, tuple[int, int]],
+    rows: list[dict[str, Any]],
+    mapped_bodies: dict[str, dict[str, Any]],
+    decoded_instructions: dict[str, list[dict[str, Any]]],
+    gameassembly_path: Path,
+) -> dict[str, Any]:
+    """Recover the state-gated quest lifecycle calls from packet field shape."""
+    source_hashes = {
+        "gameAssemblySha256": file_sha256(gameassembly_path),
+        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+    }
+    candidates = [
+        row for row in rows
+        if row.get("entityKind") == "quest"
+        and row.get("controlKind") == "state_update"
+        and len(row.get("consumedControlFields") or []) == 1
+    ]
+    failures: list[dict[str, Any]] = []
+    enum_values: list[dict[str, Any]] = []
+    comparisons: list[dict[str, Any]] = []
+    routes: list[dict[str, Any]] = []
+    enum_type = ""
+    candidate = candidates[0] if len(candidates) == 1 else None
+    if candidate is not None:
+        state_field = str(candidate.get("stateField") or "")
+        expected_enum_name = state_field[:1].upper() + state_field[1:]
+        enum_type_candidates = [
+            metadata.type_full_name(type_def)
+            for type_def in metadata.types
+            if metadata.type_full_name(type_def).rsplit(".", 1)[-1]
+            == expected_enum_name
+        ]
+        if len(enum_type_candidates) == 1:
+            enum_type = enum_type_candidates[0]
+            enum_values = enum_members(metadata, defaults, enum_type)
+        else:
+            failures.append({
+                "validator": "quest_state_lifecycle_application",
+                "gate": "uniqueStateEnumType",
+                "message": candidate.get("type"),
+                "expected": 1,
+                "actual": enum_type_candidates,
+                "sourceFile": str(gameassembly_path.resolve()),
+                "sourceHashes": source_hashes,
+            })
+        expected_origin = (
+            f"param:msg+{candidate.get('fieldOffsets', {}).get(state_field)}"
+        )
+        body = mapped_bodies.get(str(candidate.get("type") or "")) or {}
+        for access in body.get("fieldAccesses") or []:
+            if access.get("origin") != expected_origin:
+                continue
+            text = str(access.get("text") or "")
+            match = re.fullmatch(
+                r"cmp\s+\[[^]]+\],\s*0x([0-9a-f]+)",
+                text,
+                re.I,
+            )
+            if not match:
+                continue
+            comparisons.append({
+                "offset": int(access.get("offset") or 0),
+                "text": text,
+                "value": int(match.group(1), 16),
+            })
+        method_va = int(str((candidate.get("handler") or {}).get("va") or "0"), 16)
+        routes = constrained_enum_lifecycle_routes(
+            decoded_instructions.get(str(candidate.get("type") or "")) or [],
+            comparisons,
+            candidate.get("lifecycleCalls") or [],
+            enum_values,
+            method_va=method_va,
+        )
+    validation = validate_quest_state_lifecycle_application(
+        candidate_rows=candidates,
+        enum_values=enum_values,
+        comparisons=comparisons,
+        routes=routes,
+        source_file=str(gameassembly_path.resolve()),
+        source_hashes=source_hashes,
+        prior_failures=failures,
+    )
+    transitions = [
+        row for row in routes if row.get("reachableLifecycleCalls")
+    ]
+    return {
+        "schema": "questStateLifecycleApplication.v1",
+        "classification": "server_selected_quest_identity_state_transition",
+        "discoveryPattern": {
+            "message": (
+                "unique quest identity+state server packet from the generic "
+                "state-update census"
+            ),
+            "enum": "unique metadata enum whose type name matches the state field",
+            "controlFlow": (
+                "exact packet-field comparisons constrain direct native CFG edges; "
+                "all unrelated conditional edges remain possible"
+            ),
+        },
+        "message": ({
+            "type": candidate.get("type"),
+            "messageId": candidate.get("messageId"),
+            "identityField": candidate.get("identityField"),
+            "stateField": candidate.get("stateField"),
+            "fields": candidate.get("fields") or [],
+            "successorLikeFields": candidate.get("successorLikeFields") or [],
+            "handler": candidate.get("handler") or {},
+        } if candidate else {}),
+        "stateEnum": {
+            "type": enum_type,
+            "values": enum_values,
+        },
+        "stateComparisons": comparisons,
+        "transitions": transitions,
+        "statesWithoutDirectLifecycleCall": [
+            {"state": row.get("state"), "stateName": row.get("stateName")}
+            for row in routes if not row.get("reachableLifecycleCalls")
+        ],
+        "finding": (
+            "The native handler constrains the exact server-supplied questState field "
+            "before applying distinct lifecycle calls to the same packet questId. "
+            "The packet has no successor identity field, so each recovered fork arm "
+            "is activated only after the server supplies that arm's quest identity."
+        ),
+        "boundary": (
+            "This recovers client-side application of a server-selected quest identity "
+            "and state. It does not recover the server-only arm-selection policy, prove "
+            "that sibling arms are exclusive, or order Story files within an arm. "
+            "States without a direct call here may be handled by other packets or paths."
+        ),
+        "validation": validation,
+    }
+
+
 def state_update_application_census(
     metadata: Any,
     defaults: dict[int, tuple[int, int]],
@@ -6368,6 +6691,8 @@ def state_update_application_census(
     handlers_by_type = discover_state_update_handlers(metadata, helper, candidates)
     failures: list[dict[str, Any]] = []
     rows: list[dict[str, Any]] = []
+    mapped_bodies: dict[str, dict[str, Any]] = {}
+    decoded_instructions: dict[str, list[dict[str, Any]]] = {}
 
     def fail(gate: str, candidate: dict[str, Any] | None, expected: Any, actual: Any) -> None:
         failures.append(
@@ -6439,6 +6764,13 @@ def state_update_application_census(
             if isinstance(offset, int)
         }
         body = mapped["bodySummary"]
+        mapped_bodies[candidate["type"]] = body
+        method_va = int(mapped["va"], 16)
+        decoded_instructions[candidate["type"]] = mapper.decode_x64_subset(
+            pe.bytes_at_va(method_va, int(mapped["scanBytes"])),
+            method_va,
+            stop_offset=int(mapped["scanBytes"]),
+        )
         field_origins = {
             row.get("origin") for row in body.get("fieldLikeOrigins") or []
         }
@@ -6560,6 +6892,14 @@ def state_update_application_census(
         source_hashes=source_hashes,
         prior_failures=failures,
     )
+    quest_state_lifecycle = quest_state_lifecycle_application_contract(
+        metadata,
+        defaults,
+        rows,
+        mapped_bodies,
+        decoded_instructions,
+        gameassembly_path,
+    )
     quest_start = quest_start_application_contract(
         metadata,
         helper,
@@ -6621,6 +6961,7 @@ def state_update_application_census(
         "clientSuccessorSelectors": sum(
             int(row["clientSuccessorSelectorPresent"]) for row in rows
         ),
+        "questStateLifecycleApplication": quest_state_lifecycle,
         "questStartApplication": quest_start,
         "questSucceedActionApplication": quest_succeed,
         "questTopologyFieldConsumers": topology_consumers,
@@ -7494,6 +7835,7 @@ def render_markdown(report: dict[str, Any]) -> str:
             )
         )
     quest_start = state_census.get("questStartApplication") or {}
+    quest_state_lifecycle = state_census.get("questStateLifecycleApplication") or {}
     quest_succeed = state_census.get("questSucceedActionApplication") or {}
     quest_fields = quest_start.get("questInfoFieldOffsets") or {}
     quest_reads = quest_start.get("fieldReadCounts") or {}
@@ -7516,6 +7858,27 @@ def render_markdown(report: dict[str, Any]) -> str:
         [
             "",
             state_census["boundary"],
+            "",
+            "### Quest state lifecycle application",
+            "",
+            quest_state_lifecycle.get("finding")
+            or "[quest-state lifecycle audit unavailable]",
+            "",
+            "| Server state | Native lifecycle calls |",
+            "|---|---|",
+            *[
+                "| `{name}` ({value}) | {calls} |".format(
+                    name=md_escape(str(route.get("stateName") or "?")),
+                    value=route.get("state"),
+                    calls=", ".join(
+                        f"`{md_escape(str(call.get('method') or '?'))}`"
+                        for call in route.get("reachableLifecycleCalls") or []
+                    ),
+                )
+                for route in quest_state_lifecycle.get("transitions") or []
+            ],
+            "",
+            quest_state_lifecycle.get("boundary") or "",
             "",
             "### Quest-start fork authority",
             "",
@@ -7962,6 +8325,16 @@ def current_report_status(
             "quest-start validation is "
             f"{quest_start_validation.get('status')!r}"
         )
+    quest_state_lifecycle_validation = (
+        ((report.get("stateUpdateApplicationCensus") or {}).get(
+            "questStateLifecycleApplication"
+        ) or {}).get("validation") or {}
+    )
+    if quest_state_lifecycle_validation.get("status") != "validated":
+        return False, (
+            "quest-state lifecycle validation is "
+            f"{quest_state_lifecycle_validation.get('status')!r}"
+        )
     quest_succeed_validation = (
         ((report.get("stateUpdateApplicationCensus") or {}).get(
             "questSucceedActionApplication"
@@ -8075,6 +8448,19 @@ def main() -> int:
         first = validation["failures"][0]
         print(
             "state-update validator failed: "
+            f"validator={first['validator']} gate={first['gate']} "
+            f"message={first.get('message')} expected={first['expected']!r} "
+            f"actual={first['actual']!r} source={first['sourceFile']}",
+            file=sys.stderr,
+        )
+        return 1
+    quest_state_lifecycle_validation = report["stateUpdateApplicationCensus"][
+        "questStateLifecycleApplication"
+    ]["validation"]
+    if quest_state_lifecycle_validation["status"] != "validated":
+        first = quest_state_lifecycle_validation["failures"][0]
+        print(
+            "quest-state lifecycle validator failed: "
             f"validator={first['validator']} gate={first['gate']} "
             f"message={first.get('message')} expected={first['expected']!r} "
             f"actual={first['actual']!r} source={first['sourceFile']}",

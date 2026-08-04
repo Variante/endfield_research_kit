@@ -83,6 +83,11 @@ Rebuild Story data after editing overrides.
   corridor, exact typed Story relations, and hash-checked arm-related original
   files. It links the hash-validated original runtime file and labels
   server-side arm selection and exclusivity as unresolved.
+- Every authored fork now includes a server-application card derived from the
+  original binary and metadata. It shows the exact arm `questId` values,
+  packet fields, handler, `Processing -> StartQuest` and
+  `Completed -> SucceedQuest` routes, source hashes, and the explicit boundary
+  that the client applies but does not select the successor arm.
 - Its native-boundary panel shows the generally discovered mission/quest
   identity+state application paths, the exact lifecycle identity flow, the
   absence of a client successor selector, and the hash-validated original

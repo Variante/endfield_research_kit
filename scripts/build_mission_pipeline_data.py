@@ -6854,6 +6854,41 @@ def load_state_update_application_contract(
             f"actual={failure.get('actual')!r} "
             f"source={failure.get('sourceFile') or audit_path}"
         )
+    quest_state_lifecycle = census.get("questStateLifecycleApplication") or {}
+    quest_state_validation = quest_state_lifecycle.get("validation") or {}
+    if quest_state_validation.get("status") != "validated":
+        failure = (quest_state_validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            f"gate={failure.get('gate') or 'questStateLifecycleApplication'} "
+            f"message={failure.get('message')} expected={failure.get('expected')!r} "
+            f"actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    if quest_state_lifecycle.get("schema") != "questStateLifecycleApplication.v1":
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            "gate=questStateLifecycleSchema "
+            "expected='questStateLifecycleApplication.v1' "
+            f"actual={quest_state_lifecycle.get('schema')!r} source={audit_path}"
+        )
+    transitions = quest_state_lifecycle.get("transitions") or []
+    transition_shapes = {
+        tuple(call.get("method") for call in row.get("reachableLifecycleCalls") or [])
+        for row in transitions
+    }
+    successor_fields = (
+        (quest_state_lifecycle.get("message") or {}).get("successorLikeFields")
+        or []
+    )
+    if len(transitions) < 2 or len(transition_shapes) < 2 or successor_fields:
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            "gate=questStateLifecycleShape "
+            "expected='>=2 distinct state routes and no successor field' "
+            f"actual={{'transitions': {transitions!r}, "
+            f"'successorLikeFields': {successor_fields!r}}} source={audit_path}"
+        )
     quest_start = census.get("questStartApplication") or {}
     quest_start_validation = quest_start.get("validation") or {}
     if quest_start_validation.get("status") != "validated":
@@ -6983,6 +7018,15 @@ def load_state_update_application_contract(
         "candidateCount": census.get("candidateCount", 0),
         "validatedCandidateCount": census.get("validatedCandidateCount", 0),
         "clientSuccessorSelectors": census.get("clientSuccessorSelectors", 0),
+        "questStateLifecycleApplication": {
+            **quest_state_lifecycle,
+            "source": (
+                audit_path.relative_to(ROOT).as_posix()
+                if audit_path.is_relative_to(ROOT)
+                else audit_path.as_posix()
+            ),
+            "relatedOriginalFiles": related_files,
+        },
         "questStartApplication": quest_start,
         "questSucceedActionApplication": {
             **quest_succeed,
@@ -9958,6 +10002,79 @@ def annotate_quest_action_dispatch(
     return counts
 
 
+def annotate_quest_fork_state_application(
+    payload: dict[str, Any],
+    contract: dict[str, Any],
+) -> Counter[str]:
+    """Attach one binary-discovered state application shape to every fork arm."""
+    validator = "quest_fork_state_application"
+    if contract.get("schema") != "questStateLifecycleApplication.v1":
+        raise RuntimeError(
+            f"validator={validator} gate=contractSchema "
+            "expected='questStateLifecycleApplication.v1' "
+            f"actual={contract.get('schema')!r}"
+        )
+    if (contract.get("validation") or {}).get("status") != "validated":
+        failure = ((contract.get("validation") or {}).get("failures") or [{}])[0]
+        raise RuntimeError(
+            f"validator={validator} gate={failure.get('gate') or 'contractValidation'} "
+            f"expected={failure.get('expected')!r} actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or contract.get('source') or ''}"
+        )
+    message = contract.get("message") or {}
+    identity_field = str(message.get("identityField") or "")
+    transitions = contract.get("transitions") or []
+    if not identity_field or not transitions or message.get("successorLikeFields"):
+        raise RuntimeError(
+            f"validator={validator} gate=applicationShape "
+            "expected='identity field, state routes, no successor fields' "
+            f"actual={{'identityField': {identity_field!r}, "
+            f"'transitionCount': {len(transitions)}, "
+            f"'successorLikeFields': {message.get('successorLikeFields') or []!r}}}"
+        )
+    compact_contract = {
+        "schema": contract.get("schema"),
+        "classification": contract.get("classification"),
+        "message": {
+            "type": message.get("type"),
+            "messageId": message.get("messageId"),
+            "identityField": identity_field,
+            "stateField": message.get("stateField"),
+            "successorLikeFields": [],
+            "handler": message.get("handler") or {},
+        },
+        "stateEnum": contract.get("stateEnum") or {},
+        "transitions": transitions,
+        "source": contract.get("source") or "",
+        "relatedOriginalFiles": contract.get("relatedOriginalFiles") or [],
+        "finding": contract.get("finding") or "",
+        "boundary": contract.get("boundary") or "",
+    }
+    counts: Counter[str] = Counter()
+    forks = ((payload.get("questTopology") or {}).get("forks") or [])
+    for fork in forks:
+        if not isinstance(fork, dict):
+            continue
+        fork["serverQuestStateApplication"] = compact_contract
+        counts["forks"] += 1
+        for arm in fork.get("arms") or []:
+            if not isinstance(arm, dict) or not arm.get("questId"):
+                raise RuntimeError(
+                    f"validator={validator} gate=armQuestIdentity "
+                    f"expected=non-empty actual={arm!r}"
+                )
+            arm["serverApplicationIdentity"] = {
+                "field": identity_field,
+                "value": str(arm["questId"]),
+                "contractReference": (
+                    "runtimeContract.stateUpdateApplicationAudit."
+                    "questStateLifecycleApplication"
+                ),
+            }
+            counts["arms"] += 1
+    return counts
+
+
 def _quest_reachability_distances(
     start: str,
     successors: dict[str, list[str]],
@@ -10707,7 +10824,11 @@ def build_all(
     quest_action_dispatch = (
         state_update_contract.get("questSucceedActionApplication") or {}
     )
+    quest_state_application = (
+        state_update_contract.get("questStateLifecycleApplication") or {}
+    )
     quest_action_dispatch_counts: Counter[str] = Counter()
+    quest_state_application_counts: Counter[str] = Counter()
     for summary in summaries:
         mission_path = mission_output / f"{summary['id']}.json"
         payload = read_json(mission_path)
@@ -10715,6 +10836,12 @@ def build_all(
             continue
         quest_action_dispatch_counts.update(
             annotate_quest_action_dispatch(payload, quest_action_dispatch)
+        )
+        quest_state_application_counts.update(
+            annotate_quest_fork_state_application(
+                payload,
+                quest_state_application,
+            )
         )
         write_json(mission_path, payload)
     index = {
@@ -10820,6 +10947,12 @@ def build_all(
                 row["questForkOutcomeCounts"].get("reconverging", 0)
                 for row in summaries
             ),
+            "questForkServerStateApplications": quest_state_application_counts[
+                "forks"
+            ],
+            "questForkServerStateApplicationArms": quest_state_application_counts[
+                "arms"
+            ],
             "stateUpdateApplicationCandidates": state_update_contract[
                 "candidateCount"
             ],

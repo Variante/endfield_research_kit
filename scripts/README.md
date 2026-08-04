@@ -46,6 +46,12 @@ override those defaults for one run.
   every predecessor, flow-index, and main-path consumer. It fails closed on
   an active predecessor reader, a non-sort flow consumer, or any
   topology-driven lifecycle call.
+- The same state census constrains native control flow by the discovered packet
+  enum field. It currently validates `Processing -> StartQuest` and
+  `Completed -> SucceedQuest` for the exact server-supplied `questId`, then
+  projects that one corpus contract onto every authored fork arm. Message IDs,
+  addresses, enum values, and quest IDs are recovered inputs rather than
+  per-object rules; server-only selection and exclusivity remain unresolved.
 - The same corpus-wide census recovers `QuestType` and `QuestShowMode` enum
   values and follows both `QuestInfo` fields through every verified direct
   getter caller. Its field-driven branch analyzer validates the sole

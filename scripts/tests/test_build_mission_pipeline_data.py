@@ -12,12 +12,40 @@ from scripts import build_mission_pipeline_data as pipeline
 from scripts.story_builder import level_bindings, mission_flow, source_links
 
 
+QUEST_STATE_LIFECYCLE_FIXTURE = {
+    "schema": "questStateLifecycleApplication.v1",
+    "classification": "server_selected_quest_identity_state_transition",
+    "message": {
+        "type": "Proto.SC_FIXTURE_QUEST_STATE_UPDATE",
+        "messageId": 111,
+        "identityField": "questId",
+        "stateField": "questState",
+        "successorLikeFields": [],
+    },
+    "stateEnum": {"type": "Fixture.QuestState", "values": []},
+    "transitions": [
+        {
+            "state": 2,
+            "stateName": "Processing",
+            "reachableLifecycleCalls": [{"method": "StartQuest"}],
+        },
+        {
+            "state": 3,
+            "stateName": "Completed",
+            "reachableLifecycleCalls": [{"method": "SucceedQuest"}],
+        },
+    ],
+    "validation": {"status": "validated", "failures": []},
+}
+
+
 STATE_UPDATE_CONTRACT_FIXTURE = {
     "classification": "server_selected_identity_state_application",
     "candidateCount": 4,
     "validatedCandidateCount": 4,
     "clientSuccessorSelectors": 0,
     "allLifecycleCallsUsePacketIdentity": True,
+    "questStateLifecycleApplication": QUEST_STATE_LIFECYCLE_FIXTURE,
     "questStartApplication": {
         "classification": "single_server_selected_quest_objective_initialization",
         "fieldReadCounts": {
@@ -120,6 +148,71 @@ def condition(kind, **values):
 
 
 class MissionPipelineBuilderTests(unittest.TestCase):
+    def test_quest_fork_state_application_annotation_is_corpus_wide(self):
+        payload = {
+            "questTopology": {
+                "forks": [{
+                    "questId": "m1_q#1",
+                    "arms": [
+                        {"questId": "m1_q#2"},
+                        {"questId": "m1_q#3"},
+                    ],
+                }],
+            },
+        }
+        contract = {
+            **QUEST_STATE_LIFECYCLE_FIXTURE,
+            "source": "reports/story/recovery/protocol_registry_audit.json",
+            "relatedOriginalFiles": [
+                {"kind": "original_game_binary", "sha256": "binary"},
+                {"kind": "original_game_metadata", "sha256": "metadata"},
+            ],
+            "finding": "fixture finding",
+            "boundary": "fixture boundary",
+        }
+
+        counts = pipeline.annotate_quest_fork_state_application(payload, contract)
+
+        fork = payload["questTopology"]["forks"][0]
+        self.assertEqual(counts, {"forks": 1, "arms": 2})
+        self.assertEqual(
+            fork["serverQuestStateApplication"]["message"]["identityField"],
+            "questId",
+        )
+        self.assertEqual(
+            fork["arms"][1]["serverApplicationIdentity"],
+            {
+                "field": "questId",
+                "value": "m1_q#3",
+                "contractReference": (
+                    "runtimeContract.stateUpdateApplicationAudit."
+                    "questStateLifecycleApplication"
+                ),
+            },
+        )
+        self.assertEqual(
+            len(fork["serverQuestStateApplication"]["relatedOriginalFiles"]),
+            2,
+        )
+
+    def test_quest_fork_state_application_fails_closed_on_successor_field(self):
+        contract = {
+            **QUEST_STATE_LIFECYCLE_FIXTURE,
+            "message": {
+                **QUEST_STATE_LIFECYCLE_FIXTURE["message"],
+                "successorLikeFields": ["nextQuestId"],
+            },
+        }
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"validator=quest_fork_state_application gate=applicationShape",
+        ):
+            pipeline.annotate_quest_fork_state_application(
+                {"questTopology": {"forks": []}},
+                contract,
+            )
+
     def test_quest_action_dispatch_annotation_is_corpus_driven(self):
         payload = {
             "nodes": [{
@@ -416,6 +509,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "metadataSha256": hashlib.sha256(metadata.read_bytes()).hexdigest(),
                 },
                 "stateUpdateApplicationCensus": {
+                    "questStateLifecycleApplication": QUEST_STATE_LIFECYCLE_FIXTURE,
                     "classification": "server_selected_identity_state_application",
                     "candidateCount": 2,
                     "validatedCandidateCount": 2,
@@ -485,6 +579,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "metadataSha256": hashlib.sha256(metadata.read_bytes()).hexdigest(),
                 },
                 "stateUpdateApplicationCensus": {
+                    "questStateLifecycleApplication": QUEST_STATE_LIFECYCLE_FIXTURE,
                     "questStartApplication": {
                         "validation": {"status": "validated", "failures": []},
                     },
@@ -539,6 +634,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "metadataSha256": hashlib.sha256(metadata.read_bytes()).hexdigest(),
                 },
                 "stateUpdateApplicationCensus": {
+                    "questStateLifecycleApplication": QUEST_STATE_LIFECYCLE_FIXTURE,
                     "questStartApplication": {
                         "validation": {"status": "validated", "failures": []},
                     },
@@ -4120,6 +4216,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "questForkAllAuxiliary": 0,
                 "questForkMultipleMainPath": 0,
                 "questForkReconverging": 0,
+                "questForkServerStateApplications": 1,
+                "questForkServerStateApplicationArms": 2,
                 "stateUpdateApplicationCandidates": 4,
                 "stateUpdateApplicationCandidatesValidated": 4,
                 "stateUpdateClientSuccessorSelectors": 0,
@@ -4179,6 +4277,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             self.assertEqual(
                 payload["questTopology"]["forks"][0]["structure"],
                 "main_path_plus_auxiliary",
+            )
+            self.assertEqual(
+                payload["questTopology"]["forks"][0]
+                ["serverQuestStateApplication"]["schema"],
+                "questStateLifecycleApplication.v1",
             )
 
     @patch.object(

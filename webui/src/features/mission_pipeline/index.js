@@ -467,6 +467,11 @@
       questForkArmOriginalFiles: "arm-related original files",
       questForkArmEvidenceBoundary: "These files and Story relations occur on quests reachable only from this sibling arm. They do not prove that the server selected the arm or that sibling arms are mutually exclusive.",
       questForkServerPolicy: "server activation unresolved",
+      questForkServerApplication: "Server-applied arm identity",
+      questForkServerApplicationHint: "The original binary applies the server-supplied quest identity and state; it does not choose a successor arm.",
+      questForkServerApplicationBoundary: "This proves client-side application after server selection, not the server-only selection policy, sibling exclusivity, or Story-file order.",
+      questForkStateTransitions: "Validated state routes",
+      questForkPacketShape: "Server packet",
       questForkMainPathAuxiliary: "main path + auxiliary",
       questForkAllAuxiliary: "all auxiliary",
       questForkMultipleMainPath: "multiple main-path arms",
@@ -1660,6 +1665,11 @@
       questForkArmOriginalFiles: "\u5206\u652f\u76f8\u5173\u539f\u59cb\u6587\u4ef6",
       questForkArmEvidenceBoundary: "\u8fd9\u4e9b\u6587\u4ef6\u4e0e Story \u5173\u7cfb\u4f4d\u4e8e\u4ec5\u80fd\u4ece\u8be5\u540c\u7ea7\u5206\u652f\u5230\u8fbe\u7684\u4efb\u52a1\u4e0a\uff1b\u5b83\u4eec\u4e0d\u8bc1\u660e\u670d\u52a1\u7aef\u9009\u4e2d\u4e86\u8be5\u5206\u652f\uff0c\u4e5f\u4e0d\u8bc1\u660e\u540c\u7ea7\u5206\u652f\u4e92\u65a5\u3002",
       questForkServerPolicy: "\u670d\u52a1\u7aef\u542f\u52a8\u7b56\u7565\u672a\u89e3",
+      questForkServerApplication: "\u670d\u52a1\u7aef\u4e0b\u53d1\u7684\u5206\u652f\u4efb\u52a1\u8eab\u4efd",
+      questForkServerApplicationHint: "\u539f\u59cb\u4e8c\u8fdb\u5236\u53ea\u5e94\u7528\u670d\u52a1\u7aef\u4e0b\u53d1\u7684\u4efb\u52a1\u8eab\u4efd\u4e0e\u72b6\u6001\uff0c\u4e0d\u5728\u5ba2\u6237\u7aef\u9009\u62e9\u540e\u7ee7\u5206\u652f\u3002",
+      questForkServerApplicationBoundary: "\u8fd9\u53ea\u8bc1\u660e\u5ba2\u6237\u7aef\u5728\u670d\u52a1\u7aef\u9009\u62e9\u540e\u5e94\u7528\u72b6\u6001\uff1b\u4e0d\u8bc1\u660e\u670d\u52a1\u7aef\u9009\u62e9\u7b56\u7565\u3001\u540c\u7ea7\u5206\u652f\u4e92\u65a5\u6027\u6216 Story \u6587\u4ef6\u987a\u5e8f\u3002",
+      questForkStateTransitions: "\u5df2\u9a8c\u8bc1\u72b6\u6001\u8def\u7531",
+      questForkPacketShape: "\u670d\u52a1\u7aef\u6570\u636e\u5305",
       questForkMainPathAuxiliary: "\u4e3b\u8def\u5f84 + \u8f85\u52a9\u5206\u652f",
       questForkAllAuxiliary: "\u5168\u90e8\u4e3a\u8f85\u52a9\u5206\u652f",
       questForkMultipleMainPath: "\u591a\u4e2a\u4e3b\u8def\u5f84\u5206\u652f",
@@ -3565,10 +3575,31 @@
         ${(corridor.length || storyEvidence.length) ? `<small class="mp-quest-fork-arm-boundary">${esc(arm.storyEvidenceBoundary || arm.corridorEvidenceBoundary || t("questForkArmEvidenceBoundary"))}</small>` : ""}
       </section>`;
     };
+    const serverApplicationHtml = (fork) => {
+      const contract = fork.serverQuestStateApplication || null;
+      if (!contract) return "";
+      const message = contract.message || {};
+      const transitions = contract.transitions || [];
+      const identities = (fork.arms || [])
+        .map((arm) => arm.serverApplicationIdentity)
+        .filter(Boolean);
+      const files = contract.relatedOriginalFiles || [];
+      return `<article class="mp-order-branch is-boundary mp-quest-server-application">
+        <header><strong>${esc(t("questForkServerApplication"))}</strong><code>${esc(message.type || "?")} #${Number(message.messageId || 0)}</code></header>
+        <p><strong>${esc(t("questForkPacketShape"))}:</strong> <code>${esc(message.identityField || "questId")}</code> <code>${esc(message.stateField || "questState")}</code>${(message.successorLikeFields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</p>
+        <p>${identities.map((identity) => `<code>${esc(identity.field || "questId")}=${esc(identity.value || "?")}</code>`).join(" ")}</p>
+        <p><strong>${esc(t("questForkStateTransitions"))}:</strong> ${transitions.map((route) => `<code>${esc(route.stateName || "?")} (${Number(route.state)}) &rarr; ${(route.reachableLifecycleCalls || []).map((call) => esc(call.method || "?")).join(" + ")}</code>`).join(" ")}</p>
+        <code>${esc(message.handler?.symbol || "")}${message.handler?.va ? ` @ ${esc(message.handler.va)}` : ""}</code>
+        <p>${esc(t("questForkServerApplicationHint"))}</p>
+        ${files.length ? `<details class="mp-quest-fork-files"><summary>${esc(t("relatedOriginalFile"))} <span>${files.length}</span></summary>${files.map((related) => `<small><code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("")}</details>` : ""}
+        <small>${esc(t("questForkServerApplicationBoundary"))}</small>
+      </article>`;
+    };
     return `<details class="mp-mission-story mp-quest-topology" data-weight="strong" open>
       <summary>${esc(t("questForkStructure"))} <span>${forks.length}</span></summary>
       <p>${esc(t("questForkStructureHint"))}</p>
       <div class="mp-quest-fork-list">${forks.map((fork) => `<details class="mp-quest-fork-detail"><summary><code>${esc(fork.questId || "?")}</code><i>&rarr;</i>${(fork.successorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}<b>${esc(structureLabel(fork.structure))}</b><b>${esc(outcomeLabel(fork.outcome))}</b></summary>
+        ${serverApplicationHtml(fork)}
         <div class="mp-quest-fork-arms">${(fork.arms || []).map(armHtml).join("")}</div>
         ${fork.firstCommonDescendant ? `<p><strong>${esc(t("questForkReconverges"))}:</strong><code>${esc(fork.firstCommonDescendant.questId || "?")}</code>${Object.entries(fork.firstCommonDescendant.distanceByArm || {}).map(([id, distance]) => `<code>${esc(id)} +${Number(distance)}</code>`).join(" ")}</p>` : ""}
         <small>${esc(t("questForkServerPolicy"))}</small>
@@ -4561,6 +4592,14 @@
             <p><b>${esc(t("lifecycleIdentityFlow"))}:</b> ${esc(lifecycle)}</p>
           </article>`;
         }).join("")}</div>
+        ${stateApplication.questStateLifecycleApplication ? `<article class="mp-contract-card is-server_to_client">
+          <span>${esc(stateApplication.questStateLifecycleApplication.classification || "")}</span>
+          <strong>${esc(t("questForkServerApplication"))}</strong>
+          <div class="mp-contract-tags">${(stateApplication.questStateLifecycleApplication.transitions || []).map((route) => `<b>${esc(route.stateName || "?")} (${Number(route.state)}) &rarr; ${(route.reachableLifecycleCalls || []).map((call) => call.method || "?").join(" + ")}</b>`).join("")}</div>
+          <code>${esc(stateApplication.questStateLifecycleApplication.message?.handler?.symbol || "")}${stateApplication.questStateLifecycleApplication.message?.handler?.va ? ` @ ${esc(stateApplication.questStateLifecycleApplication.message.handler.va)}` : ""}</code>
+          <p>${esc(stateApplication.questStateLifecycleApplication.finding || "")}</p>
+          <small>${esc(stateApplication.questStateLifecycleApplication.boundary || "")}</small>
+        </article>` : ""}
         <p class="mp-gap-policy">${esc(stateApplication.finding || "")}</p>
         ${(stateApplication.relatedOriginalFiles || []).map((related) => `<p class="mp-gap-policy"><b>${esc(t("relatedOriginalFile"))}:</b> <code>${esc(related.sourceFile || "")}</code> / SHA-256 <code>${esc(related.sha256 || "")}</code></p>`).join("")}
         <p class="mp-contract-boundary">${esc(stateApplication.boundary || "")}</p>

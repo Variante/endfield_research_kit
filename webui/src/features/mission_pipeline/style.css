@@ -2071,6 +2071,26 @@ body:not(.show-debug) .mp-playback-rejection {
 .mp-quest-fork-detail > p,
 .mp-quest-fork-detail > small { margin: .5rem .65rem; }
 .mp-quest-fork-detail > small { display: block; color: var(--muted); }
+.mp-quest-server-application {
+  margin: .15rem .65rem .55rem;
+  padding: .55rem .65rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: .45rem;
+  background: color-mix(in srgb, var(--accent) 7%, var(--panel));
+}
+.mp-quest-server-application > header,
+.mp-quest-server-application > p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  align-items: center;
+}
+.mp-quest-server-application > p { margin: .4rem 0; }
+.mp-quest-server-application > small {
+  display: block;
+  margin-top: .4rem;
+  color: var(--muted);
+}
 .mp-quest-fork-arms {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
