@@ -117,6 +117,128 @@ def mission_payload(
 
 
 class SourceStoryPartialOrderTests(unittest.TestCase):
+    def test_exact_quest_succeed_lifecycle_orders_same_quest_story_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "MissionRuntimeAsset" / "m1.json"
+            source.parent.mkdir(parents=True)
+            source.write_text('{"missionId":"m1"}', encoding="utf-8")
+            payload = mission_payload()
+            payload["timelineRecovery"]["metadata"] = {
+                "source": {"file": "MissionRuntimeAsset/m1.json"},
+            }
+            payload["flow"]["quests"] = [{
+                "id": "m1_q#1",
+                "storyConnections": [
+                    {
+                        "key": "dlg_m1_1",
+                        "relation": "objective_condition",
+                        "direction": "story_to_quest",
+                        "phase": "progress",
+                        "confidence": "direct",
+                        "conditionType": "CheckTalkOptionFinish",
+                    },
+                    {
+                        "key": "radio_m1_1",
+                        "relation": "client_action_succeed",
+                        "direction": "quest_to_story",
+                        "phase": "succeed",
+                        "confidence": "native_typed_direct",
+                        "actionType": "PlayRadio",
+                    },
+                ],
+            }]
+            contract = {
+                "schema": "questSucceedClientAction.v1",
+                "validation": {"status": "validated", "failures": []},
+                "succeedActionCalls": [{"questActionValue": 2}],
+                "relatedOriginalFiles": [{
+                    "kind": "original_game_binary",
+                    "sourceFile": "GameAssembly.dll",
+                    "sha256": "A" * 64,
+                }],
+            }
+            with patch.object(partial_order, "ROOT", root):
+                result = partial_order.build_mission_partial_order(
+                    "m1",
+                    {"dlg_m1_1": "dlg", "radio_m1_1": "radio"},
+                    payload,
+                    quest_succeed_lifecycle_contract=contract,
+                )
+
+        edge = result["directEdges"][0]
+        self.assertEqual(
+            (edge["from"], edge["to"], edge["kind"], edge["tier"]),
+            ("dlg_m1_1", "radio_m1_1", "questSucceedLifecycle", "strong"),
+        )
+        self.assertEqual(edge["questIds"], ["m1_q#1"])
+        self.assertEqual(len(edge["relatedOriginalFiles"]), 2)
+        self.assertEqual(result["summary"]["questSucceedLifecycleEdgeCount"], 1)
+
+    def test_quest_succeed_lifecycle_rejects_reverse_strong_conflict(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "m1.json"
+            source.write_text("{}", encoding="utf-8")
+            payload = mission_payload([{
+                "from": "radio_m1_1",
+                "to": "dlg_m1_1",
+                "kind": "questPrev",
+            }])
+            payload["timelineRecovery"]["metadata"] = {
+                "source": {"file": "m1.json"},
+            }
+            payload["flow"]["quests"] = [{
+                "id": "m1_q#1",
+                "storyConnections": [
+                    {"key": "dlg_m1_1", "relation": "objective_condition",
+                     "direction": "story_to_quest", "phase": "progress"},
+                    {"key": "radio_m1_1", "relation": "client_action_succeed",
+                     "direction": "quest_to_story", "phase": "succeed",
+                     "confidence": "native_typed_direct"},
+                ],
+            }]
+            with patch.object(partial_order, "ROOT", root):
+                result = partial_order.build_mission_partial_order(
+                    "m1",
+                    {"dlg_m1_1": "dlg", "radio_m1_1": "radio"},
+                    payload,
+                    quest_succeed_lifecycle_contract={
+                        "validation": {"status": "validated", "failures": []},
+                    },
+                )
+
+        self.assertEqual(result["summary"]["questSucceedLifecycleEdgeCount"], 0)
+        self.assertEqual(result["warnings"][0]["check"], "noReverseStrongOrderConflict")
+
+    def test_quest_succeed_lifecycle_skips_non_applicable_mission_cleanly(self) -> None:
+        payload = mission_payload()
+        payload["flow"]["quests"] = [{
+            "id": "m1_q#1",
+            "storyConnections": [{
+                "key": "dlg_m1_1",
+                "relation": "objective_condition",
+                "direction": "story_to_quest",
+                "phase": "progress",
+            }],
+        }]
+
+        result = partial_order.build_mission_partial_order(
+            "m1",
+            {"dlg_m1_1": "dlg"},
+            payload,
+            quest_succeed_lifecycle_contract={
+                "validation": {"status": "validation_failed", "failures": []},
+            },
+        )
+
+        self.assertEqual(result["summary"]["questSucceedLifecycleEdgeCount"], 0)
+        self.assertFalse(any(
+            warning.get("validator") == "questSucceedLifecycle"
+            for warning in result["warnings"]
+            if isinstance(warning, dict)
+        ))
+
     def test_typed_selector_alternatives_are_visible_without_order_edges(self) -> None:
         alternatives = [
             {"role": "first", "key": "dlg_a"},

@@ -382,6 +382,11 @@
       embeddedAtFinish: "at parent finish",
       readingPopup: "Reading popup",
       strongEdges: "strong order edges",
+      questSucceedLifecycle: "Binary-proven quest-success order",
+      questSucceedLifecycleHint: "An exact objective Story completion precedes the same quest's authored succeed client action. The installed binary proves the success dispatch; it does not prove that the quest succeeds or which successor branch the server selects.",
+      questSucceedLifecyclePath: "objective Story completed → server success state → succeed client action",
+      questSucceedLifecycleEdges: "quest-success edges",
+      questSucceedLifecycleOriginals: "original lifecycle evidence files",
       weakEdges: "context-only edges",
       orderCycles: "source cycles",
       unknownPairs: "unordered pairs",
@@ -1479,6 +1484,11 @@
       embeddedAtFinish: "\u7236\u5bf9\u8bdd\u7ed3\u675f\u5904",
       readingPopup: "\u9605\u8bfb\u5f39\u7a97",
       strongEdges: "\u5f3a\u987a\u5e8f\u8fb9",
+      questSucceedLifecycle: "\u4e8c\u8fdb\u5236\u5df2\u8bc1\u7684\u4efb\u52a1\u6210\u529f\u987a\u5e8f",
+      questSucceedLifecycleHint: "\u7cbe\u786e\u7684\u76ee\u6807 Story \u5b8c\u6210\u5148\u4e8e\u540c\u4e00\u4efb\u52a1\u4e2d\u4f5c\u8005\u5b9a\u4e49\u7684\u6210\u529f\u5ba2\u6237\u7aef\u52a8\u4f5c\u3002\u5b89\u88c5\u7684\u4e8c\u8fdb\u5236\u8bc1\u660e\u4e86\u6210\u529f\u6d3e\u53d1\uff1b\u4e0d\u8bc1\u660e\u8be5\u4efb\u52a1\u5fc5\u7136\u6210\u529f\uff0c\u4e5f\u4e0d\u8bc1\u660e\u670d\u52a1\u7aef\u9009\u62e9\u4e86\u54ea\u4e2a\u540e\u7ee7\u5206\u652f\u3002",
+      questSucceedLifecyclePath: "\u76ee\u6807 Story \u5b8c\u6210 \u2192 \u670d\u52a1\u5668\u6210\u529f\u72b6\u6001 \u2192 \u6210\u529f\u5ba2\u6237\u7aef\u52a8\u4f5c",
+      questSucceedLifecycleEdges: "\u4efb\u52a1\u6210\u529f\u987a\u5e8f\u8fb9",
+      questSucceedLifecycleOriginals: "\u539f\u59cb\u751f\u547d\u5468\u671f\u8bc1\u636e\u6587\u4ef6",
       weakEdges: "\u4ec5\u4e0a\u4e0b\u6587\u8fb9",
       orderCycles: "\u6e90\u8bc1\u636e\u5faa\u73af",
       unknownPairs: "\u987a\u5e8f\u672a\u77e5\u5bf9",
@@ -3541,6 +3551,23 @@
         }).join("");
         return `<details${row.branchingTransition ? " open" : ""}><summary><a href="${esc(storyHref(row.from))}"><code>${esc(row.from || "?")}</code></a><i>&rarr;</i><a href="${esc(storyHref(row.to))}"><code>${esc(row.to || "?")}</code></a>${kinds.map((kind) => `<b>${esc(nativeTransitionKindLabel(kind))}</b>`).join("")}</summary>${evidence}${nativeSourcesHtml(row)}</details>`;
       }).join("");
+    const questSucceedLifecycleEdges = directEdges
+      .filter((row) => row.kind === "questSucceedLifecycle")
+      .map((row) => {
+        const objective = row.objectiveStoryRelation || {};
+        const succeed = row.succeedStoryRelation || {};
+        const contract = row.nativeLifecycleContract || {};
+        const action = (contract.succeedActionCalls || [])[0] || {};
+        const questIds = (row.questIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ");
+        const relationDetail = [
+          objective.conditionType,
+          objective.objectiveIndex != null ? `objective ${objective.objectiveIndex}` : "",
+          succeed.actionType,
+          succeed.actionId != null ? `action #${succeed.actionId}` : "",
+        ].filter(Boolean).map((value) => `<code>${esc(value)}</code>`).join(" ");
+        const originals = (row.relatedOriginalFiles || []).map((related) => `<small><code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("");
+        return `<details open class="mp-quest-succeed-lifecycle"><summary><a href="${esc(storyHref(row.from))}"><code>${esc(row.from || "?")}</code></a><i>&rarr;</i><a href="${esc(storyHref(row.to))}"><code>${esc(row.to || "?")}</code></a></summary><p><b>${esc(t("questSucceedLifecyclePath"))}</b> ${questIds}</p><p>${relationDetail}</p><small><code>${esc(contract.succeedQuest?.symbol || "SucceedQuest")}</code> <code>${esc(contract.succeedQuest?.token || "")}</code> <code>${esc(action.questActionName || "OnSucceedClientAction")}</code></small><small>${esc(contract.boundary || t("questSucceedLifecycleHint"))}</small>${originals ? `<details class="mp-quest-lifecycle-files"><summary>${esc(t("questSucceedLifecycleOriginals"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${originals}</details>` : ""}</details>`;
+      }).join("");
     const nativeBranches = (branches.nativeControlBranches || []).map((row) => `<details><summary><b>${esc(nativeBranchLabel(row.kind))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code></summary><small>${esc(row.eventName || "")}</small>${nativeEventDetailHtml(row.eventDetail)}${nativePredicateHtml(row.predicate)}${(row.arms || []).map((arm) => `<div><code>${esc(arm.edge || "?")} &rarr; #${esc(arm.entryLocalId ?? "?")}</code><span>${(arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("")}${nativeSourcesHtml(row)}</details>`).join("");
     const nativeMerges = (branches.nativeControlMerges || []).map((row) => `<details><summary><b>${esc(t("nativeControlMerge"))}</b><code>#${esc(row.branchLocalId ?? "?")}</code><i>&rarr;</i><code>#${esc(row.mergeLocalId ?? "?")}</code></summary><small>${esc(row.convergenceStatus === "exact_serialized_downstream_control_convergence" ? t("nativeControlReachability") : row.convergenceStatus || "")}</small><span>${(row.downstreamStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span>${(row.mergePaths || []).map((path) => `<div><b>${esc(t("nativeControlPath"))}</b>${path.map((localId) => `<code>#${esc(localId)}</code>`).join(" &rarr; ")}</div>`).join("")}${nativeSourcesHtml(row)}</details>`).join("");
     const nativeSequences = (branches.nativeOrderedSequences || []).map((row) => `<details open><summary><b>${esc(t("nativeOrderedSequence"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code></summary><small>${esc(row.eventName || "")}</small>${(row.arms || []).map((arm, index) => `<div><code>${index + 1}. ${esc(arm.edge || "?")}</code><span>${(arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("")}${(row.nativeConsumers || []).map((consumer) => `<small><code>${esc(consumer.method || "?")} @ ${esc(consumer.address || "?")}</code> ${esc(consumer.contract || "")}</small>`).join("")}${nativeSourcesHtml(row)}</details>`).join("");
@@ -4026,9 +4053,10 @@
     return `<details class="mp-mission-story mp-story-order" data-weight="${Number(summary.strongEdgeCount) ? "strong" : "context"}"${Number(summary.strongEdgeCount) || offlineRows.length ? " open" : ""}>
       <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
       <p>${esc(t("storyOrderHint"))}</p>
-      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span><span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
+      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span><span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
       ${causalEdges ? `<section><h4>${esc(t("causalEdges"))}</h4><div class="mp-order-edges">${causalEdges}</div></section>` : ""}
       ${nativeTransitions ? `<section><h4>${esc(t("nativeStoryTransitions"))}</h4><p>${esc(t("nativeStoryTransitionsHint"))}</p><div class="mp-order-branches">${nativeTransitions}</div></section>` : ""}
+      ${questSucceedLifecycleEdges ? `<section><h4>${esc(t("questSucceedLifecycle"))}</h4><p>${esc(t("questSucceedLifecycleHint"))}</p><div class="mp-order-branches mp-quest-succeed-lifecycles">${questSucceedLifecycleEdges}</div></section>` : ""}
       ${containments ? `<section><h4>${esc(t("embeddedStory"))}</h4><p>${esc(t("embeddedStoryHint"))}</p><div class="mp-order-edges">${containments}</div></section>` : ""}
       ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}

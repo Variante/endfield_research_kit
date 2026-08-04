@@ -193,3 +193,12 @@ for (const [key, category] of [
         self.assertIn('t("questForkArmCorridor")', source)
         self.assertIn('t("questForkArmStoryEvidence")', source)
         self.assertIn("They do not prove that the server selected the arm", source)
+
+    def test_mission_pipeline_surfaces_binary_proven_quest_success_order(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn('row.kind === "questSucceedLifecycle"', source)
+        self.assertIn("row.objectiveStoryRelation", source)
+        self.assertIn("row.succeedStoryRelation", source)
+        self.assertIn("row.relatedOriginalFiles", source)
+        self.assertIn('t("questSucceedLifecyclePath")', source)
+        self.assertIn("does not prove that the quest succeeds", source)

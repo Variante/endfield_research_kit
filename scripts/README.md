@@ -46,6 +46,12 @@ override those defaults for one run.
   every predecessor, flow-index, and main-path consumer. It fails closed on
   an active predecessor reader, a non-sort flow consumer, or any
   topology-driven lifecycle call.
+- The protocol audit also recovers the `QuestAction` enum and validates the
+  bounded `SucceedQuest -> SafeRunQuestAction -> RunQuestAction` flow. The
+  partial-order builder may then join only same-quest objective Story
+  completion and native-typed succeed Story actions. This is a corpus rule,
+  not a mission/Story allowlist; reverse strong conflicts fail closed, and
+  success occurrence or successor selection is not inferred.
 - The same hash-locked protocol audit discovers the generic LevelScript start
   policy from metadata method signatures, enum constants, and decoded native
   branch targets. It validates that an `Active`, unfinished

@@ -21,9 +21,10 @@ Latest CN reports:
 | Actionable core-isolated files | 0 |
 | Partial-order mission rows | 487 |
 | Candidate scene placements | 8,877 |
-| Strong / supported / weak edges | 1,502 / 834 / 2,635 |
+| Strong / supported / weak edges | 1,524 / 834 / 2,635 |
+| Binary-proven quest-success Story order | 22 edges / 21 quests / 18 missions |
 | Exact native Story transitions | 380; 85 branch-bearing across 40 missions (77 Split, 7 conditional, 1 ordered-sequence) |
-| Source-comparable scene pairs | 3,791 / 249,695 (1.52%) |
+| Source-comparable scene pairs | 3,845 / 249,695 (1.54%) |
 | Cyclic components | 0 |
 | Exact nested DialogTree containments | 49 across 44 child files |
 | Exact quest-observed DialogTree definitions | 434 definitions / 461 placements across 422 quests |
@@ -79,6 +80,12 @@ in five payloads.
 - 368 strict option-route groups covering 767 option arms and 1,597 branch
   lines.
 - Source-only graph generation with zero cycles and explicit unknown pairs.
+- The general quest-lifecycle join adds 22 exact objective-Story to succeed-
+  action Story edges. It requires same-quest typed relations, the original
+  MissionRuntime hash, and the installed-binary proof that `SucceedQuest`
+  dispatches `OnSucceedClientAction`; no mission, Story, condition, or action
+  allowlist participates. It does not prove success occurrence, successor-arm
+  selection, or order within one action graph.
 - 180 of 188 narrative-video references attached across 53 Story keys.
 
 The registered DialogTree trunk-group recovery handles complete, partial, and
@@ -1374,6 +1381,16 @@ client-side successor-selector hypothesis without pretending to recover
 server-only policy. Authored predecessor forks and merges remain prerequisite
 topology, not proof of exclusive branch choice. OCR and manual overrides are
 not inputs.
+
+The same hash-locked audit now recovers the `QuestAction` enum and validates
+the complete bounded `SafeRunQuestAction` caller set. Current
+`SucceedQuest` passes value 2 (`OnSucceedClientAction`) through the safe runner
+to the MissionRuntime action map. Joining this binary lifecycle contract to
+same-quest `objective_condition` progress rows and native-typed
+`client_action_succeed` rows yields 22 exact Story edges across 21 quests in
+18 missions, with zero reverse strong conflicts and zero cycles. `StartQuest`
+does not expose the same dispatch in the current fallback, so no start-phase
+order is inferred.
 
 Quest-fork presentation is now generated from the normalized graph rather than
 mission names or per-object rules. The current corpus contains 226

@@ -6505,10 +6505,10 @@ def load_state_update_application_contract(
             f"expected=file actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v15":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v16":
         raise RuntimeError(
             "validator=state_update_application_contract gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v15' "
+            "expected='endfieldProtocolRegistryAudit.v16' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     census = audit.get("stateUpdateApplicationCensus") or {}
@@ -6529,6 +6529,17 @@ def load_state_update_application_contract(
         raise RuntimeError(
             "validator=state_update_application_contract "
             f"gate={failure.get('gate') or 'questStartApplication'} "
+            f"message={failure.get('message')} expected={failure.get('expected')!r} "
+            f"actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    quest_succeed = census.get("questSucceedActionApplication") or {}
+    quest_succeed_validation = quest_succeed.get("validation") or {}
+    if quest_succeed_validation.get("status") != "validated":
+        failure = (quest_succeed_validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            f"gate={failure.get('gate') or 'questSucceedActionApplication'} "
             f"message={failure.get('message')} expected={failure.get('expected')!r} "
             f"actual={failure.get('actual')!r} "
             f"source={failure.get('sourceFile') or audit_path}"
@@ -6587,6 +6598,7 @@ def load_state_update_application_contract(
         "validatedCandidateCount": census.get("validatedCandidateCount", 0),
         "clientSuccessorSelectors": census.get("clientSuccessorSelectors", 0),
         "questStartApplication": quest_start,
+        "questSucceedActionApplication": quest_succeed,
         "questTopologyFieldConsumers": topology_consumers,
         "allLifecycleCallsUsePacketIdentity": census.get(
             "allLifecycleCallsUsePacketIdentity", False
@@ -6610,10 +6622,10 @@ def load_levelscript_task_authority_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v15":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v16":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v15' "
+            "expected='endfieldProtocolRegistryAudit.v16' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
 
@@ -6774,10 +6786,10 @@ def load_levelscript_start_policy_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v15":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v16":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v15' "
+            "expected='endfieldProtocolRegistryAudit.v16' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptStartPolicy") or {}
@@ -6868,10 +6880,10 @@ def load_levelscript_manual_self_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v15":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v16":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v15' "
+            "expected='endfieldProtocolRegistryAudit.v16' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptManualSelfControl") or {}
@@ -6964,10 +6976,10 @@ def load_levelscript_activation_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v15":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v16":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v15' "
+            "expected='endfieldProtocolRegistryAudit.v16' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptActivationControl") or {}
@@ -10192,13 +10204,20 @@ def publish_source_story_partial_order(
     story_index = story_data_root / language / "index.json"
     if not story_index.is_file():
         return None
-    report = build_source_story_partial_order_report(
-        language,
-        story_data_root=story_data_root,
-    )
     state_contract = (
         (index.get("runtimeContract") or {}).get("stateUpdateApplicationAudit")
         or {}
+    )
+    quest_succeed_contract = dict(
+        state_contract.get("questSucceedActionApplication") or {}
+    )
+    quest_succeed_contract["relatedOriginalFiles"] = (
+        state_contract.get("relatedOriginalFiles") or []
+    )
+    report = build_source_story_partial_order_report(
+        language,
+        story_data_root=story_data_root,
+        quest_succeed_lifecycle_contract=quest_succeed_contract,
     )
     quest_start = state_contract.get("questStartApplication") or {}
     topology_consumers = state_contract.get("questTopologyFieldConsumers") or {}
@@ -10304,6 +10323,9 @@ def publish_source_story_partial_order(
         )
         summary["storyOrderNativeTransitionCount"] = int(
             order_summary.get("nativeControlPathTransitionEdgeCount") or 0
+        )
+        summary["storyOrderQuestSucceedLifecycleCount"] = int(
+            order_summary.get("questSucceedLifecycleEdgeCount") or 0
         )
         summary["storyOrderNativeTransitionStepCount"] = int(
             order_summary.get("nativeControlPathTransitionStepCount") or 0
@@ -11453,6 +11475,7 @@ def main() -> int:
         summary = order_report.get("summary") or {}
         print(
             f"Story partial order: {summary.get('strongEdges', 0)} strong edges, "
+            f"{summary.get('questSucceedLifecycleEdges', 0)} binary-proven quest-success edges, "
             f"{summary.get('questForks', 0)} quest forks, "
             f"{summary.get('questMerges', 0)} quest merges, "
             f"{summary.get('nativeControlBranches', 0)} native branch groups, "

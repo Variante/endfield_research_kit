@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v25"
+SCHEMA = "sourceStoryPartialOrder.v26"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -131,6 +131,7 @@ PROVEN_ORDER_EDGE_KINDS = (
     "levelscriptNativeControlPath",
     "levelscriptNativeOrderedSequence",
     "levelscriptQuestStateActionPath",
+    "questSucceedLifecycle",
     "spawnerWaveGroupPartKilled",
     "spawnerWavePartKilled",
 })
@@ -389,6 +390,7 @@ EVIDENCE_POLICY = {
         "exact serialized LevelScript event-to-action strict path-prefix edges",
         "exact Branch._idList Story order only when installed Branch.Execute semantics and distinct serialized sequence slots agree",
         "exact LevelEvent_OnQuestStateChanged typed playback action paths",
+        "same-quest objective Story completion before a typed succeed client Story action, gated by the current installed SucceedQuest binary contract",
         "exact SpawnerConfig PartKilled target-wave dependencies joined to typed LevelEvent_OnSpawnerWaveBegin playback",
         "exact SpawnerConfig wave/group nesting and PartKilled gates joined to typed wave/group-begin playback",
         "exact same-script RaiseCustomScriptEvent relays from typed spawner callbacks to typed Story playback listeners",
@@ -2512,6 +2514,129 @@ def _quest_state_action_path_story_edges(
     return edges
 
 
+def _quest_succeed_lifecycle_story_edges(
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+    lifecycle_contract: dict[str, Any] | None,
+    mission_source: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Join authored objective and succeed-action Story rows by exact quest identity."""
+    if lifecycle_contract is None:
+        return [], []
+    contract = lifecycle_contract or {}
+    matched_rows: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
+    for quest in flow.get("quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        quest_id = safe_key(quest.get("id") or quest.get("questId"))
+        rows = [
+            row for row in quest.get("storyConnections") or []
+            if isinstance(row, dict)
+        ]
+        objective_rows = [
+            row for row in rows
+            if safe_key(row.get("key")) in candidate_keys
+            and safe_key(row.get("relation")) == "objective_condition"
+            and safe_key(row.get("direction")) == "story_to_quest"
+            and safe_key(row.get("phase")) == "progress"
+        ]
+        succeed_rows = [
+            row for row in rows
+            if safe_key(row.get("key")) in candidate_keys
+            and safe_key(row.get("relation")) == "client_action_succeed"
+            and safe_key(row.get("direction")) == "quest_to_story"
+            and safe_key(row.get("phase")) == "succeed"
+            and safe_key(row.get("confidence")) == "native_typed_direct"
+        ]
+        matched_rows.extend(
+            (quest_id, source_row, target_row)
+            for source_row in objective_rows
+            for target_row in succeed_rows
+            if safe_key(source_row.get("key"))
+            and safe_key(target_row.get("key"))
+            and safe_key(source_row.get("key"))
+            != safe_key(target_row.get("key"))
+        )
+    if not matched_rows:
+        return [], []
+
+    validation = contract.get("validation") or {}
+    if validation.get("status") != "validated":
+        return [], [{
+            "validator": "questSucceedLifecycle",
+            "check": "validatedInstalledBinaryContract",
+            "expected": "validated",
+            "actual": validation.get("status"),
+            "sourcePaths": [mission_source] if mission_source else [],
+        }]
+
+    mission_path = ROOT / mission_source if mission_source else Path()
+    if not mission_source or not mission_path.is_file():
+        return [], [{
+            "validator": "questSucceedLifecycle",
+            "check": "missionRuntimeSourceExists",
+            "expected": "file",
+            "actual": "missing",
+            "sourcePaths": [mission_source] if mission_source else [],
+        }]
+    mission_sha256 = hashlib.sha256(mission_path.read_bytes()).hexdigest().upper()
+    related_original_files = [
+        {
+            "kind": "original_mission_runtime",
+            "sourceFile": mission_source,
+            "sha256": mission_sha256,
+            "relationship": "authored_quest_objective_and_succeed_action",
+        },
+        *[
+            dict(row)
+            for row in contract.get("relatedOriginalFiles") or []
+            if isinstance(row, dict)
+        ],
+    ]
+
+    def compact(row: dict[str, Any]) -> dict[str, Any]:
+        fields = (
+            "key", "kind", "relation", "direction", "phase", "confidence",
+            "source", "objectiveIndex", "conditionType", "finishId",
+            "actionSlot", "actionId", "actionType",
+        )
+        return {name: row[name] for name in fields if name in row}
+
+    edges: list[dict[str, Any]] = []
+    for quest_id, source_row, target_row in matched_rows:
+        source_key = safe_key(source_row.get("key"))
+        target_key = safe_key(target_row.get("key"))
+        edges.append({
+            "from": source_key,
+            "to": target_key,
+            "kind": "questSucceedLifecycle",
+            "tier": "strong",
+            "source": (
+                "MissionRuntime objective completion -> server quest-success "
+                "state -> binary-proven OnSucceedClientAction dispatch"
+            ),
+            "questIds": [quest_id] if quest_id else [],
+            "sourceFiles": [mission_source],
+            "sourceSha256": {mission_source: mission_sha256},
+            "objectiveStoryRelation": compact(source_row),
+            "succeedStoryRelation": compact(target_row),
+            "nativeLifecycleContract": {
+                "schema": contract.get("schema"),
+                "classification": contract.get("classification"),
+                "succeedQuest": contract.get("succeedQuest") or {},
+                "succeedActionCalls": contract.get("succeedActionCalls") or [],
+                "finding": contract.get("finding") or "",
+                "boundary": contract.get("boundary") or "",
+            },
+            "relatedOriginalFiles": related_original_files,
+        })
+    unique: dict[tuple[str, str, tuple[str, ...]], dict[str, Any]] = {}
+    for edge in edges:
+        signature = (edge["from"], edge["to"], tuple(edge["questIds"]))
+        unique[signature] = edge
+    return sorted(unique.values(), key=_edge_sort_key), []
+
+
 def _repo_path(path: Path) -> str:
     try:
         return path.relative_to(ROOT).as_posix()
@@ -3665,6 +3790,7 @@ def build_mission_partial_order(
     reading_popup_rows: dict[str, Any] | None = None,
     reading_popup_source: str = "",
     reading_popup_sha256: str = "",
+    quest_succeed_lifecycle_contract: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build one source-only mission partial order from generated source evidence."""
     mission_payload = mission_payload if isinstance(mission_payload, dict) else {}
@@ -3784,6 +3910,36 @@ def build_mission_partial_order(
         dialog_payloads,
     )
     direct_edges.extend(dialog_tree_conditional_edges)
+    mission_source = safe_key(
+        (((timeline.get("metadata") or {}).get("source") or {}).get("file"))
+    )
+    lifecycle_edges, lifecycle_warnings = _quest_succeed_lifecycle_story_edges(
+        flow,
+        candidate_keys,
+        quest_succeed_lifecycle_contract,
+        mission_source,
+    )
+    existing_strong_pairs = {
+        (safe_key(edge.get("from")), safe_key(edge.get("to")))
+        for edge in direct_edges
+        if safe_key(edge.get("tier")) == "strong"
+    }
+    admitted_lifecycle_edges: list[dict[str, Any]] = []
+    for edge in lifecycle_edges:
+        reverse = (edge["to"], edge["from"])
+        if reverse in existing_strong_pairs:
+            lifecycle_warnings.append({
+                "validator": "questSucceedLifecycle",
+                "check": "noReverseStrongOrderConflict",
+                "mission": mission,
+                "expected": [],
+                "actual": [edge["from"], edge["to"]],
+                "sourcePaths": edge.get("sourceFiles") or [],
+            })
+            continue
+        admitted_lifecycle_edges.append(edge)
+        existing_strong_pairs.add((edge["from"], edge["to"]))
+    direct_edges.extend(admitted_lifecycle_edges)
     narrative_containments, narrative_containment_warnings = (
         _dialog_tree_narrative_containments(
             mission,
@@ -4152,6 +4308,12 @@ def build_mission_partial_order(
             ),
             "nativeOrderedSequenceCount": len(native_ordered_sequences),
             "nativeOrderedSequenceEdgeCount": len(native_ordered_sequence_edges),
+            "questSucceedLifecycleEdgeCount": len(admitted_lifecycle_edges),
+            "questSucceedLifecycleQuestCount": len({
+                quest_id
+                for edge in admitted_lifecycle_edges
+                for quest_id in edge.get("questIds") or []
+            }),
             "nativeRelatedActionTopologyCount": len(
                 native_related_action_topologies
             ),
@@ -4248,6 +4410,7 @@ def build_mission_partial_order(
             *dialog_tree_conditional_warnings,
             *narrative_containment_warnings,
             *open_ui_containment_warnings,
+            *lifecycle_warnings,
         ],
     }
 
@@ -4314,6 +4477,7 @@ def build_report(
     language: str,
     selected_missions: set[str] | None = None,
     story_data_root: Path | None = None,
+    quest_succeed_lifecycle_contract: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     lang_root = (story_data_root or (ROOT / "webui" / "data" / "lang")) / language
     index_path = lang_root / "index.json"
@@ -4421,6 +4585,7 @@ def build_report(
             reading_popup_rows,
             reading_popup_source,
             reading_popup_sha256,
+            quest_succeed_lifecycle_contract,
         )
         row["missionData"] = (
             mission_path.relative_to(ROOT).as_posix() if mission_path.is_file() else ""
@@ -4490,6 +4655,15 @@ def build_report(
         totals["nativeOrderedSequenceEdges"] += summary[
             "nativeOrderedSequenceEdgeCount"
         ]
+        totals["questSucceedLifecycleEdges"] += summary[
+            "questSucceedLifecycleEdgeCount"
+        ]
+        totals["questSucceedLifecycleQuests"] += summary[
+            "questSucceedLifecycleQuestCount"
+        ]
+        totals["questSucceedLifecycleMissions"] += int(
+            summary["questSucceedLifecycleEdgeCount"] > 0
+        )
         totals["nativeRelatedActionTopologies"] += summary[
             "nativeRelatedActionTopologyCount"
         ]
@@ -4575,6 +4749,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- direct evidence edges: `{summary.get('directEdges', 0)}` "
         f"(`{summary.get('strongEdges', 0)}` strong, `{summary.get('supportedEdges', 0)}` supported, "
         f"`{summary.get('weakEdges', 0)}` weak)",
+        f"- binary-proven quest-success lifecycle: "
+        f"`{summary.get('questSucceedLifecycleEdges', 0)}` exact Story edges across "
+        f"`{summary.get('questSucceedLifecycleQuests', 0)}` quests in "
+        f"`{summary.get('questSucceedLifecycleMissions', 0)}` missions",
         f"- reduced component edges: `{summary.get('reducedComponentEdges', 0)}`",
         f"- cyclic components: `{summary.get('cycles', 0)}` across "
         f"`{summary.get('missionsWithCycles', 0)}` missions",
