@@ -88,6 +88,11 @@ Rebuild Story data after editing overrides.
   topology-field census: verified direct `GetQuestInfo` callers, the deprecated
   predecessor-description reader, display-only flow comparator, main-path
   context/cache consumers, and zero topology-driven lifecycle calls.
+  Fork arms also show installed-metadata names for `questType` and `showMode`.
+  The authority card exposes all seven quest-type consumer methods, the two
+  post-lifecycle reads, all five visibility consumer methods, and zero
+  visibility-driven lifecycle calls. These are presentation/post-application
+  semantics, not evidence of arm activation or exclusivity.
   Predecessor forks remain topology rather than claimed server branch choice.
 - Story-order panels show binary-proven quest-success lifecycle edges as
   `objective Story completed -> server success state -> succeed client action`.

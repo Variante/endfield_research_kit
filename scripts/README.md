@@ -46,6 +46,12 @@ override those defaults for one run.
   every predecessor, flow-index, and main-path consumer. It fails closed on
   an active predecessor reader, a non-sort flow consumer, or any
   topology-driven lifecycle call.
+- The same corpus-wide census recovers `QuestType` and `QuestShowMode` enum
+  values and follows both `QuestInfo` fields through every verified direct
+  getter caller. It fails closed if visibility reaches lifecycle code, if a
+  quest-type read interleaves with state application, or if a bounded native
+  back-edge could revisit lifecycle calls. The resulting names are display
+  semantics, never a successor-arm selector.
 - The protocol audit also recovers the `QuestAction` enum and validates the
   bounded `SucceedQuest -> SafeRunQuestAction -> RunQuestAction` flow. The
   partial-order builder may then join only same-quest objective Story

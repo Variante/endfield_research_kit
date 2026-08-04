@@ -202,3 +202,13 @@ for (const [key, category] of [
         self.assertIn("row.relatedOriginalFiles", source)
         self.assertIn('t("questSucceedLifecyclePath")', source)
         self.assertIn("does not prove that the quest succeeds", source)
+
+    def test_mission_pipeline_names_binary_quest_semantic_fields(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("?.questTopologyFieldConsumers?.questSemanticFields", source)
+        self.assertIn("semanticFields.questType?.values", source)
+        self.assertIn("semanticFields.showMode?.values", source)
+        self.assertIn('t("questForkQuestType")', source)
+        self.assertIn('t("questForkShowMode")', source)
+        self.assertIn("postLifecycleConsumerCount", source)
+        self.assertIn("They do not select a successor arm", source)
