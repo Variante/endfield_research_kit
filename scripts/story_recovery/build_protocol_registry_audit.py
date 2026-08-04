@@ -1994,6 +1994,7 @@ def validate_levelscript_activation_control_observation(
         "CsSceneSetLevelScriptActive": 94,
         "CsSceneSetLevelScriptStart": 101,
         "ScSceneLevelScriptStateNotify": 37,
+        "ScSelfSceneInfo": 25,
     }
     actual_ids = {
         name: (observation.get("messageIds") or {}).get(name)
@@ -2021,6 +2022,19 @@ def validate_levelscript_activation_control_observation(
             ("state", 3),
             ("isComplete", 4),
         ],
+        "selfSceneInfo": [
+            ("sceneNumId", 1),
+            ("sceneId", 2),
+            ("levelScripts", 8),
+        ],
+        "levelScriptInfo": [
+            ("scriptId", 1),
+            ("state", 2),
+            ("properties", 3),
+            ("isDone", 4),
+            ("stage", 5),
+            ("triggerVolumeInfos", 6),
+        ],
     }
     actual_fields = {
         key: [
@@ -2028,6 +2042,7 @@ def validate_levelscript_activation_control_observation(
             for row in ((observation.get("messageSchemas") or {}).get(key) or {}).get(
                 "fields", []
             )
+            if row.get("name") in {name for name, _tag in expected_fields[key]}
         ]
         for key in expected_fields
     }
@@ -2041,6 +2056,15 @@ def validate_levelscript_activation_control_observation(
         "stateNotify.scriptId_": 0x20,
         "stateNotify.state_": 0x28,
         "stateNotify.isComplete_": 0x2C,
+        "selfSceneInfo.sceneNumId_": 0x18,
+        "selfSceneInfo.sceneId_": 0x20,
+        "selfSceneInfo.levelScripts_": 0x38,
+        "levelScriptInfo.scriptId_": 0x18,
+        "levelScriptInfo.state_": 0x20,
+        "levelScriptInfo.properties_": 0x28,
+        "levelScriptInfo.isDone_": 0x30,
+        "levelScriptInfo.stage_": 0x34,
+        "levelScriptInfo.triggerVolumeInfos_": 0x38,
         "levelScriptRuntime.m_manualStartTriggered": 0xF8,
         "levelScriptRuntime.withinActiveArea": 0x68,
         "levelScriptRuntime.activeShapeList": 0x70,
@@ -2054,11 +2078,15 @@ def validate_levelscript_activation_control_observation(
         fail("fieldOffsets", expected_offsets, actual_offsets)
 
     expected_methods = {
+        "SelfSceneInfoHandler",
         "StateNotifyHandler",
         "ManagerStateShort",
         "ManagerStateFull",
+        "ManagerServerSyncLevelScript",
         "ContainerState",
+        "ContainerServerSyncLevelScript",
         "UpdateState",
+        "RuntimeServerSync",
         "set_state",
         "set_runtimeState",
         "UpdateRuntimeState",
@@ -2106,6 +2134,57 @@ def validate_levelscript_activation_control_observation(
     }
     if actual_state_flow != expected_state_flow:
         fail("publicStateFlow", expected_state_flow, actual_state_flow)
+
+    expected_public_state_sources = {
+        "snapshotMessageId": 25,
+        "incrementalMessageId": 37,
+        "snapshotLevelScriptsRuntimeType": (
+            "Google.Protobuf.Collections.RepeatedField`1<Proto.LEVEL_SCRIPT_INFO>"
+        ),
+        "managerStateShortDirectCallers": [
+            "Beyond.Gameplay.GameplayNetwork._Handle_SceneLevelScriptStateNotify",
+            "Beyond.Gameplay.GameplayNetwork._Handle_SelfSceneInfo",
+        ],
+        "managerStateFullDirectCallers": [
+            "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptState",
+        ],
+        "managerServerSyncDirectCallers": [],
+        "containerStateDirectCallers": [
+            "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptState",
+        ],
+        "updateStateDirectCallers": [
+            "Beyond.Gameplay.Core.LevelScriptContainer.ServerSyncLevelScriptState",
+        ],
+        "runtimeServerSyncDirectCallers": [
+            "Beyond.Gameplay.Core.LevelScriptContainer.ServerSyncLevelScript",
+        ],
+        "containerServerSyncDirectCallers": [
+            "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScript",
+            "Beyond.Gameplay.GameplayNetwork._Handle_SelfSceneInfo",
+        ],
+        "publicStateSetterDirectCallers": [
+            "Beyond.Gameplay.Core.LevelScriptContainer.LoadFromLevelData",
+            "Beyond.Gameplay.Core.LevelScriptRuntime.Init",
+            "Beyond.Gameplay.Core.LevelScriptRuntime.ServerSync",
+            "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateState",
+        ],
+        "publicStateSetterArguments": {
+            "Beyond.Gameplay.Core.LevelScriptContainer.LoadFromLevelData": ["0"],
+            "Beyond.Gameplay.Core.LevelScriptRuntime.Init": ["0"],
+            "Beyond.Gameplay.Core.LevelScriptRuntime.ServerSync": ["param:state"],
+            "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateState": ["param:value"],
+        },
+    }
+    actual_public_state_sources = {
+        name: (observation.get("publicStateSourceFlow") or {}).get(name)
+        for name in expected_public_state_sources
+    }
+    if actual_public_state_sources != expected_public_state_sources:
+        fail(
+            "publicStateSourceFlow",
+            expected_public_state_sources,
+            actual_public_state_sources,
+        )
 
     expected_subgame_flow = {
         "subGameLookupCallCount": 1,
@@ -2389,6 +2468,12 @@ def levelscript_activation_control_contract(
         }
 
     methods = {
+        "SelfSceneInfoHandler": mapped_method(
+            "Beyond.Gameplay.GameplayNetwork",
+            "_Handle_SelfSceneInfo",
+            1,
+            "System.Void",
+        ),
         "StateNotifyHandler": mapped_method(
             "Beyond.Gameplay.GameplayNetwork",
             "_Handle_SceneLevelScriptStateNotify",
@@ -2408,10 +2493,22 @@ def levelscript_activation_control_contract(
             5,
             "System.Void",
         ),
+        "ManagerServerSyncLevelScript": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptManager",
+            "ServerSyncLevelScript",
+            7,
+            "System.Void",
+        ),
         "ContainerState": mapped_method(
             "Beyond.Gameplay.Core.LevelScriptContainer",
             "ServerSyncLevelScriptState",
             4,
+            "System.Void",
+        ),
+        "ContainerServerSyncLevelScript": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptContainer",
+            "ServerSyncLevelScript",
+            6,
             "System.Void",
         ),
         "UpdateState": mapped_method(
@@ -2424,6 +2521,12 @@ def levelscript_activation_control_contract(
                 "Beyond.Gameplay.Core.ScriptEndReason",
                 "System.Boolean",
             ),
+        ),
+        "RuntimeServerSync": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "ServerSync",
+            5,
+            "System.Void",
         ),
         "set_state": mapped_method(
             "Beyond.Gameplay.Core.LevelScriptRuntime",
@@ -2597,11 +2700,15 @@ def levelscript_activation_control_contract(
     bodies = {
         name: method_body(name)
         for name in (
+            "SelfSceneInfoHandler",
             "StateNotifyHandler",
             "ManagerStateShort",
             "ManagerStateFull",
+            "ManagerServerSyncLevelScript",
             "ContainerState",
+            "ContainerServerSyncLevelScript",
             "UpdateState",
+            "RuntimeServerSync",
             "ChallengeOnInteract",
             "UpdateRuntimeState",
             "UpdateWithinActiveArea",
@@ -2690,6 +2797,27 @@ def levelscript_activation_control_contract(
     state_notify_fields = find_type(
         "Proto.SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY"
     )
+    self_scene_info_fields = find_type("Proto.SC_SELF_SCENE_INFO")
+    level_script_info_fields = find_type("Proto.LEVEL_SCRIPT_INFO")
+    runtime_types_va = int(metadata_summary["types"], 16)
+
+    def field_runtime_type(type_rows: list[Any], field_name: str) -> str:
+        if len(type_rows) != 1:
+            return ""
+        matches = [
+            field
+            for field in metadata.fields_for(type_rows[0])
+            if metadata.string(field.name_index) == field_name
+        ]
+        if len(matches) != 1:
+            return ""
+        type_va = pe.u64_at_va(runtime_types_va + matches[0].type_index * 8)
+        return runtime_type_name(pe, metadata, type_va)
+
+    snapshot_level_scripts_runtime_type = field_runtime_type(
+        self_scene_info_fields,
+        "levelScripts_",
+    )
     field_offsets: dict[str, int | None] = {}
     if len(challenge_fields) == 1:
         current = runtime_type_field_offsets(
@@ -2711,6 +2839,25 @@ def levelscript_activation_control_contract(
         )
         for name in ("sceneNumId_", "scriptId_", "state_", "isComplete_"):
             field_offsets[f"stateNotify.{name}"] = current.get(name)
+    if len(self_scene_info_fields) == 1:
+        current = runtime_type_field_offsets(
+            metadata, pe, metadata_summary, self_scene_info_fields[0].index
+        )
+        for name in ("sceneNumId_", "sceneId_", "levelScripts_"):
+            field_offsets[f"selfSceneInfo.{name}"] = current.get(name)
+    if len(level_script_info_fields) == 1:
+        current = runtime_type_field_offsets(
+            metadata, pe, metadata_summary, level_script_info_fields[0].index
+        )
+        for name in (
+            "scriptId_",
+            "state_",
+            "properties_",
+            "isDone_",
+            "stage_",
+            "triggerVolumeInfos_",
+        ):
+            field_offsets[f"levelScriptInfo.{name}"] = current.get(name)
     runtime_fields = find_type("Beyond.Gameplay.Core.LevelScriptRuntime")
     if len(runtime_fields) == 1:
         current = runtime_type_field_offsets(
@@ -2759,6 +2906,14 @@ def levelscript_activation_control_contract(
     target_pointers = {
         int(methods[key]["methodPointerVa"], 16): key
         for key in (
+            "ManagerStateShort",
+            "ManagerStateFull",
+            "ManagerServerSyncLevelScript",
+            "ContainerState",
+            "ContainerServerSyncLevelScript",
+            "UpdateState",
+            "set_state",
+            "RuntimeServerSync",
             "ManualStart",
             "NetworkSetActive",
             "NetworkSetStart",
@@ -2857,11 +3012,65 @@ def levelscript_activation_control_contract(
                             "callOffset": call_offset,
                             "section": section["name"],
                             "decodedDirectCall": True,
+                            "argumentOrigins": decoded_call.get(
+                                "argumentOrigins"
+                            )
+                            or {},
+                            "argumentContext": decoded_call.get(
+                                "argumentContext"
+                            )
+                            or {},
                         })
                 offset = data.find(b"\xe8", offset + 1)
     direct_callers = {
         key: sorted(rows.values(), key=lambda row: (row["type"], row["method"]))
         for key, rows in caller_rows.items()
+    }
+    def direct_caller_symbols(target_key: str) -> list[str]:
+        return [
+            f"{row.get('type')}.{row.get('method')}"
+            for row in direct_callers.get(target_key) or []
+        ]
+
+    public_state_source_flow = {
+        "snapshotMessageId": next(
+            (row["id"] for row in sc if row["name"] == "ScSelfSceneInfo"),
+            None,
+        ),
+        "incrementalMessageId": next(
+            (
+                row["id"]
+                for row in sc
+                if row["name"] == "ScSceneLevelScriptStateNotify"
+            ),
+            None,
+        ),
+        "snapshotLevelScriptsRuntimeType": snapshot_level_scripts_runtime_type,
+        "managerStateShortDirectCallers": direct_caller_symbols(
+            "ManagerStateShort"
+        ),
+        "managerStateFullDirectCallers": direct_caller_symbols(
+            "ManagerStateFull"
+        ),
+        "managerServerSyncDirectCallers": direct_caller_symbols(
+            "ManagerServerSyncLevelScript"
+        ),
+        "containerStateDirectCallers": direct_caller_symbols("ContainerState"),
+        "updateStateDirectCallers": direct_caller_symbols("UpdateState"),
+        "runtimeServerSyncDirectCallers": direct_caller_symbols(
+            "RuntimeServerSync"
+        ),
+        "containerServerSyncDirectCallers": direct_caller_symbols(
+            "ContainerServerSyncLevelScript"
+        ),
+        "publicStateSetterDirectCallers": direct_caller_symbols("set_state"),
+        "publicStateSetterArguments": {
+            f"{row.get('type')}.{row.get('method')}": [
+                (site.get("argumentOrigins") or {}).get("rdx")
+                for site in row.get("callSites") or []
+            ]
+            for row in direct_callers.get("set_state") or []
+        },
     }
     manual_start_callers = [
         {
@@ -3328,6 +3537,7 @@ def levelscript_activation_control_contract(
         "ScSceneLevelScriptStateNotify": sc_by_name.get(
             "ScSceneLevelScriptStateNotify"
         ),
+        "ScSelfSceneInfo": sc_by_name.get("ScSelfSceneInfo"),
     }
     message_schemas = {
         "activationRequest": message_schema(
@@ -3339,6 +3549,12 @@ def levelscript_activation_control_contract(
         "stateNotify": message_schema(
             metadata, defaults, "Proto.SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY"
         ),
+        "selfSceneInfo": message_schema(
+            metadata, defaults, "Proto.SC_SELF_SCENE_INFO"
+        ),
+        "levelScriptInfo": message_schema(
+            metadata, defaults, "Proto.LEVEL_SCRIPT_INFO"
+        ),
     }
     observation = {
         "messageIds": message_ids,
@@ -3346,6 +3562,7 @@ def levelscript_activation_control_contract(
         "fieldOffsets": field_offsets,
         "methods": methods,
         "publicStateFlow": public_state_flow,
+        "publicStateSourceFlow": public_state_source_flow,
         "subGameInteractionFlow": subgame_interaction_flow,
         "manualStartDirectCallers": manual_start_callers,
         "directCallers": direct_callers,
@@ -3364,7 +3581,7 @@ def levelscript_activation_control_contract(
         source_hashes=source_hashes,
     )
     return {
-        "schema": "levelScriptActivationControl.v5",
+        "schema": "levelScriptActivationControl.v6",
         "classification": "server_state_subgame_and_runtime_request_paths",
         "discoveryPattern": {
             "methodSelection": "exact metadata type, name, signature, and return type",
@@ -3372,7 +3589,8 @@ def levelscript_activation_control_contract(
             "fieldSelection": "MetadataRegistration instance offsets",
             "callers": (
                 "complete current executable-code direct E8 caller census for "
-                "ManualStart and both public/runtime active/start sender methods"
+                "both public-state application chains, the public state setter, "
+                "ManualStart, and both public/runtime active/start sender methods"
             ),
             "serializedObjectInputs": [
                 "SubGameInstanceData.id",
@@ -3389,9 +3607,14 @@ def levelscript_activation_control_contract(
         },
         **observation,
         "finding": (
-            "The server state notification applies its exact scene/script/state tuple "
-            "through LevelScriptManager and LevelScriptContainer into "
-            "LevelScriptRuntime.UpdateState. Separately, the only direct ManualStart "
+            "The server supplies public LevelScript state through exactly two current "
+            "AOT entry handlers: SC_SELF_SCENE_INFO carries repeated LEVEL_SCRIPT_INFO "
+            "snapshot rows into LevelScriptRuntime.ServerSync, while "
+            "SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY applies an incremental "
+            "scene/script/state tuple through LevelScriptRuntime.UpdateState. The full "
+            "direct-call census closes every later application layer and separates the "
+            "two zero-valued initialization writes from those two server-derived state "
+            "parameters. Separately, the only direct ManualStart "
             "callers in the current AOT client are ManualStartLevelScript.Execute and "
             "InteractiveLogicChallengeStartPoint._OnInteract; the interaction path "
             "resolves the typed SubGame row by id, reads bindScriptId, looks up that "
@@ -3411,16 +3634,18 @@ def levelscript_activation_control_contract(
         ),
         "boundary": (
             "An exact SubGame id/bindScriptId row therefore proves an interaction "
-            "ManualStart carrier for that bound script. The server state packet has no "
-            "mission or quest field, and neither path proves which mission owns Story "
+            "ManualStart carrier for that bound script. Neither server state carrier "
+            "has a mission, quest, Story, or branch-reason field, and neither path "
+            "proves which mission owns Story "
             "playback, which server branch selected a state, or any cross-Story order. "
             "The public network sender methods have zero direct current-AOT callers; "
             "indirect/IFix/server selection remains outside this evidence. An Active-"
             "phase receiver proves availability after public activation, not the "
             "producer of that activation or that the event fired. For non-SubLevelScript "
-            "types the client request producer is now exact, but the source of public "
-            "Enabled, player position, runtime list construction, and the spatial gate "
-            "outcome remain separate questions."
+            "types the client request producer and server-supplied public-state carriers "
+            "are now exact, but the server-side rule choosing Enabled, player position, "
+            "runtime list construction, and the spatial gate outcome remain separate "
+            "questions."
         ),
         "validation": validation,
     }
@@ -5125,7 +5350,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v14",
+        "_schema": "endfieldProtocolRegistryAudit.v15",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -5579,6 +5804,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     activation_control = report.get("levelScriptActivationControl") or {}
     activation_methods = activation_control.get("methods") or {}
     activation_state_flow = activation_control.get("publicStateFlow") or {}
+    public_state_sources = activation_control.get("publicStateSourceFlow") or {}
     subgame_flow = activation_control.get("subGameInteractionFlow") or {}
     client_request_flow = activation_control.get("clientRequestFlow") or {}
     lines.extend(
@@ -5733,12 +5959,21 @@ def render_markdown(report: dict[str, Any]) -> str:
             activation_control.get("finding") or "[activation-control audit unavailable]",
             "",
             (
-                "Server state message `{message}` ({message_id}) carries only "
+                "Full-scene message `SC_SELF_SCENE_INFO` ({snapshot_id}) carries "
+                "tag 8 as `{snapshot_type}`; each `LEVEL_SCRIPT_INFO` row supplies "
+                "scriptId/state/properties/isDone/stage/triggerVolumeInfos to "
+                "`LevelScriptRuntime.ServerSync`. Incremental message `{message}` "
+                "({message_id}) carries only "
                 "`sceneNumId`, `scriptId`, `state`, and `isComplete`; its native "
                 "handler reaches `LevelScriptRuntime.UpdateState` through three "
                 "typed wrappers, then calls `set_state` before "
                 "`UpdateRuntimeState`."
             ).format(
+                snapshot_id=public_state_sources.get("snapshotMessageId", "?"),
+                snapshot_type=md_escape(str(
+                    public_state_sources.get("snapshotLevelScriptsRuntimeType")
+                    or "?"
+                )),
                 message="SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY",
                 message_id=(activation_control.get("messageIds") or {}).get(
                     "ScSceneLevelScriptStateNotify", "?"
@@ -5777,11 +6012,19 @@ def render_markdown(report: dict[str, Any]) -> str:
             (
                 "Whole-client direct ManualStart callers: **{count}**; "
                 "public-state setter precedes runtime evaluation: **{ordered}**; "
-                "SubGame id/bindScriptId field reads validated: **{fields}**."
+                "public-state entry handlers: **{entry_count}**; direct state writers: "
+                "**{writer_count}**; SubGame id/bindScriptId field reads validated: "
+                "**{fields}**."
             ).format(
                 count=len(activation_control.get("manualStartDirectCallers") or []),
                 ordered=activation_state_flow.get(
                     "setterBeforeRuntimeEvaluation", False
+                ),
+                entry_count=len(
+                    public_state_sources.get("managerStateShortDirectCallers") or []
+                ),
+                writer_count=len(
+                    public_state_sources.get("publicStateSetterDirectCallers") or []
                 ),
                 fields=(
                     subgame_flow.get("subGameIdFieldRead", False)
@@ -5917,7 +6160,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v14 report when its original "
+            "Reuse an existing validated v15 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -5936,7 +6179,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v14":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v15":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}

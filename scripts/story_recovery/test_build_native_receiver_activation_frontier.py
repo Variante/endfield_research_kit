@@ -380,7 +380,7 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
     @staticmethod
     def activation_selector_fixture() -> dict:
         return {
-            "schema": "levelScriptActivationControl.v5",
+            "schema": "levelScriptActivationControl.v6",
             "validation": {"status": "validated"},
             "activationSelectorFlow": {
                 "levelScriptTypeValues": {
@@ -412,7 +412,7 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 "count": 1,
                 "shapes": [{
                     "type": "SPHERE",
-                    "center": {"x": 1.0, "y": 2.0, "z": 3.0},
+                    "position": {"x": 1.0, "y": 2.0, "z": 3.0},
                     "radius": 4.0,
                 }],
             },

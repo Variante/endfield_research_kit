@@ -171,9 +171,16 @@ for (const [key, category] of [
         self.assertIn("activation.clientActiveRequestControl", source)
         self.assertIn('t("binaryClientActiveRequest")', source)
         self.assertIn("clientActiveRequestControl.runtimePath", source)
-        self.assertIn("who supplied Enabled", source)
+        self.assertIn("server-side selection rule remains unavailable", source)
         self.assertIn('t("binaryActiveVolume")', source)
         self.assertIn("clientActiveRequestControl.activeShapeList?.shapes", source)
         self.assertIn("validated_runtime_position_dependent", source)
         self.assertIn("shape.position", source)
         self.assertIn("shape.eulerAngles", source)
+
+    def test_mission_pipeline_distinguishes_public_state_server_carriers(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("publicStateControl.publicStateSourceFlow", source)
+        self.assertIn("publicStateControl.selfSceneInfoMessageId", source)
+        self.assertIn("levelScripts[] → ServerSync", source)
+        self.assertIn("They prove that Enabled is server-supplied", source)

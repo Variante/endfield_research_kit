@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v14",
+                "_schema": "endfieldProtocolRegistryAudit.v15",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -303,6 +303,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "CsSceneSetLevelScriptActive": 94,
                 "CsSceneSetLevelScriptStart": 101,
                 "ScSceneLevelScriptStateNotify": 37,
+                "ScSelfSceneInfo": 25,
             },
             "messageSchemas": {
                 "activationRequest": {"fields": [
@@ -323,6 +324,19 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     {"name": "state", "tag": 3},
                     {"name": "isComplete", "tag": 4},
                 ]},
+                "selfSceneInfo": {"fields": [
+                    {"name": "sceneNumId", "tag": 1},
+                    {"name": "sceneId", "tag": 2},
+                    {"name": "levelScripts", "tag": 8},
+                ]},
+                "levelScriptInfo": {"fields": [
+                    {"name": "scriptId", "tag": 1},
+                    {"name": "state", "tag": 2},
+                    {"name": "properties", "tag": 3},
+                    {"name": "isDone", "tag": 4},
+                    {"name": "stage", "tag": 5},
+                    {"name": "triggerVolumeInfos", "tag": 6},
+                ]},
             },
             "fieldOffsets": {
                 "challengeStartPoint.m_subGameId": 0x68,
@@ -331,6 +345,15 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "stateNotify.scriptId_": 0x20,
                 "stateNotify.state_": 0x28,
                 "stateNotify.isComplete_": 0x2C,
+                "selfSceneInfo.sceneNumId_": 0x18,
+                "selfSceneInfo.sceneId_": 0x20,
+                "selfSceneInfo.levelScripts_": 0x38,
+                "levelScriptInfo.scriptId_": 0x18,
+                "levelScriptInfo.state_": 0x20,
+                "levelScriptInfo.properties_": 0x28,
+                "levelScriptInfo.isDone_": 0x30,
+                "levelScriptInfo.stage_": 0x34,
+                "levelScriptInfo.triggerVolumeInfos_": 0x38,
                 "levelScriptRuntime.m_manualStartTriggered": 0xF8,
                 "levelScriptRuntime.withinActiveArea": 0x68,
                 "levelScriptRuntime.activeShapeList": 0x70,
@@ -339,11 +362,15 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             "methods": {
                 name: {"mappingStatus": "mapped_unique"}
                 for name in (
+                    "SelfSceneInfoHandler",
                     "StateNotifyHandler",
                     "ManagerStateShort",
                     "ManagerStateFull",
+                    "ManagerServerSyncLevelScript",
                     "ContainerState",
+                    "ContainerServerSyncLevelScript",
                     "UpdateState",
+                    "RuntimeServerSync",
                     "set_state",
                     "set_runtimeState",
                     "UpdateRuntimeState",
@@ -374,6 +401,46 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "updateStateToSetter": 1,
                 "updateStateToRuntimeEvaluation": 1,
                 "setterBeforeRuntimeEvaluation": True,
+            },
+            "publicStateSourceFlow": {
+                "snapshotMessageId": 25,
+                "incrementalMessageId": 37,
+                "snapshotLevelScriptsRuntimeType": (
+                    "Google.Protobuf.Collections.RepeatedField`1<Proto.LEVEL_SCRIPT_INFO>"
+                ),
+                "managerStateShortDirectCallers": [
+                    "Beyond.Gameplay.GameplayNetwork._Handle_SceneLevelScriptStateNotify",
+                    "Beyond.Gameplay.GameplayNetwork._Handle_SelfSceneInfo",
+                ],
+                "managerStateFullDirectCallers": [
+                    "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptState",
+                ],
+                "managerServerSyncDirectCallers": [],
+                "containerStateDirectCallers": [
+                    "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptState",
+                ],
+                "updateStateDirectCallers": [
+                    "Beyond.Gameplay.Core.LevelScriptContainer.ServerSyncLevelScriptState",
+                ],
+                "runtimeServerSyncDirectCallers": [
+                    "Beyond.Gameplay.Core.LevelScriptContainer.ServerSyncLevelScript",
+                ],
+                "containerServerSyncDirectCallers": [
+                    "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScript",
+                    "Beyond.Gameplay.GameplayNetwork._Handle_SelfSceneInfo",
+                ],
+                "publicStateSetterDirectCallers": [
+                    "Beyond.Gameplay.Core.LevelScriptContainer.LoadFromLevelData",
+                    "Beyond.Gameplay.Core.LevelScriptRuntime.Init",
+                    "Beyond.Gameplay.Core.LevelScriptRuntime.ServerSync",
+                    "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateState",
+                ],
+                "publicStateSetterArguments": {
+                    "Beyond.Gameplay.Core.LevelScriptContainer.LoadFromLevelData": ["0"],
+                    "Beyond.Gameplay.Core.LevelScriptRuntime.Init": ["0"],
+                    "Beyond.Gameplay.Core.LevelScriptRuntime.ServerSync": ["param:state"],
+                    "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateState": ["param:value"],
+                },
             },
             "subGameInteractionFlow": {
                 "subGameLookupCallCount": 1,
@@ -523,6 +590,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "fieldOffsets",
                 "methodMapping",
                 "publicStateFlow",
+                "publicStateSourceFlow",
                 "subGameInteractionFlow",
                 "manualStartDirectCallers",
                 "clientRequestFlow",
