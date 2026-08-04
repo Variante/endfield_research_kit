@@ -63,7 +63,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v21"
+SCHEMA = "nativeReceiverActivationFrontier.v22"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -1863,7 +1863,7 @@ def exact_client_active_request_contract(
         if isinstance((host.get("briefData") or {}).get("levelScriptType"), int)
     ]
     binary_validated = (
-        activation_control.get("schema") == "levelScriptActivationControl.v5"
+        activation_control.get("schema") == "levelScriptActivationControl.v6"
         and validation.get("status") == "validated"
         and selector.get("nonSubLevelRequiresEnabledAndActiveArea") is True
         and selector.get("subLevelRequiresPublicActive") is True
@@ -1955,7 +1955,8 @@ def exact_client_active_request_contract(
         "evidenceBoundary": (
             "This proves the generic request-producing branch selected by the "
             "original LevelData type and, where decoded, its authored activation "
-            "volume. It does not prove who supplied public Enabled, the player "
+            "volume. The validated snapshot/notification carriers prove public "
+            "Enabled is server-supplied, but not the server-side selection rule, player "
             "position, whether the spatial gate passed in a particular playthrough, "
             "which server branch accepted Active, mission ownership, event firing, "
             "or Story order."
@@ -2259,6 +2260,13 @@ def build_report(
                 "stateNotifyMessageId": (
                     activation_control.get("messageIds") or {}
                 ).get("ScSceneLevelScriptStateNotify"),
+                "selfSceneInfoMessageId": (
+                    activation_control.get("messageIds") or {}
+                ).get("ScSelfSceneInfo"),
+                "selfSceneInfoHandlerMethod": activation_methods.get(
+                    "SelfSceneInfoHandler"
+                )
+                or {},
                 "handlerMethod": activation_methods.get(
                     "StateNotifyHandler"
                 )
@@ -2266,6 +2274,10 @@ def build_report(
                 "updateStateMethod": activation_methods.get("UpdateState")
                 or {},
                 "publicStateFlow": activation_control.get("publicStateFlow")
+                or {},
+                "publicStateSourceFlow": activation_control.get(
+                    "publicStateSourceFlow"
+                )
                 or {},
                 "finding": safe_text(activation_control.get("finding")),
                 "evidenceBoundary": safe_text(
@@ -2435,7 +2447,8 @@ def build_report(
                 "missionOwnerStatus": "unresolved",
                 "evidenceBoundary": (
                     "The exact LevelData type now selects the generic client/public "
-                    "activation branch. This does not identify who supplied Enabled, "
+                    "activation branch. The server supplies Enabled through the exact "
+                    "snapshot/notification carriers, but its selection rule, "
                     "a mission or quest owner, event firing, playback ownership, or "
                     "Story order."
                 ),

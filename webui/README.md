@@ -158,10 +158,12 @@ Rebuild Story data after editing overrides.
   `SubLevelScript` and visibly show `Enabled -> active-area gate -> PreActive ->
   active=true -> WaitForStateActive`. Each card also shows its directly decoded
   original sphere/box activation geometry and the binary-validated active/
-  outside-list gate behavior. The UI still labels the source of Enabled,
-  player position and playthrough-specific spatial result, server acceptance,
-  event occurrence, mission owner, branch choice, and cross-Story order
-  unresolved.
+  outside-list gate behavior. The public-state row distinguishes the full-scene
+  `SC_SELF_SCENE_INFO` snapshot from incremental state notifications and shows
+  that both are server-derived. The UI still labels the unavailable server-side
+  selection rule, player position and playthrough-specific spatial result,
+  server acceptance, event occurrence, mission owner, branch choice, and
+  cross-Story order unresolved.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

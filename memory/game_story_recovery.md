@@ -41,6 +41,7 @@ Latest CN reports:
 | Whole-client topology consumers | 42 / 43 direct `GetQuestInfo` call candidates verified; active predecessor consumers 0; non-sort flow consumers 0; topology lifecycle calls 0 |
 | Authored quest-fork semantics | 307 forks: 226 main-path + auxiliary, 78 all-auxiliary, 3 with multiple main-path arms; 97 guarded; 45 reconverging |
 | Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; all 95 exact LevelData types select the non-SubLevel client `active=true` request branch; all 95 original scripts have one uniquely decoded active volume (86 sphere / 9 box); 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
+| Binary public-state entry closure | 2 server-derived handlers: full-scene `SC_SELF_SCENE_INFO` snapshots and incremental `SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY`; 4 direct public-state setter callers split into 2 zero initializers and 2 server-parameter writers |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -1526,12 +1527,18 @@ active volume in every receiver script: 86 spheres and 9 boxes. The current
 binary proves empty active lists and active-shape hits set `withinActiveArea`,
 missing outside lists and outside misses preserve its prior value, and outside
 hits clear it. Mission Pipeline shows that geometry, state chain, method
-offsets, original LevelScript/LevelData files, and binary/metadata hashes. The
-remaining gap is who supplies public Enabled, the player position and resulting
-gate value in a specific run, which server branch accepts Active, whether the
-receiver event fired, and how separate Story files are ordered. OCR, overrides,
-source-graph grouping, registration order, and code-address order remain
-cross-reference only.
+offsets, original LevelScript/LevelData files, and binary/metadata hashes.
+The direct current-AOT caller census now closes the upstream client surface:
+`SC_SELF_SCENE_INFO` message 25 supplies repeated `LEVEL_SCRIPT_INFO` snapshot
+rows to `Runtime.ServerSync`, while message 37 supplies incremental state to
+`Runtime.UpdateState`. The four direct `set_state` callers are exactly those
+two server-parameter writers plus zero-valued `LoadFromLevelData` and `Init`
+writes. Thus public Enabled is server-supplied, but neither carrier contains a
+mission, quest, Story id, or branch reason. The remaining gap is the server-side
+selection rule, player position and resulting gate value, server acceptance of
+Active, event firing, and cross-file order. OCR, overrides, source-graph
+grouping, registration order, and code-address order remain cross-reference
+only.
 
 ## Evidence rules
 

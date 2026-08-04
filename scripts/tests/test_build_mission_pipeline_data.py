@@ -151,7 +151,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v14",
+                "_schema": "endfieldProtocolRegistryAudit.v15",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -203,7 +203,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v14",
+                "_schema": "endfieldProtocolRegistryAudit.v15",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": "0" * 64,
@@ -281,7 +281,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v14",
+                "_schema": "endfieldProtocolRegistryAudit.v15",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -310,7 +310,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v14",
+                "_schema": "endfieldProtocolRegistryAudit.v15",
                 "selectedSchemas": [],
                 "nativeTaskPaths": {},
             }), encoding="utf-8")
@@ -330,7 +330,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v14",
+                "_schema": "endfieldProtocolRegistryAudit.v15",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -378,7 +378,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v14",
+                "_schema": "endfieldProtocolRegistryAudit.v15",
                 "levelScriptStartPolicy": {
                     "schema": "levelScriptStartPolicy.v1",
                     "classification": (
@@ -410,7 +410,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v14",
+                "_schema": "endfieldProtocolRegistryAudit.v15",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -460,7 +460,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v14",
+                "_schema": "endfieldProtocolRegistryAudit.v15",
                 "levelScriptManualSelfControl": {
                     "schema": "levelScriptManualSelfControl.v1",
                     "classification": (
@@ -494,7 +494,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v14",
+                "_schema": "endfieldProtocolRegistryAudit.v15",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -506,7 +506,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     ).hexdigest(),
                 },
                 "levelScriptActivationControl": {
-                    "schema": "levelScriptActivationControl.v5",
+                    "schema": "levelScriptActivationControl.v6",
                     "classification": (
                         "server_state_subgame_and_runtime_request_paths"
                     ),
@@ -519,6 +519,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "messageIds": {
                         "CsSceneSetLevelScriptActive": 94,
                         "ScSceneLevelScriptStateNotify": 37,
+                        "ScSelfSceneInfo": 25,
+                    },
+                    "publicStateSourceFlow": {
+                        "snapshotMessageId": 25,
+                        "incrementalMessageId": 37,
                     },
                     "subGameInteractionFlow": {
                         "callsInCarrierOrder": True,
@@ -556,6 +561,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(
             contract["messageIds"]["ScSceneLevelScriptStateNotify"], 37
         )
+        self.assertEqual(
+            contract["publicStateSourceFlow"]["snapshotMessageId"], 25
+        )
         self.assertEqual(len(contract["relatedOriginalFiles"]), 2)
         self.assertTrue(
             contract["activeReceiverFlow"][
@@ -575,9 +583,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v14",
+                "_schema": "endfieldProtocolRegistryAudit.v15",
                 "levelScriptActivationControl": {
-                    "schema": "levelScriptActivationControl.v5",
+                    "schema": "levelScriptActivationControl.v6",
                     "classification": (
                         "server_state_subgame_and_runtime_request_paths"
                     ),
