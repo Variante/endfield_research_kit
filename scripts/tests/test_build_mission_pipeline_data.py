@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import json
+import struct
 import subprocess
 import tempfile
 import unittest
@@ -10,6 +11,36 @@ from unittest.mock import patch
 
 from scripts import build_mission_pipeline_data as pipeline
 from scripts.story_builder import level_bindings, mission_flow, source_links
+
+
+class LevelScriptSourceEvidenceTests(unittest.TestCase):
+    def test_exact_empty_action_map_attaches_original_file_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "level_a" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"\x1b\x02\x03" + struct.pack("<III", 0, 0, 0))
+            condition = {
+                "$type": "Fixture.CheckLevelScriptPropertyBool",
+                "uniqueId": "condition_a",
+                "_sceneId": "level_a",
+                "_scriptId": {"scriptId": 1001},
+                "_key": "isFinished",
+            }
+
+            rows = pipeline.level_script_source_evidence(
+                condition,
+                level_script_root=root,
+            )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["actionMapStatus"], "exact_empty_action_map")
+        self.assertEqual(
+            rows[0]["actionMapListCounts"],
+            {"actionList": 0, "getterList": 0, "headerList": 0},
+        )
+        self.assertEqual(len(rows[0]["relatedOriginalFiles"][0]["sha256"]), 64)
+
 
 
 QUEST_STATE_LIFECYCLE_FIXTURE = {
@@ -3989,7 +4020,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         row = pipeline.objective_row({
             "description": {"key": "objective_fixture"},
             "condition": task_condition,
-        }, 1)
+        }, 1, include_level_script_source_evidence=False)
         self.assertEqual(
             row["condition"]["facts"]["taskId"],
             "task_fixture",
@@ -4230,6 +4261,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             row = pipeline.objective_row(
                 {"description": {"key": "fixture"}, "condition": combined},
                 1,
+                include_level_script_source_evidence=False,
             )
         finally:
             pipeline._SUBMIT_ITEM_ROWS_CACHE = previous_cache

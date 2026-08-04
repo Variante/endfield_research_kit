@@ -1408,6 +1408,23 @@ original files, and the installed-binary task-authority reference. This proves
 that the authored objective waits for the task; it does not prove script
 activation, Story ownership, branch selection, or scene-file order.
 
+Empty `ActionSerializedMap` recovery is now corpus-shaped and fail-closed. All
+526 original LevelScripts whose first serialized action-list count is zero have
+the same exact three-word `(actionList, getterList, headerList) = (0, 0, 0)`
+header. The decoder consumes that boundary directly, leaving 309 UID-shaped
+tail records in 188 files outside executable evidence; 42 Story-like strings
+in 40 such files remain serialized context only. Mission Pipeline attaches 341
+exact condition-to-LevelScript source rows and visibly marks 51 empty maps
+across 39 objectives in 32 missions, including `c13m3_q#4` with its original
+file hash and two non-executable tail rows. Quest-scope recovery now admits
+only strong authored/decoded scene edges that resolve to one LevelScript;
+weak file, offset, list, and cross-file order can no longer turn tail literals
+or neighboring endpoints into a Story attachment. OCR, overrides, filenames,
+and numeric file order remain comparison-only. This correction removes 62
+unsupported quest-scope contexts and 370 duplicated/unsupported fork-arm Story
+placements while leaving all 1,524 strong order edges and 312 native branch
+groups unchanged; connected/unlinked Story counts are now 4,237 / 1,327.
+
 ## Remaining gaps
 
 1. **Mission ownership:** 156 Story files have exact native playback but lack a

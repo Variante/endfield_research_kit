@@ -275,6 +275,10 @@
       submissionLevelScriptCoGateHint: "Exact authored co-gate only. The LevelScript can provide dialog playback context, but this does not prove it opens or owns the submission UI.",
       levelScriptTaskDependency: "exact LevelScript task dependency",
       levelScriptTaskDependencyHint: "The authored mission objective waits for this exact task tuple. It does not prove that the mission activates the script, owns its Story playback, or selects a Story branch.",
+      levelScriptSource: "original LevelScript condition source",
+      levelScriptExactEmptyMap: "exact empty executable map",
+      levelScriptExecutableMap: "serialized executable map",
+      levelScriptTailRecords: "non-executable tail records",
       taskMetadata: "task metadata",
       or: "or",
       nativeDirectCallers: "native direct callers",
@@ -1147,6 +1151,10 @@
       submissionLevelScriptCoGateHint: "仅表示精确的原始条件共门。关卡脚本可提供对话播放上下文，但不证明它会打开或拥有提交界面。",
       levelScriptTaskDependency: "精确的关卡脚本任务依赖",
       levelScriptTaskDependencyHint: "原始使命目标等待这个精确任务元组。它不证明使命会激活该脚本、拥有其剧情播放或选择剧情分支。",
+      levelScriptSource: "原始关卡脚本条件来源",
+      levelScriptExactEmptyMap: "精确的空可执行映射",
+      levelScriptExecutableMap: "序列化可执行映射",
+      levelScriptTailRecords: "不可执行尾部记录",
       taskMetadata: "任务元数据",
       or: "或",
       nativeDirectCallers: "原生直接调用者",
@@ -5425,9 +5433,16 @@
       const metadataText = [metadata.titleKey, metadata.descriptionKey, metadata.objectiveCount != null ? `${metadata.objectiveCount} ${t("objectives")}` : ""].filter(Boolean).join(" · ");
       return `<details open class="mp-quest-task-dependency"><summary><b>${esc(t("levelScriptTaskDependency"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}/${esc(row.taskId || "?")}</code></summary>${metadataText ? `<p><strong>${esc(t("taskMetadata"))}:</strong> ${esc(metadataText)}</p>` : ""}<small>${esc(t("levelScriptTaskDependencyHint"))}</small>${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}</details>`;
     }).join("");
+    const levelScriptSources = (objective.levelScriptSources || []).map((row) => {
+      const counts = row.actionMapListCounts || {};
+      const countText = ["actionList", "getterList", "headerList"].map((name) => `${name}=${counts[name] ?? "?"}`).join(" / ");
+      const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
+      const statusLabel = row.actionMapStatus === "exact_empty_action_map" ? t("levelScriptExactEmptyMap") : t("levelScriptExecutableMap");
+      return `<details${row.actionMapStatus === "exact_empty_action_map" ? " open" : ""} class="mp-quest-task-dependency"><summary><b>${esc(t("levelScriptSource"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}</code> <span>${esc(statusLabel)}</span></summary><p><code>${esc(countText)}</code>${row.serializedTailRecordCount ? ` 路 ${esc(t("levelScriptTailRecords"))}: ${Number(row.serializedTailRecordCount).toLocaleString()}` : ""}</p><small>${esc(row.evidenceBoundary || "")}</small>${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}</details>`;
+    }).join("");
     return `<article class="mp-objective"><header><strong>${esc(t("objectives"))} ${objective.index}</strong><span class="mp-authority is-${esc(objective.authority)}">${esc(objective.authority)}</span></header>
       <p>${esc(objective.descriptionKey || t("noObjective"))}</p>
-      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${taskDependencies}
+      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${levelScriptSources}${taskDependencies}
       ${objectiveTrackingHtml(objective.tracking)}
       ${renderConditionTree(objective.condition)}
     </article>`;

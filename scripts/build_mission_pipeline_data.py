@@ -34,8 +34,10 @@ try:
     )
     from story_builder.levelscript_binary import (
         compact_callserver_serialized_contract,
+        decode_levelscript_action_map_lists,
         decode_levelscript_action_header_validation,
         decode_levelscript_encounter_module_target,
+        extract_levelscript_uid_records,
     )
     from story_builder.level_bindings import (
         ACTIONBASE_FORMATTER_ACTION_NAMES,
@@ -86,8 +88,10 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
     )
     from scripts.story_builder.levelscript_binary import (
         compact_callserver_serialized_contract,
+        decode_levelscript_action_map_lists,
         decode_levelscript_action_header_validation,
         decode_levelscript_encounter_module_target,
+        extract_levelscript_uid_records,
     )
     from scripts.story_builder.level_bindings import (
         ACTIONBASE_FORMATTER_ACTION_NAMES,
@@ -9844,6 +9848,74 @@ def level_script_task_dependencies(condition: Any) -> list[dict[str, Any]]:
     return dependencies
 
 
+def level_script_source_evidence(
+    condition: Any,
+    *,
+    level_script_root: Path = DEFAULT_LEVEL_SCRIPT_DATA_ROOT,
+) -> list[dict[str, Any]]:
+    """Attach exact authored LevelScript files and executable-map boundaries.
+
+    The join is field-shaped across the entire condition corpus: any condition
+    carrying both a level/map identity and a LevelScript identity is eligible.
+    Story-like literals outside the three decoded ActionSerializedMap lists are
+    retained only as serialized context and never promoted to playback/order.
+    """
+    out: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for row in condition_objects(condition):
+        level_id = get_const(row, "_sceneId", "sceneId", "_levelId", "levelId", "_mapId", "mapId")
+        script_id = get_const(row, "_scriptId", "scriptId")
+        if isinstance(script_id, dict):
+            script_id = script_id.get("scriptId")
+        if not all(isinstance(value, (str, int)) and str(value) for value in (level_id, script_id)):
+            continue
+        identity = (str(level_id), str(script_id))
+        if identity in seen:
+            continue
+        seen.add(identity)
+        source_path = level_script_root / identity[0] / f"{identity[1]}.json"
+        if not source_path.is_file():
+            raise RuntimeError(
+                "validator=level_script_source_evidence gate=levelScriptExists "
+                f"condition={row.get('uniqueId') or '-'} identity={identity[0]}/{identity[1]} "
+                f"expected=file actual=missing source={source_path}"
+            )
+        data = read_bytes_cached(source_path)
+        records = extract_levelscript_uid_records(data)
+        action_map = decode_levelscript_action_map_lists(data, records)
+        exact_empty = bool(action_map.get("exactEmptyActionMap"))
+        out.append({
+            "levelId": identity[0],
+            "scriptId": identity[1],
+            "conditionType": type_name(row.get("$type")) or "UnknownCondition",
+            "actionMapStatus": (
+                "exact_empty_action_map"
+                if exact_empty
+                else str(action_map.get("status") or "absent")
+            ),
+            "actionMapListCounts": action_map.get("listCounts") or {},
+            "serializedTailRecordCount": sum(
+                int(item.get("count") or 0)
+                for item in action_map.get("serializedLists") or []
+                if item.get("name") == "outsideSerializedActionMap"
+            ),
+            "relatedOriginalFiles": [{
+                "kind": "level_script",
+                "sourceFile": repo_path(source_path),
+                "relationship": "authored_condition_operand",
+                "sha256": sha256_path(source_path),
+            }],
+            "evidenceBoundary": (
+                "The three original serialized action-list counts are exactly zero. "
+                "Later UID-shaped objects and Story-like strings are outside the "
+                "executable action map and provide no playback, ownership, branch, or order evidence."
+                if exact_empty
+                else "Only records inside the decoded ActionSerializedMap lists are executable evidence; the condition observes this script but does not prove playback ownership, branch selection, or Story order."
+            ),
+        })
+    return out
+
+
 def validate_level_script_task_dependency(
     dependency: dict[str, Any],
     *,
@@ -9920,7 +9992,12 @@ def validate_level_script_task_dependency(
     return result
 
 
-def objective_row(objective: dict[str, Any], index: int) -> dict[str, Any]:
+def objective_row(
+    objective: dict[str, Any],
+    index: int,
+    *,
+    include_level_script_source_evidence: bool = True,
+) -> dict[str, Any]:
     condition = objective.get("condition")
     objects = condition_objects(condition)
     types = sorted({type_name(row.get("$type")) for row in objects if type_name(row.get("$type"))})
@@ -9987,6 +10064,11 @@ def objective_row(objective: dict[str, Any], index: int) -> dict[str, Any]:
         ),
         "questStateRefs": quest_state_refs,
         "levelScriptIds": sorted(level_scripts),
+        "levelScriptSources": (
+            level_script_source_evidence(condition)
+            if include_level_script_source_evidence
+            else []
+        ),
         "levelScriptTaskDependencies": level_script_task_dependencies(condition),
         "propertyKeys": sorted(properties),
         "tracking": tracking,
