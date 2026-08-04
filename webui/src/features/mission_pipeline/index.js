@@ -204,6 +204,13 @@
       noServerExchange: "no server exchange",
       carrierAudit: "Closed managed-carrier candidates",
       noGraphEdges: "zero mission graph edges",
+      nativeCrossSystemConsumers: "Native cross-system consumer census",
+      crossSystemCallers: "cross-system callers",
+      missionDynamicConsumers: "mission-state → DynamicScene consumers",
+      missionLevelScriptConsumers: "MissionSystem → LevelScript consumers",
+      tripleSystemConsumers: "three-system consumers",
+      unreviewedConsumers: "unreviewed consumers",
+      visualContextConsumers: "Story ↔ DynamicScene visual-context consumers",
       dynamicSceneCrossReferences: "DynamicScene identity cross-references",
       dynamicSceneCrossReferencesHint: "A DynamicScene object co-carries mission/quest state conditions, and its exact numeric logic id equals an exported LevelScript script id containing Story playback. One current row also has a typed LevelScript target and shared local Story path; the mission-condition-to-trigger activation edge is still missing, so no row gains mission ownership, playback causality, or order.",
       dynamicSceneLogicId: "DynamicScene logic id",
@@ -1038,6 +1045,13 @@
       noServerExchange: "不与服务器交换",
       carrierAudit: "已关闭的托管载体候选",
       noGraphEdges: "使命图边为零",
+      nativeCrossSystemConsumers: "原生跨系统消费者普查",
+      crossSystemCallers: "跨系统调用者",
+      missionDynamicConsumers: "任务状态 → DynamicScene 消费者",
+      missionLevelScriptConsumers: "MissionSystem → LevelScript 消费者",
+      tripleSystemConsumers: "三系统消费者",
+      unreviewedConsumers: "未审查消费者",
+      visualContextConsumers: "剧情 ↔ DynamicScene 视觉上下文消费者",
       dynamicSceneCrossReferences: "DynamicScene 身份交叉引用",
       dynamicSceneCrossReferencesHint: "DynamicScene 对象携带任务状态条件，其精确数字逻辑 ID 与包含剧情播放的 LevelScript 脚本 ID 相同。当前一行还具有类型化 LevelScript 目标和共享的本地剧情路径；任务条件到触发器激活的链路仍缺失，因此所有行都不表示任务所有权、播放因果或顺序。",
       dynamicSceneLogicId: "DynamicScene 逻辑 ID",
@@ -4457,6 +4471,7 @@
     const paramSourceAudit = contract.paramSourceMissionContextAudit || null;
     const managedCarrierCensus = contract.managedIdentityCarrierCensus || null;
     const nestedCarrierCensus = contract.nestedManagedIdentityCarrierCensus || null;
+    const crossSystemCensus = contract.nativeCrossSystemConsumerCensus || null;
     const eventFamilies = Object.entries(state.index?.storyCoverage?.nativePlaybackEventFamilies || {})
       .filter(([, count]) => Number(count) > 0)
       .sort((a, b) => Number(b[1]) - Number(a[1]) || a[0].localeCompare(b[0]));
@@ -4559,6 +4574,24 @@
           <small>${esc(nestedCarrierCensus.boundary || "")}</small>
         </article>` : ""}
       </div></section>` : ""}
+      ${crossSystemCensus?.finding ? `<section class="mp-local-only mp-cross-system-census">
+        <header><strong>${esc(t("nativeCrossSystemConsumers"))}</strong><span>${esc(t("noGraphEdges"))}</span></header>
+        <div><article class="mp-contract-card is-boundary-only">
+          <span>${esc(crossSystemCensus.classification || "binary_cross_system_consumers_reviewed")}</span>
+          <strong>${Number(crossSystemCensus.counts?.crossSystemCallers || 0).toLocaleString()} ${esc(t("crossSystemCallers"))}</strong>
+          <div class="mp-contract-tags">
+            <b>${esc(t("missionDynamicConsumers"))}: ${Number(crossSystemCensus.counts?.missionStateDynamicSceneCallers || 0).toLocaleString()}</b>
+            <b>${esc(t("missionLevelScriptConsumers"))}: ${Number(crossSystemCensus.counts?.missionLevelScriptCallers || 0).toLocaleString()}</b>
+            <b>${esc(t("tripleSystemConsumers"))}: ${Number(crossSystemCensus.counts?.tripleOrGreaterFamilyCallers || 0).toLocaleString()}</b>
+            <b>${esc(t("visualContextConsumers"))}: ${Number(crossSystemCensus.counts?.dynamicSceneStoryCallers || 0).toLocaleString()}</b>
+            <b>${esc(t("unreviewedConsumers"))}: ${Number(crossSystemCensus.counts?.unreviewedCallers || 0).toLocaleString()}</b>
+          </div>
+          <p>${esc(crossSystemCensus.finding)}</p>
+          <small>${esc(crossSystemCensus.method || "")}</small>
+          ${(crossSystemCensus.relatedOriginalFiles || []).map((related) => `<small><b>${esc(t("relatedOriginalFile"))}:</b> <code>${esc(related.sourceFile || "")}</code> / SHA-256 <code>${esc(related.sha256 || "")}</code> / ${esc(related.role || "")}</small>`).join("")}
+          <small>${esc(crossSystemCensus.boundary || "")}</small>
+        </article></div>
+      </section>` : ""}
       ${dynamicSceneRows.length ? `<section class="mp-missionless-runtime mp-dynamic-scene-crossrefs">
         <header><strong>${esc(t("dynamicSceneCrossReferences"))} <span>${dynamicSceneRows.length}</span></strong><p>${esc(t("dynamicSceneCrossReferencesHint"))}</p></header>
         <div class="mp-missionless-runtime-grid">${dynamicSceneRows.map((row) => {

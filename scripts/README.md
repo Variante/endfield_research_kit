@@ -93,6 +93,14 @@ override those defaults for one run.
   The validator scans both complete original-object indexes and fails closed on
   a new exact type label, an incomplete index, or an unclassified path family;
   truncated scalar projections stay visible as a bounded limitation.
+- `story_recovery/build_native_cross_system_consumer_census.py` maps every
+  current IL2CPP method pointer and scans both executable `GameAssembly.dll`
+  sections for direct callers crossing MissionSystem, DynamicScene,
+  LevelScript, or Story API families. Discovery uses no content ids, rejects
+  ambiguous shared generic pointers, and fails closed on new call shapes or
+  changed class counts. It distinguishes mission-controlled DynamicScene
+  availability from shared geometry, global loading, and Story visual context;
+  none of those classifications creates ownership or order.
 - A second general activation contract inventories every direct current-client
   `ManualStart` caller, validates the public state-notify application chain,
   and recovers the generic client request lifecycle. Exact metadata schemas,
