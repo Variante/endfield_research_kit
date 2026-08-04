@@ -34,6 +34,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     "questStateLifecycleApplication": {
                         "validation": {"status": "validated", "failures": []},
                     },
+                    "questEnableLifecycleApplication": {
+                        "validation": {"status": "validated", "failures": []},
+                    },
                     "questStartApplication": {
                         "validation": {"status": "validated", "failures": []},
                     },
@@ -1295,6 +1298,112 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             ["stateFieldComparisons", "stateConstrainedLifecycleRoutes"],
         )
         self.assertEqual(validation["failures"][0]["sourceFile"], "GameAssembly.dll")
+
+    def test_boolean_lifecycle_matrix_is_discovered_from_live_fields(self):
+        method_va = 0x1000
+        instructions = [
+            {"offset": 0, "text": "mov r12b, [rsi+0x20]", "write": {"register": "r12b"}},
+            {"offset": 4, "text": "mov al, [r14+0x28]", "write": {"register": "al"}},
+            {"offset": 8, "text": "test r12b, r12b"},
+            {"offset": 11, "text": "je 0x1030", "targetVa": "0x1030", "bytes": "74 23"},
+            {"offset": 13, "text": "test al, al"},
+            {"offset": 15, "text": "jne 0x1020", "targetVa": "0x1020", "bytes": "75 0f"},
+            {"offset": 17, "text": "call 0x2000"},
+            {"offset": 22, "text": "ret"},
+            {"offset": 32, "text": "call 0x3000"},
+            {"offset": 37, "text": "ret"},
+            {"offset": 48, "text": "test al, al"},
+            {"offset": 50, "text": "jne 0x1040", "targetVa": "0x1040", "bytes": "75 0c"},
+            {"offset": 52, "text": "call 0x4000"},
+            {"offset": 57, "text": "ret"},
+            {"offset": 64, "text": "call 0x4000"},
+            {"offset": 69, "text": "ret"},
+        ]
+        enable_predicates = audit.discover_boolean_field_predicates(
+            instructions,
+            field="enabled",
+            field_read_offset=0,
+            method_va=method_va,
+        )
+        paused_predicates = audit.discover_boolean_field_predicates(
+            instructions,
+            field="paused",
+            field_read_offset=4,
+            method_va=method_va,
+        )
+        calls = [
+            {"method": "BeginThing", "callOffset": 17, "samePacketIdentity": True},
+            {"method": "PauseThing", "callOffset": 32, "samePacketIdentity": True},
+            {"method": "DisableThing", "callOffset": 52, "samePacketIdentity": True},
+            {"method": "DisableThing", "callOffset": 64, "samePacketIdentity": True},
+        ]
+        scenarios = [
+            {"values": {"enabled": enabled, "paused": paused}}
+            for enabled in (False, True)
+            for paused in (False, True)
+        ]
+
+        routes = audit.constrained_lifecycle_routes(
+            instructions,
+            [*enable_predicates, *paused_predicates],
+            calls,
+            scenarios,
+            method_va=method_va,
+        )
+
+        self.assertEqual(len(enable_predicates), 1)
+        self.assertEqual(len(paused_predicates), 2)
+        self.assertEqual(
+            {
+                (row["values"]["enabled"], row["values"]["paused"]): [
+                    call["method"] for call in row["reachableLifecycleCalls"]
+                ]
+                for row in routes
+            },
+            {
+                (False, False): ["DisableThing"],
+                (False, True): ["DisableThing"],
+                (True, False): ["BeginThing"],
+                (True, True): ["PauseThing"],
+            },
+        )
+        validation = audit.validate_quest_enable_lifecycle_application(
+            candidate_rows=[{"type": "Proto.SC_GENERIC_ENABLE"}],
+            packet_predicates=enable_predicates,
+            runtime_predicates=paused_predicates,
+            routes=routes,
+            unread_control_fields=["priorState"],
+            packet_field="enabled",
+            runtime_field="paused",
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "fixture"},
+        )
+        self.assertEqual(validation, {"status": "validated", "failures": []})
+
+    def test_boolean_lifecycle_validator_reports_incomplete_matrix(self):
+        validation = audit.validate_quest_enable_lifecycle_application(
+            candidate_rows=[{"type": "Proto.SC_GENERIC_ENABLE"}],
+            packet_predicates=[],
+            runtime_predicates=[],
+            routes=[],
+            unread_control_fields=[],
+            packet_field="enabled",
+            runtime_field="paused",
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "fixture"},
+        )
+
+        self.assertEqual(validation["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in validation["failures"]],
+            [
+                "packetEnablePredicate",
+                "runtimePausePredicates",
+                "completeBooleanMatrix",
+                "oneDistinctLifecycleCallPerRoute",
+                "unusedPacketControlReported",
+            ],
+        )
 
 
 if __name__ == "__main__":

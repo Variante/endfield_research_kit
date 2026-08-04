@@ -88,6 +88,11 @@ Rebuild Story data after editing overrides.
   packet fields, handler, `Processing -> StartQuest` and
   `Completed -> SucceedQuest` routes, source hashes, and the explicit boundary
   that the client applies but does not select the successor arm.
+- The same card shows the binary-validated enable/pause matrix: enabled and
+  unpaused starts, enabled and paused remains paused, and disabled reaches
+  `DisableQuest` for either pause value. It also labels `prevQuestState` as
+  serialized but unread, links the exact binary and metadata hashes, and does
+  not promote these application routes to server arm policy or Story order.
 - Its native-boundary panel shows the generally discovered mission/quest
   identity+state application paths, the exact lifecycle identity flow, the
   absence of a client successor selector, and the hash-validated original

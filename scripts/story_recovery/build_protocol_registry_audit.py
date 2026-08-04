@@ -4028,44 +4028,51 @@ def validate_state_update_application_rows(
     }
 
 
-def constrained_enum_lifecycle_routes(
+def conditional_branch_kind(row: dict[str, Any]) -> str:
+    """Return the exact equality branch kind, including compact decoder jcc rows."""
+    text = str(row.get("text") or "").lower()
+    mnemonic = text.split(" ", 1)[0]
+    if mnemonic in {"je", "jne"}:
+        return mnemonic
+    raw = str(row.get("bytes") or "").lower().split()
+    if raw[:2] == ["0f", "84"] or raw[:1] == ["74"]:
+        return "je"
+    if raw[:2] == ["0f", "85"] or raw[:1] == ["75"]:
+        return "jne"
+    return ""
+
+
+def direct_branch_target_offset(
+    row: dict[str, Any],
+    method_va: int,
+) -> int | None:
+    """Resolve a decoded direct branch target to a method-relative offset."""
+    target_text = str(row.get("targetVa") or "")
+    if not target_text:
+        match = re.search(r"\b0x[0-9a-f]+\b", str(row.get("text") or ""), re.I)
+        target_text = match.group(0) if match else ""
+    return (
+        int(target_text, 16) - method_va
+        if target_text.startswith("0x")
+        else None
+    )
+
+
+def constrained_lifecycle_routes(
     instructions: list[dict[str, Any]],
-    comparisons: list[dict[str, Any]],
+    predicates: list[dict[str, Any]],
     lifecycle_calls: list[dict[str, Any]],
-    enum_values: list[dict[str, Any]],
+    scenarios: list[dict[str, Any]],
     *,
     method_va: int,
 ) -> list[dict[str, Any]]:
-    """Follow native CFG edges while constraining one discovered enum field.
+    """Follow native CFG edges under discovered typed predicate assignments.
 
-    The caller supplies comparisons already proven to read the selected packet
-    field. All other conditional branches remain possible. This makes the
-    routine reusable for any enum-backed state packet without encoding message
-    IDs, object IDs, method addresses, enum constants, or lifecycle names.
+    Each predicate names a field, the value for which its preceding comparison
+    is equal/zero, and the exact conditional-branch offset. All other native
+    conditions remain possible. The solver therefore supports enum and boolean
+    carriers without encoding message IDs, addresses, constants, or call names.
     """
-    def conditional_kind(row: dict[str, Any]) -> str:
-        text = str(row.get("text") or "").lower()
-        mnemonic = text.split(" ", 1)[0]
-        if mnemonic in {"je", "jne"}:
-            return mnemonic
-        raw = str(row.get("bytes") or "").lower().split()
-        if raw[:2] == ["0f", "84"] or raw[:1] == ["74"]:
-            return "je"
-        if raw[:2] == ["0f", "85"] or raw[:1] == ["75"]:
-            return "jne"
-        return ""
-
-    def target_offset_for(row: dict[str, Any]) -> int | None:
-        target_text = str(row.get("targetVa") or "")
-        if not target_text:
-            match = re.search(r"\b0x[0-9a-f]+\b", str(row.get("text") or ""), re.I)
-            target_text = match.group(0) if match else ""
-        return (
-            int(target_text, 16) - method_va
-            if target_text.startswith("0x")
-            else None
-        )
-
     ordered = sorted(
         instructions,
         key=lambda row: int(row.get("offset") or 0),
@@ -4076,28 +4083,19 @@ def constrained_enum_lifecycle_routes(
         offset: offsets[index + 1]
         for index, offset in enumerate(offsets[:-1])
     }
-    state_branch_by_offset: dict[int, dict[str, Any]] = {}
-    for comparison in comparisons:
-        comparison_offset = int(comparison.get("offset") or 0)
-        branch = next(
-            (
-                row for row in ordered
-                if comparison_offset < int(row.get("offset") or 0)
-                <= comparison_offset + 16
-                and conditional_kind(row)
-            ),
-            None,
-        )
-        if branch is not None:
-            state_branch_by_offset[int(branch.get("offset") or 0)] = comparison
+    predicate_by_offset = {
+        int(row["branchOffset"]): row
+        for row in predicates
+        if isinstance(row.get("branchOffset"), int)
+    }
 
     calls_by_offset: dict[int, list[dict[str, Any]]] = {}
     for call in lifecycle_calls:
         calls_by_offset.setdefault(int(call.get("callOffset") or 0), []).append(call)
 
     routes: list[dict[str, Any]] = []
-    for enum_row in enum_values:
-        state_value = int(enum_row["id"])
+    for scenario in scenarios:
+        values = scenario.get("values") or {}
         pending = [offsets[0]] if offsets else []
         visited: set[int] = set()
         reached_calls: dict[tuple[str, int], dict[str, Any]] = {}
@@ -4111,7 +4109,7 @@ def constrained_enum_lifecycle_routes(
             instruction = by_offset[offset]
             text = str(instruction.get("text") or "").lower()
             following = next_offset.get(offset)
-            target_offset = target_offset_for(instruction)
+            target_offset = direct_branch_target_offset(instruction, method_va)
             successors: list[int] = []
             if text.startswith("jmp "):
                 if target_offset in by_offset:
@@ -4119,15 +4117,20 @@ def constrained_enum_lifecycle_routes(
             elif text.startswith(("ret", "int3")):
                 pass
             elif re.match(r"^j[a-z]+\b", text):
-                comparison = state_branch_by_offset.get(offset)
-                if comparison is None:
+                predicate = predicate_by_offset.get(offset)
+                if predicate is None:
                     if following is not None:
                         successors.append(following)
                     if target_offset in by_offset:
                         successors.append(target_offset)
                 else:
-                    equal = state_value == int(comparison["value"])
-                    taken = equal if conditional_kind(instruction) == "je" else not equal
+                    field_name = str(predicate.get("field") or "")
+                    equal = values.get(field_name) == predicate.get("equalValue")
+                    taken = (
+                        equal
+                        if conditional_branch_kind(instruction) == "je"
+                        else not equal
+                    )
                     selected = target_offset if taken else following
                     if selected in by_offset:
                         successors.append(selected)
@@ -4139,8 +4142,8 @@ def constrained_enum_lifecycle_routes(
             key=lambda row: (int(row.get("callOffset") or 0), str(row.get("method") or "")),
         )
         routes.append({
-            "state": state_value,
-            "stateName": enum_row.get("name"),
+            **{key: value for key, value in scenario.items() if key != "values"},
+            "values": values,
             "reachableLifecycleCalls": [
                 {
                     "method": call.get("method"),
@@ -4153,6 +4156,236 @@ def constrained_enum_lifecycle_routes(
             ],
         })
     return routes
+
+
+def constrained_enum_lifecycle_routes(
+    instructions: list[dict[str, Any]],
+    comparisons: list[dict[str, Any]],
+    lifecycle_calls: list[dict[str, Any]],
+    enum_values: list[dict[str, Any]],
+    *,
+    method_va: int,
+) -> list[dict[str, Any]]:
+    """Constrain a discovered enum field and project reachable lifecycle calls."""
+    ordered = sorted(
+        instructions,
+        key=lambda row: int(row.get("offset") or 0),
+    )
+    predicates: list[dict[str, Any]] = []
+    for comparison in comparisons:
+        comparison_offset = int(comparison.get("offset") or 0)
+        branch = next(
+            (
+                row for row in ordered
+                if comparison_offset < int(row.get("offset") or 0)
+                <= comparison_offset + 16
+                and conditional_branch_kind(row)
+            ),
+            None,
+        )
+        if branch is not None:
+            predicates.append({
+                "field": "state",
+                "equalValue": int(comparison["value"]),
+                "comparisonOffset": comparison_offset,
+                "branchOffset": int(branch.get("offset") or 0),
+            })
+    scenarios = [
+        {
+            "state": int(row["id"]),
+            "stateName": row.get("name"),
+            "values": {"state": int(row["id"])},
+        }
+        for row in enum_values
+    ]
+    return constrained_lifecycle_routes(
+        instructions,
+        predicates,
+        lifecycle_calls,
+        scenarios,
+        method_va=method_va,
+    )
+
+
+def register_family(register: str) -> str:
+    """Normalize an x64 general-purpose register alias to its 64-bit family."""
+    value = str(register or "").lower()
+    aliases = {
+        "al": "rax", "ah": "rax", "ax": "rax", "eax": "rax", "rax": "rax",
+        "bl": "rbx", "bh": "rbx", "bx": "rbx", "ebx": "rbx", "rbx": "rbx",
+        "cl": "rcx", "ch": "rcx", "cx": "rcx", "ecx": "rcx", "rcx": "rcx",
+        "dl": "rdx", "dh": "rdx", "dx": "rdx", "edx": "rdx", "rdx": "rdx",
+        "sil": "rsi", "si": "rsi", "esi": "rsi", "rsi": "rsi",
+        "dil": "rdi", "di": "rdi", "edi": "rdi", "rdi": "rdi",
+        "bpl": "rbp", "bp": "rbp", "ebp": "rbp", "rbp": "rbp",
+        "spl": "rsp", "sp": "rsp", "esp": "rsp", "rsp": "rsp",
+    }
+    if value in aliases:
+        return aliases[value]
+    match = re.fullmatch(r"r(1[0-5]|[8-9])(?:b|w|d)?", value)
+    return f"r{match.group(1)}" if match else value
+
+
+def discover_boolean_field_predicates(
+    instructions: list[dict[str, Any]],
+    *,
+    field: str,
+    field_read_offset: int,
+    method_va: int,
+) -> list[dict[str, Any]]:
+    """Find every direct zero/nonzero branch while one typed bool stays live."""
+    ordered = sorted(
+        instructions,
+        key=lambda row: int(row.get("offset") or 0),
+    )
+    by_offset = {int(row.get("offset") or 0): row for row in ordered}
+    offsets = sorted(by_offset)
+    next_offset = {
+        offset: offsets[index + 1]
+        for index, offset in enumerate(offsets[:-1])
+    }
+    read = by_offset.get(field_read_offset) or {}
+    target_register = register_family((read.get("write") or {}).get("register") or "")
+    start = next_offset.get(field_read_offset)
+    if not target_register or start is None:
+        return []
+    volatile = {"rax", "rcx", "rdx", "r8", "r9", "r10", "r11"}
+    pending = [start]
+    visited: set[int] = set()
+    predicates: dict[int, dict[str, Any]] = {}
+    while pending:
+        offset = pending.pop()
+        if offset in visited or offset not in by_offset:
+            continue
+        visited.add(offset)
+        instruction = by_offset[offset]
+        text = str(instruction.get("text") or "").lower()
+        write_register = register_family(
+            (instruction.get("write") or {}).get("register") or ""
+        )
+        if write_register == target_register:
+            continue
+        test_match = re.fullmatch(
+            r"test\s+([a-z0-9]+),\s*([a-z0-9]+)",
+            text,
+            re.I,
+        )
+        if test_match and (
+            register_family(test_match.group(1)) == target_register
+            and register_family(test_match.group(2)) == target_register
+        ):
+            branch_offset = next_offset.get(offset)
+            branch = by_offset.get(branch_offset) if branch_offset is not None else None
+            if branch is not None and conditional_branch_kind(branch):
+                predicates[int(branch_offset)] = {
+                    "field": field,
+                    "equalValue": False,
+                    "testOffset": offset,
+                    "testText": text,
+                    "branchOffset": int(branch_offset),
+                    "branchText": branch.get("text"),
+                }
+        if text.startswith("call ") and target_register in volatile:
+            continue
+        following = next_offset.get(offset)
+        target = direct_branch_target_offset(instruction, method_va)
+        successors: list[int] = []
+        if text.startswith("jmp "):
+            if target in by_offset:
+                successors.append(target)
+        elif text.startswith(("ret", "int3")):
+            pass
+        else:
+            if following is not None:
+                successors.append(following)
+            if re.match(r"^j[a-z]+\b", text) and target in by_offset:
+                successors.append(target)
+        pending.extend(reversed(successors))
+    return [predicates[offset] for offset in sorted(predicates)]
+
+
+def validate_quest_enable_lifecycle_application(
+    *,
+    candidate_rows: list[dict[str, Any]],
+    packet_predicates: list[dict[str, Any]],
+    runtime_predicates: list[dict[str, Any]],
+    routes: list[dict[str, Any]],
+    unread_control_fields: list[str],
+    packet_field: str,
+    runtime_field: str,
+    source_file: str,
+    source_hashes: dict[str, str],
+    prior_failures: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Fail closed on a complete two-boolean quest enable application matrix."""
+    failures = list(prior_failures or [])
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "quest_enable_lifecycle_application",
+            "gate": gate,
+            "message": (
+                candidate_rows[0].get("type") if len(candidate_rows) == 1 else None
+            ),
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": source_hashes,
+        })
+
+    if len(candidate_rows) != 1:
+        fail("uniqueQuestEnableUpdate", 1, [row.get("type") for row in candidate_rows])
+    if len(packet_predicates) != 1:
+        fail("packetEnablePredicate", 1, packet_predicates)
+    if len(runtime_predicates) != 2:
+        fail("runtimePausePredicates", 2, runtime_predicates)
+    expected_inputs = {
+        (False, False), (False, True), (True, False), (True, True)
+    }
+    actual_inputs = {
+        ((row.get("values") or {}).get(packet_field),
+         (row.get("values") or {}).get(runtime_field))
+        for row in routes
+    }
+    typed_boolean_inputs = all(
+        type(value) is bool
+        for values in actual_inputs
+        for value in values
+    )
+    if actual_inputs != expected_inputs or not typed_boolean_inputs:
+        fail(
+            "completeBooleanMatrix",
+            sorted(expected_inputs),
+            sorted(actual_inputs, key=repr),
+        )
+    invalid_routes = [
+        row for row in routes
+        if len(row.get("reachableLifecycleCalls") or []) != 1
+    ]
+    distinct_calls = {
+        tuple(call.get("method") for call in row.get("reachableLifecycleCalls") or [])
+        for row in routes
+    }
+    if invalid_routes or len(distinct_calls) < 3:
+        fail(
+            "oneDistinctLifecycleCallPerRoute",
+            "4 single-call routes spanning >=3 lifecycle methods",
+            routes,
+        )
+    mismatched = [
+        {"values": row.get("values"), "method": call.get("method")}
+        for row in routes
+        for call in row.get("reachableLifecycleCalls") or []
+        if call.get("samePacketIdentity") is not True
+    ]
+    if mismatched:
+        fail("samePacketIdentity", [], mismatched)
+    if not unread_control_fields:
+        fail("unusedPacketControlReported", ">=1 unread control field", [])
+    return {
+        "status": "validated" if not failures else "validation_failed",
+        "failures": failures,
+    }
 
 
 def validate_quest_state_lifecycle_application(
@@ -6657,6 +6890,233 @@ def quest_state_lifecycle_application_contract(
     }
 
 
+def quest_enable_lifecycle_application_contract(
+    metadata: Any,
+    pe: Any,
+    metadata_summary: dict[str, Any],
+    rows: list[dict[str, Any]],
+    mapped_bodies: dict[str, dict[str, Any]],
+    decoded_instructions: dict[str, list[dict[str, Any]]],
+    gameassembly_path: Path,
+) -> dict[str, Any]:
+    """Recover packet-enable/runtime-pause lifecycle routing by field shape."""
+    source_hashes = {
+        "gameAssemblySha256": file_sha256(gameassembly_path),
+        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+    }
+    candidates = [
+        row for row in rows
+        if row.get("entityKind") == "quest"
+        and row.get("controlKind") == "enable_update"
+        and len(row.get("identityFields") or []) == 1
+    ]
+    failures: list[dict[str, Any]] = []
+    packet_field = ""
+    runtime_field = ""
+    runtime_owner = ""
+    runtime_field_type = ""
+    runtime_offset: int | None = None
+    packet_predicates: list[dict[str, Any]] = []
+    runtime_predicates: list[dict[str, Any]] = []
+    routes: list[dict[str, Any]] = []
+    unread_control_fields: list[str] = []
+    candidate = candidates[0] if len(candidates) == 1 else None
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "quest_enable_lifecycle_application",
+            "gate": gate,
+            "message": candidate.get("type") if candidate else None,
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": str(gameassembly_path.resolve()),
+            "sourceHashes": source_hashes,
+        })
+
+    if candidate is not None:
+        body = mapped_bodies.get(str(candidate.get("type") or "")) or {}
+        instructions = decoded_instructions.get(str(candidate.get("type") or "")) or []
+        field_accesses = body.get("fieldAccesses") or []
+        packet_fields = [
+            name for name in candidate.get("controlFields") or []
+            if any(
+                access.get("origin")
+                == f"param:msg+{candidate.get('fieldOffsets', {}).get(name)}"
+                for access in field_accesses
+            )
+        ]
+        unread_control_fields = [
+            name for name in candidate.get("controlFields") or []
+            if name not in packet_fields
+        ]
+        if len(packet_fields) == 1:
+            packet_field = packet_fields[0]
+        else:
+            fail("uniqueConsumedPacketControl", 1, packet_fields)
+        packet_origin = (
+            f"param:msg+{candidate.get('fieldOffsets', {}).get(packet_field)}"
+            if packet_field else ""
+        )
+        packet_reads = [
+            access for access in field_accesses
+            if access.get("kind") == "read"
+            and access.get("origin") == packet_origin
+        ]
+        runtime_reads: list[tuple[dict[str, Any], str, int, str, str]] = []
+        runtime_types_va = int(metadata_summary["types"], 16)
+        runtime_type_count = int(metadata_summary["typesCount"])
+        for access in field_accesses:
+            if access.get("kind") != "read":
+                continue
+            origin = str(access.get("origin") or "")
+            match = re.fullmatch(r"return:(.+)\+0x([0-9a-f]+)", origin, re.I)
+            if not match:
+                continue
+            owner_name = match.group(1)
+            field_offset = int(match.group(2), 16)
+            owner_types = [
+                type_def for type_def in metadata.types
+                if metadata.type_full_name(type_def) == owner_name
+            ]
+            if len(owner_types) != 1:
+                continue
+            try:
+                offsets = runtime_type_field_offsets(
+                    metadata,
+                    pe,
+                    metadata_summary,
+                    owner_types[0].index,
+                )
+            except RuntimeError as exc:
+                fail(
+                    "runtimeFieldOffsetResolution",
+                    "current MetadataRegistration field-offset row",
+                    {"ownerType": owner_name, "error": str(exc)},
+                )
+                continue
+            for field_def in metadata.fields_for(owner_types[0]):
+                field_name = metadata.string(field_def.name_index)
+                if offsets.get(field_name) != field_offset:
+                    continue
+                if not 0 <= field_def.type_index < runtime_type_count:
+                    continue
+                type_va = pe.u64_at_va(runtime_types_va + field_def.type_index * 8)
+                field_type = runtime_type_name(pe, metadata, type_va)
+                if field_type == "bool":
+                    runtime_reads.append(
+                        (access, owner_name, field_offset, field_name, field_type)
+                    )
+        if len(packet_reads) != 1:
+            fail("uniquePacketControlRead", 1, packet_reads)
+        if len(runtime_reads) != 1:
+            fail("uniqueRuntimeBooleanRead", 1, runtime_reads)
+        if len(runtime_reads) == 1:
+            (
+                runtime_access,
+                runtime_owner,
+                runtime_offset,
+                runtime_field,
+                runtime_field_type,
+            ) = runtime_reads[0]
+        method_va = int(str((candidate.get("handler") or {}).get("va") or "0"), 16)
+        if len(packet_reads) == 1 and packet_field:
+            packet_predicates = discover_boolean_field_predicates(
+                instructions,
+                field=packet_field,
+                field_read_offset=int(packet_reads[0].get("offset") or 0),
+                method_va=method_va,
+            )
+        if len(runtime_reads) == 1 and runtime_field:
+            runtime_predicates = discover_boolean_field_predicates(
+                instructions,
+                field=runtime_field,
+                field_read_offset=int(runtime_reads[0][0].get("offset") or 0),
+                method_va=method_va,
+            )
+        if packet_field and runtime_field:
+            scenarios = [
+                {
+                    "values": {
+                        packet_field: enabled,
+                        runtime_field: paused,
+                    },
+                }
+                for enabled in (False, True)
+                for paused in (False, True)
+            ]
+            routes = constrained_lifecycle_routes(
+                instructions,
+                [*packet_predicates, *runtime_predicates],
+                candidate.get("lifecycleCalls") or [],
+                scenarios,
+                method_va=method_va,
+            )
+    validation = validate_quest_enable_lifecycle_application(
+        candidate_rows=candidates,
+        packet_predicates=packet_predicates,
+        runtime_predicates=runtime_predicates,
+        routes=routes,
+        unread_control_fields=unread_control_fields,
+        packet_field=packet_field,
+        runtime_field=runtime_field,
+        source_file=str(gameassembly_path.resolve()),
+        source_hashes=source_hashes,
+        prior_failures=failures,
+    )
+    return {
+        "schema": "questEnableLifecycleApplication.v1",
+        "classification": "server_selected_quest_enable_local_pause_application",
+        "discoveryPattern": {
+            "message": (
+                "unique quest identity+enable server packet from the generic "
+                "state-update census"
+            ),
+            "runtimeField": (
+                "unique exact returned-object Boolean field read resolved through "
+                "the current MetadataRegistration field-offset and runtime-type tables"
+            ),
+            "controlFlow": (
+                "live boolean register provenance into exact zero/nonzero native "
+                "branches, followed by the shared constrained CFG solver"
+            ),
+        },
+        "message": ({
+            "type": candidate.get("type"),
+            "messageId": candidate.get("messageId"),
+            "identityField": candidate.get("identityField"),
+            "controlFields": candidate.get("controlFields") or [],
+            "consumedControlFields": [packet_field] if packet_field else [],
+            "unreadControlFields": unread_control_fields,
+            "fields": candidate.get("fields") or [],
+            "successorLikeFields": candidate.get("successorLikeFields") or [],
+            "handler": candidate.get("handler") or {},
+        } if candidate else {}),
+        "runtimeControl": {
+            "ownerType": runtime_owner,
+            "field": runtime_field,
+            "type": runtime_field_type,
+            "offset": f"0x{runtime_offset:x}" if runtime_offset is not None else None,
+        },
+        "packetPredicates": packet_predicates,
+        "runtimePredicates": runtime_predicates,
+        "routes": routes,
+        "finding": (
+            "The quest-enable handler routes the same server-supplied questId by the "
+            "packet enable flag and the exact current QuestData pause flag. Enabling "
+            "starts an unpaused quest but preserves a paused quest through PauseQuest; "
+            "disabling reaches DisableQuest for either pause value. The serialized "
+            "previous-state field is not read by this handler."
+        ),
+        "boundary": (
+            "This proves client-side enable/pause/disable application after the server "
+            "selects a quest identity. It does not recover server arm eligibility, "
+            "successor selection, sibling exclusivity, or Story-file order. Other "
+            "runtime state mutations and server policy remain outside this static path."
+        ),
+        "validation": validation,
+    }
+
+
 def state_update_application_census(
     metadata: Any,
     defaults: dict[int, tuple[int, int]],
@@ -6900,6 +7360,15 @@ def state_update_application_census(
         decoded_instructions,
         gameassembly_path,
     )
+    quest_enable_lifecycle = quest_enable_lifecycle_application_contract(
+        metadata,
+        pe,
+        metadata_summary,
+        rows,
+        mapped_bodies,
+        decoded_instructions,
+        gameassembly_path,
+    )
     quest_start = quest_start_application_contract(
         metadata,
         helper,
@@ -6962,6 +7431,7 @@ def state_update_application_census(
             int(row["clientSuccessorSelectorPresent"]) for row in rows
         ),
         "questStateLifecycleApplication": quest_state_lifecycle,
+        "questEnableLifecycleApplication": quest_enable_lifecycle,
         "questStartApplication": quest_start,
         "questSucceedActionApplication": quest_succeed,
         "questTopologyFieldConsumers": topology_consumers,
@@ -7836,6 +8306,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         )
     quest_start = state_census.get("questStartApplication") or {}
     quest_state_lifecycle = state_census.get("questStateLifecycleApplication") or {}
+    quest_enable_lifecycle = state_census.get("questEnableLifecycleApplication") or {}
     quest_succeed = state_census.get("questSucceedActionApplication") or {}
     quest_fields = quest_start.get("questInfoFieldOffsets") or {}
     quest_reads = quest_start.get("fieldReadCounts") or {}
@@ -7879,6 +8350,41 @@ def render_markdown(report: dict[str, Any]) -> str:
             ],
             "",
             quest_state_lifecycle.get("boundary") or "",
+            "",
+            "### Quest enable/pause application",
+            "",
+            quest_enable_lifecycle.get("finding")
+            or "[quest-enable lifecycle audit unavailable]",
+            "",
+            "| Packet enable | Current pause | Native lifecycle call |",
+            "|---|---|---|",
+            *[
+                "| `{enable}` | `{paused}` | {calls} |".format(
+                    enable=route.get("values", {}).get("isEnable"),
+                    paused=route.get("values", {}).get("isPaused"),
+                    calls=", ".join(
+                        f"`{md_escape(str(call.get('method') or '?'))}`"
+                        for call in route.get("reachableLifecycleCalls") or []
+                    ),
+                )
+                for route in quest_enable_lifecycle.get("routes") or []
+            ],
+            "",
+            (
+                "Serialized but unread packet controls: "
+                + ", ".join(
+                    f"`{md_escape(str(field))}`"
+                    for field in (
+                        quest_enable_lifecycle.get("message", {}).get(
+                            "unreadControlFields"
+                        )
+                        or []
+                    )
+                )
+                + "."
+            ),
+            "",
+            quest_enable_lifecycle.get("boundary") or "",
             "",
             "### Quest-start fork authority",
             "",
@@ -8335,6 +8841,16 @@ def current_report_status(
             "quest-state lifecycle validation is "
             f"{quest_state_lifecycle_validation.get('status')!r}"
         )
+    quest_enable_lifecycle_validation = (
+        ((report.get("stateUpdateApplicationCensus") or {}).get(
+            "questEnableLifecycleApplication"
+        ) or {}).get("validation") or {}
+    )
+    if quest_enable_lifecycle_validation.get("status") != "validated":
+        return False, (
+            "quest-enable lifecycle validation is "
+            f"{quest_enable_lifecycle_validation.get('status')!r}"
+        )
     quest_succeed_validation = (
         ((report.get("stateUpdateApplicationCensus") or {}).get(
             "questSucceedActionApplication"
@@ -8461,6 +8977,19 @@ def main() -> int:
         first = quest_state_lifecycle_validation["failures"][0]
         print(
             "quest-state lifecycle validator failed: "
+            f"validator={first['validator']} gate={first['gate']} "
+            f"message={first.get('message')} expected={first['expected']!r} "
+            f"actual={first['actual']!r} source={first['sourceFile']}",
+            file=sys.stderr,
+        )
+        return 1
+    quest_enable_lifecycle_validation = report["stateUpdateApplicationCensus"][
+        "questEnableLifecycleApplication"
+    ]["validation"]
+    if quest_enable_lifecycle_validation["status"] != "validated":
+        first = quest_enable_lifecycle_validation["failures"][0]
+        print(
+            "quest-enable lifecycle validator failed: "
             f"validator={first['validator']} gate={first['gate']} "
             f"message={first.get('message')} expected={first['expected']!r} "
             f"actual={first['actual']!r} source={first['sourceFile']}",

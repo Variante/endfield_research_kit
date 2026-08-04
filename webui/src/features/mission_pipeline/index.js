@@ -470,6 +470,10 @@
       questForkServerApplication: "Server-applied arm identity",
       questForkServerApplicationHint: "The original binary applies the server-supplied quest identity and state; it does not choose a successor arm.",
       questForkServerApplicationBoundary: "This proves client-side application after server selection, not the server-only selection policy, sibling exclusivity, or Story-file order.",
+      questForkEnableApplication: "Validated enable / pause routes",
+      questForkEnableApplicationHint: "The original handler combines the packet enable flag with the current runtime pause flag. The serialized previous-state field is not read.",
+      questForkEnableRoute: "packet enable / current pause",
+      questForkUnreadControls: "serialized but unread",
       questForkStateTransitions: "Validated state routes",
       questForkPacketShape: "Server packet",
       questForkMainPathAuxiliary: "main path + auxiliary",
@@ -1668,6 +1672,10 @@
       questForkServerApplication: "\u670d\u52a1\u7aef\u4e0b\u53d1\u7684\u5206\u652f\u4efb\u52a1\u8eab\u4efd",
       questForkServerApplicationHint: "\u539f\u59cb\u4e8c\u8fdb\u5236\u53ea\u5e94\u7528\u670d\u52a1\u7aef\u4e0b\u53d1\u7684\u4efb\u52a1\u8eab\u4efd\u4e0e\u72b6\u6001\uff0c\u4e0d\u5728\u5ba2\u6237\u7aef\u9009\u62e9\u540e\u7ee7\u5206\u652f\u3002",
       questForkServerApplicationBoundary: "\u8fd9\u53ea\u8bc1\u660e\u5ba2\u6237\u7aef\u5728\u670d\u52a1\u7aef\u9009\u62e9\u540e\u5e94\u7528\u72b6\u6001\uff1b\u4e0d\u8bc1\u660e\u670d\u52a1\u7aef\u9009\u62e9\u7b56\u7565\u3001\u540c\u7ea7\u5206\u652f\u4e92\u65a5\u6027\u6216 Story \u6587\u4ef6\u987a\u5e8f\u3002",
+      questForkEnableApplication: "\u5df2\u9a8c\u8bc1\u7684\u542f\u7528 / \u6682\u505c\u8def\u7531",
+      questForkEnableApplicationHint: "\u539f\u59cb\u5904\u7406\u51fd\u6570\u5c06\u6570\u636e\u5305\u542f\u7528\u6807\u5fd7\u4e0e\u5f53\u524d\u8fd0\u884c\u65f6\u6682\u505c\u6807\u5fd7\u7ec4\u5408\u3002\u5e8f\u5217\u5316\u7684\u524d\u4e00\u72b6\u6001\u5b57\u6bb5\u672a\u88ab\u8bfb\u53d6\u3002",
+      questForkEnableRoute: "\u6570\u636e\u5305\u542f\u7528 / \u5f53\u524d\u6682\u505c",
+      questForkUnreadControls: "\u5df2\u5e8f\u5217\u5316\u4f46\u672a\u8bfb\u53d6",
       questForkStateTransitions: "\u5df2\u9a8c\u8bc1\u72b6\u6001\u8def\u7531",
       questForkPacketShape: "\u670d\u52a1\u7aef\u6570\u636e\u5305",
       questForkMainPathAuxiliary: "\u4e3b\u8def\u5f84 + \u8f85\u52a9\u5206\u652f",
@@ -3576,14 +3584,19 @@
       </section>`;
     };
     const serverApplicationHtml = (fork) => {
-      const contract = fork.serverQuestStateApplication || null;
-      if (!contract) return "";
-      const message = contract.message || {};
-      const transitions = contract.transitions || [];
+      const stateContract = fork.serverQuestStateApplication || null;
+      const enableContract = fork.serverQuestEnableApplication || null;
+      if (!stateContract && !enableContract) return "";
+      const message = stateContract?.message || enableContract?.message || {};
+      const transitions = stateContract?.transitions || [];
+      const enableMessage = enableContract?.message || {};
+      const enableRoutes = enableContract?.routes || [];
+      const enableField = enableMessage.consumedControlFields?.[0] || "isEnable";
+      const pauseField = enableContract?.runtimeControl?.field || "isPaused";
       const identities = (fork.arms || [])
         .map((arm) => arm.serverApplicationIdentity)
         .filter(Boolean);
-      const files = contract.relatedOriginalFiles || [];
+      const files = stateContract?.relatedOriginalFiles || enableContract?.relatedOriginalFiles || [];
       return `<article class="mp-order-branch is-boundary mp-quest-server-application">
         <header><strong>${esc(t("questForkServerApplication"))}</strong><code>${esc(message.type || "?")} #${Number(message.messageId || 0)}</code></header>
         <p><strong>${esc(t("questForkPacketShape"))}:</strong> <code>${esc(message.identityField || "questId")}</code> <code>${esc(message.stateField || "questState")}</code>${(message.successorLikeFields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</p>
@@ -3591,6 +3604,11 @@
         <p><strong>${esc(t("questForkStateTransitions"))}:</strong> ${transitions.map((route) => `<code>${esc(route.stateName || "?")} (${Number(route.state)}) &rarr; ${(route.reachableLifecycleCalls || []).map((call) => esc(call.method || "?")).join(" + ")}</code>`).join(" ")}</p>
         <code>${esc(message.handler?.symbol || "")}${message.handler?.va ? ` @ ${esc(message.handler.va)}` : ""}</code>
         <p>${esc(t("questForkServerApplicationHint"))}</p>
+        ${enableContract ? `<section class="mp-quest-enable-routes"><strong>${esc(t("questForkEnableApplication"))}</strong><p>${enableRoutes.map((route) => {
+          const values = route.values || {};
+          const calls = (route.reachableLifecycleCalls || []).map((call) => call.method || "?").join(" + ");
+          return `<code>${esc(`${enableField}=${String(values[enableField])} / ${pauseField}=${String(values[pauseField])} → ${calls}`)}</code>`;
+        }).join(" ")}</p><code>${esc(enableMessage.handler?.symbol || "")}${enableMessage.handler?.va ? ` @ ${esc(enableMessage.handler.va)}` : ""}</code>${(enableMessage.unreadControlFields || []).length ? `<p><strong>${esc(t("questForkUnreadControls"))}:</strong> ${(enableMessage.unreadControlFields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</p>` : ""}<p>${esc(t("questForkEnableApplicationHint"))}</p></section>` : ""}
         ${files.length ? `<details class="mp-quest-fork-files"><summary>${esc(t("relatedOriginalFile"))} <span>${files.length}</span></summary>${files.map((related) => `<small><code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("")}</details>` : ""}
         <small>${esc(t("questForkServerApplicationBoundary"))}</small>
       </article>`;
@@ -4599,6 +4617,20 @@
           <code>${esc(stateApplication.questStateLifecycleApplication.message?.handler?.symbol || "")}${stateApplication.questStateLifecycleApplication.message?.handler?.va ? ` @ ${esc(stateApplication.questStateLifecycleApplication.message.handler.va)}` : ""}</code>
           <p>${esc(stateApplication.questStateLifecycleApplication.finding || "")}</p>
           <small>${esc(stateApplication.questStateLifecycleApplication.boundary || "")}</small>
+        </article>` : ""}
+        ${stateApplication.questEnableLifecycleApplication ? `<article class="mp-contract-card is-server_to_client">
+          <span>${esc(stateApplication.questEnableLifecycleApplication.classification || "")}</span>
+          <strong>${esc(t("questForkEnableApplication"))}</strong>
+          <div class="mp-contract-tags">${(stateApplication.questEnableLifecycleApplication.routes || []).map((route) => {
+            const packetField = stateApplication.questEnableLifecycleApplication.message?.consumedControlFields?.[0] || "isEnable";
+            const runtimeField = stateApplication.questEnableLifecycleApplication.runtimeControl?.field || "isPaused";
+            const calls = (route.reachableLifecycleCalls || []).map((call) => call.method || "?").join(" + ");
+            return `<b>${esc(`${packetField}=${String(route.values?.[packetField])} / ${runtimeField}=${String(route.values?.[runtimeField])} → ${calls}`)}</b>`;
+          }).join("")}</div>
+          <code>${esc(stateApplication.questEnableLifecycleApplication.message?.handler?.symbol || "")}${stateApplication.questEnableLifecycleApplication.message?.handler?.va ? ` @ ${esc(stateApplication.questEnableLifecycleApplication.message.handler.va)}` : ""}</code>
+          ${(stateApplication.questEnableLifecycleApplication.message?.unreadControlFields || []).length ? `<p><strong>${esc(t("questForkUnreadControls"))}:</strong> ${(stateApplication.questEnableLifecycleApplication.message.unreadControlFields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</p>` : ""}
+          <p>${esc(stateApplication.questEnableLifecycleApplication.finding || "")}</p>
+          <small>${esc(stateApplication.questEnableLifecycleApplication.boundary || "")}</small>
         </article>` : ""}
         <p class="mp-gap-policy">${esc(stateApplication.finding || "")}</p>
         ${(stateApplication.relatedOriginalFiles || []).map((related) => `<p class="mp-gap-policy"><b>${esc(t("relatedOriginalFile"))}:</b> <code>${esc(related.sourceFile || "")}</code> / SHA-256 <code>${esc(related.sha256 || "")}</code></p>`).join("")}
