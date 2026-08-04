@@ -4221,6 +4221,108 @@ def lifecycle_call_sites_from_body(body: dict[str, Any]) -> list[dict[str, Any]]
     )
 
 
+def semantic_enum_branch_observations(
+    body: dict[str, Any],
+    field_reads: dict[str, list[dict[str, Any]]],
+    *,
+    method_pointer: int,
+    method_size: int,
+    enum_names: dict[str, dict[int, str]],
+) -> list[dict[str, Any]]:
+    """Describe enum comparisons and their bounded forward fallthrough calls.
+
+    This is deliberately field-driven rather than method-name-driven.  It
+    records the next decoded conditional branch after each exact typed field
+    read and the calls in a forward fallthrough corridor.  A ``jne`` corridor
+    is the enum-equal path; a ``je`` corridor is the enum-not-equal path.  More
+    complex control flow remains explicitly unclassified.
+    """
+    controls = sorted(
+        body.get("controlFlow") or [],
+        key=lambda row: int(row.get("offset") or 0),
+    )
+    calls = sorted(
+        body.get("calls") or [],
+        key=lambda row: int(row.get("offset") or 0),
+    )
+    observations: list[dict[str, Any]] = []
+    for field_name, reads in field_reads.items():
+        value_names = enum_names.get(field_name) or {}
+        if not value_names:
+            continue
+        for read in reads:
+            text = str(read.get("text") or "")
+            match = re.fullmatch(
+                r"cmp\s+\[[^]]+\],\s*0x([0-9a-f]+)",
+                text,
+                re.I,
+            )
+            if not match:
+                continue
+            value = int(match.group(1), 16)
+            read_offset = int(read.get("offset") or 0)
+            branch = next(
+                (
+                    row for row in controls
+                    if read_offset < int(row.get("offset") or 0) <= read_offset + 16
+                    and re.match(r"^j(?:e|ne)\b", str(row.get("text") or ""), re.I)
+                ),
+                None,
+            )
+            branch_text = str((branch or {}).get("text") or "")
+            branch_mnemonic = branch_text.split(" ", 1)[0].lower()
+            target_text = str((branch or {}).get("targetVa") or "")
+            target_offset = (
+                int(target_text, 16) - method_pointer if target_text else None
+            )
+            forward_target = (
+                isinstance(target_offset, int)
+                and read_offset < target_offset < method_size
+            )
+            branch_offset = int((branch or {}).get("offset") or 0)
+            corridor_calls = [
+                call for call in calls
+                if forward_target
+                and branch_offset < int(call.get("offset") or 0) < target_offset
+            ]
+            call_rows = []
+            for call in corridor_calls:
+                symbols = sorted({
+                    f"{target.get('type')}.{target.get('method')}"
+                    for target in call.get("resolved") or []
+                    if target.get("type") and target.get("method")
+                })
+                call_rows.append({
+                    "offset": int(call.get("offset") or 0),
+                    "targetVa": call.get("targetVa"),
+                    "symbols": symbols,
+                    "resolved": bool(symbols),
+                })
+            observations.append({
+                "field": field_name,
+                "value": value,
+                "enumName": value_names.get(value),
+                "readOffset": read_offset,
+                "readText": text,
+                "branchOffset": branch_offset if branch else None,
+                "branchText": branch_text or None,
+                "branchTargetOffset": target_offset,
+                "forwardTargetInMethod": forward_target,
+                "fallthroughCondition": (
+                    "equal" if branch_mnemonic == "jne"
+                    else "not_equal" if branch_mnemonic == "je"
+                    else "unclassified"
+                ),
+                "fallthroughCalls": call_rows,
+                "fallthroughResolvedSymbols": sorted({
+                    symbol
+                    for call in call_rows
+                    for symbol in call["symbols"]
+                }),
+            })
+    return observations
+
+
 def typed_getter_field_consumer_census(
     metadata: Any,
     helper: Any,
@@ -4232,6 +4334,7 @@ def typed_getter_field_consumer_census(
     getter_va: int,
     return_type: str,
     field_offsets: dict[str, int],
+    enum_names: dict[str, dict[int, str]] | None = None,
     max_method_bytes: int = 65536,
 ) -> dict[str, Any]:
     """Decode every direct typed-getter caller and census exact root fields."""
@@ -4348,6 +4451,13 @@ def typed_getter_field_consumer_census(
                         "targetOffset": target_offset,
                         "text": text,
                     })
+        enum_branches = semantic_enum_branch_observations(
+            body,
+            reads,
+            method_pointer=pointer,
+            method_size=scan_size,
+            enum_names=enum_names or {},
+        )
         parameter_details = mapper_row.get("parameterDetails") or []
         is_two_value_comparator = (
             mapper_row.get("returnTypeName") == "System.Int32"
@@ -4370,7 +4480,19 @@ def typed_getter_field_consumer_census(
                 and min(semantic_read_offsets) > max(lifecycle_offsets)
                 and not backward_lifecycle_branches
             ):
-                classification = "post_lifecycle_quest_type_behavior"
+                block_branches = [
+                    branch for branch in enum_branches
+                    if branch.get("field") == "questType"
+                    and branch.get("enumName") == "Block"
+                    and branch.get("fallthroughCondition") == "equal"
+                    and branch.get("fallthroughResolvedSymbols")
+                    == ["Beyond.EventManager.SendGlobal"]
+                ]
+                classification = (
+                    "post_lifecycle_block_notification"
+                    if len(block_branches) == len(enum_branches) == 1
+                    else "post_lifecycle_quest_type_behavior"
+                )
             else:
                 classification = "quest_type_lifecycle_interleaved"
         elif reads.get("questType"):
@@ -4399,6 +4521,7 @@ def typed_getter_field_consumer_census(
             "lifecycleCalls": lifecycle_symbols_from_body(body),
             "lifecycleCallSites": lifecycle_call_sites,
             "semanticFieldReadOffsets": semantic_read_offsets,
+            "semanticEnumBranches": enum_branches,
             "backwardLifecycleBranches": backward_lifecycle_branches,
         })
     return {
@@ -4498,13 +4621,41 @@ def validate_quest_semantic_field_observation(
     interleaved_rows = [
         row for row in quest_type_rows
         if row.get("lifecycleCallSites")
-        and row.get("classification") != "post_lifecycle_quest_type_behavior"
+        and row.get("classification") != "post_lifecycle_block_notification"
     ]
     if interleaved_rows:
         fail(
-            "questTypeLifecycleReadsArePostApplication",
+            "questTypeLifecycleReadsArePostApplicationBlockNotifications",
             [],
             interleaved_rows,
+        )
+    block_notification_rows = [
+        row for row in quest_type_rows
+        if row.get("classification") == "post_lifecycle_block_notification"
+    ]
+    if len(block_notification_rows) != 2:
+        fail(
+            "postLifecycleBlockNotificationConsumers",
+            2,
+            len(block_notification_rows),
+        )
+    invalid_block_branches = [
+        row for row in block_notification_rows
+        if len(row.get("semanticEnumBranches") or []) != 1
+        or (row.get("semanticEnumBranches") or [{}])[0].get("enumName")
+        != "Block"
+        or (row.get("semanticEnumBranches") or [{}])[0].get(
+            "fallthroughCondition"
+        ) != "equal"
+        or (row.get("semanticEnumBranches") or [{}])[0].get(
+            "fallthroughResolvedSymbols"
+        ) != ["Beyond.EventManager.SendGlobal"]
+    ]
+    if invalid_block_branches:
+        fail(
+            "blockEqualPathResolvedCall",
+            ["Beyond.EventManager.SendGlobal"],
+            invalid_block_branches,
         )
     backward_rows = [
         row for row in quest_type_rows
@@ -4515,6 +4666,257 @@ def validate_quest_semantic_field_observation(
     return {
         "status": "validation_failed" if failures else "validated",
         "failures": failures,
+    }
+
+
+def quest_optional_objective_flag_contract(
+    metadata: Any,
+    helper: Any,
+    mapper: Any,
+    pe: Any,
+    metadata_summary: dict[str, Any],
+    method_by_pointer: dict[int, list[dict[str, Any]]],
+    quest_consumers: dict[str, Any],
+    *,
+    optional_value: int,
+    gameassembly_path: Path,
+) -> dict[str, Any]:
+    """Prove the current Optional comparison writes a presentation flag.
+
+    The target type is found by its managed field shape, the field offset comes
+    from the installed MetadataRegistration, and the consumer is selected from
+    the complete typed GetQuestInfo caller census.  No mission or quest id is
+    named here.
+    """
+    source_hashes = {
+        "gameAssemblySha256": file_sha256(gameassembly_path),
+        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+    }
+    failures: list[dict[str, Any]] = []
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "quest_optional_objective_flag_contract",
+            "gate": gate,
+            "message": "QuestType.Optional objective presentation flag",
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": str(gameassembly_path.resolve()),
+            "sourceHashes": source_hashes,
+        })
+
+    required_fields = {
+        "questId",
+        "objectiveIdx",
+        "isShowProgress",
+        "description",
+        "optional",
+        "distanceText",
+    }
+    type_candidates = []
+    for type_def in metadata.types:
+        names = {
+            metadata.string(field.name_index)
+            for field in metadata.fields_for(type_def)
+        }
+        if required_fields <= names:
+            type_candidates.append(type_def)
+    if len(type_candidates) != 1:
+        fail(
+            "uniqueObjectiveShowDataShape",
+            1,
+            [metadata.type_full_name(row) for row in type_candidates],
+        )
+        return {
+            "schema": "questOptionalObjectiveFlag.v1",
+            "classification": "validation_failed",
+            "validation": {"status": "validation_failed", "failures": failures},
+        }
+
+    type_def = type_candidates[0]
+    type_name = metadata.type_full_name(type_def)
+    field_offsets = runtime_type_field_offsets(
+        metadata,
+        pe,
+        metadata_summary,
+        type_def.index,
+    )
+    optional_offset = field_offsets.get("optional")
+    if not isinstance(optional_offset, int):
+        fail("optionalFieldOffset", "integer offset", optional_offset)
+
+    optional_rows = [
+        row for row in quest_consumers.get("rows") or []
+        if any(
+            branch.get("field") == "questType"
+            and branch.get("value") == optional_value
+            and branch.get("enumName") == "Optional"
+            for branch in row.get("semanticEnumBranches") or []
+        )
+    ]
+    if len(optional_rows) != 1:
+        fail(
+            "uniqueOptionalConsumer",
+            1,
+            [
+                f"{row.get('caller', {}).get('type')}."
+                f"{row.get('caller', {}).get('method')}"
+                for row in optional_rows
+            ],
+        )
+    observation: dict[str, Any] = {}
+    if len(optional_rows) == 1 and isinstance(optional_offset, int):
+        row = optional_rows[0]
+        caller = row.get("caller") or {}
+        pointer = int(str(caller.get("va")), 16)
+        scan_size = int(caller.get("scanBytes") or 0)
+        mapper_row = full_method_mapper_row(
+            metadata,
+            helper,
+            int(caller.get("methodIndex")),
+        )
+        body_bytes = pe.bytes_at_va(pointer, scan_size)
+        body = mapper.build_method_body_summary(
+            mapper_row,
+            body_bytes,
+            pointer,
+            method_by_pointer,
+            pe=pe,
+            max_instructions=30000,
+        )
+        instructions = mapper.decode_x64_subset(
+            body_bytes,
+            pointer,
+            stop_offset=len(body_bytes),
+        )
+        instruction_by_offset = {
+            int(inst.get("offset") or 0): inst for inst in instructions
+        }
+        optional_branch = next(
+            branch for branch in row.get("semanticEnumBranches") or []
+            if branch.get("field") == "questType"
+            and branch.get("value") == optional_value
+        )
+        target_offset = optional_branch.get("branchTargetOffset")
+        target_inst = instruction_by_offset.get(int(target_offset or -1))
+        target_text = str((target_inst or {}).get("text") or "")
+        target_index = next(
+            (
+                index for index, inst in enumerate(instructions)
+                if int(inst.get("offset") or 0) == target_offset
+            ),
+            -1,
+        )
+        target_tail = (
+            instructions[target_index:target_index + 4]
+            if target_index >= 0 else []
+        )
+        join_target = None
+        for inst in target_tail:
+            match = re.fullmatch(
+                r"jmp\s+0x([0-9a-f]+)",
+                str(inst.get("text") or ""),
+                re.I,
+            )
+            if match:
+                join_target = int(match.group(1), 16) - pointer
+                break
+        write_match = None
+        write_inst = None
+        if isinstance(join_target, int):
+            for inst in instructions:
+                offset = int(inst.get("offset") or 0)
+                if not join_target <= offset <= join_target + 16:
+                    continue
+                match = re.fullmatch(
+                    rf"mov\s+\[([a-z0-9]+)\+0x{optional_offset:x}\],\s*al",
+                    str(inst.get("text") or ""),
+                    re.I,
+                )
+                if match:
+                    write_match = match
+                    write_inst = inst
+                    break
+        constructor_calls = [
+            call for call in body.get("calls") or []
+            if any(
+                target.get("type") == type_name
+                and target.get("method") == ".ctor"
+                for target in call.get("resolved") or []
+            )
+        ]
+        output_register = write_match.group(1) if write_match else None
+        output_alias_before_constructor = False
+        if output_register and len(constructor_calls) == 1:
+            ctor_offset = int(constructor_calls[0].get("offset") or 0)
+            output_alias_before_constructor = any(
+                ctor_offset - 48 <= int(inst.get("offset") or 0) < ctor_offset
+                and str(inst.get("text") or "").lower()
+                == f"mov {output_register.lower()}, rax"
+                for inst in instructions
+            )
+        observation = {
+            "caller": caller,
+            "comparison": optional_branch,
+            "objectiveShowDataType": type_name,
+            "optionalFieldOffset": f"0x{optional_offset:x}",
+            "constructorCalls": len(constructor_calls),
+            "outputRegister": output_register,
+            "outputAliasBeforeConstructor": output_alias_before_constructor,
+            "equalTargetInstruction": {
+                "offset": target_inst.get("offset") if target_inst else None,
+                "va": target_inst.get("va") if target_inst else None,
+                "text": target_text,
+            },
+            "joinTargetOffset": join_target,
+            "optionalFieldWrite": {
+                "offset": write_inst.get("offset") if write_inst else None,
+                "va": write_inst.get("va") if write_inst else None,
+                "text": write_inst.get("text") if write_inst else None,
+            },
+        }
+        if optional_branch.get("branchText", "").split(" ", 1)[0].lower() != "je":
+            fail("optionalEqualBranch", "je", optional_branch)
+        if target_text.lower() != "mov al, 0x1":
+            fail("optionalEqualValue", "mov al, 0x1", target_text)
+        if not isinstance(join_target, int):
+            fail("optionalEqualJoin", "forward jmp", target_tail)
+        if write_inst is None:
+            fail(
+                "optionalFieldWrite",
+                f"mov [object+0x{optional_offset:x}], al",
+                None,
+            )
+        if len(constructor_calls) != 1 or not output_alias_before_constructor:
+            fail(
+                "objectiveShowDataObjectIdentity",
+                "one constructor and output-register alias",
+                {
+                    "constructorCalls": len(constructor_calls),
+                    "outputRegister": output_register,
+                    "outputAliasBeforeConstructor": output_alias_before_constructor,
+                },
+            )
+
+    validation = {
+        "status": "validation_failed" if failures else "validated",
+        "failures": failures,
+    }
+    return {
+        "schema": "questOptionalObjectiveFlag.v1",
+        "classification": "optional_objective_presentation_flag",
+        "observation": observation,
+        "finding": (
+            "The sole current QuestType.Optional comparison is in the objective "
+            "presentation builder. Its equal branch writes true to the exact "
+            "MetadataRegistration-backed ObjectiveShowData.optional field."
+        ),
+        "boundary": (
+            "This is a client objective-display flag after QuestInfo lookup. It "
+            "does not activate an Optional quest, select a successor, or establish "
+            "parallel or exclusive execution."
+        ),
+        "validation": validation,
     }
 
 
@@ -4543,6 +4945,16 @@ def quest_topology_field_consumer_census(
     }
     getter_rows = quest_start.get("questInfoGetterCalls") or []
     getter_va = int(str(getter_rows[0]["targetVa"]), 16)
+    quest_type_enum = enum_members(
+        metadata,
+        defaults,
+        "Beyond.GEnums.QuestType",
+    )
+    show_mode_enum = enum_members(
+        metadata,
+        defaults,
+        "Beyond.Gameplay.QuestShowMode",
+    )
     quest_consumers = typed_getter_field_consumer_census(
         metadata,
         helper,
@@ -4553,6 +4965,16 @@ def quest_topology_field_consumer_census(
         getter_va=getter_va,
         return_type=str(quest_start.get("questInfoType") or ""),
         field_offsets=quest_fields,
+        enum_names={
+            "questType": {
+                int(row["id"]): str(row["name"])
+                for row in quest_type_enum
+            },
+            "showMode": {
+                int(row["id"]): str(row["name"])
+                for row in show_mode_enum
+            },
+        },
     )
 
     required_mission_fields = {
@@ -4718,24 +5140,34 @@ def quest_topology_field_consumer_census(
         row for row in quest_consumers["rows"]
         if row["fieldReads"].get("showMode")
     ]
-    quest_type_enum = enum_members(
+    quest_type_values = {
+        row["name"]: row["id"] for row in quest_type_enum
+    }
+    optional_flag = quest_optional_objective_flag_contract(
         metadata,
-        defaults,
-        "Beyond.GEnums.QuestType",
-    )
-    show_mode_enum = enum_members(
-        metadata,
-        defaults,
-        "Beyond.Gameplay.QuestShowMode",
+        helper,
+        mapper,
+        pe,
+        metadata_summary,
+        method_by_pointer,
+        quest_consumers,
+        optional_value=int(quest_type_values.get("Optional", -1)),
+        gameassembly_path=gameassembly_path,
     )
     semantic_validation = validate_quest_semantic_field_observation(
-        quest_type_values={row["name"]: row["id"] for row in quest_type_enum},
+        quest_type_values=quest_type_values,
         show_mode_values={row["name"]: row["id"] for row in show_mode_enum},
         quest_type_rows=quest_type_rows,
         show_mode_rows=show_mode_rows,
         source_file=str(gameassembly_path.resolve()),
         source_hashes=source_hashes,
     )
+    optional_validation = optional_flag.get("validation") or {}
+    if optional_validation.get("status") != "validated":
+        semantic_validation["failures"].extend(
+            optional_validation.get("failures") or []
+        )
+        semantic_validation["status"] = "validation_failed"
     validation = validate_quest_topology_consumer_observation(
         verified_direct_calls=quest_consumers["verifiedDirectCallCount"],
         active_predecessor_rows=active_predecessor_rows,
@@ -4760,7 +5192,7 @@ def quest_topology_field_consumer_census(
         "flowIndexNonSortConsumerCount": len(non_sort_flow_rows),
         "topologyLifecycleCalls": lifecycle_calls,
         "questSemanticFields": {
-            "schema": "questSemanticFieldConsumers.v1",
+            "schema": "questSemanticFieldConsumers.v2",
             "classification": "client_presentation_and_post_application_only",
             "questType": {
                 "type": "Beyond.GEnums.QuestType",
@@ -4768,9 +5200,19 @@ def quest_topology_field_consumer_census(
                 "consumerCount": len(quest_type_rows),
                 "postLifecycleConsumerCount": sum(
                     row.get("classification")
-                    == "post_lifecycle_quest_type_behavior"
+                    == "post_lifecycle_block_notification"
                     for row in quest_type_rows
                 ),
+                "blockNotificationConsumerCount": sum(
+                    row.get("classification")
+                    == "post_lifecycle_block_notification"
+                    for row in quest_type_rows
+                ),
+                "comparisonCounts": dict(sorted(Counter(
+                    branch.get("enumName") or f"value:{branch.get('value')}"
+                    for row in quest_type_rows
+                    for branch in row.get("semanticEnumBranches") or []
+                ).items())),
             },
             "showMode": {
                 "type": "Beyond.Gameplay.QuestShowMode",
@@ -4780,15 +5222,22 @@ def quest_topology_field_consumer_census(
                     bool(row.get("lifecycleCallSites"))
                     for row in show_mode_rows
                 ),
+                "comparisonCounts": dict(sorted(Counter(
+                    branch.get("enumName") or f"value:{branch.get('value')}"
+                    for row in show_mode_rows
+                    for branch in row.get("semanticEnumBranches") or []
+                ).items())),
             },
+            "optionalObjectiveFlag": optional_flag,
             "finding": (
                 "The installed metadata names questType as Normal, Block, or "
                 "Optional and showMode as AlwaysShow or AlwaysHide. Every direct "
-                "showMode consumer is presentation/tracker-only. The two network "
-                "handlers that also read questType apply their typed quest lifecycle "
-                "calls before reading questType, with no native back-edge to those "
-                "calls; the remaining questType consumers are query or presentation "
-                "methods. Neither field selects a successor arm."
+                "showMode consumer is presentation/tracker-only. The sole Optional "
+                "comparison writes ObjectiveShowData.optional. The two network "
+                "handlers that compare Block apply their typed quest lifecycle calls "
+                "first, then the Block-equal corridor emits EventManager.SendGlobal, "
+                "with no native back-edge to lifecycle application. Neither field "
+                "selects a successor arm."
             ),
             "boundary": (
                 "These enum names explain authored arm metadata and current client "
@@ -5922,7 +6371,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v17",
+        "_schema": "endfieldProtocolRegistryAudit.v18",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -5999,6 +6448,17 @@ def build_report(
                 state_application_census["questTopologyFieldConsumers"]
                 ["questSemanticFields"]["questType"]
                 ["postLifecycleConsumerCount"]
+            ),
+            "questTypeBlockNotificationConsumers": (
+                state_application_census["questTopologyFieldConsumers"]
+                ["questSemanticFields"]["questType"]
+                ["blockNotificationConsumerCount"]
+            ),
+            "questOptionalObjectiveFlagValidated": (
+                state_application_census["questTopologyFieldConsumers"]
+                ["questSemanticFields"]["optionalObjectiveFlag"]
+                ["validation"]["status"]
+                == "validated"
             ),
             "questShowModeConsumers": (
                 state_application_census["questTopologyFieldConsumers"]
@@ -6812,7 +7272,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v17 report when its original "
+            "Reuse an existing validated v18 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -6831,7 +7291,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v17":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v18":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}

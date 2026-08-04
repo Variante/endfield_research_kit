@@ -2026,6 +2026,32 @@ body:not(.show-debug) .mp-playback-rejection {
   background: color-mix(in srgb, var(--panel) 94%, var(--accent) 6%);
 }
 .mp-quest-semantic-fields p { margin: .3rem 0; }
+.mp-quest-optional-flag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .38rem;
+  margin: .45rem 0;
+  padding: .55rem .65rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: .55rem;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.mp-structured-identity-census {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.8rem 0;
+  padding: 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--accent) 5%, var(--panel));
+}
+
+.mp-structured-identity-census code {
+  width: fit-content;
+}
+.mp-quest-optional-flag small { flex-basis: 100%; }
 
 .mp-quest-topology > p { color: var(--muted); }
 .mp-quest-fork-list { display: grid; gap: .6rem; }

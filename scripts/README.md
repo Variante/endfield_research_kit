@@ -48,10 +48,12 @@ override those defaults for one run.
   topology-driven lifecycle call.
 - The same corpus-wide census recovers `QuestType` and `QuestShowMode` enum
   values and follows both `QuestInfo` fields through every verified direct
-  getter caller. It fails closed if visibility reaches lifecycle code, if a
-  quest-type read interleaves with state application, or if a bounded native
-  back-edge could revisit lifecycle calls. The resulting names are display
-  semantics, never a successor-arm selector.
+  getter caller. Its field-driven branch analyzer validates the sole
+  `Optional` comparison as an `ObjectiveShowData.optional` write and both
+  post-lifecycle `Block` comparisons as `EventManager.SendGlobal` notification
+  corridors. It fails closed if visibility reaches lifecycle code, a quest-type
+  read interleaves with state application, or a bounded native back-edge could
+  revisit lifecycle calls. None of these paths selects a successor arm.
 - The protocol audit also recovers the `QuestAction` enum and validates the
   bounded `SucceedQuest -> SafeRunQuestAction -> RunQuestAction` flow. The
   partial-order builder may then join only same-quest objective Story
@@ -101,6 +103,12 @@ override those defaults for one run.
   The server-side selection rule, player position and playthrough-specific area
   result, server acceptance, event occurrence, mission ownership, and Story
   order remain unknown.
+  The receiver frontier also performs a schema-key-driven census of every JSON
+  record under the selected original structured-data root. It accepts only
+  reviewed exact script-identity plus mission/quest-identity pairs in the same
+  record, currently `bindScriptId + dungeonMissionId`; any new pair shape,
+  parse failure, or missing corpus fails publication with a bounded diagnostic.
+  Filenames, neighboring records, OCR, and overrides never create an edge.
   It proves that `InteractiveLogicChallengeStartPoint` resolves the typed
   `SubGameInstanceData` row by `m_subGameId`, reads `bindScriptId`, looks up the
   LevelScript, and calls `ManualStart`. Exact SubGame bindings are therefore

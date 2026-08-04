@@ -90,9 +90,11 @@ Rebuild Story data after editing overrides.
   context/cache consumers, and zero topology-driven lifecycle calls.
   Fork arms also show installed-metadata names for `questType` and `showMode`.
   The authority card exposes all seven quest-type consumer methods, the two
-  post-lifecycle reads, all five visibility consumer methods, and zero
-  visibility-driven lifecycle calls. These are presentation/post-application
-  semantics, not evidence of arm activation or exclusivity.
+  post-lifecycle `Block` notification corridors, the exact
+  `ObjectiveShowData.optional` write, all five visibility consumer methods,
+  and zero visibility-driven lifecycle calls. These are presentation and
+  post-application notification semantics, not evidence of arm activation or
+  exclusivity.
   Predecessor forks remain topology rather than claimed server branch choice.
 - Story-order panels show binary-proven quest-success lifecycle edges as
   `objective Story completed -> server success state -> succeed client action`.
@@ -177,6 +179,11 @@ Rebuild Story data after editing overrides.
   selection rule, player position and playthrough-specific spatial result,
   server acceptance, event occurrence, mission owner, branch choice, and
   cross-Story order unresolved.
+- Above the exact receiver cards, a corpus-wide original structured-data census
+  shows candidate files, visited records, direct identity carriers, receiver
+  matches, and unreviewed shapes. Only exact script and mission/quest fields in
+  one record count; the panel explicitly excludes filename, ancestor, OCR, and
+  override proximity from evidence.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

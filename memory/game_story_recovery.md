@@ -40,7 +40,7 @@ Latest CN reports:
 | Binary state-update authority | 4 / 4 identity+state/control paths validated; 0 client successor selectors |
 | Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
 | Whole-client topology consumers | 42 / 43 direct `GetQuestInfo` call candidates verified; active predecessor consumers 0; non-sort flow consumers 0; topology lifecycle calls 0 |
-| Binary quest semantic fields | `questType`: 7 consumers / 2 post-lifecycle; `showMode`: 5 consumers / 0 lifecycle; 676 Normal and 64 Optional fork arms, 0 Block |
+| Binary quest semantic fields | `questType`: 7 consumers / 6 Block comparisons / 1 Optional comparison; 2 post-lifecycle Block notifications; `showMode`: 5 consumers / 0 lifecycle; 676 Normal and 64 Optional fork arms, 0 Block |
 | Authored quest-fork semantics | 307 forks: 226 main-path + auxiliary, 78 all-auxiliary, 3 with multiple main-path arms; 97 guarded; 45 reconverging |
 | Quest-fork arm evidence | 740 sibling arms; 349 carry 2,053 exact typed Story placements covering 741 Story keys and 318 arm-related original files; 307 placements use binary-named action types |
 | Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; all 95 exact LevelData types select the non-SubLevel client `active=true` request branch; all 95 original scripts have one uniquely decoded active volume (86 sphere / 9 box); 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
@@ -1396,15 +1396,19 @@ order is inferred.
 The hash-locked topology audit now also recovers `Beyond.GEnums.QuestType`
 (`Normal=0`, `Block=1`, `Optional=2`) and `QuestShowMode` (`AlwaysShow=1`,
 `AlwaysHide=1000`) from installed metadata, then re-decodes every verified
-direct `GetQuestInfo` caller. Seven methods consume `questType`; five are
-query/presentation methods and the two network handlers perform all five typed
-quest lifecycle calls before their quest-type read, with no bounded native
-back-edge. Five methods consume `showMode` through seven reads and none calls a
-quest lifecycle transition. Across the 740 authored fork arms this names 676
-Normal and 64 Optional arms; no Block arm occurs. Mission Pipeline shows the
-exact enum names/tokens, consumer methods, binary/metadata hashes, and boundary.
-These fields explain presentation and post-application behavior only: they do
-not prove eligibility, parallelism, exclusivity, or server successor choice.
+direct `GetQuestInfo` caller. Seven methods consume `questType`: six compare
+`Block=1`, while the sole `Optional=2` comparison branches to `mov al, 1` and
+writes the exact MetadataRegistration-backed
+`ObjectiveShowData.optional@0x50` presentation field. The two network handlers
+perform all five typed quest lifecycle calls first, then their Block-equal
+corridors make `EventManager.SendGlobal` the sole resolved gameplay call, with
+no bounded native back-edge. Five methods consume `showMode` through seven reads
+and none calls a quest lifecycle transition. Across the 740 authored fork arms
+this names 676 Normal and 64 Optional arms; no Block arm occurs. Mission Pipeline
+shows the exact comparisons, field write, consumer methods, binary/metadata
+hashes, and boundary. These fields explain presentation and post-application
+notification only: they do not prove eligibility, parallelism, exclusivity, or
+server successor choice.
 
 Quest-fork presentation is now generated from the normalized graph rather than
 mission names or per-object rules. The current corpus contains 226
@@ -1584,6 +1588,16 @@ selection rule, player position and resulting gate value, server acceptance of
 Active, event firing, and cross-file order. OCR, overrides, source-graph
 grouping, registration order, and code-address order remain cross-reference
 only.
+
+The maintained receiver frontier now applies the same general rule across the
+complete selected original structured JSON corpus. It parsed 197 candidate
+files and visited 109,066 records. The only 20 direct records co-carrying an
+exact LevelScript identity with a mission/quest identity use the already
+reviewed `bindScriptId + dungeonMissionId` SubGame shape, and none names any of
+the 95 unresolved receiver scripts. New key-pair shapes, parse loss, or a
+missing source root fail closed. Ancestor containers, filenames, neighboring
+records, OCR, and overrides remain cross-reference only and create no owner or
+order edge.
 
 ## Evidence rules
 

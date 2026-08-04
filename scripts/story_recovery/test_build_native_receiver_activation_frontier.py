@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import unittest
@@ -15,6 +16,55 @@ import build_native_receiver_activation_frontier as frontier  # noqa: E402
 
 
 class NativeReceiverActivationFrontierTests(unittest.TestCase):
+    def test_structured_identity_census_accepts_only_reviewed_direct_shape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "rows.json").write_text(json.dumps({
+                "rows": [
+                    {
+                        "bindScriptId": "known_subgame_script",
+                        "dungeonMissionId": "mission_fixture",
+                    },
+                    {"scriptId": "receiver_fixture"},
+                    {"missionId": "mission_elsewhere"},
+                ]
+            }), encoding="utf-8")
+            census = frontier.structured_identity_cocarrier_census(
+                [{"scriptId": "receiver_fixture"}],
+                structured_json_root=root,
+            )
+
+        self.assertEqual("validated", census["validation"]["status"])
+        self.assertEqual(1, census["directCarrierCount"])
+        self.assertEqual(0, census["receiverMatchCount"])
+        self.assertEqual(
+            {"bindScriptId+dungeonMissionId": 1},
+            census["keyPairCounts"],
+        )
+
+    def test_structured_identity_census_fails_on_new_direct_shape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "new_carrier.json"
+            source.write_text(json.dumps({
+                "scriptId": "receiver_fixture",
+                "missionId": "mission_fixture",
+            }), encoding="utf-8")
+            census = frontier.structured_identity_cocarrier_census(
+                [{"scriptId": "receiver_fixture"}],
+                structured_json_root=root,
+            )
+
+        failure = census["validation"]["failures"][0]
+        self.assertEqual("validation_failed", census["validation"]["status"])
+        self.assertEqual("allDirectCarrierShapesReviewed", failure["gate"])
+        self.assertEqual(frontier.rel_path(source), failure["sourceFile"])
+        self.assertEqual(1, census["receiverMatchCount"])
+        self.assertEqual(
+            "unreviewed_direct_identity_carrier",
+            failure["actual"][0]["classification"],
+        )
+
     def test_authored_property_contract_separates_namespaces_and_observers(self) -> None:
         contract = frontier.authored_property_contract(
             [
