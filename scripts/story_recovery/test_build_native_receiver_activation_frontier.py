@@ -380,7 +380,7 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
     @staticmethod
     def activation_selector_fixture() -> dict:
         return {
-            "schema": "levelScriptActivationControl.v4",
+            "schema": "levelScriptActivationControl.v5",
             "validation": {"status": "validated"},
             "activationSelectorFlow": {
                 "levelScriptTypeValues": {
@@ -393,12 +393,36 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 "nonSubLevelSendsActiveTrueAfterPreActive": True,
                 "subLevelSkipsActiveTrueRequest": True,
             },
+            "activeAreaFlow": {
+                "emptyActiveListSetsWithinTrue": True,
+                "activeShapeHitSetsWithinTrue": True,
+                "missingOutsideListPreservesPriorWithin": True,
+                "outsideShapeMissPreservesPriorWithin": True,
+                "outsideShapeHitClearsWithin": True,
+            },
+        }
+
+    @staticmethod
+    def levelscript_active_shape_fixture() -> dict:
+        return {
+            "activeShapeList": {
+                "schema": "levelScriptActiveShapeList.v1",
+                "status": "decoded_unique",
+                "candidateCount": 1,
+                "count": 1,
+                "shapes": [{
+                    "type": "SPHERE",
+                    "center": {"x": 1.0, "y": 2.0, "z": 3.0},
+                    "radius": 4.0,
+                }],
+            },
         }
 
     def test_client_active_request_contract_uses_only_exact_host_type(self) -> None:
         contract = frontier.exact_client_active_request_contract(
             [{"briefData": {"levelScriptType": 1}}],
             self.activation_selector_fixture(),
+            self.levelscript_active_shape_fixture(),
         )
 
         self.assertEqual("validated", contract["status"])
@@ -406,6 +430,13 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertTrue(contract["clientProducesActiveRequest"])
         self.assertEqual("Enabled", contract["entryPublicState"])
         self.assertIn("SendLevelScriptSetActive(true)", contract["runtimePath"])
+        self.assertEqual(
+            "validated_runtime_position_dependent",
+            contract["spatialGateStatus"],
+        )
+        self.assertEqual(
+            "SPHERE", contract["activeShapeList"]["shapes"][0]["type"]
+        )
 
     def test_client_active_request_contract_fails_closed_on_ambiguous_hosts(
         self,
@@ -416,6 +447,7 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
                 {"briefData": {"levelScriptType": 1}},
             ],
             self.activation_selector_fixture(),
+            self.levelscript_active_shape_fixture(),
         )
 
         self.assertEqual("unresolved", contract["status"])

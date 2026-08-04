@@ -2220,6 +2220,41 @@ def validate_levelscript_activation_control_observation(
             actual_activation_selector_flow,
         )
 
+    expected_active_area_flow = {
+        "activeShapeListFieldOffset": 0x70,
+        "activeShapeOutsideListFieldOffset": 0x78,
+        "withinActiveAreaFieldOffset": 0x68,
+        "activeShapeListReadOffsets": [363, 1356, 1374],
+        "activeShapeOutsideListReadOffsets": [1630, 1648],
+        "withinActiveAreaAccessOffsets": [1704, 1743, 3388, 3394, 3398],
+        "activeListPositiveCountSetterOffset": 430,
+        "emptyActiveListBranchOffset": 555,
+        "activeShapeTestCallOffset": 1617,
+        "activeShapeHitBranchOffset": 1624,
+        "missingOutsideListBranchOffset": 1635,
+        "outsideShapeTestCallOffset": 1691,
+        "outsideShapeMissBranchOffset": 1698,
+        "withinFalseSetterOffsets": [1743, 3388],
+        "outsideShapeHitClearOffset": 1743,
+        "withinTrueSetterOffset": 3394,
+        "withinReturnOffset": 3398,
+        "emptyActiveListSetsWithinTrue": True,
+        "activeShapeHitSetsWithinTrue": True,
+        "missingOutsideListPreservesPriorWithin": True,
+        "outsideShapeMissPreservesPriorWithin": True,
+        "outsideShapeHitClearsWithin": True,
+    }
+    actual_active_area_flow = {
+        name: (observation.get("activeAreaFlow") or {}).get(name)
+        for name in expected_active_area_flow
+    }
+    if actual_active_area_flow != expected_active_area_flow:
+        fail(
+            "activeAreaFlow",
+            expected_active_area_flow,
+            actual_active_area_flow,
+        )
+
     expected_active_receiver_flow = {
         "triggerActiveDuringValues": {"Active": 0, "Start": 1},
         "setupRegisterTriggerCallCount": 1,
@@ -2569,6 +2604,7 @@ def levelscript_activation_control_contract(
             "UpdateState",
             "ChallengeOnInteract",
             "UpdateRuntimeState",
+            "UpdateWithinActiveArea",
             "Setup",
             "ManualStart",
             "NetworkSetActive",
@@ -3073,6 +3109,124 @@ def levelscript_activation_control_contract(
             < int(wait_active_setters[1]["offset"])
         ),
     }
+    active_area_pointer = int(methods["UpdateWithinActiveArea"]["methodPointerVa"], 16)
+    active_area_instructions = mapper.decode_x64_subset(
+        pe.bytes_at_va(
+            active_area_pointer,
+            int(bodies["UpdateWithinActiveArea"]["scanBytes"]),
+        ),
+        active_area_pointer,
+        stop_offset=int(bodies["UpdateWithinActiveArea"]["scanBytes"]),
+    )
+
+    def area_rows(text: str) -> list[dict[str, Any]]:
+        return [
+            row
+            for row in active_area_instructions
+            if str(row.get("text") or "").lower() == text.lower()
+        ]
+
+    def area_offset(text: str, rank: int = 0) -> int:
+        rows = area_rows(text)
+        return int(rows[rank]["offset"]) if len(rows) > rank else -1
+
+    active_list_read_offsets = sorted({
+        int(row["offset"])
+        for row in active_area_instructions
+        if "[rsi+0x70]" in str(row.get("text") or "").lower()
+    })
+    outside_list_read_offsets = sorted({
+        int(row["offset"])
+        for row in active_area_instructions
+        if "[rsi+0x78]" in str(row.get("text") or "").lower()
+    })
+    within_access_offsets = sorted({
+        int(row["offset"])
+        for row in active_area_instructions
+        if "[rsi+0x68]" in str(row.get("text") or "").lower()
+    })
+    within_false_offsets = [
+        int(row["offset"])
+        for row in area_rows("mov [rsi+0x68], 0x0")
+    ]
+    outside_hit_clear_offset = within_false_offsets[0] if within_false_offsets else -1
+    within_true_offset = area_offset("mov [rsi+0x68], 0x1")
+    within_return_offset = area_offset("movzx eax, [rsi+0x68]")
+    active_count_setter_offset = area_offset("setg al")
+    empty_active_branch_offset = area_offset(
+        f"jcc 0x{active_area_pointer + within_true_offset:x}"
+    )
+    active_shape_test_offset = area_offset("call 0x1821e6930")
+    active_shape_hit_branch_offset = area_offset(
+        f"jcc 0x{active_area_pointer + within_true_offset:x}",
+        1,
+    )
+    missing_outside_branch_offset = area_offset(
+        f"jcc 0x{active_area_pointer + within_return_offset:x}"
+    )
+    outside_shape_test_offset = area_offset("call 0x1834c3790")
+    outside_shape_miss_branch_offset = area_offset(
+        f"jcc 0x{active_area_pointer + within_return_offset:x}",
+        1,
+    )
+
+    def area_bytes(offset: int) -> str:
+        row = next(
+            (
+                item
+                for item in active_area_instructions
+                if int(item.get("offset") or -1) == offset
+            ),
+            {},
+        )
+        return str(row.get("bytes") or "").lower()
+
+    active_area_flow = {
+        "activeShapeListFieldOffset": field_offsets.get(
+            "levelScriptRuntime.activeShapeList"
+        ),
+        "activeShapeOutsideListFieldOffset": field_offsets.get(
+            "levelScriptRuntime.activeShapeOutsideList"
+        ),
+        "withinActiveAreaFieldOffset": field_offsets.get(
+            "levelScriptRuntime.withinActiveArea"
+        ),
+        "activeShapeListReadOffsets": active_list_read_offsets,
+        "activeShapeOutsideListReadOffsets": outside_list_read_offsets,
+        "withinActiveAreaAccessOffsets": within_access_offsets,
+        "activeListPositiveCountSetterOffset": active_count_setter_offset,
+        "emptyActiveListBranchOffset": empty_active_branch_offset,
+        "activeShapeTestCallOffset": active_shape_test_offset,
+        "activeShapeHitBranchOffset": active_shape_hit_branch_offset,
+        "missingOutsideListBranchOffset": missing_outside_branch_offset,
+        "outsideShapeTestCallOffset": outside_shape_test_offset,
+        "outsideShapeMissBranchOffset": outside_shape_miss_branch_offset,
+        "withinFalseSetterOffsets": within_false_offsets,
+        "outsideShapeHitClearOffset": outside_hit_clear_offset,
+        "withinTrueSetterOffset": within_true_offset,
+        "withinReturnOffset": within_return_offset,
+        "emptyActiveListSetsWithinTrue": (
+            area_bytes(empty_active_branch_offset).startswith("0f 84")
+            and active_count_setter_offset < empty_active_branch_offset
+        ),
+        "activeShapeHitSetsWithinTrue": (
+            area_bytes(active_shape_hit_branch_offset).startswith("0f 85")
+            and active_shape_test_offset < active_shape_hit_branch_offset
+        ),
+        "missingOutsideListPreservesPriorWithin": (
+            area_bytes(missing_outside_branch_offset).startswith("0f 84")
+            and missing_outside_branch_offset < outside_shape_test_offset
+        ),
+        "outsideShapeMissPreservesPriorWithin": (
+            area_bytes(outside_shape_miss_branch_offset).startswith("0f 84")
+            and outside_shape_test_offset < outside_shape_miss_branch_offset
+        ),
+        "outsideShapeHitClearsWithin": (
+            outside_shape_miss_branch_offset < outside_hit_clear_offset
+            < within_return_offset
+            and within_false_offsets[-1] < within_true_offset < within_return_offset
+        ),
+    }
     setup_register_calls = calls_to("Setup", "RegisterTriggerFromLevelScript")
     phase_calls = calls_to("UpdateRuntimeState", "SetAllTriggerActiveByPhase")
 
@@ -3198,6 +3352,7 @@ def levelscript_activation_control_contract(
         "clientRequestFlow": client_request_flow,
         "activeReceiverFlow": active_receiver_flow,
         "activationSelectorFlow": activation_selector_flow,
+        "activeAreaFlow": active_area_flow,
     }
     source_hashes = {
         "gameAssemblySha256": file_sha256(gameassembly_path),
@@ -3209,7 +3364,7 @@ def levelscript_activation_control_contract(
         source_hashes=source_hashes,
     )
     return {
-        "schema": "levelScriptActivationControl.v4",
+        "schema": "levelScriptActivationControl.v5",
         "classification": "server_state_subgame_and_runtime_request_paths",
         "discoveryPattern": {
             "methodSelection": "exact metadata type, name, signature, and return type",
@@ -3249,7 +3404,10 @@ def levelscript_activation_control_contract(
             "separately: every other LevelScript type enters PreActive from public "
             "Enabled only after UpdateWithinActiveArea succeeds, then emits the typed "
             "active=true request after pre-active actions; SubLevelScript instead waits "
-            "for public Active and skips that client request."
+            "for public Active and skips that client request. UpdateWithinActiveArea "
+            "uses a positive-count active list as the enter test, preserves prior state "
+            "when no outside list or no outside hit exists, and clears the flag on an "
+            "outside-list hit."
         ),
         "boundary": (
             "An exact SubGame id/bindScriptId row therefore proves an interaction "
@@ -3261,7 +3419,8 @@ def levelscript_activation_control_contract(
             "phase receiver proves availability after public activation, not the "
             "producer of that activation or that the event fired. For non-SubLevelScript "
             "types the client request producer is now exact, but the source of public "
-            "Enabled and the spatial gate outcome remain separate questions."
+            "Enabled, player position, runtime list construction, and the spatial gate "
+            "outcome remain separate questions."
         ),
         "validation": validation,
     }
@@ -4966,7 +5125,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v13",
+        "_schema": "endfieldProtocolRegistryAudit.v14",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -5758,7 +5917,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v13 report when its original "
+            "Reuse an existing validated v14 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -5777,7 +5936,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v13":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v14":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}

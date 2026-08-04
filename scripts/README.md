@@ -79,9 +79,12 @@ override those defaults for one run.
   machine separates `SubLevelScript` from every other metadata-defined type.
   Joining the exact LevelData brief type proves that all 95 current receivers
   use `Enabled -> UpdateWithinActiveArea -> PreActive -> active=true ->
-  WaitForStateActive`; no script-id exception exists. Who supplied Enabled,
-  the playthrough-specific area result, server acceptance, event occurrence,
-  mission ownership, and Story order remain unknown.
+  WaitForStateActive`; no script-id exception exists. A bounded structural
+  MemoryPack scan also decodes each script's top-level active-shape list without
+  ids or filenames (86 sphere / 9 box), while the installed binary validates
+  the active/outside-list state transitions. Who supplied Enabled, player
+  position and the playthrough-specific area result, server acceptance, event
+  occurrence, mission ownership, and Story order remain unknown.
   It proves that `InteractiveLogicChallengeStartPoint` resolves the typed
   `SubGameInstanceData` row by `m_subGameId`, reads `bindScriptId`, looks up the
   LevelScript, and calls `ManualStart`. Exact SubGame bindings are therefore

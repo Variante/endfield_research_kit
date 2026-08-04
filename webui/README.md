@@ -156,9 +156,12 @@ Rebuild Story data after editing overrides.
   receiver availability. Each card also joins its exact validated LevelData
   type to the generic binary selector. All 95 current receivers are non-
   `SubLevelScript` and visibly show `Enabled -> active-area gate -> PreActive ->
-  active=true -> WaitForStateActive`. The UI still labels the source of
-  Enabled, the playthrough-specific spatial result, server acceptance, event
-  occurrence, mission owner, branch choice, and cross-Story order unresolved.
+  active=true -> WaitForStateActive`. Each card also shows its directly decoded
+  original sphere/box activation geometry and the binary-validated active/
+  outside-list gate behavior. The UI still labels the source of Enabled,
+  player position and playthrough-specific spatial result, server acceptance,
+  event occurrence, mission owner, branch choice, and cross-Story order
+  unresolved.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and
