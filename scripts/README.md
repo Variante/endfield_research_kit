@@ -152,6 +152,13 @@ override those defaults for one run.
   inactive targets, runtime terminals, arm-exclusive actions, and shared
   downstream nodes. Runtime-mapping or topology mismatches fail closed with
   bounded source/hash diagnostics; no mission/object allowlist is used.
+- Source-order publication is corpus-wide and runs again after recovery shells
+  are created. Missing Story namespaces receive an aggregate shell only when
+  their generated Story bundle explicitly declares variant mission bundles,
+  every variant resolves to an existing pipeline mission, and each mission is
+  backed by a hash-checked original MissionRuntime file. The publication gate
+  fails closed if any recovered native branch placement remains unattached;
+  aggregates and offline shells never imply ownership or server branch choice.
 - MissionRuntime-to-receiver context joins are likewise corpus-driven and
   require the exact typed `(mapId, scriptId)` operand from the recursive
   objective condition tree. Flat script-id summaries cannot attach a mission.

@@ -823,6 +823,10 @@
       offlineRecoveryCrossMissionTracking: "Cross-mission SNS tracking (navigation only)",
       offlineMissionShell: "Story-only recovery shell",
       offlineMissionShellHint: "No MissionRuntimeAsset exists in the current export. This page exposes exact table definitions and current-build negative carrier evidence only; it has no quest, ownership, playback, handshake, or order edge.",
+      storyAggregateShell: "Declared Story variant aggregate",
+      storyAggregateShellHint: "This Story namespace combines exact serialized evidence from its declared mission variants. It is not a MissionRuntime mission and does not establish mission ownership, quest ownership, branch selection, or extra chronology.",
+      storyAggregateVariants: "Declared mission variants",
+      storyAggregateOriginals: "Variant MissionRuntime source files",
       questAttachmentDiagnostic: "Story ownership unresolved",
       questAttachmentDiagnosticHint: "Exact offline evidence closes this broad Story co-membership as non-owning. It does not create a quest-to-Story or order edge.",
       questAttachmentDiagnosticStories: "Diagnostic Story context",
@@ -1486,6 +1490,10 @@
       offlineRecoveryCrossMissionTracking: "\u8de8\u4efb\u52a1 SNS \u8ffd\u8e2a\uff08\u4ec5\u5bfc\u822a\uff09",
       offlineMissionShell: "\u4ec5\u5267\u60c5\u6062\u590d\u7684\u4efb\u52a1\u5916\u58f3",
       offlineMissionShellHint: "\u5f53\u524d\u5bfc\u51fa\u4e2d\u6ca1\u6709 MissionRuntimeAsset\u3002\u672c\u9875\u4ec5\u5c55\u793a\u7cbe\u786e\u8868\u5b9a\u4e49\u548c\u5f53\u524d\u7248\u672c\u7684\u8f7d\u4f53\u8d1f\u8bc1\u636e\uff1b\u4e0d\u4ea7\u751f\u4efb\u52a1\u8282\u70b9\u3001\u5f52\u5c5e\u3001\u64ad\u653e\u3001\u63e1\u624b\u6216\u987a\u5e8f\u8fb9\u3002",
+      storyAggregateShell: "\u58f0\u660e\u7684 Story \u53d8\u4f53\u805a\u5408",
+      storyAggregateShellHint: "\u8be5 Story \u547d\u540d\u7a7a\u95f4\u6c47\u603b\u4e86\u5176\u58f0\u660e\u7684\u4efb\u52a1\u53d8\u4f53\u4e2d\u7684\u7cbe\u786e\u5e8f\u5217\u5316\u8bc1\u636e\u3002\u5b83\u672c\u8eab\u4e0d\u662f MissionRuntime \u4efb\u52a1\uff0c\u4e5f\u4e0d\u8bc1\u660e\u4efb\u52a1\u5f52\u5c5e\u3001\u8282\u70b9\u5f52\u5c5e\u3001\u5206\u652f\u9009\u62e9\u6216\u989d\u5916\u65f6\u5e8f\u3002",
+      storyAggregateVariants: "\u5df2\u58f0\u660e\u7684\u4efb\u52a1\u53d8\u4f53",
+      storyAggregateOriginals: "\u53d8\u4f53 MissionRuntime \u539f\u59cb\u6587\u4ef6",
       questAttachmentDiagnostic: "\u5267\u60c5\u5f52\u5c5e\u672a\u89e3\u6790",
       questAttachmentDiagnosticHint: "\u7cbe\u786e\u79bb\u7ebf\u8bc1\u636e\u5c06\u8fd9\u4e2a\u5bbd\u6cdb\u5267\u60c5\u5171\u73b0\u5173\u7cfb\u95ed\u5408\u4e3a\u975e\u5f52\u5c5e\u8bca\u65ad\uff1b\u4e0d\u751f\u6210\u4efb\u52a1\u5230\u5267\u60c5\u6216\u987a\u5e8f\u8fb9\u3002",
       questAttachmentDiagnosticStories: "\u8bca\u65ad\u5267\u60c5\u4e0a\u4e0b\u6587",
@@ -2167,6 +2175,7 @@
   function missionBadges(row) {
     const badges = [];
     if (row.offlineRecoveryShell) badges.push(`<span class="mp-list-badge is-evidence">${esc(t("offlineMissionShell"))}</span>`);
+    if (row.storyAggregateShell) badges.push(`<span class="mp-list-badge is-evidence">${esc(t("storyAggregateShell"))}</span>`);
     if (row.caseStudy) badges.push(`<span class="mp-list-badge is-evidence">${esc(t("evidence"))}</span>`);
     if (row.fanoutCount) badges.push(`<span class="mp-list-badge">${row.fanoutCount} ${esc(t("branches"))}</span>`);
     if (row.multiPrevJoinCount || row.activeJoinCount) badges.push(`<span class="mp-list-badge">${row.multiPrevJoinCount + row.activeJoinCount} ${esc(t("join"))}</span>`);
@@ -4302,6 +4311,11 @@
     const row = state.index?.missions?.find((item) => item.id === mission.id) || {};
     const caseStudy = state.mission.caseStudy;
     const offlineShell = mission.offlineRecoveryShell === true;
+    const aggregateShell = mission.storyAggregateShell === true;
+    const shellLabel = aggregateShell ? t("storyAggregateShell") : t("offlineMissionShell");
+    const shellHint = aggregateShell ? t("storyAggregateShellHint") : t("offlineMissionShellHint");
+    const aggregateVariants = (mission.variantMissionIds || []).map((id) => `<button class="mp-graph-link" type="button" data-mission="${esc(id)}"><code>${esc(id)}</code></button>`).join("");
+    const aggregateOriginals = (mission.relatedOriginalFiles || []).map((related) => `<small><code>${esc(related.variantMissionId || related.kind || "file")}</code> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("");
     const metrics = [
       [row.questCount || state.mission.nodes?.length || 0, t("quests")],
       [row.entryCount || 0, t("roots")],
@@ -4318,11 +4332,11 @@
         <div><p class="mp-summary-kicker">${esc(mission.levelId || "—")}</p><h2>${esc(missionName(mission.id))}</h2><code>${esc(mission.id)}</code></div>
         <div class="mp-summary-metrics">${metrics.map(([value, label]) => `<span><strong>${value}</strong>${esc(label)}</span>`).join("")}</div>
       </div>
-      <div class="mp-case${caseStudy || offlineShell ? " has-case" : ""}">
+      <div class="mp-case${caseStudy || offlineShell || aggregateShell ? " has-case" : ""}">
         <span class="mp-case-icon" aria-hidden="true">${caseStudy ? "◎" : "○"}</span>
-        <div><strong>${esc(offlineShell ? t("offlineMissionShell") : (caseStudy?.title || t("evidence")))}</strong><p>${esc(offlineShell ? t("offlineMissionShellHint") : (caseStudy?.summary || t("noCase")))}</p>${caseStudy ? `<span class="mp-confidence">${esc(t("confidence"))}: ${esc(caseStudy.confidence)}</span>` : ""}</div>
+        <div><strong>${esc(offlineShell || aggregateShell ? shellLabel : (caseStudy?.title || t("evidence")))}</strong><p>${esc(offlineShell || aggregateShell ? shellHint : (caseStudy?.summary || t("noCase")))}</p>${aggregateVariants ? `<div><b>${esc(t("storyAggregateVariants"))}:</b> ${aggregateVariants}</div>` : ""}${aggregateOriginals ? `<details><summary>${esc(t("storyAggregateOriginals"))} <span>${mission.relatedOriginalFiles.length}</span></summary>${aggregateOriginals}</details>` : ""}${caseStudy ? `<span class="mp-confidence">${esc(t("confidence"))}: ${esc(caseStudy.confidence)}</span>` : ""}</div>
       </div>
-      ${offlineShell ? "" : `<div class="mp-mission-handshake">
+      ${offlineShell || aggregateShell ? "" : `<div class="mp-mission-handshake">
         <strong>${esc(t("missionHandshake"))}</strong>
         <span class="is-outbound">${esc(t("acceptRequest"))}</span>
         <i aria-hidden="true">⇄</i>

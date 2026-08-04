@@ -270,3 +270,12 @@ for (const [key, category] of [
         self.assertIn('t("extraThreadScheduler")', source)
         self.assertIn('t("extraThreadSiblingBoundary")', source)
         self.assertIn("extraThreadScheduler.relatedOriginalFiles", source)
+
+    def test_mission_pipeline_labels_declared_story_variant_aggregates(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("mission.storyAggregateShell === true", source)
+        self.assertIn("mission.variantMissionIds", source)
+        self.assertIn("mission.relatedOriginalFiles", source)
+        self.assertIn('t("storyAggregateVariants")', source)
+        self.assertIn('t("storyAggregateOriginals")', source)
+        self.assertIn("does not establish mission ownership", source)

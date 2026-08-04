@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 605 (490 MissionRuntime + 115 Story-only recovery shells) |
+| Pipeline missions | 606 (490 MissionRuntime + 115 Story-only recovery shells + 1 declared Story-variant aggregate) |
 | Unique Story files | 5,564 |
 | Connected files | 4,239 (76.2%) |
 | Files with a normalized trigger/context route | 4,462 (80.2%) |
@@ -33,7 +33,7 @@ Latest CN reports:
 | Exact quest-observed DialogTree definitions | 434 definitions / 461 placements across 422 quests |
 | LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
 | Native branch predicates | 259 named; 264 semantic including 5 inline; 0 class-only; 0 unresolved |
-| Complete native branch-arm topology | Global audit: 312 / 312 placements, 880 serialized slots, 43 active non-Story arms, 155 inactive slots, 0 runtime terminals, 0 validator failures. Mission Pipeline: 95 / 95 placements, 272 slots, 30 active non-Story arms, 27 inactive slots |
+| Complete native branch-arm topology | 312 / 312 recovered placements published in Mission Pipeline, 880 serialized slots, 43 active non-Story arms, 155 inactive slots, 0 runtime terminals, 0 recovery or publication validator failures |
 | Complete cross-boundary native branches | 5 groups / 5 exact external Story references (4 Split fan-outs, 1 SwitchInt choice); no ownership or order promotion |
 | Exact mission-state Story alternatives | 3 branch groups / 2 cross-mission Story references; selection only, never chronology or ownership |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
@@ -85,6 +85,17 @@ in five payloads.
   installed-binary runtime mapping and fails closed with source hashes and
   expected/actual diagnostics. These sibling actions describe file-local
   topology only; they do not add Story ownership, order, or mission membership.
+- Mission Pipeline publication now performs a second corpus-wide attachment
+  pass after graph-neutral recovery shells exist and fails closed unless every
+  recovered native branch reaches a payload. This restored 217 previously
+  generated-but-unpublished branch placements: four under `gm01m2`, one under
+  `map02_lv002`, and 212 under the declared `db01m2` Story namespace. The
+  latter is created generically because its generated Story bundle explicitly
+  declares four validated variant mission bundles; the aggregate exposes their
+  four hash-checked original MissionRuntime files as context and explicitly
+  does not claim mission/quest ownership, server branch choice, or additional
+  chronology. No object/mission allowlist, OCR order, or manual override is
+  used.
 - Native branch grouping now uses mission Story files only as anchors, then
   retains every exact Story-bearing arm under the same serialized event and
   branch. This generically restores five cross-boundary references across four
