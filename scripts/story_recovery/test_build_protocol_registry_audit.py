@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+                "_schema": "endfieldProtocolRegistryAudit.v19",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -53,6 +53,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "levelScriptActivationControl": {
                     "validation": {"status": "validated", "failures": []},
                 },
+                "actionExtraThreadSchedulerCensus": {
+                    "validation": {"status": "validated", "failures": []},
+                },
             }), encoding="utf-8")
 
             self.assertEqual(
@@ -67,6 +70,61 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             )
             self.assertFalse(current)
             self.assertIn("metadataSha256 differs", reason)
+
+    def test_extra_thread_scheduler_validator_accepts_corpus_derived_shapes(self):
+        result = audit.validate_action_extra_thread_scheduler_census(
+            carrier_count=1,
+            scheduler_method_count=1,
+            direct_calls=[{
+                "caller": "Fixture.Composite.Execute",
+                "thisArgumentPreserved": True,
+                "childIdFromOwnField": True,
+                "thirdArgumentZero": True,
+            }],
+            rejected_direct_calls=[],
+            extra_thread_execute_methods=[{
+                "symbol": "Fixture.Composite.Execute",
+                "writerShape": "direct_scheduler_calls_from_typed_fields",
+            }, {
+                "symbol": "Fixture.CollectionComposite.Execute",
+                "writerShape": "inline_list_add_from_typed_collection",
+            }],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "a" * 64},
+        )
+        self.assertEqual(result, {"status": "validated", "failures": []})
+
+    def test_extra_thread_scheduler_validator_reports_independent_drift(self):
+        result = audit.validate_action_extra_thread_scheduler_census(
+            carrier_count=2,
+            scheduler_method_count=0,
+            direct_calls=[{
+                "caller": "Fixture.Unknown.Execute",
+                "thisArgumentPreserved": False,
+                "childIdFromOwnField": False,
+                "thirdArgumentZero": False,
+            }],
+            rejected_direct_calls=[{"callVa": "0x1", "reason": "no_symbol"}],
+            extra_thread_execute_methods=[{
+                "symbol": "Fixture.Unknown.Execute",
+                "writerShape": "unknown",
+            }],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "b" * 64},
+        )
+        self.assertEqual(result["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in result["failures"]],
+            [
+                "uniqueStructuralCarrier",
+                "uniqueSchedulerMethod",
+                "completeDecodedDirectCallerCensus",
+                "directCallerPreservesThis",
+                "directChildIdFromTypedField",
+                "directSchedulerFlagIsZero",
+                "knownStructuralWriterShape",
+            ],
+        )
 
     def test_quest_succeed_action_observation_accepts_generic_native_flow(self):
         result = audit.validate_quest_succeed_action_observation(

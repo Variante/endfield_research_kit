@@ -60,6 +60,12 @@ override those defaults for one run.
   completion and native-typed succeed Story actions. This is a corpus rule,
   not a mission/Story allowlist; reverse strong conflicts fail closed, and
   success occurrence or successor selection is not inferred.
+- The protocol audit structurally discovers the ActionBase extra-thread list
+  and scheduler, then scans every direct child `Execute` body for typed child
+  fields or typed collection members flowing into that scheduler/list. New
+  writer shapes fail closed. Mission Pipeline uses the admitted current-build
+  class names to label parallel `actions[i]` edges; array position never becomes
+  chronology, and IFix substitution remains outside the static proof.
 - The same hash-locked protocol audit discovers the generic LevelScript start
   policy from metadata method signatures, enum constants, and decoded native
   branch targets. It validates that an `Active`, unfinished

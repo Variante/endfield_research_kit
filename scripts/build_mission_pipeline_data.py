@@ -6505,10 +6505,10 @@ def load_state_update_application_contract(
             f"expected=file actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v18":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
         raise RuntimeError(
             "validator=state_update_application_contract gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v18' "
+            "expected='endfieldProtocolRegistryAudit.v19' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     census = audit.get("stateUpdateApplicationCensus") or {}
@@ -6642,6 +6642,90 @@ def load_state_update_application_contract(
     }
 
 
+def load_action_extra_thread_scheduler_contract(
+    audit_path: Path = DEFAULT_PROTOCOL_REGISTRY_AUDIT,
+) -> dict[str, Any]:
+    """Revalidate binary-derived parallel child-launch semantics."""
+    validator = "action_extra_thread_scheduler_contract"
+    if not audit_path.is_file():
+        raise RuntimeError(
+            f"validator={validator} gate=auditExists expected=file "
+            f"actual=missing source={audit_path}"
+        )
+    audit = read_json(audit_path)
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
+        raise RuntimeError(
+            f"validator={validator} gate=auditSchema "
+            "expected='endfieldProtocolRegistryAudit.v19' "
+            f"actual={audit.get('_schema')!r} source={audit_path}"
+        )
+    contract = audit.get("actionExtraThreadSchedulerCensus") or {}
+    validation = contract.get("validation") or {}
+    if validation.get("status") != "validated":
+        failure = (validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            f"validator={validator} "
+            f"gate={failure.get('gate') or 'upstreamValidation'} "
+            f"message={failure.get('message')} expected={failure.get('expected')!r} "
+            f"actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    discovery = contract.get("discoveryPattern") or {}
+    actual_shape = {
+        "schema": contract.get("schema"),
+        "classification": contract.get("classification"),
+        "objectIdentityInputs": discovery.get("objectIdentityInputs"),
+    }
+    expected_shape = {
+        "schema": "actionExtraThreadSchedulerCensus.v1",
+        "classification": "typed_children_launch_as_parallel_extra_threads",
+        "objectIdentityInputs": [],
+    }
+    if actual_shape != expected_shape:
+        raise RuntimeError(
+            f"validator={validator} gate=genericContractShape "
+            f"expected={expected_shape!r} actual={actual_shape!r} "
+            f"source={audit_path}"
+        )
+    writers = contract.get("extraThreadExecuteMethods") or []
+    if not writers:
+        raise RuntimeError(
+            f"validator={validator} gate=writerMethods expected=>=1 actual=0 "
+            f"source={audit_path}"
+        )
+    source = audit.get("source") or {}
+    related_files: list[dict[str, Any]] = []
+    for path_key, hash_key, kind in (
+        ("gameAssembly", "gameAssemblySha256", "original_game_binary"),
+        ("metadata", "metadataSha256", "original_game_metadata"),
+    ):
+        source_text = str(source.get(path_key) or "")
+        expected_hash = str(source.get(hash_key) or "").lower()
+        source_path = Path(source_text)
+        if not source_text or not source_path.is_file():
+            raise RuntimeError(
+                f"validator={validator} gate=sourceExists expected=file "
+                f"actual=missing source={source_text or path_key}"
+            )
+        actual_hash = sha256_path(source_path)
+        if actual_hash != expected_hash:
+            raise RuntimeError(
+                f"validator={validator} gate=sourceHash expected={expected_hash!r} "
+                f"actual={actual_hash!r} source={source_path}"
+            )
+        related_files.append({
+            "kind": kind,
+            "sourceFile": str(source_path.resolve()),
+            "sha256": actual_hash,
+            "relationship": "native_action_extra_thread_scheduler_authority",
+        })
+    return {
+        **contract,
+        "source": repo_path(audit_path),
+        "relatedOriginalFiles": related_files,
+    }
+
+
 def load_levelscript_task_authority_contract(
     audit_path: Path = DEFAULT_PROTOCOL_REGISTRY_AUDIT,
 ) -> dict[str, Any]:
@@ -6653,10 +6737,10 @@ def load_levelscript_task_authority_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v18":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v18' "
+            "expected='endfieldProtocolRegistryAudit.v19' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
 
@@ -6817,10 +6901,10 @@ def load_levelscript_start_policy_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v18":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v18' "
+            "expected='endfieldProtocolRegistryAudit.v19' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptStartPolicy") or {}
@@ -6911,10 +6995,10 @@ def load_levelscript_manual_self_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v18":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v18' "
+            "expected='endfieldProtocolRegistryAudit.v19' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptManualSelfControl") or {}
@@ -7007,10 +7091,10 @@ def load_levelscript_activation_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v18":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v18' "
+            "expected='endfieldProtocolRegistryAudit.v19' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptActivationControl") or {}
@@ -10049,6 +10133,9 @@ def build_all(
             "selection": "explicit_mission_root",
         }
     state_update_contract = load_state_update_application_contract()
+    extra_thread_scheduler_contract = (
+        load_action_extra_thread_scheduler_contract()
+    )
     task_authority_contract = load_levelscript_task_authority_contract()
     start_policy_contract = load_levelscript_start_policy_contract()
     manual_self_control_contract = (
@@ -10060,6 +10147,7 @@ def build_all(
     runtime_contract = {
         **RUNTIME_CONTRACT,
         "stateUpdateApplicationAudit": state_update_contract,
+        "actionExtraThreadSchedulerAudit": extra_thread_scheduler_contract,
         "levelScriptTaskAuthorityAudit": task_authority_contract,
         "levelScriptStartPolicyAudit": start_policy_contract,
         "levelScriptManualSelfControlAudit": manual_self_control_contract,
@@ -10231,6 +10319,14 @@ def build_all(
                 .get("showMode", {})
                 .get("lifecycleConsumerCount", 0)
             ),
+            "actionExtraThreadWriterMethods": len(
+                extra_thread_scheduler_contract.get(
+                    "extraThreadExecuteMethods", []
+                )
+            ),
+            "actionExtraThreadDirectCalls": len(
+                extra_thread_scheduler_contract.get("directCalls", [])
+            ),
         },
         "conditionTypeMissionCounts": dict(sorted(condition_counts.items())),
         "runtimeContract": runtime_contract,
@@ -10283,10 +10379,17 @@ def publish_source_story_partial_order(
     quest_succeed_contract["relatedOriginalFiles"] = (
         state_contract.get("relatedOriginalFiles") or []
     )
+    extra_thread_contract = (
+        (index.get("runtimeContract") or {}).get(
+            "actionExtraThreadSchedulerAudit"
+        )
+        or {}
+    )
     report = build_source_story_partial_order_report(
         language,
         story_data_root=story_data_root,
         quest_succeed_lifecycle_contract=quest_succeed_contract,
+        extra_thread_scheduler_contract=extra_thread_contract,
     )
     quest_start = state_contract.get("questStartApplication") or {}
     topology_consumers = state_contract.get("questTopologyFieldConsumers") or {}

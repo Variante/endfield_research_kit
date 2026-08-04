@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v26"
+SCHEMA = "sourceStoryPartialOrder.v27"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -69,6 +69,9 @@ _NATIVE_ACTION_TOPOLOGY_CACHE: dict[str, tuple[dict, dict | None]] = {}
 READING_POPUP_TABLE_PATH = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Table" / "ReadingPopUpTable.json"
+)
+PROTOCOL_REGISTRY_AUDIT_PATH = (
+    ROOT / "reports" / "story" / "recovery" / "protocol_registry_audit.json"
 )
 VARIANT_FLOW_LIST_FIELDS = (
     "missionStoryConnections",
@@ -2200,9 +2203,96 @@ def _strict_native_path_prefix(
     )
 
 
-def _native_transition_kind(edge: str, source_action_name: str) -> str:
+def _parallel_action_names(
+    extra_thread_scheduler_contract: dict[str, Any] | None,
+) -> set[str]:
+    """Project structurally admitted binary writers to action class names."""
+    names: set[str] = set()
+    for row in (extra_thread_scheduler_contract or {}).get(
+        "extraThreadExecuteMethods", []
+    ):
+        if not isinstance(row, dict) or row.get("writerShape") not in {
+            "direct_scheduler_calls_from_typed_fields",
+            "inline_list_add_from_typed_collection",
+        }:
+            continue
+        symbol = safe_key(row.get("symbol"))
+        if symbol.endswith(".Execute"):
+            names.add(symbol.removesuffix(".Execute").rsplit(".", 1)[-1])
+    return names
+
+
+def load_current_parallel_fanout_authority(
+    audit_path: Path = PROTOCOL_REGISTRY_AUDIT_PATH,
+) -> dict[str, Any]:
+    """Fail closed unless the scheduler contract matches its original inputs."""
+    validator = "parallel_fanout_authority"
+    audit = read_json(audit_path, {})
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v19":
+        raise RuntimeError(
+            f"validator={validator} gate=auditSchema "
+            "expected='endfieldProtocolRegistryAudit.v19' "
+            f"actual={audit.get('_schema')!r} source={audit_path}"
+        )
+    contract = dict(audit.get("actionExtraThreadSchedulerCensus") or {})
+    validation = contract.get("validation") or {}
+    if validation.get("status") != "validated":
+        failure = (validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            f"validator={validator} "
+            f"gate={failure.get('gate') or 'upstreamValidation'} "
+            f"message={failure.get('message')} expected={failure.get('expected')!r} "
+            f"actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    source = audit.get("source") or {}
+    related_files: list[dict[str, Any]] = []
+    for path_key, hash_key, kind in (
+        ("gameAssembly", "gameAssemblySha256", "original_game_binary"),
+        ("metadata", "metadataSha256", "original_game_metadata"),
+    ):
+        source_path = Path(str(source.get(path_key) or ""))
+        expected = str(source.get(hash_key) or "").lower()
+        if not source_path.is_file():
+            raise RuntimeError(
+                f"validator={validator} gate=sourceExists expected=file "
+                f"actual=missing source={source_path or path_key}"
+            )
+        digest = hashlib.sha256()
+        with source_path.open("rb") as source_handle:
+            for chunk in iter(lambda: source_handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        actual = digest.hexdigest()
+        if actual != expected:
+            raise RuntimeError(
+                f"validator={validator} gate=sourceHash expected={expected!r} "
+                f"actual={actual!r} source={source_path}"
+            )
+        related_files.append({
+            "kind": kind,
+            "sourceFile": str(source_path.resolve()),
+            "sha256": actual,
+            "relationship": "native_action_extra_thread_scheduler_authority",
+        })
+    contract["source"] = (
+        audit_path.relative_to(ROOT).as_posix()
+        if audit_path.is_relative_to(ROOT)
+        else audit_path.as_posix()
+    )
+    contract["relatedOriginalFiles"] = related_files
+    return contract
+
+
+def _native_transition_kind(
+    edge: str,
+    source_action_name: str,
+    parallel_action_names: set[str] | None = None,
+) -> str:
     """Classify one exact typed successor without interpreting identifiers."""
-    if edge.startswith("Split.actions["):
+    if (
+        source_action_name in (parallel_action_names or set())
+        and re.search(r"\.actions\[[0-9]+\]$", edge)
+    ):
         return "parallelFanout"
     if edge in {"IfElseAction.trueAction", "IfElseAction.falseAction"}:
         return "conditionalBranch"
@@ -2228,6 +2318,7 @@ def _native_transition_kind(edge: str, source_action_name: str) -> str:
 def _native_story_transition_steps(
     source_path: tuple[tuple[Any, ...], ...],
     target_path: tuple[tuple[Any, ...], ...],
+    extra_thread_scheduler_contract: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Return the exact typed suffix between two prefix-comparable Story actions.
 
@@ -2239,6 +2330,9 @@ def _native_story_transition_steps(
     """
     if not _strict_native_path_prefix(source_path, target_path):
         return []
+    parallel_action_names = _parallel_action_names(
+        extra_thread_scheduler_contract
+    )
     steps: list[dict[str, Any]] = []
     for index in range(len(source_path), len(target_path)):
         source_step = target_path[index - 1]
@@ -2251,16 +2345,18 @@ def _native_story_transition_steps(
             if predicate_json not in {"", "{}"}
             else {}
         )
-        steps.append({
+        transition_kind = _native_transition_kind(
+            edge,
+            source_action_name,
+            parallel_action_names,
+        )
+        step = {
             key: value
             for key, value in {
                 "sourceLocalId": int(source_step[0]),
                 "targetLocalId": int(target_step[0]),
                 "edge": edge,
-                "transitionKind": _native_transition_kind(
-                    edge,
-                    source_action_name,
-                ),
+                "transitionKind": transition_kind,
                 "sourceActionName": source_action_name,
                 "sourceActionClass": safe_key(source_step[3]),
                 "targetActionName": safe_key(target_step[2]),
@@ -2268,7 +2364,16 @@ def _native_story_transition_steps(
                 "predicate": predicate,
             }.items()
             if value not in ("", None, [], {})
-        })
+        }
+        if transition_kind == "parallelFanout":
+            step.update({
+                "runtimeSemantics": "binary_proven_extra_thread_launch",
+                "siblingOrderEvidence": False,
+                "runtimeAuthoritySource": safe_key(
+                    (extra_thread_scheduler_contract or {}).get("source")
+                ),
+            })
+        steps.append(step)
     return steps
 
 
@@ -2315,6 +2420,7 @@ def _expand_native_control_path_candidates(
 def _native_control_path_story_edges(
     flow: dict[str, Any],
     candidate_keys: set[str],
+    extra_thread_scheduler_contract: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Recover strict Story order when one native control path prefixes another."""
     event_paths = _native_event_story_paths(flow, candidate_keys)
@@ -2333,6 +2439,7 @@ def _native_control_path_story_edges(
                 transition_steps = _native_story_transition_steps(
                     source_path,
                     target_path,
+                    extra_thread_scheduler_contract,
                 )
                 if not transition_steps:
                     continue
@@ -3791,6 +3898,7 @@ def build_mission_partial_order(
     reading_popup_source: str = "",
     reading_popup_sha256: str = "",
     quest_succeed_lifecycle_contract: dict[str, Any] | None = None,
+    extra_thread_scheduler_contract: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build one source-only mission partial order from generated source evidence."""
     mission_payload = mission_payload if isinstance(mission_payload, dict) else {}
@@ -3883,7 +3991,11 @@ def build_mission_partial_order(
     for key in unresolved_nodes:
         definition_only_nodes.pop(key, None)
 
-    direct_edges.extend(_native_control_path_story_edges(flow, candidate_keys))
+    direct_edges.extend(_native_control_path_story_edges(
+        flow,
+        candidate_keys,
+        extra_thread_scheduler_contract,
+    ))
     native_ordered_sequence_edges, native_ordered_sequences = (
         _native_ordered_branch_sequences(flow, candidate_keys)
     )
@@ -4478,6 +4590,7 @@ def build_report(
     selected_missions: set[str] | None = None,
     story_data_root: Path | None = None,
     quest_succeed_lifecycle_contract: dict[str, Any] | None = None,
+    extra_thread_scheduler_contract: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     lang_root = (story_data_root or (ROOT / "webui" / "data" / "lang")) / language
     index_path = lang_root / "index.json"
@@ -4586,6 +4699,7 @@ def build_report(
             reading_popup_source,
             reading_popup_sha256,
             quest_succeed_lifecycle_contract,
+            extra_thread_scheduler_contract,
         )
         row["missionData"] = (
             mission_path.relative_to(ROOT).as_posix() if mission_path.is_file() else ""
@@ -4714,6 +4828,28 @@ def build_report(
     summary_payload["nativeControlPathTransitionKinds"] = dict(
         sorted(native_transition_kind_totals.items())
     )
+    summary_payload["binaryValidatedParallelFanoutTransitions"] = (
+        native_transition_kind_totals.get("parallelFanout", 0)
+    )
+    summary_payload["binaryValidatedParallelFanoutEvidenceRows"] = sum(
+        1
+        for mission_row in rows
+        for edge in mission_row.get("directEdges") or []
+        if edge.get("kind") == "levelscriptNativeControlPath"
+        for event in edge.get("events") or []
+        for step in event.get("transitionSteps") or []
+        if step.get("runtimeSemantics")
+        == "binary_proven_extra_thread_launch"
+    )
+    summary_payload["binaryValidatedParallelFanoutBranchGroups"] = sum(
+        1
+        for mission_row in rows
+        for branch in (
+            (mission_row.get("branches") or {}).get("nativeControlBranches")
+            or []
+        )
+        if branch.get("kind") == "splitFanout"
+    )
     summary_payload["dialogLineOptionProvenance"] = dict(sorted(dialog_provenance_totals.items()))
     return {
         "_schema": SCHEMA,
@@ -4725,6 +4861,28 @@ def build_report(
             "conversationDir": conversation_dir.relative_to(ROOT).as_posix() if conversation_dir.is_relative_to(ROOT) else conversation_dir.as_posix(),
         },
         "evidencePolicy": EVIDENCE_POLICY,
+        "parallelFanoutAuthority": {
+            key: value
+            for key, value in {
+                "schema": (extra_thread_scheduler_contract or {}).get("schema"),
+                "classification": (extra_thread_scheduler_contract or {}).get(
+                    "classification"
+                ),
+                "source": (extra_thread_scheduler_contract or {}).get("source"),
+                "finding": (extra_thread_scheduler_contract or {}).get("finding"),
+                "boundary": (extra_thread_scheduler_contract or {}).get("boundary"),
+                "writerMethods": (extra_thread_scheduler_contract or {}).get(
+                    "extraThreadExecuteMethods", []
+                ),
+                "relatedOriginalFiles": (
+                    extra_thread_scheduler_contract or {}
+                ).get("relatedOriginalFiles", []),
+                "validation": (extra_thread_scheduler_contract or {}).get(
+                    "validation"
+                ),
+            }.items()
+            if value not in (None, "", [], {})
+        },
         "summary": summary_payload,
         "missions": rows,
     }
@@ -4876,7 +5034,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    report = build_report(args.language, _split_missions(args.mission) or None)
+    report = build_report(
+        args.language,
+        _split_missions(args.mission) or None,
+        extra_thread_scheduler_contract=(
+            load_current_parallel_fanout_authority()
+        ),
+    )
     out_json = args.reports_dir / f"source_story_partial_order_{args.language}.json"
     out_md = args.reports_dir / f"source_story_partial_order_{args.language}.md"
     write_report_json(out_json, report)

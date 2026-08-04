@@ -114,7 +114,7 @@ or local source edits.
 - 5,562 unique Story files across 591 pipeline missions.
 - 4,239 files have an accepted mission/context connection (**76.2%**).
 - 4,462 have a normalized trigger/context route (**80.2%**).
-- 1,323 remain unlinked; 156 already have exact native playback but lack a
+- 1,325 remain unlinked; 156 already have exact native playback but lack a
   mission/quest activation bridge.
 - A general original-binary Encounter contract now adds exact controller and
   related LevelData/SpawnerConfig context for 27 of those Story keys. Its
@@ -127,6 +127,10 @@ or local source edits.
 - All 258 named native branch predicates are operand-decoded where their
   current binary layout is supported; the pipeline reports 263 semantic
   predicates including inline forms, with 0 class-only and 0 unresolved.
+- Parallel Split semantics now come from a general original-binary scheduler
+  census rather than an action-name rule: two writer methods and all three
+  direct scheduler calls validate, covering 44 branch groups and 77 exact
+  Story transitions while keeping sibling slots unordered.
 - A general installed-binary quest-lifecycle rule adds 22 exact same-quest
   objective-to-succeed-action Story edges across 18 missions; each carries its
   original MissionRuntime and binary hashes without inferring server branch choice.

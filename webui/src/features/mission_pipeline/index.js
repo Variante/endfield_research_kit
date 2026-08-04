@@ -487,6 +487,10 @@
       stateApplicationValidated: "typed paths validated",
       noClientSuccessorSelector: "no client successor selector",
       lifecycleIdentityFlow: "same packet identity",
+      extraThreadScheduler: "Parallel branch runtime authority",
+      extraThreadSchedulerValidated: "binary writer shapes validated",
+      extraThreadSiblingBoundary: "sibling slots are not chronological order",
+      extraThreadDirectCalls: "direct scheduler calls",
       exchanges: "exchanges",
       asynchronousExchange: "asynchronous",
       boundaryOnly: "native boundary only",
@@ -1170,6 +1174,10 @@
       stateApplicationValidated: "已验证类型路径",
       noClientSuccessorSelector: "客户端无后继选择器",
       lifecycleIdentityFlow: "同一数据包标识",
+      extraThreadScheduler: "并行分支运行时权威",
+      extraThreadSchedulerValidated: "已验证原生写入形状",
+      extraThreadSiblingBoundary: "同级槽位不是时间顺序",
+      extraThreadDirectCalls: "直接调度器调用",
       exchanges: "项消息",
       asynchronousExchange: "异步",
       boundaryOnly: "仅原生边界",
@@ -3591,7 +3599,7 @@
           const steps = (event.transitionSteps || []).map((step) => {
             const source = `${step.sourceActionName || step.sourceActionClass || "action"} #${step.sourceLocalId ?? "?"}`;
             const target = `${step.targetActionName || step.targetActionClass || "action"} #${step.targetLocalId ?? "?"}`;
-            return `<div><code>${esc(source)}</code><i>&rarr;</i><code>${esc(step.edge || "?")}</code><i>&rarr;</i><code>${esc(target)}</code><b>${esc(nativeTransitionKindLabel(step.transitionKind))}</b>${nativePredicateHtml(step.predicate)}</div>`;
+            return `<div><code>${esc(source)}</code><i>&rarr;</i><code>${esc(step.edge || "?")}</code><i>&rarr;</i><code>${esc(target)}</code><b>${esc(nativeTransitionKindLabel(step.transitionKind))}</b>${step.runtimeSemantics === "binary_proven_extra_thread_launch" && step.siblingOrderEvidence === false ? `<b title="${esc(step.runtimeAuthoritySource || "")}">${esc(t("extraThreadSchedulerValidated"))}</b><small>${esc(t("extraThreadSiblingBoundary"))}</small>` : ""}${nativePredicateHtml(step.predicate)}</div>`;
           }).join("");
           return `<section><small><code>${esc(event.levelId || "?")}/${esc(event.scriptId || "?")}#${esc(event.headerLocalId ?? "?")}</code> ${esc(event.eventName || "")}</small>${nativeEventDetailHtml((event.eventDetails || [])[0])}${steps}</section>`;
         }).join("");
@@ -4272,6 +4280,7 @@
   function runtimeContractHtml() {
     const contract = state.index?.runtimeContract || {};
     const stateApplication = contract.stateUpdateApplicationAudit || null;
+    const extraThreadScheduler = contract.actionExtraThreadSchedulerAudit || null;
     const coveragePolicy = state.index?.storyCoverage?.policy || "";
     const dynamicSceneAudit = state.index?.storyCoverage?.dynamicSceneIdentityCrossReferences || {};
     const currentMissionId = String(state.missionId || state.mission?.mission?.id || "");
@@ -4363,6 +4372,19 @@
         <p class="mp-gap-policy">${esc(stateApplication.finding || "")}</p>
         ${(stateApplication.relatedOriginalFiles || []).map((related) => `<p class="mp-gap-policy"><b>${esc(t("relatedOriginalFile"))}:</b> <code>${esc(related.sourceFile || "")}</code> / SHA-256 <code>${esc(related.sha256 || "")}</code></p>`).join("")}
         <p class="mp-contract-boundary">${esc(stateApplication.boundary || "")}</p>
+      </section>` : ""}
+      ${extraThreadScheduler ? `<section class="mp-local-only mp-extra-thread-scheduler">
+        <header><strong>${esc(t("extraThreadScheduler"))}</strong><span>${Number(extraThreadScheduler.extraThreadExecuteMethods?.length || 0).toLocaleString()} ${esc(t("extraThreadSchedulerValidated"))}</span></header>
+        <div>${(extraThreadScheduler.extraThreadExecuteMethods || []).map((row) => `<article class="mp-contract-card is-local-only">
+          <span>${esc(row.writerShape || "")}</span>
+          <strong>${esc(row.symbol || "")}</strong>
+          <div class="mp-contract-tags"><b>${esc(t("extraThreadSiblingBoundary"))}</b><b>${Number(row.directSchedulerCalls?.length || 0).toLocaleString()} ${esc(t("extraThreadDirectCalls"))}</b></div>
+          <code>${esc(row.token || "")} @ ${esc(row.va || "?")}</code>
+          <small>${(row.typedChildFields || []).map((field) => `<code>${esc(`${field.field}@${field.offset}`)}</code>`).join(" ")}</small>
+        </article>`).join("")}</div>
+        <p class="mp-gap-policy">${esc(extraThreadScheduler.finding || "")}</p>
+        ${(extraThreadScheduler.relatedOriginalFiles || []).map((related) => `<p class="mp-gap-policy"><b>${esc(t("relatedOriginalFile"))}:</b> <code>${esc(related.sourceFile || "")}</code> / SHA-256 <code>${esc(related.sha256 || "")}</code></p>`).join("")}
+        <p class="mp-contract-boundary">${esc(extraThreadScheduler.boundary || "")}</p>
       </section>` : ""}
       ${localRows.length ? `<section class="mp-local-only"><header><strong>${esc(t("localOnlyPaths"))}</strong><span>${esc(t("noServerExchange"))}</span></header><div>${localRows.map((row) => `<article class="mp-contract-card is-local-only"><span>LOCAL · ${esc(row.confidence || "native_proven")}</span><strong>${esc(row.event)}</strong><div class="mp-contract-tags"><b>${esc(t("noServerExchange"))}</b></div>${(row.fields || []).length ? `<small><b>${esc(t("protocolFields"))}:</b> ${(row.fields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</small>` : ""}<code>${esc(row.handler || "")}${row.address ? ` @ ${esc(row.address)}` : ""}</code><p>${esc(row.effect || "")}</p></article>`).join("")}</div></section>` : ""}
       ${protocolOnlyRows.length ? `<section class="mp-local-only mp-protocol-capabilities"><header><strong>${esc(protocolLabel("capability"))}</strong><span>${esc(protocolLabel("schemaOnly"))}</span></header><div>${protocolOnlyRows.map((row) => `<article class="mp-contract-card"><span>${esc(protocolLabel(row.boundary === "runtime_unconfirmed" ? "runtimeUnconfirmed" : "senderUnconfirmed"))}</span><strong>${esc(row.message)}</strong><div class="mp-contract-tags"><b>${esc(row.confidence || "protocol_schema_only")}</b></div>${(row.fields || []).length ? `<small><b>${esc(t("protocolFields"))}:</b> ${(row.fields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</small>` : ""}${row.possibleServerPush ? `<small><b>${esc(protocolLabel("possible"))}:</b> <code>${esc(row.possibleServerPush)}</code></small>` : ""}<p>${esc(row.effect || "")}</p></article>`).join("")}</div></section>` : ""}
