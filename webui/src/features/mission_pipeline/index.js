@@ -408,6 +408,10 @@
       questForkTerminal: "terminal",
       questForkContinues: "continues",
       questForkFlowSort: "display flow",
+      questForkQuestType: "binary quest type",
+      questForkShowMode: "binary visibility mode",
+      questSemanticFields: "Quest type and visibility semantics",
+      questSemanticFieldsHint: "These installed-binary enum names describe client presentation and post-state behavior. They do not select a successor arm.",
       questForkArmCorridor: "sibling-exclusive quest corridor",
       questForkArmStoryEvidence: "exact related Story evidence",
       questForkArmOriginalFiles: "arm-related original files",
@@ -434,6 +438,9 @@
       deprecatedDescriptionOnly: "deprecated description fallback",
       mainPathContextOnly: "level/description context selection",
       mainPathCacheOnly: "derived main-path membership cache",
+      questVisibilityPresentation: "visibility/tracker presentation",
+      questTypePresentation: "quest-type query/presentation",
+      questTypePostLifecycle: "quest type read after lifecycle application",
       questMerge: "quest join",
       nativeSplitFanout: "native Split fan-out",
       nativeIfElseBranch: "native If/Else branch",
@@ -1510,6 +1517,10 @@
       questForkTerminal: "\u7ec8\u70b9",
       questForkContinues: "\u7ee7\u7eed",
       questForkFlowSort: "\u663e\u793a\u987a\u5e8f",
+      questForkQuestType: "\u539f\u751f\u4efb\u52a1\u7c7b\u578b",
+      questForkShowMode: "\u539f\u751f\u53ef\u89c1\u6a21\u5f0f",
+      questSemanticFields: "\u4efb\u52a1\u7c7b\u578b\u4e0e\u53ef\u89c1\u6027\u8bed\u4e49",
+      questSemanticFieldsHint: "\u8fd9\u4e9b\u539f\u59cb\u5ba2\u6237\u7aef\u679a\u4e3e\u540d\u79f0\u4ec5\u63cf\u8ff0\u663e\u793a\u4e0e\u72b6\u6001\u5e94\u7528\u540e\u884c\u4e3a\uff0c\u4e0d\u9009\u62e9\u540e\u7ee7\u5206\u652f\u3002",
       questForkArmCorridor: "\u540c\u7ea7\u5206\u652f\u72ec\u6709\u4efb\u52a1\u8d70\u5eca",
       questForkArmStoryEvidence: "\u7cbe\u786e\u76f8\u5173 Story \u8bc1\u636e",
       questForkArmOriginalFiles: "\u5206\u652f\u76f8\u5173\u539f\u59cb\u6587\u4ef6",
@@ -1536,6 +1547,9 @@
       deprecatedDescriptionOnly: "\u5df2\u5e9f\u5f03\u7684\u63cf\u8ff0\u56de\u9000",
       mainPathContextOnly: "\u5173\u5361/\u63cf\u8ff0\u4e0a\u4e0b\u6587\u9009\u62e9",
       mainPathCacheOnly: "\u6d3e\u751f\u4e3b\u8def\u5f84\u6210\u5458\u7f13\u5b58",
+      questVisibilityPresentation: "\u53ef\u89c1\u6027/\u8ddf\u8e2a\u663e\u793a",
+      questTypePresentation: "\u4efb\u52a1\u7c7b\u578b\u67e5\u8be2/\u663e\u793a",
+      questTypePostLifecycle: "\u751f\u547d\u5468\u671f\u72b6\u6001\u5e94\u7528\u540e\u8bfb\u53d6\u4efb\u52a1\u7c7b\u578b",
       questMerge: "\u4efb\u52a1\u6c47\u5408",
       nativeSplitFanout: "\u539f\u751f Split \u5206\u6d41",
       nativeIfElseBranch: "\u539f\u751f If/Else \u5206\u652f",
@@ -3359,6 +3373,14 @@
     const topology = state.mission?.questTopology;
     const forks = topology?.forks || [];
     if (!forks.length) return "";
+    const semanticFields = state.index?.runtimeContract?.stateUpdateApplicationAudit
+      ?.questTopologyFieldConsumers?.questSemanticFields || {};
+    const questTypeNames = new Map(
+      (semanticFields.questType?.values || []).map((row) => [Number(row.id), row.name]),
+    );
+    const showModeNames = new Map(
+      (semanticFields.showMode?.values || []).map((row) => [Number(row.id), row.name]),
+    );
     const structureLabel = (value) => t(({
       main_path_plus_auxiliary: "questForkMainPathAuxiliary",
       all_auxiliary: "questForkAllAuxiliary",
@@ -3377,9 +3399,11 @@
       const corridor = arm.siblingExclusiveQuestIds || [];
       const storyEvidence = arm.storyEvidence || [];
       const relatedOriginalFiles = arm.relatedOriginalFiles || [];
+      const questTypeName = questTypeNames.get(Number(arm.questType));
+      const showModeName = showModeNames.get(Number(arm.showMode));
       return `<section class="mp-quest-fork-arm ${arm.role === "main_path" ? "is-main-path" : "is-auxiliary"}">
         <header><code>${esc(arm.questId || "?")}</code><b>${esc(t(arm.role === "main_path" ? "questForkMainPathArm" : "questForkAuxiliaryArm"))}</b><span>${esc(t(arm.terminal ? "questForkTerminal" : "questForkContinues"))}</span></header>
-        <p><code>${esc(t("questForkFlowSort"))}=${Number(arm.flowIndex || 0)}</code>${arm.mainPathOrder != null ? `<code>mainPath #${Number(arm.mainPathOrder) + 1}</code>` : ""}${(arm.successorQuestIds || []).map((id) => `<code>&rarr; ${esc(id)}</code>`).join(" ")}</p>
+        <p><code>${esc(t("questForkFlowSort"))}=${Number(arm.flowIndex || 0)}</code>${questTypeName ? `<code>${esc(t("questForkQuestType"))}: ${esc(questTypeName)} (${Number(arm.questType)})</code>` : ""}${showModeName ? `<code>${esc(t("questForkShowMode"))}: ${esc(showModeName)} (${Number(arm.showMode)})</code>` : ""}${arm.mainPathOrder != null ? `<code>mainPath #${Number(arm.mainPathOrder) + 1}</code>` : ""}${(arm.successorQuestIds || []).map((id) => `<code>&rarr; ${esc(id)}</code>`).join(" ")}</p>
         ${corridor.length ? `<div class="mp-quest-fork-corridor"><strong>${esc(t("questForkArmCorridor"))}:</strong>${corridor.map((id) => `<code>${esc(id)}</code>`).join(" ")}</div>` : ""}
         ${conditions.length ? `<p><strong>${esc(t("questForkObjectiveConditions"))}:</strong>${conditions.map((name) => `<code>${esc(name)}</code>`).join(" ")}</p>` : ""}
         ${guard ? `<div class="mp-quest-fork-guard"><strong>${esc(t("questForkGuardedArm"))}:</strong>${renderConditionTree(guard)}</div>` : ""}
@@ -3422,6 +3446,7 @@
     const questForkAuthority = branches.questForkAuthority || null;
     const questStartReads = questForkAuthority?.fieldReadCounts || {};
     const topologyConsumers = questForkAuthority?.topologyFieldConsumers || null;
+    const semanticFields = topologyConsumers?.questSemanticFields || null;
     const questConsumerCensus = topologyConsumers?.questInfoConsumers || {};
     const topologyConsumerRows = [
       ...(questConsumerCensus.rows || []),
@@ -3432,20 +3457,24 @@
       deprecated_description_fallback: t("deprecatedDescriptionOnly"),
       level_or_description_context_selection: t("mainPathContextOnly"),
       derived_main_path_membership_cache: t("mainPathCacheOnly"),
+      quest_visibility_or_tracker_presentation: t("questVisibilityPresentation"),
+      quest_type_query_or_presentation: t("questTypePresentation"),
+      post_lifecycle_quest_type_behavior: t("questTypePostLifecycle"),
     })[classification] || String(classification || "typed field consumer").replaceAll("_", " ");
     const topologyConsumerFields = (row) => {
       const questReads = Object.entries(row.fieldReads || {}).map(([name, reads]) => `${name}:${(reads || []).length}`);
       const missionAccesses = Object.entries(row.fieldAccesses || {}).map(([name, kinds]) => `${name}:${Object.entries(kinds || {}).map(([kind, accesses]) => `${kind}=${(accesses || []).length}`).join("/")}`);
       return [...questReads, ...missionAccesses];
     };
+    const semanticFieldsHtml = semanticFields ? `<section class="mp-quest-semantic-fields"><p><strong>${esc(t("questSemanticFields"))}:</strong> ${(semanticFields.questType?.values || []).map((row) => `<code>${esc(row.name || "?")}=${Number(row.id)}</code>`).join(" ")} ${(semanticFields.showMode?.values || []).map((row) => `<code>${esc(row.name || "?")}=${Number(row.id)}</code>`).join(" ")}</p><p><code>questType consumers=${Number(semanticFields.questType?.consumerCount || 0)}</code> <code>post-lifecycle=${Number(semanticFields.questType?.postLifecycleConsumerCount || 0)}</code> <code>showMode consumers=${Number(semanticFields.showMode?.consumerCount || 0)}</code> <code>lifecycle=${Number(semanticFields.showMode?.lifecycleConsumerCount || 0)}</code></p><small>${esc(semanticFields.finding || t("questSemanticFieldsHint"))}</small><small>${esc(semanticFields.boundary || "")}</small></section>` : "";
     const topologyConsumersHtml = topologyConsumers ? `<section class="mp-topology-consumer-audit">
       <p><strong>${esc(t("wholeClientTopologyConsumers"))}:</strong> <code>${Number(questConsumerCensus.verifiedDirectCallCount || 0)} / ${Number(questConsumerCensus.rawE8CandidateCount || 0)}</code> ${esc(t("verifiedQuestInfoCalls"))} <code>${esc(t("activePredecessorConsumers"))}=${Number(topologyConsumers.activePredecessorConsumerCount || 0)}</code> <code>${esc(t("nonSortFlowConsumers"))}=${Number(topologyConsumers.flowIndexNonSortConsumerCount || 0)}</code> <code>${esc(t("topologyLifecycleCalls"))}=${(topologyConsumers.topologyLifecycleCalls || []).length}</code></p>
       ${topologyConsumerRows.length ? `<details><summary><strong>${esc(t("topologyConsumerMethods"))}</strong> <span>${topologyConsumerRows.length}</span></summary>${topologyConsumerRows.map((row) => `<p><code>${esc(row.caller?.type || "")}.${esc(row.caller?.method || "")}</code> <code>${esc(row.caller?.token || "")}</code> <b>${esc(topologyClassificationLabel(row.classification))}</b>${topologyConsumerFields(row).map((field) => `<code>${esc(field)}</code>`).join(" ")}</p>`).join("")}</details>` : ""}
-      <small>${esc(topologyConsumers.finding || "")}</small><small>${esc(topologyConsumers.boundary || "")}</small>
+      ${semanticFieldsHtml}<small>${esc(topologyConsumers.finding || "")}</small><small>${esc(topologyConsumers.boundary || "")}</small>
     </section>` : "";
     const questForkAuthorityHtml = questForkAuthority ? `<details open class="mp-quest-fork-authority"><summary><b>${esc(t("questForkAuthority"))}</b><span>${esc(t("serverSelectedStart"))}</span></summary>
       <p>${esc(questForkAuthority.finding || t("questForkAuthorityHint"))}</p>
-      <p><strong>${esc(t("questStartReadEvidence"))}:</strong> <code>objectiveList=${Number(questStartReads.objectiveList || 0)}</code> <code>prevQuestIdList=${Number(questStartReads.prevQuestIdList || 0)}</code> <code>flowIndex=${Number(questStartReads.flowIndex || 0)}</code> <code>topology calls=${(questForkAuthority.topologyTraversalCalls || []).length}</code></p>
+      <p><strong>${esc(t("questStartReadEvidence"))}:</strong> <code>objectiveList=${Number(questStartReads.objectiveList || 0)}</code> <code>questType=${Number(questStartReads.questType || 0)}</code> <code>showMode=${Number(questStartReads.showMode || 0)}</code> <code>prevQuestIdList=${Number(questStartReads.prevQuestIdList || 0)}</code> <code>flowIndex=${Number(questStartReads.flowIndex || 0)}</code> <code>topology calls=${(questForkAuthority.topologyTraversalCalls || []).length}</code></p>
       ${questForkAuthority.startQuest?.symbol ? `<p><code>${esc(questForkAuthority.startQuest.symbol)}</code> <code>${esc(questForkAuthority.startQuest.token || "")}</code> <code>${esc(questForkAuthority.startQuest.va || "")}</code></p>` : ""}
       <small>${esc(questForkAuthority.boundary || t("questForkAuthorityHint"))}</small>
       ${topologyConsumersHtml}

@@ -2018,6 +2018,14 @@ body:not(.show-debug) .mp-playback-rejection {
 .mp-topology-consumer-audit p { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
 .mp-topology-consumer-audit details > summary { cursor: pointer; }
 .mp-topology-consumer-audit small { display: block; margin-top: .35rem; color: var(--muted); }
+.mp-quest-semantic-fields {
+  margin: .55rem 0;
+  padding: .45rem .55rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: .45rem;
+  background: color-mix(in srgb, var(--panel) 94%, var(--accent) 6%);
+}
+.mp-quest-semantic-fields p { margin: .3rem 0; }
 
 .mp-quest-topology > p { color: var(--muted); }
 .mp-quest-fork-list { display: grid; gap: .6rem; }

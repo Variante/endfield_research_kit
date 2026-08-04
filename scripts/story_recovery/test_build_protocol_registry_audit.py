@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v16",
+                "_schema": "endfieldProtocolRegistryAudit.v17",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -39,6 +39,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                     },
                     "questTopologyFieldConsumers": {
                         "validation": {"status": "validated", "failures": []},
+                        "questSemanticFields": {
+                            "validation": {"status": "validated", "failures": []},
+                        },
                     },
                 },
                 "levelScriptStartPolicy": {
@@ -661,6 +664,8 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         result = audit.validate_quest_start_application_observation(
             field_reads={
                 "objectiveList": 3,
+                "questType": 0,
+                "showMode": 0,
                 "prevQuestIdList": 0,
                 "flowIndex": 0,
             },
@@ -676,6 +681,8 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         result = audit.validate_quest_start_application_observation(
             field_reads={
                 "objectiveList": 0,
+                "questType": 1,
+                "showMode": 1,
                 "prevQuestIdList": 2,
                 "flowIndex": 1,
             },
@@ -692,6 +699,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "uniqueQuestInfoGetter",
                 "objectiveInitializationRead",
                 "noClientTopologyReadDuringStart",
+                "noQuestSemanticSelectorDuringStart",
                 "noClientSuccessorTraversalCall",
             ],
         )
@@ -702,6 +710,10 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         self.assertEqual(
             result["failures"][2]["actual"],
             {"prevQuestIdList": 2, "flowIndex": 1},
+        )
+        self.assertEqual(
+            result["failures"][3]["actual"],
+            {"questType": 1, "showMode": 1},
         )
         self.assertEqual(result["failures"][0]["sourceFile"], "GameAssembly.dll")
 
@@ -743,6 +755,56 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         self.assertEqual(
             result["failures"][-1]["actual"],
             ["Fixture.StartQuest"],
+        )
+
+    def test_quest_semantic_fields_accept_post_lifecycle_consumption(self):
+        result = audit.validate_quest_semantic_field_observation(
+            quest_type_values={"Normal": 0, "Block": 1, "Optional": 2},
+            show_mode_values={"AlwaysShow": 1, "AlwaysHide": 1000},
+            quest_type_rows=[{
+                "classification": "post_lifecycle_quest_type_behavior",
+                "lifecycleCallSites": [{"offset": 20}],
+                "semanticFieldReadOffsets": [30],
+                "backwardLifecycleBranches": [],
+            }],
+            show_mode_rows=[{
+                "classification": "quest_visibility_or_tracker_presentation",
+                "lifecycleCallSites": [],
+            }],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "e" * 64},
+        )
+
+        self.assertEqual(result, {"status": "validated", "failures": []})
+
+    def test_quest_semantic_fields_report_enum_and_interleaving_failures(self):
+        interleaved = {
+            "classification": "quest_type_lifecycle_interleaved",
+            "lifecycleCallSites": [{"offset": 30}],
+            "semanticFieldReadOffsets": [20],
+            "backwardLifecycleBranches": [{"offset": 40, "targetOffset": 10}],
+        }
+        result = audit.validate_quest_semantic_field_observation(
+            quest_type_values={"Normal": 0},
+            show_mode_values={"AlwaysShow": 1},
+            quest_type_rows=[interleaved],
+            show_mode_rows=[{
+                "lifecycleCallSites": [{"offset": 10}],
+            }],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "f" * 64},
+        )
+
+        self.assertEqual(result["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in result["failures"]],
+            [
+                "questTypeEnum",
+                "questShowModeEnum",
+                "showModeHasNoLifecycleConsumer",
+                "questTypeLifecycleReadsArePostApplication",
+                "noSemanticFieldBackEdgeToLifecycle",
+            ],
         )
 
     def test_relevant_task_schemas_reference_separately_proven_native_paths(self):

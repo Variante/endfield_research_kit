@@ -4065,6 +4065,16 @@ def validate_quest_start_application_observation(
             {"prevQuestIdList": 0, "flowIndex": 0},
             topology_reads,
         )
+    semantic_reads = {
+        name: field_reads.get(name, 0)
+        for name in ("questType", "showMode")
+    }
+    if any(semantic_reads.values()):
+        fail(
+            "noQuestSemanticSelectorDuringStart",
+            {"questType": 0, "showMode": 0},
+            semantic_reads,
+        )
     if topology_calls:
         fail("noClientSuccessorTraversalCall", [], topology_calls)
     return {
@@ -4187,6 +4197,30 @@ def lifecycle_symbols_from_body(body: dict[str, Any]) -> list[str]:
     })
 
 
+def lifecycle_call_sites_from_body(body: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return exact decoded lifecycle calls with their native body offsets."""
+    rows: list[dict[str, Any]] = []
+    for call in body.get("calls") or []:
+        for target in call.get("resolved") or []:
+            method = str(target.get("method") or "")
+            if not STATE_LIFECYCLE_METHOD_RE.fullmatch(method):
+                continue
+            rows.append({
+                "offset": int(call.get("offset") or 0),
+                "targetVa": call.get("targetVa"),
+                "symbol": f"{target.get('type')}.{method}",
+                "token": target.get("token"),
+            })
+    unique = {
+        (row["offset"], row["symbol"], row.get("targetVa")): row
+        for row in rows
+    }
+    return sorted(
+        unique.values(),
+        key=lambda row: (row["offset"], row["symbol"]),
+    )
+
+
 def typed_getter_field_consumer_census(
     metadata: Any,
     helper: Any,
@@ -4282,6 +4316,38 @@ def typed_getter_field_consumer_census(
                 reads[name] = matches
         if not reads:
             continue
+        lifecycle_call_sites = lifecycle_call_sites_from_body(body)
+        semantic_read_offsets = sorted({
+            int(access.get("offset") or 0)
+            for name in ("questType", "showMode")
+            for access in reads.get(name) or []
+        })
+        lifecycle_offsets = [row["offset"] for row in lifecycle_call_sites]
+        first_semantic_read = (
+            semantic_read_offsets[0] if semantic_read_offsets else None
+        )
+        backward_lifecycle_branches: list[dict[str, Any]] = []
+        if first_semantic_read is not None and lifecycle_offsets:
+            latest_lifecycle = max(lifecycle_offsets)
+            for control in body.get("controlFlow") or []:
+                source_offset = int(control.get("offset") or 0)
+                text = str(control.get("text") or "")
+                if not text.startswith("j"):
+                    continue
+                target_text = str(control.get("targetVa") or "")
+                if not target_text:
+                    continue
+                target_offset = int(target_text, 16) - pointer
+                if (
+                    source_offset >= first_semantic_read
+                    and 0 <= target_offset < scan_size
+                    and target_offset <= latest_lifecycle
+                ):
+                    backward_lifecycle_branches.append({
+                        "offset": source_offset,
+                        "targetOffset": target_offset,
+                        "text": text,
+                    })
         parameter_details = mapper_row.get("parameterDetails") or []
         is_two_value_comparator = (
             mapper_row.get("returnTypeName") == "System.Int32"
@@ -4295,6 +4361,20 @@ def typed_getter_field_consumer_census(
             mapper_row.get("method") or ""
         ).lower():
             classification = "deprecated_description_fallback"
+        elif reads.get("showMode") and not lifecycle_call_sites:
+            classification = "quest_visibility_or_tracker_presentation"
+        elif reads.get("questType") and lifecycle_call_sites:
+            if (
+                first_semantic_read is not None
+                and lifecycle_offsets
+                and min(semantic_read_offsets) > max(lifecycle_offsets)
+                and not backward_lifecycle_branches
+            ):
+                classification = "post_lifecycle_quest_type_behavior"
+            else:
+                classification = "quest_type_lifecycle_interleaved"
+        elif reads.get("questType"):
+            classification = "quest_type_query_or_presentation"
         else:
             classification = "typed_field_consumer"
         rows.append({
@@ -4317,6 +4397,9 @@ def typed_getter_field_consumer_census(
             "fieldReads": reads,
             "classification": classification,
             "lifecycleCalls": lifecycle_symbols_from_body(body),
+            "lifecycleCallSites": lifecycle_call_sites,
+            "semanticFieldReadOffsets": semantic_read_offsets,
+            "backwardLifecycleBranches": backward_lifecycle_branches,
         })
     return {
         "getterVa": f"0x{getter_va:x}",
@@ -4373,8 +4456,71 @@ def validate_quest_topology_consumer_observation(
     }
 
 
+def validate_quest_semantic_field_observation(
+    *,
+    quest_type_values: dict[str, int],
+    show_mode_values: dict[str, int],
+    quest_type_rows: list[dict[str, Any]],
+    show_mode_rows: list[dict[str, Any]],
+    source_file: str,
+    source_hashes: dict[str, str],
+) -> dict[str, Any]:
+    """Fail closed on enum identity and branch-neutral client consumption."""
+    failures: list[dict[str, Any]] = []
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append({
+            "validator": "quest_semantic_field_consumer_census",
+            "gate": gate,
+            "message": "QuestInfo.questType/showMode consumers",
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": source_hashes,
+        })
+
+    expected_quest_types = {"Normal": 0, "Block": 1, "Optional": 2}
+    expected_show_modes = {"AlwaysShow": 1, "AlwaysHide": 1000}
+    if quest_type_values != expected_quest_types:
+        fail("questTypeEnum", expected_quest_types, quest_type_values)
+    if show_mode_values != expected_show_modes:
+        fail("questShowModeEnum", expected_show_modes, show_mode_values)
+    if not quest_type_rows:
+        fail("questTypeConsumerDiscovery", ">=1", 0)
+    if not show_mode_rows:
+        fail("showModeConsumerDiscovery", ">=1", 0)
+
+    show_lifecycle_rows = [
+        row for row in show_mode_rows if row.get("lifecycleCallSites")
+    ]
+    if show_lifecycle_rows:
+        fail("showModeHasNoLifecycleConsumer", [], show_lifecycle_rows)
+    interleaved_rows = [
+        row for row in quest_type_rows
+        if row.get("lifecycleCallSites")
+        and row.get("classification") != "post_lifecycle_quest_type_behavior"
+    ]
+    if interleaved_rows:
+        fail(
+            "questTypeLifecycleReadsArePostApplication",
+            [],
+            interleaved_rows,
+        )
+    backward_rows = [
+        row for row in quest_type_rows
+        if row.get("backwardLifecycleBranches")
+    ]
+    if backward_rows:
+        fail("noSemanticFieldBackEdgeToLifecycle", [], backward_rows)
+    return {
+        "status": "validation_failed" if failures else "validated",
+        "failures": failures,
+    }
+
+
 def quest_topology_field_consumer_census(
     metadata: Any,
+    defaults: dict[int, tuple[int, int]],
     helper: Any,
     mapper: Any,
     pe: Any,
@@ -4388,7 +4534,12 @@ def quest_topology_field_consumer_census(
     quest_fields = {
         name: int(str(value), 16)
         for name, value in (quest_start.get("questInfoFieldOffsets") or {}).items()
-        if name in {"prevQuestIdList", "flowIndex"} and value
+        if name in {
+            "questType",
+            "showMode",
+            "prevQuestIdList",
+            "flowIndex",
+        } and value
     }
     getter_rows = quest_start.get("questInfoGetterCalls") or []
     getter_va = int(str(getter_rows[0]["targetVa"]), 16)
@@ -4559,6 +4710,32 @@ def quest_topology_field_consumer_census(
         row for row in mission_rows
         if (row.get("fieldAccesses", {}).get("mainPathQuests") or {}).get("read")
     ]
+    quest_type_rows = [
+        row for row in quest_consumers["rows"]
+        if row["fieldReads"].get("questType")
+    ]
+    show_mode_rows = [
+        row for row in quest_consumers["rows"]
+        if row["fieldReads"].get("showMode")
+    ]
+    quest_type_enum = enum_members(
+        metadata,
+        defaults,
+        "Beyond.GEnums.QuestType",
+    )
+    show_mode_enum = enum_members(
+        metadata,
+        defaults,
+        "Beyond.Gameplay.QuestShowMode",
+    )
+    semantic_validation = validate_quest_semantic_field_observation(
+        quest_type_values={row["name"]: row["id"] for row in quest_type_enum},
+        show_mode_values={row["name"]: row["id"] for row in show_mode_enum},
+        quest_type_rows=quest_type_rows,
+        show_mode_rows=show_mode_rows,
+        source_file=str(gameassembly_path.resolve()),
+        source_hashes=source_hashes,
+    )
     validation = validate_quest_topology_consumer_observation(
         verified_direct_calls=quest_consumers["verifiedDirectCallCount"],
         active_predecessor_rows=active_predecessor_rows,
@@ -4582,6 +4759,45 @@ def quest_topology_field_consumer_census(
         "activePredecessorConsumerCount": len(active_predecessor_rows),
         "flowIndexNonSortConsumerCount": len(non_sort_flow_rows),
         "topologyLifecycleCalls": lifecycle_calls,
+        "questSemanticFields": {
+            "schema": "questSemanticFieldConsumers.v1",
+            "classification": "client_presentation_and_post_application_only",
+            "questType": {
+                "type": "Beyond.GEnums.QuestType",
+                "values": quest_type_enum,
+                "consumerCount": len(quest_type_rows),
+                "postLifecycleConsumerCount": sum(
+                    row.get("classification")
+                    == "post_lifecycle_quest_type_behavior"
+                    for row in quest_type_rows
+                ),
+            },
+            "showMode": {
+                "type": "Beyond.Gameplay.QuestShowMode",
+                "values": show_mode_enum,
+                "consumerCount": len(show_mode_rows),
+                "lifecycleConsumerCount": sum(
+                    bool(row.get("lifecycleCallSites"))
+                    for row in show_mode_rows
+                ),
+            },
+            "finding": (
+                "The installed metadata names questType as Normal, Block, or "
+                "Optional and showMode as AlwaysShow or AlwaysHide. Every direct "
+                "showMode consumer is presentation/tracker-only. The two network "
+                "handlers that also read questType apply their typed quest lifecycle "
+                "calls before reading questType, with no native back-edge to those "
+                "calls; the remaining questType consumers are query or presentation "
+                "methods. Neither field selects a successor arm."
+            ),
+            "boundary": (
+                "These enum names explain authored arm metadata and current client "
+                "consumption. Normal, Block, Optional, AlwaysShow, and AlwaysHide do "
+                "not prove parallel execution, exclusivity, eligibility, or server "
+                "successor selection."
+            ),
+            "validation": semantic_validation,
+        },
         "finding": (
             "Across every verified direct GetQuestInfo caller, flowIndex is consumed "
             "only by a two-value MissionShowData comparator and prevQuestIdList only "
@@ -4630,6 +4846,8 @@ def quest_start_application_contract(
 
     required_fields = {
         "questId",
+        "questType",
+        "showMode",
         "objectiveList",
         "prevQuestIdList",
         "flowIndex",
@@ -4797,8 +5015,8 @@ def quest_start_application_contract(
         "finding": (
             "StartQuest receives one server-selected quest identity, resolves only that "
             "QuestInfo, and reads its objectiveList while initializing client objective "
-            "state. It does not read prevQuestIdList or flowIndex and makes no native "
-            "predecessor/successor traversal call."
+            "state. It does not read questType, showMode, prevQuestIdList, or flowIndex "
+            "and makes no native predecessor/successor traversal call."
         ),
         "boundary": (
             "A MissionRuntime fan-out therefore proves authored prerequisite topology, "
@@ -5343,6 +5561,7 @@ def state_update_application_census(
     )
     topology_consumers = quest_topology_field_consumer_census(
         metadata,
+        defaults,
         helper,
         mapper,
         pe,
@@ -5703,7 +5922,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v16",
+        "_schema": "endfieldProtocolRegistryAudit.v17",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -5772,6 +5991,24 @@ def build_report(
             "topologyLifecycleCalls": len(state_application_census[
                 "questTopologyFieldConsumers"
             ].get("topologyLifecycleCalls") or []),
+            "questTypeConsumers": (
+                state_application_census["questTopologyFieldConsumers"]
+                ["questSemanticFields"]["questType"]["consumerCount"]
+            ),
+            "questTypePostLifecycleConsumers": (
+                state_application_census["questTopologyFieldConsumers"]
+                ["questSemanticFields"]["questType"]
+                ["postLifecycleConsumerCount"]
+            ),
+            "questShowModeConsumers": (
+                state_application_census["questTopologyFieldConsumers"]
+                ["questSemanticFields"]["showMode"]["consumerCount"]
+            ),
+            "questShowModeLifecycleConsumers": (
+                state_application_census["questTopologyFieldConsumers"]
+                ["questSemanticFields"]["showMode"]
+                ["lifecycleConsumerCount"]
+            ),
             "levelScriptStartPolicyValidated": (
                 (start_policy_contract.get("validation") or {}).get("status")
                 == "validated"
@@ -5811,6 +6048,9 @@ def build_report(
             "questSucceedClientAction": state_application_census[
                 "questSucceedActionApplication"
             ]["boundary"],
+            "questSemanticFields": state_application_census[
+                "questTopologyFieldConsumers"
+            ]["questSemanticFields"]["boundary"],
             "levelScriptTasks": (
                 "The task packet family exposes exact (sceneNumId, scriptId, taskId) "
                 "identity, and current-build native sender/handler paths are proven "
@@ -6157,6 +6397,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     quest_fields = quest_start.get("questInfoFieldOffsets") or {}
     quest_reads = quest_start.get("fieldReadCounts") or {}
     topology = state_census.get("questTopologyFieldConsumers") or {}
+    quest_semantics = topology.get("questSemanticFields") or {}
     quest_consumer_census = topology.get("questInfoConsumers") or {}
     topology_rows = quest_consumer_census.get("rows") or []
     mission_topology_rows = topology.get("missionRuntimeConsumers") or []
@@ -6264,6 +6505,37 @@ def render_markdown(report: dict[str, Any]) -> str:
                 )
                 for row in mission_topology_rows
             ],
+            "",
+            "### Quest type and visibility semantics",
+            "",
+            quest_semantics.get("finding") or "[quest semantic-field audit unavailable]",
+            "",
+            (
+                "Quest types: {quest_types}; show modes: {show_modes}; "
+                "post-lifecycle questType consumers: **{post_count}**; "
+                "showMode lifecycle consumers: **{show_lifecycle}**."
+            ).format(
+                quest_types=", ".join(
+                    f"`{row.get('name')}={row.get('id')}`"
+                    for row in (quest_semantics.get("questType") or {}).get(
+                        "values", []
+                    )
+                ),
+                show_modes=", ".join(
+                    f"`{row.get('name')}={row.get('id')}`"
+                    for row in (quest_semantics.get("showMode") or {}).get(
+                        "values", []
+                    )
+                ),
+                post_count=(quest_semantics.get("questType") or {}).get(
+                    "postLifecycleConsumerCount", 0
+                ),
+                show_lifecycle=(quest_semantics.get("showMode") or {}).get(
+                    "lifecycleConsumerCount", 0
+                ),
+            ),
+            "",
+            quest_semantics.get("boundary") or "",
             "",
             topology.get("boundary") or "",
             "",
@@ -6540,7 +6812,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v16 report when its original "
+            "Reuse an existing validated v17 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -6559,7 +6831,7 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v16":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v17":
         return False, f"schema is {report.get('_schema')!r}"
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}
@@ -6595,6 +6867,16 @@ def current_report_status(
         return False, (
             "topology-consumer validation is "
             f"{topology_validation.get('status')!r}"
+        )
+    semantic_validation = (
+        (((report.get("stateUpdateApplicationCensus") or {}).get(
+            "questTopologyFieldConsumers"
+        ) or {}).get("questSemanticFields") or {}).get("validation") or {}
+    )
+    if semantic_validation.get("status") != "validated":
+        return False, (
+            "quest-semantic-field validation is "
+            f"{semantic_validation.get('status')!r}"
         )
     start_policy_validation = (
         (report.get("levelScriptStartPolicy") or {}).get("validation") or {}
@@ -6719,6 +7001,19 @@ def main() -> int:
         first = topology_validation["failures"][0]
         print(
             "topology-consumer validator failed: "
+            f"validator={first['validator']} gate={first['gate']} "
+            f"message={first.get('message')} expected={first['expected']!r} "
+            f"actual={first['actual']!r} source={first['sourceFile']}",
+            file=sys.stderr,
+        )
+        return 1
+    semantic_validation = report["stateUpdateApplicationCensus"][
+        "questTopologyFieldConsumers"
+    ]["questSemanticFields"]["validation"]
+    if semantic_validation["status"] != "validated":
+        first = semantic_validation["failures"][0]
+        print(
+            "quest-semantic-field validator failed: "
             f"validator={first['validator']} gate={first['gate']} "
             f"message={first.get('message')} expected={first['expected']!r} "
             f"actual={first['actual']!r} source={first['sourceFile']}",

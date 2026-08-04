@@ -6505,10 +6505,10 @@ def load_state_update_application_contract(
             f"expected=file actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v16":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v17":
         raise RuntimeError(
             "validator=state_update_application_contract gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v16' "
+            "expected='endfieldProtocolRegistryAudit.v17' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     census = audit.get("stateUpdateApplicationCensus") or {}
@@ -6551,6 +6551,17 @@ def load_state_update_application_contract(
         raise RuntimeError(
             "validator=state_update_application_contract "
             f"gate={failure.get('gate') or 'questTopologyFieldConsumers'} "
+            f"message={failure.get('message')} expected={failure.get('expected')!r} "
+            f"actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    semantic_fields = topology_consumers.get("questSemanticFields") or {}
+    semantic_validation = semantic_fields.get("validation") or {}
+    if semantic_validation.get("status") != "validated":
+        failure = (semantic_validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            "validator=state_update_application_contract "
+            f"gate={failure.get('gate') or 'questSemanticFields'} "
             f"message={failure.get('message')} expected={failure.get('expected')!r} "
             f"actual={failure.get('actual')!r} "
             f"source={failure.get('sourceFile') or audit_path}"
@@ -6622,10 +6633,10 @@ def load_levelscript_task_authority_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v16":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v17":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v16' "
+            "expected='endfieldProtocolRegistryAudit.v17' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
 
@@ -6786,10 +6797,10 @@ def load_levelscript_start_policy_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v16":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v17":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v16' "
+            "expected='endfieldProtocolRegistryAudit.v17' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptStartPolicy") or {}
@@ -6880,10 +6891,10 @@ def load_levelscript_manual_self_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v16":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v17":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v16' "
+            "expected='endfieldProtocolRegistryAudit.v17' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptManualSelfControl") or {}
@@ -6976,10 +6987,10 @@ def load_levelscript_activation_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v16":
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v17":
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v16' "
+            "expected='endfieldProtocolRegistryAudit.v17' "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptActivationControl") or {}
@@ -10162,6 +10173,30 @@ def build_all(
                     "topologyLifecycleCalls", []
                 )
             ),
+            "questTypeConsumers": (
+                state_update_contract["questTopologyFieldConsumers"]
+                .get("questSemanticFields", {})
+                .get("questType", {})
+                .get("consumerCount", 0)
+            ),
+            "questTypePostLifecycleConsumers": (
+                state_update_contract["questTopologyFieldConsumers"]
+                .get("questSemanticFields", {})
+                .get("questType", {})
+                .get("postLifecycleConsumerCount", 0)
+            ),
+            "questShowModeConsumers": (
+                state_update_contract["questTopologyFieldConsumers"]
+                .get("questSemanticFields", {})
+                .get("showMode", {})
+                .get("consumerCount", 0)
+            ),
+            "questShowModeLifecycleConsumers": (
+                state_update_contract["questTopologyFieldConsumers"]
+                .get("questSemanticFields", {})
+                .get("showMode", {})
+                .get("lifecycleConsumerCount", 0)
+            ),
         },
         "conditionTypeMissionCounts": dict(sorted(condition_counts.items())),
         "runtimeContract": runtime_contract,
@@ -11441,6 +11476,14 @@ def main() -> int:
     print(
         f"Mission pipeline: {index['counts']['missions']} missions, "
         f"{index['counts']['quests']} quests -> {args.output_root}"
+    )
+    print(
+        "Quest semantic fields: "
+        f"{index['counts'].get('questTypeConsumers', 0)} questType consumers "
+        f"({index['counts'].get('questTypePostLifecycleConsumers', 0)} "
+        "post-lifecycle), "
+        f"{index['counts'].get('questShowModeConsumers', 0)} showMode consumers "
+        f"({index['counts'].get('questShowModeLifecycleConsumers', 0)} lifecycle)"
     )
     if coverage:
         counts = coverage["counts"]
