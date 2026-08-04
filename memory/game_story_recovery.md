@@ -51,7 +51,7 @@ Latest CN reports:
 | Quest-fork arm evidence | 740 sibling arms; 349 carry 2,053 exact typed Story placements covering 741 Story keys and 318 arm-related original files; 307 placements use binary-named action types |
 | Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; all 95 exact LevelData types select the non-SubLevel client `active=true` request branch; all 95 original scripts have one uniquely decoded active volume (86 sphere / 9 box); 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
 | Binary public-state entry closure | 2 server-derived handlers: full-scene `SC_SELF_SCENE_INFO` snapshots and incremental `SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY`; 4 direct public-state setter callers split into 2 zero initializers and 2 server-parameter writers |
-| Native cross-system consumer census | 500,976 mapped methods / 7,214 unambiguous family targets / 17 reviewed callers: 4 mission-state→DynamicScene, 4 DynamicScene↔LevelScript infrastructure, 8 Story↔DynamicScene visual context, 1 separately audited mission/dialog alternate action; 0 MissionSystem→LevelScript, 0 three-system, 0 unreviewed |
+| Native cross-system consumer census | 500,976 mapped methods / 7,214 unambiguous family targets / 17 reviewed callers; the 4 mission-state→DynamicScene seeds close over 23 methods / 30 direct edges / depth 2, with 1 reviewed IL2CPP class-init indirect site, 0 LevelScript, 0 Story, and 0 unreviewed; deferred availability refresh is pinned through `m_pendingRefreshCompSet@0x48` to `BeforeTick` and `RefreshEntityStatus` |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -78,12 +78,15 @@ in five payloads.
   `GameAssembly.dll`/metadata method corpus and classifies every caller crossing
   MissionSystem, DynamicScene, LevelScript, or Story API families. Four
   `DynamicSceneMissionControlSystem` paths prove that exact mission/quest state
-  controls cared component availability. The remaining callers are trigger
-  geometry, global level loading, Story visual override/actor recovery, or the
-  separately audited `MissionOption` alternate-action path. No direct
-  MissionSystem-to-LevelScript consumer and no three-system activation bridge
-  exists in the current corpus, so DynamicScene identity matches remain
-  mission-scoped context rather than Story ownership, playback, or order.
+  controls cared component availability. Their general direct-call closure has
+  23 methods and 30 edges; the only decoded indirect call is the reviewed
+  IL2CPP class-initializer guard. MetadataRegistration and native field access
+  then prove the deferred continuation: enqueue cared component ids into
+  `m_pendingRefreshCompSet` (token `0x0400e5f9`, offset `0x48`), consume it in
+  `BeforeTick`, re-evaluate the condition, and call `RefreshEntityStatus`. No
+  reachable LevelScript or Story method exists, so this is availability refresh
+  rather than activation, ownership, playback, or order. OCR/manual overrides
+  are not inputs.
 - Exact native control paths for Split, If/Else, Switch, ordered Branch, playback, and
   many event families.
 - 312 native branch groups and 20 native convergences, kept as a partial

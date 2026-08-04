@@ -103,10 +103,11 @@ Rebuild Story data after editing overrides.
   alone never creates a mission ownership or order edge.
 - The native cross-system card shows the complete hash-pinned direct-call
   census across MissionSystem, DynamicScene, LevelScript, and Story APIs,
-  including zero MissionSystem-to-LevelScript and zero three-system consumers.
-  It links the original binary and metadata hashes and keeps mission-controlled
-  DynamicScene availability distinct from LevelScript activation, Story
-  ownership, playback causality, and order.
+  plus the fixed-point consumer closure and the metadata-backed deferred chain
+  `mission/quest state -> pending component set -> BeforeTick -> condition
+  update -> RefreshEntityStatus`. It links the original binary and metadata
+  hashes and keeps this availability refresh distinct from LevelScript
+  activation, Story ownership, playback causality, and order.
 - Story-order panels show binary-proven quest-success lifecycle edges as
   `objective Story completed -> server success state -> succeed client action`.
   Each edge links its exact quest relations and expands the hash-checked

@@ -166,6 +166,10 @@ DEFAULT_LUA_CONSUMER_REFERENCE_AUDIT = (
 DEFAULT_PROTOCOL_REGISTRY_AUDIT = (
     ROOT / "reports" / "story" / "recovery" / "protocol_registry_audit.json"
 )
+DEFAULT_NATIVE_CROSS_SYSTEM_CONSUMER_CENSUS = (
+    ROOT / "reports" / "story" / "recovery"
+    / "native_cross_system_consumer_census.json"
+)
 DEFAULT_CUTSCENE_CASE_RESOLUTION_AUDIT = (
     ROOT / "reports" / "story" / "recovery" / "cutscene_case_resolution_audit.json"
 )
@@ -1186,6 +1190,11 @@ RUNTIME_CONTRACT = {
             "missionLevelScriptCallers": 0,
             "tripleOrGreaterFamilyCallers": 0,
             "unreviewedCallers": 0,
+            "closureReachableMethods": 23,
+            "closureDirectEdges": 30,
+            "closureLevelScriptMethods": 0,
+            "closureStoryMethods": 0,
+            "unreviewedIndirectSites": 0,
         },
         "classifications": {
             "missionStateControlsDynamicComponentAvailability": 4,
@@ -1194,19 +1203,40 @@ RUNTIME_CONTRACT = {
             "storyDynamicSceneVisualContext": 8,
             "missionOrDialogAlternateActionConsumer": 1,
         },
+        "deferredRefreshClosure": {
+            "pendingField": {
+                "name": "m_pendingRefreshCompSet",
+                "token": "0x0400e5f9",
+                "offset": "0x48",
+            },
+            "chain": [
+                "MissionSystem mission/quest state",
+                "DynamicScene cared component enqueue",
+                "m_pendingRefreshCompSet@0x48",
+                "DynamicSceneMissionControlSystem.BeforeTick",
+                "DynamicSceneMissionControlSystem._UpdateConditionValue",
+                "DynamicSceneEntitySystem.RefreshEntityStatus",
+            ],
+            "classification": (
+                "mission_state_drives_deferred_dynamic_scene_availability_refresh"
+            ),
+        },
         "finding": (
             "Four native DynamicSceneMissionControlSystem paths read exact mission or "
-            "quest state and update cared DynamicScene components. The full direct-call "
-            "census finds no MissionSystem-to-LevelScript consumer and no caller joining "
-            "mission state, DynamicScene, and Story or LevelScript. The remaining routes "
+            "quest state and update cared DynamicScene components. Their fixed-point "
+            "direct-call closure reaches 23 gameplay methods across 30 edges, with no "
+            "LevelScript or Story method. Metadata and native field access prove that "
+            "the pending set is consumed by BeforeTick to re-evaluate conditions and "
+            "RefreshEntityStatus. The remaining cross-system routes "
             "are shared trigger geometry, global level-load synchronization, Story visual "
             "override/actor context, or the separately audited MissionOption alternate "
             "mission/dialog actions."
         ),
         "boundary": (
-            "This proves direct mapped calls in the hash-pinned installed binary only. "
-            "Virtual/interface dispatch, reflection, XLua, server-only logic, runtime-created "
-            "delegates, and future builds remain outside the census. Mission-controlled "
+            "The closure reviews its sole decoded indirect site as an IL2CPP class-"
+            "initializer guard, but the partial decoder is not a general x64 proof. "
+            "Reflection, XLua, server-only logic, opaque dynamic dispatch, and future "
+            "builds remain outside the census. Mission-controlled "
             "DynamicScene rows are availability context, not LevelScript activation, Story "
             "ownership, playback causality, or mission order."
         ),
@@ -1226,10 +1256,10 @@ RUNTIME_CONTRACT = {
             ),
             "role": "managed method, type, and generic-instantiation mapping",
         }],
-        "classification": "binary_cross_system_consumers_reviewed_no_activation_bridge",
+        "classification": "mission_state_drives_deferred_dynamic_scene_availability_refresh",
         "storyBindingsAdded": 0,
         "missionOrderEdgesAdded": 0,
-        "confidence": "complete_hash_locked_direct_call_census",
+        "confidence": "hash_locked_direct_and_deferred_native_closure",
     },
     "airWallMissionRadioContext": {
         "managedCarrier": {
@@ -6635,6 +6665,81 @@ POST_PLAYBACK_VARIABLE_SETTER_ACTIONS = {
 }
 
 
+def load_native_cross_system_consumer_contract(
+    audit_path: Path = DEFAULT_NATIVE_CROSS_SYSTEM_CONSUMER_CENSUS,
+) -> dict[str, Any]:
+    """Publish the generic hash-locked closure audit when locally available."""
+    fallback = copy.deepcopy(RUNTIME_CONTRACT["nativeCrossSystemConsumerCensus"])
+    if not audit_path.is_file():
+        return fallback
+    audit = read_json(audit_path)
+    if audit.get("schemaVersion") != "nativeCrossSystemConsumerCensus.v2":
+        raise RuntimeError(
+            "validator=nativeCrossSystemConsumerCensus gate=auditSchema "
+            "expected='nativeCrossSystemConsumerCensus.v2' "
+            f"actual={audit.get('schemaVersion')!r} source={audit_path}"
+        )
+    validation = audit.get("validation") or {}
+    if validation.get("status") != "passed":
+        failure = (validation.get("failures") or [{}])[0]
+        raise RuntimeError(
+            "validator=nativeCrossSystemConsumerCensus "
+            f"gate={failure.get('gate') or 'upstreamValidation'} "
+            f"expected={failure.get('expected')!r} actual={failure.get('actual')!r} "
+            f"source={failure.get('sourceFile') or audit_path}"
+        )
+    summary = audit.get("summary") or {}
+    closure = audit.get("directConsumerClosure") or {}
+    closure_counts = closure.get("counts") or {}
+    deferred = audit.get("deferredRefreshClosure") or {}
+    source = audit.get("source") or {}
+    classifications = summary.get("classificationCounts") or {}
+    return {
+        "source": repo_path(audit_path),
+        "method": " ".join(filter(None, [
+            str((audit.get("method") or {}).get("selection") or ""),
+            str(closure.get("method") or ""),
+        ])),
+        "counts": {
+            "mappedMethodPointers": (audit.get("method") or {}).get("mappedMethodPointers", 0),
+            "familyTargetPointers": (audit.get("method") or {}).get("familyTargetPointers", 0),
+            "crossSystemCallers": summary.get("crossSystemCallers", 0),
+            "missionStateDynamicSceneCallers": classifications.get(
+                "mission_state_controls_dynamic_component_availability", 0
+            ),
+            "missionLevelScriptCallers": summary.get("missionLevelScriptCallers", 0),
+            "tripleOrGreaterFamilyCallers": summary.get("tripleOrGreaterFamilyCallers", 0),
+            "dynamicSceneStoryCallers": classifications.get(
+                "story_dynamic_scene_visual_context", 0
+            ),
+            "unreviewedCallers": summary.get("unreviewedCallers", 0),
+            "closureReachableMethods": closure_counts.get("reachableMethods", 0),
+            "closureDirectEdges": closure_counts.get("directEdges", 0),
+            "closureLevelScriptMethods": closure_counts.get("levelScriptMethods", 0),
+            "closureStoryMethods": closure_counts.get("storyMethods", 0),
+            "unreviewedIndirectSites": closure_counts.get("unreviewedIndirectSites", 0),
+        },
+        "deferredRefreshClosure": deferred,
+        "finding": audit.get("finding"),
+        "boundary": audit.get("boundary"),
+        "relatedOriginalFiles": [{
+            "sourceFile": source.get("gameAssembly"),
+            "sha256": source.get("gameAssemblySha256"),
+            "role": "native consumer and deferred refresh implementation",
+        }, {
+            "sourceFile": source.get("globalMetadata"),
+            "sha256": source.get("globalMetadataSha256"),
+            "role": "managed identities and runtime field layout",
+        }],
+        "classification": deferred.get(
+            "classification", "binary_cross_system_consumers_reviewed"
+        ),
+        "storyBindingsAdded": 0,
+        "missionOrderEdgesAdded": 0,
+        "confidence": "hash_locked_direct_and_deferred_native_closure",
+    }
+
+
 def load_state_update_application_contract(
     audit_path: Path = DEFAULT_PROTOCOL_REGISTRY_AUDIT,
 ) -> dict[str, Any]:
@@ -10360,6 +10465,9 @@ def build_all(
     )
     runtime_contract = {
         **RUNTIME_CONTRACT,
+        "nativeCrossSystemConsumerCensus": (
+            load_native_cross_system_consumer_contract()
+        ),
         "stateUpdateApplicationAudit": state_update_contract,
         "actionExtraThreadSchedulerAudit": extra_thread_scheduler_contract,
         "levelScriptTaskAuthorityAudit": task_authority_contract,

@@ -210,6 +210,11 @@
       missionLevelScriptConsumers: "MissionSystem → LevelScript consumers",
       tripleSystemConsumers: "three-system consumers",
       unreviewedConsumers: "unreviewed consumers",
+      closureReachableMethods: "reachable consumer methods",
+      closureDirectEdges: "direct closure edges",
+      deferredAvailabilityRefresh: "Deferred DynamicScene availability refresh",
+      pendingRefreshField: "pending refresh field",
+      availabilityOnlyNoOrder: "availability refresh only; no Story binding, mission ownership, or order",
       visualContextConsumers: "Story ↔ DynamicScene visual-context consumers",
       dynamicSceneCrossReferences: "DynamicScene identity cross-references",
       dynamicSceneCrossReferencesHint: "A DynamicScene object co-carries mission/quest state conditions, and its exact numeric logic id equals an exported LevelScript script id containing Story playback. One current row also has a typed LevelScript target and shared local Story path; the mission-condition-to-trigger activation edge is still missing, so no row gains mission ownership, playback causality, or order.",
@@ -1051,6 +1056,11 @@
       missionLevelScriptConsumers: "MissionSystem → LevelScript 消费者",
       tripleSystemConsumers: "三系统消费者",
       unreviewedConsumers: "未审查消费者",
+      closureReachableMethods: "可达消费者方法",
+      closureDirectEdges: "直接调用闭包边",
+      deferredAvailabilityRefresh: "延迟 DynamicScene 可用性刷新",
+      pendingRefreshField: "待刷新字段",
+      availabilityOnlyNoOrder: "仅证明可用性刷新；不证明剧情绑定、任务归属或顺序",
       visualContextConsumers: "剧情 ↔ DynamicScene 视觉上下文消费者",
       dynamicSceneCrossReferences: "DynamicScene 身份交叉引用",
       dynamicSceneCrossReferencesHint: "DynamicScene 对象携带任务状态条件，其精确数字逻辑 ID 与包含剧情播放的 LevelScript 脚本 ID 相同。当前一行还具有类型化 LevelScript 目标和共享的本地剧情路径；任务条件到触发器激活的链路仍缺失，因此所有行都不表示任务所有权、播放因果或顺序。",
@@ -4585,7 +4595,15 @@
             <b>${esc(t("tripleSystemConsumers"))}: ${Number(crossSystemCensus.counts?.tripleOrGreaterFamilyCallers || 0).toLocaleString()}</b>
             <b>${esc(t("visualContextConsumers"))}: ${Number(crossSystemCensus.counts?.dynamicSceneStoryCallers || 0).toLocaleString()}</b>
             <b>${esc(t("unreviewedConsumers"))}: ${Number(crossSystemCensus.counts?.unreviewedCallers || 0).toLocaleString()}</b>
+            <b>${esc(t("closureReachableMethods"))}: ${Number(crossSystemCensus.counts?.closureReachableMethods || 0).toLocaleString()}</b>
+            <b>${esc(t("closureDirectEdges"))}: ${Number(crossSystemCensus.counts?.closureDirectEdges || 0).toLocaleString()}</b>
           </div>
+          ${crossSystemCensus.deferredRefreshClosure?.chain?.length ? `<div class="mp-runtime-associations">
+            <strong>${esc(t("deferredAvailabilityRefresh"))}</strong>
+            <div>${crossSystemCensus.deferredRefreshClosure.chain.map((step) => `<code>${esc(step)}</code>`).join('<i aria-hidden="true">→</i>')}</div>
+            <small><b>${esc(t("pendingRefreshField"))}:</b> <code>${esc(`${crossSystemCensus.deferredRefreshClosure.pendingField?.name || "?"}@${crossSystemCensus.deferredRefreshClosure.pendingField?.offset || "?"}`)}</code> <code>${esc(crossSystemCensus.deferredRefreshClosure.pendingField?.token || "")}</code></small>
+            <small>${esc(t("availabilityOnlyNoOrder"))}</small>
+          </div>` : ""}
           <p>${esc(crossSystemCensus.finding)}</p>
           <small>${esc(crossSystemCensus.method || "")}</small>
           ${(crossSystemCensus.relatedOriginalFiles || []).map((related) => `<small><b>${esc(t("relatedOriginalFile"))}:</b> <code>${esc(related.sourceFile || "")}</code> / SHA-256 <code>${esc(related.sha256 || "")}</code> / ${esc(related.role || "")}</small>`).join("")}
