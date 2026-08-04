@@ -32,7 +32,8 @@ Latest CN reports:
 | Exact nested DialogTree containments | 49 across 44 child files |
 | Exact quest-observed DialogTree definitions | 434 definitions / 461 placements across 422 quests |
 | LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
-| Native branch predicates | 258 named; 263 semantic including 5 inline; 0 class-only; 0 unresolved |
+| Native branch predicates | 259 named; 264 semantic including 5 inline; 0 class-only; 0 unresolved |
+| Exact mission-state Story alternatives | 3 branch groups / 2 cross-mission Story references; selection only, never chronology or ownership |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
 | Exact post-playback control | 128 graphs / 105 Story files / 348 actions and edges / 18 branch points / 76 exact serialized handoff contracts with unresolved server handlers |
 | Binary ActionBase naming | 1,313 validated formatter tags / 348 of 348 post-playback actions / 2,564 of 2,564 native-transition endpoints named |
@@ -72,8 +73,15 @@ in five payloads.
   selected runtime receiver evidence.
 - Exact native control paths for Split, If/Else, Switch, ordered Branch, playback, and
   many event families.
-- 307 native branch groups and 19 native convergences, kept as a partial
+- 308 native branch groups and 20 native convergences, kept as a partial
   graph instead of flattened into a guessed file list.
+- The same generic control-path projection now retains complete
+  `CompareMissionState(GetMissionState(constant id), constant state)` arms even
+  when an alternative Story file is nominally grouped under another mission.
+  Three current branch groups expose two such cross-mission references. Each
+  attaches the exact LevelScript, MissionRuntime, installed binary, and metadata
+  hashes; it proves client-side alternative selection, not Story ownership,
+  server transition timing, or order among the alternatives.
 - All 3 previously opaque native branch predicates are now typed from the
   current binary: one general LevelScript-stage comparison and two instances
   of the general mission-or-quest completion getter.
