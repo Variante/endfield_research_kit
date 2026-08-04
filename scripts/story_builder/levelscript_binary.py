@@ -1329,6 +1329,179 @@ def _decode_levelscript_shape_list(
     return _drop_empty(out), cursor
 
 
+def _valid_levelscript_active_shape(shape: dict[str, Any]) -> bool:
+    """Validate one current MemoryPack ``LevelScriptShape`` structurally."""
+    if (
+        shape.get("memberCount") != 5
+        or shape.get("typeRaw") not in LEVELSCRIPT_SHAPE_TYPE_NAMES
+        or shape.get("typeRaw") == 0
+    ):
+        return False
+    values: list[Any] = [shape.get("radius")]
+    for field_name in ("position", "eulerAngles", "size"):
+        field = shape.get(field_name)
+        if not isinstance(field, dict) or set(field) != {"x", "y", "z"}:
+            return False
+        values.extend(field.values())
+    return all(
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+        and abs(value) < 10_000_000
+        for value in values
+    )
+
+
+def find_levelscript_active_shape_candidates(
+    data: bytes,
+    search_start: int,
+    search_end: int,
+) -> list[dict[str, Any]]:
+    """Find exact active-shape members by their generated neighbor fields.
+
+    Current metadata fixes the top-level MemoryPack order as ``actionMap``,
+    ``activeShapeList``, three booleans, then ``endType``.  The scan remains
+    fail-closed: a candidate must decode every shape with the exact five-member
+    schema and must be followed by all four typed scalar neighbors.
+    """
+    lower = max(0, int(search_start))
+    upper = min(len(data), max(lower, int(search_end)))
+    candidates: list[dict[str, Any]] = []
+    for offset in range(lower, upper):
+        shape_list, cursor = _decode_levelscript_shape_list(data, offset)
+        if (
+            cursor is None
+            or shape_list.get("status") != "present"
+            or not isinstance(shape_list.get("count"), int)
+            or int(shape_list["count"]) <= 0
+            or shape_list.get("parseStatus") != "decoded"
+            or not all(
+                isinstance(shape, dict) and _valid_levelscript_active_shape(shape)
+                for shape in shape_list.get("shapes") or []
+            )
+            or len(shape_list.get("shapes") or []) != int(shape_list["count"])
+            or cursor + 7 > upper
+        ):
+            continue
+        scalar_flags = list(data[cursor : cursor + 3])
+        end_type_raw = _u32(data, cursor + 3)
+        if (
+            any(value not in (0, 1) for value in scalar_flags)
+            or end_type_raw not in LEVELSCRIPT_END_TYPE_NAMES
+        ):
+            continue
+        candidates.append({
+            "offset": offset,
+            "offsetHex": _offset_hex(offset),
+            "endOffset": cursor,
+            "endOffsetHex": _offset_hex(cursor),
+            "shapeList": shape_list,
+            "followingFields": {
+                "allowStartOnTravelPole": bool(scalar_flags[0]),
+                "allowTick": bool(scalar_flags[1]),
+                "enablePreload": bool(scalar_flags[2]),
+                "endTypeRaw": end_type_raw,
+                "endTypeName": LEVELSCRIPT_END_TYPE_NAMES[end_type_raw],
+            },
+        })
+    return candidates
+
+
+def decode_levelscript_active_shape_list(
+    data: bytes,
+    script_id: int,
+) -> dict[str, Any]:
+    """Recover the authored active volume without an object-specific offset."""
+    out: dict[str, Any] = {
+        "schema": "levelScriptActiveShapeList.v1",
+        "status": "unresolved",
+        "candidateCount": 0,
+    }
+    if not data or data[0] != 27 or script_id <= 0:
+        out["diagnostic"] = "topLevelMemberCountOrScriptId"
+        return out
+
+    records = extract_levelscript_uid_records(data)
+    action_map = decode_levelscript_action_map_lists(data, records)
+    sorted_records = sorted(records, key=_record_start)
+    serialized_lists = [
+        row
+        for row in action_map.get("serializedLists") or []
+        if row.get("name") in ACTION_SERIALIZED_MAP_LIST_ORDER
+        and row.get("status") == "present"
+        and isinstance(row.get("recordIndexEnd"), int)
+    ]
+    final_record_index = max(
+        (int(row["recordIndexEnd"]) for row in serialized_lists),
+        default=0,
+    )
+    if final_record_index <= 0 or final_record_index > len(sorted_records):
+        out["diagnostic"] = "completeActionMapBoundaryMissing"
+        return out
+
+    tail_rows = [_tail_candidate(data, offset) for offset in _u64_offsets(data, script_id)]
+    if not tail_rows:
+        out["diagnostic"] = "verifiedTopLevelScriptIdMissing"
+        return out
+    best_score = max(int(row.get("score") or 0) for row in tail_rows)
+    best_tails = [row for row in tail_rows if int(row.get("score") or 0) == best_score]
+    if len(best_tails) != 1:
+        out.update({
+            "diagnostic": "topLevelScriptIdBoundaryAmbiguous",
+            "tailCandidateCount": len(best_tails),
+        })
+        return out
+
+    final_record = sorted_records[final_record_index - 1]
+    search_start = int(final_record.get("payloadStart") or final_record.get("start") or 0)
+    search_end = int(best_tails[0].get("scriptIdOffset") or 0)
+    candidates = find_levelscript_active_shape_candidates(
+        data,
+        search_start,
+        search_end,
+    )
+    out.update({
+        "candidateCount": len(candidates),
+        "candidateOffsets": [row["offsetHex"] for row in candidates[:8]],
+        "searchStartOffsetHex": _offset_hex(search_start),
+        "searchEndOffsetHex": _offset_hex(search_end),
+        "actionMapFinalList": str(serialized_lists[-1].get("name") or ""),
+        "serializedMemberOrder": [
+            "actionMap",
+            "activeShapeList",
+            "allowStartOnTravelPole",
+            "allowTick",
+            "enablePreload",
+            "endType",
+        ],
+    })
+    if len(candidates) != 1:
+        out["diagnostic"] = (
+            "activeShapeCandidateMissing"
+            if not candidates
+            else "activeShapeCandidateAmbiguous"
+        )
+        return out
+
+    candidate = candidates[0]
+    shape_list = candidate["shapeList"]
+    out.update({
+        "status": "decoded_unique",
+        "offsetHex": candidate["offsetHex"],
+        "endOffsetHex": candidate["endOffsetHex"],
+        "count": shape_list.get("count"),
+        "shapes": shape_list.get("shapes") or [],
+        "followingFields": candidate["followingFields"],
+        "evidenceBoundary": (
+            "This recovers the authored activation geometry and exact adjacent "
+            "MemoryPack fields. It does not prove the player position, runtime "
+            "inside/outside classification, activation outcome, mission owner, "
+            "event firing, or Story order."
+        ),
+    })
+    return out
+
+
 def _decode_vector2_list(
     data: bytes,
     offset: int,
@@ -7753,6 +7926,7 @@ def decode_levelscript_binary_summary(data: bytes, script_id: int) -> dict[str, 
     offsets = _u64_offsets(data, script_id)
     candidates = [_tail_candidate(data, offset) for offset in offsets]
     best = max(candidates, key=lambda item: int(item.get("score") or 0), default={})
+    active_shapes = decode_levelscript_active_shape_list(data, script_id)
     return {
         "serializedMemberCount": data[0],
         "expectedMemberCount": 27,
@@ -7766,6 +7940,10 @@ def decode_levelscript_binary_summary(data: bytes, script_id: int) -> dict[str, 
         "scriptIdVerified": bool(offsets),
         "probableScriptIdOffset": best.get("scriptIdOffset"),
         "probableScriptIdOffsetHex": best.get("scriptIdOffsetHex") or "",
+        "activeShapeList": active_shapes,
+        "activeShapeListStatus": active_shapes.get("status") or "",
+        "activeShapeListCount": active_shapes.get("count"),
+        "activeShapeListShapes": active_shapes.get("shapes") or [],
         "startShapeListStatus": best.get("startShapeListStatus") or "",
         "startShapeListCount": best.get("startShapeListCount"),
         "startShapeListDetails": best.get("startShapeList") or {},
@@ -7784,7 +7962,7 @@ def decode_levelscript_binary_summary(data: bytes, script_id: int) -> dict[str, 
         "triggerVolumeSlotIds": (best.get("triggerVolumes") or {}).get("slotIds") or [],
         "note": (
             "current 27-member top-level MemoryPack plus actionMap header and "
-            "scriptId/startType/shape-list trigger fields decoded; "
+            "unique active shape, scriptId/startType/shape-list trigger fields decoded; "
             "final current-build Leader trigger-volume maps include exact slot and geometry; "
             "action start/end opcodes are still not decoded"
         ),

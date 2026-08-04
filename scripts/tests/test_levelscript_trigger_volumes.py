@@ -8,10 +8,28 @@ from scripts.story_builder.levelscript_binary import (
     _find_final_trigger_volume_map,
     decode_levelscript_binary_summary,
     decode_levelscript_encounter_module_target,
+    find_levelscript_active_shape_candidates,
 )
 
 
 class LevelScriptTriggerVolumeTests(unittest.TestCase):
+    @staticmethod
+    def _active_shape_list(*, shape_type: int = 2) -> bytes:
+        shape = (
+            b"\x05"
+            + struct.pack("<fff", 0.0, 45.0, 0.0)
+            + struct.pack("<fff", 10.0, 20.0, 30.0)
+            + struct.pack("<f", 8.0)
+            + struct.pack("<fff", 3.0, 4.0, 5.0)
+            + struct.pack("<I", shape_type)
+        )
+        return (
+            struct.pack("<I", 1)
+            + shape
+            + b"\x00\x01\x00"
+            + struct.pack("<I", 3)
+        )
+
     @staticmethod
     def _single_encounter_script(pointer: int, script_id: int) -> bytes:
         slot_ptr = lambda logic_id, slot_id: (
@@ -107,6 +125,37 @@ class LevelScriptTriggerVolumeTests(unittest.TestCase):
         self.assertEqual(len(b"task-prefix"), offset)
         self.assertEqual(len(wrapped), cursor)
         self.assertEqual([80001], tail["slotIds"])
+
+    def test_active_shape_candidate_uses_schema_and_adjacent_typed_fields(self) -> None:
+        encoded = self._active_shape_list()
+        payload = b"action-tail" + encoded + b"later-members"
+        candidates = find_levelscript_active_shape_candidates(
+            payload,
+            len(b"action-tail"),
+            len(payload),
+        )
+        self.assertEqual(1, len(candidates))
+        self.assertEqual("SPHERE", candidates[0]["shapeList"]["shapes"][0]["type"])
+        self.assertEqual("SameWithDeactive", candidates[0]["followingFields"]["endTypeName"])
+
+    def test_active_shape_candidate_rejects_bad_member_and_ambiguous_matches(self) -> None:
+        invalid = bytearray(self._active_shape_list())
+        invalid[4] = 4
+        self.assertEqual(
+            [],
+            find_levelscript_active_shape_candidates(bytes(invalid), 0, len(invalid)),
+        )
+
+        encoded = self._active_shape_list()
+        ambiguous = encoded + b"separator" + encoded
+        self.assertEqual(
+            2,
+            len(find_levelscript_active_shape_candidates(
+                ambiguous,
+                0,
+                len(ambiguous),
+            )),
+        )
 
     def test_finds_exact_empty_or_null_map_at_eof(self) -> None:
         for encoded_count, expected_status, expected_count in (

@@ -63,7 +63,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v20"
+SCHEMA = "nativeReceiverActivationFrontier.v21"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -1845,6 +1845,7 @@ def exact_active_phase_receiver_contract(
 def exact_client_active_request_contract(
     hosts: list[dict[str, Any]],
     activation_control: dict[str, Any],
+    levelscript: dict[str, Any],
 ) -> dict[str, Any]:
     """Join one validated LevelData type to the generic binary selector.
 
@@ -1852,6 +1853,8 @@ def exact_client_active_request_contract(
     mission candidates never select a branch.
     """
     selector = activation_control.get("activationSelectorFlow") or {}
+    active_area_flow = activation_control.get("activeAreaFlow") or {}
+    active_shapes = levelscript.get("activeShapeList") or {}
     type_values = selector.get("levelScriptTypeValues") or {}
     validation = activation_control.get("validation") or {}
     host_types = [
@@ -1860,7 +1863,7 @@ def exact_client_active_request_contract(
         if isinstance((host.get("briefData") or {}).get("levelScriptType"), int)
     ]
     binary_validated = (
-        activation_control.get("schema") == "levelScriptActivationControl.v4"
+        activation_control.get("schema") == "levelScriptActivationControl.v5"
         and validation.get("status") == "validated"
         and selector.get("nonSubLevelRequiresEnabledAndActiveArea") is True
         and selector.get("subLevelRequiresPublicActive") is True
@@ -1888,6 +1891,20 @@ def exact_client_active_request_contract(
             if is_sublevel
             else "client_runtime_active_request_after_enabled_area_gate"
         )
+    spatial_gate_validated = (
+        validated
+        and not is_sublevel
+        and active_shapes.get("status") == "decoded_unique"
+        and active_shapes.get("candidateCount") == 1
+        and isinstance(active_shapes.get("count"), int)
+        and int(active_shapes["count"]) > 0
+        and len(active_shapes.get("shapes") or []) == int(active_shapes["count"])
+        and active_area_flow.get("emptyActiveListSetsWithinTrue") is True
+        and active_area_flow.get("activeShapeHitSetsWithinTrue") is True
+        and active_area_flow.get("missingOutsideListPreservesPriorWithin") is True
+        and active_area_flow.get("outsideShapeMissPreservesPriorWithin") is True
+        and active_area_flow.get("outsideShapeHitClearsWithin") is True
+    )
     return {
         "schema": "exactClientActiveRequest.v1",
         "status": "validated" if validated else "unresolved",
@@ -1915,6 +1932,15 @@ def exact_client_active_request_contract(
             else []
         ),
         "selectorFlow": selector if validated else {},
+        "spatialGateStatus": (
+            "validated_runtime_position_dependent"
+            if spatial_gate_validated
+            else "not_applicable"
+            if is_sublevel
+            else "unresolved"
+        ),
+        "activeShapeList": active_shapes if spatial_gate_validated else {},
+        "activeAreaFlow": active_area_flow if spatial_gate_validated else {},
         "finding": (
             "The exact LevelData type selects the generic non-SubLevelScript "
             "branch: after public Enabled and a successful active-area check, "
@@ -1928,8 +1954,9 @@ def exact_client_active_request_contract(
         ),
         "evidenceBoundary": (
             "This proves the generic request-producing branch selected by the "
-            "original LevelData type. It does not prove who supplied public "
-            "Enabled, whether the spatial gate passed in a particular playthrough, "
+            "original LevelData type and, where decoded, its authored activation "
+            "volume. It does not prove who supplied public Enabled, the player "
+            "position, whether the spatial gate passed in a particular playthrough, "
             "which server branch accepted Active, mission ownership, event firing, "
             "or Story order."
         ),
@@ -2172,6 +2199,7 @@ def build_report(
         client_active_request = exact_client_active_request_contract(
             hosts,
             activation_control,
+            levelscript,
         )
         classification = activation_class(
             levelscript,
@@ -2351,6 +2379,17 @@ def build_report(
                     "actionMapRecordCount": levelscript.get(
                         "actionMapRecordCount"
                     ),
+                    "activeShapeList": levelscript.get("activeShapeList") or {},
+                    "activeShapeListStatus": safe_text(
+                        levelscript.get("activeShapeListStatus")
+                    ),
+                    "activeShapeListCount": levelscript.get(
+                        "activeShapeListCount"
+                    ),
+                    "activeShapeListShapes": levelscript.get(
+                        "activeShapeListShapes"
+                    )
+                    or [],
                     "startTypeRaw": levelscript.get("startTypeRaw"),
                     "startTypeName": safe_text(levelscript.get("startTypeName")),
                     "startShapeListStatus": safe_text(
@@ -2679,6 +2718,33 @@ def build_report(
                 is True
                 for row in rows
             ),
+            "scriptsWithValidatedActiveShapeGate": sum(
+                (row.get("clientActiveRequestControl") or {}).get(
+                    "spatialGateStatus"
+                )
+                == "validated_runtime_position_dependent"
+                for row in rows
+            ),
+            "authoredActiveShapeCount": sum(
+                int(
+                    ((row.get("clientActiveRequestControl") or {}).get(
+                        "activeShapeList"
+                    ) or {}).get("count")
+                    or 0
+                )
+                for row in rows
+            ),
+            "authoredActiveShapeTypes": dict(sorted(Counter(
+                safe_text(shape.get("type"))
+                for row in rows
+                for shape in (
+                    ((row.get("clientActiveRequestControl") or {}).get(
+                        "activeShapeList"
+                    ) or {}).get("shapes")
+                    or []
+                )
+                if isinstance(shape, dict) and safe_text(shape.get("type"))
+            ).items())),
             "clientActiveRequestLevelScriptTypes": dict(sorted(Counter(
                 safe_text((row.get("clientActiveRequestControl") or {}).get(
                     "levelScriptTypeName"
@@ -3018,6 +3084,11 @@ def publish_to_pipeline_index(
                 levelscript.get("startShapeListStatus")
             ),
             "startShapeListCount": levelscript.get("startShapeListCount"),
+            "activeShapeList": levelscript.get("activeShapeList") or {},
+            "activeShapeListStatus": safe_text(
+                levelscript.get("activeShapeListStatus")
+            ),
+            "activeShapeListCount": levelscript.get("activeShapeListCount"),
             "taskMapStatus": safe_text(levelscript.get("taskMapStatus")),
             "taskMapCount": levelscript.get("taskMapCount"),
             "levelDataHosts": [
@@ -3321,6 +3392,12 @@ def markdown_report(payload: dict[str, Any]) -> str:
             f"`{counts.get('scriptsWithValidatedClientActiveRequestSelector')}` / "
             f"`{counts.get('scriptsWithClientProducedActiveRequest')}` "
             f"(`{counts.get('clientActiveRequestLevelScriptTypes')}`)"
+        ),
+        (
+            "- Scripts with exact authored active-volume gate / shapes / types: "
+            f"`{counts.get('scriptsWithValidatedActiveShapeGate')}` / "
+            f"`{counts.get('authoredActiveShapeCount')}` / "
+            f"`{counts.get('authoredActiveShapeTypes')}`"
         ),
         (
             "- Scripts / exact headers / Story keys with binary-validated "

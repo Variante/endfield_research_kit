@@ -172,3 +172,8 @@ for (const [key, category] of [
         self.assertIn('t("binaryClientActiveRequest")', source)
         self.assertIn("clientActiveRequestControl.runtimePath", source)
         self.assertIn("who supplied Enabled", source)
+        self.assertIn('t("binaryActiveVolume")', source)
+        self.assertIn("clientActiveRequestControl.activeShapeList?.shapes", source)
+        self.assertIn("validated_runtime_position_dependent", source)
+        self.assertIn("shape.position", source)
+        self.assertIn("shape.eulerAngles", source)

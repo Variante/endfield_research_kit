@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v13",
+                "_schema": "endfieldProtocolRegistryAudit.v14",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -463,6 +463,30 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "nonSubLevelSendsActiveTrueAfterPreActive": True,
                 "subLevelSkipsActiveTrueRequest": True,
             },
+            "activeAreaFlow": {
+                "activeShapeListFieldOffset": 112,
+                "activeShapeOutsideListFieldOffset": 120,
+                "withinActiveAreaFieldOffset": 104,
+                "activeShapeListReadOffsets": [363, 1356, 1374],
+                "activeShapeOutsideListReadOffsets": [1630, 1648],
+                "withinActiveAreaAccessOffsets": [1704, 1743, 3388, 3394, 3398],
+                "activeListPositiveCountSetterOffset": 430,
+                "emptyActiveListBranchOffset": 555,
+                "activeShapeTestCallOffset": 1617,
+                "activeShapeHitBranchOffset": 1624,
+                "missingOutsideListBranchOffset": 1635,
+                "outsideShapeTestCallOffset": 1691,
+                "outsideShapeMissBranchOffset": 1698,
+                "withinFalseSetterOffsets": [1743, 3388],
+                "outsideShapeHitClearOffset": 1743,
+                "withinTrueSetterOffset": 3394,
+                "withinReturnOffset": 3398,
+                "emptyActiveListSetsWithinTrue": True,
+                "activeShapeHitSetsWithinTrue": True,
+                "missingOutsideListPreservesPriorWithin": True,
+                "outsideShapeMissPreservesPriorWithin": True,
+                "outsideShapeHitClearsWithin": True,
+            },
         }
 
         result = audit.validate_levelscript_activation_control_observation(
@@ -504,6 +528,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "clientRequestFlow",
                 "requestDirectCallers",
                 "activationSelectorFlow",
+                "activeAreaFlow",
                 "activeReceiverFlow",
             ],
         )
