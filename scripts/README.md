@@ -104,9 +104,13 @@ override those defaults for one run.
   through the deferred `BeforeTick` availability refresh. A second corpus-
   derived pass discovers the full managed mission/quest identity type surface,
   then audits all cross-family callers and method signatures against
-  LevelScript and Story. It distinguishes
+  LevelScript and Story. The same hash-locked pass resolves every callable
+  field type through MetadataRegistration, discovers callable-parameter entry
+  methods without member-name allowlists, and scans every direct native caller
+  of those bindings. It distinguishes
   mission-controlled DynamicScene availability from shared geometry, global
-  loading, and Story visual context; none creates ownership or order.
+  loading, Story visual context, and family-local delegate notifications; none
+  creates ownership or order.
 - A second general activation contract inventories every direct current-client
   `ManualStart` caller, validates the public state-notify application chain,
   and recovers the generic client request lifecycle. Exact metadata schemas,

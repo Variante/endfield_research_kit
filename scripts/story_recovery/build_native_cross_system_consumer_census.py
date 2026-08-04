@@ -66,6 +66,37 @@ EXPECTED_MISSION_RUNTIME_SURFACE = {
     "trackingSceneFieldWrites": 3,
     "unreviewedCallers": 0,
 }
+EXPECTED_CALLABLE_CARRIER_SURFACE = {
+    "callableFields": 13,
+    "missionRuntimeCallableFields": 9,
+    "levelScriptCallableFields": 4,
+    "crossIdentityCallableFields": 0,
+    "callableEntryMethods": 5,
+    "callableEntryTargetPointers": 5,
+    "directBindingCalls": 5,
+    "missionLevelScriptBindings": 0,
+    "unreviewedBindingCallers": 0,
+}
+
+RUNTIME_PRIMITIVE_TYPE_NAMES = {
+    0x01: "void",
+    0x02: "bool",
+    0x03: "char",
+    0x04: "sbyte",
+    0x05: "byte",
+    0x06: "short",
+    0x07: "ushort",
+    0x08: "int",
+    0x09: "uint",
+    0x0A: "long",
+    0x0B: "ulong",
+    0x0C: "float",
+    0x0D: "double",
+    0x0E: "string",
+    0x18: "nint",
+    0x19: "nuint",
+    0x1C: "object",
+}
 
 
 class AuditError(RuntimeError):
@@ -135,6 +166,186 @@ def mission_runtime_type_names(metadata: Any) -> set[str]:
         if "mission" in short_name or "quest" in short_name or fields & identity_fields:
             result.add(type_name)
     return result
+
+
+def runtime_generic_inst_type_pointers(pe: Any, generic_inst_va: int) -> list[int]:
+    """Decode one installed IL2CPP generic-instantiation argument vector."""
+    offset, _section, _rva = pe.file_offset_for_va(generic_inst_va)
+    if offset is None:
+        raise AuditError(
+            f"generic instantiation VA outside GameAssembly: 0x{generic_inst_va:x}"
+        )
+    argument_count, arguments_va = struct.unpack_from("<QQ", pe.buf, offset)
+    if argument_count > 64:
+        raise AuditError(
+            f"implausible generic argument count {argument_count} at "
+            f"0x{generic_inst_va:x}"
+        )
+    return [pe.u64_at_va(arguments_va + index * 8) for index in range(argument_count)]
+
+
+def runtime_type_name(
+    pe: Any,
+    metadata: Any,
+    type_va: int,
+    *,
+    depth: int = 0,
+    seen: frozenset[int] = frozenset(),
+) -> str:
+    """Name one installed Il2CppType, including closed generic arguments."""
+    if depth > 12:
+        return "<generic-depth-limit>"
+    if type_va in seen:
+        return f"<recursive-type:0x{type_va:x}>"
+    offset, _section, _rva = pe.file_offset_for_va(type_va)
+    if offset is None:
+        return f"<type-va-outside-image:0x{type_va:x}>"
+    data = struct.unpack_from("<Q", pe.buf, offset)[0]
+    type_code = pe.buf[offset + 10]
+    primitive = RUNTIME_PRIMITIVE_TYPE_NAMES.get(type_code)
+    if primitive is not None:
+        return primitive
+    if type_code in {0x11, 0x12}:  # valuetype / class
+        if 0 <= data < len(metadata.types):
+            return metadata.type_full_name(metadata.types[data])
+        return f"<type-definition:{data}>"
+    if type_code == 0x15:  # genericinst
+        generic_offset, _section, _rva = pe.file_offset_for_va(data)
+        if generic_offset is None:
+            return f"<generic-class-va-outside-image:0x{data:x}>"
+        definition_type_va, class_inst_va = struct.unpack_from(
+            "<QQ", pe.buf, generic_offset
+        )
+        next_seen = seen | {type_va}
+        definition_name = runtime_type_name(
+            pe,
+            metadata,
+            definition_type_va,
+            depth=depth + 1,
+            seen=next_seen,
+        )
+        arguments = [
+            runtime_type_name(
+                pe,
+                metadata,
+                argument_type_va,
+                depth=depth + 1,
+                seen=next_seen,
+            )
+            for argument_type_va in runtime_generic_inst_type_pointers(pe, class_inst_va)
+        ]
+        return f"{definition_name}<{','.join(arguments)}>"
+    if type_code in {0x13, 0x1E}:  # generic type/method variable
+        return f"{'VAR' if type_code == 0x13 else 'MVAR'}[{data}]"
+    if type_code == 0x0F:  # pointer
+        return runtime_type_name(
+            pe, metadata, data, depth=depth + 1, seen=seen | {type_va}
+        ) + "*"
+    if type_code == 0x1D:  # single-dimensional array
+        return runtime_type_name(
+            pe, metadata, data, depth=depth + 1, seen=seen | {type_va}
+        ) + "[]"
+    return f"<runtime-type:0x{type_code:x}:data=0x{data:x}>"
+
+
+def is_callable_type_name(type_name: str) -> bool:
+    """Recognize managed callable carriers by resolved type semantics."""
+    short_name = type_name.rsplit(".", 1)[-1]
+    return (
+        type_name == "System.Action"
+        or type_name.startswith("System.Action`")
+        or type_name.startswith("System.Func`")
+        or short_name.endswith("Delegate")
+        or short_name.endswith("Callback")
+    )
+
+
+def callable_owner_families(type_name: str, mission_types: set[str]) -> set[str]:
+    families: set[str] = set()
+    if type_name in mission_types:
+        families.add("mission_runtime")
+    if "LevelScript" in type_name:
+        families.add("level_script")
+    return families
+
+
+def callable_binding_crosses_mission_levelscript(binding: dict[str, Any]) -> bool:
+    return {"mission_runtime", "level_script"} <= (
+        set(binding.get("callerFamilies") or [])
+        | set(binding.get("targetFamilies") or [])
+    )
+
+
+def callable_carrier_metadata_surface(
+    metadata: Any,
+    catalog: Any,
+    pe: Any,
+    registration_summary: dict[str, Any],
+    mission_types: set[str],
+) -> tuple[list[dict[str, Any]], dict[int, dict[str, Any]]]:
+    """Discover callable fields and their typed binding entry points generically."""
+    runtime_types_va = int(registration_summary["types"], 16)
+    runtime_type_count = int(registration_summary["typesCount"])
+    type_name_cache: dict[int, str] = {}
+
+    def resolved_type_name(type_index: int) -> str:
+        if type_index not in type_name_cache:
+            if not 0 <= type_index < runtime_type_count:
+                type_name_cache[type_index] = f"<type-index:{type_index}>"
+            else:
+                type_name_cache[type_index] = runtime_type_name(
+                    pe,
+                    metadata,
+                    pe.u64_at_va(runtime_types_va + type_index * 8),
+                )
+        return type_name_cache[type_index]
+
+    fields: list[dict[str, Any]] = []
+    callable_owners: set[str] = set()
+    for type_def in metadata.types:
+        owner = metadata.type_full_name(type_def)
+        families = callable_owner_families(owner, mission_types)
+        if not families:
+            continue
+        for field in metadata.fields_for(type_def):
+            field_type = resolved_type_name(field.type_index)
+            if not is_callable_type_name(field_type):
+                continue
+            fields.append({
+                "owner": owner,
+                "ownerToken": f"0x{type_def.token:08x}",
+                "field": metadata.string(field.name_index),
+                "fieldToken": f"0x{field.token:08x}",
+                "type": field_type,
+                "families": sorted(families),
+            })
+            callable_owners.add(owner)
+
+    entry_methods: dict[int, dict[str, Any]] = {}
+    for type_def in metadata.types:
+        owner = metadata.type_full_name(type_def)
+        if owner not in callable_owners:
+            continue
+        for method in metadata.methods_for(type_def):
+            method_row = catalog.method_row(metadata, method)
+            parameter_types = [
+                str(parameter.get("typeName") or "")
+                for parameter in method_row.get("parameterDetails") or []
+            ]
+            callable_parameters = [
+                type_name for type_name in parameter_types if is_callable_type_name(type_name)
+            ]
+            if not callable_parameters:
+                continue
+            entry_methods[method.index] = {
+                "owner": owner,
+                "method": method_row["name"],
+                "token": method_row["token"],
+                "parameterTypes": parameter_types,
+                "callableParameterTypes": callable_parameters,
+                "families": sorted(callable_owner_families(owner, mission_types)),
+            }
+    return sorted(fields, key=lambda row: (row["owner"], row["field"])), entry_methods
 
 
 def mission_runtime_families(
@@ -554,6 +765,23 @@ def validate_mission_runtime_surface(
     return failures
 
 
+def validate_callable_carrier_surface(
+    counts: dict[str, int], source_file: str
+) -> list[dict[str, Any]]:
+    failures: list[dict[str, Any]] = []
+    for gate, expected in EXPECTED_CALLABLE_CARRIER_SURFACE.items():
+        actual = counts.get(gate, 0)
+        if actual != expected:
+            failures.append({
+                "validator": "nativeCrossSystemConsumerCensus",
+                "gate": f"managedCallableSurface.{gate}",
+                "expected": expected,
+                "actual": actual,
+                "sourceFile": source_file,
+            })
+    return failures
+
+
 def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
     if not gameassembly.is_file() or not metadata_path.is_file():
         raise AuditError(f"missing original binary input: {gameassembly} / {metadata_path}")
@@ -589,6 +817,7 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
         methods_by_pointer.setdefault(pointer, aliases)
 
     method_pointers = sorted(methods_by_pointer)
+    registration_summary = mapper.metadata_registration_summary(pe, registration)
     family_by_pointer: dict[int, tuple[str, ...]] = {}
     for pointer, aliases in methods_by_pointer.items():
         families = tuple(sorted({family for row in aliases for family in api_families(row)}))
@@ -596,6 +825,23 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
             family_by_pointer[pointer] = families
 
     mission_types = mission_runtime_type_names(metadata)
+    callable_fields, callable_entry_methods = callable_carrier_metadata_surface(
+        metadata,
+        catalog,
+        pe,
+        registration_summary,
+        mission_types,
+    )
+    callable_entry_methods_by_pointer: dict[int, list[int]] = {}
+    for pointer, aliases in methods_by_pointer.items():
+        method_indices = sorted({
+            int(row["methodIndex"])
+            for row in aliases
+            if row.get("methodIndex") is not None
+            and int(row["methodIndex"]) in callable_entry_methods
+        })
+        if method_indices and len(aliases) <= MAX_POINTER_ALIASES:
+            callable_entry_methods_by_pointer[pointer] = method_indices
     mission_runtime_family_by_pointer: dict[int, tuple[str, ...]] = {}
     for pointer, aliases in methods_by_pointer.items():
         families = tuple(sorted({
@@ -610,6 +856,7 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
     mission_runtime_calls_by_caller: dict[int, list[dict[str, Any]]] = defaultdict(list)
     family_call_counts: Counter[str] = Counter()
     section_call_candidates: Counter[str] = Counter()
+    callable_binding_calls_by_target: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for section in pe.sections:
         section_name = str(section["name"])
         if section_name not in {".text", "il2cpp"}:
@@ -626,7 +873,8 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
                 mission_runtime_families_at_target = (
                     mission_runtime_family_by_pointer.get(target_va)
                 )
-                if families or mission_runtime_families_at_target:
+                callable_entry_indices = callable_entry_methods_by_pointer.get(target_va)
+                if families or mission_runtime_families_at_target or callable_entry_indices:
                     caller_pos = bisect.bisect_right(method_pointers, call_va) - 1
                     if caller_pos >= 0:
                         caller_va = method_pointers[caller_pos]
@@ -654,6 +902,27 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
                                 "targetVa": f"0x{target_va:x}",
                                 "families": list(mission_runtime_families_at_target),
                                 "targets": sorted({method_symbol(row) for row in targets}),
+                            })
+                        if (
+                            call_va < min(next_va, caller_va + 0x10000)
+                            and callable_entry_indices
+                        ):
+                            caller_aliases = methods_by_pointer[caller_va]
+                            callable_binding_calls_by_target[target_va].append({
+                                "callVa": f"0x{call_va:x}",
+                                "callerVa": f"0x{caller_va:x}",
+                                "callers": sorted({
+                                    method_symbol(row) for row in caller_aliases
+                                }),
+                                "callerFamilies": sorted({
+                                    family
+                                    for row in caller_aliases
+                                    for family in callable_owner_families(
+                                        str(row.get("type") or ""), mission_types
+                                    )
+                                }),
+                                "callerAliasCount": len(caller_aliases),
+                                "entryMethodIndices": callable_entry_indices,
                             })
             position = data.find(b"\xe8", position + 1)
 
@@ -780,6 +1049,53 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
         ),
     }
 
+    callable_entry_rows: list[dict[str, Any]] = []
+    for pointer, method_indices in sorted(callable_entry_methods_by_pointer.items()):
+        entries = [callable_entry_methods[index] for index in method_indices]
+        bindings = callable_binding_calls_by_target.get(pointer, [])
+        target_families = sorted({
+            family for entry in entries for family in entry["families"]
+        })
+        callable_entry_rows.append({
+            "targetVa": f"0x{pointer:x}",
+            "entries": entries,
+            "targetFamilies": target_families,
+            "bindings": bindings,
+        })
+    binding_rows = [
+        {
+            **binding,
+            "targetVa": row["targetVa"],
+            "targetFamilies": row["targetFamilies"],
+            "entries": row["entries"],
+        }
+        for row in callable_entry_rows
+        for binding in row["bindings"]
+    ]
+    callable_counts = {
+        "callableFields": len(callable_fields),
+        "missionRuntimeCallableFields": sum(
+            "mission_runtime" in row["families"] for row in callable_fields
+        ),
+        "levelScriptCallableFields": sum(
+            "level_script" in row["families"] for row in callable_fields
+        ),
+        "crossIdentityCallableFields": sum(
+            {"mission_runtime", "level_script"} <= set(row["families"])
+            for row in callable_fields
+        ),
+        "callableEntryMethods": len(callable_entry_methods),
+        "callableEntryTargetPointers": len(callable_entry_rows),
+        "directBindingCalls": len(binding_rows),
+        "missionLevelScriptBindings": sum(
+            callable_binding_crosses_mission_levelscript(row)
+            for row in binding_rows
+        ),
+        "unreviewedBindingCallers": sum(
+            row["callerAliasCount"] > MAX_POINTER_ALIASES for row in binding_rows
+        ),
+    }
+
     seeds = {
         int(row["callerVa"], 16)
         for row in rows
@@ -844,7 +1160,6 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
             "nativeCrossSystemConsumerCensus failed deferredRefresh.metadataOwnerType: "
             f"expected 1, actual {len(owner_types)}; source={source_path(metadata_path)}"
         )
-    registration_summary = mapper.metadata_registration_summary(pe, registration)
     field_rows = runtime_field_rows(
         metadata, pe, registration_summary, owner_types[0].index
     )
@@ -928,6 +1243,9 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
     failures.extend(validate_mission_runtime_surface(
         mission_runtime_counts, source_path(gameassembly)
     ))
+    failures.extend(validate_callable_carrier_surface(
+        callable_counts, source_path(gameassembly)
+    ))
     if failures:
         first = failures[0]
         raise AuditError(
@@ -938,7 +1256,7 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
     class_counts = Counter(row["classification"] for row in rows)
     family_sets = Counter("+".join(row["families"]) for row in rows)
     return {
-        "schemaVersion": "nativeCrossSystemConsumerCensus.v3",
+        "schemaVersion": "nativeCrossSystemConsumerCensus.v4",
         "source": {
             "gameAssembly": source_path(gameassembly),
             "gameAssemblySha256": game_hash,
@@ -1050,6 +1368,36 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
             "storyBindingsAdded": 0,
             "missionOrderEdgesAdded": 0,
         },
+        "managedCallableSurface": {
+            "method": (
+                "Resolves every callable field type from the installed IL2CPP runtime-type "
+                "table for the complete mission/quest and LevelScript type surface, then "
+                "finds every owner method with a callable parameter and every direct native "
+                "caller of those binding entry points. No field, method, callback, mission, "
+                "quest, script, or Story identifier is allowlisted."
+            ),
+            "counts": callable_counts,
+            "fields": callable_fields,
+            "entryPoints": callable_entry_rows,
+            "bindings": binding_rows,
+            "finding": (
+                "The current managed callable surface contains 13 delegate/Action/Func "
+                "fields and five callable-parameter binding entry points. All five native "
+                "binding calls remain within their owning family: MissionSystem binds the "
+                "MissionAcceptMode callback, while LevelScriptRuntime binds its own task "
+                "condition notifications. No callable field or binding joins mission/quest "
+                "identity to LevelScript, a Story receiver, or scene order."
+            ),
+            "boundary": (
+                "This closes typed managed fields and direct calls to callable-parameter "
+                "entry points in the current installed AOT image. Runtime mutation of public "
+                "delegate fields, reflection, XLua, IFix, native-only registries, and server "
+                "selection remain outside the bound and cannot be promoted as ownership."
+            ),
+            "classification": "managed_callable_carriers_reviewed_no_activation_bridge",
+            "storyBindingsAdded": 0,
+            "missionOrderEdgesAdded": 0,
+        },
         "rows": rows,
         "finding": (
             "The current binary exposes mission-state consumers for DynamicScene component "
@@ -1074,6 +1422,8 @@ def markdown_report(report: dict[str, Any]) -> str:
     summary = report["summary"]
     runtime = report["missionRuntimeSurface"]
     runtime_counts = runtime["counts"]
+    callable_surface = report["managedCallableSurface"]
+    callable_counts = callable_surface["counts"]
     lines = [
         "# Native Cross-System Consumer Census",
         "",
@@ -1109,6 +1459,17 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Tracking sceneId writes: **{runtime_counts['trackingSceneFieldWrites']}**",
         "",
         runtime["finding"],
+        "",
+        "## Managed callable carrier surface",
+        "",
+        f"- Callable fields: **{callable_counts['callableFields']}**",
+        f"- Mission-runtime / LevelScript callable fields: **{callable_counts['missionRuntimeCallableFields']}** / **{callable_counts['levelScriptCallableFields']}**",
+        f"- Cross-identity callable fields: **{callable_counts['crossIdentityCallableFields']}**",
+        f"- Callable binding entry methods / target pointers: **{callable_counts['callableEntryMethods']}** / **{callable_counts['callableEntryTargetPointers']}**",
+        f"- Direct native binding calls: **{callable_counts['directBindingCalls']}**",
+        f"- Mission + LevelScript bindings: **{callable_counts['missionLevelScriptBindings']}**",
+        "",
+        callable_surface["finding"],
     ])
     lines.extend(["", "## Boundary", "", report["boundary"], ""])
     return "\n".join(lines)

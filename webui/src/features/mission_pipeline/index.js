@@ -221,6 +221,14 @@
       trackingMissionWrites: "tracking missionId writes",
       trackingSceneWrites: "tracking sceneId writes",
       trackingContextOnly: "tracking UI context only; no receiver activation or order",
+      managedCallableSurface: "Managed delegate/callback carrier surface",
+      callableFields: "callable fields",
+      missionCallableFields: "mission-runtime callable fields",
+      levelScriptCallableFields: "LevelScript callable fields",
+      callableEntryMethods: "typed binding entry methods",
+      directBindingCalls: "direct native binding calls",
+      crossFamilyBindings: "mission + LevelScript bindings",
+      callableNoActivation: "typed callbacks remain family-local; no receiver activation or order",
       visualContextConsumers: "Story ↔ DynamicScene visual-context consumers",
       dynamicSceneCrossReferences: "DynamicScene identity cross-references",
       dynamicSceneCrossReferencesHint: "A DynamicScene object co-carries mission/quest state conditions, and its exact numeric logic id equals an exported LevelScript script id containing Story playback. One current row also has a typed LevelScript target and shared local Story path; the mission-condition-to-trigger activation edge is still missing, so no row gains mission ownership, playback causality, or order.",
@@ -1073,6 +1081,14 @@
       trackingMissionWrites: "追踪对象 missionId 写入",
       trackingSceneWrites: "追踪对象 sceneId 写入",
       trackingContextOnly: "仅为追踪界面上下文；不证明接收器激活或顺序",
+      managedCallableSurface: "托管委托/回调载体表面",
+      callableFields: "可调用字段",
+      missionCallableFields: "任务运行时可调用字段",
+      levelScriptCallableFields: "LevelScript 可调用字段",
+      callableEntryMethods: "类型化绑定入口方法",
+      directBindingCalls: "原生直接绑定调用",
+      crossFamilyBindings: "任务 + LevelScript 绑定",
+      callableNoActivation: "类型化回调仅在各自系统内绑定；不证明接收器激活或顺序",
       visualContextConsumers: "剧情 ↔ DynamicScene 视觉上下文消费者",
       dynamicSceneCrossReferences: "DynamicScene 身份交叉引用",
       dynamicSceneCrossReferencesHint: "DynamicScene 对象携带任务状态条件，其精确数字逻辑 ID 与包含剧情播放的 LevelScript 脚本 ID 相同。当前一行还具有类型化 LevelScript 目标和共享的本地剧情路径；任务条件到触发器激活的链路仍缺失，因此所有行都不表示任务所有权、播放因果或顺序。",
@@ -4629,6 +4645,21 @@
             <p>${esc(crossSystemCensus.missionRuntimeSurface.finding)}</p>
             <small>${esc(t("trackingContextOnly"))}</small>
             <small>${esc(crossSystemCensus.missionRuntimeSurface.boundary || "")}</small>
+          </div>` : ""}
+          ${crossSystemCensus.managedCallableSurface?.finding ? `<div class="mp-runtime-associations">
+            <strong>${esc(t("managedCallableSurface"))}</strong>
+            <div class="mp-contract-tags">
+              <b>${esc(t("callableFields"))}: ${Number(crossSystemCensus.managedCallableSurface.counts?.callableFields || 0).toLocaleString()}</b>
+              <b>${esc(t("missionCallableFields"))}: ${Number(crossSystemCensus.managedCallableSurface.counts?.missionRuntimeCallableFields || 0).toLocaleString()}</b>
+              <b>${esc(t("levelScriptCallableFields"))}: ${Number(crossSystemCensus.managedCallableSurface.counts?.levelScriptCallableFields || 0).toLocaleString()}</b>
+              <b>${esc(t("callableEntryMethods"))}: ${Number(crossSystemCensus.managedCallableSurface.counts?.callableEntryMethods || 0).toLocaleString()}</b>
+              <b>${esc(t("directBindingCalls"))}: ${Number(crossSystemCensus.managedCallableSurface.counts?.directBindingCalls || 0).toLocaleString()}</b>
+              <b>${esc(t("crossFamilyBindings"))}: ${Number(crossSystemCensus.managedCallableSurface.counts?.missionLevelScriptBindings || 0).toLocaleString()}</b>
+            </div>
+            ${(crossSystemCensus.managedCallableSurface.bindings || []).map((binding) => `<div><code>${esc((binding.callers || []).join(" / "))}</code><i aria-hidden="true">→</i><code>${esc((binding.entries || []).map((entry) => `${entry.owner}.${entry.method}`).join(" / "))}</code></div>`).join("")}
+            <p>${esc(crossSystemCensus.managedCallableSurface.finding)}</p>
+            <small>${esc(t("callableNoActivation"))}</small>
+            <small>${esc(crossSystemCensus.managedCallableSurface.boundary || "")}</small>
           </div>` : ""}
           <p>${esc(crossSystemCensus.finding)}</p>
           <small>${esc(crossSystemCensus.method || "")}</small>
