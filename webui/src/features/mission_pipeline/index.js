@@ -375,6 +375,10 @@
       branches: "fan-outs",
       storyOrder: "Source-proven Story order",
       storyOrderHint: "This is a partial causal graph. It preserves branches, joins, cycles, and unknown pairs; it is not a guessed total file sequence.",
+      missionObservedScriptContexts: "Mission-observed LevelScript contexts",
+      missionObservedScriptContextsHint: "An original typed mission objective reads the same level and LevelScript that contains native Story playback. This is related-file context, not ownership, activation, or order evidence.",
+      observedProperties: "Observed properties",
+      propertyWriterUnresolved: "Property writer unresolved",
       embeddedStory: "Nested Story playback",
       embeddedStoryHint: "Original DialogTree connections place this child content at an exact line, entry, or finish boundary in the parent. This is containment, not a complete file-order edge or proof of the parent mission trigger.",
       embeddedBetween: "between parent lines",
@@ -1504,6 +1508,10 @@
       triggerUnknownTransport: "\u4f20\u8f93\u8fb9\u754c\u672a\u89e3\u6790",
       storyOrder: "\u6e90\u6570\u636e\u8bc1\u660e\u7684\u5267\u60c5\u987a\u5e8f",
       storyOrderHint: "\u8fd9\u662f\u90e8\u5206\u56e0\u679c\u56fe\uff1a\u4fdd\u7559\u5206\u652f\u3001\u6c47\u5408\u3001\u5faa\u73af\u548c\u672a\u77e5\u987a\u5e8f\uff0c\u4e0d\u731c\u6d4b\u552f\u4e00\u6587\u4ef6\u5e8f\u5217\u3002",
+      missionObservedScriptContexts: "\u4efb\u52a1\u89c2\u6d4b\u5230\u7684 LevelScript \u4e0a\u4e0b\u6587",
+      missionObservedScriptContextsHint: "\u539f\u59cb\u7c7b\u578b\u5316\u4efb\u52a1\u76ee\u6807\u8bfb\u53d6\u4e86\u540c\u4e00\u5173\u5361\u548c LevelScript\uff0c\u800c\u8be5\u811a\u672c\u5305\u542b\u539f\u751f\u5267\u60c5\u64ad\u653e\u3002\u8fd9\u53ea\u662f\u5173\u8054\u6587\u4ef6\u4e0a\u4e0b\u6587\uff0c\u4e0d\u662f\u5f52\u5c5e\u3001\u6fc0\u6d3b\u6216\u987a\u5e8f\u8bc1\u636e\u3002",
+      observedProperties: "\u88ab\u89c2\u6d4b\u5c5e\u6027",
+      propertyWriterUnresolved: "\u5c5e\u6027\u5199\u5165\u65b9\u672a\u89e3\u6790",
       embeddedStory: "\u5d4c\u5957\u5267\u60c5\u64ad\u653e",
       embeddedStoryHint: "\u539f\u59cb DialogTree \u8fde\u63a5\u5c06\u5b50\u5185\u5bb9\u7cbe\u786e\u653e\u5728\u7236\u5bf9\u8bdd\u7684\u884c\u3001\u5165\u53e3\u6216\u7ed3\u675f\u8fb9\u754c\u3002\u8fd9\u662f\u5305\u542b\u5173\u7cfb\uff0c\u4e0d\u662f\u5b8c\u6574\u6587\u4ef6\u987a\u5e8f\u8fb9\uff0c\u4e5f\u4e0d\u8bc1\u660e\u7236\u5bf9\u8bdd\u7684\u4efb\u52a1\u89e6\u53d1\u3002",
       embeddedBetween: "\u7236\u5bf9\u8bdd\u884c\u4e4b\u95f4",
@@ -3463,6 +3471,13 @@
     const summary = order.summary;
     const components = new Map((order.components || []).map((row) => [row.id, row]));
     const directEdges = order.directEdges || [];
+    const missionObservedContexts = (order.missionObservedLevelScriptContexts || []).map((row) => {
+      const stories = (row.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
+      const conditions = (row.conditionTypes || []).map((name) => `<code>${esc(name)}</code>`).join(" ");
+      const properties = (row.propertyKeys || []).map((name) => `<code>${esc(name)}</code>`).join(" ");
+      const files = (row.relatedOriginalFiles || []).map((related) => `<small><code>${esc(related.kind || "file")}</code> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("");
+      return `<article class="mp-order-branch is-boundary"><header><code>${esc(row.questId || "?")}</code><i>&rarr;</i><code>${esc(row.levelId || "?")} / ${esc(row.scriptId || "?")}</code><i>&harr;</i>${stories}</header><p>${conditions}${properties ? ` <strong>${esc(t("observedProperties"))}:</strong> ${properties}` : ""}</p><small><strong>${esc(t("propertyWriterUnresolved"))}</strong> ${esc(row.evidenceBoundary || "")}</small>${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}</article>`;
+    }).join("");
     const componentHtml = (componentId) => {
       const component = components.get(componentId) || {id: componentId, sceneKeys: []};
       const files = (component.sceneKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join("");
@@ -4122,6 +4137,7 @@
       <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
       <p>${esc(t("storyOrderHint"))}</p>
       <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.questStartActionDefinitionCount || 0).toLocaleString()}</b>${esc(t("questStartDefinitions"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span><span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
+      ${missionObservedContexts ? `<section><h4>${esc(t("missionObservedScriptContexts"))}</h4><p>${esc(t("missionObservedScriptContextsHint"))}</p><div class="mp-order-branches">${missionObservedContexts}</div></section>` : ""}
       ${causalEdges ? `<section><h4>${esc(t("causalEdges"))}</h4><div class="mp-order-edges">${causalEdges}</div></section>` : ""}
       ${nativeTransitions ? `<section><h4>${esc(t("nativeStoryTransitions"))}</h4><p>${esc(t("nativeStoryTransitionsHint"))}</p><div class="mp-order-branches">${nativeTransitions}</div></section>` : ""}
       ${questSucceedLifecycleEdges ? `<section><h4>${esc(t("questSucceedLifecycle"))}</h4><p>${esc(t("questSucceedLifecycleHint"))}</p><div class="mp-order-branches mp-quest-succeed-lifecycles">${questSucceedLifecycleEdges}</div></section>` : ""}

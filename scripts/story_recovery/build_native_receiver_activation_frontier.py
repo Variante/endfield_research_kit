@@ -38,6 +38,7 @@ from common import (  # noqa: E402
     read_bytes_cached,
     read_json,
     rel_path,
+    write_json,
     write_report_json,
     write_text_if_changed,
 )
@@ -64,7 +65,7 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v23"
+SCHEMA = "nativeReceiverActivationFrontier.v24"
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -1218,11 +1219,48 @@ def annotate_task_condition_operands(
                 )
 
 
+def _typed_levelscript_condition_operands(
+    value: Any,
+) -> list[dict[str, str]]:
+    """Recover exact ``(levelId, scriptId)`` operands from condition trees.
+
+    Mission objective summaries also expose a flat ``levelScriptIds`` list,
+    but script ids are not globally unique.  Only the original typed condition
+    operand carries the level needed for a fail-closed corpus join.
+    """
+    operands: list[dict[str, str]] = []
+    if isinstance(value, list):
+        for item in value:
+            operands.extend(_typed_levelscript_condition_operands(item))
+        return operands
+    if not isinstance(value, dict):
+        return operands
+    facts = value.get("facts")
+    if isinstance(facts, dict):
+        level_id = safe_text(facts.get("mapId") or facts.get("levelId"))
+        script_value = facts.get("scriptId")
+        if isinstance(script_value, dict):
+            script_value = script_value.get("scriptId")
+        script_id = safe_text(script_value)
+        condition_type = safe_text(value.get("type"))
+        if level_id and script_id and condition_type:
+            operands.append({
+                "levelId": level_id,
+                "scriptId": script_id,
+                "conditionType": condition_type,
+                "propertyKey": safe_text(facts.get("key")),
+            })
+    for nested in value.values():
+        if isinstance(nested, (dict, list)):
+            operands.extend(_typed_levelscript_condition_operands(nested))
+    return operands
+
+
 def mission_runtime_script_consumers(
     mission_root: Path,
-) -> dict[str, list[dict[str, Any]]]:
-    """Index typed objective operands that name a LevelScript id."""
-    consumers: dict[str, list[dict[str, Any]]] = defaultdict(list)
+) -> dict[tuple[str, str], list[dict[str, Any]]]:
+    """Index exact typed objective operands by level and LevelScript id."""
+    consumers: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     if not mission_root.is_dir():
         return consumers
     for path in sorted(mission_root.glob("*.json")):
@@ -1239,21 +1277,35 @@ def mission_runtime_script_consumers(
             for objective in node.get("objectives") or []:
                 if not isinstance(objective, dict):
                     continue
-                for script_id_raw in objective.get("levelScriptIds") or []:
-                    script_id = safe_text(script_id_raw)
-                    if not script_id:
-                        continue
-                    consumers[script_id].append(
-                        {
-                            "missionId": mission_id,
-                            "questId": quest_id,
-                            "objectiveIndex": objective.get("index"),
-                            "conditionTypes": objective.get("conditionTypes") or [],
-                            "propertyKeys": objective.get("propertyKeys") or [],
-                            "sourceFile": original_source,
-                            "pipelineSourceFile": rel_path(path),
-                        }
+                operands = _typed_levelscript_condition_operands(
+                    objective.get("condition")
+                )
+                grouped: dict[tuple[str, str], list[dict[str, str]]] = (
+                    defaultdict(list)
+                )
+                for operand in operands:
+                    grouped[(operand["levelId"], operand["scriptId"])].append(
+                        operand
                     )
+                for (level_id, script_id), exact_operands in grouped.items():
+                    condition_types = sorted({
+                        operand["conditionType"] for operand in exact_operands
+                    })
+                    property_keys = sorted({
+                        operand["propertyKey"] for operand in exact_operands
+                        if operand["propertyKey"]
+                    })
+                    consumers[(level_id, script_id)].append({
+                        "missionId": mission_id,
+                        "questId": quest_id,
+                        "objectiveIndex": objective.get("index"),
+                        "levelId": level_id,
+                        "scriptId": script_id,
+                        "conditionTypes": condition_types,
+                        "propertyKeys": property_keys,
+                        "sourceFile": original_source,
+                        "pipelineSourceFile": rel_path(path),
+                    })
     return consumers
 
 
@@ -2346,7 +2398,7 @@ def build_report(
             }
             for context in dungeon_contexts_by_scene.get(level_id, [])
         ]
-        consumers = consumers_by_script.get(script_id, [])
+        consumers = consumers_by_script.get((level_id, script_id), [])
         property_contract = authored_property_contract(hosts, consumers)
         authored_property_scripts.update(
             set(property_contract["authoredNames"])
@@ -3204,6 +3256,23 @@ def build_report(
             "scriptsWithMissionRuntimeObjectiveConsumer": sum(
                 bool(row["missionRuntimeScriptConsumers"]) for row in rows
             ),
+            "missionObservedLevelScriptContextMissions": len({
+                safe_text(consumer.get("missionId"))
+                for row in rows
+                for consumer in row["missionRuntimeScriptConsumers"]
+                if safe_text(consumer.get("missionId"))
+            }),
+            "missionObservedLevelScriptContextStoryKeys": len({
+                story_key
+                for row in rows
+                if row["missionRuntimeScriptConsumers"]
+                for story_key in row["storyKeys"]
+            }),
+            "missionObservedLevelScriptContextPlacements": sum(
+                len(row["storyKeys"])
+                * len(row["missionRuntimeScriptConsumers"])
+                for row in rows
+            ),
             "relatedOriginalFilePlacements": sum(
                 len(row.get("relatedOriginalFiles") or []) for row in rows
             ),
@@ -3313,8 +3382,16 @@ def build_report(
 def publish_to_pipeline_index(
     index_payload: dict[str, Any],
     report: dict[str, Any],
+    *,
+    mission_root: Path | None = None,
 ) -> int:
-    """Publish compact debug annotations without adding graph edges."""
+    """Publish compact debug annotations without adding graph edges.
+
+    Exact typed MissionRuntime operands are also copied onto their mission's
+    Story-order payload as non-owning context.  This makes the source files
+    inspectable beside the affected Story keys while preserving the unknown
+    activation, property-writer, and ordering boundaries.
+    """
     coverage = index_payload.get("storyCoverage")
     if not isinstance(coverage, dict):
         return 0
@@ -3602,6 +3679,98 @@ def publish_to_pipeline_index(
         }
         annotated += 1
 
+    contexts_by_mission: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in report.get("rows") or []:
+        if not isinstance(row, dict):
+            continue
+        level_id = safe_text(row.get("levelId"))
+        script_id = safe_text(row.get("scriptId"))
+        story_keys = sorted({
+            safe_text(key) for key in row.get("storyKeys") or [] if safe_text(key)
+        })
+        if not level_id or not script_id or not story_keys:
+            continue
+        related_files = [
+            {
+                "kind": safe_text(related.get("kind")),
+                "sourceFile": safe_text(related.get("sourceFile")),
+                "relationship": safe_text(related.get("relationship")),
+                "sha256": safe_text(related.get("sha256")),
+            }
+            for related in row.get("relatedOriginalFiles") or []
+            if isinstance(related, dict) and safe_text(related.get("sourceFile"))
+        ]
+        for consumer in row.get("missionRuntimeScriptConsumers") or []:
+            if not isinstance(consumer, dict):
+                continue
+            mission_id = safe_text(consumer.get("missionId"))
+            if not mission_id:
+                continue
+            contexts_by_mission[mission_id].append({
+                "relation": "mission_objective_observes_story_receiver_levelscript",
+                "missionId": mission_id,
+                "questId": safe_text(consumer.get("questId")),
+                "objectiveIndex": consumer.get("objectiveIndex"),
+                "levelId": level_id,
+                "scriptId": script_id,
+                "storyKeys": story_keys,
+                "eventNames": row.get("eventNames") or [],
+                "listenerHeaderLocalIds": row.get("listenerHeaderLocalIds") or [],
+                "conditionTypes": consumer.get("conditionTypes") or [],
+                "propertyKeys": consumer.get("propertyKeys") or [],
+                "propertyWriterStatus": "unresolved",
+                "ownership": False,
+                "activation": False,
+                "storyPlayback": False,
+                "orderEvidence": False,
+                "relatedOriginalFiles": related_files,
+                "evidenceBoundary": (
+                    "The original typed MissionRuntime objective reads the same "
+                    "(level, LevelScript) that contains exact native Story playback. "
+                    "This attaches mission context and original files only: it does "
+                    "not prove that the quest starts or owns playback, that playback "
+                    "writes the observed property, or any Story order."
+                ),
+            })
+
+    published_contexts = 0
+    if mission_root is not None:
+        mission_summaries = {
+            safe_text(row.get("id")): row
+            for row in index_payload.get("missions") or []
+            if isinstance(row, dict) and safe_text(row.get("id"))
+        }
+        for mission_id, contexts in sorted(contexts_by_mission.items()):
+            path = mission_root / f"{mission_id}.json"
+            payload = read_json(path)
+            if not isinstance(payload, dict):
+                continue
+            unique = {
+                (
+                    safe_text(context.get("questId")),
+                    context.get("objectiveIndex"),
+                    safe_text(context.get("levelId")),
+                    safe_text(context.get("scriptId")),
+                    tuple(context.get("storyKeys") or []),
+                ): context
+                for context in contexts
+            }
+            ordered = [unique[key] for key in sorted(unique, key=str)]
+            story_order = payload.setdefault("storyOrder", {})
+            story_order["missionObservedLevelScriptContexts"] = ordered
+            summary = story_order.setdefault("summary", {})
+            summary["missionObservedLevelScriptContextCount"] = len(ordered)
+            summary["missionObservedLevelScriptContextStoryCount"] = len({
+                key for context in ordered for key in context["storyKeys"]
+            })
+            write_json(path, payload)
+            published_contexts += len(ordered)
+            mission_summary = mission_summaries.get(mission_id)
+            if mission_summary is not None:
+                mission_summary["storyOrderMissionObservedLevelScriptContextCount"] = (
+                    len(ordered)
+                )
+
     coverage["nativeReceiverActivationFrontier"] = {
         "schemaVersion": report.get("schemaVersion"),
         "generated": report.get("generated"),
@@ -3617,6 +3786,7 @@ def publish_to_pipeline_index(
         "reportJson": rel_path(DEFAULT_JSON),
         "reportMarkdown": rel_path(DEFAULT_MARKDOWN),
         "annotatedReceiverNodes": annotated,
+        "publishedMissionObservedLevelScriptContexts": published_contexts,
     }
     return annotated
 

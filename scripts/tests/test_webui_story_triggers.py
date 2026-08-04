@@ -159,6 +159,13 @@ for (const [key, category] of [
         self.assertIn("consumer.propertyKeys", source)
         self.assertIn("They do not identify the writer, Story owner, or scene-file order.", source)
 
+    def test_mission_pipeline_surfaces_mission_observed_levelscript_context(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("order.missionObservedLevelScriptContexts", source)
+        self.assertIn('t("missionObservedScriptContexts")', source)
+        self.assertIn('t("propertyWriterUnresolved")', source)
+        self.assertIn("row.relatedOriginalFiles", source)
+
     def test_mission_pipeline_surfaces_exact_active_phase_receivers(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("activation.activePhaseReceiverControl", source)

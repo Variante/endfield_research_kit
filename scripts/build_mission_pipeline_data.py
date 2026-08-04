@@ -11703,6 +11703,7 @@ def main() -> int:
         publish_native_receiver_activation_frontier(
             index,
             activation_frontier,
+            mission_root=output_root / "missions",
         )
         node_attachment = publish_quest_objective_story_scope(
             index,

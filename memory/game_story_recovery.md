@@ -16,7 +16,7 @@ Latest CN reports:
 | Unlinked files | 1,325 |
 | Unlinked files with exact native playback | 156 |
 | Encounter-controller contexts | 5 receiver scripts / 7 modules / 27 Story keys / 9 related source files |
-| Authored receiver-property contracts | 63 scripts; 16 carry `isFinished`; 1 has an exact MissionRuntime observer |
+| Authored receiver-property contracts | 63 scripts; 16 carry `isFinished`; 1 exact `(level, script)` MissionRuntime observer is attached as non-ordering mission context |
 | Exact non-mission content | 281 (280 spacecraft/profile + 1 guide runtime) |
 | Actionable core-isolated files | 0 |
 | Partial-order mission rows | 487 |
@@ -1318,7 +1318,9 @@ only, never Story order; OCR and manual order do not participate.
    LevelData, MissionRuntime, SpawnerConfig, gameplay-config, and table files
    found recursively in the typed evidence; these are related context, not
    inferred owners. `cutscene_e1m10_1` likewise has an exact
-   shipped-Lua phase owner but no serialized mission/quest identity.
+   shipped-Lua phase owner but no serialized mission/quest identity. One of
+   the 156 keys, `cutscene_e3m5_4`, now also carries exact `e3m5_q#1`
+   same-LevelScript context; it remains in this ownership gap and unordered.
 2. **Black screens:** 65 remain unassigned. Most are definition-only or lack a
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
@@ -1361,8 +1363,13 @@ call `ParamExtensions.GetValue<T>`, and tail-call the matching
 not a LevelScript-property writer. Among the 161 unresolved receiver nodes,
 63 scripts have ordinary authored LevelData property names and `isFinished`
 recurs in 16 scripts, but only `map01_lv007/2800010051` has an exact typed
-MissionRuntime observer (`e3m5/e3m5_q#1`). The observer and its original
-MissionRuntime file are now attached in Mission Pipeline as read-only context.
+MissionRuntime observer (`e3m5/e3m5_q#1`). The general join now requires the
+full typed `(mapId, scriptId)` condition operand, rejects flat script-id
+summaries, and attaches the observer, Story key, LevelScript/LevelData,
+MissionRuntime, binary, and metadata files directly to the `e3m5` mission
+order panel as read-only context. The FMV path ends in a `CallServer` request
+with `waitForCallback=true`, but the serialized contract contains no client
+callback output UID; it therefore does not identify the `isFinished` writer.
 Raw property-literal adjacency is explicitly non-ordering and cannot identify
 the writer, playback owner, or chronology.
 
