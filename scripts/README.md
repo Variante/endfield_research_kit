@@ -101,7 +101,10 @@ override those defaults for one run.
   changed class counts. From every mission-state/DynamicScene consumer it also
   follows unambiguous gameplay calls to a fixed point, reviews decoded indirect
   call shapes, and validates the metadata field/native writer-reader bridge
-  through the deferred `BeforeTick` availability refresh. It distinguishes
+  through the deferred `BeforeTick` availability refresh. A second corpus-
+  derived pass discovers the full managed mission/quest identity type surface,
+  then audits all cross-family callers and method signatures against
+  LevelScript and Story. It distinguishes
   mission-controlled DynamicScene availability from shared geometry, global
   loading, and Story visual context; none creates ownership or order.
 - A second general activation contract inventories every direct current-client

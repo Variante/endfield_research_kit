@@ -55,6 +55,17 @@ EXPECTED_PENDING_FIELD = {
     "token": "0x0400e5f9",
     "offset": "0x48",
 }
+EXPECTED_MISSION_RUNTIME_SURFACE = {
+    "missionIdentityTypes": 174,
+    "familyTargetPointers": 4322,
+    "crossSystemCallers": 2,
+    "missionRuntimeLevelScriptCallers": 1,
+    "missionRuntimeStoryCallers": 1,
+    "crossFamilyMethodSignatures": 0,
+    "trackingMissionFieldWrites": 0,
+    "trackingSceneFieldWrites": 3,
+    "unreviewedCallers": 0,
+}
 
 
 class AuditError(RuntimeError):
@@ -106,6 +117,73 @@ def api_families(row: dict[str, Any]) -> set[str]:
     )):
         result.add("story")
     return result
+
+
+def mission_runtime_type_names(metadata: Any) -> set[str]:
+    """Discover the full managed mission/quest identity surface by type shape."""
+    result: set[str] = set()
+    identity_fields = {"missionid", "questid", "parentmissionid", "dungeonmissionid"}
+    for type_def in metadata.types:
+        type_name = metadata.type_full_name(type_def)
+        if not type_name.startswith("Beyond.Gameplay"):
+            continue
+        short_name = type_name.rsplit(".", 1)[-1].lower()
+        fields = {
+            metadata.string(field.name_index).lower()
+            for field in metadata.fields_for(type_def)
+        }
+        if "mission" in short_name or "quest" in short_name or fields & identity_fields:
+            result.add(type_name)
+    return result
+
+
+def mission_runtime_families(
+    row: dict[str, Any], mission_types: set[str]
+) -> set[str]:
+    type_name = str(row.get("type") or "")
+    method_name = str(row.get("method") or "")
+    result: set[str] = set()
+    if type_name in mission_types:
+        result.add("mission_runtime")
+    if "LevelScript" in type_name or "LevelScript" in method_name:
+        result.add("level_script")
+    if any(token in type_name or token in method_name for token in (
+        "Dialog", "Radio", "Cinematic", "Cutscene",
+    )):
+        result.add("story")
+    return result
+
+
+def admissible_family_pointer(
+    aliases: Iterable[dict[str, Any]], mission_types: set[str]
+) -> bool:
+    rows = list(aliases)
+    family_sets = {tuple(sorted(mission_runtime_families(row, mission_types))) for row in rows}
+    families = {family for row in rows for family in mission_runtime_families(row, mission_types)}
+    return (
+        bool(rows)
+        and len(rows) <= MAX_POINTER_ALIASES
+        and len(family_sets) == 1
+        and len(families) == 1
+        and any(str(row.get("type") or "").startswith("Beyond.Gameplay") for row in rows)
+    )
+
+
+def classify_mission_runtime_candidate(
+    families: Iterable[str], target_symbols: Iterable[str]
+) -> str:
+    family_set = frozenset(families)
+    joined = "\n".join(target_symbols)
+    if family_set == {"mission_runtime", "story"}:
+        if "MissionSystem.AcceptMission" in joined and "StopAndPlayDialogById" in joined:
+            return "mission_or_dialog_alternate_action_consumer"
+    if family_set == {"level_script", "mission_runtime"}:
+        if (
+            "CommonTrackingPointInfoBase..ctor" in joined
+            and "LevelScriptTaskTracking.get_scriptId" in joined
+        ):
+            return "levelscript_tracking_context_candidate"
+    return "unreviewed_mission_runtime_cross_system_shape"
 
 
 def admissible_pointer_aliases(aliases: Iterable[dict[str, Any]]) -> bool:
@@ -319,6 +397,98 @@ def select_instance_field_references(
     return base, [reference for register, reference in candidates if register == base]
 
 
+def cross_family_method_signatures(
+    metadata: Any,
+    catalog: Any,
+    mission_types: set[str],
+) -> list[dict[str, Any]]:
+    """Find signature-level mission/LevelScript joins missed by call grouping."""
+    rows: list[dict[str, Any]] = []
+    for type_def in metadata.types:
+        owner = metadata.type_full_name(type_def)
+        if not owner.startswith("Beyond.Gameplay"):
+            continue
+        for method in metadata.methods_for(type_def):
+            method_info = catalog.method_row(metadata, method)
+            parameter_types = [
+                str(param.get("typeName") or "")
+                for param in method_info.get("parameterDetails") or []
+            ]
+            all_types = [
+                owner,
+                str(method_info.get("returnTypeName") or ""),
+                *parameter_types,
+            ]
+            mission_hits = sorted({name for name in all_types if name in mission_types})
+            levelscript_hits = sorted({name for name in all_types if "LevelScript" in name})
+            if mission_hits and levelscript_hits:
+                rows.append({
+                    "owner": owner,
+                    "method": method_info["name"],
+                    "token": method_info["token"],
+                    "parameters": parameter_types,
+                    "returnType": method_info.get("returnTypeName"),
+                    "missionTypes": mission_hits,
+                    "levelScriptTypes": levelscript_hits,
+                })
+    return sorted(rows, key=lambda row: (row["owner"], row["method"], row["token"]))
+
+
+def derive_constructed_object_base(
+    instructions: list[dict[str, Any]], call_index: int
+) -> str | None:
+    """Derive a constructed object's saved register from the call argument flow."""
+    rcx_source: str | None = None
+    for row in reversed(instructions[max(0, call_index - 12):call_index]):
+        write = row.get("write") or {}
+        if write.get("register") in {"rcx", "ecx"}:
+            value = str(write.get("value") or "")
+            rcx_source = value.lstrip("&")
+            break
+    if rcx_source != "rax":
+        return None
+    candidates: list[str] = []
+    for row in instructions[max(0, call_index - 12):call_index]:
+        write = row.get("write") or {}
+        register = str(write.get("register") or "")
+        value = str(write.get("value") or "")
+        if value == "rax" and register not in {"rax", "rcx", "rdx", "r8", "r9"}:
+            candidates.append(register)
+    return candidates[-1] if candidates else None
+
+
+def constructed_field_writes(
+    instructions: list[dict[str, Any]],
+    constructor_target_va: int,
+    field_offsets: dict[str, str],
+) -> dict[str, Any]:
+    """Count post-constructor writes through a derived saved object register."""
+    call_index = next((
+        index
+        for index, row in enumerate(instructions)
+        if str(row.get("text") or "") == f"call 0x{constructor_target_va:x}"
+    ), -1)
+    if call_index < 0:
+        return {"baseRegister": None, "writes": {name: [] for name in field_offsets}}
+    base = derive_constructed_object_base(instructions, call_index)
+    writes: dict[str, list[dict[str, Any]]] = {name: [] for name in field_offsets}
+    if not base:
+        return {"baseRegister": None, "writes": writes}
+    for row in instructions[call_index + 1:]:
+        text = str(row.get("text") or "")
+        for name, offset in field_offsets.items():
+            if re.match(rf"mov \[{re.escape(base)}\+{re.escape(offset)}\],", text):
+                writes[name].append({
+                    "va": (
+                        str(row.get("va"))
+                        if str(row.get("va") or "").startswith("0x")
+                        else f"0x{int(row.get('va') or 0):x}"
+                    ),
+                    "instruction": text,
+                })
+    return {"baseRegister": base, "writes": writes}
+
+
 def validate_closure(
     counts: dict[str, int],
     pending_field: dict[str, Any] | None,
@@ -367,6 +537,23 @@ def validate_closure(
     return failures
 
 
+def validate_mission_runtime_surface(
+    counts: dict[str, int], source_file: str
+) -> list[dict[str, Any]]:
+    failures: list[dict[str, Any]] = []
+    for gate, expected in EXPECTED_MISSION_RUNTIME_SURFACE.items():
+        actual = counts.get(gate, 0)
+        if actual != expected:
+            failures.append({
+                "validator": "nativeCrossSystemConsumerCensus",
+                "gate": f"missionRuntimeSurface.{gate}",
+                "expected": expected,
+                "actual": actual,
+                "sourceFile": source_file,
+            })
+    return failures
+
+
 def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
     if not gameassembly.is_file() or not metadata_path.is_file():
         raise AuditError(f"missing original binary input: {gameassembly} / {metadata_path}")
@@ -408,7 +595,19 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
         if len(families) == 1 and admissible_pointer_aliases(aliases):
             family_by_pointer[pointer] = families
 
+    mission_types = mission_runtime_type_names(metadata)
+    mission_runtime_family_by_pointer: dict[int, tuple[str, ...]] = {}
+    for pointer, aliases in methods_by_pointer.items():
+        families = tuple(sorted({
+            family
+            for row in aliases
+            for family in mission_runtime_families(row, mission_types)
+        }))
+        if len(families) == 1 and admissible_family_pointer(aliases, mission_types):
+            mission_runtime_family_by_pointer[pointer] = families
+
     calls_by_caller: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    mission_runtime_calls_by_caller: dict[int, list[dict[str, Any]]] = defaultdict(list)
     family_call_counts: Counter[str] = Counter()
     section_call_candidates: Counter[str] = Counter()
     for section in pe.sections:
@@ -424,7 +623,10 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
                 relative = struct.unpack_from("<i", data, position + 1)[0]
                 target_va = call_va + 5 + relative
                 families = family_by_pointer.get(target_va)
-                if families:
+                mission_runtime_families_at_target = (
+                    mission_runtime_family_by_pointer.get(target_va)
+                )
+                if families or mission_runtime_families_at_target:
                     caller_pos = bisect.bisect_right(method_pointers, call_va) - 1
                     if caller_pos >= 0:
                         caller_va = method_pointers[caller_pos]
@@ -433,7 +635,7 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
                             if caller_pos + 1 < len(method_pointers)
                             else caller_va + 0x10000
                         )
-                        if call_va < min(next_va, caller_va + 0x10000):
+                        if call_va < min(next_va, caller_va + 0x10000) and families:
                             targets = methods_by_pointer[target_va]
                             calls_by_caller[caller_va].append({
                                 "callVa": f"0x{call_va:x}",
@@ -442,6 +644,17 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
                                 "targets": sorted({method_symbol(row) for row in targets}),
                             })
                             family_call_counts.update(families)
+                        if (
+                            call_va < min(next_va, caller_va + 0x10000)
+                            and mission_runtime_families_at_target
+                        ):
+                            targets = methods_by_pointer[target_va]
+                            mission_runtime_calls_by_caller[caller_va].append({
+                                "callVa": f"0x{call_va:x}",
+                                "targetVa": f"0x{target_va:x}",
+                                "families": list(mission_runtime_families_at_target),
+                                "targets": sorted({method_symbol(row) for row in targets}),
+                            })
             position = data.find(b"\xe8", position + 1)
 
     rows: list[dict[str, Any]] = []
@@ -467,6 +680,105 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
             "callSites": calls,
         })
     rows.sort(key=lambda row: (row["families"], row["callerVa"]))
+
+    mission_runtime_rows: list[dict[str, Any]] = []
+    for caller_va, calls in mission_runtime_calls_by_caller.items():
+        families = sorted({family for call in calls for family in call["families"]})
+        family_set = set(families)
+        if "mission_runtime" not in family_set or not ({"level_script", "story"} & family_set):
+            continue
+        aliases = methods_by_pointer[caller_va]
+        if len(aliases) > MAX_POINTER_ALIASES:
+            continue
+        target_symbols = sorted({symbol for call in calls for symbol in call["targets"]})
+        mission_runtime_rows.append({
+            "callerVa": f"0x{caller_va:x}",
+            "callers": sorted({method_symbol(alias) for alias in aliases}),
+            "families": families,
+            "classification": classify_mission_runtime_candidate(families, target_symbols),
+            "targets": target_symbols,
+            "callSites": calls,
+        })
+    mission_runtime_rows.sort(key=lambda row: (row["families"], row["callerVa"]))
+    signature_rows = cross_family_method_signatures(metadata, catalog, mission_types)
+
+    tracking_rows = [
+        row for row in mission_runtime_rows
+        if row["classification"] == "levelscript_tracking_context_candidate"
+    ]
+    tracking_field_flow: dict[str, Any] = {
+        "baseRegister": None,
+        "fieldLayout": {},
+        "writes": {"missionId": [], "sceneId": []},
+    }
+    if len(tracking_rows) == 1:
+        tracking_row = tracking_rows[0]
+        tracking_pointer = int(tracking_row["callerVa"], 16)
+        constructor_sites = [
+            site for site in tracking_row["callSites"]
+            if "Beyond.Gameplay.CommonTrackingPointInfoBase..ctor" in site["targets"]
+        ]
+        common_types = [
+            type_def for type_def in metadata.types
+            if metadata.type_full_name(type_def)
+            == "Beyond.Gameplay.CommonTrackingPointInfoBase"
+        ]
+        if len(constructor_sites) == 1 and len(common_types) == 1:
+            registration_summary_for_runtime = mapper.metadata_registration_summary(
+                pe, registration
+            )
+            common_fields = runtime_field_rows(
+                metadata, pe, registration_summary_for_runtime, common_types[0].index
+            )
+            field_layout = {
+                row["name"]: row
+                for row in common_fields
+                if row["name"] in {"missionId", "sceneId"}
+            }
+            tracking_body = method_body(pe, method_pointers, tracking_pointer)
+            instructions = mapper.decode_x64_subset(
+                tracking_body,
+                tracking_pointer,
+                stop_offset=len(tracking_body),
+            )
+            flow = constructed_field_writes(
+                instructions,
+                int(constructor_sites[0]["targetVa"], 16),
+                {name: row["offset"] for name, row in field_layout.items()},
+            )
+            tracking_field_flow = {
+                "baseRegister": flow["baseRegister"],
+                "fieldLayout": field_layout,
+                "writes": flow["writes"],
+            }
+
+    mission_runtime_class_counts = Counter(
+        row["classification"] for row in mission_runtime_rows
+    )
+    mission_runtime_family_counts = Counter(
+        "+".join(row["families"]) for row in mission_runtime_rows
+    )
+    mission_runtime_counts = {
+        "missionIdentityTypes": len(mission_types),
+        "familyTargetPointers": len(mission_runtime_family_by_pointer),
+        "crossSystemCallers": len(mission_runtime_rows),
+        "missionRuntimeLevelScriptCallers": mission_runtime_family_counts.get(
+            "level_script+mission_runtime", 0
+        ),
+        "missionRuntimeStoryCallers": mission_runtime_family_counts.get(
+            "mission_runtime+story", 0
+        ),
+        "crossFamilyMethodSignatures": len(signature_rows),
+        "trackingMissionFieldWrites": len(
+            (tracking_field_flow.get("writes") or {}).get("missionId") or []
+        ),
+        "trackingSceneFieldWrites": len(
+            (tracking_field_flow.get("writes") or {}).get("sceneId") or []
+        ),
+        "unreviewedCallers": mission_runtime_class_counts.get(
+            "unreviewed_mission_runtime_cross_system_shape", 0
+        ),
+    }
 
     seeds = {
         int(row["callerVa"], 16)
@@ -613,6 +925,9 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
     failures.extend(validate_closure(
         closure_counts, pending_field, deferred_counts, source_path(gameassembly)
     ))
+    failures.extend(validate_mission_runtime_surface(
+        mission_runtime_counts, source_path(gameassembly)
+    ))
     if failures:
         first = failures[0]
         raise AuditError(
@@ -623,7 +938,7 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
     class_counts = Counter(row["classification"] for row in rows)
     family_sets = Counter("+".join(row["families"]) for row in rows)
     return {
-        "schemaVersion": "nativeCrossSystemConsumerCensus.v2",
+        "schemaVersion": "nativeCrossSystemConsumerCensus.v3",
         "source": {
             "gameAssembly": source_path(gameassembly),
             "gameAssemblySha256": game_hash,
@@ -705,6 +1020,36 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
             "storyBindingsAdded": 0,
             "missionOrderEdgesAdded": 0,
         },
+        "missionRuntimeSurface": {
+            "method": (
+                "Discovers every Beyond.Gameplay type whose name denotes mission/quest "
+                "semantics or whose own fields carry missionId/questId identities, then "
+                "censuses direct callers and method signatures that cross that complete "
+                "surface with LevelScript or Story types. No content id is seeded."
+            ),
+            "counts": mission_runtime_counts,
+            "classificationCounts": dict(sorted(mission_runtime_class_counts.items())),
+            "familyCombinationCounts": dict(sorted(mission_runtime_family_counts.items())),
+            "rows": mission_runtime_rows,
+            "crossFamilyMethodSignatures": signature_rows,
+            "trackingFieldFlow": tracking_field_flow,
+            "finding": (
+                "The broadened 174-type mission/quest runtime surface adds no activation "
+                "bridge. Its sole LevelScript caller constructs a tracking point and writes "
+                "sceneId, but never writes CommonTrackingPointInfoBase.missionId; the other "
+                "caller is the separately audited MissionOption alternate action. No managed "
+                "method signature co-carries a mission-runtime type and a LevelScript type."
+            ),
+            "boundary": (
+                "This covers current managed method pointers and metadata signatures. "
+                "Reflection, XLua, server-only registries, opaque native-only objects, and "
+                "future builds remain outside the bound. Tracking UI context creates no "
+                "receiver activation, Story ownership, branch, or order edge."
+            ),
+            "classification": "full_mission_runtime_surface_reviewed_no_activation_bridge",
+            "storyBindingsAdded": 0,
+            "missionOrderEdgesAdded": 0,
+        },
         "rows": rows,
         "finding": (
             "The current binary exposes mission-state consumers for DynamicScene component "
@@ -727,6 +1072,8 @@ def build_report(gameassembly: Path, metadata_path: Path) -> dict[str, Any]:
 
 def markdown_report(report: dict[str, Any]) -> str:
     summary = report["summary"]
+    runtime = report["missionRuntimeSurface"]
+    runtime_counts = runtime["counts"]
     lines = [
         "# Native Cross-System Consumer Census",
         "",
@@ -750,6 +1097,19 @@ def markdown_report(report: dict[str, Any]) -> str:
             f"- `{row['callerVa']}` `{row['classification']}`: "
             + ", ".join(f"`{caller}`" for caller in row["callers"])
         )
+    lines.extend([
+        "",
+        "## Full mission/quest runtime surface",
+        "",
+        f"- Identity-bearing/mission-named types: **{runtime_counts['missionIdentityTypes']}**",
+        f"- Cross-system callers: **{runtime_counts['crossSystemCallers']}**",
+        f"- Mission-runtime + LevelScript callers: **{runtime_counts['missionRuntimeLevelScriptCallers']}**",
+        f"- Cross-family managed signatures: **{runtime_counts['crossFamilyMethodSignatures']}**",
+        f"- Tracking missionId writes: **{runtime_counts['trackingMissionFieldWrites']}**",
+        f"- Tracking sceneId writes: **{runtime_counts['trackingSceneFieldWrites']}**",
+        "",
+        runtime["finding"],
+    ])
     lines.extend(["", "## Boundary", "", report["boundary"], ""])
     return "\n".join(lines)
 
@@ -778,6 +1138,7 @@ def main() -> int:
         "Native cross-system consumer census passed: "
         f"{report['summary']['crossSystemCallers']} callers, "
         f"{report['summary']['unreviewedCallers']} unreviewed, "
+        f"{report['missionRuntimeSurface']['counts']['crossSystemCallers']} broad-runtime callers, "
         f"{report['summary']['missionOrderEdgesAdded']} order edges"
     )
     return 0

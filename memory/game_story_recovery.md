@@ -51,7 +51,7 @@ Latest CN reports:
 | Quest-fork arm evidence | 740 sibling arms; 349 carry 2,053 exact typed Story placements covering 741 Story keys and 318 arm-related original files; 307 placements use binary-named action types |
 | Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; all 95 exact LevelData types select the non-SubLevel client `active=true` request branch; all 95 original scripts have one uniquely decoded active volume (86 sphere / 9 box); 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
 | Binary public-state entry closure | 2 server-derived handlers: full-scene `SC_SELF_SCENE_INFO` snapshots and incremental `SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY`; 4 direct public-state setter callers split into 2 zero initializers and 2 server-parameter writers |
-| Native cross-system consumer census | 500,976 mapped methods / 7,214 unambiguous family targets / 17 reviewed callers; the 4 mission-state→DynamicScene seeds close over 23 methods / 30 direct edges / depth 2, with 1 reviewed IL2CPP class-init indirect site, 0 LevelScript, 0 Story, and 0 unreviewed; deferred availability refresh is pinned through `m_pendingRefreshCompSet@0x48` to `BeforeTick` and `RefreshEntityStatus` |
+| Native cross-system consumer census | 500,976 mapped methods / 7,214 unambiguous family targets / 17 reviewed callers; the 4 mission-state→DynamicScene seeds close over 23 methods / 30 direct edges / depth 2, with 1 reviewed IL2CPP class-init indirect site, 0 LevelScript, 0 Story, and 0 unreviewed; a second 174-type managed mission/quest runtime census finds 2 reviewed cross-system callers, 0 mission+LevelScript signatures, and only a tracking caller with 3 `sceneId` writes / 0 `missionId` writes |
 
 Persistent `MissionRuntimeAsset` is the effective authored corpus only when it
 contains the complete StreamingAssets filename set; otherwise builders use the
@@ -86,7 +86,16 @@ in five payloads.
   `BeforeTick`, re-evaluate the condition, and call `RefreshEntityStatus`. No
   reachable LevelScript or Story method exists, so this is availability refresh
   rather than activation, ownership, playback, or order. OCR/manual overrides
-  are not inputs.
+  are not inputs. The complementary type-shape census broadens "mission" beyond
+  the singleton to all 174 managed mission/quest-named or identity-bearing
+  `Beyond.Gameplay` types. Across 4,322 unambiguous family pointers it finds
+  only two cross-system callers and no cross-family method signature. One is
+  the already-audited MissionOption alternate action; the other is
+  `LevelScriptTaskTracking._AddTrackPoint`. MetadataRegistration places
+  `CommonTrackingPointInfoBase.missionId@0x20` and `sceneId@0x30`; its native
+  constructor caller has three branch-local `sceneId` writes and zero
+  `missionId` writes. This closes the broader managed runtime surface as
+  tracking UI context, not a receiver owner.
 - Exact native control paths for Split, If/Else, Switch, ordered Branch, playback, and
   many event families.
 - 312 native branch groups and 20 native convergences, kept as a partial
@@ -1393,11 +1402,13 @@ arms remain explicitly empty. These corridors are sibling-relative authored
 topology: nested forks may legitimately repeat downstream evidence, and no row
 proves which arm the server selected or whether siblings are exclusive.
 
-The highest-value missing source is a serialized server/runtime registry that
-contains both LevelScript and mission/quest identity. Next inspect a new typed
-selector operand or server successor policy that could expose such a foreign
-key; repeated LevelData property and CallServer payload patterns are now
-bounded and visible as related context. Repeating
+The highest-value missing source is now an opaque native/server registry that
+contains both LevelScript and mission/quest identity. The complete managed
+mission/quest type surface, its cross-family method signatures, authored JSON,
+and protobuf carriers are closed for this build. Next inspect a new typed
+selector operand, native-only registry, or server successor policy that could
+expose such a foreign key; repeated LevelData property and CallServer payload
+patterns are bounded and visible as related context. Repeating
 existing LevelScript, DialogTree, Timeline, teleport, proxy, Encounter, or
 local carrier scans is unlikely to close ownership without a new foreign key
 or changed inputs.

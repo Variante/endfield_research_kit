@@ -215,6 +215,12 @@
       deferredAvailabilityRefresh: "Deferred DynamicScene availability refresh",
       pendingRefreshField: "pending refresh field",
       availabilityOnlyNoOrder: "availability refresh only; no Story binding, mission ownership, or order",
+      fullMissionRuntimeSurface: "Full mission/quest runtime surface",
+      missionIdentityTypes: "mission/quest identity types",
+      crossFamilySignatures: "mission + LevelScript method signatures",
+      trackingMissionWrites: "tracking missionId writes",
+      trackingSceneWrites: "tracking sceneId writes",
+      trackingContextOnly: "tracking UI context only; no receiver activation or order",
       visualContextConsumers: "Story ↔ DynamicScene visual-context consumers",
       dynamicSceneCrossReferences: "DynamicScene identity cross-references",
       dynamicSceneCrossReferencesHint: "A DynamicScene object co-carries mission/quest state conditions, and its exact numeric logic id equals an exported LevelScript script id containing Story playback. One current row also has a typed LevelScript target and shared local Story path; the mission-condition-to-trigger activation edge is still missing, so no row gains mission ownership, playback causality, or order.",
@@ -1061,6 +1067,12 @@
       deferredAvailabilityRefresh: "延迟 DynamicScene 可用性刷新",
       pendingRefreshField: "待刷新字段",
       availabilityOnlyNoOrder: "仅证明可用性刷新；不证明剧情绑定、任务归属或顺序",
+      fullMissionRuntimeSurface: "完整任务/任务节点运行时表面",
+      missionIdentityTypes: "任务身份类型",
+      crossFamilySignatures: "任务 + LevelScript 方法签名",
+      trackingMissionWrites: "追踪对象 missionId 写入",
+      trackingSceneWrites: "追踪对象 sceneId 写入",
+      trackingContextOnly: "仅为追踪界面上下文；不证明接收器激活或顺序",
       visualContextConsumers: "剧情 ↔ DynamicScene 视觉上下文消费者",
       dynamicSceneCrossReferences: "DynamicScene 身份交叉引用",
       dynamicSceneCrossReferencesHint: "DynamicScene 对象携带任务状态条件，其精确数字逻辑 ID 与包含剧情播放的 LevelScript 脚本 ID 相同。当前一行还具有类型化 LevelScript 目标和共享的本地剧情路径；任务条件到触发器激活的链路仍缺失，因此所有行都不表示任务所有权、播放因果或顺序。",
@@ -4603,6 +4615,20 @@
             <div>${crossSystemCensus.deferredRefreshClosure.chain.map((step) => `<code>${esc(step)}</code>`).join('<i aria-hidden="true">→</i>')}</div>
             <small><b>${esc(t("pendingRefreshField"))}:</b> <code>${esc(`${crossSystemCensus.deferredRefreshClosure.pendingField?.name || "?"}@${crossSystemCensus.deferredRefreshClosure.pendingField?.offset || "?"}`)}</code> <code>${esc(crossSystemCensus.deferredRefreshClosure.pendingField?.token || "")}</code></small>
             <small>${esc(t("availabilityOnlyNoOrder"))}</small>
+          </div>` : ""}
+          ${crossSystemCensus.missionRuntimeSurface?.finding ? `<div class="mp-runtime-associations">
+            <strong>${esc(t("fullMissionRuntimeSurface"))}</strong>
+            <div class="mp-contract-tags">
+              <b>${esc(t("missionIdentityTypes"))}: ${Number(crossSystemCensus.missionRuntimeSurface.counts?.missionIdentityTypes || 0).toLocaleString()}</b>
+              <b>${esc(t("crossSystemCallers"))}: ${Number(crossSystemCensus.missionRuntimeSurface.counts?.crossSystemCallers || 0).toLocaleString()}</b>
+              <b>${esc(t("crossFamilySignatures"))}: ${Number(crossSystemCensus.missionRuntimeSurface.counts?.crossFamilyMethodSignatures || 0).toLocaleString()}</b>
+              <b>${esc(t("trackingMissionWrites"))}: ${Number(crossSystemCensus.missionRuntimeSurface.counts?.trackingMissionFieldWrites || 0).toLocaleString()}</b>
+              <b>${esc(t("trackingSceneWrites"))}: ${Number(crossSystemCensus.missionRuntimeSurface.counts?.trackingSceneFieldWrites || 0).toLocaleString()}</b>
+            </div>
+            <small><code>${esc(`missionId@${crossSystemCensus.missionRuntimeSurface.trackingFieldFlow?.fieldLayout?.missionId?.offset || "?"}`)}</code> <code>${esc(`sceneId@${crossSystemCensus.missionRuntimeSurface.trackingFieldFlow?.fieldLayout?.sceneId?.offset || "?"}`)}</code></small>
+            <p>${esc(crossSystemCensus.missionRuntimeSurface.finding)}</p>
+            <small>${esc(t("trackingContextOnly"))}</small>
+            <small>${esc(crossSystemCensus.missionRuntimeSurface.boundary || "")}</small>
           </div>` : ""}
           <p>${esc(crossSystemCensus.finding)}</p>
           <small>${esc(crossSystemCensus.method || "")}</small>
