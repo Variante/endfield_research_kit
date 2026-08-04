@@ -50,6 +50,7 @@ Latest CN reports:
 | Authored quest-fork semantics | 307 forks: 226 main-path + auxiliary, 78 all-auxiliary, 3 with multiple main-path arms; 97 guarded; 45 reconverging |
 | Quest-fork arm evidence | 740 sibling arms; 349 carry 2,053 exact typed Story placements covering 741 Story keys and 318 arm-related original files; 307 placements use binary-named action types |
 | Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; all 95 exact LevelData types select the non-SubLevel client `active=true` request branch; all 95 original scripts have one uniquely decoded active volume (86 sphere / 9 box); 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
+| Authored mission-to-LevelScript task dependencies | 2 exact `(level, script, task)` tuples across 2 missions; 0 unresolved; each joined to MissionRuntime, LevelScriptData, and ScriptTaskExtraInfoTable |
 | Binary public-state entry closure | 2 server-derived handlers: full-scene `SC_SELF_SCENE_INFO` snapshots and incremental `SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY`; 4 direct public-state setter callers split into 2 zero initializers and 2 server-parameter writers |
 | Native cross-system consumer census | 500,976 mapped methods / 7,214 unambiguous family targets / 17 reviewed callers; the 4 mission-state→DynamicScene seeds close over 23 methods / 30 direct edges / depth 2, with 1 reviewed IL2CPP class-init indirect site, 0 LevelScript, 0 Story, and 0 unreviewed; the 174-type managed mission/quest census finds 2 reviewed cross-system callers and 0 mission+LevelScript signatures; its general callable-carrier pass resolves 13 fields, 5 typed entry methods, and 5 family-local native bindings with 0 mission+LevelScript bindings |
 
@@ -1375,6 +1376,16 @@ still comes only from the serialized action row and its authored event/control
 path. Multi-row table fields stay candidates unless their lookup key is proven.
 Lua without a same-row mission/quest foreign key proves controller playback
 only, never Story order; OCR and manual order do not participate.
+
+Mission objective task dependencies are now recovered by serialized field
+shape, not mission or object ids. Every condition carrying a complete
+`(scene/level, script, task)` tuple is fail-closed against the original nested
+`ScriptTaskExtraInfoTable` corpus and its exact `LevelScriptData` file. The
+current corpus has two validated rows: `c17m2_q#9d5` and `sm1l3m3_q#0d1`.
+Mission Pipeline retains each tuple, task display metadata, three hashed
+original files, and the installed-binary task-authority reference. This proves
+that the authored objective waits for the task; it does not prove script
+activation, Story ownership, branch selection, or scene-file order.
 
 ## Remaining gaps
 

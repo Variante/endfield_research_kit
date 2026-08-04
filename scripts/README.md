@@ -157,6 +157,10 @@ override those defaults for one run.
   properties, and scans only actual original MissionRuntime filenames for
   possible foreign-key tokens. Scene/script/task identity proves server-backed
   task lifecycle, but does not supply mission ownership or Story order.
+  Mission objective conditions carrying the complete tuple are also joined by
+  field shape to the original nested `ScriptTaskExtraInfoTable` and exact
+  `LevelScriptData` file. Missing task rows or files fail with mission, quest,
+  tuple, source path, expected/actual state, and source hashes.
 - Mission Pipeline resolves exact native receiver playback gates generically
   through serialized `ActionHeader._validate` getter references. The resolver
   walks reusable AND/OR/NOT/ALL and comparison trees to exact leaves; unknown,

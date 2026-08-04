@@ -273,6 +273,9 @@
       submissionDialogCoGateHint: "Authored co-gate only; it does not prove this dialog opens the submission UI.",
       submissionLevelScriptCoGate: "same AND objective with LevelScript stage max",
       submissionLevelScriptCoGateHint: "Exact authored co-gate only. The LevelScript can provide dialog playback context, but this does not prove it opens or owns the submission UI.",
+      levelScriptTaskDependency: "exact LevelScript task dependency",
+      levelScriptTaskDependencyHint: "The authored mission objective waits for this exact task tuple. It does not prove that the mission activates the script, owns its Story playback, or selects a Story branch.",
+      taskMetadata: "task metadata",
       or: "or",
       nativeDirectCallers: "native direct callers",
       runtimeObjectCandidates: "runtime/object candidates",
@@ -1133,6 +1136,9 @@
       submissionDialogCoGateHint: "仅表示原始条件共同成立；不证明该对话会打开提交界面。",
       submissionLevelScriptCoGate: "与关卡脚本阶段完成同属 AND 目标",
       submissionLevelScriptCoGateHint: "仅表示精确的原始条件共门。关卡脚本可提供对话播放上下文，但不证明它会打开或拥有提交界面。",
+      levelScriptTaskDependency: "精确的关卡脚本任务依赖",
+      levelScriptTaskDependencyHint: "原始使命目标等待这个精确任务元组。它不证明使命会激活该脚本、拥有其剧情播放或选择剧情分支。",
+      taskMetadata: "任务元数据",
       or: "或",
       nativeDirectCallers: "原生直接调用者",
       runtimeObjectCandidates: "运行时/对象候选",
@@ -5342,9 +5348,15 @@
     }).join("");
     const submissionCoGates = (objective.submissionDialogCoGates || []).map((row) => `<span class="mp-state-chip" title="${esc(t("submissionDialogCoGateHint"))}"><b>${esc(t("submissionDialogCoGate"))}</b> · <code>${esc(row.submissionId || "")}</code> + <code>${esc(row.dialogId || "")}</code> · ${row.finishId < 0 ? esc(t("anyFinish")) : `${esc(t("finish"))} ${esc(row.finishId)}`}</span>`).join("");
     const submissionLevelScriptCoGates = (objective.submissionLevelScriptCoGates || []).map((row) => `<span class="mp-state-chip" title="${esc(t("submissionLevelScriptCoGateHint"))}"><b>${esc(t("submissionLevelScriptCoGate"))}</b> · <code>${esc(row.submissionId || "")}</code> + <code>${esc(row.levelId || "")}/${esc(row.scriptId || "")}</code></span>`).join("");
+    const taskDependencies = (objective.levelScriptTaskDependencies || []).map((row) => {
+      const metadata = row.taskMetadata || {};
+      const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
+      const metadataText = [metadata.titleKey, metadata.descriptionKey, metadata.objectiveCount != null ? `${metadata.objectiveCount} ${t("objectives")}` : ""].filter(Boolean).join(" · ");
+      return `<details open class="mp-quest-task-dependency"><summary><b>${esc(t("levelScriptTaskDependency"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}/${esc(row.taskId || "?")}</code></summary>${metadataText ? `<p><strong>${esc(t("taskMetadata"))}:</strong> ${esc(metadataText)}</p>` : ""}<small>${esc(t("levelScriptTaskDependencyHint"))}</small>${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}</details>`;
+    }).join("");
     return `<article class="mp-objective"><header><strong>${esc(t("objectives"))} ${objective.index}</strong><span class="mp-authority is-${esc(objective.authority)}">${esc(objective.authority)}</span></header>
       <p>${esc(objective.descriptionKey || t("noObjective"))}</p>
-      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>
+      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${taskDependencies}
       ${objectiveTrackingHtml(objective.tracking)}
       ${renderConditionTree(objective.condition)}
     </article>`;

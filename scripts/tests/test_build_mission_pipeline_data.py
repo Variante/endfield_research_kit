@@ -3776,6 +3776,104 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         }])
         self.assertEqual(row["questStateRefs"], [])
 
+    def test_objective_recovers_generic_level_script_task_tuple(self):
+        task_condition = condition(
+            "FutureTaskCondition",
+            _sceneId={"constValue": "map_fixture"},
+            _scriptId={"constValue": {"scriptId": 12345}},
+            _taskId={"constValue": "task_fixture"},
+        )
+        task_condition["uniqueId"] = "condition_fixture"
+        row = pipeline.objective_row({
+            "description": {"key": "objective_fixture"},
+            "condition": task_condition,
+        }, 1)
+        self.assertEqual(
+            row["condition"]["facts"]["taskId"],
+            "task_fixture",
+        )
+        self.assertEqual(row["levelScriptTaskDependencies"], [{
+            "conditionType": "FutureTaskCondition",
+            "conditionId": "condition_fixture",
+            "levelId": "map_fixture",
+            "scriptId": "12345",
+            "taskId": "task_fixture",
+            "relation": "mission_objective_waits_for_levelscript_task",
+            "runtimeAuthorityReference": (
+                "runtimeContract.levelScriptTaskAuthorityAudit"
+            ),
+            "evidenceBoundary": (
+                "The authored mission objective waits for this exact LevelScript "
+                "task. This does not prove that the mission activates the script, "
+                "owns its Story playback, or selects a Story branch."
+            ),
+        }])
+
+    def test_level_script_task_dependency_validates_original_tuple_and_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mission_source = root / "MissionRuntimeAsset" / "m1.json"
+            task_table = root / "GameplayConfig" / "ScriptTaskExtraInfoTable.json"
+            level_root = root / "LevelScriptData"
+            level_script = level_root / "map_fixture" / "12345.json"
+            for path, payload in (
+                (mission_source, {"missionId": "m1"}),
+                (task_table, {"dataTable": {"map_fixture": {"12345": {
+                    "task_fixture": {
+                        "taskTitle": {"key": "task_title"},
+                        "singleDescription": {"key": "task_description"},
+                        "objectiveCount": 2,
+                    }
+                }}}}),
+                (level_script, {"scriptId": 12345}),
+            ):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(payload), encoding="utf-8")
+            result = pipeline.validate_level_script_task_dependency(
+                {
+                    "levelId": "map_fixture",
+                    "scriptId": "12345",
+                    "taskId": "task_fixture",
+                },
+                mission_id="m1",
+                quest_id="m1_q#1",
+                mission_source=mission_source,
+                task_table_path=task_table,
+                level_script_root=level_root,
+            )
+            self.assertEqual(result["validation"]["status"], "validated")
+            self.assertEqual(result["taskMetadata"], {
+                "titleKey": "task_title",
+                "descriptionKey": "task_description",
+                "objectiveCount": 2,
+            })
+            self.assertEqual(len(result["relatedOriginalFiles"]), 3)
+
+    def test_level_script_task_dependency_fails_closed_for_missing_tuple(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mission_source = root / "m1.json"
+            task_table = root / "ScriptTaskExtraInfoTable.json"
+            mission_source.write_text("{}", encoding="utf-8")
+            task_table.write_text('{"dataTable": {}}', encoding="utf-8")
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"validator=level_script_task_dependency gate=taskTuple "
+                r"mission=m1 quest=m1_q#1 identity=map_fixture/12345/task_fixture",
+            ):
+                pipeline.validate_level_script_task_dependency(
+                    {
+                        "levelId": "map_fixture",
+                        "scriptId": "12345",
+                        "taskId": "task_fixture",
+                    },
+                    mission_id="m1",
+                    quest_id="m1_q#1",
+                    mission_source=mission_source,
+                    task_table_path=task_table,
+                    level_script_root=root / "LevelScriptData",
+                )
+
     def test_build_mission_retains_property_defaults_without_writer_claim(self):
         fixture = self.fixture()
         fixture["properties"] = [{
@@ -4004,6 +4102,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "submitItemMissions": 0,
                 "submitItemDialogCoGates": 0,
                 "submitItemLevelScriptCoGates": 0,
+                "levelScriptTaskDependencies": 0,
+                "missionsWithLevelScriptTaskDependencies": 0,
                 "nativeRuntimeBindings": 0,
                 "nativeRuntimeBoundMissions": 0,
                 "nativeRuntimeDistinctScriptIds": 0,

@@ -72,6 +72,11 @@ Rebuild Story data after editing overrides.
 - Disabling debug from a hidden page returns to a visible page and URL.
 - Mission Pipeline distinguishes ownership, context, definition-only rows, and
   unresolved native playback.
+- Mission objective cards expose every complete authored LevelScript task
+  tuple, its task display metadata, and hash-checked MissionRuntime,
+  LevelScriptData, and ScriptTaskExtraInfoTable files. These rows are completion
+  dependencies only; they do not claim script activation, Story ownership,
+  branch selection, or scene-file order.
 - Its authored-structure panel expands every MissionRuntime quest fork into
   main/auxiliary arms, typed objective and failure guards, terminal state, and
   exact first common descendant. Each arm shows its sibling-exclusive quest
