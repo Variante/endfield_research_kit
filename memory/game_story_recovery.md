@@ -24,6 +24,7 @@ Latest CN reports:
 | Strong / supported / weak edges | 1,524 / 834 / 2,635 |
 | Binary-proven quest-success Story order | 22 edges / 21 quests / 18 missions |
 | Exact native Story transitions | 380; 85 branch-bearing across 40 missions (77 Split, 7 conditional, 1 ordered-sequence) |
+| Binary parallel-fan-out authority | 1 structural scheduler carrier / 2 admitted writer methods / 3 decoded direct calls / 44 Split branch groups / 77 transitions / 104 evidence rows |
 | Source-comparable scene pairs | 3,845 / 249,695 (1.54%) |
 | Cyclic components | 0 |
 | Exact nested DialogTree containments | 49 across 44 child files |
@@ -136,7 +137,18 @@ from the current GameAssembly formatter and Execute bodies. Current
 `Branch.Execute` at `0x18764d990` reserves itself and advances `_idList` one
 item at a time, so `Branch.sequence[*]` is ordered iteration, not fan-out;
 `Split` is parallel fan-out, If/Else and Switch select one arm, and While is a
-loop. Zero action ids are exact terminal pointers. The current binary also
+loop. The Split classification is no longer a class-name rule: the protocol
+audit structurally discovers the inherited `m_extraThreadIDList` carrier and
+its scheduler, performs a complete direct-call census, and scans every direct
+ActionBase child `Execute` body. It admits two current writer shapes: typed
+child fields passed to the scheduler and typed collection members appended
+inline. This yields two writer methods and three decoded direct calls with no
+rejected call sites; one cleanup-only list consumer stays separate. The 44
+serialized Split branch groups produce 77 distinct cross-Story transitions
+and 104 evidence rows. Every row is marked as binary-proven extra-thread
+launch with `siblingOrderEvidence=false` and carries the exact binary/metadata
+hashes. IFix substitution remains explicitly outside the static proof.
+Zero action ids are exact terminal pointers. The current binary also
 proves one reusable construction rule for all three `ActionMapRuntime`
 collections: serialized header, action, and getter records are assigned into
 their respective runtime arrays by local id, so the final serialized record

@@ -4184,6 +4184,383 @@ def direct_rel32_call_candidates(
     return sites
 
 
+def validate_action_extra_thread_scheduler_census(
+    *,
+    carrier_count: int,
+    scheduler_method_count: int,
+    direct_calls: list[dict[str, Any]],
+    rejected_direct_calls: list[dict[str, Any]],
+    extra_thread_execute_methods: list[dict[str, Any]],
+    source_file: str,
+    source_hashes: dict[str, str],
+) -> dict[str, Any]:
+    """Fail closed on every current ActionBase extra-thread writer shape.
+
+    Counts are deliberately corpus-derived.  The validator does not encode the
+    names or expected number of composite action classes; a future build must
+    either match one of the structural writer shapes or make this gate fail.
+    """
+    failures: list[dict[str, Any]] = []
+
+    def fail(gate: str, expected: Any, actual: Any, message: str = "") -> None:
+        failures.append({
+            "validator": "action_extra_thread_scheduler_census",
+            "gate": gate,
+            "message": message or None,
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": source_hashes,
+        })
+
+    if carrier_count != 1:
+        fail("uniqueStructuralCarrier", 1, carrier_count)
+    if scheduler_method_count != 1:
+        fail("uniqueSchedulerMethod", 1, scheduler_method_count)
+    if rejected_direct_calls:
+        fail("completeDecodedDirectCallerCensus", [], rejected_direct_calls)
+    for call in direct_calls:
+        if not call.get("thisArgumentPreserved"):
+            fail("directCallerPreservesThis", True, call, str(call.get("caller") or ""))
+        if not call.get("childIdFromOwnField"):
+            fail("directChildIdFromTypedField", True, call, str(call.get("caller") or ""))
+        if not call.get("thirdArgumentZero"):
+            fail("directSchedulerFlagIsZero", True, call, str(call.get("caller") or ""))
+    if not extra_thread_execute_methods:
+        fail("observedCompositeWriter", ">=1", 0)
+    for row in extra_thread_execute_methods:
+        if row.get("writerShape") not in {
+            "direct_scheduler_calls_from_typed_fields",
+            "inline_list_add_from_typed_collection",
+        }:
+            fail(
+                "knownStructuralWriterShape",
+                [
+                    "direct_scheduler_calls_from_typed_fields",
+                    "inline_list_add_from_typed_collection",
+                ],
+                row,
+                str(row.get("symbol") or ""),
+            )
+    return {
+        "status": "validation_failed" if failures else "validated",
+        "failures": failures,
+    }
+
+
+def action_extra_thread_scheduler_census(
+    metadata: Any,
+    helper: Any,
+    gameassembly_path: Path,
+    mapper_path: Path = NATIVE_MAPPER_HELPER,
+) -> dict[str, Any]:
+    """Recover parallel composite semantics from the generic ActionBase scheduler.
+
+    Discovery starts with field/method shape, then scans every direct ActionBase
+    child Execute body.  Display names are reported only after admission; they
+    are never selection keys.
+    """
+    mapper = load_native_mapper(mapper_path)
+    pe = mapper.PeImage(gameassembly_path)
+    registration = mapper.find_metadata_registration(
+        pe, mapper.DEFAULT_CODE_REGISTRATION
+    )
+    if registration is None:
+        raise RuntimeError("extra-thread audit could not derive MetadataRegistration")
+    registration_summary = mapper.metadata_registration_summary(pe, registration)
+    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    ranges = mapper.image_method_ranges(metadata)
+    pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
+        pe, metadata, modules, ranges
+    )
+    sorted_pointers = sorted({
+        pointer
+        for pointers in pointers_by_image.values()
+        for pointer in pointers
+        if pointer
+    })
+    source_hashes = {
+        "gameAssemblySha256": file_sha256(gameassembly_path),
+        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+    }
+
+    def mapped_method(type_def: Any, method: Any) -> tuple[dict[str, Any], int, int]:
+        row = full_method_mapper_row(metadata, helper, method.index)
+        image_range = ranges.get(row["image"])
+        pointers = pointers_by_image.get(row["image"], [])
+        if not image_range:
+            raise RuntimeError(f"missing image method range for {row['image']}")
+        slot = row["methodIndex"] - image_range["methodStart"]
+        if not 0 <= slot < len(pointers) or not pointers[slot]:
+            raise RuntimeError(f"unmapped method {row['type']}.{row['method']}")
+        pointer = pointers[slot]
+        size, _ = mapper.estimate_scan_size(pointer, sorted_pointers, 4096)
+        return row, pointer, size
+
+    carriers: list[dict[str, Any]] = []
+    carrier_defs: list[Any] = []
+    for type_def in metadata.types:
+        field_names = {
+            metadata.string(field.name_index)
+            for field in metadata.fields_for(type_def)
+        }
+        scheduler_methods = [
+            method
+            for method in metadata.methods_for(type_def)
+            if helper.method_row(metadata, method)["name"]
+            == "SetResultLaunchExtraThread"
+        ]
+        if "m_extraThreadIDList" not in field_names or not scheduler_methods:
+            continue
+        offsets = runtime_type_field_offsets(
+            metadata, pe, registration_summary, type_def.index
+        )
+        carriers.append({
+            "type": metadata.type_full_name(type_def),
+            "typeIndex": type_def.index,
+            "typeToken": f"0x{type_def.token:08x}",
+            "extraThreadListField": "m_extraThreadIDList",
+            "extraThreadListOffset": f"0x{offsets['m_extraThreadIDList']:x}",
+            "schedulerMethods": len(scheduler_methods),
+        })
+        carrier_defs.append((type_def, scheduler_methods, offsets))
+
+    scheduler_method_count = sum(
+        len(methods) for _, methods, _ in carrier_defs
+    )
+    scheduler_va = 0
+    scheduler_row: dict[str, Any] = {}
+    scheduler_size = 0
+    if len(carrier_defs) == 1 and scheduler_method_count == 1:
+        _, methods, _ = carrier_defs[0]
+        scheduler_row, scheduler_va, scheduler_size = mapped_method(
+            carrier_defs[0][0], methods[0]
+        )
+
+    raw_call_sites = direct_rel32_call_candidates(pe, scheduler_va) if scheduler_va else []
+    direct_calls: list[dict[str, Any]] = []
+    rejected_direct_calls: list[dict[str, Any]] = []
+    calls_by_method: dict[int, list[dict[str, Any]]] = {}
+    for site in raw_call_sites:
+        position = bisect_right(sorted_pointers, site) - 1
+        if position < 0:
+            rejected_direct_calls.append({"callVa": f"0x{site:x}", "reason": "no_caller"})
+            continue
+        caller_va = sorted_pointers[position]
+        aliases = method_by_pointer.get(caller_va) or []
+        caller = aliases[0] if aliases else None
+        if not caller:
+            rejected_direct_calls.append({"callVa": f"0x{site:x}", "reason": "no_symbol"})
+            continue
+        caller_method = metadata.methods[int(caller["methodIndex"])]
+        caller_def = metadata.types[caller_method.declaring_type]
+        own_offsets = runtime_type_field_offsets(
+            metadata, pe, registration_summary, caller_def.index
+        )
+        scan_start = max(caller_va, site - 24)
+        instructions = mapper.decode_x64_subset(
+            pe.bytes_at_va(scan_start, site + 5 - scan_start),
+            scan_start,
+            stop_offset=site + 5 - scan_start,
+        )
+        before = [str(row.get("text") or "") for row in instructions[-8:]]
+        own_origin = None
+        for field_name, offset in own_offsets.items():
+            if any(re.search(rf"mov edx, \[[a-z0-9]+\+0x{offset:x}\]", text) for text in before):
+                own_origin = {"field": field_name, "offset": f"0x{offset:x}"}
+                break
+        row = {
+            "callVa": f"0x{site:x}",
+            "caller": f"{caller.get('type')}.{caller.get('method')}",
+            "callerToken": caller.get("token"),
+            "callerVa": f"0x{caller_va:x}",
+            "thisArgumentPreserved": any(
+                re.fullmatch(r"mov rcx, (rbx|rsi|rdi|r1[2-5])", text)
+                for text in before
+            ),
+            "childIdFromOwnField": own_origin is not None,
+            "childIdOrigin": own_origin,
+            "thirdArgumentZero": any(
+                text in {"xor r8d, r8d", "mov r8d, 0x0"} for text in before
+            ),
+        }
+        direct_calls.append(row)
+        calls_by_method.setdefault(caller_va, []).append(row)
+
+    extra_offset = (
+        carrier_defs[0][2].get("m_extraThreadIDList")
+        if len(carrier_defs) == 1
+        else None
+    )
+    execute_rows: list[dict[str, Any]] = []
+    non_child_extra_thread_consumers: list[dict[str, Any]] = []
+    carrier_byval = carrier_defs[0][0].byval_type_index if len(carrier_defs) == 1 else -1
+    for type_def in metadata.types:
+        if type_def.declaring_type_index != carrier_byval:
+            continue
+        executes = [
+            method
+            for method in metadata.methods_for(type_def)
+            if helper.method_row(metadata, method)["name"] == "Execute"
+        ]
+        for method in executes:
+            try:
+                method_row, pointer, size = mapped_method(type_def, method)
+            except RuntimeError:
+                # Open generic definitions can legitimately lack an AOT body;
+                # their closed instantiations do not own serialized action fields.
+                continue
+            instructions = mapper.decode_x64_subset(
+                pe.bytes_at_va(pointer, size), pointer, stop_offset=size
+            )
+            texts = [str(row.get("text") or "") for row in instructions]
+            this_aliases = {"rcx"}
+            changed = True
+            while changed:
+                changed = False
+                for row in instructions:
+                    if int(row.get("offset") or 0) > 96:
+                        break
+                    match = re.fullmatch(
+                        r"mov ([a-z0-9]+), ([a-z0-9]+)",
+                        str(row.get("text") or ""),
+                    )
+                    if match and match.group(2) in this_aliases and match.group(1) not in this_aliases:
+                        this_aliases.add(match.group(1))
+                        changed = True
+            alias_pattern = "(?:" + "|".join(sorted(map(re.escape, this_aliases))) + ")"
+            try:
+                own_offsets = runtime_type_field_offsets(
+                    metadata, pe, registration_summary, type_def.index
+                )
+            except RuntimeError:
+                own_offsets = {}
+            own_reads = [
+                {"field": field_name, "offset": f"0x{offset:x}"}
+                for field_name, offset in own_offsets.items()
+                if any(re.search(rf"\[{alias_pattern}\+0x{offset:x}\]", text) for text in texts)
+            ]
+            extra_reads = [
+                row for row in instructions
+                if extra_offset is not None
+                and re.match(
+                    rf"mov [a-z0-9]+, \[{alias_pattern}\+0x{extra_offset:x}\]$",
+                    str(row.get("text") or ""),
+                )
+            ]
+            direct = calls_by_method.get(pointer, [])
+            child_loads = [
+                row for row in instructions
+                if re.fullmatch(
+                    r"mov ([a-z0-9]+), \[[a-z0-9]+\+0x20\+[a-z0-9]+\*4\]",
+                    str(row.get("text") or ""),
+                )
+            ]
+            loaded_registers = {
+                re.fullmatch(r"mov ([a-z0-9]+), .*", str(row.get("text") or "")).group(1)
+                for row in child_loads
+            }
+            inline_appends = [
+                row for row in instructions
+                if any(
+                    str(row.get("text") or "").endswith(f", {register}")
+                    and (
+                        str(row.get("text") or "").startswith("mov edx,")
+                        or "+0x20+" in str(row.get("text") or "")
+                    )
+                    for register in loaded_registers
+                )
+            ]
+            writer_shape = ""
+            if direct:
+                writer_shape = "direct_scheduler_calls_from_typed_fields"
+            elif extra_reads and own_reads and child_loads and inline_appends:
+                writer_shape = "inline_list_add_from_typed_collection"
+            if not extra_reads and not direct:
+                continue
+            if not writer_shape:
+                non_child_extra_thread_consumers.append({
+                    "symbol": f"{method_row['type']}.{method_row['method']}",
+                    "token": method_row["token"],
+                    "va": f"0x{pointer:x}",
+                    "extraThreadListReads": [
+                        {"offset": row["offset"], "text": row["text"]}
+                        for row in extra_reads
+                    ],
+                    "classification": "no_typed_child_launch_shape_observed",
+                })
+                continue
+            execute_rows.append({
+                "symbol": f"{method_row['type']}.{method_row['method']}",
+                "token": method_row["token"],
+                "va": f"0x{pointer:x}",
+                "scanBytes": size,
+                "writerShape": writer_shape or "unclassified_extra_thread_access",
+                "typedChildFields": own_reads,
+                "directSchedulerCalls": direct,
+                "extraThreadListReads": [
+                    {"offset": row["offset"], "text": row["text"]}
+                    for row in extra_reads
+                ],
+                "collectionChildLoads": [
+                    {"offset": row["offset"], "text": row["text"]}
+                    for row in child_loads
+                ],
+                "appendObservations": [
+                    {"offset": row["offset"], "text": row["text"]}
+                    for row in inline_appends
+                ],
+            })
+
+    validation = validate_action_extra_thread_scheduler_census(
+        carrier_count=len(carriers),
+        scheduler_method_count=scheduler_method_count,
+        direct_calls=direct_calls,
+        rejected_direct_calls=rejected_direct_calls,
+        extra_thread_execute_methods=execute_rows,
+        source_file=str(gameassembly_path.resolve()),
+        source_hashes=source_hashes,
+    )
+    return {
+        "schema": "actionExtraThreadSchedulerCensus.v1",
+        "classification": "typed_children_launch_as_parallel_extra_threads",
+        "discoveryPattern": {
+            "selection": "ActionBase field/method shape plus direct-child Execute bodies",
+            "objectIdentityInputs": [],
+            "acceptedWriterShapes": [
+                "direct_scheduler_calls_from_typed_fields",
+                "inline_list_add_from_typed_collection",
+            ],
+        },
+        "carrier": carriers[0] if len(carriers) == 1 else None,
+        "carrierCandidates": carriers,
+        "schedulerMethod": ({
+            "symbol": f"{scheduler_row.get('type')}.{scheduler_row.get('method')}",
+            "token": scheduler_row.get("token"),
+            "va": f"0x{scheduler_va:x}",
+            "scanBytes": scheduler_size,
+        } if scheduler_va else None),
+        "rawDirectCallCandidates": len(raw_call_sites),
+        "directCalls": direct_calls,
+        "rejectedDirectCalls": rejected_direct_calls,
+        "extraThreadExecuteMethods": execute_rows,
+        "nonChildExtraThreadConsumers": non_child_extra_thread_consumers,
+        "finding": (
+            "Every current direct ActionBase child Execute body that writes the inherited "
+            "extra-thread list either calls the structurally discovered scheduler with "
+            "typed child fields or appends typed collection members inline. These child "
+            "slots are parallel fan-out arms, not array-position chronology."
+        ),
+        "boundary": (
+            "This proves the current installed GameAssembly AOT path. Execute methods "
+            "carry IFix guards; an active runtime substitution, native memory mutation, "
+            "future patch, or future build remains outside this static proof. Sibling "
+            "completion order and order across separate Story files remain unknown."
+        ),
+        "validation": validation,
+    }
+
+
 def lifecycle_symbols_from_body(body: dict[str, Any]) -> list[str]:
     targets = [
         target
@@ -6309,6 +6686,12 @@ def build_report(
         gameassembly_path,
         mapper_path,
     )
+    extra_thread_scheduler_census = action_extra_thread_scheduler_census(
+        metadata,
+        helper,
+        gameassembly_path,
+        mapper_path,
+    )
     start_policy_contract = levelscript_start_policy_contract(
         metadata,
         defaults,
@@ -6371,7 +6754,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v18",
+        "_schema": "endfieldProtocolRegistryAudit.v19",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -6485,6 +6868,16 @@ def build_report(
                 )
                 == "validated"
             ),
+            "actionExtraThreadWriterMethods": len(
+                extra_thread_scheduler_census["extraThreadExecuteMethods"]
+            ),
+            "actionExtraThreadDirectCalls": len(
+                extra_thread_scheduler_census["directCalls"]
+            ),
+            "actionExtraThreadSchedulerValidated": (
+                extra_thread_scheduler_census["validation"]["status"]
+                == "validated"
+            ),
         },
         "evidencePolicy": {
             "registry": (
@@ -6511,6 +6904,7 @@ def build_report(
             "questSemanticFields": state_application_census[
                 "questTopologyFieldConsumers"
             ]["questSemanticFields"]["boundary"],
+            "actionExtraThreadScheduler": extra_thread_scheduler_census["boundary"],
             "levelScriptTasks": (
                 "The task packet family exposes exact (sceneNumId, scriptId, taskId) "
                 "identity, and current-build native sender/handler paths are proven "
@@ -6564,6 +6958,7 @@ def build_report(
         "nativeLevelScriptEventPaths": NATIVE_LEVEL_SCRIPT_EVENT_PATHS,
         "protobufIdentityCarrierCensus": identity_carrier_census,
         "stateUpdateApplicationCensus": state_application_census,
+        "actionExtraThreadSchedulerCensus": extra_thread_scheduler_census,
         "levelScriptStartPolicy": start_policy_contract,
         "levelScriptManualSelfControl": manual_self_control_contract,
         "levelScriptActivationControl": activation_control_contract,
@@ -6627,6 +7022,12 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"**{summary['stateUpdateClientSuccessorSelectors']}** client successor selectors"
         ),
         (
+            "- Action extra-thread composite writers: "
+            f"**{summary['actionExtraThreadWriterMethods']}** methods / "
+            f"**{summary['actionExtraThreadDirectCalls']}** direct scheduler calls; "
+            f"**{'validated' if summary['actionExtraThreadSchedulerValidated'] else 'failed'}**"
+        ),
+        (
             "- LevelScript SameWithActive start policy: "
             f"**{'validated' if summary['levelScriptStartPolicyValidated'] else 'failed'}**"
         ),
@@ -6644,6 +7045,37 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
     ]
     lines.extend(f"- **{md_escape(key)}:** {md_escape(value)}" for key, value in policy.items())
+    scheduler = report["actionExtraThreadSchedulerCensus"]
+    lines.extend([
+        "",
+        "## Action extra-thread scheduler",
+        "",
+        md_escape(scheduler["finding"]),
+        "",
+        "| Execute method | Writer shape | Token | VA | Child fields |",
+        "|---|---|---|---|---|",
+    ])
+    for row in scheduler["extraThreadExecuteMethods"]:
+        child_fields = ", ".join(
+            f"{field.get('field')}@{field.get('offset')}"
+            for field in row.get("typedChildFields") or []
+        )
+        lines.append(
+            f"| `{md_escape(row.get('symbol', ''))}` | "
+            f"`{md_escape(row.get('writerShape', ''))}` | "
+            f"`{md_escape(row.get('token', ''))}` | "
+            f"`{md_escape(row.get('va', ''))}` | "
+            f"{md_escape(child_fields)} |"
+        )
+    lines.extend([
+        "",
+        (
+            f"Complete direct-call census: **{len(scheduler['directCalls'])}** "
+            f"decoded / **{len(scheduler['rejectedDirectCalls'])}** rejected."
+        ),
+        "",
+        md_escape(scheduler["boundary"]),
+    ])
     lines.extend(
         [
             "",
@@ -6732,7 +7164,8 @@ def render_markdown(report: dict[str, Any]) -> str:
             ),
         ]
     )
-    level_event = report["nativeLevelScriptEventPaths"][57]
+    level_events = report["nativeLevelScriptEventPaths"]
+    level_event = level_events.get(57) or level_events["57"]
     lines.extend(
         [
             "",
@@ -7272,7 +7705,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v18 report when its original "
+            "Reuse an existing validated v19 report when its original "
             "GameAssembly and metadata hashes still match; otherwise rebuild it."
         ),
     )
@@ -7291,8 +7724,17 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v18":
+    if report.get("_schema") != "endfieldProtocolRegistryAudit.v19":
         return False, f"schema is {report.get('_schema')!r}"
+    scheduler_validation = (
+        (report.get("actionExtraThreadSchedulerCensus") or {}).get("validation")
+        or {}
+    )
+    if scheduler_validation.get("status") != "validated":
+        return False, (
+            "action-extra-thread validation is "
+            f"{scheduler_validation.get('status')!r}"
+        )
     validation = (
         (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}
     )
@@ -7396,14 +7838,13 @@ def main() -> int:
             args.gameassembly,
         )
         if is_current:
-            if not args.markdown_output.is_file():
-                existing_report = json.loads(
-                    args.json_output.read_text(encoding="utf-8")
-                )
-                write_text_if_changed(
-                    args.markdown_output,
-                    render_markdown(existing_report),
-                )
+            existing_report = json.loads(
+                args.json_output.read_text(encoding="utf-8")
+            )
+            write_text_if_changed(
+                args.markdown_output,
+                render_markdown(existing_report),
+            )
             print(f"protocol registry audit current: {reason}")
             return 0
         print(f"protocol registry audit refresh required: {reason}")
@@ -7480,6 +7921,17 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+    scheduler_validation = report["actionExtraThreadSchedulerCensus"]["validation"]
+    if scheduler_validation["status"] != "validated":
+        first = scheduler_validation["failures"][0]
+        print(
+            "action-extra-thread validator failed: "
+            f"validator={first['validator']} gate={first['gate']} "
+            f"message={first.get('message')} expected={first['expected']!r} "
+            f"actual={first['actual']!r} source={first['sourceFile']}",
+            file=sys.stderr,
+        )
+        return 1
     start_policy_validation = report["levelScriptStartPolicy"]["validation"]
     if start_policy_validation["status"] != "validated":
         first = start_policy_validation["failures"][0]
@@ -7523,7 +7975,8 @@ def main() -> int:
         f"{report['summary']['selectedSchemas']} selected schemas, "
         f"{report['summary']['stateUpdateApplicationCandidatesValidated']}/"
         f"{report['summary']['stateUpdateApplicationCandidates']} state-update paths validated, "
-        "LevelScript start policy, manual self-control, and activation control validated"
+        "LevelScript start policy, manual self-control, activation control, and "
+        "ActionBase extra-thread scheduler validated"
     )
     return 0
 

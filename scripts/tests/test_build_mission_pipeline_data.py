@@ -98,6 +98,20 @@ TASK_AUTHORITY_CONTRACT_FIXTURE = {
     "validation": {"status": "validated"},
 }
 
+EXTRA_THREAD_SCHEDULER_CONTRACT_FIXTURE = {
+    "schema": "actionExtraThreadSchedulerCensus.v1",
+    "classification": "typed_children_launch_as_parallel_extra_threads",
+    "extraThreadExecuteMethods": [
+        {
+            "symbol": "Fixture.Actions.Composite.Execute",
+            "writerShape": "inline_list_add_from_typed_collection",
+        }
+    ],
+    "directCalls": [],
+    "relatedOriginalFiles": [],
+    "validation": {"status": "validated", "failures": []},
+}
+
 
 def condition(kind, **values):
     return {"$type": f"Beyond.Gameplay.{kind}, Gameplay.Beyond", "uniqueId": f"id_{kind}", **values}
@@ -349,7 +363,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+            "_schema": "endfieldProtocolRegistryAudit.v19",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -415,7 +429,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+            "_schema": "endfieldProtocolRegistryAudit.v19",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": "0" * 64,
@@ -465,7 +479,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+            "_schema": "endfieldProtocolRegistryAudit.v19",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -506,6 +520,74 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 r"gate=optionalFieldWrite.*expected='\[object\+0x50\] = 1'.*actual='missing'",
             ):
                 pipeline.load_state_update_application_contract(audit_path)
+
+    def test_extra_thread_scheduler_contract_revalidates_original_sources(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            gameassembly.write_bytes(b"fixture-gameassembly")
+            metadata.write_bytes(b"fixture-metadata")
+            audit_path = root / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v19",
+                "source": {
+                    "gameAssembly": str(gameassembly),
+                    "gameAssemblySha256": hashlib.sha256(
+                        gameassembly.read_bytes()
+                    ).hexdigest(),
+                    "metadata": str(metadata),
+                    "metadataSha256": hashlib.sha256(
+                        metadata.read_bytes()
+                    ).hexdigest(),
+                },
+                "actionExtraThreadSchedulerCensus": {
+                    "schema": "actionExtraThreadSchedulerCensus.v1",
+                    "classification": "typed_children_launch_as_parallel_extra_threads",
+                    "discoveryPattern": {"objectIdentityInputs": []},
+                    "extraThreadExecuteMethods": [{
+                        "symbol": "Fixture.Composite.Execute",
+                        "writerShape": "inline_list_add_from_typed_collection",
+                    }],
+                    "validation": {"status": "validated", "failures": []},
+                },
+            }), encoding="utf-8")
+
+            contract = pipeline.load_action_extra_thread_scheduler_contract(
+                audit_path
+            )
+
+        self.assertEqual(
+            contract["classification"],
+            "typed_children_launch_as_parallel_extra_threads",
+        )
+        self.assertEqual(len(contract["relatedOriginalFiles"]), 2)
+
+    def test_extra_thread_scheduler_contract_reports_upstream_shape_failure(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v19",
+                "actionExtraThreadSchedulerCensus": {
+                    "validation": {
+                        "status": "validation_failed",
+                        "failures": [{
+                            "gate": "knownStructuralWriterShape",
+                            "message": "Fixture.Unknown.Execute",
+                            "expected": ["typed child writer"],
+                            "actual": "unknown",
+                            "sourceFile": "GameAssembly.dll",
+                        }],
+                    },
+                },
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"validator=action_extra_thread_scheduler_contract.*"
+                r"gate=knownStructuralWriterShape.*Fixture.Unknown.Execute",
+            ):
+                pipeline.load_action_extra_thread_scheduler_contract(audit_path)
 
     def test_levelscript_task_authority_validates_general_packet_family(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -557,7 +639,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+            "_schema": "endfieldProtocolRegistryAudit.v19",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -586,7 +668,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+            "_schema": "endfieldProtocolRegistryAudit.v19",
                 "selectedSchemas": [],
                 "nativeTaskPaths": {},
             }), encoding="utf-8")
@@ -606,7 +688,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+            "_schema": "endfieldProtocolRegistryAudit.v19",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -654,7 +736,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+            "_schema": "endfieldProtocolRegistryAudit.v19",
                 "levelScriptStartPolicy": {
                     "schema": "levelScriptStartPolicy.v1",
                     "classification": (
@@ -686,7 +768,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+            "_schema": "endfieldProtocolRegistryAudit.v19",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -736,7 +818,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+            "_schema": "endfieldProtocolRegistryAudit.v19",
                 "levelScriptManualSelfControl": {
                     "schema": "levelScriptManualSelfControl.v1",
                     "classification": (
@@ -770,7 +852,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+                "_schema": "endfieldProtocolRegistryAudit.v19",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -859,7 +941,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v18",
+                "_schema": "endfieldProtocolRegistryAudit.v19",
                 "levelScriptActivationControl": {
                     "schema": "levelScriptActivationControl.v6",
                     "classification": (
@@ -2415,6 +2497,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "missions": [{"id": "testm1", "file": "missions/testm1.json"}],
                 "runtimeContract": {
                     "stateUpdateApplicationAudit": STATE_UPDATE_CONTRACT_FIXTURE,
+                    "actionExtraThreadSchedulerAudit": EXTRA_THREAD_SCHEDULER_CONTRACT_FIXTURE,
                 },
             }
             order_row = {
@@ -2427,6 +2510,20 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "questMergeCount": 1,
                 },
                 "nodes": [{"key": "dlg_testm1_1"}, {"key": "dlg_testm1_2"}],
+                "directEdges": [{
+                    "from": "dlg_testm1_1",
+                    "to": "dlg_testm1_2",
+                    "kind": "levelscriptNativeControlPath",
+                    "events": [{
+                        "transitionSteps": [{
+                            "edge": "Split.actions[0]",
+                            "transitionKind": "parallelFanout",
+                            "runtimeSemantics": "binary_proven_extra_thread_launch",
+                            "siblingOrderEvidence": False,
+                            "runtimeAuthoritySource": "reports/story/recovery/protocol_registry_audit.json",
+                        }],
+                    }],
+                }],
                 "reducedComponentEdges": [{"from": "p1", "to": "p2"}],
                 "branches": {
                     "questForks": [
@@ -2469,8 +2566,20 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             )
             self.assertEqual(lifecycle_contract["action"]["value"], 2)
             self.assertEqual(len(lifecycle_contract["relatedOriginalFiles"]), 2)
+            self.assertIs(
+                build_order_report.call_args.kwargs[
+                    "extra_thread_scheduler_contract"
+                ],
+                EXTRA_THREAD_SCHEDULER_CONTRACT_FIXTURE,
+            )
             mission_payload = json.loads((mission_root / "testm1.json").read_text(encoding="utf-8"))
             self.assertEqual(mission_payload["storyOrder"], order_row)
+            published_step = mission_payload["storyOrder"]["directEdges"][0]["events"][0]["transitionSteps"][0]
+            self.assertEqual(
+                published_step["runtimeSemantics"],
+                "binary_proven_extra_thread_launch",
+            )
+            self.assertFalse(published_step["siblingOrderEvidence"])
             authority = mission_payload["storyOrder"]["branches"]["questForkAuthority"]
             self.assertEqual(
                 authority["classification"],
@@ -3683,6 +3792,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
     @patch.object(
         pipeline,
+        "load_action_extra_thread_scheduler_contract",
+        return_value=EXTRA_THREAD_SCHEDULER_CONTRACT_FIXTURE,
+    )
+    @patch.object(
+        pipeline,
         "load_levelscript_task_authority_contract",
         return_value=TASK_AUTHORITY_CONTRACT_FIXTURE,
     )
@@ -3692,7 +3806,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         return_value=STATE_UPDATE_CONTRACT_FIXTURE,
     )
     def test_build_all_writes_lazy_index_and_mission_payload(
-        self, _state_loader, _task_loader
+        self, _state_loader, _task_loader, _scheduler_loader
     ):
         self.maxDiff = None
         with tempfile.TemporaryDirectory() as temporary:
@@ -3750,6 +3864,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "questOptionalObjectiveFlagValidated": True,
                 "questShowModeConsumers": 5,
                 "questShowModeLifecycleConsumers": 0,
+                "actionExtraThreadWriterMethods": 1,
+                "actionExtraThreadDirectCalls": 0,
                 # The fixture has one mission with no cross-mission state
                 # condition and no envTalk consumer table, so both new lanes
                 # are legitimately empty rather than absent.
@@ -3792,6 +3908,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
     @patch.object(
         pipeline,
+        "load_action_extra_thread_scheduler_contract",
+        return_value=EXTRA_THREAD_SCHEDULER_CONTRACT_FIXTURE,
+    )
+    @patch.object(
+        pipeline,
         "load_levelscript_task_authority_contract",
         return_value=TASK_AUTHORITY_CONTRACT_FIXTURE,
     )
@@ -3804,6 +3925,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self,
         _state_loader,
         _task_loader,
+        _scheduler_loader,
     ):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -3863,6 +3985,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
 
     @patch.object(
         pipeline,
+        "load_action_extra_thread_scheduler_contract",
+        return_value=EXTRA_THREAD_SCHEDULER_CONTRACT_FIXTURE,
+    )
+    @patch.object(
+        pipeline,
         "load_levelscript_task_authority_contract",
         return_value=TASK_AUTHORITY_CONTRACT_FIXTURE,
     )
@@ -3875,6 +4002,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self,
         _state_loader,
         _task_loader,
+        _scheduler_loader,
     ):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

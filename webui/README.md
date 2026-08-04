@@ -118,6 +118,11 @@ Rebuild Story data after editing overrides.
   exact native event-to-Story path. They show the related file and semantic
   control actions, active last-serialized runtime slots, and shadowed physical
   records without treating the rest of the file as mission chronology.
+- The runtime-authority panel shows the structurally discovered ActionBase
+  extra-thread scheduler, every admitted composite writer shape, exact native
+  method/token/field evidence, and binary/metadata hashes. Parallel Story
+  transition badges appear only when this current-build contract validates;
+  sibling action slots remain explicitly unordered.
 - Native branch cards show typed predicate operands when the current binary
   union, formatter field order, payload shape, and runtime consumer all agree;
   embedded root `GameCondition` unions and local getter references retain

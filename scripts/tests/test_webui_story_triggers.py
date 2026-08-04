@@ -218,3 +218,13 @@ for (const [key, category] of [
         self.assertIn("optionalObservation.optionalFieldWrite?.text", source)
         self.assertIn("post_lifecycle_block_notification", source)
         self.assertIn("They do not select a successor arm", source)
+
+    def test_mission_pipeline_surfaces_binary_parallel_scheduler_authority(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("contract.actionExtraThreadSchedulerAudit", source)
+        self.assertIn("extraThreadExecuteMethods", source)
+        self.assertIn("binary_proven_extra_thread_launch", source)
+        self.assertIn("step.siblingOrderEvidence", source)
+        self.assertIn('t("extraThreadScheduler")', source)
+        self.assertIn('t("extraThreadSiblingBoundary")', source)
+        self.assertIn("extraThreadScheduler.relatedOriginalFiles", source)

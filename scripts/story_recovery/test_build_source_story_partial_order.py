@@ -1160,6 +1160,40 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             [],
         )
 
+    def test_parallel_transition_requires_binary_discovered_writer(self) -> None:
+        source_path = (
+            (5, "ActionHeader.nextId", "Split", "branch", "{}"),
+        )
+        target_path = (
+            *source_path,
+            (6, "Split.actions[0]", "PlayRadio", "play_radio", "{}"),
+        )
+        self.assertEqual(
+            partial_order._native_story_transition_steps(
+                source_path,
+                target_path,
+            )[0]["transitionKind"],
+            "linear",
+        )
+        contract = {
+            "source": "reports/story/recovery/protocol_registry_audit.json",
+            "extraThreadExecuteMethods": [{
+                "symbol": "Fixture.Actions.Split.Execute",
+                "writerShape": "inline_list_add_from_typed_collection",
+            }],
+        }
+        step = partial_order._native_story_transition_steps(
+            source_path,
+            target_path,
+            contract,
+        )[0]
+        self.assertEqual(step["transitionKind"], "parallelFanout")
+        self.assertEqual(
+            step["runtimeSemantics"],
+            "binary_proven_extra_thread_launch",
+        )
+        self.assertFalse(step["siblingOrderEvidence"])
+
     def test_native_control_edge_reports_branching_transition(self) -> None:
         candidates = {"radio_m1_1": "radio", "dlg_m1_1": "dlg"}
         predicate = {
