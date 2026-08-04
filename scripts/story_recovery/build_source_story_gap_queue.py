@@ -1588,25 +1588,6 @@ QUEST_ATTACHMENT_DIAGNOSTIC_DECLARATIONS = {
             "radio_e2m8_1",
             "radio_e2m8_1d5",
         ),
-        "connectionRows": tuple(
-            {
-                "key": story_key,
-                "kind": kind,
-                "relation": "levelscript_condition_scope",
-                "direction": "context",
-                "phase": "context",
-                "confidence": "scoped_script",
-                "source": "LevelScript referenced by this quest condition",
-                "mapId": "map01_lv006",
-                "scriptId": "3500100002",
-                "conditionKey": "CarParked",
-            }
-            for story_key, kind in (
-                ("dlg_e2m8_1", "dialog"),
-                ("radio_e2m8_1", "radio"),
-                ("radio_e2m8_1d5", "radio"),
-            )
-        ),
         "levelScriptByteStringCounts": {
             "CarParked": 1,
             "dlg_e2m8_1": 2,
@@ -1709,32 +1690,6 @@ QUEST_ATTACHMENT_DIAGNOSTIC_DECLARATIONS = {
         "diagnosticStoryKeys": (
             "dlg_e5m2_10",
             "radio_e5m2_10",
-        ),
-        "connectionRows": (
-            {
-                "key": "dlg_e5m2_10",
-                "kind": "dialog",
-                "relation": "levelscript_condition_scope",
-                "direction": "context",
-                "phase": "context",
-                "confidence": "scoped_script",
-                "source": "LevelScript referenced by this quest condition",
-                "mapId": "map02_lv001",
-                "scriptId": "10100070004",
-                "conditionKey": "bridge",
-            },
-            {
-                "key": "radio_e5m2_10",
-                "kind": "radio",
-                "relation": "levelscript_condition_scope",
-                "direction": "context",
-                "phase": "context",
-                "confidence": "scoped_script",
-                "source": "LevelScript referenced by this quest condition",
-                "mapId": "map02_lv001",
-                "scriptId": "10100070004",
-                "conditionKey": "bridge",
-            },
         ),
         "levelScriptByteStringCounts": {
             "e5m2_q#33": 1,
@@ -11040,6 +10995,16 @@ def build_quest_attachment_diagnostic_index(
                 }
                 == set(declaration["diagnosticStoryKeys"])
             )
+        elif valid and validation_kind in {
+            "property_getter_without_story_chain",
+            "shared_levelscript_condition_scope",
+        }:
+            # These negative boundaries prove that same-script literals and
+            # property getters do not form a typed Story control path.  After
+            # weak file/list/cross-file scope was removed from the producer,
+            # the only valid generated shape is no Story connection at all.
+            # Any newly typed route reopens the diagnostic fail-closed.
+            valid = not connections
         elif valid:
             valid = exact_rows(
                 connections,
@@ -11349,6 +11314,30 @@ def build_quest_attachment_diagnostic_index(
                         declaration["diagnosticStoryKeys"]
                     ),
                     "validationKind": validation_kind,
+                    "connectionStoryKeys": (
+                        []
+                        if validation_kind in {
+                            "property_getter_without_story_chain",
+                            "shared_levelscript_condition_scope",
+                        }
+                        else sorted({
+                            safe_key(row.get("key"))
+                            for row in declaration.get("connectionRows") or []
+                            if isinstance(row, dict) and safe_key(row.get("key"))
+                        }, key=natural_key)
+                    ),
+                    "connectionRelations": (
+                        []
+                        if validation_kind in {
+                            "property_getter_without_story_chain",
+                            "shared_levelscript_condition_scope",
+                        }
+                        else sorted({
+                            safe_key(row.get("relation"))
+                            for row in declaration.get("connectionRows") or []
+                            if isinstance(row, dict) and safe_key(row.get("relation"))
+                        })
+                    ),
                 },
                 "actual": {
                     "conditionType": safe_key(leaf.get("type")),

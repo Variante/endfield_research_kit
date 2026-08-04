@@ -9948,7 +9948,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         quest = next(
             row for row in flow["quests"] if row["id"] == "e2m8_q#5"
         )
-        quest["storyConnections"][0]["relation"] = "typed_property_route"
+        quest.setdefault("storyConnections", []).append({
+            "key": "dlg_typed_fixture",
+            "relation": "typed_property_route",
+        })
 
         index, status = gap_queue.build_quest_attachment_diagnostic_index(
             payloads
@@ -9974,8 +9977,10 @@ class SourceStoryGapQueueTests(unittest.TestCase):
         )
         self.assertEqual(
             detail["actual"]["connectionRelations"],
-            ["levelscript_condition_scope", "typed_property_route"],
+            ["typed_property_route"],
         )
+        self.assertEqual(detail["expected"]["connectionRelations"], [])
+        self.assertEqual(detail["expected"]["connectionStoryKeys"], [])
 
     def test_mission_bound_proxy_diagnostic_fails_closed_on_proxy_change(
         self,

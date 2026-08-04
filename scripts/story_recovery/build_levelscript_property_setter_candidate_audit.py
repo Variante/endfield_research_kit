@@ -277,6 +277,14 @@ def score_candidate(
     if record.get("propertyOutputs"):
         score -= 4
         reasons.append("has property output refs")
+    if safe_text(record.get("actionMap")) == "outside":
+        # Serialized tail objects can legitimately co-store property names and
+        # Story ids, but they are not ActionSerializedMap records.  Keep the
+        # occurrence visible for format research while failing closed against
+        # presenting it as a setter/action candidate.
+        score -= 20
+        reasons.append("serialized tail co-occurrence is not executable action evidence")
+        candidate_kind = "serialized-tail-cooccurrence"
     return score, reasons, candidate_kind
 
 
@@ -432,6 +440,11 @@ def analyze_bridge_row(row: dict[str, Any]) -> dict[str, Any]:
         })
 
     candidate_rows.sort(key=lambda item: (-int(item.get("score") or 0), safe_text((item.get("record") or {}).get("offset"))))
+    action_candidates = [
+        item
+        for item in candidate_rows
+        if item.get("candidateKind") != "serialized-tail-cooccurrence"
+    ]
 
     return {
         **base,
@@ -455,8 +468,9 @@ def analyze_bridge_row(row: dict[str, Any]) -> dict[str, Any]:
             if outside_key_record is not None
             else {}
         ),
-        "candidateCount": len(candidate_rows),
-        "bestCandidate": candidate_rows[0] if candidate_rows else {},
+        "candidateCount": len(action_candidates),
+        "serializedTailObservationCount": len(candidate_rows) - len(action_candidates),
+        "bestCandidate": action_candidates[0] if action_candidates else {},
         "candidates": candidate_rows,
         "chains": chain_rows[:8],
     }
@@ -479,6 +493,8 @@ def aggregate_candidates(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     by_opcode: dict[str, dict[str, Any]] = {}
     for row in rows:
         for candidate in row.get("candidates") or []:
+            if candidate.get("candidateKind") == "serialized-tail-cooccurrence":
+                continue
             record = candidate.get("record") or {}
             opcode = safe_text(record.get("opcode")) or "unknown"
             bucket = by_opcode.setdefault(
@@ -593,7 +609,14 @@ def build_audit(*, language: str, refresh_property_flow: bool) -> dict[str, Any]
                 1
                 for row in analyzed_rows
                 for candidate in row.get("candidates") or []
-                if candidate.get("relationToStory") != "no-story-in-chain"
+                if (
+                    candidate.get("candidateKind") != "serialized-tail-cooccurrence"
+                    and candidate.get("relationToStory") != "no-story-in-chain"
+                )
+            ),
+            "serializedTailObservations": sum(
+                int(row.get("serializedTailObservationCount") or 0)
+                for row in analyzed_rows
             ),
             "bestCandidateKinds": dict(best_kind_counts.most_common()),
             "opcodeCandidateCount": len(aggregate_rows),
@@ -636,6 +659,7 @@ def markdown_report(payload: dict[str, Any], *, top_rows: int) -> str:
         f"- Rows with offset-only containing records: `{summary.get('rowsWithOffsetOnlyContainingRecords')}`",
         f"- Candidate observations: `{summary.get('candidateObservations')}`",
         f"- Story-adjacent candidate observations: `{summary.get('storyAdjacentCandidateObservations')}`",
+        f"- Non-executable serialized-tail observations: `{summary.get('serializedTailObservations')}`",
         f"- Status counts: `{summary.get('statusCounts')}`",
         f"- Best candidate kinds: `{summary.get('bestCandidateKinds')}`",
         "",

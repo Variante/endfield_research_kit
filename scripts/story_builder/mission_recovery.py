@@ -1766,28 +1766,36 @@ def levelscript_path_components(source_file: str) -> tuple[str, str]:
 def build_levelscript_story_keys_map(
     scene_edges: list[dict],
 ) -> dict[tuple[str, str], set[str]]:
-    """Reconstruct the story keys present in each LevelScript file from the
-    mission's source-backed scene edges.
+    """Reconstruct executable Story keys per LevelScript from strong edges.
 
-    Every edge carries the LevelScriptData JSON path it was decoded from in
-    ``sourceFiles``. Both endpoints are story keys (or hash terminals) that
-    appear in that file.
+    Weak file/byte/list ordering is deliberately excluded: those rows can span
+    two LevelScript files and cannot prove that either endpoint executes in
+    either file.  A strong edge is admitted only when it resolves to exactly
+    one LevelScript source, preventing cross-file endpoint contamination.
     """
     out: dict[tuple[str, str], set[str]] = defaultdict(set)
     for edge in scene_edges or []:
         if not isinstance(edge, dict):
             continue
+        if str(edge.get("kind") or "") not in STRONG_ORDER_EDGE_KINDS:
+            continue
         keys = [
             str(edge.get("from") or "").strip(),
             str(edge.get("to") or "").strip(),
         ]
-        for source_file in edge.get("sourceFiles") or []:
-            map_id, script_id = levelscript_path_components(source_file)
-            if not (map_id and script_id):
-                continue
-            for key in keys:
-                if key:
-                    out[(map_id, script_id)].add(key)
+        source_pairs = {
+            (map_id, script_id)
+            for source_file in edge.get("sourceFiles") or []
+            if (map_id_script := levelscript_path_components(source_file))
+            for map_id, script_id in [map_id_script]
+            if map_id and script_id
+        }
+        if len(source_pairs) != 1:
+            continue
+        source_pair = next(iter(source_pairs))
+        for key in keys:
+            if key:
+                out[source_pair].add(key)
     return out
 
 

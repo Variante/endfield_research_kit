@@ -1088,6 +1088,53 @@ def decode_levelscript_action_map_lists(
         source="actionMapHeader",
     )
 
+    # An empty ActionSerializedMap is encoded as three consecutive zero list
+    # counts immediately after the top-level ``02 03`` object marker.  This is
+    # an exact corpus-wide shape in the current original export: every blob
+    # whose actionList count is zero has zero getterList/headerList words at
+    # offsets 7 and 11 as well.  Decode those words directly.  Looking for the
+    # next UID boundary in this case can cross the action-map boundary and
+    # misclassify unrelated LevelScript tail objects as executable records.
+    if (
+        first_count == 0
+        and len(data) >= 15
+        and _u32(data, 7) == 0
+        and _u32(data, 11) == 0
+    ):
+        index = append_list(
+            "getterList",
+            count=0,
+            marker_offset=7,
+            marker_value=0,
+            start_index=index,
+            source="consecutiveEmptyListCount",
+        )
+        index = append_list(
+            "headerList",
+            count=0,
+            marker_offset=11,
+            marker_value=0,
+            start_index=index,
+            source="consecutiveEmptyListCount",
+        )
+        out["exactEmptyActionMap"] = True
+        out["emptyMapBoundaryEndOffset"] = _offset_hex(15)
+        if record_count:
+            lists.append({
+                "name": "outsideSerializedActionMap",
+                "status": "residual-uid-records-after-exact-empty-map",
+                "count": record_count,
+                "recordIndexStart": 0,
+                "recordIndexEnd": record_count,
+            })
+        out["serializedLists"] = lists
+        out["listCounts"] = {
+            str(row.get("name")): row.get("count")
+            for row in lists
+            if row.get("name") in ACTION_SERIALIZED_MAP_LIST_ORDER
+        }
+        return _drop_empty(out)
+
     for name in ACTION_SERIALIZED_MAP_LIST_ORDER[1:]:
         if not sorted_records:
             lists.append({
