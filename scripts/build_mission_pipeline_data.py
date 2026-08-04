@@ -1221,6 +1221,55 @@ RUNTIME_CONTRACT = {
                 "mission_state_drives_deferred_dynamic_scene_availability_refresh"
             ),
         },
+        "missionRuntimeSurface": {
+            "counts": {
+                "missionIdentityTypes": 174,
+                "familyTargetPointers": 4322,
+                "crossSystemCallers": 2,
+                "missionRuntimeLevelScriptCallers": 1,
+                "missionRuntimeStoryCallers": 1,
+                "crossFamilyMethodSignatures": 0,
+                "trackingMissionFieldWrites": 0,
+                "trackingSceneFieldWrites": 3,
+                "unreviewedCallers": 0,
+            },
+            "trackingFieldFlow": {
+                "fieldLayout": {
+                    "missionId": {
+                        "name": "missionId",
+                        "token": "0x04003f3b",
+                        "offset": "0x20",
+                    },
+                    "sceneId": {
+                        "name": "sceneId",
+                        "token": "0x04003f3d",
+                        "offset": "0x30",
+                    },
+                },
+                "writes": {
+                    "missionId": [],
+                    "sceneId": [
+                        {"va": "0x186fb6567"},
+                        {"va": "0x186fb6675"},
+                        {"va": "0x186fb66e4"},
+                    ],
+                },
+            },
+            "finding": (
+                "The broadened 174-type mission/quest runtime surface adds no "
+                "activation bridge. Its sole LevelScript caller constructs a "
+                "tracking point and writes sceneId, but never writes missionId; "
+                "the other caller is the audited MissionOption alternate action. "
+                "No managed method signature co-carries both runtime families."
+            ),
+            "boundary": (
+                "Tracking UI context creates no receiver activation, Story "
+                "ownership, branch, or order edge."
+            ),
+            "classification": (
+                "full_mission_runtime_surface_reviewed_no_activation_bridge"
+            ),
+        },
         "finding": (
             "Four native DynamicSceneMissionControlSystem paths read exact mission or "
             "quest state and update cared DynamicScene components. Their fixed-point "
@@ -6673,10 +6722,10 @@ def load_native_cross_system_consumer_contract(
     if not audit_path.is_file():
         return fallback
     audit = read_json(audit_path)
-    if audit.get("schemaVersion") != "nativeCrossSystemConsumerCensus.v2":
+    if audit.get("schemaVersion") != "nativeCrossSystemConsumerCensus.v3":
         raise RuntimeError(
             "validator=nativeCrossSystemConsumerCensus gate=auditSchema "
-            "expected='nativeCrossSystemConsumerCensus.v2' "
+            "expected='nativeCrossSystemConsumerCensus.v3' "
             f"actual={audit.get('schemaVersion')!r} source={audit_path}"
         )
     validation = audit.get("validation") or {}
@@ -6692,6 +6741,7 @@ def load_native_cross_system_consumer_contract(
     closure = audit.get("directConsumerClosure") or {}
     closure_counts = closure.get("counts") or {}
     deferred = audit.get("deferredRefreshClosure") or {}
+    mission_runtime_surface = audit.get("missionRuntimeSurface") or {}
     source = audit.get("source") or {}
     classifications = summary.get("classificationCounts") or {}
     return {
@@ -6720,6 +6770,7 @@ def load_native_cross_system_consumer_contract(
             "unreviewedIndirectSites": closure_counts.get("unreviewedIndirectSites", 0),
         },
         "deferredRefreshClosure": deferred,
+        "missionRuntimeSurface": mission_runtime_surface,
         "finding": audit.get("finding"),
         "boundary": audit.get("boundary"),
         "relatedOriginalFiles": [{

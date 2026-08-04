@@ -105,8 +105,10 @@ Rebuild Story data after editing overrides.
   census across MissionSystem, DynamicScene, LevelScript, and Story APIs,
   plus the fixed-point consumer closure and the metadata-backed deferred chain
   `mission/quest state -> pending component set -> BeforeTick -> condition
-  update -> RefreshEntityStatus`. It links the original binary and metadata
-  hashes and keeps this availability refresh distinct from LevelScript
+  update -> RefreshEntityStatus`. The same card shows the complete managed
+  mission/quest runtime surface and the tracking-only LevelScript caller: it
+  writes `sceneId` but never `missionId`. It links the original binary and
+  metadata hashes and keeps these runtime contexts distinct from LevelScript
   activation, Story ownership, playback causality, and order.
 - Story-order panels show binary-proven quest-success lifecycle edges as
   `objective Story completed -> server success state -> succeed client action`.

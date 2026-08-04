@@ -102,6 +102,50 @@ class NativeCrossSystemConsumerCensusTests(unittest.TestCase):
         self.assertEqual(base, "r14")
         self.assertEqual(len(references), 2)
 
+    def test_broad_mission_runtime_shapes_are_classified_by_api(self):
+        self.assertEqual(
+            census.classify_mission_runtime_candidate(
+                ["level_script", "mission_runtime"],
+                [
+                    "Beyond.Gameplay.CommonTrackingPointInfoBase..ctor",
+                    "Beyond.Gameplay.Core.LevelScriptTaskTracking.get_scriptId",
+                ],
+            ),
+            "levelscript_tracking_context_candidate",
+        )
+        self.assertEqual(
+            census.classify_mission_runtime_candidate(
+                ["level_script", "mission_runtime"],
+                ["Beyond.Gameplay.Unknown.DoThing"],
+            ),
+            "unreviewed_mission_runtime_cross_system_shape",
+        )
+
+    def test_constructed_field_writes_derive_saved_register(self):
+        instructions = [
+            {"va": 0x1000, "text": "call 0x9000", "write": None},
+            {"va": 0x1005, "text": "mov r14, rax", "write": {"register": "r14", "value": "rax"}},
+            {"va": 0x1008, "text": "mov rcx, rax", "write": {"register": "rcx", "value": "rax"}},
+            {"va": 0x100B, "text": "call 0xa000", "write": None},
+            {"va": 0x1010, "text": "mov [r14+0x30], rcx", "write": None},
+        ]
+        flow = census.constructed_field_writes(
+            instructions, 0xA000, {"missionId": "0x20", "sceneId": "0x30"}
+        )
+        self.assertEqual(flow["baseRegister"], "r14")
+        self.assertEqual(flow["writes"]["missionId"], [])
+        self.assertEqual(len(flow["writes"]["sceneId"]), 1)
+
+    def test_broad_surface_validator_names_changed_gate(self):
+        counts = dict(census.EXPECTED_MISSION_RUNTIME_SURFACE)
+        self.assertEqual(census.validate_mission_runtime_surface(counts, "binary"), [])
+        counts["crossFamilyMethodSignatures"] = 1
+        failures = census.validate_mission_runtime_surface(counts, "binary")
+        self.assertEqual(
+            failures[0]["gate"],
+            "missionRuntimeSurface.crossFamilyMethodSignatures",
+        )
+
     def test_validator_names_failed_gate_and_bounded_counts(self):
         rows = [
             {"classification": key}
