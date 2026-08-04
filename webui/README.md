@@ -74,8 +74,10 @@ Rebuild Story data after editing overrides.
   unresolved native playback.
 - Its authored-structure panel expands every MissionRuntime quest fork into
   main/auxiliary arms, typed objective and failure guards, terminal state, and
-  exact first common descendant. It links the hash-validated original runtime
-  file and labels server-side arm selection as unresolved.
+  exact first common descendant. Each arm shows its sibling-exclusive quest
+  corridor, exact typed Story relations, and hash-checked arm-related original
+  files. It links the hash-validated original runtime file and labels
+  server-side arm selection and exclusivity as unresolved.
 - Its native-boundary panel shows the generally discovered mission/quest
   identity+state application paths, the exact lifecycle identity flow, the
   absence of a client successor selector, and the hash-validated original

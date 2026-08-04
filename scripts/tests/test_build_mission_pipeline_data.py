@@ -112,7 +112,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual([arm["role"] for arm in fork["arms"]], [
             "main_path", "auxiliary",
         ])
+        self.assertEqual(
+            [arm["siblingExclusiveQuestIds"] for arm in fork["arms"]],
+            [["m1_q#2"], ["m1_q#3"]],
+        )
         self.assertEqual(fork["arms"][1]["flowIndexRole"], "display_sort_only")
+        self.assertEqual(result["schema"], "missionQuestForkSemantics.v2")
         self.assertEqual(
             fork["relatedOriginalFiles"][0]["sha256"],
             hashlib.sha256(b'{"missionId":"m1"}').hexdigest(),
@@ -141,6 +146,162 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(first["actual"], ["m_bad_q#missing"])
         self.assertTrue(first["sourceFile"].endswith("m_bad.json"))
         self.assertIn("missionRuntimeSha256", first["sourceHashes"])
+
+    def test_publish_quest_fork_arm_evidence_attaches_typed_story_and_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output_root = root / "webui" / "data" / "mission_pipeline"
+            mission_root = output_root / "missions"
+            sidecar_root = root / "webui" / "data" / "lang" / "CN" / "mission"
+            report_root = root / "reports" / "mission_order"
+            original_root = root / "export_full" / "structured"
+            mission_root.mkdir(parents=True)
+            sidecar_root.mkdir(parents=True)
+            report_root.mkdir(parents=True)
+            original_root.mkdir(parents=True)
+            action_audit = report_root / "action_names.json"
+            action_audit.write_text(json.dumps({
+                "metadata": {
+                    "gameAssemblySha256": "game-hash",
+                    "metadataSha256": "metadata-hash",
+                },
+            }), encoding="utf-8")
+            levelscript = original_root / "levelscript.json"
+            levelscript.write_text("{}", encoding="utf-8")
+            dialog_tree = original_root / "dialog_tree.json"
+            dialog_tree.write_text('{"tree":1}', encoding="utf-8")
+            mission_source = original_root / "m1.json"
+            mission_source.write_text('{"missionId":"m1"}', encoding="utf-8")
+            topology = pipeline.build_quest_fork_semantics([
+                {"id": "m1_q#1", "successors": ["m1_q#2", "m1_q#3"], "prev": []},
+                {"id": "m1_q#2", "successors": [], "prev": ["m1_q#1"]},
+                {"id": "m1_q#3", "successors": [], "prev": ["m1_q#1"]},
+            ], mission_source)
+            mission_payload = {
+                "questTopology": topology,
+                "nodes": [
+                    {
+                        "id": "m1_q#1",
+                    },
+                    {
+                        "id": "m1_q#2",
+                        "dialogTreeDefinitions": [{
+                            "sceneKey": "dlg_m1_1",
+                            "sourceFile": dialog_tree.relative_to(root).as_posix(),
+                            "sourceSha256": hashlib.sha256(dialog_tree.read_bytes()).hexdigest(),
+                        }],
+                    },
+                    {"id": "m1_q#3"},
+                ],
+                "storyOrder": {"branches": {"questForks": topology["forks"]}},
+            }
+            (mission_root / "m1.json").write_text(
+                json.dumps(mission_payload), encoding="utf-8"
+            )
+            (sidecar_root / "m1.json").write_text(json.dumps({
+                "flow": {"quests": [
+                    {"id": "m1_q#1", "storyConnections": []},
+                    {"id": "m1_q#2", "storyConnections": [
+                        {
+                            "key": "radio_m1_1",
+                            "kind": "radio",
+                            "relation": "client_action_succeed",
+                            "direction": "quest_to_story",
+                            "phase": "succeed",
+                            "confidence": "native_typed_direct",
+                            "actionType": "PlayRadio",
+                            "source": "MissionRuntime action",
+                            "sourceFiles": [levelscript.relative_to(root).as_posix()],
+                        },
+                        {
+                            "key": "dlg_m1_1",
+                            "kind": "dialog",
+                            "relation": "objective_condition",
+                            "direction": "story_to_quest",
+                            "phase": "progress",
+                            "confidence": "direct",
+                            "conditionType": "CheckTalkOptionFinish",
+                            "source": "MissionRuntime condition",
+                        },
+                    ]},
+                    {"id": "m1_q#3", "storyConnections": [{
+                        "key": "dlg_m1_2",
+                        "kind": "dialog",
+                        "relation": "failure_condition",
+                        "direction": "story_to_quest",
+                        "phase": "failure",
+                        "confidence": "direct",
+                        "source": "MissionRuntime failure condition",
+                    }]},
+                ]},
+            }), encoding="utf-8")
+            index = {
+                "missions": [{"id": "m1", "file": "missions/m1.json"}],
+            }
+            audit_contract = {
+                "schema": "actionBaseFormatterNameAudit.v1",
+                "status": "validated",
+                "sourceFile": action_audit.relative_to(root).as_posix(),
+                "sourceSha256": hashlib.sha256(action_audit.read_bytes()).hexdigest().upper(),
+                "nativeMappingId": "fixture-action-map",
+                "summary": {"recoveredTags": 2, "validationFailures": 0},
+                "validationFailures": [],
+                "usesOcrOrManualOrder": False,
+            }
+            with patch.object(pipeline, "ROOT", root), patch.object(
+                pipeline, "ACTIONBASE_FORMATTER_NAME_AUDIT", audit_contract
+            ):
+                result = pipeline.publish_quest_fork_arm_evidence(
+                    index, output_root, root / "webui" / "data" / "lang", "CN"
+                )
+
+            published = json.loads((mission_root / "m1.json").read_text(encoding="utf-8"))
+            arms = published["questTopology"]["forks"][0]["arms"]
+            self.assertEqual(result["counts"]["storyEvidencePlacements"], 3)
+            self.assertEqual(result["counts"]["armsWithStoryEvidence"], 2)
+            self.assertEqual(result["counts"]["binaryNamedActionPlacements"], 1)
+            self.assertEqual(
+                [row["key"] for row in arms[0]["storyEvidence"]],
+                ["dlg_m1_1", "radio_m1_1"],
+            )
+            self.assertEqual(len(arms[0]["relatedOriginalFiles"]), 2)
+            self.assertTrue(all(row["sha256"] for row in arms[0]["relatedOriginalFiles"]))
+            self.assertFalse(result["evidencePolicy"]["usesOcrOrManualOrder"])
+            self.assertEqual(
+                published["storyOrder"]["branches"]["questForks"][0],
+                published["questTopology"]["forks"][0],
+            )
+
+    def test_publish_quest_fork_arm_evidence_fails_closed_for_missing_sidecar(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output_root = root / "webui" / "data" / "mission_pipeline"
+            mission_root = output_root / "missions"
+            report_root = root / "reports" / "mission_order"
+            mission_root.mkdir(parents=True)
+            report_root.mkdir(parents=True)
+            action_audit = report_root / "action_names.json"
+            action_audit.write_text('{"metadata":{}}', encoding="utf-8")
+            (mission_root / "m1.json").write_text(json.dumps({
+                "questTopology": {"forks": [{"questId": "m1_q#1", "arms": []}]},
+                "nodes": [],
+            }), encoding="utf-8")
+            index = {"missions": [{"id": "m1", "file": "missions/m1.json"}]}
+            audit_contract = {
+                "status": "validated",
+                "sourceFile": action_audit.relative_to(root).as_posix(),
+                "sourceSha256": hashlib.sha256(action_audit.read_bytes()).hexdigest().upper(),
+            }
+            with patch.object(pipeline, "ROOT", root), patch.object(
+                pipeline, "ACTIONBASE_FORMATTER_NAME_AUDIT", audit_contract
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    r"validator=quest_fork_arm_evidence gate=missionSidecar mission=m1",
+                ):
+                    pipeline.publish_quest_fork_arm_evidence(
+                        index, output_root, root / "webui" / "data" / "lang", "CN"
+                    )
 
     def test_state_update_contract_revalidates_original_binary_sources(self):
         with tempfile.TemporaryDirectory() as temporary:
