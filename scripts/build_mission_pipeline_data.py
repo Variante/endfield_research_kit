@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import copy
 import hashlib
 import json
 import re
@@ -10568,11 +10569,238 @@ def publish_source_story_partial_order(
         render_source_story_partial_order_markdown(report),
     )
 
+    publication = attach_source_story_partial_order(
+        index,
+        output_root,
+        report,
+        create_variant_aggregate_shells=False,
+        require_complete_branch_publication=False,
+    )
+
+    order_summary = report.get("summary") or {}
+    index["storyOrder"] = {
+        "schema": report.get("_schema"),
+        "language": language,
+        "summary": order_summary,
+        "evidencePolicy": report.get("evidencePolicy") or {},
+        "reportJson": repo_path(report_json),
+        "reportMarkdown": repo_path(report_markdown),
+        "publication": publication,
+    }
+    write_json(output_root / "index.json", index)
+    return report
+
+
+def _update_story_order_summary(
+    summary: dict[str, Any],
+    order_row: dict[str, Any],
+) -> None:
+    order_summary = order_row.get("summary") or {}
+    mappings = {
+        "storyOrderSceneCount": "sceneCount",
+        "storyOrderStrongEdgeCount": "strongEdgeCount",
+        "storyOrderCycleCount": "cycleCount",
+        "storyOrderNativeBranchCount": "nativeControlBranchCount",
+        "storyOrderNativeMergeCount": "nativeControlMergeCount",
+        "storyOrderNativeTransitionCount": "nativeControlPathTransitionEdgeCount",
+        "storyOrderQuestSucceedLifecycleCount": "questSucceedLifecycleEdgeCount",
+        "storyOrderNativeTransitionStepCount": "nativeControlPathTransitionStepCount",
+        "storyOrderNativeNamedActionEndpointCount": "nativeControlPathNamedActionEndpointCount",
+        "storyOrderNativeUnresolvedActionEndpointCount": "nativeControlPathUnresolvedActionEndpointCount",
+        "storyOrderNativeBranchingTransitionCount": "nativeControlPathBranchingTransitionEdgeCount",
+        "storyOrderNativeOrderedSequenceCount": "nativeOrderedSequenceCount",
+        "storyOrderNativeRelatedActionTopologyCount": "nativeRelatedActionTopologyCount",
+        "storyOrderNativeNamedPredicateCount": "nativeNamedPredicateCount",
+        "storyOrderNativeInlinePredicateCount": "nativeInlinePredicateCount",
+        "storyOrderNativeSemanticPredicateCount": "nativeSemanticPredicateCount",
+        "storyOrderNativeClassOnlyPredicateCount": "nativeClassOnlyPredicateCount",
+        "storyOrderNativeUnresolvedPredicateCount": "nativeUnresolvedPredicateCount",
+        "storyOrderQuestForkCount": "questForkCount",
+        "storyOrderQuestMergeCount": "questMergeCount",
+    }
+    for target, source in mappings.items():
+        summary[target] = int(order_summary.get(source) or 0)
+
+
+def _resolve_report_source_path(source: str) -> Path:
+    path = Path(source)
+    return path if path.is_absolute() else ROOT / path
+
+
+def _create_story_variant_aggregate_shell(
+    index: dict[str, Any],
+    output_root: Path,
+    order_row: dict[str, Any],
+) -> dict[str, Any]:
+    """Create a non-owning shell from declared, validated Story variants.
+
+    The rule is corpus-driven: a missing Story namespace is eligible only when
+    its generated mission bundle declares variant mission bundles, every bundle
+    identifies itself exactly, and every variant already has a Mission Pipeline
+    payload backed by an original MissionRuntimeAsset.
+    """
+    mission_id = str(order_row.get("mission") or "")
+    variant_sources = [
+        str(value) for value in order_row.get("missionDataVariants") or [] if value
+    ]
+    validator = "source_story_order_publication"
+    if not mission_id or not variant_sources:
+        raise RuntimeError(
+            f"validator={validator} gate=aggregateHasDeclaredVariants "
+            f"mission={mission_id or '-'} expected=nonempty actual={variant_sources!r} "
+            f"source={order_row.get('missionData') or '-'}"
+        )
+    summaries = {
+        str(row.get("id") or ""): row
+        for row in index.get("missions") or []
+        if isinstance(row, dict) and row.get("id")
+    }
+    variant_ids: list[str] = []
+    related_files: list[dict[str, Any]] = []
+    level_ids: set[str] = set()
+    for variant_source in variant_sources:
+        generated_path = _resolve_report_source_path(variant_source)
+        generated = read_json(generated_path) if generated_path.is_file() else None
+        variant_id = str((generated or {}).get("mission") or "")
+        if not variant_id:
+            raise RuntimeError(
+                f"validator={validator} gate=variantBundleIdentifiesMission "
+                f"mission={mission_id} expected=mission-id actual={variant_id or '-'} "
+                f"source={generated_path}"
+            )
+        variant_summary = summaries.get(variant_id)
+        if not variant_summary:
+            raise RuntimeError(
+                f"validator={validator} gate=declaredVariantHasPipelineMission "
+                f"mission={mission_id} expected={variant_id!r} actual=missing "
+                f"source={generated_path}"
+            )
+        pipeline_path = output_root / str(variant_summary.get("file") or "")
+        pipeline_payload = read_json(pipeline_path) if pipeline_path.is_file() else None
+        original_source = str(((pipeline_payload or {}).get("mission") or {}).get("source") or "")
+        original_path = _resolve_report_source_path(original_source) if original_source else Path()
+        if not original_source or not original_path.is_file():
+            raise RuntimeError(
+                f"validator={validator} gate=variantHasOriginalMissionRuntime "
+                f"mission={mission_id} variant={variant_id} expected=file actual={original_source or '-'} "
+                f"source={pipeline_path}"
+            )
+        related_files.append({
+            "kind": "original_mission_runtime",
+            "sourceFile": repo_path(original_path),
+            "sha256": sha256_path(original_path),
+            "relationship": "declared_story_graph_variant_context",
+            "variantMissionId": variant_id,
+        })
+        variant_ids.append(variant_id)
+        if variant_summary.get("levelId"):
+            level_ids.add(str(variant_summary["levelId"]))
+
+    variant_ids = sorted(set(variant_ids), key=natural_quest_key)
+    related_files.sort(key=lambda row: (natural_quest_key(row["variantMissionId"]), row["sourceFile"]))
+    mission_output = output_root / "missions"
+    mission_output.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schemaVersion": SCHEMA_VERSION,
+        "mission": {
+            "id": mission_id,
+            "nameKey": "",
+            "descriptionKey": "",
+            "levelId": next(iter(level_ids)) if len(level_ids) == 1 else "",
+            "missionType": None,
+            "rewardId": "",
+            "mainPath": [],
+            "entryQuestIds": [],
+            "nativeRuntimeBindings": [],
+            "source": str(order_row.get("missionData") or ""),
+            "storyAggregateShell": True,
+            "variantMissionIds": variant_ids,
+            "relatedOriginalFiles": related_files,
+            "sourceBoundary": (
+                "This Story namespace aggregates exact serialized Story and LevelScript "
+                "evidence across its declared mission variants. It is not itself a "
+                "MissionRuntimeAsset and does not prove mission ownership, quest ownership, "
+                "branch selection, or chronology beyond the attached typed evidence."
+            ),
+        },
+        "nodes": [],
+        "edges": [],
+        "caseStudy": None,
+        "missionGraph": {"upstream": {}, "downstream": {}},
+        "envTalkContext": [],
+        "storyOrder": copy.deepcopy(order_row),
+    }
+    write_json(mission_output / f"{mission_id}.json", payload)
+    summary = {
+        "id": mission_id,
+        "nameKey": "",
+        "levelId": payload["mission"]["levelId"],
+        "questCount": 0,
+        "mainPathCount": 0,
+        "entryCount": 0,
+        "fanoutCount": 0,
+        "multiPrevJoinCount": 0,
+        "activeJoinCount": 0,
+        "exactFinishCount": 0,
+        "serverPlaceholderCount": 0,
+        "serverPlaceholderQuestCount": 0,
+        "failureConditionCount": 0,
+        "externalDependencyCount": 0,
+        "submitItemConditionCount": 0,
+        "submitItemQuestCount": 0,
+        "submitItemDialogCoGateCount": 0,
+        "submitItemLevelScriptCoGateCount": 0,
+        "nativeRuntimeBindingCount": 0,
+        "activityStageHostCount": 0,
+        "activityStageHostedQuestCount": 0,
+        "trackingInfoCount": 0,
+        "trackingObjectiveCount": 0,
+        "missionPropertyCount": 0,
+        "conditionTypes": [],
+        "caseStudy": False,
+        "file": f"missions/{mission_id}.json",
+        "storyAggregateShell": True,
+        "storyAggregateVariantCount": len(variant_ids),
+    }
+    _update_story_order_summary(summary, order_row)
+    index.setdefault("missions", []).append(summary)
+    return summary
+
+
+def attach_source_story_partial_order(
+    index: dict[str, Any],
+    output_root: Path,
+    report: dict[str, Any],
+    *,
+    create_variant_aggregate_shells: bool,
+    require_complete_branch_publication: bool,
+) -> dict[str, Any]:
+    """Attach every recovered row that has a validated pipeline destination."""
     rows_by_mission = {
         str(row.get("mission") or ""): row
         for row in report.get("missions") or []
         if isinstance(row, dict) and row.get("mission")
     }
+    existing_ids = {
+        str(row.get("id") or "")
+        for row in index.get("missions") or []
+        if isinstance(row, dict)
+    }
+    aggregate_shells: list[str] = []
+    if create_variant_aggregate_shells:
+        for mission_id, order_row in sorted(rows_by_mission.items()):
+            branch_count = len(
+                ((order_row.get("branches") or {}).get("nativeControlBranches") or [])
+            )
+            if mission_id in existing_ids or not branch_count:
+                continue
+            if order_row.get("missionDataVariants"):
+                _create_story_variant_aggregate_shell(index, output_root, order_row)
+                existing_ids.add(mission_id)
+                aggregate_shells.append(mission_id)
+
+    published_missions: list[str] = []
+    published_branches = 0
     for summary in index.get("missions") or []:
         if not isinstance(summary, dict):
             continue
@@ -10584,73 +10812,58 @@ def publish_source_story_partial_order(
         payload = read_json(mission_path)
         if not isinstance(payload, dict):
             continue
-        payload["storyOrder"] = order_row
+        published_order = copy.deepcopy(order_row)
+        previous_order = payload.get("storyOrder") or {}
+        if previous_order.get("sourceGapQueue"):
+            published_order["sourceGapQueue"] = previous_order["sourceGapQueue"]
+        payload["storyOrder"] = published_order
         write_json(mission_path, payload)
-        order_summary = order_row.get("summary") or {}
-        summary["storyOrderSceneCount"] = int(order_summary.get("sceneCount") or 0)
-        summary["storyOrderStrongEdgeCount"] = int(order_summary.get("strongEdgeCount") or 0)
-        summary["storyOrderCycleCount"] = int(order_summary.get("cycleCount") or 0)
-        summary["storyOrderNativeBranchCount"] = int(
-            order_summary.get("nativeControlBranchCount") or 0
+        _update_story_order_summary(summary, order_row)
+        published_missions.append(mission_id)
+        published_branches += len(
+            ((order_row.get("branches") or {}).get("nativeControlBranches") or [])
         )
-        summary["storyOrderNativeMergeCount"] = int(
-            order_summary.get("nativeControlMergeCount") or 0
-        )
-        summary["storyOrderNativeTransitionCount"] = int(
-            order_summary.get("nativeControlPathTransitionEdgeCount") or 0
-        )
-        summary["storyOrderQuestSucceedLifecycleCount"] = int(
-            order_summary.get("questSucceedLifecycleEdgeCount") or 0
-        )
-        summary["storyOrderNativeTransitionStepCount"] = int(
-            order_summary.get("nativeControlPathTransitionStepCount") or 0
-        )
-        summary["storyOrderNativeNamedActionEndpointCount"] = int(
-            order_summary.get("nativeControlPathNamedActionEndpointCount") or 0
-        )
-        summary["storyOrderNativeUnresolvedActionEndpointCount"] = int(
-            order_summary.get("nativeControlPathUnresolvedActionEndpointCount") or 0
-        )
-        summary["storyOrderNativeBranchingTransitionCount"] = int(
-            order_summary.get(
-                "nativeControlPathBranchingTransitionEdgeCount"
-            ) or 0
-        )
-        summary["storyOrderNativeOrderedSequenceCount"] = int(
-            order_summary.get("nativeOrderedSequenceCount") or 0
-        )
-        summary["storyOrderNativeRelatedActionTopologyCount"] = int(
-            order_summary.get("nativeRelatedActionTopologyCount") or 0
-        )
-        summary["storyOrderNativeNamedPredicateCount"] = int(
-            order_summary.get("nativeNamedPredicateCount") or 0
-        )
-        summary["storyOrderNativeInlinePredicateCount"] = int(
-            order_summary.get("nativeInlinePredicateCount") or 0
-        )
-        summary["storyOrderNativeSemanticPredicateCount"] = int(
-            order_summary.get("nativeSemanticPredicateCount") or 0
-        )
-        summary["storyOrderNativeClassOnlyPredicateCount"] = int(
-            order_summary.get("nativeClassOnlyPredicateCount") or 0
-        )
-        summary["storyOrderNativeUnresolvedPredicateCount"] = int(
-            order_summary.get("nativeUnresolvedPredicateCount") or 0
-        )
-        summary["storyOrderQuestForkCount"] = int(order_summary.get("questForkCount") or 0)
-        summary["storyOrderQuestMergeCount"] = int(order_summary.get("questMergeCount") or 0)
 
-    order_summary = report.get("summary") or {}
-    index["storyOrder"] = {
-        "schema": report.get("_schema"),
-        "language": language,
-        "summary": order_summary,
-        "evidencePolicy": report.get("evidencePolicy") or {},
-        "reportJson": repo_path(report_json),
-        "reportMarkdown": repo_path(report_markdown),
+    expected_branches = sum(
+        len(((row.get("branches") or {}).get("nativeControlBranches") or []))
+        for row in rows_by_mission.values()
+    )
+    missing_branch_missions = [
+        mission_id
+        for mission_id, row in sorted(rows_by_mission.items())
+        if ((row.get("branches") or {}).get("nativeControlBranches") or [])
+        and mission_id not in published_missions
+    ]
+    publication = {
+        "validator": "source_story_order_publication",
+        "status": "validated" if not missing_branch_missions else "incomplete",
+        "expectedNativeBranchPlacements": expected_branches,
+        "publishedNativeBranchPlacements": published_branches,
+        "unpublishedNativeBranchPlacements": expected_branches - published_branches,
+        "publishedMissionRows": len(published_missions),
+        "variantAggregateShells": aggregate_shells,
+        "missingBranchMissions": missing_branch_missions,
     }
+    index.setdefault("storyOrder", {})["publication"] = publication
+    index.setdefault("counts", {})["storyVariantAggregateShells"] = len(
+        [row for row in index.get("missions") or [] if row.get("storyAggregateShell")]
+    )
+    index["counts"]["missions"] = len(index.get("missions") or [])
+    index["missions"].sort(key=lambda row: natural_quest_key(str(row.get("id") or "")))
+    if require_complete_branch_publication and missing_branch_missions:
+        first = missing_branch_missions[0]
+        row = rows_by_mission[first]
+        actual = len(
+            ((row.get("branches") or {}).get("nativeControlBranches") or [])
+        )
+        raise RuntimeError(
+            "validator=source_story_order_publication "
+            "gate=allRecoveredNativeBranchesPublished "
+            f"mission={first} expected={actual} actual=0 "
+            f"source={row.get('missionData') or '-'}"
+        )
     write_json(output_root / "index.json", index)
-    return report
+    return publication
 
 
 def publish_quest_objective_story_scope(
@@ -11629,6 +11842,14 @@ def main() -> int:
                 source_story_gap_queue,
             ) if output_root == DEFAULT_OUTPUT_ROOT.resolve() else []
         )
+        if order_report:
+            attach_source_story_partial_order(
+                index,
+                output_root,
+                order_report,
+                create_variant_aggregate_shells=True,
+                require_complete_branch_publication=True,
+            )
         report_stem = f"mission_pipeline_story_binding_coverage_{coverage['language']}"
         coverage_report = args.report_root.resolve() / f"{report_stem}.json"
         index["storyCoverage"] = {
@@ -11774,6 +11995,7 @@ def main() -> int:
     )
     if order_report:
         summary = order_report.get("summary") or {}
+        publication = (index.get("storyOrder") or {}).get("publication") or {}
         print(
             f"Story partial order: {summary.get('strongEdges', 0)} strong edges, "
             f"{summary.get('questSucceedLifecycleEdges', 0)} binary-proven quest-success edges, "
@@ -11802,6 +12024,14 @@ def main() -> int:
             f"{summary.get('nativeSemanticPredicates', 0)} semantic predicates, "
             f"{summary.get('nativeClassOnlyPredicates', 0)} class-only predicates, "
             f"{summary.get('nativeUnresolvedPredicates', 0)} unresolved predicates"
+        )
+        print(
+            "Story-order publication: "
+            f"{publication.get('publishedNativeBranchPlacements', 0)}/"
+            f"{publication.get('expectedNativeBranchPlacements', 0)} recovered native "
+            "branch placements attached; "
+            f"{len(publication.get('variantAggregateShells') or [])} validated "
+            "variant aggregate shells"
         )
     if runtime_trace:
         summary = runtime_trace.get("summary") or {}

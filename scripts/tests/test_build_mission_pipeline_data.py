@@ -1851,6 +1851,121 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertTrue(shell["mission"]["offlineRecoveryShell"])
         self.assertEqual(shell["storyOrder"]["mission"], "gm_fixture")
 
+    def test_story_order_attachment_upgrades_late_offline_shell_without_losing_gap_queue(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            mission_root = root / "missions"
+            mission_root.mkdir()
+            gap = {"mission": "gm_fixture", "metrics": {"sceneCount": 2}}
+            pipeline.write_json(mission_root / "gm_fixture.json", {
+                "mission": {"id": "gm_fixture", "offlineRecoveryShell": True},
+                "storyOrder": {"mission": "gm_fixture", "sourceGapQueue": gap},
+            })
+            index = {
+                "counts": {"missions": 1},
+                "missions": [{
+                    "id": "gm_fixture",
+                    "file": "missions/gm_fixture.json",
+                    "offlineRecoveryShell": True,
+                }],
+            }
+            order_row = {
+                "mission": "gm_fixture",
+                "missionData": "story/gm_fixture.json",
+                "summary": {"sceneCount": 2, "nativeControlBranchCount": 1},
+                "branches": {"nativeControlBranches": [{"id": "branch-1"}]},
+            }
+            publication = pipeline.attach_source_story_partial_order(
+                index,
+                root,
+                {"missions": [order_row]},
+                create_variant_aggregate_shells=True,
+                require_complete_branch_publication=True,
+            )
+            shell = json.loads(
+                (mission_root / "gm_fixture.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(publication["publishedNativeBranchPlacements"], 1)
+        self.assertEqual(publication["unpublishedNativeBranchPlacements"], 0)
+        self.assertEqual(shell["storyOrder"]["branches"]["nativeControlBranches"], [{"id": "branch-1"}])
+        self.assertEqual(shell["storyOrder"]["sourceGapQueue"], gap)
+        self.assertTrue(shell["mission"]["offlineRecoveryShell"])
+
+    def test_story_order_attachment_builds_validated_variant_aggregate_shell(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            mission_root = root / "missions"
+            story_root = root / "story"
+            original_root = root / "original"
+            mission_root.mkdir()
+            story_root.mkdir()
+            original_root.mkdir()
+            original = original_root / "variant_a.json"
+            original.write_text('{"missionId":"variant_a"}', encoding="utf-8")
+            original_sha256 = hashlib.sha256(original.read_bytes()).hexdigest()
+            generated = story_root / "variant_a.json"
+            pipeline.write_json(generated, {"mission": "variant_a"})
+            pipeline.write_json(mission_root / "variant_a.json", {
+                "mission": {"id": "variant_a", "levelId": "level_a", "source": str(original)},
+            })
+            index = {
+                "counts": {"missions": 1},
+                "missions": [{
+                    "id": "variant_a",
+                    "levelId": "level_a",
+                    "file": "missions/variant_a.json",
+                }],
+            }
+            order_row = {
+                "mission": "aggregate",
+                "missionData": str(story_root / "aggregate.json"),
+                "missionDataVariants": [str(generated)],
+                "summary": {"sceneCount": 3, "nativeControlBranchCount": 2},
+                "branches": {"nativeControlBranches": [{"id": "b1"}, {"id": "b2"}]},
+            }
+            publication = pipeline.attach_source_story_partial_order(
+                index,
+                root,
+                {"missions": [order_row]},
+                create_variant_aggregate_shells=True,
+                require_complete_branch_publication=True,
+            )
+            shell = json.loads(
+                (mission_root / "aggregate.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(publication["variantAggregateShells"], ["aggregate"])
+        self.assertEqual(publication["publishedNativeBranchPlacements"], 2)
+        self.assertTrue(shell["mission"]["storyAggregateShell"])
+        self.assertEqual(shell["mission"]["variantMissionIds"], ["variant_a"])
+        self.assertEqual(shell["mission"]["levelId"], "level_a")
+        related = shell["mission"]["relatedOriginalFiles"]
+        self.assertEqual(related[0]["relationship"], "declared_story_graph_variant_context")
+        self.assertEqual(related[0]["sha256"], original_sha256)
+        self.assertIn("does not prove mission ownership", shell["mission"]["sourceBoundary"])
+
+    def test_story_order_attachment_fails_closed_for_unpublished_native_branch(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            index = {"counts": {"missions": 0}, "missions": []}
+            report = {"missions": [{
+                "mission": "missing",
+                "missionData": "story/missing.json",
+                "branches": {"nativeControlBranches": [{"id": "b1"}]},
+            }]}
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"validator=source_story_order_publication .*gate=allRecoveredNativeBranchesPublished .*mission=missing .*expected=1 actual=0 .*source=story/missing.json",
+            ):
+                pipeline.attach_source_story_partial_order(
+                    index,
+                    root,
+                    report,
+                    create_variant_aggregate_shells=True,
+                    require_complete_branch_publication=True,
+                )
+
     def test_dynamic_scene_cross_references_remain_non_owning(self):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "dynamic_scene.json"

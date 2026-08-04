@@ -149,6 +149,12 @@ Rebuild Story data after editing overrides.
   topology, shared downstream actions, and related hash-addressed original
   files remain visibly distinct; non-Story arms never imply Story ownership,
   chronology, or mission membership.
+- Mission Pipeline includes every recovered native branch placement. Late
+  Story-only shells receive the full source-order row, while a missing Story
+  namespace becomes a labeled variant aggregate only when its generated bundle
+  explicitly declares validated MissionRuntime variants. The aggregate links
+  those variant missions and shows their hash-addressed original files, without
+  presenting the aggregate as a MissionRuntime mission or ownership proof.
 - Mission-state alternative cards preserve every Story file on both exact
   serialized arms, including cross-mission nominal groupings, and expose the
   related original LevelScript, MissionRuntime, binary, and metadata files.
