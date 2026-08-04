@@ -24,7 +24,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             metadata.write_bytes(b"metadata")
             gameassembly.write_bytes(b"gameassembly")
             report_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v15",
+                "_schema": "endfieldProtocolRegistryAudit.v16",
                 "source": {
                     "metadataSha256": audit.file_sha256(metadata),
                     "gameAssemblySha256": audit.file_sha256(gameassembly),
@@ -32,6 +32,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "stateUpdateApplicationCensus": {
                     "validation": {"status": "validated", "failures": []},
                     "questStartApplication": {
+                        "validation": {"status": "validated", "failures": []},
+                    },
+                    "questSucceedActionApplication": {
                         "validation": {"status": "validated", "failures": []},
                     },
                     "questTopologyFieldConsumers": {
@@ -61,6 +64,47 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             )
             self.assertFalse(current)
             self.assertIn("metadataSha256 differs", reason)
+
+    def test_quest_succeed_action_observation_accepts_generic_native_flow(self):
+        result = audit.validate_quest_succeed_action_observation(
+            enum_values={
+                "OnStartClientAction": 1,
+                "OnSucceedClientAction": 2,
+                "OnFailedClientAction": 4,
+            },
+            succeed_action_calls=[{"questActionValue": 2}],
+            safe_run_action_flow={"preservesQuestActionArgument": True},
+            safe_run_direct_callers=[
+                {"symbol": "Beyond.Gameplay.MissionSystem.FailQuest"},
+                {"symbol": "Beyond.Gameplay.MissionSystem.SucceedQuest"},
+            ],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "a" * 64},
+        )
+        self.assertEqual(result, {"status": "validated", "failures": []})
+
+    def test_quest_succeed_action_observation_reports_independent_drift(self):
+        result = audit.validate_quest_succeed_action_observation(
+            enum_values={"OnSucceedClientAction": 3},
+            succeed_action_calls=[{"questActionValue": 3}],
+            safe_run_action_flow={"preservesQuestActionArgument": False},
+            safe_run_direct_callers=[
+                {"symbol": "Beyond.Gameplay.MissionSystem.SucceedQuest"},
+            ],
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "b" * 64},
+        )
+        self.assertEqual(result["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in result["failures"]],
+            [
+                "questActionEnum",
+                "succeedActionValue",
+                "safeRunPreservesQuestAction",
+                "safeRunDirectCallerCensus",
+            ],
+        )
+        self.assertTrue(all(failure["sourceHashes"] for failure in result["failures"]))
 
     def test_levelscript_start_policy_observation_accepts_generic_native_flow(self):
         observation = {

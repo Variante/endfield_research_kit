@@ -2130,6 +2130,17 @@ body:not(.show-debug) .mp-playback-rejection {
 .mp-order-branches > details > summary { cursor: pointer; }
 .mp-order-branches > details > small { display: block; margin: .35rem 0; color: var(--muted); }
 .mp-order-branches > details > div { margin-top: .35rem; }
+.mp-quest-succeed-lifecycle {
+  border-left: 3px solid color-mix(in srgb, var(--accent) 78%, var(--border)) !important;
+}
+.mp-quest-succeed-lifecycle > p { margin: .4rem 0; }
+.mp-quest-lifecycle-files { flex-basis: 100%; margin-top: .35rem; }
+.mp-quest-lifecycle-files > summary { cursor: pointer; color: var(--muted); }
+.mp-quest-lifecycle-files > small {
+  display: block;
+  margin-top: .3rem;
+  overflow-wrap: anywhere;
+}
 .mp-native-predicate { display: flex; flex-wrap: wrap; gap: .3rem; margin: .35rem 0; color: var(--muted); }
 
 .mp-order-edge > small { flex-basis: 100%; color: var(--muted); }

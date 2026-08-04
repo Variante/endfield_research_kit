@@ -28,6 +28,15 @@ STATE_UPDATE_CONTRACT_FIXTURE = {
         "topologyTraversalCalls": [],
         "validation": {"status": "validated", "failures": []},
     },
+    "questSucceedActionApplication": {
+        "schema": "questSucceedClientAction.v1",
+        "classification": "quest_success_dispatches_succeed_client_action",
+        "action": {
+            "name": "OnSucceedClientAction",
+            "value": 2,
+        },
+        "validation": {"status": "validated", "failures": []},
+    },
     "questTopologyFieldConsumers": {
         "classification": "client_display_and_context_topology_only",
         "activePredecessorConsumerCount": 0,
@@ -312,7 +321,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v15",
+                "_schema": "endfieldProtocolRegistryAudit.v16",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(gameassembly.read_bytes()).hexdigest(),
@@ -336,6 +345,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                             "flowIndex": 0,
                         },
                         "topologyTraversalCalls": [],
+                        "validation": {"status": "validated", "failures": []},
+                    },
+                    "questSucceedActionApplication": {
+                        "schema": "questSucceedClientAction.v1",
                         "validation": {"status": "validated", "failures": []},
                     },
                     "questTopologyFieldConsumers": {
@@ -364,7 +377,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v15",
+                "_schema": "endfieldProtocolRegistryAudit.v16",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": "0" * 64,
@@ -373,6 +386,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 },
                 "stateUpdateApplicationCensus": {
                     "questStartApplication": {
+                        "validation": {"status": "validated", "failures": []},
+                    },
+                    "questSucceedActionApplication": {
                         "validation": {"status": "validated", "failures": []},
                     },
                     "questTopologyFieldConsumers": {
@@ -442,7 +458,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             }
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v15",
+                "_schema": "endfieldProtocolRegistryAudit.v16",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -471,7 +487,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v15",
+                "_schema": "endfieldProtocolRegistryAudit.v16",
                 "selectedSchemas": [],
                 "nativeTaskPaths": {},
             }), encoding="utf-8")
@@ -491,7 +507,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v15",
+                "_schema": "endfieldProtocolRegistryAudit.v16",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -539,7 +555,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v15",
+                "_schema": "endfieldProtocolRegistryAudit.v16",
                 "levelScriptStartPolicy": {
                     "schema": "levelScriptStartPolicy.v1",
                     "classification": (
@@ -571,7 +587,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v15",
+                "_schema": "endfieldProtocolRegistryAudit.v16",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -621,7 +637,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v15",
+                "_schema": "endfieldProtocolRegistryAudit.v16",
                 "levelScriptManualSelfControl": {
                     "schema": "levelScriptManualSelfControl.v1",
                     "classification": (
@@ -655,7 +671,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             metadata.write_bytes(b"fixture-metadata")
             audit_path = root / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v15",
+                "_schema": "endfieldProtocolRegistryAudit.v16",
                 "source": {
                     "gameAssembly": str(gameassembly),
                     "gameAssemblySha256": hashlib.sha256(
@@ -744,7 +760,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             audit_path = Path(temporary) / "protocol_registry_audit.json"
             audit_path.write_text(json.dumps({
-                "_schema": "endfieldProtocolRegistryAudit.v15",
+                "_schema": "endfieldProtocolRegistryAudit.v16",
                 "levelScriptActivationControl": {
                     "schema": "levelScriptActivationControl.v6",
                     "classification": (
@@ -2331,7 +2347,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 pipeline,
                 "build_source_story_partial_order_report",
                 return_value=report,
-            ), patch.object(
+            ) as build_order_report, patch.object(
                 pipeline,
                 "render_source_story_partial_order_markdown",
                 return_value="# fixture\n",
@@ -2345,6 +2361,15 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 )
 
             self.assertIs(result, report)
+            lifecycle_contract = build_order_report.call_args.kwargs[
+                "quest_succeed_lifecycle_contract"
+            ]
+            self.assertEqual(
+                lifecycle_contract["classification"],
+                "quest_success_dispatches_succeed_client_action",
+            )
+            self.assertEqual(lifecycle_contract["action"]["value"], 2)
+            self.assertEqual(len(lifecycle_contract["relatedOriginalFiles"]), 2)
             mission_payload = json.loads((mission_root / "testm1.json").read_text(encoding="utf-8"))
             self.assertEqual(mission_payload["storyOrder"], order_row)
             authority = mission_payload["storyOrder"]["branches"]["questForkAuthority"]

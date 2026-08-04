@@ -89,6 +89,12 @@ Rebuild Story data after editing overrides.
   predecessor-description reader, display-only flow comparator, main-path
   context/cache consumers, and zero topology-driven lifecycle calls.
   Predecessor forks remain topology rather than claimed server branch choice.
+- Story-order panels show binary-proven quest-success lifecycle edges as
+  `objective Story completed -> server success state -> succeed client action`.
+  Each edge links its exact quest relations and expands the hash-checked
+  MissionRuntime, `GameAssembly.dll`, and metadata files. This proves relative
+  order only for the matching same-quest pair, not that success occurred or
+  which successor branch the server selected.
 - Post-playback `CallServer` rows show their complete binary-decoded serialized
   contract and exact related `LevelScriptData` file, while keeping correlation
   labels and argument parameters explicitly non-owning.
