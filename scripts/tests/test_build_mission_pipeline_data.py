@@ -2677,6 +2677,37 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             ):
                 pipeline._story_branch_related_original_files(order_row)
 
+    def test_story_branch_related_files_keep_normalized_related_original_rows(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            binary = Path(temporary) / "GameAssembly.dll"
+            binary.write_bytes(b"original-binary")
+            binary_sha = hashlib.sha256(binary.read_bytes()).hexdigest()
+            order_row = {
+                "mission": "normalized_branch_rows",
+                "branches": {
+                    "dialogTreeIfNodes": [{
+                        "relatedOriginalFiles": [{
+                            "kind": "original_game_binary",
+                            "sourceFile": str(binary),
+                            "sha256": binary_sha,
+                            "relationship": "DialogTreeIfNode_GetNextIndex_polarity",
+                        }],
+                    }],
+                },
+            }
+
+            related = pipeline._story_branch_related_original_files(order_row)
+
+        self.assertEqual(
+            related,
+            [{
+                "kind": "original_game_binary",
+                "sourceFile": str(binary).replace("\\", "/"),
+                "sha256": binary_sha,
+                "relationship": "DialogTreeIfNode_GetNextIndex_polarity",
+            }],
+        )
+
     def test_story_order_attachment_builds_validated_variant_aggregate_shell(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

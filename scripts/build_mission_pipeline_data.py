@@ -12226,6 +12226,27 @@ def _story_branch_related_original_files(
 
     def walk(value: Any) -> None:
         if isinstance(value, dict):
+            # Branch projections may already carry a normalized
+            # ``relatedOriginalFiles`` row (for example the exact
+            # GameAssembly file used to validate a DialogTree selector).
+            # Preserve that relationship and hash instead of requiring every
+            # producer to duplicate it under ``sourceFiles``.  This remains
+            # shape-driven: no mission, Story key, or concrete branch class is
+            # special-cased here.
+            related_rows = value.get("relatedOriginalFiles")
+            if isinstance(related_rows, list):
+                for row in related_rows:
+                    if isinstance(row, dict):
+                        add_source(
+                            row.get("sourceFile"),
+                            relationship=(
+                                str(row.get("relationship") or "")
+                                or "authored_story_branch_related_original_file"
+                            ),
+                            expected_hash=str(row.get("sha256") or ""),
+                        )
+                    elif isinstance(row, str):
+                        add_source(row)
             for source in source_values(value.get("sourceFiles")):
                 add_source(source)
             for child in value.values():
