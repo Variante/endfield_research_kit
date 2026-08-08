@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v38"
+SCHEMA = "sourceStoryPartialOrder.v39"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -73,8 +73,14 @@ NATIVE_LEVELSCRIPT_ROOTS = (
     / "Data" / "Json" / "LevelScriptData",
 )
 NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA = (
-    "nativeSerializedBranchInventory.v6"
+    "nativeSerializedBranchInventory.v7"
 )
+NATIVE_TYPED_CONTROL_ACTION_NAMES = frozenset({
+    "Split",
+    "IfElseAction",
+    "SwitchInt",
+    "SwitchString",
+})
 READING_POPUP_TABLE_PATH = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Table" / "ReadingPopUpTable.json"
@@ -4221,6 +4227,15 @@ def _native_serialized_branch_arm_projection(
         }, key=natural_key)
         return action_names, record_classes
 
+    def reachable_control_ids(local_ids: set[int]) -> list[int]:
+        """Return typed control locals reached by one exact action projection."""
+        return sorted(
+            local_id
+            for local_id in local_ids
+            if safe_key(action_by_local.get(local_id, {}).get("actionName"))
+            in NATIVE_TYPED_CONTROL_ACTION_NAMES
+        )
+
     def playback_projection(local_ids: set[int]) -> tuple[list[int], list[str]]:
         playback_local_ids = sorted(
             local_id for local_id in local_ids if local_id in playback_by_local
@@ -4238,12 +4253,7 @@ def _native_serialized_branch_arm_projection(
         controls: list[dict[str, Any]] = []
         for local_id in sorted(local_ids):
             nested = action_by_local.get(local_id) or {}
-            if safe_key(nested.get("actionName")) not in {
-                "Split",
-                "IfElseAction",
-                "SwitchInt",
-                "SwitchString",
-            }:
+            if safe_key(nested.get("actionName")) not in NATIVE_TYPED_CONTROL_ACTION_NAMES:
                 continue
             slots = _serialized_native_control_arm_slots(nested)
             if not slots:
@@ -4269,6 +4279,7 @@ def _native_serialized_branch_arm_projection(
                     "reachableActionCount": len(reached),
                     "reachableActionNames": action_names,
                     "reachableRecordClasses": record_classes,
+                    "reachableControlLocalIds": reachable_control_ids(reached),
                     "playbackActionLocalIds": playback_local_ids,
                     "playbackStoryKeys": playback_keys,
                 })
@@ -4276,6 +4287,12 @@ def _native_serialized_branch_arm_projection(
                     nested_arm["runtimeTerminal"] = terminal
                 control["arms"].append(nested_arm)
             control["serializedArmCount"] = len(control["arms"])
+            control["reachableControlLocalIds"] = sorted({
+                child_id
+                for nested_arm in control["arms"]
+                for child_id in nested_arm.get("reachableControlLocalIds") or []
+                if child_id != local_id
+            })
             control["playbackArmCount"] = sum(
                 bool(nested_arm.get("playbackStoryKeys"))
                 for nested_arm in control["arms"]
@@ -4319,6 +4336,7 @@ def _native_serialized_branch_arm_projection(
             "reachableActionCount": len(reached),
             "reachableActionNames": reachable_action_names,
             "reachableRecordClasses": reachable_record_classes,
+            "reachableControlLocalIds": reachable_control_ids(reached),
             "nestedControls": nested_controls(reached),
             "playbackActionLocalIds": playback_local_ids,
             "playbackStoryKeys": playback_keys,
@@ -5009,6 +5027,7 @@ def _native_serialized_branch_inventory_not_requested() -> dict[str, Any]:
             "nestedMultiPlaybackControlCount": 0,
             "nestedPlaybackControlCount": 0,
             "nestedPlaybackPredicateGapCount": 0,
+            "nestedControlReferenceCount": 0,
             "controlPredicateConflictCount": 0,
             "validationFailureCount": 0,
         },
@@ -5393,6 +5412,13 @@ def _native_serialized_branch_inventory(
             for row in rows
             for arm in row.get("arms") or []
             for control in arm.get("nestedControls") or []
+        ),
+        "nestedControlReferenceCount": sum(
+            len(nested_arm.get("reachableControlLocalIds") or [])
+            for row in rows
+            for arm in row.get("arms") or []
+            for control in arm.get("nestedControls") or []
+            for nested_arm in control.get("arms") or []
         ),
         "uniquePlaybackStoryKeyCount": len({
             story_key
@@ -6614,6 +6640,9 @@ def build_report(
         "nativeSerializedNestedPlaybackPredicateGapCount": int(
             inventory_summary.get("nestedPlaybackPredicateGapCount") or 0
         ),
+        "nativeSerializedNestedControlReferenceCount": int(
+            inventory_summary.get("nestedControlReferenceCount") or 0
+        ),
         "nativeSerializedBranchPredicateConflictCount": int(
             inventory_summary.get("controlPredicateConflictCount") or 0
         ),
@@ -6741,7 +6770,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"nested playback arms / `{summary.get('nativeSerializedNestedMultiPlaybackControlCount', 0)}` "
         f"multi-playback controls / `{summary.get('nativeSerializedNestedPlaybackControlCount', 0)}` "
         f"playback controls / `{summary.get('nativeSerializedNestedPlaybackPredicateGapCount', 0)}` "
-        f"playback predicate gaps; `{summary.get('nativeSerializedBranchPredicateConflictCount', 0)}` "
+        f"playback predicate gaps / `{summary.get('nativeSerializedNestedControlReferenceCount', 0)}` "
+        f"nested control references; `{summary.get('nativeSerializedBranchPredicateConflictCount', 0)}` "
         "predicate-join conflicts (conflicts fail closed)",
         f"- related native action graphs: `{summary.get('nativeRelatedActionTopologies', 0)}` "
         "original LevelScript files attached only through exact Story control paths",

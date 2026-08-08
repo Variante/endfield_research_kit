@@ -183,10 +183,12 @@ class NativeSerializedBranchProjectionTests(unittest.TestCase):
         )
         nested = projection["arms"][0]["nestedControls"]
         self.assertEqual(len(nested), 1)
+        self.assertEqual(projection["arms"][0]["reachableControlLocalIds"], [20])
         self.assertEqual(nested[0]["actionName"], "IfElseAction")
         self.assertEqual(nested[0]["predicate"]["getterName"], "IntCompare")
         self.assertEqual(nested[0]["arms"][0]["playbackStoryKeys"], ["radio_nested"])
         self.assertEqual(nested[0]["arms"][1]["reachableActionNames"], ["CallServer"])
+        self.assertEqual(nested[0]["arms"][1]["reachableControlLocalIds"], [])
         self.assertEqual(nested[0]["playbackArmCount"], 1)
         self.assertEqual(nested[0]["branchingStatus"], "single_playback_arm")
         self.assertEqual(nested[0]["playbackPredicateStatus"], "exact_unique_getter")

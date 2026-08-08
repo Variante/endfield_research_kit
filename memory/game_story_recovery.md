@@ -35,7 +35,7 @@ Latest CN reports:
 | Native branch predicates | 259 named; 264 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Complete native branch-arm topology | 312 / 312 recovered placements published in Mission Pipeline, 880 serialized slots, 43 active non-Story arms, 155 inactive slots, 0 runtime terminals, 0 recovery or publication validator failures |
 | Exact ordered-Branch context | 27 original LevelScript/event contexts across 4 missions; complete serialized `_idList`, exact Story-path arm coverage, and GameAssembly/metadata/LevelScript hashes; 0 multi-arm Story-order edges admitted |
-| Corpus serialized-Branch census | 81 unique original Branch groups / 227 `_idList` slots / 37 exact playback-bearing arms; 298 nested typed controls / 465 nested playback arms / 233 playback-bearing controls / 208 nested controls with playback on multiple alternatives / 0 playback-predicate gaps; StreamingAssets + Persistent = 9,029 paths / 4,572 hashes; 0 outer groups with playback on multiple arms; context-only |
+| Corpus serialized-Branch census | 81 unique original Branch groups / 227 `_idList` slots / 37 exact playback-bearing arms; 298 nested typed controls / 465 nested playback arms / 233 playback-bearing controls / 208 nested controls with playback on multiple alternatives / 593 nested control references / 0 playback-predicate gaps; StreamingAssets + Persistent = 9,029 paths / 4,572 hashes; 0 outer groups with playback on multiple arms; context-only |
 | Complete cross-boundary native branches | 5 groups / 5 exact external Story references (4 Split fan-outs, 1 SwitchInt choice); no ownership or order promotion |
 | Exact mission-state Story alternatives | 3 branch groups / 2 cross-mission Story references; selection only, never chronology or ownership |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
@@ -164,7 +164,9 @@ in five payloads.
   playback arms and 208 controls with playback on multiple alternatives. All
   233 playback-bearing controls have an exact joined binary predicate in this
   corpus (zero playback-predicate gaps); those alternatives are conditional
-  evidence, not chronology. Predicate conflicts fail closed. It remains
+  evidence, not chronology. The projection also retains 593 decoded
+  control-to-control reachability references so deeper typed chains are not
+  flattened away. Predicate conflicts fail closed. It remains
   context-only and never promotes ownership or order; arbitrary `texts`
   fields and OCR/overrides are not inputs.
 - Mission Pipeline publication now performs a second corpus-wide attachment
