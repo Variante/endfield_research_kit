@@ -77,6 +77,10 @@ try:
         build_report as build_source_story_partial_order_report,
         render_markdown as render_source_story_partial_order_markdown,
     )
+    from story_recovery.build_source_story_order_cross_reference import (
+        build_report as build_source_story_order_cross_reference_report,
+        render_markdown as render_source_story_order_cross_reference_markdown,
+    )
 except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data``
     from scripts.common import (
         combined_non_mission_content_keys,
@@ -131,6 +135,10 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
     from scripts.story_recovery.build_source_story_partial_order import (
         build_report as build_source_story_partial_order_report,
         render_markdown as render_source_story_partial_order_markdown,
+    )
+    from scripts.story_recovery.build_source_story_order_cross_reference import (
+        build_report as build_source_story_order_cross_reference_report,
+        render_markdown as render_source_story_order_cross_reference_markdown,
     )
 
 
@@ -212,6 +220,8 @@ DEFAULT_LEVEL_SEQUENCE_TEXTASSET_ROOT = (
 DEFAULT_STORY_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "build"
 DEFAULT_ORDER_REPORT_ROOT = ROOT / "reports" / "mission_order"
+DEFAULT_STORY_ORDER_OVERRIDE = ROOT / "webui" / "overrides" / "story_order.json"
+DEFAULT_STORY_ORDER_OCR = ROOT / "webui" / "data" / "story_order_ocr.json"
 DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
@@ -11766,12 +11776,36 @@ def publish_source_story_partial_order(
         render_source_story_partial_order_markdown(report),
     )
 
+    order_cross_reference = build_source_story_order_cross_reference_report(
+        report,
+        read_json(DEFAULT_STORY_ORDER_OVERRIDE)
+        if DEFAULT_STORY_ORDER_OVERRIDE.is_file()
+        else {},
+        read_json(DEFAULT_STORY_ORDER_OCR)
+        if DEFAULT_STORY_ORDER_OCR.is_file()
+        else {},
+    )
+    cross_reference_json = (
+        report_root / f"source_story_order_cross_reference_{language}.json"
+    )
+    cross_reference_markdown = (
+        report_root / f"source_story_order_cross_reference_{language}.md"
+    )
+    order_cross_reference["reportJson"] = repo_path(cross_reference_json)
+    order_cross_reference["reportMarkdown"] = repo_path(cross_reference_markdown)
+    write_report_json(cross_reference_json, order_cross_reference)
+    write_text_if_changed(
+        cross_reference_markdown,
+        render_source_story_order_cross_reference_markdown(order_cross_reference),
+    )
+
     publication = attach_source_story_partial_order(
         index,
         output_root,
         report,
         create_variant_aggregate_shells=False,
         require_complete_branch_publication=False,
+        order_cross_reference=order_cross_reference,
     )
 
     order_summary = report.get("summary") or {}
@@ -11786,6 +11820,9 @@ def publish_source_story_partial_order(
         "reportJson": repo_path(report_json),
         "reportMarkdown": repo_path(report_markdown),
         "publication": publication,
+        "crossReference": _compact_story_order_cross_reference_index(
+            order_cross_reference
+        ),
     }
     write_json(output_root / "index.json", index)
     return report
@@ -11855,6 +11892,124 @@ def _update_story_order_summary(
     }
     for target, source in mappings.items():
         summary[target] = int(order_summary.get(source) or 0)
+    cross_reference = order_row.get("crossReference") or {}
+    if isinstance(cross_reference, dict):
+        summary["storyOrderCrossReferenceStrictEdgeCount"] = int(
+            cross_reference.get("strictEdgeCount") or 0
+        )
+        summary["storyOrderCrossReferenceOverrideDisagreeCount"] = int(
+            (cross_reference.get("override") or {}).get("disagrees") or 0
+        )
+        summary["storyOrderCrossReferenceOcrDisagreeCount"] = int(
+            (cross_reference.get("ocr") or {}).get("disagrees") or 0
+        )
+        summary["storyOrderCrossReferenceConflictCount"] = int(
+            cross_reference.get("conflictCount") or 0
+        )
+
+
+def _cross_reference_status_counts(
+    counts: dict[str, Any] | None,
+    reference: str,
+) -> dict[str, int]:
+    counts = counts or {}
+    return {
+        status: int(counts.get(f"{reference}_{status}") or 0)
+        for status in ("agrees", "disagrees", "uncovered")
+    }
+
+
+def _compact_story_order_cross_reference(
+    mission_row: dict[str, Any],
+    cross_reference: dict[str, Any],
+) -> dict[str, Any]:
+    """Attach diagnostic override/OCR comparison without changing evidence."""
+    counts = mission_row.get("counts") or {}
+    disagreement_edges: list[dict[str, Any]] = []
+    for edge in mission_row.get("edges") or []:
+        if not isinstance(edge, dict):
+            continue
+        override = edge.get("override") or {}
+        ocr = edge.get("ocr") or {}
+        if (
+            override.get("status") != "disagrees"
+            and ocr.get("status") != "disagrees"
+            and not edge.get("crossReferenceConflict")
+        ):
+            continue
+        disagreement_edges.append({
+            "from": str(edge.get("from") or ""),
+            "to": str(edge.get("to") or ""),
+            "kind": str(edge.get("kind") or "sourceEdge"),
+            "override": {
+                "status": str(override.get("status") or "uncovered"),
+                "fromIndex": override.get("fromIndex"),
+                "toIndex": override.get("toIndex"),
+                "missing": [
+                    str(value)
+                    for value in override.get("missing") or []
+                    if value
+                ],
+            },
+            "ocr": {
+                "status": str(ocr.get("status") or "uncovered"),
+                "fromIndex": ocr.get("fromIndex"),
+                "toIndex": ocr.get("toIndex"),
+                "missing": [
+                    str(value)
+                    for value in ocr.get("missing") or []
+                    if value
+                ],
+            },
+            "crossReferenceConflict": bool(
+                edge.get("crossReferenceConflict")
+            ),
+            "orderEvidence": False,
+        })
+    disagreement_edges.sort(
+        key=lambda edge: (
+            str(edge.get("from") or ""),
+            str(edge.get("to") or ""),
+            str(edge.get("kind") or ""),
+        )
+    )
+    return {
+        "schema": str(cross_reference.get("_schema") or ""),
+        "status": "cross_reference_only",
+        "strictEdgeCount": int(mission_row.get("strictEdgeCount") or 0),
+        "override": _cross_reference_status_counts(counts, "override"),
+        "ocr": _cross_reference_status_counts(counts, "ocr"),
+        "conflictCount": sum(
+            bool(edge.get("crossReferenceConflict"))
+            for edge in mission_row.get("edges") or []
+            if isinstance(edge, dict)
+        ),
+        "disagreementEdges": disagreement_edges,
+        "policy": (
+            "Only strict source partial-order edges are evidence. Manual "
+            "override and OCR lists are diagnostic cross-references; they "
+            "never create, strengthen, weaken, or remove an edge."
+        ),
+        "reportJson": str(cross_reference.get("reportJson") or ""),
+        "reportMarkdown": str(cross_reference.get("reportMarkdown") or ""),
+        "orderEvidence": False,
+    }
+
+
+def _compact_story_order_cross_reference_index(
+    cross_reference: dict[str, Any],
+) -> dict[str, Any]:
+    """Keep the global index compact while retaining the full report on disk."""
+    return {
+        "schema": str(cross_reference.get("_schema") or ""),
+        "status": "cross_reference_only",
+        "policy": cross_reference.get("policy") or {},
+        "inputs": cross_reference.get("inputs") or {},
+        "summary": cross_reference.get("summary") or {},
+        "reportJson": str(cross_reference.get("reportJson") or ""),
+        "reportMarkdown": str(cross_reference.get("reportMarkdown") or ""),
+        "orderEvidence": False,
+    }
 
 
 def _resolve_report_source_path(source: str) -> Path:
@@ -12009,6 +12164,7 @@ def attach_source_story_partial_order(
     *,
     create_variant_aggregate_shells: bool,
     require_complete_branch_publication: bool,
+    order_cross_reference: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Attach every recovered row that has a validated pipeline destination."""
     rows_by_mission = {
@@ -12036,6 +12192,11 @@ def attach_source_story_partial_order(
 
     published_missions: list[str] = []
     published_branches = 0
+    cross_reference_by_mission = {
+        str(row.get("mission") or ""): row
+        for row in (order_cross_reference or {}).get("missions") or []
+        if isinstance(row, dict) and row.get("mission")
+    }
     for summary in index.get("missions") or []:
         if not isinstance(summary, dict):
             continue
@@ -12057,6 +12218,38 @@ def attach_source_story_partial_order(
         previous_order = payload.get("storyOrder") or {}
         if previous_order.get("sourceGapQueue"):
             published_order["sourceGapQueue"] = previous_order["sourceGapQueue"]
+        cross_reference_row = cross_reference_by_mission.get(mission_id)
+        if cross_reference_row is not None:
+            cross_reference_payload = _compact_story_order_cross_reference(
+                cross_reference_row,
+                order_cross_reference or {},
+            )
+            published_order["crossReference"] = cross_reference_payload
+            order_summary = published_order.setdefault("summary", {})
+            order_summary["crossReferenceStrictEdgeCount"] = int(
+                cross_reference_payload.get("strictEdgeCount") or 0
+            )
+            order_summary["crossReferenceOverrideDisagreeCount"] = int(
+                (cross_reference_payload.get("override") or {}).get(
+                    "disagrees"
+                )
+                or 0
+            )
+            order_summary["crossReferenceOcrDisagreeCount"] = int(
+                (cross_reference_payload.get("ocr") or {}).get("disagrees")
+                or 0
+            )
+            order_summary["crossReferenceConflictCount"] = int(
+                cross_reference_payload.get("conflictCount") or 0
+            )
+        elif isinstance(previous_order.get("crossReference"), dict):
+            # The canonical builder publishes the order once before coverage
+            # attachment and once after it. Preserve the full per-mission
+            # diagnostic comparison on the second pass; it is deliberately
+            # not reconstructed from the compact global index summary.
+            published_order["crossReference"] = copy.deepcopy(
+                previous_order["crossReference"]
+            )
         payload["storyOrder"] = published_order
         write_json(mission_path, payload)
         _update_story_order_summary(summary, published_order)
@@ -13084,12 +13277,24 @@ def main() -> int:
             ) if output_root == DEFAULT_OUTPUT_ROOT.resolve() else []
         )
         if order_report:
+            order_cross_reference = None
+            cross_reference_meta = (
+                (index.get("storyOrder") or {}).get("crossReference") or {}
+            )
+            cross_reference_source = cross_reference_meta.get("reportJson")
+            if cross_reference_source:
+                cross_reference_path = _resolve_report_source_path(
+                    str(cross_reference_source)
+                )
+                if cross_reference_path.is_file():
+                    order_cross_reference = read_json(cross_reference_path)
             attach_source_story_partial_order(
                 index,
                 output_root,
                 order_report,
                 create_variant_aggregate_shells=True,
                 require_complete_branch_publication=True,
+                order_cross_reference=order_cross_reference,
             )
         report_stem = f"mission_pipeline_story_binding_coverage_{coverage['language']}"
         coverage_report = args.report_root.resolve() / f"{report_stem}.json"
