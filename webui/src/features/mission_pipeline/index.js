@@ -468,6 +468,10 @@
       dialogTreeBranchSelection: "first condition result == 1; no true condition → arm 0",
       dialogTreeBranchCount: "binary DialogTree branch nodes",
       dialogTreeBranchBoundary: "This proves native arm selection and related original files, not mission trigger, ownership, cross-file order, or chronology.",
+      dialogTreeIfNode: "DialogTree IfNode",
+      dialogTreeIfArm: "If arm",
+      dialogTreeIfCount: "binary DialogTree IfNodes",
+      dialogTreeIfBoundary: "This is internal condition-selection evidence with original files; it does not prove mission trigger, ownership, cross-file order, or chronology.",
       questFork: "quest fork",
       questForkStructure: "Authored quest-fork structure",
       questForkStructureHint: "Arm roles, guards, terminal shape, and reconvergence come from the original MissionRuntime file. Server activation and exclusivity remain unresolved.",
@@ -1732,6 +1736,10 @@
       dialogTreeBranchSelection: "\u7b2c\u4e00\u4e2a\u6761\u4ef6 result == 1\uff1b\u65e0\u771f\u6761\u4ef6 \u2192 \u5206\u652f\u81c2 0",
       dialogTreeBranchCount: "\u4e8c\u8fdb\u5236\u9a8c\u8bc1\u7684 DialogTree \u5206\u652f\u8282\u70b9",
       dialogTreeBranchBoundary: "\u8fd9\u53ea\u8bc1\u660e\u539f\u751f\u5206\u652f\u9009\u62e9\u548c\u76f8\u5173\u539f\u59cb\u6587\u4ef6\uff0c\u4e0d\u8bc1\u660e\u4efb\u52a1\u89e6\u53d1\u3001\u5f52\u5c5e\u3001\u8de8\u6587\u4ef6\u987a\u5e8f\u6216\u65f6\u5e8f\u3002",
+      dialogTreeIfNode: "DialogTree If \u8282\u70b9",
+      dialogTreeIfArm: "If \u5206\u652f\u81c2",
+      dialogTreeIfCount: "\u4e8c\u8fdb\u5236\u9a8c\u8bc1\u7684 DialogTree If \u8282\u70b9",
+      dialogTreeIfBoundary: "\u8fd9\u662f\u5e26\u539f\u59cb\u6587\u4ef6\u7684\u5185\u90e8\u6761\u4ef6\u9009\u62e9\u8bc1\u636e\uff1b\u4e0d\u8bc1\u660e\u4efb\u52a1\u89e6\u53d1\u3001\u5f52\u5c5e\u3001\u8de8\u6587\u4ef6\u987a\u5e8f\u6216\u65f6\u5e8f\u3002",
       questFork: "\u4efb\u52a1\u5206\u652f",
       questForkStructure: "\u539f\u59cb\u4efb\u52a1\u5206\u652f\u7ed3\u6784",
       questForkStructureHint: "\u5206\u652f\u89d2\u8272\u3001\u5b88\u536b\u6761\u4ef6\u3001\u7ec8\u70b9\u5f62\u72b6\u548c\u518d\u6c47\u5408\u5747\u6765\u81ea\u539f\u59cb MissionRuntime \u6587\u4ef6\uff1b\u670d\u52a1\u7aef\u542f\u52a8\u4e0e\u4e92\u65a5\u7b56\u7565\u4ecd\u672a\u77e5\u3002",
@@ -4142,6 +4150,23 @@
         : "";
       return `<div><code>${esc(option.optionId || "?")}</code><i>&rarr;</i><span>${branchLines.map((line) => `<code>${esc(line)}</code>`).join(" ")}${directContinuation}</span></div>`;
     }).join("")}</details>`).join("");
+    const dialogTreeIfNodes = (branches.dialogTreeIfNodes || []).map((row) => {
+      const condition = row.condition && Object.keys(row.condition).length
+        ? `<code>${esc(JSON.stringify(row.condition))}</code>`
+        : `<span>${esc(t("nativePredicateOpaque"))}</span>`;
+      const nativeProof = (row.nativeConsumers || []).map((consumer) => `<code>${esc(consumer.method || "?")} ${esc(consumer.token || "")} @ ${esc(consumer.address || "?")}</code>`).join(" ");
+      const arms = (row.arms || []).map((arm) => {
+        const target = arm.targetNodeId
+          ? `<code>#${esc(arm.targetNodeId)}</code>${arm.targetNodeType ? ` <small>${esc(arm.targetNodeType)}</small>` : ""}`
+          : "";
+        const result = arm.conditionResult === 1
+          ? `<code>result == 1</code>`
+          : `<code>result != 1</code>`;
+        return `<div><b>${esc(t("dialogTreeIfArm"))}</b> ${result}<code>connection ${esc(arm.connectionOrdinal ?? "?")} / raw ${esc(arm.connectionIndex ?? "?")}</code><span>&rarr; ${target}</span>${arm.defaultArm ? `<small>${esc(t("dialogTreeBranchSelection"))}</small>` : ""}</div>`;
+      }).join("");
+      const originals = (row.relatedOriginalFiles || []).map((related) => `<small><code>${esc(related.kind || "file")}</code> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("");
+      return `<details><summary><b>${esc(t("dialogTreeIfNode"))}</b> <a href="${esc(storyHref(row.storyKey))}"><code>${esc(row.storyKey || "?")}</code></a> <i>#${esc(row.branchNodeId || "?")}</i><span>${esc(row.conditionType || "")}</span></summary><p class="mp-native-predicate"><b>${esc(t("nativePredicate"))}</b>${condition}</p>${arms}<small><strong>${esc(t("dialogConditionalNativeProof"))}:</strong> ${nativeProof}</small><small>${(row.sourceFiles || []).map((source) => `<code>${esc(source)}</code>`).join(" ")}</small><small>${esc(t("dialogTreeIfBoundary"))}</small>${originals ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${originals}</details>` : ""}</details>`;
+    }).join("");
     const offlineRows = offlineRecoveryRowsForMission();
     const offlineGaps = offlineRows.map((row) => {
       const timeline = row.sharedTimelineContext?.timeline;
@@ -4586,7 +4611,7 @@
     return `<details class="mp-mission-story mp-story-order" data-weight="${Number(summary.strongEdgeCount) ? "strong" : "context"}"${Number(summary.strongEdgeCount) || offlineRows.length ? " open" : ""}>
       <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
       <p>${esc(t("storyOrderHint"))}</p>
-      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.questStartActionDefinitionCount || 0).toLocaleString()}</b>${esc(t("questStartDefinitions"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span>${summary.dialogConditionalBranchCount ? `<span><b>${Number(summary.dialogConditionalBranchCount).toLocaleString()}</b>${esc(t("dialogConditionalCount"))}</span>` : ""}${summary.dialogTreeBranchNodeCount ? `<span><b>${Number(summary.dialogTreeBranchNodeCount).toLocaleString()}</b>${esc(t("dialogTreeBranchCount"))}</span>` : ""}${summary.nativeControlNonStoryArmCount ? `<span><b>${Number(summary.nativeControlNonStoryArmCount).toLocaleString()}</b>${esc(t("nativeNonStoryArm"))}</span>` : ""}${summary.nativeControlCrossBoundaryBranchCount ? `<span><b>${Number(summary.nativeControlCrossBoundaryBranchCount).toLocaleString()}</b>${esc(t("nativeCrossBoundaryStories"))}</span>` : ""}<span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
+      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.questStartActionDefinitionCount || 0).toLocaleString()}</b>${esc(t("questStartDefinitions"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span>${summary.dialogConditionalBranchCount ? `<span><b>${Number(summary.dialogConditionalBranchCount).toLocaleString()}</b>${esc(t("dialogConditionalCount"))}</span>` : ""}${summary.dialogTreeBranchNodeCount ? `<span><b>${Number(summary.dialogTreeBranchNodeCount).toLocaleString()}</b>${esc(t("dialogTreeBranchCount"))}</span>` : ""}${summary.dialogTreeIfNodeCount ? `<span><b>${Number(summary.dialogTreeIfNodeCount).toLocaleString()}</b>${esc(t("dialogTreeIfCount"))}</span>` : ""}${summary.nativeControlNonStoryArmCount ? `<span><b>${Number(summary.nativeControlNonStoryArmCount).toLocaleString()}</b>${esc(t("nativeNonStoryArm"))}</span>` : ""}${summary.nativeControlCrossBoundaryBranchCount ? `<span><b>${Number(summary.nativeControlCrossBoundaryBranchCount).toLocaleString()}</b>${esc(t("nativeCrossBoundaryStories"))}</span>` : ""}<span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
       ${missionNamedLevelDataContexts ? `<section><h4>${esc(t("missionNamedLevelDataReceiverContexts"))} <span>${(order.missionNamedLevelDataReceiverContexts || []).length}</span></h4><p>${esc(t("missionNamedLevelDataReceiverContextsHint"))}</p><div class="mp-order-branches">${missionNamedLevelDataContexts}</div></section>` : ""}
       ${missionObservedContexts ? `<section><h4>${esc(t("missionObservedScriptContexts"))}</h4><p>${esc(t("missionObservedScriptContextsHint"))}</p><div class="mp-order-branches">${missionObservedContexts}</div></section>` : ""}
       ${causalEdges ? `<section><h4>${esc(t("causalEdges"))}</h4><div class="mp-order-edges">${causalEdges}</div></section>` : ""}
@@ -4597,7 +4622,7 @@
       ${containments ? `<section><h4>${esc(t("embeddedStory"))}</h4><p>${esc(t("embeddedStoryHint"))}</p><div class="mp-order-edges">${containments}</div></section>` : ""}
       ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}
-      ${questForks || questMerges || nativeBranches || nativeMerges || nativeSequences || sceneOptions || dialogConditionalBranches || dialogLocalConditionalBranches || dialogTreeBranchNodes || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4>${questForkAuthorityHtml}<div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${nativeSequences}${sceneOptions}${dialogConditionalBranches}${dialogLocalConditionalBranches}${dialogTreeBranchNodes}${typedSelectors}</div></section>` : ""}
+      ${questForks || questMerges || nativeBranches || nativeMerges || nativeSequences || sceneOptions || dialogConditionalBranches || dialogLocalConditionalBranches || dialogTreeBranchNodes || dialogTreeIfNodes || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4>${questForkAuthorityHtml}<div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${nativeSequences}${sceneOptions}${dialogConditionalBranches}${dialogLocalConditionalBranches}${dialogTreeBranchNodes}${dialogTreeIfNodes}${typedSelectors}</div></section>` : ""}
       ${serializedBranchInventoryHtml}
       ${typedControlFamilyHtml}
       ${relatedActionTopologies ? `<section><h4>${esc(t("nativeRelatedActionGraphs"))}</h4><p>${esc(t("nativeRelatedActionGraphsHint"))}</p><div class="mp-order-branches">${relatedActionTopologies}</div></section>` : ""}

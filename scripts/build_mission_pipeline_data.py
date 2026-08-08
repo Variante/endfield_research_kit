@@ -11686,6 +11686,9 @@ def _update_story_order_summary(
         "storyOrderDialogTreeBranchNodeCount": "dialogTreeBranchNodeCount",
         "storyOrderDialogTreeBranchNodeArmCount": "dialogTreeBranchNodeArmCount",
         "storyOrderDialogTreeBranchNodeValidationFailureCount": "dialogTreeBranchNodeValidationFailureCount",
+        "storyOrderDialogTreeIfNodeCount": "dialogTreeIfNodeCount",
+        "storyOrderDialogTreeIfNodeArmCount": "dialogTreeIfNodeArmCount",
+        "storyOrderDialogTreeIfNodeValidationFailureCount": "dialogTreeIfNodeValidationFailureCount",
     }
     for target, source in mappings.items():
         summary[target] = int(order_summary.get(source) or 0)
@@ -13089,6 +13092,8 @@ def main() -> int:
             f"{summary.get('dialogConditionalBranches', 0)} binary-validated local DialogTree conditionals, "
             f"{summary.get('dialogTreeBranchNodes', 0)} binary-validated DialogTree branch nodes / "
             f"{summary.get('dialogTreeBranchNodeArms', 0)} branch arms, "
+            f"{summary.get('dialogTreeIfNodes', 0)} binary-validated DialogTree IfNodes / "
+            f"{summary.get('dialogTreeIfNodeArms', 0)} IfNode arms, "
             f"{summary.get('nativeOrderedSequences', 0)} native ordered sequences, "
             f"{summary.get('nativeOrderedSequenceContexts', 0)} native sequence contexts, "
             f"{summary.get('nativeSerializedBranchGroupCount', 0)} corpus serialized Branch groups / "
