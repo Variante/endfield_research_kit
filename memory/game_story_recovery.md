@@ -179,6 +179,18 @@ in five payloads.
   closed. It remains
   context-only and never promotes ownership or order; arbitrary `texts`
   fields and OCR/overrides are not inputs.
+- The shared integer-switch decoder now covers the binary-proven
+  `SwitchIntLarger` family (`0x04BE/0x0C`; `SwitchIntLarger.Execute` at
+  `0x18765b770` in the hash-locked original `GameAssembly.dll`) without
+  object-specific rules. The corpus contains 16 copied records across 12
+  LevelScript paths (8 unique hash/local records). Only
+  `map01_lv001/2100280004.json` reaches a Story-bearing exact path, attached
+  to `sm1l1m9` through `dlg_sm1l1m9_5`; its case targets are both inactive and
+  its default target is `0`, so it adds no Story order or ownership. The other
+  11 copied paths retain native case edges as unowned/non-Story frontier
+  context until an original activation bridge is recovered. The generated
+  census exposes all mapped control-family counts, including
+  `SwitchIntLarger: 8`; OCR and manual order remain cross-reference only.
 - Mission Pipeline publication now performs a second corpus-wide attachment
   pass after graph-neutral recovery shells exist and fails closed unless every
   recovered native branch reaches a payload. This restored 217 previously

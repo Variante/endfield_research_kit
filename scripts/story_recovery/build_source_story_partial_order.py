@@ -59,7 +59,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v41"
+SCHEMA = "sourceStoryPartialOrder.v42"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -74,7 +74,7 @@ NATIVE_LEVELSCRIPT_ROOTS = (
     / "Data" / "Json" / "LevelScriptData",
 )
 NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA = (
-    "nativeSerializedBranchInventory.v9"
+    "nativeSerializedBranchInventory.v11"
 )
 
 # The control family set is derived from the current-build native mapping and
@@ -433,7 +433,7 @@ EVIDENCE_POLICY = {
         "LevelScript file/cross-file order and untyped chain membership",
         "LevelData quest references and PRTS collection order",
         "related LevelScript action graphs attached through exact Story paths but not promoted wholesale to mission order",
-        "divergent Split/IfElseAction/SwitchInt/SwitchString Story arms as topology only",
+        "divergent Split/IfElseAction/SwitchInt/SwitchIntLarger/SwitchString Story arms as topology only",
         "authored quest-start Story actions when the complete current AOT dispatcher census has no slot-1 producer",
     ],
     "rejects": [
@@ -2348,6 +2348,8 @@ def _native_transition_kind(
     if (
         edge.startswith("SwitchInt.case[")
         or edge == "SwitchInt.default"
+        or edge.startswith("SwitchIntLarger.case[")
+        or edge == "SwitchIntLarger.default"
         or edge.startswith("SwitchString.case[")
         or edge == "SwitchString.default"
     ):
@@ -4002,6 +4004,8 @@ def _native_branch_kind(edge: str) -> str:
         return "splitFanout"
     if edge in {"IfElseAction.trueAction", "IfElseAction.falseAction"}:
         return "ifElse"
+    if edge.startswith("SwitchIntLarger.case[") or edge == "SwitchIntLarger.default":
+        return "switchIntLarger"
     if edge.startswith("SwitchInt.case[") or edge == "SwitchInt.default":
         return "switch"
     if edge.startswith("SwitchString.case[") or edge == "SwitchString.default":
@@ -4025,6 +4029,7 @@ def _native_branch_runtime_mapping(
         "splitFanout": "Split",
         "ifElse": "IfElseAction",
         "switch": "",
+        "switchIntLarger": "SwitchIntLarger",
         "while": "WhileAction",
         "waitTriggerVolume": "WaitForSecondsInTriggerVolume",
     }
@@ -4037,6 +4042,8 @@ def _native_branch_runtime_mapping(
         }
         if edges and all(edge.startswith("SwitchInt.") for edge in edges):
             action_name = "SwitchInt"
+        elif edges and all(edge.startswith("SwitchIntLarger.") for edge in edges):
+            action_name = "SwitchIntLarger"
         elif edges and all(edge.startswith("SwitchString.") for edge in edges):
             action_name = "SwitchString"
     for pair, name in LEVELSCRIPT_NATIVE_ACTION_NAMES.items():
@@ -4079,6 +4086,14 @@ NATIVE_CONTROL_ARM_SCHEMAS: dict[str, dict[str, Any]] = {
         "defaultField": "switchDefaultActionLocalId",
         "edgePrefix": "SwitchInt.case",
         "defaultEdge": "SwitchInt.default",
+    },
+    "SwitchIntLarger": {
+        "kind": "switch",
+        "caseValues": "switchIntLargerCaseValues",
+        "caseTargets": "switchIntLargerCaseActionLocalIds",
+        "defaultField": "switchIntLargerDefaultActionLocalId",
+        "edgePrefix": "SwitchIntLarger.case",
+        "defaultEdge": "SwitchIntLarger.default",
     },
     "SwitchString": {
         "kind": "switch",
@@ -4621,17 +4636,17 @@ def _full_native_branch_arm_context(
                     "expected": ["trueActionLocalId", "falseActionLocalId"],
                     "actualMissing": missing_fields,
                 })
-        if action_name in {"SwitchInt", "SwitchString"}:
-            prefix = "switch" if action_name == "SwitchInt" else "switchString"
-            case_values = detail.get(f"{prefix}CaseValues") or []
-            case_ids = detail.get(f"{prefix}CaseActionLocalIds") or []
+        if action_name in {"SwitchInt", "SwitchIntLarger", "SwitchString"}:
+            schema = NATIVE_CONTROL_ARM_SCHEMAS[action_name]
+            case_values = detail.get(schema["caseValues"]) or []
+            case_ids = detail.get(schema["caseTargets"]) or []
             if len(case_values) != len(case_ids):
                 slot_schema_failures.append({
                     "check": "switchCaseValueTargetCardinality",
                     "expected": len(case_values),
                     "actual": len(case_ids),
                 })
-            default_field = f"{prefix}DefaultActionLocalId"
+            default_field = schema["defaultField"]
             if default_field not in detail:
                 slot_schema_failures.append({
                     "check": "switchDefaultFieldPresent",
@@ -5159,6 +5174,8 @@ def _native_serialized_branch_inventory_not_requested() -> dict[str, Any]:
             "nestedInactiveArmCount": 0,
             "nestedRuntimeTerminalArmCount": 0,
             "nestedUnavailableArmCount": 0,
+            "typedControlGroupCount": 0,
+            "typedControlFamilyCounts": {},
             "controlPredicateConflictCount": 0,
             "validationFailureCount": 0,
         },
@@ -5500,6 +5517,26 @@ def _native_serialized_branch_inventory(
             ),
         })
 
+    # Keep a corpus-wide count of every binary-mapped control family, not only
+    # controls nested under a serialized Branch arm. This is keyed by content
+    # hash/local id so StreamingAssets and Persistent copies do not inflate
+    # the family census. The family set comes from the current-build mapping
+    # table; no mission or object allowlist participates.
+    typed_control_groups: dict[tuple[str, int], str] = {}
+    for digest, topology_result in topology_by_hash.items():
+        topology, _topology_diagnostic = topology_result
+        for action in topology.get("actions") or []:
+            if not isinstance(action, dict):
+                continue
+            action_name = safe_key(action.get("actionName"))
+            local_id = action.get("localId")
+            if action_name not in NATIVE_TYPED_CONTROL_ACTION_NAMES:
+                continue
+            if not isinstance(local_id, int):
+                continue
+            typed_control_groups[(digest, local_id)] = action_name
+    typed_control_family_counts = Counter(typed_control_groups.values())
+
     nested_controls = [
         control
         for row in rows
@@ -5599,6 +5636,11 @@ def _native_serialized_branch_inventory(
             for control in arm.get("nestedControls") or []
             for nested_arm in control.get("arms") or []
         ),
+        "typedControlGroupCount": len(typed_control_groups),
+        "typedControlFamilyCounts": dict(sorted(
+            typed_control_family_counts.items(),
+            key=lambda item: natural_key(item[0]),
+        )),
         "uniquePlaybackStoryKeyCount": len({
             story_key
             for row in rows

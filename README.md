@@ -131,6 +131,12 @@ or local source edits.
   active / 164 explicit inactive). The family schema is mapping-derived and
   reports 0 arm-schema gaps; the inventory stays context-only and refuses to
   guess order or ownership.
+  The same binary-driven decoder now covers `SwitchIntLarger` generically:
+  16 copied records across 12 original LevelScript paths (8 deduplicated
+  controls), with only `map01_lv001/2100280004.json` reaching the exact
+  `sm1l1m9` → `dlg_sm1l1m9_5` Story path. Its case targets are inactive, so no
+  new order edge is admitted; the WebUI exposes the complete family census
+  and shows `SwitchIntLarger: 8`.
   The same original-binary projector now exposes five
   `WaitForSecondsInTriggerVolume` controls as success/fail outcomes in two
   attached LevelScript files; waiting/current-action and next-tick delay paths

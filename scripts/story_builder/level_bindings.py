@@ -332,6 +332,16 @@ LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS = {
         "kind": "conditional_choice",
         "mappingId": "gameassembly-2026-08-02-switchint-execute-0x1849dcca0",
     },
+    # SwitchIntLarger.Execute is method index 35552 at VA 0x18765b770
+    # (RVA 0x765b770, file offset 0x7659d70) in the current original
+    # GameAssembly.  The body reads _caseValueList/_caseIDList/_defaultID,
+    # compares the value, and calls SetResultReservedID plus SetResultNextID
+    # on case/default paths.  The shared integer-switch decoder below admits
+    # only the exact serialized list/value-getter shape.
+    (0x04BE, 0x0C): {
+        "kind": "conditional_choice",
+        "mappingId": "gameassembly-2026-08-08-switchint-larger-execute-0x18765b770",
+    },
     (0x04BF, 0x0C): {
         "kind": "conditional_choice",
         "mappingId": "gameassembly-2026-08-02-switchstring-execute-0x18765ba00",
@@ -412,6 +422,7 @@ LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {
     (0x04B1, 0x0C): "StopLevelSeqLoopSegment",
     (0x04B2, 0x09): "StopLevelSequenceAction",
     (0x04BD, 0x0C): "SwitchInt",
+    (0x04BE, 0x0C): "SwitchIntLarger",
     (0x04BF, 0x0C): "SwitchString",
     (0x0495, 0x09): "Split",
     (0x0478, 0x09): "ShowDramaticPerformanceNewItemToast",
@@ -439,6 +450,21 @@ LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {
     (0x0465, 0x0A): "SetString",
     (0x0485, 0x0A): "ShowSceneDecorationNew",
     (0x048D, 0x0A): "ShowUIToast",
+}
+# Integer switch families share one serialized list/value-getter shape.  Keep
+# the family-specific output prefix and edge namespace in data so new
+# binary-validated variants do not require object-specific traversal code.
+LEVELSCRIPT_NATIVE_INTEGER_SWITCH_SPECS = {
+    (0x04BD, 0x0C): {
+        "actionName": "SwitchInt",
+        "fieldPrefix": "switch",
+        "edgePrefix": "SwitchInt",
+    },
+    (0x04BE, 0x0C): {
+        "actionName": "SwitchIntLarger",
+        "fieldPrefix": "switchIntLarger",
+        "edgePrefix": "SwitchIntLarger",
+    },
 }
 DEFAULT_ACTIONBASE_FORMATTER_REPORT = (
     ROOT / "reports" / "mission_order" / "levelscript_actionbase_formatter_names.json"
@@ -1329,6 +1355,9 @@ def _prepare_levelscript_native_control_context(
             tuple(detail.get("switchCaseActionLocalIds") or []),
             tuple(detail.get("switchCaseValues") or []),
             detail.get("switchDefaultActionLocalId"),
+            tuple(detail.get("switchIntLargerCaseActionLocalIds") or []),
+            tuple(detail.get("switchIntLargerCaseValues") or []),
+            detail.get("switchIntLargerDefaultActionLocalId"),
             tuple(detail.get("switchStringCaseActionLocalIds") or []),
             tuple(detail.get("switchStringCaseValues") or []),
             detail.get("switchStringDefaultActionLocalId"),
@@ -1444,15 +1473,18 @@ def _levelscript_native_action_successors(
         local_id = detail.get("whileDoActionLocalId")
         if isinstance(local_id, int) and local_id > 0:
             edges.append(("WhileAction.doAction", local_id))
-    elif pair == (0x04BD, 0x0C):
-        case_ids = detail.get("switchCaseActionLocalIds") or []
-        case_values = detail.get("switchCaseValues") or []
+    elif pair in LEVELSCRIPT_NATIVE_INTEGER_SWITCH_SPECS:
+        switch_spec = LEVELSCRIPT_NATIVE_INTEGER_SWITCH_SPECS[pair]
+        field_prefix = switch_spec["fieldPrefix"]
+        edge_prefix = switch_spec["edgePrefix"]
+        case_ids = detail.get(f"{field_prefix}CaseActionLocalIds") or []
+        case_values = detail.get(f"{field_prefix}CaseValues") or []
         for index, (case_value, local_id) in enumerate(zip(case_values, case_ids)):
             if isinstance(local_id, int) and local_id > 0:
-                edges.append((f"SwitchInt.case[{index}]={case_value}", local_id))
-        default_id = detail.get("switchDefaultActionLocalId")
+                edges.append((f"{edge_prefix}.case[{index}]={case_value}", local_id))
+        default_id = detail.get(f"{field_prefix}DefaultActionLocalId")
         if isinstance(default_id, int) and default_id > 0:
-            edges.append(("SwitchInt.default", default_id))
+            edges.append((f"{edge_prefix}.default", default_id))
     elif pair == (0x04BF, 0x0C):
         case_ids = detail.get("switchStringCaseActionLocalIds") or []
         case_values = detail.get("switchStringCaseValues") or []
@@ -1552,8 +1584,9 @@ def _levelscript_native_control_paths_to_record(
     graph uses only authored ``ActionHeader.nextId``, ``ActionBase.nextId``,
     the current-build ordered ``Branch._idList``, ``Split.actions`` list,
     current-build ``IfElseAction`` true/false fields, and current-build
-    ``SwitchInt``/``SwitchString`` case/default lists, ``WhileAction`` body,
-    and same-script ``WaitForSecondsInTriggerVolume`` success/fail ids. It
+    integer-switch (``SwitchInt``/``SwitchIntLarger``) and
+    ``SwitchString`` case/default lists, ``WhileAction`` body, and same-script
+    ``WaitForSecondsInTriggerVolume`` success/fail ids. It
     deliberately does not use record adjacency or infer a mission owner from
     an event name/trigger slot. Callers scanning one file should reuse the
     prepared context so typed payloads and duplicate-id validation are decoded
@@ -1653,11 +1686,19 @@ def _levelscript_native_control_paths_to_record(
         getter_local_id = None
         if pair == (0x00FF, 0x0B):
             getter_local_id = detail.get("conditionGetterLocalId")
-        elif pair in {(0x04BD, 0x0C), (0x04BF, 0x0C)}:
+        elif pair in {
+            (0x04BD, 0x0C),
+            (0x04BE, 0x0C),
+            (0x04BF, 0x0C),
+        }:
             getter_field = (
                 "switchValueGetterLocalId"
                 if pair == (0x04BD, 0x0C)
-                else "switchStringValueGetterLocalId"
+                else (
+                    "switchIntLargerValueGetterLocalId"
+                    if pair == (0x04BE, 0x0C)
+                    else "switchStringValueGetterLocalId"
+                )
             )
             getter_local_id = detail.get(getter_field)
         if isinstance(getter_local_id, int):
@@ -1736,11 +1777,13 @@ def _levelscript_native_control_paths_to_record(
         elif pair in {
             (0x00FF, 0x0B),
             (0x04BD, 0x0C),
+            (0x04BE, 0x0C),
             (0x04BF, 0x0C),
         }:
             inline_param = (
                 detail.get("conditionParam")
                 or detail.get("switchValueParam")
+                or detail.get("switchIntLargerValueParam")
                 or detail.get("switchStringValueParam")
                 or {}
             )
@@ -2247,6 +2290,11 @@ def decode_levelscript_native_action_topology(
         "switchCaseValues",
         "switchCaseActionLocalIds",
         "switchDefaultActionLocalId",
+        "switchIntLargerValueGetterLocalId",
+        "switchIntLargerValueParam",
+        "switchIntLargerCaseValues",
+        "switchIntLargerCaseActionLocalIds",
+        "switchIntLargerDefaultActionLocalId",
         "switchStringValueGetterLocalId",
         "switchStringValueParam",
         "switchStringCaseValues",
