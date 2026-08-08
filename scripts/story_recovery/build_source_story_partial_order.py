@@ -42,6 +42,7 @@ from story_builder.mission_recovery import (  # noqa: E402
     scene_order_infer_kind,
 )
 from story_builder.level_bindings import (  # noqa: E402
+    LEVELSCRIPT_NATIVE_ACTION_NAMES,
     LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS,
     LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES,
     build_levelscript_action_story_occurrences,
@@ -58,7 +59,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v40"
+SCHEMA = "sourceStoryPartialOrder.v41"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -73,14 +74,20 @@ NATIVE_LEVELSCRIPT_ROOTS = (
     / "Data" / "Json" / "LevelScriptData",
 )
 NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA = (
-    "nativeSerializedBranchInventory.v8"
+    "nativeSerializedBranchInventory.v9"
 )
-NATIVE_TYPED_CONTROL_ACTION_NAMES = frozenset({
-    "Split",
-    "IfElseAction",
-    "SwitchInt",
-    "SwitchString",
-})
+
+# The control family set is derived from the current-build native mapping and
+# action-name table.  It intentionally contains no mission, file, or object
+# identifiers.  Adding a binary-validated control family to
+# LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS automatically brings it into
+# this corpus census; an unreviewed action remains ordinary topology and is
+# never promoted by this audit.
+NATIVE_TYPED_CONTROL_ACTION_NAMES = frozenset(
+    LEVELSCRIPT_NATIVE_ACTION_NAMES[pair]
+    for pair in LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS
+    if pair in LEVELSCRIPT_NATIVE_ACTION_NAMES
+)
 READING_POPUP_TABLE_PATH = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Table" / "ReadingPopUpTable.json"
@@ -3999,6 +4006,8 @@ def _native_branch_kind(edge: str) -> str:
         return "switch"
     if edge.startswith("SwitchString.case[") or edge == "SwitchString.default":
         return "switch"
+    if edge == "WhileAction.doAction":
+        return "while"
     return ""
 
 
@@ -4007,22 +4016,77 @@ def _native_branch_runtime_mapping(
     arms: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """Resolve a typed branch family to its installed-binary runtime mapping."""
-    pair: tuple[int, int] | None = None
-    if branch_kind == "splitFanout":
-        pair = (0x0495, 0x09)
-    elif branch_kind == "ifElse":
-        pair = (0x00FF, 0x0B)
-    elif branch_kind == "switch":
+    family_by_kind = {
+        "splitFanout": "Split",
+        "ifElse": "IfElseAction",
+        "switch": "",
+        "while": "WhileAction",
+    }
+    action_name = family_by_kind.get(branch_kind, "")
+    if branch_kind == "switch":
         edges = {
             safe_key(arm.get("edge"))
             for arm in arms
             if isinstance(arm, dict)
         }
         if edges and all(edge.startswith("SwitchInt.") for edge in edges):
-            pair = (0x04BD, 0x0C)
+            action_name = "SwitchInt"
         elif edges and all(edge.startswith("SwitchString.") for edge in edges):
-            pair = (0x04BF, 0x0C)
-    return dict(LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS.get(pair) or {})
+            action_name = "SwitchString"
+    for pair, name in LEVELSCRIPT_NATIVE_ACTION_NAMES.items():
+        if name != action_name:
+            continue
+        mapping = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS.get(pair)
+        if mapping:
+            return dict(mapping)
+    return {}
+
+
+# Serialized arm schemas are family-level declarations, not per-object
+# overrides.  The fields are emitted by the original LevelScript decoder and
+# the edge labels match the installed successor decoder in level_bindings.py.
+# Keeping this table data-driven makes the projection reusable for every
+# serialized action map and makes a missing field visible instead of silently
+# dropping a control.
+NATIVE_CONTROL_ARM_SCHEMAS: dict[str, dict[str, Any]] = {
+    "Branch": {
+        "kind": "indexed",
+        "field": "branchSequenceActionLocalIds",
+        "edgePrefix": "Branch.sequence",
+    },
+    "Split": {
+        "kind": "indexed",
+        "field": "splitActionLocalIds",
+        "edgePrefix": "Split.actions",
+    },
+    "IfElseAction": {
+        "kind": "fields",
+        "fields": (
+            ("trueActionLocalId", "IfElseAction.trueAction"),
+            ("falseActionLocalId", "IfElseAction.falseAction"),
+        ),
+    },
+    "SwitchInt": {
+        "kind": "switch",
+        "caseValues": "switchCaseValues",
+        "caseTargets": "switchCaseActionLocalIds",
+        "defaultField": "switchDefaultActionLocalId",
+        "edgePrefix": "SwitchInt.case",
+        "defaultEdge": "SwitchInt.default",
+    },
+    "SwitchString": {
+        "kind": "switch",
+        "caseValues": "switchStringCaseValues",
+        "caseTargets": "switchStringCaseActionLocalIds",
+        "defaultField": "switchStringDefaultActionLocalId",
+        "edgePrefix": "SwitchString.case",
+        "defaultEdge": "SwitchString.default",
+    },
+    "WhileAction": {
+        "kind": "fields",
+        "fields": (("whileDoActionLocalId", "WhileAction.doAction"),),
+    },
+}
 
 
 def _serialized_native_control_arm_slots(
@@ -4036,38 +4100,57 @@ def _serialized_native_control_arm_slots(
     """
     detail = action.get("controlDetail") or {}
     action_name = safe_key(action.get("actionName"))
+    schema = NATIVE_CONTROL_ARM_SCHEMAS.get(action_name)
+    if not schema:
+        return []
     slots: list[dict[str, Any]] = []
-    if action_name == "Split":
+    if schema.get("kind") == "indexed":
+        field = safe_key(schema.get("field"))
+        values = detail.get(field)
+        if not isinstance(values, list):
+            return []
+        edge_prefix = safe_key(schema.get("edgePrefix"))
         slots.extend({
-            "edge": f"Split.actions[{index}]",
+            "edge": f"{edge_prefix}[{index}]",
             "entryLocalId": local_id,
             "serializedIndex": index,
-        } for index, local_id in enumerate(detail.get("splitActionLocalIds") or []))
-    elif action_name == "IfElseAction":
+            "serializedField": field,
+            "serializedFieldPresent": True,
+        } for index, local_id in enumerate(values))
+    elif schema.get("kind") == "fields":
         slots.extend({
             "edge": edge,
             "entryLocalId": detail.get(field),
             "serializedField": field,
             "serializedFieldPresent": field in detail,
-        } for field, edge in (
-            ("trueActionLocalId", "IfElseAction.trueAction"),
-            ("falseActionLocalId", "IfElseAction.falseAction"),
-        ))
-    elif action_name in {"SwitchInt", "SwitchString"}:
-        prefix = "switch" if action_name == "SwitchInt" else "switchString"
-        case_ids = detail.get(f"{prefix}CaseActionLocalIds") or []
-        case_values = detail.get(f"{prefix}CaseValues") or []
-        slots.extend({
-            "edge": f"{action_name}.case[{index}]={case_value}",
-            "entryLocalId": local_id,
-            "serializedIndex": index,
-            "caseValue": case_value,
-        } for index, (case_value, local_id) in enumerate(zip(case_values, case_ids)))
+        } for field, edge in schema.get("fields") or ())
+    elif schema.get("kind") == "switch":
+        case_ids = detail.get(safe_key(schema.get("caseTargets")))
+        case_values = detail.get(safe_key(schema.get("caseValues")))
+        case_ids = case_ids if isinstance(case_ids, list) else []
+        case_values = case_values if isinstance(case_values, list) else []
+        edge_prefix = safe_key(schema.get("edgePrefix"))
+        for index in range(max(len(case_values), len(case_ids))):
+            has_value = index < len(case_values)
+            has_target = index < len(case_ids)
+            case_value = case_values[index] if has_value else None
+            local_id = case_ids[index] if has_target else None
+            slots.append({
+                "edge": f"{edge_prefix}[{index}]={case_value}",
+                "entryLocalId": local_id,
+                "serializedIndex": index,
+                "caseValue": case_value,
+                "serializedField": safe_key(schema.get("caseTargets")),
+                "serializedFieldPresent": has_target and has_value,
+                "serializedCaseValuePresent": has_value,
+                "serializedTargetPresent": has_target,
+            })
+        default_field = safe_key(schema.get("defaultField"))
         slots.append({
-            "edge": f"{action_name}.default",
-            "entryLocalId": detail.get(f"{prefix}DefaultActionLocalId"),
-            "serializedField": f"{prefix}DefaultActionLocalId",
-            "serializedFieldPresent": f"{prefix}DefaultActionLocalId" in detail,
+            "edge": safe_key(schema.get("defaultEdge")),
+            "entryLocalId": detail.get(default_field),
+            "serializedField": default_field,
+            "serializedFieldPresent": default_field in detail,
         })
     return slots
 
@@ -4256,8 +4339,6 @@ def _native_serialized_branch_arm_projection(
             if safe_key(nested.get("actionName")) not in NATIVE_TYPED_CONTROL_ACTION_NAMES:
                 continue
             slots = _serialized_native_control_arm_slots(nested)
-            if not slots:
-                continue
             control = _compact_native_action(nested)
             detail = nested.get("controlDetail") or {}
             if isinstance(detail, dict):
@@ -4266,10 +4347,35 @@ def _native_serialized_branch_arm_projection(
             if isinstance(predicate, dict):
                 control["predicate"] = dict(predicate)
             control["arms"] = []
+            if not slots:
+                # A mapped control with no decodable arm list is still useful
+                # evidence: it marks a schema/decoder gap rather than
+                # disappearing from the branch topology.
+                control.update({
+                    "serializedArmCount": 0,
+                    "armSchemaStatus": "unavailable_fail_closed",
+                    "armSchemaDiagnostic": {
+                        "validator": "nativeSerializedControlArmSchema",
+                        "gate": "mappedControlArmFieldsPresent",
+                        "actionName": safe_key(nested.get("actionName")),
+                        "localId": local_id,
+                        "expected": "family schema fields decodable",
+                        "actual": {
+                            "controlDetailFields": sorted(
+                                detail.keys()
+                            ) if isinstance(detail, dict) else [],
+                        },
+                    },
+                })
+                controls.append(control)
+                continue
             for slot in slots:
                 relation = safe_key(slot.get("edge"))
                 target = slot.get("entryLocalId")
-                status, terminal = target_status(local_id, relation, target)
+                if slot.get("serializedFieldPresent") is False:
+                    status, terminal = "unavailable_fail_closed", None
+                else:
+                    status, terminal = target_status(local_id, relation, target)
                 reached = downstream(target)
                 action_names, record_classes = reachable_semantics(reached)
                 playback_local_ids, playback_keys = playback_projection(reached)
@@ -4287,6 +4393,7 @@ def _native_serialized_branch_arm_projection(
                     nested_arm["runtimeTerminal"] = terminal
                 control["arms"].append(nested_arm)
             control["serializedArmCount"] = len(control["arms"])
+            control["armSchemaStatus"] = "exact_complete"
             control["reachableControlLocalIds"] = sorted({
                 child_id
                 for nested_arm in control["arms"]
@@ -5374,6 +5481,16 @@ def _native_serialized_branch_inventory(
             ),
         })
 
+    nested_controls = [
+        control
+        for row in rows
+        for arm in row.get("arms") or []
+        for control in arm.get("nestedControls") or []
+    ]
+    nested_control_family_counts = Counter(
+        safe_key(control.get("actionName")) or "unknown"
+        for control in nested_controls
+    )
     summary = {
         "sourcePathCount": len(file_rows),
         "uniqueContentFileCount": len(hash_to_paths),
@@ -5388,10 +5505,14 @@ def _native_serialized_branch_inventory(
         "multiPlaybackBranchCount": sum(
             int(row.get("playbackArmCount") or 0) >= 2 for row in rows
         ),
-        "nestedControlCount": sum(
-            len(arm.get("nestedControls") or [])
-            for row in rows
-            for arm in row.get("arms") or []
+        "nestedControlCount": len(nested_controls),
+        "nestedControlFamilyCounts": dict(sorted(
+            nested_control_family_counts.items(),
+            key=lambda item: natural_key(item[0]),
+        )),
+        "nestedControlArmSchemaUnavailableCount": sum(
+            control.get("armSchemaStatus") == "unavailable_fail_closed"
+            for control in nested_controls
         ),
         "nestedPlaybackArmCount": sum(
             int(control.get("playbackArmCount") or 0)
@@ -6667,6 +6788,12 @@ def build_report(
         "nativeSerializedNestedControlCount": int(
             inventory_summary.get("nestedControlCount") or 0
         ),
+        "nativeSerializedNestedControlFamilyCounts": dict(
+            inventory_summary.get("nestedControlFamilyCounts") or {}
+        ),
+        "nativeSerializedNestedControlArmSchemaUnavailableCount": int(
+            inventory_summary.get("nestedControlArmSchemaUnavailableCount") or 0
+        ),
         "nativeSerializedNestedPlaybackArmCount": int(
             inventory_summary.get("nestedPlaybackArmCount") or 0
         ),
@@ -6829,6 +6956,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"nested slots (`{summary.get('nativeSerializedNestedExactActiveArmCount', 0)}` active, "
         f"`{summary.get('nativeSerializedNestedInactiveArmCount', 0)}` inactive, "
         f"`{summary.get('nativeSerializedNestedUnavailableArmCount', 0)}` unavailable); "
+        f"families `{summary.get('nativeSerializedNestedControlFamilyCounts', {})}`; "
+        f"`{summary.get('nativeSerializedNestedControlArmSchemaUnavailableCount', 0)}` "
+        "mapped controls have an unavailable arm schema; "
         f"`{summary.get('nativeSerializedBranchPredicateConflictCount', 0)}` "
         "predicate-join conflicts (conflicts fail closed)",
         f"- related native action graphs: `{summary.get('nativeRelatedActionTopologies', 0)}` "

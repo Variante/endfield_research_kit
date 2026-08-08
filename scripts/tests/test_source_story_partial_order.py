@@ -3,7 +3,9 @@ from __future__ import annotations
 import unittest
 
 from scripts.story_recovery.build_source_story_partial_order import (
+    NATIVE_TYPED_CONTROL_ACTION_NAMES,
     _native_serialized_branch_arm_projection,
+    _serialized_native_control_arm_slots,
     _native_ordered_sequence_contexts,
 )
 
@@ -82,6 +84,35 @@ class NativeOrderedSequenceContextTests(unittest.TestCase):
 
 
 class NativeSerializedBranchProjectionTests(unittest.TestCase):
+    def test_control_families_come_from_binary_mapping(self) -> None:
+        self.assertIn("Branch", NATIVE_TYPED_CONTROL_ACTION_NAMES)
+        self.assertIn("WhileAction", NATIVE_TYPED_CONTROL_ACTION_NAMES)
+
+    def test_loop_control_uses_family_schema_without_object_override(self) -> None:
+        slots = _serialized_native_control_arm_slots({
+            "actionName": "WhileAction",
+            "controlDetail": {"whileDoActionLocalId": 42},
+        })
+        self.assertEqual(slots, [{
+            "edge": "WhileAction.doAction",
+            "entryLocalId": 42,
+            "serializedField": "whileDoActionLocalId",
+            "serializedFieldPresent": True,
+        }])
+
+    def test_switch_cardinality_mismatch_is_visible_and_fail_closed(self) -> None:
+        slots = _serialized_native_control_arm_slots({
+            "actionName": "SwitchInt",
+            "controlDetail": {
+                "switchCaseValues": [1, 2],
+                "switchCaseActionLocalIds": [30],
+                "switchDefaultActionLocalId": 40,
+            },
+        })
+        self.assertEqual(slots[0]["entryLocalId"], 30)
+        self.assertFalse(slots[1]["serializedFieldPresent"])
+        self.assertIsNone(slots[1]["entryLocalId"])
+
     def topology(self) -> dict:
         return {
             "actions": [

@@ -181,6 +181,13 @@ Rebuild Story data after editing overrides.
   topology, shared downstream actions, and related hash-addressed original
   files remain visibly distinct; non-Story arms never imply Story ownership,
   chronology, or mission membership.
+- Corpus serialized-Branch diagnostics also summarize mapping-derived nested
+  controls: each `Branch`, `IfElseAction`, `SwitchInt`, `SwitchString`,
+  `Split`, or `WhileAction` retains its serialized arms, exact reachable
+  playback keys, and binary predicate when proven. Missing family fields are
+  shown as fail-closed schema gaps. Multi-playback nested controls are
+  displayed as conditional context; they never become file-order edges or
+  ownership claims.
 - Mission Pipeline includes every recovered native branch placement. Late
   Story-only shells receive the full source-order row, while a missing Story
   namespace becomes a labeled variant aggregate only when its generated bundle
