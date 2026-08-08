@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 607 (490 MissionRuntime + 116 Story-only recovery shells + 1 declared Story-variant aggregate) |
+| Pipeline missions | 608 (490 MissionRuntime + 115 offline recovery shells + 1 source-order shell + 1 Story-branch shell + 1 declared Story-variant aggregate) |
 | Unique Story files | 5,564 |
 | Connected files | 4,237 (76.1%) |
 | Files with a normalized trigger/context route | 4,462 (80.2%) |
@@ -62,7 +62,7 @@ Latest CN reports:
 | Receiver Story context projection | 34 mission payloads / 96 exact receiver-to-Story intersections / 156 mission Story keys; every row retains compact binary receiver contracts and related original-file hashes; all ownership, activation, playback, and order flags remain false |
 | Story-order override/OCR cross-reference | 1,524 strict source edges across 216 source missions; manual override 940 agree / 253 disagree / 331 uncovered; OCR 406 / 10 / 1,108; 12 conflicts; all 216 pipeline destinations carry the per-mission diagnostic block, including one graph-neutral source-order shell |
 | Source-order original-file attachment | 275 pipeline missions carry 3,574 hash-validated source-order related-file records across 1,913 distinct originals; 215 of the 216 cross-reference destinations have at least one original file, while `map01_lv002_env` remains generated-only; binary/metadata files are context authority, never ownership or order evidence |
-| Authored Story-branch source catalog | 180 pipeline missions carry 471 hash-validated branch-source records across 467 distinct originals; `map01_lv002_env` contributes three exact DialogTree TextAssets even though its strict source-order destination remains generated-only; branch-source files are definition context, never chronology, activation, or ownership evidence |
+| Authored Story-branch source catalog | 190 pipeline missions carry 524 hash-validated branch/validation-source records across 519 distinct originals; this includes the malformed `dlg_e1m3_2` TextAsset plus its binary context, while `map01_lv002_env` contributes three exact DialogTree TextAssets even though its strict source-order destination remains generated-only; `map01_lv005` is the graph-neutral Story-branch shell; branch-source files are definition context, never chronology, activation, or ownership evidence |
 | Authored mission-to-LevelScript task dependencies | 2 exact `(level, script, task)` tuples across 2 missions; 0 unresolved; each joined to MissionRuntime, LevelScriptData, and ScriptTaskExtraInfoTable |
 | Binary public-state entry closure | 2 server-derived handlers: full-scene `SC_SELF_SCENE_INFO` snapshots and incremental `SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY`; 4 direct public-state setter callers split into 2 zero initializers and 2 server-parameter writers |
 | Native cross-system consumer census | 500,976 mapped methods / 7,214 unambiguous family targets / 17 reviewed callers; the 4 mission-state→DynamicScene seeds close over 23 methods / 30 direct edges / depth 2, with 1 reviewed IL2CPP class-init indirect site, 0 LevelScript, 0 Story, and 0 unreviewed; the 174-type managed mission/quest census finds 2 reviewed cross-system callers and 0 mission+LevelScript signatures; its general callable-carrier pass resolves 13 fields, 5 typed entry methods, and 5 family-local native bindings with 0 mission+LevelScript bindings |
@@ -238,8 +238,11 @@ in five payloads.
   records, and 1,913 distinct files. The strict source-order destination for
   `map01_lv002_env` remains generated-only, but its authored branch records now
   attach three hash-validated DialogTree TextAssets as definition context. The
-  WebUI labels both boundaries and exposes these files; no OCR/manual ordering
-  is evidence.
+  same catalog retains bounded branch-validation sources, including the
+  malformed `dlg_e1m3_2` TextAsset and its binary context, without promoting
+  that failed carrier. The missing `map01_lv005` MissionRuntime namespace is
+  exposed as a graph-neutral Story-branch shell with its exact authored source
+  file; no OCR/manual ordering is evidence.
 - Native branch grouping now uses mission Story files only as anchors, then
   retains every exact Story-bearing arm under the same serialized event and
   branch. This generically restores five cross-boundary references across four
