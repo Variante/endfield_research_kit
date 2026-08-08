@@ -11475,6 +11475,9 @@ def publish_source_story_partial_order(
         "schema": report.get("_schema"),
         "language": language,
         "summary": order_summary,
+        "nativeSerializedBranchInventory": copy.deepcopy(
+            report.get("nativeSerializedBranchInventory") or {}
+        ),
         "evidencePolicy": report.get("evidencePolicy") or {},
         "reportJson": repo_path(report_json),
         "reportMarkdown": repo_path(report_markdown),
@@ -11504,6 +11507,10 @@ def _update_story_order_summary(
         "storyOrderNativeOrderedSequenceCount": "nativeOrderedSequenceCount",
         "storyOrderNativeOrderedSequenceContextCount": "nativeOrderedSequenceContextCount",
         "storyOrderNativeRelatedActionTopologyCount": "nativeRelatedActionTopologyCount",
+        "storyOrderNativeSerializedBranchGroupCount": "nativeSerializedBranchGroupCount",
+        "storyOrderNativeSerializedBranchArmCount": "nativeSerializedBranchArmCount",
+        "storyOrderNativeSerializedPlaybackArmCount": "nativeSerializedPlaybackArmCount",
+        "storyOrderNativeSerializedMultiPlaybackBranchCount": "nativeSerializedMultiPlaybackBranchCount",
         "storyOrderNativeNamedPredicateCount": "nativeNamedPredicateCount",
         "storyOrderNativeInlinePredicateCount": "nativeInlinePredicateCount",
         "storyOrderNativeSemanticPredicateCount": "nativeSemanticPredicateCount",
@@ -12913,6 +12920,10 @@ def main() -> int:
             f"{summary.get('nativeControlPathTransitionActionEndpoints', 0)} named transition endpoints, "
             f"{summary.get('nativeOrderedSequences', 0)} native ordered sequences, "
             f"{summary.get('nativeOrderedSequenceContexts', 0)} native sequence contexts, "
+            f"{summary.get('nativeSerializedBranchGroupCount', 0)} corpus serialized Branch groups / "
+            f"{summary.get('nativeSerializedBranchArmCount', 0)} slots / "
+            f"{summary.get('nativeSerializedPlaybackArmCount', 0)} playback arms / "
+            f"{summary.get('nativeSerializedMultiPlaybackBranchCount', 0)} multi-playback groups, "
             f"{summary.get('nativeRelatedActionTopologies', 0)} related action graphs, "
             f"{summary.get('nativeNamedPredicates', 0)} named predicates, "
             f"{summary.get('nativeInlinePredicates', 0)} inline predicates, "
