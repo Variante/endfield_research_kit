@@ -1444,6 +1444,162 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             ],
         )
 
+    def test_publish_projects_exact_receiver_story_intersection_without_ownership(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
+            mission_root = Path(tmp)
+            mission_path = mission_root / "fixture_mission.json"
+            mission_path.write_text(
+                __import__("json").dumps({
+                    "mission": {"id": "fixture_mission"},
+                    "storyOrder": {
+                        "nodes": [{"key": "story_a"}, {"key": "story_b"}],
+                        "directEdges": [],
+                        "summary": {"strongEdgeCount": 0},
+                    },
+                }),
+                encoding="utf-8",
+            )
+            index = {
+                "missions": [{"id": "fixture_mission"}],
+                "storyCoverage": {"missionlessNativeRuntimeNodes": []},
+            }
+            base_row = {
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "storyKeys": ["story_a", "story_external"],
+                "storyKinds": ["cutscene", "radio"],
+                "eventNames": ["LevelEvent_OnCustomEvent"],
+                "listenerHeaderLocalIds": [11],
+                "activationClass": "same_with_active_binary_active_gate",
+                "missionOwnerStatus": "unresolved",
+                "levelScript": {
+                    "scriptIdVerified": True,
+                    "serializedMemberCount": 27,
+                    "actionMapRecordCount": 5,
+                    "startTypeName": "SameWithActive",
+                    "activeShapeListStatus": "decoded_unique",
+                    "activeShapeListCount": 1,
+                    "taskMapStatus": "present",
+                    "taskMapCount": 1,
+                    "activeShapeList": {
+                        "followingFields": {"endTypeName": "Manual"},
+                    },
+                },
+                "activePhaseReceiverControl": {
+                    "schema": "exactActivePhaseReceiver.v1",
+                    "status": "validated",
+                    "classification": "registered_active_phase_story_receivers",
+                    "allReceiversActivePhase": True,
+                    "listenerHeaderCount": 1,
+                    "resolvedHeaderCount": 1,
+                    "receiverHeaders": [{
+                        "listenerHeaderLocalId": 11,
+                        "headerName": "LevelEvent_OnCustomEvent",
+                        "triggerActiveDuring": 0,
+                        "nextActionLocalId": 12,
+                    }],
+                    "topologySchema": "levelScriptNativeActionTopology.v4",
+                    "topologyStatus": "exact_complete_action_map",
+                    "runtimeFlow": {
+                        "setupRegisterTriggerCallCount": 1,
+                        "activePhaseEnableCallOffsets": [42],
+                    },
+                    "evidenceBoundary": "binary receiver only",
+                },
+                "clientActiveRequestControl": {
+                    "schema": "exactClientActiveRequest.v1",
+                    "status": "validated",
+                    "classification": "client_runtime_active_request",
+                    "levelScriptType": 0,
+                    "levelScriptTypeName": "World",
+                    "clientProducesActiveRequest": True,
+                    "requiresActiveAreaGate": True,
+                    "entryPublicState": "Enabled",
+                    "spatialGateStatus": "validated_runtime_position_dependent",
+                    "runtimePath": ["Enabled", "SendLevelScriptSetActive(true)"],
+                    "evidenceBoundary": "binary request only",
+                },
+                "startRuntimePolicy": {
+                    "schema": "levelScriptStartPolicy.v1",
+                    "classification": "same_with_active_enters_prestart_when_active",
+                    "validation": {"status": "validated"},
+                    "evidenceBoundary": "binary start only",
+                },
+                "relatedOriginalFiles": [
+                    {
+                        "kind": "levelscript",
+                        "sourceFile": "source/1001.json",
+                        "relationship": "exact receiver",
+                        "sha256": "a" * 64,
+                    },
+                    {
+                        "kind": "original_game_binary",
+                        "sourceFile": "GameAssembly.dll",
+                        "relationship": "binary receiver contract",
+                        "sha256": "b" * 64,
+                    },
+                ],
+            }
+            report = {
+                "schemaVersion": frontier.SCHEMA,
+                "counts": {},
+                "rows": [
+                    base_row,
+                    {**base_row, "scriptId": "1002"},
+                    {**base_row, "scriptId": "1003", "storyKeys": ["elsewhere"]},
+                ],
+            }
+            frontier.publish_to_pipeline_index(
+                index,
+                report,
+                mission_root=mission_root,
+            )
+            mission = __import__("json").loads(
+                mission_path.read_text(encoding="utf-8")
+            )
+
+        contexts = mission["storyOrder"]["nativeReceiverStoryContexts"]
+        self.assertEqual(2, len(contexts))
+        self.assertEqual(["story_a"], contexts[0]["missionStoryKeys"])
+        self.assertEqual(
+            ["story_external"],
+            contexts[0]["externalStoryKeys"],
+        )
+        self.assertEqual(
+            "native_receiver_story_context",
+            contexts[0]["relation"],
+        )
+        self.assertFalse(contexts[0]["ownership"])
+        self.assertFalse(contexts[0]["activation"])
+        self.assertFalse(contexts[0]["storyPlayback"])
+        self.assertFalse(contexts[0]["orderEvidence"])
+        self.assertEqual(
+            "validated",
+            contexts[0]["receiverEvidence"]["activePhaseReceiver"]["status"],
+        )
+        self.assertEqual(
+            {"GameAssembly.dll", "source/1001.json"},
+            {
+                row["sourceFile"]
+                for row in contexts[0]["relatedOriginalFiles"]
+            },
+        )
+        self.assertEqual(
+            2,
+            mission["storyOrder"]["summary"]["nativeReceiverStoryContextCount"],
+        )
+        self.assertEqual(
+            1,
+            mission["storyOrder"]["summary"]["nativeReceiverStoryContextStoryCount"],
+        )
+        self.assertEqual(
+            2,
+            index["missions"][0]["storyOrderNativeReceiverStoryContextCount"],
+        )
+        self.assertEqual([], mission["storyOrder"]["directEdges"])
+
     def test_task_source_annotations_require_exact_keys(self) -> None:
         task_map = {
             "tasks": [

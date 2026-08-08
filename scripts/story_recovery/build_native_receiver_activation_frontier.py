@@ -176,6 +176,185 @@ def safe_text(value: Any) -> str:
     return str(value if value is not None else "").strip()
 
 
+def _story_order_keys(story_order: dict[str, Any]) -> set[str]:
+    """Read only exact Story node keys from a published order row."""
+    return {
+        safe_text(node if isinstance(node, str) else node.get("key"))
+        for node in story_order.get("nodes") or []
+        if (isinstance(node, str) and safe_text(node))
+        or (isinstance(node, dict) and safe_text(node.get("key")))
+    }
+
+
+def _receiver_related_files(row: dict[str, Any]) -> list[dict[str, str]]:
+    """Keep the exact original-file evidence attached to a compact context row."""
+    related: dict[tuple[str, str], dict[str, str]] = {}
+    for item in row.get("relatedOriginalFiles") or []:
+        if not isinstance(item, dict):
+            continue
+        source_file = safe_text(item.get("sourceFile"))
+        if not source_file:
+            continue
+        normalized = source_file.replace("\\", "/")
+        related[(normalized, safe_text(item.get("relationship")))] = {
+            "kind": safe_text(item.get("kind")),
+            "sourceFile": normalized,
+            "relationship": safe_text(item.get("relationship")),
+            "sha256": safe_text(item.get("sha256")),
+        }
+    return [
+        related[key]
+        for key in sorted(related)
+    ]
+
+
+def _receiver_native_evidence_context(row: dict[str, Any]) -> dict[str, Any]:
+    """Compact the binary-validated receiver contract for mission-card display."""
+    levelscript = row.get("levelScript") or {}
+    active = row.get("activePhaseReceiverControl") or {}
+    request = row.get("clientActiveRequestControl") or {}
+    start_policy = row.get("startRuntimePolicy") or {}
+    active_shape = levelscript.get("activeShapeList") or {}
+    headers = [
+        {
+            "listenerHeaderLocalId": header.get("listenerHeaderLocalId"),
+            "headerName": safe_text(header.get("headerName")),
+            "triggerActiveDuring": header.get("triggerActiveDuring"),
+            "nextActionLocalId": header.get("nextActionLocalId"),
+        }
+        for header in active.get("receiverHeaders") or []
+        if isinstance(header, dict)
+    ]
+    return {
+        "levelScript": {
+            "scriptIdVerified": bool(levelscript.get("scriptIdVerified")),
+            "serializedMemberCount": levelscript.get("serializedMemberCount"),
+            "actionMapRecordCount": levelscript.get("actionMapRecordCount"),
+            "startTypeName": safe_text(levelscript.get("startTypeName")),
+            "endTypeName": safe_text(
+                (active_shape.get("followingFields") or {}).get("endTypeName")
+            ),
+            "activeShapeListStatus": safe_text(
+                levelscript.get("activeShapeListStatus")
+            ),
+            "activeShapeListCount": levelscript.get("activeShapeListCount"),
+            "taskMapStatus": safe_text(levelscript.get("taskMapStatus")),
+            "taskMapCount": levelscript.get("taskMapCount"),
+        },
+        "activePhaseReceiver": {
+            "schema": safe_text(active.get("schema")),
+            "status": safe_text(active.get("status")),
+            "classification": safe_text(active.get("classification")),
+            "allReceiversActivePhase": bool(
+                active.get("allReceiversActivePhase")
+            ),
+            "listenerHeaderCount": active.get("listenerHeaderCount"),
+            "resolvedHeaderCount": active.get("resolvedHeaderCount"),
+            "receiverHeaders": headers,
+            "topologySchema": safe_text(active.get("topologySchema")),
+            "topologyStatus": safe_text(active.get("topologyStatus")),
+            "runtimeFlow": {
+                key: active.get("runtimeFlow", {}).get(key)
+                for key in (
+                    "setupRegisterTriggerCallCount",
+                    "setupRegisterTriggerCallOffsets",
+                    "activePhaseEnableCallOffsets",
+                    "activeBeginStateValue",
+                    "activeBeginSetterOffsets",
+                    "activePhaseEnableBetweenStateSetters",
+                )
+                if active.get("runtimeFlow", {}).get(key) not in (None, [], {})
+            },
+        },
+        "clientActiveRequest": {
+            "schema": safe_text(request.get("schema")),
+            "status": safe_text(request.get("status")),
+            "classification": safe_text(request.get("classification")),
+            "levelScriptType": request.get("levelScriptType"),
+            "levelScriptTypeName": safe_text(request.get("levelScriptTypeName")),
+            "clientProducesActiveRequest": bool(
+                request.get("clientProducesActiveRequest")
+            ),
+            "requiresActiveAreaGate": bool(request.get("requiresActiveAreaGate")),
+            "entryPublicState": request.get("entryPublicState"),
+            "spatialGateStatus": safe_text(request.get("spatialGateStatus")),
+            "runtimePath": [
+                safe_text(value)
+                for value in request.get("runtimePath") or []
+                if safe_text(value)
+            ],
+        },
+        "startRuntimePolicy": {
+            "schema": safe_text(start_policy.get("schema")),
+            "classification": safe_text(start_policy.get("classification")),
+            "validation": (start_policy.get("validation") or {}).get("status"),
+        },
+        "binaryBoundary": safe_text(
+            active.get("evidenceBoundary")
+            or request.get("evidenceBoundary")
+            or start_policy.get("evidenceBoundary")
+        ),
+    }
+
+
+def _receiver_story_context(
+    row: dict[str, Any],
+    mission_id: str,
+    mission_story_keys: set[str],
+) -> dict[str, Any] | None:
+    """Project one exact receiver/Story intersection without promoting ownership."""
+    story_keys = {
+        safe_text(key) for key in row.get("storyKeys") or [] if safe_text(key)
+    }
+    matched = story_keys & mission_story_keys
+    if not matched:
+        return None
+    level_id = safe_text(row.get("levelId"))
+    script_id = safe_text(row.get("scriptId"))
+    if not level_id or not script_id:
+        return None
+    return {
+        "relation": "native_receiver_story_context",
+        "missionId": mission_id,
+        "levelId": level_id,
+        "scriptId": script_id,
+        "storyKeys": sorted(story_keys),
+        "missionStoryKeys": sorted(matched),
+        "externalStoryKeys": sorted(story_keys - mission_story_keys),
+        "storyKinds": sorted({
+            safe_text(kind)
+            for kind in row.get("storyKinds") or []
+            if safe_text(kind)
+        }),
+        "eventNames": sorted({
+            safe_text(name)
+            for name in row.get("eventNames") or []
+            if safe_text(name)
+        }),
+        "listenerHeaderLocalIds": sorted({
+            value
+            for value in row.get("listenerHeaderLocalIds") or []
+            if isinstance(value, int)
+        }),
+        "activationClass": safe_text(row.get("activationClass")),
+        "missionOwnerStatus": safe_text(row.get("missionOwnerStatus")),
+        "receiverEvidence": _receiver_native_evidence_context(row),
+        "ownership": False,
+        "activation": False,
+        "storyPlayback": False,
+        "orderEvidence": False,
+        "relatedOriginalFiles": _receiver_related_files(row),
+        "evidenceBoundary": (
+            "The original LevelScript receiver row has an exact native path to "
+            "the listed Story keys, and those keys intersect this mission's "
+            "published Story nodes. The attached binary-backed receiver contract "
+            "proves availability/control shape only; it does not prove the mission "
+            "selected activation, event firing, ownership, branch choice, or "
+            "inter-Story order."
+        ),
+    }
+
+
 def _original_file_kind(source_file: str) -> str:
     normalized = source_file.replace("\\", "/")
     for marker, kind in (
@@ -4031,6 +4210,7 @@ def publish_to_pipeline_index(
 
     published_contexts = 0
     published_mission_named_contexts = 0
+    published_receiver_story_contexts = 0
     if mission_root is not None:
         mission_summaries = {
             safe_text(row.get("id")): row
@@ -4181,6 +4361,78 @@ def publish_to_pipeline_index(
                 mission_summary[
                     "storyOrderMissionNamedLevelDataReceiverContextCount"
                 ] = len(ordered)
+        receiver_contexts_by_mission: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for mission_id, mission_summary in sorted(mission_summaries.items()):
+            path = mission_root / f"{mission_id}.json"
+            payload = read_json(path)
+            if not isinstance(payload, dict):
+                continue
+            story_order = payload.get("storyOrder") or {}
+            if not isinstance(story_order, dict):
+                continue
+            mission_story_keys = _story_order_keys(story_order)
+            if not mission_story_keys:
+                continue
+            for row in report.get("rows") or []:
+                if not isinstance(row, dict):
+                    continue
+                context = _receiver_story_context(
+                    row,
+                    mission_id,
+                    mission_story_keys,
+                )
+                if context is not None:
+                    receiver_contexts_by_mission[mission_id].append(context)
+        for mission_id, contexts in sorted(receiver_contexts_by_mission.items()):
+            path = mission_root / f"{mission_id}.json"
+            payload = read_json(path)
+            if not isinstance(payload, dict):
+                continue
+            unique = {
+                (
+                    safe_text(context.get("levelId")),
+                    safe_text(context.get("scriptId")),
+                    tuple(context.get("missionStoryKeys") or []),
+                    tuple(
+                        (related.get("sourceFile"), related.get("sha256"))
+                        for related in context.get("relatedOriginalFiles") or []
+                    ),
+                ): context
+                for context in contexts
+            }
+            ordered = [unique[key] for key in sorted(unique, key=str)]
+            story_order = payload.setdefault("storyOrder", {})
+            story_order["nativeReceiverStoryContexts"] = ordered
+            summary = story_order.setdefault("summary", {})
+            summary["nativeReceiverStoryContextCount"] = len(ordered)
+            summary["nativeReceiverStoryContextStoryCount"] = len({
+                key for context in ordered for key in context["missionStoryKeys"]
+            })
+            summary["nativeReceiverStoryContextRelatedFileCount"] = len({
+                related.get("sourceFile")
+                for context in ordered
+                for related in context.get("relatedOriginalFiles") or []
+                if related.get("sourceFile")
+            })
+            write_json(path, payload)
+            published_receiver_story_contexts += len(ordered)
+            mission_summary = mission_summaries.get(mission_id)
+            if mission_summary is None:
+                continue
+            mission_summary["storyOrderNativeReceiverStoryContextCount"] = len(
+                ordered
+            )
+            mission_summary["storyOrderNativeReceiverStoryContextStoryCount"] = len({
+                key for context in ordered for key in context["missionStoryKeys"]
+            })
+            mission_summary[
+                "storyOrderNativeReceiverStoryContextRelatedFileCount"
+            ] = len({
+                related.get("sourceFile")
+                for context in ordered
+                for related in context.get("relatedOriginalFiles") or []
+                if related.get("sourceFile")
+            })
 
     coverage["nativeReceiverActivationFrontier"] = {
         "schemaVersion": report.get("schemaVersion"),
@@ -4201,6 +4453,7 @@ def publish_to_pipeline_index(
         "publishedMissionNamedLevelDataReceiverContexts": (
             published_mission_named_contexts
         ),
+        "publishedNativeReceiverStoryContexts": published_receiver_story_contexts,
     }
     return annotated
 
