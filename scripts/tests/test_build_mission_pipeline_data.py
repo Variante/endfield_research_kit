@@ -2312,6 +2312,88 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             1,
         )
 
+    def test_story_order_cross_reference_is_diagnostic_only(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            mission_root = root / "missions"
+            mission_root.mkdir()
+            pipeline.write_json(mission_root / "mission_a.json", {
+                "mission": {"id": "mission_a"},
+            })
+            index = {
+                "counts": {"missions": 1},
+                "missions": [{
+                    "id": "mission_a",
+                    "file": "missions/mission_a.json",
+                }],
+            }
+            order_row = {
+                "mission": "mission_a",
+                "nodes": [{"key": "story_a"}, {"key": "story_b"}],
+                "directEdges": [
+                    {
+                        "from": "story_a",
+                        "to": "story_b",
+                        "kind": "questPrev",
+                        "tier": "strong",
+                    },
+                    {
+                        "from": "story_b",
+                        "to": "story_a",
+                        "kind": "questPrev",
+                        "tier": "strong",
+                    },
+                ],
+                "summary": {"sceneCount": 2},
+                "branches": {},
+            }
+            cross_reference = (
+                pipeline.build_source_story_order_cross_reference_report(
+                    {"missions": [order_row]},
+                    {"missions": {"mission_a": {"order": ["story_a", "story_b"]}}},
+                    {"missions": {"mission_a": {"order": ["story_b", "story_a"]}}},
+                )
+            )
+            pipeline.attach_source_story_partial_order(
+                index,
+                root,
+                {"missions": [order_row]},
+                create_variant_aggregate_shells=False,
+                require_complete_branch_publication=False,
+                order_cross_reference=cross_reference,
+            )
+            pipeline.attach_source_story_partial_order(
+                index,
+                root,
+                {"missions": [order_row]},
+                create_variant_aggregate_shells=False,
+                require_complete_branch_publication=False,
+            )
+            payload = json.loads(
+                (mission_root / "mission_a.json").read_text(encoding="utf-8")
+            )
+
+        comparison = payload["storyOrder"]["crossReference"]
+        self.assertEqual(comparison["status"], "cross_reference_only")
+        self.assertEqual(comparison["strictEdgeCount"], 2)
+        self.assertEqual(comparison["override"], {
+            "agrees": 1,
+            "disagrees": 1,
+            "uncovered": 0,
+        })
+        self.assertEqual(comparison["ocr"], {
+            "agrees": 1,
+            "disagrees": 1,
+            "uncovered": 0,
+        })
+        self.assertEqual(comparison["conflictCount"], 2)
+        self.assertEqual(len(comparison["disagreementEdges"]), 2)
+        self.assertFalse(comparison["orderEvidence"])
+        self.assertEqual(
+            [edge["from"] for edge in payload["storyOrder"]["directEdges"]],
+            ["story_a", "story_b"],
+        )
+
     def test_story_order_attachment_builds_validated_variant_aggregate_shell(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
