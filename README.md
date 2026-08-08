@@ -148,6 +148,12 @@ or local source edits.
   related LevelData/SpawnerConfig context for 27 of those Story keys. Its
   LsmPtr module namespace is shown separately from the receiver LevelScript,
   without inventing mission ownership or order.
+- The receiver audit now recovers the underlying pattern generically: all 15
+  serialized `@<module>_<field>` families are censused by native value shape
+  (including the eight base lifecycle-only families), with stable family keys
+  and exact LevelData sources. New module families no longer require an
+  object-specific recovery function; only a separately binary-validated
+  semantic contract may add a label, and none adds mission ownership or order.
 - Two exact mission-named LevelData receiver contexts (`e9m3` /
   `cutscene_e9m3_2` and `e3m6` / `cutscene_e3m5_3`) are now visible with their
   original LevelData and LevelScript files; the filename token and validated

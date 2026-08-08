@@ -148,6 +148,9 @@
       binarySubGameManualStart: "binary-validated SubGame start carrier",
       binarySubGameManualStartBoundary: "The current binary and typed original row prove SubGame id → bindScriptId → LevelScript lookup → ManualStart. This is an interaction start carrier, not mission ownership, selected branching, or cross-Story order.",
       levelDataContainer: "validated LevelData container",
+      modulePropertyFamily: "serialized module property family",
+      modulePropertyFamilyFields: "serialized field shapes",
+      modulePropertyFamilyBoundary: "Generic @module_suffix field families and native value shapes are exact LevelData context. They do not identify a mission, quest, Story owner, activation selector, branch, or order.",
       encounterController: "binary-proven Encounter controller",
       encounterModuleNamespace: "Encounter LsmPtr module namespace",
       moduleMatchesReceiver: "module id matches receiver id",
@@ -1090,6 +1093,9 @@
       binarySubGameManualStart: "二进制已验证的 SubGame 启动载体",
       binarySubGameManualStartBoundary: "当前二进制与类型化原始记录证明 SubGame ID → bindScriptId → LevelScript 查找 → ManualStart。它是交互启动载体，不证明使命所有权、所选分支或跨 Story 顺序。",
       levelDataContainer: "已验证的 LevelData 容器",
+      modulePropertyFamily: "序列化模块属性族",
+      modulePropertyFamilyFields: "序列化字段形状",
+      modulePropertyFamilyBoundary: "@module_suffix 字段族和原始值形状是精确的 LevelData 上下文。它们不证明使命、任务、Story 所有者、激活选择器、分支或顺序。",
       encounterController: "二进制已证实的遭遇战控制器",
       encounterModuleNamespace: "遭遇战 LsmPtr 模块命名空间",
       moduleMatchesReceiver: "模块 ID 与接收脚本 ID 相同",
@@ -5059,6 +5065,8 @@
           ).values()];
           const activationHosts = (activation.levelDataHosts || [])
             .filter((host) => host && host.fileName);
+          const modulePropertyFamilies = (activation.modulePropertyFamilies || [])
+            .filter((family) => family && family.moduleId);
           const encounterContexts = (activation.encounterControllerContexts || [])
             .filter((context) => context && context.classification);
           const nominalHostComparison = activation.nominalMissionHostComparison || {};
@@ -5213,6 +5221,13 @@
               ${activePhaseReceiverControl.status === "validated" && activePhaseReceiverHeader ? `<div class="is-boundary"><span>${esc(t("binaryActivePhaseReceiver"))}</span><i aria-hidden="true">→</i><code>Setup → ActiveBegin → Active(${esc(activePhaseReceiverHeader.triggerActiveDuring ?? "?")})</code><b>header #${esc(activePhaseReceiverHeader.listenerHeaderLocalId)}</b><small>${esc([activePhaseReceiverHeader.headerName || "receiver", `action #${activePhaseReceiverHeader.nextActionLocalId ?? "?"}`, `register +${activePhaseReceiverControl.runtimeFlow?.setupRegisterTriggerCallOffsets?.[0] ?? "?"}`, `enable +${activePhaseReceiverControl.runtimeFlow?.activePhaseEnableCallOffsets?.[0] ?? "?"}`, `Setup ${activePhaseReceiverControl.methods?.Setup?.methodPointerVa || "?"}`].join(" · "))}</small></div><small>${esc(activePhaseReceiverControl.evidenceBoundary || t("binaryActivePhaseReceiverBoundary"))}</small>` : ""}
               ${subGameStartControl.validation?.status === "validated" ? `<div><span>${esc(t("binarySubGameManualStart"))}</span><i aria-hidden="true">→</i><code>SubGame id → bindScriptId → LevelScript</code><b>ManualStart</b><small>${esc([`interaction ${subGameStartControl.challengeMethod?.methodPointerVa || "?"}`, `ManualStart ${subGameStartControl.manualStartMethod?.methodPointerVa || "?"}`, `fields ${binaryOffset(subGameStartControl.fieldOffsets?.["challengeStartPoint.m_subGameId"])}/${binaryOffset(subGameStartControl.fieldOffsets?.["subGameInstanceData.bindScriptId"])}`, subGameStartControl.subGameInteractionFlow?.callsInCarrierOrder ? "lookup calls ordered" : "lookup order unresolved"].join(" · "))}</small></div><small>${esc(subGameStartControl.evidenceBoundary || t("binarySubGameManualStartBoundary"))}</small>` : ""}
               ${activationRelatedFiles.map((related) => `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(related.sourceFile)}</code><b>${esc(String(related.kind || "source").replaceAll("_", " "))}</b><small>${esc([String(related.relationship || "").replaceAll("_", " "), related.sha256 ? `SHA-256 ${related.sha256}` : ""].filter(Boolean).join(" · "))}</small></div>`).join("")}
+              ${modulePropertyFamilies.map((family) => {
+                const features = (family.pattern?.features || []).filter(Boolean).join(", ");
+                const fields = (family.propertySignatures || []).map((signature) => `${signature.suffix || "?"}:${signature.valueType ?? "?"}/${signature.atomCount ?? "?"}`).join(", ");
+                const files = (family.relatedFiles || []).filter((related) => related && related.sourceFile);
+                return `<div class="is-boundary"><span>${esc(t("modulePropertyFamily"))}</span><i aria-hidden="true">→</i><code>${esc(`@${family.moduleId}_*`)}</code><b>${esc(features || "serialized_module_fields")}</b><small>${esc(`${t("modulePropertyFamilyFields")}: ${fields}${family.moduleIdMatchesReceiverScript ? ` · receiver ${family.receiverScriptId || "?"}` : ""}`)}</small></div>${files.map((related) => `<div><span>${esc(t("relatedOriginalFile"))}</span><i aria-hidden="true">→</i><code>${esc(related.sourceFile)}</code><b>${esc(String(related.kind || "source").replaceAll("_", " "))}</b><small>${esc(String(related.relationship || "").replaceAll("_", " "))}</small></div>`).join("")}`;
+              }).join("")}
+              ${modulePropertyFamilies.length ? `<small>${esc(t("modulePropertyFamilyBoundary"))}</small>` : ""}
               ${encounterContexts.flatMap((context) => [
                 `<div><span>${esc(t("encounterController"))}</span><i aria-hidden="true">→</i><code>${esc(context.runtimeType || "EncounterBase<T>")}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(`${context.dataType || "EncounterData"} · ${context.mappingId || ""}`)}</small></div>`,
                 `<div><span>${esc(t("encounterModuleNamespace"))}</span><i aria-hidden="true">→</i><code>${esc(context.moduleId || "—")}</code><b>${esc(context.moduleIdMatchesReceiverScript ? t("moduleMatchesReceiver") : t("relatedModuleNamespace"))}</b><small>${esc(`receiver LevelScript ${context.receiverScriptId || selector.listenerScriptId || "—"}`)}</small></div>`,
