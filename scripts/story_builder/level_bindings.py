@@ -304,6 +304,17 @@ LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES = frozenset({
     "exact_serialized_control_path_equivalent_duplicates",
     "exact_serialized_control_path_runtime_shadowing",
 })
+# The current original GameAssembly also proves the trigger-volume wait as a
+# conditional control family. ``WaitForSecondsInTriggerVolume.Execute`` is
+# method index 36930 at VA 0x187692760 (GameAssembly SHA-256
+# 0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE;
+# metadata SHA-256 90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E).
+# Its body calls LevelScriptManager.TryGetLevelScript and
+# LevelScriptRuntime.CheckIsInTriggerVolume, loads the serialized success and
+# fail ids on the corresponding outcome paths, and calls SetResultNextID;
+# while the wait/timeout path uses SetResultNextIDToCurrent or
+# SetResultDelayToNextTick. This is a runtime branch proof, not a formatter
+# or action-name guess.
 LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS = {
     (0x002D, 0x09): {
         "kind": "ordered_sequence",
@@ -328,6 +339,10 @@ LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS = {
     (0x0501, 0x0A): {
         "kind": "conditional_loop",
         "mappingId": "gameassembly-2026-08-02-while-execute-0x18765e758",
+    },
+    (0x04F9, 0x0E): {
+        "kind": "conditional_choice",
+        "mappingId": "gameassembly-2026-08-08-wait-trigger-volume-execute-0x187692760",
     },
 }
 LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {

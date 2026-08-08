@@ -87,6 +87,10 @@ class NativeSerializedBranchProjectionTests(unittest.TestCase):
     def test_control_families_come_from_binary_mapping(self) -> None:
         self.assertIn("Branch", NATIVE_TYPED_CONTROL_ACTION_NAMES)
         self.assertIn("WhileAction", NATIVE_TYPED_CONTROL_ACTION_NAMES)
+        self.assertIn(
+            "WaitForSecondsInTriggerVolume",
+            NATIVE_TYPED_CONTROL_ACTION_NAMES,
+        )
 
     def test_loop_control_uses_family_schema_without_object_override(self) -> None:
         slots = _serialized_native_control_arm_slots({
@@ -99,6 +103,23 @@ class NativeSerializedBranchProjectionTests(unittest.TestCase):
             "serializedField": "whileDoActionLocalId",
             "serializedFieldPresent": True,
         }])
+
+    def test_wait_trigger_volume_uses_family_schema_without_object_override(self) -> None:
+        slots = _serialized_native_control_arm_slots({
+            "actionName": "WaitForSecondsInTriggerVolume",
+            "controlDetail": {
+                "waitSuccessActionLocalId": 11,
+                "waitFailActionLocalId": 12,
+            },
+        })
+        self.assertEqual(
+            [slot["edge"] for slot in slots],
+            [
+                "WaitForSecondsInTriggerVolume.successAction",
+                "WaitForSecondsInTriggerVolume.failAction",
+            ],
+        )
+        self.assertEqual([slot["entryLocalId"] for slot in slots], [11, 12])
 
     def test_switch_cardinality_mismatch_is_visible_and_fail_closed(self) -> None:
         slots = _serialized_native_control_arm_slots({

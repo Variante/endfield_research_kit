@@ -132,7 +132,13 @@ in five payloads.
   Runtime mutation of public delegate fields, reflection/XLua/IFix, native-only
   registries, and server selection remain outside the bound.
 - Exact native control paths for Split, If/Else, Switch, ordered Branch,
-  WhileAction, playback, and many event families.
+  WhileAction, the binary-proven `WaitForSecondsInTriggerVolume` outcome
+  family, playback, and many event families. The wait Execute body is pinned to
+  the current GameAssembly/metadata hashes and selects serialized success/fail
+  IDs only after its trigger-volume/stay-time checks; its waiting path stays on
+  the current action or delays to the next tick. Five exact wait controls are
+  now attached through two original LevelScript files, still as local outcome
+  context rather than ownership or Story chronology.
 - 312 native branch groups and 20 native convergences, kept as a partial
   graph instead of flattened into a guessed file list.
 - Every Story-anchored native branch is now expanded from the original
