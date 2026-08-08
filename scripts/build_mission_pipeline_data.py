@@ -12127,6 +12127,83 @@ def _source_order_shell_related_files(
     )
 
 
+def _story_branch_related_original_files(
+    order_row: dict[str, Any],
+    *,
+    hash_cache: dict[Path, str] | None = None,
+) -> list[dict[str, Any]]:
+    """Hash exact original files cited by authored Story branch records.
+
+    Dialog-line/Tree branch projections often cite the recovered TextAsset that
+    contains the branch while having no LevelScript source-order edge.  Keep
+    those files in a separate catalog: they are useful original-data context,
+    but they are not chronology or mission-ownership evidence.  The walk is
+    intentionally shape-driven and ignores generated WebUI paths.
+    """
+    validator = "story_branch_original_files"
+    related: dict[str, dict[str, Any]] = {}
+    resolved_hash_cache = hash_cache if hash_cache is not None else {}
+
+    def classify(path: Path) -> str:
+        normalized = path.as_posix().casefold()
+        if "levelscriptdata/" in normalized:
+            return "original_level_script"
+        if "missionruntimeasset/" in normalized:
+            return "original_mission_runtime"
+        if normalized.endswith("gameassembly.dll"):
+            return "original_game_binary"
+        if normalized.endswith("global-metadata.dat"):
+            return "original_game_metadata"
+        if "/textasset/" in normalized or "json_by_type/textasset/" in normalized:
+            return "original_dialog_tree_source"
+        return "original_authored_source"
+
+    def add_source(raw: Any) -> None:
+        source = str(raw or "")
+        if not source:
+            return
+        normalized = source.replace("\\", "/").casefold()
+        # Branch projections also carry generated conversation paths.  Only
+        # original export/game paths are eligible for this hash-validated list.
+        if normalized.startswith((
+            "webui/",
+            "reports/",
+            "scratch/",
+            "tmp/",
+        )) or "/webui/data/" in normalized:
+            return
+        path = _resolve_report_source_path(source)
+        if not path.is_file():
+            raise RuntimeError(
+                f"validator={validator} gate=sourceFile "
+                f"mission={order_row.get('mission') or '-'} expected=file "
+                f"actual=missing source={source}"
+            )
+        actual_hash = resolved_hash_cache.get(path)
+        if actual_hash is None:
+            actual_hash = sha256_path(path)
+            resolved_hash_cache[path] = actual_hash
+        related[repo_path(path)] = {
+            "kind": classify(path),
+            "sourceFile": repo_path(path),
+            "sha256": actual_hash,
+            "relationship": "authored_story_branch_source_file",
+        }
+
+    def walk(value: Any) -> None:
+        if isinstance(value, dict):
+            for source in value.get("sourceFiles") or []:
+                add_source(source)
+            for child in value.values():
+                walk(child)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child)
+
+    walk(order_row.get("branches") or {})
+    return sorted(related.values(), key=lambda row: str(row["sourceFile"]))
+
+
 def _source_order_shell_candidate(
     order_row: dict[str, Any],
     *,
@@ -12161,6 +12238,10 @@ def _create_source_order_shell(
         order_row,
         hash_cache=hash_cache,
     )
+    branch_related_files = _story_branch_related_original_files(
+        order_row,
+        hash_cache=hash_cache,
+    )
     if not mission_id or not mission_data_path.is_file() or not related_files:
         raise RuntimeError(
             "validator=source_story_order_shell gate=eligibleSourceMission "
@@ -12187,6 +12268,14 @@ def _create_source_order_shell(
         "auditability only. They do not establish mission ownership, activation, "
         "branch selection, or a total Story-file order."
     )
+    story_order["storyBranchRelatedOriginalFiles"] = copy.deepcopy(
+        branch_related_files
+    )
+    story_order["storyBranchRelatedFilesBoundary"] = (
+        "These hash-validated original files are cited by authored Story branch "
+        "records. They provide branch-definition context only; they do not "
+        "establish mission ownership, activation, or cross-file chronology."
+    )
     payload = {
         "schemaVersion": SCHEMA_VERSION,
         "mission": {
@@ -12207,6 +12296,15 @@ def _create_source_order_shell(
                 "report for auditability only. They do not establish mission "
                 "ownership, activation, branch selection, or a total Story-file "
                 "order."
+            ),
+            "storyBranchRelatedOriginalFiles": copy.deepcopy(
+                branch_related_files
+            ),
+            "storyBranchRelatedFilesBoundary": (
+                "These hash-validated original files are cited by authored Story "
+                "branch records. They provide branch-definition context only; "
+                "they do not establish mission ownership, activation, or "
+                "cross-file chronology."
             ),
             "relatedOriginalFiles": related_files,
             "sourceBoundary": (
@@ -12255,6 +12353,7 @@ def _create_source_order_shell(
         "file": f"missions/{mission_id}.json",
         "sourceOrderShell": True,
         "sourceOrderRelatedFileCount": len(related_files),
+        "storyBranchRelatedFileCount": len(branch_related_files),
     }
     _update_story_order_summary(summary, story_order)
     index.setdefault("missions", []).append(summary)
@@ -12454,6 +12553,9 @@ def attach_source_story_partial_order(
     source_order_related_file_missions: list[str] = []
     source_order_related_file_rows = 0
     source_order_related_distinct_files: set[str] = set()
+    story_branch_related_file_missions: list[str] = []
+    story_branch_related_file_rows = 0
+    story_branch_related_distinct_files: set[str] = set()
     cross_reference_by_mission = {
         str(row.get("mission") or ""): row
         for row in (order_cross_reference or {}).get("missions") or []
@@ -12498,6 +12600,10 @@ def attach_source_story_partial_order(
             hash_cache=source_order_hash_cache,
             additional_files=additional_source_files,
         )
+        branch_related_files = _story_branch_related_original_files(
+            order_row,
+            hash_cache=source_order_hash_cache,
+        )
         if related_files:
             related_boundary = (
                 "These original files are attached to the strict source-order "
@@ -12520,6 +12626,34 @@ def attach_source_story_partial_order(
             source_order_related_distinct_files.update(
                 str(row.get("sourceFile") or "")
                 for row in related_files
+                if row.get("sourceFile")
+            )
+        if branch_related_files:
+            branch_related_boundary = (
+                "These hash-validated original files are cited by authored Story "
+                "branch records. They provide branch-definition context only; "
+                "they do not establish mission ownership, activation, or "
+                "cross-file chronology."
+            )
+            published_order["storyBranchRelatedOriginalFiles"] = copy.deepcopy(
+                branch_related_files
+            )
+            published_order["storyBranchRelatedFilesBoundary"] = (
+                branch_related_boundary
+            )
+            mission_data = payload.setdefault("mission", {})
+            mission_data["storyBranchRelatedOriginalFiles"] = copy.deepcopy(
+                branch_related_files
+            )
+            mission_data["storyBranchRelatedFilesBoundary"] = (
+                branch_related_boundary
+            )
+            summary["storyBranchRelatedFileCount"] = len(branch_related_files)
+            story_branch_related_file_missions.append(mission_id)
+            story_branch_related_file_rows += len(branch_related_files)
+            story_branch_related_distinct_files.update(
+                str(row.get("sourceFile") or "")
+                for row in branch_related_files
                 if row.get("sourceFile")
             )
         cross_reference_row = cross_reference_by_mission.get(mission_id)
@@ -12584,6 +12718,9 @@ def attach_source_story_partial_order(
         "sourceOrderRelatedFileMissions": source_order_related_file_missions,
         "sourceOrderRelatedFileRows": source_order_related_file_rows,
         "sourceOrderRelatedDistinctFiles": len(source_order_related_distinct_files),
+        "storyBranchRelatedFileMissions": story_branch_related_file_missions,
+        "storyBranchRelatedFileRows": story_branch_related_file_rows,
+        "storyBranchRelatedDistinctFiles": len(story_branch_related_distinct_files),
         "missingBranchMissions": missing_branch_missions,
     }
     index.setdefault("counts", {})["missions"] = len(index.get("missions") or [])
@@ -12594,6 +12731,13 @@ def attach_source_story_partial_order(
     index["counts"]["sourceOrderRelatedFileRows"] = source_order_related_file_rows
     index["counts"]["sourceOrderRelatedDistinctFiles"] = len(
         source_order_related_distinct_files
+    )
+    index["counts"]["storyBranchRelatedFileMissions"] = len(
+        story_branch_related_file_missions
+    )
+    index["counts"]["storyBranchRelatedFileRows"] = story_branch_related_file_rows
+    index["counts"]["storyBranchRelatedDistinctFiles"] = len(
+        story_branch_related_distinct_files
     )
     index.setdefault("storyOrder", {})["publication"] = publication
     index.setdefault("counts", {})["storyVariantAggregateShells"] = len(
