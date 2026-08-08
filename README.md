@@ -148,6 +148,11 @@ or local source edits.
   related LevelData/SpawnerConfig context for 27 of those Story keys. Its
   LsmPtr module namespace is shown separately from the receiver LevelScript,
   without inventing mission ownership or order.
+- Two exact mission-named LevelData receiver contexts (`e9m3` /
+  `cutscene_e9m3_2` and `e3m6` / `cutscene_e3m5_3`) are now visible with their
+  original LevelData and LevelScript files; the filename token and validated
+  dictionary are container context only, not activation, ownership, playback,
+  branch, or Story-order evidence.
 - A general recursive ActionHeader validator now exposes all 30 exact receiver
   playback gates, including AND/OR/NOT/ALL trees, comparisons, property/stage,
   LSM-completion, and interactive-state leaves, without treating those local

@@ -3734,12 +3734,96 @@ def publish_to_pipeline_index(
             })
 
     published_contexts = 0
+    published_mission_named_contexts = 0
     if mission_root is not None:
         mission_summaries = {
             safe_text(row.get("id")): row
             for row in index_payload.get("missions") or []
             if isinstance(row, dict) and safe_text(row.get("id"))
         }
+        mission_named_contexts_by_mission: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for row in report.get("rows") or []:
+            if not isinstance(row, dict):
+                continue
+            level_id = safe_text(row.get("levelId"))
+            script_id = safe_text(row.get("scriptId"))
+            story_keys = sorted({
+                safe_text(key)
+                for key in row.get("storyKeys") or []
+                if safe_text(key)
+            })
+            if not level_id or not script_id or not story_keys:
+                continue
+            related_files = [
+                {
+                    "kind": safe_text(related.get("kind")),
+                    "sourceFile": safe_text(related.get("sourceFile")),
+                    "relationship": safe_text(related.get("relationship")),
+                    "sha256": safe_text(related.get("sha256")),
+                }
+                for related in row.get("relatedOriginalFiles") or []
+                if isinstance(related, dict)
+                and safe_text(related.get("sourceFile"))
+            ]
+            levelscript = row.get("levelScript") or {}
+            for host in row.get("levelDataHosts") or []:
+                if not isinstance(host, dict) or not host.get("missionNamedHost"):
+                    continue
+                mission_id = safe_text(host.get("hostMissionId"))
+                if not mission_id or mission_id not in mission_summaries:
+                    continue
+                host_source = safe_text(host.get("sourceFile"))
+                host_file = safe_text(host.get("fileName"))
+                host_related = list(related_files)
+                if host_source and not any(
+                    safe_text(item.get("sourceFile")) == host_source
+                    for item in host_related
+                ):
+                    host_related.append({
+                        "kind": "leveldata",
+                        "sourceFile": host_source,
+                        "relationship": "exact_mission_named_leveldata_receiver_context",
+                        "sha256": "",
+                    })
+                mission_named_contexts_by_mission[mission_id].append({
+                    "relation": "mission_named_leveldata_receiver_context",
+                    "missionId": mission_id,
+                    "levelId": level_id,
+                    "scriptId": script_id,
+                    "storyKeys": story_keys,
+                    "eventNames": [
+                        safe_text(name)
+                        for name in row.get("eventNames") or []
+                        if safe_text(name)
+                    ],
+                    "listenerHeaderLocalIds": [
+                        value
+                        for value in row.get("listenerHeaderLocalIds") or []
+                        if isinstance(value, int)
+                    ],
+                    "activationClass": safe_text(row.get("activationClass")),
+                    "levelDataHost": {
+                        "fileName": host_file,
+                        "sourceFile": host_source,
+                        "dictionaryEntryCount": host.get("dictionaryEntryCount"),
+                        "hostMissionId": mission_id,
+                        "briefData": host.get("briefData") or {},
+                        "encoding": "leveldata_filename_mission_token_plus_member22_dictionary",
+                    },
+                    "ownership": False,
+                    "activation": False,
+                    "storyPlayback": False,
+                    "orderEvidence": False,
+                    "relatedOriginalFiles": host_related,
+                    "evidenceBoundary": (
+                        "The exact mission token in the LevelData filename and the "
+                        "validated member-22 LevelScriptBriefData dictionary place "
+                        "this receiver in an authored mission-named asset container. "
+                        "That container context does not prove the server activation "
+                        "selector, quest ownership, Story playback ownership, branch "
+                        "selection, completion, or inter-file Story order."
+                    ),
+                })
         for mission_id, contexts in sorted(contexts_by_mission.items()):
             path = mission_root / f"{mission_id}.json"
             payload = read_json(path)
@@ -3770,6 +3854,37 @@ def publish_to_pipeline_index(
                 mission_summary["storyOrderMissionObservedLevelScriptContextCount"] = (
                     len(ordered)
                 )
+        for mission_id, contexts in sorted(mission_named_contexts_by_mission.items()):
+            path = mission_root / f"{mission_id}.json"
+            payload = read_json(path)
+            if not isinstance(payload, dict):
+                continue
+            unique = {
+                (
+                    safe_text(context.get("levelId")),
+                    safe_text(context.get("scriptId")),
+                    safe_text(
+                        (context.get("levelDataHost") or {}).get("sourceFile")
+                    ),
+                    tuple(context.get("storyKeys") or []),
+                ): context
+                for context in contexts
+            }
+            ordered = [unique[key] for key in sorted(unique, key=str)]
+            story_order = payload.setdefault("storyOrder", {})
+            story_order["missionNamedLevelDataReceiverContexts"] = ordered
+            summary = story_order.setdefault("summary", {})
+            summary["missionNamedLevelDataReceiverContextCount"] = len(ordered)
+            summary["missionNamedLevelDataReceiverContextStoryCount"] = len({
+                key for context in ordered for key in context["storyKeys"]
+            })
+            write_json(path, payload)
+            published_mission_named_contexts += len(ordered)
+            mission_summary = mission_summaries.get(mission_id)
+            if mission_summary is not None:
+                mission_summary[
+                    "storyOrderMissionNamedLevelDataReceiverContextCount"
+                ] = len(ordered)
 
     coverage["nativeReceiverActivationFrontier"] = {
         "schemaVersion": report.get("schemaVersion"),
@@ -3787,6 +3902,9 @@ def publish_to_pipeline_index(
         "reportMarkdown": rel_path(DEFAULT_MARKDOWN),
         "annotatedReceiverNodes": annotated,
         "publishedMissionObservedLevelScriptContexts": published_contexts,
+        "publishedMissionNamedLevelDataReceiverContexts": (
+            published_mission_named_contexts
+        ),
     }
     return annotated
 
