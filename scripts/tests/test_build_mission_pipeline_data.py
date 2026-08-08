@@ -2486,10 +2486,18 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             story_root = root / "story"
             level_script = root / "level.json"
             binary = root / "GameAssembly.dll"
+            branch_source = (
+                root / "export_full" / "recovered" / "AnimeStudio-cli"
+                / "StreamingAssets" / "json_by_type" / "TextAsset"
+                / "dlg_existing_branch_p123.json"
+            )
             mission_root.mkdir()
             story_root.mkdir()
             level_script.write_bytes(b"level")
             binary.write_bytes(b"binary")
+            branch_source.parent.mkdir(parents=True)
+            branch_source.write_bytes(b"dialog-tree-branch")
+            branch_sha = hashlib.sha256(branch_source.read_bytes()).hexdigest()
             mission_source = story_root / "existing.json"
             mission_source.write_text("{}", encoding="utf-8")
             mission_runtime = (
@@ -2523,7 +2531,13 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "tier": "strong",
                     "sourceFiles": [str(level_script), str(binary)],
                 }],
-                "branches": {},
+                "branches": {
+                    "dialogLineOptions": [{
+                        "provenance": {
+                            "sourceFiles": [str(branch_source)],
+                        },
+                    }],
+                },
             }
             publication = pipeline.attach_source_story_partial_order(
                 index,
@@ -2546,9 +2560,37 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(publication["sourceOrderRelatedFileMissions"], ["existing"])
         self.assertEqual(publication["sourceOrderRelatedFileRows"], 3)
         self.assertEqual(publication["sourceOrderRelatedDistinctFiles"], 3)
+        self.assertEqual(
+            payload["mission"]["storyBranchRelatedOriginalFiles"],
+            [{
+                "kind": "original_dialog_tree_source",
+                "sourceFile": str(branch_source).replace("\\", "/"),
+                "sha256": branch_sha,
+                "relationship": "authored_story_branch_source_file",
+            }],
+        )
+        self.assertEqual(publication["storyBranchRelatedFileMissions"], ["existing"])
+        self.assertEqual(publication["storyBranchRelatedFileRows"], 1)
+        self.assertEqual(publication["storyBranchRelatedDistinctFiles"], 1)
         self.assertEqual(index["counts"]["sourceOrderRelatedFileMissions"], 1)
         self.assertEqual(index["missions"][0]["sourceOrderRelatedFileCount"], 3)
+        self.assertEqual(index["missions"][0]["storyBranchRelatedFileCount"], 1)
         self.assertIn("auditability only", payload["mission"]["sourceOrderRelatedFilesBoundary"])
+
+    def test_story_branch_related_files_fail_closed_on_missing_source(self):
+        missing = Path(tempfile.gettempdir()) / "story-branch-source-does-not-exist.json"
+        order_row = {
+            "mission": "missing_branch_source",
+            "branches": {
+                "dialogLineOptions": [{"sourceFiles": [str(missing)]}],
+            },
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"validator=story_branch_original_files gate=sourceFile "
+            r"mission=missing_branch_source expected=file actual=missing",
+        ):
+            pipeline._story_branch_related_original_files(order_row)
 
     def test_story_order_attachment_builds_validated_variant_aggregate_shell(self):
         with tempfile.TemporaryDirectory() as temporary:
