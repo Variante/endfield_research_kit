@@ -201,6 +201,10 @@ override those defaults for one run.
   backed by a hash-checked original MissionRuntime file. The publication gate
   fails closed if any recovered native branch placement remains unattached;
   aggregates and offline shells never imply ownership or server branch choice.
+- Story-branch file attachment walks the evidence shape generically, retaining
+  normalized `relatedOriginalFiles` as well as producer `sourceFiles` and
+  validating every cited original hash. This can expose additional
+  graph-neutral Story-branch shells without a mission/object allowlist.
 - MissionRuntime-to-receiver context joins are likewise corpus-driven and
   require the exact typed `(mapId, scriptId)` operand from the recursive
   objective condition tree. Flat script-id summaries cannot attach a mission.

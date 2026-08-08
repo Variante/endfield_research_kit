@@ -111,6 +111,11 @@ Rebuild Story data after editing overrides.
   post-application notification semantics, not evidence of arm activation or
   exclusivity.
   Predecessor forks remain topology rather than claimed server branch choice.
+- Story branch context cards retain both producer `sourceFiles` and already
+  normalized `relatedOriginalFiles`, including the exact GameAssembly and
+  metadata hashes cited by binary validators. Missing MissionRuntime namespaces
+  with that context appear as graph-neutral Story-branch shells; the files are
+  definition/validation context, never ownership, activation, or Story order.
 - The managed-carrier card shows the cycle-safe fixed-point census, maximum
   shortest type path, Entity/shared-runtime aggregate closures, zero exact
   indexed Entity/component type labels plus the truncated-scalar boundary, and the binary, metadata, and two

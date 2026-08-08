@@ -9,7 +9,7 @@ Latest CN reports:
 
 | Metric | Current |
 | --- | ---: |
-| Pipeline missions | 608 (490 MissionRuntime + 115 offline recovery shells + 1 source-order shell + 1 Story-branch shell + 1 declared Story-variant aggregate) |
+| Pipeline missions | 614 (490 MissionRuntime + 115 offline recovery shells + 1 source-order shell + 7 Story-branch shells + 1 declared Story-variant aggregate) |
 | Unique Story files | 5,564 |
 | Connected files | 4,237 (76.1%) |
 | Files with a normalized trigger/context route | 4,462 (80.2%) |
@@ -51,6 +51,7 @@ Latest CN reports:
 | Post-playback variable bridge | 66 typed setters (43 SetBool, 23 SetInt) / 50 exact listeners / 0 same-level, same-script, same-key joins |
 | Binary-proven cinematic producers | 10 native producers / 16 typed action routes / 1,682 route attachments across 1,332 Story files |
 | Binary state-update authority | 4 / 4 identity+state/control paths validated; 0 client successor selectors |
+| Binary full-mission sync carrier | Exact `SC_SYNC_ALL_MISSION` schema (`missions: map<string,MISSION>`, `curQuests: map<string,QUEST>`, current-main/track/tag state) and `MissionSystem.Handle_SyncAllMission` body validated from original metadata/GameAssembly; constructs client state and defers world-ready processing, but exposes no successor, Story, or scene-order selector |
 | Binary quest-state fork application | Generic field-constrained CFG recovery: `Processing` (2) -> `StartQuest`, `Completed` (3) -> `SucceedQuest`; published on all 307 forks / 740 arms with binary+metadata hashes; server selection policy remains unknown |
 | Binary quest-enable fork application | Generic live-field CFG recovery: enable + unpaused -> `StartQuest`, enable + paused -> `PauseQuest`, disable + either pause value -> `DisableQuest`; `prevQuestState` is unread; published on all 307 forks / 740 arms with binary+metadata hashes |
 | Binary quest-start authority | `objectiveList` reads 3; `prevQuestIdList` / `flowIndex` reads 0 / 0; topology traversal calls 0 |
@@ -61,8 +62,8 @@ Latest CN reports:
 | Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; all 95 exact LevelData types select the non-SubLevel client `active=true` request branch; all 95 original scripts have one uniquely decoded active volume (86 sphere / 9 box); 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
 | Receiver Story context projection | 34 mission payloads / 96 exact receiver-to-Story intersections / 156 mission Story keys; every row retains compact binary receiver contracts and related original-file hashes; all ownership, activation, playback, and order flags remain false |
 | Story-order override/OCR cross-reference | 1,524 strict source edges across 216 source missions; manual override 940 agree / 253 disagree / 331 uncovered; OCR 406 / 10 / 1,108; 12 conflicts; all 216 pipeline destinations carry the per-mission diagnostic block, including one graph-neutral source-order shell |
-| Source-order original-file attachment | 275 pipeline missions carry 3,574 hash-validated source-order related-file records across 1,913 distinct originals; 215 of the 216 cross-reference destinations have at least one original file, while `map01_lv002_env` remains generated-only; binary/metadata files are context authority, never ownership or order evidence |
-| Authored Story-branch source catalog | 190 pipeline missions carry 524 hash-validated branch/validation-source records across 519 distinct originals; this includes the malformed `dlg_e1m3_2` TextAsset plus its binary context, while `map01_lv002_env` contributes three exact DialogTree TextAssets even though its strict source-order destination remains generated-only; `map01_lv005` is the graph-neutral Story-branch shell; branch-source files are definition context, never chronology, activation, or ownership evidence |
+| Source-order original-file attachment | 281 pipeline missions carry 3,593 hash-validated source-order related-file records across 1,918 distinct originals; 215 of the 216 cross-reference destinations have at least one original file, while `map01_lv002_env` remains generated-only; binary/metadata files are context authority, never ownership or order evidence |
+| Authored Story-branch source catalog | 265 pipeline missions carry 2,708 hash-validated branch/validation/context-file records across 2,206 distinct originals; normalized `relatedOriginalFiles` rows are now retained alongside source paths, exposing the original binary/metadata authority wherever a branch producer cited it. Seven graph-neutral Story-branch shells are published; branch-source files remain definition context, never chronology, activation, or ownership evidence |
 | Authored mission-to-LevelScript task dependencies | 2 exact `(level, script, task)` tuples across 2 missions; 0 unresolved; each joined to MissionRuntime, LevelScriptData, and ScriptTaskExtraInfoTable |
 | Binary public-state entry closure | 2 server-derived handlers: full-scene `SC_SELF_SCENE_INFO` snapshots and incremental `SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY`; 4 direct public-state setter callers split into 2 zero initializers and 2 server-parameter writers |
 | Native cross-system consumer census | 500,976 mapped methods / 7,214 unambiguous family targets / 17 reviewed callers; the 4 mission-state→DynamicScene seeds close over 23 methods / 30 direct edges / depth 2, with 1 reviewed IL2CPP class-init indirect site, 0 LevelScript, 0 Story, and 0 unreviewed; the 174-type managed mission/quest census finds 2 reviewed cross-system callers and 0 mission+LevelScript signatures; its general callable-carrier pass resolves 13 fields, 5 typed entry methods, and 5 family-local native bindings with 0 mission+LevelScript bindings |
@@ -1588,9 +1589,10 @@ groups unchanged; connected/unlinked Story counts are now 4,237 / 1,327.
    current-build playback consumer; five have playback but no static owner.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
    typed attachments or bounded graph-neutral diagnostics. Main, event, major,
-   character, and other missions have no actionable core-isolated files. The
-   remaining 17 missing MissionRuntime bundles stay explicit Story-only shells;
-   broad co-memberships remain non-owning diagnostics.
+   character, and other missions have no actionable core-isolated files. Missing
+   MissionRuntime bundles stay explicit Story-only shells; seven graph-neutral
+   Story-branch shells are now visible because normalized original-file rows are
+   retained. Broad co-memberships remain non-owning diagnostics.
 4. **Option routes:** no multi-choice group remains broadly actionable after
    exact current-build carrier exhaustion; unresolved groups remain visible and
    reopen only when a typed DialogTree/Timeline/runtime consumer appears.
@@ -1687,6 +1689,21 @@ unresolved Story-root, resource-path, or StringPathHash hits and zero typed
 Encounter/BattlerStage authoring objects. These original-binary results do not
 provide a mission/receiver foreign key, so selector registration order and
 file co-location remain non-evidence.
+
+The full mission synchronization carrier is now audited from the original
+binary rather than inferred from names. Metadata identifies
+`SC_SYNC_ALL_MISSION` as maps of typed `MISSION` and `QUEST` rows plus
+`trackMissionId`, `curMainMissionId`, tags, and early-accept state. Its exact
+`MissionSystem.Handle_SyncAllMission` body (`0x1833784e0`, 14,368 bytes,
+GameAssembly SHA-256
+`0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce`)
+validates mission/quest assets, constructs or updates client `MissionData` and
+`QuestData`, and calls `_ProcessSyncAllAfterWorldReady` when the world is ready.
+The handler has no Story/LevelScript identity, successor field, or native
+ordered-sequence selector; `curMainMissionId` and tracking state remain current
+selection/UI state. This closes the client sync-carrier hypothesis for authored
+Story order while leaving server-side branch policy and mission ownership
+unresolved.
 
 The general state-update audit now discovers enum-backed `Proto.SC_*` messages
 by shape: exactly one `missionId` or `questId` plus either the matching state
