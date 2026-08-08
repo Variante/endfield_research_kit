@@ -12019,6 +12019,9 @@ def _resolve_report_source_path(source: str) -> Path:
 
 def _source_order_shell_related_files(
     order_row: dict[str, Any],
+    *,
+    hash_cache: dict[Path, str] | None = None,
+    additional_files: list[Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Collect and hash original files for a strict source-order shell.
 
@@ -12028,6 +12031,7 @@ def _source_order_shell_related_files(
     """
     validator = "source_story_order_shell"
     related: dict[tuple[str, str], dict[str, Any]] = {}
+    resolved_hash_cache = hash_cache if hash_cache is not None else {}
 
     def add_file(raw: Any, *, fallback_kind: str, fallback_relationship: str) -> None:
         if isinstance(raw, str):
@@ -12044,7 +12048,10 @@ def _source_order_shell_related_files(
                 f"mission={order_row.get('mission') or '-'} expected=file "
                 f"actual=missing source={source}"
             )
-        actual_hash = sha256_path(path)
+        actual_hash = resolved_hash_cache.get(path)
+        if actual_hash is None:
+            actual_hash = sha256_path(path)
+            resolved_hash_cache[path] = actual_hash
         expected_hash = str(raw.get("sha256") or "")
         if expected_hash and expected_hash.casefold() != actual_hash.casefold():
             raise RuntimeError(
@@ -12104,6 +12111,12 @@ def _source_order_shell_related_files(
                 fallback_kind=kind,
                 fallback_relationship="strict_source_story_order_edge",
             )
+    for raw in additional_files or []:
+        add_file(
+            raw,
+            fallback_kind="original_mission_runtime",
+            fallback_relationship="source_order_mission_runtime_context",
+        )
     walk(order_row.get("branches") or {})
     return sorted(
         related.values(),
@@ -12116,6 +12129,8 @@ def _source_order_shell_related_files(
 
 def _source_order_shell_candidate(
     order_row: dict[str, Any],
+    *,
+    hash_cache: dict[Path, str] | None = None,
 ) -> bool:
     """Return whether a missing pipeline mission has strict source evidence."""
     if not str(order_row.get("mission") or ""):
@@ -12128,19 +12143,24 @@ def _source_order_shell_candidate(
     mission_data = str(order_row.get("missionData") or "")
     if not mission_data or not _resolve_report_source_path(mission_data).is_file():
         return False
-    return bool(_source_order_shell_related_files(order_row))
+    return bool(_source_order_shell_related_files(order_row, hash_cache=hash_cache))
 
 
 def _create_source_order_shell(
     index: dict[str, Any],
     output_root: Path,
     order_row: dict[str, Any],
+    *,
+    hash_cache: dict[Path, str] | None = None,
 ) -> dict[str, Any]:
     """Publish a graph-neutral shell for strict original-data Story order."""
     mission_id = str(order_row.get("mission") or "")
     mission_data = str(order_row.get("missionData") or "")
     mission_data_path = _resolve_report_source_path(mission_data)
-    related_files = _source_order_shell_related_files(order_row)
+    related_files = _source_order_shell_related_files(
+        order_row,
+        hash_cache=hash_cache,
+    )
     if not mission_id or not mission_data_path.is_file() or not related_files:
         raise RuntimeError(
             "validator=source_story_order_shell gate=eligibleSourceMission "
@@ -12161,6 +12181,12 @@ def _create_source_order_shell(
         "its hashed related files without claiming MissionRuntime, quest, playback "
         "ownership, activation, branch selection, or additional chronology."
     )
+    story_order["sourceOrderRelatedOriginalFiles"] = copy.deepcopy(related_files)
+    story_order["sourceOrderRelatedFilesBoundary"] = (
+        "These original files are attached to the strict source-order report for "
+        "auditability only. They do not establish mission ownership, activation, "
+        "branch selection, or a total Story-file order."
+    )
     payload = {
         "schemaVersion": SCHEMA_VERSION,
         "mission": {
@@ -12175,6 +12201,13 @@ def _create_source_order_shell(
             "nativeRuntimeBindings": [],
             "source": repo_path(mission_data_path),
             "sourceOrderShell": True,
+            "sourceOrderRelatedOriginalFiles": copy.deepcopy(related_files),
+            "sourceOrderRelatedFilesBoundary": (
+                "These original files are attached to the strict source-order "
+                "report for auditability only. They do not establish mission "
+                "ownership, activation, branch selection, or a total Story-file "
+                "order."
+            ),
             "relatedOriginalFiles": related_files,
             "sourceBoundary": (
                 "No MissionRuntimeAsset payload exists for this Story namespace. "
@@ -12221,6 +12254,7 @@ def _create_source_order_shell(
         "caseStudy": False,
         "file": f"missions/{mission_id}.json",
         "sourceOrderShell": True,
+        "sourceOrderRelatedFileCount": len(related_files),
     }
     _update_story_order_summary(summary, story_order)
     index.setdefault("missions", []).append(summary)
@@ -12389,6 +12423,7 @@ def attach_source_story_partial_order(
     }
     aggregate_shells: list[str] = []
     source_order_shells: list[str] = []
+    source_order_hash_cache: dict[Path, str] = {}
     if create_variant_aggregate_shells:
         for mission_id, order_row in sorted(rows_by_mission.items()):
             branch_count = len(
@@ -12401,13 +12436,24 @@ def attach_source_story_partial_order(
                 existing_ids.add(mission_id)
                 aggregate_shells.append(mission_id)
                 continue
-            if _source_order_shell_candidate(order_row):
-                _create_source_order_shell(index, output_root, order_row)
+            if _source_order_shell_candidate(
+                order_row,
+                hash_cache=source_order_hash_cache,
+            ):
+                _create_source_order_shell(
+                    index,
+                    output_root,
+                    order_row,
+                    hash_cache=source_order_hash_cache,
+                )
                 existing_ids.add(mission_id)
                 source_order_shells.append(mission_id)
 
     published_missions: list[str] = []
     published_branches = 0
+    source_order_related_file_missions: list[str] = []
+    source_order_related_file_rows = 0
+    source_order_related_distinct_files: set[str] = set()
     cross_reference_by_mission = {
         str(row.get("mission") or ""): row
         for row in (order_cross_reference or {}).get("missions") or []
@@ -12438,6 +12484,43 @@ def attach_source_story_partial_order(
             published_order["sourceOrderShell"] = True
             published_order["sourceOrderShellBoundary"] = str(
                 previous_order.get("sourceOrderShellBoundary") or ""
+            )
+        mission_source = str(
+            (payload.get("mission") or {}).get("source") or ""
+        )
+        additional_source_files = (
+            [mission_source]
+            if "MissionRuntimeAsset/" in mission_source.replace("\\", "/")
+            else []
+        )
+        related_files = _source_order_shell_related_files(
+            order_row,
+            hash_cache=source_order_hash_cache,
+            additional_files=additional_source_files,
+        )
+        if related_files:
+            related_boundary = (
+                "These original files are attached to the strict source-order "
+                "report for auditability only. They do not establish mission "
+                "ownership, activation, branch selection, or a total Story-file "
+                "order."
+            )
+            published_order["sourceOrderRelatedOriginalFiles"] = copy.deepcopy(
+                related_files
+            )
+            published_order["sourceOrderRelatedFilesBoundary"] = related_boundary
+            mission_data = payload.setdefault("mission", {})
+            mission_data["sourceOrderRelatedOriginalFiles"] = copy.deepcopy(
+                related_files
+            )
+            mission_data["sourceOrderRelatedFilesBoundary"] = related_boundary
+            summary["sourceOrderRelatedFileCount"] = len(related_files)
+            source_order_related_file_missions.append(mission_id)
+            source_order_related_file_rows += len(related_files)
+            source_order_related_distinct_files.update(
+                str(row.get("sourceFile") or "")
+                for row in related_files
+                if row.get("sourceFile")
             )
         cross_reference_row = cross_reference_by_mission.get(mission_id)
         if cross_reference_row is not None:
@@ -12498,10 +12581,20 @@ def attach_source_story_partial_order(
         "publishedMissionRows": len(published_missions),
         "variantAggregateShells": aggregate_shells,
         "sourceOrderShells": source_order_shells,
+        "sourceOrderRelatedFileMissions": source_order_related_file_missions,
+        "sourceOrderRelatedFileRows": source_order_related_file_rows,
+        "sourceOrderRelatedDistinctFiles": len(source_order_related_distinct_files),
         "missingBranchMissions": missing_branch_missions,
     }
     index.setdefault("counts", {})["missions"] = len(index.get("missions") or [])
     index["counts"]["sourceOrderMissionShells"] = len(source_order_shells)
+    index["counts"]["sourceOrderRelatedFileMissions"] = len(
+        source_order_related_file_missions
+    )
+    index["counts"]["sourceOrderRelatedFileRows"] = source_order_related_file_rows
+    index["counts"]["sourceOrderRelatedDistinctFiles"] = len(
+        source_order_related_distinct_files
+    )
     index.setdefault("storyOrder", {})["publication"] = publication
     index.setdefault("counts", {})["storyVariantAggregateShells"] = len(
         [row for row in index.get("missions") or [] if row.get("storyAggregateShell")]

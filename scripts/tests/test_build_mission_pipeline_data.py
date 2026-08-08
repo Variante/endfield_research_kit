@@ -2464,6 +2464,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertTrue(summary["sourceOrderShell"])
         self.assertTrue(shell["mission"]["sourceOrderShell"])
         self.assertTrue(shell["storyOrder"]["sourceOrderShell"])
+        self.assertEqual(
+            shell["mission"]["sourceOrderRelatedOriginalFiles"],
+            shell["mission"]["relatedOriginalFiles"],
+        )
         self.assertEqual(shell["mission"]["levelId"], "map_a")
         self.assertEqual(
             shell["storyOrder"]["directEdges"][0]["kind"],
@@ -2474,6 +2478,77 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             {"original_game_binary", "original_game_metadata", "original_level_script"},
         )
         self.assertIn("not a mission or quest owner", shell["mission"]["sourceBoundary"])
+
+    def test_source_order_related_files_attach_to_existing_mission(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            mission_root = root / "missions"
+            story_root = root / "story"
+            level_script = root / "level.json"
+            binary = root / "GameAssembly.dll"
+            mission_root.mkdir()
+            story_root.mkdir()
+            level_script.write_bytes(b"level")
+            binary.write_bytes(b"binary")
+            mission_source = story_root / "existing.json"
+            mission_source.write_text("{}", encoding="utf-8")
+            mission_runtime = (
+                root / "export_full" / "structured" / "Persistent" / "Data"
+                / "Json" / "MissionRuntimeAsset" / "existing.json"
+            )
+            mission_runtime.parent.mkdir(parents=True)
+            mission_runtime.write_text("{\"missionId\":\"existing\"}", encoding="utf-8")
+            pipeline.write_json(mission_root / "existing.json", {
+                "mission": {
+                    "id": "existing",
+                    "levelId": "level_a",
+                    "source": str(mission_runtime),
+                },
+                "nodes": [],
+                "storyOrder": {},
+            })
+            index = {
+                "counts": {"missions": 1},
+                "missions": [{
+                    "id": "existing",
+                    "file": "missions/existing.json",
+                }],
+            }
+            order_row = {
+                "mission": "existing",
+                "missionData": str(mission_source),
+                "directEdges": [{
+                    "from": "radio_existing_1",
+                    "to": "radio_existing_2",
+                    "tier": "strong",
+                    "sourceFiles": [str(level_script), str(binary)],
+                }],
+                "branches": {},
+            }
+            publication = pipeline.attach_source_story_partial_order(
+                index,
+                root,
+                {"missions": [order_row]},
+                create_variant_aggregate_shells=False,
+                require_complete_branch_publication=True,
+            )
+            payload = json.loads(
+                (mission_root / "existing.json").read_text(encoding="utf-8")
+            )
+
+        related = payload["mission"]["sourceOrderRelatedOriginalFiles"]
+        self.assertEqual(len(related), 3)
+        self.assertEqual({row["sourceFile"] for row in related}, {
+            str(level_script).replace("\\", "/"),
+            str(binary).replace("\\", "/"),
+            str(mission_runtime).replace("\\", "/"),
+        })
+        self.assertEqual(publication["sourceOrderRelatedFileMissions"], ["existing"])
+        self.assertEqual(publication["sourceOrderRelatedFileRows"], 3)
+        self.assertEqual(publication["sourceOrderRelatedDistinctFiles"], 3)
+        self.assertEqual(index["counts"]["sourceOrderRelatedFileMissions"], 1)
+        self.assertEqual(index["missions"][0]["sourceOrderRelatedFileCount"], 3)
+        self.assertIn("auditability only", payload["mission"]["sourceOrderRelatedFilesBoundary"])
 
     def test_story_order_attachment_builds_validated_variant_aggregate_shell(self):
         with tempfile.TemporaryDirectory() as temporary:
