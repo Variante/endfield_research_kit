@@ -41,6 +41,81 @@ class LevelScriptSourceEvidenceTests(unittest.TestCase):
         )
         self.assertEqual(len(rows[0]["relatedOriginalFiles"][0]["sha256"]), 64)
 
+    def test_native_control_evidence_is_generic_and_event_reachable(self) -> None:
+        topology = {
+            "schema": "levelScriptNativeActionTopology.v4",
+            "status": "exact_complete_action_map",
+            "eventRootCount": 1,
+            "eventRoots": [{
+                "localId": 100,
+                "headerName": "ScriptEvent_OnScriptActive",
+                "nextActionLocalId": 10,
+            }],
+            "edges": [
+                {
+                    "sourceKind": "event",
+                    "sourceLocalId": 100,
+                    "targetActionLocalId": 10,
+                    "relation": "ActionHeader.nextId",
+                },
+                {
+                    "sourceKind": "action",
+                    "sourceLocalId": 10,
+                    "targetActionLocalId": 11,
+                    "relation": "ActionBase.nextId",
+                },
+            ],
+            "runtimeTerminalTargets": [],
+            "actions": [
+                {
+                    "localId": 10,
+                    "actionName": "SwitchIntLarger",
+                    "controlKind": "conditional_choice",
+                    "controlRuntimeMappingId": "fixture-switch-larger",
+                    "controlDetail": {"switchIntLargerCaseValues": [0, 1]},
+                },
+                {
+                    "localId": 11,
+                    "actionName": "Split",
+                    "controlKind": "parallel_fanout",
+                    "controlRuntimeMappingId": "fixture-split",
+                    "controlDetail": {"splitActionLocalIds": [12, 13]},
+                },
+            ],
+            "actionControlFlowEvidence": True,
+            "storyOrderEvidence": False,
+            "nativeActionMappingId": "fixture-native-action-map",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "level_a" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"fixture")
+            pipeline._LEVEL_SCRIPT_NATIVE_CONTROL_EVIDENCE_CACHE.clear()
+            with patch.object(
+                pipeline,
+                "decode_levelscript_native_action_topology",
+                return_value=(topology, None),
+            ):
+                evidence = pipeline.level_script_native_control_evidence(
+                    b"fixture",
+                    source,
+                )
+
+        self.assertEqual(evidence["controlCount"], 2)
+        self.assertEqual(
+            evidence["controlFamilyCounts"],
+            {"conditional_choice": 1, "parallel_fanout": 1},
+        )
+        self.assertEqual(evidence["eventToControlReachableCount"], 2)
+        self.assertEqual(
+            evidence["controls"][0]["eventRoots"][0]["headerName"],
+            "ScriptEvent_OnScriptActive",
+        )
+        self.assertEqual(
+            evidence["controls"][0]["serializedOutgoingEdges"][0]["targetActionLocalId"],
+            11,
+        )
+
 
 
 QUEST_STATE_LIFECYCLE_FIXTURE = {

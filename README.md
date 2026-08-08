@@ -136,7 +136,10 @@ or local source edits.
   controls), with only `map01_lv001/2100280004.json` reaching the exact
   `sm1l1m9` → `dlg_sm1l1m9_5` Story path. Its case targets are inactive, so no
   new order edge is admitted; the WebUI exposes the complete family census
-  and shows `SwitchIntLarger: 8`.
+  and shows `SwitchIntLarger: 8`. The dungeon copies are also attached to
+  exact `e10m4d5`/`e10m1d5` mission context through their authored
+  MissionRuntime LevelScript property/stage conditions; this does not promote
+  them to Story ownership or inter-file order.
   The same original-binary projector now exposes five
   `WaitForSecondsInTriggerVolume` controls as success/fail outcomes in two
   attached LevelScript files; waiting/current-action and next-tick delay paths

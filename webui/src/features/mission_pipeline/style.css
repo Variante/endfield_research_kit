@@ -2499,6 +2499,41 @@ body:not(.show-debug) .mp-playback-rejection {
 .mp-objective > header strong { font-size: 10px; }
 .mp-objective > p { margin: 4px 0; color: var(--muted); font: 9px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; }
 
+.mp-levelscript-native-controls {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border: 1px dashed rgba(54, 127, 132, 0.35);
+  border-radius: 7px;
+  background: rgba(54, 127, 132, 0.035);
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.mp-levelscript-native-controls > summary {
+  color: var(--text);
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.mp-levelscript-native-controls > summary span { margin-left: 4px; color: var(--mp-client); }
+.mp-levelscript-native-controls > p { margin: 5px 0; overflow-wrap: anywhere; }
+.mp-levelscript-native-controls > small { display: block; margin: 4px 0; overflow-wrap: anywhere; }
+
+.mp-levelscript-native-control {
+  display: grid;
+  gap: 3px;
+  margin: 5px 0 0;
+  padding: 5px 6px;
+  border-radius: 5px;
+  background: white;
+}
+
+.mp-levelscript-native-control > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; color: var(--text); }
+.mp-levelscript-native-control > header span { color: var(--mp-client); font-size: 8px; }
+.mp-levelscript-native-control > small { display: block; overflow-wrap: anywhere; }
+.mp-levelscript-native-control code { overflow-wrap: anywhere; }
+
 .mp-objective-tracking {
   margin-top: 7px;
   padding: 6px 8px;

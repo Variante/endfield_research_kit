@@ -43,6 +43,7 @@ try:
         ACTIONBASE_FORMATTER_ACTION_NAMES,
         ACTIONBASE_FORMATTER_NAME_AUDIT,
         build_levelscript_native_story_playback_index,
+        decode_levelscript_native_action_topology,
     )
     from story_builder.mission_assets import (
         mission_runtime_source_summary,
@@ -97,6 +98,7 @@ except ModuleNotFoundError:  # imported as ``scripts.build_mission_pipeline_data
         ACTIONBASE_FORMATTER_ACTION_NAMES,
         ACTIONBASE_FORMATTER_NAME_AUDIT,
         build_levelscript_native_story_playback_index,
+        decode_levelscript_native_action_topology,
     )
     from scripts.story_builder.mission_assets import (
         mission_runtime_source_summary,
@@ -290,8 +292,10 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v43 distinguishes the full-scene LevelScript snapshot from incremental public
 # state notifications and publishes their closed current-AOT application paths.
 # v45 retains every complete authored scene/script/task condition tuple and
-# fail-closed joins it to the original task table and LevelScript source.
-SCHEMA_VERSION = 45
+# fail-closed joins it to the original task table and LevelScript source. v46
+# attaches the generic binary-decoded typed-control topology observed by each
+# authored LevelScript condition, without promoting it to Story ownership/order.
+SCHEMA_VERSION = 46
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -9848,6 +9852,145 @@ def level_script_task_dependencies(condition: Any) -> list[dict[str, Any]]:
     return dependencies
 
 
+_LEVEL_SCRIPT_NATIVE_CONTROL_EVIDENCE_CACHE: dict[str, dict[str, Any]] = {}
+
+
+def level_script_native_control_evidence(
+    data: bytes,
+    source_path: Path,
+) -> dict[str, Any]:
+    """Summarize every binary-mapped typed control in one original script.
+
+    This is intentionally corpus-driven.  The action decoder owns the set of
+    native control families and their serialized fields; this helper only
+    projects those decoded rows into a compact mission-context attachment.
+    Event-root reachability is exact within this file.  It is never treated as
+    Story ownership or inter-file order evidence.
+    """
+    cache_key = str(source_path.resolve())
+    cached = _LEVEL_SCRIPT_NATIVE_CONTROL_EVIDENCE_CACHE.get(cache_key)
+    if cached is not None:
+        return copy.deepcopy(cached)
+    topology, diagnostic = decode_levelscript_native_action_topology(data)
+    if not isinstance(topology, dict):
+        topology = {
+            "schema": "levelScriptNativeActionTopology.v4",
+            "status": "unavailable_fail_closed",
+            "actionControlFlowEvidence": False,
+            "storyOrderEvidence": False,
+        }
+
+    # Build only the action-to-action adjacency.  Event roots are kept as
+    # independent invocation sources and are joined to controls by exact
+    # serialized reachability, not by physical record order.
+    adjacency: dict[int, list[int]] = defaultdict(list)
+    for edge in topology.get("edges") or []:
+        if edge.get("sourceKind") != "action":
+            continue
+        source_id = edge.get("sourceLocalId")
+        target_id = edge.get("targetActionLocalId")
+        if isinstance(source_id, int) and isinstance(target_id, int) and target_id > 0:
+            adjacency[source_id].append(target_id)
+    roots_by_action: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for root in topology.get("eventRoots") or []:
+        start_id = root.get("nextActionLocalId")
+        if not isinstance(start_id, int) or start_id <= 0:
+            continue
+        root_ref = {
+            key: root[key]
+            for key in ("localId", "headerName", "nextActionLocalId")
+            if root.get(key) not in (None, "", [], {})
+        }
+        queue = deque([start_id])
+        visited: set[int] = set()
+        while queue:
+            local_id = queue.popleft()
+            if local_id in visited:
+                continue
+            visited.add(local_id)
+            roots_by_action[local_id].append(root_ref)
+            queue.extend(adjacency.get(local_id) or [])
+
+    controls: list[dict[str, Any]] = []
+    family_counts: Counter[str] = Counter()
+    for action in topology.get("actions") or []:
+        if not isinstance(action, dict):
+            continue
+        control_kind = str(action.get("controlKind") or "")
+        mapping_id = action.get("controlRuntimeMappingId")
+        if not control_kind and not mapping_id:
+            continue
+        if control_kind:
+            family_counts[control_kind] += 1
+        local_id = action.get("localId")
+        outgoing = [
+            edge
+            for edge in topology.get("edges") or []
+            if edge.get("sourceKind") == "action"
+            and edge.get("sourceLocalId") == local_id
+        ]
+        outgoing.extend(
+            edge
+            for edge in topology.get("runtimeTerminalTargets") or []
+            if edge.get("sourceKind") == "action"
+            and edge.get("sourceLocalId") == local_id
+        )
+        rows = {
+            "localId": local_id,
+            "actionName": action.get("actionName"),
+            "controlKind": control_kind,
+            "controlRuntimeMappingId": mapping_id,
+            "controlDetail": action.get("controlDetail") or {},
+            "serializedOutgoingEdges": outgoing,
+            "eventRoots": sorted(
+                roots_by_action.get(local_id) or [],
+                key=lambda row: (
+                    int(row.get("localId") or 0),
+                    int(row.get("nextActionLocalId") or 0),
+                ),
+            ),
+            "reachability": (
+                "exact_serialized_event_to_control"
+                if roots_by_action.get(local_id)
+                else "serialized_control_without_decoded_event_root"
+            ),
+        }
+        controls.append({
+            key: value
+            for key, value in rows.items()
+            if value not in (None, "", [], {})
+        })
+    controls.sort(key=lambda row: int(row.get("localId") or 0))
+    result: dict[str, Any] = {
+        "schema": "levelScriptNativeControlEvidence.v1",
+        "topologySchema": topology.get("schema"),
+        "status": topology.get("status"),
+        "controlCount": len(controls),
+        "controlFamilyCounts": dict(sorted(family_counts.items())),
+        "eventRootCount": int(topology.get("eventRootCount") or 0),
+        "eventToControlReachableCount": sum(
+            1 for row in controls if row.get("eventRoots")
+        ),
+        "controls": controls,
+        "actionControlFlowEvidence": bool(
+            topology.get("actionControlFlowEvidence")
+        ),
+        "storyOrderEvidence": bool(topology.get("storyOrderEvidence")),
+        "nativeActionMappingId": topology.get("nativeActionMappingId"),
+        "evidenceBoundary": (
+            "The original binary decoder identifies typed control families and "
+            "exact serialized event-to-control reachability inside this one "
+            "LevelScript. MissionRuntime condition references establish mission "
+            "context only; these controls do not prove Story playback ownership "
+            "or inter-file Story order."
+        ),
+    }
+    if diagnostic:
+        result["validatorDiagnostic"] = diagnostic
+    _LEVEL_SCRIPT_NATIVE_CONTROL_EVIDENCE_CACHE[cache_key] = result
+    return copy.deepcopy(result)
+
+
 def level_script_source_evidence(
     condition: Any,
     *,
@@ -9883,6 +10026,10 @@ def level_script_source_evidence(
         data = read_bytes_cached(source_path)
         records = extract_levelscript_uid_records(data)
         action_map = decode_levelscript_action_map_lists(data, records)
+        native_control_evidence = level_script_native_control_evidence(
+            data,
+            source_path,
+        )
         exact_empty = bool(action_map.get("exactEmptyActionMap"))
         out.append({
             "levelId": identity[0],
@@ -9899,6 +10046,7 @@ def level_script_source_evidence(
                 for item in action_map.get("serializedLists") or []
                 if item.get("name") == "outsideSerializedActionMap"
             ),
+            "nativeControlEvidence": native_control_evidence,
             "relatedOriginalFiles": [{
                 "kind": "level_script",
                 "sourceFile": repo_path(source_path),

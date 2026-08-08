@@ -247,6 +247,15 @@ for (const [key, category] of [
         self.assertIn("row.serializedTailRecordCount", source)
         self.assertIn("row.relatedOriginalFiles", source)
 
+    def test_mission_pipeline_surfaces_generic_binary_levelscript_controls(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("row.nativeControlEvidence", source)
+        self.assertIn("nativeLevelScriptControlAttachments", source)
+        self.assertIn("control.serializedOutgoingEdges", source)
+        self.assertIn("control.controlDetail", source)
+        self.assertIn('t("levelScriptNativeControls")', source)
+        self.assertIn("does not prove Story ownership", source)
+
     def test_mission_pipeline_surfaces_binary_proven_quest_success_order(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn('row.kind === "questSucceedLifecycle"', source)

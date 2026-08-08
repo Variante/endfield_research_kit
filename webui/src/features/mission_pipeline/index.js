@@ -279,6 +279,15 @@
       levelScriptExactEmptyMap: "exact empty executable map",
       levelScriptExecutableMap: "serialized executable map",
       levelScriptTailRecords: "non-executable tail records",
+      levelScriptNativeControls: "binary-decoded typed controls",
+      levelScriptNativeControlHint: "Exact original-binary control topology inside this LevelScript. The authored MissionRuntime condition supplies mission context only; it does not prove Story ownership or Story order.",
+      levelScriptNativeControlFamilies: "control families",
+      levelScriptNativeControlRoots: "event roots",
+      levelScriptNativeControlEdges: "serialized outgoing edges",
+      levelScriptNativeControlMapping: "native mapping",
+      levelScriptNativeControlDetail: "decoded control fields",
+      levelScriptNativeControlReachable: "controls reached from event roots",
+      levelScriptNativeControlDiagnostic: "topology diagnostic",
       taskMetadata: "task metadata",
       or: "or",
       nativeDirectCallers: "native direct callers",
@@ -1190,6 +1199,15 @@
       levelScriptExactEmptyMap: "精确的空可执行映射",
       levelScriptExecutableMap: "序列化可执行映射",
       levelScriptTailRecords: "不可执行尾部记录",
+      levelScriptNativeControls: "原始二进制恢复的类型化控制",
+      levelScriptNativeControlHint: "这是单个关卡脚本内由原始二进制精确恢复的控制拓扑。原始使命条件只提供任务上下文，不证明剧情归属或剧情顺序。",
+      levelScriptNativeControlFamilies: "控制族",
+      levelScriptNativeControlRoots: "事件根",
+      levelScriptNativeControlEdges: "序列化出边",
+      levelScriptNativeControlMapping: "原生映射",
+      levelScriptNativeControlDetail: "解码后的控制字段",
+      levelScriptNativeControlReachable: "从事件根可达的控制",
+      levelScriptNativeControlDiagnostic: "拓扑诊断",
       taskMetadata: "任务元数据",
       or: "或",
       nativeDirectCallers: "原生直接调用者",
@@ -5598,9 +5616,27 @@
       const statusLabel = row.actionMapStatus === "exact_empty_action_map" ? t("levelScriptExactEmptyMap") : t("levelScriptExecutableMap");
       return `<details${row.actionMapStatus === "exact_empty_action_map" ? " open" : ""} class="mp-quest-task-dependency"><summary><b>${esc(t("levelScriptSource"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}</code> <span>${esc(statusLabel)}</span></summary><p><code>${esc(countText)}</code>${row.serializedTailRecordCount ? ` 路 ${esc(t("levelScriptTailRecords"))}: ${Number(row.serializedTailRecordCount).toLocaleString()}` : ""}</p><small>${esc(row.evidenceBoundary || "")}</small>${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}</details>`;
     }).join("");
+    const nativeLevelScriptControlAttachments = (objective.levelScriptSources || []).map((row) => {
+      const evidence = row.nativeControlEvidence || {};
+      const controls = evidence.controls || [];
+      const diagnostic = evidence.validatorDiagnostic
+        ? `<small><b>${esc(t("levelScriptNativeControlDiagnostic"))}:</b> <code>${esc(JSON.stringify(evidence.validatorDiagnostic))}</code></small>`
+        : "";
+      if (!controls.length && !diagnostic) return "";
+      const rows = controls.map((control) => {
+        const detail = control.controlDetail && Object.keys(control.controlDetail).length
+          ? `<code>${esc(JSON.stringify(control.controlDetail))}</code>`
+          : "";
+        const roots = (control.eventRoots || []).map((root) => `#${root.localId ?? "?"} ${root.headerName || "?"} -> #${root.nextActionLocalId ?? "?"}`).join(" / ");
+        const edges = (control.serializedOutgoingEdges || []).map((edge) => `${edge.sourceKind || "action"} #${edge.sourceLocalId ?? "?"} -> #${edge.targetActionLocalId ?? "?"} ${edge.relation || ""}`).join(" / ");
+        return `<article class="mp-levelscript-native-control"><header><b>${esc(control.actionName || control.controlKind || "typed control")}</b> <code>#${esc(control.localId ?? "?")}</code>${control.controlKind ? ` <span>${esc(control.controlKind)}</span>` : ""}</header>${control.controlRuntimeMappingId ? `<small><b>${esc(t("levelScriptNativeControlMapping"))}:</b> <code>${esc(control.controlRuntimeMappingId)}</code></small>` : ""}${detail ? `<small><b>${esc(t("levelScriptNativeControlDetail"))}:</b> ${detail}</small>` : ""}${roots ? `<small><b>${esc(t("levelScriptNativeControlRoots"))}:</b> ${esc(roots)}</small>` : ""}${edges ? `<small><b>${esc(t("levelScriptNativeControlEdges"))}:</b> ${esc(edges)}</small>` : ""}</article>`;
+      }).join("");
+      const families = Object.entries(evidence.controlFamilyCounts || {}).map(([family, count]) => `${family}=${Number(count).toLocaleString()}`).join(" / ");
+      return `<details class="mp-levelscript-native-controls"><summary><b>${esc(t("levelScriptNativeControls"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}</code> <span>${Number(evidence.controlCount || controls.length).toLocaleString()}</span></summary><p>${families ? `${esc(t("levelScriptNativeControlFamilies"))}: <code>${esc(families)}</code> / ` : ""}${Number(evidence.eventRootCount || 0).toLocaleString()} ${esc(t("levelScriptNativeControlRoots"))} / ${Number(evidence.eventToControlReachableCount || 0).toLocaleString()} ${esc(t("levelScriptNativeControlReachable"))}</p><small>${esc(evidence.evidenceBoundary || t("levelScriptNativeControlHint"))}</small>${diagnostic}${rows}</details>`;
+    }).join("");
     return `<article class="mp-objective"><header><strong>${esc(t("objectives"))} ${objective.index}</strong><span class="mp-authority is-${esc(objective.authority)}">${esc(objective.authority)}</span></header>
       <p>${esc(objective.descriptionKey || t("noObjective"))}</p>
-      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${levelScriptSources}${taskDependencies}
+      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${levelScriptSources}${nativeLevelScriptControlAttachments}${taskDependencies}
       ${objectiveTrackingHtml(objective.tracking)}
       ${renderConditionTree(objective.condition)}
     </article>`;
