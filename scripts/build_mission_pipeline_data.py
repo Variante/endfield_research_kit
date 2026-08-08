@@ -11502,6 +11502,7 @@ def _update_story_order_summary(
         "storyOrderNativeUnresolvedActionEndpointCount": "nativeControlPathUnresolvedActionEndpointCount",
         "storyOrderNativeBranchingTransitionCount": "nativeControlPathBranchingTransitionEdgeCount",
         "storyOrderNativeOrderedSequenceCount": "nativeOrderedSequenceCount",
+        "storyOrderNativeOrderedSequenceContextCount": "nativeOrderedSequenceContextCount",
         "storyOrderNativeRelatedActionTopologyCount": "nativeRelatedActionTopologyCount",
         "storyOrderNativeNamedPredicateCount": "nativeNamedPredicateCount",
         "storyOrderNativeInlinePredicateCount": "nativeInlinePredicateCount",
@@ -12911,6 +12912,7 @@ def main() -> int:
             f"{summary.get('nativeControlPathNamedActionEndpoints', 0)}/"
             f"{summary.get('nativeControlPathTransitionActionEndpoints', 0)} named transition endpoints, "
             f"{summary.get('nativeOrderedSequences', 0)} native ordered sequences, "
+            f"{summary.get('nativeOrderedSequenceContexts', 0)} native sequence contexts, "
             f"{summary.get('nativeRelatedActionTopologies', 0)} related action graphs, "
             f"{summary.get('nativeNamedPredicates', 0)} named predicates, "
             f"{summary.get('nativeInlinePredicates', 0)} inline predicates, "

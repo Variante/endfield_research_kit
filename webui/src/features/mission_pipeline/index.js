@@ -528,6 +528,10 @@
       nativeSharedDownstream: "shared downstream actions",
       nativeFullArmHint: "Every slot is decoded from the runtime-active action map in the original LevelScript and checked against the installed binary mapping. Non-Story sibling actions do not establish Story ownership, chronology, or mission membership.",
       nativeOrderedSequence: "native ordered action sequence",
+      nativeSequenceContext: "serialized Branch sequence context",
+      nativeSequenceContextHint: "Exact Story paths reach these Branch arms. The other serialized arms stay visible as unresolved runtime context; this projection does not create Story order or ownership.",
+      nativeSequenceContextNotAdmitted: "order edge not admitted",
+      nativeSequenceContextObserved: "observed Story arm",
       nativeStoryTransitions: "Exact native Story transitions",
       nativeStoryTransitionsHint: "Each edge is an original LevelScript path-prefix relation. The typed suffix shows whether playback continues linearly or crosses a parallel, conditional, outcome, or ordered branch.",
       nativeStoryTransitionLinear: "linear",
@@ -1734,6 +1738,10 @@
       nativeSharedDownstream: "\u5171\u4eab\u4e0b\u6e38\u52a8\u4f5c",
       nativeFullArmHint: "\u6bcf\u4e2a\u69fd\u4f4d\u90fd\u6765\u81ea\u539f\u59cb LevelScript \u7684\u8fd0\u884c\u65f6\u6709\u6548\u52a8\u4f5c\u8868\uff0c\u5e76\u4e0e\u5df2\u5b89\u88c5\u5ba2\u6237\u7aef\u7684\u4e8c\u8fdb\u5236\u6620\u5c04\u6821\u9a8c\u3002\u975e Story \u540c\u7ea7\u52a8\u4f5c\u4e0d\u8bc1\u660e Story \u5f52\u5c5e\u3001\u65f6\u5e8f\u6216\u4efb\u52a1\u6210\u5458\u5173\u7cfb\u3002",
       nativeOrderedSequence: "\u539f\u751f\u6709\u5e8f\u52a8\u4f5c\u5e8f\u5217",
+      nativeSequenceContext: "\u5e8f\u5217\u5316 Branch \u5e8f\u5217\u4e0a\u4e0b\u6587",
+      nativeSequenceContextHint: "\u7cbe\u786e Story \u8def\u5f84\u5230\u8fbe\u8fd9\u4e9b Branch \u5206\u652f\u3002\u5176\u4f59\u5e8f\u5217\u5316\u5206\u652f\u4f5c\u4e3a\u672a\u89e3\u51b3\u7684\u8fd0\u884c\u65f6\u4e0a\u4e0b\u6587\u4fdd\u7559\uff1b\u8be5\u6295\u5f71\u4e0d\u4f1a\u521b\u5efa Story \u987a\u5e8f\u6216\u5f52\u5c5e\u3002",
+      nativeSequenceContextNotAdmitted: "\u672a\u63a5\u7eb3\u987a\u5e8f\u8fb9",
+      nativeSequenceContextObserved: "\u5df2\u89c2\u6d4b Story \u5206\u652f",
       nativeStoryTransitions: "\u7cbe\u786e\u539f\u751f Story \u8f6c\u79fb",
       nativeStoryTransitionsHint: "\u6bcf\u6761\u8fb9\u90fd\u662f\u539f\u59cb LevelScript \u8def\u5f84\u524d\u7f00\u5173\u7cfb\u3002\u7c7b\u578b\u5316\u540e\u7f00\u4f1a\u663e\u793a\u64ad\u653e\u662f\u7ebf\u6027\u7ee7\u7eed\uff0c\u8fd8\u662f\u7ecf\u8fc7\u5e76\u884c\u3001\u6761\u4ef6\u3001\u6210\u529f/\u5931\u8d25\u6216\u6709\u5e8f\u5206\u652f\u3002",
       nativeStoryTransitionLinear: "\u7ebf\u6027",
@@ -3880,9 +3888,20 @@
           : "";
         return `<div><code>#${esc(action.localId ?? "?")}</code><b>${esc(action.actionName || "?")}</b><span>${esc(action.controlKind || "")}</span>${shadowed}</div>`;
       }).join("");
+      const sequenceContexts = (row.orderedSequenceContexts || []).map((context) => {
+        const arms = (context.arms || []).map((arm) => {
+          const stories = (arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
+          const observed = Number(arm.observedRouteCount || 0) > 0
+            ? `<b>${esc(t("nativeSequenceContextObserved"))}</b>`
+            : "";
+          return `<div><code>${esc(arm.edge || "?")} &rarr; #${esc(arm.entryLocalId ?? "inactive")}</code><span>${stories || observed || ""}</span></div>`;
+        }).join("");
+        const reason = context.admissionReason || t("nativeSequenceContextNotAdmitted");
+        return `<details open><summary><b>${esc(t("nativeSequenceContext"))}</b> <code>#${esc(context.branchLocalId ?? "?")}</code><span>${Number(context.storyBearingArmCount || 0).toLocaleString()} / ${Number(context.serializedArmCount || 0).toLocaleString()} Story arms</span><b>${esc(t("nativeSequenceContextNotAdmitted"))}</b></summary><small>${esc(reason)}</small>${arms}${(context.nativeConsumers || []).map((consumer) => `<small><code>${esc(consumer.method || "?")} @ ${esc(consumer.address || "?")}</code> ${esc(consumer.contract || "")}</small>`).join("")}</details>`;
+      }).join("");
       const terminals = (row.runtimeTerminalTargets || []).map((target) => `<div><code>#${esc(target.sourceLocalId ?? "?")}</code><span>${esc(target.relation || "edge")} &rarr; #${esc(target.targetActionLocalId ?? "?")}</span><small>${esc(t("offlineRecoverySubGameActionTerminals"))}</small></div>`).join("");
       const stories = (row.relatedStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
-      return `<details><summary><code>${esc(row.sourceFile || "?")}</code><span>${Number(row.eventRootCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionEvents"))}</span>${Number(row.physicalHeaderRecordCount || 0) !== Number(row.eventRootCount || 0) ? `<span>${Number(row.physicalHeaderRecordCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionPhysicalEvents"))}</span>` : ""}<span>${Number(row.actionNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionNodes"))}</span>${Number(row.runtimeShadowedIndexedRecordCount || 0) ? `<span>${Number(row.runtimeShadowedIndexedRecordCount).toLocaleString()} ${esc(t("offlineRecoverySubGameActionShadowed"))}</span>` : ""}${Number(row.runtimeTerminalTargetCount || 0) ? `<span>${Number(row.runtimeTerminalTargetCount).toLocaleString()} ${esc(t("offlineRecoverySubGameActionTerminals"))}</span>` : ""}</summary><p>${stories}</p><p><span>${Number(row.orderedSequenceNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionSequences"))}</span> <span>${Number(row.parallelFanoutNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionFanouts"))}</span> <span>${Number(row.conditionalBranchNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionChoices"))}</span> <span>${Number(row.loopNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionLoops"))}</span></p>${selectedEvents}${controls}${terminals}<small>${esc(row.relationshipBoundary || "")}</small></details>`;
+      return `<details><summary><code>${esc(row.sourceFile || "?")}</code><span>${Number(row.eventRootCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionEvents"))}</span>${Number(row.physicalHeaderRecordCount || 0) !== Number(row.eventRootCount || 0) ? `<span>${Number(row.physicalHeaderRecordCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionPhysicalEvents"))}</span>` : ""}<span>${Number(row.actionNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionNodes"))}</span>${Number(row.runtimeShadowedIndexedRecordCount || 0) ? `<span>${Number(row.runtimeShadowedIndexedRecordCount).toLocaleString()} ${esc(t("offlineRecoverySubGameActionShadowed"))}</span>` : ""}${Number(row.runtimeTerminalTargetCount || 0) ? `<span>${Number(row.runtimeTerminalTargetCount).toLocaleString()} ${esc(t("offlineRecoverySubGameActionTerminals"))}</span>` : ""}</summary><p>${stories}</p><p><span>${Number(row.orderedSequenceNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionSequences"))}</span> <span>${Number(row.parallelFanoutNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionFanouts"))}</span> <span>${Number(row.conditionalBranchNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionChoices"))}</span> <span>${Number(row.loopNodeCount || 0).toLocaleString()} ${esc(t("offlineRecoverySubGameActionLoops"))}</span></p>${selectedEvents}${sequenceContexts ? `<p><strong>${esc(t("nativeSequenceContext"))}</strong></p><p>${esc(t("nativeSequenceContextHint"))}</p>${sequenceContexts}` : ""}${controls}${terminals}${relatedOriginalFilesHtml(row)}<small>${esc(row.relationshipBoundary || "")}</small></details>`;
     }).join("");
     const sceneOptions = (branches.sceneGraphOptions || []).map((row) => `<div><b>${esc(t("optionBranches"))}</b><a href="${esc(storyHref(row.from))}"><code>${esc(row.from || "?")}</code></a><i>&rarr;</i><span>${(row.arms || []).flatMap((arm) => arm.targets || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("");
     const dialogConditionalBranches = directEdges.filter((row) => row.kind === "dialogTreeCrossStoryConditionalBranch").map((row) => {
