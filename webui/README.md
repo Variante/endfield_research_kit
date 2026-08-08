@@ -183,7 +183,9 @@ Rebuild Story data after editing overrides.
   chronology, or mission membership.
 - Corpus serialized-Branch diagnostics also summarize mapping-derived nested
   controls: each `Branch`, `IfElseAction`, `SwitchInt`, `SwitchString`,
-  `Split`, or `WhileAction` retains its serialized arms, exact reachable
+  `Split`, `WhileAction`, or the binary-mapped
+  `WaitForSecondsInTriggerVolume` outcome family retains its serialized arms,
+  exact reachable
   playback keys, and binary predicate when proven. Missing family fields are
   shown as fail-closed schema gaps. Multi-playback nested controls are
   displayed as conditional context; they never become file-order edges or

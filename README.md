@@ -131,6 +131,10 @@ or local source edits.
   active / 164 explicit inactive). The family schema is mapping-derived and
   reports 0 arm-schema gaps; the inventory stays context-only and refuses to
   guess order or ownership.
+  The same original-binary projector now exposes five
+  `WaitForSecondsInTriggerVolume` controls as success/fail outcomes in two
+  attached LevelScript files; waiting/current-action and next-tick delay paths
+  remain context, not inferred Story order.
 - A general original-binary Encounter contract now adds exact controller and
   related LevelData/SpawnerConfig context for 27 of those Story keys. Its
   LsmPtr module namespace is shown separately from the receiver LevelScript,

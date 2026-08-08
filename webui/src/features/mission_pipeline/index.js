@@ -509,6 +509,7 @@
       nativeSplitFanout: "native Split fan-out",
       nativeIfElseBranch: "native If/Else branch",
       nativeSwitchBranch: "native Switch branch",
+      nativeWaitTriggerVolumeBranch: "native trigger-volume wait outcome",
       nativeControlMerge: "native branch convergence",
       nativeMissionStateBranches: "Mission-state Story alternatives",
       nativeMissionStateBranchesHint: "The original LevelScript and installed native getter/comparer mapping prove which Story files occupy each state-controlled arm, including files nominally grouped under another mission. These are alternatives, not Story order or ownership.",
@@ -1747,6 +1748,7 @@
       nativeSplitFanout: "\u539f\u751f Split \u5206\u6d41",
       nativeIfElseBranch: "\u539f\u751f If/Else \u5206\u652f",
       nativeSwitchBranch: "\u539f\u751f Switch \u5206\u652f",
+      nativeWaitTriggerVolumeBranch: "\u539f\u751f\u89e6\u53d1\u4f53\u79ef\u7b49\u5f85\u7ed3\u679c\u5206\u652f",
       nativeControlMerge: "\u539f\u751f\u5206\u652f\u6c47\u5408",
       nativeMissionStateBranches: "\u4efb\u52a1\u72b6\u6001 Story \u5019\u9009\u5206\u652f",
       nativeMissionStateBranchesHint: "\u539f\u59cb LevelScript \u4e0e\u5df2\u5b89\u88c5\u5ba2\u6237\u7aef\u7684 getter/comparer \u6620\u5c04\u7cbe\u786e\u8bc1\u660e\u6bcf\u4e2a\u72b6\u6001\u5206\u652f\u4e0a\u7684 Story \u6587\u4ef6\uff0c\u5305\u62ec\u540d\u4e49\u4e0a\u5f52\u5165\u5176\u4ed6\u4efb\u52a1\u7684\u6587\u4ef6\u3002\u5b83\u4eec\u662f\u4e92\u65a5\u5019\u9009\uff0c\u4e0d\u662f Story \u987a\u5e8f\u6216\u5f52\u5c5e\u3002",
@@ -3767,7 +3769,7 @@
     const typedSelectors = (branches.typedStorySelectorGroups || []).map((row) => `<details><summary><b>${esc(t("typedStorySelectors"))}</b> <code>${esc(row.selectorGroupId || "?")}</code></summary><p>${esc(t("typedStorySelectorHint"))}</p>${(row.alternatives || []).map((alternative) => `<div><code>${esc(alternative.role || "?")}</code><i>&rarr;</i><a href="${esc(storyHref(alternative.key))}"><code>${esc(alternative.key || "?")}</code></a></div>`).join("")}${(row.sourceFiles || []).length ? `<small>${row.sourceFiles.map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</details>`).join("");
     const questForks = (branches.questForks || []).map((row) => `<div><b>${esc(t("questFork"))}</b><code>${esc(row.questId || "?")}</code><i>&rarr;</i><span>${(row.successorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>${questForkAuthority ? `<small>${esc(t("serverSelectedStart"))}</small>` : ""}</div>`).join("");
     const questMerges = (branches.questMerges || []).map((row) => `<div><b>${esc(t("questMerge"))}</b><span>${(row.predecessorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span><i>&rarr;</i><code>${esc(row.questId || "?")}</code></div>`).join("");
-    const nativeBranchLabel = (kind) => t(kind === "splitFanout" ? "nativeSplitFanout" : kind === "ifElse" ? "nativeIfElseBranch" : "nativeSwitchBranch");
+    const nativeBranchLabel = (kind) => t(kind === "splitFanout" ? "nativeSplitFanout" : kind === "ifElse" ? "nativeIfElseBranch" : kind === "waitTriggerVolume" ? "nativeWaitTriggerVolumeBranch" : "nativeSwitchBranch");
     const nativeParamText = (label, param) => {
       if (!param || typeof param !== "object") return "";
       const source = param.getterLocalId != null
@@ -3897,7 +3899,7 @@
       const armRows = displayArms.map((arm) => {
         const storyLinks = (arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>${external.has(key) ? `<b>${esc(t("nativeCrossBoundaryExternal"))}</b>` : ""}`).join(" ");
         const entry = arm.entryAction
-          ? `<span><b>${esc(t("nativeArmEntryAction"))}</b> <code>#${esc(arm.entryAction.localId ?? "?")} ${esc(arm.entryAction.actionName || arm.entryAction.recordClass || "?")}</code></span>`
+          ? `<span><b>${esc(t("nativeArmEntryAction"))}</b> <code>#${esc(arm.entryAction.localId ?? "?")} ${esc(arm.entryAction.actionName || arm.entryAction.recordClass || "?")}</code>${arm.entryAction.controlRuntimeMappingId ? ` <small><code>${esc(arm.entryAction.controlRuntimeMappingId)}</code></small>` : ""}</span>`
           : "";
         const status = !storyLinks && arm.targetStatus === "exact_active_action"
           ? `<b>${esc(t("nativeNonStoryArm"))}</b>`

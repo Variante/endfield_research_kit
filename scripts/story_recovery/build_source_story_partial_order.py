@@ -4008,6 +4008,11 @@ def _native_branch_kind(edge: str) -> str:
         return "switch"
     if edge == "WhileAction.doAction":
         return "while"
+    if edge in {
+        "WaitForSecondsInTriggerVolume.successAction",
+        "WaitForSecondsInTriggerVolume.failAction",
+    }:
+        return "waitTriggerVolume"
     return ""
 
 
@@ -4021,6 +4026,7 @@ def _native_branch_runtime_mapping(
         "ifElse": "IfElseAction",
         "switch": "",
         "while": "WhileAction",
+        "waitTriggerVolume": "WaitForSecondsInTriggerVolume",
     }
     action_name = family_by_kind.get(branch_kind, "")
     if branch_kind == "switch":
@@ -4085,6 +4091,19 @@ NATIVE_CONTROL_ARM_SCHEMAS: dict[str, dict[str, Any]] = {
     "WhileAction": {
         "kind": "fields",
         "fields": (("whileDoActionLocalId", "WhileAction.doAction"),),
+    },
+    "WaitForSecondsInTriggerVolume": {
+        "kind": "fields",
+        "fields": (
+            (
+                "waitSuccessActionLocalId",
+                "WaitForSecondsInTriggerVolume.successAction",
+            ),
+            (
+                "waitFailActionLocalId",
+                "WaitForSecondsInTriggerVolume.failAction",
+            ),
+        ),
     },
 }
 
