@@ -11689,6 +11689,9 @@ def _update_story_order_summary(
         "storyOrderDialogTreeIfNodeCount": "dialogTreeIfNodeCount",
         "storyOrderDialogTreeIfNodeArmCount": "dialogTreeIfNodeArmCount",
         "storyOrderDialogTreeIfNodeValidationFailureCount": "dialogTreeIfNodeValidationFailureCount",
+        "storyOrderDialogLineOptionBinaryValidatedGroupCount": "dialogLineOptionBinaryValidatedGroupCount",
+        "storyOrderDialogLineOptionBinaryValidationFailureCount": "dialogLineOptionBinaryValidationFailureCount",
+        "storyOrderDialogLineOptionRelatedFileCount": "dialogLineOptionRelatedFileCount",
     }
     for target, source in mappings.items():
         summary[target] = int(order_summary.get(source) or 0)
@@ -13094,6 +13097,9 @@ def main() -> int:
             f"{summary.get('dialogTreeBranchNodeArms', 0)} branch arms, "
             f"{summary.get('dialogTreeIfNodes', 0)} binary-validated DialogTree IfNodes / "
             f"{summary.get('dialogTreeIfNodeArms', 0)} IfNode arms, "
+            f"{summary.get('dialogLineOptionBinaryValidatedGroups', 0)} binary-validated Timeline option groups / "
+            f"{summary.get('dialogLineOptionRelatedFiles', 0)} related option-route files / "
+            f"{summary.get('dialogLineOptionBinaryValidationFailures', 0)} Timeline option validation failures, "
             f"{summary.get('nativeOrderedSequences', 0)} native ordered sequences, "
             f"{summary.get('nativeOrderedSequenceContexts', 0)} native sequence contexts, "
             f"{summary.get('nativeSerializedBranchGroupCount', 0)} corpus serialized Branch groups / "

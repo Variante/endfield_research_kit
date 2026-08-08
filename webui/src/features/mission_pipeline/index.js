@@ -472,6 +472,10 @@
       dialogTreeIfArm: "If arm",
       dialogTreeIfCount: "binary DialogTree IfNodes",
       dialogTreeIfBoundary: "This is internal condition-selection evidence with original files; it does not prove mission trigger, ownership, cross-file order, or chronology.",
+      dialogTimelineBinaryContract: "Original-binary Timeline option contract",
+      dialogTimelineValidation: "binary validation",
+      dialogTimelineBinaryCount: "binary Timeline option groups",
+      dialogTimelineBoundary: "Timeline tracks supply the exact option-index skip/return window; the binary contract explains runtime option matching. This does not prove a mission trigger, cross-file chronology, or server branch choice.",
       questFork: "quest fork",
       questForkStructure: "Authored quest-fork structure",
       questForkStructureHint: "Arm roles, guards, terminal shape, and reconvergence come from the original MissionRuntime file. Server activation and exclusivity remain unresolved.",
@@ -1740,6 +1744,10 @@
       dialogTreeIfArm: "If \u5206\u652f\u81c2",
       dialogTreeIfCount: "\u4e8c\u8fdb\u5236\u9a8c\u8bc1\u7684 DialogTree If \u8282\u70b9",
       dialogTreeIfBoundary: "\u8fd9\u662f\u5e26\u539f\u59cb\u6587\u4ef6\u7684\u5185\u90e8\u6761\u4ef6\u9009\u62e9\u8bc1\u636e\uff1b\u4e0d\u8bc1\u660e\u4efb\u52a1\u89e6\u53d1\u3001\u5f52\u5c5e\u3001\u8de8\u6587\u4ef6\u987a\u5e8f\u6216\u65f6\u5e8f\u3002",
+      dialogTimelineBinaryContract: "\u539f\u59cb\u4e8c\u8fdb\u5236 Timeline \u9009\u9879\u5408\u7ea6",
+      dialogTimelineValidation: "\u4e8c\u8fdb\u5236\u9a8c\u8bc1",
+      dialogTimelineBinaryCount: "\u4e8c\u8fdb\u5236 Timeline \u9009\u9879\u5206\u652f\u7ec4",
+      dialogTimelineBoundary: "Timeline \u8f68\u9053\u63d0\u4f9b\u7cbe\u786e\u7684 option-index \u8df3\u8f6c/\u8fd4\u56de\u7a97\u53e3\uff1b\u4e8c\u8fdb\u5236\u5408\u7ea6\u89e3\u91ca\u8fd0\u884c\u65f6\u9009\u9879\u5339\u914d\u3002\u8fd9\u4e0d\u8bc1\u660e\u4efb\u52a1\u89e6\u53d1\u3001\u8de8\u6587\u4ef6\u65f6\u5e8f\u6216\u670d\u52a1\u5668\u5206\u652f\u9009\u62e9\u3002",
       questFork: "\u4efb\u52a1\u5206\u652f",
       questForkStructure: "\u539f\u59cb\u4efb\u52a1\u5206\u652f\u7ed3\u6784",
       questForkStructureHint: "\u5206\u652f\u89d2\u8272\u3001\u5b88\u536b\u6761\u4ef6\u3001\u7ec8\u70b9\u5f62\u72b6\u548c\u518d\u6c47\u5408\u5747\u6765\u81ea\u539f\u59cb MissionRuntime \u6587\u4ef6\uff1b\u670d\u52a1\u7aef\u542f\u52a8\u4e0e\u4e92\u65a5\u7b56\u7565\u4ecd\u672a\u77e5\u3002",
@@ -4143,13 +4151,32 @@
       const originals = (row.relatedOriginalFiles || []).map((related) => `<small><code>${esc(related.kind || "file")}</code> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("");
       return `<details open><summary><b>${esc(t("dialogTreeBranchNode"))}</b> <a href="${esc(storyHref(row.storyKey))}"><code>${esc(row.storyKey || "?")}</code></a> <i>#${esc(row.branchNodeId || "?")}</i><span>${Number(row.conditionCount || 0).toLocaleString()} ${esc(t("dialogTreeBranchArm"))}</span></summary><p class="mp-native-predicate"><b>${esc(t("dialogTreeBranchSelection"))}</b> <code>${esc(row.selectionRule || "")}</code></p>${arms}<small><strong>${esc(t("dialogConditionalNativeProof"))}:</strong> ${nativeProof}</small><small>${(row.sourceFiles || []).map((source) => `<code>${esc(source)}</code>`).join(" ")}</small><small>${esc(t("dialogTreeBranchBoundary"))}</small>${originals ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${originals}</details>` : ""}</details>`;
     }).join("");
-    const dialogOptions = (branches.dialogLineOptions || []).map((row) => `<details><summary><code>${esc(row.storyKey || "?")}</code> 路 ${esc(t("optionBranches"))} ${esc(row.group ?? "?")}</summary>${(row.options || []).map((option) => {
-      const branchLines = option.branchLineIds || [];
-      const directContinuation = option.directContinuation && option.continuationLineId
-        ? `<small>${esc(t("optionDirectContinuation"))}</small> <code>${esc(option.continuationLineId)}</code>`
+    const dialogOptionsWithEvidence = (branches.dialogLineOptions || []).map((row) => {
+      const provenance = row.provenance || {};
+      const validation = row.binaryValidation || provenance.binaryValidation || {};
+      const consumers = (provenance.nativeConsumers || [])
+        .map((consumer) => `<code>${esc(consumer.method || "?")} ${esc(consumer.token || "")} @ ${esc(consumer.address || "?")}</code>`)
+        .join(" ");
+      const relatedOriginalFiles = (row.relatedOriginalFiles || [])
+        .map((related) => `<small><code>${esc(related.kind || "file")}</code> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`)
+        .join("");
+      const validationFailures = (validation.failures || []).length
+        ? `<small>${esc(JSON.stringify(validation.failures))}</small>`
         : "";
-      return `<div><code>${esc(option.optionId || "?")}</code><i>&rarr;</i><span>${branchLines.map((line) => `<code>${esc(line)}</code>`).join(" ")}${directContinuation}</span></div>`;
-    }).join("")}</details>`).join("");
+      const binaryEvidence = validation.status
+        ? `<p class="mp-native-predicate"><b>${esc(t("dialogTimelineBinaryContract"))}</b> <code>${esc(provenance.selectionRule || "")}</code> <span>${esc(t("dialogTimelineValidation"))}: ${esc(validation.status)}</span></p><small>${consumers}</small>${validationFailures}`
+        : "";
+      const sources = (provenance.sourceFiles || provenance.assetTracks || [])
+        .map((source) => `<code>${esc(source)}</code>`)
+        .join(" ");
+      return `<details><summary><code>${esc(row.storyKey || "?")}</code> · ${esc(t("optionBranches"))} ${esc(row.group ?? "?")}</summary>${(row.options || []).map((option) => {
+        const branchLines = option.branchLineIds || [];
+        const directContinuation = option.directContinuation && option.continuationLineId
+          ? `<small>${esc(t("optionDirectContinuation"))}</small> <code>${esc(option.continuationLineId)}</code>`
+          : "";
+        return `<div><code>${esc(option.optionId || "?")}</code><i>&rarr;</i><span>${branchLines.map((line) => `<code>${esc(line)}</code>`).join(" ")}${directContinuation}</span></div>`;
+      }).join("")}${binaryEvidence}${sources ? `<small>${sources}</small>` : ""}${row.evidenceBoundary ? `<small>${esc(row.evidenceBoundary)}</small>` : ""}${relatedOriginalFiles ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${relatedOriginalFiles}</details>` : ""}</details>`;
+    }).join("");
     const dialogTreeIfNodes = (branches.dialogTreeIfNodes || []).map((row) => {
       const condition = row.condition && Object.keys(row.condition).length
         ? `<code>${esc(JSON.stringify(row.condition))}</code>`
@@ -4611,7 +4638,7 @@
     return `<details class="mp-mission-story mp-story-order" data-weight="${Number(summary.strongEdgeCount) ? "strong" : "context"}"${Number(summary.strongEdgeCount) || offlineRows.length ? " open" : ""}>
       <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
       <p>${esc(t("storyOrderHint"))}</p>
-      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.questStartActionDefinitionCount || 0).toLocaleString()}</b>${esc(t("questStartDefinitions"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span>${summary.dialogConditionalBranchCount ? `<span><b>${Number(summary.dialogConditionalBranchCount).toLocaleString()}</b>${esc(t("dialogConditionalCount"))}</span>` : ""}${summary.dialogTreeBranchNodeCount ? `<span><b>${Number(summary.dialogTreeBranchNodeCount).toLocaleString()}</b>${esc(t("dialogTreeBranchCount"))}</span>` : ""}${summary.dialogTreeIfNodeCount ? `<span><b>${Number(summary.dialogTreeIfNodeCount).toLocaleString()}</b>${esc(t("dialogTreeIfCount"))}</span>` : ""}${summary.nativeControlNonStoryArmCount ? `<span><b>${Number(summary.nativeControlNonStoryArmCount).toLocaleString()}</b>${esc(t("nativeNonStoryArm"))}</span>` : ""}${summary.nativeControlCrossBoundaryBranchCount ? `<span><b>${Number(summary.nativeControlCrossBoundaryBranchCount).toLocaleString()}</b>${esc(t("nativeCrossBoundaryStories"))}</span>` : ""}<span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
+      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.questStartActionDefinitionCount || 0).toLocaleString()}</b>${esc(t("questStartDefinitions"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span>${summary.dialogConditionalBranchCount ? `<span><b>${Number(summary.dialogConditionalBranchCount).toLocaleString()}</b>${esc(t("dialogConditionalCount"))}</span>` : ""}${summary.dialogTreeBranchNodeCount ? `<span><b>${Number(summary.dialogTreeBranchNodeCount).toLocaleString()}</b>${esc(t("dialogTreeBranchCount"))}</span>` : ""}${summary.dialogTreeIfNodeCount ? `<span><b>${Number(summary.dialogTreeIfNodeCount).toLocaleString()}</b>${esc(t("dialogTreeIfCount"))}</span>` : ""}${summary.dialogLineOptionBinaryValidatedGroupCount ? `<span><b>${Number(summary.dialogLineOptionBinaryValidatedGroupCount).toLocaleString()}</b>${esc(t("dialogTimelineBinaryCount"))}</span>` : ""}${summary.nativeControlNonStoryArmCount ? `<span><b>${Number(summary.nativeControlNonStoryArmCount).toLocaleString()}</b>${esc(t("nativeNonStoryArm"))}</span>` : ""}${summary.nativeControlCrossBoundaryBranchCount ? `<span><b>${Number(summary.nativeControlCrossBoundaryBranchCount).toLocaleString()}</b>${esc(t("nativeCrossBoundaryStories"))}</span>` : ""}<span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
       ${missionNamedLevelDataContexts ? `<section><h4>${esc(t("missionNamedLevelDataReceiverContexts"))} <span>${(order.missionNamedLevelDataReceiverContexts || []).length}</span></h4><p>${esc(t("missionNamedLevelDataReceiverContextsHint"))}</p><div class="mp-order-branches">${missionNamedLevelDataContexts}</div></section>` : ""}
       ${missionObservedContexts ? `<section><h4>${esc(t("missionObservedScriptContexts"))}</h4><p>${esc(t("missionObservedScriptContextsHint"))}</p><div class="mp-order-branches">${missionObservedContexts}</div></section>` : ""}
       ${causalEdges ? `<section><h4>${esc(t("causalEdges"))}</h4><div class="mp-order-edges">${causalEdges}</div></section>` : ""}
@@ -4626,7 +4653,7 @@
       ${serializedBranchInventoryHtml}
       ${typedControlFamilyHtml}
       ${relatedActionTopologies ? `<section><h4>${esc(t("nativeRelatedActionGraphs"))}</h4><p>${esc(t("nativeRelatedActionGraphsHint"))}</p><div class="mp-order-branches">${relatedActionTopologies}</div></section>` : ""}
-      ${dialogOptions ? `<section><h4>${esc(t("optionBranches"))}</h4><div class="mp-order-dialog-branches">${dialogOptions}</div></section>` : ""}
+      ${dialogOptionsWithEvidence ? `<section><h4>${esc(t("optionBranches"))}</h4><div class="mp-order-dialog-branches">${dialogOptionsWithEvidence}</div></section>` : ""}
       ${offlineGaps ? `<details class="mp-order-recovery-gaps" open><summary>${esc(t("offlineRecoveryGaps"))} <span>${offlineRows.length.toLocaleString()}</span></summary><p>${esc(t("offlineRecoveryGapsHint"))}</p><div>${offlineGaps}</div></details>` : ""}
       <small>${esc(t("isolatedScenes"))}: ${Number(summary.isolatedSceneCount || 0).toLocaleString()} 路 ${esc(t("weakOnlyScenes"))}: ${Number(summary.weakOnlySceneCount || 0).toLocaleString()}</small>
     </details>`;
