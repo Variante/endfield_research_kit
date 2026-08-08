@@ -140,6 +140,48 @@ class NativeSerializedBranchProjectionTests(unittest.TestCase):
             ["PlayRadio"],
         )
 
+    def test_nested_typed_control_keeps_each_serialized_arm(self) -> None:
+        topology = {
+            "actions": [
+                {
+                    "localId": 10,
+                    "actionName": "Branch",
+                    "controlRuntimeMappingId": "fixture-branch-runtime",
+                    "controlDetail": {
+                        "branchSequenceActionLocalIds": [20],
+                    },
+                    "nextActionLocalId": 50,
+                },
+                {
+                    "localId": 20,
+                    "actionName": "IfElseAction",
+                    "controlDetail": {
+                        "trueActionLocalId": 30,
+                        "falseActionLocalId": 40,
+                    },
+                },
+                {"localId": 30, "actionName": "PlayRadio"},
+                {"localId": 40, "actionName": "CallServer"},
+                {"localId": 50, "actionName": "Finish"},
+            ],
+            "edges": [
+                {"sourceKind": "action", "sourceLocalId": 10, "targetActionLocalId": 20, "relation": "Branch.sequence[0]"},
+                {"sourceKind": "action", "sourceLocalId": 10, "targetActionLocalId": 50, "relation": "ActionBase.nextId"},
+                {"sourceKind": "action", "sourceLocalId": 20, "targetActionLocalId": 30, "relation": "IfElseAction.trueAction"},
+                {"sourceKind": "action", "sourceLocalId": 20, "targetActionLocalId": 40, "relation": "IfElseAction.falseAction"},
+            ],
+        }
+        projection = _native_serialized_branch_arm_projection(
+            topology,
+            topology["actions"][0],
+            {30: {"radio_nested"}},
+        )
+        nested = projection["arms"][0]["nestedControls"]
+        self.assertEqual(len(nested), 1)
+        self.assertEqual(nested[0]["actionName"], "IfElseAction")
+        self.assertEqual(nested[0]["arms"][0]["playbackStoryKeys"], ["radio_nested"])
+        self.assertEqual(nested[0]["arms"][1]["reachableActionNames"], ["CallServer"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -158,8 +158,9 @@ in five payloads.
   227 serialized slots, and 37 playback-bearing arms, with zero groups carrying
   playback on two arms. The inventory attaches LevelScript plus binary/metadata
   hashes as related original files, and now exposes each arm's exact reachable
-  native action names/classes. It remains context-only and never promotes
-  ownership or order; arbitrary `texts` fields and OCR/overrides are not inputs.
+  native action names/classes and 298 nested typed control contexts across the
+  current 227 arms. It remains context-only and never promotes ownership or
+  order; arbitrary `texts` fields and OCR/overrides are not inputs.
 - Mission Pipeline publication now performs a second corpus-wide attachment
   pass after graph-neutral recovery shells exist and fails closed unless every
   recovered native branch reaches a payload. This restored 217 previously
