@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v35"
+SCHEMA = "sourceStoryPartialOrder.v36"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -73,7 +73,7 @@ NATIVE_LEVELSCRIPT_ROOTS = (
     / "Data" / "Json" / "LevelScriptData",
 )
 NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA = (
-    "nativeSerializedBranchInventory.v3"
+    "nativeSerializedBranchInventory.v4"
 )
 READING_POPUP_TABLE_PATH = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
@@ -4088,6 +4088,7 @@ def _native_serialized_branch_arm_projection(
     topology: dict[str, Any],
     action: dict[str, Any],
     playback_by_local: dict[int, set[str]] | None = None,
+    control_predicates_by_local: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Project one serialized ``Branch._idList`` without inferring ownership.
 
@@ -4096,9 +4097,11 @@ def _native_serialized_branch_arm_projection(
     playback records supplied by ``build_levelscript_action_story_occurrences``.
     This makes it reusable for the complete original LevelScript corpus and
     keeps sibling arms visible even when no Story record is reachable from an
-    arm.
+    arm. When an exact Story path supplies a decoded predicate, that predicate
+    is attached to the nested control without promoting it to ownership/order.
     """
     playback_by_local = playback_by_local or {}
+    control_predicates_by_local = control_predicates_by_local or {}
     branch_local_id = action.get("localId")
     detail = action.get("controlDetail") or {}
     serialized_refs = detail.get("branchSequenceActionLocalIds")
@@ -4249,6 +4252,9 @@ def _native_serialized_branch_arm_projection(
             detail = nested.get("controlDetail") or {}
             if isinstance(detail, dict):
                 control["controlDetail"] = dict(detail)
+            predicate = control_predicates_by_local.get(local_id)
+            if isinstance(predicate, dict):
+                control["predicate"] = dict(predicate)
             control["arms"] = []
             for slot in slots:
                 relation = safe_key(slot.get("edge"))
@@ -4973,6 +4979,8 @@ def _native_serialized_branch_inventory_not_requested() -> dict[str, Any]:
             "serializedBranchArmCount": 0,
             "playbackArmCount": 0,
             "multiPlaybackBranchCount": 0,
+            "nestedControlCount": 0,
+            "controlPredicateConflictCount": 0,
             "validationFailureCount": 0,
         },
         "rows": [],
@@ -5048,6 +5056,7 @@ def _native_serialized_branch_inventory(
                 )
 
     playback_by_hash_local: dict[tuple[str, int], set[str]] = defaultdict(set)
+    control_predicate_variants: dict[tuple[str, int], set[str]] = defaultdict(set)
     playback_join_misses = 0
     occurrence_roots = dict(playback_occurrences_by_root or {})
     for root in NATIVE_LEVELSCRIPT_ROOTS:
@@ -5076,6 +5085,50 @@ def _native_serialized_branch_inventory(
                 playback_by_hash_local[
                     (digest, occurrence["localId"])
                 ].add(safe_key(story_key))
+                for owner in occurrence.get("nativeEventOwners") or []:
+                    if not isinstance(owner, dict):
+                        continue
+                    for path_row in owner.get("path") or []:
+                        if not isinstance(path_row, dict):
+                            continue
+                        local_id = path_row.get("localId")
+                        predicate = path_row.get("branchPredicate")
+                        if not isinstance(local_id, int) or not isinstance(predicate, dict):
+                            continue
+                        try:
+                            control_predicate_variants[(digest, local_id)].add(
+                                json.dumps(
+                                    predicate,
+                                    ensure_ascii=False,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                )
+                            )
+                        except (TypeError, ValueError):
+                            continue
+
+    control_predicates_by_hash_local: dict[tuple[str, int], dict[str, Any]] = {}
+    predicate_conflict_keys: list[tuple[str, int]] = []
+    for key, variants in control_predicate_variants.items():
+        if len(variants) != 1:
+            predicate_conflict_keys.append(key)
+            continue
+        try:
+            predicate = json.loads(next(iter(variants)))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            predicate = None
+        if isinstance(predicate, dict):
+            control_predicates_by_hash_local[key] = predicate
+    for digest, local_id in sorted(predicate_conflict_keys, key=lambda item: (natural_key(item[0]), item[1]))[:32]:
+        failures.append({
+            "validator": "nativeSerializedBranchInventory",
+            "gate": "uniqueControlPredicate",
+            "sourceFiles": sorted(hash_to_paths.get(digest) or [], key=natural_key),
+            "sourceSha256": digest,
+            "localId": local_id,
+            "expected": "one exact branch predicate per action slot",
+            "actual": {"variantCount": len(control_predicate_variants[(digest, local_id)])},
+        })
 
     grouped: dict[tuple[str, int], dict[str, Any]] = {}
     reported_topology_failures: set[str] = set()
@@ -5157,10 +5210,17 @@ def _native_serialized_branch_inventory(
             in playback_by_hash_local.items()
             if row_digest == digest
         }
+        control_predicates_by_local = {
+            local_id: predicate
+            for (row_digest, local_id), predicate
+            in control_predicates_by_hash_local.items()
+            if row_digest == digest
+        }
         projection = _native_serialized_branch_arm_projection(
             topology,
             action,
             playback_by_local,
+            control_predicates_by_local,
         )
         branch_local_id = action.get("localId")
         adjacency: dict[int, set[int]] = defaultdict(set)
@@ -5275,12 +5335,18 @@ def _native_serialized_branch_inventory(
         "multiPlaybackBranchCount": sum(
             int(row.get("playbackArmCount") or 0) >= 2 for row in rows
         ),
+        "nestedControlCount": sum(
+            len(arm.get("nestedControls") or [])
+            for row in rows
+            for arm in row.get("arms") or []
+        ),
         "uniquePlaybackStoryKeyCount": len({
             story_key
             for row in rows
             for story_key in row.get("playbackStoryKeys") or []
         }),
         "playbackOccurrenceJoinMissCount": playback_join_misses,
+        "controlPredicateConflictCount": len(predicate_conflict_keys),
         "validationFailureCount": len(failures),
     }
     return {
@@ -6479,6 +6545,12 @@ def build_report(
         "nativeSerializedMultiPlaybackBranchCount": int(
             inventory_summary.get("multiPlaybackBranchCount") or 0
         ),
+        "nativeSerializedNestedControlCount": int(
+            inventory_summary.get("nestedControlCount") or 0
+        ),
+        "nativeSerializedBranchPredicateConflictCount": int(
+            inventory_summary.get("controlPredicateConflictCount") or 0
+        ),
         "nativeSerializedBranchValidationFailureCount": int(
             inventory_summary.get("validationFailureCount") or 0
         ),
@@ -6598,6 +6670,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"serialized slots / `{summary.get('nativeSerializedPlaybackArmCount', 0)}` "
         f"exact playback-bearing arms; `{summary.get('nativeSerializedMultiPlaybackBranchCount', 0)}` "
         "groups have playback on multiple arms, so this census admits no order or ownership",
+        f"- nested corpus Branch controls: `{summary.get('nativeSerializedNestedControlCount', 0)}` "
+        f"typed control contexts; `{summary.get('nativeSerializedBranchPredicateConflictCount', 0)}` "
+        "predicate-join conflicts (conflicts fail closed)",
         f"- related native action graphs: `{summary.get('nativeRelatedActionTopologies', 0)}` "
         "original LevelScript files attached only through exact Story control paths",
         f"- conditional predicates: `{summary.get('nativeSemanticPredicates', 0)}` exact "
