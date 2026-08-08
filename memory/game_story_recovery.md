@@ -537,6 +537,17 @@ hash-locked original `GameAssembly.dll`. These rows expose branch selection,
 not a guessed order between arms or a mission trigger; cross-Story routes still
 require the stricter carrier-closure edge gate.
 
+The same original-binary audit now scans every candidate DialogTree TextAsset
+for serialized `Beyond.Gameplay.DialogTreeBranchNode` records, including
+mechanical `misc_dlg_*` aliases. The current corpus has 13 exact nodes / 28
+condition arms with zero validation failures. The installed
+`DialogManager.GetBranchNextIndex` contract iterates `DialogBranchData.conditions`
+in serialized order, selects the first native `GameCondition.result == 1`, and
+defaults to outgoing ordinal 0. Mission Pipeline cards attach each exact
+TextAsset and the hash-locked `GameAssembly.dll`; this is internal arm-selection
+evidence only and does not recover mission triggers, Story ownership, cross-file
+order, or sibling chronology.
+
 The latest batch removes two object-shaped blind spots with reusable negative
 consumer rules. Mechanical `misc_dlg_*` aliases now enter the same exact
 DialogText/DialogOption/audio, registry, Timeline, typed action/playback,

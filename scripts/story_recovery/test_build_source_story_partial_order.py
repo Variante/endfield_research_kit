@@ -414,6 +414,185 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(diagnostic["expected"]["outcomeCount"], 2)
         self.assertEqual(diagnostic["actual"]["binaryNodeType"], "")
 
+    def test_dialog_tree_branch_nodes_follow_serialized_condition_order(self) -> None:
+        """BranchNode recovery is corpus-driven and preserves native arm ordinals."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source_path = root / "dialog_branch_tree.json"
+            game_assembly = root / "GameAssembly.dll"
+            game_assembly.write_bytes(b"test-original-gameassembly-branch")
+            raw_tree = {
+                "type": "Beyond.Gameplay.DialogTree",
+                "nodes": [
+                    {
+                        "$id": "branch-arbitrary",
+                        "$type": "Beyond.Gameplay.DialogTreeBranchNode",
+                        "_dialogBranchData": {
+                            "conditions": [
+                                {
+                                    "$type": "Beyond.Gameplay.CheckQuestState",
+                                    "_questId": {"constValue": "arbitrary_q#1"},
+                                    "_targetQuestState": {"constValue": 2},
+                                },
+                                {
+                                    "$type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+                                    "_mapId": {"constValue": "map_arbitrary"},
+                                    "_scriptId": {"constValue": {"scriptId": 8801}},
+                                    "_key": {"constValue": "branch_flag"},
+                                    "_value": {"constValue": True},
+                                },
+                                {
+                                    "$type": "Beyond.Gameplay.CheckQuestState",
+                                    "_questId": {"constValue": "arbitrary_q#3"},
+                                    "_targetQuestState": {"constValue": 4},
+                                },
+                            ],
+                        },
+                    },
+                    {"$id": "arm-zero", "$type": "Beyond.Gameplay.DialogTreeFinishNode"},
+                    {"$id": "arm-one", "$type": "Beyond.Gameplay.DialogTreeTrunkNode"},
+                    {"$id": "arm-two", "$type": "Beyond.Gameplay.DialogTreeOptionNode"},
+                ],
+                "connections": [
+                    {"_sourceNode": {"$ref": "branch-arbitrary"}, "_targetNode": {"$ref": "arm-zero"}},
+                    {"_sourceNode": {"$ref": "branch-arbitrary"}, "_targetNode": {"$ref": "arm-one"}},
+                    {"_sourceNode": {"$ref": "branch-arbitrary"}, "_targetNode": {"$ref": "arm-two"}},
+                ],
+            }
+            source_path.write_text(
+                json.dumps({
+                    "m_Script": base64.b64encode(
+                        json.dumps(raw_tree).encode("utf-8")
+                    ).decode("ascii"),
+                }),
+                encoding="utf-8",
+            )
+            story_key = "dlg_arbitrary_branch_9"
+            conv = {
+                "key": story_key,
+                "lineGraph": {
+                    "sources": [{
+                        "kind": "dialogTree",
+                        "file": "dialog_branch_tree.json",
+                        "nodes": [{"id": "branch-arbitrary", "type": "DialogTreeBranchNode"}],
+                    }],
+                },
+            }
+            contract = copy.deepcopy(partial_order.DIALOG_TREE_BRANCH_BINARY_CONTRACT)
+            contract["gameAssemblySha256"] = hashlib.sha256(
+                game_assembly.read_bytes()
+            ).hexdigest().upper()
+            with patch.object(partial_order, "ROOT", root), patch.object(
+                partial_order,
+                "_configured_game_assembly_path",
+                return_value=game_assembly,
+            ), patch.object(
+                partial_order,
+                "DIALOG_TREE_BRANCH_BINARY_CONTRACT",
+                contract,
+            ):
+                branches, warnings = partial_order._dialog_tree_local_branch_nodes([
+                    ("conv/arbitrary-branch.json", conv),
+                ])
+
+        self.assertEqual(warnings, [])
+        self.assertEqual(len(branches), 1)
+        branch = branches[0]
+        self.assertEqual(branch["storyKey"], story_key)
+        self.assertEqual(branch["conditionCount"], 3)
+        self.assertEqual(
+            [arm["targetNodeId"] for arm in branch["arms"]],
+            ["arm-zero", "arm-one", "arm-two"],
+        )
+        self.assertEqual(
+            [arm["condition"]["type"] for arm in branch["arms"]],
+            [
+                "Beyond.Gameplay.CheckQuestState",
+                "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+                "Beyond.Gameplay.CheckQuestState",
+            ],
+        )
+        self.assertTrue(branch["arms"][0]["defaultArm"])
+        self.assertFalse(branch["arms"][1]["defaultArm"])
+        self.assertEqual(branch["arms"][1]["connectionIndex"], 1)
+        self.assertEqual(
+            {row["kind"] for row in branch["relatedOriginalFiles"]},
+            {"dialog_tree_source", "original_game_binary"},
+        )
+
+    def test_dialog_tree_branch_nodes_fail_closed_on_condition_arm_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source_path = root / "dialog_branch_invalid.json"
+            game_assembly = root / "GameAssembly.dll"
+            game_assembly.write_bytes(b"test-original-gameassembly-branch-invalid")
+            raw_tree = {
+                "nodes": [{
+                    "$id": "branch-invalid",
+                    "$type": "Beyond.Gameplay.DialogTreeBranchNode",
+                    "_dialogBranchData": {"conditions": [{"$type": "Beyond.Gameplay.CheckQuestState"}]},
+                }, {
+                    "$id": "arm-zero",
+                    "$type": "Beyond.Gameplay.DialogTreeFinishNode",
+                }, {
+                    "$id": "arm-one",
+                    "$type": "Beyond.Gameplay.DialogTreeFinishNode",
+                }],
+                "connections": [
+                    {"_sourceNode": {"$ref": "branch-invalid"}, "_targetNode": {"$ref": "arm-zero"}},
+                    {"_sourceNode": {"$ref": "branch-invalid"}, "_targetNode": {"$ref": "arm-one"}},
+                ],
+            }
+            source_path.write_text(
+                json.dumps({
+                    "m_Script": base64.b64encode(
+                        json.dumps(raw_tree).encode("utf-8")
+                    ).decode("ascii"),
+                }),
+                encoding="utf-8",
+            )
+            conv = {
+                "key": "dlg_arbitrary_branch_invalid",
+                "lineGraph": {
+                    "sources": [{
+                        "kind": "dialogTree",
+                        "file": "dialog_branch_invalid.json",
+                        "nodes": [{"id": "branch-invalid", "type": "DialogTreeBranchNode"}],
+                    }],
+                },
+            }
+            contract = copy.deepcopy(partial_order.DIALOG_TREE_BRANCH_BINARY_CONTRACT)
+            contract["gameAssemblySha256"] = hashlib.sha256(
+                game_assembly.read_bytes()
+            ).hexdigest().upper()
+            with patch.object(partial_order, "ROOT", root), patch.object(
+                partial_order,
+                "_configured_game_assembly_path",
+                return_value=game_assembly,
+            ), patch.object(
+                partial_order,
+                "DIALOG_TREE_BRANCH_BINARY_CONTRACT",
+                contract,
+            ):
+                branches, warnings = partial_order._dialog_tree_local_branch_nodes([
+                    ("conv/arbitrary-branch-invalid.json", conv),
+                ])
+
+        self.assertEqual(branches, [])
+        self.assertEqual(len(warnings), 1)
+        diagnostic = warnings[0]
+        self.assertEqual(diagnostic["validator"], "dialogTreeLocalBranchNode")
+        self.assertEqual(
+            diagnostic["gate"],
+            "exactSerializedBranchListAndNativeSelection",
+        )
+        self.assertEqual(diagnostic["actual"]["conditionCount"], 1)
+        self.assertEqual(diagnostic["actual"]["outgoingConnectionCount"], 2)
+        self.assertEqual(
+            diagnostic["expected"]["conditionCountEqualsOutgoingCount"],
+            True,
+        )
+
     def test_exact_quest_succeed_lifecycle_orders_same_quest_story_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
