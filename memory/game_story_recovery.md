@@ -35,7 +35,7 @@ Latest CN reports:
 | Native branch predicates | 259 named; 264 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Complete native branch-arm topology | 312 / 312 recovered placements published in Mission Pipeline, 880 serialized slots, 43 active non-Story arms, 155 inactive slots, 0 runtime terminals, 0 recovery or publication validator failures |
 | Exact ordered-Branch context | 27 original LevelScript/event contexts across 4 missions; complete serialized `_idList`, exact Story-path arm coverage, and GameAssembly/metadata/LevelScript hashes; 0 multi-arm Story-order edges admitted |
-| Corpus serialized-Branch census | 81 unique original Branch groups / 227 `_idList` slots / 37 exact playback-bearing arms; 298 nested typed controls / 769 nested serialized slots (605 active / 164 inactive) / 465 nested playback arms / 233 playback-bearing controls / 208 nested controls with playback on multiple alternatives / 593 nested control references / 0 playback-predicate gaps; StreamingAssets + Persistent = 9,029 paths / 4,572 hashes; 0 outer groups with playback on multiple arms; context-only |
+| Corpus serialized-Branch census | 81 unique original Branch groups / 227 `_idList` slots / 37 exact playback-bearing arms; 302 mapping-derived nested controls (`Branch` 4 / `Split` 50 / `IfElseAction` 116 / `SwitchInt` 132) / 793 nested serialized slots (629 active / 164 inactive) / 465 nested playback arms / 233 playback-bearing controls / 208 nested controls with playback on multiple alternatives / 601 nested control references / 0 playback-predicate gaps / 0 arm-schema gaps; StreamingAssets + Persistent = 9,029 paths / 4,572 hashes; 0 outer groups with playback on multiple arms; context-only |
 | Complete cross-boundary native branches | 5 groups / 5 exact external Story references (4 Split fan-outs, 1 SwitchInt choice); no ownership or order promotion |
 | Exact mission-state Story alternatives | 3 branch groups / 2 cross-mission Story references; selection only, never chronology or ownership |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
@@ -131,13 +131,13 @@ in five payloads.
   current typed managed delegate route without adding ownership or order.
   Runtime mutation of public delegate fields, reflection/XLua/IFix, native-only
   registries, and server selection remain outside the bound.
-- Exact native control paths for Split, If/Else, Switch, ordered Branch, playback, and
-  many event families.
+- Exact native control paths for Split, If/Else, Switch, ordered Branch,
+  WhileAction, playback, and many event families.
 - 312 native branch groups and 20 native convergences, kept as a partial
   graph instead of flattened into a guessed file list.
 - Every Story-anchored native branch is now expanded from the original
   LevelScript's runtime-active action map rather than a per-object list. A
-  table-driven Split/IfElse/Switch projector retains active non-Story arms,
+  mapping-derived control-family projector retains active non-Story arms,
   non-positive inactive slots, arm-exclusive action topology, and shared
   downstream nodes. It requires the decoded control action to match the
   installed-binary runtime mapping and fails closed with source hashes and
@@ -158,17 +158,19 @@ in five payloads.
   227 serialized slots, and 37 playback-bearing arms, with zero groups carrying
   playback on two arms. The inventory attaches LevelScript plus binary/metadata
   hashes as related original files, and now exposes each arm's exact reachable
-  native action names/classes and 298 nested typed control contexts across the
-  current 227 arms. Exact playback paths also carry decoded binary predicates
+  native action names/classes and 302 mapping-derived nested control contexts
+  across the current 227 arms (`Branch` 4, `Split` 50, `IfElseAction` 116,
+  `SwitchInt` 132). Exact playback paths also carry decoded binary predicates
   onto those nested controls. The same typed projection counts 465 nested
   playback arms and 208 controls with playback on multiple alternatives. All
   233 playback-bearing controls have an exact joined binary predicate in this
   corpus (zero playback-predicate gaps); those alternatives are conditional
-  evidence, not chronology. The projection also retains 593 decoded
+  evidence, not chronology. The projection also retains 601 decoded
   control-to-control reachability references so deeper typed chains are not
-  flattened away. All 769 nested serialized slots resolve to either an exact
-  active action or an explicit inactive target in this corpus; predicate
-  conflicts fail closed. It remains
+  flattened away. All 793 nested serialized slots resolve to either an exact
+  active action or an explicit inactive target in this corpus; the
+  mapping-derived arm schemas have zero gaps and predicate conflicts fail
+  closed. It remains
   context-only and never promotes ownership or order; arbitrary `texts`
   fields and OCR/overrides are not inputs.
 - Mission Pipeline publication now performs a second corpus-wide attachment
