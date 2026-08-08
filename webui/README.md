@@ -190,6 +190,11 @@ Rebuild Story data after editing overrides.
   shown as fail-closed schema gaps. Multi-playback nested controls are
   displayed as conditional context; they never become file-order edges or
   ownership claims.
+- Mission objective cards also expose every generic binary-decoded typed
+  control observed by an authored LevelScript condition. The control detail,
+  exact serialized outgoing edges, event roots, mapping id, and hash-addressed
+  source file are mission-context evidence only; a `CheckLevelScript*`
+  condition does not establish Story ownership or inter-file order.
 - Mission Pipeline includes every recovered native branch placement. Late
   Story-only shells receive the full source-order row, while a missing Story
   namespace becomes a labeled variant aggregate only when its generated bundle

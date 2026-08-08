@@ -187,10 +187,13 @@ in five payloads.
   `map01_lv001/2100280004.json` reaches a Story-bearing exact path, attached
   to `sm1l1m9` through `dlg_sm1l1m9_5`; its case targets are both inactive and
   its default target is `0`, so it adds no Story order or ownership. The other
-  11 copied paths retain native case edges as unowned/non-Story frontier
-  context until an original activation bridge is recovered. The generated
-  census exposes all mapped control-family counts, including
-  `SwitchIntLarger: 8`; OCR and manual order remain cross-reference only.
+  11 copied paths retain native case edges as non-Story frontier context, but
+  the dungeon copies are now attached to exact mission context wherever the
+  original MissionRuntime observes their LevelScript properties/stages
+  (`e10m4d5`/`e10m1d5`). Those authored condition operands do not prove Story
+  playback ownership or inter-file order. The generated census exposes all
+  mapped control-family counts, including `SwitchIntLarger: 8`; OCR and manual
+  order remain cross-reference only.
 - Mission Pipeline publication now performs a second corpus-wide attachment
   pass after graph-neutral recovery shells exist and fails closed unless every
   recovered native branch reaches a payload. This restored 217 previously
