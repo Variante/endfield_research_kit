@@ -12,6 +12,7 @@ generated UI rank, ``sceneOrderInfo.questOrder``, or scene-graph node ``order``.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -209,85 +210,42 @@ EDGE_EVIDENCE_FIELDS = (
 )
 
 
-# Current-build declarations are deliberately narrow and hash locked.  They
-# turn an exact serialized DialogTree branch into chronology only after both
-# the carrier paths and the current GameAssembly branch-selection contract
-# have been audited.  A mismatch emits an actionable warning and no edge.
-DIALOG_TREE_CONDITIONAL_BRANCH_DECLARATIONS = {
-    ("gm02m14", "dlg_gm02m14_1", "dlg_gm02m14_3"): {
-        "sourceFile": (
-            "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
-            "json_by_type/TextAsset/"
-            "dlg_gm02m14_1_p4C5228BE5CCE25DA.json"
-        ),
-        "sourceSha256": (
-            "018DFF862D1EBDA9B0336EDF81F1D862DC2E71271EE0C7695248F507261A00D1"
-        ),
-        "nativeMappingId": "dialog-tree-reachable-story-playback-native-v1",
-        "optionId": "option_dlg_gm02m14_1_2_001",
-        "optionAfterLineId": "dlg_gm02m14_1_005",
-        "branchAfterLineId": "dlg_gm02m14_1_006",
-        "branchNodeId": "9",
-        "parentLineIds": tuple(
-            f"dlg_gm02m14_1_{number:03d}" for number in range(1, 10)
-        ),
-        "parentArmLineIds": (
-            "dlg_gm02m14_1_007",
-            "dlg_gm02m14_1_008",
-            "dlg_gm02m14_1_009",
-        ),
-        "childArmLineIds": (
-            "dlg_gm02m14_3_001",
-            "dlg_gm02m14_3_002",
-            "dlg_gm02m14_3_003",
-        ),
-        "carrierNodePaths": {
-            "dlg_gm02m14_3_001": ("8", "9", "14"),
-            "dlg_gm02m14_3_002": ("8", "9", "14", "15"),
-            "dlg_gm02m14_3_003": ("8", "9", "14", "15", "16", "17"),
+# Current-build binary authority for every serialized DialogTreeIfNode.  The
+# contract is deliberately value/mission independent: the original binary
+# returns the outgoing connection ordinal selected by GameCondition.result.
+# Serialized DialogTree routes still have to prove the complete parent/child
+# carrier closure before this generic rule can emit a Story edge.
+DIALOG_TREE_IF_BINARY_CONTRACT = {
+    "mappingId": "gameassembly-2026-08-02-dialog-tree-if-next-index-v1",
+    "gameAssemblySha256": (
+        "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+    ),
+    "conditionResultTrue": 1,
+    "conditionTrueConnectionIndex": 1,
+    "conditionFalseConnectionIndex": 0,
+    "nativeConsumers": (
+        {
+            "method": "DialogTreeIfNode.GetNextIndex",
+            "token": "0x06003be3",
+            "address": "0x1872a51f8",
+            "contract": (
+                "returns outgoing index 1 exactly when "
+                "GameCondition.result equals 1"
+            ),
         },
-        "carrierConnectionIndexes": {
-            "dlg_gm02m14_3_001": (10, 12),
-            "dlg_gm02m14_3_002": (10, 12, 16),
-            "dlg_gm02m14_3_003": (10, 12, 16, 17, 18),
+        {
+            "method": "GameCondition.Activate",
+            "token": "0x0600489f",
+            "address": "0x18332c000",
         },
-        "condition": {
-            "type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
-            "mapId": "map02_lv005",
-            "scriptId": 90002,
-            "key": "canskip",
-            "value": True,
+        {
+            "method": "GameCondition.get_result",
+            "token": "0x06004884",
+            "address": "0x183a8ad10",
         },
-        "conditionTrueConnectionIndex": 1,
-        "conditionFalseConnectionIndex": 0,
-        "conditionTrueTargetNodeId": "14",
-        "conditionFalseTargetNodeId": "10",
-        "gameAssemblySha256": (
-            "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-        ),
-        "nativeConsumers": (
-            {
-                "method": "DialogTreeIfNode.GetNextIndex",
-                "token": "0x06003be3",
-                "address": "0x1872a51f8",
-                "contract": (
-                    "returns outgoing index 1 exactly when "
-                    "GameCondition.result equals 1"
-                ),
-            },
-            {
-                "method": "GameCondition.Activate",
-                "token": "0x0600489f",
-                "address": "0x18332c000",
-            },
-            {
-                "method": "GameCondition.get_result",
-                "token": "0x06004884",
-                "address": "0x183a8ad10",
-            },
-        ),
-    },
+    ),
 }
+_DIALOG_TREE_BINARY_SOURCE_CACHE: dict[str, dict[str, Any] | None] = {}
 
 
 def _configured_game_assembly_path() -> Path:
@@ -1919,62 +1877,237 @@ def _dialog_tree_cross_story_conditional_edges(
     candidate_keys: set[str],
     dialog_payloads: list[tuple[str, dict[str, Any]]] | None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Validate hash-locked cross-file DialogTree conditional branches."""
+    """Recover typed DialogTree If-node Story branches from the corpus.
+
+    The installed binary returns the outgoing connection ordinal selected by
+    ``GameCondition.result``.  This value-independent contract is combined
+    with exact serialized parent/child carrier closure; no mission, Story,
+    option, line, or condition allowlist is used to discover a branch.
+    """
     payloads_by_key = {
         safe_key(payload.get("key")): payload
         for _path, payload in dialog_payloads or []
         if isinstance(payload, dict) and safe_key(payload.get("key"))
     }
-    rows_by_pair = {
-        (
-            safe_key(row.get("parentStoryKey")),
-            safe_key(row.get("key")),
-        ): row
-        for row in _story_connection_rows(flow)
-        if isinstance(row, dict)
-    }
     edges: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
-    for (declared_mission, parent_key, child_key), declaration in (
-        DIALOG_TREE_CONDITIONAL_BRANCH_DECLARATIONS.items()
-    ):
-        if declared_mission != mission:
-            continue
-        source_file = declaration["sourceFile"]
-        source_path = ROOT / source_file
+    seen_pairs: set[tuple[str, str, str, str]] = set()
+
+    def source_files(payload: dict[str, Any]) -> list[str]:
+        line_graph = payload.get("lineGraph")
+        if not isinstance(line_graph, dict):
+            return []
+        return sorted({
+            safe_key(source.get("file"))
+            for source in line_graph.get("sources") or []
+            if isinstance(source, dict)
+            and safe_key(source.get("kind")) == "dialogTree"
+            and safe_key(source.get("file"))
+        }, key=natural_key)
+
+    def story_lines(payload: dict[str, Any]) -> set[str]:
+        return {
+            safe_key(line.get("id"))
+            for line in payload.get("lines") or []
+            if isinstance(line, dict) and safe_key(line.get("id"))
+        }
+
+    def resolved(path_text: str) -> Path:
+        path = Path(path_text)
+        return path if path.is_absolute() else ROOT / path
+
+    def raw_source(path: Path | None) -> dict[str, Any] | None:
+        if path is None:
+            return None
+        cache_key = str(path.resolve())
+        if cache_key in _DIALOG_TREE_BINARY_SOURCE_CACHE:
+            return _DIALOG_TREE_BINARY_SOURCE_CACHE[cache_key]
+        decoded: dict[str, Any] | None = None
+        try:
+            wrapper = read_json(path, {})
+            encoded = wrapper.get("m_Script") if isinstance(wrapper, dict) else None
+            if isinstance(encoded, str) and encoded.strip():
+                candidate = json.loads(
+                    base64.b64decode(encoded).decode("utf-8-sig")
+                )
+                if isinstance(candidate, dict):
+                    decoded = candidate
+        except (OSError, ValueError, UnicodeDecodeError):
+            decoded = None
+        _DIALOG_TREE_BINARY_SOURCE_CACHE[cache_key] = decoded
+        return decoded
+
+    def ref(value: Any) -> str:
+        return safe_key(value.get("$ref")) if isinstance(value, dict) else ""
+
+    def branch_info(
+        source: dict[str, Any] | None,
+        branch_id: str,
+    ) -> tuple[dict[str, Any], list[tuple[int, str]]]:
+        if not isinstance(source, dict) or not branch_id:
+            return {}, []
+        node = next(
+            (
+                item for item in source.get("nodes") or []
+                if isinstance(item, dict) and safe_key(item.get("$id")) == branch_id
+            ),
+            {},
+        )
+        outgoing: list[tuple[int, str]] = []
+        for index, connection in enumerate(source.get("connections") or []):
+            if not isinstance(connection, dict):
+                continue
+            if ref(connection.get("_sourceNode")) != branch_id:
+                continue
+            target_id = ref(connection.get("_targetNode"))
+            if target_id:
+                outgoing.append((index, target_id))
+        return node, outgoing
+
+    def condition(node: dict[str, Any]) -> dict[str, Any]:
+        if_data = node.get("_dialogIfData")
+        value = if_data.get("condition") if isinstance(if_data, dict) else None
+        if not isinstance(value, dict):
+            return {}
+        result: dict[str, Any] = {}
+        condition_type = safe_key(value.get("$type"))
+        if condition_type:
+            result["type"] = condition_type
+        for source_key, output_key in (
+            ("_mapId", "mapId"),
+            ("_scriptId", "scriptId"),
+            ("_key", "key"),
+            ("_value", "value"),
+            ("_comparer", "comparer"),
+        ):
+            item = value.get(source_key)
+            if isinstance(item, dict) and "constValue" in item:
+                item = item.get("constValue")
+            if isinstance(item, dict) and set(item) == {"scriptId"}:
+                item = item.get("scriptId")
+            if item not in (None, "", {}):
+                result[output_key] = item
+        return result
+
+    def path_nodes(
+        source: dict[str, Any] | None,
+        indexes: tuple[int, ...],
+    ) -> tuple[str, ...]:
+        if not isinstance(source, dict) or not indexes:
+            return ()
+        connections = source.get("connections") or []
+        pairs: list[tuple[str, str]] = []
+        for index in indexes:
+            if index < 0 or index >= len(connections):
+                return ()
+            item = connections[index]
+            if not isinstance(item, dict):
+                return ()
+            pairs.append((ref(item.get("_sourceNode")), ref(item.get("_targetNode"))))
+        if (
+            not pairs
+            or any(not source_id or not target_id for source_id, target_id in pairs)
+            or any(pairs[index][1] != pairs[index + 1][0] for index in range(len(pairs) - 1))
+        ):
+            return ()
+        return (pairs[0][0],) + tuple(target_id for _source_id, target_id in pairs)
+
+    try:
         game_assembly_path = _configured_game_assembly_path()
-        source_sha256 = (
-            hashlib.sha256(source_path.read_bytes()).hexdigest().upper()
-            if source_path.is_file() else ""
-        )
-        game_assembly_sha256 = (
-            hashlib.sha256(game_assembly_path.read_bytes()).hexdigest().upper()
-            if game_assembly_path.is_file() else ""
-        )
-        row = rows_by_pair.get((parent_key, child_key)) or {}
+    except OSError:
+        # Synthetic/unit-test payloads may not ship the repository path
+        # configuration.  Such rows remain fail-closed without preventing
+        # unrelated missions from being audited.
+        game_assembly_path = None
+    game_assembly_sha256 = (
+        hashlib.sha256(game_assembly_path.read_bytes()).hexdigest().upper()
+        if game_assembly_path is not None and game_assembly_path.is_file() else ""
+    )
+    contract = DIALOG_TREE_IF_BINARY_CONTRACT
+
+    for row in _story_connection_rows(flow):
+        if not isinstance(row, dict):
+            continue
+        if safe_key(row.get("relation")) != "dialog_tree_reachable_story_playback":
+            continue
+        parent_key = safe_key(row.get("parentStoryKey"))
+        child_key = safe_key(row.get("key"))
+        if (
+            not parent_key
+            or not child_key
+            or parent_key == child_key
+            or parent_key not in candidate_keys
+            or child_key not in candidate_keys
+        ):
+            continue
         parent_payload = payloads_by_key.get(parent_key) or {}
         child_payload = payloads_by_key.get(child_key) or {}
-        parent_line_ids = {
-            safe_key(line.get("id"))
-            for line in parent_payload.get("lines") or []
-            if isinstance(line, dict) and safe_key(line.get("id"))
-        }
-        child_line_ids = {
-            safe_key(line.get("id"))
-            for line in child_payload.get("lines") or []
-            if isinstance(line, dict) and safe_key(line.get("id"))
-        }
+        parent_line_ids = story_lines(parent_payload)
+        child_line_ids = story_lines(child_payload)
         carriers = {
             safe_key(carrier.get("carrierValue")): carrier
             for carrier in row.get("dialogTreeStoryPlaybackCarriers") or []
-            if isinstance(carrier, dict)
-            and safe_key(carrier.get("carrierValue"))
+            if isinstance(carrier, dict) and safe_key(carrier.get("carrierValue"))
         }
-        actual_carrier_paths = {
+        if not parent_line_ids or not child_line_ids or not carriers:
+            continue
+        routes: list[tuple[dict[str, Any], dict[str, Any]]] = []
+        for link in parent_payload.get("sceneGraphLinks") or []:
+            if not isinstance(link, dict):
+                continue
+            for option in link.get("options") or []:
+                if not isinstance(option, dict):
+                    continue
+                outcomes = [
+                    outcome for outcome in option.get("conditionalOutcomes") or []
+                    if isinstance(outcome, dict)
+                ]
+                if len(outcomes) != 2:
+                    continue
+                if any(
+                    set(_string_list(outcome.get("pathLineIds"))) <= child_line_ids
+                    and _string_list(outcome.get("pathLineIds"))
+                    for outcome in outcomes
+                ):
+                    routes.append((link, option))
+        route_link, route = routes[0] if len(routes) == 1 else ({}, {})
+        outcomes = [
+            outcome for outcome in route.get("conditionalOutcomes") or []
+            if isinstance(outcome, dict)
+        ]
+        child_outcomes = [
+            outcome for outcome in outcomes
+            if set(_string_list(outcome.get("pathLineIds"))) <= child_line_ids
+            and _string_list(outcome.get("pathLineIds"))
+        ]
+        parent_outcomes = [
+            outcome for outcome in outcomes
+            if outcome not in child_outcomes
+            and set(_string_list(outcome.get("pathLineIds"))) <= parent_line_ids
+        ]
+        child_outcome = child_outcomes[0] if len(child_outcomes) == 1 else {}
+        parent_outcome = parent_outcomes[0] if len(parent_outcomes) == 1 else {}
+        debug = route.get("_debug")
+        branch_node_id = safe_key(
+            debug.get("endNodeId") if isinstance(debug, dict) else ""
+        )
+        source_candidates = source_files(parent_payload)
+        source_file = source_candidates[0] if len(source_candidates) == 1 else ""
+        source_path = resolved(source_file) if source_file else None
+        source_payload = raw_source(source_path) if source_file else None
+        source_sha256 = (
+            hashlib.sha256(source_path.read_bytes()).hexdigest().upper()
+            if source_path is not None and source_path.is_file() else ""
+        )
+        node, outgoing = branch_info(source_payload, branch_node_id)
+        outgoing_targets = [target_id for _index, target_id in outgoing]
+        child_target = safe_key(child_outcome.get("targetNodeId"))
+        parent_target = safe_key(parent_outcome.get("targetNodeId"))
+        carrier_paths = {
             line_id: tuple(_string_list(carrier.get("nodePath")))
             for line_id, carrier in carriers.items()
         }
-        actual_connection_indexes = {
+        carrier_indexes = {
             line_id: tuple(
                 int(connection.get("index"))
                 for connection in carrier.get("connectionPath") or []
@@ -1983,106 +2116,116 @@ def _dialog_tree_cross_story_conditional_edges(
             )
             for line_id, carrier in carriers.items()
         }
-        conditional_routes = []
-        for link in parent_payload.get("sceneGraphLinks") or []:
-            if not isinstance(link, dict):
-                continue
-            for option in link.get("options") or []:
-                if (
-                    isinstance(option, dict)
-                    and safe_key(option.get("optionId"))
-                    == declaration["optionId"]
-                ):
-                    conditional_routes.append((link, option))
-        route_link, route = (
-            conditional_routes[0]
-            if len(conditional_routes) == 1 else ({}, {})
-        )
-        outcomes = route.get("conditionalOutcomes") or []
-        actual_outcomes = {
-            safe_key(outcome.get("targetNodeId")): tuple(
-                _string_list(outcome.get("pathLineIds"))
-            )
-            for outcome in outcomes
-            if isinstance(outcome, dict)
-            and safe_key(outcome.get("targetNodeId"))
-        }
-        expected_child_lines = set(declaration["childArmLineIds"])
         current_parent_lines = {
             safe_key(line_id)
             for carrier in carriers.values()
             for line_id in carrier.get("currentParentTrunkIds") or []
             if safe_key(line_id)
         }
-        expected = {
-            "sourceSha256": declaration["sourceSha256"],
-            "gameAssemblySha256": declaration["gameAssemblySha256"],
-            "candidateKeysPresent": True,
-            "relation": "dialog_tree_reachable_story_playback",
-            "confidence": "native_exact_parent_mission_context",
-            "certainty": "authored_reachable",
-            "nativeMappingId": declaration["nativeMappingId"],
-            "parentLineIds": sorted(
-                declaration["parentLineIds"], key=natural_key
-            ),
-            "childLineIds": sorted(expected_child_lines, key=natural_key),
-            "carrierNodePaths": declaration["carrierNodePaths"],
-            "carrierConnectionIndexes": declaration[
-                "carrierConnectionIndexes"
-            ],
-            "optionAfterLineId": declaration["optionAfterLineId"],
-            "branchAfterLineId": declaration["branchAfterLineId"],
-            "branchNodeId": declaration["branchNodeId"],
-            "outcomeKind": "authoredConditionalBranch",
-            "parentOutcome": tuple(declaration["parentArmLineIds"]),
-            # The emitted route stops at the child option node; the exact
-            # carrier closure above proves the terminal third child line.
-            "childOutcomePrefix": tuple(declaration["childArmLineIds"][:2]),
-        }
+        carrier_path_valid = all(
+            path_nodes(source_payload, carrier_indexes.get(line_id, ()))
+            == carrier_paths.get(line_id, ())
+            and branch_node_id in carrier_paths.get(line_id, ())
+            and carrier_paths.get(line_id, ())[-1:]
+            == (safe_key(carrier.get("nodeId")),)
+            for line_id, carrier in carriers.items()
+        )
         actual = {
             "sourceSha256": source_sha256,
             "gameAssemblySha256": game_assembly_sha256,
-            "candidateKeysPresent": {
-                parent_key, child_key
-            } <= candidate_keys,
+            "candidateKeysPresent": parent_key in candidate_keys and child_key in candidate_keys,
             "relation": safe_key(row.get("relation")),
             "confidence": safe_key(row.get("confidence")),
             "certainty": safe_key(row.get("certainty")),
             "nativeMappingId": safe_key(row.get("nativeMappingId")),
             "parentLineIds": sorted(current_parent_lines, key=natural_key),
-            "childLineIds": sorted(child_line_ids, key=natural_key),
-            "carrierNodePaths": actual_carrier_paths,
-            "carrierConnectionIndexes": actual_connection_indexes,
+            "childLineIds": sorted(set(carriers), key=natural_key),
+            "carrierNodePaths": carrier_paths,
+            "carrierConnectionIndexes": carrier_indexes,
             "optionAfterLineId": safe_key(route_link.get("after")),
             "branchAfterLineId": safe_key(route.get("firstLineId")),
-            "branchNodeId": safe_key((route.get("_debug") or {}).get(
-                "endNodeId"
-            )),
+            "branchNodeId": branch_node_id,
+            "conditionTrueTargetNodeId": child_target,
+            "conditionFalseTargetNodeId": parent_target,
             "outcomeKind": safe_key(route.get("outcomeKind")),
-            "parentOutcome": actual_outcomes.get(
-                declaration["conditionFalseTargetNodeId"], ()
-            ),
-            "childOutcomePrefix": actual_outcomes.get(
-                declaration["conditionTrueTargetNodeId"], ()
-            ),
+            "parentOutcome": tuple(_string_list(parent_outcome.get("pathLineIds"))),
+            "childOutcomePrefix": tuple(_string_list(child_outcome.get("pathLineIds"))),
+            "binaryNodeType": safe_key(node.get("$type")),
+            "binaryOutgoingTargetIds": outgoing_targets,
+            "binaryOutgoingIndexes": [index for index, _target in outgoing],
+            "binaryCarrierPathValid": carrier_path_valid,
+            "condition": condition(node),
         }
-        if actual != expected or parent_line_ids != set(
-            declaration["parentLineIds"]
-        ):
+        valid = (
+            len(routes) == 1
+            and len(source_candidates) == 1
+            and source_path is not None
+            and source_path.is_file()
+            and source_payload is not None
+            and game_assembly_sha256 == contract["gameAssemblySha256"]
+            and safe_key(row.get("nativeMappingId"))
+            == "dialog-tree-reachable-story-playback-native-v1"
+            and safe_key(row.get("confidence"))
+            == "native_exact_parent_mission_context"
+            and safe_key(row.get("certainty")) == "authored_reachable"
+            and safe_key(node.get("$type")) == "Beyond.Gameplay.DialogTreeIfNode"
+            and len(outgoing) == 2
+            and outgoing_targets == [parent_target, child_target]
+            and current_parent_lines == parent_line_ids
+            and set(carriers) == child_line_ids
+            and len(child_outcomes) == 1
+            and len(parent_outcomes) == 1
+            and carrier_path_valid
+            and condition(node)
+            and safe_key(route.get("outcomeKind")) == "authoredConditionalBranch"
+        )
+        option_id = safe_key(route.get("optionId"))
+        signature = (mission, parent_key, child_key, option_id)
+        if signature in seen_pairs:
+            continue
+        seen_pairs.add(signature)
+        if not valid:
             warnings.append({
                 "validator": "dialogTreeCrossStoryConditionalBranch",
                 "gate": "exactSerializedBranchCarrierAndNativePolarity",
                 "mission": mission,
                 "storyKeys": [parent_key, child_key],
-                "sourcePaths": [str(source_path), str(game_assembly_path)],
+                "sourcePaths": [
+                    str(path)
+                    for path in (source_path, game_assembly_path)
+                    if path is not None
+                ],
                 "sourceSha256": {
                     source_file: source_sha256,
                     "GameAssembly.dll": game_assembly_sha256,
                 },
-                "expected": expected,
+                "expected": {
+                    "gameAssemblySha256": contract["gameAssemblySha256"],
+                    "binaryMappingId": contract["mappingId"],
+                    "binaryNodeType": "Beyond.Gameplay.DialogTreeIfNode",
+                    "conditionTrueConnectionIndex": contract["conditionTrueConnectionIndex"],
+                    "conditionFalseConnectionIndex": contract["conditionFalseConnectionIndex"],
+                    "completeParentLineCoverage": True,
+                    "completeChildLineCoverage": True,
+                    "carrierPathValid": True,
+                },
                 "actual": actual,
             })
             continue
+        related_original_files = [
+            {
+                "kind": "dialog_tree_source",
+                "sourceFile": source_file,
+                "sha256": source_sha256,
+                "relationship": "exact_serialized_dialog_tree_conditional_branch",
+            },
+            {
+                "kind": "original_game_binary",
+                "sourceFile": str(game_assembly_path.resolve()),
+                "sha256": game_assembly_sha256,
+                "relationship": "DialogTreeIfNode_GetNextIndex_branch_polarity",
+            },
+        ]
         edges.append({
             "from": parent_key,
             "to": child_key,
@@ -2094,25 +2237,27 @@ def _dialog_tree_cross_story_conditional_edges(
             ),
             "sourceFiles": [source_file],
             "sourceSha256": {source_file: source_sha256},
-            "nativeMappingId": declaration["nativeMappingId"],
-            "optionId": declaration["optionId"],
-            "optionAfterLineId": declaration["optionAfterLineId"],
-            "branchAfterLineId": declaration["branchAfterLineId"],
-            "branchNodeId": declaration["branchNodeId"],
-            "parentArmLineIds": list(declaration["parentArmLineIds"]),
-            "childArmLineIds": list(declaration["childArmLineIds"]),
-            "condition": declaration["condition"],
-            "conditionTrueConnectionIndex": declaration[
-                "conditionTrueConnectionIndex"
-            ],
-            "conditionFalseConnectionIndex": declaration[
-                "conditionFalseConnectionIndex"
-            ],
-            "gameAssemblySha256": declaration["gameAssemblySha256"],
-            "nativeConsumers": list(declaration["nativeConsumers"]),
-            "runtimeReplacementPossible": bool(
-                row.get("runtimeReplacementPossible")
-            ),
+            "relatedOriginalFiles": related_original_files,
+            "nativeMappingId": safe_key(row.get("nativeMappingId")),
+            "binaryMappingId": contract["mappingId"],
+            "optionId": option_id,
+            "optionAfterLineId": safe_key(route_link.get("after")),
+            "branchAfterLineId": safe_key(route.get("firstLineId")),
+            "branchNodeId": branch_node_id,
+            "parentLineIds": sorted(parent_line_ids, key=natural_key),
+            "childLineIds": sorted(child_line_ids, key=natural_key),
+            "parentArmLineIds": _string_list(parent_outcome.get("pathLineIds")),
+            "childArmLineIds": sorted(child_line_ids, key=natural_key),
+            "condition": condition(node),
+            "conditionTrueConnectionIndex": contract["conditionTrueConnectionIndex"],
+            "conditionFalseConnectionIndex": contract["conditionFalseConnectionIndex"],
+            "conditionTrueTargetNodeId": child_target,
+            "conditionFalseTargetNodeId": parent_target,
+            "gameAssemblySha256": game_assembly_sha256,
+            "nativeConsumers": list(contract["nativeConsumers"]),
+            "carrierNodePaths": carrier_paths,
+            "carrierConnectionIndexes": carrier_indexes,
+            "runtimeReplacementPossible": bool(row.get("runtimeReplacementPossible")),
         })
     return edges, warnings
 

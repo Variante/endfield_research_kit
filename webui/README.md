@@ -139,6 +139,11 @@ Rebuild Story data after editing overrides.
   They expose the quest, condition/property, Story keys, and related original
   files while visibly preserving unresolved ownership, activation, property
   writer, and order.
+- DialogTree conditional Story edges are discovered across the serialized
+  corpus, not by mission-specific declarations. Their cards show the typed
+  predicate, binary-validated true/false connection ordinals, complete carrier
+  line arms, and the exact DialogTree TextAsset plus `GameAssembly.dll` files;
+  ambiguous or incomplete routes remain absent with a bounded diagnostic.
 - The same panel lists authored quest-start Story actions separately when the
   current installed-binary census has no slot-1 dispatcher. Each row exposes
   its quest, action, Story file, boundary, and hash-checked MissionRuntime,

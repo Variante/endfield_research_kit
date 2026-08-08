@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import base64
 import copy
+import hashlib
 import json
 import struct
 import sys
@@ -117,6 +119,161 @@ def mission_payload(
 
 
 class SourceStoryPartialOrderTests(unittest.TestCase):
+    def test_dialog_tree_conditional_branch_is_value_independent(self) -> None:
+        """The branch adapter must discover arbitrary corpus values."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source_path = root / "dialog_tree.json"
+            game_assembly = root / "GameAssembly.dll"
+            game_assembly.write_bytes(b"test-original-gameassembly")
+            raw_tree = {
+                "type": "Beyond.Gameplay.DialogTree",
+                "nodes": [
+                    {
+                        "$id": "0",
+                        "$type": "Beyond.Gameplay.DialogTreeTrunkNode",
+                        "_actorNodeData": {
+                            "mfTrunkActionData": {
+                                "_trunkId": "dlg_test_parent_001",
+                            },
+                        },
+                    },
+                    {
+                        "$id": "b",
+                        "$type": "Beyond.Gameplay.DialogTreeIfNode",
+                        "_dialogIfData": {
+                            "condition": {
+                                "$type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+                                "_mapId": {"constValue": "test_map"},
+                                "_scriptId": {"constValue": {"scriptId": 77123}},
+                                "_key": {"constValue": "branch_flag"},
+                                "_value": {"constValue": True},
+                            },
+                        },
+                    },
+                    {"$id": "f1", "$type": "Beyond.Gameplay.DialogTreeFinishNode"},
+                    {"$id": "c1", "$type": "Beyond.Gameplay.DialogTreeTrunkNode"},
+                    {"$id": "c2", "$type": "Beyond.Gameplay.DialogTreeTrunkNode"},
+                    {"$id": "co", "$type": "Beyond.Gameplay.DialogTreeOptionNode"},
+                    {"$id": "c3", "$type": "Beyond.Gameplay.DialogTreeTrunkNode"},
+                    {"$id": "f2", "$type": "Beyond.Gameplay.DialogTreeTrunkNode"},
+                ],
+                "connections": [
+                    {"_sourceNode": {"$ref": "0"}, "_targetNode": {"$ref": "b"}},
+                    {"_sourceNode": {"$ref": "b"}, "_targetNode": {"$ref": "f2"}},
+                    {"_sourceNode": {"$ref": "b"}, "_targetNode": {"$ref": "c1"}},
+                    {"_sourceNode": {"$ref": "f2"}, "_targetNode": {"$ref": "f1"}},
+                    {"_sourceNode": {"$ref": "c1"}, "_targetNode": {"$ref": "c2"}},
+                    {"_sourceNode": {"$ref": "c2"}, "_targetNode": {"$ref": "co"}},
+                    {"_sourceNode": {"$ref": "co"}, "_targetNode": {"$ref": "c3"}},
+                ],
+            }
+            source_path.write_text(
+                json.dumps({
+                    "m_Script": base64.b64encode(
+                        json.dumps(raw_tree).encode("utf-8")
+                    ).decode("ascii"),
+                }),
+                encoding="utf-8",
+            )
+            parent_key = "dlg_test_parent"
+            child_key = "dlg_test_child"
+            parent_lines = [
+                f"{parent_key}_001",
+                f"{parent_key}_002",
+                f"{parent_key}_003",
+            ]
+            child_lines = [
+                f"{child_key}_001",
+                f"{child_key}_002",
+                f"{child_key}_003",
+            ]
+            parent_payload = {
+                "key": parent_key,
+                "lines": [{"id": line_id} for line_id in parent_lines],
+                "lineGraph": {"sources": [{"kind": "dialogTree", "file": "dialog_tree.json"}]},
+                "sceneGraphLinks": [{
+                    "after": parent_lines[0],
+                    "options": [{
+                        "optionId": "option_test_branch",
+                        "firstLineId": child_lines[0],
+                        "outcomeKind": "authoredConditionalBranch",
+                        "conditionalOutcomes": [
+                            {
+                                "targetNodeId": "f2",
+                                "pathLineIds": parent_lines[1:],
+                            },
+                            {
+                                "targetNodeId": "c1",
+                                "pathLineIds": child_lines[:2],
+                            },
+                        ],
+                        "_debug": {"endNodeId": "b"},
+                    }],
+                }],
+            }
+            child_payload = {
+                "key": child_key,
+                "lines": [{"id": line_id} for line_id in child_lines],
+            }
+            carriers = []
+            for line_id, node_path, indexes, node_id in (
+                (child_lines[0], ["0", "b", "c1"], [0, 2], "c1"),
+                (child_lines[1], ["0", "b", "c1", "c2"], [0, 2, 4], "c2"),
+                (child_lines[2], ["0", "b", "c1", "c2", "co", "c3"], [0, 2, 4, 5, 6], "c3"),
+            ):
+                carriers.append({
+                    "storyKey": child_key,
+                    "carrierKind": "trunk",
+                    "carrierValue": line_id,
+                    "nodeId": node_id,
+                    "nodePath": node_path,
+                    "connectionPath": [{"index": index} for index in indexes],
+                    "currentParentTrunkIds": parent_lines,
+                    "reachableFromCurrentParentTrunk": True,
+                })
+            payload = mission_payload([])
+            payload["flow"]["missionStoryConnections"] = [{
+                "key": child_key,
+                "parentStoryKey": parent_key,
+                "relation": "dialog_tree_reachable_story_playback",
+                "confidence": "native_exact_parent_mission_context",
+                "certainty": "authored_reachable",
+                "nativeMappingId": "dialog-tree-reachable-story-playback-native-v1",
+                "dialogTreeStoryPlaybackCarriers": carriers,
+            }]
+            contract = copy.deepcopy(partial_order.DIALOG_TREE_IF_BINARY_CONTRACT)
+            contract["gameAssemblySha256"] = hashlib.sha256(
+                game_assembly.read_bytes()
+            ).hexdigest().upper()
+            with patch.object(partial_order, "ROOT", root), patch.object(
+                partial_order,
+                "_configured_game_assembly_path",
+                return_value=game_assembly,
+            ), patch.object(partial_order, "DIALOG_TREE_IF_BINARY_CONTRACT", contract):
+                result = partial_order.build_mission_partial_order(
+                    "test_mission",
+                    {parent_key: "dlg", child_key: "dlg"},
+                    payload,
+                    [
+                        ("conv/dlg_test_parent.json", parent_payload),
+                        ("conv/dlg_test_child.json", child_payload),
+                    ],
+                )
+
+        edge = next(
+            edge for edge in result["directEdges"]
+            if edge["kind"] == "dialogTreeCrossStoryConditionalBranch"
+        )
+        self.assertEqual((edge["from"], edge["to"]), (parent_key, child_key))
+        self.assertEqual(edge["condition"]["mapId"], "test_map")
+        self.assertEqual(edge["condition"]["scriptId"], 77123)
+        self.assertEqual(edge["childArmLineIds"], child_lines)
+        self.assertEqual(
+            {row["kind"] for row in edge["relatedOriginalFiles"]},
+            {"dialog_tree_source", "original_game_binary"},
+        )
+
     def test_exact_quest_succeed_lifecycle_orders_same_quest_story_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
