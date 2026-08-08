@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v34"
+SCHEMA = "sourceStoryPartialOrder.v35"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -73,7 +73,7 @@ NATIVE_LEVELSCRIPT_ROOTS = (
     / "Data" / "Json" / "LevelScriptData",
 )
 NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA = (
-    "nativeSerializedBranchInventory.v2"
+    "nativeSerializedBranchInventory.v3"
 )
 READING_POPUP_TABLE_PATH = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
@@ -4119,6 +4119,26 @@ def _native_serialized_branch_arm_projection(
         target = edge.get("targetActionLocalId")
         if isinstance(source, int) and isinstance(target, int):
             adjacency[source].add(target)
+    active_edge_keys = {
+        (
+            edge.get("sourceLocalId"),
+            safe_key(edge.get("relation")),
+            edge.get("targetActionLocalId"),
+        )
+        for edge in action_edges
+        if isinstance(edge.get("sourceLocalId"), int)
+        and isinstance(edge.get("targetActionLocalId"), int)
+    }
+    terminal_edge_keys = {
+        (
+            edge.get("sourceLocalId"),
+            safe_key(edge.get("relation")),
+            edge.get("targetActionLocalId"),
+        ): edge
+        for edge in topology.get("runtimeTerminalTargets") or []
+        if isinstance(edge, dict)
+        and isinstance(edge.get("sourceLocalId"), int)
+    }
     branch_targets = {
         (
             safe_key(edge.get("relation")),
@@ -4138,15 +4158,31 @@ def _native_serialized_branch_arm_projection(
         and edge.get("sourceLocalId") == branch_local_id
     }
 
-    def target_status(relation: str, target: Any) -> tuple[str, dict[str, Any] | None]:
+    def target_status(
+        source_local_id: Any,
+        relation: str,
+        target: Any,
+    ) -> tuple[str, dict[str, Any] | None]:
         if not isinstance(target, int) or target <= 0:
             return "inactive_serialized_target", None
+        key = (source_local_id, relation, target)
+        if key in active_edge_keys and target in action_by_local:
+            return "exact_active_action", None
+        if key in terminal_edge_keys:
+            return "missing_runtime_action_slot", terminal_edge_keys[key]
+        return "unavailable_fail_closed", None
+
+    def root_target_status(
+        relation: str,
+        target: Any,
+    ) -> tuple[str, dict[str, Any] | None]:
+        """Resolve a serialized root Branch edge against exact decoded links."""
         key = (relation, target)
         if key in branch_targets and target in action_by_local:
             return "exact_active_action", None
         if key in branch_terminals:
             return "missing_runtime_action_slot", branch_terminals[key]
-        return "unavailable_fail_closed", None
+        return target_status(branch_local_id, relation, target)
 
     def downstream(target: Any) -> set[int]:
         if not isinstance(target, int) or target <= 0:
@@ -4182,14 +4218,9 @@ def _native_serialized_branch_arm_projection(
         }, key=natural_key)
         return action_names, record_classes
 
-    arms: list[dict[str, Any]] = []
-    for sequence_index, entry_local_id in enumerate(serialized_refs):
-        relation = f"Branch.sequence[{sequence_index}]"
-        status, terminal = target_status(relation, entry_local_id)
-        reached = downstream(entry_local_id)
-        reachable_action_names, reachable_record_classes = reachable_semantics(reached)
+    def playback_projection(local_ids: set[int]) -> tuple[list[int], list[str]]:
         playback_local_ids = sorted(
-            local_id for local_id in reached if local_id in playback_by_local
+            local_id for local_id in local_ids if local_id in playback_by_local
         )
         playback_keys = sorted({
             story_key
@@ -4197,6 +4228,58 @@ def _native_serialized_branch_arm_projection(
             for story_key in playback_by_local.get(local_id) or set()
             if safe_key(story_key)
         }, key=natural_key)
+        return playback_local_ids, playback_keys
+
+    def nested_controls(local_ids: set[int]) -> list[dict[str, Any]]:
+        """Expose typed controls nested inside one ordered Branch arm."""
+        controls: list[dict[str, Any]] = []
+        for local_id in sorted(local_ids):
+            nested = action_by_local.get(local_id) or {}
+            if safe_key(nested.get("actionName")) not in {
+                "Split",
+                "IfElseAction",
+                "SwitchInt",
+                "SwitchString",
+            }:
+                continue
+            slots = _serialized_native_control_arm_slots(nested)
+            if not slots:
+                continue
+            control = _compact_native_action(nested)
+            detail = nested.get("controlDetail") or {}
+            if isinstance(detail, dict):
+                control["controlDetail"] = dict(detail)
+            control["arms"] = []
+            for slot in slots:
+                relation = safe_key(slot.get("edge"))
+                target = slot.get("entryLocalId")
+                status, terminal = target_status(local_id, relation, target)
+                reached = downstream(target)
+                action_names, record_classes = reachable_semantics(reached)
+                playback_local_ids, playback_keys = playback_projection(reached)
+                nested_arm = dict(slot)
+                nested_arm.update({
+                    "targetStatus": status,
+                    "reachableActionCount": len(reached),
+                    "reachableActionNames": action_names,
+                    "reachableRecordClasses": record_classes,
+                    "playbackActionLocalIds": playback_local_ids,
+                    "playbackStoryKeys": playback_keys,
+                })
+                if terminal:
+                    nested_arm["runtimeTerminal"] = terminal
+                control["arms"].append(nested_arm)
+            control["serializedArmCount"] = len(control["arms"])
+            controls.append(control)
+        return controls
+
+    arms: list[dict[str, Any]] = []
+    for sequence_index, entry_local_id in enumerate(serialized_refs):
+        relation = f"Branch.sequence[{sequence_index}]"
+        status, terminal = root_target_status(relation, entry_local_id)
+        reached = downstream(entry_local_id)
+        reachable_action_names, reachable_record_classes = reachable_semantics(reached)
+        playback_local_ids, playback_keys = playback_projection(reached)
         row: dict[str, Any] = {
             "edge": relation,
             "sequenceIndex": sequence_index,
@@ -4205,6 +4288,7 @@ def _native_serialized_branch_arm_projection(
             "reachableActionCount": len(reached),
             "reachableActionNames": reachable_action_names,
             "reachableRecordClasses": reachable_record_classes,
+            "nestedControls": nested_controls(reached),
             "playbackActionLocalIds": playback_local_ids,
             "playbackStoryKeys": playback_keys,
         }
@@ -4217,7 +4301,7 @@ def _native_serialized_branch_arm_projection(
         arms.append(row)
 
     exit_target = action.get("nextActionLocalId")
-    exit_status, exit_terminal = target_status("ActionBase.nextId", exit_target)
+    exit_status, exit_terminal = root_target_status("ActionBase.nextId", exit_target)
     exit_row: dict[str, Any] = {
         "edge": "ActionBase.nextId (after sequence)",
         "entryLocalId": exit_target,
