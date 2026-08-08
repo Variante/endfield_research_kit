@@ -2491,6 +2491,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 / "StreamingAssets" / "json_by_type" / "TextAsset"
                 / "dlg_existing_branch_p123.json"
             )
+            validation_source = (
+                root / "export_full" / "recovered" / "AnimeStudio-cli"
+                / "StreamingAssets" / "json_by_type" / "TextAsset"
+                / "dlg_existing_branch_validation_p456.json"
+            )
             mission_root.mkdir()
             story_root.mkdir()
             level_script.write_bytes(b"level")
@@ -2498,6 +2503,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             branch_source.parent.mkdir(parents=True)
             branch_source.write_bytes(b"dialog-tree-branch")
             branch_sha = hashlib.sha256(branch_source.read_bytes()).hexdigest()
+            validation_source.write_bytes(b"dialog-tree-validation")
+            validation_sha = hashlib.sha256(validation_source.read_bytes()).hexdigest()
             mission_source = story_root / "existing.json"
             mission_source.write_text("{}", encoding="utf-8")
             mission_runtime = (
@@ -2538,6 +2545,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                         },
                     }],
                 },
+                "warnings": [{
+                    "validator": "dialogTreeLocalIfNode",
+                    "sourcePaths": [str(validation_source)],
+                    "sourceSha256": {str(validation_source): validation_sha},
+                }],
             }
             publication = pipeline.attach_source_story_partial_order(
                 index,
@@ -2562,20 +2574,74 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(publication["sourceOrderRelatedDistinctFiles"], 3)
         self.assertEqual(
             payload["mission"]["storyBranchRelatedOriginalFiles"],
-            [{
-                "kind": "original_dialog_tree_source",
-                "sourceFile": str(branch_source).replace("\\", "/"),
-                "sha256": branch_sha,
-                "relationship": "authored_story_branch_source_file",
-            }],
+            [
+                {
+                    "kind": "original_dialog_tree_source",
+                    "sourceFile": str(branch_source).replace("\\", "/"),
+                    "sha256": branch_sha,
+                    "relationship": "authored_story_branch_source_file",
+                },
+                {
+                    "kind": "original_dialog_tree_source",
+                    "sourceFile": str(validation_source).replace("\\", "/"),
+                    "sha256": validation_sha,
+                    "relationship": "authored_story_branch_validation_source_file",
+                },
+            ],
         )
         self.assertEqual(publication["storyBranchRelatedFileMissions"], ["existing"])
-        self.assertEqual(publication["storyBranchRelatedFileRows"], 1)
-        self.assertEqual(publication["storyBranchRelatedDistinctFiles"], 1)
+        self.assertEqual(publication["storyBranchRelatedFileRows"], 2)
+        self.assertEqual(publication["storyBranchRelatedDistinctFiles"], 2)
         self.assertEqual(index["counts"]["sourceOrderRelatedFileMissions"], 1)
         self.assertEqual(index["missions"][0]["sourceOrderRelatedFileCount"], 3)
-        self.assertEqual(index["missions"][0]["storyBranchRelatedFileCount"], 1)
+        self.assertEqual(index["missions"][0]["storyBranchRelatedFileCount"], 2)
         self.assertIn("auditability only", payload["mission"]["sourceOrderRelatedFilesBoundary"])
+
+    def test_story_branch_shell_publishes_missing_pipeline_context(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source_root = root / "export_full" / "recovered" / "TextAsset"
+            source_root.mkdir(parents=True)
+            branch_source = source_root / "dlg_branch_only_p001.json"
+            branch_source.write_bytes(b"branch-only")
+            story_source = root / "webui" / "data" / "lang" / "CN" / "mission" / "branch_only.json"
+            story_source.parent.mkdir(parents=True)
+            story_source.write_text("{}", encoding="utf-8")
+            index = {"counts": {"missions": 0}, "missions": []}
+            order_row = {
+                "mission": "branch_only",
+                "missionData": str(story_source),
+                "directEdges": [],
+                "branches": {
+                    "dialogLineOptions": [{
+                        "provenance": {"sourceFiles": [str(branch_source)]},
+                    }],
+                },
+            }
+            publication = pipeline.attach_source_story_partial_order(
+                index,
+                root,
+                {"missions": [order_row]},
+                create_variant_aggregate_shells=True,
+                require_complete_branch_publication=True,
+            )
+            payload = json.loads(
+                (root / "missions" / "branch_only.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        self.assertEqual(publication["storyBranchShells"], ["branch_only"])
+        self.assertEqual(publication["storyBranchRelatedFileMissions"], ["branch_only"])
+        self.assertEqual(publication["storyBranchRelatedFileRows"], 1)
+        self.assertTrue(index["missions"][0]["storyBranchShell"])
+        self.assertTrue(payload["mission"]["storyBranchShell"])
+        self.assertTrue(payload["storyOrder"]["storyBranchShell"])
+        self.assertIn("not a mission or quest owner", payload["mission"]["sourceBoundary"])
+        self.assertEqual(
+            payload["mission"]["storyBranchRelatedOriginalFiles"][0]["sourceFile"],
+            str(branch_source).replace("\\", "/"),
+        )
 
     def test_story_branch_related_files_fail_closed_on_missing_source(self):
         missing = Path(tempfile.gettempdir()) / "story-branch-source-does-not-exist.json"
@@ -2591,6 +2657,25 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             r"mission=missing_branch_source expected=file actual=missing",
         ):
             pipeline._story_branch_related_original_files(order_row)
+
+    def test_story_branch_related_files_fail_closed_on_hash_mismatch(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "branch.json"
+            source.write_bytes(b"actual")
+            order_row = {
+                "mission": "mismatched_branch_source",
+                "warnings": [{
+                    "validator": "dialogTreeLocalIfNode",
+                    "sourcePaths": [str(source)],
+                    "sourceSha256": {str(source): "0" * 64},
+                }],
+            }
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"validator=story_branch_original_files gate=sourceHash "
+                r"mission=mismatched_branch_source",
+            ):
+                pipeline._story_branch_related_original_files(order_row)
 
     def test_story_order_attachment_builds_validated_variant_aggregate_shell(self):
         with tempfile.TemporaryDirectory() as temporary:
