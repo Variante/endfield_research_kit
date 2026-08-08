@@ -118,6 +118,10 @@ class NativeSerializedBranchProjectionTests(unittest.TestCase):
         self.assertEqual(projection["arms"][0]["playbackStoryKeys"], ["radio_a"])
         self.assertEqual(projection["arms"][1]["playbackStoryKeys"], [])
         self.assertEqual(projection["arms"][0]["targetStatus"], "exact_active_action")
+        self.assertEqual(
+            projection["arms"][0]["reachableActionNames"],
+            ["PlayRadio", "Wait"],
+        )
         self.assertEqual(projection["exit"]["entryLocalId"], 50)
 
     def test_multiple_playback_arms_remain_a_context_measure(self) -> None:
@@ -130,6 +134,10 @@ class NativeSerializedBranchProjectionTests(unittest.TestCase):
         self.assertEqual(
             projection["playbackStoryKeys"],
             ["radio_a", "radio_b"],
+        )
+        self.assertEqual(
+            projection["arms"][1]["reachableActionNames"],
+            ["PlayRadio"],
         )
 
 

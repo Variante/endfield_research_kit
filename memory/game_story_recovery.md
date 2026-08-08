@@ -157,7 +157,8 @@ in five payloads.
   `play_*` action occurrences to downstream arms. It finds 81 unique groups,
   227 serialized slots, and 37 playback-bearing arms, with zero groups carrying
   playback on two arms. The inventory attaches LevelScript plus binary/metadata
-  hashes as related original files, but remains context-only and never promotes
+  hashes as related original files, and now exposes each arm's exact reachable
+  native action names/classes. It remains context-only and never promotes
   ownership or order; arbitrary `texts` fields and OCR/overrides are not inputs.
 - Mission Pipeline publication now performs a second corpus-wide attachment
   pass after graph-neutral recovery shells exist and fails closed unless every

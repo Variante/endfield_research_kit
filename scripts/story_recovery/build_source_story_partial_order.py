@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v33"
+SCHEMA = "sourceStoryPartialOrder.v34"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -73,7 +73,7 @@ NATIVE_LEVELSCRIPT_ROOTS = (
     / "Data" / "Json" / "LevelScriptData",
 )
 NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA = (
-    "nativeSerializedBranchInventory.v1"
+    "nativeSerializedBranchInventory.v2"
 )
 READING_POPUP_TABLE_PATH = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
@@ -4161,11 +4161,33 @@ def _native_serialized_branch_arm_projection(
             pending.extend(adjacency.get(current) or [])
         return reached
 
+    def reachable_semantics(local_ids: set[int]) -> tuple[list[str], list[str]]:
+        """Return exact native names/classes for an arm's decoded action set.
+
+        These labels come from the original action-map decoder.  They are a
+        bounded semantic summary of the sibling arm, not an inferred Story
+        relationship or a filename/order hint.
+        """
+        action_names = sorted({
+            safe_key(action_by_local[local_id].get("actionName"))
+            for local_id in local_ids
+            if local_id in action_by_local
+            and safe_key(action_by_local[local_id].get("actionName"))
+        }, key=natural_key)
+        record_classes = sorted({
+            safe_key(action_by_local[local_id].get("recordClass"))
+            for local_id in local_ids
+            if local_id in action_by_local
+            and safe_key(action_by_local[local_id].get("recordClass"))
+        }, key=natural_key)
+        return action_names, record_classes
+
     arms: list[dict[str, Any]] = []
     for sequence_index, entry_local_id in enumerate(serialized_refs):
         relation = f"Branch.sequence[{sequence_index}]"
         status, terminal = target_status(relation, entry_local_id)
         reached = downstream(entry_local_id)
+        reachable_action_names, reachable_record_classes = reachable_semantics(reached)
         playback_local_ids = sorted(
             local_id for local_id in reached if local_id in playback_by_local
         )
@@ -4181,6 +4203,8 @@ def _native_serialized_branch_arm_projection(
             "entryLocalId": entry_local_id,
             "targetStatus": status,
             "reachableActionCount": len(reached),
+            "reachableActionNames": reachable_action_names,
+            "reachableRecordClasses": reachable_record_classes,
             "playbackActionLocalIds": playback_local_ids,
             "playbackStoryKeys": playback_keys,
         }

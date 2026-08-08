@@ -541,6 +541,8 @@
       nativeSerializedBranchMatched: "mission-matching census rows",
       nativeSerializedBranchArmPlayback: "exact playback",
       nativeSerializedBranchReachable: "reachable actions",
+      nativeSerializedBranchActions: "reachable native actions",
+      nativeSerializedBranchClasses: "decoded record classes",
       nativeStoryTransitions: "Exact native Story transitions",
       nativeStoryTransitionsHint: "Each edge is an original LevelScript path-prefix relation. The typed suffix shows whether playback continues linearly or crosses a parallel, conditional, outcome, or ordered branch.",
       nativeStoryTransitionLinear: "linear",
@@ -1760,6 +1762,8 @@
       nativeSerializedBranchMatched: "\u4efb\u52a1\u5339\u914d\u7684\u666e\u67e5\u884c",
       nativeSerializedBranchArmPlayback: "\u7cbe\u786e\u64ad\u653e",
       nativeSerializedBranchReachable: "\u53ef\u8fbe\u52a8\u4f5c",
+      nativeSerializedBranchActions: "\u53ef\u8fbe\u539f\u751f\u52a8\u4f5c",
+      nativeSerializedBranchClasses: "\u89e3\u7801\u8bb0\u5f55\u7c7b\u522b",
       nativeStoryTransitions: "\u7cbe\u786e\u539f\u751f Story \u8f6c\u79fb",
       nativeStoryTransitionsHint: "\u6bcf\u6761\u8fb9\u90fd\u662f\u539f\u59cb LevelScript \u8def\u5f84\u524d\u7f00\u5173\u7cfb\u3002\u7c7b\u578b\u5316\u540e\u7f00\u4f1a\u663e\u793a\u64ad\u653e\u662f\u7ebf\u6027\u7ee7\u7eed\uff0c\u8fd8\u662f\u7ecf\u8fc7\u5e76\u884c\u3001\u6761\u4ef6\u3001\u6210\u529f/\u5931\u8d25\u6216\u6709\u5e8f\u5206\u652f\u3002",
       nativeStoryTransitionLinear: "\u7ebf\u6027",
@@ -3903,7 +3907,19 @@
       const action = arm.entryAction
         ? `<code>#${esc(arm.entryAction.localId ?? "?")} ${esc(arm.entryAction.actionName || arm.entryAction.recordClass || "?")}</code>`
         : "";
-      return `<div><code>${esc(arm.edge || "?")} &rarr; #${esc(arm.entryLocalId ?? "inactive")}</code><span>${playback || `<small>${esc(arm.targetStatus || "")}</small>`}</span>${action ? `<small>${esc(t("nativeArmEntryAction"))}: ${action}</small>` : ""}<small>${esc(t("nativeSerializedBranchReachable"))}: ${Number(arm.reachableActionCount || 0).toLocaleString()}${playback ? ` / ${esc(t("nativeSerializedBranchArmPlayback"))}: ${playback}` : ""}</small></div>`;
+      const actionNames = (arm.reachableActionNames || [])
+        .map((name) => `<code>${esc(name)}</code>`).join(" ");
+      const recordClasses = (arm.reachableRecordClasses || [])
+        .map((name) => `<code>${esc(name)}</code>`).join(" ");
+      const semanticSummary = [
+        actionNames
+          ? `<small>${esc(t("nativeSerializedBranchActions"))}: ${actionNames}</small>`
+          : "",
+        recordClasses
+          ? `<small>${esc(t("nativeSerializedBranchClasses"))}: ${recordClasses}</small>`
+          : "",
+      ].join("");
+      return `<div><code>${esc(arm.edge || "?")} &rarr; #${esc(arm.entryLocalId ?? "inactive")}</code><span>${playback || `<small>${esc(arm.targetStatus || "")}</small>`}</span>${action ? `<small>${esc(t("nativeArmEntryAction"))}: ${action}</small>` : ""}<small>${esc(t("nativeSerializedBranchReachable"))}: ${Number(arm.reachableActionCount || 0).toLocaleString()}${playback ? ` / ${esc(t("nativeSerializedBranchArmPlayback"))}: ${playback}` : ""}</small>${semanticSummary}</div>`;
     }).join("");
     const serializedBranchInventoryRowsHtml = serializedBranchInventoryRows.map((row) => `<details open><summary><b>${esc(t("nativeSerializedBranchInventory"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code><span>${Number(row.serializedArmCount || 0).toLocaleString()} ${esc(t("nativeSerializedBranchArms"))}</span><span>${Number(row.playbackArmCount || 0).toLocaleString()} ${esc(t("nativeSerializedPlaybackArms"))}</span></summary><p>${(row.sourceContexts || []).map((context) => `<code>${esc(context.levelId || "?")}/${esc(context.scriptId || "?")}</code>`).join(" ")}</p>${(row.eventRoots || []).length ? `<small>${esc(t("triggerEvents"))}: ${(row.eventRoots || []).map((event) => `<code>#${esc(event.localId ?? "?")} ${esc(event.headerName || "?")} &rarr; #${esc(event.nextActionLocalId ?? "?")}</code>`).join(" ")}</small>` : ""}${serializedBranchInventoryArmHtml(row)}${row.exit ? `<small><code>${esc(row.exit.edge || "ActionBase.nextId")}</code> &rarr; #${esc(row.exit.entryLocalId ?? "inactive")} <code>${esc(row.exit.targetStatus || "")}</code></small>` : ""}${relatedOriginalFilesHtml(row)}<small>${esc(row.evidenceBoundary || "")}</small></details>`).join("");
     const serializedBranchInventoryHtml = serializedBranchInventory?.schema
