@@ -121,8 +121,9 @@ or local source edits.
   is admitted until a second arm is proven by an original path or runtime trace.
 - The corpus-wide original-binary census covers 81 unique serialized `Branch`
   groups / 227 slots / 37 exact playback-bearing arms across both copied
-  LevelScript roots; zero groups currently carry playback on two arms, so the
-  inventory remains context-only and does not guess order or ownership.
+  LevelScript roots; zero groups currently carry playback on two arms. The
+  WebUI also shows each arm's exact reachable native action names/classes, while
+  keeping the inventory context-only and refusing to guess order or ownership.
 - A general original-binary Encounter contract now adds exact controller and
   related LevelData/SpawnerConfig context for 27 of those Story keys. Its
   LsmPtr module namespace is shown separately from the receiver LevelScript,
