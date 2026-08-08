@@ -111,11 +111,14 @@ or local source edits.
 
 ### Story
 
-- 5,562 unique Story files across 591 pipeline missions.
-- 4,239 files have an accepted mission/context connection (**76.2%**).
+- 5,564 unique Story files across 606 pipeline missions.
+- 4,237 files have an accepted mission/context connection (**76.1%**).
 - 4,462 have a normalized trigger/context route (**80.2%**).
-- 1,325 remain unlinked; 156 already have exact native playback but lack a
+- 1,327 remain unlinked; 156 already have exact native playback but lack a
   mission/quest activation bridge.
+- 27 exact ordered-`Branch` contexts across four missions now expose every
+  serialized arm and its original-binary hashes; no multi-arm Story-order edge
+  is admitted until a second arm is proven by an original path or runtime trace.
 - A general original-binary Encounter contract now adds exact controller and
   related LevelData/SpawnerConfig context for 27 of those Story keys. Its
   LsmPtr module namespace is shown separately from the receiver LevelScript,
@@ -124,8 +127,8 @@ or local source edits.
   playback gates, including AND/OR/NOT/ALL trees, comparisons, property/stage,
   LSM-completion, and interactive-state leaves, without treating those local
   predicates as mission ownership or cross-Story order.
-- All 258 named native branch predicates are operand-decoded where their
-  current binary layout is supported; the pipeline reports 263 semantic
+- All 259 named native branch predicates are operand-decoded where their
+  current binary layout is supported; the pipeline reports 264 semantic
   predicates including inline forms, with 0 class-only and 0 unresolved.
 - Parallel Split semantics now come from a general original-binary scheduler
   census rather than an action-name rule: two writer methods and all three

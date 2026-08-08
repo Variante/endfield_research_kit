@@ -11,9 +11,9 @@ Latest CN reports:
 | --- | ---: |
 | Pipeline missions | 606 (490 MissionRuntime + 115 Story-only recovery shells + 1 declared Story-variant aggregate) |
 | Unique Story files | 5,564 |
-| Connected files | 4,239 (76.2%) |
+| Connected files | 4,237 (76.1%) |
 | Files with a normalized trigger/context route | 4,462 (80.2%) |
-| Unlinked files | 1,325 |
+| Unlinked files | 1,327 |
 | Unlinked files with exact native playback | 156 |
 | Encounter-controller contexts | 5 receiver scripts / 7 modules / 27 Story keys / 9 related source files |
 | Authored receiver-property contracts | 63 scripts; 16 carry `isFinished`; 1 exact `(level, script)` MissionRuntime observer is attached as non-ordering mission context |
@@ -34,6 +34,7 @@ Latest CN reports:
 | LevelScript action topology | 4,512 / 4,512 classified; 0 fail-closed |
 | Native branch predicates | 259 named; 264 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Complete native branch-arm topology | 312 / 312 recovered placements published in Mission Pipeline, 880 serialized slots, 43 active non-Story arms, 155 inactive slots, 0 runtime terminals, 0 recovery or publication validator failures |
+| Exact ordered-Branch context | 27 original LevelScript/event contexts across 4 missions; complete serialized `_idList`, exact Story-path arm coverage, and GameAssembly/metadata/LevelScript hashes; 0 multi-arm Story-order edges admitted |
 | Complete cross-boundary native branches | 5 groups / 5 exact external Story references (4 Split fan-outs, 1 SwitchInt choice); no ownership or order promotion |
 | Exact mission-state Story alternatives | 3 branch groups / 2 cross-mission Story references; selection only, never chronology or ownership |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
@@ -141,6 +142,15 @@ in five payloads.
   installed-binary runtime mapping and fails closed with source hashes and
   expected/actual diagnostics. These sibling actions describe file-local
   topology only; they do not add Story ownership, order, or mission membership.
+- The same corpus-driven projector now audits ordered `Branch._idList` slots
+  wherever an exact native path reaches a Story. It retains every serialized
+  arm, marks which arms are observed by Story paths, and attaches the original
+  LevelScript, MissionRuntime (when present), GameAssembly, and metadata hashes.
+  The installed `Branch.Execute` mapping proves iterator semantics, but the
+  current corpus reaches only one Story-bearing sequence arm per event (27
+  contexts across four missions), so no new Story-order edge is admitted.
+  Unvisited sibling arms remain explicit context, not inferred empty branches
+  or ownership.
 - Mission Pipeline publication now performs a second corpus-wide attachment
   pass after graph-neutral recovery shells exist and fails closed unless every
   recovered native branch reaches a payload. This restored 217 previously
@@ -1453,6 +1463,11 @@ groups unchanged; connected/unlinked Story counts are now 4,237 / 1,327.
    `cs_video_e1m3_3`, `remotecomm_e1m2_2`, and `remotecomm_e1m2_3`.
 6. **Total ordering:** most scene pairs are unknowable from current static
    evidence. A display order must remain separate from source proof.
+7. **Ordered Branch arms:** the exact binary iterator is decoded, but no event
+   currently has Story paths on two distinct serialized sequence arms. Keep the
+   27 attached contexts visible and reopen order admission only when a new
+   original path or runtime trace supplies a second arm; OCR and overrides are
+   comparison-only.
 
 Quest-fork presentation no longer hides arm-local content behind the immediate
 successor. Across 307 forks, the general predecessor-reachability rule expands

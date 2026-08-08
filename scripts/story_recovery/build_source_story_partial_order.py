@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v31"
+SCHEMA = "sourceStoryPartialOrder.v32"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -3458,9 +3458,183 @@ def _spawner_wave_group_part_killed_story_edges(
     return edges
 
 
+def _native_ordered_sequence_contexts(
+    topology: dict[str, Any],
+    routes: Iterable[tuple[tuple[str, str, int, str], str, tuple[tuple[Any, ...], ...]]],
+) -> list[dict[str, Any]]:
+    """Project exact Story-path coverage onto serialized Branch sequence slots.
+
+    ``decode_levelscript_native_action_topology`` already recovers the complete
+    runtime action map from the original LevelScript.  This helper only joins
+    that map to paths that independently reached a Story playback record.  It
+    never treats an unvisited sibling arm as a Story placement and never emits
+    order edges; the separate ``_native_ordered_branch_sequences`` gate owns
+    that stricter admission.
+    """
+    action_by_local = {
+        int(action.get("localId")): action
+        for action in topology.get("actions") or []
+        if isinstance(action, dict) and isinstance(action.get("localId"), int)
+    }
+    grouped: dict[
+        tuple[int, tuple[int, ...]],
+        dict[str, Any],
+    ] = {}
+    sequence_pattern = re.compile(r"Branch\.sequence\[(\d+)\]")
+    for signature, story_key, path in routes:
+        for index, step in enumerate(path):
+            if (
+                not isinstance(step, tuple)
+                or len(step) < 3
+                or safe_key(step[2]) != "Branch"
+                or index + 1 >= len(path)
+            ):
+                continue
+            branch_local_id = step[0]
+            if not isinstance(branch_local_id, int):
+                continue
+            action = action_by_local.get(branch_local_id)
+            if not action or safe_key(action.get("actionName")) != "Branch":
+                continue
+            next_step = path[index + 1]
+            edge = safe_key(next_step[1])
+            match = sequence_pattern.fullmatch(edge)
+            sequence_index: int | None = int(match.group(1)) if match else None
+            is_exit = edge == "ActionBase.nextId"
+            if sequence_index is None and not is_exit:
+                continue
+            prefix = tuple(
+                int(prefix_step[0])
+                for prefix_step in path[:index]
+                if isinstance(prefix_step, tuple)
+                and isinstance(prefix_step[0], int)
+            )
+            group = grouped.setdefault(
+                (branch_local_id, prefix),
+                {
+                    "action": action,
+                    "routesByIndex": defaultdict(set),
+                    "routePathsByIndex": defaultdict(set),
+                    "eventSelectors": set(),
+                },
+            )
+            ordinal_key = sequence_index if sequence_index is not None else None
+            group["routesByIndex"][ordinal_key].add(story_key)
+            group["routePathsByIndex"][ordinal_key].add(tuple(
+                int(path_step[0])
+                for path_step in path
+                if isinstance(path_step, tuple)
+                and isinstance(path_step[0], int)
+            ))
+            group["eventSelectors"].add(signature)
+
+    contexts: list[dict[str, Any]] = []
+    for (branch_local_id, prefix), group in sorted(
+        grouped.items(),
+        key=lambda item: (item[0][0], item[0][1]),
+    ):
+        action = group["action"]
+        detail = action.get("controlDetail") or {}
+        serialized_refs = [
+            value
+            for value in detail.get("branchSequenceActionLocalIds") or []
+            if isinstance(value, int)
+        ]
+        routes_by_index = group["routesByIndex"]
+        arm_rows = []
+        for sequence_index, entry_local_id in enumerate(serialized_refs):
+            story_keys = sorted(
+                routes_by_index.get(sequence_index) or set(),
+                key=natural_key,
+            )
+            arm_rows.append({
+                "edge": f"Branch.sequence[{sequence_index}]",
+                "sequenceIndex": sequence_index,
+                "entryLocalId": entry_local_id,
+                "storyKeys": story_keys,
+                "observedRouteCount": len(
+                    group["routePathsByIndex"].get(sequence_index) or set()
+                ),
+            })
+        exit_story_keys = sorted(
+            routes_by_index.get(None) or set(),
+            key=natural_key,
+        )
+        if exit_story_keys:
+            arm_rows.append({
+                "edge": "ActionBase.nextId (after sequence)",
+                "sequenceIndex": None,
+                "entryLocalId": action.get("nextActionLocalId"),
+                "storyKeys": exit_story_keys,
+                "observedRouteCount": len(
+                    group["routePathsByIndex"].get(None) or set()
+                ),
+            })
+        story_bearing_arm_count = sum(
+            bool(row["storyKeys"])
+            for row in arm_rows
+            if row.get("sequenceIndex") is not None
+        )
+        observed_arm_count = sum(
+            bool(group["routesByIndex"].get(index))
+            for index in range(len(serialized_refs))
+        )
+        admission_reason = (
+            "one_or_zero_story_bearing_sequence_arms"
+            if story_bearing_arm_count < 2
+            else "multiple_story_bearing_arms_require_global_conflict_check"
+        )
+        contexts.append({
+            "kind": "orderedSequenceContext",
+            "branchLocalId": branch_local_id,
+            "branchPath": list(prefix),
+            "actionName": "Branch",
+            "controlKind": safe_key(action.get("controlKind")),
+            "nativeMappingId": safe_key(action.get("controlRuntimeMappingId")),
+            "serializedArmCount": len(serialized_refs),
+            "observedSequenceArmCount": observed_arm_count,
+            "storyBearingArmCount": story_bearing_arm_count,
+            "arms": arm_rows,
+            "storyOrderAdmission": "not_admitted",
+            "admissionReason": admission_reason,
+            "eventSelectors": [
+                {
+                    "levelId": signature[0],
+                    "scriptId": signature[1],
+                    "headerLocalId": signature[2],
+                    "eventName": signature[3],
+                }
+                for signature in sorted(
+                    group["eventSelectors"],
+                    key=lambda value: tuple(natural_key(str(item)) for item in value),
+                )
+            ],
+            "runtimeMappingId": BRANCH_SEQUENCE_RUNTIME["mappingId"],
+            "gameAssemblySha256": BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256,
+            "nativeConsumers": [{
+                "method": "Beyond.Gameplay.Actions.Branch.Execute",
+                "address": "0x18764d990",
+                "contract": (
+                    "dispatches _idList[m_index], reserves Branch for the next "
+                    "item, then resumes ActionBase.nextId after the list"
+                ),
+            }],
+            "evidenceBoundary": (
+                "The original serialized Branch slots and exact Story playback "
+                "paths identify which sequence arms are observed. A missing Story "
+                "in a sibling arm is not proof that the arm is empty at runtime; "
+                "this context therefore does not create Story order or ownership."
+            ),
+        })
+    return contexts
+
+
 def _native_related_action_topologies(
     flow: dict[str, Any],
     candidate_keys: set[str],
+    *,
+    mission: str = "",
+    original_binary_contract: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Attach compact graphs only for exact Story-bearing native paths.
 
@@ -3469,15 +3643,16 @@ def _native_related_action_topologies(
     never admit a file into a mission.
     """
     related: dict[str, dict[str, set[Any]]] = defaultdict(
-        lambda: {"storyKeys": set(), "events": set()}
+        lambda: {"storyKeys": set(), "events": set(), "routes": set()}
     )
     for signature, routes in _native_event_story_paths(flow, candidate_keys).items():
-        for story_key, _path, source_files, _detail, _downstream in routes:
+        for story_key, path, source_files, _detail, _downstream in routes:
             for source_file in source_files:
                 if "LevelScriptData" not in source_file:
                     continue
                 related[source_file]["storyKeys"].add(story_key)
                 related[source_file]["events"].add(signature)
+                related[source_file]["routes"].add((signature, story_key, path))
 
     rows: list[dict[str, Any]] = []
     for source_file, context in sorted(
@@ -3498,6 +3673,10 @@ def _native_related_action_topologies(
             except OSError:
                 continue
         topology, diagnostic = _NATIVE_ACTION_TOPOLOGY_CACHE[cache_key]
+        route_contexts = _native_ordered_sequence_contexts(
+            topology,
+            context["routes"],
+        )
         selected_header_ids = {
             int(signature[2])
             for signature in context["events"]
@@ -3548,6 +3727,15 @@ def _native_related_action_topologies(
             "status": topology.get("status"),
             "sourceFile": source_file,
             "relatedStoryKeys": sorted(context["storyKeys"], key=natural_key),
+            "orderedSequenceContexts": route_contexts,
+            "relatedOriginalFiles": _related_original_branch_files(
+                mission,
+                [source_file],
+                original_binary_contract,
+                level_relationship="exact_native_story_path_related_levelscript",
+                mission_relationship="exact_native_story_path_mission_context",
+                binary_relationship="native_action_topology_binary_authority",
+            ),
             "eventSelectors": [
                 {
                     "levelId": signature[0],
@@ -4926,7 +5114,10 @@ def build_mission_partial_order(
         extra_thread_scheduler_contract,
     )
     native_related_action_topologies = _native_related_action_topologies(
-        flow, candidate_keys
+        flow,
+        candidate_keys,
+        mission=mission,
+        original_binary_contract=extra_thread_scheduler_contract,
     )
     native_named_predicates = sum(
         1
@@ -5170,6 +5361,10 @@ def build_mission_partial_order(
             ),
             "nativeOrderedSequenceCount": len(native_ordered_sequences),
             "nativeOrderedSequenceEdgeCount": len(native_ordered_sequence_edges),
+            "nativeOrderedSequenceContextCount": sum(
+                len(row.get("orderedSequenceContexts") or [])
+                for row in native_related_action_topologies
+            ),
             "questSucceedLifecycleEdgeCount": len(admitted_lifecycle_edges),
             "questSucceedLifecycleQuestCount": len({
                 quest_id
@@ -5568,6 +5763,9 @@ def build_report(
         totals["nativeOrderedSequenceEdges"] += summary[
             "nativeOrderedSequenceEdgeCount"
         ]
+        totals["nativeOrderedSequenceContexts"] += summary[
+            "nativeOrderedSequenceContextCount"
+        ]
         totals["questSucceedLifecycleEdges"] += summary[
             "questSucceedLifecycleEdgeCount"
         ]
@@ -5756,6 +5954,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- native ordered topology: `{summary.get('nativeOrderedSequences', 0)}` exact "
         f"Branch iterators creating `{summary.get('nativeOrderedSequenceEdges', 0)}` "
         "Story-order edges",
+        f"- native ordered sequence contexts: `{summary.get('nativeOrderedSequenceContexts', 0)}` "
+        "exact serialized Branch arm projections attached to Story paths; these "
+        "remain context-only unless the global multi-arm order gate admits an edge",
         f"- related native action graphs: `{summary.get('nativeRelatedActionTopologies', 0)}` "
         "original LevelScript files attached only through exact Story control paths",
         f"- conditional predicates: `{summary.get('nativeSemanticPredicates', 0)}` exact "
