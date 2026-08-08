@@ -11680,6 +11680,9 @@ def _update_story_order_summary(
         "storyOrderNativeUnresolvedPredicateCount": "nativeUnresolvedPredicateCount",
         "storyOrderQuestForkCount": "questForkCount",
         "storyOrderQuestMergeCount": "questMergeCount",
+        "storyOrderDialogConditionalBranchCount": "dialogConditionalBranchCount",
+        "storyOrderDialogConditionalBranchArmCount": "dialogConditionalBranchArmCount",
+        "storyOrderDialogConditionalBranchValidationFailureCount": "dialogConditionalBranchValidationFailureCount",
     }
     for target, source in mappings.items():
         summary[target] = int(order_summary.get(source) or 0)
@@ -13080,6 +13083,7 @@ def main() -> int:
             f"({summary.get('nativeControlPathBranchingTransitionEdges', 0)} branch-bearing), "
             f"{summary.get('nativeControlPathNamedActionEndpoints', 0)}/"
             f"{summary.get('nativeControlPathTransitionActionEndpoints', 0)} named transition endpoints, "
+            f"{summary.get('dialogConditionalBranches', 0)} binary-validated local DialogTree conditionals, "
             f"{summary.get('nativeOrderedSequences', 0)} native ordered sequences, "
             f"{summary.get('nativeOrderedSequenceContexts', 0)} native sequence contexts, "
             f"{summary.get('nativeSerializedBranchGroupCount', 0)} corpus serialized Branch groups / "

@@ -460,6 +460,8 @@
       dialogConditionalTrueArm: "condition true",
       dialogConditionalFalseArm: "condition false",
       dialogConditionalNativeProof: "Native branch selection",
+      dialogConditionalLocal: "same-Story branch (selection evidence)",
+      dialogConditionalBoundary: "This does not order the two arms or prove a mission trigger.",
       questFork: "quest fork",
       questForkStructure: "Authored quest-fork structure",
       questForkStructureHint: "Arm roles, guards, terminal shape, and reconvergence come from the original MissionRuntime file. Server activation and exclusivity remain unresolved.",
@@ -1716,6 +1718,8 @@
       dialogConditionalTrueArm: "\u6761\u4ef6\u4e3a\u771f",
       dialogConditionalFalseArm: "\u6761\u4ef6\u4e3a\u5047",
       dialogConditionalNativeProof: "\u539f\u751f\u5206\u652f\u9009\u62e9",
+      dialogConditionalLocal: "\u540c\u4e00 Story \u5206\u652f\uff08\u4ec5\u5206\u652f\u9009\u62e9\u8bc1\u636e\uff09",
+      dialogConditionalBoundary: "\u8fd9\u4e0d\u4f1a\u4e3a\u4e24\u4e2a\u5206\u652f\u6392\u5e8f\uff0c\u4e5f\u4e0d\u8bc1\u660e\u4efb\u52a1\u89e6\u53d1\u3002",
       questFork: "\u4efb\u52a1\u5206\u652f",
       questForkStructure: "\u539f\u59cb\u4efb\u52a1\u5206\u652f\u7ed3\u6784",
       questForkStructureHint: "\u5206\u652f\u89d2\u8272\u3001\u5b88\u536b\u6761\u4ef6\u3001\u7ec8\u70b9\u5f62\u72b6\u548c\u518d\u6c47\u5408\u5747\u6765\u81ea\u539f\u59cb MissionRuntime \u6587\u4ef6\uff1b\u670d\u52a1\u7aef\u542f\u52a8\u4e0e\u4e92\u65a5\u7b56\u7565\u4ecd\u672a\u77e5\u3002",
@@ -4089,6 +4093,21 @@
       const originals = (row.relatedOriginalFiles || []).map((related) => `<small><code>${esc(related.kind || "file")}</code> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("");
       return `<details open><summary><b>${esc(t("dialogConditionalBranch"))}</b> <a href="${esc(storyHref(row.from))}"><code>${esc(row.from || "?")}</code></a> <i>&rarr;</i> <a href="${esc(storyHref(row.to))}"><code>${esc(row.to || "?")}</code></a></summary><p class="mp-native-predicate"><b>${esc(t("nativePredicate"))}</b>${predicate}</p><div><b>${esc(t("dialogConditionalTrueArm"))}</b><code>index ${esc(row.conditionTrueConnectionIndex ?? "?")}</code><span>${(row.childArmLineIds || []).map((lineId) => `<code>${esc(lineId)}</code>`).join(" ")}</span></div><div><b>${esc(t("dialogConditionalFalseArm"))}</b><code>index ${esc(row.conditionFalseConnectionIndex ?? "?")}</code><span>${(row.parentArmLineIds || []).map((lineId) => `<code>${esc(lineId)}</code>`).join(" ")}</span></div><small><strong>${esc(t("dialogConditionalNativeProof"))}:</strong> ${nativeProof}</small><small>${(row.sourceFiles || []).map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>${originals ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${originals}</details>` : ""}</details>`;
     }).join("");
+    const dialogLocalConditionalBranches = (branches.dialogConditionalBranches || []).map((row) => {
+      const condition = row.condition || {};
+      const predicate = Object.keys(condition).length
+        ? `<code>${esc(JSON.stringify(condition))}</code>`
+        : `<span>${esc(t("nativePredicateOpaque"))}</span>`;
+      const nativeProof = (row.nativeConsumers || []).map((consumer) => `<code>${esc(consumer.method || "?")} ${esc(consumer.token || "")} @ ${esc(consumer.address || "?")}</code>`).join(" ");
+      const armHtml = (label, arm, index) => {
+        const lines = (arm?.pathLineIds || []).map((lineId) => `<code>${esc(lineId)}</code>`).join(" ");
+        const target = arm?.targetNodeId ? `<code>target #${esc(arm.targetNodeId)}</code>` : "";
+        const terminal = arm?.terminal ? `<code>${esc(arm.terminal)}</code>` : "";
+        return `<div><b>${esc(t(label))}</b><code>index ${esc(index ?? "?")}</code>${target}${terminal}<span>${lines}</span></div>`;
+      };
+      const originals = (row.relatedOriginalFiles || []).map((related) => `<small><code>${esc(related.kind || "file")}</code> <code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("");
+      return `<details open><summary><b>${esc(t("dialogConditionalBranch"))}</b> <span>${esc(t("dialogConditionalLocal"))}</span> <a href="${esc(storyHref(row.storyKey))}"><code>${esc(row.storyKey || "?")}</code></a> <i>#${esc(row.branchNodeId || "?")}</i></summary><p class="mp-native-predicate"><b>${esc(t("nativePredicate"))}</b>${predicate}</p>${armHtml("dialogConditionalTrueArm", row.conditionTrueArm, row.conditionTrueConnectionIndex)}${armHtml("dialogConditionalFalseArm", row.conditionFalseArm, row.conditionFalseConnectionIndex)}<small><strong>${esc(t("dialogConditionalNativeProof"))}:</strong> ${nativeProof}</small><small>${(row.sourceFiles || []).map((source) => `<code>${esc(source)}</code>`).join(" ")}</small><small>${esc(t("dialogConditionalBoundary"))}</small>${originals ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${originals}</details>` : ""}</details>`;
+    }).join("");
     const dialogOptions = (branches.dialogLineOptions || []).map((row) => `<details><summary><code>${esc(row.storyKey || "?")}</code> 路 ${esc(t("optionBranches"))} ${esc(row.group ?? "?")}</summary>${(row.options || []).map((option) => {
       const branchLines = option.branchLineIds || [];
       const directContinuation = option.directContinuation && option.continuationLineId
@@ -4551,7 +4570,7 @@
       ${containments ? `<section><h4>${esc(t("embeddedStory"))}</h4><p>${esc(t("embeddedStoryHint"))}</p><div class="mp-order-edges">${containments}</div></section>` : ""}
       ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}
-      ${questForks || questMerges || nativeBranches || nativeMerges || nativeSequences || sceneOptions || dialogConditionalBranches || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4>${questForkAuthorityHtml}<div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${nativeSequences}${sceneOptions}${dialogConditionalBranches}${typedSelectors}</div></section>` : ""}
+      ${questForks || questMerges || nativeBranches || nativeMerges || nativeSequences || sceneOptions || dialogConditionalBranches || dialogLocalConditionalBranches || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4>${questForkAuthorityHtml}<div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${nativeSequences}${sceneOptions}${dialogConditionalBranches}${dialogLocalConditionalBranches}${typedSelectors}</div></section>` : ""}
       ${serializedBranchInventoryHtml}
       ${typedControlFamilyHtml}
       ${relatedActionTopologies ? `<section><h4>${esc(t("nativeRelatedActionGraphs"))}</h4><p>${esc(t("nativeRelatedActionGraphsHint"))}</p><div class="mp-order-branches">${relatedActionTopologies}</div></section>` : ""}

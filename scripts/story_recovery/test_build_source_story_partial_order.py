@@ -274,6 +274,146 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             {"dialog_tree_source", "original_game_binary"},
         )
 
+    def test_local_dialog_tree_conditionals_use_serialized_if_contract(self) -> None:
+        """Local conditional routes are discovered from arbitrary IDs."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source_path = root / "dialog_tree.json"
+            game_assembly = root / "GameAssembly.dll"
+            game_assembly.write_bytes(b"test-original-gameassembly-local")
+            raw_tree = {
+                "type": "Beyond.Gameplay.DialogTree",
+                "nodes": [
+                    {"$id": "0", "$type": "Beyond.Gameplay.DialogTreeTrunkNode"},
+                    {
+                        "$id": "if",
+                        "$type": "Beyond.Gameplay.DialogTreeIfNode",
+                        "_dialogIfData": {
+                            "condition": {
+                                "$type": "Beyond.Gameplay.CheckQuestState",
+                                "_questId": {"constValue": "arbitrary_q#7"},
+                                "_targetQuestState": {"constValue": 3},
+                            },
+                        },
+                    },
+                    {"$id": "false", "$type": "Beyond.Gameplay.DialogTreeFinishNode"},
+                    {"$id": "true", "$type": "Beyond.Gameplay.DialogTreeTrunkNode"},
+                ],
+                "connections": [
+                    {"_sourceNode": {"$ref": "0"}, "_targetNode": {"$ref": "if"}},
+                    {"_sourceNode": {"$ref": "if"}, "_targetNode": {"$ref": "false"}},
+                    {"_sourceNode": {"$ref": "if"}, "_targetNode": {"$ref": "true"}},
+                ],
+            }
+            source_path.write_text(
+                json.dumps({
+                    "m_Script": base64.b64encode(
+                        json.dumps(raw_tree).encode("utf-8")
+                    ).decode("ascii"),
+                }),
+                encoding="utf-8",
+            )
+            story_key = "dlg_arbitrary_local_7"
+            conv = {
+                "key": story_key,
+                "lines": [{"id": f"{story_key}_{index:03d}"} for index in range(1, 4)],
+                "sceneGraphLinks": [{
+                    "sourceKey": story_key,
+                    "file": "dialog_tree.json",
+                    "after": f"{story_key}_001",
+                    "options": [{
+                        "optionId": "option_arbitrary_local",
+                        "outcomeKind": "authoredConditionalBranch",
+                        "conditionalOutcomes": [
+                            {
+                                "targetNodeId": "false",
+                                "pathNodeIds": ["false"],
+                                "pathLineIds": [f"{story_key}_002"],
+                                "endNodeId": "false",
+                                "endNodeType": "DialogTreeFinishNode",
+                                "terminal": "finish",
+                            },
+                            {
+                                "targetNodeId": "true",
+                                "pathNodeIds": ["true"],
+                                "pathLineIds": [f"{story_key}_003"],
+                                "endNodeId": "true",
+                                "endNodeType": "DialogTreeTrunkNode",
+                            },
+                        ],
+                        "_debug": {"endNodeId": "if"},
+                    }],
+                }],
+            }
+            contract = copy.deepcopy(partial_order.DIALOG_TREE_IF_BINARY_CONTRACT)
+            contract["gameAssemblySha256"] = hashlib.sha256(
+                game_assembly.read_bytes()
+            ).hexdigest().upper()
+            with patch.object(partial_order, "ROOT", root), patch.object(
+                partial_order,
+                "_configured_game_assembly_path",
+                return_value=game_assembly,
+            ), patch.object(partial_order, "DIALOG_TREE_IF_BINARY_CONTRACT", contract):
+                branches, warnings = partial_order._dialog_tree_local_conditional_branches([
+                    ("conv/arbitrary.json", conv),
+                ])
+
+        self.assertEqual(warnings, [])
+        self.assertEqual(len(branches), 1)
+        branch = branches[0]
+        self.assertEqual(branch["storyKey"], story_key)
+        self.assertEqual(branch["condition"]["questId"], "arbitrary_q#7")
+        self.assertEqual(branch["conditionTrueTargetNodeId"], "true")
+        self.assertEqual(branch["conditionFalseTargetNodeId"], "false")
+        self.assertEqual(branch["conditionTrueArm"]["pathLineIds"], [f"{story_key}_003"])
+        self.assertEqual(
+            {row["kind"] for row in branch["relatedOriginalFiles"]},
+            {"dialog_tree_source", "original_game_binary"},
+        )
+
+    def test_local_dialog_tree_conditionals_fail_closed_with_bounded_diagnostic(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            game_assembly = root / "GameAssembly.dll"
+            game_assembly.write_bytes(b"wrong-binary")
+            story_key = "dlg_arbitrary_invalid_8"
+            conv = {
+                "key": story_key,
+                "lines": [{"id": f"{story_key}_{index:03d}"} for index in range(1, 4)],
+                "sceneGraphLinks": [{
+                    "sourceKey": story_key,
+                    "file": "missing_dialog_tree.json",
+                    "after": f"{story_key}_001",
+                    "options": [{
+                        "optionId": "option_arbitrary_invalid",
+                        "outcomeKind": "authoredConditionalBranch",
+                        "conditionalOutcomes": [
+                            {"targetNodeId": "false", "pathLineIds": [f"{story_key}_002"]},
+                            {"targetNodeId": "true", "pathLineIds": [f"{story_key}_003"]},
+                        ],
+                        "_debug": {"endNodeId": "if"},
+                    }],
+                }],
+            }
+            with patch.object(partial_order, "ROOT", root), patch.object(
+                partial_order,
+                "_configured_game_assembly_path",
+                return_value=game_assembly,
+            ):
+                branches, warnings = partial_order._dialog_tree_local_conditional_branches([
+                    ("conv/arbitrary-invalid.json", conv),
+                ])
+
+        self.assertEqual(branches, [])
+        self.assertEqual(len(warnings), 1)
+        diagnostic = warnings[0]
+        self.assertEqual(diagnostic["validator"], "dialogTreeLocalConditionalBranch")
+        self.assertEqual(diagnostic["gate"], "exactSerializedBranchAndNativePolarity")
+        self.assertEqual(diagnostic["storyKey"], story_key)
+        self.assertEqual(diagnostic["optionId"], "option_arbitrary_invalid")
+        self.assertEqual(diagnostic["expected"]["outcomeCount"], 2)
+        self.assertEqual(diagnostic["actual"]["binaryNodeType"], "")
+
     def test_exact_quest_succeed_lifecycle_orders_same_quest_story_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

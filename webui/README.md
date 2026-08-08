@@ -144,6 +144,11 @@ Rebuild Story data after editing overrides.
   predicate, binary-validated true/false connection ordinals, complete carrier
   line arms, and the exact DialogTree TextAsset plus `GameAssembly.dll` files;
   ambiguous or incomplete routes remain absent with a bounded diagnostic.
+- The same panel lists exact same-Story authored `DialogTreeIfNode` routes from
+  the corpus-wide validator. Each row shows both serialized arms, nested
+  condition operands, the binary polarity contract, and the related TextAsset
+  plus `GameAssembly.dll`; these are selection-evidence rows only and never
+  imply a file-order edge or mission trigger.
 - The same panel lists authored quest-start Story actions separately when the
   current installed-binary census has no slot-1 dispatcher. Each row exposes
   its quest, action, Story file, boundary, and hash-checked MissionRuntime,
