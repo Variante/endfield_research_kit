@@ -206,6 +206,12 @@ Rebuild Story data after editing overrides.
   related original LevelScript, MissionRuntime, binary, and metadata files.
   They are labeled as alternative selection rather than Story order or
   ownership.
+- Exact native receiver cards also expose the corpus-driven serialized module
+  property-family census. Every `@<module>_<field>` group with at least two
+  fields is shown with its value-type/atom-count shapes, stable family key, and
+  exact LevelData source. The generic namespace rule is binary-validated and
+  does not require per-object declarations; family repetition remains
+  non-owning context until a typed mission/quest foreign key is proven.
 - Exact native receiver cards recognize the reusable `EncounterBase<T>` /
   `EncounterData` property contract structurally and show its validated
   LevelData host, LsmPtr module namespace, receiver LevelScript, and typed

@@ -1574,15 +1574,31 @@ callback output UID; it therefore does not identify the `isFinished` writer.
 Raw property-literal adjacency is explicitly non-ordering and cannot identify
 the writer, playback owner, or chronology.
 
-The repeated module-property census is now bounded: seven full Encounter
-families use the existing typed controller contract, while eight
-`map02_lv006` families expose only base `LevelScriptModule.is_enabled` and
-`is_completed` state. The installed `LevelScriptModule` layout/consumers show
-that the two-field shape is generic lifecycle plumbing and carries no
-mission/quest identity, so it must not be promoted to an owner type. The next
-ownership pass should require a new co-carried foreign key in another typed
-controller payload or native registry, not a module id, LevelSequence name,
-file address, or registration order.
+The repeated module-property census is now generic rather than object-specific:
+the receiver audit groups every serialized `@<module>_<field>` family by its
+value-type/atom-count shape and stable value-independent family key, then
+attaches the exact LevelData host as non-owning context. The current corpus has
+15 families across 13 receiver scripts; seven full Encounter families use the
+existing typed controller contract, while eight `map02_lv006` families expose
+only base `LevelScriptModule.is_enabled` and `is_completed` state. The installed
+`LevelScriptModule` layout/consumers show that the two-field shape is generic
+lifecycle plumbing and carries no mission/quest identity, so it must not be
+promoted to an owner type. New module families can now be surfaced without a
+per-object function; the next ownership pass should require a new co-carried
+foreign key in another typed controller payload or native registry, not a
+module id, LevelSequence name, file address, or registration order.
+
+The current original-binary selector frontier is also bounded. Formatter cctor
+registration tables recover 20 Finder, 11 Validator, and 9 PostProcessor tags;
+the focused GameAssembly body census maps all 311/311 selector targets and
+finds zero option-flow facts. The serialized FindTarget boundary probe decodes
+24 items but finds zero valid TargetSettings envelopes and leaves 30 first-
+FindTarget records ambiguous; selector-tag byte hits are prioritization hints,
+not boundaries. The skipped world/dynamic-streaming audit finds zero exact
+unresolved Story-root, resource-path, or StringPathHash hits and zero typed
+Encounter/BattlerStage authoring objects. These original-binary results do not
+provide a mission/receiver foreign key, so selector registration order and
+file co-location remain non-evidence.
 
 The general state-update audit now discovers enum-backed `Proto.SC_*` messages
 by shape: exactly one `missionId` or `questId` plus either the matching state

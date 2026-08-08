@@ -91,6 +91,94 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertFalse(contract["ownership"])
         self.assertFalse(contract["orderEvidence"])
 
+    def test_module_property_family_census_is_id_agnostic(self) -> None:
+        host = {
+            "sourceFile": "export_full/structured/LevelData/map_fixture/host.json",
+            "briefData": {
+                "properties": [
+                    {
+                        "name": "@987_is_enabled",
+                        "valueType": 1,
+                        "atomCount": 1,
+                        "atoms": [{"valueBit64": 0}],
+                    },
+                    {
+                        "name": "@987_is_completed",
+                        "valueType": 1,
+                        "atomCount": 1,
+                        "atoms": [{"valueBit64": 1}],
+                    },
+                    {
+                        "name": "@987_custom_payload",
+                        "valueType": 50,
+                        "atomCount": 1,
+                        "atoms": [{"valueBit64": 42}],
+                    },
+                ],
+            },
+        }
+        rows = frontier.module_property_family_contexts(
+            [host], receiver_script_id="123"
+        )
+        self.assertEqual(1, len(rows))
+        self.assertEqual("987", rows[0]["moduleId"])
+        self.assertFalse(rows[0]["moduleIdMatchesReceiverScript"])
+        self.assertEqual(["base_lifecycle_pair", "typed_payload_fields"], rows[0]["pattern"]["features"])
+        self.assertEqual(
+            "export_full/structured/LevelData/map_fixture/host.json",
+            rows[0]["relatedFiles"][0]["sourceFile"],
+        )
+        self.assertFalse(rows[0]["storyBinding"])
+        self.assertFalse(rows[0]["orderEvidence"])
+
+    def test_module_property_family_census_ignores_singletons_and_values(self) -> None:
+        rows = frontier.module_property_family_contexts([
+            {
+                "sourceFile": "host.json",
+                "briefData": {
+                    "properties": [
+                        {
+                            "name": "@1_only",
+                            "valueType": 50,
+                            "atomCount": 1,
+                            "atoms": [{"valueBit64": 999}],
+                        },
+                    ],
+                },
+            },
+        ])
+        self.assertEqual([], rows)
+
+    def test_module_property_family_key_ignores_module_id_and_runtime_values(self) -> None:
+        def host(module_id: str, value: int) -> dict:
+            return {
+                "sourceFile": "host.json",
+                "briefData": {
+                    "properties": [
+                        {
+                            "name": f"@{module_id}_is_enabled",
+                            "valueType": 1,
+                            "atomCount": 1,
+                            "atoms": [{"valueBit64": value}],
+                        },
+                        {
+                            "name": f"@{module_id}_is_completed",
+                            "valueType": 1,
+                            "atomCount": 1,
+                            "atoms": [{"valueBit64": 0 if value else 1}],
+                        },
+                    ],
+                },
+            }
+        self.assertEqual(
+            frontier.module_property_family_contexts(
+                [host("100", 0)]
+            )[0]["familyKey"],
+            frontier.module_property_family_contexts(
+                [host("200", 1)]
+            )[0]["familyKey"],
+        )
+
     @staticmethod
     def encounter_host(script_id: str) -> dict:
         prefix = f"@{script_id}_"
@@ -245,6 +333,13 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertIn("activation.encounterControllerContexts", source)
         self.assertIn('t("relatedOriginalFile")', source)
         self.assertIn('t("encounterControllerBoundary")', source)
+
+    def test_frontend_renders_generic_module_property_families(self) -> None:
+        source = (
+            ROOT / "webui" / "src" / "features" / "mission_pipeline" / "index.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("activation.modulePropertyFamilies", source)
+        self.assertIn('t("modulePropertyFamilyBoundary")', source)
 
     def test_frontend_renders_objective_consumer_as_observation_only(self) -> None:
         source = (

@@ -18,6 +18,7 @@ server-side state selector.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -65,7 +66,24 @@ from story_builder.mission_recovery import (  # noqa: E402
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v24"
+SCHEMA = "nativeReceiverActivationFrontier.v25"
+
+# This is the binary-validated namespace rule shared by every LevelScript
+# module property.  LevelData writes the module's save-state fields as
+# ``@<LsmPtr id>_<save key>``; the id is a runtime namespace, not an object or
+# mission identifier.  Keep this evidence separate from the semantic
+# Encounter adapter below so new typed module families can be surfaced without
+# adding one function per object.
+LEVELSCRIPT_MODULE_PROPERTY_MAPPING_ID = (
+    "gameassembly-2026-08-02-levelscriptmodule-save-prefix-v1"
+)
+LEVELSCRIPT_MODULE_PROPERTY_GAMEASSEMBLY_SHA256 = (
+    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+)
+LEVELSCRIPT_MODULE_PROPERTY_METADATA_SHA256 = (
+    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+)
+LEVELSCRIPT_MODULE_PROPERTY_NAME_RE = re.compile(r"@(?P<module_id>\d+)_(?P<suffix>.+)")
 
 # The installed 2026-08-02 binary identifies this serialized property family
 # as the reusable Encounter controller contract.  The names below are suffixes
@@ -1585,6 +1603,189 @@ def single_native_atom_value(
     return atoms[0].get("valueBit64")
 
 
+def _module_property_signature(property_row: dict[str, Any]) -> dict[str, Any]:
+    """Return a value-free signature for one serialized module property.
+
+    Values such as spawner ids and entity references vary by instance.  The
+    serialized value type, atom count, and atom representation are the stable
+    shape evidence that can be compared across hosts without naming a level,
+    receiver, or mission.
+    """
+    name = safe_text(property_row.get("name"))
+    match = LEVELSCRIPT_MODULE_PROPERTY_NAME_RE.fullmatch(name)
+    value_type = property_row.get("valueType")
+    atom_count = property_row.get("atomCount")
+    atoms = property_row.get("atoms") or []
+    atom_shapes: list[str] = []
+    for atom in atoms:
+        if not isinstance(atom, dict):
+            atom_shapes.append("invalid")
+        elif isinstance(atom.get("valueBit64"), bool):
+            atom_shapes.append("bool")
+        elif isinstance(atom.get("valueBit64"), int):
+            atom_shapes.append("int")
+        elif atom.get("valueBit64") is None:
+            atom_shapes.append("null")
+        else:
+            atom_shapes.append(type(atom.get("valueBit64")).__name__)
+    return {
+        "name": name,
+        "moduleId": match.group("module_id") if match else "",
+        "suffix": match.group("suffix") if match else "",
+        "valueType": value_type,
+        "atomCount": atom_count,
+        "atomShapes": atom_shapes,
+    }
+
+
+def _module_property_family_key(signatures: list[dict[str, Any]]) -> str:
+    """Build a deterministic value-independent family key."""
+    shape = [
+        (
+            safe_text(signature.get("suffix")),
+            signature.get("valueType"),
+            signature.get("atomCount"),
+            tuple(signature.get("atomShapes") or []),
+        )
+        for signature in signatures
+    ]
+    return hashlib.sha256(
+        json.dumps(shape, ensure_ascii=False, separators=(",", ":")).encode(
+            "utf-8"
+        )
+    ).hexdigest()
+
+
+def _module_property_family_pattern(
+    signatures: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Classify only reusable field-shape features, never an object id.
+
+    The feature flags intentionally describe what is serialized.  They are
+    not ownership claims.  A semantic adapter can add stronger binary meaning
+    (for example the Encounter contract) only after this generic census has
+    validated the complete family shape.
+    """
+    by_suffix = {
+        safe_text(signature.get("suffix")): signature
+        for signature in signatures
+        if safe_text(signature.get("suffix"))
+    }
+    lifecycle = {
+        suffix
+        for suffix in ("is_enabled", "is_completed")
+        if suffix in by_suffix
+        and by_suffix[suffix].get("valueType") == 1
+        and by_suffix[suffix].get("atomCount") == 1
+        and by_suffix[suffix].get("atomShapes") == ["int"]
+    }
+    typed_payload = {
+        suffix
+        for suffix in by_suffix
+        if suffix not in {"is_enabled", "is_completed"}
+        and by_suffix[suffix].get("valueType") not in (None, 0)
+    }
+    features: list[str] = []
+    if len(lifecycle) == 2:
+        features.append("base_lifecycle_pair")
+    if typed_payload:
+        features.append("typed_payload_fields")
+    if any(
+        suffix in by_suffix
+        for suffix in ("spawner_id", "enemy_list")
+    ):
+        features.append("encounter_candidate_fields")
+    if not features:
+        features.append("serialized_module_fields")
+    return {
+        "features": features,
+        "propertyCount": len(signatures),
+        "suffixes": [
+            safe_text(signature.get("suffix"))
+            for signature in signatures
+            if safe_text(signature.get("suffix"))
+        ],
+    }
+
+
+def module_property_family_contexts(
+    hosts: list[dict[str, Any]],
+    *,
+    receiver_script_id: str = "",
+) -> list[dict[str, Any]]:
+    """Census every serialized ``@module_suffix`` family in every host.
+
+    This is the reusable recovery surface.  It groups by the serialized
+    namespace pattern and preserves exact field/value shapes, so future
+    controllers can be recognized from corpus repetition and binary metadata
+    without adding a host- or object-specific allowlist.
+    """
+    contexts: list[dict[str, Any]] = []
+    for host in hosts:
+        brief = host.get("briefData") or {}
+        grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for property_row in brief.get("properties") or []:
+            if not isinstance(property_row, dict):
+                continue
+            signature = _module_property_signature(property_row)
+            module_id = safe_text(signature.get("moduleId"))
+            suffix = safe_text(signature.get("suffix"))
+            if not module_id or not suffix:
+                continue
+            grouped[module_id].append(signature)
+        for module_id, signatures in sorted(grouped.items(), key=lambda item: int(item[0])):
+            signatures = sorted(
+                signatures,
+                key=lambda signature: (
+                    safe_text(signature.get("suffix")),
+                    str(signature.get("valueType")),
+                    str(signature.get("atomCount")),
+                ),
+            )
+            if len(signatures) < 2:
+                continue
+            pattern = _module_property_family_pattern(signatures)
+            source_file = safe_text(host.get("sourceFile"))
+            contexts.append({
+                "classification": "levelscript_module_property_family",
+                "mappingId": LEVELSCRIPT_MODULE_PROPERTY_MAPPING_ID,
+                "runtimeType": "Beyond.Gameplay.Core.LevelScriptModule",
+                "moduleId": module_id,
+                "receiverScriptId": safe_text(receiver_script_id),
+                "moduleIdMatchesReceiverScript": (
+                    bool(receiver_script_id) and module_id == receiver_script_id
+                ),
+                "familyKey": _module_property_family_key(signatures),
+                "pattern": pattern,
+                "propertySignatures": signatures,
+                "relatedFiles": ([{
+                    "kind": "leveldata_module_property_host",
+                    "sourceFile": source_file,
+                    "relationship": "serialized_module_property_family",
+                }] if source_file else []),
+                "missionOwnerStatus": "unresolved",
+                "storyBinding": False,
+                "orderEvidence": False,
+                "binaryEvidence": {
+                    "gameAssemblySha256": (
+                        LEVELSCRIPT_MODULE_PROPERTY_GAMEASSEMBLY_SHA256
+                    ),
+                    "globalMetadataSha256": (
+                        LEVELSCRIPT_MODULE_PROPERTY_METADATA_SHA256
+                    ),
+                    "namespaceMethod": "LevelScriptModule.GetSaveKeyPrefixed",
+                    "moduleIdFieldOffset": "this+0x18",
+                },
+                "evidenceBoundary": (
+                    "The original LevelData property names and native value "
+                    "shapes prove a reusable module namespace family only. "
+                    "The module id is not a mission, quest, Story owner, "
+                    "activation selector, branch, or playback order."
+                ),
+            })
+    return contexts
+
+
 def encounter_controller_contexts(
     level_id: str,
     receiver_script_id: str,
@@ -2370,6 +2571,10 @@ def build_report(
             leveldata_root=leveldata_root,
             levelscript_root=levelscript_root,
         )
+        module_property_families = module_property_family_contexts(
+            hosts,
+            receiver_script_id=script_id,
+        )
         encounter_contexts = encounter_controller_contexts(
             level_id,
             script_id,
@@ -2500,6 +2705,7 @@ def build_report(
             {"sourceFile": rel_path(script_path)},
             receiver,
             hosts,
+            module_property_families,
             encounter_contexts,
             subgames,
             dungeon_contexts,
@@ -2698,6 +2904,7 @@ def build_report(
                     or [],
                 },
                 "levelDataHosts": hosts,
+                "modulePropertyFamilies": module_property_families,
                 "encounterControllerContexts": encounter_contexts,
                 "nominalMissionHostComparison": nominal_host_comparison,
                 "incomingLiteralManualControls": incoming,
@@ -2803,6 +3010,17 @@ def build_report(
                 "gameAssemblySha256": ENCOUNTER_GAMEASSEMBLY_SHA256,
                 "globalMetadataSha256": ENCOUNTER_METADATA_SHA256,
             },
+            "modulePropertyFamilyEvidence": {
+                "mappingId": LEVELSCRIPT_MODULE_PROPERTY_MAPPING_ID,
+                "namespaceMethod": "Beyond.Gameplay.Core.LevelScriptModule.GetSaveKeyPrefixed",
+                "moduleIdFieldOffset": "this+0x18",
+                "gameAssemblySha256": (
+                    LEVELSCRIPT_MODULE_PROPERTY_GAMEASSEMBLY_SHA256
+                ),
+                "globalMetadataSha256": (
+                    LEVELSCRIPT_MODULE_PROPERTY_METADATA_SHA256
+                ),
+            },
         },
         "evidencePolicy": {
             "purpose": (
@@ -2830,6 +3048,14 @@ def build_report(
                 "related original-data files. The module id can differ from "
                 "the hosting LevelScript id; neither identity supplies a "
                 "MissionRuntime owner, Story branch, or order edge."
+            ),
+            "modulePropertyFamilyBoundary": (
+                "Every @module_suffix group is a generic serialized native "
+                "module namespace census. Field names, value shapes, and "
+                "related LevelData files are exact original-data context; "
+                "module ids and repeated field families do not identify a "
+                "mission, quest, Story owner, activation selector, branch, "
+                "or chronology."
             ),
             "subGameBoundary": (
                 "The hash-validated current binary proves that challenge-start "
@@ -3099,6 +3325,26 @@ def build_report(
                 any(host.get("missionNamedHost") for host in row["levelDataHosts"])
                 for row in rows
             ),
+            "modulePropertyFamilyCount": sum(
+                len(row.get("modulePropertyFamilies") or [])
+                for row in rows
+            ),
+            "scriptsWithModulePropertyFamilies": sum(
+                bool(row.get("modulePropertyFamilies")) for row in rows
+            ),
+            "modulePropertyFamilyRelatedFiles": len({
+                safe_text(related.get("sourceFile"))
+                for row in rows
+                for family in row.get("modulePropertyFamilies") or []
+                for related in family.get("relatedFiles") or []
+                if isinstance(related, dict) and safe_text(related.get("sourceFile"))
+            }),
+            "modulePropertyFamilyFeatures": dict(sorted(Counter(
+                feature
+                for row in rows
+                for family in row.get("modulePropertyFamilies") or []
+                for feature in (family.get("pattern") or {}).get("features") or []
+            ).items())),
             "scriptsWithEncounterControllerContract": sum(
                 bool(row.get("encounterControllerContexts")) for row in rows
             ),
@@ -3436,6 +3682,56 @@ def publish_to_pipeline_index(
                 }
                 for host in row.get("levelDataHosts") or []
                 if isinstance(host, dict)
+            ],
+            "modulePropertyFamilies": [
+                {
+                    "classification": safe_text(
+                        family.get("classification")
+                    ),
+                    "mappingId": safe_text(family.get("mappingId")),
+                    "runtimeType": safe_text(family.get("runtimeType")),
+                    "moduleId": safe_text(family.get("moduleId")),
+                    "receiverScriptId": safe_text(
+                        family.get("receiverScriptId")
+                    ),
+                    "moduleIdMatchesReceiverScript": bool(
+                        family.get("moduleIdMatchesReceiverScript")
+                    ),
+                    "familyKey": safe_text(family.get("familyKey")),
+                    "pattern": family.get("pattern") or {},
+                    "propertySignatures": [
+                        {
+                            "suffix": safe_text(signature.get("suffix")),
+                            "valueType": signature.get("valueType"),
+                            "atomCount": signature.get("atomCount"),
+                            "atomShapes": signature.get("atomShapes") or [],
+                        }
+                        for signature in family.get("propertySignatures") or []
+                        if isinstance(signature, dict)
+                    ],
+                    "relatedFiles": [
+                        {
+                            "kind": safe_text(related.get("kind")),
+                            "sourceFile": safe_text(
+                                related.get("sourceFile")
+                            ),
+                            "relationship": safe_text(
+                                related.get("relationship")
+                            ),
+                        }
+                        for related in family.get("relatedFiles") or []
+                        if isinstance(related, dict)
+                        and safe_text(related.get("sourceFile"))
+                    ],
+                    "missionOwnerStatus": "unresolved",
+                    "storyBinding": False,
+                    "orderEvidence": False,
+                    "evidenceBoundary": safe_text(
+                        family.get("evidenceBoundary")
+                    ),
+                }
+                for family in row.get("modulePropertyFamilies") or []
+                if isinstance(family, dict)
             ],
             "encounterControllerContexts": [
                 {
@@ -3985,6 +4281,17 @@ def markdown_report(payload: dict[str, Any]) -> str:
         (
             "- Scripts in a validated mission-named LevelData host: "
             f"`{counts.get('scriptsWithMissionNamedHost')}`"
+        ),
+        (
+            "- Generic serialized module property families / scripts / "
+            "related files: "
+            f"`{counts.get('modulePropertyFamilyCount')}` / "
+            f"`{counts.get('scriptsWithModulePropertyFamilies')}` / "
+            f"`{counts.get('modulePropertyFamilyRelatedFiles')}`"
+        ),
+        (
+            "- Generic module family features: "
+            f"`{counts.get('modulePropertyFamilyFeatures')}`"
         ),
         (
             "- Receiver scripts / Encounter modules / Story keys with the "
