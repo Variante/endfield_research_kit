@@ -59,6 +59,7 @@ Latest CN reports:
 | Authored quest-fork semantics | 307 forks: 226 main-path + auxiliary, 78 all-auxiliary, 3 with multiple main-path arms; 97 guarded; 45 reconverging |
 | Quest-fork arm evidence | 740 sibling arms; 349 carry 2,053 exact typed Story placements covering 741 Story keys and 318 arm-related original files; 307 placements use binary-named action types |
 | Binary LevelScript receiver activation | 95 scripts / 161 exact headers / 156 Story keys validated as Active-phase; all 95 exact LevelData types select the non-SubLevel client `active=true` request branch; all 95 original scripts have one uniquely decoded active volume (86 sphere / 9 box); 54 manual scripts / 95 headers / 99 Story keys no longer require a Start carrier for receiver availability |
+| Receiver Story context projection | 34 mission payloads / 96 exact receiver-to-Story intersections / 156 mission Story keys; every row retains compact binary receiver contracts and related original-file hashes; all ownership, activation, playback, and order flags remain false |
 | Authored mission-to-LevelScript task dependencies | 2 exact `(level, script, task)` tuples across 2 missions; 0 unresolved; each joined to MissionRuntime, LevelScriptData, and ScriptTaskExtraInfoTable |
 | Binary public-state entry closure | 2 server-derived handlers: full-scene `SC_SELF_SCENE_INFO` snapshots and incremental `SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY`; 4 direct public-state setter callers split into 2 zero initializers and 2 server-parameter writers |
 | Native cross-system consumer census | 500,976 mapped methods / 7,214 unambiguous family targets / 17 reviewed callers; the 4 mission-state→DynamicScene seeds close over 23 methods / 30 direct edges / depth 2, with 1 reviewed IL2CPP class-init indirect site, 0 LevelScript, 0 Story, and 0 unreviewed; the 174-type managed mission/quest census finds 2 reviewed cross-system callers and 0 mission+LevelScript signatures; its general callable-carrier pass resolves 13 fields, 5 typed entry methods, and 5 family-local native bindings with 0 mission+LevelScript bindings |
@@ -1909,6 +1910,16 @@ the 95 unresolved receiver scripts. New key-pair shapes, parse loss, or a
 missing source root fail closed. Ancestor containers, filenames, neighboring
 records, OCR, and overrides remain cross-reference only and create no owner or
 order edge.
+
+The same frontier now projects exact receiver rows into Mission Pipeline cards
+when their original `storyKeys` intersect the mission's published Story node
+keys. The corpus produces 96 rows across 34 missions and 156 mission Story
+keys, retaining the receiver's binary activation contract plus related
+LevelScript, LevelData, table, binary, and metadata files. This is a generic
+intersection/context attachment only: it does not prove mission activation,
+receiver ownership, event firing, branch selection, or inter-Story order. The
+index summary and detailed mission payloads are checked to agree; no direct
+order edge is created.
 
 ## Evidence rules
 
