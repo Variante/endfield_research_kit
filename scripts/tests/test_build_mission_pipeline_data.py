@@ -2394,6 +2394,87 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             ["story_a", "story_b"],
         )
 
+    def test_source_order_shell_is_generic_and_hashes_original_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            mission_output = root / "pipeline"
+            story_source = root / "story" / "source_only.json"
+            level_script = (
+                root / "export_full" / "structured" / "StreamingAssets"
+                / "Data" / "Json" / "LevelScriptData" / "map_a" / "1001.json"
+            )
+            binary = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            story_source.parent.mkdir(parents=True)
+            level_script.parent.mkdir(parents=True)
+            story_source.write_text('{"mission":"source_only"}', encoding="utf-8")
+            level_script.write_bytes(b"level-script")
+            binary.write_bytes(b"binary")
+            metadata.write_bytes(b"metadata")
+            related = [
+                {
+                    "kind": "original_game_binary",
+                    "sourceFile": str(binary),
+                    "relationship": "native_branch_authority",
+                    "sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+                },
+                {
+                    "kind": "original_game_metadata",
+                    "sourceFile": str(metadata),
+                    "relationship": "native_branch_authority",
+                    "sha256": hashlib.sha256(metadata.read_bytes()).hexdigest(),
+                },
+            ]
+            order_row = {
+                "mission": "source_only",
+                "missionData": str(story_source),
+                "nodes": [{"key": "radio_source_only_1"}],
+                "summary": {"sceneCount": 1, "strongEdgeCount": 1},
+                "directEdges": [{
+                    "from": "radio_source_only_1",
+                    "to": "radio_source_only_2",
+                    "kind": "levelscriptNativeControlPath",
+                    "tier": "strong",
+                    "sourceFiles": [str(level_script)],
+                    "levelIds": ["map_a"],
+                }],
+                "branches": {
+                    "nativeRelatedActionTopologies": [{
+                        "relatedOriginalFiles": related,
+                    }],
+                },
+            }
+            index = {"counts": {"missions": 0}, "missions": []}
+            publication = pipeline.attach_source_story_partial_order(
+                index,
+                mission_output,
+                {"missions": [order_row]},
+                create_variant_aggregate_shells=True,
+                require_complete_branch_publication=True,
+            )
+            shell = json.loads(
+                (mission_output / "missions" / "source_only.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        self.assertEqual(publication["sourceOrderShells"], ["source_only"])
+        self.assertEqual(index["counts"]["missions"], 1)
+        summary = index["missions"][0]
+        self.assertTrue(summary["sourceOrderShell"])
+        self.assertTrue(shell["mission"]["sourceOrderShell"])
+        self.assertTrue(shell["storyOrder"]["sourceOrderShell"])
+        self.assertEqual(shell["mission"]["levelId"], "map_a")
+        self.assertEqual(
+            shell["storyOrder"]["directEdges"][0]["kind"],
+            "levelscriptNativeControlPath",
+        )
+        self.assertEqual(
+            {row["kind"] for row in shell["mission"]["relatedOriginalFiles"]},
+            {"original_game_binary", "original_game_metadata", "original_level_script"},
+        )
+        self.assertIn("not a mission or quest owner", shell["mission"]["sourceBoundary"])
+
     def test_story_order_attachment_builds_validated_variant_aggregate_shell(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
