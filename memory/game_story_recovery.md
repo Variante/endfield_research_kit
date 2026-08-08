@@ -26,6 +26,7 @@ Latest CN reports:
 | Binary quest-action dispatch | Fail=4 and Succeed=2 validated through the only 2 SafeRun callers; RunQuestAction has only SafeRun + pending replay callers; 0 current AOT Start=1 dispatchers |
 | Authored start-action boundary | 60 root definitions / 57 typed Story references / 53 candidate-scene definition cards across 41 missions; never order edges |
 | Exact native Story transitions | 380; 85 branch-bearing across 40 missions (77 Split, 7 conditional, 1 ordered-sequence) |
+| Generic DialogTree conditional branch adapter | 1 exact cross-Story edge; corpus-scanned typed `DialogTreeIfNode`, complete carrier closure, and hash-locked `GameAssembly.dll` polarity |
 | Binary parallel-fan-out authority | 1 structural scheduler carrier / 2 admitted writer methods / 3 decoded direct calls / 44 Split branch groups / 77 transitions / 104 evidence rows |
 | Source-comparable scene pairs | 3,845 / 249,695 (1.54%) |
 | Cyclic components | 0 |
@@ -515,6 +516,17 @@ serialized leader-volume -> `CheckQuestState(Equal, Processing)` ->
 `PlayRadio` chain. Arbitrary Story ids using either shape are supported; the
 multi-quest DialogTree branch subtype remains separate. Both closures retain
 source hashes and quest context but add no relative Story-file edge.
+
+The cross-Story DialogTree conditional adapter is now corpus-driven rather than
+mission/object-declared. It scans every typed `DialogTreeIfNode` candidate from
+the normalized reachability rows, derives the conditional route and complete
+parent/child carrier coverage from serialized lines and connections, and admits
+an edge only when the current installed binary's hash-locked
+`GetNextIndex`/`GameCondition.result` polarity agrees. The Mission Pipeline card
+attaches the exact DialogTree TextAsset and `GameAssembly.dll`; missing source,
+ambiguous routes, incomplete carriers, or binary drift fail closed with bounded
+diagnostics. The current corpus yields one edge (`dlg_gm02m14_1` ->
+`dlg_gm02m14_3`), but no Story or mission id is embedded in the adapter.
 
 The latest batch removes two object-shaped blind spots with reusable negative
 consumer rules. Mechanical `misc_dlg_*` aliases now enter the same exact
