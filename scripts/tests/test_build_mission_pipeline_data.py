@@ -2200,6 +2200,118 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(shell["storyOrder"]["sourceGapQueue"], gap)
         self.assertTrue(shell["mission"]["offlineRecoveryShell"])
 
+    def test_serialized_branch_context_projection_is_generic_and_non_owning(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            mission_root = root / "missions"
+            mission_root.mkdir()
+            pipeline.write_json(mission_root / "mission_a.json", {
+                "mission": {"id": "mission_a"},
+            })
+            index = {
+                "counts": {"missions": 1},
+                "missions": [{
+                    "id": "mission_a",
+                    "file": "missions/mission_a.json",
+                }],
+            }
+            order_row = {
+                "mission": "mission_a",
+                "nodes": [{"key": "story_a"}, {"key": "story_b"}],
+                "summary": {"sceneCount": 2},
+                "branches": {"nativeControlBranches": []},
+            }
+            nested_context = {
+                "kind": "serializedBranchInventory",
+                "levelId": "map_a",
+                "scriptId": "1002",
+                "branchLocalId": 7,
+                "sha256": "b" * 64,
+                "sourceFiles": ["LevelScriptData/map_a/1002.json"],
+                "playbackStoryKeys": [],
+                "arms": [{
+                    "nestedControls": [{
+                        "controlKind": "conditional_choice",
+                        "branchingStatus": "multi_playback_arms",
+                        "arms": [{"playbackStoryKeys": ["story_b"]}],
+                    }],
+                }],
+                "relatedOriginalFiles": [{
+                    "sourceFile": "LevelScriptData/map_a/1002.json",
+                    "sha256": "b" * 64,
+                }],
+            }
+            duplicate = {
+                **nested_context,
+                "sourceFiles": ["Persistent/LevelScriptData/map_a/1002.json"],
+            }
+            direct_context = {
+                "kind": "serializedBranchInventory",
+                "levelId": "map_a",
+                "scriptId": "1001",
+                "branchLocalId": 4,
+                "sha256": "a" * 64,
+                "sourceFiles": ["LevelScriptData/map_a/1001.json"],
+                "playbackStoryKeys": ["story_a", "story_external"],
+                "arms": [],
+                "relatedOriginalFiles": [{
+                    "sourceFile": "LevelScriptData/map_a/1001.json",
+                    "sha256": "a" * 64,
+                }],
+            }
+            non_match = {
+                **direct_context,
+                "sha256": "c" * 64,
+                "playbackStoryKeys": ["story_elsewhere"],
+            }
+            publication = pipeline.attach_source_story_partial_order(
+                index,
+                root,
+                {"missions": [order_row], "nativeSerializedBranchInventory": {
+                    "rows": [direct_context, nested_context, duplicate, non_match],
+                }},
+                create_variant_aggregate_shells=False,
+                require_complete_branch_publication=False,
+            )
+            payload = json.loads(
+                (mission_root / "mission_a.json").read_text(encoding="utf-8")
+            )
+
+        contexts = payload["storyOrder"]["branches"]["nativeSerializedBranchContexts"]
+        self.assertEqual(publication["publishedMissionRows"], 1)
+        self.assertEqual(len(contexts), 2)
+        mission_summary = next(row for row in index["missions"] if row["id"] == "mission_a")
+        self.assertEqual(mission_summary["storyOrderNativeSerializedBranchContextCount"], 2)
+        self.assertEqual(mission_summary["storyOrderNativeSerializedBranchContextStoryCount"], 2)
+        self.assertEqual(
+            [row["branchLocalId"] for row in contexts],
+            [4, 7],
+        )
+        self.assertEqual(contexts[0]["missionStoryKeys"], ["story_a"])
+        self.assertEqual(
+            contexts[0]["externalStoryKeys"],
+            ["story_external"],
+        )
+        self.assertEqual(contexts[1]["missionStoryKeys"], ["story_b"])
+        self.assertFalse(contexts[1]["ownership"])
+        self.assertFalse(contexts[1]["orderEvidence"])
+        self.assertEqual(
+            contexts[1]["relatedOriginalFiles"][0]["sourceFile"],
+            "LevelScriptData/map_a/1002.json",
+        )
+        self.assertEqual(
+            payload["storyOrder"]["summary"]["nativeSerializedBranchContextCount"],
+            2,
+        )
+        self.assertEqual(
+            payload["storyOrder"]["summary"]["nativeSerializedBranchContextStoryCount"],
+            2,
+        )
+        self.assertEqual(
+            payload["storyOrder"]["summary"]["nativeSerializedBranchContextMultiPlaybackCount"],
+            1,
+        )
+
     def test_story_order_attachment_builds_validated_variant_aggregate_shell(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

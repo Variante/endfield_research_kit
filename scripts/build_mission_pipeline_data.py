@@ -9471,6 +9471,162 @@ def natural_quest_key(value: str) -> tuple[str, int, str]:
     return mission, number, suffix
 
 
+def _serialized_branch_story_keys(value: Any) -> set[str]:
+    """Collect only Story keys carried by serialized Branch playback records.
+
+    The native Branch inventory is deliberately a typed, corpus-wide census.  A
+    mission projection may use it only when the exact Story key is present on a
+    playback arm (including nested typed controls); arbitrary strings such as
+    action names, level ids, and file paths are not candidates.
+    """
+    keys: set[str] = set()
+
+    def visit(node: Any) -> None:
+        if isinstance(node, dict):
+            for field in ("playbackStoryKeys", "storyKeys"):
+                values = node.get(field)
+                if isinstance(values, str) and values:
+                    keys.add(values)
+                elif isinstance(values, list):
+                    keys.update(
+                        str(item) for item in values
+                        if isinstance(item, str) and item
+                    )
+            for child in node.values():
+                visit(child)
+        elif isinstance(node, list):
+            for child in node:
+                visit(child)
+
+    visit(value)
+    return keys
+
+
+def _serialized_branch_controls(value: Any) -> list[dict[str, Any]]:
+    """Return nested typed controls without relying on a control-name allowlist."""
+    controls: list[dict[str, Any]] = []
+
+    def visit(node: Any) -> None:
+        if isinstance(node, dict):
+            if (
+                isinstance(node.get("arms"), list)
+                and ("controlKind" in node or "controlRuntimeMappingId" in node)
+            ):
+                controls.append(node)
+            for child in node.values():
+                visit(child)
+        elif isinstance(node, list):
+            for child in node:
+                visit(child)
+
+    visit(value)
+    return controls
+
+
+def attach_serialized_branch_story_contexts(
+    order_row: dict[str, Any],
+    inventory_rows: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
+    """Project exact serialized Branch/Story intersections into one mission row.
+
+    This is intentionally a projection, not an ownership or chronology rule:
+    the only admission gate is an exact Story key shared by the mission's
+    serialized Story nodes and the original LevelScript Branch census.  The
+    complete typed row and its original-file evidence remain attached so the
+    WebUI can show the unresolved native context without inventing a route.
+    """
+    projected = copy.deepcopy(order_row)
+    inventory_rows = [
+        row for row in inventory_rows
+        if isinstance(row, dict)
+    ]
+    if not inventory_rows:
+        return projected
+    mission_story_keys = {
+        str(node if isinstance(node, str) else node.get("key") or "")
+        for node in order_row.get("nodes") or []
+        if (isinstance(node, str) and node) or (isinstance(node, dict) and node.get("key"))
+    }
+    contexts: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, tuple[str, ...]]] = set()
+    context_story_keys: set[str] = set()
+    related_source_files: set[str] = set()
+    multi_playback_count = 0
+
+    for source_row in inventory_rows:
+        serialized_story_keys = _serialized_branch_story_keys(source_row)
+        mission_keys = serialized_story_keys & mission_story_keys
+        if not mission_keys:
+            continue
+        dedupe_hash = str(source_row.get("sha256") or "")
+        if not dedupe_hash:
+            dedupe_hash = "|".join(
+                sorted(
+                    str(value).replace("\\", "/")
+                    for value in source_row.get("sourceFiles") or []
+                    if value
+                )
+            )
+        dedupe_key = (
+            dedupe_hash,
+            str(source_row.get("branchLocalId") or ""),
+            tuple(sorted(mission_keys)),
+        )
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        context = copy.deepcopy(source_row)
+        context["relation"] = "serialized_branch_story_context"
+        context["missionStoryKeys"] = sorted(mission_keys)
+        context["externalStoryKeys"] = sorted(serialized_story_keys - mission_story_keys)
+        context["ownership"] = False
+        context["orderEvidence"] = False
+        context["contextEvidenceBoundary"] = (
+            "Exact serialized Branch playback keys intersect this mission's Story "
+            "nodes. The original LevelScript, GameAssembly, and metadata files are "
+            "attached for inspection; this context does not prove mission ownership, "
+            "activation, arm exclusivity, or Story file order."
+        )
+        contexts.append(context)
+        context_story_keys.update(mission_keys)
+        related_source_files.update(
+            str(related.get("sourceFile") or "")
+            for related in source_row.get("relatedOriginalFiles") or []
+            if isinstance(related, dict) and related.get("sourceFile")
+        )
+        multi_playback_count += int(
+            int(source_row.get("playbackArmCount") or 0) > 1
+        )
+        multi_playback_count += sum(
+            1
+            for control in _serialized_branch_controls(source_row)
+            if control.get("branchingStatus") == "multi_playback_arms"
+        )
+
+    contexts.sort(
+        key=lambda row: (
+            str(row.get("levelId") or ""),
+            str(row.get("scriptId") or ""),
+            str(row.get("branchLocalId") or ""),
+            str(row.get("sha256") or ""),
+            tuple(row.get("missionStoryKeys") or []),
+        )
+    )
+    branches = projected.setdefault("branches", {})
+    branches["nativeSerializedBranchContexts"] = contexts
+    branches["nativeSerializedBranchContextEvidenceBoundary"] = (
+        "These rows are exact serialized Branch playback contexts projected by Story "
+        "key intersection. They retain original-file hashes but are not mission "
+        "ownership, activation, arm exclusivity, or chronology evidence."
+    )
+    summary = projected.setdefault("summary", {})
+    summary["nativeSerializedBranchContextCount"] = len(contexts)
+    summary["nativeSerializedBranchContextStoryCount"] = len(context_story_keys)
+    summary["nativeSerializedBranchContextMultiPlaybackCount"] = multi_playback_count
+    summary["nativeSerializedBranchContextRelatedFileCount"] = len(related_source_files)
+    return projected
+
+
 def compact_scalar(value: Any) -> Any:
     value = const_value(value)
     if isinstance(value, (str, int, float, bool)) or value is None:
@@ -11659,6 +11815,10 @@ def _update_story_order_summary(
         "storyOrderNativeSerializedBranchArmCount": "nativeSerializedBranchArmCount",
         "storyOrderNativeSerializedPlaybackArmCount": "nativeSerializedPlaybackArmCount",
         "storyOrderNativeSerializedMultiPlaybackBranchCount": "nativeSerializedMultiPlaybackBranchCount",
+        "storyOrderNativeSerializedBranchContextCount": "nativeSerializedBranchContextCount",
+        "storyOrderNativeSerializedBranchContextStoryCount": "nativeSerializedBranchContextStoryCount",
+        "storyOrderNativeSerializedBranchContextMultiPlaybackCount": "nativeSerializedBranchContextMultiPlaybackCount",
+        "storyOrderNativeSerializedBranchContextRelatedFileCount": "nativeSerializedBranchContextRelatedFileCount",
         "storyOrderNativeSerializedNestedControlCount": "nativeSerializedNestedControlCount",
         "storyOrderNativeSerializedNestedControlFamilyCounts": "nativeSerializedNestedControlFamilyCounts",
         "storyOrderNativeSerializedNestedControlArmSchemaUnavailableCount": "nativeSerializedNestedControlArmSchemaUnavailableCount",
@@ -11887,13 +12047,19 @@ def attach_source_story_partial_order(
         payload = read_json(mission_path)
         if not isinstance(payload, dict):
             continue
-        published_order = copy.deepcopy(order_row)
+        inventory_rows = (
+            (report.get("nativeSerializedBranchInventory") or {}).get("rows") or []
+        )
+        published_order = attach_serialized_branch_story_contexts(
+            order_row,
+            inventory_rows,
+        )
         previous_order = payload.get("storyOrder") or {}
         if previous_order.get("sourceGapQueue"):
             published_order["sourceGapQueue"] = previous_order["sourceGapQueue"]
         payload["storyOrder"] = published_order
         write_json(mission_path, payload)
-        _update_story_order_summary(summary, order_row)
+        _update_story_order_summary(summary, published_order)
         published_missions.append(mission_id)
         published_branches += len(
             ((order_row.get("branches") or {}).get("nativeControlBranches") or [])
