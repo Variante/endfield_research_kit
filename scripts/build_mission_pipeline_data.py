@@ -11517,6 +11517,11 @@ def _update_story_order_summary(
         "storyOrderNativeSerializedNestedPlaybackControlCount": "nativeSerializedNestedPlaybackControlCount",
         "storyOrderNativeSerializedNestedPlaybackPredicateGapCount": "nativeSerializedNestedPlaybackPredicateGapCount",
         "storyOrderNativeSerializedNestedControlReferenceCount": "nativeSerializedNestedControlReferenceCount",
+        "storyOrderNativeSerializedNestedArmCount": "nativeSerializedNestedArmCount",
+        "storyOrderNativeSerializedNestedExactActiveArmCount": "nativeSerializedNestedExactActiveArmCount",
+        "storyOrderNativeSerializedNestedInactiveArmCount": "nativeSerializedNestedInactiveArmCount",
+        "storyOrderNativeSerializedNestedRuntimeTerminalArmCount": "nativeSerializedNestedRuntimeTerminalArmCount",
+        "storyOrderNativeSerializedNestedUnavailableArmCount": "nativeSerializedNestedUnavailableArmCount",
         "storyOrderNativeSerializedBranchPredicateConflictCount": "nativeSerializedBranchPredicateConflictCount",
         "storyOrderNativeNamedPredicateCount": "nativeNamedPredicateCount",
         "storyOrderNativeInlinePredicateCount": "nativeInlinePredicateCount",
@@ -12937,6 +12942,10 @@ def main() -> int:
             f"{summary.get('nativeSerializedNestedPlaybackControlCount', 0)} playback controls / "
             f"{summary.get('nativeSerializedNestedPlaybackPredicateGapCount', 0)} playback predicate gaps / "
             f"{summary.get('nativeSerializedNestedControlReferenceCount', 0)} nested control references / "
+            f"{summary.get('nativeSerializedNestedArmCount', 0)} nested slots / "
+            f"{summary.get('nativeSerializedNestedExactActiveArmCount', 0)} nested active / "
+            f"{summary.get('nativeSerializedNestedInactiveArmCount', 0)} nested inactive / "
+            f"{summary.get('nativeSerializedNestedUnavailableArmCount', 0)} nested unavailable / "
             f"{summary.get('nativeSerializedBranchPredicateConflictCount', 0)} predicate conflicts, "
             f"{summary.get('nativeRelatedActionTopologies', 0)} related action graphs, "
             f"{summary.get('nativeNamedPredicates', 0)} named predicates, "

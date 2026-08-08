@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v39"
+SCHEMA = "sourceStoryPartialOrder.v40"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -73,7 +73,7 @@ NATIVE_LEVELSCRIPT_ROOTS = (
     / "Data" / "Json" / "LevelScriptData",
 )
 NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA = (
-    "nativeSerializedBranchInventory.v7"
+    "nativeSerializedBranchInventory.v8"
 )
 NATIVE_TYPED_CONTROL_ACTION_NAMES = frozenset({
     "Split",
@@ -5028,6 +5028,11 @@ def _native_serialized_branch_inventory_not_requested() -> dict[str, Any]:
             "nestedPlaybackControlCount": 0,
             "nestedPlaybackPredicateGapCount": 0,
             "nestedControlReferenceCount": 0,
+            "nestedSerializedArmCount": 0,
+            "nestedExactActiveArmCount": 0,
+            "nestedInactiveArmCount": 0,
+            "nestedRuntimeTerminalArmCount": 0,
+            "nestedUnavailableArmCount": 0,
             "controlPredicateConflictCount": 0,
             "validationFailureCount": 0,
         },
@@ -5415,6 +5420,40 @@ def _native_serialized_branch_inventory(
         ),
         "nestedControlReferenceCount": sum(
             len(nested_arm.get("reachableControlLocalIds") or [])
+            for row in rows
+            for arm in row.get("arms") or []
+            for control in arm.get("nestedControls") or []
+            for nested_arm in control.get("arms") or []
+        ),
+        "nestedSerializedArmCount": sum(
+            len(control.get("arms") or [])
+            for row in rows
+            for arm in row.get("arms") or []
+            for control in arm.get("nestedControls") or []
+        ),
+        "nestedExactActiveArmCount": sum(
+            nested_arm.get("targetStatus") == "exact_active_action"
+            for row in rows
+            for arm in row.get("arms") or []
+            for control in arm.get("nestedControls") or []
+            for nested_arm in control.get("arms") or []
+        ),
+        "nestedInactiveArmCount": sum(
+            nested_arm.get("targetStatus") == "inactive_serialized_target"
+            for row in rows
+            for arm in row.get("arms") or []
+            for control in arm.get("nestedControls") or []
+            for nested_arm in control.get("arms") or []
+        ),
+        "nestedRuntimeTerminalArmCount": sum(
+            nested_arm.get("targetStatus") == "missing_runtime_action_slot"
+            for row in rows
+            for arm in row.get("arms") or []
+            for control in arm.get("nestedControls") or []
+            for nested_arm in control.get("arms") or []
+        ),
+        "nestedUnavailableArmCount": sum(
+            nested_arm.get("targetStatus") == "unavailable_fail_closed"
             for row in rows
             for arm in row.get("arms") or []
             for control in arm.get("nestedControls") or []
@@ -6643,6 +6682,21 @@ def build_report(
         "nativeSerializedNestedControlReferenceCount": int(
             inventory_summary.get("nestedControlReferenceCount") or 0
         ),
+        "nativeSerializedNestedArmCount": int(
+            inventory_summary.get("nestedSerializedArmCount") or 0
+        ),
+        "nativeSerializedNestedExactActiveArmCount": int(
+            inventory_summary.get("nestedExactActiveArmCount") or 0
+        ),
+        "nativeSerializedNestedInactiveArmCount": int(
+            inventory_summary.get("nestedInactiveArmCount") or 0
+        ),
+        "nativeSerializedNestedRuntimeTerminalArmCount": int(
+            inventory_summary.get("nestedRuntimeTerminalArmCount") or 0
+        ),
+        "nativeSerializedNestedUnavailableArmCount": int(
+            inventory_summary.get("nestedUnavailableArmCount") or 0
+        ),
         "nativeSerializedBranchPredicateConflictCount": int(
             inventory_summary.get("controlPredicateConflictCount") or 0
         ),
@@ -6771,7 +6825,11 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"multi-playback controls / `{summary.get('nativeSerializedNestedPlaybackControlCount', 0)}` "
         f"playback controls / `{summary.get('nativeSerializedNestedPlaybackPredicateGapCount', 0)}` "
         f"playback predicate gaps / `{summary.get('nativeSerializedNestedControlReferenceCount', 0)}` "
-        f"nested control references; `{summary.get('nativeSerializedBranchPredicateConflictCount', 0)}` "
+        f"nested control references / `{summary.get('nativeSerializedNestedArmCount', 0)}` "
+        f"nested slots (`{summary.get('nativeSerializedNestedExactActiveArmCount', 0)}` active, "
+        f"`{summary.get('nativeSerializedNestedInactiveArmCount', 0)}` inactive, "
+        f"`{summary.get('nativeSerializedNestedUnavailableArmCount', 0)}` unavailable); "
+        f"`{summary.get('nativeSerializedBranchPredicateConflictCount', 0)}` "
         "predicate-join conflicts (conflicts fail closed)",
         f"- related native action graphs: `{summary.get('nativeRelatedActionTopologies', 0)}` "
         "original LevelScript files attached only through exact Story control paths",
