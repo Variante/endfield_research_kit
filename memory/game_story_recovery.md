@@ -27,6 +27,7 @@ Latest CN reports:
 | Authored start-action boundary | 60 root definitions / 57 typed Story references / 53 candidate-scene definition cards across 41 missions; never order edges |
 | Exact native Story transitions | 380; 85 branch-bearing across 40 missions (77 Split, 7 conditional, 1 ordered-sequence) |
 | Generic DialogTree conditional branch adapter | 1 exact cross-Story edge; corpus-scanned typed `DialogTreeIfNode`, complete carrier closure, and hash-locked `GameAssembly.dll` polarity |
+| Local DialogTree conditional census | 13 exact same-Story routes / 26 serialized arms across 7 Story files; hash-locked `DialogTreeIfNode` polarity, 0 validation failures; selection evidence only, never file order |
 | Binary parallel-fan-out authority | 1 structural scheduler carrier / 2 admitted writer methods / 3 decoded direct calls / 44 Split branch groups / 77 transitions / 104 evidence rows |
 | Source-comparable scene pairs | 3,845 / 249,695 (1.54%) |
 | Cyclic components | 0 |
@@ -527,6 +528,14 @@ attaches the exact DialogTree TextAsset and `GameAssembly.dll`; missing source,
 ambiguous routes, incomplete carriers, or binary drift fail closed with bounded
 diagnostics. The current corpus yields one edge (`dlg_gm02m14_1` ->
 `dlg_gm02m14_3`), but no Story or mission id is embedded in the adapter.
+
+The same corpus adapter now audits local authored conditional routes rather than
+treating them as opaque option layouts. It finds 13 exact same-Story
+`DialogTreeIfNode` routes (26 arms) across 7 files, preserves nested
+`GameCondition` operands, and attaches each serialized TextAsset plus the
+hash-locked original `GameAssembly.dll`. These rows expose branch selection,
+not a guessed order between arms or a mission trigger; cross-Story routes still
+require the stricter carrier-closure edge gate.
 
 The latest batch removes two object-shaped blind spots with reusable negative
 consumer rules. Mechanical `misc_dlg_*` aliases now enter the same exact
