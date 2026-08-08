@@ -308,7 +308,68 @@ DIALOG_TREE_BRANCH_BINARY_CONTRACT = {
         },
     ),
 }
+
+# Current-build binary authority for Timeline option routes.  The contract is
+# deliberately value/mission independent: the selected Timeline option row's
+# runtime value is copied into the active option object, and the Timeline
+# runtime only accepts a matching positive option value.  The serialized
+# Runtime Jump/clip track still supplies the actual skipped/returned line
+# windows; this contract does not invent a target from an option index.
+DIALOG_TIMELINE_OPTION_BINARY_CONTRACT = {
+    "mappingId": "gameassembly-2026-08-02-dialog-timeline-option-index-v1",
+    "gameAssemblySha256": (
+        "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+    ),
+    "metadataSha256": (
+        "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+    ),
+    "selectionRule": (
+        "DialogTimelineManager._SelectIndexInTimeline reads selected option "
+        "+0x98; DialogUtils.DialogChooseOption writes runtime +0x18; "
+        "SetDialogOption/active-clip traversal accepts a matching positive "
+        "+0x18"
+    ),
+    "nativeConsumers": (
+        {
+            "method": "DialogTimelineManager._SelectIndexInTimeline",
+            "token": "0x0600f97b",
+            "address": "0x186e4aa04",
+            "contract": (
+                "reads the selected Timeline option +0x98 and passes it to "
+                "DialogUtils.DialogChooseOption"
+            ),
+        },
+        {
+            "method": "DialogUtils.DialogChooseOption",
+            "token": "0x0600f9fb",
+            "address": "0x186e4bbac",
+            "contract": "writes the selected runtime optionIndex to +0x18",
+        },
+        {
+            "method": "DialogTimelineManager.SetDialogOption",
+            "token": "0x0600f979",
+            "address": "0x186e484a8",
+            "contract": (
+                "compares current and candidate +0x18 and treats zero as "
+                "the non-branch/default value"
+            ),
+        },
+        {
+            "method": "DialogTimelineManager.TryTriggerTrunkBindingOption",
+            "token": "0x0600f955",
+            "address": "0x186e48e28",
+            "contract": "enumerates active clips before the option gate",
+        },
+        {
+            "method": "DialogUtils.DialogTimelineGetAllActiveClips",
+            "token": "0x0600f9f9",
+            "address": "0x186e4d6bc",
+            "contract": "collects active Timeline clips for runtime matching",
+        },
+    ),
+}
 _DIALOG_TREE_BINARY_SOURCE_CACHE: dict[str, dict[str, Any] | None] = {}
+_DIALOG_TIMELINE_SOURCE_HASH_CACHE: dict[str, str] = {}
 
 
 def _dialog_tree_resolve_source(source_file: str) -> Path:
@@ -429,6 +490,147 @@ def _configured_game_assembly_path() -> Path:
     )
 
 
+def _configured_game_metadata_path() -> Path:
+    """Resolve the metadata paired with the configured original binary."""
+    game_assembly_path = _configured_game_assembly_path()
+    if str(game_assembly_path) in {"", "."}:
+        return Path()
+    return (
+        game_assembly_path.parent
+        / "Endfield_Data"
+        / "il2cpp_data"
+        / "Metadata"
+        / "global-metadata.dat"
+    )
+
+
+def _dialog_timeline_source_hash(path: Path) -> str:
+    """Hash a recovered Timeline source once while preserving missing files."""
+    if str(path) in {"", "."}:
+        return ""
+    cache_key = str(path.resolve())
+    if cache_key in _DIALOG_TIMELINE_SOURCE_HASH_CACHE:
+        return _DIALOG_TIMELINE_SOURCE_HASH_CACHE[cache_key]
+    digest = ""
+    if path.is_file():
+        digest = hashlib.sha256(path.read_bytes()).hexdigest().upper()
+    _DIALOG_TIMELINE_SOURCE_HASH_CACHE[cache_key] = digest
+    return digest
+
+
+def _dialog_timeline_option_evidence(risk: dict[str, Any]) -> dict[str, Any]:
+    """Attach Timeline tracks and the generic original-binary option contract.
+
+    Runtime Jump/clip rows are accepted only from the existing exact
+    serialized-track risk signatures.  This helper adds provenance and makes
+    the binary gate auditable; it never turns an option index into a line or
+    Story target by itself.
+    """
+    contract = DIALOG_TIMELINE_OPTION_BINARY_CONTRACT
+    related_files: list[dict[str, Any]] = []
+    missing_tracks: list[str] = []
+    track_files = _string_list(risk.get("assetTracks"))
+    for source_file in track_files:
+        source_path = Path(source_file)
+        if not source_path.is_absolute():
+            source_path = ROOT / source_path
+        source_hash = _dialog_timeline_source_hash(source_path)
+        if not source_hash:
+            missing_tracks.append(source_file)
+            continue
+        related_files.append({
+            "kind": "dialog_timeline_asset_track",
+            "sourceFile": source_file,
+            "sha256": source_hash,
+            "relationship": "exact_serialized_timeline_option_route_track",
+        })
+
+    binary_path = _configured_game_assembly_path()
+    metadata_path = _configured_game_metadata_path()
+    binary_hash = _dialog_timeline_source_hash(binary_path)
+    metadata_hash = _dialog_timeline_source_hash(metadata_path)
+    validation_failures: list[dict[str, Any]] = []
+    for label, source_path, actual_hash, expected_hash in (
+        ("GameAssembly.dll", binary_path, binary_hash, contract["gameAssemblySha256"]),
+        ("global-metadata.dat", metadata_path, metadata_hash, contract["metadataSha256"]),
+    ):
+        if actual_hash != expected_hash:
+            validation_failures.append({
+                "gate": "originalBinaryHash",
+                "source": label,
+                "sourcePath": str(source_path),
+                "expected": expected_hash,
+                "actual": actual_hash,
+            })
+    if not track_files or missing_tracks:
+        validation_failures.append({
+            "gate": "timelineTrackSources",
+            "source": "dialogTimeline",
+            "sourcePath": missing_tracks,
+            "expected": "at least one serialized option-route asset track exists",
+            "actual": (
+                "missing source files"
+                if missing_tracks
+                else "no asset track paths were supplied"
+            ),
+        })
+    status = "validated" if not validation_failures else "unvalidated"
+    binary_source_file = (
+        str(binary_path.resolve())
+        if str(binary_path) not in {"", "."}
+        else ""
+    )
+    metadata_source_file = (
+        str(metadata_path.resolve())
+        if str(metadata_path) not in {"", "."}
+        else ""
+    )
+    related_files.extend([
+        {
+            "kind": "original_game_binary",
+            "sourceFile": binary_source_file,
+            "sha256": binary_hash,
+            "relationship": "DialogTimeline_option_index_runtime_contract",
+        },
+        {
+            "kind": "original_game_metadata",
+            "sourceFile": metadata_source_file,
+            "sha256": metadata_hash,
+            "relationship": "DialogTimeline_option_index_runtime_contract",
+        },
+    ])
+    return {
+        "binaryMappingId": contract["mappingId"],
+        "gameAssemblySha256": binary_hash,
+        "metadataSha256": metadata_hash,
+        "nativeConsumers": list(contract["nativeConsumers"]),
+        "selectionRule": contract["selectionRule"],
+        "binaryValidation": {
+            "validator": "dialogTimelineOptionBinaryContract",
+            "status": status,
+            "expected": {
+                "gameAssemblySha256": contract["gameAssemblySha256"],
+                "metadataSha256": contract["metadataSha256"],
+                "assetTrackSources": len(track_files),
+            },
+            "actual": {
+                "gameAssemblySha256": binary_hash,
+                "metadataSha256": metadata_hash,
+                "assetTrackSources": len(track_files) - len(missing_tracks),
+                "missingAssetTracks": missing_tracks,
+            },
+            "failures": validation_failures,
+        },
+        "relatedOriginalFiles": related_files,
+        "evidenceBoundary": (
+            "The serialized Timeline track supplies the exact option-index "
+            "skip/return window, while the original binary proves how the "
+            "option index reaches active runtime clips. This does not prove a "
+            "mission trigger, cross-file order, or server branch choice."
+        ),
+    }
+
+
 def load_mission_payload_with_variants(
     mission_dir: Path,
     mission: str,
@@ -532,6 +734,7 @@ EVIDENCE_POLICY = {
         "MissionRuntimeAsset questPrev edges backed by prevQuestIdList",
         "DialogTree authoredDirect option routes",
         "DialogTree/DialogTreeFragment option-to-line branchLines verified against sceneGraphLinks",
+        "Dialog Timeline Runtime Jump/clip option routes with exact serialized track hashes and the installed option-index/active-clip binary contract",
         "exact serialized DialogTreeBranchNode DialogBranchData.conditions joined to ordered outgoing connections and the installed DialogManager.GetBranchNextIndex rule",
         "exact serialized DialogTreeIfNode condition joined to its ordered outgoing connections and the installed DialogTreeIfNode.GetNextIndex rule",
         "Dialog Timeline Runtime Jump routes with the exact timelineRouteBranches/runtimeJumpTrack signature",
@@ -560,6 +763,7 @@ EVIDENCE_POLICY = {
         "divergent Split/IfElseAction/SwitchInt/SwitchIntLarger/SwitchString Story arms as topology only",
         "DialogTreeBranchNode sibling arms and connection order (selection evidence only; no file-order or mission trigger)",
         "DialogTreeIfNode sibling arms and connection order (selection evidence only; no file-order or mission trigger)",
+        "Dialog Timeline option-index sibling arms and Runtime Jump/clip track windows (selection evidence only; no mission trigger or cross-file chronology)",
         "authored quest-start Story actions when the complete current AOT dispatcher census has no slot-1 producer",
     ],
     "rejects": [
@@ -1084,6 +1288,7 @@ def collect_dialog_line_option_branches(
                     "branchLineIds": branch_lines,
                 })
             if complete and runtime_options:
+                timeline_evidence = _dialog_timeline_option_evidence(risk)
                 allowed.append({
                     **base,
                     "provenance": {
@@ -1096,11 +1301,25 @@ def collect_dialog_line_option_branches(
                         ),
                         "optionIndex": risk.get("optionIndex") or [],
                         "candidateMapping": "trunkClipOptionIndex",
+                        **{
+                            key: value
+                            for key, value in timeline_evidence.items()
+                            if key not in {"relatedOriginalFiles", "evidenceBoundary"}
+                        },
                     },
                     "options": runtime_options,
                     "commonContinuationLineId": safe_key(
                         risk.get("commonContinuationLineId")
                     ),
+                    "relatedOriginalFiles": timeline_evidence[
+                        "relatedOriginalFiles"
+                    ],
+                    "binaryValidation": timeline_evidence[
+                        "binaryValidation"
+                    ],
+                    "evidenceBoundary": timeline_evidence[
+                        "evidenceBoundary"
+                    ],
                 })
                 continue
             excluded.append({
@@ -1140,6 +1359,7 @@ def collect_dialog_line_option_branches(
                     runtime_option["continuationLineId"] = common_continuation
                 runtime_options.append(runtime_option)
             if complete and runtime_options:
+                timeline_evidence = _dialog_timeline_option_evidence(risk)
                 allowed.append({
                     **base,
                     "provenance": {
@@ -1149,6 +1369,11 @@ def collect_dialog_line_option_branches(
                         "source": "dialogTimeline",
                         "assetTracks": _string_list(risk.get("assetTracks")),
                         "optionIndex": risk.get("optionIndex") or [],
+                        **{
+                            key: value
+                            for key, value in timeline_evidence.items()
+                            if key not in {"relatedOriginalFiles", "evidenceBoundary"}
+                        },
                     },
                     "options": runtime_options,
                     "skippedLineIdsByOption": {
@@ -1169,6 +1394,15 @@ def collect_dialog_line_option_branches(
                         key=natural_key,
                     ),
                     "commonContinuationLineId": common_continuation,
+                    "relatedOriginalFiles": timeline_evidence[
+                        "relatedOriginalFiles"
+                    ],
+                    "binaryValidation": timeline_evidence[
+                        "binaryValidation"
+                    ],
+                    "evidenceBoundary": timeline_evidence[
+                        "evidenceBoundary"
+                    ],
                 })
                 continue
             excluded.append({
@@ -7290,6 +7524,20 @@ def build_mission_partial_order(
         for row in dialog_line_options
         if safe_key((row.get("provenance") or {}).get("kind"))
     )
+    dialog_line_binary_validated_group_count = sum(
+        (row.get("binaryValidation") or {}).get("status") == "validated"
+        for row in dialog_line_options
+    )
+    dialog_line_binary_validation_failure_count = sum(
+        len((row.get("binaryValidation") or {}).get("failures") or [])
+        for row in dialog_line_options
+    )
+    dialog_line_related_file_count = len({
+        safe_key(related.get("sourceFile"))
+        for row in dialog_line_options
+        for related in row.get("relatedOriginalFiles") or []
+        if isinstance(related, dict) and safe_key(related.get("sourceFile"))
+    })
     excluded_dialog_line_option_count = sum(
         len(row.get("options") or row.get("optionIds") or [])
         for row in excluded_dialog_line_options
@@ -7457,6 +7705,13 @@ def build_mission_partial_order(
             "dialogLineOptionGroupCount": len(dialog_line_options),
             "dialogLineOptionRouteCount": dialog_line_route_count,
             "dialogLineOptionLineCount": dialog_line_count,
+            "dialogLineOptionBinaryValidatedGroupCount": (
+                dialog_line_binary_validated_group_count
+            ),
+            "dialogLineOptionBinaryValidationFailureCount": (
+                dialog_line_binary_validation_failure_count
+            ),
+            "dialogLineOptionRelatedFileCount": dialog_line_related_file_count,
             "excludedDialogLineOptionGroupCount": len(excluded_dialog_line_options),
             "excludedDialogLineOptionCount": excluded_dialog_line_option_count,
             "actionableExcludedDialogLineOptionGroupCount":
@@ -7908,6 +8163,15 @@ def build_report(
         totals["dialogLineOptionGroups"] += summary["dialogLineOptionGroupCount"]
         totals["dialogLineOptionRoutes"] += summary["dialogLineOptionRouteCount"]
         totals["dialogLineOptionLines"] += summary["dialogLineOptionLineCount"]
+        totals["dialogLineOptionBinaryValidatedGroups"] += summary[
+            "dialogLineOptionBinaryValidatedGroupCount"
+        ]
+        totals["dialogLineOptionBinaryValidationFailures"] += summary[
+            "dialogLineOptionBinaryValidationFailureCount"
+        ]
+        totals["dialogLineOptionRelatedFiles"] += summary[
+            "dialogLineOptionRelatedFileCount"
+        ]
         totals["excludedDialogLineOptionGroups"] += summary["excludedDialogLineOptionGroupCount"]
         totals["excludedDialogLineOptions"] += summary["excludedDialogLineOptionCount"]
         totals["actionableExcludedDialogLineOptionGroups"] += (
@@ -8135,6 +8399,12 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- strict intra-dialog option routes: `{summary.get('dialogLineOptionRoutes', 0)}` options "
         f"in `{summary.get('dialogLineOptionGroups', 0)}` groups, covering "
         f"`{summary.get('dialogLineOptionLines', 0)}` branch lines",
+        f"- Timeline option-route binary contract: "
+        f"`{summary.get('dialogLineOptionBinaryValidatedGroups', 0)}` groups "
+        f"validated / `{summary.get('dialogLineOptionRelatedFiles', 0)}` related "
+        f"files / `{summary.get('dialogLineOptionBinaryValidationFailures', 0)}` "
+        "validation failures; selection/track evidence only, never a mission "
+        "or cross-file order edge",
         f"- binary-validated local DialogTree conditionals: "
         f"`{summary.get('dialogConditionalBranches', 0)}` routes / "
         f"`{summary.get('dialogConditionalBranchArms', 0)}` arms; "

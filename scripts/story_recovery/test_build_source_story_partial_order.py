@@ -3223,6 +3223,162 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         self.assertEqual(groups[0]["provenance"]["kind"], "DialogTimelineRuntimeJump")
         self.assertEqual(result["summary"]["dialogLineOptionRouteCount"], 2)
 
+    def test_timeline_option_route_attaches_binary_and_track_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            track_path = Path(temp_dir) / "Runtime Jump Track.json"
+            track_path.write_text('{"m_Clips": []}', encoding="utf-8")
+            conv = {
+                "key": "dlg_m1_timeline_provenance",
+                "optionGroups": [{
+                    "g": 1,
+                    "after": "dlg_m1_timeline_provenance_001",
+                    "options": [
+                        {"id": "option_1", "branchLines": ["line_1"]},
+                        {"id": "option_2", "branchLines": ["line_2"]},
+                    ],
+                    "optionBranchRisk": {
+                        "code": "timelineRouteBranches",
+                        "reason": "runtimeJumpTrack",
+                        "source": "dialogTimeline",
+                        "branchLineIdsByOption": {
+                            "option_1": ["line_1"],
+                            "option_2": ["line_2"],
+                        },
+                        "assetTracks": [str(track_path)],
+                    },
+                }],
+            }
+
+            groups = partial_order.collect_dialog_line_option_branches(
+                conv,
+                "conv/dlg_m1_timeline_provenance.json",
+            )["dialogLineOptions"]
+
+        self.assertEqual(len(groups), 1)
+        row = groups[0]
+        self.assertEqual(
+            row["binaryValidation"]["validator"],
+            "dialogTimelineOptionBinaryContract",
+        )
+        self.assertEqual(row["binaryValidation"]["status"], "validated")
+        self.assertEqual(
+            row["provenance"]["binaryMappingId"],
+            partial_order.DIALOG_TIMELINE_OPTION_BINARY_CONTRACT[
+                "mappingId"
+            ],
+        )
+        self.assertIn(
+            "dialog_timeline_asset_track",
+            {item["kind"] for item in row["relatedOriginalFiles"]},
+        )
+        self.assertIn(
+            "original_game_binary",
+            {item["kind"] for item in row["relatedOriginalFiles"]},
+        )
+        self.assertIn(
+            "original_game_metadata",
+            {item["kind"] for item in row["relatedOriginalFiles"]},
+        )
+
+    def test_timeline_option_route_reports_missing_track_diagnostic(self) -> None:
+        conv = {
+            "key": "dlg_m1_timeline_missing_track",
+            "optionGroups": [{
+                "g": 1,
+                "after": "dlg_m1_timeline_missing_track_001",
+                "options": [
+                    {"id": "option_1", "branchLines": ["line_1"]},
+                    {"id": "option_2", "branchLines": ["line_2"]},
+                ],
+                "optionBranchRisk": {
+                    "code": "timelineRouteBranches",
+                    "reason": "runtimeJumpTrack",
+                    "source": "dialogTimeline",
+                    "branchLineIdsByOption": {
+                        "option_1": ["line_1"],
+                        "option_2": ["line_2"],
+                    },
+                    "assetTracks": [
+                        "export_full/recovered/missing-runtime-track.json"
+                    ],
+                },
+            }],
+        }
+
+        groups = partial_order.collect_dialog_line_option_branches(
+            conv,
+            "conv/dlg_m1_timeline_missing_track.json",
+        )["dialogLineOptions"]
+
+        self.assertEqual(len(groups), 1)
+        validation = groups[0]["binaryValidation"]
+        self.assertEqual(validation["status"], "unvalidated")
+        self.assertEqual(
+            validation["failures"][0]["gate"],
+            "timelineTrackSources",
+        )
+
+    def test_timeline_option_route_reports_binary_hash_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            track_path = root / "Runtime Jump Track.json"
+            game_assembly_path = root / "GameAssembly.dll"
+            metadata_path = root / "global-metadata.dat"
+            track_path.write_text('{"m_Clips": []}', encoding="utf-8")
+            game_assembly_path.write_bytes(b"wrong-game-binary")
+            metadata_path.write_bytes(b"wrong-metadata")
+            conv = {
+                "key": "dlg_m1_timeline_bad_binary",
+                "optionGroups": [{
+                    "g": 1,
+                    "after": "dlg_m1_timeline_bad_binary_001",
+                    "options": [
+                        {"id": "option_1", "branchLines": ["line_1"]},
+                        {"id": "option_2", "branchLines": ["line_2"]},
+                    ],
+                    "optionBranchRisk": {
+                        "code": "timelineRouteBranches",
+                        "reason": "runtimeJumpTrack",
+                        "source": "dialogTimeline",
+                        "branchLineIdsByOption": {
+                            "option_1": ["line_1"],
+                            "option_2": ["line_2"],
+                        },
+                        "assetTracks": [str(track_path)],
+                    },
+                }],
+            }
+            with patch.object(
+                partial_order,
+                "_configured_game_assembly_path",
+                return_value=game_assembly_path,
+            ), patch.object(
+                partial_order,
+                "_configured_game_metadata_path",
+                return_value=metadata_path,
+            ):
+                groups = partial_order.collect_dialog_line_option_branches(
+                    conv,
+                    "conv/dlg_m1_timeline_bad_binary.json",
+                )["dialogLineOptions"]
+
+        self.assertEqual(len(groups), 1)
+        validation = groups[0]["binaryValidation"]
+        self.assertEqual(validation["status"], "unvalidated")
+        binary_failures = [
+            failure
+            for failure in validation["failures"]
+            if failure.get("gate") == "originalBinaryHash"
+        ]
+        self.assertEqual({failure["source"] for failure in binary_failures}, {
+            "GameAssembly.dll",
+            "global-metadata.dat",
+        })
+        self.assertTrue(all(
+            failure.get("expected") and failure.get("actual")
+            for failure in binary_failures
+        ))
+
     def test_exact_timeline_clip_option_indices_are_source_backed(self) -> None:
         conv = {
             "key": "dlg_m1_clip_indices",

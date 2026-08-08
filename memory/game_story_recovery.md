@@ -28,6 +28,8 @@ Latest CN reports:
 | Exact native Story transitions | 380; 85 branch-bearing across 40 missions (77 Split, 7 conditional, 1 ordered-sequence) |
 | Generic DialogTree conditional branch adapter | 1 exact cross-Story edge; corpus-scanned typed `DialogTreeIfNode`, complete carrier closure, and hash-locked `GameAssembly.dll` polarity |
 | Local DialogTree conditional census | 13 exact same-Story routes / 26 serialized arms across 7 Story files; hash-locked `DialogTreeIfNode` polarity, 0 validation failures; selection evidence only, never file order |
+| Serialized DialogTree IfNode census | 78 binary-validated nodes / 156 arms; 1 malformed node retained as a structured failure; internal selection evidence only |
+| Timeline option-route binary contract | 25 route groups / 84 related-file occurrences; exact serialized Runtime Jump/clip tracks plus hash-locked option-index/active-clip contract; 0 validation failures; selection/track evidence only |
 | Binary parallel-fan-out authority | 1 structural scheduler carrier / 2 admitted writer methods / 3 decoded direct calls / 44 Split branch groups / 77 transitions / 104 evidence rows |
 | Source-comparable scene pairs | 3,845 / 249,695 (1.54%) |
 | Cyclic components | 0 |
@@ -555,6 +557,15 @@ and one malformed node (`dlg_e1m3_2`, no outgoing connections) remains visible
 as a bounded validator failure. These rows attach their exact TextAssets and
 the original binary to Mission Pipeline as selection-only evidence; they do
 not increase strong Story-order edges.
+
+Timeline Runtime Jump and non-default clip-option routes now receive the same
+corpus-wide provenance treatment. Each qualifying route carries hashes for
+its serialized Timeline track files plus the installed binary/metadata
+contract proving selected option `+0x98` reaches runtime `+0x18` and the
+positive active-clip gate. The track window remains the route evidence; the
+binary contract does not invent a target, mission trigger, ownership, or
+cross-file chronology. Missing tracks or binary-hash mismatches remain visible
+as structured validation failures.
 
 The latest batch removes two object-shaped blind spots with reusable negative
 consumer rules. Mechanical `misc_dlg_*` aliases now enter the same exact
