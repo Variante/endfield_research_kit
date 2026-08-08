@@ -548,6 +548,14 @@ TextAsset and the hash-locked `GameAssembly.dll`; this is internal arm-selection
 evidence only and does not recover mission triggers, Story ownership, cross-file
 order, or sibling chronology.
 
+The same source census now covers internal serialized `DialogTreeIfNode`
+records that have no promoted `sceneGraphLinks` route: 78 candidate nodes / 156
+arms are binary-validated with the generic `result == 1 -> ordinal 1` polarity,
+and one malformed node (`dlg_e1m3_2`, no outgoing connections) remains visible
+as a bounded validator failure. These rows attach their exact TextAssets and
+the original binary to Mission Pipeline as selection-only evidence; they do
+not increase strong Story-order edges.
+
 The latest batch removes two object-shaped blind spots with reusable negative
 consumer rules. Mechanical `misc_dlg_*` aliases now enter the same exact
 DialogText/DialogOption/audio, registry, Timeline, typed action/playback,

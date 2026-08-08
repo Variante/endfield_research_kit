@@ -593,6 +593,166 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
             True,
         )
 
+    def test_dialog_tree_if_nodes_scan_internal_serialized_arms(self) -> None:
+        """Internal IfNodes remain visible even without sceneGraphLinks routes."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source_path = root / "dialog_if_tree.json"
+            game_assembly = root / "GameAssembly.dll"
+            game_assembly.write_bytes(b"test-original-gameassembly-if-census")
+            raw_tree = {
+                "type": "Beyond.Gameplay.DialogTree",
+                "nodes": [
+                    {
+                        "$id": "if-arbitrary",
+                        "$type": "Beyond.Gameplay.DialogTreeIfNode",
+                        "_dialogIfData": {
+                            "condition": {
+                                "$type": "Beyond.Gameplay.CombineCondition",
+                                "conditionEvalString": "{0} or {1}",
+                                "subConditions": [
+                                    {
+                                        "$type": "Beyond.Gameplay.CheckQuestState",
+                                        "_questId": {"constValue": "arbitrary_q#1"},
+                                        "_targetQuestState": {"constValue": 2},
+                                    },
+                                    {
+                                        "$type": "Beyond.Gameplay.CheckPlayerGender",
+                                        "_gender": {"constValue": 1},
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                    {"$id": "if-false", "$type": "Beyond.Gameplay.DialogTreeFinishNode"},
+                    {"$id": "if-true", "$type": "Beyond.Gameplay.DialogTreeTrunkNode"},
+                ],
+                "connections": [
+                    {"_sourceNode": {"$ref": "if-arbitrary"}, "_targetNode": {"$ref": "if-false"}},
+                    {"_sourceNode": {"$ref": "if-arbitrary"}, "_targetNode": {"$ref": "if-true"}},
+                ],
+            }
+            source_path.write_text(
+                json.dumps({
+                    "m_Script": base64.b64encode(
+                        json.dumps(raw_tree).encode("utf-8")
+                    ).decode("ascii"),
+                }),
+                encoding="utf-8",
+            )
+            conv = {
+                "key": "dlg_arbitrary_if_census",
+                "lineGraph": {
+                    "sources": [{
+                        "kind": "dialogTree",
+                        "file": "dialog_if_tree.json",
+                        "nodes": [{"id": "if-arbitrary", "type": "DialogTreeIfNode"}],
+                    }],
+                },
+            }
+            contract = copy.deepcopy(partial_order.DIALOG_TREE_IF_BINARY_CONTRACT)
+            contract["gameAssemblySha256"] = hashlib.sha256(
+                game_assembly.read_bytes()
+            ).hexdigest().upper()
+            with patch.object(partial_order, "ROOT", root), patch.object(
+                partial_order,
+                "_configured_game_assembly_path",
+                return_value=game_assembly,
+            ), patch.object(
+                partial_order,
+                "DIALOG_TREE_IF_BINARY_CONTRACT",
+                contract,
+            ):
+                rows, warnings = partial_order._dialog_tree_local_if_nodes([
+                    ("conv/arbitrary-if.json", conv),
+                ])
+
+        self.assertEqual(warnings, [])
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["storyKey"], "dlg_arbitrary_if_census")
+        self.assertEqual(row["branchNodeId"], "if-arbitrary")
+        self.assertEqual(row["conditionType"], "Beyond.Gameplay.CombineCondition")
+        self.assertEqual(row["condition"]["subConditions"][0]["questId"], "arbitrary_q#1")
+        self.assertEqual(
+            [arm["targetNodeId"] for arm in row["arms"]],
+            ["if-false", "if-true"],
+        )
+        self.assertEqual(row["arms"][0]["connectionOrdinal"], 0)
+        self.assertEqual(row["arms"][1]["connectionOrdinal"], 1)
+        self.assertEqual(
+            {item["kind"] for item in row["relatedOriginalFiles"]},
+            {"dialog_tree_source", "original_game_binary"},
+        )
+
+    def test_dialog_tree_if_nodes_fail_closed_with_bounded_diagnostic(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source_path = root / "dialog_if_invalid.json"
+            game_assembly = root / "GameAssembly.dll"
+            game_assembly.write_bytes(b"test-original-gameassembly-if-invalid")
+            raw_tree = {
+                "nodes": [{
+                    "$id": "if-invalid",
+                    "$type": "Beyond.Gameplay.DialogTreeIfNode",
+                    "_dialogIfData": {
+                        "condition": {"$type": "Beyond.Gameplay.CheckQuestState"},
+                    },
+                }, {
+                    "$id": "if-only-arm",
+                    "$type": "Beyond.Gameplay.DialogTreeFinishNode",
+                }],
+                "connections": [{
+                    "_sourceNode": {"$ref": "if-invalid"},
+                    "_targetNode": {"$ref": "if-only-arm"},
+                }],
+            }
+            source_path.write_text(
+                json.dumps({
+                    "m_Script": base64.b64encode(
+                        json.dumps(raw_tree).encode("utf-8")
+                    ).decode("ascii"),
+                }),
+                encoding="utf-8",
+            )
+            conv = {
+                "key": "dlg_arbitrary_if_invalid",
+                "lineGraph": {
+                    "sources": [{
+                        "kind": "dialogTree",
+                        "file": "dialog_if_invalid.json",
+                        "nodes": [{"id": "if-invalid", "type": "DialogTreeIfNode"}],
+                    }],
+                },
+            }
+            contract = copy.deepcopy(partial_order.DIALOG_TREE_IF_BINARY_CONTRACT)
+            contract["gameAssemblySha256"] = hashlib.sha256(
+                game_assembly.read_bytes()
+            ).hexdigest().upper()
+            with patch.object(partial_order, "ROOT", root), patch.object(
+                partial_order,
+                "_configured_game_assembly_path",
+                return_value=game_assembly,
+            ), patch.object(
+                partial_order,
+                "DIALOG_TREE_IF_BINARY_CONTRACT",
+                contract,
+            ):
+                rows, warnings = partial_order._dialog_tree_local_if_nodes([
+                    ("conv/arbitrary-if-invalid.json", conv),
+                ])
+
+        self.assertEqual(rows, [])
+        self.assertEqual(len(warnings), 1)
+        diagnostic = warnings[0]
+        self.assertEqual(diagnostic["validator"], "dialogTreeLocalIfNode")
+        self.assertEqual(
+            diagnostic["gate"],
+            "exactSerializedIfConditionAndNativePolarity",
+        )
+        self.assertEqual(diagnostic["actual"]["outgoingConnectionCount"], 1)
+        self.assertEqual(diagnostic["expected"]["outgoingConnectionCount"], 2)
+
     def test_exact_quest_succeed_lifecycle_orders_same_quest_story_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -1094,6 +1254,12 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         )
         self.assertEqual((edge["from"], edge["to"]), ("dlg_m1_1", "dlg_m1_2"))
         self.assertEqual(edge["tier"], "strong")
+        self.assertFalse(any(
+            isinstance(warning, dict)
+            and warning.get("validator")
+            == "dialogTreeCrossStoryConditionalBranch"
+            for warning in row["warnings"]
+        ))
 
         incomplete = copy.deepcopy(payload)
         incomplete["flow"]["missionStoryConnections"][0][
