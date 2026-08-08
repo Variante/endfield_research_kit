@@ -12017,6 +12017,216 @@ def _resolve_report_source_path(source: str) -> Path:
     return path if path.is_absolute() else ROOT / path
 
 
+def _source_order_shell_related_files(
+    order_row: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Collect and hash original files for a strict source-order shell.
+
+    The collector walks the generated evidence shape instead of naming a
+    LevelScript class, mission, or action family.  Every listed original file
+    must still exist and match its report hash before a shell is published.
+    """
+    validator = "source_story_order_shell"
+    related: dict[tuple[str, str], dict[str, Any]] = {}
+
+    def add_file(raw: Any, *, fallback_kind: str, fallback_relationship: str) -> None:
+        if isinstance(raw, str):
+            raw = {"sourceFile": raw}
+        if not isinstance(raw, dict):
+            return
+        source = str(raw.get("sourceFile") or "")
+        if not source:
+            return
+        path = _resolve_report_source_path(source)
+        if not path.is_file():
+            raise RuntimeError(
+                f"validator={validator} gate=relatedOriginalFile "
+                f"mission={order_row.get('mission') or '-'} expected=file "
+                f"actual=missing source={source}"
+            )
+        actual_hash = sha256_path(path)
+        expected_hash = str(raw.get("sha256") or "")
+        if expected_hash and expected_hash.casefold() != actual_hash.casefold():
+            raise RuntimeError(
+                f"validator={validator} gate=relatedOriginalFileHash "
+                f"mission={order_row.get('mission') or '-'} "
+                f"expected={expected_hash.upper()} actual={actual_hash.upper()} "
+                f"source={source}"
+            )
+        normalized = dict(raw)
+        normalized["sourceFile"] = repo_path(path)
+        normalized["sha256"] = actual_hash
+        normalized.setdefault("kind", fallback_kind)
+        normalized.setdefault("relationship", fallback_relationship)
+        key = (
+            str(normalized["sourceFile"]),
+            str(normalized.get("relationship") or ""),
+        )
+        related[key] = normalized
+
+    def walk(value: Any) -> None:
+        if isinstance(value, dict):
+            rows = value.get("relatedOriginalFiles")
+            if isinstance(rows, list):
+                for row in rows:
+                    add_file(
+                        row,
+                        fallback_kind="original_authored_source",
+                        fallback_relationship="strict_source_story_order_context",
+                    )
+            for child in value.values():
+                walk(child)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child)
+
+    strong_edges = [
+        edge
+        for edge in order_row.get("directEdges") or []
+        if isinstance(edge, dict) and str(edge.get("tier") or "") == "strong"
+    ]
+    for edge in strong_edges:
+        for source in edge.get("sourceFiles") or []:
+            source_text = str(source or "")
+            normalized_source = source_text.replace("\\", "/")
+            if "LevelScriptData/" in normalized_source:
+                kind = "original_level_script"
+            elif "MissionRuntimeAsset/" in normalized_source:
+                kind = "original_mission_runtime"
+            elif normalized_source.casefold().endswith("gameassembly.dll"):
+                kind = "original_game_binary"
+            elif normalized_source.casefold().endswith("global-metadata.dat"):
+                kind = "original_game_metadata"
+            else:
+                kind = "original_authored_source"
+            add_file(
+                source_text,
+                fallback_kind=kind,
+                fallback_relationship="strict_source_story_order_edge",
+            )
+    walk(order_row.get("branches") or {})
+    return sorted(
+        related.values(),
+        key=lambda row: (
+            str(row.get("sourceFile") or ""),
+            str(row.get("relationship") or ""),
+        ),
+    )
+
+
+def _source_order_shell_candidate(
+    order_row: dict[str, Any],
+) -> bool:
+    """Return whether a missing pipeline mission has strict source evidence."""
+    if not str(order_row.get("mission") or ""):
+        return False
+    if not any(
+        isinstance(edge, dict) and str(edge.get("tier") or "") == "strong"
+        for edge in order_row.get("directEdges") or []
+    ):
+        return False
+    mission_data = str(order_row.get("missionData") or "")
+    if not mission_data or not _resolve_report_source_path(mission_data).is_file():
+        return False
+    return bool(_source_order_shell_related_files(order_row))
+
+
+def _create_source_order_shell(
+    index: dict[str, Any],
+    output_root: Path,
+    order_row: dict[str, Any],
+) -> dict[str, Any]:
+    """Publish a graph-neutral shell for strict original-data Story order."""
+    mission_id = str(order_row.get("mission") or "")
+    mission_data = str(order_row.get("missionData") or "")
+    mission_data_path = _resolve_report_source_path(mission_data)
+    related_files = _source_order_shell_related_files(order_row)
+    if not mission_id or not mission_data_path.is_file() or not related_files:
+        raise RuntimeError(
+            "validator=source_story_order_shell gate=eligibleSourceMission "
+            f"mission={mission_id or '-'} expected=localized-sidecar-and-original-files "
+            f"actual=missionData={mission_data or '-'} relatedFiles={len(related_files)}"
+        )
+    level_ids = sorted({
+        str(level_id)
+        for edge in order_row.get("directEdges") or []
+        if isinstance(edge, dict)
+        for level_id in edge.get("levelIds") or []
+        if level_id
+    }, key=natural_quest_key)
+    story_order = copy.deepcopy(order_row)
+    story_order["sourceOrderShell"] = True
+    story_order["sourceOrderShellBoundary"] = (
+        "This graph-neutral shell publishes strict original-data Story order and "
+        "its hashed related files without claiming MissionRuntime, quest, playback "
+        "ownership, activation, branch selection, or additional chronology."
+    )
+    payload = {
+        "schemaVersion": SCHEMA_VERSION,
+        "mission": {
+            "id": mission_id,
+            "nameKey": "",
+            "descriptionKey": "",
+            "levelId": level_ids[0] if len(level_ids) == 1 else "",
+            "missionType": None,
+            "rewardId": "",
+            "mainPath": [],
+            "entryQuestIds": [],
+            "nativeRuntimeBindings": [],
+            "source": repo_path(mission_data_path),
+            "sourceOrderShell": True,
+            "relatedOriginalFiles": related_files,
+            "sourceBoundary": (
+                "No MissionRuntimeAsset payload exists for this Story namespace. "
+                "The page exposes exact strict source-order evidence and hashed "
+                "original files only; it is not a mission or quest owner."
+            ),
+        },
+        "nodes": [],
+        "edges": [],
+        "caseStudy": None,
+        "missionGraph": {"upstream": {}, "downstream": {}},
+        "envTalkContext": [],
+        "storyOrder": story_order,
+    }
+    mission_output = output_root / "missions"
+    mission_output.mkdir(parents=True, exist_ok=True)
+    write_json(mission_output / f"{mission_id}.json", payload)
+    summary = {
+        "id": mission_id,
+        "nameKey": "",
+        "levelId": payload["mission"]["levelId"],
+        "questCount": 0,
+        "mainPathCount": 0,
+        "entryCount": 0,
+        "fanoutCount": 0,
+        "multiPrevJoinCount": 0,
+        "activeJoinCount": 0,
+        "exactFinishCount": 0,
+        "serverPlaceholderCount": 0,
+        "serverPlaceholderQuestCount": 0,
+        "failureConditionCount": 0,
+        "externalDependencyCount": 0,
+        "submitItemConditionCount": 0,
+        "submitItemQuestCount": 0,
+        "submitItemDialogCoGateCount": 0,
+        "submitItemLevelScriptCoGateCount": 0,
+        "nativeRuntimeBindingCount": 0,
+        "activityStageHostCount": 0,
+        "activityStageHostedQuestCount": 0,
+        "trackingInfoCount": 0,
+        "trackingObjectiveCount": 0,
+        "missionPropertyCount": 0,
+        "conditionTypes": [],
+        "caseStudy": False,
+        "file": f"missions/{mission_id}.json",
+        "sourceOrderShell": True,
+    }
+    _update_story_order_summary(summary, story_order)
+    index.setdefault("missions", []).append(summary)
+    return summary
+
+
 def _create_story_variant_aggregate_shell(
     index: dict[str, Any],
     output_root: Path,
@@ -12178,17 +12388,23 @@ def attach_source_story_partial_order(
         if isinstance(row, dict)
     }
     aggregate_shells: list[str] = []
+    source_order_shells: list[str] = []
     if create_variant_aggregate_shells:
         for mission_id, order_row in sorted(rows_by_mission.items()):
             branch_count = len(
                 ((order_row.get("branches") or {}).get("nativeControlBranches") or [])
             )
-            if mission_id in existing_ids or not branch_count:
+            if mission_id in existing_ids:
                 continue
-            if order_row.get("missionDataVariants"):
+            if order_row.get("missionDataVariants") and branch_count:
                 _create_story_variant_aggregate_shell(index, output_root, order_row)
                 existing_ids.add(mission_id)
                 aggregate_shells.append(mission_id)
+                continue
+            if _source_order_shell_candidate(order_row):
+                _create_source_order_shell(index, output_root, order_row)
+                existing_ids.add(mission_id)
+                source_order_shells.append(mission_id)
 
     published_missions: list[str] = []
     published_branches = 0
@@ -12218,6 +12434,11 @@ def attach_source_story_partial_order(
         previous_order = payload.get("storyOrder") or {}
         if previous_order.get("sourceGapQueue"):
             published_order["sourceGapQueue"] = previous_order["sourceGapQueue"]
+        if previous_order.get("sourceOrderShell"):
+            published_order["sourceOrderShell"] = True
+            published_order["sourceOrderShellBoundary"] = str(
+                previous_order.get("sourceOrderShellBoundary") or ""
+            )
         cross_reference_row = cross_reference_by_mission.get(mission_id)
         if cross_reference_row is not None:
             cross_reference_payload = _compact_story_order_cross_reference(
@@ -12276,8 +12497,11 @@ def attach_source_story_partial_order(
         "unpublishedNativeBranchPlacements": expected_branches - published_branches,
         "publishedMissionRows": len(published_missions),
         "variantAggregateShells": aggregate_shells,
+        "sourceOrderShells": source_order_shells,
         "missingBranchMissions": missing_branch_missions,
     }
+    index.setdefault("counts", {})["missions"] = len(index.get("missions") or [])
+    index["counts"]["sourceOrderMissionShells"] = len(source_order_shells)
     index.setdefault("storyOrder", {})["publication"] = publication
     index.setdefault("counts", {})["storyVariantAggregateShells"] = len(
         [row for row in index.get("missions") or [] if row.get("storyAggregateShell")]
