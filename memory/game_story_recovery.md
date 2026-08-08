@@ -35,6 +35,7 @@ Latest CN reports:
 | Native branch predicates | 259 named; 264 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Complete native branch-arm topology | 312 / 312 recovered placements published in Mission Pipeline, 880 serialized slots, 43 active non-Story arms, 155 inactive slots, 0 runtime terminals, 0 recovery or publication validator failures |
 | Exact ordered-Branch context | 27 original LevelScript/event contexts across 4 missions; complete serialized `_idList`, exact Story-path arm coverage, and GameAssembly/metadata/LevelScript hashes; 0 multi-arm Story-order edges admitted |
+| Corpus serialized-Branch census | 81 unique original Branch groups / 227 `_idList` slots / 37 exact playback-bearing arms; StreamingAssets + Persistent = 9,029 paths / 4,572 hashes; 0 groups with playback on multiple arms; context-only |
 | Complete cross-boundary native branches | 5 groups / 5 exact external Story references (4 Split fan-outs, 1 SwitchInt choice); no ownership or order promotion |
 | Exact mission-state Story alternatives | 3 branch groups / 2 cross-mission Story references; selection only, never chronology or ownership |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
@@ -151,6 +152,13 @@ in five payloads.
   contexts across four missions), so no new Story-order edge is admitted.
   Unvisited sibling arms remain explicit context, not inferred empty branches
   or ownership.
+- A separate corpus-wide serialized-Branch census now scans both original
+  LevelScript roots, hashes and deduplicates every file, and joins only exact
+  `play_*` action occurrences to downstream arms. It finds 81 unique groups,
+  227 serialized slots, and 37 playback-bearing arms, with zero groups carrying
+  playback on two arms. The inventory attaches LevelScript plus binary/metadata
+  hashes as related original files, but remains context-only and never promotes
+  ownership or order; arbitrary `texts` fields and OCR/overrides are not inputs.
 - Mission Pipeline publication now performs a second corpus-wide attachment
   pass after graph-neutral recovery shells exist and fails closed unless every
   recovered native branch reaches a payload. This restored 217 previously
@@ -1463,11 +1471,12 @@ groups unchanged; connected/unlinked Story counts are now 4,237 / 1,327.
    `cs_video_e1m3_3`, `remotecomm_e1m2_2`, and `remotecomm_e1m2_3`.
 6. **Total ordering:** most scene pairs are unknowable from current static
    evidence. A display order must remain separate from source proof.
-7. **Ordered Branch arms:** the exact binary iterator is decoded, but no event
-   currently has Story paths on two distinct serialized sequence arms. Keep the
-   27 attached contexts visible and reopen order admission only when a new
-   original path or runtime trace supplies a second arm; OCR and overrides are
-   comparison-only.
+7. **Ordered Branch arms:** the exact binary iterator and the complete current
+   original LevelScript census are decoded. Across 81 unique groups / 227 slots,
+   37 arms reach exact playback and no group reaches playback on two arms. Keep
+   the 27 mission-attached contexts and the 81-row corpus inventory visible;
+   reopen order admission only when a new original path or runtime trace supplies
+   a second arm. OCR and overrides remain comparison-only.
 
 Quest-fork presentation no longer hides arm-local content behind the immediate
 successor. Across 307 forks, the general predecessor-reachability rule expands

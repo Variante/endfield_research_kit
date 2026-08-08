@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v32"
+SCHEMA = "sourceStoryPartialOrder.v33"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -66,6 +66,15 @@ BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )
 _NATIVE_ACTION_TOPOLOGY_CACHE: dict[str, tuple[dict, dict | None]] = {}
+NATIVE_LEVELSCRIPT_ROOTS = (
+    ROOT / "export_full" / "structured" / "StreamingAssets"
+    / "Data" / "Json" / "LevelScriptData",
+    ROOT / "export_full" / "structured" / "Persistent"
+    / "Data" / "Json" / "LevelScriptData",
+)
+NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA = (
+    "nativeSerializedBranchInventory.v1"
+)
 READING_POPUP_TABLE_PATH = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
     / "Table" / "ReadingPopUpTable.json"
@@ -4075,6 +4084,145 @@ def _compact_native_action(action: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _native_serialized_branch_arm_projection(
+    topology: dict[str, Any],
+    action: dict[str, Any],
+    playback_by_local: dict[int, set[str]] | None = None,
+) -> dict[str, Any]:
+    """Project one serialized ``Branch._idList`` without inferring ownership.
+
+    The projection is intentionally independent of mission names and filename
+    order.  It follows only the decoded action adjacency and joins exact
+    playback records supplied by ``build_levelscript_action_story_occurrences``.
+    This makes it reusable for the complete original LevelScript corpus and
+    keeps sibling arms visible even when no Story record is reachable from an
+    arm.
+    """
+    playback_by_local = playback_by_local or {}
+    branch_local_id = action.get("localId")
+    detail = action.get("controlDetail") or {}
+    serialized_refs = detail.get("branchSequenceActionLocalIds")
+    if not isinstance(serialized_refs, list):
+        serialized_refs = []
+    action_by_local = {
+        int(row.get("localId")): row
+        for row in topology.get("actions") or []
+        if isinstance(row, dict) and isinstance(row.get("localId"), int)
+    }
+    action_edges = [
+        row for row in topology.get("edges") or []
+        if isinstance(row, dict) and row.get("sourceKind") == "action"
+    ]
+    adjacency: dict[int, set[int]] = defaultdict(set)
+    for edge in action_edges:
+        source = edge.get("sourceLocalId")
+        target = edge.get("targetActionLocalId")
+        if isinstance(source, int) and isinstance(target, int):
+            adjacency[source].add(target)
+    branch_targets = {
+        (
+            safe_key(edge.get("relation")),
+            edge.get("targetActionLocalId"),
+        ): edge
+        for edge in action_edges
+        if edge.get("sourceLocalId") == branch_local_id
+    }
+    branch_terminals = {
+        (
+            safe_key(edge.get("relation")),
+            edge.get("targetActionLocalId"),
+        ): edge
+        for edge in topology.get("runtimeTerminalTargets") or []
+        if isinstance(edge, dict)
+        and edge.get("sourceKind") == "action"
+        and edge.get("sourceLocalId") == branch_local_id
+    }
+
+    def target_status(relation: str, target: Any) -> tuple[str, dict[str, Any] | None]:
+        if not isinstance(target, int) or target <= 0:
+            return "inactive_serialized_target", None
+        key = (relation, target)
+        if key in branch_targets and target in action_by_local:
+            return "exact_active_action", None
+        if key in branch_terminals:
+            return "missing_runtime_action_slot", branch_terminals[key]
+        return "unavailable_fail_closed", None
+
+    def downstream(target: Any) -> set[int]:
+        if not isinstance(target, int) or target <= 0:
+            return set()
+        pending = [target]
+        reached: set[int] = set()
+        while pending:
+            current = pending.pop()
+            if current in reached or current == branch_local_id:
+                continue
+            reached.add(current)
+            pending.extend(adjacency.get(current) or [])
+        return reached
+
+    arms: list[dict[str, Any]] = []
+    for sequence_index, entry_local_id in enumerate(serialized_refs):
+        relation = f"Branch.sequence[{sequence_index}]"
+        status, terminal = target_status(relation, entry_local_id)
+        reached = downstream(entry_local_id)
+        playback_local_ids = sorted(
+            local_id for local_id in reached if local_id in playback_by_local
+        )
+        playback_keys = sorted({
+            story_key
+            for local_id in playback_local_ids
+            for story_key in playback_by_local.get(local_id) or set()
+            if safe_key(story_key)
+        }, key=natural_key)
+        row: dict[str, Any] = {
+            "edge": relation,
+            "sequenceIndex": sequence_index,
+            "entryLocalId": entry_local_id,
+            "targetStatus": status,
+            "reachableActionCount": len(reached),
+            "playbackActionLocalIds": playback_local_ids,
+            "playbackStoryKeys": playback_keys,
+        }
+        if status == "exact_active_action" and entry_local_id in action_by_local:
+            row["entryAction"] = _compact_native_action(
+                action_by_local[entry_local_id]
+            )
+        if terminal:
+            row["runtimeTerminal"] = terminal
+        arms.append(row)
+
+    exit_target = action.get("nextActionLocalId")
+    exit_status, exit_terminal = target_status("ActionBase.nextId", exit_target)
+    exit_row: dict[str, Any] = {
+        "edge": "ActionBase.nextId (after sequence)",
+        "entryLocalId": exit_target,
+        "targetStatus": exit_status,
+    }
+    if exit_status == "exact_active_action" and exit_target in action_by_local:
+        exit_row["entryAction"] = _compact_native_action(
+            action_by_local[exit_target]
+        )
+    if exit_terminal:
+        exit_row["runtimeTerminal"] = exit_terminal
+
+    return {
+        "branchLocalId": branch_local_id,
+        "runtimeMappingId": safe_key(action.get("controlRuntimeMappingId")),
+        "serializedArmCount": len(arms),
+        "arms": arms,
+        "exit": exit_row,
+        "playbackArmCount": sum(
+            bool(row.get("playbackStoryKeys")) for row in arms
+        ),
+        "playbackStoryKeys": sorted({
+            story_key
+            for row in arms
+            for story_key in row.get("playbackStoryKeys") or []
+        }, key=natural_key),
+    }
+
+
 def _full_native_branch_arm_context(
     mission: str,
     branches: list[dict[str, Any]],
@@ -4703,6 +4851,358 @@ def _related_original_branch_files(
         "relationship": binary_relationship,
     } for row in (original_binary_contract or {}).get("relatedOriginalFiles") or [])
     return related
+
+
+def _native_serialized_branch_inventory_not_requested() -> dict[str, Any]:
+    return {
+        "schema": NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA,
+        "status": "not_requested",
+        "summary": {
+            "sourcePathCount": 0,
+            "uniqueContentFileCount": 0,
+            "duplicatePathCount": 0,
+            "serializedBranchGroupCount": 0,
+            "serializedBranchArmCount": 0,
+            "playbackArmCount": 0,
+            "multiPlaybackBranchCount": 0,
+            "validationFailureCount": 0,
+        },
+        "rows": [],
+        "validationFailures": [],
+        "evidenceBoundary": (
+            "The complete original LevelScript corpus is scanned only for a full "
+            "report build; a mission-filtered report keeps this inventory absent "
+            "rather than presenting a partial census as complete."
+        ),
+    }
+
+
+def _native_serialized_branch_inventory(
+    *,
+    original_binary_contract: dict[str, Any] | None = None,
+    playback_occurrences_by_root: dict[Path, dict[str, list[dict]]] | None = None,
+) -> dict[str, Any]:
+    """Audit every serialized Branch in both original LevelScript roots.
+
+    StreamingAssets and Persistent are treated as source copies, not separate
+    gameplay instances. Branch groups are deduplicated by original file hash
+    and local action id, while every source path remains attached for audit.
+    Playback is joined only from the exact action-class decoder; arbitrary text
+    identifiers never participate.
+    """
+    failures: list[dict[str, Any]] = []
+    file_rows: list[dict[str, Any]] = []
+    hash_to_paths: dict[str, set[str]] = defaultdict(set)
+    path_to_hash: dict[str, str] = {}
+    topology_by_hash: dict[str, tuple[dict, dict | None]] = {}
+    for root in NATIVE_LEVELSCRIPT_ROOTS:
+        root_rel = root.relative_to(ROOT).as_posix()
+        if not root.is_dir():
+            failures.append({
+                "validator": "nativeSerializedBranchInventory",
+                "gate": "sourceRootExists",
+                "sourceRoot": root_rel,
+                "expected": "directory",
+                "actual": "missing",
+            })
+            continue
+        for path in sorted(
+            root.rglob("*.json"),
+            key=lambda item: natural_key(item.relative_to(root).as_posix()),
+        ):
+            try:
+                blob = path.read_bytes()
+            except OSError as error:
+                failures.append({
+                    "validator": "nativeSerializedBranchInventory",
+                    "gate": "sourceFileReadable",
+                    "sourceFile": path.relative_to(ROOT).as_posix(),
+                    "expected": "readable",
+                    "actual": type(error).__name__,
+                })
+                continue
+            source_file = path.relative_to(ROOT).as_posix()
+            digest = hashlib.sha256(blob).hexdigest()
+            resolved_key = path.resolve().as_posix().lower()
+            path_to_hash[resolved_key] = digest
+            hash_to_paths[digest].add(source_file)
+            relative_parts = path.relative_to(root).parts
+            file_rows.append({
+                "path": path,
+                "sourceFile": source_file,
+                "sha256": digest,
+                "levelId": relative_parts[0] if len(relative_parts) > 1 else "",
+                "scriptId": path.stem,
+            })
+            if digest not in topology_by_hash:
+                topology_by_hash[digest] = (
+                    decode_levelscript_native_action_topology(blob)
+                )
+
+    playback_by_hash_local: dict[tuple[str, int], set[str]] = defaultdict(set)
+    playback_join_misses = 0
+    occurrence_roots = dict(playback_occurrences_by_root or {})
+    for root in NATIVE_LEVELSCRIPT_ROOTS:
+        if root not in occurrence_roots:
+            occurrence_roots[root] = build_levelscript_action_story_occurrences(root)
+        for story_key, occurrences in occurrence_roots[root].items():
+            for occurrence in occurrences or []:
+                if (
+                    not isinstance(occurrence, dict)
+                    or not safe_key(occurrence.get("recordClass")).startswith("play_")
+                    or not isinstance(occurrence.get("localId"), int)
+                ):
+                    continue
+                source_file = safe_key(occurrence.get("sourceFile"))
+                if not source_file:
+                    continue
+                source_path = Path(source_file)
+                if not source_path.is_absolute():
+                    source_path = ROOT / source_path
+                digest = path_to_hash.get(
+                    source_path.resolve().as_posix().lower()
+                )
+                if not digest:
+                    playback_join_misses += 1
+                    continue
+                playback_by_hash_local[
+                    (digest, occurrence["localId"])
+                ].add(safe_key(story_key))
+
+    grouped: dict[tuple[str, int], dict[str, Any]] = {}
+    reported_topology_failures: set[str] = set()
+    for file_row in file_rows:
+        digest = file_row["sha256"]
+        topology, diagnostic = topology_by_hash[digest]
+        status = safe_key(topology.get("status"))
+        exact_empty_status = status in {
+            "exact_empty_action_map",
+            "exact_no_action_map",
+        }
+        if diagnostic or (
+            not status.startswith("exact_complete_action_map")
+            and not exact_empty_status
+        ):
+            if digest not in reported_topology_failures:
+                failures.append({
+                    "validator": "nativeSerializedBranchInventory",
+                    "gate": "completeSerializedActionEventGraph",
+                    "sourceFiles": sorted(
+                        hash_to_paths[digest], key=natural_key
+                    ),
+                    "sourceSha256": digest,
+                    "expected": "exact_complete_action_map",
+                    "actual": {
+                        "status": status,
+                        "diagnostic": diagnostic,
+                    },
+                })
+                reported_topology_failures.add(digest)
+            continue
+        for action in topology.get("actions") or []:
+            if (
+                not isinstance(action, dict)
+                or safe_key(action.get("actionName")) != "Branch"
+            ):
+                continue
+            branch_local_id = action.get("localId")
+            if not isinstance(branch_local_id, int):
+                failures.append({
+                    "validator": "nativeSerializedBranchInventory",
+                    "gate": "branchLocalIdIsInteger",
+                    "sourceFiles": sorted(
+                        hash_to_paths[digest], key=natural_key
+                    ),
+                    "sourceSha256": digest,
+                    "expected": "integer",
+                    "actual": branch_local_id,
+                })
+                continue
+            key = (digest, branch_local_id)
+            group = grouped.setdefault(key, {
+                "sha256": digest,
+                "sourceFiles": set(),
+                "sourceContexts": set(),
+                "topology": topology,
+                "action": action,
+            })
+            group["sourceFiles"].add(file_row["sourceFile"])
+            group["sourceContexts"].add((
+                file_row["levelId"],
+                file_row["scriptId"],
+            ))
+
+    rows: list[dict[str, Any]] = []
+    for (_digest, _branch_local_id), group in sorted(
+        grouped.items(),
+        key=lambda item: (
+            natural_key(item[1]["sha256"]),
+            int(item[1]["action"].get("localId") or 0),
+        ),
+    ):
+        topology = group["topology"]
+        action = group["action"]
+        digest = group["sha256"]
+        playback_by_local = {
+            local_id: set(story_keys)
+            for (row_digest, local_id), story_keys
+            in playback_by_hash_local.items()
+            if row_digest == digest
+        }
+        projection = _native_serialized_branch_arm_projection(
+            topology,
+            action,
+            playback_by_local,
+        )
+        branch_local_id = action.get("localId")
+        adjacency: dict[int, set[int]] = defaultdict(set)
+        for edge in topology.get("edges") or []:
+            if edge.get("sourceKind") != "action":
+                continue
+            source = edge.get("sourceLocalId")
+            target = edge.get("targetActionLocalId")
+            if isinstance(source, int) and isinstance(target, int):
+                adjacency[source].add(target)
+        event_roots: list[dict[str, Any]] = []
+        for event in topology.get("eventRoots") or []:
+            if (
+                not isinstance(event, dict)
+                or not isinstance(event.get("nextActionLocalId"), int)
+            ):
+                continue
+            pending = [event["nextActionLocalId"]]
+            visited: set[int] = set()
+            reaches_branch = False
+            while pending:
+                current = pending.pop()
+                if current in visited:
+                    continue
+                visited.add(current)
+                if current == branch_local_id:
+                    reaches_branch = True
+                    break
+                pending.extend(adjacency.get(current) or [])
+            if reaches_branch:
+                event_roots.append({
+                    key: event[key]
+                    for key in (
+                        "localId",
+                        "headerName",
+                        "nextActionLocalId",
+                        "priority",
+                        "triggerActiveDuring",
+                        "filterMode",
+                        "filterMask",
+                        "filterLevel",
+                        "runtimeHeaderSlotMappingId",
+                    )
+                    if event.get(key) not in (None, "", [], {})
+                })
+        source_files = sorted(group["sourceFiles"], key=natural_key)
+        context_values = sorted(
+            group["sourceContexts"],
+            key=lambda value: (
+                natural_key(value[0]),
+                natural_key(value[1]),
+            ),
+        )
+        rows.append({
+            "kind": "serializedBranchInventory",
+            "status": safe_key(topology.get("status")),
+            "levelId": next(
+                (value[0] for value in context_values if value[0]),
+                "",
+            ),
+            "scriptId": next(
+                (value[1] for value in context_values if value[1]),
+                "",
+            ),
+            "sourceContexts": [
+                {"levelId": level_id, "scriptId": script_id}
+                for level_id, script_id in context_values
+            ],
+            "sourceFiles": source_files,
+            "sha256": digest,
+            "branchLocalId": branch_local_id,
+            "actionName": safe_key(action.get("actionName")),
+            "runtimeMappingId": safe_key(
+                action.get("controlRuntimeMappingId")
+            ),
+            "serializedArmCount": projection["serializedArmCount"],
+            "arms": projection["arms"],
+            "exit": projection["exit"],
+            "eventRoots": event_roots,
+            "playbackArmCount": projection["playbackArmCount"],
+            "playbackStoryKeys": projection["playbackStoryKeys"],
+            "relatedOriginalFiles": _related_original_branch_files(
+                "",
+                source_files,
+                original_binary_contract,
+                level_relationship="serialized_branch_inventory_source",
+                mission_relationship="serialized_branch_inventory_no_mission_owner",
+                binary_relationship="native_branch_runtime_semantics_authority",
+            ),
+            "ownership": False,
+            "orderEvidence": False,
+            "evidenceBoundary": (
+                "This row is a corpus-wide serialized Branch reachability "
+                "context. The original LevelScript action map and exact "
+                "playback action-class join identify reachable Story records, "
+                "but do not prove mission ownership, activation, arm "
+                "exclusivity, or Story file order."
+            ),
+        })
+
+    summary = {
+        "sourcePathCount": len(file_rows),
+        "uniqueContentFileCount": len(hash_to_paths),
+        "duplicatePathCount": len(file_rows) - len(hash_to_paths),
+        "serializedBranchGroupCount": len(rows),
+        "serializedBranchArmCount": sum(
+            int(row.get("serializedArmCount") or 0) for row in rows
+        ),
+        "playbackArmCount": sum(
+            int(row.get("playbackArmCount") or 0) for row in rows
+        ),
+        "multiPlaybackBranchCount": sum(
+            int(row.get("playbackArmCount") or 0) >= 2 for row in rows
+        ),
+        "uniquePlaybackStoryKeyCount": len({
+            story_key
+            for row in rows
+            for story_key in row.get("playbackStoryKeys") or []
+        }),
+        "playbackOccurrenceJoinMissCount": playback_join_misses,
+        "validationFailureCount": len(failures),
+    }
+    return {
+        "schema": NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA,
+        "status": (
+            "validated_complete_corpus"
+            if not failures
+            else "unavailable_fail_closed"
+        ),
+        "sourceRoots": [
+            root.relative_to(ROOT).as_posix()
+            for root in NATIVE_LEVELSCRIPT_ROOTS
+        ],
+        "summary": summary,
+        "rows": rows,
+        "validationFailures": failures[:32],
+        "relatedOriginalFiles": [
+            dict(row)
+            for row in (
+                (original_binary_contract or {}).get("relatedOriginalFiles")
+                or []
+            )
+        ],
+        "evidenceBoundary": (
+            "The census scans both original LevelScript roots, hashes every "
+            "file, deduplicates identical source copies, and joins only exact "
+            "playback action records. It remains context-only: no inventory "
+            "row creates mission ownership or Story order."
+        ),
+    }
 
 
 def _attach_cross_boundary_native_branch_context(
@@ -5570,10 +6070,9 @@ def build_report(
     if selected_missions:
         missions = [mission for mission in missions if mission in selected_missions]
 
+    story_occurrences = build_levelscript_action_story_occurrences()
     playback_source_files_by_key: dict[str, set[str]] = defaultdict(set)
-    for story_key, occurrences in (
-        build_levelscript_action_story_occurrences().items()
-    ):
+    for story_key, occurrences in story_occurrences.items():
         for occurrence in occurrences:
             if (
                 not isinstance(occurrence, dict)
@@ -5848,6 +6347,34 @@ def build_report(
         if branch.get("kind") == "splitFanout"
     )
     summary_payload["dialogLineOptionProvenance"] = dict(sorted(dialog_provenance_totals.items()))
+    native_serialized_branch_inventory = (
+        _native_serialized_branch_inventory(
+            original_binary_contract=extra_thread_scheduler_contract,
+            playback_occurrences_by_root={
+                NATIVE_LEVELSCRIPT_ROOTS[0]: story_occurrences,
+            },
+        )
+        if not selected_missions
+        else _native_serialized_branch_inventory_not_requested()
+    )
+    inventory_summary = native_serialized_branch_inventory.get("summary") or {}
+    summary_payload.update({
+        "nativeSerializedBranchGroupCount": int(
+            inventory_summary.get("serializedBranchGroupCount") or 0
+        ),
+        "nativeSerializedBranchArmCount": int(
+            inventory_summary.get("serializedBranchArmCount") or 0
+        ),
+        "nativeSerializedPlaybackArmCount": int(
+            inventory_summary.get("playbackArmCount") or 0
+        ),
+        "nativeSerializedMultiPlaybackBranchCount": int(
+            inventory_summary.get("multiPlaybackBranchCount") or 0
+        ),
+        "nativeSerializedBranchValidationFailureCount": int(
+            inventory_summary.get("validationFailureCount") or 0
+        ),
+    })
     return {
         "_schema": SCHEMA,
         "_generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
@@ -5882,6 +6409,7 @@ def build_report(
         },
         "summary": summary_payload,
         "missions": rows,
+        "nativeSerializedBranchInventory": native_serialized_branch_inventory,
     }
 
 
@@ -5957,6 +6485,11 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- native ordered sequence contexts: `{summary.get('nativeOrderedSequenceContexts', 0)}` "
         "exact serialized Branch arm projections attached to Story paths; these "
         "remain context-only unless the global multi-arm order gate admits an edge",
+        f"- corpus serialized Branch inventory: `{summary.get('nativeSerializedBranchGroupCount', 0)}` "
+        f"unique original groups / `{summary.get('nativeSerializedBranchArmCount', 0)}` "
+        f"serialized slots / `{summary.get('nativeSerializedPlaybackArmCount', 0)}` "
+        f"exact playback-bearing arms; `{summary.get('nativeSerializedMultiPlaybackBranchCount', 0)}` "
+        "groups have playback on multiple arms, so this census admits no order or ownership",
         f"- related native action graphs: `{summary.get('nativeRelatedActionTopologies', 0)}` "
         "original LevelScript files attached only through exact Story control paths",
         f"- conditional predicates: `{summary.get('nativeSemanticPredicates', 0)}` exact "
