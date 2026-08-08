@@ -40,6 +40,7 @@ Latest CN reports:
 | Complete native branch-arm topology | 312 / 312 recovered placements published in Mission Pipeline, 880 serialized slots, 43 active non-Story arms, 155 inactive slots, 0 runtime terminals, 0 recovery or publication validator failures |
 | Exact ordered-Branch context | 27 original LevelScript/event contexts across 4 missions; complete serialized `_idList`, exact Story-path arm coverage, and GameAssembly/metadata/LevelScript hashes; 0 multi-arm Story-order edges admitted |
 | Corpus serialized-Branch census | 81 unique original Branch groups / 227 `_idList` slots / 37 exact playback-bearing arms; 302 mapping-derived nested controls (`Branch` 4 / `Split` 50 / `IfElseAction` 116 / `SwitchInt` 132) / 793 nested serialized slots (629 active / 164 inactive) / 465 nested playback arms / 233 playback-bearing controls / 208 nested controls with playback on multiple alternatives / 601 nested control references / 0 playback-predicate gaps / 0 arm-schema gaps; StreamingAssets + Persistent = 9,029 paths / 4,572 hashes; 0 outer groups with playback on multiple arms; context-only |
+| Serialized-Branch mission context projection | 4 mission payloads / 27 exact Story-key intersections / 14 distinct mission Story keys; every context retains original LevelScript plus binary/metadata related-file hashes; nested playback keys are included; 0 ownership or order promotion |
 | Complete cross-boundary native branches | 5 groups / 5 exact external Story references (4 Split fan-outs, 1 SwitchInt choice); no ownership or order promotion |
 | Exact mission-state Story alternatives | 3 branch groups / 2 cross-mission Story references; selection only, never chronology or ownership |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
@@ -183,6 +184,15 @@ in five payloads.
   closed. It remains
   context-only and never promotes ownership or order; arbitrary `texts`
   fields and OCR/overrides are not inputs.
+- Mission Pipeline now projects that same inventory into each mission payload
+  only when its exact serialized playback Story keys intersect the mission's
+  own Story nodes. The projection is recursive over typed nested controls,
+  deduplicates identical original content, and retains the original
+  LevelScript/GameAssembly/metadata related files. It is explicitly marked
+  `serialized_branch_story_context` with `ownership=false` and
+  `orderEvidence=false`; the 4 current payloads / 27 contexts make native
+  branching inspectable in the mission card without claiming activation,
+  exclusivity, chronology, or mission ownership.
 - The shared integer-switch decoder now covers the binary-proven
   `SwitchIntLarger` family (`0x04BE/0x0C`; `SwitchIntLarger.Execute` at
   `0x18765b770` in the hash-locked original `GameAssembly.dll`) without
