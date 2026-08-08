@@ -1262,6 +1262,93 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             ],
         )
 
+    def test_publish_attaches_mission_named_leveldata_receiver_context_without_edge(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
+            mission_root = Path(tmp)
+            mission_path = mission_root / "fixture_mission.json"
+            mission_path.write_text(
+                __import__("json").dumps({
+                    "mission": {"id": "fixture_mission"},
+                    "storyOrder": {
+                        "directEdges": [],
+                        "summary": {"strongEdgeCount": 0},
+                    },
+                }),
+                encoding="utf-8",
+            )
+            index = {
+                "missions": [{"id": "fixture_mission"}],
+                "storyCoverage": {"missionlessNativeRuntimeNodes": []},
+            }
+            report = {
+                "schemaVersion": frontier.SCHEMA,
+                "counts": {},
+                "rows": [{
+                    "levelId": "map_fixture",
+                    "scriptId": "1001",
+                    "storyKeys": ["cutscene_fixture_1"],
+                    "eventNames": ["ScriptEvent_OnCustomEvent"],
+                    "listenerHeaderLocalIds": [11],
+                    "activationClass": "manual_start_active_phase_receiver",
+                    "levelScript": {"startTypeName": "Manual"},
+                    "relatedOriginalFiles": [{
+                        "kind": "levelscript",
+                        "sourceFile": "source/1001.json",
+                        "relationship": "exact context",
+                    }],
+                    "levelDataHosts": [{
+                        "sourceFile": "source/fixture_mission.json",
+                        "fileName": "map_fixture_lv_data_sub_fixture_mission.json",
+                        "dictionaryEntryCount": 1,
+                        "missionNamedHost": True,
+                        "hostMissionId": "fixture_mission",
+                        "briefData": {
+                            "parentLevelScriptId": "0",
+                            "propertyNames": ["is_enabled"],
+                        },
+                    }],
+                }],
+            }
+            frontier.publish_to_pipeline_index(
+                index,
+                report,
+                mission_root=mission_root,
+            )
+            mission = __import__("json").loads(
+                mission_path.read_text(encoding="utf-8")
+            )
+        contexts = mission["storyOrder"][
+            "missionNamedLevelDataReceiverContexts"
+        ]
+        self.assertEqual(1, len(contexts))
+        context = contexts[0]
+        self.assertEqual("fixture_mission", context["missionId"])
+        self.assertEqual("map_fixture", context["levelId"])
+        self.assertEqual(["cutscene_fixture_1"], context["storyKeys"])
+        self.assertEqual(
+            "leveldata_filename_mission_token_plus_member22_dictionary",
+            context["levelDataHost"]["encoding"],
+        )
+        self.assertFalse(context["ownership"])
+        self.assertFalse(context["activation"])
+        self.assertFalse(context["storyPlayback"])
+        self.assertFalse(context["orderEvidence"])
+        self.assertEqual([], mission["storyOrder"]["directEdges"])
+        self.assertEqual(
+            1,
+            mission["storyOrder"][
+                "summary"
+            ]["missionNamedLevelDataReceiverContextStoryCount"],
+        )
+        self.assertEqual(
+            1,
+            index["missions"][0][
+                "storyOrderMissionNamedLevelDataReceiverContextCount"
+            ],
+        )
+
     def test_task_source_annotations_require_exact_keys(self) -> None:
         task_map = {
             "tasks": [

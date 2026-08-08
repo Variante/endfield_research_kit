@@ -267,6 +267,12 @@ Rebuild Story data after editing overrides.
   matches, and unreviewed shapes. Only exact script and mission/quest fields in
   one record count; the panel explicitly excludes filename, ancestor, OCR, and
   override proximity from evidence.
+- Mission order panels also attach a generic mission-named LevelData receiver
+  context when the exact LevelData filename token matches a pipeline mission
+  and its validated member-22 `LevelScriptBriefData` dictionary contains the
+  receiver. The panel links the original LevelData and LevelScript files while
+  keeping activation, ownership, playback, branch selection, and Story order
+  false; filename proximity alone is never promoted.
 - Mission Pipeline opens source-bounded activation gaps in the order panel and
   shows exact ReadingPopUp/RichContent row identities for definition-only text
   files and

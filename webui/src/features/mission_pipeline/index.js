@@ -423,6 +423,9 @@
       branches: "fan-outs",
       storyOrder: "Source-proven Story order",
       storyOrderHint: "This is a partial causal graph. It preserves branches, joins, cycles, and unknown pairs; it is not a guessed total file sequence.",
+      missionNamedLevelDataReceiverContexts: "Mission-named LevelData receiver contexts",
+      missionNamedLevelDataReceiverContextsHint: "The exact LevelData filename names this mission and its validated typed dictionary contains the receiver script. This attaches original files as authored container context only; it does not prove activation, ownership, playback, branch selection, or Story order.",
+      missionNamedLevelDataReceiverBoundary: "Mission-named LevelData container context only",
       missionObservedScriptContexts: "Mission-observed LevelScript contexts",
       missionObservedScriptContextsHint: "An original typed mission objective reads the same level and LevelScript that contains native Story playback. This is related-file context, not ownership, activation, or order evidence.",
       observedProperties: "Observed properties",
@@ -1673,6 +1676,9 @@
       triggerUnknownTransport: "\u4f20\u8f93\u8fb9\u754c\u672a\u89e3\u6790",
       storyOrder: "\u6e90\u6570\u636e\u8bc1\u660e\u7684\u5267\u60c5\u987a\u5e8f",
       storyOrderHint: "\u8fd9\u662f\u90e8\u5206\u56e0\u679c\u56fe\uff1a\u4fdd\u7559\u5206\u652f\u3001\u6c47\u5408\u3001\u5faa\u73af\u548c\u672a\u77e5\u987a\u5e8f\uff0c\u4e0d\u731c\u6d4b\u552f\u4e00\u6587\u4ef6\u5e8f\u5217\u3002",
+      missionNamedLevelDataReceiverContexts: "\u4efb\u52a1\u547d\u540d LevelData \u63a5\u6536\u5668\u4e0a\u4e0b\u6587",
+      missionNamedLevelDataReceiverContextsHint: "\u539f\u59cb LevelData \u6587\u4ef6\u540d\u5305\u542b\u8be5\u4efb\u52a1\uff0c\u5176\u7c7b\u578b\u5316\u5b57\u5178\u5305\u542b\u8be5\u63a5\u6536\u5668脚本\u3002\u8fd9\u53ea\u9644\u52a0\u539f\u59cb\u6587\u4ef6\u5bb9\u5668\u4e0a\u4e0b\u6587\uff0c\u4e0d\u8bc1\u660e\u6fc0\u6d3b\u3001\u5f52\u5c5e\u3001\u64ad\u653e\u3001\u5206\u652f\u9009\u62e9\u6216\u5267\u60c5\u987a\u5e8f\u3002",
+      missionNamedLevelDataReceiverBoundary: "\u4ec5\u4efb\u52a1\u547d\u540d LevelData \u5bb9\u5668\u4e0a\u4e0b\u6587",
       missionObservedScriptContexts: "\u4efb\u52a1\u89c2\u6d4b\u5230\u7684 LevelScript \u4e0a\u4e0b\u6587",
       missionObservedScriptContextsHint: "\u539f\u59cb\u7c7b\u578b\u5316\u4efb\u52a1\u76ee\u6807\u8bfb\u53d6\u4e86\u540c\u4e00\u5173\u5361\u548c LevelScript\uff0c\u800c\u8be5\u811a\u672c\u5305\u542b\u539f\u751f\u5267\u60c5\u64ad\u653e\u3002\u8fd9\u53ea\u662f\u5173\u8054\u6587\u4ef6\u4e0a\u4e0b\u6587\uff0c\u4e0d\u662f\u5f52\u5c5e\u3001\u6fc0\u6d3b\u6216\u987a\u5e8f\u8bc1\u636e\u3002",
       observedProperties: "\u88ab\u89c2\u6d4b\u5c5e\u6027",
@@ -3729,6 +3735,15 @@
     const summary = order.summary;
     const components = new Map((order.components || []).map((row) => [row.id, row]));
     const directEdges = order.directEdges || [];
+    const relatedOriginalFilesHtml = (row) => (row.relatedOriginalFiles || []).length
+      ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${row.relatedOriginalFiles.length}</span></summary>${row.relatedOriginalFiles.map((related) => `<small><code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("")}</details>`
+      : "";
+    const missionNamedLevelDataContexts = (order.missionNamedLevelDataReceiverContexts || []).map((row) => {
+      const stories = (row.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
+      const host = row.levelDataHost || {};
+      const files = relatedOriginalFilesHtml(row);
+      return `<article class="mp-order-branch is-boundary mp-leveldata-receiver-context"><header><code>${esc(row.missionId || "?")}</code><i>&rarr;</i><code>${esc(row.levelId || "?")} / ${esc(row.scriptId || "?")}</code><i>&harr;</i>${stories}</header><p><strong>${esc(t("missionNamedLevelDataReceiverBoundary"))}</strong> <code>${esc(host.fileName || host.sourceFile || "?")}</code>${host.dictionaryEntryCount != null ? ` <code>${Number(host.dictionaryEntryCount).toLocaleString()} typed scripts</code>` : ""}${row.activationClass ? ` <code>${esc(row.activationClass)}</code>` : ""}</p><small>${esc(row.evidenceBoundary || t("missionNamedLevelDataReceiverContextsHint"))}</small>${files}</article>`;
+    }).join("");
     const missionObservedContexts = (order.missionObservedLevelScriptContexts || []).map((row) => {
       const stories = (row.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
       const conditions = (row.conditionTypes || []).map((name) => `<code>${esc(name)}</code>`).join(" ");
@@ -3865,9 +3880,6 @@
     };
     const nativeSourcesHtml = (row) => (row.sourceFiles || []).length
       ? `<small><strong>${esc(t("source"))}:</strong> ${(row.sourceFiles || []).map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>`
-      : "";
-    const relatedOriginalFilesHtml = (row) => (row.relatedOriginalFiles || []).length
-      ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${row.relatedOriginalFiles.length}</span></summary>${row.relatedOriginalFiles.map((related) => `<small><code>${esc(related.sourceFile || "")}</code>${related.sha256 ? ` / SHA-256 <code>${esc(related.sha256)}</code>` : ""}</small>`).join("")}</details>`
       : "";
     const nativeTransitionKindLabel = (kind) => t(({
       linear: "nativeStoryTransitionLinear",
@@ -4522,6 +4534,7 @@
       <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
       <p>${esc(t("storyOrderHint"))}</p>
       <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.questSucceedLifecycleEdgeCount || 0).toLocaleString()}</b>${esc(t("questSucceedLifecycleEdges"))}</span><span><b>${Number(summary.questStartActionDefinitionCount || 0).toLocaleString()}</b>${esc(t("questStartDefinitions"))}</span><span><b>${Number(summary.nativeControlPathTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitions"))}</span><span><b>${Number(summary.nativeControlPathBranchingTransitionEdgeCount || 0).toLocaleString()}</b>${esc(t("nativeStoryTransitionBranching"))}</span>${summary.nativeControlNonStoryArmCount ? `<span><b>${Number(summary.nativeControlNonStoryArmCount).toLocaleString()}</b>${esc(t("nativeNonStoryArm"))}</span>` : ""}${summary.nativeControlCrossBoundaryBranchCount ? `<span><b>${Number(summary.nativeControlCrossBoundaryBranchCount).toLocaleString()}</b>${esc(t("nativeCrossBoundaryStories"))}</span>` : ""}<span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span><span><b>${offlineRows.length.toLocaleString()}</b>${esc(t("offlineRecoveryGaps"))}</span></div>
+      ${missionNamedLevelDataContexts ? `<section><h4>${esc(t("missionNamedLevelDataReceiverContexts"))} <span>${(order.missionNamedLevelDataReceiverContexts || []).length}</span></h4><p>${esc(t("missionNamedLevelDataReceiverContextsHint"))}</p><div class="mp-order-branches">${missionNamedLevelDataContexts}</div></section>` : ""}
       ${missionObservedContexts ? `<section><h4>${esc(t("missionObservedScriptContexts"))}</h4><p>${esc(t("missionObservedScriptContextsHint"))}</p><div class="mp-order-branches">${missionObservedContexts}</div></section>` : ""}
       ${causalEdges ? `<section><h4>${esc(t("causalEdges"))}</h4><div class="mp-order-edges">${causalEdges}</div></section>` : ""}
       ${nativeTransitions ? `<section><h4>${esc(t("nativeStoryTransitions"))}</h4><p>${esc(t("nativeStoryTransitionsHint"))}</p><div class="mp-order-branches">${nativeTransitions}</div></section>` : ""}

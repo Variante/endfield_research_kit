@@ -2198,6 +2198,10 @@ body:not(.show-debug) .mp-playback-rejection {
 .mp-quest-succeed-lifecycle {
   border-left: 3px solid color-mix(in srgb, var(--accent) 78%, var(--border)) !important;
 }
+.mp-leveldata-receiver-context {
+  border-left: 3px solid color-mix(in srgb, var(--accent) 58%, var(--border)) !important;
+}
+.mp-leveldata-receiver-context > p { margin: .4rem 0; }
 .mp-quest-succeed-lifecycle > p { margin: .4rem 0; }
 .mp-quest-lifecycle-files { flex-basis: 100%; margin-top: .35rem; }
 .mp-quest-lifecycle-files > summary { cursor: pointer; color: var(--muted); }

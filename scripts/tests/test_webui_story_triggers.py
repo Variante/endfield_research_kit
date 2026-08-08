@@ -204,6 +204,14 @@ for (const [key, category] of [
         self.assertIn('t("propertyWriterUnresolved")', source)
         self.assertIn("row.relatedOriginalFiles", source)
 
+    def test_mission_pipeline_surfaces_mission_named_leveldata_receiver_context(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("order.missionNamedLevelDataReceiverContexts", source)
+        self.assertIn('t("missionNamedLevelDataReceiverContexts")', source)
+        self.assertIn('t("missionNamedLevelDataReceiverBoundary")', source)
+        self.assertIn("row.levelDataHost", source)
+        self.assertIn("mp-leveldata-receiver-context", source)
+
     def test_mission_pipeline_surfaces_exact_active_phase_receivers(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("activation.activePhaseReceiverControl", source)

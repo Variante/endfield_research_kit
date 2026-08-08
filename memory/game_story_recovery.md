@@ -1488,7 +1488,11 @@ groups unchanged; connected/unlinked Story counts are now 4,237 / 1,327.
    attaches 237 placements of 141 distinct authoritative LevelScript,
    LevelData, MissionRuntime, SpawnerConfig, gameplay-config, and table files
    found recursively in the typed evidence; these are related context, not
-   inferred owners. `cutscene_e1m10_1` likewise has an exact
+   inferred owners. Two additional generic context rows attach the exact
+   mission-named LevelData receiver hosts for `e9m3`/`cutscene_e9m3_2` and
+   `e3m6`/`cutscene_e3m5_3`; the filename token plus validated member-22
+   dictionary still do not prove activation, ownership, playback, branch
+   selection, or order. `cutscene_e1m10_1` likewise has an exact
    shipped-Lua phase owner but no serialized mission/quest identity. One of
    the 156 keys, `cutscene_e3m5_4`, now also carries exact `e3m5_q#1`
    same-LevelScript context; it remains in this ownership gap and unordered.
