@@ -189,6 +189,7 @@ class NativeSerializedBranchProjectionTests(unittest.TestCase):
         self.assertEqual(nested[0]["arms"][1]["reachableActionNames"], ["CallServer"])
         self.assertEqual(nested[0]["playbackArmCount"], 1)
         self.assertEqual(nested[0]["branchingStatus"], "single_playback_arm")
+        self.assertEqual(nested[0]["playbackPredicateStatus"], "exact_unique_getter")
 
     def test_nested_multi_playback_controls_remain_context_only(self) -> None:
         topology = {
@@ -226,6 +227,42 @@ class NativeSerializedBranchProjectionTests(unittest.TestCase):
         self.assertEqual(nested["playbackArmCount"], 2)
         self.assertEqual(nested["playbackStoryKeys"], ["radio_false", "radio_true"])
         self.assertEqual(nested["branchingStatus"], "multi_playback_arms")
+        self.assertEqual(
+            nested["playbackPredicateStatus"],
+            "unresolved_playback_predicate",
+        )
+
+    def test_parallel_nested_playback_has_no_predicate_gap(self) -> None:
+        topology = {
+            "actions": [
+                {
+                    "localId": 10,
+                    "actionName": "Branch",
+                    "controlDetail": {"branchSequenceActionLocalIds": [20]},
+                },
+                {
+                    "localId": 20,
+                    "actionName": "Split",
+                    "controlKind": "parallel_fanout",
+                    "controlDetail": {"splitActionLocalIds": [30, 40]},
+                },
+                {"localId": 30, "actionName": "PlayRadio"},
+                {"localId": 40, "actionName": "Wait"},
+            ],
+            "edges": [
+                {"sourceKind": "action", "sourceLocalId": 10, "targetActionLocalId": 20, "relation": "Branch.sequence[0]"},
+                {"sourceKind": "action", "sourceLocalId": 20, "targetActionLocalId": 30, "relation": "Split.actions[0]"},
+                {"sourceKind": "action", "sourceLocalId": 20, "targetActionLocalId": 40, "relation": "Split.actions[1]"},
+            ],
+        }
+        projection = _native_serialized_branch_arm_projection(
+            topology,
+            topology["actions"][0],
+            {30: {"radio_parallel"}},
+        )
+        nested = projection["arms"][0]["nestedControls"][0]
+        self.assertEqual(nested["branchingStatus"], "single_playback_arm")
+        self.assertEqual(nested["playbackPredicateStatus"], "not_applicable")
 
 
 if __name__ == "__main__":
