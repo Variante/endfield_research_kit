@@ -35,7 +35,7 @@ Latest CN reports:
 | Native branch predicates | 259 named; 264 semantic including 5 inline; 0 class-only; 0 unresolved |
 | Complete native branch-arm topology | 312 / 312 recovered placements published in Mission Pipeline, 880 serialized slots, 43 active non-Story arms, 155 inactive slots, 0 runtime terminals, 0 recovery or publication validator failures |
 | Exact ordered-Branch context | 27 original LevelScript/event contexts across 4 missions; complete serialized `_idList`, exact Story-path arm coverage, and GameAssembly/metadata/LevelScript hashes; 0 multi-arm Story-order edges admitted |
-| Corpus serialized-Branch census | 81 unique original Branch groups / 227 `_idList` slots / 37 exact playback-bearing arms; StreamingAssets + Persistent = 9,029 paths / 4,572 hashes; 0 groups with playback on multiple arms; context-only |
+| Corpus serialized-Branch census | 81 unique original Branch groups / 227 `_idList` slots / 37 exact playback-bearing arms; 298 nested typed controls / 465 nested playback arms / 208 nested controls with playback on multiple alternatives; StreamingAssets + Persistent = 9,029 paths / 4,572 hashes; 0 outer groups with playback on multiple arms; context-only |
 | Complete cross-boundary native branches | 5 groups / 5 exact external Story references (4 Split fan-outs, 1 SwitchInt choice); no ownership or order promotion |
 | Exact mission-state Story alternatives | 3 branch groups / 2 cross-mission Story references; selection only, never chronology or ownership |
 | Exact receiver playback gates | 30 Story files (15 Boolean comparisons, 6 NOT, 4 integer equalities, 2 AND, 1 OR, 1 ALL, 1 Boolean leaf) |
@@ -160,9 +160,11 @@ in five payloads.
   hashes as related original files, and now exposes each arm's exact reachable
   native action names/classes and 298 nested typed control contexts across the
   current 227 arms. Exact playback paths also carry decoded binary predicates
-  onto those nested controls; predicate conflicts fail closed. It remains
-  context-only and never promotes ownership or order; arbitrary `texts` fields
-  and OCR/overrides are not inputs.
+  onto those nested controls. The same typed projection counts 465 nested
+  playback arms and 208 controls with playback on multiple alternatives;
+  those are conditional-branch evidence, not chronology. Predicate conflicts
+  fail closed. It remains context-only and never promotes ownership or order;
+  arbitrary `texts` fields and OCR/overrides are not inputs.
 - Mission Pipeline publication now performs a second corpus-wide attachment
   pass after graph-neutral recovery shells exist and fails closed unless every
   recovered native branch reaches a payload. This restored 217 previously

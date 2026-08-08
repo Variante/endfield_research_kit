@@ -546,6 +546,8 @@
       nativeSerializedNestedControls: "nested typed controls",
       nativeSerializedNestedArms: "nested serialized arms",
       nativeSerializedNestedPlayback: "nested exact playback",
+      nativeSerializedNestedPlaybackArms: "nested playback arms",
+      nativeSerializedNestedMultiPlayback: "multi-playback controls",
       nativeSerializedPredicateConflicts: "predicate conflicts",
       nativeSerializedNestedPredicate: "binary predicate",
       nativeStoryTransitions: "Exact native Story transitions",
@@ -1772,6 +1774,8 @@
       nativeSerializedNestedControls: "\u5d4c\u5957\u7c7b\u578b\u63a7\u5236",
       nativeSerializedNestedArms: "\u5d4c\u5957\u5e8f\u5217\u5316\u5206\u652f",
       nativeSerializedNestedPlayback: "\u5d4c\u5957\u7cbe\u786e\u64ad\u653e",
+      nativeSerializedNestedPlaybackArms: "\u5d4c\u5957\u64ad\u653e\u5206\u652f",
+      nativeSerializedNestedMultiPlayback: "\u591a\u64ad\u653e\u63a7\u5236",
       nativeSerializedPredicateConflicts: "\u8c13\u8bcd\u51b2\u7a81",
       nativeSerializedNestedPredicate: "\u539f\u751f\u8c13\u8bcd",
       nativeStoryTransitions: "\u7cbe\u786e\u539f\u751f Story \u8f6c\u79fb",
@@ -3944,7 +3948,14 @@
         const predicate = control.predicate
           ? `<small>${esc(t("nativeSerializedNestedPredicate"))}: <code>${esc(JSON.stringify(control.predicate))}</code></small>`
           : "";
-        return `<details><summary><b><code>#${esc(control.localId ?? "?")} ${esc(control.actionName || control.recordClass || "?")}</code></b><span>${Number(control.serializedArmCount || 0).toLocaleString()} ${esc(t("nativeSerializedNestedArms"))}</span></summary>${detail}${predicate}${nestedArms}</details>`;
+        const nestedPlaybackCount = Number(control.playbackArmCount || 0);
+        const nestedPlaybackSummary = nestedPlaybackCount
+          ? `<span>${nestedPlaybackCount.toLocaleString()} ${esc(t("nativeSerializedNestedPlaybackArms"))}</span>`
+          : "";
+        const nestedBranchingSummary = control.branchingStatus === "multi_playback_arms"
+          ? `<b>${esc(t("nativeSerializedNestedMultiPlayback"))}</b>`
+          : "";
+        return `<details><summary><b><code>#${esc(control.localId ?? "?")} ${esc(control.actionName || control.recordClass || "?")}</code></b><span>${Number(control.serializedArmCount || 0).toLocaleString()} ${esc(t("nativeSerializedNestedArms"))}</span>${nestedPlaybackSummary}${nestedBranchingSummary}</summary>${detail}${predicate}${nestedArms}</details>`;
       }).join("");
       const nestedSummary = nestedControlsHtml
         ? `<small>${esc(t("nativeSerializedNestedControls"))}: ${(arm.nestedControls || []).length.toLocaleString()}</small>${nestedControlsHtml}`
@@ -3953,7 +3964,7 @@
     }).join("");
     const serializedBranchInventoryRowsHtml = serializedBranchInventoryRows.map((row) => `<details open><summary><b>${esc(t("nativeSerializedBranchInventory"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code><span>${Number(row.serializedArmCount || 0).toLocaleString()} ${esc(t("nativeSerializedBranchArms"))}</span><span>${Number(row.playbackArmCount || 0).toLocaleString()} ${esc(t("nativeSerializedPlaybackArms"))}</span></summary><p>${(row.sourceContexts || []).map((context) => `<code>${esc(context.levelId || "?")}/${esc(context.scriptId || "?")}</code>`).join(" ")}</p>${(row.eventRoots || []).length ? `<small>${esc(t("triggerEvents"))}: ${(row.eventRoots || []).map((event) => `<code>#${esc(event.localId ?? "?")} ${esc(event.headerName || "?")} &rarr; #${esc(event.nextActionLocalId ?? "?")}</code>`).join(" ")}</small>` : ""}${serializedBranchInventoryArmHtml(row)}${row.exit ? `<small><code>${esc(row.exit.edge || "ActionBase.nextId")}</code> &rarr; #${esc(row.exit.entryLocalId ?? "inactive")} <code>${esc(row.exit.targetStatus || "")}</code></small>` : ""}${relatedOriginalFilesHtml(row)}<small>${esc(row.evidenceBoundary || "")}</small></details>`).join("");
     const serializedBranchInventoryHtml = serializedBranchInventory?.schema
-      ? `<section class="mp-native-serialized-branch-inventory"><h4>${esc(t("nativeSerializedBranchInventory"))}</h4><p>${esc(t("nativeSerializedBranchInventoryHint"))}</p><div class="mp-order-metrics"><span><b>${Number(serializedBranchInventorySummary.serializedBranchGroupCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedBranchGroups"))}</span><span><b>${Number(serializedBranchInventorySummary.serializedBranchArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedBranchArms"))}</span><span><b>${Number(serializedBranchInventorySummary.playbackArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedPlaybackArms"))}</span><span><b>${Number(serializedBranchInventorySummary.multiPlaybackBranchCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedMultiPlaybackArms"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedControlCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedControls"))}</span><span><b>${Number(serializedBranchInventorySummary.controlPredicateConflictCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedPredicateConflicts"))}</span></div><small><code>${esc(serializedBranchInventory.status || "unavailable")}</code> / ${Number(serializedBranchInventorySummary.sourcePathCount || 0).toLocaleString()} source paths / ${Number(serializedBranchInventorySummary.uniqueContentFileCount || 0).toLocaleString()} unique hashes</small>${serializedBranchInventoryRowsHtml ? `<p><strong>${esc(t("nativeSerializedBranchMatched"))}: ${serializedBranchInventoryRows.length.toLocaleString()}</strong></p><div class="mp-order-branches">${serializedBranchInventoryRowsHtml}</div>` : `<small>${esc(t("nativeSerializedBranchMatched"))}: 0</small>`}${serializedBranchInventory.validationFailures?.length ? `<small>${esc(t("nativeSerializedBranchInventory"))} validation failures: ${serializedBranchInventory.validationFailures.length}</small>` : ""}<small>${esc(serializedBranchInventory.evidenceBoundary || "")}</small></section>`
+      ? `<section class="mp-native-serialized-branch-inventory"><h4>${esc(t("nativeSerializedBranchInventory"))}</h4><p>${esc(t("nativeSerializedBranchInventoryHint"))}</p><div class="mp-order-metrics"><span><b>${Number(serializedBranchInventorySummary.serializedBranchGroupCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedBranchGroups"))}</span><span><b>${Number(serializedBranchInventorySummary.serializedBranchArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedBranchArms"))}</span><span><b>${Number(serializedBranchInventorySummary.playbackArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedPlaybackArms"))}</span><span><b>${Number(serializedBranchInventorySummary.multiPlaybackBranchCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedMultiPlaybackArms"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedControlCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedControls"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedPlaybackArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedPlaybackArms"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedMultiPlaybackControlCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedMultiPlayback"))}</span><span><b>${Number(serializedBranchInventorySummary.controlPredicateConflictCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedPredicateConflicts"))}</span></div><small><code>${esc(serializedBranchInventory.status || "unavailable")}</code> / ${Number(serializedBranchInventorySummary.sourcePathCount || 0).toLocaleString()} source paths / ${Number(serializedBranchInventorySummary.uniqueContentFileCount || 0).toLocaleString()} unique hashes</small>${serializedBranchInventoryRowsHtml ? `<p><strong>${esc(t("nativeSerializedBranchMatched"))}: ${serializedBranchInventoryRows.length.toLocaleString()}</strong></p><div class="mp-order-branches">${serializedBranchInventoryRowsHtml}</div>` : `<small>${esc(t("nativeSerializedBranchMatched"))}: 0</small>`}${serializedBranchInventory.validationFailures?.length ? `<small>${esc(t("nativeSerializedBranchInventory"))} validation failures: ${serializedBranchInventory.validationFailures.length}</small>` : ""}<small>${esc(serializedBranchInventory.evidenceBoundary || "")}</small></section>`
       : "";
     const relatedActionTopologies = (branches.nativeRelatedActionTopologies || []).map((row) => {
       const selectedEvents = (row.selectedEventRoots || []).map((event) => {

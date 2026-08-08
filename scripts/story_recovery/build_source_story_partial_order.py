@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v36"
+SCHEMA = "sourceStoryPartialOrder.v37"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -73,7 +73,7 @@ NATIVE_LEVELSCRIPT_ROOTS = (
     / "Data" / "Json" / "LevelScriptData",
 )
 NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA = (
-    "nativeSerializedBranchInventory.v4"
+    "nativeSerializedBranchInventory.v5"
 )
 READING_POPUP_TABLE_PATH = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
@@ -4276,6 +4276,23 @@ def _native_serialized_branch_arm_projection(
                     nested_arm["runtimeTerminal"] = terminal
                 control["arms"].append(nested_arm)
             control["serializedArmCount"] = len(control["arms"])
+            control["playbackArmCount"] = sum(
+                bool(nested_arm.get("playbackStoryKeys"))
+                for nested_arm in control["arms"]
+            )
+            control["playbackStoryKeys"] = sorted({
+                story_key
+                for nested_arm in control["arms"]
+                for story_key in nested_arm.get("playbackStoryKeys") or []
+                if safe_key(story_key)
+            }, key=natural_key)
+            control["branchingStatus"] = (
+                "multi_playback_arms"
+                if control["playbackArmCount"] >= 2
+                else "single_playback_arm"
+                if control["playbackArmCount"] == 1
+                else "no_playback"
+            )
             controls.append(control)
         return controls
 
@@ -4980,6 +4997,8 @@ def _native_serialized_branch_inventory_not_requested() -> dict[str, Any]:
             "playbackArmCount": 0,
             "multiPlaybackBranchCount": 0,
             "nestedControlCount": 0,
+            "nestedPlaybackArmCount": 0,
+            "nestedMultiPlaybackControlCount": 0,
             "controlPredicateConflictCount": 0,
             "validationFailureCount": 0,
         },
@@ -5339,6 +5358,18 @@ def _native_serialized_branch_inventory(
             len(arm.get("nestedControls") or [])
             for row in rows
             for arm in row.get("arms") or []
+        ),
+        "nestedPlaybackArmCount": sum(
+            int(control.get("playbackArmCount") or 0)
+            for row in rows
+            for arm in row.get("arms") or []
+            for control in arm.get("nestedControls") or []
+        ),
+        "nestedMultiPlaybackControlCount": sum(
+            int(control.get("playbackArmCount") or 0) >= 2
+            for row in rows
+            for arm in row.get("arms") or []
+            for control in arm.get("nestedControls") or []
         ),
         "uniquePlaybackStoryKeyCount": len({
             story_key
@@ -6548,6 +6579,12 @@ def build_report(
         "nativeSerializedNestedControlCount": int(
             inventory_summary.get("nestedControlCount") or 0
         ),
+        "nativeSerializedNestedPlaybackArmCount": int(
+            inventory_summary.get("nestedPlaybackArmCount") or 0
+        ),
+        "nativeSerializedNestedMultiPlaybackControlCount": int(
+            inventory_summary.get("nestedMultiPlaybackControlCount") or 0
+        ),
         "nativeSerializedBranchPredicateConflictCount": int(
             inventory_summary.get("controlPredicateConflictCount") or 0
         ),
@@ -6671,7 +6708,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"exact playback-bearing arms; `{summary.get('nativeSerializedMultiPlaybackBranchCount', 0)}` "
         "groups have playback on multiple arms, so this census admits no order or ownership",
         f"- nested corpus Branch controls: `{summary.get('nativeSerializedNestedControlCount', 0)}` "
-        f"typed control contexts; `{summary.get('nativeSerializedBranchPredicateConflictCount', 0)}` "
+        f"typed control contexts / `{summary.get('nativeSerializedNestedPlaybackArmCount', 0)}` "
+        f"nested playback arms / `{summary.get('nativeSerializedNestedMultiPlaybackControlCount', 0)}` "
+        f"multi-playback controls; `{summary.get('nativeSerializedBranchPredicateConflictCount', 0)}` "
         "predicate-join conflicts (conflicts fail closed)",
         f"- related native action graphs: `{summary.get('nativeRelatedActionTopologies', 0)}` "
         "original LevelScript files attached only through exact Story control paths",

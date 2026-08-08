@@ -11512,6 +11512,8 @@ def _update_story_order_summary(
         "storyOrderNativeSerializedPlaybackArmCount": "nativeSerializedPlaybackArmCount",
         "storyOrderNativeSerializedMultiPlaybackBranchCount": "nativeSerializedMultiPlaybackBranchCount",
         "storyOrderNativeSerializedNestedControlCount": "nativeSerializedNestedControlCount",
+        "storyOrderNativeSerializedNestedPlaybackArmCount": "nativeSerializedNestedPlaybackArmCount",
+        "storyOrderNativeSerializedNestedMultiPlaybackControlCount": "nativeSerializedNestedMultiPlaybackControlCount",
         "storyOrderNativeSerializedBranchPredicateConflictCount": "nativeSerializedBranchPredicateConflictCount",
         "storyOrderNativeNamedPredicateCount": "nativeNamedPredicateCount",
         "storyOrderNativeInlinePredicateCount": "nativeInlinePredicateCount",
@@ -12927,6 +12929,8 @@ def main() -> int:
             f"{summary.get('nativeSerializedPlaybackArmCount', 0)} playback arms / "
             f"{summary.get('nativeSerializedMultiPlaybackBranchCount', 0)} multi-playback groups, "
             f"{summary.get('nativeSerializedNestedControlCount', 0)} nested controls / "
+            f"{summary.get('nativeSerializedNestedPlaybackArmCount', 0)} nested playback arms / "
+            f"{summary.get('nativeSerializedNestedMultiPlaybackControlCount', 0)} multi-playback controls / "
             f"{summary.get('nativeSerializedBranchPredicateConflictCount', 0)} predicate conflicts, "
             f"{summary.get('nativeRelatedActionTopologies', 0)} related action graphs, "
             f"{summary.get('nativeNamedPredicates', 0)} named predicates, "
