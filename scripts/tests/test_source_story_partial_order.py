@@ -4,6 +4,7 @@ import unittest
 
 from scripts.story_recovery.build_source_story_partial_order import (
     NATIVE_TYPED_CONTROL_ACTION_NAMES,
+    _native_branch_kind,
     _native_serialized_branch_arm_projection,
     _serialized_native_control_arm_slots,
     _native_ordered_sequence_contexts,
@@ -91,6 +92,30 @@ class NativeSerializedBranchProjectionTests(unittest.TestCase):
             "WaitForSecondsInTriggerVolume",
             NATIVE_TYPED_CONTROL_ACTION_NAMES,
         )
+        self.assertIn("SwitchIntLarger", NATIVE_TYPED_CONTROL_ACTION_NAMES)
+
+    def test_integer_switch_variant_uses_shared_family_schema(self) -> None:
+        self.assertEqual(
+            _native_branch_kind("SwitchIntLarger.case[2]=9"),
+            "switchIntLarger",
+        )
+        slots = _serialized_native_control_arm_slots({
+            "actionName": "SwitchIntLarger",
+            "controlDetail": {
+                "switchIntLargerCaseValues": [0, 9],
+                "switchIntLargerCaseActionLocalIds": [12, -1],
+                "switchIntLargerDefaultActionLocalId": 30,
+            },
+        })
+        self.assertEqual(
+            [slot["edge"] for slot in slots],
+            [
+                "SwitchIntLarger.case[0]=0",
+                "SwitchIntLarger.case[1]=9",
+                "SwitchIntLarger.default",
+            ],
+        )
+        self.assertEqual([slot["entryLocalId"] for slot in slots], [12, -1, 30])
 
     def test_loop_control_uses_family_schema_without_object_override(self) -> None:
         slots = _serialized_native_control_arm_slots({

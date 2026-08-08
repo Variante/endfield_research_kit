@@ -378,6 +378,15 @@ LEVELSCRIPT_RECORD_HINTS = {
         "note": "current installed ActionBase formatter tag maps this code to SwitchInt",
         "actionBaseAction": "SwitchInt",
     },
+    (0x04BE, 0x0C): {
+        "label": "actionbase-switch-int-larger",
+        "confidence": "high",
+        "note": (
+            "current installed ActionBase formatter tag maps this code to "
+            "SwitchIntLarger; its Execute body selects serialized case/default ids"
+        ),
+        "actionBaseAction": "SwitchIntLarger",
+    },
     (0x04BF, 0x0C): {
         "label": "actionbase-switch-string",
         "confidence": "high",
@@ -4907,16 +4916,26 @@ def _decode_while_action(payload: bytes) -> dict[str, Any]:
     return out
 
 
-def _decode_switch_int_action(payload: bytes) -> dict[str, Any]:
-    """Decode the current-build ``SwitchInt`` branch table exactly.
+def _decode_switch_int_action(
+    payload: bytes,
+    *,
+    field_prefix: str = "switch",
+    action_name: str = "SwitchInt",
+    branch_role: str | None = None,
+) -> dict[str, Any]:
+    """Decode a serialized integer switch family using its shared shape.
 
-    Native ``SwitchIntForMemoryPack.Deserialize`` reads, in setter order,
-    ``_caseIDList``, ``_caseValueList``, ``_defaultID``, then the typed
-    ``PureGetter<int> _value`` object.  Both lists use a u32 count followed by
-    signed i32 values.  ``-1`` and ``0`` action ids are authored no-op
-    sentinels in the current corpus, so they are retained for diagnostics but
-    are not exposed as traversable branch refs.
+    The current ``SwitchInt`` and ``SwitchIntLarger`` formatters both read, in
+    setter order, ``_caseIDList``, ``_caseValueList``, ``_defaultID``, then a
+    typed ``PureGetter<int> _value`` object.  Both lists use a u32 count
+    followed by signed i32 values.  Keeping the parser parameterized by the
+    family prefix prevents per-object recovery rules while retaining explicit
+    family names in the emitted evidence.
     """
+    if branch_role is None:
+        family_token = re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", action_name)
+        family_token = family_token.replace("-Action", "").lower()
+        branch_role = f"typed-{family_token}-actions"
     cursor = 0
 
     def read_i32_list() -> list[int] | None:
@@ -4945,7 +4964,7 @@ def _decode_switch_int_action(payload: bytes) -> dict[str, Any]:
     value_getter = payload[cursor:]
 
     # The installed formatter writes a polymorphic PureGetter<int> object
-    # here.  Every current SwitchInt record has the object-present tag 0x04
+    # here.  Every current integer-switch record has the object-present tag 0x04
     # and at least the 14-byte compact object shell.  Requiring it consumes the
     # complete record tail and prevents a matching scalar prefix from being
     # promoted into control flow.
@@ -4957,18 +4976,24 @@ def _decode_switch_int_action(payload: bytes) -> dict[str, Any]:
     branch_refs = list(dict.fromkeys(
         ref for ref in [*case_ids, default_id] if ref > 0
     ))
+    case_ids_field = f"{field_prefix}CaseActionLocalIds"
+    case_values_field = f"{field_prefix}CaseValues"
+    cases_field = f"{field_prefix}Cases"
+    default_field = f"{field_prefix}DefaultActionLocalId"
+    value_length_field = f"{field_prefix}ValueGetterPayloadLength"
+    value_prefix_field = f"{field_prefix}ValueGetterHexPrefix"
     out: dict[str, Any] = {
-        "switchCaseActionLocalIds": case_ids,
-        "switchCaseValues": case_values,
-        "switchCases": [
+        case_ids_field: case_ids,
+        case_values_field: case_values,
+        cases_field: [
             {"value": value, "actionLocalId": action_id}
             for value, action_id in zip(case_values, case_ids)
         ],
-        "switchDefaultActionLocalId": default_id,
-        "switchValueGetterPayloadLength": len(value_getter),
-        "switchValueGetterHexPrefix": value_getter[:32].hex(" "),
+        default_field: default_id,
+        value_length_field: len(value_getter),
+        value_prefix_field: value_getter[:32].hex(" "),
         "branchLocalRefs": branch_refs,
-        "branchRole": "typed-switch-int-actions",
+        "branchRole": branch_role,
     }
     # Common property-output/local-getter form used by the e3m4 radio chain:
     # object-present + zero subtype header + local getter id + null sentinel.
@@ -4979,11 +5004,11 @@ def _decode_switch_int_action(payload: bytes) -> dict[str, Any]:
     ):
         getter_id = struct.unpack_from("<i", value_getter, 5)[0]
         if 0 <= getter_id <= 0x10000:
-            out["switchValueGetterLocalId"] = getter_id
-    if "switchValueGetterLocalId" not in out:
+            out[f"{field_prefix}ValueGetterLocalId"] = getter_id
+    if f"{field_prefix}ValueGetterLocalId" not in out:
         inline_value = _decode_i32_param(value_getter, 0)
         if inline_value is not None and inline_value[1] == len(value_getter):
-            out["switchValueParam"] = inline_value[0]
+            out[f"{field_prefix}ValueParam"] = inline_value[0]
     return out
 
 
@@ -6481,6 +6506,15 @@ def decode_levelscript_record_payload(
         switch_int = _decode_switch_int_action(payload)
         if switch_int:
             out.update(switch_int)
+    if semantic_key == (0x04BE, 0x0C):
+        switch_int_larger = _decode_switch_int_action(
+            payload,
+            field_prefix="switchIntLarger",
+            action_name="SwitchIntLarger",
+            branch_role="typed-switch-int-larger-actions",
+        )
+        if switch_int_larger:
+            out.update(switch_int_larger)
     if semantic_key == (0x049E, 0x0F):
         start_dialog = _decode_start_dialog_action(payload)
         if start_dialog:

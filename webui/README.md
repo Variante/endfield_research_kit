@@ -182,7 +182,7 @@ Rebuild Story data after editing overrides.
   files remain visibly distinct; non-Story arms never imply Story ownership,
   chronology, or mission membership.
 - Corpus serialized-Branch diagnostics also summarize mapping-derived nested
-  controls: each `Branch`, `IfElseAction`, `SwitchInt`, `SwitchString`,
+  controls: each `Branch`, `IfElseAction`, `SwitchInt`, `SwitchIntLarger`, `SwitchString`,
   `Split`, `WhileAction`, or the binary-mapped
   `WaitForSecondsInTriggerVolume` outcome family retains its serialized arms,
   exact reachable

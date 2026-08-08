@@ -88,6 +88,7 @@ SELECTED_OPCODE_KEYS = (
     "0x0455/0x0a",  # SetOverrideInteractDialog
     "0x045d/0x0a",  # SetScriptTaskPtr
     "0x04bd/0x09",  # SwitchInt
+    "0x04be/0x0c",  # SwitchIntLarger
     "0x0308/0x0a",  # ManualStartLevelScript
     "0x0302/0x0a",  # ManualEndLevelScript
     "0x03da/0x0a",  # SetBool

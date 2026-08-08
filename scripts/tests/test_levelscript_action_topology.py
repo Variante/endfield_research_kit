@@ -211,6 +211,35 @@ class LevelScriptActionTopologyTests(unittest.TestCase):
             "parallel_fanout",
         )
 
+    def test_switch_int_larger_uses_shared_integer_switch_successors(self) -> None:
+        record = {
+            "nextId": -1,
+            "unionTag": 0x04BE,
+            "serializedMemberCount": 0x0C,
+        }
+        successors = level_bindings._levelscript_native_action_successors(
+            record,
+            {
+                "switchIntLargerCaseActionLocalIds": [20, -1],
+                "switchIntLargerCaseValues": [2, 9],
+                "switchIntLargerDefaultActionLocalId": 30,
+            },
+        )
+
+        self.assertEqual(
+            successors,
+            [
+                ("SwitchIntLarger.case[0]=2", 20),
+                ("SwitchIntLarger.default", 30),
+            ],
+        )
+        self.assertEqual(
+            level_bindings.LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
+                (0x04BE, 0x0C)
+            ]["kind"],
+            "conditional_choice",
+        )
+
     def test_missing_positive_target_is_an_exact_runtime_terminal(self) -> None:
         topology, diagnostic = self.run_topology(branch_targets=[20, 99])
 

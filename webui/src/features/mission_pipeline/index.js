@@ -509,6 +509,7 @@
       nativeSplitFanout: "native Split fan-out",
       nativeIfElseBranch: "native If/Else branch",
       nativeSwitchBranch: "native Switch branch",
+      nativeSwitchIntLargerBranch: "native SwitchIntLarger branch",
       nativeWaitTriggerVolumeBranch: "native trigger-volume wait outcome",
       nativeControlMerge: "native branch convergence",
       nativeMissionStateBranches: "Mission-state Story alternatives",
@@ -559,6 +560,7 @@
       nativeSerializedNestedUnavailable: "nested unavailable slots",
       nativeSerializedNestedSchemaGaps: "arm-schema gaps",
       nativeSerializedNestedFamilies: "control families",
+      nativeSerializedTypedFamilies: "typed corpus control families",
       nativeSerializedPredicateConflicts: "predicate conflicts",
       nativeSerializedNestedPredicate: "binary predicate",
       nativeStoryTransitions: "Exact native Story transitions",
@@ -1748,6 +1750,7 @@
       nativeSplitFanout: "\u539f\u751f Split \u5206\u6d41",
       nativeIfElseBranch: "\u539f\u751f If/Else \u5206\u652f",
       nativeSwitchBranch: "\u539f\u751f Switch \u5206\u652f",
+      nativeSwitchIntLargerBranch: "\u539f\u751f SwitchIntLarger \u5206\u652f",
       nativeWaitTriggerVolumeBranch: "\u539f\u751f\u89e6\u53d1\u4f53\u79ef\u7b49\u5f85\u7ed3\u679c\u5206\u652f",
       nativeControlMerge: "\u539f\u751f\u5206\u652f\u6c47\u5408",
       nativeMissionStateBranches: "\u4efb\u52a1\u72b6\u6001 Story \u5019\u9009\u5206\u652f",
@@ -1798,6 +1801,7 @@
       nativeSerializedNestedUnavailable: "\u5d4c\u5957\u4e0d\u53ef\u7528\u69fd\u4f4d",
       nativeSerializedNestedSchemaGaps: "\u5206\u652f\u6a21\u5f0f\u7f3a\u53e3",
       nativeSerializedNestedFamilies: "\u63a7\u5236\u65cf",
+      nativeSerializedTypedFamilies: "\u5168\u91cf\u7c7b\u578b\u63a7\u5236\u65cf",
       nativeSerializedPredicateConflicts: "\u8c13\u8bcd\u51b2\u7a81",
       nativeSerializedNestedPredicate: "\u539f\u751f\u8c13\u8bcd",
       nativeStoryTransitions: "\u7cbe\u786e\u539f\u751f Story \u8f6c\u79fb",
@@ -3769,7 +3773,7 @@
     const typedSelectors = (branches.typedStorySelectorGroups || []).map((row) => `<details><summary><b>${esc(t("typedStorySelectors"))}</b> <code>${esc(row.selectorGroupId || "?")}</code></summary><p>${esc(t("typedStorySelectorHint"))}</p>${(row.alternatives || []).map((alternative) => `<div><code>${esc(alternative.role || "?")}</code><i>&rarr;</i><a href="${esc(storyHref(alternative.key))}"><code>${esc(alternative.key || "?")}</code></a></div>`).join("")}${(row.sourceFiles || []).length ? `<small>${row.sourceFiles.map((source) => `<code>${esc(source)}</code>`).join(" ")}</small>` : ""}</details>`).join("");
     const questForks = (branches.questForks || []).map((row) => `<div><b>${esc(t("questFork"))}</b><code>${esc(row.questId || "?")}</code><i>&rarr;</i><span>${(row.successorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span>${questForkAuthority ? `<small>${esc(t("serverSelectedStart"))}</small>` : ""}</div>`).join("");
     const questMerges = (branches.questMerges || []).map((row) => `<div><b>${esc(t("questMerge"))}</b><span>${(row.predecessorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span><i>&rarr;</i><code>${esc(row.questId || "?")}</code></div>`).join("");
-    const nativeBranchLabel = (kind) => t(kind === "splitFanout" ? "nativeSplitFanout" : kind === "ifElse" ? "nativeIfElseBranch" : kind === "waitTriggerVolume" ? "nativeWaitTriggerVolumeBranch" : "nativeSwitchBranch");
+    const nativeBranchLabel = (kind) => t(kind === "splitFanout" ? "nativeSplitFanout" : kind === "ifElse" ? "nativeIfElseBranch" : kind === "switchIntLarger" ? "nativeSwitchIntLargerBranch" : kind === "waitTriggerVolume" ? "nativeWaitTriggerVolumeBranch" : "nativeSwitchBranch");
     const nativeParamText = (label, param) => {
       if (!param || typeof param !== "object") return "";
       const source = param.getterLocalId != null
@@ -3996,6 +4000,10 @@
     const serializedBranchInventoryHtml = serializedBranchInventory?.schema
       ? `<section class="mp-native-serialized-branch-inventory"><h4>${esc(t("nativeSerializedBranchInventory"))}</h4><p>${esc(t("nativeSerializedBranchInventoryHint"))}</p><div class="mp-order-metrics"><span><b>${Number(serializedBranchInventorySummary.serializedBranchGroupCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedBranchGroups"))}</span><span><b>${Number(serializedBranchInventorySummary.serializedBranchArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedBranchArms"))}</span><span><b>${Number(serializedBranchInventorySummary.playbackArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedPlaybackArms"))}</span><span><b>${Number(serializedBranchInventorySummary.multiPlaybackBranchCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedMultiPlaybackArms"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedControlCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedControls"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedPlaybackArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedPlaybackArms"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedMultiPlaybackControlCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedMultiPlayback"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedPlaybackControlCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedPlaybackControls"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedPlaybackPredicateGapCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedPredicateGaps"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedControlReferenceCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedControlReferences"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedSerializedArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedSlots"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedExactActiveArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedActive"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedInactiveArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedInactive"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedUnavailableArmCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedUnavailable"))}</span><span><b>${Number(serializedBranchInventorySummary.nestedControlArmSchemaUnavailableCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedNestedSchemaGaps"))}</span><span><b>${Number(serializedBranchInventorySummary.controlPredicateConflictCount || 0).toLocaleString()}</b>${esc(t("nativeSerializedPredicateConflicts"))}</span></div><small><code>${esc(serializedBranchInventory.status || "unavailable")}</code> / ${Number(serializedBranchInventorySummary.sourcePathCount || 0).toLocaleString()} source paths / ${Number(serializedBranchInventorySummary.uniqueContentFileCount || 0).toLocaleString()} unique hashes</small>${Object.keys(serializedBranchInventorySummary.nestedControlFamilyCounts || {}).length ? `<small>${esc(t("nativeSerializedNestedFamilies"))}: <code>${esc(JSON.stringify(serializedBranchInventorySummary.nestedControlFamilyCounts))}</code></small>` : ""}${serializedBranchInventoryRowsHtml ? `<p><strong>${esc(t("nativeSerializedBranchMatched"))}: ${serializedBranchInventoryRows.length.toLocaleString()}</strong></p><div class="mp-order-branches">${serializedBranchInventoryRowsHtml}</div>` : `<small>${esc(t("nativeSerializedBranchMatched"))}: 0</small>`}${serializedBranchInventory.validationFailures?.length ? `<small>${esc(t("nativeSerializedBranchInventory"))} validation failures: ${serializedBranchInventory.validationFailures.length}</small>` : ""}<small>${esc(serializedBranchInventory.evidenceBoundary || "")}</small></section>`
       : "";
+    const typedControlFamilyHtml = serializedBranchInventory?.schema
+      && Number(serializedBranchInventorySummary.typedControlGroupCount || 0)
+      ? `<section><h4>${esc(t("nativeSerializedTypedFamilies"))}</h4><p><b>${Number(serializedBranchInventorySummary.typedControlGroupCount || 0).toLocaleString()}</b> ${esc(t("nativeSerializedTypedFamilies"))}: <code>${esc(JSON.stringify(serializedBranchInventorySummary.typedControlFamilyCounts || {}))}</code></p></section>`
+      : "";
     const relatedActionTopologies = (branches.nativeRelatedActionTopologies || []).map((row) => {
       const selectedEvents = (row.selectedEventRoots || []).map((event) => {
         const metadata = [
@@ -4009,7 +4017,13 @@
         const shadowed = (action.runtimeShadowedRecordOffsets || []).length
           ? `<small>${(action.runtimeShadowedRecordOffsets || []).length} ${esc(t("offlineRecoverySubGameActionShadowed"))}; ${esc(t("offlineRecoverySubGameActionActiveSlot"))}</small>`
           : "";
-        return `<div><code>#${esc(action.localId ?? "?")}</code><b>${esc(action.actionName || "?")}</b><span>${esc(action.controlKind || "")}</span>${shadowed}</div>`;
+        const mapping = action.controlRuntimeMappingId
+          ? `<small><code>${esc(action.controlRuntimeMappingId)}</code></small>`
+          : "";
+        const detail = action.controlDetail
+          ? `<small><code>${esc(JSON.stringify(action.controlDetail))}</code></small>`
+          : "";
+        return `<div><code>#${esc(action.localId ?? "?")}</code><b>${esc(action.actionName || "?")}</b><span>${esc(action.controlKind || "")}</span>${mapping}${detail}${shadowed}</div>`;
       }).join("");
       const sequenceContexts = (row.orderedSequenceContexts || []).map((context) => {
         const arms = (context.arms || []).map((arm) => {
@@ -4501,6 +4515,7 @@
       ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}
       ${questForks || questMerges || nativeBranches || nativeMerges || nativeSequences || sceneOptions || dialogConditionalBranches || typedSelectors ? `<section><h4>${esc(t("forkMerge"))}</h4>${questForkAuthorityHtml}<div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${nativeSequences}${sceneOptions}${dialogConditionalBranches}${typedSelectors}</div></section>` : ""}
       ${serializedBranchInventoryHtml}
+      ${typedControlFamilyHtml}
       ${relatedActionTopologies ? `<section><h4>${esc(t("nativeRelatedActionGraphs"))}</h4><p>${esc(t("nativeRelatedActionGraphsHint"))}</p><div class="mp-order-branches">${relatedActionTopologies}</div></section>` : ""}
       ${dialogOptions ? `<section><h4>${esc(t("optionBranches"))}</h4><div class="mp-order-dialog-branches">${dialogOptions}</div></section>` : ""}
       ${offlineGaps ? `<details class="mp-order-recovery-gaps" open><summary>${esc(t("offlineRecoveryGaps"))} <span>${offlineRows.length.toLocaleString()}</span></summary><p>${esc(t("offlineRecoveryGapsHint"))}</p><div>${offlineGaps}</div></details>` : ""}

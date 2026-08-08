@@ -1846,6 +1846,34 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         )
         self.assertNotIn("switchCaseActionLocalIds", rejected)
 
+    def test_switch_int_larger_reuses_exact_integer_switch_shape(self):
+        payload = (
+            struct.pack("<Iii", 2, 90, 157)
+            + struct.pack("<Iii", 2, 2, 9)
+            + struct.pack("<i", 0)
+            + b"\x04\x00\x00\x00\x00"
+            + struct.pack("<i", 156)
+            + b"\xff" * 8
+        )
+        decoded = decode_levelscript_record_payload(
+            payload,
+            {
+                "code": 0x04BE,
+                "kind": 0x0C,
+                "unionTag": 0x04BE,
+                "serializedMemberCount": 0x0C,
+                "payloadStart": 0,
+            },
+            next_start=len(payload),
+            action_map_role="actionList#1 root",
+        )
+        self.assertEqual("SwitchIntLarger", decoded["actionBaseAction"])
+        self.assertEqual([90, 157], decoded["switchIntLargerCaseActionLocalIds"])
+        self.assertEqual([2, 9], decoded["switchIntLargerCaseValues"])
+        self.assertEqual(0, decoded["switchIntLargerDefaultActionLocalId"])
+        self.assertEqual(156, decoded["switchIntLargerValueGetterLocalId"])
+        self.assertEqual([90, 157], decoded["branchLocalRefs"])
+
     def test_switch_int_path_reaches_serialized_radio_chain(self):
         header = {
             "code": 0x12BE,
