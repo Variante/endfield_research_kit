@@ -58,7 +58,7 @@ from story_builder.spawner_binary import (  # noqa: E402
 )
 
 
-SCHEMA = "sourceStoryPartialOrder.v37"
+SCHEMA = "sourceStoryPartialOrder.v38"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     (0x002D, 0x09)
 ]
@@ -73,7 +73,7 @@ NATIVE_LEVELSCRIPT_ROOTS = (
     / "Data" / "Json" / "LevelScriptData",
 )
 NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA = (
-    "nativeSerializedBranchInventory.v5"
+    "nativeSerializedBranchInventory.v6"
 )
 READING_POPUP_TABLE_PATH = (
     ROOT / "export_full" / "structured" / "StreamingAssets"
@@ -4293,6 +4293,14 @@ def _native_serialized_branch_arm_projection(
                 if control["playbackArmCount"] == 1
                 else "no_playback"
             )
+            control["playbackPredicateStatus"] = (
+                "not_applicable"
+                if not control["playbackArmCount"]
+                or control.get("controlKind") == "parallel_fanout"
+                else "exact_unique_getter"
+                if isinstance(control.get("predicate"), dict)
+                else "unresolved_playback_predicate"
+            )
             controls.append(control)
         return controls
 
@@ -4999,6 +5007,8 @@ def _native_serialized_branch_inventory_not_requested() -> dict[str, Any]:
             "nestedControlCount": 0,
             "nestedPlaybackArmCount": 0,
             "nestedMultiPlaybackControlCount": 0,
+            "nestedPlaybackControlCount": 0,
+            "nestedPlaybackPredicateGapCount": 0,
             "controlPredicateConflictCount": 0,
             "validationFailureCount": 0,
         },
@@ -5367,6 +5377,19 @@ def _native_serialized_branch_inventory(
         ),
         "nestedMultiPlaybackControlCount": sum(
             int(control.get("playbackArmCount") or 0) >= 2
+            for row in rows
+            for arm in row.get("arms") or []
+            for control in arm.get("nestedControls") or []
+        ),
+        "nestedPlaybackControlCount": sum(
+            int(control.get("playbackArmCount") or 0) > 0
+            for row in rows
+            for arm in row.get("arms") or []
+            for control in arm.get("nestedControls") or []
+        ),
+        "nestedPlaybackPredicateGapCount": sum(
+            control.get("playbackPredicateStatus")
+            == "unresolved_playback_predicate"
             for row in rows
             for arm in row.get("arms") or []
             for control in arm.get("nestedControls") or []
@@ -6585,6 +6608,12 @@ def build_report(
         "nativeSerializedNestedMultiPlaybackControlCount": int(
             inventory_summary.get("nestedMultiPlaybackControlCount") or 0
         ),
+        "nativeSerializedNestedPlaybackControlCount": int(
+            inventory_summary.get("nestedPlaybackControlCount") or 0
+        ),
+        "nativeSerializedNestedPlaybackPredicateGapCount": int(
+            inventory_summary.get("nestedPlaybackPredicateGapCount") or 0
+        ),
         "nativeSerializedBranchPredicateConflictCount": int(
             inventory_summary.get("controlPredicateConflictCount") or 0
         ),
@@ -6710,7 +6739,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- nested corpus Branch controls: `{summary.get('nativeSerializedNestedControlCount', 0)}` "
         f"typed control contexts / `{summary.get('nativeSerializedNestedPlaybackArmCount', 0)}` "
         f"nested playback arms / `{summary.get('nativeSerializedNestedMultiPlaybackControlCount', 0)}` "
-        f"multi-playback controls; `{summary.get('nativeSerializedBranchPredicateConflictCount', 0)}` "
+        f"multi-playback controls / `{summary.get('nativeSerializedNestedPlaybackControlCount', 0)}` "
+        f"playback controls / `{summary.get('nativeSerializedNestedPlaybackPredicateGapCount', 0)}` "
+        f"playback predicate gaps; `{summary.get('nativeSerializedBranchPredicateConflictCount', 0)}` "
         "predicate-join conflicts (conflicts fail closed)",
         f"- related native action graphs: `{summary.get('nativeRelatedActionTopologies', 0)}` "
         "original LevelScript files attached only through exact Story control paths",

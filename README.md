@@ -124,9 +124,9 @@ or local source edits.
   LevelScript roots; zero groups currently carry playback on two arms. The
   WebUI also shows each arm's exact reachable native action names/classes,
   298 nested typed controls, 465 nested playback arms, and 208 nested controls
-  with playback on multiple alternatives. Exact binary predicates are shown
-  where playback paths prove them, while the inventory stays context-only and
-  refuses to guess order or ownership.
+  with playback on multiple alternatives. All 233 playback-bearing nested
+  controls currently have exact binary predicates (0 playback-predicate gaps).
+  The inventory stays context-only and refuses to guess order or ownership.
 - A general original-binary Encounter contract now adds exact controller and
   related LevelData/SpawnerConfig context for 27 of those Story keys. Its
   LsmPtr module namespace is shown separately from the receiver LevelScript,
