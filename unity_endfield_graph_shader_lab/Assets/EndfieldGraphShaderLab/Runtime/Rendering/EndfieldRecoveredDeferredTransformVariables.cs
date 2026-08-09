@@ -84,7 +84,8 @@ namespace EndfieldGraphShaderLab
                     EndfieldRecoveredDeferredTransformVariablesContract
                         .D3D11SelectedSizeBytes);
                 commandBuffer.SetGlobalFloat(ReadyId, 1.0f);
-                commandBuffer.SetGlobalFloat(Pass0SubsetReadyId, 1.0f);
+                // The combined pass-0 subset gate is raised only after b31
+                // _LightDataBuffer also succeeds later in the same frame.
                 return true;
             }
             catch (Exception exception)

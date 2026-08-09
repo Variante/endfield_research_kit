@@ -413,6 +413,8 @@ namespace EndfieldGraphShaderLab
             recoveredVisibilitySHConstants;
         private readonly EndfieldRecoveredDeferredTransformVariables
             recoveredDeferredTransformVariables;
+        private readonly EndfieldRecoveredDeferredLightData
+            recoveredDeferredLightData;
         private readonly EndfieldRecoveredPunctualShadowProducer
             recoveredPunctualShadowProducer;
         private readonly EndfieldRecoveredPreGBufferDiagnostic
@@ -476,6 +478,8 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredReflectionFrameFailure;
         private bool loggedRecoveredDeferredTransformActivation;
         private bool loggedRecoveredDeferredTransformFailure;
+        private bool loggedRecoveredDeferredLightDataActivation;
+        private bool loggedRecoveredDeferredLightDataFailure;
 
         private static int[] CreateBloomMipIds(string prefix)
         {
@@ -506,6 +510,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredVisibilitySHConstants();
             recoveredDeferredTransformVariables =
                 new EndfieldRecoveredDeferredTransformVariables();
+            recoveredDeferredLightData =
+                new EndfieldRecoveredDeferredLightData();
             recoveredPunctualShadowProducer =
                 new EndfieldRecoveredPunctualShadowProducer();
             recoveredScreenDirectAudit =
@@ -597,6 +603,7 @@ namespace EndfieldGraphShaderLab
             recoveredDeferredGBufferFrame?.Dispose();
             recoveredVisibilitySHProducer?.Dispose();
             recoveredPunctualShadowProducer?.Dispose();
+            recoveredDeferredLightData?.Dispose();
             recoveredDeferredTransformVariables?.Dispose();
             recoveredVisibilitySHConstants?.Dispose();
             recoveredReflectionProbeFallback?.Dispose();
@@ -1033,6 +1040,7 @@ namespace EndfieldGraphShaderLab
             recoveredReflectionProbeFallback.ResetPublication(commandBuffer);
             recoveredVisibilitySHConstants.ResetPublication(commandBuffer);
             recoveredDeferredTransformVariables.ResetPublication(commandBuffer);
+            recoveredDeferredLightData.ResetPublication(commandBuffer);
             bool recoveredCanonicalBinningReady =
                 recoveredLightBinning.PrepareCamera(
                 camera,
@@ -1041,6 +1049,7 @@ namespace EndfieldGraphShaderLab
                 operatorLightRig,
                     commandBuffer);
             bool recoveredCanonicalFrameResourcesReady = false;
+            bool recoveredDeferredTransformsReady = false;
             if (recoveredCanonicalBinningReady)
             {
                 string reflectionFailure;
@@ -1116,7 +1125,7 @@ namespace EndfieldGraphShaderLab
                         recoveredCanonicalFrameResourcesReady = true;
                         if (EndfieldRecoveredDeferredTransformVariables.IsRequested)
                         {
-                            bool recoveredDeferredTransformsReady =
+                            recoveredDeferredTransformsReady =
                                 recoveredDeferredTransformVariables
                                     .PrepareAndPublish(
                                         camera,
@@ -1167,6 +1176,46 @@ namespace EndfieldGraphShaderLab
                 applyPostProcess
                     ? new RenderTargetIdentifier(CameraColorId)
                     : new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget));
+
+            if (EndfieldRecoveredDeferredLightData.IsRequested)
+            {
+                CommandBuffer lightDataCommand = new CommandBuffer
+                {
+                    name = "Recovered selected deferred LightData"
+                };
+                bool recoveredDeferredLightDataReady =
+                    recoveredDeferredLightData.PrepareAndPublish(
+                        camera,
+                        cullingResults,
+                        characterVolume != null
+                            ? characterVolume.sceneMainLight
+                            : null,
+                        operatorLightRig,
+                        recoveredCanonicalFrameResourcesReady,
+                        recoveredDeferredTransformsReady,
+                        lightDataCommand,
+                        out string lightDataFailure);
+                context.ExecuteCommandBuffer(lightDataCommand);
+                lightDataCommand.Release();
+                if (recoveredDeferredLightDataReady)
+                {
+                    if (!loggedRecoveredDeferredLightDataActivation)
+                    {
+                        Debug.Log(
+                            "Recovered selected deferred _LightDataBuffer b31 " +
+                            "reads are active for the source-closed " +
+                            "Wulfa/Zhuangfy CharInfo fixture; pass0=disabled.");
+                        loggedRecoveredDeferredLightDataActivation = true;
+                    }
+                }
+                else if (!loggedRecoveredDeferredLightDataFailure)
+                {
+                    Debug.LogWarning(
+                        "Recovered selected deferred _LightDataBuffer failed " +
+                        "closed: " + lightDataFailure + ".");
+                    loggedRecoveredDeferredLightDataFailure = true;
+                }
+            }
 
             if (useRecoveredCameraDepth)
             {

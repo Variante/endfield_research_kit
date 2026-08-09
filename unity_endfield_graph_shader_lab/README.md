@@ -2211,6 +2211,18 @@ and world-space position. A default-off same-frame publisher exposes the full
 on D3D11/D3D12, while the 69 unselected history/jitter/stereo rows stay zero.
 This closes only the fields proven used by the selected binary and does not
 enable pass 0.
+
+The selected `_LightDataBuffer` b31 reads are also closed for the isolated
+Wulfa/Zhuangfy CharInfo fixture. Native construction and `PrepareCPUData`
+packing prove a 32,864-byte layout of six header vectors plus 256 eight-vector
+punctual records. The exact CharInfo directional header is published; every
+selected punctual row has zero OBB flags and `CharacterOnly=1`, so the selected
+SphereOutside program exits before unresolved general-light or shadow fields.
+All 8,216 words match on D3D11/D3D12 through both `_LightDataBuffer` and the
+original DXBC-shell `EndfieldCB4` bridge, with unknown words zero and unchanged
+beauty output. This source-closes only that consumer subset; general-scene
+punctual records and pass 0 remain open.
+
 The remaining streamed
 `m_defaultIV` voxel contents/per-frame parameters, light/shadow resources,
 settled VisibilitySH `PassInput.enabled`, exact posed record values and
