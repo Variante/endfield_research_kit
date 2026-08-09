@@ -119,9 +119,12 @@ NPC archetypes are imported as labeled source kits.
   c135..c137 each equal the serialized ambient-SH reorder
   `(SH3,SH1,SH2,SH0) * skyDirectIntensity`, or exactly
   `(-0.0075507611,0.4722373188,0.0121708093,1.0963056087)`. All selected b35
-  value producers are now source-closed. `EndfieldCB1` remains unpublished
-  pending a default-off runtime publisher and D3D11/D3D12 verifier; pass 0
-  remains disabled.
+  value producers are source-closed. A default-off publisher now binds all 200
+  canonical vectors plus the 157-vector `EndfieldCB1` prefix. D3D11/D3D12
+  read back 800/800 and 628/628 words exactly; all unselected rows stay zero,
+  c28 keeps its raw integer bit pattern, same-frame Wulfa activation succeeds,
+  and missing canonical prerequisites fail closed without changing D3D12
+  beauty. Pass 0 remains disabled.
 - Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
   initialization/upload and `cookieIndex >= 0` consumer guard closed. The
   source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off
@@ -230,6 +233,7 @@ cd unity_endfield_graph_shader_lab
 .\verify_fast_render_style_viewer.bat
 .\verify_recovered_light_binning_constants.bat --all
 .\verify_recovered_light_cookie_data.bat --all
+.\verify_recovered_shader_variables_global.bat --all
 ```
 
 Canonical viewer:
@@ -243,16 +247,14 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Implement and GPU-verify a default-off selected-row `ShaderVariablesGlobal`
-   / `EndfieldCB1` publisher; keep unselected rows zero and fail closed.
-2. Recover the retail light-cull survivor list, then populate exact shadow,
+1. Recover the retail light-cull survivor list, then populate exact shadow,
    depth, GBuffer, irradiance, non-empty cookie, and VisibilitySH inputs.
-3. Validate selected paths against accepted retail captures.
-4. Extend exact texture/mip and material-variant support only where visible.
-5. Generalize animation from a second exact Avatar/clip oracle.
-6. Implement controller, grounding, facial, FX, and secondary systems behind
+2. Validate selected paths against accepted retail captures.
+3. Extend exact texture/mip and material-variant support only where visible.
+4. Generalize animation from a second exact Avatar/clip oracle.
+5. Implement controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.
-7. Upgrade representative non-playable families before making broad parity
+6. Upgrade representative non-playable families before making broad parity
    claims.
 
 Every production value must come from serialized data, native behavior, or a

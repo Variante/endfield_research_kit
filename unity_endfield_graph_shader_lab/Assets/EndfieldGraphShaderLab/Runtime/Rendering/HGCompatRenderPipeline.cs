@@ -413,6 +413,8 @@ namespace EndfieldGraphShaderLab
             recoveredVisibilitySHConstants;
         private readonly EndfieldRecoveredDeferredTransformVariables
             recoveredDeferredTransformVariables;
+        private readonly EndfieldRecoveredShaderVariablesGlobal
+            recoveredShaderVariablesGlobal;
         private readonly EndfieldRecoveredDeferredLightData
             recoveredDeferredLightData;
         private readonly EndfieldRecoveredDeferredShadowData
@@ -480,6 +482,8 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredReflectionFrameFailure;
         private bool loggedRecoveredDeferredTransformActivation;
         private bool loggedRecoveredDeferredTransformFailure;
+        private bool loggedRecoveredShaderVariablesGlobalActivation;
+        private bool loggedRecoveredShaderVariablesGlobalFailure;
         private bool loggedRecoveredDeferredLightDataActivation;
         private bool loggedRecoveredDeferredLightDataFailure;
         private bool loggedRecoveredDeferredShadowDataActivation;
@@ -514,6 +518,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredVisibilitySHConstants();
             recoveredDeferredTransformVariables =
                 new EndfieldRecoveredDeferredTransformVariables();
+            recoveredShaderVariablesGlobal =
+                new EndfieldRecoveredShaderVariablesGlobal();
             recoveredDeferredLightData =
                 new EndfieldRecoveredDeferredLightData();
             recoveredDeferredShadowData =
@@ -611,6 +617,7 @@ namespace EndfieldGraphShaderLab
             recoveredPunctualShadowProducer?.Dispose();
             recoveredDeferredShadowData?.Dispose();
             recoveredDeferredLightData?.Dispose();
+            recoveredShaderVariablesGlobal?.Dispose();
             recoveredDeferredTransformVariables?.Dispose();
             recoveredVisibilitySHConstants?.Dispose();
             recoveredReflectionProbeFallback?.Dispose();
@@ -1047,6 +1054,7 @@ namespace EndfieldGraphShaderLab
             recoveredReflectionProbeFallback.ResetPublication(commandBuffer);
             recoveredVisibilitySHConstants.ResetPublication(commandBuffer);
             recoveredDeferredTransformVariables.ResetPublication(commandBuffer);
+            recoveredShaderVariablesGlobal.ResetPublication(commandBuffer);
             recoveredDeferredLightData.ResetPublication(commandBuffer);
             recoveredDeferredShadowData.ResetPublication(commandBuffer);
             bool recoveredCanonicalBinningReady =
@@ -1161,6 +1169,41 @@ namespace EndfieldGraphShaderLab
                                 loggedRecoveredDeferredTransformFailure = true;
                             }
                         }
+                        if (EndfieldRecoveredShaderVariablesGlobal.IsRequested)
+                        {
+                            Vector4 environmentParams = characterVolume != null
+                                ? characterVolume.environmentGlobalParams0
+                                : Vector4.zero;
+                            bool recoveredShaderVariablesGlobalReady =
+                                recoveredShaderVariablesGlobal.PrepareAndPublish(
+                                    camera,
+                                    renderWidth,
+                                    renderHeight,
+                                    environmentParams,
+                                    recoveredDeferredTransformsReady,
+                                    commandBuffer,
+                                    out string shaderVariablesFailure);
+                            if (recoveredShaderVariablesGlobalReady)
+                            {
+                                if (!loggedRecoveredShaderVariablesGlobalActivation)
+                                {
+                                    Debug.Log(
+                                        "Recovered selected " +
+                                        "ShaderVariablesGlobal b35 / " +
+                                        "EndfieldCB1 reads are active; pass0=" +
+                                        "disabled.");
+                                    loggedRecoveredShaderVariablesGlobalActivation =
+                                        true;
+                                }
+                            }
+                            else if (!loggedRecoveredShaderVariablesGlobalFailure)
+                            {
+                                Debug.LogWarning(
+                                    "Recovered selected ShaderVariablesGlobal " +
+                                    "failed closed: " + shaderVariablesFailure + ".");
+                                loggedRecoveredShaderVariablesGlobalFailure = true;
+                            }
+                        }
                     }
                 }
             }
@@ -1173,6 +1216,16 @@ namespace EndfieldGraphShaderLab
                     "closed: canonical binning/reflection/" +
                     "VisibilitySHConstData prerequisites are not ready.");
                 loggedRecoveredDeferredTransformFailure = true;
+            }
+            if (EndfieldRecoveredShaderVariablesGlobal.IsRequested &&
+                !recoveredCanonicalFrameResourcesReady &&
+                !loggedRecoveredShaderVariablesGlobalFailure)
+            {
+                Debug.LogWarning(
+                    "Recovered selected ShaderVariablesGlobal failed closed: " +
+                    "canonical binning/reflection/VisibilitySHConstData " +
+                    "prerequisites are not ready.");
+                loggedRecoveredShaderVariablesGlobalFailure = true;
             }
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
