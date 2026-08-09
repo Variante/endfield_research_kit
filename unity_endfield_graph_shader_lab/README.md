@@ -1983,8 +1983,15 @@ role-identifies unnamed binding 32 as `_LightBinningConstants`. Its exact
 native 48-byte field layout/upload and a default-off, fail-closed isolated-count
 Unity publisher are now source-closed; all 12 words read back bit-exactly on
 D3D11 and D3D12. The retail whole-scene cull survivors and final `lightCount`
-are still not captured. Exact original cross-shader layout also identifies b34 as
-`ShadowData`. Binding 37 now has its native `HGLightCookieManager` initialization,
+are still not captured. Exact original cross-shader layout identifies b34 as
+the 11,440-byte `ShadowData`. Its native `HGShadowConstantBufferUtils` owner
+allocates one full buffer, copies CSM/PunctualLight/Character/ASM sections at
+their exact same offsets, then binds the full size. The selected deferred
+resolver reads only PunctualLight bytes `1024..6415`; the rest is declaration-
+only. Publication remains fail-closed until the settled 6,144-byte PunctualLight
+section and matching `_PunctualLightShadowTexV2` are captured together at
+`SetGlobalConstantBuffer` section enum `1`. Binding 37 now has its native
+`HGLightCookieManager` initialization,
 32-record atlas/matrix layout, exact 2,560-byte upload, and `-1` no-cookie guard
 closed. A default-off publisher emits the exact all-zero buffer only for the
 source-closed Wulfa/Zhuangfy isolated Overview lists; all 640 words read back

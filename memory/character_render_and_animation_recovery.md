@@ -43,6 +43,13 @@ NPC archetypes are imported as labeled source kits.
   `CullLights` producer, two `HGCamera.DoECSCulling` call sites, 256-candidate
   cap, pointer/count ABI, and first consumer are also closed; only an
   authorized target-frame array capture can settle retail order/`lightCount`.
+- Deferred binding 34 is the exact 11,440-byte `ShadowData` layout. The native
+  `HGShadowConstantBufferUtils` transport allocates the full buffer, copies one
+  of four exact same-offset sections (CSM 1,024; Punctual 6,144; Character
+  2,048; ASM 2,224 bytes), then binds the full size. The selected resolver
+  reads only Punctual bytes 1,024..6,415. Publication remains fail-closed;
+  capture the settled Punctual section and matching
+  `_PunctualLightShadowTexV2` together at section enum 1.
 - Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
   initialization/upload and `cookieIndex >= 0` consumer guard closed. The
   source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off
