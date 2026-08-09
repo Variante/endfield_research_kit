@@ -125,6 +125,26 @@ The strongest current authored playback joins are SkillData/BuffData audio
 references, Timeline/cutscene audio fields, and AudioDialog-to-lipsync
 `pathStem` associations. We do not yet have a complete runtime receiver,
 activation chronology, or proof of which branch was selected in a live game.
+Gameplay audio also consumes recovered Unity `AnimationClip.m_Events` rows for
+the exact `PostAudioEvent`, `PostAudioEventAdvance`,
+`PostAudioEventAtPosition`, and `OnCustomFootStep` callbacks. The callback
+time, function, payload, clip PathID, and AssetMap container are exact authored
+evidence. Playable-character and enemy-template ownership is inferred only
+when the clip name contains the unique table-id suffix token; the callback
+does not prove that a current controller can reach the clip or which Wwise
+container branch wins at runtime. Canonical Wwise events therefore retain
+per-clip owner contexts rather than one global owner.
+
+Two additional Gameplay joins fill gaps outside SkillData/BuffData. Exact
+SkillData strings embedded in recovered `EnemyData.AbilitySystemData` allow
+enemy variants to reuse their authored template skill bundle, with the
+template-to-variant relation kept as inferred ownership. In contrast,
+`CharacterTable.profileVoice` is direct character ownership: its combat,
+attack, skill, hurt, and death voice ids join one-to-one to `AudioDialog`
+media, with optional `AIBark` trigger-prefix semantics. Animation catalogs and
+their detailed callback evidence are separate lazy sidecars so opening the
+Gameplay view does not eagerly fetch every clip context.
+
 There is nevertheless exact authored timing for a useful subset: recovered
 Timeline `AudioEventPlayable` assets carry the event key plus stop/fade/seek
 behavior, and the generated video bindings carry each clip's start and
@@ -143,9 +163,12 @@ version-150 typed Sound/container/music decoding, beginning with the validated
 Sound media/source field, then recover switch/state/random/music branch rules.
 Also retain exact PCK sector and embedded-bank provenance during extraction,
 identify Timeline/native audio receivers and activation paths, and validate
-chronology against a captured game session. Keep source WEM ids, authored
-references, controls, and runtime-selected candidates separate in reports and
-WebUI labels.
+chronology against a captured game session. Gameplay follow-up should finish
+the partial `EnemyData.AbilitySystemData` mode-tail decoder, connect animation
+clips through controllers instead of filename ownership alone, and recover
+native effect-audio components for the remaining silent templates. Keep source
+WEM ids, authored references, controls, and runtime-selected candidates
+separate in reports and WebUI labels.
 
 ## Source graph
 

@@ -263,6 +263,133 @@ class GameplayAudioLinkTests(unittest.TestCase):
             self.assertEqual(enemy_spawn["confidence"], "direct")
             self.assertEqual(set(enemy_spawn["events"]), {"au_enemy_spawn"})
 
+    def test_collects_enemy_template_skill_authored_under_another_enemy(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            webui_root = root / "webui"
+            export_root = root / "export_full"
+            gameplay_path = webui_root / "data/lang/CN/gameplay/index.json"
+            gameplay_path.parent.mkdir(parents=True)
+            gameplay_path.write_text(json.dumps({"entries": [{
+                "kind": "enemy",
+                "id": "eny_0101_variant",
+                "templateId": "eny_0101_variant",
+                "variantIds": ["eny_0101_variant"],
+                "bornBuffs": [],
+            }]}), encoding="utf-8")
+            skill_root = export_root / "structured/StreamingAssets/Data/Json/SkillData"
+            skill_root.mkdir(parents=True)
+            (skill_root / "eny_0001_base_attack.json").write_bytes(
+                self.memorypack_strings(47, "au_enemy_base_attack")
+            )
+            template_root = (
+                export_root
+                / "recovered/AnimeStudio-cli/Persistent/json_by_type/MonoBehaviour"
+            )
+            template_root.mkdir(parents=True)
+            (template_root / "data_eny_0101_variant_p1234.json").write_text(json.dumps({
+                "references": {"RefIds": [{
+                    "type": {"class": "AbilitySystemData"},
+                    "data": {"remainingStringHints": [
+                        {"offset": 24, "value": "eny_0001_base_attack"},
+                    ]},
+                }]},
+            }), encoding="utf-8")
+
+            result = build_audio.collect_gameplay_audio_references(
+                webui_root,
+                export_root,
+                "CN",
+            )
+            owner = next(row for row in result["owners"] if row["skillId"])
+            self.assertEqual(owner["ownerId"], "eny_0101_variant")
+            self.assertEqual(owner["confidence"], "inferred")
+            self.assertEqual(owner["ownershipMethod"], "enemyTemplateAbilitySystemSkill")
+            self.assertEqual(set(owner["events"]), {"au_enemy_base_attack"})
+            self.assertEqual(result["counts"]["enemyTemplatesWithSkillReferences"], 1)
+            self.assertEqual(result["counts"]["enemyTemplateSkillReferences"], 1)
+
+    def test_collects_exact_animation_clip_audio_callback(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            webui_root = root / "webui"
+            export_root = root / "export_full"
+            gameplay_path = webui_root / "data/lang/CN/gameplay/index.json"
+            gameplay_path.parent.mkdir(parents=True)
+            gameplay_path.write_text(json.dumps({"entries": [{
+                "kind": "character",
+                "id": "chr_0001_test",
+                "skillGroups": [{
+                    "id": "chr_0001_test_NormalAttack",
+                    "actionSkillIds": ["chr_0001_test_attack1"],
+                }],
+            }]}), encoding="utf-8")
+            clip_root = (
+                export_root
+                / "recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"
+            )
+            clip_root.mkdir(parents=True)
+            (clip_root / "A_actor_test_battle_attack1_p0123456789ABCDEF.anim").write_text(
+                "\n".join([
+                    "%YAML 1.1",
+                    "AnimationClip:",
+                    "  m_Name: A_actor_test_battle_attack1",
+                    "  m_Events:",
+                    "  - time: 0.25",
+                    "    functionName: PostAudioEvent",
+                    "    data: player_test_attack_foley",
+                    "  - time: 0.5",
+                    "    functionName: NotAudio",
+                    "    data: ignored",
+                ]),
+                encoding="utf-8",
+            )
+
+            result = build_audio.collect_gameplay_audio_references(
+                webui_root,
+                export_root,
+                "CN",
+            )
+            self.assertIn("player_test_attack_foley", result["eventNames"])
+            animation_owner = result["animationOwners"][0]
+            self.assertEqual(animation_owner["ownerId"], "chr_0001_test")
+            evidence = animation_owner["events"]["player_test_attack_foley"][0]
+            self.assertEqual(evidence["actionKind"], "attack")
+            self.assertEqual(evidence["function"], "PostAudioEvent")
+            self.assertEqual(evidence["time"], 0.25)
+
+    def test_collects_direct_combat_profile_voice_and_bark_trigger(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            export_root = root / "export_full"
+            table_root = export_root / "structured/StreamingAssets/Table"
+            table_root.mkdir(parents=True)
+            (table_root / "CharacterTable.json").write_text(json.dumps({
+                "chr_0001_test": {
+                    "profileVoice": [{
+                        "voId": "chr_0001_test_combat_intobattle_01",
+                        "voiceIndex": 7,
+                    }, {
+                        "voId": "chr_0001_test_chrbark_join_01",
+                        "voiceIndex": 8,
+                    }],
+                },
+            }), encoding="utf-8")
+            (table_root / "AIBark.json").write_text(json.dumps({
+                "bark_test": {"array": [{"triggerKey": ["combat_intobattle"]}]},
+            }), encoding="utf-8")
+            result = build_audio.collect_gameplay_profile_voices(export_root, [{
+                "kind": "character",
+                "id": "chr_0001_test",
+                "skillGroups": [],
+            }])
+
+            self.assertEqual(result["counts"]["profileVoiceRefs"], 1)
+            voice = result["owners"][0]["voices"][0]
+            self.assertEqual(voice["id"], "chr_0001_test_combat_intobattle_01")
+            self.assertEqual(voice["triggerKey"], "combat_intobattle")
+            self.assertEqual(voice["actionKind"], "combatVoice")
+
     def test_writes_only_playable_gameplay_candidates(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             webui_root = Path(raw_root)
@@ -283,6 +410,29 @@ class GameplayAudioLinkTests(unittest.TestCase):
                     "confidence": "inferred",
                     "events": {"au_yes": [{"kind": "skillData"}]},
                 }],
+                "animationOwners": [{
+                    "ownerKind": "enemy",
+                    "ownerId": "eny_animation",
+                    "ownershipSources": ["animation config"],
+                    "events": {"au_yes": [{
+                        "kind": "animationClipEvent",
+                        "clip": "A_monster_test_battle_attack1",
+                        "actionKind": "attack",
+                        "time": 0.25,
+                        "function": "PostAudioEvent",
+                    }]},
+                }],
+                "profileVoiceOwners": [{
+                    "ownerId": "chr_voice",
+                    "voices": [{
+                        "id": "chr_voice_mono_attack_01",
+                        "actionKind": "attackVoice",
+                        "characterId": "chr_voice",
+                        "profileVoiceIndex": 1,
+                        "triggerKey": "",
+                        "source": "CharacterTable.json",
+                    }],
+                }],
                 "counts": {},
             }
             stats = build_audio.link_gameplay_audio(
@@ -291,15 +441,39 @@ class GameplayAudioLinkTests(unittest.TestCase):
                 references,
                 {"au_yes": [{"src": "data/audio/shared/yes.wav", "mediaId": 1}]},
                 [{"eventId": "au_yes"}],
+                {"chr_voice_mono_attack_01": {
+                    "src": "data/audio/CN/voice.wav",
+                    "id": "chr_voice_mono_attack_01",
+                    "format": "wav",
+                }},
             )
             payload = json.loads((webui_root / "data/lang/CN/gameplay/sound_effects.json").read_text(encoding="utf-8"))
             events = payload["characters"]["chr_test"]["groups"]["normal"]["events"]
-            self.assertEqual(stats["gameplayAudioRefsLinked"], 2)
+            self.assertEqual(stats["gameplayAudioRefsLinked"], 4)
+            self.assertEqual(stats["animationAudioRefsLinked"], 1)
+            self.assertEqual(stats["profileVoiceRefsLinked"], 1)
             self.assertEqual([row["id"] for row in events], ["au_yes"])
             enemy = payload["enemies"]["eny_test"]
             self.assertEqual(enemy["ownershipConfidence"], "inferred")
             self.assertEqual(enemy["skillIds"], ["eny_test_attack"])
             self.assertEqual([row["id"] for row in enemy["events"]], ["au_yes"])
+            animation = payload["enemies"]["eny_animation"]
+            self.assertEqual(animation["animationOwnershipConfidence"], "inferred")
+            self.assertEqual(animation["animationEvents"][0]["actionKinds"], ["attack"])
+            self.assertNotIn("audio", animation["animationEvents"][0])
+            catalog = json.loads(
+                (webui_root / "data/lang/CN/gameplay/sound_effects_animation_catalog.json")
+                .read_text(encoding="utf-8")
+            )
+            self.assertEqual(catalog["events"]["au_yes"]["audio"][0]["mediaId"], 1)
+            self.assertEqual(
+                animation["animationEvents"][0]["sourceAnimationClips"],
+                ["A_monster_test_battle_attack1"],
+            )
+            self.assertEqual(
+                payload["characters"]["chr_voice"]["profileVoices"][0]["actionKinds"],
+                ["attackVoice"],
+            )
 
 
 if __name__ == "__main__":
