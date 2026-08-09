@@ -97,6 +97,249 @@ def require_tokens(path: Path, tokens: list[str]) -> None:
             raise AssertionError(f"{path}: missing token {token!r}")
 
 
+def require_charinfo_v2_path_value(
+    source: Path,
+    check: str,
+    actual: object,
+    expected: object,
+) -> None:
+    if actual != expected:
+        raise AssertionError(
+            "CharInfo V2 irradiance data-path validator failed: "
+            f"check={check}; source={source}; "
+            f"expected={expected!r}; actual={actual!r}"
+        )
+
+
+def verify_charinfo_v2_data_path_contract(
+    ownership: dict[str, object],
+    report: dict[str, object],
+    source: Path = BINDING_CONTRACT_PATH,
+) -> None:
+    selection = report["livePath"]["installedMapPathSelection"]
+    shipped = report["shippedIvData"]
+    contract_selection = ownership["installed_map_path_selection"]
+    contract_shipped = ownership["shipped_iv_data"]
+    checks = (
+        (
+            "installed_map_path_selection.constructor_fields",
+            contract_selection["constructor_fields"],
+            {
+                "m_irradianceDataPathV2": "System.String.Empty",
+                "m_exportpathV2": "System.String.Empty",
+                "m_gachaDataPathV2": "System.String.Empty",
+            },
+        ),
+        (
+            "audit.installed_map_path_selection.constructor_fields",
+            selection["constructorFields"],
+            contract_selection["constructor_fields"],
+        ),
+        (
+            "installed_map_path_selection.streaming_suffix",
+            contract_selection["streaming_suffix"],
+            "/aiTest/index.bytes",
+        ),
+        (
+            "audit.installed_map_path_selection.streaming_suffix",
+            selection["streamingSuffixLiteral"]["value"],
+            contract_selection["streaming_suffix"],
+        ),
+        (
+            "audit.installed_map_path_selection.streaming_literal",
+            (
+                selection["streamingSuffixLiteral"]["encodedUsage"],
+                selection["streamingSuffixLiteral"]["literalIndex"],
+                selection["streamingSuffixLiteral"]["utf8ByteCount"],
+            ),
+            ("0xa0000fdd", 2030, 19),
+        ),
+        (
+            "installed_map_path_selection.matching_shipped_iv_files",
+            contract_selection["matching_shipped_iv_files"],
+            0,
+        ),
+        (
+            "audit.path_resolution.matching_shipped_files",
+            shipped["pathResolution"]["matchingShippedFiles"],
+            [],
+        ),
+        (
+            "installed_map_path_selection.direct_managed_call_sites",
+            contract_selection["direct_managed_call_sites"],
+            {"ReloadIndexFileV2": [], "StreamingInNewMapV2": []},
+        ),
+        (
+            "audit.installed_map_path_selection.direct_managed_call_sites",
+            selection["directManagedCallSites"],
+            {"0x189d025a0": [], "0x184843fb0": []},
+        ),
+        (
+            "installed_map_path_selection.shipped_lua_mentions",
+            contract_selection["shipped_lua_mentions"],
+            {
+                "ReloadIndexFileV2": [],
+                "StreamingInNewMapV2": [],
+                "HGIrradianceVolumeManagerV2": [],
+            },
+        ),
+        (
+            "audit.installed_map_path_selection.shipped_lua_mentions",
+            selection["shippedLuaMentions"],
+            contract_selection["shipped_lua_mentions"],
+        ),
+        (
+            "installed_map_path_selection.installed_ifix_target_count",
+            contract_selection["installed_ifix_target_count"],
+            30,
+        ),
+        (
+            "audit.installed_map_path_selection.installed_ifix",
+            (
+                selection["installedIfix"]["persistentTargetCount"],
+                selection["installedIfix"]["matchingTargets"],
+                selection["installedIfix"]["currentRoute"],
+            ),
+            (30, [], "all three recovered non-IFix branches"),
+        ),
+        (
+            "shipped_iv_data.vfs_index_sha256",
+            contract_shipped["vfs_index_sha256"],
+            shipped["vfs"]["sha256"],
+        ),
+        (
+            "shipped_iv_data.inventory",
+            contract_shipped["inventory"],
+            {
+                "iv_files": 224,
+                "v3_index_files": 85,
+                "legacy_index_files": 2,
+                "gacha_files": 12,
+                "ai_test_index_files": 0,
+            },
+        ),
+        (
+            "audit.shipped_iv_data.inventory",
+            shipped["vfs"]["counts"],
+            {
+                "v3Index": 85,
+                "legacyIndex": 2,
+                "gachaFiles": 12,
+                "aiTestIndex": 0,
+            },
+        ),
+        (
+            "shipped_iv_data.marker2",
+            contract_shipped["index_record_formats"]["marker_0x03000002"],
+            {
+                "record_stride": 32,
+                "length_fields": "one stored/decoded length",
+                "tail_record_count": 0,
+                "sample_sha256": (
+                    "d0ba47a7d92820598ade4039807f9cb5"
+                    "fe28b190825205835ccf17b69ba79eb3"
+                ),
+                "sample_record_count": 24,
+            },
+        ),
+        (
+            "audit.shipped_iv_data.marker2",
+            {
+                key: shipped["indexFormatSamples"]["gachaCharacterMarker2"][key]
+                for key in (
+                    "marker",
+                    "recordStride",
+                    "recordCount",
+                    "tailRecordCount",
+                    "storedPayloadBytes",
+                )
+            },
+            {
+                "marker": "0x03000002",
+                "recordStride": 32,
+                "recordCount": 24,
+                "tailRecordCount": 0,
+                "storedPayloadBytes": 1399240,
+            },
+        ),
+        (
+            "shipped_iv_data.marker3",
+            contract_shipped["index_record_formats"]["marker_0x03000003"],
+            {
+                "record_stride": 36,
+                "length_fields": "separate stored and decoded lengths",
+                "tail_record_stride": 20,
+                "sample_sha256": (
+                    "1726f8d11aa7c2706d95e0e4163cb776"
+                    "f9bfa2eb54787bb672dd9a7d868a360c"
+                ),
+                "sample_record_count": 18,
+                "sample_tail_record_count": 12,
+            },
+        ),
+        (
+            "audit.shipped_iv_data.marker3",
+            {
+                key: shipped["indexFormatSamples"]["indieDg008Marker3"][key]
+                for key in (
+                    "marker",
+                    "recordStride",
+                    "recordCount",
+                    "tailRecordStride",
+                    "tailRecordCount",
+                )
+            },
+            {
+                "marker": "0x03000003",
+                "recordStride": 36,
+                "recordCount": 18,
+                "tailRecordStride": 20,
+                "tailRecordCount": 12,
+            },
+        ),
+        (
+            "shipped_iv_data.gacha_character_sample",
+            contract_shipped["gacha_character_sample"],
+            {
+                "index_path": (
+                    "Data/IrradianceVolume/PC/gacha/character/v3/index.bytes"
+                ),
+                "payload_path": (
+                    "Data/IrradianceVolume/PC/gacha/character/v3/iv_0_0.bytes"
+                ),
+                "payload_sha256": (
+                    "ccba259839d3b91cf9d32c2edce1d672"
+                    "eb82f489c7aae33014982aa310b351b4"
+                ),
+                "payload_bytes": 1399240,
+                "covered_exactly_by_index_stored_ranges": True,
+                "charinfo_v2_owner": False,
+            },
+        ),
+        (
+            "audit.shipped_iv_data.gacha_character_payload",
+            {
+                key: shipped["gachaCharacterPayload"][key]
+                for key in (
+                    "sha256",
+                    "byteCount",
+                    "coveredExactlyByIndexStoredRanges",
+                )
+            },
+            {
+                "sha256": (
+                    "ccba259839d3b91cf9d32c2edce1d672"
+                    "eb82f489c7aae33014982aa310b351b4"
+                ),
+                "byteCount": 1399240,
+                "coveredExactlyByIndexStoredRanges": True,
+            },
+        ),
+    )
+    for check, actual, expected in checks:
+        require_charinfo_v2_path_value(source, check, actual, expected)
+
+
 def require_hdpls_matrix_value(
     source: Path,
     check: str,
@@ -1852,6 +2095,11 @@ def verify_selected_resolver_binding_contract() -> None:
             encoding="utf-8"
         )
     )
+    verify_charinfo_v2_data_path_contract(
+        irradiance_ownership,
+        v2_report,
+        BINDING_CONTRACT_PATH,
+    )
     assert v2_report["valid"] is True
     assert v2_report["livePath"]["manager"] == (
         "HG.Rendering.Runtime.HGIrradianceVolumeManagerV2"
@@ -3250,7 +3498,9 @@ def main() -> int:
         "default-off Unity half-depth/procedural-instance replay, "
         "the installed live V2 irradiance manager proving it always renders "
         "m_defaultIV, its six exact A/B clipmap descriptors/order and shared "
-        "zero fallback, plus the shipped Lua old-gacha lifecycle boundary, "
+        "zero fallback, installed /aiTest path construction with no shipped IV "
+        "match, marker-2/marker-3 index record formats and exact gacha sample "
+        "payload span, plus the shipped Lua old-gacha ownership boundary, "
         "the exact reflection Cubemap's binary-derived 576x576x32 RGBAHalf "
         "slice-0 oct producer, the 4,160-byte global-buffer producer and "
         "serialized CharInfo SH-luminance fallback, and the binning "

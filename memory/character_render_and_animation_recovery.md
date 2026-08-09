@@ -117,6 +117,15 @@ NPC archetypes are imported as labeled source kits.
   version boundary. Live input values, active rows/selectors, unused persistent
   rows, atlas texels, and resolved RGBA pixels remain capture-only.
 
+- The live V2 irradiance owner remains `m_defaultIV`, but its installed map-path
+  boundary is now narrower: the unpatched new-map branch appends
+  `/aiTest/index.bytes`, which is absent from all 224 shipped IV files; current
+  IFix, direct managed calls, and decoded Lua provide no alternate owner. Four
+  exact indices close the marker-2/marker-3 record layouts, and one extracted
+  gacha payload is byte-covered by its index but belongs to the old gacha
+  manager, not CharInfo. Native missing-map behavior, indirect reloads,
+  transient atlas dimensions, and per-frame IV parameters remain open.
+
 ## Main rendering gap
 
 The largest missing piece is the coupled retail frame contract:

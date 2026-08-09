@@ -90,6 +90,47 @@ class SourceTextEvidenceTests(unittest.TestCase):
                 verifier.require_text_hash(path, "0" * 64)
 
 
+class CharInfoV2DataPathContractTests(unittest.TestCase):
+    @staticmethod
+    def load_current_contract() -> tuple[dict[str, object], dict[str, object]]:
+        contract = json.loads(
+            verifier.BINDING_CONTRACT_PATH.read_text(encoding="utf-8")
+        )
+        ownership = contract["charinfo_irradiance_volume_ownership"]
+        report = json.loads(
+            (
+                verifier.LAB_ROOT / ownership["v2_audit_path"]
+            ).read_text(encoding="utf-8")
+        )
+        return ownership, report
+
+    def test_current_v2_data_path_contract_passes(self) -> None:
+        ownership, report = self.load_current_contract()
+        verifier.verify_charinfo_v2_data_path_contract(
+            ownership,
+            report,
+            Path("fixture_contract.json"),
+        )
+
+    def test_shipped_suffix_match_failure_is_actionable(self) -> None:
+        ownership, report = self.load_current_contract()
+        changed = copy.deepcopy(ownership)
+        changed["installed_map_path_selection"][
+            "matching_shipped_iv_files"
+        ] = 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            "CharInfo V2 irradiance data-path validator failed: "
+            "check=installed_map_path_selection.matching_shipped_iv_files; "
+            "source=fixture_contract.json; expected=0; actual=1",
+        ):
+            verifier.verify_charinfo_v2_data_path_contract(
+                changed,
+                report,
+                Path("fixture_contract.json"),
+            )
+
+
 class HdplsMatrixFormulaContractTests(unittest.TestCase):
     @staticmethod
     def load_current_contract() -> tuple[dict[str, object], dict[str, object]]:
