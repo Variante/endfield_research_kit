@@ -59,6 +59,24 @@ def spawner_config_fixture() -> bytes:
 
 
 class AudioSemanticDataTests(unittest.TestCase):
+    def test_audio_hash_generator_matches_native_utf16_fnv1_without_trimming(self) -> None:
+        self.assertEqual(
+            audio_semantics.audio_hash_generator_compute("au_cue_music_combat_boss_state1"),
+            0x8DD0B0C9,
+        )
+        self.assertEqual(
+            audio_semantics.audio_hash_generator_compute("AU_CUE_MUSIC_COMBAT_BOSS_STATE1"),
+            0x8DD0B0C9,
+        )
+        self.assertEqual(
+            audio_semantics.audio_hash_generator_compute(" au_cue_music_combat_boss_state1"),
+            0x7C6CA2E7,
+        )
+        self.assertNotEqual(
+            audio_semantics.audio_hash_generator_compute("\u00c9"),
+            audio_semantics.audio_hash_generator_compute("\u00e9"),
+        )
+
     def test_direct_and_content_equivalent_media_keep_honest_counts(self) -> None:
         media = []
         for media_id in (10, 11):
@@ -96,6 +114,30 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(event["contentEquivalentLeafCount"], 1)
         self.assertEqual(event["runtimeSelection"], "multiplePossibleMediaUnresolved")
         self.assertEqual([row["contentEquivalentCount"] for row in event["media"]], [2, 2])
+
+    def test_music_node_evidence_survives_debug_event_compaction(self) -> None:
+        music_node = {
+            "objectId": 10,
+            "objectType": 12,
+            "nodeKind": "musicSwitchContainer",
+            "childIds": [11],
+            "treeDepth": 1,
+            "treeLeaves": [{"audioNodeId": 11, "pathKeys": [22]}],
+            "structureStatus": "typedExactV150",
+        }
+        rows, _, _ = audio_semantics.build_event_rows({
+            "eventNames": ["au_music_fixture"],
+            "events": [],
+            "eventEvidence": [{
+                "eventId": "au_music_fixture",
+                "eventHash": 5,
+                "bankId": 9,
+                "traversalStatus": "complete",
+                "musicNodeEvidence": [music_node],
+            }],
+        }, {})
+
+        self.assertEqual(rows[0]["evidence"][0]["musicNodeEvidence"], [music_node])
 
     def test_event_categories_preserve_unknowns(self) -> None:
         self.assertEqual(audio_semantics.event_category("au_sfx_test"), "sfx")
@@ -546,7 +588,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(context["animationOccurrenceCount"], 1)
             self.assertEqual(context["sourcePaths"], ["AnimationClip/UI_Generic.anim"])
 
-    def test_collects_levelscript_constant_events_and_keeps_dynamic_and_cue_controls_separate(self) -> None:
+    def test_collects_levelscript_events_controls_and_exact_cue_behavior_join(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             export_root = Path(raw_root)
             for source, marker in (("StreamingAssets", b"base"), ("Persistent", b"override")):
@@ -588,8 +630,8 @@ class AudioSemanticDataTests(unittest.TestCase):
                     "actionMapRole": "actionList#3 linked",
                     "audioAction": {
                         "action": "PostAudioCue",
-                        "fields": {"name": {"sourceField": "_name", "bindingKind": "constant", "value": "cue_test"}},
-                        "cueBindings": [{"cueName": "cue_test", "role": "invoke", "sourceField": "_name"}],
+                        "fields": {"name": {"sourceField": "_name", "bindingKind": "constant", "value": "au_cue_music_combat_boss_state1"}},
+                        "cueBindings": [{"cueName": "au_cue_music_combat_boss_state1", "role": "invoke", "sourceField": "_name"}],
                     },
                 }, {
                     "record": {**common_record, "start": 96, "unionTag": 0x0307, "serializedMemberCount": 0x0B},
@@ -617,6 +659,23 @@ class AudioSemanticDataTests(unittest.TestCase):
             semantics = audio_semantics.collect_levelscript_audio_semantics(
                 export_root,
                 decode_file=decode_file,
+                cue_semantics={"cueDefinitions": {
+                    audio_semantics.audio_hash_generator_compute("au_cue_music_combat_boss_state1"): {
+                        "source": "structured/Persistent/Table/AudioCueTable.json",
+                        "handlerCount": 1,
+                        "directHandlerCount": 1,
+                        "levelHandlerCount": 0,
+                        "expressionOperands": [],
+                        "behaviorEvents": [{
+                            "eventId": "au_music_cue_fixture",
+                            "handlerScope": "direct",
+                            "handlerIndex": 0,
+                            "expressionSide": "behavior",
+                            "expressionPath": "fixture.behaviourExpr",
+                            "exprType": 3,
+                        }],
+                    },
+                }},
             )
 
             context = semantics["eventContexts"]["au_ls_play"][0]
@@ -625,8 +684,24 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(context["triggerRole"], "play")
             self.assertEqual(context["fields"]["stopOnRelease"]["value"], True)
             self.assertEqual(audio_semantics.semantic_context_group(context["kind"]), "scripted")
-            self.assertEqual(semantics["cueInvocations"][0]["cueName"], "cue_test")
-            self.assertEqual(semantics["cueInvocations"][0]["definitionStatus"], "runtimeNameToCueDefinitionUnresolved")
+            self.assertEqual(semantics["cueInvocations"][0]["cueName"], "au_cue_music_combat_boss_state1")
+            self.assertEqual(semantics["cueInvocations"][0]["definitionStatus"], "resolved")
+            self.assertEqual(
+                semantics["cueInvocations"][0]["cueId"],
+                audio_semantics.audio_hash_generator_compute("au_cue_music_combat_boss_state1"),
+            )
+            self.assertEqual(semantics["cueInvocations"][0]["cueSignedId"], -1915703095)
+            cue_context = semantics["eventContexts"]["au_music_cue_fixture"][0]
+            self.assertEqual(cue_context["kind"], "levelScriptAudioCueBehaviorEvent")
+            self.assertEqual(cue_context["handlerScope"], "direct")
+            self.assertIn("nativeAudioHashGeneratorCompute", cue_context["triggerRequestEvidence"])
+            missing = audio_semantics.collect_levelscript_audio_semantics(
+                export_root,
+                decode_file=decode_file,
+                cue_semantics={"cueDefinitions": {}},
+            )
+            self.assertEqual(missing["cueInvocations"][0]["definitionStatus"], "missing")
+            self.assertNotIn("au_music_cue_fixture", missing["eventContexts"])
             self.assertEqual(semantics["dynamicEventBindings"][0]["binding"]["path"], "Start_music")
             self.assertEqual(semantics["controlActions"][0]["controlRole"], "musicStateOverride")
             self.assertEqual(semantics["controlActions"][0]["fields"]["baseState"]["value"], 2)
@@ -634,6 +709,8 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(semantics["dynamicControlBindings"][0]["binding"]["path"], "$28@_audioPlayingId")
             self.assertEqual(semantics["stats"]["decodedAudioActionRecords"], 5)
             self.assertEqual(semantics["stats"]["constantEventRequestContexts"], 1)
+            self.assertEqual(semantics["stats"]["cueBehaviorEventContexts"], 1)
+            self.assertEqual(semantics["stats"]["cueDefinitionStatusCounts"], {"resolved": 1})
             self.assertEqual(semantics["stats"]["controlActions"], 2)
             self.assertEqual(semantics["stats"]["dynamicControlBindings"], 1)
 
