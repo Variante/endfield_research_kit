@@ -1,4 +1,5 @@
 import unittest
+import json
 import struct
 import tempfile
 from pathlib import Path
@@ -13,8 +14,10 @@ from scripts.story_builder.level_bindings import (
     classify_levelscript_record,
     _levelscript_native_control_paths_to_record,
     _prepare_levelscript_native_control_context,
+    build_resolved_mission_tracking_context_rows,
     levelscript_native_action_name,
     match_pos_tracking_leader_trigger_context,
+    match_tracking_point_inside_leader_trigger_context,
     match_levelscript_native_black_record,
     match_entity_tracking_native_entity_event_context,
     resolve_dynamic_hp_spawner_context,
@@ -2672,6 +2675,134 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertEqual(
             [],
             match_pos_tracking_leader_trigger_context(occurrence, tracking),
+        )
+
+    def test_tracking_point_containment_is_typed_rotated_and_fail_closed(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source_path = Path(temp_dir) / "90000000002.json"
+            source_path.write_bytes(b"fixture")
+            occurrence = {
+                "levelId": "map_fixture_lv001",
+                "scriptId": "90000000002",
+                "sourceFile": str(source_path),
+                "nativeEventOwners": [{
+                    "status": (
+                        "exact_serialized_control_path_equivalent_duplicates"
+                    ),
+                    "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    "eventDetail": {
+                        "payloadSchemaStatus": (
+                            "exact_current_build_memorypack_fields"
+                        ),
+                        "triggerSlotIdFilter": 80001,
+                    },
+                }],
+            }
+            tracking = {
+                "type": "MissionAreaTrackingInfo",
+                "sourceType": "missionArea",
+                "scene": "map_fixture_lv001",
+                "position": {"x": 4.0, "y": 0.0, "z": 0.0},
+            }
+            box = {
+                "shapeType": "Box",
+                "offset": 120,
+                "position": {"x": 0.0, "y": 0.0, "z": 0.0},
+                "rotation": {"x": 0.0, "y": 90.0, "z": 0.0},
+                "size": {"x": 2.0, "y": 2.0, "z": 10.0},
+            }
+
+            def summary(shapes):
+                return {
+                    "triggerVolumesDetails": {
+                        "status": "present",
+                        "parseStatus": "decoded",
+                        "volumes": [{
+                            "slotId": 80001,
+                            "triggerVolumeType": "Leader",
+                            "offset": 100,
+                            "shapeList": {"shapes": shapes},
+                        }],
+                    },
+                }
+
+            with mock.patch(
+                "scripts.story_builder.level_bindings."
+                "decode_levelscript_binary_file",
+                return_value=summary([box]),
+            ):
+                from scripts.story_builder import level_bindings
+
+                level_bindings._LEVELSCRIPT_BINARY_SUMMARY_CACHE.clear()
+                level_bindings._LEVELSCRIPT_BINARY_SUMMARY_SOURCE_CACHE.clear()
+                matches = match_tracking_point_inside_leader_trigger_context(
+                    occurrence,
+                    tracking,
+                )
+            self.assertEqual(1, len(matches))
+            self.assertEqual(
+                "oriented_box_euler_zxy",
+                matches[0]["containmentMethod"],
+            )
+            self.assertFalse(matches[0]["questActivation"])
+            self.assertFalse(matches[0]["storyOrderEvidence"])
+
+            with mock.patch(
+                "scripts.story_builder.level_bindings."
+                "decode_levelscript_binary_file",
+                return_value=summary([box, dict(box, offset=140)]),
+            ):
+                level_bindings._LEVELSCRIPT_BINARY_SUMMARY_CACHE.clear()
+                level_bindings._LEVELSCRIPT_BINARY_SUMMARY_SOURCE_CACHE.clear()
+                ambiguous = match_tracking_point_inside_leader_trigger_context(
+                    occurrence,
+                    tracking,
+                )
+            self.assertEqual([], ambiguous)
+            self.assertEqual(
+                [],
+                match_tracking_point_inside_leader_trigger_context(
+                    occurrence,
+                    {**tracking, "scene": "map_fixture_lv002"},
+                ),
+            )
+
+    def test_resolved_mission_tracking_rows_preserve_exact_provenance(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            mission_path = root / "mission_general.json"
+            mission_path.write_text(json.dumps({
+                "missionId": "mission_general",
+                "questDic": {
+                    "mission_general_q#1": {
+                        "questId": "mission_general_q#1",
+                        "objectiveList": [{
+                            "trackingInfoList": [{
+                                "$type": "Beyond.Gameplay.PosTrackingInfo",
+                                "sceneId": "map_fixture_lv001",
+                                "trackingPos": {
+                                    "x": 1.0, "y": 2.0, "z": 3.0,
+                                },
+                            }],
+                        }],
+                    },
+                },
+            }), encoding="utf-8")
+            rows = build_resolved_mission_tracking_context_rows(
+                {"mission_general"},
+                mission_runtime_root=root,
+            )
+            no_rows = build_resolved_mission_tracking_context_rows(
+                set(),
+                mission_runtime_root=root,
+            )
+        self.assertEqual(1, len(rows))
+        self.assertEqual([], no_rows)
+        self.assertEqual("mission_general_q#1", rows[0]["questId"])
+        self.assertEqual("trackingPos", rows[0]["sourceType"])
+        self.assertEqual(
+            "$.questDic.mission_general_q#1.objectiveList[0].trackingInfoList[0]",
+            rows[0]["missionRuntimeSourcePath"],
         )
 
     def test_exact_header_and_if_else_path_reaches_black_without_adjacency(self):

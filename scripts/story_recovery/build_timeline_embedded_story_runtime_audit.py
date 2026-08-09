@@ -623,6 +623,8 @@ def join_parent_dialog_activation_routes(
     gameassembly: Path,
     metadata: Path,
     mission_runtime_root: Path,
+    mission_tracking_rows: list[dict[str, Any]] | None = None,
+    tracking_context_matcher: Any | None = None,
 ) -> dict[str, Any]:
     """Join native event roots to Timeline parents by exact dialog identity.
 
@@ -632,8 +634,9 @@ def join_parent_dialog_activation_routes(
     ``-> dialog registry Timeline -> PlayableDirector/ControlPlayableAsset``.
 
     A fully decoded LevelData member-22 host can additionally prove the owning
-    mission shell.  It never proves a quest activator, selected branch, or
-    chronology inside/between missions.
+    mission shell. Typed quest tracking points inside the event-selected
+    trigger shape are retained as spatial context only. Neither relation proves
+    a quest activator, selected branch, or chronology inside/between missions.
     """
     dialog_to_story: dict[str, set[str]] = defaultdict(set)
     for row in rows:
@@ -672,6 +675,7 @@ def join_parent_dialog_activation_routes(
     ]
     dialogs_with_playback = {dialog_key for dialog_key, _row in playback_actions}
     candidate_owner_count = 0
+    mission_tracking_rows = mission_tracking_rows or []
 
     for dialog_key, occurrence in playback_actions:
         level_id = str(occurrence.get("levelId") or "")
@@ -820,6 +824,75 @@ def join_parent_dialog_activation_routes(
                 host.get("status") == "unique" and len(host_ids) == 1
             )
             area_host = mission_area_hosts.get(pair) or {}
+            eligible_tracking_rows = [
+                tracking
+                for tracking in mission_tracking_rows
+                if isinstance(tracking, dict)
+                and mission_shell_ownership
+                and str(tracking.get("missionId") or "") in host_ids
+                and str(tracking.get("scene") or "") == level_id
+                and isinstance(tracking.get("position"), dict)
+            ]
+            quest_spatial_contexts: list[dict[str, Any]] = []
+            if callable(tracking_context_matcher):
+                for tracking in eligible_tracking_rows:
+                    matches = tracking_context_matcher(occurrence, tracking)
+                    if len(matches) != 1:
+                        continue
+                    match = matches[0]
+                    quest_spatial_contexts.append({
+                        "status": match.get("status"),
+                        "spatialRelation": (
+                            "tracking_target_point_inside_event_selected_"
+                            "trigger_shape"
+                        ),
+                        "missionId": tracking.get("missionId"),
+                        "questId": tracking.get("questId"),
+                        "objectiveIndex": tracking.get("objectiveIndex"),
+                        "trackingIndex": tracking.get("trackingIndex"),
+                        "trackingType": tracking.get("type"),
+                        "sourceType": tracking.get("sourceType"),
+                        "missionAreaId": tracking.get("missionAreaId"),
+                        "npcProxyId": tracking.get("npcProxyId"),
+                        "trackingPosition": match.get("trackingPosition"),
+                        "triggerSlotId": match.get("triggerSlotId"),
+                        "triggerShapeOffset": match.get("triggerShapeOffset"),
+                        "triggerShape": match.get("triggerShape"),
+                        "containmentMethod": match.get("containmentMethod"),
+                        "localPoint": match.get("localPoint"),
+                        "distanceToCenter": match.get("distanceToCenter"),
+                        "boundaryMargin": match.get("boundaryMargin"),
+                        "boundaryMargins": match.get("boundaryMargins"),
+                        "missionRuntimeSourceFile": tracking.get(
+                            "missionRuntimeSourceFile"
+                        ),
+                        "missionRuntimeSourcePath": tracking.get(
+                            "missionRuntimeSourcePath"
+                        ),
+                        "positionSourceFiles": tracking.get(
+                            "positionSourceFiles"
+                        ) or [],
+                        "questActivation": False,
+                        "branchSelection": False,
+                        "storyOrderEvidence": False,
+                    })
+            quest_spatial_contexts = list({
+                (
+                    str(context.get("missionId") or ""),
+                    str(context.get("questId") or ""),
+                    context.get("objectiveIndex"),
+                    context.get("trackingIndex"),
+                    context.get("triggerShapeOffset"),
+                ): context
+                for context in quest_spatial_contexts
+            }.values())
+            quest_spatial_contexts.sort(key=lambda context: (
+                str(context.get("missionId") or ""),
+                str(context.get("questId") or ""),
+                int(context.get("objectiveIndex") or 0),
+                int(context.get("trackingIndex") or 0),
+                str(context.get("triggerShapeOffset") or ""),
+            ))
             related_files = [
                 hashed_source_record(source_file, "levelscript_event_action_source"),
                 hashed_source_record(gameassembly, "original_game_binary"),
@@ -841,6 +914,21 @@ def join_parent_dialog_activation_routes(
                 if mission_path.is_file():
                     related_files.append(hashed_source_record(
                         mission_path, "mission_runtime_shell_identity"
+                    ))
+            tracking_source_roles = {
+                "MissionAreaTable.json": "quest_tracking_mission_area_table",
+                "LevelBasicInfoTable.json": "quest_tracking_level_table",
+                "NpcProxyTable.json": "quest_tracking_npc_proxy_table",
+            }
+            for context in quest_spatial_contexts:
+                for tracking_source in context.get("positionSourceFiles") or []:
+                    source_name = Path(str(tracking_source)).name
+                    role = tracking_source_roles.get(
+                        source_name,
+                        "quest_tracking_mission_runtime",
+                    )
+                    related_files.append(hashed_source_record(
+                        str(tracking_source), role
                     ))
             area_references: list[dict[str, Any]] = []
             for area_shell in area_host.get("hosts") or []:
@@ -931,6 +1019,17 @@ def join_parent_dialog_activation_routes(
                         str(value.get("missionAreaId") or ""),
                     ),
                 ),
+                "questSpatialContextStatus": (
+                    "exact_tracking_points_inside_trigger_shape"
+                    if quest_spatial_contexts
+                    else (
+                        "checked_no_containment"
+                        if mission_shell_ownership and eligible_tracking_rows
+                        else "not_applicable"
+                    )
+                ),
+                "questSpatialTrackingRowsChecked": len(eligible_tracking_rows),
+                "questSpatialContexts": quest_spatial_contexts,
                 "questActivation": False,
                 "branchSelection": False,
                 "crossTimelineOrder": False,
@@ -1007,6 +1106,18 @@ def join_parent_dialog_activation_routes(
             "exactLocalTriggerVolumeRoutes": sum(
                 bool(route.get("localTriggerVolumeContext")) for route in routes
             ),
+            "routesWithQuestSpatialContext": sum(
+                bool(route.get("questSpatialContexts")) for route in routes
+            ),
+            "questSpatialContextRows": sum(
+                len(route.get("questSpatialContexts") or []) for route in routes
+            ),
+            "questSpatialContextQuestIds": len({
+                str(context.get("questId") or "")
+                for route in routes
+                for context in route.get("questSpatialContexts") or []
+                if context.get("questId")
+            }),
         },
         "evidenceBoundary": {
             "eventToActionTopology": True,
@@ -1017,6 +1128,10 @@ def join_parent_dialog_activation_routes(
             "missionShellOwnership": "unique_validated_leveldata_hosts_only",
             "localTriggerVolumeGeometry": (
                 "exact_event_selector_to_same_levelscript_memorypack_volume"
+            ),
+            "questSpatialContext": (
+                "typed_original_tracking_point_inside_exact_event_selected_"
+                "trigger_shape_only"
             ),
             "questActivation": False,
             "branchSelection": False,
@@ -1098,6 +1213,20 @@ def recover_parent_dialog_activation_routes(
     mission_area_hosts = level_bindings.build_leveldata_mission_area_script_host_index(
         script_pairs
     )
+    tracking_mission_ids = {
+        str(mission_id)
+        for host in mission_hosts.values()
+        for mission_id in host.get("hostMissionIds") or []
+        if mission_id
+    }
+    mission_tracking_rows = (
+        level_bindings.build_resolved_mission_tracking_context_rows(
+            tracking_mission_ids,
+            mission_runtime_root=story_context.MRA_DIR,
+        )
+        if tracking_mission_ids
+        else []
+    )
     result = join_parent_dialog_activation_routes(
         rows,
         header_report,
@@ -1107,6 +1236,10 @@ def recover_parent_dialog_activation_routes(
         gameassembly=gameassembly,
         metadata=metadata,
         mission_runtime_root=story_context.MRA_DIR,
+        mission_tracking_rows=mission_tracking_rows,
+        tracking_context_matcher=(
+            level_bindings.match_tracking_point_inside_leader_trigger_context
+        ),
     )
     result["source"] = {
         "candidateLevels": levels,
@@ -1810,7 +1943,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         )
     edges = local_order_edges(rows)
     return {
-        "schemaVersion": "timelineEmbeddedStoryRuntimeAudit.v4",
+        "schemaVersion": "timelineEmbeddedStoryRuntimeAudit.v5",
         "source": {
             "gameAssembly": str(args.gameassembly),
             "gameAssemblySha256": sha256_path(args.gameassembly),
@@ -1850,6 +1983,15 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 activation["counts"]["storyKeysWithExactActivation"]
             ),
             "missionOwnershipEdges": activation["counts"]["missionOwnedRoutes"],
+            "questSpatialContextRoutes": (
+                activation["counts"]["routesWithQuestSpatialContext"]
+            ),
+            "questSpatialContextRows": (
+                activation["counts"]["questSpatialContextRows"]
+            ),
+            "questSpatialContextQuestIds": (
+                activation["counts"]["questSpatialContextQuestIds"]
+            ),
             "branchSelectionEdges": 0,
             "parallelFanoutActivationRoutes": sum(
                 bool(route.get("parallelFanout")) for route in activation["routes"]
@@ -1872,6 +2014,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "parallelFanoutSiblingOrder": False,
             "conditionalRouteSelectionObserved": False,
             "missionOwnership": "unique_validated_leveldata_hosts_only",
+            "questSpatialContext": (
+                "typed_tracking_point_inside_exact_selected_trigger_shape_only"
+            ),
             "questActivation": False,
             "branchSelection": False,
             "crossTimelineOrder": False,
@@ -1902,6 +2047,12 @@ def render_markdown(report: dict[str, Any]) -> str:
         "- Story keys reached through exact parent activation: "
         f"`{counts['storyKeysWithExactActivation']}`",
         f"- unique mission-shell ownership edges: `{counts['missionOwnershipEdges']}`",
+        "- parent routes with exact quest spatial context: "
+        f"`{counts['questSpatialContextRoutes']}`",
+        "- exact quest tracking-point containment rows: "
+        f"`{counts['questSpatialContextRows']}`",
+        "- distinct spatial-context quest ids: "
+        f"`{counts['questSpatialContextQuestIds']}`",
         f"- GameAssembly SHA-256: `{report['source']['gameAssemblySha256']}`",
         f"- metadata SHA-256: `{report['source']['metadataSha256']}`",
         "",

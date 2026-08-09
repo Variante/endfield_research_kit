@@ -431,9 +431,9 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
                         "offset": "0x60",
                         "opcode": "0x1000/0x00",
                     },
-                    "headerName": "ScriptEvent_OnGeneralEvent",
+                    "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
                     "eventDetail": {
-                        "type": "ScriptEvent_OnGeneralEvent",
+                        "type": "ScriptEvent_OnLeaderEnterTriggerVolume",
                         "payloadSchemaStatus": "exact_current_build_memorypack_fields",
                         "triggerSlotIdFilter": 80007,
                     },
@@ -526,11 +526,11 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
                 "recordClass": "play_dialog",
                 "nativeEventOwners": [{
                     "status": "exact_serialized_control_path",
-                    "headerName": "ScriptEvent_OnGeneralEvent",
+                    "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
                     "headerLocalId": 5,
                     "targetLocalId": 6,
                     "eventDetail": {
-                        "type": "ScriptEvent_OnGeneralEvent",
+                        "type": "ScriptEvent_OnLeaderEnterTriggerVolume",
                         "payloadSchemaStatus": "exact_current_build_memorypack_fields",
                         "triggerSlotIdFilter": 80007,
                     },
@@ -553,6 +553,38 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
                 gameassembly=gameassembly,
                 metadata=metadata,
                 mission_runtime_root=mission_root,
+                mission_tracking_rows=[{
+                    "missionId": "mission_general",
+                    "questId": "mission_general_q#1",
+                    "objectiveIndex": 1,
+                    "trackingIndex": 0,
+                    "type": "PosTrackingInfo",
+                    "sourceType": "trackingPos",
+                    "scene": "level_general",
+                    "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+                    "missionRuntimeSourceFile": str(mission),
+                    "missionRuntimeSourcePath": (
+                        "$.questDic.mission_general_q#1.objectiveList[0]."
+                        "trackingInfoList[0]"
+                    ),
+                    "positionSourceFiles": [str(mission)],
+                }],
+                tracking_context_matcher=lambda occurrence, tracking: [{
+                    "status": (
+                        "exact_tracking_point_inside_trigger_shape_context"
+                    ),
+                    "trackingPosition": tracking["position"],
+                    "triggerSlotId": 80007,
+                    "triggerShapeOffset": "0x90",
+                    "triggerShape": {
+                        "shapeType": "Sphere",
+                        "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+                        "radius": 5.0,
+                    },
+                    "containmentMethod": "sphere_radius",
+                    "distanceToCenter": 0.0,
+                    "boundaryMargin": 5.0,
+                }],
             )
 
         self.assertEqual("validated", result["validation"]["status"])
@@ -562,6 +594,17 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
         self.assertEqual(["mission_general"], route["missionShellIds"])
         self.assertTrue(route["missionShellOwnership"])
         self.assertFalse(route["questActivation"])
+        self.assertEqual(
+            "exact_tracking_points_inside_trigger_shape",
+            route["questSpatialContextStatus"],
+        )
+        self.assertEqual(
+            "mission_general_q#1",
+            route["questSpatialContexts"][0]["questId"],
+        )
+        self.assertFalse(
+            route["questSpatialContexts"][0]["storyOrderEvidence"]
+        )
         trigger_context = route["localTriggerVolumeContext"]
         self.assertEqual([80007], trigger_context["selectorSlotIds"])
         self.assertEqual(
@@ -573,6 +616,7 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
         roles = {row["role"] for row in route["relatedOriginalFiles"]}
         self.assertIn("levelscript_event_action_source", roles)
         self.assertIn("mission_leveldata_script_host", roles)
+        self.assertIn("quest_tracking_mission_runtime", roles)
         self.assertIn("original_game_binary", roles)
 
     def test_parent_dialog_activation_failure_names_exact_gate(self) -> None:

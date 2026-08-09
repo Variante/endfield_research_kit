@@ -89,6 +89,13 @@ never promotes an edge.
   crosses a conditional `SwitchInt` case whose runtime selection is unobserved.
   The remaining `dlg_c13m3_7` occurrence is a property/default reference, not a
   playback action, and stays unresolved.
+- The same 13-route audit now resolves every typed MissionRuntime tracking row
+  through the maintained original MissionArea/NPC-proxy tables and tests its
+  point against the exact event-selected serialized trigger shape. The general
+  box/sphere rule yields 24 contained tracking rows on nine routes (23 distinct
+  quest IDs). These are quest spatial candidates only: containment does not
+  prove entry, activation, ownership, branch selection, or Story-file order;
+  unsupported or multiply matching shapes fail closed.
 - Branch, IfElse, Switch, loop, and wait/outcome families retain active,
   inactive, non-Story, and playback-bearing arms separately. A branch only
   creates order when its runtime semantics and the relevant source-to-target

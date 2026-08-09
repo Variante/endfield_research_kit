@@ -3402,6 +3402,7 @@ def _exact_leader_trigger_slot_ids(event_owners: list[dict]) -> list[int]:
         for owner in event_owners
         for detail in [owner.get("eventDetail")]
         if isinstance(detail, dict)
+        and owner.get("status") in LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES
         and detail.get("payloadSchemaStatus")
         == "exact_current_build_memorypack_fields"
         for slot_id in [detail.get("triggerSlotIdFilter")]
@@ -3468,7 +3469,7 @@ def match_mission_area_leader_trigger_context(
         owner
         for owner in occurrence.get("nativeEventOwners") or []
         if isinstance(owner, dict)
-        and owner.get("status") == "exact_serialized_control_path"
+        and owner.get("status") in LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES
         and owner.get("headerName") == "ScriptEvent_OnLeaderEnterTriggerVolume"
     ]
     trigger_slots = _exact_leader_trigger_slot_ids(event_owners)
@@ -3582,7 +3583,7 @@ def match_pos_tracking_leader_trigger_context(
         owner
         for owner in occurrence.get("nativeEventOwners") or []
         if isinstance(owner, dict)
-        and owner.get("status") == "exact_serialized_control_path"
+        and owner.get("status") in LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES
         and owner.get("headerName")
         == "ScriptEvent_OnLeaderEnterTriggerVolume"
     ]
@@ -3634,6 +3635,272 @@ def match_pos_tracking_leader_trigger_context(
                 "sourceFile": source_file,
                 "nativeEventOwners": event_owners,
             })
+    return matches if len(matches) == 1 else []
+
+
+def build_resolved_mission_tracking_context_rows(
+    mission_ids: set[str] | None = None,
+    *,
+    mission_runtime_root: Path = MRA_DIR,
+) -> list[dict]:
+    """Resolve every typed MissionRuntime tracking row through shared tables.
+
+    This is the corpus-wide normalization used by mission-flow generation: raw
+    ``trackingPos`` stays in the MissionRuntime source, while MissionArea and
+    NPC-proxy identifiers resolve through their typed original tables.  The
+    helper adds exact mission/quest/objective provenance but deliberately does
+    not assign Story ownership, activation, or order.
+    """
+    filter_missions = mission_ids is not None
+    wanted = {
+        str(mission_id).strip()
+        for mission_id in (mission_ids or set())
+        if str(mission_id).strip()
+    }
+    rows: list[dict] = []
+    if not mission_runtime_root.is_dir() or (filter_missions and not wanted):
+        return rows
+    for path in sorted(mission_runtime_root.glob("*.json")):
+        if path.stem.endswith("_meta") or (
+            filter_missions and path.stem not in wanted
+        ):
+            continue
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(raw, dict):
+            continue
+        mission_id = str(raw.get("missionId") or "").strip()
+        quests = raw.get("questDic") or {}
+        if (
+            not mission_id
+            or mission_id != path.stem
+            or (filter_missions and mission_id not in wanted)
+            or not isinstance(quests, dict)
+        ):
+            continue
+        for quest_key, quest in quests.items():
+            if (
+                not isinstance(quest, dict)
+                or str(quest.get("questId") or "") != str(quest_key)
+            ):
+                continue
+            for hint in _extract_tracking_hints(quest):
+                resolved = _resolve_tracking_hint(hint)
+                objective_index = resolved.get("objectiveIndex")
+                tracking_index = resolved.get("trackingIndex")
+                if resolved.get("trackingListSource"):
+                    source_path = (
+                        f"$.questDic.{quest_key}.objectiveList"
+                        f"[{int(objective_index or 1) - 1}]."
+                        f"multiDescTrackingInfoList"
+                        f"[{resolved.get('multiDescriptionIndex')}].actualList"
+                        f"[{resolved.get('actualListIndex')}]"
+                    )
+                else:
+                    source_path = (
+                        f"$.questDic.{quest_key}.objectiveList"
+                        f"[{int(objective_index or 1) - 1}].trackingInfoList"
+                        f"[{tracking_index}]"
+                    )
+                position_source_files = [repo_rel(path)]
+                if resolved.get("sourceType") == "missionArea":
+                    position_source_files.extend([
+                        repo_rel(GAMEPLAY_CONFIG_DIR / "MissionAreaTable.json"),
+                        repo_rel(GAMEPLAY_CONFIG_DIR / "LevelBasicInfoTable.json"),
+                    ])
+                elif resolved.get("sourceType") == "npcProxy":
+                    position_source_files.append(repo_rel(NPC_PROXY_TABLE_PATH))
+                rows.append({
+                    **resolved,
+                    "missionId": mission_id,
+                    "questId": str(quest_key),
+                    "missionRuntimeSourceFile": repo_rel(path),
+                    "missionRuntimeSourcePath": source_path,
+                    "positionSourceFiles": sorted(set(position_source_files)),
+                })
+    return sorted(
+        rows,
+        key=lambda row: (
+            str(row.get("missionId") or ""),
+            str(row.get("questId") or ""),
+            int(row.get("objectiveIndex") or 0),
+            int(row.get("trackingIndex") or 0),
+            str(row.get("type") or ""),
+        ),
+    )
+
+
+def _finite_native_vector3(value: object) -> tuple[float, float, float] | None:
+    if not isinstance(value, dict):
+        return None
+    try:
+        result = tuple(float(value.get(axis)) for axis in ("x", "y", "z"))
+    except (TypeError, ValueError):
+        return None
+    return result if all(math.isfinite(component) for component in result) else None
+
+
+def _inverse_unity_euler_delta(
+    delta: tuple[float, float, float],
+    euler: tuple[float, float, float],
+) -> tuple[float, float, float]:
+    """Transform a world delta into a Unity Euler-rotated box's local space.
+
+    Unity's ``Quaternion.Euler(x, y, z)`` applies Z, then X, then Y.  Inverting
+    the authored transform consequently applies inverse Y, inverse X, inverse
+    Z.  Keeping this here makes oriented-box containment data-driven rather
+    than adding yaw- or object-specific exceptions.
+    """
+    x, y, z = delta
+    rx, ry, rz = (math.radians(value) for value in euler)
+
+    cosine, sine = math.cos(ry), math.sin(ry)
+    x, z = x * cosine - z * sine, x * sine + z * cosine
+
+    cosine, sine = math.cos(rx), math.sin(rx)
+    y, z = y * cosine + z * sine, -y * sine + z * cosine
+
+    cosine, sine = math.cos(rz), math.sin(rz)
+    x, y = x * cosine + y * sine, -x * sine + y * cosine
+    return x, y, z
+
+
+def _tracking_point_trigger_shape_containment(
+    point: object,
+    shape: dict,
+    *,
+    tolerance: float = 0.001,
+) -> dict | None:
+    point_vector = _finite_native_vector3(point)
+    center = _finite_native_vector3(shape.get("position"))
+    if point_vector is None or center is None:
+        return None
+    delta = tuple(point_vector[index] - center[index] for index in range(3))
+    shape_type = str(shape.get("shapeType") or "")
+    if shape_type == "Sphere":
+        try:
+            radius = float(shape.get("radius"))
+        except (TypeError, ValueError):
+            return None
+        if not math.isfinite(radius) or radius < 0:
+            return None
+        distance = math.sqrt(sum(value * value for value in delta))
+        if distance > radius + tolerance:
+            return None
+        return {
+            "containmentMethod": "sphere_radius",
+            "distanceToCenter": round(distance, 6),
+            "boundaryMargin": round(radius - distance, 6),
+        }
+    if shape_type != "Box":
+        return None
+    size = _finite_native_vector3(shape.get("size"))
+    rotation = _finite_native_vector3(shape.get("rotation") or {
+        "x": 0.0, "y": 0.0, "z": 0.0,
+    })
+    if size is None or rotation is None or any(value < 0 for value in size):
+        return None
+    local = _inverse_unity_euler_delta(delta, rotation)
+    half_size = tuple(value / 2.0 for value in size)
+    if any(abs(local[index]) > half_size[index] + tolerance for index in range(3)):
+        return None
+    return {
+        "containmentMethod": "oriented_box_euler_zxy",
+        "localPoint": {
+            axis: round(local[index], 6)
+            for index, axis in enumerate(("x", "y", "z"))
+        },
+        "boundaryMargins": {
+            axis: round(half_size[index] - abs(local[index]), 6)
+            for index, axis in enumerate(("x", "y", "z"))
+        },
+    }
+
+
+def match_tracking_point_inside_leader_trigger_context(
+    occurrence: dict,
+    tracking: dict,
+) -> list[dict]:
+    """Prove that one typed quest tracking point lies in a playback volume.
+
+    This admits any resolved ``*TrackingInfo`` row whose position provenance is
+    one of the maintained original-data resolvers.  It requires the exact
+    current-build Leader event selector and the selected serialized shape.
+    Containment is spatial context only: it proves neither that the quest
+    entered the volume nor that it activated, owns, or orders Story playback.
+    """
+    if not isinstance(occurrence, dict) or not isinstance(tracking, dict):
+        return []
+    if (
+        not str(tracking.get("type") or "").endswith("TrackingInfo")
+        or str(tracking.get("sourceType") or "")
+        not in {"trackingPos", "missionArea", "npcProxy"}
+        or not isinstance(tracking.get("position"), dict)
+    ):
+        return []
+    level_id = str(occurrence.get("levelId") or "")
+    if not level_id or level_id != str(tracking.get("scene") or ""):
+        return []
+    event_owners = [
+        owner
+        for owner in occurrence.get("nativeEventOwners") or []
+        if isinstance(owner, dict)
+        and owner.get("status") in LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES
+        and owner.get("headerName") == "ScriptEvent_OnLeaderEnterTriggerVolume"
+    ]
+    trigger_slots = _exact_leader_trigger_slot_ids(event_owners)
+    if not event_owners or not trigger_slots:
+        return []
+    source_file = str(occurrence.get("sourceFile") or "")
+    script_id = str(occurrence.get("scriptId") or "")
+    trigger_map = (
+        _levelscript_binary_summary(source_file, script_id).get(
+            "triggerVolumesDetails"
+        )
+        or {}
+    )
+    if (
+        trigger_map.get("status") != "present"
+        or trigger_map.get("parseStatus") != "decoded"
+    ):
+        return []
+    matches: list[dict] = []
+    for volume in trigger_map.get("volumes") or []:
+        if (
+            not isinstance(volume, dict)
+            or volume.get("triggerVolumeType") != "Leader"
+            or volume.get("slotId") not in trigger_slots
+        ):
+            continue
+        for shape in (volume.get("shapeList") or {}).get("shapes") or []:
+            if not isinstance(shape, dict):
+                continue
+            containment = _tracking_point_trigger_shape_containment(
+                tracking.get("position"),
+                shape,
+            )
+            if containment is None:
+                continue
+            matches.append({
+                "status": "exact_tracking_point_inside_trigger_shape_context",
+                "levelId": level_id,
+                "scriptId": script_id,
+                "triggerSlotId": volume.get("slotId"),
+                "triggerVolumeType": volume.get("triggerVolumeType"),
+                "triggerVolumeOffset": volume.get("offset"),
+                "triggerShapeOffset": shape.get("offset"),
+                "triggerShape": shape,
+                "trackingPosition": tracking.get("position"),
+                **containment,
+                "sourceFile": source_file,
+                "nativeEventOwners": event_owners,
+                "questActivation": False,
+                "branchSelection": False,
+                "storyOrderEvidence": False,
+            })
+    # A point inside several selected shapes has an ambiguous local carrier.
     return matches if len(matches) == 1 else []
 
 
