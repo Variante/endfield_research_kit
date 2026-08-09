@@ -27,6 +27,7 @@
     item: "badge-mail",
   };
   const TEXTS = window.WebUI.gameplayTexts;
+  const GAMEPLAY_SOUND_CANDIDATES = new Map();
 
   const {
     $,
@@ -1174,21 +1175,153 @@
       .replace(/^(?:chr|eny)_\d+_[^_]+_/i, ""));
   }
 
+  function gameplaySoundCountText(events) {
+    const rows = events || [];
+    const candidates = rows.reduce((total, event) => {
+      const resolved = (event.audio || []).filter((audio) => audio?.src).length;
+      return total + (resolved || Number(event.playableCandidates || 0));
+    }, 0);
+    return `${rows.length} ${text("soundEvents")} · ${candidates} ${text("projectilePlayableCandidates")}`;
+  }
+
+  function gameplayAudioEventHref(eventId) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("gameplay");
+    url.searchParams.delete("gameplayId");
+    url.searchParams.delete("entry");
+    url.searchParams.set("audio", String(eventId || ""));
+    url.searchParams.set("audioKind", "events");
+    url.hash = "#audio";
+    return url.toString();
+  }
+
+  function gameplaySoundSkillIds(event) {
+    const ids = new Set((event?.sourceSkillIds || []).filter(Boolean).map(String));
+    for (const evidence of event?.evidence || []) {
+      if (evidence?.skillId) ids.add(String(evidence.skillId));
+    }
+    return [...ids].sort();
+  }
+
+  function gameplaySoundActionGroup(event) {
+    const actionKinds = [...new Set((event?.actionKinds || []).filter(Boolean).map(String))].sort();
+    if (actionKinds.length) return { key: `kind:${actionKinds.join("|")}`, kind: "kind", values: actionKinds };
+    const skillIds = gameplaySoundSkillIds(event);
+    if (skillIds.length) return { key: `skill:${skillIds.join("|")}`, kind: "skill", values: skillIds };
+    const spawn = (event?.evidence || []).some((row) => row?.kind === "enemyBornBuffData");
+    if (spawn) return { key: "spawn", kind: "spawn", values: [] };
+    return { key: "other", kind: "other", values: [] };
+  }
+
+  function gameplaySoundActionLabel(group) {
+    const kindLabels = {
+      attack: "soundActionAttack",
+      skill: "soundActionSkill",
+      reaction: "soundActionReaction",
+      movement: "soundActionMovement",
+      action: "soundActionOther",
+      attackVoice: "soundActionAttackVoice",
+      skillVoice: "soundActionSkillVoice",
+      reactionVoice: "soundActionReactionVoice",
+      combatVoice: "soundActionCombatVoice",
+    };
+    if (group.kind === "kind") {
+      return group.values.map((value) => text(kindLabels[value] || "soundActionOther")).join(" / ");
+    }
+    if (group.kind === "spawn") return text("enemySpawnSounds");
+    if (group.kind === "other") return text("soundActionOther");
+    const labels = group.values.map((value) => readableIntegrationId(String(value || "")
+      .replace(/^(?:chr|eny)_\d+_[^_]+_/i, "")));
+    if (labels.length === 1) return labels[0];
+    return `${text("soundActionShared")}: ${labels.slice(0, 2).join(" / ")}${labels.length > 2 ? ` +${labels.length - 2}` : ""}`;
+  }
+
+  function renderGameplaySoundCandidate(event, audio) {
+    if (!audio.length) return "";
+    const eventKey = String(event?.id || "").toLowerCase();
+    GAMEPLAY_SOUND_CANDIDATES.set(eventKey, audio);
+    const initialLabel = STATE.showDebug && audio[0].mediaId
+      ? `1 / ${audio.length} · ${audio[0].mediaId}`
+      : `1 / ${audio.length}`;
+    const picker = audio.length > 1
+      ? `<div class="gameplay-sfx-candidate-picker"><span>${escapeHtml(text("soundCandidateSelect"))}</span><button type="button" data-gameplay-sfx-nav="-1" aria-label="${escapeHtml(text("soundCandidatePrevious"))}">‹</button><output data-gameplay-sfx-position>${escapeHtml(initialLabel)}</output><button type="button" data-gameplay-sfx-nav="1" aria-label="${escapeHtml(text("soundCandidateNext"))}">›</button></div>`
+      : "";
+    return `<div class="gameplay-projectile-audio-candidate" data-gameplay-sfx-player data-gameplay-sfx-event="${escapeHtml(eventKey)}" data-gameplay-sfx-index="0">${picker}<audio controls preload="none" src="${escapeHtml(audio[0].src)}"></audio></div>`;
+  }
+
   function renderGameplaySoundEvents(events) {
     const eventRows = events || [];
     return eventRows.map((event) => {
       const audio = (event.audio || []).filter((candidate) => candidate?.src);
-      const candidates = audio.map((candidate, index) => `<div class="gameplay-projectile-audio-candidate"><audio controls preload="none" src="${escapeHtml(candidate.src)}"></audio><small>${escapeHtml(`${text("soundCandidate")} ${index + 1}`)}${STATE.showDebug && candidate.mediaId ? ` · <code>${escapeHtml(candidate.mediaId)}</code>` : ""}</small></div>`).join("");
-      const technical = STATE.showDebug ? `<code class="gameplay-sfx-event-id">${escapeHtml(event.id || "")}</code>` : "";
-      return `<details class="gameplay-projectile-audio-phase"${audio.length === 1 || eventRows.length === 1 ? " open" : ""}><summary><strong>${escapeHtml(gameplaySoundEventName(event.id) || text("soundEvent"))}</strong><span>${escapeHtml(`${audio.length} ${text("projectilePlayableCandidates")}`)}</span></summary>${technical}${candidates}</details>`;
+      const evidenceIds = gameplaySoundSkillIds(event);
+      const clips = event.sourceAnimationClips || [];
+      const trigger = (event.evidence || []).map((row) => row?.triggerKey).find(Boolean) || "";
+      const technical = STATE.showDebug ? `<details class="gameplay-sfx-technical"><summary>${escapeHtml(text("projectileTechnical"))}</summary><code class="gameplay-sfx-event-id">${escapeHtml(event.id || "")}</code>${evidenceIds.length ? `<code>${escapeHtml(evidenceIds.join(" / "))}</code>` : ""}${clips.length ? `<code>${escapeHtml(clips.join(" / "))}</code>` : ""}${trigger ? `<code>${escapeHtml(trigger)}</code>` : ""}<a data-gameplay-audio-event href="${escapeHtml(gameplayAudioEventHref(event.id))}">${escapeHtml(text("openInAudio"))}</a></details>` : "";
+      const candidateCount = audio.length || Number(event.playableCandidates || 0);
+      return `<details class="gameplay-projectile-audio-phase"><summary><strong>${escapeHtml(gameplaySoundEventName(event.id) || text("soundEvent"))}</strong><span>${escapeHtml(`${candidateCount} ${text("projectilePlayableCandidates")}`)}</span></summary>${technical}${renderGameplaySoundCandidate(event, audio)}</details>`;
     }).join("");
   }
 
+  function renderGameplaySoundActionGroups(events) {
+    const groups = new Map();
+    for (const event of events || []) {
+      const action = gameplaySoundActionGroup(event);
+      if (!groups.has(action.key)) groups.set(action.key, { ...action, events: [] });
+      groups.get(action.key).events.push(event);
+    }
+    const priority = ["attack", "skill", "attackVoice", "skillVoice", "reaction", "reactionVoice", "combatVoice", "movement", "action"];
+    return [...groups.values()]
+      .sort((left, right) => {
+        const leftIndex = priority.indexOf(left.values[0]);
+        const rightIndex = priority.indexOf(right.values[0]);
+        return (leftIndex < 0 ? 99 : leftIndex) - (rightIndex < 0 ? 99 : rightIndex)
+          || gameplaySoundActionLabel(left).localeCompare(gameplaySoundActionLabel(right));
+      })
+      .map((group) => `<details class="gameplay-sfx-action"><summary><strong>${escapeHtml(gameplaySoundActionLabel(group))}</strong><span>${escapeHtml(gameplaySoundCountText(group.events))}</span></summary>${renderGameplaySoundEvents(group.events)}</details>`)
+      .join("");
+  }
+
+  function gameplayResolvedSoundEvents(events) {
+    const catalog = STATE.integration.soundEffects?.animationEventCatalog || {};
+    return (events || []).map((event) => {
+      if ((event?.audio || []).length) return event;
+      const shared = catalog[String(event?.id || "").toLowerCase()];
+      return shared ? { ...shared, ...event, audio: shared.audio || [] } : event;
+    });
+  }
+
+  function ensureGameplayAnimationCatalog(entry) {
+    const payload = STATE.integration.soundEffects;
+    const owner = entry?.kind === "character"
+      ? payload?.characters?.[entry.id]
+      : entry?.kind === "enemy" ? payload?.enemies?.[entry.id] : null;
+    if (!payload || payload.animationEventCatalog || payload._animationCatalogLoading || !(owner?.animationEvents || []).length) return;
+    const shard = String(payload.animationEventCatalogPath || "");
+    if (!shard) return;
+    payload._animationCatalogLoading = true;
+    fetch(`data/lang/${encodeURIComponent(STATE.language)}/gameplay/${encodeURIComponent(shard)}?v=${GAMEPLAY_INTEGRATION_VERSION}`)
+      .then((response) => {
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        return response.json();
+      })
+      .then((catalog) => {
+        payload.animationEventCatalog = catalog?.events || {};
+      })
+      .catch(() => {
+        payload.animationEventCatalog = {};
+      })
+      .finally(() => {
+        payload._animationCatalogLoading = false;
+        if (STATE.selected?.id === entry.id) renderDetail(STATE.selected);
+      });
+  }
+
   function renderGameplaySoundGroup(events, options = {}) {
-    const playable = (events || []).reduce((total, event) => total + (event.audio || []).filter((candidate) => candidate?.src).length, 0);
+    const playableEvents = gameplayResolvedSoundEvents(events).filter((event) => (event.audio || []).some((candidate) => candidate?.src) || Number(event.playableCandidates || 0) > 0);
+    const playable = playableEvents.reduce((total, event) => total + ((event.audio || []).filter((candidate) => candidate?.src).length || Number(event.playableCandidates || 0)), 0);
     if (!playable) return "";
     const confidence = options.confidence ? integrationConfidence(options.confidence) : "";
-    return `<details class="gameplay-related-sfx"><summary><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(`${playable} ${text("projectilePlayableCandidates")}`)}</span>${confidence}</summary><p>${escapeHtml(text("soundRuntimeNote"))}</p>${renderGameplaySoundEvents(events)}</details>`;
+    return `<details class="gameplay-related-sfx"><summary><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(gameplaySoundCountText(playableEvents))}</span>${confidence}</summary><p>${escapeHtml(options.note || text("soundRuntimeNote"))}</p>${renderGameplaySoundActionGroups(playableEvents)}</details>`;
   }
 
   function renderActiveSkillSoundEffects(group) {
@@ -1201,10 +1334,27 @@
 
   function renderEnemySoundEffects(entry) {
     const sounds = STATE.integration.soundEffects?.enemies?.[entry?.id] || {};
-    return renderGameplaySoundGroup(sounds.events || [], {
+    return `${renderGameplaySoundGroup(sounds.events || [], {
       label: sounds.includesSpawnBuffAudio ? text("enemyCombatAndSpawnSounds") : text("enemyCombatSounds"),
       confidence: sounds.ownershipConfidence,
-    });
+    })}${renderGameplaySoundGroup(sounds.animationEvents || [], {
+      label: text("animationTriggeredSounds"),
+      confidence: sounds.animationOwnershipConfidence,
+      note: text("animationSoundNote"),
+    })}`;
+  }
+
+  function renderCharacterAnimationSounds(entry) {
+    const sounds = STATE.integration.soundEffects?.characters?.[entry?.id] || {};
+    return `${renderGameplaySoundGroup(sounds.animationEvents || [], {
+      label: text("animationTriggeredSounds"),
+      confidence: sounds.animationOwnershipConfidence,
+      note: text("animationSoundNote"),
+    })}${renderGameplaySoundGroup(sounds.profileVoices || [], {
+      label: text("combatVoice"),
+      confidence: "direct",
+      note: text("profileVoiceNote"),
+    })}`;
   }
 
   function renderCharacterProjectileCompact(match) {
@@ -1399,6 +1549,7 @@
       facts,
       body: [
         section(text("characterAssets"), characterAssets),
+        section(text("characterActionAudio"), renderCharacterAnimationSounds(entry)),
         section(text("characterSkills"), skillRows || unresolvedProjectiles ? `${skillRows ? `<div class="gameplay-active-skill-table${STATE.showDebug ? " is-debug" : ""}">${renderActiveSkillTableHeader()}<p class="gameplay-projectile-coverage-note">${escapeHtml(text("projectileCoverageNote"))}</p>${skillRows}</div>` : ""}${unresolvedProjectiles}` : ""),
         section(text("talents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : "")),
         section(text("characterBreakthroughs"), renderCharacterBreakthroughs(entry)),
@@ -2529,7 +2680,38 @@
   }
 
   function bindGameplayMediaPlayers(root) {
-    if (!root || !window.WebUI.enhanceMediaPlayers) return;
+    if (!root) return;
+    root.querySelectorAll("[data-gameplay-audio-event]").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const audioTab = gp$('.view-tab[data-view="audio"]');
+        if (!audioTab || audioTab.hidden) return;
+        event.preventDefault();
+        history.pushState(null, "", link.href);
+        audioTab.click();
+      });
+    });
+    if (!window.WebUI.enhanceMediaPlayers) return;
+    root.querySelectorAll("[data-gameplay-sfx-nav]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const shell = button.closest("[data-gameplay-sfx-player]");
+        const player = shell?.querySelector("audio");
+        const candidates = GAMEPLAY_SOUND_CANDIDATES.get(String(shell?.dataset.gameplaySfxEvent || "")) || [];
+        if (!player || !candidates.length) return;
+        const delta = Number(button.dataset.gameplaySfxNav || 0);
+        const next = (Number(shell.dataset.gameplaySfxIndex || 0) + delta + candidates.length) % candidates.length;
+        const candidate = candidates[next];
+        if (!candidate?.src) return;
+        shell.dataset.gameplaySfxIndex = String(next);
+        player.pause();
+        player.src = candidate.src;
+        player.load();
+        const position = shell.querySelector("[data-gameplay-sfx-position]");
+        if (position) position.textContent = STATE.showDebug && candidate.mediaId
+          ? `${next + 1} / ${candidates.length} · ${candidate.mediaId}`
+          : `${next + 1} / ${candidates.length}`;
+      });
+    });
     const isRevealed = (media) => {
       for (let node = media.parentElement; node && node !== root; node = node.parentElement) {
         if (node.tagName === "DETAILS" && !node.open) return false;
@@ -2561,6 +2743,7 @@
     }
     if (empty) empty.hidden = true;
     detail.hidden = false;
+    ensureGameplayAnimationCatalog(entry);
     const title = entry.title || entry.id || "";
     gp$("#gameplay-detail-title").innerHTML = highlightText(title);
     const rendered = entry.kind === "weapon" ? renderWeaponDetail(entry) : entry.kind === "equipment" ? renderEquipmentDetail(entry) : entry.kind === "enemy" ? renderEnemyDetail(entry) : entry.kind === "item" ? renderItemDetail(entry) : renderCharacterDetail(entry);
@@ -2943,7 +3126,7 @@
     const requests = [
       ["combat", integrationPath("combat", nextLanguage), (payload) => payload && Array.isArray(payload.nodes) && Array.isArray(payload.edges)],
       ["projectiles", integrationPath("projectiles", nextLanguage), (payload) => payload && Array.isArray(payload.entries)],
-      ["soundEffects", integrationPath("soundEffects", nextLanguage), (payload) => payload && payload.schemaVersion === 1 && payload.characters && payload.enemies],
+      ["soundEffects", integrationPath("soundEffects", nextLanguage), (payload) => payload && [1, 2].includes(payload.schemaVersion) && payload.characters && payload.enemies],
       ["assets", integrationPath("assets", nextLanguage), (payload) => payload && payload.entries && typeof payload.entries === "object"],
     ];
     const promise = Promise.all(requests.map(async ([kind, path, validator]) => {
