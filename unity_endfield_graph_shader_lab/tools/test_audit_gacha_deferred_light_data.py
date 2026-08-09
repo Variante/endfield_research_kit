@@ -80,6 +80,29 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertEqual([row["record"] for row in result["spot"]], list(range(7)))
         self.assertEqual(result["common"][0]["record"], 7)
 
+    def test_native_record0_discriminator_formula(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = stream.read(AUDIT.PREPARE_CPU_DATA_SIZE)
+        result = AUDIT.validate_record0_discriminator_native(body)
+        self.assertEqual(result["formula"], "float(lightKind + 2 * shadowOnly)")
+        self.assertEqual(result["encodedValues"]["Spot"]["normal"], 0.0)
+        self.assertEqual(
+            result["encodedValues"]["PointOrLinearExtension"]["normal"], 1.0
+        )
+
+    def test_changed_record0_discriminator_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.PREPARE_CPU_DATA_SIZE))
+        body[0x1352 + 3] = 4
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=record0_point_discriminator_sequence; source=.*GameAssembly.dll; "
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_record0_discriminator_native(bytes(body))
+
     def test_native_additional_data_layout(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.GET_LIGHT_NPR_DATA_FILE_OFFSET)
@@ -278,6 +301,33 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         )
         self.assertTrue(all(row["falloff"] == 1.0 for row in recovered))
         self.assertTrue(all(row["flickerScale"] == 1.0 for row in recovered))
+
+    def test_selected_room_record0_discriminator_payloads(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        rows = AUDIT.room_light_rows(population, hierarchy)
+        recovered = [AUDIT.recover_record0_discriminator(row) for row in rows]
+        self.assertEqual(recovered[0]["record0WBits"], "0x00000000")
+        self.assertTrue(
+            all(row["record0WBits"] == "0x3F800000" for row in recovered[1:])
+        )
+        shadow_spot = copy.deepcopy(rows[0])
+        shadow_spot["shadowOnly"] = True
+        self.assertEqual(
+            AUDIT.recover_record0_discriminator(shadow_spot)["record0W"], 2.0
+        )
+
+    def test_unknown_record0_light_type_fails_closed(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        row = copy.deepcopy(AUDIT.room_light_rows(population, hierarchy)[0])
+        row["unityLightType"] = 7
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=room_.*_record0_supported_light_type; source=.*Light.*; "
+            r"expected=True; actual=False",
+        ):
+            AUDIT.recover_record0_discriminator(row)
 
     def test_unknown_record0_color_fails_closed(self) -> None:
         population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))

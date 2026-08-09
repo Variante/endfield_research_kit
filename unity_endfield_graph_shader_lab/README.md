@@ -2250,8 +2250,11 @@ objects set Linear color space and linear light intensity, while all 11 rows
 disable color temperature, distance/far-show falloff, animation, multistate,
 and flicker. Hash-pinned UnityPlayer `finalColor`, `Color.linear`, animation-
 disable, and flicker bodies now close exact b31 record0.xyz bits as linearized
-authored RGB times intensity, with falloff/flicker both 1. Target-frame
-transforms, record0.w, runtime carry-in, final light count, and a byte-exact
+authored RGB times intensity, with falloff/flicker both 1. The two native
+`PrepareCPUData` branches close record0.w as
+`float(lightKind + 2*shadowOnly)`: the one Spot row is exactly 0 and all ten
+Point/linear-extension rows are exactly 1. Record0 is therefore fully closed.
+Target-frame transforms, runtime carry-in, final light count, and a byte-exact
 room b31 fixture remain open.
 
 `ShaderVariablesGlobal` b35 is now exactly scoped and transported. The
