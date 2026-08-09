@@ -19,6 +19,8 @@
       basicFilters: "Basic filters",
       search: "Search event / media / bank / category",
       category: "Category",
+      context: "Context",
+      relation: "Media relation",
       scope: "Scope",
       source: "Source",
       shown: "shown",
@@ -45,6 +47,40 @@
       mediaIds: "Media IDs",
       eventIds: "Event IDs",
       actions: "Actions / objects",
+      recordType: "Record type",
+      playbackEvent: "Playback event",
+      controlEvent: "Control event",
+      decodedMedia: "Decoded media",
+      contextGroups: "Semantic contexts",
+      contextEvidence: "Context evidence",
+      contextGameplay: "Gameplay",
+      contextCutscene: "Cutscene / story",
+      contextAnimation: "Animation",
+      contextAuthoredConfig: "Authored config",
+      contextManagedRuntime: "Managed runtime",
+      contextDialogMedia: "Dialog media",
+      contextNone: "No linked authored context",
+      relationRuntimeSelected: "Typed runtime-selected branches",
+      relationMultipleUnknown: "Multiple possible files; relation unresolved",
+      relationSingle: "Single possible file",
+      relationNoDecodedMedia: "Wwise event; no decoded media leaf",
+      relationUnresolvedEvent: "Event unresolved in Wwise",
+      relationEventCandidate: "Wwise event media leaf",
+      relationDirectDialogMedia: "Direct dialog media",
+      relationUnlinkedMedia: "No recovered event relation",
+      relationPartialGraph: "Partial typed graph",
+      relationMultipleRoots: "Multiple Play roots",
+      relationRandom: "Random alternatives",
+      relationSequence: "Sequence items",
+      relationSwitch: "Switch / State branches",
+      relationLayer: "Layer branches",
+      relationDirectSound: "Direct Sound leaf",
+      possibleMedia: "Possible media",
+      playRoots: "Play roots",
+      typedTraversal: "Typed traversal",
+      selectorEvidence: "Selector evidence",
+      uniqueContent: "Unique decoded content",
+      equivalentContent: "Content-equivalent leaves",
       rawRecord: "Raw record",
       id: "ID",
       hash: "Hash",
@@ -67,6 +103,8 @@
       basicFilters: "\u57fa\u7840\u7b5b\u9009",
       search: "\u641c\u7d22\u4e8b\u4ef6 / \u5a92\u4f53 / \u97f3\u9891\u5305 / \u5206\u7c7b",
       category: "\u5206\u7c7b",
+      context: "\u4e0a\u4e0b\u6587",
+      relation: "\u5a92\u4f53\u5173\u7cfb",
       scope: "\u8303\u56f4",
       source: "\u6765\u6e90",
       shown: "\u5df2\u663e\u793a",
@@ -93,6 +131,40 @@
       mediaIds: "\u5a92\u4f53 ID",
       eventIds: "\u4e8b\u4ef6 ID",
       actions: "\u52a8\u4f5c / \u5bf9\u8c61",
+      recordType: "\u8bb0\u5f55\u7c7b\u578b",
+      playbackEvent: "\u64ad\u653e\u4e8b\u4ef6",
+      controlEvent: "\u63a7\u5236\u4e8b\u4ef6",
+      decodedMedia: "\u5df2\u89e3\u7801\u5a92\u4f53",
+      contextGroups: "\u8bed\u4e49\u4e0a\u4e0b\u6587",
+      contextEvidence: "\u4e0a\u4e0b\u6587\u8bc1\u636e",
+      contextGameplay: "\u73a9\u6cd5",
+      contextCutscene: "\u8fc7\u573a / \u5267\u60c5",
+      contextAnimation: "\u52a8\u753b",
+      contextAuthoredConfig: "\u914d\u7f6e\u8868",
+      contextManagedRuntime: "\u6258\u7ba1\u8fd0\u884c\u65f6",
+      contextDialogMedia: "\u5bf9\u8bdd\u5a92\u4f53",
+      contextNone: "\u65e0\u5df2\u94fe\u63a5\u7684\u521b\u4f5c\u4e0a\u4e0b\u6587",
+      relationRuntimeSelected: "\u7c7b\u578b\u5316\u8fd0\u884c\u65f6\u5206\u652f",
+      relationMultipleUnknown: "\u591a\u4e2a\u53ef\u80fd\u6587\u4ef6\uff0c\u5173\u7cfb\u672a\u89e3\u6790",
+      relationSingle: "\u5355\u4e00\u53ef\u80fd\u6587\u4ef6",
+      relationNoDecodedMedia: "Wwise \u4e8b\u4ef6\uff0c\u65e0\u5df2\u89e3\u7801\u5a92\u4f53\u53f6",
+      relationUnresolvedEvent: "\u4e8b\u4ef6\u672a\u5728 Wwise \u4e2d\u89e3\u6790",
+      relationEventCandidate: "Wwise \u4e8b\u4ef6\u5a92\u4f53\u53f6",
+      relationDirectDialogMedia: "\u76f4\u63a5\u5bf9\u8bdd\u5a92\u4f53",
+      relationUnlinkedMedia: "\u65e0\u5df2\u6062\u590d\u4e8b\u4ef6\u5173\u7cfb",
+      relationPartialGraph: "\u90e8\u5206\u7c7b\u578b\u5316\u56fe",
+      relationMultipleRoots: "\u591a\u4e2a Play \u6839",
+      relationRandom: "\u968f\u673a\u5907\u9009",
+      relationSequence: "\u5e8f\u5217\u9879",
+      relationSwitch: "Switch / State \u5206\u652f",
+      relationLayer: "Layer \u5206\u652f",
+      relationDirectSound: "\u76f4\u63a5 Sound \u53f6",
+      possibleMedia: "\u53ef\u80fd\u5a92\u4f53",
+      playRoots: "Play \u6839",
+      typedTraversal: "\u7c7b\u578b\u5316\u904d\u5386",
+      selectorEvidence: "\u9009\u62e9\u5668\u8bc1\u636e",
+      uniqueContent: "\u552f\u4e00\u89e3\u7801\u5185\u5bb9",
+      equivalentContent: "\u5185\u5bb9\u7b49\u4ef7\u53f6",
       rawRecord: "\u539f\u59cb\u8bb0\u5f55",
       id: "ID",
       hash: "\u54c8\u5e0c",
@@ -123,7 +195,10 @@
     rows: [],
     selected: null,
     query: "",
-    filters: { categories: new Set(), scopes: new Set(), sources: new Set() },
+    filters: { categories: new Set(), contexts: new Set(), relations: new Set(), scopes: new Set(), sources: new Set() },
+    eventTaxonomyById: new Map(),
+    eventDetailCache: new Map(),
+    eventDetailPromises: new Map(),
     filterPanel: null,
     renderFrame: 0,
   };
@@ -197,10 +272,100 @@
     return mediaSource || t("unknown");
   }
 
-  function recordMeta(record, kind = state.mode) {
-    const parts = [recordCategory(record), recordScope(record), recordSource(record)];
+  const CONTEXT_LABEL_KEYS = {
+    gameplay: "contextGameplay",
+    cutscene: "contextCutscene",
+    animation: "contextAnimation",
+    authoredConfig: "contextAuthoredConfig",
+    managedRuntime: "contextManagedRuntime",
+    dialogMedia: "contextDialogMedia",
+    none: "contextNone",
+  };
+
+  const RELATION_LABEL_KEYS = {
+    runtimeSelected: "relationRuntimeSelected",
+    multipleUnknown: "relationMultipleUnknown",
+    single: "relationSingle",
+    noDecodedMedia: "relationNoDecodedMedia",
+    unresolvedEvent: "relationUnresolvedEvent",
+    eventCandidate: "relationEventCandidate",
+    directDialogMedia: "relationDirectDialogMedia",
+    unlinkedMedia: "relationUnlinkedMedia",
+    partialGraph: "relationPartialGraph",
+    multipleRoots: "relationMultipleRoots",
+    randomAlternative: "relationRandom",
+    sequenceItem: "relationSequence",
+    switchCandidate: "relationSwitch",
+    layerChild: "relationLayer",
+    directSound: "relationDirectSound",
+  };
+
+  function taxonomyLabel(value) {
+    return t(CONTEXT_LABEL_KEYS[value] || RELATION_LABEL_KEYS[value] || value);
+  }
+
+  function recordType(record, kind) {
+    if (kind === "media") return "decodedMedia";
+    return recordCategory(record) === "control" ? "controlEvent" : "playbackEvent";
+  }
+
+  function contextGroup(kind) {
+    if (["characterSkill", "enemySkill"].includes(kind)) return "gameplay";
+    if (kind === "cutsceneTimeline") return "cutscene";
+    if (["characterAnimation", "enemyAnimation"].includes(kind)) return "animation";
+    if (["table", "tableEventHash"].includes(kind)) return "authoredConfig";
+    if (kind === "binaryManagedLiteral") return "managedRuntime";
+    return "";
+  }
+
+  function recordContextTags(record, kind) {
+    const tags = new Set(asArray(record?.contextGroups).filter(Boolean));
+    for (const context of asArray(record?.contexts)) {
+      if (!context || typeof context !== "object") continue;
+      const group = contextGroup(normalize(context.kind));
+      if (group) tags.add(group);
+    }
+    if (kind === "media") {
+      if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
+      for (const eventId of asArray(record?.eventIds)) {
+        for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) tags.add(tag);
+      }
+    }
+    if (!tags.size) tags.add("none");
+    return [...tags];
+  }
+
+  function recordRelationTags(record, kind) {
+    if (kind === "media") {
+      if (record?.audioDialogKey || record?.audioDialogPath) return ["directDialogMedia"];
+      if (asArray(record?.eventIds).length || Number(record?.eventCount) > 0) return ["eventCandidate"];
+      return ["unlinkedMedia"];
+    }
+    const evidence = asArray(record?.evidence).filter((value) => value && typeof value === "object");
+    const foundInWwise = record?.foundInWwise === true || (record?.foundInWwise !== false && evidence.length > 0);
+    const candidates = Number(record?.possibleMediaCount ?? record?.candidateCount ?? record?.resolvedMediaCount ?? record?.mediaCount)
+      || asArray(record?.media).length;
+    if (!foundInWwise) return ["unresolvedEvent"];
+    if (!candidates) return ["noDecodedMedia"];
+    const tags = [];
+    if (record?.traversalStatus === "partial") tags.push("partialGraph");
+    if (Number(record?.playRootCount) > 1) tags.push("multipleRoots");
+    for (const relation of asArray(record?.mediaRelationTypes)) {
+      if (RELATION_LABEL_KEYS[relation]) tags.push(relation);
+    }
+    if (asArray(record?.selectionContainerTypes).length && !tags.some((value) => ["randomAlternative", "sequenceItem", "switchCandidate", "layerChild"].includes(value))) tags.push("runtimeSelected");
+    if (!tags.length) tags.push(candidates === 1 ? "single" : "multipleUnknown");
+    return [...new Set(tags)];
+  }
+
+  function recordMeta(record, kind = state.mode, taxonomy = {}) {
+    const parts = [t(taxonomy.objectType || recordType(record, kind)), recordCategory(record)];
+    const contexts = asArray(taxonomy.contextTags).filter((value) => value !== "none");
+    if (contexts.length) parts.push(contexts.map(taxonomyLabel).join(" + "));
+    const relations = asArray(taxonomy.relationTags);
+    if (relations.length) parts.push(relations.slice(0, 2).map(taxonomyLabel).join(" + "));
     if (kind === "events") {
-      const count = Number(record?.resolvedMediaCount ?? record?.mediaCount ?? record?.candidateCount)
+      const count = Number(record?.possibleMediaCount ?? record?.resolvedMediaCount ?? record?.mediaCount ?? record?.candidateCount)
         || asArray(record?.mediaIds).length
         || asArray(record?.media).length;
       if (count) parts.push(`${formatNumber(count)} ${t("media")}`);
@@ -210,17 +375,28 @@
     return [...new Set(parts.filter(Boolean))].join(" · ");
   }
 
-  function searchText(record, kind) {
+  function searchText(record, kind, taxonomy = {}) {
     const values = [
       recordTitle(record, kind), recordId(record, kind), recordCategory(record), recordScope(record), recordSource(record),
       record?.eventHash, record?.mediaId, record?.bankId, record?.bank, record?.rel, record?.path, record?.src,
       ...asArray(record?.eventIds), ...asArray(record?.mediaIds), ...asArray(record?.actionIds), ...asArray(record?.visitedObjectIds),
+      ...asArray(record?.contextSearch), ...asArray(record?.bankPackages),
+      ...asArray(taxonomy.contextTags).flatMap((value) => [value, taxonomyLabel(value)]),
+      ...asArray(taxonomy.relationTags).flatMap((value) => [value, taxonomyLabel(value)]),
+      ...asArray(record?.contexts).flatMap((context) => context && typeof context === "object" ? [
+        context.kind, context.ownerId, context.groupId, context.storyKey, context.table, context.path,
+        context.semanticRole, context.confidence, ...asArray(context.skillIds), ...asArray(context.actionKinds), ...asArray(context.animationClips),
+      ] : []),
     ];
     return values.filter((value) => value !== undefined && value !== null).join("\n").toLowerCase();
   }
 
   function normalizeRecord(record, kind, index) {
     const raw = record && typeof record === "object" ? record : { id: record };
+    const contextTags = recordContextTags(raw, kind);
+    const relationTags = recordRelationTags(raw, kind);
+    const objectType = recordType(raw, kind);
+    const taxonomy = { contextTags, relationTags, objectType };
     return {
       raw,
       kind,
@@ -229,9 +405,21 @@
       category: recordCategory(raw),
       scope: recordScope(raw),
       source: recordSource(raw),
-      meta: recordMeta(raw, kind),
-      search: searchText(raw, kind),
+      contextTags,
+      relationTags,
+      objectType,
+      meta: recordMeta(raw, kind, taxonomy),
+      search: searchText(raw, kind, taxonomy),
     };
+  }
+
+  function rebuildEventTaxonomy(records) {
+    state.eventTaxonomyById = new Map();
+    for (const record of records || []) {
+      const keys = [recordId(record.raw, "events"), record.raw?.name, record.raw?.eventId, record.raw?.id]
+        .map(normalizeLower).filter(Boolean);
+      for (const key of keys) state.eventTaxonomyById.set(key, record.contextTags || ["none"]);
+    }
   }
 
   function dedupeRecords(records, kind) {
@@ -277,6 +465,39 @@
     return new URL(value, new URL(indexPath, window.location.href)).toString();
   }
 
+  async function ensureEventDetail(record) {
+    const shard = normalize(record?.raw?.detailShard);
+    if (!shard || record?.raw?._detailLoaded) return record?.raw;
+    let records = state.eventDetailCache.get(shard);
+    if (!records) {
+      let promise = state.eventDetailPromises.get(shard);
+      if (!promise) {
+        const token = state.loadToken;
+        const url = shardUrl(shard, INDEX_PATH(state.language));
+        promise = fetch(url).then((response) => {
+          if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+          return response.json();
+        }).then((payload) => {
+          if (token !== state.loadToken) return new Map();
+          const rows = new Map(recordsFromPayload(payload, "events").map((row) => [normalizeLower(recordId(row, "events")), row]));
+          state.eventDetailCache.set(shard, rows);
+          return rows;
+        }).finally(() => state.eventDetailPromises.delete(shard));
+        state.eventDetailPromises.set(shard, promise);
+      }
+      records = await promise;
+    }
+    const detail = records?.get(normalizeLower(recordId(record.raw, "events")));
+    if (!detail) return record.raw;
+    record.raw = { ...record.raw, ...detail, _detailLoaded: true };
+    record.contextTags = recordContextTags(record.raw, record.kind);
+    record.relationTags = recordRelationTags(record.raw, record.kind);
+    record.meta = recordMeta(record.raw, record.kind, record);
+    record.search = searchText(record.raw, record.kind, record);
+    if (state.selected === record) renderDetail();
+    return record.raw;
+  }
+
   function abortDataset(kind) {
     for (const controller of state.datasetControllers[kind] || []) controller.abort();
     state.datasetControllers[kind] = [];
@@ -298,6 +519,7 @@
     const specs = shardSpecs(state.index?.shards?.[kind]);
     if (!specs.length) {
       const records = dedupeRecords(inline, kind);
+      if (kind === "events") rebuildEventTaxonomy(records);
       state.datasets[kind] = records;
       return records;
     }
@@ -331,6 +553,7 @@
     })).then((parts) => {
       if (token !== state.loadToken) return null;
       const records = dedupeRecords([...inline, ...parts.flat()], kind);
+      if (kind === "events") rebuildEventTaxonomy(records);
       state.datasets[kind] = records;
       return records;
     }).finally(() => {
@@ -356,6 +579,9 @@
     state.index = null;
     state.datasets = { events: null, media: null };
     state.datasetPromises = { events: null, media: null };
+    state.eventTaxonomyById = new Map();
+    state.eventDetailCache = new Map();
+    state.eventDetailPromises = new Map();
     state.selected = null;
     state.indexController = new AbortController();
     resetFilters({ render: false });
@@ -382,6 +608,7 @@
         renderDetail();
         await ensureDataset("events", { token, force, progressBase: 0.25, progressSpan: 0.75 });
         if (token !== state.loadToken) return null;
+        buildFilterChips();
         applyFilters({ resetScroll: true });
         applyRequestedSelection();
         window.WebUI?.updateLoader?.("audio", 1, t("loadingEvents"));
@@ -413,6 +640,7 @@
     renderDetail();
     clearSelectionFromUrl();
     if (state.datasets[kind]) {
+      buildFilterChips();
       applyFilters({ resetScroll: true });
       return;
     }
@@ -421,6 +649,7 @@
     try {
       const records = await ensureDataset(kind, { token: state.loadToken });
       if (state.mode !== kind || !records) return;
+      buildFilterChips();
       applyFilters({ resetScroll: true });
     } catch (error) {
       if (error?.name !== "AbortError") renderLoadError(error, { index: false });
@@ -457,6 +686,14 @@
             <section class="filter-section is-collapsed" data-filter-section="audio-category" data-default-collapsed="1">
               <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="audio-category-filter-body"><span id="audio-category-label"></span></button>
               <div id="audio-category-filter-body" class="filter-section-body" hidden><div id="audio-category-filter" class="chips" data-multi="1"></div></div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="audio-context" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="audio-context-filter-body"><span id="audio-context-label"></span></button>
+              <div id="audio-context-filter-body" class="filter-section-body" hidden><div id="audio-context-filter" class="chips" data-multi="1"></div></div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="audio-relation" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="audio-relation-filter-body"><span id="audio-relation-label"></span></button>
+              <div id="audio-relation-filter-body" class="filter-section-body" hidden><div id="audio-relation-filter" class="chips" data-multi="1"></div></div>
             </section>
             <section class="filter-section is-collapsed" data-filter-section="audio-scope" data-default-collapsed="1">
               <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="audio-scope-filter-body"><span id="audio-scope-label"></span></button>
@@ -644,7 +881,8 @@
     const pairs = {
       "audio-title": "title", "audio-count-label": "countLabel", "audio-filter-toggle": state.filterPanel?.collapsed ? "showFilters" : "hideFilters",
       "audio-reset": "reset", "audio-events-mode": "events", "audio-media-mode": "media", "audio-basic-filter-label": "basicFilters",
-      "audio-category-label": "category", "audio-scope-label": "scope", "audio-source-label": "source", "audio-shown-label": "shown",
+      "audio-category-label": "category", "audio-context-label": "context", "audio-relation-label": "relation",
+      "audio-scope-label": "scope", "audio-source-label": "source", "audio-shown-label": "shown",
     };
     for (const [id, key] of Object.entries(pairs)) {
       const node = $(`#${id}`, state.container);
@@ -652,6 +890,12 @@
     }
     const search = $("#audio-q", state.container);
     if (search) search.placeholder = t("search");
+    for (const records of Object.values(state.datasets)) {
+      for (const record of records || []) {
+        record.meta = recordMeta(record.raw, record.kind, record);
+        record.search = searchText(record.raw, record.kind, record);
+      }
+    }
     applyIndexHeader();
     buildFilterChips();
     renderList();
@@ -689,6 +933,8 @@
   function resetFilters({ render = true } = {}) {
     state.query = "";
     state.filters.categories.clear();
+    state.filters.contexts.clear();
+    state.filters.relations.clear();
     state.filters.scopes.clear();
     state.filters.sources.clear();
     const search = $("#audio-q", state.container);
@@ -701,7 +947,9 @@
 
   function countValues(records, field) {
     const counts = new Map();
-    for (const record of records || []) counts.set(record[field], (counts.get(record[field]) || 0) + 1);
+    for (const record of records || []) {
+      for (const value of new Set(asArray(record[field]).filter(Boolean))) counts.set(value, (counts.get(value) || 0) + 1);
+    }
     return counts;
   }
 
@@ -710,17 +958,20 @@
     const build = window.WebUI?.filters?.buildChips;
     if (!build) return;
     const groups = [
-      ["#audio-category-filter", "category", state.filters.categories],
-      ["#audio-scope-filter", "scope", state.filters.scopes],
-      ["#audio-source-filter", "source", state.filters.sources],
+      ["#audio-category-filter", "category", state.filters.categories, null],
+      ["#audio-context-filter", "contextTags", state.filters.contexts, taxonomyLabel],
+      ["#audio-relation-filter", "relationTags", state.filters.relations, taxonomyLabel],
+      ["#audio-scope-filter", "scope", state.filters.scopes, null],
+      ["#audio-source-filter", "source", state.filters.sources, null],
     ];
-    for (const [selector, field, active] of groups) {
+    for (const [selector, field, active, label] of groups) {
       const counts = countValues(records, field);
-      const values = [...counts.keys()].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      const values = [...counts.keys()].filter(Boolean).sort((a, b) => (label ? label(a) : a).localeCompare(label ? label(b) : b, undefined, { numeric: true }));
       build(selector, values, {
         active,
         count: counts,
         className: "audio-filter-chip",
+        label: label || undefined,
         onToggle: () => applyFilters({ resetScroll: true }),
       });
     }
@@ -730,6 +981,8 @@
     window.WebUI?.setFilterSectionActiveCounts?.({
       "audio-basic": state.query.trim() ? 1 : 0,
       "audio-category": state.filters.categories.size,
+      "audio-context": state.filters.contexts.size,
+      "audio-relation": state.filters.relations.size,
       "audio-scope": state.filters.scopes.size,
       "audio-source": state.filters.sources.size,
     });
@@ -741,6 +994,8 @@
     state.filtered = records.filter((record) => {
       if (tokens.length && !tokens.every((token) => record.search.includes(token))) return false;
       if (state.filters.categories.size && !state.filters.categories.has(record.category)) return false;
+      if (state.filters.contexts.size && !record.contextTags.some((value) => state.filters.contexts.has(value))) return false;
+      if (state.filters.relations.size && !record.relationTags.some((value) => state.filters.relations.has(value))) return false;
       if (state.filters.scopes.size && !state.filters.scopes.has(record.scope)) return false;
       if (state.filters.sources.size && !state.filters.sources.has(record.source)) return false;
       return true;
@@ -816,6 +1071,9 @@
     if (detail) detail.scrollTop = 0;
     renderList();
     renderDetail();
+    if (record.kind === "events") ensureEventDetail(record).catch((error) => {
+      if (state.selected === record) window.WebUI?.showShellStatus?.("audio", `${t("shardError")} ${error.message || error}`, "error");
+    });
   }
 
   function requestedSelection() {
@@ -990,6 +1248,52 @@
     return section;
   }
 
+  function contextEvidenceLabel(context) {
+    const kind = normalize(context?.kind);
+    const group = contextGroup(kind);
+    const parts = [group ? taxonomyLabel(group) : humanize(kind), humanize(kind)];
+    if (context?.ownerId) parts.push(context.ownerId);
+    if (context?.groupId) parts.push(context.groupId);
+    if (context?.storyKey) parts.push(context.storyKey);
+    if (context?.table) parts.push(context.table);
+    if (context?.path) parts.push(context.path);
+    if (context?.semanticRole) parts.push(humanize(context.semanticRole));
+    if (context?.confidence) parts.push(context.confidence);
+    const skillIds = asArray(context?.skillIds).filter(Boolean);
+    if (skillIds.length) parts.push(skillIds.length === 1 ? skillIds[0] : `${skillIds[0]} +${skillIds.length - 1}`);
+    const actionKinds = asArray(context?.actionKinds).filter(Boolean);
+    if (actionKinds.length) parts.push(actionKinds.map(humanize).join(" / "));
+    const clips = asArray(context?.animationClips).filter(Boolean);
+    if (clips.length) parts.push(clips.length === 1 ? clips[0] : `${clips[0]} +${clips.length - 1}`);
+    return [...new Set(parts.filter(Boolean))].join(" · ");
+  }
+
+  function selectorEvidenceSummary(record) {
+    const actions = new Map();
+    const containers = new Map();
+    let unresolved = 0;
+    for (const evidence of asArray(record?.evidence)) {
+      for (const action of asArray(evidence?.actionEvidence)) {
+        const operation = humanize(action?.operation || "unknown action");
+        actions.set(operation, (actions.get(operation) || 0) + 1);
+      }
+      for (const container of asArray(evidence?.containerEvidence)) {
+        const relation = normalize(container?.edgeKind) || "unknown";
+        const current = containers.get(relation) || { count: 0, children: 0 };
+        current.count += Number(container?.nodeCount || 1);
+        current.children += Number(container?.childCount || 0);
+        containers.set(relation, current);
+      }
+      unresolved += asArray(evidence?.unresolvedNodes).length;
+    }
+    const values = [...actions].map(([operation, count]) => `${operation} × ${formatNumber(count)}`);
+    for (const [relation, value] of containers) {
+      values.push(`${taxonomyLabel(relation)}: ${formatNumber(value.count)} nodes / ${formatNumber(value.children)} child edges`);
+    }
+    if (unresolved) values.push(`${t("relationPartialGraph")}: ${formatNumber(unresolved)} unresolved nodes`);
+    return values;
+  }
+
   function recordPanel(record) {
     const panel = document.createElement("section");
     panel.className = "audio-panel";
@@ -999,13 +1303,15 @@
     const raw = record.raw;
     const facts = record.kind === "events"
       ? [
-          [t("id"), raw.eventId ?? raw.id], [t("hash"), raw.eventHash ?? raw.hash], [t("category"), record.category],
+          [t("recordType"), t(record.objectType)], [t("id"), raw.eventId ?? raw.id], [t("hash"), raw.eventHash ?? raw.hash], [t("category"), record.category],
           ["Category evidence", raw.categoryEvidence],
           [t("scope"), record.scope], [t("source"), record.source], [t("bank"), raw.bank ?? raw.sourceBank ?? raw.bankId ?? raw.evidence?.[0]?.bank],
-          ["Wwise", raw.foundInWwise], ["Runtime selection", raw.runtimeSelection], ["Candidates", raw.candidateCount], ["Contexts", raw.contextCount],
+          ["Wwise", raw.foundInWwise], [t("typedTraversal"), raw.traversalStatus], [t("playRoots"), raw.playRootCount],
+          [t("possibleMedia"), raw.possibleMediaCount ?? raw.candidateCount], [t("uniqueContent"), raw.uniqueDecodedContentCount],
+          [t("equivalentContent"), raw.contentEquivalentLeafCount], ["Runtime selection", raw.runtimeSelection], ["Contexts", raw.contextCount],
         ]
       : [
-          [t("id"), raw.mediaId ?? raw.id], [t("category"), record.category], [t("scope"), record.scope],
+          [t("recordType"), t(record.objectType)], [t("id"), raw.mediaId ?? raw.id], [t("category"), record.category], [t("scope"), record.scope],
           [t("source"), record.source], [t("path"), raw.rel ?? raw.path ?? raw.src], [t("format"), raw.format],
           [t("bytes"), raw.bytes !== undefined ? formatBytes(raw.bytes) : ""], [t("bank"), raw.bank ?? raw.sourceBank ?? raw.bankId],
         ];
@@ -1013,6 +1319,11 @@
     grid.className = "audio-facts";
     for (const [label, value] of facts) if (value !== undefined && value !== null && value !== "") grid.appendChild(factNode(label, value));
     panel.appendChild(grid);
+
+    if (record.contextTags.length) panel.appendChild(chipSection(t("contextGroups"), record.contextTags.map(taxonomyLabel)));
+    if (record.relationTags.length) panel.appendChild(chipSection(t("relation"), record.relationTags.map(taxonomyLabel)));
+    const selectorEvidence = selectorEvidenceSummary(raw);
+    if (selectorEvidence.length) panel.appendChild(chipSection(t("selectorEvidence"), selectorEvidence));
 
     const evidence = asArray(raw.evidence).filter((value) => value && typeof value === "object");
     const mediaIds = [...new Set([
@@ -1027,8 +1338,8 @@
     if (mediaIds.length) panel.appendChild(chipSection(t("mediaIds"), mediaIds));
     if (record.kind === "media" && eventIds.length) panel.appendChild(chipSection(t("eventIds"), eventIds));
     if (actionIds.length) panel.appendChild(chipSection(t("actions"), actionIds));
-    const contexts = asArray(raw.contexts).filter((value) => value && typeof value === "object").map((value) => [value.kind, value.ownerId, value.groupId, value.confidence].filter(Boolean).join(" / ")).filter(Boolean);
-    if (contexts.length) panel.appendChild(chipSection("Contexts", contexts));
+    const contexts = asArray(raw.contexts).filter((value) => value && typeof value === "object").map(contextEvidenceLabel).filter(Boolean);
+    if (contexts.length) panel.appendChild(chipSection(t("contextEvidence"), contexts));
 
     const players = playableRecords(raw, record.kind);
     const playerSection = document.createElement("section");
@@ -1036,7 +1347,12 @@
     const playerHeading = document.createElement("h3");
     playerHeading.textContent = t("playableMedia");
     playerSection.appendChild(playerHeading);
-    if (players.length) renderPlayers(playerSection, players);
+    if (raw.detailShard && !raw._detailLoaded) {
+      const note = document.createElement("p");
+      note.className = "audio-detail-note";
+      note.textContent = t("loadingEvents");
+      playerSection.appendChild(note);
+    } else if (players.length) renderPlayers(playerSection, players);
     else {
       const note = document.createElement("p");
       note.className = "audio-detail-note";
@@ -1082,8 +1398,17 @@
     return candidates.map((candidate) => {
       const src = audioSource(candidate, raw);
       const id = normalize(candidate.mediaId ?? candidate.id ?? fileName(src));
-      return { raw: candidate, src, id, bytes: candidate.bytes, format: candidate.format };
-    }).filter((candidate) => candidate.src && !seen.has(candidate.src) && seen.add(candidate.src)).slice(0, 24);
+      const wwise = asArray(candidate?.wwiseMediaEvidence).filter((row) => row && typeof row === "object");
+      const rootActionIds = [...new Set(wwise.flatMap((row) => asArray(row.rootActionIds)).filter((value) => Number.isInteger(value)))].sort((a, b) => a - b);
+      const relationTypes = [...new Set(wwise.flatMap((row) => asArray(row.relationTypes)).filter(Boolean))].sort();
+      const soundObjectCount = wwise.reduce((total, row) => total + Number(row.soundObjectCount || 0), 0);
+      return {
+        raw: candidate, src, id, bytes: candidate.bytes, format: candidate.format,
+        rootActionIds, relationTypes, soundObjectCount,
+        contentSha256: normalize(candidate.contentSha256),
+        contentEquivalentCount: Number(candidate.contentEquivalentCount || 0),
+      };
+    }).filter((candidate) => candidate.src && !seen.has(candidate.src) && seen.add(candidate.src));
   }
 
   function audioSource(candidate, parent = {}) {
@@ -1106,7 +1431,23 @@
   function renderPlayers(parent, players) {
     const list = document.createElement("div");
     list.className = "audio-player-list";
+    const groups = new Map();
     for (const candidate of players) {
+      const groupKey = `${candidate.rootActionIds.join(",")}|${candidate.relationTypes.join(",")}`;
+      if (!groups.has(groupKey)) groups.set(groupKey, []);
+      groups.get(groupKey).push(candidate);
+    }
+    for (const candidates of groups.values()) {
+      const exemplar = candidates[0];
+      const groupTitle = document.createElement("div");
+      groupTitle.className = "audio-fact-label";
+      const rootLabel = exemplar.rootActionIds.length
+        ? `${t("playRoots")}: ${exemplar.rootActionIds.join(" / ")}`
+        : t("relationDirectDialogMedia");
+      const relationLabel = exemplar.relationTypes.map(taxonomyLabel).join(" + ");
+      groupTitle.textContent = [rootLabel, relationLabel, `${formatNumber(candidates.length)} ${t("possibleMedia")}`].filter(Boolean).join(" · ");
+      list.appendChild(groupTitle);
+      for (const candidate of candidates) {
       const card = document.createElement("div");
       card.className = "audio-player-card";
       const head = document.createElement("div");
@@ -1116,14 +1457,22 @@
       title.textContent = candidate.id || fileName(candidate.src);
       const meta = document.createElement("div");
       meta.className = "audio-player-meta";
-      meta.textContent = [candidate.format, candidate.bytes !== undefined ? formatBytes(candidate.bytes) : ""].filter(Boolean).join(" · ");
+      meta.textContent = [
+        candidate.format,
+        candidate.bytes !== undefined ? formatBytes(candidate.bytes) : "",
+        candidate.soundObjectCount ? `${candidate.soundObjectCount} Sound objects` : "",
+        candidate.contentEquivalentCount > 1 ? `${t("equivalentContent")} × ${candidate.contentEquivalentCount}` : "",
+        ...candidate.relationTypes.map(taxonomyLabel),
+      ].filter(Boolean).join(" · ");
       head.append(title, meta);
       const audio = document.createElement("audio");
       audio.preload = "none";
+      audio.controls = true;
       audio.src = candidate.src;
-      const player = window.WebUI?.createMediaPlayer ? window.WebUI.createMediaPlayer(audio) : audio;
+      const player = players.length <= 200 && window.WebUI?.createMediaPlayer ? window.WebUI.createMediaPlayer(audio) : audio;
       card.append(head, player);
       list.appendChild(card);
+      }
     }
     parent.appendChild(list);
   }
