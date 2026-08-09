@@ -860,6 +860,29 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
                     "authoredEventIds": list(event.get("authoredEventIds") or [])[:8],
                 }
                 _append_context(contexts, seen, event.get("id"), context)
+    for event in animation_evidence.get("ownerUnresolved") or []:
+        if not isinstance(event, dict):
+            continue
+        evidence = [row for row in event.get("evidence") or [] if isinstance(row, dict)]
+        context = {
+            "kind": "animationCallbackOwnerUnresolved",
+            "confidence": "exactCallbackOwnerUnresolved",
+            "semanticRole": "authoredAnimationAudioCallback",
+            "ownerStatus": "unresolved",
+            "actionKinds": list(event.get("actionKinds") or [])[:8],
+            "animationFunctions": list(event.get("animationFunctions") or [])[:8],
+            "animationClipContexts": list(event.get("animationClipContexts") or [])[:8],
+            "animationClips": list(event.get("sourceAnimationClips") or [])[:12],
+            "animationOccurrenceCount": len(evidence),
+            "clipReachability": event.get("clipReachability") or "unresolved",
+            "authoredEventIds": list(event.get("authoredEventIds") or [])[:8],
+            "sourcePaths": sorted({
+                str(row.get("clipSource") or "")
+                for row in evidence
+                if str(row.get("clipSource") or "")
+            })[:12],
+        }
+        _append_context(contexts, seen, event.get("id"), context)
     return dict(contexts)
 
 
@@ -921,6 +944,126 @@ def collect_projectile_contexts(webui_root: Path) -> dict[str, list[dict[str, An
                 context["skillOwnershipStatus"] = "projectileTemplateReferenceOnly"
             _append_context(contexts, seen, event_hash_context_key(event_hash), context)
     return dict(contexts)
+
+
+def collect_spawner_pre_warn_semantics(
+    export_root: Path,
+    *,
+    decoder: Any | None = None,
+) -> dict[str, Any]:
+    """Recover exact current SpawnerEnemyLibraryItem pre-warning Events."""
+    if decoder is None:
+        try:
+            from story_builder.spawner_binary import decode_spawner_enemy_library
+        except ImportError:
+            from scripts.story_builder.spawner_binary import decode_spawner_enemy_library
+        decoder = decode_spawner_enemy_library
+
+    spawner_root: Path | None = None
+    source_root = ""
+    for candidate_root in ("StreamingAssets", "Persistent"):
+        candidate = export_root / "structured" / candidate_root / "Data/Json/SpawnerConfig"
+        if candidate.is_dir():
+            spawner_root = candidate
+            source_root = candidate_root
+            break
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    failures: list[dict[str, str]] = []
+    source_files = 0
+    decoded_files = 0
+    enemy_rows = 0
+    pre_warn_contexts = 0
+    if spawner_root is not None:
+        for path in sorted(spawner_root.rglob("*.json"), key=lambda item: item.as_posix().lower()):
+            if not path.is_file():
+                continue
+            source_files += 1
+            source = normalize_posix(path.relative_to(export_root))
+            try:
+                data = path.read_bytes()
+                decoded = decoder(data)
+            except (OSError, ValueError) as exc:
+                if len(failures) < 16:
+                    failures.append({"source": source, "error": str(exc)})
+                continue
+            if not isinstance(decoded, dict) or not isinstance(decoded.get("enemyLibrary"), list):
+                if len(failures) < 16:
+                    failures.append({"source": source, "error": "decoder returned no enemyLibrary"})
+                continue
+            decoded_files += 1
+            fingerprint = hashlib.sha256(data).hexdigest()
+            config_id = str(decoded.get("configId") or path.stem)
+            schema_mapping_id = str(decoded.get("schemaMappingId") or "")
+            schema_status = str(decoded.get("schemaStatus") or "")
+            for enemy in decoded["enemyLibrary"]:
+                if not isinstance(enemy, dict):
+                    continue
+                enemy_rows += 1
+                authored_event_id = str(enemy.get("preWarnAudioEventKey") or "").strip()
+                if not authored_event_id:
+                    continue
+                row_index = int(enemy.get("index") or 0)
+                born_buff_ids = sorted({
+                    str(buff.get("buffId") or "")
+                    for buff in enemy.get("bornBuffList") or []
+                    if isinstance(buff, dict) and buff.get("buffId")
+                })
+                context = {
+                    "kind": "spawnerPreWarnAudio",
+                    "ownerId": str(enemy.get("enemyId") or ""),
+                    "confidence": "direct",
+                    "semanticRole": "authoredSpawnerEnemyPreWarning",
+                    "authoredEventId": authored_event_id,
+                    "spawnerConfigId": config_id,
+                    "enemyLibraryIndex": row_index,
+                    "enemyId": str(enemy.get("enemyId") or ""),
+                    "bornTemplateId": str(enemy.get("bornTemplateId") or ""),
+                    "enemyLevel": enemy.get("enemyLevel"),
+                    "spawnerEnemyKey": str(enemy.get("key") or ""),
+                    "preWarnTime": enemy.get("preWarnTime"),
+                    "preWarnEffectKey": str(enemy.get("preWarnEffectKey") or ""),
+                    "preWarnEffectFixedRotation": list(enemy.get("preWarnEffectFixedRotation") or []),
+                    "bornBuffIds": born_buff_ids,
+                    "source": source,
+                    "sourceRoot": source_root,
+                    "sourcePaths": [source],
+                    "sourceFingerprint": fingerprint,
+                    "sourceOffset": enemy.get("sourceOffset"),
+                    "path": f"enemyLibrary[{row_index}].preWarnAudioEventKey",
+                    "semanticPath": "SpawnerConfig.enemyLibrary.preWarnAudioEventKey",
+                    "schemaMappingId": schema_mapping_id,
+                    "schemaStatus": schema_status,
+                    "triggerRequestEvidence": ["serializedSpawnerEnemyLibraryItemPreWarnAudioEventKey"],
+                    "triggerRuntimeActivationStatuses": ["runtimeSpawnerPreWarningConditionRequired"],
+                    "runtimeActivationStatus": "spawnerPreWarningExecutionNotObserved",
+                }
+                _append_context(contexts, seen, authored_event_id, context)
+                pre_warn_contexts += 1
+
+    stats = {
+        "status": (
+            "unavailable" if spawner_root is None
+            else "complete" if decoded_files == source_files
+            else "partial"
+        ),
+        "sourceRoot": source_root,
+        "sourceFiles": source_files,
+        "decodedFiles": decoded_files,
+        "failedFiles": source_files - decoded_files,
+        "enemyRows": enemy_rows,
+        "preWarnAudioContexts": pre_warn_contexts,
+        "distinctPreWarnAudioEvents": len(contexts),
+        "failureSamples": failures,
+        "evidenceBoundary": (
+            "The current mc13 SpawnerEnemyLibraryItem field proves an authored enemy-spawn "
+            "pre-warning Event request, timing value, effect key, enemy/template, and source row. "
+            "It does not prove that the spawner ran or that a Wwise branch played. Non-null "
+            "bornBehaviorData is rejected because no current authored fixture exercises it."
+        ),
+    }
+    return {"eventContexts": dict(contexts), "stats": stats}
 
 
 def _first_recovered_mono_behaviour(export_root: Path, stem: str) -> Path | None:
@@ -1840,6 +1983,13 @@ def build_event_rows(
         ):
             category = "sfx"
             category_evidence = "exactProjectileSoundField"
+        if category == "unknown" and any(
+            context.get("kind") == "spawnerPreWarnAudio"
+            for context in event_contexts
+            if isinstance(context, dict)
+        ):
+            category = "sfx"
+            category_evidence = "exactSpawnerPreWarnAudioField"
         rows.append({
             "id": key,
             "name": display_names.get(key, key),
@@ -1920,12 +2070,13 @@ def semantic_context_group(kind: Any) -> str:
         return "gameplay"
     if value == "cutsceneTimeline":
         return "cutscene"
-    if value in {"characterAnimation", "enemyAnimation"}:
+    if value in {"characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"}:
         return "animation"
     if value in {
         "table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger",
         "audioGlobalConfigEvent", "audioGlobalConfigEventHash",
         "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent",
+        "spawnerPreWarnAudio",
     }:
         return "authoredConfig"
     if value == "binaryManagedLiteral":
@@ -1953,6 +2104,9 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "cueSignedId", "cueId", "cueHex", "handlerScope", "levelId",
             "handlerIndex", "expressionSide", "expressionPath", "exprType",
             "globalMusicCueField",
+            "authoredEventId", "spawnerConfigId", "enemyLibraryIndex", "enemyId",
+            "bornTemplateId", "enemyLevel", "spawnerEnemyKey", "preWarnTime",
+            "preWarnEffectKey", "schemaMappingId", "schemaStatus",
         ):
             value = context.get(key)
             if value not in (None, "", []):
@@ -1965,6 +2119,7 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "triggerSourcePaths",
             "sourcePaths",
             "authoredSkillIds",
+            "bornBuffIds", "preWarnEffectFixedRotation",
         ):
             context_search.update(str(value) for value in context.get(key) or [] if str(value))
         for action in context.get("triggerPlaySoundActions") or []:
@@ -2035,6 +2190,7 @@ def build_audio_semantic_data(
     literal_context_index, managed_literal_names = managed_literal_contexts(metadata_path)
     cue_semantics = collect_audio_cue_semantics(export_root)
     global_controls = collect_audio_global_control_semantics(export_root, cue_semantics)
+    spawner_semantics = collect_spawner_pre_warn_semantics(export_root)
     managed_rtpc_parameters = [{
         "kind": "rtpcParameter",
         "parameterName": name,
@@ -2045,6 +2201,7 @@ def build_audio_semantic_data(
     contexts = merge_contexts(
         collect_gameplay_contexts(webui_root, language),
         collect_projectile_contexts(webui_root),
+        spawner_semantics.get("eventContexts") or {},
         collect_table_contexts(
             export_root,
             runtime_model,
@@ -2071,6 +2228,13 @@ def build_audio_semantic_data(
     )
     events, media_to_events, banks = build_event_rows(audio_index, contexts)
     media = build_media_rows(audio_index, media_to_events)
+    spawner_event_rows = [
+        row for row in events
+        if any(
+            isinstance(context, dict) and context.get("kind") == "spawnerPreWarnAudio"
+            for context in row.get("contexts") or []
+        )
+    ]
 
     named_event_ids = {
         str(value or "").strip().lower()
@@ -2220,6 +2384,14 @@ def build_audio_semantic_data(
             ),
             "projectileSoundEvents": context_kind_event_counts.get("projectileSoundField", 0),
             "projectileSoundContexts": context_kind_counts.get("projectileSoundField", 0),
+            "spawnerPreWarnAudioEvents": context_kind_event_counts.get("spawnerPreWarnAudio", 0),
+            "spawnerPreWarnAudioContexts": context_kind_counts.get("spawnerPreWarnAudio", 0),
+            "spawnerPreWarnAudioEventsFoundInWwise": sum(
+                bool(row.get("foundInWwise")) for row in spawner_event_rows
+            ),
+            "spawnerPreWarnAudioEventsUnresolved": sum(
+                not row.get("foundInWwise") for row in spawner_event_rows
+            ),
             "authoredPlaySoundActionEvents": play_sound_action_events,
             "authoredPlaySoundActionContexts": play_sound_action_contexts,
             "authoredPlaySoundActionOccurrences": play_sound_action_occurrences,
@@ -2244,6 +2416,9 @@ def build_audio_semantic_data(
         ],
         "banks": banks,
         "hircSummary": audio_index.get("hircSummary") or {},
+        "triggerCatalog": {
+            "spawnerPreWarnAudio": spawner_semantics.get("stats") or {},
+        },
         "controlCatalog": {
             "schemaVersion": 1,
             "counts": {
@@ -2280,6 +2455,7 @@ def build_audio_semantic_data(
             "animationOwnership": "An AnimationClip callback proves that the owned clip requests the Event. If the same Event is used by multiple playable characters, its complete Wwise leaf graph is a shared selector surface and is not character-specific media ownership.",
             "authoredEventHash": "Signed table integers are normalized to uint32 only in event-designated fields; row and field prove semantic ownership even when no string name is known.",
             "projectileSound": "A nonzero decoded projectile sound slot proves the projectile lifecycle field references the uint32 Wwise Event. It does not prove that the projectile was spawned, that the lifecycle phase executed, or which Wwise media branch was selected.",
+            "spawnerPreWarnAudio": "The current mc13 SpawnerEnemyLibraryItem preWarnAudioEventKey proves an authored enemy-spawn pre-warning request and its row-local timing/effect/enemy/template source. It does not prove that the spawner executed or that a Wwise branch played; unresolved authored names remain visible.",
             "audioCue": "Only behaviourExpr exprType=3 string values are Event requests. exprType=8 strings are runtime cue-variable operands; AudioGlobal musicCue fields are cue references, and RTPC names are control parameters.",
             "runtimeMetadata": "IL2CPP names prove shipped system structure, not live call order or active state.",
         },

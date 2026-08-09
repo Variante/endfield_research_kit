@@ -1,11 +1,11 @@
 """Fail-closed readers for current Endfield ``SpawnerConfig`` MemoryPack data.
 
-Only the final ``waveMap`` field is decoded here.  The current generated
-formatters serialize ``SpawnerConfig`` as five fields with ``waveMap`` last,
-``SpawnerWaveData`` as eleven fields, and ``SpawnerGroupData`` as twelve
-fields.  Action maps in the middle of group rows remain opaque: the decoder
-accepts a file only when one unique, complete wave/group parse reaches the
-physical end of the file.
+The leading ``enemyLibrary`` and final ``waveMap`` fields are decoded here.
+The current generated formatters serialize ``SpawnerConfig`` as five fields,
+``SpawnerEnemyLibraryItem`` as thirteen fields, ``SpawnerWaveData`` as eleven
+fields, and ``SpawnerGroupData`` as twelve fields.  Action maps in the middle
+of group rows remain opaque: the wave decoder accepts a file only when one
+unique, complete wave/group parse reaches the physical end of the file.
 """
 from __future__ import annotations
 
@@ -17,11 +17,22 @@ from typing import Any
 
 NULL_COUNT = 0xFFFFFFFF
 SPAWNER_CONFIG_MEMBER_COUNT = 5
+SPAWNER_ENEMY_LIBRARY_ITEM_MEMBER_COUNT = 13
+SPAWNER_ENEMY_BORN_BEHAVIOR_MEMBER_COUNT = 18
+SPAWNER_BUFF_ITEM_MEMBER_COUNT = 2
+SPAWNER_BLACKBOARD_ITEM_MEMBER_COUNT = 4
 SPAWNER_WAVE_MEMBER_COUNT = 11
 SPAWNER_GROUP_MEMBER_COUNT = 12
+MAX_ENEMY_COUNT = 10_000
+MAX_BUFF_COUNT = 256
+MAX_BLACKBOARD_COUNT = 256
 MAX_WAVE_COUNT = 256
 MAX_GROUP_COUNT = 1_024
 MAX_STRING_BYTES = 256
+
+SPAWNER_ENEMY_LIBRARY_SCHEMA_MAPPING_ID = (
+    "gameassembly-0c557367-memorypack-spawner-enemy-library-item-v13"
+)
 
 SPAWNER_WAVE_SCHEMA_MAPPING_ID = (
     "gameassembly-2026-07-23-memorypack-spawner-wave-group-v2"
@@ -33,6 +44,229 @@ SPAWNER_WAVE_RUNTIME_MAPPING_ID = (
 
 class SpawnerWaveDecodeError(ValueError):
     """Raised when a SpawnerConfig wave map is absent, changed, or ambiguous."""
+
+
+class SpawnerEnemyLibraryDecodeError(ValueError):
+    """Raised when the current SpawnerConfig enemy-library prefix changes."""
+
+
+def _enemy_read_u32(data: bytes, offset: int, field: str) -> tuple[int, int]:
+    if offset + 4 > len(data):
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: truncated uint32")
+    return struct.unpack_from("<I", data, offset)[0], offset + 4
+
+
+def _enemy_read_i32(data: bytes, offset: int, field: str) -> tuple[int, int]:
+    if offset + 4 > len(data):
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: truncated int32")
+    return struct.unpack_from("<i", data, offset)[0], offset + 4
+
+
+def _enemy_read_f32(data: bytes, offset: int, field: str) -> tuple[float, int]:
+    if offset + 4 > len(data):
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: truncated float32")
+    value = struct.unpack_from("<f", data, offset)[0]
+    if not math.isfinite(value):
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: non-finite float32")
+    return value, offset + 4
+
+
+def _enemy_read_bool(data: bytes, offset: int, field: str) -> tuple[bool, int]:
+    if offset >= len(data) or data[offset] not in (0, 1):
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: invalid bool")
+    return bool(data[offset]), offset + 1
+
+
+def _enemy_read_string(
+    data: bytes,
+    offset: int,
+    field: str,
+    *,
+    max_bytes: int = 512,
+) -> tuple[str | None, int]:
+    length, offset = _enemy_read_u32(data, offset, f"{field}.length")
+    if length == NULL_COUNT:
+        return None, offset
+    if length > max_bytes or offset + length > len(data):
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: invalid string length {length}")
+    try:
+        value = data[offset:offset + length].decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: invalid UTF-8") from exc
+    if any(ord(character) < 0x20 for character in value):
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: control character")
+    return value, offset + length
+
+
+def _enemy_read_count(
+    data: bytes,
+    offset: int,
+    field: str,
+    max_count: int,
+) -> tuple[int, int]:
+    count, offset = _enemy_read_u32(data, offset, field)
+    if count == NULL_COUNT:
+        return 0, offset
+    if count > max_count:
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: implausible count {count}")
+    return count, offset
+
+
+def _decode_spawner_buff_item(data: bytes, offset: int, index: int) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset >= len(data) or data[offset] != SPAWNER_BUFF_ITEM_MEMBER_COUNT:
+        raise SpawnerEnemyLibraryDecodeError(f"bornBuffList[{index}]: member count changed")
+    offset += 1
+    blackboard_count, offset = _enemy_read_count(
+        data,
+        offset,
+        f"bornBuffList[{index}].blackboards",
+        MAX_BLACKBOARD_COUNT,
+    )
+    blackboards: list[dict[str, Any]] = []
+    for blackboard_index in range(blackboard_count):
+        if offset >= len(data) or data[offset] != SPAWNER_BLACKBOARD_ITEM_MEMBER_COUNT:
+            raise SpawnerEnemyLibraryDecodeError(
+                f"bornBuffList[{index}].blackboards[{blackboard_index}]: member count changed"
+            )
+        offset += 1
+        key, offset = _enemy_read_string(
+            data,
+            offset,
+            f"bornBuffList[{index}].blackboards[{blackboard_index}].key",
+        )
+        use_string, offset = _enemy_read_bool(
+            data,
+            offset,
+            f"bornBuffList[{index}].blackboards[{blackboard_index}].useString",
+        )
+        value_float, offset = _enemy_read_f32(
+            data,
+            offset,
+            f"bornBuffList[{index}].blackboards[{blackboard_index}].valueFloat",
+        )
+        value_string, offset = _enemy_read_string(
+            data,
+            offset,
+            f"bornBuffList[{index}].blackboards[{blackboard_index}].valueString",
+        )
+        blackboards.append({
+            "key": key or "",
+            "useString": use_string,
+            "valueFloat": value_float,
+            "valueString": value_string or "",
+        })
+    buff_id, offset = _enemy_read_string(data, offset, f"bornBuffList[{index}].buffId")
+    return {
+        "sourceOffset": start,
+        "blackboards": blackboards,
+        "buffId": buff_id or "",
+    }, offset
+
+
+def decode_spawner_enemy_library(data: bytes) -> dict[str, Any]:
+    """Decode the exact current-build ``SpawnerEnemyLibraryItem`` prefix.
+
+    ``bornBehaviorData`` is nullable and every row in the current exported
+    corpus uses the null marker.  A future non-null member-18 payload is
+    rejected rather than skipped: its field names are known from metadata but
+    its serialized value layout has no current authored fixture.
+    """
+    if not data or data[0] != SPAWNER_CONFIG_MEMBER_COUNT:
+        raise SpawnerEnemyLibraryDecodeError("SpawnerConfig member count changed")
+    config_id, offset = _enemy_read_string(data, 1, "configId")
+    if not config_id:
+        raise SpawnerEnemyLibraryDecodeError("missing configId")
+    enemy_count, offset = _enemy_read_count(data, offset, "enemyLibrary", MAX_ENEMY_COUNT)
+    enemy_library_offset = offset - 4
+    enemies: list[dict[str, Any]] = []
+    for index in range(enemy_count):
+        start = offset
+        if offset >= len(data) or data[offset] != SPAWNER_ENEMY_LIBRARY_ITEM_MEMBER_COUNT:
+            raise SpawnerEnemyLibraryDecodeError(f"enemyLibrary[{index}]: member count changed")
+        offset += 1
+
+        if offset >= len(data):
+            raise SpawnerEnemyLibraryDecodeError(f"enemyLibrary[{index}].bornBehaviorData: truncated")
+        born_behavior_marker = data[offset]
+        if born_behavior_marker != 0xFF:
+            if born_behavior_marker == SPAWNER_ENEMY_BORN_BEHAVIOR_MEMBER_COUNT:
+                detail = "non-null member-18 layout has no current authored fixture"
+            else:
+                detail = f"unexpected marker {born_behavior_marker}"
+            raise SpawnerEnemyLibraryDecodeError(
+                f"enemyLibrary[{index}].bornBehaviorData: {detail}"
+            )
+        offset += 1
+
+        buff_count, offset = _enemy_read_count(
+            data,
+            offset,
+            f"enemyLibrary[{index}].bornBuffList",
+            MAX_BUFF_COUNT,
+        )
+        buffs: list[dict[str, Any]] = []
+        for buff_index in range(buff_count):
+            buff, offset = _decode_spawner_buff_item(data, offset, buff_index)
+            buffs.append(buff)
+
+        born_template_id, offset = _enemy_read_string(
+            data, offset, f"enemyLibrary[{index}].bornTemplateId"
+        )
+        enemy_id, offset = _enemy_read_string(data, offset, f"enemyLibrary[{index}].enemyId")
+        enemy_level, offset = _enemy_read_i32(data, offset, f"enemyLibrary[{index}].enemyLevel")
+        force_to_battle, offset = _enemy_read_bool(
+            data, offset, f"enemyLibrary[{index}].forceToBattle"
+        )
+        key, offset = _enemy_read_string(data, offset, f"enemyLibrary[{index}].key")
+        override_ai_config, offset = _enemy_read_string(
+            data, offset, f"enemyLibrary[{index}].overrideAIConfig"
+        )
+        patrol_gait, offset = _enemy_read_i32(data, offset, f"enemyLibrary[{index}].patrolGait")
+        pre_warn_audio_event_key, offset = _enemy_read_string(
+            data, offset, f"enemyLibrary[{index}].preWarnAudioEventKey"
+        )
+        pre_warn_effect_fixed_rotation: list[float] = []
+        for axis in range(4):
+            value, offset = _enemy_read_f32(
+                data,
+                offset,
+                f"enemyLibrary[{index}].preWarnEffectFixedRotation[{axis}]",
+            )
+            pre_warn_effect_fixed_rotation.append(value)
+        pre_warn_effect_key, offset = _enemy_read_string(
+            data, offset, f"enemyLibrary[{index}].preWarnEffectKey"
+        )
+        pre_warn_time, offset = _enemy_read_f32(
+            data, offset, f"enemyLibrary[{index}].preWarnTime"
+        )
+        enemies.append({
+            "index": index,
+            "sourceOffset": start,
+            "endOffset": offset,
+            "bornBehaviorData": None,
+            "bornBuffList": buffs,
+            "bornTemplateId": born_template_id or "",
+            "enemyId": enemy_id or "",
+            "enemyLevel": enemy_level,
+            "forceToBattle": force_to_battle,
+            "key": key or "",
+            "overrideAIConfig": override_ai_config or "",
+            "patrolGait": patrol_gait,
+            "preWarnAudioEventKey": pre_warn_audio_event_key or "",
+            "preWarnEffectFixedRotation": pre_warn_effect_fixed_rotation,
+            "preWarnEffectKey": pre_warn_effect_key or "",
+            "preWarnTime": pre_warn_time,
+        })
+    return {
+        "configId": config_id,
+        "enemyLibraryOffset": enemy_library_offset,
+        "enemyLibraryEndOffset": offset,
+        "enemyLibraryCount": len(enemies),
+        "enemyLibrary": enemies,
+        "schemaMappingId": SPAWNER_ENEMY_LIBRARY_SCHEMA_MAPPING_ID,
+        "schemaStatus": "exact-current-null-born-behavior",
+    }
 
 
 def _read_string(data: bytes, offset: int) -> tuple[str | None, int]:

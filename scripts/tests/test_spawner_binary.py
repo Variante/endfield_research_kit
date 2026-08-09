@@ -11,9 +11,12 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from story_builder.spawner_binary import (
+    SPAWNER_ENEMY_LIBRARY_ITEM_MEMBER_COUNT,
     SPAWNER_GROUP_MEMBER_COUNT,
     SPAWNER_WAVE_MEMBER_COUNT,
+    SpawnerEnemyLibraryDecodeError,
     SpawnerWaveDecodeError,
+    decode_spawner_enemy_library,
     decode_spawner_wave_map,
 )
 
@@ -114,7 +117,92 @@ def spawner_fixture(second_mode: int = 2) -> bytes:
     return b"\x05" + mp_string("sc_map_test_1004") + b"opaque-prefix" + wave_map
 
 
+def enemy_buff(buff_id: str) -> bytes:
+    blackboard = bytes([4]) + mp_string("ratio") + b"\x00" + struct.pack("<f", 5.0) + mp_string(None)
+    return bytes([2]) + struct.pack("<I", 1) + blackboard + mp_string(buff_id)
+
+
+def enemy_library_item(
+    *,
+    enemy_id: str,
+    template_id: str | None,
+    event_id: str,
+    effect_id: str,
+    pre_warn_time: float,
+) -> bytes:
+    return (
+        bytes([SPAWNER_ENEMY_LIBRARY_ITEM_MEMBER_COUNT, 0xFF])
+        + struct.pack("<I", 1)
+        + enemy_buff("buff_common_born")
+        + mp_string(template_id)
+        + mp_string(enemy_id)
+        + struct.pack("<i", 20)
+        + b"\x01"
+        + mp_string("2C065AAE")
+        + mp_string("EnemyAIConfig/Test")
+        + struct.pack("<i", 2)
+        + mp_string(event_id)
+        + struct.pack("<ffff", 0.0, 0.5, 0.0, 1.0)
+        + mp_string(effect_id)
+        + struct.pack("<f", pre_warn_time)
+    )
+
+
+def enemy_library_fixture() -> bytes:
+    rows = [
+        enemy_library_item(
+            enemy_id="eny_0018_lbtough_train",
+            template_id=None,
+            event_id="au_interactive_monsterspawn_white_2s",
+            effect_id="P_monsterspawn_summon_02_2s",
+            pre_warn_time=2.0,
+        ),
+        enemy_library_item(
+            enemy_id="eny_test_template",
+            template_id="eny_template_override",
+            event_id="au_int_electric_fence_hit",
+            effect_id="P_monsterspawn_summon_01_1s",
+            pre_warn_time=1.25,
+        ),
+    ]
+    return b"\x05" + mp_string("sc_base01_dg001_9900010011") + struct.pack("<I", len(rows)) + b"".join(rows) + b"opaque-tail"
+
+
 class SpawnerBinaryTests(unittest.TestCase):
+    def test_decodes_exact_mc13_enemy_library_prefix(self) -> None:
+        fixture = enemy_library_fixture()
+        decoded = decode_spawner_enemy_library(fixture)
+
+        self.assertEqual(decoded["configId"], "sc_base01_dg001_9900010011")
+        self.assertEqual(decoded["enemyLibraryCount"], 2)
+        self.assertEqual(decoded["enemyLibraryEndOffset"], len(fixture) - len(b"opaque-tail"))
+        first = decoded["enemyLibrary"][0]
+        self.assertIsNone(first["bornBehaviorData"])
+        self.assertEqual(first["bornBuffList"][0]["buffId"], "buff_common_born")
+        self.assertEqual(first["bornBuffList"][0]["blackboards"][0]["key"], "ratio")
+        self.assertEqual(first["bornTemplateId"], "")
+        self.assertEqual(first["enemyId"], "eny_0018_lbtough_train")
+        self.assertEqual(first["preWarnAudioEventKey"], "au_interactive_monsterspawn_white_2s")
+        self.assertEqual(first["preWarnEffectKey"], "P_monsterspawn_summon_02_2s")
+        self.assertEqual(first["preWarnTime"], 2.0)
+        self.assertEqual(first["preWarnEffectFixedRotation"], [0.0, 0.5, 0.0, 1.0])
+        self.assertEqual(decoded["enemyLibrary"][1]["bornTemplateId"], "eny_template_override")
+
+    def test_rejects_changed_enemy_item_member_count(self) -> None:
+        fixture = enemy_library_fixture()
+        item_offset = 1 + len(mp_string("sc_base01_dg001_9900010011")) + 4
+        changed = fixture[:item_offset] + b"\x0c" + fixture[item_offset + 1:]
+        with self.assertRaises(SpawnerEnemyLibraryDecodeError):
+            decode_spawner_enemy_library(changed)
+
+    def test_rejects_unverified_non_null_born_behavior(self) -> None:
+        fixture = enemy_library_fixture()
+        item_offset = 1 + len(mp_string("sc_base01_dg001_9900010011")) + 4
+        behavior_offset = item_offset + 1
+        changed = fixture[:behavior_offset] + b"\x12" + fixture[behavior_offset + 1:]
+        with self.assertRaisesRegex(SpawnerEnemyLibraryDecodeError, "no current authored fixture"):
+            decode_spawner_enemy_library(changed)
+
     def test_decodes_unique_complete_wave_and_group_maps(self) -> None:
         result = decode_spawner_wave_map(spawner_fixture())
 

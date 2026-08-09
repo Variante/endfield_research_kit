@@ -189,6 +189,17 @@ source PathID, field/phase, and exact template SkillData references are retained
 but the skill reference proves projectile configuration only. Runtime spawn,
 lifecycle execution, and Wwise branch selection remain unobserved.
 
+Spawner enemy pre-warning audio now uses the exact current
+`SpawnerEnemyLibraryItem` mc13 prefix rather than the previous mc11 layout.
+All 560 current StreamingAssets configs decode without failure: 1,407 enemy
+rows contain 1,204 non-empty `preWarnAudioEventKey` occurrences across 19
+authored names. The Audio view retains the row-local enemy/template, timing,
+effect, source offset/path, and source SHA-256 even for the 18 names absent from
+the current CN HIRC Event inventory; one name resolves to a current Event.
+This proves authored spawn-warning requests, not that a spawner executed.
+Every current `bornBehaviorData` value is null, so a future non-null member-18
+payload fails closed until an authored fixture proves its serialized layout.
+
 `AudioCueTable` is an expression system rather than a flat Event list. The
 current 175 cue definitions contain 291 handlers: only 325 `behaviourExpr`
 nodes with `exprType=3` are exact downstream Event requests (229 unique Event
