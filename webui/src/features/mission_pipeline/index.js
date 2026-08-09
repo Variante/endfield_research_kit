@@ -365,6 +365,15 @@
       dialogTreeNodes: "nodes",
       dialogTreeConnections: "connections",
       dialogTreeBranchGroups: "multi-option groups",
+      dialogTreeNormalOptions: "normal options",
+      dialogTreeValidatedRoutes: "validated normal-option routes",
+      dialogTreeRejectedRoutes: "rejected normal-option routes",
+      dialogTreeDefaultIndexes: "runtime-default connection indexes",
+      dialogTreeMismatchNodes: "unequal option/connection nodes",
+      dialogTreeExtraOptionNodes: "extra-option nodes",
+      dialogTreeRouteTopology: "Physical option-edge routing",
+      dialogTreeRouteIndex: "connection index",
+      dialogTreeRouteHint: "The original binary passes NormalOptionData.index to DialogTree.Continue, which enters that physical outgoing edge. Unequal counts are valid when exact indexes resolve; invalid indexes remain visible and fail closed.",
       dialogTreeNoOrder: "Definition/internal graph only · no cross-file order promotion",
       dialogTreeObserver: "Mission observer",
       dialogTreeObjectiveObserver: "objective",
@@ -1377,6 +1386,15 @@
       dialogTreeNodes: "节点",
       dialogTreeConnections: "连接",
       dialogTreeBranchGroups: "多选项组",
+      dialogTreeNormalOptions: "普通选项",
+      dialogTreeValidatedRoutes: "已验证普通选项路径",
+      dialogTreeRejectedRoutes: "已拒绝普通选项路径",
+      dialogTreeDefaultIndexes: "运行时默认连接索引",
+      dialogTreeMismatchNodes: "选项/连接数量不等的节点",
+      dialogTreeExtraOptionNodes: "额外选项节点",
+      dialogTreeRouteTopology: "选项到物理边的路径",
+      dialogTreeRouteIndex: "连接索引",
+      dialogTreeRouteHint: "原始二进制把 NormalOptionData.index 传给 DialogTree.Continue，并进入对应的物理输出边。只要精确索引可解析，数量不等也是有效结构；无效索引会保留显示并关闭推断。",
       dialogTreeNoOrder: "仅定义与内部图 · 不提升为跨文件顺序",
       dialogTreeObserver: "任务监听条件",
       dialogTreeObjectiveObserver: "目标",
@@ -2495,7 +2513,7 @@
       ${changedFiles.length ? `<code>${esc(changedFiles.join(", "))}</code>` : ""}
       <span>${esc(t("sourceMissingFiles"))}: ${Number(missingFiles.length).toLocaleString()}</span>
       ${state.index?.storyCoverage?.luaStoryPlaybackEvidence?.status ? `<span>${esc(t("luaPlaybackAudit"))}: <strong>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.status)}</strong> · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.scannedPlaybackCalls || 0).toLocaleString()} calls · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.acceptedTableCarrierCalls || 0).toLocaleString()} table-owned · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherCallCount || 0).toLocaleString()} runtime branches / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherFamilyCount || 0).toLocaleString()} queue family · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleContract?.nativeProducerCount || 0).toLocaleString()} native producers / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleContract?.typedActionProducerTypeCount || 0).toLocaleString()} typed actions · ${Number(state.index.storyCoverage.counts?.nativeCinematicProducerRouteAttachments || 0).toLocaleString()} mission-route attachments · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.unresolvedPlaybackCalls || 0).toLocaleString()} authored unresolved · <code>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.auditSha256 || "")}</code></span>` : ""}
-      ${state.index?.dialogFinishBranchRecovery?.status ? `<span>${esc(t("dialogFinishBranchDependencies"))}: <strong>${esc(state.index.dialogFinishBranchRecovery.status)}</strong> · ${Number(state.index.dialogFinishBranchRecovery.counts?.publishedDependencies || 0).toLocaleString()} ${esc(t("dialogFinishBranchStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.dialogTreeRuntimeDefaultFinishRows || 0).toLocaleString()} ${esc(t("dialogFinishDefaultStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.reusedOptionIdsAcrossScopes || 0).toLocaleString()} ${esc(t("dialogFinishReusedScopeStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.missions || 0).toLocaleString()} ${esc(t("missions"))} · <code>${esc(state.index.dialogFinishBranchRecovery.reportJson || "")}</code></span>` : ""}
+      ${state.index?.dialogFinishBranchRecovery?.status ? `<span>${esc(t("dialogFinishBranchDependencies"))}: <strong>${esc(state.index.dialogFinishBranchRecovery.status)}</strong> · ${Number(state.index.dialogFinishBranchRecovery.counts?.publishedDependencies || 0).toLocaleString()} ${esc(t("dialogFinishBranchStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.dialogTreeValidatedNormalOptionRoutes || 0).toLocaleString()} ${esc(t("dialogTreeValidatedRoutes"))} / ${Number(state.index.dialogFinishBranchRecovery.counts?.dialogTreeRejectedNormalOptionRoutes || 0).toLocaleString()} ${esc(t("dialogTreeRejectedRoutes"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.dialogTreeConnectionCountMismatchNodes || 0).toLocaleString()} ${esc(t("dialogTreeMismatchNodes"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.dialogTreeRuntimeDefaultFinishRows || 0).toLocaleString()} ${esc(t("dialogFinishDefaultStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.reusedOptionIdsAcrossScopes || 0).toLocaleString()} ${esc(t("dialogFinishReusedScopeStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.missions || 0).toLocaleString()} ${esc(t("missions"))} · <code>${esc(state.index.dialogFinishBranchRecovery.reportJson || "")}</code></span>` : ""}
     `;
   }
 
@@ -6249,12 +6267,30 @@
     const definitions = node.dialogTreeDefinitions || [];
     if (!definitions.length) return "";
     const rows = definitions.map((row) => {
+      const routeRecovery = row.optionRouteRecovery || {};
+      const routeCounts = routeRecovery.counts || {};
       const facts = [
         `${Number((row.lineIds || []).length)} ${t("dialogTreeLines")}`,
         `${Number(row.nodeCount || 0)} ${t("dialogTreeNodes")}`,
         `${Number(row.connectionCount || 0)} ${t("dialogTreeConnections")}`,
         `${Number(row.branchingOptionGroupCount || 0)} ${t("dialogTreeBranchGroups")}`,
+        `${Number(routeCounts.validatedNormalOptionRoutes || 0)} ${t("dialogTreeValidatedRoutes")}`,
+        `${Number(routeCounts.rejectedNormalOptionRoutes || 0)} ${t("dialogTreeRejectedRoutes")}`,
       ];
+      const routeNodes = (routeRecovery.nodes || []).filter((routeNode) =>
+        routeNode.normalOptionCount !== routeNode.outgoingConnectionCount
+        || (routeNode.extraOptionConnectionIndices || []).length
+        || (routeNode.issues || []).length
+      );
+      const routeTopology = routeNodes.length ? `<details class="mp-dialog-tree-route-topology"><summary><b>${esc(t("dialogTreeRouteTopology"))}</b> · ${Number(routeCounts.connectionCountMismatchNodes || 0).toLocaleString()} ${esc(t("dialogTreeMismatchNodes"))} · ${Number(routeCounts.extraOptionNodes || 0).toLocaleString()} ${esc(t("dialogTreeExtraOptionNodes"))}</summary><small>${esc(t("dialogTreeRouteHint"))}</small>${routeNodes.map((routeNode) => {
+        const routes = (routeNode.routes || []).map((route) => {
+          const target = route.status === "validated"
+            ? ` → ${esc(route.targetNodeType || "?")} <code>${esc(route.targetNodeId || "?")}</code>`
+            : ` · <strong>${esc(route.status || "rejected")}</strong> · ${esc(route.issue?.gate || "validation_failed")}`;
+          return `<li><code>${esc(route.optionId || `#${route.optionOrdinal ?? "?"}`)}</code> · ${esc(t("dialogTreeRouteIndex"))} <code>${esc(route.connectionIndex ?? "?")}</code> (${esc(route.connectionIndexSource || "?")})${target}</li>`;
+        }).join("");
+        return `<article class="mp-action"><small><code>${esc(routeNode.nodeId || "?")}</code> · ${Number(routeNode.normalOptionCount || 0)} ${esc(t("dialogTreeNormalOptions"))} / ${Number(routeNode.outgoingConnectionCount || 0)} ${esc(t("dialogTreeConnections"))}</small><ul>${routes}</ul></article>`;
+      }).join("")}</details>` : "";
       const observers = (row.missionObservers || []).map((observer) => {
         const relation = observer.relation === "failed_condition"
           ? t("dialogTreeFailureObserver")
@@ -6270,6 +6306,8 @@
         ${observers.map((observer) => `<small>${esc(t("dialogTreeObserver"))}: ${esc(observer)}</small>`).join("")}
         <small><code>${esc(row.sourceFile || "")}</code></small>
         <small>SHA-256 <code>${esc(row.sourceSha256 || "")}</code></small>
+        ${routeCounts.runtimeDefaultConnectionIndexes ? `<small>${Number(routeCounts.runtimeDefaultConnectionIndexes).toLocaleString()} ${esc(t("dialogTreeDefaultIndexes"))}</small>` : ""}
+        ${routeTopology}
         <small>${esc(t("dialogTreeNoOrder"))}</small>
       </article>`;
     }).join("");

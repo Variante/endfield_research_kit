@@ -121,6 +121,18 @@ def compact_source(meta: dict[str, Any] | None, kind: str) -> dict[str, Any] | N
         "targetFragments": len(meta.get("targetFragments") or []),
         "cinematicFinishGroups": len(meta.get("cinematicFinishGroups") or []),
     }
+    route_recovery = meta.get("optionRouteRecovery") or {}
+    route_counts = route_recovery.get("counts") or {}
+    for key in (
+        "validatedNormalOptionRoutes",
+        "rejectedNormalOptionRoutes",
+        "runtimeDefaultConnectionIndexes",
+        "explicitConnectionIndexes",
+        "connectionCountMismatchNodes",
+        "extraOptionNodes",
+    ):
+        if route_counts.get(key):
+            signal_counts[key] = route_counts[key]
     out["signalCounts"] = {key: value for key, value in signal_counts.items() if value}
     if action_assets := compact_action_asset_names(meta.get("actionAssets")):
         out["actionAssets"] = action_assets
@@ -224,6 +236,8 @@ def option_scene_link_matches(scene_links: list[dict[str, Any]], option_id: str)
                     entry[field] = option.get(field)
             if option.get("loop"):
                 entry["loop"] = option.get("loop")
+            if option.get("routeEvidence"):
+                entry["routeEvidence"] = option.get("routeEvidence")
             matches.append({key: value for key, value in entry.items() if value not in ("", [], {})})
     return matches
 

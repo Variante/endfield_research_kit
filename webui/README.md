@@ -173,6 +173,12 @@ sns_topic_map02_lv005_12002
   `Int32 0`. Reused localization option IDs stay separated by runtime scope.
   Each row remains a dependency, not an observed player choice or
   server-selected successor.
+- Original DialogTree definition cards expose normal-option route validation.
+  The binary-proven `NormalOptionData.index` selects a physical outgoing edge,
+  including positions around extra-option edges. Unequal option/connection
+  counts are allowed when exact indexes resolve; invalid or identity-less
+  authored routes remain visible and fail closed. OCR and manual overrides are
+  never route evidence.
 - Manual Story order and OCR proposals are cross-reference material, not graph
   evidence.
 

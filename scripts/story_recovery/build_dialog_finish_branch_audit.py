@@ -21,8 +21,19 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.story_builder.dialog_tree_option_routes import (
+    DIALOG_TREE_RUNTIME_DEFAULTS,
+    recover_dialog_tree_option_routes,
+    resolve_serialized_field,
+    short_type as _short_type,
+)
+
+
+ROOT = _REPO_ROOT
 DEFAULT_PIPELINE_ROOT = ROOT / "webui" / "data" / "mission_pipeline"
 DEFAULT_TIMELINE_ORDERS = (
     ROOT
@@ -30,6 +41,15 @@ DEFAULT_TIMELINE_ORDERS = (
     / "recovered"
     / "AnimeStudio-cli"
     / "timeline_line_orders.json"
+)
+DEFAULT_DIALOG_TREE_ROOT = (
+    ROOT
+    / "export_full"
+    / "recovered"
+    / "AnimeStudio-cli"
+    / "StreamingAssets"
+    / "json_by_type"
+    / "TextAsset"
 )
 DEFAULT_GAME_ASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
 DEFAULT_METADATA = Path(
@@ -50,6 +70,17 @@ EXPECTED_GAME_ASSEMBLY_SHA256 = (
 EXPECTED_METADATA_SHA256 = (
     "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
 )
+EXPECTED_METADATA_REGISTRATION = 0x18B921C30
+EXPECTED_RUNTIME_FIELD_OFFSETS = {
+    "Beyond.Gameplay.NormalOptionData": {
+        "main": 0x70,
+        "index": 0x80,
+    },
+    "Beyond.Gameplay.DialogTreeOptionNode": {
+        "_normalOptions": 0xA0,
+        "_hasExOption": 0xA8,
+    },
+}
 NATIVE_METHODS = {
     "DialogTree.ImportFromJson": {
         "token": "0x06003a7f",
@@ -93,6 +124,77 @@ NATIVE_METHODS = {
             "creates reflected objects through FormatterServices."
             "GetSafeUninitializedObject, whose managed value-type fields start "
             "at their zero/default value"
+        ),
+    },
+    "DialogTreeOptionNode.get_maxOutConnections": {
+        "token": "0x06003b8f",
+        "va": 0x1872A721C,
+        "bytes": 80,
+        "sha256": "b5cba6675adf30a99f4751b3b00bfeb7a4bbf86d4830b1037e663a26c4cd846c",
+        "contract": (
+            "returns ten rather than the normal-option count, so unequal "
+            "option/connection counts are an allowed serialized shape"
+        ),
+    },
+    "DialogTreeOptionNode.get_exOptionIndex": {
+        "token": "0x06003b90",
+        "va": 0x1872A70A4,
+        "bytes": 220,
+        "sha256": "059f36a29c0cff656135384abcf5fcfd8f22db2935f30f84ef3338f5dd9998ef",
+        "contract": (
+            "scans the physical outgoing connection list and returns the "
+            "first target whose runtime node type is DialogTreeExOptionNode"
+        ),
+    },
+    "DialogTreeOptionNode.GetNextIndex": {
+        "token": "0x06003b98",
+        "va": 0x1872A6B7C,
+        "bytes": 120,
+        "sha256": "470f865abaa215a04d82fdcc4faf8a5b4972bec7215c00d80fab85de6cd5f32a",
+        "contract": (
+            "shifts the default normal-option ordinal over an earlier "
+            "DialogTreeExOptionNode connection"
+        ),
+    },
+    "NormalOptionHandler.OnSelectWhenOptionEnd": {
+        "token": "0x0600fa1e",
+        "va": 0x186E512B0,
+        "bytes": 176,
+        "sha256": "10fac7b20f31417754dd81e2ec8955cc50ac369f9348e4a05e96cee675213416",
+        "contract": (
+            "reads NormalOptionData.index at the MetadataRegistration-backed "
+            "0x80 field and passes it to DialogManager.SelectDialogTreeIndex"
+        ),
+    },
+    "DialogManager.SelectDialogTreeIndex": {
+        "token": "0x0600f7dc",
+        "va": 0x186E18578,
+        "bytes": 112,
+        "sha256": "37976498f3a1ee76a34ee8134da4bc24cc8652e65eb040995e14002e992470b4",
+        "contract": "passes the selected NormalOptionData.index unchanged to the controller",
+    },
+    "DialogTreeController.SelectIndex": {
+        "token": "0x06003a9e",
+        "va": 0x1872A2F9C,
+        "bytes": 176,
+        "sha256": "fe722e939949c4907f2362ff716a9d67ee76ad6995fb6fbf2fc36514a5484d3b",
+        "contract": "calls currentNode.GetRealIndex and then DialogTree.Continue",
+    },
+    "DialogTreeNode.GetRealIndex": {
+        "token": "0x06003b04",
+        "va": 0x1872A56E0,
+        "bytes": 88,
+        "sha256": "ee0588ce28b0c7f7b261f1490213d2a56b0d0f2707c7bd4e1c6adc1259a989d5",
+        "contract": "returns the supplied connection index unchanged on the native path",
+    },
+    "DialogTree.Continue": {
+        "token": "0x06003a74",
+        "va": 0x1872A8CE8,
+        "bytes": 492,
+        "sha256": "e26813edbe2614638bbd8039571b830460cec7e129bbccd9c0eb6d3a12e8bf99",
+        "contract": (
+            "bounds-checks the supplied index against outConnections.Count "
+            "and enters exactly outConnections[index]"
         ),
     },
     "DialogTreeFinishNode.DoExecute": {
@@ -214,6 +316,52 @@ def validate_native_contract(
                 "contract": expected["contract"],
             }
         )
+    catalog_module = mapper.load_catalog_module()
+    metadata_image = catalog_module.Metadata(metadata)
+    registration = mapper.metadata_registration_summary(
+        pe, EXPECTED_METADATA_REGISTRATION
+    )
+    offsets_table = int(registration["fieldOffsets"], 16)
+    runtime_field_offsets: dict[str, dict[str, int]] = {}
+    type_by_name = {
+        metadata_image.type_full_name(type_def): type_def
+        for type_def in metadata_image.types
+    }
+    for type_name, expected_offsets in EXPECTED_RUNTIME_FIELD_OFFSETS.items():
+        type_def = type_by_name.get(type_name)
+        if type_def is None:
+            raise AuditValidationError(
+                f"validator={validator} gate=runtimeFieldOwner "
+                f"expected={type_name} actual=missing source={metadata}"
+            )
+        row_va = pe.u64_at_va(offsets_table + type_def.index * 8)
+        if not row_va:
+            raise AuditValidationError(
+                f"validator={validator} gate=runtimeFieldOffsetRow "
+                f"expected=nonzero actual=0 owner={type_name} source={game_assembly}"
+            )
+        actual_offsets = {
+            metadata_image.string(field.name_index): pe.u32_at_va(
+                row_va + ordinal * 4
+            )
+            for ordinal, field in enumerate(
+                metadata_image.fields[
+                    type_def.field_start : type_def.field_start + type_def.field_count
+                ]
+            )
+        }
+        selected = {
+            field_name: actual_offsets.get(field_name)
+            for field_name in expected_offsets
+        }
+        if selected != expected_offsets:
+            raise AuditValidationError(
+                f"validator={validator} gate=runtimeFieldOffsets owner={type_name} "
+                f"expected={expected_offsets} actual={selected} "
+                f"source={game_assembly}"
+            )
+        runtime_field_offsets[type_name] = selected
+
     return {
         "status": "validated",
         "validator": validator,
@@ -226,12 +374,19 @@ def validate_native_contract(
             "sha256": EXPECTED_METADATA_SHA256,
         },
         "methods": methods,
+        "metadataRegistration": {
+            "address": f"0x{EXPECTED_METADATA_REGISTRATION:x}",
+            "fieldOffsets": runtime_field_offsets,
+        },
         "serializedFieldDefaults": {
             "status": "validated",
             "scope": "FullSerializer reflected fields omitted from authored JSON",
             "initialization": "FormatterServices.GetSafeUninitializedObject",
             "assignmentGate": "JSON-name dictionary lookup must succeed",
-            "managedValueTypeDefaults": {"System.Int32": 0},
+            "managedValueTypeDefaults": {
+                "System.Int32": 0,
+                "System.Boolean": False,
+            },
             "evidenceMethods": [
                 "DialogTree.ImportFromJson",
                 "NodeCanvas.Graph.Deserialize",
@@ -248,48 +403,18 @@ def validate_native_contract(
     }
 
 
-def _short_type(value: Any) -> str:
-    text = str(value or "").split(",", 1)[0]
-    return text.rsplit(".", 1)[-1]
-
-
-def resolve_serialized_field(
-    record: dict[str, Any],
-    field_name: str,
-    managed_type: str,
-    *,
-    runtime_defaults: dict[str, Any] | None = None,
-) -> tuple[Any | None, str]:
-    """Resolve one authored field without inventing object-specific defaults.
-
-    Explicit values always win.  An omitted field is admitted only when the
-    installed-runtime contract validated the general FullSerializer reflected
-    field behavior and declared the managed value type's default.
-    """
-    if field_name in record:
-        value = record[field_name]
-        if managed_type == "System.Int32" and type(value) is int:
-            return value, "serialized_explicit"
-        return None, "invalid_serialized_value"
-    defaults = runtime_defaults or {}
-    values = defaults.get("managedValueTypeDefaults") or {}
-    if defaults.get("status") == "validated" and managed_type in values:
-        value = values[managed_type]
-        if managed_type == "System.Int32" and type(value) is int:
-            return value, "runtime_default"
-    return None, "missing_without_validated_default"
-
-
 def decode_dialog_tree_finish_routes(
     outer: Any,
     *,
     source_file: str,
     runtime_defaults: dict[str, Any] | None = None,
+    route_coverage: dict[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Decode exact option-to-finish routes, rejecting ambiguous node shapes.
+    """Decode exact option-to-finish routes from authored physical indexes.
 
-    Connection order is used only because the installed ``SelectIndex`` path
-    indexes the option list and the outgoing connection list positionally.
+    The installed selection path passes ``NormalOptionData.index`` unchanged
+    to ``DialogTree.Continue``. Option-list ordinal is never substituted for a
+    missing, invalid, or out-of-bounds physical connection index.
     """
     rejected: list[dict[str, Any]] = []
     if not isinstance(outer, dict) or not isinstance(outer.get("m_Script"), str):
@@ -332,10 +457,26 @@ def decode_dialog_tree_finish_routes(
             return [], [{"sourceFile": source_file, "gate": "connectionReference"}]
         targets[source_id].append(target_id)
 
+    option_route_recovery = recover_dialog_tree_option_routes(
+        payload["nodes"],
+        payload["connections"],
+        runtime_defaults=runtime_defaults,
+    )
+    if route_coverage is not None:
+        route_coverage.update(
+            {
+                "schemaVersion": option_route_recovery.get("schemaVersion"),
+                "sourceFile": source_file,
+                "counts": option_route_recovery.get("counts") or {},
+                "nodes": option_route_recovery.get("nodes") or [],
+                "issues": option_route_recovery.get("issues") or [],
+            }
+        )
+
     rows: list[dict[str, Any]] = []
-    for node_id, node in nodes.items():
-        if _short_type(node.get("$type")) != "DialogTreeOptionNode":
-            continue
+    for node_summary in option_route_recovery.get("nodes") or []:
+        node_id = str(node_summary.get("nodeId") or "")
+        node = nodes.get(node_id) or {}
         option_rows = node.get("_normalOptions") or []
         if not isinstance(option_rows, list):
             rejected.append({"sourceFile": source_file, "gate": "optionList", "nodeId": node_id})
@@ -353,21 +494,18 @@ def decode_dialog_tree_finish_routes(
         ):
             rejected.append({"sourceFile": source_file, "gate": "uniqueOptionIds", "nodeId": node_id})
             continue
-        outgoing = targets.get(node_id, [])
-        if len(outgoing) != len(option_ids):
-            rejected.append(
-                {
-                    "sourceFile": source_file,
-                    "gate": "positionalOptionConnections",
-                    "nodeId": node_id,
-                    "expected": len(option_ids),
-                    "actual": len(outgoing),
-                }
-            )
-            continue
-        for option_ordinal, (option_id, start_id) in enumerate(
-            zip(option_ids, outgoing, strict=True)
-        ):
+        for route in node_summary.get("routes") or []:
+            option_ordinal = route.get("optionOrdinal")
+            option_id = str(route.get("optionId") or "")
+            if route.get("status") != "validated":
+                rejected.append(
+                    {
+                        "sourceFile": source_file,
+                        **(route.get("issue") or {}),
+                    }
+                )
+                continue
+            start_id = str(route.get("targetNodeId") or "")
             seen: set[str] = set()
             current_id = start_id
             while current_id not in seen:
@@ -404,11 +542,18 @@ def decode_dialog_tree_finish_routes(
                                 "producerFamily": "dialog_tree_finish_node",
                                 "optionNodeId": node_id,
                                 "optionOrdinal": option_ordinal,
+                                "connectionIndex": route.get("connectionIndex"),
+                                "connectionIndexSource": route.get(
+                                    "connectionIndexSource"
+                                ),
                                 "producerScope": {
                                     "kind": "dialog_tree_option_node",
                                     "key": f"node:{node_id}:option:{option_ordinal}",
                                     "optionNodeId": node_id,
                                     "optionOrdinal": option_ordinal,
+                                    "connectionIndex": route.get(
+                                        "connectionIndex"
+                                    ),
                                 },
                                 "finishNodeId": current_id,
                                 "sourceFiles": [
@@ -630,7 +775,11 @@ def _collect_dialog_tree_producers(
     payloads: dict[str, dict[str, Any]],
     *,
     runtime_defaults: dict[str, Any] | None = None,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+) -> tuple[
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+]:
     source_files = sorted(
         {
             str(definition.get("sourceFile") or "")
@@ -643,6 +792,7 @@ def _collect_dialog_tree_producers(
     )
     rows: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
+    route_coverage: list[dict[str, Any]] = []
     for source_file in source_files:
         path = resolve_source(source_file)
         if not path.is_file():
@@ -650,14 +800,137 @@ def _collect_dialog_tree_producers(
                 "validator=dialog_finish_branch_recovery gate=dialogTreeSource "
                 f"expected=file actual=missing source={path}"
             )
+        source_route_coverage: dict[str, Any] = {}
         decoded, failures = decode_dialog_tree_finish_routes(
             read_json(path),
             source_file=source_label(path),
             runtime_defaults=runtime_defaults,
+            route_coverage=source_route_coverage,
         )
         rows.extend(decoded)
         rejected.extend(failures)
-    return rows, rejected
+        route_coverage.append(source_route_coverage)
+    return rows, rejected, route_coverage
+
+
+def _summarize_dialog_tree_route_coverage(
+    sources: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
+    """Aggregate exact per-file route diagnostics without discarding bounds."""
+    source_rows = list(sources)
+    totals: Counter[str] = Counter()
+    mismatch_nodes: list[dict[str, Any]] = []
+    invalid_routes: list[dict[str, Any]] = []
+    extra_option_nodes: list[dict[str, Any]] = []
+    for source in source_rows:
+        source_file = str(source.get("sourceFile") or "")
+        totals.update(source.get("counts") or {})
+        for node in source.get("nodes") or []:
+            if not isinstance(node, dict):
+                continue
+            bounded = {
+                "sourceFile": source_file,
+                "nodeId": node.get("nodeId"),
+                "normalOptionCount": node.get("normalOptionCount"),
+                "outgoingConnectionCount": node.get("outgoingConnectionCount"),
+                "extraOptionConnectionIndices": node.get(
+                    "extraOptionConnectionIndices"
+                )
+                or [],
+            }
+            if (
+                isinstance(node.get("normalOptionCount"), int)
+                and isinstance(node.get("outgoingConnectionCount"), int)
+                and node.get("normalOptionCount")
+                != node.get("outgoingConnectionCount")
+            ):
+                mismatch_nodes.append(bounded)
+            if node.get("extraOptionConnectionIndices"):
+                extra_option_nodes.append(bounded)
+            for route in node.get("routes") or []:
+                if isinstance(route, dict) and route.get("status") != "validated":
+                    invalid_routes.append(
+                        {
+                            "sourceFile": source_file,
+                            "nodeId": node.get("nodeId"),
+                            "optionId": route.get("optionId"),
+                            "optionOrdinal": route.get("optionOrdinal"),
+                            "connectionIndex": route.get("connectionIndex"),
+                            "connectionIndexSource": route.get(
+                                "connectionIndexSource"
+                            ),
+                            "issue": route.get("issue") or {},
+                        }
+                    )
+    return {
+        "sourceFileCount": len(source_rows),
+        "counts": dict(sorted(totals.items())),
+        "connectionCountMismatchNodes": mismatch_nodes,
+        "extraOptionNodes": extra_option_nodes,
+        "invalidNormalOptionRoutes": invalid_routes,
+        "evidenceBoundary": (
+            "Counts describe only exact original DialogTree files observed by "
+            "Mission Pipeline. Unequal option/connection counts are retained "
+            "when serialized indexes validate; invalid indexes fail closed."
+        ),
+    }
+
+
+def _collect_dialog_tree_route_corpus(
+    root: Path,
+    *,
+    runtime_defaults: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Validate the same route contract over every typed DialogTree source."""
+    if not root.is_dir():
+        raise AuditValidationError(
+            "validator=dialog_finish_branch_recovery gate=dialogTreeCorpusRoot "
+            f"expected=directory actual=missing source={root}"
+        )
+    coverage_sources: list[dict[str, Any]] = []
+    scanned_json_files = 0
+    for path in sorted(root.rglob("*.json")):
+        scanned_json_files += 1
+        outer = read_json(path)
+        if not isinstance(outer, dict) or not isinstance(outer.get("m_Script"), str):
+            continue
+        try:
+            payload = json.loads(
+                base64.b64decode(outer["m_Script"], validate=True).decode(
+                    "utf-8-sig"
+                )
+            )
+        except (binascii.Error, UnicodeDecodeError, json.JSONDecodeError, ValueError):
+            continue
+        if (
+            not isinstance(payload, dict)
+            or payload.get("type") != "Beyond.Gameplay.DialogTree"
+            or not isinstance(payload.get("nodes"), list)
+            or not isinstance(payload.get("connections"), list)
+        ):
+            continue
+        recovered = recover_dialog_tree_option_routes(
+            payload["nodes"],
+            payload["connections"],
+            runtime_defaults=runtime_defaults,
+        )
+        coverage_sources.append(
+            {
+                "sourceFile": source_label(path),
+                "counts": recovered.get("counts") or {},
+                "nodes": recovered.get("nodes") or [],
+                "issues": recovered.get("issues") or [],
+            }
+        )
+    summary = _summarize_dialog_tree_route_coverage(coverage_sources)
+    summary.update(
+        {
+            "sourceRoot": source_label(root),
+            "scannedJsonFiles": scanned_json_files,
+            "dialogTreeFileCount": len(coverage_sources),
+        }
+    )
+    return summary
 
 
 def _normalize_producers(
@@ -742,6 +1015,7 @@ def build_report(
     index: dict[str, Any],
     pipeline_root: Path = DEFAULT_PIPELINE_ROOT,
     timeline_orders_path: Path = DEFAULT_TIMELINE_ORDERS,
+    dialog_tree_root: Path = DEFAULT_DIALOG_TREE_ROOT,
     *,
     native_contract: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
@@ -749,9 +1023,18 @@ def build_report(
     native_contract = native_contract or validate_native_contract()
     consumers, payloads = _collect_mission_consumers(index, pipeline_root)
     runtime_defaults = native_contract.get("serializedFieldDefaults") or {}
-    tree_rows, tree_rejected = _collect_dialog_tree_producers(
+    tree_rows, tree_rejected, tree_route_sources = _collect_dialog_tree_producers(
         payloads, runtime_defaults=runtime_defaults
     )
+    tree_route_coverage = _summarize_dialog_tree_route_coverage(
+        tree_route_sources
+    )
+    tree_route_counts = tree_route_coverage.get("counts") or {}
+    corpus_route_coverage = _collect_dialog_tree_route_corpus(
+        dialog_tree_root,
+        runtime_defaults=runtime_defaults,
+    )
+    corpus_route_counts = corpus_route_coverage.get("counts") or {}
     timeline_payload = read_json(timeline_orders_path) if timeline_orders_path.is_file() else {}
     timeline_rows, timeline_rejected = decode_timeline_finish_routes(timeline_payload)
     producers, conflicts = _normalize_producers([*tree_rows, *timeline_rows])
@@ -825,15 +1108,16 @@ def build_report(
         )
     )
     report = {
-        "schemaVersion": "dialogFinishMissionBranchAudit.v2",
+        "schemaVersion": "dialogFinishMissionBranchAudit.v3",
         "status": "validated",
         "validator": validator,
         "evidencePolicy": (
             "Only exact nonnegative dialog finish IDs shared by an original "
             "DialogTree/Timeline option producer and MissionRuntime objective are "
-            "admitted. An omitted DialogTree Int32 is admitted as zero only under "
-            "the hash-locked FullSerializer reflected-field default contract. OCR "
-            "and manual overrides are not read."
+            "admitted. A DialogTree normal option selects the physical outgoing "
+            "edge stored in NormalOptionData.index. An omitted DialogTree Int32 "
+            "is admitted as zero only under the hash-locked FullSerializer "
+            "reflected-field default contract. OCR and manual overrides are not read."
         ),
         "nativeContract": native_contract,
         "sources": {
@@ -848,6 +1132,54 @@ def build_report(
             ),
             "dialogTreeRuntimeDefaultFinishRows": sum(
                 row.get("finishIdSource") == "runtime_default" for row in tree_rows
+            ),
+            "dialogTreeRouteSourceFiles": tree_route_coverage.get(
+                "sourceFileCount", 0
+            ),
+            "dialogTreeValidatedNormalOptionRoutes": tree_route_counts.get(
+                "validatedNormalOptionRoutes", 0
+            ),
+            "dialogTreeRejectedNormalOptionRoutes": tree_route_counts.get(
+                "rejectedNormalOptionRoutes", 0
+            ),
+            "dialogTreeRuntimeDefaultConnectionIndexes": tree_route_counts.get(
+                "runtimeDefaultConnectionIndexes", 0
+            ),
+            "dialogTreeExplicitConnectionIndexes": tree_route_counts.get(
+                "explicitConnectionIndexes", 0
+            ),
+            "dialogTreeConnectionCountMismatchNodes": tree_route_counts.get(
+                "connectionCountMismatchNodes", 0
+            ),
+            "dialogTreeExtraOptionNodes": tree_route_counts.get(
+                "extraOptionNodes", 0
+            ),
+            "corpusDialogTreeFiles": corpus_route_coverage.get(
+                "dialogTreeFileCount", 0
+            ),
+            "corpusDialogTreeOptionNodes": corpus_route_counts.get(
+                "authoredOptionNodes", 0
+            ),
+            "corpusDecodableDialogTreeOptionNodes": corpus_route_counts.get(
+                "optionNodes", 0
+            ),
+            "corpusAuthoredNormalOptions": corpus_route_counts.get(
+                "authoredNormalOptions", 0
+            ),
+            "corpusUnrecoverableOptionNodes": corpus_route_counts.get(
+                "unrecoverableOptionNodes", 0
+            ),
+            "corpusValidatedNormalOptionRoutes": corpus_route_counts.get(
+                "validatedNormalOptionRoutes", 0
+            ),
+            "corpusRejectedNormalOptionRoutes": corpus_route_counts.get(
+                "rejectedNormalOptionRoutes", 0
+            ),
+            "corpusConnectionCountMismatchNodes": corpus_route_counts.get(
+                "connectionCountMismatchNodes", 0
+            ),
+            "corpusExtraOptionNodes": corpus_route_counts.get(
+                "extraOptionNodes", 0
             ),
             "timelineProducerRows": len(timeline_rows),
             "acceptedOptionProducers": len(producers),
@@ -866,6 +1198,8 @@ def build_report(
         "producerFamilyCounts": dict(
             sorted(Counter(family for row in producers for family in row["producerFamilies"]).items())
         ),
+        "dialogTreeOptionRouteCoverage": tree_route_coverage,
+        "dialogTreeOptionRouteCorpusCoverage": corpus_route_coverage,
         "dependencies": dependencies,
         "unresolvedExactConsumers": unresolved,
         "rejectedProducerShapes": [*tree_rejected, *timeline_rejected],
@@ -950,6 +1284,12 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Exact MissionRuntime consumers: {counts.get('exactMissionConsumers', 0)}",
         f"- Accepted option producers: {counts.get('acceptedOptionProducers', 0)}",
         f"- DialogTree explicit / runtime-default finish rows: {counts.get('dialogTreeExplicitFinishRows', 0)} / {counts.get('dialogTreeRuntimeDefaultFinishRows', 0)}",
+        f"- Validated / rejected normal-option routes: {counts.get('dialogTreeValidatedNormalOptionRoutes', 0)} / {counts.get('dialogTreeRejectedNormalOptionRoutes', 0)}",
+        f"- Explicit / runtime-default connection indexes: {counts.get('dialogTreeExplicitConnectionIndexes', 0)} / {counts.get('dialogTreeRuntimeDefaultConnectionIndexes', 0)}",
+        f"- Unequal option/connection nodes admitted by exact index / extra-option nodes: {counts.get('dialogTreeConnectionCountMismatchNodes', 0)} / {counts.get('dialogTreeExtraOptionNodes', 0)}",
+        f"- Full typed corpus: {counts.get('corpusDialogTreeFiles', 0)} DialogTrees, {counts.get('corpusDialogTreeOptionNodes', 0)} authored option nodes, {counts.get('corpusAuthoredNormalOptions', 0)} normal options",
+        f"- Full-corpus validated / rejected routes: {counts.get('corpusValidatedNormalOptionRoutes', 0)} / {counts.get('corpusRejectedNormalOptionRoutes', 0)}; unrecoverable-identity option nodes: {counts.get('corpusUnrecoverableOptionNodes', 0)}",
+        f"- Full-corpus unequal-count / extra-option nodes: {counts.get('corpusConnectionCountMismatchNodes', 0)} / {counts.get('corpusExtraOptionNodes', 0)}",
         f"- Published dependencies: {counts.get('publishedDependencies', 0)}",
         f"- Missions / quests: {counts.get('missions', 0)} / {counts.get('quests', 0)}",
         f"- Unresolved exact consumers: {counts.get('unresolvedExactConsumers', 0)}",
@@ -983,6 +1323,21 @@ def markdown_report(report: dict[str, Any]) -> str:
             )
     else:
         lines.append("- None.")
+    lines.extend(["", "## Invalid original normal-option routes", ""])
+    invalid_routes = (
+        report.get("dialogTreeOptionRouteCoverage") or {}
+    ).get("invalidNormalOptionRoutes") or []
+    if invalid_routes:
+        for row in invalid_routes:
+            issue = row.get("issue") or {}
+            lines.append(
+                f"- `{row.get('sourceFile')}` node `{row.get('nodeId')}` option "
+                f"`{row.get('optionId')}` uses connection index "
+                f"`{row.get('connectionIndex')}` ({row.get('connectionIndexSource')}); "
+                f"gate `{issue.get('gate')}`, expected `{issue.get('expected')}`."
+            )
+    else:
+        lines.append("- None.")
     lines.extend(
         [
             "",
@@ -999,6 +1354,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pipeline-root", type=Path, default=DEFAULT_PIPELINE_ROOT)
     parser.add_argument("--timeline-orders", type=Path, default=DEFAULT_TIMELINE_ORDERS)
+    parser.add_argument("--dialog-tree-root", type=Path, default=DEFAULT_DIALOG_TREE_ROOT)
     parser.add_argument("--game-assembly", type=Path, default=DEFAULT_GAME_ASSEMBLY)
     parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
@@ -1012,6 +1368,7 @@ def main() -> int:
         index,
         args.pipeline_root,
         args.timeline_orders,
+        args.dialog_tree_root,
         native_contract=native,
     )
     write_json(args.json, report)
