@@ -73,7 +73,14 @@ NPC archetypes are imported as labeled source kits.
   gates, hidden-sret handoff, 16-byte `LightCullResult`, and 148-byte
   `VisibleLight` capture stride are source-closed. An authorized target-frame
   capture therefore has an exact pointer/count/row decoding contract, but no
-  live values are inferred offline.
+  live values are inferred offline. The same maintained audit now closes
+  `AddCullViewByMatrix` from its 16-argument binding through six-plane
+  construction and the scheduled view record. The managed screen-size minimum
+  is squared and stored at view `+0x18`; its installed desktop default is zero.
+  Candidate visibility bit 0 is evaluated before the mask-enabled bit and
+  `Camera.cullingMask & candidate.layerMask`. `sceneCullingMask` is forwarded
+  but not read by this hash-pinned constructor; any separate consumer and the
+  downstream screen-threshold job equation remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
@@ -303,8 +310,9 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Recover the retail survivor list at the exact `HGCamera.DoECSCulling` return
-   boundary, starting from the source-closed 18-row authored input and exact
+1. Recover the downstream scheduled-job screen-threshold equation and the
+   retail survivor list at the exact `HGCamera.DoECSCulling` return boundary,
+   starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom
    carry-in and other display aspects; populate exact shadow, depth, GBuffer,
    irradiance, non-empty cookie, and VisibilitySH inputs afterward.

@@ -1527,7 +1527,16 @@ The maintained audit now verifies the current GameAssembly call registers and
 return copies plus the UnityPlayer candidate gates directly. It closes the
 16-byte `LightCullResult` layout and the consumer's 148-byte `VisibleLight`
 stride, including type `+0x00`, priority `+0x70`, and world position `+0x74`;
-future capture can therefore reject truncated rows deterministically.
+future capture can therefore reject truncated rows deterministically. It now
+also pins internal call 3304 from the 16-argument `AddCullViewByMatrix` binding
+through six-plane extraction and the scheduled view constructor. The physical
+camera's `cullingMask` lands at view `+0x4`; the squared
+`cullingViewScreenSizeMin` lands at `+0x18` and is zero on the installed desktop
+default route. Native candidate evaluation tests synchronous visibility bit 0,
+then mask-enabled bit 0, then `view.cullingMask & candidate.layerMask`.
+`sceneCullingMask` is forwarded but the complete hash-pinned constructor does
+not read its slot. Any separate consumer and the downstream scheduled-job
+screen-threshold equation remain explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
 binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
 value still requires an explicitly authorized target-frame capture of that

@@ -31,6 +31,7 @@ DEVICE_TYPE_SOURCE = HGRP_ROOT / "HGDeviceType.cs"
 SETTING_HUB_SOURCE = HGRP_ROOT / "HGRenderPipelineSettingHub.cs"
 SETTING_PARAMETERS_SOURCE = HGRP_ROOT / "HGSettingParameters.cs"
 LIGHT_CLUSTER_SOURCE = HGRP_ROOT / "LightClusteringPassConstructor.cs"
+HG_CAMERA_SOURCE = HGRP_ROOT / "HGCamera.cs"
 IFIX_STATE = (
     LAB_ROOT
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
@@ -56,6 +57,7 @@ EXPECTED_HASHES = {
     "setting_hub_source": "0ab0fd1fb0fa6aaa52a2acc2544503f7379487d96b47a31bcaf4e3d525f1b761",
     "setting_parameters_source": "0ea7d61931aa014fb7ebca149380da2804fc8d5e07705e941bf6474b74a55ce9",
     "light_cluster_source": "a81ef9843339141a86c910a6915ab96e647f1f43c25631d537fe872ef4ead888",
+    "hg_camera_source": "2f0e098481f25f0e77de8d203c7cae1e4d748b4521d5157af0ab1aaa1163205a",
     "ifix_state": "b9ab981b65caa0b2a16d9603812c18236ad0aa5af255cb06614e7441cdef45d1",
     "do_ecs_culling_body": "bcbfa96588743701a5d1992256c68f193e624dc01ead47e86b80eb0a7653151b",
     "cull_lights_injected_body": "90fe3e38d69fd29a65c4fdc3e472199d9fa0e67733d220875cff6925b4f25503",
@@ -117,6 +119,68 @@ UNITY_CULL_LIGHTS_ICALL_VA = 0x1800FBCE0
 UNITY_CULL_LIGHTS_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGCullingSystem::CullLightsInternal_Injected"
 )
+
+UNITY_ADD_CULL_VIEW_ICALL_INDEX = 3304
+UNITY_ADD_CULL_VIEW_ICALL_VA = 0x1800F9790
+UNITY_ADD_CULL_VIEW_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGCullingSystem::AddCullViewByMatrix"
+)
+
+UNITY_CULL_VIEW_BODIES = {
+    "injected_binding": (
+        0x1800F9790,
+        0xF2,
+        "386a7e4b825187d828baf76b7b87b9e017fd2be2cd10f431ffc2c63f56b538fd",
+    ),
+    "matrix_plane_core": (
+        0x18104A190,
+        0x289,
+        "cfdc4bfdf1e258b63bcc52842fa3fd274939ef858e8860ea7dc4d9788567c060",
+    ),
+    "scheduled_constructor": (
+        0x18104A7A0,
+        0x1082,
+        "e3f1d5de1f4f32ee7198d0d4a8a789b7789bf34c10b83ba3fc5281de62d1d681",
+    ),
+}
+
+UNITY_CULL_VIEW_SLICES = {
+    "binding_to_matrix_plane_core": (0x1800F9864, "e82709f500"),
+    "matrix_plane_core_to_scheduled_constructor": (
+        0x18104A3D3,
+        "488d45e04c894c2448458bc8c74424400000000041b806000000"
+        "c744243801000000c7442430010000004889442428488d45e0"
+        "4889442420e890030000",
+    ),
+    "scheduled_view_header_projection": (
+        0x18104A83B,
+        "89388b85e0010000418945048b85e8010000410bc441894508"
+        "8b85f0010000410bc44189450c",
+    ),
+    "scheduled_screen_camera_occlusion_projection": (
+        0x18104A8DB,
+        "8b8508020000f30f1085000200004189452c8b8510020000"
+        "f3410f114518f30f1085400200004189453049894d104d897520"
+        "458975288b15e923dd004c8d0dd774c90041b808000000"
+        "f3410f114534",
+    ),
+    "scheduled_occlusion_allocation_gate": (
+        0x18104AA66,
+        "8885e0010000394424400f8444020000398518020000"
+        "0f84380200003985200200000f842c020000",
+    ),
+    "candidate_visibility_then_culling_mask_gate": (
+        0x181051FD3,
+        "8b0ef6c1010f84b906000041f6410401740c8b43044185017404"
+        "b001eb0232c0",
+    ),
+    "scheduled_constructor_return_handle": (
+        0x18104B7E3,
+        "488d4b38e894830eff488b4b388b44244448897b4848ffcf"
+        "488b9c2470020000488d14f9488bbc24600200004885d27403"
+        "4c892a4881c478020000415d5dc3",
+    ),
+}
 
 UNITY_CULLING_SLICES = {
     "binding_to_result_wrapper": (0x1800FBD2B, "e89052f500"),
@@ -222,6 +286,10 @@ EXPECTED_CAP_DEFINITIONS = {
     "ConsoleSettings": [256],
     "DesktopSettings": [256],
     "MobileSettings": [32],
+}
+
+EXPECTED_SCREEN_THRESHOLD_DEFINITIONS = {
+    "MobileSettings": [0.0, 0.0, 0.0],
 }
 
 
@@ -585,6 +653,147 @@ def validate_unity_native_producer(image: PEImage) -> dict[str, object]:
     }
 
 
+def validate_unity_cull_view_constructor(image: PEImage) -> dict[str, object]:
+    require("unity_player_image_base", image.image_base, 0x180000000, image.path)
+    target = image.u64(
+        UNITY_ICALL_FUNCTION_TABLE_VA + UNITY_ADD_CULL_VIEW_ICALL_INDEX * 8
+    )
+    name_pointer = image.u64(
+        UNITY_ICALL_NAME_TABLE_VA + UNITY_ADD_CULL_VIEW_ICALL_INDEX * 8
+    )
+    name = image.cstring(name_pointer)
+    require(
+        "unity_add_cull_view_icall_target",
+        target,
+        UNITY_ADD_CULL_VIEW_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_add_cull_view_icall_name",
+        name,
+        UNITY_ADD_CULL_VIEW_ICALL_NAME,
+        image.path,
+    )
+
+    bodies = []
+    for label, (virtual_address, size_bytes, expected_hash) in UNITY_CULL_VIEW_BODIES.items():
+        body = image.read(virtual_address, size_bytes)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        require(
+            f"unity_cull_view_{label}_sha256",
+            actual_hash,
+            expected_hash,
+            image.path,
+        )
+        bodies.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size_bytes,
+                "sha256": actual_hash,
+            }
+        )
+
+    slices = []
+    for label, (virtual_address, expected_hex) in UNITY_CULL_VIEW_SLICES.items():
+        expected = bytes.fromhex(expected_hex)
+        actual = image.read(virtual_address, len(expected))
+        require(f"unity_cull_view_{label}", actual, expected, image.path)
+        slices.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": len(actual),
+                "sha256": hashlib.sha256(actual).hexdigest(),
+            }
+        )
+
+    return {
+        "internalCall": {
+            "index": UNITY_ADD_CULL_VIEW_ICALL_INDEX,
+            "name": name,
+            "targetVirtualAddress": f"0x{target:X}",
+        },
+        "callChain": [
+            "0x1800F9790 injected binding and 16-argument repack",
+            "0x18104A190 six-plane extraction from the supplied culling matrix",
+            "0x18104A7A0 scheduled cull-view constructor",
+        ],
+        "managedInputContract": {
+            "sceneCullingMask": {
+                "argumentIndex": 2,
+                "scheduledStackSlot": "entry+0x50 / rbp+0x1D8",
+                "constructorRead": False,
+                "boundary": (
+                    "forwarded by the binding/core but not read by the complete "
+                    "hash-pinned scheduled-constructor body"
+                ),
+            },
+            "cameraCullingMask": {
+                "argumentIndex": 3,
+                "scheduledStackSlot": "entry+0x58 / rbp+0x1E0",
+                "viewRecordOffset": "0x04",
+            },
+            "screenSizeMinimum": {
+                "argumentIndex": 7,
+                "managedTransform": "cullingViewScreenSizeMin squared",
+                "scheduledStackSlot": "entry+0x78 / rbp+0x200",
+                "viewRecordOffset": "0x18",
+                "storage": "verbatim squared float",
+                "installedDesktopDefaultBeforeRuntimeOverride": 0.0,
+            },
+            "occlusionDimensions": {
+                "argumentIndices": [10, 11],
+                "scheduledStackSlots": [
+                    "entry+0x90 / rbp+0x218",
+                    "entry+0x98 / rbp+0x220",
+                ],
+                "allocationGate": "instanceId != 0 && width != 0 && height != 0",
+            },
+            "occlusionScreenSizeMinimum": {
+                "argumentIndex": 15,
+                "managedTransform": "ocScreenSizeMin squared",
+                "scheduledStackSlot": "entry+0xC0 / rbp+0x248",
+                "viewRecordOffset": "0x34",
+            },
+        },
+        "viewRecord": {
+            "instanceIdOffset": "0x00",
+            "cameraCullingMaskOffset": "0x04",
+            "forcedBit0Words": ["0x08", "0x0C"],
+            "lodCrossFadeDataOffset": "0x10",
+            "screenSizeMinimumSquaredOffset": "0x18",
+            "cameraTypeOffset": "0x2C",
+            "uniqueIdOffset": "0x30",
+            "occlusionScreenSizeMinimumSquaredOffset": "0x34",
+            "planeCountOffset": "0x58",
+            "normalizedPlaneArrayOffset": "0x5C",
+            "planeCount": 6,
+        },
+        "candidateGateOrder": [
+            "candidate synchronous visibility/AABB-plane result bit 0",
+            "candidate mask-enabled flag bit 0",
+            "view cameraCullingMask & candidate layer mask != 0",
+        ],
+        "evidenceBoundary": {
+            "closed": [
+                "managed-to-native 16-argument repack",
+                "six culling-matrix plane extraction and normalization",
+                "scheduled view field projection",
+                "occlusion allocation gate",
+                "generic visibility then culling-mask evaluation order",
+            ],
+            "open": [
+                "downstream scheduled-job screen-size threshold equation",
+                "a separate consumer, if any, for the forwarded sceneCullingMask slot",
+                "target-frame runtime overrides and final survivor rows",
+            ],
+        },
+        "verifiedBodies": bodies,
+        "verifiedInstructionSlices": slices,
+    }
+
+
 def _read_text_assets(
     extracted_root: Path, *, verify_hashes: bool
 ) -> tuple[dict[str, str], list[dict[str, object]]]:
@@ -671,6 +880,21 @@ def validate_settings_payloads(
         EXPECTED_CAP_DEFINITIONS,
         extracted_root,
     )
+    screen_threshold_pattern = re.compile(
+        r"^\s*CullingViewScreenSizeMin\s*=\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*$",
+        re.MULTILINE,
+    )
+    screen_threshold_definitions = {
+        name: [float(value) for value in screen_threshold_pattern.findall(text)]
+        for name, text in texts.items()
+        if screen_threshold_pattern.search(text)
+    }
+    require(
+        "screen_threshold_definitions",
+        screen_threshold_definitions,
+        EXPECTED_SCREEN_THRESHOLD_DEFINITIONS,
+        extracted_root,
+    )
     return records, cap_definitions
 
 
@@ -680,6 +904,7 @@ def _require_source_contracts() -> dict[str, str]:
         "setting_hub_source": SETTING_HUB_SOURCE,
         "setting_parameters_source": SETTING_PARAMETERS_SOURCE,
         "light_cluster_source": LIGHT_CLUSTER_SOURCE,
+        "hg_camera_source": HG_CAMERA_SOURCE,
     }
     texts = {name: path.read_text(encoding="utf-8-sig") for name, path in paths.items()}
     snippets = {
@@ -692,6 +917,8 @@ def _require_source_contracts() -> dict[str, str]:
             "SettingParameter::Create<int>(",
             "//                                                           256,",
             '(String *)"PunctualLightMaxCount"',
+            "this.fields._cullingViewScreenSizeMin_k__BackingField = HG::Rendering::Runtime::SettingParameter::Create<float>(",
+            '(String *)"CullingViewScreenSizeMin"',
         ],
         "light_cluster_source": [
             "*(_DWORD *)m_Buffer == 2 || !*(_DWORD *)m_Buffer",
@@ -699,6 +926,14 @@ def _require_source_contracts() -> dict[str, str]:
             "System::Int32::CompareTo((Int32 *)&other.priority, this.priority",
             "if ( v12 < (int)v42 )",
             "this.fields.m_punctualLightCount = v42",
+        ],
+        "hg_camera_source": [
+            "settingParameters.fields._cullingViewScreenSizeMin_k__BackingField",
+            "v21 = HG::Rendering::Runtime::SettingParameter<float>::op_Implicit",
+            "SceneCullingMaskFromCamera = HG::Rendering::Runtime::HGUtils::GetSceneCullingMaskFromCamera",
+            "v31 = useOcclusionCulling ? 0x140 : 0",
+            "v32 = useOcclusionCulling ? 0xA0 : 0",
+            "HGCullingSystem::AddCullViewByMatrix(UnityEngine.Matrix4x4&",
         ],
     }
     for name, required in snippets.items():
@@ -732,12 +967,16 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
         "light_cluster_source": verified_hash(
             "light_cluster_source", LIGHT_CLUSTER_SOURCE
         ),
+        "hg_camera_source": verified_hash("hg_camera_source", HG_CAMERA_SOURCE),
         "ifix_state": verified_hash("ifix_state", IFIX_STATE),
     }
     _require_source_contracts()
     asset_records, cap_definitions = validate_settings_payloads(extracted_root)
     native_handoff = validate_native_handoff(read_native_method_bodies())
     unity_native_producer = validate_unity_native_producer(PEImage(UNITY_PLAYER))
+    unity_cull_view_constructor = validate_unity_cull_view_constructor(
+        PEImage(UNITY_PLAYER)
+    )
 
     ifix = json.loads(IFIX_STATE.read_text(encoding="utf-8"))
     require(
@@ -754,8 +993,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v2",
-        "status": "installed_cap_native_producer_and_capture_abi_source_closed",
+        "schema": "endfield.recovered-light-cull-cap.v3",
+        "status": "installed_cap_cull_view_native_producer_and_capture_abi_source_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -764,7 +1003,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "receives maxCount=256, the desktop settings cap cannot further "
             "truncate that native result. The GameAssembly handoff, UnityPlayer "
             "native candidate gates, 16-byte LightCullResult, and 148-byte "
-            "VisibleLight capture stride are source-closed. The target-frame "
+            "VisibleLight capture stride are source-closed. AddCullViewByMatrix "
+            "also closes the scheduled view layout and visibility-then-camera-mask "
+            "gate. Its downstream screen-threshold job formula, the target-frame "
             "pointer/count and unrelated live native lights remain capture-only."
         ),
         "installedInputs": {
@@ -810,6 +1051,12 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "CloudDesktopOverride contains no PunctualLightMaxCount and "
                 "inherits DesktopSettings"
             ),
+            "screenSizeMinimum": {
+                "constructorDefault": 0.0,
+                "desktopOrCloudOverride": None,
+                "onlyExtractedOverrides": EXPECTED_SCREEN_THRESHOLD_DEFINITIONS,
+                "managedInput": "square before AddCullViewByMatrix",
+            },
         },
         "capDefinitions": cap_definitions,
         "resolvedInstalledDesktopCap": 256,
@@ -841,6 +1088,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             },
             "gameAssemblyHandoff": native_handoff,
             "unityPlayerCandidateProducer": unity_native_producer,
+            "unityPlayerCullViewConstructor": unity_cull_view_constructor,
             "desktopNoSecondTruncation": True,
         },
         "sourceFiles": {
@@ -853,6 +1101,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "setting_hub_source": SETTING_HUB_SOURCE,
                 "setting_parameters_source": SETTING_PARAMETERS_SOURCE,
                 "light_cluster_source": LIGHT_CLUSTER_SOURCE,
+                "hg_camera_source": HG_CAMERA_SOURCE,
             }.items()
         },
         "evidenceBoundary": {
@@ -866,11 +1115,14 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "both GameAssembly DoECSCulling call sites and their exact input/result registers",
                 "the 16-byte LightCullResult pointer/count ABI and NativeArray projection",
                 "the 148-byte VisibleLight capture stride plus SetupState type, priority, and world-position offsets",
+                "the AddCullViewByMatrix binding, six-plane constructor, view layout, and generic visibility/mask gate order",
             ],
             "captureOnly": [
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
+                "the downstream scheduled-job screen-size threshold equation",
+                "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
         },
@@ -901,8 +1153,9 @@ def main() -> int:
         OUTPUT.parent.mkdir(parents=True, exist_ok=True)
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
-        "Light-cull audit passed: desktop cap=256; native producer/handoff and "
-        "16-byte result plus 148-byte capture-row ABI closed."
+        "Light-cull audit passed: desktop cap=256; native producer/handoff, "
+        "scheduled cull-view layout, mask order, 16-byte result, and 148-byte "
+        "capture-row ABI closed."
     )
     return 0
 
