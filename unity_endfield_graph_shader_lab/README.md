@@ -2254,8 +2254,13 @@ authored RGB times intensity, with falloff/flicker both 1. The two native
 `PrepareCPUData` branches close record0.w as
 `float(lightKind + 2*shadowOnly)`: the one Spot row is exactly 0 and all ten
 Point/linear-extension rows are exactly 1. Record0 is therefore fully closed.
-Target-frame transforms, runtime carry-in, final light count, and a byte-exact
-room b31 fixture remain open.
+Metadata-backed `VisibleLight.get_range` at `+0x68` and the native divide now
+close record1.w for all 11 rows. Hash-pinned half-angle scaling and the original
+scalar-cosine body close record2.z plus the Spot row's record2.w; the Point
+branch closes record2.z as `HGSharedLightData.length` (`-1` for six ordinary
+Points and `18` for four linear extensions). Target-frame record1.xyz/record2.xy,
+Point record2.w shadow-face packing, runtime carry-in, final light count, and a
+byte-exact room b31 fixture remain open.
 
 `ShaderVariablesGlobal` b35 is now exactly scoped and transported. The
 selected body references 33 fields, and installed native reset producers close

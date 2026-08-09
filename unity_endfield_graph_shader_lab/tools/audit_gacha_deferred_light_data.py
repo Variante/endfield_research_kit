@@ -60,6 +60,16 @@ GET_LIGHT_FALLOFF_VA = 0x189D03E58
 GET_LIGHT_FALLOFF_FILE_OFFSET = 0x9D02458
 GET_LIGHT_FALLOFF_SIZE = 0x187
 GET_LIGHT_FALLOFF_DEFAULT_FILE_OFFSET = 0xB957600
+VISIBLE_LIGHT_GET_RANGE_VA = 0x184DBCCB0
+VISIBLE_LIGHT_GET_RANGE_FILE_OFFSET = 0x4DBB2B0
+VISIBLE_LIGHT_GET_RANGE_SIZE = 8
+SCALAR_COS_VA = 0x180334EA0
+SCALAR_COS_FILE_OFFSET = 0x3342A0
+SCALAR_COS_SIZE = 0x21F
+SPOT_ANGLE_DIVISOR_FILE_OFFSET = 0xB9576AC
+SPOT_ANGLE_PI_FILE_OFFSET = 0xB957C80
+SPOT_ANGLE_DIVISOR_BITS = 0x43B40000
+SPOT_ANGLE_PI_BITS = 0x40490FDB
 PACK_TWO_HALF_VA = 0x189C0F0A4
 PACK_TWO_HALF_FILE_OFFSET = 0x9C0D6A4
 PACK_TWO_HALF_SIZE = 0x7C
@@ -141,12 +151,35 @@ EXPECTED_HASHES = {
     "packTwoHalfBody": "dad4b266316d3ba37f5c20fd92f2db90da363f7b65b3467bf313342c1a8814ce",
     "f32ToF16Body": "dc4fa0754a86aed4b2d58a5a978fe6028d83257aa5fc8e0a06e8fa6b9b5dae62",
     "getLightFalloffBody": "dbb121bbf91f191001755e9290988f4f287fb9fcc1c65cd09254452474a2509d",
+    "visibleLightGetRangeBody": "6ef4776b9933e7529c578b48a5fbc7322a242c1f05b8b8ec30b715a199d8a822",
+    "scalarCosBody": "02ced20a0867a29f34e8f6e9060bbbea89d8475e154834c57ee2036f63a93bee",
     "playerSettingsObject": "bb2752bf4f4dd43d7885e01520c992289330ea8efdf7321ea926cb7cb149b3d6",
     "graphicsSettingsObject": "8bbfff1de820c06fb150aa4093391bff3ad080eba65f4230d83496ed84b94563",
     "unityFlickerGetterBody": "622b04cd8adaf7bc219e4d56c9dc574f89f324e55128c2ca2c96c624254d3f1b",
     "unitySetLightAnimationBody": "911725357c454b8224102d6b34d32f12d912f9cadbbfcc26aa64dda8b3bb83c6",
     "unityFinalColorUpdateBody": "39cbb35b17202949963e8cb4ed54a9d1e31067ae1c26c766c191c80e004b5e1d",
     "unityColorLinearBody": "83785743304ef92949c2b53f43ba6b1fd9e30655b389f61a1f56a334babd608f",
+}
+
+EXPECTED_INVERSE_RANGE_BITS = {
+    0x41200000: 0x3DCCCCCD,
+    0x40E17F92: 0x3E115050,
+    0x41600000: 0x3D924925,
+    0x40A00000: 0x3E4CCCCD,
+    0x40DDB186: 0x3E13CEC6,
+    0x41A00000: 0x3D4CCCCD,
+    0x41700000: 0x3D888889,
+}
+
+EXPECTED_SPOT_RECORD2_BITS = {
+    "innerAngleDegrees": 0x42B40000,
+    "outerAngleDegrees": 0x430C0000,
+    "innerRadians": 0x3F490FDB,
+    "outerRadians": 0x3F9C61AB,
+    "innerCos": 0x3F3504F3,
+    "outerCos": 0x3EAF1D40,
+    "cosDifference": 0x3EBAECA6,
+    "inverseCosDifference": 0x402F4D02,
 }
 
 # Golden Color.linear results were executed against the pinned UnityPlayer body.
@@ -248,7 +281,9 @@ NATIVE_CALLS = {
     0x0CA0: (PACK_TWO_HALF_VA, "HGUtils.PackTwoHalfValuesAsFloat row2.xy"),
     0x0CBE: (PACK_TWO_HALF_VA, "HGUtils.PackTwoHalfValuesAsFloat row2.zw"),
     0x0CF8: (0x18B3BDF2C, "HGSharedLightData.get_innerSpotAngle_Injected"),
+    0x0D0D: (SCALAR_COS_VA, "installed scalar cosine for inner half-angle"),
     0x0D1C: (0x18B3BE5FC, "HGSharedLightData.get_spotAngle_Injected"),
+    0x0D31: (SCALAR_COS_VA, "installed scalar cosine for outer half-angle"),
     0x0DD9: (0x18B3BE4D0, "HGSharedLightData.get_shadowOnly_Injected Spot"),
     0x1046: (0x18B3BDB48, "HGSharedLightData.get_cullingBoxFalloffThreshold_Injected"),
     0x105A: (0x18B3BE584, "HGSharedLightData.get_softSourceRadius_Injected"),
@@ -751,6 +786,142 @@ def validate_record0_discriminator_native(body: bytes) -> dict[str, Any]:
         "spotSequenceOffset": "0x0DD9",
         "pointSequenceOffset": "0x1347",
         "destination": "record0.w",
+    }
+
+
+def validate_static_record_terms_native(
+    body: bytes,
+    range_getter_body: bytes,
+    scalar_cos_body: bytes,
+    one_bytes: bytes,
+    angle_divisor_bytes: bytes,
+    angle_pi_bytes: bytes,
+) -> dict[str, Any]:
+    require(
+        "visible_light_get_range_size",
+        len(range_getter_body),
+        VISIBLE_LIGHT_GET_RANGE_SIZE,
+        GAME_ASSEMBLY,
+    )
+    range_hash = hashlib.sha256(range_getter_body).hexdigest()
+    require(
+        "visible_light_get_range_body_sha256",
+        range_hash,
+        EXPECTED_HASHES["visibleLightGetRangeBody"],
+        GAME_ASSEMBLY,
+    )
+    require(
+        "visible_light_get_range_field_offset",
+        range_getter_body,
+        bytes.fromhex("6690f30f104168c3"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "prepare_cpu_data_one_constant_load",
+        body[0x0E3:0x0EC],
+        bytes.fromhex("f3440f103558c9c401"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "prepare_cpu_data_one_constant_bits",
+        struct.unpack("<I", one_bytes)[0],
+        0x3F800000,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "record1_inverse_range_sequence",
+        body[0x8A5:0x8CA],
+        bytes.fromhex(
+            "410f28ce89742420f30f5e8da80400004d8bcc4c8d8540040000498bd5"
+            "f30f118d8c000000"
+        ),
+        GAME_ASSEMBLY,
+    )
+
+    require("scalar_cos_size", len(scalar_cos_body), SCALAR_COS_SIZE, GAME_ASSEMBLY)
+    cos_hash = hashlib.sha256(scalar_cos_body).hexdigest()
+    require(
+        "scalar_cos_body_sha256",
+        cos_hash,
+        EXPECTED_HASHES["scalarCosBody"],
+        GAME_ASSEMBLY,
+    )
+    require(
+        "spot_angle_divisor_bits",
+        struct.unpack("<I", angle_divisor_bytes)[0],
+        SPOT_ANGLE_DIVISOR_BITS,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "spot_angle_pi_bits",
+        struct.unpack("<I", angle_pi_bytes)[0],
+        SPOT_ANGLE_PI_BITS,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "spot_inner_angle_scale_sequence",
+        body[0xCFD:0xD0D],
+        bytes.fromhex("f30f5e05ebbdc401f30f5905b7c3c401"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "spot_outer_angle_scale_sequence",
+        body[0xD21:0xD31],
+        bytes.fromhex("f30f5e05c7bdc401f30f590593c3c401"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "spot_record2_cosine_terms",
+        (
+            body[0xE25:0xE2A],
+            body[0xE4F:0xE58],
+            body[0xEA2:0xEAA],
+            body[0xEB7:0xEBF],
+        ),
+        (
+            bytes.fromhex("f3410f5cf0"),
+            bytes.fromhex("f3440f1185e8000000"),
+            bytes.fromhex("410f28c6f30f5ec6"),
+            bytes.fromhex("f30f1185ec000000"),
+        ),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "point_record2_length_term",
+        (
+            body[0x140C:0x1414],
+            body[0x141C:0x1423],
+        ),
+        (
+            bytes.fromhex("f30f118518010000"),
+            bytes.fromhex("0f108510010000"),
+        ),
+        GAME_ASSEMBLY,
+    )
+    return {
+        "visibleLightRange": {
+            "method": "UnityEngine.Rendering.VisibleLight.get_range",
+            "methodIndex": 408154,
+            "virtualAddress": f"0x{VISIBLE_LIGHT_GET_RANGE_VA:X}",
+            "fileOffset": f"0x{VISIBLE_LIGHT_GET_RANGE_FILE_OFFSET:X}",
+            "bodySha256": range_hash,
+            "fieldOffset": "0x68",
+            "record1WFormula": "1.0f / VisibleLight.range",
+        },
+        "spotRecord2": {
+            "scalarCosVirtualAddress": f"0x{SCALAR_COS_VA:X}",
+            "scalarCosBodySha256": cos_hash,
+            "halfAngleRadiansFormula": "float32(degrees / 360.0f * piFloat32)",
+            "record2ZFormula": "cos(outer half-angle)",
+            "record2WFormula": "1.0f / (cos(inner half-angle) - cos(outer half-angle))",
+            "selectedGoldenBits": {
+                key: f"0x{bits:08X}" for key, bits in EXPECTED_SPOT_RECORD2_BITS.items()
+            },
+        },
+        "pointRecord2": {
+            "record2ZFormula": "HGSharedLightData.length",
+            "record2WBoundary": "packed point-shadow face indices; not closed here",
+        },
     }
 
 
@@ -1557,6 +1728,84 @@ def recover_record0_discriminator(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def recover_record1_inverse_range(row: dict[str, Any]) -> dict[str, Any]:
+    source = REPO_ROOT / row["sourcePath"]
+    range_bits = float32_bits(row["range"])
+    require(
+        f"room_{row['lightPathId']}_record1_range_known",
+        range_bits in EXPECTED_INVERSE_RANGE_BITS,
+        True,
+        source,
+    )
+    expected_bits = EXPECTED_INVERSE_RANGE_BITS[range_bits]
+    calculated_bits = float32_bits(f32(1.0 / float32_from_bits(range_bits)))
+    require(
+        f"room_{row['lightPathId']}_record1_inverse_range_bits",
+        calculated_bits,
+        expected_bits,
+        source,
+    )
+    return {
+        "producerFormula": "1.0f / VisibleLight.range",
+        "range": float32_from_bits(range_bits),
+        "rangeBits": f"0x{range_bits:08X}",
+        "record1W": float32_from_bits(expected_bits),
+        "record1WBits": f"0x{expected_bits:08X}",
+    }
+
+
+def recover_record2_static_terms(row: dict[str, Any]) -> dict[str, Any]:
+    source = REPO_ROOT / row["sourcePath"]
+    if row["unityLightType"] == 0:
+        inner_bits = float32_bits(row["innerSpotAngleDegrees"])
+        outer_bits = float32_bits(row["outerSpotAngleDegrees"])
+        require(
+            f"room_{row['lightPathId']}_record2_spot_angles",
+            (inner_bits, outer_bits),
+            (
+                EXPECTED_SPOT_RECORD2_BITS["innerAngleDegrees"],
+                EXPECTED_SPOT_RECORD2_BITS["outerAngleDegrees"],
+            ),
+            source,
+        )
+        z_bits = EXPECTED_SPOT_RECORD2_BITS["outerCos"]
+        w_bits = EXPECTED_SPOT_RECORD2_BITS["inverseCosDifference"]
+        return {
+            "nativeBranch": "Spot",
+            "record2ZSemantic": "cos(outer half-angle)",
+            "record2Z": float32_from_bits(z_bits),
+            "record2ZBits": f"0x{z_bits:08X}",
+            "record2WSemantic": "inverse inner-minus-outer half-angle cosine difference",
+            "record2W": float32_from_bits(w_bits),
+            "record2WBits": f"0x{w_bits:08X}",
+            "record2WClosed": True,
+        }
+
+    require(
+        f"room_{row['lightPathId']}_record2_point_branch",
+        row["unityLightType"],
+        2,
+        source,
+    )
+    length_bits = float32_bits(row["linearLightLength"])
+    require(
+        f"room_{row['lightPathId']}_record2_point_length",
+        length_bits in (0xBF800000, 0x41900000),
+        True,
+        source,
+    )
+    return {
+        "nativeBranch": "PointOrLinearExtension",
+        "record2ZSemantic": "HGSharedLightData.length",
+        "record2Z": float32_from_bits(length_bits),
+        "record2ZBits": f"0x{length_bits:08X}",
+        "record2WSemantic": "packed point-shadow face indices",
+        "record2W": None,
+        "record2WBits": None,
+        "record2WClosed": False,
+    }
+
+
 def validate_consumer(text: str) -> dict[str, Any]:
     checks = {
         "recordStride": "int((32u * _747) + _758) * 8",
@@ -1619,6 +1868,14 @@ def build_audit() -> dict[str, Any]:
         falloff_body = stream.read(GET_LIGHT_FALLOFF_SIZE)
         stream.seek(GET_LIGHT_FALLOFF_DEFAULT_FILE_OFFSET)
         falloff_default = stream.read(4)
+        stream.seek(VISIBLE_LIGHT_GET_RANGE_FILE_OFFSET)
+        range_getter_body = stream.read(VISIBLE_LIGHT_GET_RANGE_SIZE)
+        stream.seek(SCALAR_COS_FILE_OFFSET)
+        scalar_cos_body = stream.read(SCALAR_COS_SIZE)
+        stream.seek(SPOT_ANGLE_DIVISOR_FILE_OFFSET)
+        angle_divisor_bytes = stream.read(4)
+        stream.seek(SPOT_ANGLE_PI_FILE_OFFSET)
+        angle_pi_bytes = stream.read(4)
         stream.seek(PACK_TWO_HALF_FILE_OFFSET)
         pack_body = stream.read(PACK_TWO_HALF_SIZE)
         stream.seek(F32_TO_F16_FILE_OFFSET)
@@ -1637,6 +1894,8 @@ def build_audit() -> dict[str, Any]:
     for row in rows:
         row["record0Color"] = recover_record0_color(row)
         row["record0Discriminator"] = recover_record0_discriminator(row)
+        row["record1InverseRange"] = recover_record1_inverse_range(row)
+        row["record2StaticTerms"] = recover_record2_static_terms(row)
         row["obbPackedTransform"] = recover_obb_pack(row)
     consumer = validate_consumer(SELECTED_FRAGMENT.read_text(encoding="utf-8"))
     native = validate_native_body(body)
@@ -1645,6 +1904,14 @@ def build_audit() -> dict[str, Any]:
     )
     native["lightFalloff"] = validate_light_falloff_native(
         falloff_body, falloff_default
+    )
+    native["staticRecordTerms"] = validate_static_record_terms_native(
+        body,
+        range_getter_body,
+        scalar_cos_body,
+        falloff_default,
+        angle_divisor_bytes,
+        angle_pi_bytes,
     )
     native["unityPlayerLightColor"] = validate_unity_light_color_native(
         unity_player_data
@@ -1668,6 +1935,23 @@ def build_audit() -> dict[str, Any]:
         Counter({1: 10, 0: 1}),
         ROOM_LIGHT_ROOT,
     )
+    record1_closed_count = sum("record1WBits" in row["record1InverseRange"] for row in rows)
+    record2_z_closed_count = sum("record2ZBits" in row["record2StaticTerms"] for row in rows)
+    record2_w_closed_count = sum(row["record2StaticTerms"]["record2WClosed"] for row in rows)
+    point_length_counts = Counter(
+        row["record2StaticTerms"]["record2Z"]
+        for row in rows
+        if row["record2StaticTerms"]["nativeBranch"] == "PointOrLinearExtension"
+    )
+    require("selected_room_record1_w_closed_count", record1_closed_count, 11, ROOM_LIGHT_ROOT)
+    require("selected_room_record2_z_closed_count", record2_z_closed_count, 11, ROOM_LIGHT_ROOT)
+    require("selected_room_record2_w_closed_count", record2_w_closed_count, 1, ROOM_LIGHT_ROOT)
+    require(
+        "selected_room_point_length_counts",
+        point_length_counts,
+        Counter({-1.0: 6, 18.0: 4}),
+        ROOM_LIGHT_ROOT,
+    )
     obb_boundaries = [
         {
             "name": row["name"],
@@ -1687,8 +1971,8 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v5",
-        "status": "room_record0_and_obb_candidates_closed",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v6",
+        "status": "room_record0_record1w_record2z_and_obb_candidates_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
             global_game_managers_data
@@ -1732,6 +2016,24 @@ def build_audit() -> dict[str, Any]:
                 },
                 "exactCandidateCount": len(rows),
                 "closedLanes": ["record0.w"],
+            },
+            "record1InverseRangeSummary": {
+                "producerFormula": "1.0f / VisibleLight.range",
+                "exactCandidateCount": record1_closed_count,
+                "closedLanes": ["record1.w"],
+            },
+            "record2StaticTermsSummary": {
+                "spotRecord2ZFormula": "cos(outer half-angle)",
+                "spotRecord2WFormula": "1.0f / (cos(inner half-angle) - cos(outer half-angle))",
+                "pointRecord2ZFormula": "HGSharedLightData.length",
+                "pointLengthCounts": {
+                    "-1": point_length_counts[-1.0],
+                    "18": point_length_counts[18.0],
+                },
+                "record2ZExactCandidateCount": record2_z_closed_count,
+                "record2WExactCandidateCount": record2_w_closed_count,
+                "closedLanes": ["record2.z for all rows", "record2.w for the Spot row"],
+                "openLanes": ["record2.w packed point-shadow face indices for Point rows"],
             },
             "obbHalfPackingSummary": {
                 "producerFormula": "inverse TRS of authored relative position, ZXY Euler orientation, and half extents",
@@ -1781,17 +2083,20 @@ def build_audit() -> dict[str, Any]:
                 "all eleven rows disable per-light color temperature, culling-distance/far-show falloff, animation, multistate, and flicker; their state tables and flicker references are empty",
                 "exact UnityPlayer-derived record0.xyz IEEE-754 candidates for all eleven rows: linearized serialized RGB times intensity, with falloff and flickerScale both 1",
                 "the native record0.w discriminator formula float(lightKind + 2*shadowOnly), yielding exact 0.0 for the one Spot row and 1.0 for all ten Point/linear-extension rows",
+                "VisibleLight.get_range reads field +0x68 and PrepareCPUData divides exact 1.0f by it, closing record1.w for all eleven rows",
+                "the pinned original scalar-cosine body and exact half-angle scaling close record2.z and record2.w for the one Spot row",
+                "HGSharedLightData.length closes record2.z as -1 for six ordinary Point rows and 18 for four linear-extension rows",
             ],
             "open": [
-                "camera-relative position/direction values at the target frame",
-                "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, and shadow/cookie cache indices",
+                "camera-relative record1.xyz position and record2.xy direction values at the target frame",
+                "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, Point record2.w packed shadow-face indices, and other shadow/cookie cache indices",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (
                 "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, "
-                "including all record0 lanes, additional-light lanes, and bounded OBB transform candidates. Do not publish "
+                "including all record0 lanes, record1.w, record2.z, the Spot record2.w, additional-light lanes, and bounded OBB transform candidates. Do not publish "
                 "a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary "
-                "bits, target-frame transforms, and runtime list boundary are closed."
+                "bits, record1.xyz/record2.xy target-frame transforms, Point record2.w, and runtime list boundary are closed."
             ),
         },
     }
@@ -1809,7 +2114,8 @@ def main() -> int:
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
-        "all 11 record0 float4 values/additional-light components, and bounded OBB half candidates closed."
+        "all 11 record0 float4 values, record1.w/record2.z static terms, the Spot record2.w, "
+        "additional-light components, and bounded OBB half candidates closed."
     )
     return 0
 
