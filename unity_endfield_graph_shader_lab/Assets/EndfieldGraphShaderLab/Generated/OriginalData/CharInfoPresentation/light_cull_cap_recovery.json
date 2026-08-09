@@ -1,0 +1,183 @@
+{
+  "schema": "endfield.recovered-light-cull-cap.v1",
+  "status": "installed_windows_desktop_punctual_cap_source_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The target-frame LightCullResult and unrelated live native lights remain capture-only.",
+  "installedInputs": {
+    "gameAssembly": {
+      "sizeBytes": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "sizeBytes": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "initBundleChunk": {
+      "vfsRelativePath": "0CE8FA57/19F0903A12BA87C0D43E67E64889B525.chk",
+      "blockType": "InitBundle",
+      "sizeBytes": 211831350,
+      "sha256": "cbc87c7d8f41d90da25af7758cf77ced7321d19c52c067f6f77a75aa5dabc380",
+      "serializedFileOffset": 157608586
+    },
+    "installedIfixState": {
+      "path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
+      "sha256": "b9ab981b65caa0b2a16d9603812c18236ad0aa5af255cb06614e7441cdef45d1",
+      "targetCount": 30,
+      "hgrpSettingOrLightClusterTargets": []
+    }
+  },
+  "settingTextAssets": [
+    {
+      "name": "SettingFiles",
+      "pathIdHex": "0xA5D65C734C247CA7",
+      "fileName": "SettingFiles_pA5D65C734C247CA7.txt",
+      "sizeBytes": 159,
+      "sha256": "6031cb98e345cd347830658d3661067af0a6b34ca58f92bc5f9ee6f0ed75d14c"
+    },
+    {
+      "name": "HGRenderPipelineSettings",
+      "pathIdHex": "0x0EA7FF83EAC093AD",
+      "fileName": "HGRenderPipelineSettings_p0EA7FF83EAC093AD.txt",
+      "sizeBytes": 2543,
+      "sha256": "05a4fb96d13a4766757c965df6c5c2a478964ab40d8d2df31659a39e6b710abf"
+    },
+    {
+      "name": "CommonSettings",
+      "pathIdHex": "0x2936E10EDCE2C9E4",
+      "fileName": "CommonSettings_p2936E10EDCE2C9E4.txt",
+      "sizeBytes": 2910,
+      "sha256": "aed529949a67769c9066ead730aea1f4144cc8f9ecd63d5debf6e59670649049"
+    },
+    {
+      "name": "DesktopSettings",
+      "pathIdHex": "0x99C7C961A15A8994",
+      "fileName": "DesktopSettings_p99C7C961A15A8994.txt",
+      "sizeBytes": 12323,
+      "sha256": "a4a0b652162a13e5c5cad39e7c290641dd83116b984d884e246cacf7991f1f10"
+    },
+    {
+      "name": "CloudDesktopOverride",
+      "pathIdHex": "0x4CDB7A1FBABEC323",
+      "fileName": "CloudDesktopOverride_p4CDB7A1FBABEC323.txt",
+      "sizeBytes": 775,
+      "sha256": "439af33ecca9b7b400a6b92b17ca279b488d47652b04296d95d868b85a7be7f4"
+    },
+    {
+      "name": "ConsoleSettings",
+      "pathIdHex": "0x6DB117C9F26E1FCE",
+      "fileName": "ConsoleSettings_p6DB117C9F26E1FCE.txt",
+      "sizeBytes": 10776,
+      "sha256": "0d077462addf6478a90abf6584f6e0844c8b3ef0ff929465dc6c04c6b2e3ea69"
+    },
+    {
+      "name": "MobileSettings",
+      "pathIdHex": "0x883CA7EF83FC2F7C",
+      "fileName": "MobileSettings_p883CA7EF83FC2F7C.txt",
+      "sizeBytes": 20619,
+      "sha256": "f9f3388bf3ddb6c0dfbecdac952244044589acb4bb6d7231f0e41a968e463a72"
+    },
+    {
+      "name": "CinematicSettings",
+      "pathIdHex": "0x02A48AAA604195BF",
+      "fileName": "CinematicSettings_p02A48AAA604195BF.txt",
+      "sizeBytes": 5554,
+      "sha256": "c0cd749dd829222aab2a2761e0ca7e61ed0d72e87dd2d294a3c65e2bc9358c73"
+    }
+  ],
+  "settingRoute": {
+    "entry": "HGRenderPipelineSettings.ini",
+    "settingFiles": [
+      "CommonSettings.ini",
+      "ConsoleSettings.ini",
+      "DesktopSettings.ini",
+      "CloudDesktopOverride.ini",
+      "MobileSettings.ini",
+      "CinematicSettings.ini",
+      "HGRenderPipelineSettings.ini"
+    ],
+    "includeRoutes": {
+      "Common": "CommonSettings.ini",
+      "Handheld": "MobileSettings.ini",
+      "Desktop": "DesktopSettings.ini",
+      "Desktop.Cloud": "CloudDesktopOverride.ini",
+      "Console": "ConsoleSettings.ini",
+      "Cinematic": "CinematicSettings.ini"
+    },
+    "installedPlayer": "Windows desktop",
+    "deviceSelection": "HGRenderPipelineSettings.PopulateDeviceInfo uses UnityEngine.SystemInfo.GetDeviceType when no override is supplied",
+    "desktopCloudInheritance": "CloudDesktopOverride contains no PunctualLightMaxCount and inherits DesktopSettings"
+  },
+  "capDefinitions": {
+    "DesktopSettings": [
+      256
+    ],
+    "ConsoleSettings": [
+      256
+    ],
+    "MobileSettings": [
+      32
+    ]
+  },
+  "resolvedInstalledDesktopCap": 256,
+  "nativeContract": {
+    "settingDefault": {
+      "method": "HG.Rendering.Runtime.HGSettingParameters..ctor",
+      "methodIndex": 288533,
+      "virtualAddress": "0x1836590A0",
+      "value": 256
+    },
+    "setupState": {
+      "method": "HG.Rendering.Runtime.LightClusteringPassConstructor.SetupState",
+      "methodIndex": 285302,
+      "virtualAddress": "0x189D09F50",
+      "acceptedVisibleLightTypes": [
+        0,
+        2
+      ],
+      "sortOrder": [
+        "priority descending",
+        "squared camera distance ascending"
+      ],
+      "finalCountEquation": "min(punctualSurvivorCount, punctualLightMaxCount)"
+    },
+    "upstreamCull": {
+      "method": "HG.Rendering.Runtime.HGCullingSystem.CullLights",
+      "directCaller": "HG.Rendering.Runtime.HGCamera.DoECSCulling",
+      "directCallSiteCount": 2,
+      "maxCount": 256
+    },
+    "desktopNoSecondTruncation": true
+  },
+  "sourceFiles": {
+    "device_type_source": {
+      "path": "tools/FractalMiner/Assets/Project/EndField/HGRP/packages/com.hg.render-pipelines/runtime/HG/Rendering/Runtime/HGDeviceType.cs",
+      "sha256": "8cde77dfadb6b857ceb1dc5c92eec460cac1d49eb2ccbd948619699c69ed84b5"
+    },
+    "setting_hub_source": {
+      "path": "tools/FractalMiner/Assets/Project/EndField/HGRP/packages/com.hg.render-pipelines/runtime/HG/Rendering/Runtime/HGRenderPipelineSettingHub.cs",
+      "sha256": "0ab0fd1fb0fa6aaa52a2acc2544503f7379487d96b47a31bcaf4e3d525f1b761"
+    },
+    "setting_parameters_source": {
+      "path": "tools/FractalMiner/Assets/Project/EndField/HGRP/packages/com.hg.render-pipelines/runtime/HG/Rendering/Runtime/HGSettingParameters.cs",
+      "sha256": "0ea7d61931aa014fb7ebca149380da2804fc8d5e07705e941bf6474b74a55ce9"
+    },
+    "light_cluster_source": {
+      "path": "tools/FractalMiner/Assets/Project/EndField/HGRP/packages/com.hg.render-pipelines/runtime/HG/Rendering/Runtime/LightClusteringPassConstructor.cs",
+      "sha256": "a81ef9843339141a86c910a6915ab96e647f1f43c25631d537fe872ef4ead888"
+    }
+  },
+  "evidenceBoundary": {
+    "sourceClosed": [
+      "installed Windows desktop cap value 256",
+      "type 0/2 punctual filter",
+      "priority/distance shortlist order",
+      "min survivor/cap final-count rule",
+      "desktop cap cannot truncate the upstream max-256 cull result"
+    ],
+    "captureOnly": [
+      "target-frame LightCullResult pointer and count",
+      "unrelated active native lights",
+      "arbitrary/asymmetric final selected-view planes",
+      "future or separately delivered IFix/settings payloads"
+    ]
+  }
+}

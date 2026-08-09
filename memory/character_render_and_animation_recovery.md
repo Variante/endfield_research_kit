@@ -48,8 +48,13 @@ NPC archetypes are imported as labeled source kits.
   `_LightBinningConstants` layout/upload and a default-off isolated-count
   publisher verified bit-for-bit on D3D11/D3D12. Its unique native
   `CullLights` producer, two `HGCamera.DoECSCulling` call sites, 256-candidate
-  cap, pointer/count ABI, and first consumer are also closed; only an
-  authorized target-frame array capture can settle retail order/`lightCount`.
+  cap, pointer/count ABI, and first consumer are also closed. Installed
+  InitBundle settings now close the Windows desktop
+  `PunctualLightMaxCount=256`; `SetupState` keeps types 0/2, sorts priority
+  descending then squared camera distance ascending, and takes
+  `min(survivors, cap)`. Because the upstream cap is also 256, settings cannot
+  truncate the list again. Only an authorized target-frame array capture can
+  settle the live native survivors and final retail `lightCount`.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +

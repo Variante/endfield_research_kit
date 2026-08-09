@@ -1496,9 +1496,17 @@ Offline IL2CPP/xref recovery now fixes the handoff precisely:
 `LightCullResult` is `visibleLightsPtr + visibleLightCount`; its only direct
 producer is `HGCullingSystem.CullLights`, both GameAssembly call sites belong
 to `HGCamera.DoECSCulling`, and both pass `maxCount=256` before `SetupState`
-filters native types 0/2 and applies the punctual capacity. Closing the retail
-value now requires an explicitly authorized target-frame capture of that
-pointer/count and array; no retail-process attachment or injection was used.
+filters native types 0/2. A targeted AnimeStudio InitBundle extraction now
+closes the installed Windows desktop `PunctualLightMaxCount` at 256; native
+`SetupState` sorts priority descending and then squared camera distance
+ascending before taking `min(survivors, cap)`. The equal upstream/settings
+caps prove that the settings layer cannot truncate this result a second time.
+Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
+binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
+value still requires an explicitly authorized target-frame capture of that
+pointer/count and array; unrelated live native lights are not inferred from
+the authored room JSON, and no retail-process attachment or injection was
+used.
 
 Binding 37 has a similarly narrow recovered transport. Installed
 `HGLightCookieManager` code creates 32 zero atlas records plus 32 zero matrices,
