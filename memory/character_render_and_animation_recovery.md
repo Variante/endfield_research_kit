@@ -82,11 +82,15 @@ NPC archetypes are imported as labeled source kits.
   but not read by this hash-pinned constructor. The next dispatch boundary is
   now split exactly: normal views use a six-plane AABB predicate, while
   `cameraType == 0x80` uses a sphere/distance predicate; neither reads view
-  `+0x18`. Retail serializer/deserializer evidence independently identifies a
-  different 28-byte renderer record whose `lodScreenSizeMaxSquared` and
-  `lodScreenSizeMinSquared` fields are at `+0x14/+0x18`. The later job equation
-  that combines view and renderer thresholds, any separate `sceneCullingMask`
-  consumer, and zero-threshold pass behavior remain open.
+  `+0x18`. Retail serializer/deserializer evidence now identifies the formerly
+  generic 28-byte record exactly as `HGTreeRenderer`, nested under
+  `HGTreeInstance.renderers`, with `lodScreenSizeMaxSquared` and
+  `lodScreenSizeMinSquared` at `+0x14/+0x18`. Its separate
+  `HGTreeRender.CreateRendererList` binding dispatches through registered tree
+  batch groups, so it is not evidence for the scheduled cull-view threshold.
+  The concrete HGTree LOD equation, the unrelated scheduled consumer of view
+  `+0x18`, any separate `sceneCullingMask` consumer, and zero-threshold pass
+  behavior remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
@@ -316,9 +320,11 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Recover the later renderer/entity job equation that combines the cull-view
-   `screenSizeMinimumSquared` with the distinct candidate LOD bounds, then the
-   retail survivor list at the exact `HGCamera.DoECSCulling` return boundary,
+1. Recover the actual scheduled renderer/entity consumer of cull-view
+   `screenSizeMinimumSquared` without importing the separate HGTreeRenderer LOD
+   bounds; independently resolve the registered HGTree batch-group virtual
+   targets and their max/min LOD equation. Then recover the retail survivor
+   list at the exact `HGCamera.DoECSCulling` return boundary,
    starting from the source-closed 18-row authored input and exact
    selected-aspect 17-row authored result while preserving runtime/custom
    carry-in and other display aspects; populate exact shadow, depth, GBuffer,

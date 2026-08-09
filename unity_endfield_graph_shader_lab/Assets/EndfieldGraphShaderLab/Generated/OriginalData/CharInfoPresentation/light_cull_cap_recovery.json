@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v4",
-  "status": "installed_cap_cull_view_dispatch_predicates_and_capture_abi_source_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. A separate 28-byte renderer candidate record owns LOD max/min squared at +0x14/+0x18. The later view/candidate screen-threshold equation, target-frame pointer/count, and unrelated live native lights remain capture-only.",
+  "schema": "endfield.recovered-light-cull-cap.v5",
+  "status": "installed_cap_dispatch_predicates_hgtree_ownership_and_capture_abi_source_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. The previously separate 28-byte record is now identified exactly as HGTreeRenderer nested under HGTreeInstance.renderers, and its CreateRendererList entry uses a separate HGTreeRender manager/virtual-dispatch path. It is therefore not evidence for the scheduled cull-view threshold. The scheduled +0x18 consumer, HGTree LOD equation, target-frame pointer/count, and unrelated live native lights remain open.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -557,89 +557,16 @@
         "screenSizeMinimumSquaredAt0x18Read": false,
         "boundary": "the two complete hash-pinned predicates selected by this dispatch stage do not read cull-view +0x18; this does not prove that later renderer/entity jobs omit the threshold"
       },
-      "rendererCandidateRecord": {
-        "sizeBytes": 28,
-        "fields": [
-          {
-            "name": "batchKey",
-            "offset": "0x00",
-            "sizeBytes": 4
-          },
-          {
-            "name": "renderFlags",
-            "offset": "0x04",
-            "sizeBytes": 4
-          },
-          {
-            "name": "mesh",
-            "offset": "0x08",
-            "sizeBytes": 4
-          },
-          {
-            "name": "material",
-            "offset": "0x0C",
-            "sizeBytes": 4
-          },
-          {
-            "name": "subMeshIndex",
-            "offset": "0x10",
-            "sizeBytes": 4
-          },
-          {
-            "name": "lodScreenSizeMaxSquared",
-            "offset": "0x14",
-            "sizeBytes": 4
-          },
-          {
-            "name": "lodScreenSizeMinSquared",
-            "offset": "0x18",
-            "sizeBytes": 4
-          }
-        ],
-        "evidence": "independent retail serializer and deserializer offsets plus embedded native field names",
-        "fieldNameEvidence": [
-          {
-            "virtualAddress": "0x181E1E5D8",
-            "name": "batchKey"
-          },
-          {
-            "virtualAddress": "0x181E1E5E8",
-            "name": "renderFlags"
-          },
-          {
-            "virtualAddress": "0x181CF20A0",
-            "name": "mesh"
-          },
-          {
-            "virtualAddress": "0x181CF2268",
-            "name": "material"
-          },
-          {
-            "virtualAddress": "0x181E1E5F8",
-            "name": "subMeshIndex"
-          },
-          {
-            "virtualAddress": "0x181E1E608",
-            "name": "lodScreenSizeMaxSquared"
-          },
-          {
-            "virtualAddress": "0x181E1E620",
-            "name": "lodScreenSizeMinSquared"
-          }
-        ],
-        "notCullViewRecord": true
-      },
       "evidenceBoundary": {
         "closed": [
           "DispatchBatchCullingJobs internal-call binding and native call chain",
           "camera-type predicate selection",
           "standard six-plane AABB predicate",
           "cameraType 0x80 sphere/distance predicate",
-          "absence of cull-view +0x18 from those two selected predicates",
-          "the distinct 28-byte renderer candidate LOD record layout"
+          "absence of cull-view +0x18 from those two selected predicates"
         ],
         "open": [
-          "later renderer/entity LOD comparison that combines view and candidate screen thresholds",
+          "the later renderer/entity consumer, if any, of cull-view +0x18",
           "whether the installed zero view threshold makes that later gate unconditional",
           "target-frame runtime overrides and final survivor rows"
         ]
@@ -686,18 +613,6 @@
           "virtualAddress": "0x180FEAEF0",
           "sizeBytes": 96,
           "sha256": "e0404f9a11a72bc0c563e51e1c55fe16c4e5df6a4740a7f07501c32ec09254f5"
-        },
-        {
-          "label": "renderer_candidate_serializer",
-          "virtualAddress": "0x18106FD70",
-          "sizeBytes": 476,
-          "sha256": "285455b0862cf34c1b0aaeb7b198489c9dc805d7e3921424b07d75239fdfe0f2"
-        },
-        {
-          "label": "renderer_candidate_deserializer",
-          "virtualAddress": "0x1810701C0",
-          "sizeBytes": 620,
-          "sha256": "9ad71baa660f3e2547417faad460a8667bc22e98f4c2360c7f8f8a4e2cff3d72"
         }
       ],
       "verifiedInstructionSlices": [
@@ -718,6 +633,222 @@
           "virtualAddress": "0x180FEAEF0",
           "sizeBytes": 96,
           "sha256": "e0404f9a11a72bc0c563e51e1c55fe16c4e5df6a4740a7f07501c32ec09254f5"
+        }
+      ]
+    },
+    "unityPlayerHGTreeRendererBoundary": {
+      "internalCall": {
+        "index": 10320,
+        "name": "UnityEngine.HyperGryph.HGTreeRender::CreateRendererList",
+        "targetVirtualAddress": "0x180175A10",
+        "managedParameters": [
+          "viewHandle",
+          "renderFlagsMask",
+          "renderFlagsValue",
+          "lightModeMask",
+          "context",
+          "drawableFeedbackPtr",
+          "noAlphaTest"
+        ]
+      },
+      "callChain": [
+        "0x180175A10 HGTreeRender::CreateRendererList binding",
+        "0x180A5E320 renderer-list manager dispatch",
+        "registered batch-group virtual slot +0x158",
+        "registered batch-group virtual slot +0x160"
+      ],
+      "treeInstance": {
+        "nativeTypeName": "HGTreeInstance",
+        "rendererArrayField": "renderers",
+        "rendererElementType": "HGTreeRenderer",
+        "otherFields": [
+          "bounds",
+          "rendererHalfSize",
+          "objectFlags",
+          "rendererOffsets",
+          "colliderData",
+          "colliderMeshes",
+          "objectToWorld",
+          "param0",
+          "param1"
+        ]
+      },
+      "rendererRecord": {
+        "nativeTypeName": "HGTreeRenderer",
+        "sizeBytes": 28,
+        "fields": [
+          {
+            "name": "batchKey",
+            "offset": "0x00",
+            "sizeBytes": 4
+          },
+          {
+            "name": "renderFlags",
+            "offset": "0x04",
+            "sizeBytes": 4
+          },
+          {
+            "name": "mesh",
+            "offset": "0x08",
+            "sizeBytes": 4
+          },
+          {
+            "name": "material",
+            "offset": "0x0C",
+            "sizeBytes": 4
+          },
+          {
+            "name": "subMeshIndex",
+            "offset": "0x10",
+            "sizeBytes": 4
+          },
+          {
+            "name": "lodScreenSizeMaxSquared",
+            "offset": "0x14",
+            "sizeBytes": 4
+          },
+          {
+            "name": "lodScreenSizeMinSquared",
+            "offset": "0x18",
+            "sizeBytes": 4
+          }
+        ],
+        "fieldNameEvidence": [
+          {
+            "virtualAddress": "0x181D253F8",
+            "name": "HGTreeRenderer"
+          },
+          {
+            "virtualAddress": "0x181D25408",
+            "name": "HGTreeInstance"
+          },
+          {
+            "virtualAddress": "0x181E1E4F4",
+            "name": "bounds"
+          },
+          {
+            "virtualAddress": "0x181E1E560",
+            "name": "rendererHalfSize"
+          },
+          {
+            "virtualAddress": "0x181E1E578",
+            "name": "objectFlags"
+          },
+          {
+            "virtualAddress": "0x181D774E8",
+            "name": "renderers"
+          },
+          {
+            "virtualAddress": "0x181E1E588",
+            "name": "rendererOffsets"
+          },
+          {
+            "virtualAddress": "0x181E1E598",
+            "name": "colliderData"
+          },
+          {
+            "virtualAddress": "0x181E1E5A8",
+            "name": "colliderMeshes"
+          },
+          {
+            "virtualAddress": "0x181E1E5B8",
+            "name": "objectToWorld"
+          },
+          {
+            "virtualAddress": "0x181E1E5C8",
+            "name": "param0"
+          },
+          {
+            "virtualAddress": "0x181E1E5D0",
+            "name": "param1"
+          },
+          {
+            "virtualAddress": "0x181E1E5D8",
+            "name": "batchKey"
+          },
+          {
+            "virtualAddress": "0x181E1E5E8",
+            "name": "renderFlags"
+          },
+          {
+            "virtualAddress": "0x181CF20A0",
+            "name": "mesh"
+          },
+          {
+            "virtualAddress": "0x181CF2268",
+            "name": "material"
+          },
+          {
+            "virtualAddress": "0x181E1E5F8",
+            "name": "subMeshIndex"
+          },
+          {
+            "virtualAddress": "0x181E1E608",
+            "name": "lodScreenSizeMaxSquared"
+          },
+          {
+            "virtualAddress": "0x181E1E620",
+            "name": "lodScreenSizeMinSquared"
+          }
+        ]
+      },
+      "separationFromScheduledCulling": {
+        "separateEntryAndOwnershipProven": true,
+        "reason": "the record is nested under HGTreeInstance.renderers and its renderer-list entry is a separate HGTreeRender internal call; the pinned DispatchBatchCullingJobs predicates do not reference this serializer lineage",
+        "doesNotCloseCullViewScreenThresholdEquation": true
+      },
+      "evidenceBoundary": {
+        "closed": [
+          "HGTreeInstance owns a renderers array of HGTreeRenderer",
+          "the exact 28-byte HGTreeRenderer serialized layout",
+          "HGTreeRender::CreateRendererList binding and manager dispatch",
+          "manager dispatch through registered batch-group virtual slots +0x158/+0x160",
+          "HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation"
+        ],
+        "open": [
+          "concrete registered batch-group virtual targets",
+          "the HGTreeRenderer LOD max/min comparison equation",
+          "the unrelated scheduled cull-view +0x18 consumer"
+        ]
+      },
+      "verifiedBodies": [
+        {
+          "label": "instance_serializer",
+          "virtualAddress": "0x18106F9A0",
+          "sizeBytes": 969,
+          "sha256": "be21b07910174f9d037140711484fbfe345baae4d785b7ef5e035bd1d12195f9"
+        },
+        {
+          "label": "renderer_serializer",
+          "virtualAddress": "0x18106FD70",
+          "sizeBytes": 476,
+          "sha256": "285455b0862cf34c1b0aaeb7b198489c9dc805d7e3921424b07d75239fdfe0f2"
+        },
+        {
+          "label": "renderer_deserializer",
+          "virtualAddress": "0x1810701C0",
+          "sizeBytes": 620,
+          "sha256": "9ad71baa660f3e2547417faad460a8667bc22e98f4c2360c7f8f8a4e2cff3d72"
+        },
+        {
+          "label": "create_renderer_list_binding",
+          "virtualAddress": "0x180175A10",
+          "sizeBytes": 571,
+          "sha256": "2afe0023cdadb52d43ea6601fa38a555276b189da8cb2389fc0a0bcf43cad47e"
+        },
+        {
+          "label": "renderer_list_manager_dispatch",
+          "virtualAddress": "0x180A5E320",
+          "sizeBytes": 318,
+          "sha256": "1e962452aa30d8f735f5ecf1f0323b139eac72f9276d193d032cef33bf77d03c"
+        }
+      ],
+      "verifiedInstructionSlices": [
+        {
+          "label": "instance_renderer_array_to_nested_serializer",
+          "virtualAddress": "0x18106FAE2",
+          "sizeBytes": 39,
+          "sha256": "5de01d4614762d79d2a26b36259e45ed9e3065012ca1979e6cc2e072183f5e70"
         },
         {
           "label": "renderer_lod_offsets_write",
@@ -730,6 +861,24 @@
           "virtualAddress": "0x1810703F1",
           "sizeBytes": 39,
           "sha256": "d21aad86fe8306dc75ca9f521de6f21d0f02d8238bd22915b1b2d8c539f47ca1"
+        },
+        {
+          "label": "create_renderer_list_to_manager",
+          "virtualAddress": "0x180175B6A",
+          "sizeBytes": 36,
+          "sha256": "685862769b2b489791a0ed6a18beb2c3259d88ee1600de6f2a601f3925264f37"
+        },
+        {
+          "label": "manager_virtual_slot_158",
+          "virtualAddress": "0x180A5E380",
+          "sizeBytes": 23,
+          "sha256": "6bf218d6dc0ba9a75ef28f96b8fbd03e78a32b0d3b1aad721a944b71d89cdb33"
+        },
+        {
+          "label": "manager_virtual_slot_160",
+          "virtualAddress": "0x180A5E402",
+          "sizeBytes": 26,
+          "sha256": "565f705930ffddc93a319177ced5a425135025872d26b68dd7f205e1b6a114e1"
         }
       ]
     },
@@ -770,14 +919,17 @@
       "the 148-byte VisibleLight capture stride plus SetupState type, priority, and world-position offsets",
       "the AddCullViewByMatrix binding, six-plane constructor, view layout, and generic visibility/mask gate order",
       "the DispatchBatchCullingJobs binding, camera-type predicate split, and exact selected predicates",
-      "the distinct 28-byte renderer candidate LOD record with max/min squared fields at +0x14/+0x18"
+      "HGTreeInstance ownership and the exact 28-byte HGTreeRenderer LOD record",
+      "the separate HGTreeRender CreateRendererList manager/virtual-dispatch path",
+      "the correction that HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation"
     ],
     "captureOnly": [
       "target-frame LightCullResult pointer, count, and 148-byte rows",
       "unrelated active native lights",
       "arbitrary/asymmetric final selected-view planes",
-      "the later renderer/entity equation combining view and candidate screen-size thresholds",
+      "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
       "whether the installed zero view threshold makes that later gate unconditional",
+      "the concrete HGTree batch-group virtual targets and LOD comparison equation",
       "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
     ]

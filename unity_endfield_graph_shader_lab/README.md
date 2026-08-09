@@ -1538,13 +1538,17 @@ then mask-enabled bit 0, then `view.cullingMask & candidate.layerMask`.
 not read its slot. Internal call 3315 now closes the next dispatch boundary:
 normal views select the exact six-plane AABB predicate, while
 `cameraType == 0x80` selects the exact sphere/distance predicate; neither reads
-view `+0x18`. Independent retail serializer/deserializer code fixes a distinct
-28-byte renderer candidate record as `batchKey`, `renderFlags`, `mesh`,
-`material`, `subMeshIndex`, `lodScreenSizeMaxSquared`, and
-`lodScreenSizeMinSquared`, with the LOD pair at `+0x14/+0x18`. The later
-renderer/entity job equation combining those candidate bounds with the view
-threshold, any separate `sceneCullingMask` consumer, and whether zero makes the
-later gate unconditional remain explicit boundaries.
+view `+0x18`. Independent retail serializer/deserializer code fixes the
+formerly generic 28-byte record as `HGTreeRenderer`, nested under
+`HGTreeInstance.renderers`: `batchKey`, `renderFlags`, `mesh`, `material`,
+`subMeshIndex`, `lodScreenSizeMaxSquared`, and `lodScreenSizeMinSquared`, with
+the LOD pair at `+0x14/+0x18`. Internal call 10320 closes its separate
+`HGTreeRender.CreateRendererList` entry through the renderer-list manager and
+registered batch-group virtual slots `+0x158/+0x160`. It is therefore not
+evidence for the scheduled cull-view threshold. The concrete HGTree virtual
+targets and LOD equation, the unrelated scheduled consumer of view `+0x18`,
+any separate `sceneCullingMask` consumer, and whether zero makes that later
+gate unconditional remain explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
 binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
 value still requires an explicitly authorized target-frame capture of that

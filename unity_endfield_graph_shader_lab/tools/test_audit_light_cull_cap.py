@@ -208,15 +208,49 @@ class LightCullCapAuditTests(unittest.TestCase):
                 "screenSizeMinimumSquaredAt0x18Read"
             ]
         )
-        self.assertEqual(result["rendererCandidateRecord"]["sizeBytes"], 28)
+        self.assertNotIn("rendererCandidateRecord", result)
+
+    def test_unity_hgtree_renderer_boundary(self) -> None:
+        result = AUDIT.validate_unity_hgtree_renderer_boundary(
+            AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        )
+        self.assertEqual(result["internalCall"]["index"], 10320)
         self.assertEqual(
-            result["rendererCandidateRecord"]["fields"][-1],
+            result["treeInstance"]["rendererElementType"], "HGTreeRenderer"
+        )
+        self.assertEqual(result["rendererRecord"]["sizeBytes"], 28)
+        self.assertEqual(
+            result["rendererRecord"]["fields"][-1],
             {
                 "name": "lodScreenSizeMinSquared",
                 "offset": "0x18",
                 "sizeBytes": 4,
             },
         )
+        self.assertTrue(
+            result["separationFromScheduledCulling"][
+                "separateEntryAndOwnershipProven"
+            ]
+        )
+
+    def test_changed_hgtree_renderer_binding_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x180175A10 and size == 0x23B:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_hgtree_create_renderer_list_binding_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_hgtree_renderer_boundary(image)
 
     def test_changed_scheduled_cull_predicate_fails_closed(self) -> None:
         image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
