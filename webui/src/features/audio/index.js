@@ -38,6 +38,10 @@
       runtimeBoundary: "Evidence boundary",
       runtimeComponents: "Runtime components",
       hircInventory: "Wwise HIRC inventory",
+      controlCatalog: "Audio controls / cue catalog",
+      cueOperands: "Cue expression operands",
+      globalMusicCues: "Global music cue references",
+      rtpcParameters: "RTPC parameters",
       corpus: "Corpus",
       selectRecord: "Select an event or media record from the left.",
       overview: "Overview",
@@ -66,6 +70,7 @@
       contextProjectileTrigger: "Projectile lifecycle sound",
       contextInteractiveTrigger: "Interactive object trigger",
       contextGlobalLifecycle: "Global audio lifecycle",
+      contextAudioCueTrigger: "Audio cue behavior Event",
       contextAuthoredConfig: "Authored config",
       contextManagedRuntime: "Managed-code literal",
       contextDialogMedia: "Dialog media",
@@ -132,6 +137,10 @@
       runtimeBoundary: "\u8bc1\u636e\u8fb9\u754c",
       runtimeComponents: "\u8fd0\u884c\u65f6\u7ec4\u4ef6",
       hircInventory: "Wwise HIRC \u5e93\u5b58",
+      controlCatalog: "\u97f3\u9891\u63a7\u5236 / Cue \u76ee\u5f55",
+      cueOperands: "Cue \u8868\u8fbe\u5f0f\u64cd\u4f5c\u6570",
+      globalMusicCues: "\u5168\u5c40\u97f3\u4e50 Cue \u5f15\u7528",
+      rtpcParameters: "RTPC \u53c2\u6570",
       corpus: "\u6570\u636e\u96c6",
       selectRecord: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u4e2a\u4e8b\u4ef6\u6216\u5a92\u4f53\u8bb0\u5f55\u3002",
       overview: "\u6982\u89c8",
@@ -160,6 +169,7 @@
       contextProjectileTrigger: "\u6295\u5c04\u7269\u751f\u547d\u5468\u671f\u97f3\u6548",
       contextInteractiveTrigger: "\u4ea4\u4e92\u7269\u4ef6\u89e6\u53d1",
       contextGlobalLifecycle: "\u5168\u5c40\u97f3\u9891\u751f\u547d\u5468\u671f",
+      contextAudioCueTrigger: "Audio Cue \u884c\u4e3a Event",
       contextAuthoredConfig: "\u914d\u7f6e\u8868",
       contextManagedRuntime: "\u6258\u7ba1\u4ee3\u7801\u5b57\u9762\u91cf",
       contextDialogMedia: "\u5bf9\u8bdd\u5a92\u4f53",
@@ -304,6 +314,7 @@
     projectileTrigger: "contextProjectileTrigger",
     interactiveTrigger: "contextInteractiveTrigger",
     globalLifecycle: "contextGlobalLifecycle",
+    audioCueTrigger: "contextAudioCueTrigger",
     authoredConfig: "contextAuthoredConfig",
     managedRuntime: "contextManagedRuntime",
     dialogMedia: "contextDialogMedia",
@@ -342,13 +353,20 @@
     if (["characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField"].includes(kind)) return "gameplay";
     if (kind === "cutsceneTimeline") return "cutscene";
     if (["characterAnimation", "enemyAnimation"].includes(kind)) return "animation";
-    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "audioGlobalConfigEvent", "audioGlobalConfigEventHash"].includes(kind)) return "authoredConfig";
+    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
     return "";
   }
 
   function recordContextTags(record, kind) {
     const tags = new Set(asArray(record?.contextGroups).filter(Boolean));
+    const addContextKindTags = (contextKind) => {
+      if (contextKind === "projectileSoundField") tags.add("projectileTrigger");
+      if (["audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("audioCueTrigger");
+      if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(contextKind)) tags.add("interactiveTrigger");
+      if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("globalLifecycle");
+    };
+    for (const contextKind of asArray(record?.contextKinds)) addContextKindTags(contextKind);
     for (const status of asArray(record?.triggerBindingStatuses)) {
       if (status === "exactSkillConfig") tags.add("exactSkillTrigger");
       else if (status === "inferredSkillConfigOwner") tags.add("inferredSkillTrigger");
@@ -361,9 +379,7 @@
       if (context.triggerBindingStatus === "exactSkillConfig") tags.add("exactSkillTrigger");
       else if (context.triggerBindingStatus === "inferredSkillConfigOwner") tags.add("inferredSkillTrigger");
       if (Number(context.triggerPlaySoundActionCount || 0) > 0) tags.add("authoredPlaySoundAction");
-      if (context.kind === "projectileSoundField") tags.add("projectileTrigger");
-      if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(context.kind)) tags.add("interactiveTrigger");
-      if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash"].includes(context.kind)) tags.add("globalLifecycle");
+      addContextKindTags(context.kind);
     }
     if (Number(record?.playableCharacterAnimationOwnerCount || 0) > 1 || record?.animationContextScope === "sharedPlayableCharacters") {
       tags.add("sharedPlayableAnimation");
@@ -373,7 +389,7 @@
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
         "gameplay", "cutscene", "animation", "authoredConfig", "managedRuntime",
-        "sharedPlayableAnimation", "footstepSystem", "projectileTrigger", "interactiveTrigger", "globalLifecycle",
+        "sharedPlayableAnimation", "footstepSystem", "projectileTrigger", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
@@ -426,9 +442,11 @@
   }
 
   function searchText(record, kind, taxonomy = {}) {
+    const numericHashes = [record?.hash, record?.eventHash].filter((value) => Number.isInteger(Number(value)));
     const values = [
       recordTitle(record, kind), recordId(record, kind), recordCategory(record), recordScope(record), recordSource(record),
-      record?.eventHash, record?.mediaId, record?.bankId, record?.bank, record?.rel, record?.path, record?.src,
+      record?.hash, record?.eventHash, ...numericHashes.map((value) => `0x${(Number(value) >>> 0).toString(16).padStart(8, "0")}`),
+      record?.mediaId, record?.bankId, record?.bank, record?.rel, record?.path, record?.src,
       ...asArray(record?.eventIds), ...asArray(record?.mediaIds), ...asArray(record?.actionIds), ...asArray(record?.visitedObjectIds),
       ...asArray(record?.contextSearch), ...asArray(record?.bankPackages),
       ...asArray(taxonomy.contextTags).flatMap((value) => [value, taxonomyLabel(value)]),
@@ -1223,6 +1241,8 @@
     if (components.length) panel.appendChild(chipSection(t("runtimeComponents"), components));
     const hirc = state.index?.hircSummary;
     if (hirc && typeof hirc === "object" && Object.keys(hirc).length) panel.appendChild(hircInventorySection(hirc));
+    const controlCatalog = state.index?.controlCatalog;
+    if (controlCatalog && typeof controlCatalog === "object") panel.appendChild(controlCatalogSection(controlCatalog));
     const systems = asArray(runtime.systems).filter((value) => value && typeof value === "object");
     if (systems.length) panel.appendChild(runtimeSystemsSection(systems));
     const boundaryCandidate = runtime.boundary ?? state.index?.evidenceBoundary;
@@ -1262,6 +1282,45 @@
     const typeCounts = Object.entries(hirc.objectTypeCounts || {}).map(([type, count]) => `${labels[type] || `type${type}`} (${type}): ${formatNumber(count)}`);
     if (typeCounts.length) section.appendChild(chipSection("Object families", typeCounts));
     if (hirc.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), hirc.evidenceBoundary));
+    return section;
+  }
+
+  function controlCatalogSection(catalog) {
+    const section = document.createElement("div");
+    section.style.marginTop = "14px";
+    const heading = document.createElement("div");
+    heading.className = "audio-fact-label";
+    heading.textContent = t("controlCatalog");
+    section.appendChild(heading);
+    const counts = catalog.counts && typeof catalog.counts === "object" ? catalog.counts : {};
+    if (Object.keys(counts).length) {
+      const grid = document.createElement("div");
+      grid.className = "audio-stat-grid";
+      for (const [key, value] of Object.entries(counts)) grid.appendChild(statNode(humanize(key), typeof value === "number" ? formatNumber(value) : value));
+      section.appendChild(grid);
+    }
+    const groups = [
+      ["rtpcParameters", asArray(catalog.rtpcParameters), (row) => `${row.parameterName || t("unknown")} / ${row.field || humanize(row.evidence || "")}`],
+      ["globalMusicCues", asArray(catalog.audioGlobalMusicCueRefs), (row) => `${row.field || t("unknown")} / ${row.cueHex || row.cueId || "?"} / ${humanize(row.definitionStatus || "unknown")}`],
+      ["cueOperands", asArray(catalog.audioCueExpressionOperands), (row) => `${row.stringValue || t("unknown")} / ${row.cueHex || "?"} / ${humanize(row.expressionSide || "")} / ${row.expressionPath || ""}`],
+    ];
+    for (const [labelKey, rows, formatRow] of groups) {
+      if (!rows.length) continue;
+      const details = document.createElement("details");
+      details.className = "audio-runtime-system";
+      const summary = document.createElement("summary");
+      summary.textContent = `${t(labelKey)} (${formatNumber(rows.length)})`;
+      const values = document.createElement("div");
+      values.className = "audio-chip-list";
+      for (const row of rows) {
+        const chip = document.createElement("span");
+        chip.textContent = formatRow(row);
+        values.appendChild(chip);
+      }
+      details.append(summary, values);
+      section.appendChild(details);
+    }
+    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
     return section;
   }
 
@@ -1330,14 +1389,24 @@
     if (context?.sourceOffset !== undefined) parts.push(`source offset 0x${Number(context.sourceOffset).toString(16)}`);
     if (context?.stateDirection) parts.push(`${context.stateDirection} state mask ${context.audioStateMask ?? "?"}`);
     if (context?.description) parts.push(context.description);
+    if (context?.cueHex || context?.cueId !== undefined) parts.push(`cue ${context.cueHex || context.cueId}`);
+    if (context?.globalMusicCueField) parts.push(`global cue ${context.globalMusicCueField}`);
+    if (context?.handlerScope) parts.push(`${context.handlerScope} handler${context.levelId ? ` / level ${context.levelId}` : ""}`);
+    if (context?.expressionPath) parts.push(`${context.expressionSide || "expression"} type ${context.exprType ?? "?"} / ${context.expressionPath}`);
     if (context?.projectileId) parts.push(`projectile ${context.projectileId}`);
+    if (context?.projectileKey) parts.push(context.projectileKey);
     if (context?.soundField) parts.push(`${humanize(context.soundField)} / ${humanize(context.triggerPhase || "")}`);
     if (context?.eventHash !== undefined) parts.push(`Event 0x${Number(context.eventHash).toString(16).padStart(8, "0")}`);
+    if (context?.signedValue !== undefined) parts.push(`serialized int32 ${context.signedValue}`);
     if (context?.runtimeActivationStatus) parts.push(humanize(context.runtimeActivationStatus));
     const authoredSkillIds = asArray(context?.authoredSkillIds).filter(Boolean);
     if (authoredSkillIds.length) parts.push(`projectile template skills: ${authoredSkillIds.length === 1 ? authoredSkillIds[0] : `${authoredSkillIds[0]} +${authoredSkillIds.length - 1}`}`);
     if (context?.skillOwnershipStatus) parts.push(humanize(context.skillOwnershipStatus));
     if (context?.sourceJsonPath) parts.push(context.sourceJsonPath);
+    if (context?.sourceRoot || context?.sourcePathId) parts.push(`${context.sourceRoot || "source"} PathID ${context.sourcePathId || "?"}`);
+    if (context?.sourceFile) parts.push(`CAB ${context.sourceFile}`);
+    if (context?.sourceVfsPath) parts.push(context.sourceVfsPath);
+    if (context?.semanticPath) parts.push(context.semanticPath);
     const sourcePaths = asArray(context?.sourcePaths).filter(Boolean);
     if (sourcePaths.length) parts.push(sourcePaths.length === 1 ? sourcePaths[0] : `${sourcePaths[0]} +${sourcePaths.length - 1}`);
     if (context?.triggerBindingStatus) parts.push(humanize(context.triggerBindingStatus));

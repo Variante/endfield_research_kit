@@ -365,7 +365,7 @@ class ProjectileAudioLinkTests(unittest.TestCase):
                 }),
                 encoding="utf-8",
             )
-            key = build_audio.projectile_event_key(0xFFFFFFFF)
+            key = "au_projectile_named_event"
             stats = build_audio.link_projectile_audio(
                 webui_root,
                 {key: [{
@@ -384,6 +384,7 @@ class ProjectileAudioLinkTests(unittest.TestCase):
             self.assertEqual(stats["projectileSoundRefsLinked"], 1)
             self.assertTrue(launch["event"]["foundInWwise"])
             self.assertEqual(launch["event"]["runtimeSelection"], "singleCandidate")
+            self.assertEqual(launch["event"]["canonicalEventIds"], [key])
             self.assertEqual(launch["audio"][0]["mediaId"], 7)
 
 

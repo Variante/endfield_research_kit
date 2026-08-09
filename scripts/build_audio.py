@@ -29,6 +29,7 @@ try:
         collect_table_audio_event_hashes,
         collect_table_audio_event_names,
         hashed_event_key,
+        is_rtpc_parameter_name,
     )
 except ImportError:  # Imported as scripts.build_audio from repository-root tests.
     from scripts.build_audio_semantics import (
@@ -39,6 +40,7 @@ except ImportError:  # Imported as scripts.build_audio from repository-root test
         collect_table_audio_event_hashes,
         collect_table_audio_event_names,
         hashed_event_key,
+        is_rtpc_parameter_name,
     )
 
 
@@ -1951,6 +1953,7 @@ def link_projectile_audio(
         return {"projectileSoundRefs": 0, "projectileSoundEvents": 0, "projectileSoundRefsLinked": 0, "projectileAudioCandidates": 0}
 
     evidence_by_hash: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    event_ids_by_hash: dict[int, set[str]] = defaultdict(set)
     for row in event_evidence:
         if not isinstance(row, dict):
             continue
@@ -1958,8 +1961,11 @@ def link_projectile_audio(
             event_hash = int(row.get("eventHash")) & 0xFFFFFFFF
         except (TypeError, ValueError):
             continue
-        if str(row.get("eventId") or "").startswith(PROJECTILE_EVENT_PREFIX):
-            evidence_by_hash[event_hash].append(row)
+        event_id = str(row.get("eventId") or "").strip()
+        if not event_id:
+            continue
+        evidence_by_hash[event_hash].append(row)
+        event_ids_by_hash[event_hash].add(event_id)
 
     refs = 0
     linked_refs = 0
@@ -1986,22 +1992,24 @@ def link_projectile_audio(
             evidence = evidence_by_hash.get(event_hash) or []
             media: list[dict[str, Any]] = []
             seen_media: set[tuple[str, str]] = set()
-            for audio in event_audio_by_id.get(key, []):
-                src = str(audio.get("src") or "")
-                media_id = str(audio.get("mediaId") or audio.get("id") or "")
-                dedupe_key = (src, media_id)
-                if not src or dedupe_key in seen_media:
-                    continue
-                seen_media.add(dedupe_key)
-                media.append({
-                    key: audio[key]
-                    for key in (
-                        "src", "mediaId", "format", "bytes", "audioScope",
-                        "audioCategory", "audioCategoryDetail", "sourceBlock",
-                        "sourceBlockLabel", "sourceBank", "bankId", "bank",
-                    )
-                    if audio.get(key) is not None
-                })
+            canonical_event_ids = sorted(event_ids_by_hash.get(event_hash) or {key})
+            for canonical_event_id in canonical_event_ids:
+                for audio in event_audio_by_id.get(canonical_event_id, []):
+                    src = str(audio.get("src") or "")
+                    media_id = str(audio.get("mediaId") or audio.get("id") or "")
+                    dedupe_key = (src, media_id)
+                    if not src or dedupe_key in seen_media:
+                        continue
+                    seen_media.add(dedupe_key)
+                    media.append({
+                        key: audio[key]
+                        for key in (
+                            "src", "mediaId", "format", "bytes", "audioScope",
+                            "audioCategory", "audioCategoryDetail", "sourceBlock",
+                            "sourceBlockLabel", "sourceBank", "bankId", "bank",
+                        )
+                        if audio.get(key) is not None
+                    })
             event_found = bool(evidence)
             if event_found:
                 resolved_hashes.add(event_hash)
@@ -2015,6 +2023,7 @@ def link_projectile_audio(
                 "playableCandidates": len(media),
                 "source": "wwiseHirc" if event_found else "unresolved",
                 "runtimeSelection": "unresolved" if len(media) > 1 else "singleCandidate" if media else "none",
+                "canonicalEventIds": canonical_event_ids,
             }
             if media:
                 value["audio"] = media
@@ -4867,7 +4876,10 @@ def build_audio(args: argparse.Namespace) -> int:
     if not metadata_path.is_file():
         cached_metadata_path = args.export_root / "recovered" / "il2cpp" / "global-metadata.dat"
         metadata_path = cached_metadata_path if cached_metadata_path.is_file() else None
-    binary_managed_event_names = set(collect_metadata_audio_literals(metadata_path))
+    binary_managed_event_names = {
+        name for name in collect_metadata_audio_literals(metadata_path)
+        if not is_rtpc_parameter_name(name)
+    }
     event_names.update(binary_managed_event_names)
     fmv_attach_overrides = load_narrative_video_attach_overrides(args.webui_root)
     audio_source_overrides = load_narrative_video_audio_source_overrides(args.webui_root)
