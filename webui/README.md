@@ -114,6 +114,10 @@ finish, or proximity-sizzle Event field with projectile identity and source
 PathID. Skill ids stored by the projectile remain template references rather
 than proof that a displayed skill spawned it; lifecycle execution and Wwise
 branch selection remain unresolved.
+The Audio control catalog keeps cue and parameter entities separate from Wwise
+Events. Only AudioCue behavior expressions with `exprType=3` become Event
+contexts; `exprType=8` operands, Global `musicCue*` IDs, and RTPC names retain
+their own typed records and missing-definition state.
 
 ## Runtime overrides
 

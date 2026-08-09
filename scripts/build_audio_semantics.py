@@ -492,6 +492,10 @@ def event_hash_context_key(event_hash: int) -> str:
     return f"#0x{event_hash & 0xFFFFFFFF:08x}"
 
 
+def is_rtpc_parameter_name(value: Any) -> bool:
+    return str(value or "").strip().lower().startswith("au_rtpc_")
+
+
 def compact_media(entry: dict[str, Any]) -> dict[str, Any]:
     keys = (
         "id", "mediaId", "rel", "src", "format", "bytes", "storageRoot",
@@ -896,12 +900,22 @@ def collect_projectile_contexts(webui_root: Path) -> dict[str, list[dict[str, An
                 "projectileKey": projectile_key,
                 "soundField": field,
                 "triggerPhase": phase,
+                "signedValue": raw,
                 "eventHash": event_hash,
+                "eventHex": f"0x{event_hash:08x}",
                 "runtimeActivationStatus": "projectileLifecycleExecutionNotObserved",
                 "sourceRoot": str(source.get("root") or ""),
                 "sourcePathId": str(source.get("pathId") or ""),
                 "sourceJsonPath": str(source.get("jsonPath") or ""),
+                "sourceFile": str(source.get("sourceFile") or ""),
+                "sourceOffset": source.get("sourceOffset"),
+                "sourceVfsPath": str(source.get("vfsPath") or ""),
+                "sourceFingerprint": str(source.get("rawDataSha256") or ""),
+                "semanticPath": f"ProjectileComponentData.tail.structuredRemainingTail.postAlertEffectSoundTail.{field}",
             }
+            if field == "sizzleSound":
+                context["sizzleSoundTriggerDistance"] = (entry.get("sounds") or {}).get("sizzleSoundTriggerDistance")
+                context["ringProjectileSoundSmoothFactor"] = (entry.get("sounds") or {}).get("ringProjectileSoundSmoothFactor")
             if authored_skill_ids:
                 context["authoredSkillIds"] = authored_skill_ids[:16]
                 context["skillOwnershipStatus"] = "projectileTemplateReferenceOnly"
@@ -1223,9 +1237,224 @@ def collect_authored_runtime_config_contexts(
     return dict(contexts)
 
 
+def _iter_audio_cue_expression_nodes(value: Any, path: str) -> Iterable[tuple[dict[str, Any], str]]:
+    if not isinstance(value, dict):
+        return
+    yield value, path
+    for index, child in enumerate(value.get("children") or []):
+        if isinstance(child, dict):
+            yield from _iter_audio_cue_expression_nodes(child, f"{path}.children[{index}]")
+
+
+def collect_audio_cue_semantics(export_root: Path) -> dict[str, Any]:
+    """Split AudioCue Event requests from runtime expression operands."""
+
+    table_path = next((
+        export_root / "structured" / source_root / "Table" / "AudioCueTable.json"
+        for source_root in ("Persistent", "StreamingAssets")
+        if (export_root / "structured" / source_root / "Table" / "AudioCueTable.json").is_file()
+    ), None)
+    payload = load_json(table_path, {}) if table_path else {}
+    source = normalize_posix(table_path.relative_to(export_root)) if table_path else ""
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    operands: list[dict[str, Any]] = []
+    definitions: dict[int, dict[str, Any]] = {}
+
+    for raw_cue_id, row in sorted((payload.items() if isinstance(payload, dict) else []), key=lambda item: str(item[0])):
+        if not isinstance(row, dict):
+            continue
+        try:
+            cue_signed_id = int(raw_cue_id)
+        except (TypeError, ValueError):
+            continue
+        cue_id = cue_signed_id & 0xFFFFFFFF
+        definition = {
+            "cueSignedId": cue_signed_id,
+            "cueId": cue_id,
+            "cueHex": f"0x{cue_id:08x}",
+            "source": source,
+            "handlerCount": 0,
+            "directHandlerCount": 0,
+            "levelHandlerCount": 0,
+            "behaviorEvents": [],
+            "expressionOperands": [],
+        }
+
+        handlers: list[tuple[str, str, int, dict[str, Any]]] = []
+        for handler_index, handler in enumerate(row.get("directHandlers") or []):
+            if isinstance(handler, dict):
+                handlers.append(("direct", "", handler_index, handler))
+        level_map = row.get("levelHandlerMap") if isinstance(row.get("levelHandlerMap"), dict) else {}
+        for level_id, wrapper in sorted(level_map.items(), key=lambda item: str(item[0])):
+            level_handlers = wrapper.get("handlers") if isinstance(wrapper, dict) else wrapper
+            if not isinstance(level_handlers, list):
+                continue
+            for handler_index, handler in enumerate(level_handlers):
+                if isinstance(handler, dict):
+                    handlers.append(("level", str(level_id), handler_index, handler))
+
+        for handler_scope, level_id, handler_index, handler in handlers:
+            definition["handlerCount"] += 1
+            definition[f"{handler_scope}HandlerCount"] += 1
+            handler_base = (
+                f"{raw_cue_id}.directHandlers[{handler_index}]"
+                if handler_scope == "direct"
+                else f"{raw_cue_id}.levelHandlerMap[{level_id}].handlers[{handler_index}]"
+            )
+            for expression_side, root_name in (("behavior", "behaviourExpr"), ("condition", "conditionExpr")):
+                for node, expression_path in _iter_audio_cue_expression_nodes(
+                    handler.get(root_name),
+                    f"{handler_base}.{root_name}",
+                ):
+                    try:
+                        expr_type = int(node.get("exprType"))
+                    except (TypeError, ValueError):
+                        continue
+                    string_value = str(node.get("stringValue") or "").strip()
+                    common = {
+                        "cueSignedId": cue_signed_id,
+                        "cueId": cue_id,
+                        "cueHex": f"0x{cue_id:08x}",
+                        "handlerScope": handler_scope,
+                        "handlerIndex": handler_index,
+                        "expressionSide": expression_side,
+                        "expressionPath": expression_path,
+                        "exprType": expr_type,
+                        "boolValue": bool(node.get("boolValue")),
+                        "intValue": node.get("intValue"),
+                        "floatValue": node.get("floatValue"),
+                        "stringValue": string_value,
+                        "source": source,
+                    }
+                    if level_id:
+                        common["levelId"] = level_id
+                    if expression_side == "behavior" and expr_type == 3 and string_value:
+                        context = {
+                            "kind": "audioCueBehaviorEvent",
+                            "table": "AudioCueTable",
+                            "semanticRole": "cueBehaviorEventRequest",
+                            "evidence": "exactAudioCueBehaviorExpression",
+                            "triggerRequestEvidence": ["audioCueBehaviorExprType3"],
+                            "triggerRuntimeActivationStatuses": ["cueInvocationAndExpressionEvaluationRequired"],
+                            **common,
+                        }
+                        _append_context(contexts, seen, string_value, context)
+                        definition["behaviorEvents"].append({"eventId": string_value, **context})
+                    elif expr_type == 8 and string_value:
+                        operand = {
+                            "kind": "audioCueExpressionOperand",
+                            "semanticRole": "runtimeCueVariable",
+                            "wwiseEventStatus": "notApplicable",
+                            "evidence": "exactAudioCueExpressionOperand",
+                            **common,
+                        }
+                        operands.append(operand)
+                        definition["expressionOperands"].append(operand)
+        definitions[cue_id] = definition
+
+    return {
+        "eventContexts": dict(contexts),
+        "expressionOperands": operands,
+        "cueDefinitions": definitions,
+        "source": source,
+    }
+
+
+def collect_audio_global_control_semantics(
+    export_root: Path,
+    cue_semantics: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Recover Global cue references and RTPC parameters without making Event claims."""
+
+    cue_semantics = cue_semantics or collect_audio_cue_semantics(export_root)
+    cue_definitions = cue_semantics.get("cueDefinitions") or {}
+    global_path = _first_recovered_mono_behaviour(export_root, "AudioGlobalConfig")
+    global_config = load_json(global_path, {}) if global_path else {}
+    source = normalize_posix(global_path.relative_to(export_root)) if global_path else ""
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    cue_refs: list[dict[str, Any]] = []
+    rtpc_parameters: list[dict[str, Any]] = []
+    if not isinstance(global_config, dict):
+        global_config = {}
+
+    for field, value in global_config.items():
+        if not str(field).startswith("musicCue"):
+            continue
+        raw = value.get("_id") if isinstance(value, dict) else value
+        if not isinstance(raw, int) or isinstance(raw, bool) or raw == 0:
+            continue
+        cue_id = raw & 0xFFFFFFFF
+        definition = cue_definitions.get(cue_id)
+        ref = {
+            "kind": "audioGlobalMusicCueRef",
+            "field": str(field),
+            "cueSignedId": raw,
+            "cueId": cue_id,
+            "cueHex": f"0x{cue_id:08x}",
+            "definitionStatus": "resolved" if definition else "missing",
+            "source": source,
+            "evidence": "exactSerializedAudioGlobalConfigCueId",
+            "wwiseEventStatus": "notApplicable",
+        }
+        if definition:
+            ref["handlerCount"] = definition.get("handlerCount", 0)
+            ref["behaviorEventCount"] = len(definition.get("behaviorEvents") or [])
+            ref["expressionOperandCount"] = len(definition.get("expressionOperands") or [])
+            for behavior in definition.get("behaviorEvents") or []:
+                event_name = str(behavior.get("eventId") or "").strip()
+                if not event_name:
+                    continue
+                _append_context(contexts, seen, event_name, {
+                    "kind": "audioGlobalMusicCueBehaviorEvent",
+                    "table": "AudioGlobalConfig",
+                    "semanticRole": "globalLifecycleMusicCueBehaviorEvent",
+                    "globalMusicCueField": str(field),
+                    "cueSignedId": raw,
+                    "cueId": cue_id,
+                    "cueHex": f"0x{cue_id:08x}",
+                    "handlerScope": behavior.get("handlerScope"),
+                    "levelId": behavior.get("levelId"),
+                    "handlerIndex": behavior.get("handlerIndex"),
+                    "expressionPath": behavior.get("expressionPath"),
+                    "exprType": 3,
+                    "source": source,
+                    "evidence": "exactGlobalMusicCueToAudioCueBehaviorChain",
+                    "triggerRequestEvidence": ["serializedGlobalMusicCueReference", "audioCueBehaviorExprType3"],
+                    "triggerRuntimeActivationStatuses": ["globalLifecycleCueInvocationAndExpressionEvaluationRequired"],
+                })
+        cue_refs.append(ref)
+
+    for field in (
+        "rtpcGlobalVol", "rtpcMusicVol", "rtpcSfxVol", "rtpcVoiceVol",
+        "rtpcControllerSpeakerVol", "rtpcVibrationVol",
+        "listenerSpeedRtpcName", "listenerAccelerationRtpcName",
+    ):
+        parameter_name = str(global_config.get(field) or "").strip()
+        if not parameter_name:
+            continue
+        rtpc_parameters.append({
+            "kind": "rtpcParameter",
+            "parameterName": parameter_name,
+            "field": field,
+            "source": source,
+            "evidence": "exactSerializedAudioGlobalConfigParameter",
+            "wwiseEventStatus": "notApplicable",
+        })
+    return {
+        "eventContexts": dict(contexts),
+        "audioGlobalMusicCueRefs": cue_refs,
+        "rtpcParameters": rtpc_parameters,
+    }
+
+
 def collect_table_contexts(
     export_root: Path,
     runtime_model: dict[str, Any] | None = None,
+    *,
+    cue_semantics: dict[str, Any] | None = None,
+    global_controls: dict[str, Any] | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
@@ -1242,8 +1471,6 @@ def collect_table_contexts(
             semantic_role = ""
             if named_event_field_re.search(field_name):
                 semantic_role = "authoredEventName"
-            elif table == "AudioCueTable" and field_name == "stringValue":
-                semantic_role = "cueExpressionValue"
             # Voice IDs, audioOverride values, radio row IDs, and continuation
             # IDs are media/dialog identities rather than Wwise Events.  Do
             # not flatten them into this Event inventory.
@@ -1282,6 +1509,8 @@ def collect_table_contexts(
                 visit(child, f"{path}[{index}]", table, source)
 
     for table_name in AUDIO_TABLE_NAMES:
+        if table_name == "AudioCueTable.json":
+            continue
         path = next((
             export_root / "structured" / source_root / "Table" / table_name
             for source_root in ("Persistent", "StreamingAssets")
@@ -1292,6 +1521,14 @@ def collect_table_contexts(
         payload = load_json(path, None)
         if payload is not None:
             visit(payload, "", path.stem, normalize_posix(path.relative_to(export_root)))
+    cue_semantics = cue_semantics or collect_audio_cue_semantics(export_root)
+    global_controls = global_controls or collect_audio_global_control_semantics(export_root, cue_semantics)
+    for event_id, rows in cue_semantics.get("eventContexts", {}).items():
+        for row in rows:
+            _append_context(contexts, seen, event_id, row)
+    for event_id, rows in global_controls.get("eventContexts", {}).items():
+        for row in rows:
+            _append_context(contexts, seen, event_id, row)
     for event_id, rows in collect_authored_runtime_config_contexts(export_root, runtime_model).items():
         for row in rows:
             _append_context(contexts, seen, event_id, row)
@@ -1319,10 +1556,7 @@ def collect_table_audio_event_names(export_root: Path) -> set[str]:
         for key, rows in collect_table_contexts(export_root).items()
         if key
         and not key.startswith("#0x")
-        and any(
-            isinstance(row, dict) and row.get("semanticRole") != "cueExpressionValue"
-            for row in rows
-        )
+        and rows
     }
 
 
@@ -1372,7 +1606,10 @@ def collect_webui_cutscene_events(webui_root: Path, language: str) -> dict[str, 
 def managed_literal_contexts(
     metadata_path: Path | None,
 ) -> tuple[dict[str, list[dict[str, Any]]], list[str]]:
-    names = collect_metadata_audio_literals(metadata_path)
+    names = [
+        name for name in collect_metadata_audio_literals(metadata_path)
+        if not is_rtpc_parameter_name(name)
+    ]
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
     for name in names:
@@ -1594,12 +1831,21 @@ def build_event_rows(
             runtime_selection = "multiplePossibleMediaUnresolved"
         else:
             runtime_selection = "unresolved"
+        category = event_category(key)
+        category_evidence = "namePrefix" if category != "unknown" else "unclassified"
+        if category == "unknown" and any(
+            context.get("kind") == "projectileSoundField"
+            for context in event_contexts
+            if isinstance(context, dict)
+        ):
+            category = "sfx"
+            category_evidence = "exactProjectileSoundField"
         rows.append({
             "id": key,
             "name": display_names.get(key, key),
             "hash": event_hash,
-            "category": event_category(key),
-            "categoryEvidence": "namePrefix" if event_category(key) != "unknown" else "unclassified",
+            "category": category,
+            "categoryEvidence": category_evidence,
             "foundInWwise": bool(evidence_rows),
             "possibleMediaCount": len(event_candidates),
             "uniqueDecodedContentCount": len(unique_content_keys),
@@ -1679,6 +1925,7 @@ def semantic_context_group(kind: Any) -> str:
     if value in {
         "table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger",
         "audioGlobalConfigEvent", "audioGlobalConfigEventHash",
+        "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent",
     }:
         return "authoredConfig"
     if value == "binaryManagedLiteral":
@@ -1701,6 +1948,11 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "componentIndex", "sourceOffset", "sourceFingerprint",
             "projectileId", "projectileKey", "soundField", "triggerPhase",
             "runtimeActivationStatus", "sourceRoot", "sourcePathId", "sourceJsonPath",
+            "signedValue", "eventHex", "sourceFile", "sourceVfsPath", "semanticPath",
+            "sizzleSoundTriggerDistance", "ringProjectileSoundSmoothFactor",
+            "cueSignedId", "cueId", "cueHex", "handlerScope", "levelId",
+            "handlerIndex", "expressionSide", "expressionPath", "exprType",
+            "globalMusicCueField",
         ):
             value = context.get(key)
             if value not in (None, "", []):
@@ -1739,6 +1991,11 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
     summary = {key: row[key] for key in keys if row.get(key) not in (None, "", [])}
     summary.update({
         "contextGroups": sorted({semantic_context_group(context.get("kind")) for context in contexts if isinstance(context, dict)} - {""}),
+        "contextKinds": sorted({
+            str(context.get("kind") or "")
+            for context in contexts
+            if isinstance(context, dict) and context.get("kind")
+        }),
         "triggerBindingStatuses": sorted({
             str(context.get("triggerBindingStatus") or "")
             for context in contexts
@@ -1776,10 +2033,24 @@ def build_audio_semantic_data(
     language = language.upper()
     runtime_model = build_runtime_model(metadata_path, export_root)
     literal_context_index, managed_literal_names = managed_literal_contexts(metadata_path)
+    cue_semantics = collect_audio_cue_semantics(export_root)
+    global_controls = collect_audio_global_control_semantics(export_root, cue_semantics)
+    managed_rtpc_parameters = [{
+        "kind": "rtpcParameter",
+        "parameterName": name,
+        "source": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat:stringLiteral",
+        "evidence": "exactManagedStringLiteral",
+        "wwiseEventStatus": "notApplicable",
+    } for name in collect_metadata_audio_literals(metadata_path) if is_rtpc_parameter_name(name)]
     contexts = merge_contexts(
         collect_gameplay_contexts(webui_root, language),
         collect_projectile_contexts(webui_root),
-        collect_table_contexts(export_root, runtime_model),
+        collect_table_contexts(
+            export_root,
+            runtime_model,
+            cue_semantics=cue_semantics,
+            global_controls=global_controls,
+        ),
         cutscene_contexts(cutscene_events),
         literal_context_index,
     )
@@ -1973,6 +2244,34 @@ def build_audio_semantic_data(
         ],
         "banks": banks,
         "hircSummary": audio_index.get("hircSummary") or {},
+        "controlCatalog": {
+            "schemaVersion": 1,
+            "counts": {
+                "audioCueDefinitions": len(cue_semantics.get("cueDefinitions") or {}),
+                "audioCueBehaviorEventContexts": sum(
+                    len(rows) for rows in (cue_semantics.get("eventContexts") or {}).values()
+                ),
+                "audioCueExpressionOperands": len(cue_semantics.get("expressionOperands") or []),
+                "audioGlobalMusicCueRefs": len(global_controls.get("audioGlobalMusicCueRefs") or []),
+                "audioGlobalMusicCueRefsResolved": sum(
+                    row.get("definitionStatus") == "resolved"
+                    for row in global_controls.get("audioGlobalMusicCueRefs") or []
+                ),
+                "rtpcParameters": len(global_controls.get("rtpcParameters") or []) + len(managed_rtpc_parameters),
+            },
+            "audioCueDefinitions": [
+                {key: value for key, value in definition.items() if key not in {"behaviorEvents", "expressionOperands"}}
+                | {
+                    "behaviorEventCount": len(definition.get("behaviorEvents") or []),
+                    "expressionOperandCount": len(definition.get("expressionOperands") or []),
+                }
+                for definition in (cue_semantics.get("cueDefinitions") or {}).values()
+            ],
+            "audioCueExpressionOperands": cue_semantics.get("expressionOperands") or [],
+            "audioGlobalMusicCueRefs": global_controls.get("audioGlobalMusicCueRefs") or [],
+            "rtpcParameters": (global_controls.get("rtpcParameters") or []) + managed_rtpc_parameters,
+            "evidenceBoundary": "Cue behavior exprType=3 values are Event requests. exprType=8 strings are runtime cue operands, musicCue* values are cue IDs, and RTPC names are parameters; none of those controls is promoted to a Wwise Event without an exact Event operation.",
+        },
         "runtimeModel": runtime_model,
         "evidenceBoundary": {
             "decodedMedia": "A decoded FLAC/WAV/WEM is a source media object, not proof that it played.",
@@ -1981,6 +2280,7 @@ def build_audio_semantic_data(
             "animationOwnership": "An AnimationClip callback proves that the owned clip requests the Event. If the same Event is used by multiple playable characters, its complete Wwise leaf graph is a shared selector surface and is not character-specific media ownership.",
             "authoredEventHash": "Signed table integers are normalized to uint32 only in event-designated fields; row and field prove semantic ownership even when no string name is known.",
             "projectileSound": "A nonzero decoded projectile sound slot proves the projectile lifecycle field references the uint32 Wwise Event. It does not prove that the projectile was spawned, that the lifecycle phase executed, or which Wwise media branch was selected.",
+            "audioCue": "Only behaviourExpr exprType=3 string values are Event requests. exprType=8 strings are runtime cue-variable operands; AudioGlobal musicCue fields are cue references, and RTPC names are control parameters.",
             "runtimeMetadata": "IL2CPP names prove shipped system structure, not live call order or active state.",
         },
     }

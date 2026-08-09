@@ -2695,7 +2695,7 @@
   }
 
   function projectileSoundCount(projectile) {
-    return Object.values(projectile?.sounds || {}).filter((value) => value !== null && value !== undefined && value !== "").length;
+    return projectileSoundRows(projectile).length;
   }
 
   function renderProjectileIntegration(entry) {

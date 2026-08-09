@@ -101,11 +101,11 @@ class ProjectileBuilderTests(unittest.TestCase):
             index_path.write_text(json.dumps({
                 "projectileEventHashes": [event_hash],
                 "eventEvidence": [{
-                    "eventId": "projectile-event:0xffffffff",
+                    "eventId": "au_projectile_named_event",
                     "eventHash": event_hash,
                 }],
                 "events": [{
-                    "eventId": "projectile-event:0xffffffff",
+                    "eventId": "au_projectile_named_event",
                     "eventHash": event_hash,
                     "src": "/export_full/structured/Audio/shared/wwise/unknown/7.wav",
                     "mediaId": 7,
@@ -119,6 +119,7 @@ class ProjectileBuilderTests(unittest.TestCase):
         self.assertEqual(stats["projectileSoundRefsLinked"], 1)
         launch = entry["sounds"]["launchSound"]
         self.assertTrue(launch["event"]["foundInWwise"])
+        self.assertEqual(launch["event"]["canonicalEventIds"], ["au_projectile_named_event"])
         self.assertEqual(launch["audio"][0]["mediaId"], 7)
 
 

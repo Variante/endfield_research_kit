@@ -85,12 +85,18 @@ def hydrate_audio_links(entries: list[dict[str, Any]], audio_index_path: Path) -
         int(row.get("eventHash")) & 0xFFFFFFFF
         for row in (audio_index.get("eventEvidence") or [])
         if isinstance(row, dict)
-        and str(row.get("eventId") or "").startswith(PROJECTILE_EVENT_PREFIX)
         and isinstance(row.get("eventHash"), int)
     }
+    event_ids_by_hash: dict[int, set[str]] = {}
+    for row in audio_index.get("eventEvidence") or []:
+        if not isinstance(row, dict) or not isinstance(row.get("eventHash"), int):
+            continue
+        event_id = str(row.get("eventId") or "").strip()
+        if event_id:
+            event_ids_by_hash.setdefault(int(row["eventHash"]) & 0xFFFFFFFF, set()).add(event_id)
     audio_by_hash: dict[int, list[dict[str, Any]]] = {}
     for row in audio_index.get("events") or []:
-        if not isinstance(row, dict) or not str(row.get("eventId") or "").startswith(PROJECTILE_EVENT_PREFIX):
+        if not isinstance(row, dict):
             continue
         try:
             event_hash = int(row.get("eventHash")) & 0xFFFFFFFF
@@ -139,6 +145,7 @@ def hydrate_audio_links(entries: list[dict[str, Any]], audio_index_path: Path) -
                 "playableCandidates": len(media),
                 "source": "wwiseHirc" if event_found else "unresolved",
                 "runtimeSelection": "unresolved" if len(media) > 1 else "singleCandidate" if media else "none",
+                "canonicalEventIds": sorted(event_ids_by_hash.get(event_hash) or {f"{PROJECTILE_EVENT_PREFIX}0x{event_hash:08x}"}),
             }
             if media:
                 value["audio"] = media

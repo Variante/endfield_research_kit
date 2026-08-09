@@ -188,6 +188,16 @@ context-free playable Events now gain 343 possible leaves. Projectile identity,
 source PathID, field/phase, and exact template SkillData references are retained,
 but the skill reference proves projectile configuration only. Runtime spawn,
 lifecycle execution, and Wwise branch selection remain unobserved.
+
+`AudioCueTable` is an expression system rather than a flat Event list. The
+current 175 cue definitions contain 291 handlers: only 325 `behaviourExpr`
+nodes with `exprType=3` are exact downstream Event requests (229 unique Event
+names). The 42 `exprType=8` strings are runtime cue-variable operands and stay
+in a control catalog. `AudioGlobalConfig` has 17 lifecycle music-cue IDs; 15
+resolve through the table to 153 Event-request occurrences, while the two
+factory-area cue definitions remain explicitly missing. Its eight serialized
+RTPC names and seven additional managed-code RTPC literals are parameters, not
+Wwise Events.
 Gameplay audio also consumes recovered Unity `AnimationClip.m_Events` rows for
 the exact `PostAudioEvent`, `PostAudioEventAdvance`,
 `PostAudioEventAtPosition`, and `OnCustomFootStep` callbacks. The callback

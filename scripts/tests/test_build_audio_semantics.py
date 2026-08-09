@@ -103,22 +103,29 @@ class AudioSemanticDataTests(unittest.TestCase):
     def test_recovers_exact_managed_audio_string_literals(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             path = Path(raw_root) / "global-metadata.dat"
-            values = [b"au_ui_confirm", b"not_an_audio_literal", b"BARK_TEST"]
+            values = [b"au_ui_confirm", b"not_an_audio_literal", b"BARK_TEST", b"au_rtpc_fixture"]
             literal_data = b"".join(values)
-            data_indexes = [0, len(values[0]), len(values[0]) + len(values[1])]
-            header = bytearray(32)
-            header[0:8] = pack("<II", audio_semantics.METADATA_MAGIC, 29)
-            header[8:24] = pack("<IiIi", 32, 24, 56, len(literal_data))
+            data_indexes = []
+            cursor = 0
+            for value in values:
+                data_indexes.append(cursor)
+                cursor += len(value)
             records = b"".join(
                 pack("<II", len(value), index)
                 for value, index in zip(values, data_indexes)
             )
+            header = bytearray(32)
+            header[0:8] = pack("<II", audio_semantics.METADATA_MAGIC, 29)
+            header[8:24] = pack("<IiIi", 32, len(records), 32 + len(records), len(literal_data))
             path.write_bytes(bytes(header) + records + literal_data)
 
             self.assertEqual(
                 audio_semantics.collect_metadata_audio_literals(path),
-                ["au_ui_confirm", "BARK_TEST"],
+                ["au_rtpc_fixture", "au_ui_confirm", "BARK_TEST"],
             )
+            contexts, event_names = audio_semantics.managed_literal_contexts(path)
+            self.assertEqual(event_names, ["au_ui_confirm", "BARK_TEST"])
+            self.assertNotIn("au_rtpc_fixture", contexts)
 
     def test_collects_signed_table_event_hashes_without_promoting_music_state(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -159,6 +166,108 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(set(contexts), {"au_sfx_radio_transition"})
             self.assertEqual(len(contexts["au_sfx_radio_transition"]), 1)
             self.assertIn("Persistent", contexts["au_sfx_radio_transition"][0]["source"])
+
+    def test_audio_cue_separates_behavior_events_from_control_operands(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            table_path = root / "structured/StreamingAssets/Table/AudioCueTable.json"
+            table_path.parent.mkdir(parents=True)
+            table_path.write_text(json.dumps({
+                "-2": {
+                    "directHandlers": [{
+                        "behaviourExpr": {
+                            "exprType": 3,
+                            "stringValue": "au_music_direct",
+                            "boolValue": False,
+                            "intValue": 0,
+                            "floatValue": 0.0,
+                            "children": [{
+                                "exprType": 8,
+                                "stringValue": "au_trigger_behavior_operand",
+                                "children": [],
+                            }],
+                        },
+                        "conditionExpr": {
+                            "exprType": 2,
+                            "stringValue": "",
+                            "children": [{
+                                "exprType": 8,
+                                "stringValue": "au_trigger_condition_operand",
+                                "boolValue": True,
+                                "intValue": 7,
+                                "floatValue": 1.5,
+                                "children": [],
+                            }],
+                        },
+                    }],
+                    "levelHandlerMap": {
+                        "map_test": {"handlers": [{
+                            "behaviourExpr": {
+                                "exprType": 3,
+                                "stringValue": "au_music_level",
+                                "children": [],
+                            },
+                            "conditionExpr": {"exprType": 0, "stringValue": "", "children": []},
+                        }]},
+                    },
+                },
+            }), encoding="utf-8")
+
+            semantics = audio_semantics.collect_audio_cue_semantics(root)
+
+            self.assertEqual(set(semantics["eventContexts"]), {"au_music_direct", "au_music_level"})
+            level = semantics["eventContexts"]["au_music_level"][0]
+            self.assertEqual(level["handlerScope"], "level")
+            self.assertEqual(level["levelId"], "map_test")
+            self.assertEqual(level["cueId"], 0xFFFFFFFE)
+            self.assertEqual(len(semantics["expressionOperands"]), 2)
+            self.assertEqual(
+                {row["stringValue"] for row in semantics["expressionOperands"]},
+                {"au_trigger_behavior_operand", "au_trigger_condition_operand"},
+            )
+            self.assertEqual(
+                audio_semantics.collect_table_audio_event_names(root),
+                {"au_music_direct", "au_music_level"},
+            )
+
+    def test_global_music_cues_and_rtpc_parameters_are_controls(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            table_path = root / "structured/StreamingAssets/Table/AudioCueTable.json"
+            table_path.parent.mkdir(parents=True)
+            table_path.write_text(json.dumps({
+                "123": {
+                    "directHandlers": [{
+                        "behaviourExpr": {"exprType": 3, "stringValue": "au_music_fixture", "children": []},
+                        "conditionExpr": {"exprType": 0, "stringValue": "", "children": []},
+                    }],
+                    "levelHandlerMap": {},
+                },
+            }), encoding="utf-8")
+            mono_root = root / "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/MonoBehaviour"
+            mono_root.mkdir(parents=True)
+            (mono_root / "AudioGlobalConfig_p1.json").write_text(json.dumps({
+                "musicCueCombatIn": {"_id": 123},
+                "musicCueFactoryAreaIn": {"_id": -2},
+                "rtpcGlobalVol": "au_rtpc_global_fixture",
+                "listenerSpeedRtpcName": "au_rtpc_speed_fixture",
+            }), encoding="utf-8")
+
+            cue_semantics = audio_semantics.collect_audio_cue_semantics(root)
+            controls = audio_semantics.collect_audio_global_control_semantics(root, cue_semantics)
+
+            refs = {row["field"]: row for row in controls["audioGlobalMusicCueRefs"]}
+            self.assertEqual(refs["musicCueCombatIn"]["definitionStatus"], "resolved")
+            self.assertEqual(refs["musicCueFactoryAreaIn"]["definitionStatus"], "missing")
+            self.assertEqual(
+                {row["parameterName"] for row in controls["rtpcParameters"]},
+                {"au_rtpc_global_fixture", "au_rtpc_speed_fixture"},
+            )
+            derived = controls["eventContexts"]["au_music_fixture"][0]
+            self.assertEqual(derived["globalMusicCueField"], "musicCueCombatIn")
+            contexts = audio_semantics.collect_table_contexts(root)
+            self.assertIn("au_music_fixture", contexts)
+            self.assertNotIn("#0xfffffffe", contexts)
 
     def test_collects_interactive_lifecycle_and_global_policy_events(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -278,9 +387,15 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(launch["soundField"], "launchSound")
             self.assertEqual(launch["triggerPhase"], "launch")
             self.assertEqual(launch["eventHash"], 0xFFFFFFFE)
+            self.assertEqual(launch["signedValue"], -2)
+            self.assertEqual(launch["eventHex"], "0xfffffffe")
             self.assertEqual(launch["authoredSkillIds"], ["chr_test_skill"])
             self.assertEqual(launch["skillOwnershipStatus"], "projectileTemplateReferenceOnly")
             self.assertEqual(launch["runtimeActivationStatus"], "projectileLifecycleExecutionNotObserved")
+            rows, _, _ = audio_semantics.build_event_rows({"eventNames": [], "events": [], "eventEvidence": []}, contexts)
+            hashed = next(row for row in rows if row["hash"] == 0xFFFFFFFE)
+            self.assertEqual(hashed["category"], "sfx")
+            self.assertEqual(hashed["categoryEvidence"], "exactProjectileSoundField")
 
     def test_builds_compact_lazy_shards_with_evidence_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -365,7 +480,13 @@ class AudioSemanticDataTests(unittest.TestCase):
             table_path = export_root / "structured/StreamingAssets/Table/AudioCueTable.json"
             table_path.parent.mkdir(parents=True)
             table_path.write_text(json.dumps({
-                "cue_test": {"startEvent": "au_sfx_test"}
+                "123": {
+                    "directHandlers": [{
+                        "behaviourExpr": {"exprType": 3, "stringValue": "au_sfx_test", "children": []},
+                        "conditionExpr": {"exprType": 0, "stringValue": "", "children": []},
+                    }],
+                    "levelHandlerMap": {},
+                },
             }), encoding="utf-8")
 
             media_entry = {
@@ -460,7 +581,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertGreater(payload["eventDetailShardCount"], 0)
             self.assertEqual(
                 {row["kind"] for row in event["contexts"]},
-                {"buffPlaySoundAction", "characterSkill", "characterAnimation", "table", "cutsceneTimeline"},
+                {"buffPlaySoundAction", "characterSkill", "characterAnimation", "audioCueBehaviorEvent", "cutsceneTimeline"},
             )
             self.assertEqual(media["eventIds"], ["au_sfx_test"])
             self.assertIn("eventMedia", payload["evidenceBoundary"])
