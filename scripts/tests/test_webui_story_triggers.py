@@ -158,6 +158,8 @@ for (const [key, category] of [
         self.assertIn("relatedOriginalFilesValidation", source)
         self.assertIn('t("storyConnectionOriginalFiles")', source)
         self.assertIn("file.sha256", source)
+        self.assertIn("storyConnectionProvenanceSummary", source)
+        self.assertIn("storyConnectionNonPath", source)
 
     def test_mission_pipeline_surfaces_fixed_point_carrier_closure(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")

@@ -1782,6 +1782,31 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
   line-height: 1.35;
 }
 
+.mp-story-connection-provenance {
+  margin: 8px 0;
+  padding: 7px 8px;
+  border: 1px solid rgba(130, 146, 151, 0.28);
+  border-radius: 4px;
+  background: rgba(130, 146, 151, 0.045);
+}
+
+.mp-story-connection-provenance h4 {
+  margin: 0 0 2px;
+  color: #53666b;
+  font-size: 9px;
+}
+
+.mp-story-connection-provenance p {
+  margin: 0 0 5px;
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.mp-story-connection-provenance .mp-order-metrics {
+  margin: 0;
+}
+
 .mp-trigger-route {
   grid-column: 1 / -1;
   display: grid;
