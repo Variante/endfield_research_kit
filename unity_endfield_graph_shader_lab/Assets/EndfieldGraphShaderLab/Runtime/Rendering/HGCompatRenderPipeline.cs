@@ -409,6 +409,8 @@ namespace EndfieldGraphShaderLab
         private readonly EndfieldRecoveredLightBinning recoveredLightBinning;
         private readonly EndfieldRecoveredReflectionProbeFallback
             recoveredReflectionProbeFallback;
+        private readonly EndfieldRecoveredVisibilitySHConstants
+            recoveredVisibilitySHConstants;
         private readonly EndfieldRecoveredPunctualShadowProducer
             recoveredPunctualShadowProducer;
         private readonly EndfieldRecoveredPreGBufferDiagnostic
@@ -494,6 +496,8 @@ namespace EndfieldGraphShaderLab
             recoveredLightBinning = new EndfieldRecoveredLightBinning();
             recoveredReflectionProbeFallback =
                 new EndfieldRecoveredReflectionProbeFallback();
+            recoveredVisibilitySHConstants =
+                new EndfieldRecoveredVisibilitySHConstants();
             recoveredPunctualShadowProducer =
                 new EndfieldRecoveredPunctualShadowProducer();
             recoveredScreenDirectAudit =
@@ -582,6 +586,7 @@ namespace EndfieldGraphShaderLab
             recoveredPreGBufferDiagnostic?.Dispose();
             recoveredVisibilitySHProducer?.Dispose();
             recoveredPunctualShadowProducer?.Dispose();
+            recoveredVisibilitySHConstants?.Dispose();
             recoveredReflectionProbeFallback?.Dispose();
             recoveredLightBinning?.Dispose();
             recoveredColorGradingLut?.Dispose();
@@ -1014,6 +1019,7 @@ namespace EndfieldGraphShaderLab
             commandBuffer.ClearRenderTarget(true, true, sceneColorClear);
             ApplyLightingGlobals(commandBuffer);
             recoveredReflectionProbeFallback.ResetPublication(commandBuffer);
+            recoveredVisibilitySHConstants.ResetPublication(commandBuffer);
             bool recoveredCanonicalBinningReady =
                 recoveredLightBinning.PrepareCamera(
                 camera,
@@ -1058,13 +1064,39 @@ namespace EndfieldGraphShaderLab
                         loggedRecoveredReflectionFrameFailure = true;
                     }
                 }
-                else if (!loggedRecoveredReflectionFrameActivation)
+                else
                 {
-                    Debug.Log(
-                        "Recovered canonical CharInfo binning + reflection " +
-                        "oct/global frame resources are active for the exact " +
-                        "no-local-probe fixture.");
-                    loggedRecoveredReflectionFrameActivation = true;
+                    string visibilityConstantsFailure;
+                    bool recoveredVisibilityConstantsReady =
+                        recoveredVisibilitySHConstants.PrepareAndPublish(
+                            renderWidth,
+                            renderHeight,
+                            commandBuffer,
+                            out visibilityConstantsFailure);
+                    if (!recoveredVisibilityConstantsReady)
+                    {
+                        recoveredLightBinning.DisableCanonicalPublication(
+                            commandBuffer);
+                        recoveredReflectionProbeFallback.ResetPublication(
+                            commandBuffer);
+                        if (!loggedRecoveredReflectionFrameFailure)
+                        {
+                            Debug.LogWarning(
+                                "Recovered canonical CharInfo " +
+                                "VisibilitySHConstData frame failed closed: " +
+                                visibilityConstantsFailure + ".");
+                            loggedRecoveredReflectionFrameFailure = true;
+                        }
+                    }
+                    else if (!loggedRecoveredReflectionFrameActivation)
+                    {
+                        Debug.Log(
+                            "Recovered canonical CharInfo binning + reflection " +
+                            "oct/global + selected-consumer VisibilitySHConstData " +
+                            "frame resources are active for the exact " +
+                            "no-local-probe fixture.");
+                        loggedRecoveredReflectionFrameActivation = true;
+                    }
                 }
             }
             context.ExecuteCommandBuffer(commandBuffer);
