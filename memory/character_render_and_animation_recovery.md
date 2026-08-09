@@ -37,6 +37,13 @@ NPC archetypes are imported as labeled source kits.
 - The installed UnityPlayer fallback selector now closes the exact
   DefaultDeferred pass-0 D3D11 pair; both original stages execute once in a
   fail-closed standalone diagnostic, while live frame bindings remain open.
+- A default-off SphereOutside sidecar now uses the source CharInfo camera and
+  transform to produce the exact logical 640x720 SceneColor/SceneMV/GBuffer
+  A/B/C formats plus D32S8. All five readbacks are bit-identical on D3D11 and
+  D3D12, the presented frame is unchanged, and missing binning/reflection/b33
+  prerequisites fail closed. It is deliberately non-presented: canonical
+  render-graph lifetime and pass 0 remain open. The current installed
+  `RenderWithAlpha=false` route submits no WriteAlpha draw.
 - Deferred binding 32 now has its exact native 48-byte
   `_LightBinningConstants` layout/upload and a default-off isolated-count
   publisher verified bit-for-bit on D3D11/D3D12. Its unique native

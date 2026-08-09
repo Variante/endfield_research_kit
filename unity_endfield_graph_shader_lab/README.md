@@ -2195,11 +2195,20 @@ the same 320x360 RGBAHalf bytes (20,006 nonzero pixels), and an upstream-off
 D3D12 run proves canonical publication fails closed while the diagnostic output
 remains available. This is source-backed current-pose output, not a retail
 settled-frame capture, and the pass-0 consumer remains disabled.
+The next producer boundary is now closed as a non-presented diagnostic: a
+default-off SphereOutside sidecar uses the physical CharInfo camera projection,
+source transform, exact material depth/stencil state, five logical 640x720 MRT
+formats, and D32S8. SceneColor, SceneMV, and GBuffer A/B/C read back bit-exactly
+across D3D11/D3D12 without changing the beauty frame; missing canonical
+binning/reflection/b33 prerequisites produce no draw or readback. This does not
+claim the original render graph's physical identity, lifetime, or presentation.
 The original pass-0 consumer remains deliberately disabled. The remaining streamed
 `m_defaultIV` voxel contents/per-frame parameters, light/shadow resources,
 settled VisibilitySH `PassInput.enabled`, exact posed record values and
 view-cull survivors, render-graph/subpass state, and a binding-compatible
-pass-0 + WriteAlpha resolve are not closed. VisibilitySH's exact LUTs, target,
+pass-0 resolve are not closed. The current installed `RenderWithAlpha=false`
+Gacha route submits no WriteAlpha draw; its recovered passes stay available only
+for a future source-closed true route. VisibilitySH's exact LUTs, target,
 empty fallback, native output/packing ABI, actor candidates, and producer pass
 are source-closed but remain deliberately unpublished with pass 0.
 For `ShadowPlane`, the selected
@@ -2221,6 +2230,8 @@ verify_recovered_canonical_reflection_frame.bat --all
 verify_recovered_visibility_sh_constants.bat --all
 verify_recovered_visibility_sh_frame.bat --all
 verify_recovered_visibility_sh_frame.bat --fail-closed-d3d12
+verify_recovered_deferred_gbuffer_frame.bat --all
+verify_recovered_deferred_gbuffer_frame.bat --fail-closed-d3d12
 verify_sphereoutside_hgbuffer_diagnostic.bat
 verify_charinfo_shadow_receiver_recovery.bat
 ```

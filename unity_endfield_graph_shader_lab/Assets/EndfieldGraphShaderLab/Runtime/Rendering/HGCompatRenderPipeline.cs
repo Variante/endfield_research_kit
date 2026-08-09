@@ -419,6 +419,8 @@ namespace EndfieldGraphShaderLab
             recoveredPreGBufferDepthOwner;
         private readonly EndfieldRecoveredVisibilitySHProducer
             recoveredVisibilitySHProducer;
+        private readonly EndfieldRecoveredDeferredGBufferFrame
+            recoveredDeferredGBufferFrame;
         private readonly EndfieldRecoveredDirectionalCSMProducer
             recoveredDirectionalCSMProducer;
         private readonly EndfieldRecoveredContactShadowProducer
@@ -509,6 +511,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredScreenShadowMaskProducer();
             recoveredVisibilitySHProducer =
                 new EndfieldRecoveredVisibilitySHProducer();
+            recoveredDeferredGBufferFrame =
+                new EndfieldRecoveredDeferredGBufferFrame();
             recoveredContactShadowProducer =
                 new EndfieldRecoveredContactShadowProducer();
             recoveredLowResDirectionalShadowProducer =
@@ -584,6 +588,7 @@ namespace EndfieldGraphShaderLab
             recoveredScreenDirectAudit?.Dispose();
             recoveredPreGBufferDepthOwner?.Dispose();
             recoveredPreGBufferDiagnostic?.Dispose();
+            recoveredDeferredGBufferFrame?.Dispose();
             recoveredVisibilitySHProducer?.Dispose();
             recoveredPunctualShadowProducer?.Dispose();
             recoveredVisibilitySHConstants?.Dispose();
@@ -1140,6 +1145,14 @@ namespace EndfieldGraphShaderLab
                     : applyPostProcess
                         ? new RenderTargetIdentifier(CameraColorId)
                         : new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget);
+            recoveredDeferredGBufferFrame.Render(
+                context,
+                camera,
+                renderWidth,
+                renderHeight,
+                recoveredCanonicalFrameResourcesReady,
+                canonicalColorTarget,
+                canonicalDepthTarget);
             EndfieldRecoveredContactShadowProducer.Frame
                 recoveredContactShadowFrame =
                     recoveredContactShadowProducer.Render(

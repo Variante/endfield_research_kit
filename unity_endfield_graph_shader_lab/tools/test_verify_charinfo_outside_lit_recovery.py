@@ -90,6 +90,48 @@ class SourceTextEvidenceTests(unittest.TestCase):
                 verifier.require_text_hash(path, "0" * 64)
 
 
+class DeferredGBufferFrameContractTests(unittest.TestCase):
+    @staticmethod
+    def load_current_report(
+        api: str = "d3d12",
+    ) -> tuple[dict[str, object], dict[str, object]]:
+        contract = json.loads(
+            verifier.BINDING_CONTRACT_PATH.read_text(encoding="utf-8")
+        )
+        transport = contract["deferred_gbuffer_frame_transport"]
+        evidence = transport["validation"]["gpu_reports"][api]
+        report = json.loads(
+            (verifier.LAB_ROOT / evidence["path"]).read_text(encoding="utf-8")
+        )
+        return transport, report
+
+    def test_current_same_camera_frame_report_passes(self) -> None:
+        transport, report = self.load_current_report()
+        verifier.verify_deferred_gbuffer_frame_report(
+            transport,
+            report,
+            "d3d12",
+            source=Path("fixture_contract.json"),
+        )
+
+    def test_changed_gbuffer_payload_failure_is_actionable(self) -> None:
+        transport, report = self.load_current_report()
+        changed = copy.deepcopy(report)
+        changed["gpuReadbacks"]["GBufferB"]["sha256"] = "0" * 64
+        with self.assertRaisesRegex(
+            AssertionError,
+            "Deferred HGBuffer frame validator failed: "
+            "check=frame_report.d3d12.readbacks; "
+            "source=fixture_contract.json; expected=.*18e66c.*actual=.*000000",
+        ):
+            verifier.verify_deferred_gbuffer_frame_report(
+                transport,
+                changed,
+                "d3d12",
+                source=Path("fixture_contract.json"),
+            )
+
+
 class CharInfoV2DataPathContractTests(unittest.TestCase):
     @staticmethod
     def load_current_contract() -> tuple[dict[str, object], dict[str, object]]:
