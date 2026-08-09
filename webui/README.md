@@ -157,6 +157,10 @@ sns_topic_map02_lv005_12002
 - Definition-only rows never become activation, ownership, or order evidence.
 - Quest topology and client-applied state do not prove server successor
   selection.
+- Exact DialogTree/Timeline option finish outcomes may be shown beside the
+  MissionRuntime objective that consumes the same finish ID. Each row exposes
+  hash-validated original files and remains a dependency, not an observed
+  player choice or server-selected successor.
 - Manual Story order and OCR proposals are cross-reference material, not graph
   evidence.
 

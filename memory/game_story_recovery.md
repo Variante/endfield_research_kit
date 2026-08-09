@@ -74,6 +74,15 @@ never promotes an edge.
   dispatcher has no validated start producer.
 - Server-placeholder conditions expose an explicit evidence boundary rather
   than being guessed from neighboring client data.
+- Exact option-outcome dependencies are recovered generically by joining an
+  authored DialogTree finish node or Timeline finish-number override to a
+  nonnegative MissionRuntime `CheckTalkOptionFinish` operand. The installed
+  binary and metadata are hash/body-pinned for the producer, recorder, and
+  consumer methods. The current corpus yields eight unique option-to-objective
+  dependencies across seven missions. Duplicate clips must agree; missing
+  finish fields and conflicting option producers fail closed. These rows prove
+  an objective dependency, not player selection, dialog activation, server
+  successor choice, or total Story-file order.
 
 ## LevelScript and native conclusions
 
@@ -196,6 +205,7 @@ Use it as a work queue, not as a proposed Story order.
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\story_recovery\build_source_story_gap_queue.py --language CN
 python scripts\story_recovery\build_timeline_embedded_story_runtime_audit.py
+python scripts\story_recovery\build_dialog_finish_branch_audit.py --publish
 python tools\endfield_source_graph.py story STORY_KEY
 python tools\endfield_source_graph.py issues --limit 20
 ```
@@ -214,6 +224,7 @@ reports/mission_order/source_story_partial_order_CN.md
 reports/mission_order/source_story_order_cross_reference_CN.md
 reports/mission_order/source_story_gap_queue_CN.md
 reports/story/recovery/native_receiver_activation_frontier.md
+reports/story/recovery/dialog_finish_branch_audit.md
 reports/story/recovery/protocol_registry_audit.md
 reports/story/recovery/timeline_embedded_story_runtime_audit.md
 ```

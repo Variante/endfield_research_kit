@@ -369,6 +369,11 @@
       dialogTreeObserver: "Mission observer",
       dialogTreeObjectiveObserver: "objective",
       dialogTreeFailureObserver: "failure guard",
+      dialogFinishBranchDependencies: "Option outcome → mission objective",
+      dialogFinishBranchDependencyHint: "An original option outcome writes the exact finish number required by this objective. This proves a causal branch dependency, not the observed player choice, dialog activation, server-selected successor, or total Story-file order.",
+      dialogFinishProducer: "Original producer",
+      dialogFinishConsumer: "Mission consumer",
+      dialogFinishBranchStat: "exact option→objective branches",
       clientActions: "Client actions after synchronized state",
       source: "Source",
       protocol: "Selected quest network pipeline",
@@ -1371,6 +1376,11 @@
       dialogTreeObserver: "任务监听条件",
       dialogTreeObjectiveObserver: "目标",
       dialogTreeFailureObserver: "失败条件",
+      dialogFinishBranchDependencies: "选项结果 → 任务目标",
+      dialogFinishBranchDependencyHint: "原始选项结果写入了该目标所要求的精确完成编号。这证明因果分支依赖，但不证明玩家实际选择、对话激活、服务端选择的后继或完整剧情文件顺序。",
+      dialogFinishProducer: "原始产生端",
+      dialogFinishConsumer: "任务消费端",
+      dialogFinishBranchStat: "精确选项→目标分支",
       clientActions: "状态同步后的客户端动作",
       source: "来源",
       protocol: "所选任务节点的网络管线",
@@ -2443,6 +2453,7 @@
       [counts.missionGraphPrecedenceEdges, t("missionGraphEdgesStat")],
       [counts.envTalkQuestContextFiles, t("envTalkContextStat")],
       [counts.envTalkStateContextFiles, t("envTalkStateContextStat")],
+      [counts.dialogFinishBranchDependencies, t("dialogFinishBranchStat")],
     ];
     if (state.index?.runtimeTrace) stats.push([runtimeCounts.storyPlaybacks, t("runtimeObserved")]);
     node.innerHTML = stats.map(([value, label]) => `<strong>${Number(value || 0).toLocaleString()}</strong><span>${esc(label)}</span>`).join("");
@@ -2474,6 +2485,7 @@
       ${changedFiles.length ? `<code>${esc(changedFiles.join(", "))}</code>` : ""}
       <span>${esc(t("sourceMissingFiles"))}: ${Number(missingFiles.length).toLocaleString()}</span>
       ${state.index?.storyCoverage?.luaStoryPlaybackEvidence?.status ? `<span>${esc(t("luaPlaybackAudit"))}: <strong>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.status)}</strong> · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.scannedPlaybackCalls || 0).toLocaleString()} calls · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.acceptedTableCarrierCalls || 0).toLocaleString()} table-owned · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherCallCount || 0).toLocaleString()} runtime branches / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherFamilyCount || 0).toLocaleString()} queue family · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleContract?.nativeProducerCount || 0).toLocaleString()} native producers / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleContract?.typedActionProducerTypeCount || 0).toLocaleString()} typed actions · ${Number(state.index.storyCoverage.counts?.nativeCinematicProducerRouteAttachments || 0).toLocaleString()} mission-route attachments · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.unresolvedPlaybackCalls || 0).toLocaleString()} authored unresolved · <code>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.auditSha256 || "")}</code></span>` : ""}
+      ${state.index?.dialogFinishBranchRecovery?.status ? `<span>${esc(t("dialogFinishBranchDependencies"))}: <strong>${esc(state.index.dialogFinishBranchRecovery.status)}</strong> · ${Number(state.index.dialogFinishBranchRecovery.counts?.publishedDependencies || 0).toLocaleString()} ${esc(t("dialogFinishBranchStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.missions || 0).toLocaleString()} ${esc(t("missions"))} · <code>${esc(state.index.dialogFinishBranchRecovery.reportJson || "")}</code></span>` : ""}
     `;
   }
 
@@ -6164,6 +6176,18 @@
     }).join("");
     const submissionCoGates = (objective.submissionDialogCoGates || []).map((row) => `<span class="mp-state-chip" title="${esc(t("submissionDialogCoGateHint"))}"><b>${esc(t("submissionDialogCoGate"))}</b> · <code>${esc(row.submissionId || "")}</code> + <code>${esc(row.dialogId || "")}</code> · ${row.finishId < 0 ? esc(t("anyFinish")) : `${esc(t("finish"))} ${esc(row.finishId)}`}</span>`).join("");
     const submissionLevelScriptCoGates = (objective.submissionLevelScriptCoGates || []).map((row) => `<span class="mp-state-chip" title="${esc(t("submissionLevelScriptCoGateHint"))}"><b>${esc(t("submissionLevelScriptCoGate"))}</b> · <code>${esc(row.submissionId || "")}</code> + <code>${esc(row.levelId || "")}/${esc(row.scriptId || "")}</code></span>`).join("");
+    const dialogFinishBranchDependencies = (objective.dialogFinishBranchDependencies || []).map((row) => {
+      const options = (row.optionIds || []).map((optionId) => `<code>${esc(optionId)}</code>`).join(" ");
+      const producers = (row.producerFamilies || []).map((family) => `<code>${esc(family)}</code>`).join(" ");
+      const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
+      return `<details open class="mp-quest-task-dependency mp-dialog-finish-branch-dependency">
+        <summary><b>${esc(t("dialogFinishBranchDependencies"))}</b> ${options}<i>&rarr;</i><code>${esc(row.dialogId || "?")} / ${esc(t("finish"))} ${esc(row.finishId ?? "?")}</code><i>&rarr;</i><code>${esc(row.questId || questId)} / #${esc(row.objectiveIndex ?? "?")}</code></summary>
+        <p><strong>${esc(t("dialogFinishProducer"))}:</strong> ${producers || `<code>?</code>`}</p>
+        <small><strong>${esc(t("dialogFinishConsumer"))}:</strong> <code>${esc(row.conditionId || "?")}</code> / <code>CheckTalkOptionFinish</code></small>
+        <small>${esc(row.evidenceBoundary || t("dialogFinishBranchDependencyHint"))}</small>
+        ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
+      </details>`;
+    }).join("");
     const taskDependencies = (objective.levelScriptTaskDependencies || []).map((row) => {
       const metadata = row.taskMetadata || {};
       const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
@@ -6197,7 +6221,7 @@
     }).join("");
     return `<article class="mp-objective"><header><strong>${esc(t("objectives"))} ${objective.index}</strong><span class="mp-authority is-${esc(objective.authority)}">${esc(objective.authority)}</span></header>
       <p>${esc(objective.descriptionKey || t("noObjective"))}</p>
-      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${levelScriptSources}${nativeLevelScriptControlAttachments}${taskDependencies}
+      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${dialogFinishBranchDependencies}${levelScriptSources}${nativeLevelScriptControlAttachments}${taskDependencies}
       ${objectiveTrackingHtml(objective.tracking)}
       ${renderConditionTree(objective.condition)}
     </article>`;
