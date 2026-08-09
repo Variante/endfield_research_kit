@@ -53,8 +53,12 @@ NPC archetypes are imported as labeled source kits.
   `PunctualLightMaxCount=256`; `SetupState` keeps types 0/2, sorts priority
   descending then squared camera distance ascending, and takes
   `min(survivors, cap)`. Because the upstream cap is also 256, settings cannot
-  truncate the list again. Only an authorized target-frame array capture can
-  settle the live native survivors and final retail `lightCount`.
+  truncate the list again. Installed Gacha Lua plus decoded Zhuangfy and room
+  prefabs now close the known authored input as 6 `light_overview` lights + 12
+  `SceneLight6Rarity` lights: 3 type 0, 15 type 2, zero authored cookies, one
+  shadow request, and four bone followers. Only an authorized target-frame
+  array capture can settle runtime/custom carry-in, native rejection, live
+  survivor order, and final retail `lightCount`.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
@@ -252,8 +256,10 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Recover the retail light-cull survivor list, then populate exact shadow,
-   depth, GBuffer, irradiance, non-empty cookie, and VisibilitySH inputs.
+1. Recover the retail light-cull survivor list from the source-closed 18-row
+   Zhuangfy authored population, preserving runtime/custom carry-in and native
+   rejection, then populate exact shadow, depth, GBuffer, irradiance,
+   non-empty cookie, and VisibilitySH inputs.
 2. Validate selected paths against accepted retail captures.
 3. Extend exact texture/mip and material-variant support only where visible.
 4. Generalize animation from a second exact Avatar/clip oracle.
