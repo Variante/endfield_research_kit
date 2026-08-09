@@ -966,6 +966,12 @@
       storyBranchRelatedFilesHint: "These hash-validated original files are collected from authored branch sourceFile/sourceFiles and normalized relatedOriginalFiles records. They provide branch-definition context only; they do not establish mission ownership, activation, or cross-file chronology.",
       storyConnectionOriginalFiles: "Original files cited by Story connections",
       storyConnectionOriginalFilesHint: "These SHA-256 records validate the original exported files cited by an accepted Story connection. They are provenance context only; unresolved references remain diagnostic and no ownership or chronology is inferred.",
+      storyConnectionProvenanceSummary: "Original-file provenance audit",
+      storyConnectionProvenanceSummaryHint: "Corpus-wide Story-connection provenance from the current original export. Hashes validate cited bytes only; unresolved paths and non-path tokens remain diagnostics, never ownership or chronology.",
+      storyConnectionSourceReferences: "path refs",
+      storyConnectionAttachedFiles: "hashes",
+      storyConnectionUnresolved: "unresolved paths",
+      storyConnectionNonPath: "non-path tokens",
       storyAggregateShell: "Declared Story variant aggregate",
       storyAggregateShellHint: "This Story namespace combines exact serialized evidence from its declared mission variants. It is not a MissionRuntime mission and does not establish mission ownership, quest ownership, branch selection, or extra chronology.",
       storyAggregateVariants: "Declared mission variants",
@@ -1694,6 +1700,12 @@
       storyBranchRelatedFilesHint: "\u8fd9\u4e9b\u5df2\u54c8\u5e0c\u9a8c\u8bc1\u7684\u539f\u59cb\u6587\u4ef6\u6765\u81ea\u4f5c\u8005\u5206\u652f sourceFile/sourceFiles \u4ee5\u53ca\u89c4\u8303\u5316 relatedOriginalFiles \u8bb0\u5f55\uff0c\u4ec5\u63d0\u4f9b\u5206\u652f\u5b9a\u4e49\u4e0a\u4e0b\u6587\uff1b\u4e0d\u5efa\u7acb\u4efb\u52a1\u5f52\u5c5e\u3001\u6fc0\u6d3b\u6216\u8de8\u6587\u4ef6\u65f6\u95f4\u987a\u5e8f\u3002",
       storyConnectionOriginalFiles: "\u5267\u60c5\u8fde\u63a5\u5f15\u7528\u7684\u539f\u59cb\u6587\u4ef6",
       storyConnectionOriginalFilesHint: "\u8fd9\u4e9b SHA-256 \u8bb0\u5f55\u9a8c\u8bc1\u5df2\u63a5\u53d7 Story \u8fde\u63a5\u5f15\u7528\u7684\u539f\u59cb\u5bfc\u51fa\u6587\u4ef6\u3002\u5b83\u4eec\u4ec5\u63d0\u4f9b\u6765\u6e90\u4e0a\u4e0b\u6587\uff1b\u672a\u89e3\u6790\u7684\u5f15\u7528\u4ecd\u662f\u8bca\u65ad\u4fe1\u606f\uff0c\u4e0d\u63a8\u65ad\u5f52\u5c5e\u6216\u65f6\u95f4\u987a\u5e8f\u3002",
+      storyConnectionProvenanceSummary: "\u539f\u59cb\u6587\u4ef6\u6765\u6e90\u5ba1\u8ba1",
+      storyConnectionProvenanceSummaryHint: "\u6765\u81ea\u5f53\u524d\u539f\u59cb\u5bfc\u51fa\u7684\u5168\u90e8 Story \u8fde\u63a5\u6765\u6e90\u3002\u54c8\u5e0c\u4ec5\u9a8c\u8bc1\u5f15\u7528\u7684\u5b57\u8282\uff1b\u672a\u89e3\u6790\u8def\u5f84\u548c\u975e\u8def\u5f84\u4ee3\u7801\u4ecd\u662f\u8bca\u65ad\u4fe1\u606f\uff0c\u4e0d\u4f5c\u4e3a\u5f52\u5c5e\u6216\u65f6\u95f4\u987a\u5e8f\u3002",
+      storyConnectionSourceReferences: "\u8def\u5f84\u5f15\u7528",
+      storyConnectionAttachedFiles: "\u54c8\u5e0c\u6587\u4ef6",
+      storyConnectionUnresolved: "\u672a\u89e3\u6790\u8def\u5f84",
+      storyConnectionNonPath: "\u975e\u8def\u5f84\u4ee3\u7801",
       storyAggregateShell: "\u58f0\u660e\u7684 Story \u53d8\u4f53\u805a\u5408",
       storyAggregateShellHint: "\u8be5 Story \u547d\u540d\u7a7a\u95f4\u6c47\u603b\u4e86\u5176\u58f0\u660e\u7684\u4efb\u52a1\u53d8\u4f53\u4e2d\u7684\u7cbe\u786e\u5e8f\u5217\u5316\u8bc1\u636e\u3002\u5b83\u672c\u8eab\u4e0d\u662f MissionRuntime \u4efb\u52a1\uff0c\u4e5f\u4e0d\u8bc1\u660e\u4efb\u52a1\u5f52\u5c5e\u3001\u8282\u70b9\u5f52\u5c5e\u3001\u5206\u652f\u9009\u62e9\u6216\u989d\u5916\u65f6\u5e8f\u3002",
       storyAggregateVariants: "\u5df2\u58f0\u660e\u7684\u4efb\u52a1\u53d8\u4f53",
@@ -3422,8 +3434,12 @@
       .filter(Boolean)
       .map((source) => `<code>${esc(source)}</code>`)
       .join(" ");
-    if (!files && !unresolved) return "";
-    return `<span class="mp-story-connection-originals"><strong>${esc(t("storyConnectionOriginalFiles"))}</strong>${files}${unresolved ? `<small>${esc(t("storyConnectionOriginalFilesHint"))} / unresolved: ${unresolved}</small>` : ""}</span>`;
+    const nonPath = (validation.nonPathSourceReferences || [])
+      .filter(Boolean)
+      .map((source) => `<code>${esc(source)}</code>`)
+      .join(" ");
+    if (!files && !unresolved && !nonPath) return "";
+    return `<span class="mp-story-connection-originals"><strong>${esc(t("storyConnectionOriginalFiles"))}</strong>${files}${unresolved ? `<small>${esc(t("storyConnectionOriginalFilesHint"))} / unresolved: ${unresolved}</small>` : ""}${nonPath ? `<small>${esc(t("storyConnectionProvenanceSummaryHint"))} / non-path: ${nonPath}</small>` : ""}</span>`;
   }
 
   function storyConnectionLink(row, className, questId = "") {
@@ -3489,10 +3505,15 @@
     });
     const rows = [...unique.values()];
     if (!rows.length) return "";
+    const provenance = state.index?.storyConnectionOriginalFiles?.summary || {};
+    const provenanceSummary = Number(provenance.relationRows || 0)
+      ? `<section class="mp-story-connection-provenance"><h4>${esc(t("storyConnectionProvenanceSummary"))}</h4><p>${esc(t("storyConnectionProvenanceSummaryHint"))}</p><div class="mp-order-metrics"><span><b>${Number(provenance.sourceReferencesConsidered || 0).toLocaleString()}</b>${esc(t("storyConnectionSourceReferences"))}</span><span><b>${Number(provenance.attachedOriginalFiles || 0).toLocaleString()}</b>${esc(t("storyConnectionAttachedFiles"))}</span><span><b>${Number(provenance.unresolvedSourceReferences || 0).toLocaleString()}</b>${esc(t("storyConnectionUnresolved"))}</span><span><b>${Number(provenance.nonPathSourceReferences || 0).toLocaleString()}</b>${esc(t("storyConnectionNonPath"))}</span></div></section>`
+      : "";
     const acceptRows = rows.filter((row) => row.relation === "mission_accept_dialog");
     const contextRows = rows.filter((row) => row.relation !== "mission_accept_dialog");
     return `<details class="mp-mission-story" data-weight="${acceptRows.length ? "strong" : "context"}"${acceptRows.length ? " open" : ""}>
       <summary>${esc(t("missionStoryFiles"))} <span>${rows.length}</span></summary>
+      ${provenanceSummary}
       <div class="mp-story-files">
         ${acceptRows.length ? `<section class="mp-story-group is-incoming"><h4>${esc(t("relationMissionAccept"))} <span>${acceptRows.length}</span></h4>${acceptRows.map((row) => storyConnectionLink(row, "incoming")).join("")}</section>` : ""}
         ${contextRows.length ? `<section class="mp-story-group is-context"><h4>${esc(t("storyContext"))} <span>${contextRows.length}</span></h4>${contextRows.map((row) => storyConnectionLink(row, "context")).join("")}</section>` : ""}

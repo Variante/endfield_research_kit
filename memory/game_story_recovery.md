@@ -1971,6 +1971,16 @@ receiver ownership, event firing, branch selection, or inter-Story order. The
 index summary and detailed mission payloads are checked to agree; no direct
 order edge is created.
 
+The remaining mission-event carrier is also closed for the installed binary.
+`SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT` (125) carries only `(missionId,
+eventName)` into `MissionSystem.Handle_ClientMissionEvent`, which interns the
+pair through `KeyGenerator/CombineKeyManager` and publishes a global
+`Beyond.Gameplay.EventData` event. The current AOT method-spec census finds no
+matching typed `BindGlobal` subscriber, while the serialized
+`MissionEvent_OnCustomEventForMission` action family has no current matching
+records. This is mission-scoped global-event context, not a LevelScript or
+Story foreign key, branch selector, activation edge, or scene-file order.
+
 ## Evidence rules
 
 Accepted chronology requires a typed authored relation such as quest
