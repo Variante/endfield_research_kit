@@ -76,6 +76,15 @@ NPC archetypes are imported as labeled source kits.
   position. The default-off same-frame publisher reads all 1,312 bytes back
   identically on D3D11/D3D12; its 13 selected vectors match and the other 69
   history/jitter/stereo rows remain zero. Pass 0 is still disabled.
+- The selected original pass-0 `_LightDataBuffer` b31 consumer is now closed
+  for the isolated Wulfa/Zhuangfy CharInfo fixture. Native allocation/packing
+  proves `6 + 256*8` float4 (32,864 bytes), not the earlier assumed `128*16`:
+  the directional header comes from the exact CharInfo environment, while each
+  CharacterOnly row reads zero OBB flags then exits before general punctual or
+  shadow words. All 8,216 words match through `_LightDataBuffer` and the D3D11
+  `EndfieldCB4` bridge on both APIs; unknown words remain zero, same-frame
+  activation is fail-closed, beauty is unchanged, and pass 0 remains disabled.
+  General-scene punctual payloads are still unrecovered.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData` layout. The native
   `HGShadowConstantBufferUtils` transport allocates the full buffer, copies one
   of four exact same-offset sections (CSM 1,024; Punctual 6,144; Character
