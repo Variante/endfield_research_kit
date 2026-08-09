@@ -2202,7 +2202,16 @@ formats, and D32S8. SceneColor, SceneMV, and GBuffer A/B/C read back bit-exactly
 across D3D11/D3D12 without changing the beauty frame; missing canonical
 binning/reflection/b33 prerequisites produce no draw or readback. This does not
 claim the original render graph's physical identity, lifetime, or presentation.
-The original pass-0 consumer remains deliberately disabled. The remaining streamed
+The original pass-0 consumer remains deliberately disabled.
+
+The selected original pass-0 `_TransformVariables` b30 reads are now closed for
+the physical camera's view matrix, inverse view, inverse GPU view-projection,
+and world-space position. A default-off same-frame publisher exposes the full
+1,312-byte buffer plus the 720-byte D3D11 bridge; all 328 words are identical
+on D3D11/D3D12, while the 69 unselected history/jitter/stereo rows stay zero.
+This closes only the fields proven used by the selected binary and does not
+enable pass 0.
+The remaining streamed
 `m_defaultIV` voxel contents/per-frame parameters, light/shadow resources,
 settled VisibilitySH `PassInput.enabled`, exact posed record values and
 view-cull survivors, render-graph/subpass state, and a binding-compatible
@@ -2232,6 +2241,7 @@ verify_recovered_visibility_sh_frame.bat --all
 verify_recovered_visibility_sh_frame.bat --fail-closed-d3d12
 verify_recovered_deferred_gbuffer_frame.bat --all
 verify_recovered_deferred_gbuffer_frame.bat --fail-closed-d3d12
+verify_recovered_deferred_transform_variables.bat --all
 verify_sphereoutside_hgbuffer_diagnostic.bat
 verify_charinfo_shadow_receiver_recovery.bat
 ```

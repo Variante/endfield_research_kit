@@ -132,6 +132,48 @@ class DeferredGBufferFrameContractTests(unittest.TestCase):
             )
 
 
+class DeferredTransformVariablesContractTests(unittest.TestCase):
+    @staticmethod
+    def load_current_report(
+        api: str = "d3d12",
+    ) -> dict[str, object]:
+        contract = json.loads(
+            verifier.BINDING_CONTRACT_PATH.read_text(encoding="utf-8")
+        )
+        evidence = contract[
+            "selected_deferred_transform_variables_transport"
+        ]["validation"]["gpu_reports"][api]
+        return json.loads(
+            (verifier.LAB_ROOT / evidence["path"]).read_text(
+                encoding="utf-8"
+            )
+        )
+
+    def test_current_transform_variables_report_passes(self) -> None:
+        report = self.load_current_report()
+        verifier.verify_deferred_transform_variables_gpu_report(
+            report,
+            "d3d12",
+            Path("fixture_contract.json"),
+        )
+
+    def test_changed_transform_word_failure_is_actionable(self) -> None:
+        report = self.load_current_report()
+        changed = copy.deepcopy(report)
+        changed["actualWords"][0] = "0x00000000"
+        with self.assertRaisesRegex(
+            AssertionError,
+            "Deferred TransformVariables validator failed: "
+            "check=transform_variables.d3d12.words; "
+            "source=fixture_contract.json",
+        ):
+            verifier.verify_deferred_transform_variables_gpu_report(
+                changed,
+                "d3d12",
+                Path("fixture_contract.json"),
+            )
+
+
 class CharInfoV2DataPathContractTests(unittest.TestCase):
     @staticmethod
     def load_current_contract() -> tuple[dict[str, object], dict[str, object]]:
