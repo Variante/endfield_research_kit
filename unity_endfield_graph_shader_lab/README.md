@@ -2244,9 +2244,15 @@ The pinned producer also builds the authored OBB as inverse TRS and writes six
 row-major half2 words to record5.xyz/6.xyz. Its installed pack and `f32tof16`
 bodies now yield bounded candidates for all 11 rows; decoded corners miss the
 unit-box boundary by at most `0.002611`. Signed-zero bits and one
-`Spot Light (12)` one-ULP half boundary still require the opaque UnityPlayer
-internal body or retail capture. Target-frame color/transforms, runtime carry-
-in, final light count, and a byte-exact room b31 fixture remain open.
+`Spot Light (12)` one-ULP half boundary still require the exact UnityPlayer
+matrix-inverse output or retail capture. Pinned original `globalgamemanagers`
+objects set Linear color space and linear light intensity, while all 11 rows
+disable color temperature, distance/far-show falloff, animation, multistate,
+and flicker. Hash-pinned UnityPlayer `finalColor`, `Color.linear`, animation-
+disable, and flicker bodies now close exact b31 record0.xyz bits as linearized
+authored RGB times intensity, with falloff/flicker both 1. Target-frame
+transforms, record0.w, runtime carry-in, final light count, and a byte-exact
+room b31 fixture remain open.
 
 `ShaderVariablesGlobal` b35 is now exactly scoped and transported. The
 selected body references 33 fields, and installed native reset producers close

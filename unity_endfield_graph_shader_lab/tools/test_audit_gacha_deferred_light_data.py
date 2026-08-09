@@ -9,6 +9,7 @@ import json
 import struct
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT = Path(__file__).with_name("audit_gacha_deferred_light_data.py")
@@ -92,6 +93,32 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
             "defaultAutoLimit",
             result["getLightNprData"]["selectedTypeZeroPacking"],
         )
+
+    def test_original_global_lighting_settings(self) -> None:
+        result = AUDIT.validate_global_lighting_settings(
+            AUDIT.GLOBAL_GAME_MANAGERS.read_bytes()
+        )
+        self.assertEqual(result["playerSettings"]["activeColorSpace"], "Linear")
+        self.assertTrue(result["graphicsSettings"]["lightsUseLinearIntensity"])
+        self.assertTrue(result["graphicsSettings"]["lightsUseColorTemperature"])
+
+    def test_unityplayer_light_color_and_flicker_producers(self) -> None:
+        result = AUDIT.validate_unity_light_color_native(AUDIT.UNITY_PLAYER.read_bytes())
+        self.assertEqual(
+            result["finalColor"]["selectedRowsFormula"],
+            "UnityPlayer Color.linear(serialized color) * intensity",
+        )
+        self.assertEqual(result["flickerScale"]["disabledAnimationResult"], 1.0)
+        self.assertEqual(len(result["internalCallTable"]["resolvedEntries"]), 3)
+
+    def test_native_disabled_distance_falloff_is_one(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.GET_LIGHT_FALLOFF_FILE_OFFSET)
+            body = stream.read(AUDIT.GET_LIGHT_FALLOFF_SIZE)
+            stream.seek(AUDIT.GET_LIGHT_FALLOFF_DEFAULT_FILE_OFFSET)
+            default = stream.read(4)
+        result = AUDIT.validate_light_falloff_native(body, default)
+        self.assertEqual(result["selectedRowsResult"], 1.0)
 
     def test_installed_half_conversion_and_pair_layout(self) -> None:
         self.assertEqual(AUDIT.f32_to_f16_bits(0.0), 0x0000)
@@ -235,6 +262,63 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertTrue(
             all(row["maximumAuthoredCornerBoundaryError"] < 0.003 for row in recovered)
         )
+
+    def test_selected_room_record0_rgb_payloads(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        rows = AUDIT.room_light_rows(population, hierarchy)
+        recovered = [AUDIT.recover_record0_color(row) for row in rows]
+        self.assertEqual(
+            recovered[0]["record0RgbBits"],
+            ["0x42C80000", "0x427432C1", "0x41ACB03D"],
+        )
+        self.assertEqual(
+            recovered[9]["record0RgbBits"],
+            ["0x41F00000", "0x414DC57F", "0x3F7E3E9C"],
+        )
+        self.assertTrue(all(row["falloff"] == 1.0 for row in recovered))
+        self.assertTrue(all(row["flickerScale"] == 1.0 for row in recovered))
+
+    def test_unknown_record0_color_fails_closed(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        row = copy.deepcopy(AUDIT.room_light_rows(population, hierarchy)[0])
+        row["color"][1] = 0.5
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=room_.*_record0_authored_color_known; source=.*Light.*; "
+            r"expected=True; actual=False",
+        ):
+            AUDIT.recover_record0_color(row)
+
+    def test_enabled_room_animation_fails_closed(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        first = next(
+            row
+            for row in hierarchy["lights"]
+            if row["rarityGroup"] == "SceneLight6Rarity"
+            and row["name"] == AUDIT.EXPECTED_ROOM_ORDER[0]
+        )
+        path_id = int(first["lightPathId"])
+        path_hex = f"{path_id & ((1 << 64) - 1):016X}"
+        target = next(AUDIT.ROOM_LIGHT_ROOT.glob(f"*p{path_hex}.json"))
+        changed = json.loads(target.read_text(encoding="utf-8"))
+        changed["m_LightAnimationSetting"]["enableLightAnimation"] = True
+        original_read_text = Path.read_text
+
+        def changed_read_text(path: Path, *args: object, **kwargs: object) -> str:
+            if path == target:
+                return json.dumps(changed)
+            return original_read_text(path, *args, **kwargs)
+
+        with mock.patch.object(Path, "read_text", changed_read_text):
+            with self.assertRaisesRegex(
+                AssertionError,
+                rf"check=room_{path_id}_light_animation_enabled; source=.*Light.*; "
+                r"expected=False; actual=True",
+            ):
+                AUDIT.room_light_rows(population, hierarchy)
 
     def test_non_y_obb_orientation_fails_closed(self) -> None:
         population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))

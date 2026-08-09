@@ -19,6 +19,7 @@ GAME_ROOT = Path(r"D:/Program Files/Endfield Game")
 GAME_ASSEMBLY = GAME_ROOT / "GameAssembly.dll"
 UNITY_PLAYER = GAME_ROOT / "UnityPlayer.dll"
 GLOBAL_METADATA = GAME_ROOT / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat"
+GLOBAL_GAME_MANAGERS = GAME_ROOT / "Endfield_Data/globalgamemanagers"
 SELECTED_FRAGMENT = (
     LAB_ROOT
     / "scratch/reverse_engineering/sphereoutside_deferred_variant/selected_fragment.hlsl"
@@ -55,6 +56,10 @@ GET_LIGHT_NPR_DATA_SIZE = 0x100
 GET_LIGHT_ADDITIONAL_DATA_VA = 0x1832040F0
 GET_LIGHT_ADDITIONAL_DATA_FILE_OFFSET = 0x32026F0
 GET_LIGHT_ADDITIONAL_DATA_SIZE = 0x440
+GET_LIGHT_FALLOFF_VA = 0x189D03E58
+GET_LIGHT_FALLOFF_FILE_OFFSET = 0x9D02458
+GET_LIGHT_FALLOFF_SIZE = 0x187
+GET_LIGHT_FALLOFF_DEFAULT_FILE_OFFSET = 0xB957600
 PACK_TWO_HALF_VA = 0x189C0F0A4
 PACK_TWO_HALF_FILE_OFFSET = 0x9C0D6A4
 PACK_TWO_HALF_SIZE = 0x7C
@@ -69,10 +74,64 @@ DEGREES_TO_RADIANS_FILE_OFFSET = 0xB9576A0
 DEGREES_TO_RADIANS_BITS = 0x3C8EFA35
 HG_ADDITIONAL_LIGHT_DATA_SCRIPT_PATH_ID = 4098216658219718577
 
+PLAYER_SETTINGS_FILE_OFFSET = 0x1000
+PLAYER_SETTINGS_SIZE = 728
+PLAYER_SETTINGS_COLOR_SPACE_OFFSET = 240
+GRAPHICS_SETTINGS_FILE_OFFSET = 0xD8B28
+GRAPHICS_SETTINGS_SIZE = 826
+GRAPHICS_SETTINGS_LINEAR_INTENSITY_OFFSET = 736
+GRAPHICS_SETTINGS_COLOR_TEMPERATURE_OFFSET = 737
+
+UNITY_ICALL_NAME_TABLE_OFFSET = 0x20D27B0
+UNITY_ICALL_FUNCTION_TABLE_OFFSET = 0x20CAA00
+UNITY_ICALL_COUNT = 3962
+UNITY_ICALLS = {
+    1752: (
+        0x181CC2158,
+        0x1CC0D58,
+        "UnityEngine.Light::set_enableLightAnimation",
+        0x1800D4B40,
+    ),
+    1940: (
+        0x181CC4A70,
+        0x1CC3670,
+        "UnityEngine.HGSharedLightData::get_finalColor_Injected",
+        0x18011FE60,
+    ),
+    1982: (
+        0x181CC55C0,
+        0x1CC41C0,
+        "UnityEngine.HGSharedLightData::get_flickerScale_Injected",
+        0x180123330,
+    ),
+}
+UNITY_GET_FINAL_COLOR_STUB_VA = 0x18011FE60
+UNITY_GET_FINAL_COLOR_STUB_FILE_OFFSET = 0x11F460
+UNITY_GET_FINAL_COLOR_STUB_SIZE = 0x33
+UNITY_GET_FLICKER_STUB_VA = 0x180123330
+UNITY_GET_FLICKER_STUB_FILE_OFFSET = 0x122930
+UNITY_GET_FLICKER_STUB_SIZE = 5
+UNITY_SET_LIGHT_ANIMATION_STUB_VA = 0x1800D4B40
+UNITY_SET_LIGHT_ANIMATION_STUB_FILE_OFFSET = 0xD4140
+UNITY_SET_LIGHT_ANIMATION_STUB_SIZE = 0x106
+UNITY_FLICKER_GETTER_VA = 0x18036D480
+UNITY_FLICKER_GETTER_FILE_OFFSET = 0x36CA80
+UNITY_FLICKER_GETTER_SIZE = 0x190
+UNITY_SET_LIGHT_ANIMATION_VA = 0x1803569F0
+UNITY_SET_LIGHT_ANIMATION_FILE_OFFSET = 0x355FF0
+UNITY_SET_LIGHT_ANIMATION_SIZE = 0xC1
+UNITY_FINAL_COLOR_UPDATE_VA = 0x1803844E0
+UNITY_FINAL_COLOR_UPDATE_FILE_OFFSET = 0x383AE0
+UNITY_FINAL_COLOR_UPDATE_SIZE = 0x169
+UNITY_COLOR_LINEAR_VA = 0x18034C690
+UNITY_COLOR_LINEAR_FILE_OFFSET = 0x34BC90
+UNITY_COLOR_LINEAR_SIZE = 0x180
+
 EXPECTED_HASHES = {
     "gameAssembly": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
     "unityPlayer": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
     "globalMetadata": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "globalGameManagers": "191619377ff312b785aae10faec8a75e39caf1ba60016ad08eff040b8c54f20d",
     "selectedFragment": "44dc5090af87a8f65ffca870f9e02b8525c4cfe14f84cf8feaa3ea6c49e4b9db",
     "gachaPopulation": "02e15c70197bcd96f804007fe042fcb46577c0014d956d78a28f2d96162e189a",
     "roomHierarchy": "bf26b44919a7563bd6c7ee137346d7f8880bb1a32911a8972c586b2bb0c87db9",
@@ -81,6 +140,53 @@ EXPECTED_HASHES = {
     "getLightAdditionalDataBody": "071061feb7f3c76044273efe703f9bdf78288703516b863c10c592b263f73e00",
     "packTwoHalfBody": "dad4b266316d3ba37f5c20fd92f2db90da363f7b65b3467bf313342c1a8814ce",
     "f32ToF16Body": "dc4fa0754a86aed4b2d58a5a978fe6028d83257aa5fc8e0a06e8fa6b9b5dae62",
+    "getLightFalloffBody": "dbb121bbf91f191001755e9290988f4f287fb9fcc1c65cd09254452474a2509d",
+    "playerSettingsObject": "bb2752bf4f4dd43d7885e01520c992289330ea8efdf7321ea926cb7cb149b3d6",
+    "graphicsSettingsObject": "8bbfff1de820c06fb150aa4093391bff3ad080eba65f4230d83496ed84b94563",
+    "unityFlickerGetterBody": "622b04cd8adaf7bc219e4d56c9dc574f89f324e55128c2ca2c96c624254d3f1b",
+    "unitySetLightAnimationBody": "911725357c454b8224102d6b34d32f12d912f9cadbbfcc26aa64dda8b3bb83c6",
+    "unityFinalColorUpdateBody": "39cbb35b17202949963e8cb4ed54a9d1e31067ae1c26c766c191c80e004b5e1d",
+    "unityColorLinearBody": "83785743304ef92949c2b53f43ba6b1fd9e30655b389f61a1f56a334babd608f",
+}
+
+# Golden Color.linear results were executed against the pinned UnityPlayer body.
+# Keeping their IEEE-754 payloads avoids substituting Python libm for Unity's powf.
+EXPECTED_LINEAR_COLOR_BITS = {
+    (0x3F800000, 0x3F4DCDCE, 0x3F008081, 0x3F800000): (
+        0x3F800000,
+        0x3F1C4971,
+        0x3E5D0A8B,
+        0x3F800000,
+    ),
+    (0x3F800000, 0x3F43870E, 0x3ECCCCCC, 0x3F800000): (
+        0x3F800000,
+        0x3F0B53AD,
+        0x3E080EA2,
+        0x3F800000,
+    ),
+    (0x3F800000, 0x3F43186D, 0x3E99999A, 0x3F800000): (
+        0x3F800000,
+        0x3F0AA371,
+        0x3D95FE50,
+        0x3F800000,
+    ),
+    (0x3F800000, 0x3F2FAFB0, 0x3E4CCCCC, 0x3F800000): (
+        0x3F800000,
+        0x3EDB7D54,
+        0x3D0798DC,
+        0x3F800000,
+    ),
+}
+
+EXPECTED_RECORD0_RGB_BITS = {
+    ((0x3F800000, 0x3F4DCDCE, 0x3F008081, 0x3F800000), 0x42C80000): (0x42C80000, 0x427432C1, 0x41ACB03D),
+    ((0x3F800000, 0x3F43870E, 0x3ECCCCCC, 0x3F800000), 0x40800000): (0x40800000, 0x400B53AD, 0x3F080EA2),
+    ((0x3F800000, 0x3F43870E, 0x3ECCCCCC, 0x3F800000), 0x42700000): (0x42700000, 0x42029E72, 0x40FF1B70),
+    ((0x3F800000, 0x3F43870E, 0x3ECCCCCC, 0x3F800000), 0x42C80000): (0x42C80000, 0x4259B2BE, 0x415496DD),
+    ((0x3F800000, 0x3F4DCDCE, 0x3F008081, 0x3F800000), 0x40800000): (0x40800000, 0x401C4971, 0x3F5D0A8B),
+    ((0x3F800000, 0x3F43186D, 0x3E99999A, 0x3F800000), 0x42700000): (0x42700000, 0x4201F93A, 0x408C9E6B),
+    ((0x3F800000, 0x3F2FAFB0, 0x3E4CCCCC, 0x3F800000), 0x41F00000): (0x41F00000, 0x414DC57F, 0x3F7E3E9C),
+    ((0x3F800000, 0x3F4DCDCE, 0x3F008081, 0x3F800000), 0x430C0000): (0x430C0000, 0x42AAF054, 0x41F1C388),
 }
 
 EXPECTED_ROOM_ORDER = [
@@ -119,6 +225,12 @@ POINT_RECORD_WRITES = [
 COMMON_RECORD_WRITE = (0x15F8, 7, 13)
 
 NATIVE_CALLS = {
+    0x064C: (GET_LIGHT_FALLOFF_VA, "LightExtensions.GetLightFalloff"),
+    0x066B: (0x183A1D9B0, "UnityEngine.Color.op_Implicit"),
+    0x0683: (0x183796500, "UnityEngine.Color.op_Multiply color by falloff"),
+    0x0693: (0x18B3BDEF0, "HGSharedLightData.get_flickerScale_Injected"),
+    0x06AB: (0x183796500, "UnityEngine.Color.op_Multiply color by flickerScale"),
+    0x06C6: (0x18328FB00, "Unity.Mathematics.float4.op_Implicit"),
     0x08DB: (0x1832040F0, "LightExtensions.GetLightAdditionalData"),
     0x0979: (0x18B3BDCA8, "HGSharedLightData.get_cullingBoxRelativePosition_Injected"),
     0x09C2: (0x18B3BDBC8, "HGSharedLightData.get_cullingBoxHalfExtents_Injected"),
@@ -224,6 +336,329 @@ def relative_call_target(body: bytes, base_va: int, offset: int) -> int:
 
 def call_target(body: bytes, offset: int) -> int:
     return relative_call_target(body, PREPARE_CPU_DATA_VA, offset)
+
+
+def relative_branch_target(
+    body: bytes,
+    base_va: int,
+    offset: int,
+    opcode: int,
+    source: Path,
+    check: str,
+) -> int:
+    require(f"{check}_opcode", body[offset], opcode, source)
+    displacement = struct.unpack_from("<i", body, offset + 1)[0]
+    return base_va + offset + 5 + displacement
+
+
+def validate_global_lighting_settings(data: bytes) -> dict[str, Any]:
+    player = data[
+        PLAYER_SETTINGS_FILE_OFFSET : PLAYER_SETTINGS_FILE_OFFSET + PLAYER_SETTINGS_SIZE
+    ]
+    graphics = data[
+        GRAPHICS_SETTINGS_FILE_OFFSET : GRAPHICS_SETTINGS_FILE_OFFSET
+        + GRAPHICS_SETTINGS_SIZE
+    ]
+    player_hash = hashlib.sha256(player).hexdigest()
+    graphics_hash = hashlib.sha256(graphics).hexdigest()
+    require(
+        "player_settings_object_sha256",
+        player_hash,
+        EXPECTED_HASHES["playerSettingsObject"],
+        GLOBAL_GAME_MANAGERS,
+    )
+    require(
+        "graphics_settings_object_sha256",
+        graphics_hash,
+        EXPECTED_HASHES["graphicsSettingsObject"],
+        GLOBAL_GAME_MANAGERS,
+    )
+    active_color_space = struct.unpack_from(
+        "<i", player, PLAYER_SETTINGS_COLOR_SPACE_OFFSET
+    )[0]
+    linear_intensity = bool(graphics[GRAPHICS_SETTINGS_LINEAR_INTENSITY_OFFSET])
+    color_temperature = bool(graphics[GRAPHICS_SETTINGS_COLOR_TEMPERATURE_OFFSET])
+    require("player_settings_active_color_space", active_color_space, 1, GLOBAL_GAME_MANAGERS)
+    require("graphics_settings_linear_intensity", linear_intensity, True, GLOBAL_GAME_MANAGERS)
+    require(
+        "graphics_settings_color_temperature",
+        color_temperature,
+        True,
+        GLOBAL_GAME_MANAGERS,
+    )
+    return {
+        "sourcePath": GLOBAL_GAME_MANAGERS.relative_to(GAME_ROOT).as_posix(),
+        "playerSettings": {
+            "pathId": 1,
+            "fileOffset": f"0x{PLAYER_SETTINGS_FILE_OFFSET:X}",
+            "sizeBytes": PLAYER_SETTINGS_SIZE,
+            "rawObjectSha256": player_hash,
+            "activeColorSpace": "Linear",
+            "activeColorSpaceValue": active_color_space,
+        },
+        "graphicsSettings": {
+            "pathId": 7,
+            "fileOffset": f"0x{GRAPHICS_SETTINGS_FILE_OFFSET:X}",
+            "sizeBytes": GRAPHICS_SETTINGS_SIZE,
+            "rawObjectSha256": graphics_hash,
+            "lightsUseLinearIntensity": linear_intensity,
+            "lightsUseColorTemperature": color_temperature,
+        },
+    }
+
+
+def validate_light_falloff_native(body: bytes, default_bytes: bytes) -> dict[str, Any]:
+    require("get_light_falloff_size", len(body), GET_LIGHT_FALLOFF_SIZE, GAME_ASSEMBLY)
+    body_hash = hashlib.sha256(body).hexdigest()
+    require(
+        "get_light_falloff_body_sha256",
+        body_hash,
+        EXPECTED_HASHES["getLightFalloffBody"],
+        GAME_ASSEMBLY,
+    )
+    require(
+        "get_light_falloff_use_culling_call",
+        relative_call_target(body, GET_LIGHT_FALLOFF_VA, 0xD3),
+        0x18B3BE674,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "get_light_falloff_use_far_show_call",
+        relative_call_target(body, GET_LIGHT_FALLOFF_VA, 0x102),
+        0x18B3BE6B0,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "get_light_falloff_default_load",
+        body[0x12B:0x133],
+        bytes.fromhex("f30f10057552c501"),
+        GAME_ASSEMBLY,
+    )
+    require(
+        "get_light_falloff_default_bits",
+        struct.unpack("<I", default_bytes)[0],
+        0x3F800000,
+        GAME_ASSEMBLY,
+    )
+    return {
+        "method": "HG.Rendering.Runtime.LightExtensions.GetLightFalloff",
+        "methodIndex": 285215,
+        "virtualAddress": f"0x{GET_LIGHT_FALLOFF_VA:X}",
+        "fileOffset": f"0x{GET_LIGHT_FALLOFF_FILE_OFFSET:X}",
+        "sizeBytes": GET_LIGHT_FALLOFF_SIZE,
+        "bodySha256": body_hash,
+        "selectedRowsResult": 1.0,
+        "reason": "useCullingDistance=false and useFarDistanceShow=false",
+    }
+
+
+def validate_unity_light_color_native(data: bytes) -> dict[str, Any]:
+    icalls = []
+    for index, (name_pointer, name_offset, name, function_pointer) in UNITY_ICALLS.items():
+        actual_name_pointer = struct.unpack_from(
+            "<Q", data, UNITY_ICALL_NAME_TABLE_OFFSET + index * 8
+        )[0]
+        actual_function_pointer = struct.unpack_from(
+            "<Q", data, UNITY_ICALL_FUNCTION_TABLE_OFFSET + index * 8
+        )[0]
+        require(f"unity_icall_{index}_name_pointer", actual_name_pointer, name_pointer, UNITY_PLAYER)
+        require(
+            f"unity_icall_{index}_function_pointer",
+            actual_function_pointer,
+            function_pointer,
+            UNITY_PLAYER,
+        )
+        actual_name = data[name_offset : name_offset + len(name)].decode("ascii")
+        require(f"unity_icall_{index}_name", actual_name, name, UNITY_PLAYER)
+        require(
+            f"unity_icall_{index}_name_terminator",
+            data[name_offset + len(name)],
+            0,
+            UNITY_PLAYER,
+        )
+        icalls.append(
+            {
+                "index": index,
+                "name": name,
+                "namePointer": f"0x{name_pointer:X}",
+                "functionPointer": f"0x{function_pointer:X}",
+            }
+        )
+
+    final_stub = data[
+        UNITY_GET_FINAL_COLOR_STUB_FILE_OFFSET : UNITY_GET_FINAL_COLOR_STUB_FILE_OFFSET
+        + UNITY_GET_FINAL_COLOR_STUB_SIZE
+    ]
+    flicker_stub = data[
+        UNITY_GET_FLICKER_STUB_FILE_OFFSET : UNITY_GET_FLICKER_STUB_FILE_OFFSET
+        + UNITY_GET_FLICKER_STUB_SIZE
+    ]
+    animation_stub = data[
+        UNITY_SET_LIGHT_ANIMATION_STUB_FILE_OFFSET : UNITY_SET_LIGHT_ANIMATION_STUB_FILE_OFFSET
+        + UNITY_SET_LIGHT_ANIMATION_STUB_SIZE
+    ]
+    require(
+        "unity_get_final_color_shared_offset",
+        final_stub[0x26:0x2D],
+        bytes.fromhex("0f1040440f1107"),
+        UNITY_PLAYER,
+    )
+    require(
+        "unity_get_flicker_native_target",
+        relative_branch_target(
+            flicker_stub,
+            UNITY_GET_FLICKER_STUB_VA,
+            0,
+            0xE9,
+            UNITY_PLAYER,
+            "unity_get_flicker_stub_jump",
+        ),
+        UNITY_FLICKER_GETTER_VA,
+        UNITY_PLAYER,
+    )
+    require(
+        "unity_set_light_animation_native_target",
+        relative_branch_target(
+            animation_stub,
+            UNITY_SET_LIGHT_ANIMATION_STUB_VA,
+            0xEE,
+            0xE8,
+            UNITY_PLAYER,
+            "unity_set_light_animation_stub_call",
+        ),
+        UNITY_SET_LIGHT_ANIMATION_VA,
+        UNITY_PLAYER,
+    )
+
+    bodies = {
+        "flicker": data[
+            UNITY_FLICKER_GETTER_FILE_OFFSET : UNITY_FLICKER_GETTER_FILE_OFFSET
+            + UNITY_FLICKER_GETTER_SIZE
+        ],
+        "animation": data[
+            UNITY_SET_LIGHT_ANIMATION_FILE_OFFSET : UNITY_SET_LIGHT_ANIMATION_FILE_OFFSET
+            + UNITY_SET_LIGHT_ANIMATION_SIZE
+        ],
+        "finalColor": data[
+            UNITY_FINAL_COLOR_UPDATE_FILE_OFFSET : UNITY_FINAL_COLOR_UPDATE_FILE_OFFSET
+            + UNITY_FINAL_COLOR_UPDATE_SIZE
+        ],
+        "colorLinear": data[
+            UNITY_COLOR_LINEAR_FILE_OFFSET : UNITY_COLOR_LINEAR_FILE_OFFSET
+            + UNITY_COLOR_LINEAR_SIZE
+        ],
+    }
+    for key, expected_key in (
+        ("flicker", "unityFlickerGetterBody"),
+        ("animation", "unitySetLightAnimationBody"),
+        ("finalColor", "unityFinalColorUpdateBody"),
+        ("colorLinear", "unityColorLinearBody"),
+    ):
+        require(
+            f"unity_{key}_body_sha256",
+            hashlib.sha256(bodies[key]).hexdigest(),
+            EXPECTED_HASHES[expected_key],
+            UNITY_PLAYER,
+        )
+
+    require(
+        "unity_flicker_runtime_value_or_one",
+        bodies["flicker"][0x156:0x17F],
+        bytes.fromhex(
+            "741f807939007419f30f1081f0000000488b9c24e80000004881c4d00000005fc3"
+            "f30f1005e54c9801"
+        ),
+        UNITY_PLAYER,
+    )
+    require(
+        "unity_flicker_default_one_bits",
+        struct.unpack_from("<I", data, 0x1CF0EE4)[0],
+        0x3F800000,
+        UNITY_PLAYER,
+    )
+    require(
+        "unity_animation_store_enable_flag",
+        bodies["animation"][0x1A:0x25],
+        bytes.fromhex("488b43504088b828030000"),
+        UNITY_PLAYER,
+    )
+    require(
+        "unity_animation_disable_remove_calls",
+        (
+            relative_branch_target(
+                bodies["animation"], UNITY_SET_LIGHT_ANIMATION_VA, 0xA3, 0xE8,
+                UNITY_PLAYER, "unity_animation_remove_component"
+            ),
+            relative_branch_target(
+                bodies["animation"], UNITY_SET_LIGHT_ANIMATION_VA, 0xAB, 0xE8,
+                UNITY_PLAYER, "unity_animation_remove_followup"
+            ),
+        ),
+        (0x18033C350, 0x180350E60),
+        UNITY_PLAYER,
+    )
+    require(
+        "unity_final_color_graphics_settings_call",
+        relative_branch_target(
+            bodies["finalColor"], UNITY_FINAL_COLOR_UPDATE_VA, 0x13, 0xE8,
+            UNITY_PLAYER, "unity_final_color_graphics_settings"
+        ),
+        0x18039E490,
+        UNITY_PLAYER,
+    )
+    require(
+        "unity_final_color_linear_intensity_flag",
+        bodies["finalColor"][0x18:0x1F],
+        bytes.fromhex("80b85401000000"),
+        UNITY_PLAYER,
+    )
+    require(
+        "unity_final_color_temperature_flag",
+        bodies["finalColor"][0x4D:0x54],
+        bytes.fromhex("80bbc000000000"),
+        UNITY_PLAYER,
+    )
+    require(
+        "unity_final_color_color_linear_call",
+        relative_branch_target(
+            bodies["finalColor"], UNITY_FINAL_COLOR_UPDATE_VA, 0x88, 0xE8,
+            UNITY_PLAYER, "unity_final_color_color_linear"
+        ),
+        UNITY_COLOR_LINEAR_VA,
+        UNITY_PLAYER,
+    )
+    require(
+        "unity_final_color_store",
+        bodies["finalColor"][0xEB:0xF9],
+        bytes.fromhex("488d93b80100000f118300020000"),
+        UNITY_PLAYER,
+    )
+    return {
+        "internalCallTable": {
+            "entryCount": UNITY_ICALL_COUNT,
+            "nameTableFileOffset": f"0x{UNITY_ICALL_NAME_TABLE_OFFSET:X}",
+            "functionTableFileOffset": f"0x{UNITY_ICALL_FUNCTION_TABLE_OFFSET:X}",
+            "resolvedEntries": icalls,
+        },
+        "finalColor": {
+            "updateVirtualAddress": f"0x{UNITY_FINAL_COLOR_UPDATE_VA:X}",
+            "updateBodySha256": hashlib.sha256(bodies["finalColor"]).hexdigest(),
+            "colorLinearVirtualAddress": f"0x{UNITY_COLOR_LINEAR_VA:X}",
+            "colorLinearBodySha256": hashlib.sha256(bodies["colorLinear"]).hexdigest(),
+            "selectedRowsFormula": "UnityPlayer Color.linear(serialized color) * intensity",
+            "selectedRowsUseColorTemperature": False,
+        },
+        "flickerScale": {
+            "nativeVirtualAddress": f"0x{UNITY_FLICKER_GETTER_VA:X}",
+            "nativeBodySha256": hashlib.sha256(bodies["flicker"]).hexdigest(),
+            "disabledAnimationResult": 1.0,
+        },
+        "lightAnimation": {
+            "nativeVirtualAddress": f"0x{UNITY_SET_LIGHT_ANIMATION_VA:X}",
+            "nativeBodySha256": hashlib.sha256(bodies["animation"]).hexdigest(),
+            "disabledPath": "stores false and removes an existing runtime animation component",
+        },
+    }
 
 
 def validate_record_writes(body: bytes) -> dict[str, Any]:
@@ -884,6 +1319,77 @@ def room_light_rows(population: dict[str, Any], hierarchy: dict[str, Any]) -> li
         require(f"{name}_obb", bool(data["m_EnableOBBCullingBox"]), True, path)
         require(f"{name}_shadow_only", bool(data["m_ShadowOnly"]), False, path)
         require(
+            f"room_{path_id}_use_color_temperature",
+            bool(data["m_UseColorTemperature"]),
+            False,
+            path,
+        )
+        require(
+            f"room_{path_id}_use_culling_distance",
+            bool(data["m_UseCullingDistance"]),
+            False,
+            path,
+        )
+        require(f"room_{path_id}_culling_distance", float(data["m_CullingDistance"]), 100.0, path)
+        require(f"room_{path_id}_falloff_distance", float(data["m_FalloffDistance"]), 100.0, path)
+        require(
+            f"room_{path_id}_use_far_distance_show",
+            bool(data["m_UseFarDistanceShow"]),
+            False,
+            path,
+        )
+        require(
+            f"room_{path_id}_far_distance_show_distance",
+            float(data["m_FarDistanceShowDistance"]),
+            10.0,
+            path,
+        )
+        require(
+            f"room_{path_id}_far_distance_show_falloff_distance",
+            float(data["m_FarDistanceShowFalloffDistance"]),
+            12.0,
+            path,
+        )
+        animation = data["m_LightAnimationSetting"]
+        flicker = animation["lightAnimatedData"]["flickerData"]
+        require(
+            f"room_{path_id}_light_animation_enabled",
+            bool(animation["enableLightAnimation"]),
+            False,
+            path,
+        )
+        require(
+            f"room_{path_id}_light_multi_state_enabled",
+            bool(animation["enableMultiState"]),
+            False,
+            path,
+        )
+        require(
+            f"room_{path_id}_light_flicker_enabled",
+            bool(flicker["enableFlicker"]),
+            False,
+            path,
+        )
+        require(
+            f"room_{path_id}_light_flicker_style_file_id",
+            int(flicker["flickerStyle"]["m_FileID"]),
+            0,
+            path,
+        )
+        require(
+            f"room_{path_id}_light_flicker_style_path_id",
+            int(flicker["flickerStyle"]["m_PathID"]),
+            0,
+            path,
+        )
+        require(f"room_{path_id}_light_state_count", len(animation["lightState"]), 0, path)
+        require(
+            f"room_{path_id}_light_state_transition_count",
+            len(animation["lightStateTransition"]),
+            0,
+            path,
+        )
+        require(
             f"{name}_override_shadow",
             bool(data["m_Shadows"]["m_EnableOverrideShadowLight"]),
             False,
@@ -905,6 +1411,22 @@ def room_light_rows(population: dict[str, Any], hierarchy: dict[str, Any]) -> li
                 "unityLightType": int(data["m_Type"]),
                 "color": [float(data["m_Color"][key]) for key in ("r", "g", "b", "a")],
                 "intensity": float(data["m_Intensity"]),
+                "useColorTemperature": False,
+                "colorTemperature": float(data["m_ColorTemperature"]),
+                "useCullingDistance": False,
+                "cullingDistance": 100.0,
+                "falloffDistance": 100.0,
+                "useFarDistanceShow": False,
+                "farDistanceShowDistance": 10.0,
+                "farDistanceShowFalloffDistance": 12.0,
+                "lightAnimation": {
+                    "enabled": False,
+                    "multiStateEnabled": False,
+                    "flickerEnabled": False,
+                    "flickerStylePathId": 0,
+                    "stateCount": 0,
+                    "transitionCount": 0,
+                },
                 "range": float(data["m_Range"]),
                 "innerSpotAngleDegrees": float(data["m_InnerSpotAngle"]),
                 "outerSpotAngleDegrees": float(data["m_SpotAngle"]),
@@ -930,6 +1452,49 @@ def room_light_rows(population: dict[str, Any], hierarchy: dict[str, Any]) -> li
         ROOM_LIGHT_ROOT,
     )
     return result
+
+
+def recover_record0_color(row: dict[str, Any]) -> dict[str, Any]:
+    source = REPO_ROOT / row["sourcePath"]
+    color_bits = tuple(float32_bits(value) for value in row["color"])
+    require(
+        f"room_{row['lightPathId']}_record0_authored_color_known",
+        color_bits in EXPECTED_LINEAR_COLOR_BITS,
+        True,
+        source,
+    )
+    linear_bits = EXPECTED_LINEAR_COLOR_BITS[color_bits]
+    intensity_bits = float32_bits(row["intensity"])
+    key = (color_bits, intensity_bits)
+    require(
+        f"room_{row['lightPathId']}_record0_color_intensity_known",
+        key in EXPECTED_RECORD0_RGB_BITS,
+        True,
+        source,
+    )
+    expected_bits = EXPECTED_RECORD0_RGB_BITS[key]
+    calculated_bits = tuple(
+        float32_bits(f32(float32_from_bits(bits) * row["intensity"]))
+        for bits in linear_bits[:3]
+    )
+    require(
+        f"room_{row['lightPathId']}_record0_rgb_bits",
+        calculated_bits,
+        expected_bits,
+        source,
+    )
+    return {
+        "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+        "serializedColorBits": [f"0x{bits:08X}" for bits in color_bits],
+        "unityPlayerLinearColorBits": [f"0x{bits:08X}" for bits in linear_bits],
+        "unityPlayerLinearColor": [float32_from_bits(bits) for bits in linear_bits],
+        "intensity": row["intensity"],
+        "intensityBits": f"0x{intensity_bits:08X}",
+        "falloff": 1.0,
+        "flickerScale": 1.0,
+        "record0RgbBits": [f"0x{bits:08X}" for bits in expected_bits],
+        "record0Rgb": [float32_from_bits(bits) for bits in expected_bits],
+    }
 
 
 def validate_consumer(text: str) -> dict[str, Any]:
@@ -976,6 +1541,9 @@ def build_audit() -> dict[str, Any]:
         "gameAssemblySha256": verified_hash("gameAssembly", GAME_ASSEMBLY),
         "unityPlayerSha256": verified_hash("unityPlayer", UNITY_PLAYER),
         "globalMetadataSha256": verified_hash("globalMetadata", GLOBAL_METADATA),
+        "globalGameManagersSha256": verified_hash(
+            "globalGameManagers", GLOBAL_GAME_MANAGERS
+        ),
         "selectedFragmentSha256": verified_hash("selectedFragment", SELECTED_FRAGMENT),
         "gachaPopulationSha256": verified_hash("gachaPopulation", GACHA_POPULATION),
         "roomHierarchySha256": verified_hash("roomHierarchy", ROOM_HIERARCHY),
@@ -987,6 +1555,10 @@ def build_audit() -> dict[str, Any]:
         npr_body = stream.read(GET_LIGHT_NPR_DATA_SIZE)
         stream.seek(GET_LIGHT_ADDITIONAL_DATA_FILE_OFFSET)
         additional_body = stream.read(GET_LIGHT_ADDITIONAL_DATA_SIZE)
+        stream.seek(GET_LIGHT_FALLOFF_FILE_OFFSET)
+        falloff_body = stream.read(GET_LIGHT_FALLOFF_SIZE)
+        stream.seek(GET_LIGHT_FALLOFF_DEFAULT_FILE_OFFSET)
+        falloff_default = stream.read(4)
         stream.seek(PACK_TWO_HALF_FILE_OFFSET)
         pack_body = stream.read(PACK_TWO_HALF_SIZE)
         stream.seek(F32_TO_F16_FILE_OFFSET)
@@ -997,15 +1569,24 @@ def build_audit() -> dict[str, Any]:
         scale_bytes = stream.read(4)
         stream.seek(DEGREES_TO_RADIANS_FILE_OFFSET)
         degrees_to_radians_bytes = stream.read(4)
+    global_game_managers_data = GLOBAL_GAME_MANAGERS.read_bytes()
+    unity_player_data = UNITY_PLAYER.read_bytes()
     population = json.loads(GACHA_POPULATION.read_text(encoding="utf-8"))
     hierarchy = json.loads(ROOM_HIERARCHY.read_text(encoding="utf-8"))
     rows = attach_room_additional_data(room_light_rows(population, hierarchy))
     for row in rows:
+        row["record0Color"] = recover_record0_color(row)
         row["obbPackedTransform"] = recover_obb_pack(row)
     consumer = validate_consumer(SELECTED_FRAGMENT.read_text(encoding="utf-8"))
     native = validate_native_body(body)
     native["additionalLightData"] = validate_additional_data_native(
         npr_body, additional_body
+    )
+    native["lightFalloff"] = validate_light_falloff_native(
+        falloff_body, falloff_default
+    )
+    native["unityPlayerLightColor"] = validate_unity_light_color_native(
+        unity_player_data
     )
     native["obbHalfPacking"] = validate_obb_pack_native(
         pack_body,
@@ -1036,9 +1617,12 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v3",
-        "status": "room_obb_pack_schema_and_quantized_candidates_closed",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v4",
+        "status": "room_record0_color_and_obb_candidates_closed",
         "installedInputs": hashes,
+        "originalGlobalLightingSettings": validate_global_lighting_settings(
+            global_game_managers_data
+        ),
         "nativeProducer": native,
         "selectedConsumer": {
             "path": SELECTED_FRAGMENT.relative_to(LAB_ROOT).as_posix(),
@@ -1054,6 +1638,19 @@ def build_audit() -> dict[str, Any]:
             "allUnshadowed": True,
             "allCookieFree": True,
             "allAdditionalComponentsResolved": True,
+            "allColorTemperatureDisabled": True,
+            "allDistanceFalloffDisabled": True,
+            "allFarDistanceShowDisabled": True,
+            "allLightAnimationDisabled": True,
+            "record0ColorSummary": {
+                "globalColorSpace": "Linear",
+                "lightsUseLinearIntensity": True,
+                "allUseColorTemperature": False,
+                "allFalloff": 1.0,
+                "allFlickerScale": 1.0,
+                "exactCandidateCount": len(rows),
+                "closedLanes": ["record0.x", "record0.y", "record0.z"],
+            },
             "obbHalfPackingSummary": {
                 "producerFormula": "inverse TRS of authored relative position, ZXY Euler orientation, and half extents",
                 "wordPlacement": "six row-major half2 words in record5.xyz then record6.xyz",
@@ -1097,17 +1694,21 @@ def build_audit() -> dict[str, Any]:
                 "the OBB producer call chain: relative position, half extents, ZXY Euler orientation, inverse TRS, and six row-major half pairs",
                 "the installed HGUtils/math.f32tof16 method bodies, x-low/y-high word layout, and record5.xyz/record6.xyz placement",
                 "six-word analytic OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003",
+                "the installed PlayerSettings Linear color space and GraphicsSettings linear-light-intensity/color-temperature flags from pinned globalgamemanagers objects",
+                "the UnityPlayer finalColor producer, Color.linear body, light-animation disable path, and flickerScale inactive fallback of exactly 1.0",
+                "all eleven rows disable per-light color temperature, culling-distance/far-show falloff, animation, multistate, and flicker; their state tables and flicker references are empty",
+                "exact UnityPlayer-derived record0.xyz IEEE-754 candidates for all eleven rows: linearized serialized RGB times intensity, with falloff and flickerScale both 1",
             ],
             "open": [
-                "exact float32 color/intensity helper results and camera-relative position/direction values at the target frame",
+                "camera-relative position/direction values at the target frame and the exact record0.w kind/shadow discriminator payload",
                 "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, and shadow/cookie cache indices",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (
                 "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, "
-                "including their additional-light lanes and bounded OBB transform candidates. Do not publish "
+                "including their record0.xyz color, additional-light lanes, and bounded OBB transform candidates. Do not publish "
                 "a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary "
-                "bits, target-frame transforms, color/intensity helpers, and runtime list boundary are closed."
+                "bits, target-frame transforms, record0.w, and runtime list boundary are closed."
             ),
         },
     }
@@ -1125,7 +1726,7 @@ def main() -> int:
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
-        "all 11 additional-light components, and bounded OBB half candidates closed."
+        "all 11 record0.xyz colors/additional-light components, and bounded OBB half candidates closed."
     )
     return 0
 
