@@ -1988,9 +1988,13 @@ the 11,440-byte `ShadowData`. Its native `HGShadowConstantBufferUtils` owner
 allocates one full buffer, copies CSM/PunctualLight/Character/ASM sections at
 their exact same offsets, then binds the full size. The selected deferred
 resolver reads only PunctualLight bytes `1024..6415`; the rest is declaration-
-only. Publication remains fail-closed until the settled 6,144-byte PunctualLight
-section and matching `_PunctualLightShadowTexV2` are captured together at
-`SetGlobalConstantBuffer` section enum `1`. Binding 37 now has its native
+only. The exact enabled frame writer is also pinned: it serializes all 56
+matrix/params/params2 rows plus atlas texel size, then callback `b__49_2`
+publishes section enum `1` and binds the atlas. The disabled callback binds
+only a RenderGraph default texture and does not publish b34, so it proves no
+zero/neutral buffer. Publication remains fail-closed until the settled 6,144-
+byte section and matching `_PunctualLightShadowTexV2` are captured together
+immediately before the callback bind at `0x189b57155`. Binding 37 now has its native
 `HGLightCookieManager` initialization,
 32-record atlas/matrix layout, exact 2,560-byte upload, and `-1` no-cookie guard
 closed. A default-off publisher emits the exact all-zero buffer only for the
