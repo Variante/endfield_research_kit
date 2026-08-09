@@ -123,7 +123,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 4
+AUDIO_SEMANTIC_SCHEMA_VERSION = 6
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 3
 
 
@@ -511,7 +511,7 @@ def compact_media(entry: dict[str, Any]) -> dict[str, Any]:
                 key: row[key]
                 for key in (
                     "rootActionIds", "soundObjectCount", "relationTypes",
-                    "selectionPaths", "bankId", "bankPackage",
+                    "musicTrackObjectCount", "selectionPaths", "bankId", "bankPackage",
                 )
                 if row.get(key) not in (None, "", [])
             }
@@ -1076,6 +1076,25 @@ LEVELSCRIPT_AUDIO_EVENT_FIELDS: dict[str, tuple[tuple[str, str], ...]] = {
     "PostMusicEvent": (("musicEvent", "post"), ("musicEventOnRelease", "release")),
 }
 
+
+def audio_hash_generator_compute(value: str) -> int:
+    """Mirror ``Beyond.Audio.AudioHashGenerator.Compute(string)`` exactly.
+
+    The shipped implementation applies FNV-1 to managed UTF-16 code units,
+    folding only ASCII ``A``-``Z`` before each XOR.  Whitespace is significant.
+    """
+
+    hash_value = 0x811C9DC5
+    encoded = value.encode("utf-16-le", errors="surrogatepass")
+    for offset in range(0, len(encoded), 2):
+        code_unit = encoded[offset] | (encoded[offset + 1] << 8)
+        if 0x41 <= code_unit <= 0x5A:
+            code_unit += 0x20
+        hash_value = (hash_value * 0x01000193) & 0xFFFFFFFF
+        hash_value ^= code_unit
+    return hash_value
+
+
 LEVELSCRIPT_AUDIO_CONTROL_ROLES = {
     "ManualRestoreMusicState": "musicStateRestore",
     "ManualSetMusicState": "musicStateOverride",
@@ -1094,8 +1113,12 @@ def collect_levelscript_audio_semantics(
     export_root: Path,
     *,
     decode_file: Any | None = None,
+    cue_semantics: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Collect exact LevelScript Event/cue requests and dynamic bindings."""
+
+    cue_semantics = cue_semantics or collect_audio_cue_semantics(export_root)
+    cue_definitions = cue_semantics.get("cueDefinitions") or {}
 
     if decode_file is None:
         try:
@@ -1245,14 +1268,69 @@ def collect_levelscript_audio_semantics(
             for binding in action.get("cueBindings") or []:
                 if not isinstance(binding, dict) or not str(binding.get("cueName") or ""):
                     continue
+                cue_name = str(binding["cueName"])
+                cue_id = audio_hash_generator_compute(cue_name)
+                cue_signed_id = cue_id if cue_id < 0x80000000 else cue_id - 0x100000000
+                definition = cue_definitions.get(cue_id)
+                lookup = {
+                    "cueId": cue_id,
+                    "cueSignedId": cue_signed_id,
+                    "cueHex": f"0x{cue_id:08x}",
+                    "cueHashAlgorithm": "fnv1AsciiLowerUtf16CodeUnits",
+                    "cueHashEvidence": "nativeAudioHashGeneratorCompute",
+                    "definitionStatus": "resolved" if isinstance(definition, dict) else "missing",
+                }
+                if isinstance(definition, dict):
+                    lookup.update({
+                        "cueDefinitionSource": str(definition.get("source") or ""),
+                        "handlerCount": int(definition.get("handlerCount") or 0),
+                        "directHandlerCount": int(definition.get("directHandlerCount") or 0),
+                        "levelHandlerCount": int(definition.get("levelHandlerCount") or 0),
+                        "behaviorEventCount": len(definition.get("behaviorEvents") or []),
+                        "expressionOperandCount": len(definition.get("expressionOperands") or []),
+                    })
                 cue_invocations.append({
                     **common,
                     "kind": "levelScriptAudioCueInvocation",
-                    "cueName": str(binding["cueName"]),
+                    "cueName": cue_name,
                     "triggerRole": str(binding.get("role") or "invoke"),
                     "sourceField": str(binding.get("sourceField") or ""),
-                    "definitionStatus": "runtimeNameToCueDefinitionUnresolved",
+                    **lookup,
                 })
+                if not isinstance(definition, dict):
+                    continue
+                for behavior in definition.get("behaviorEvents") or []:
+                    if not isinstance(behavior, dict) or not str(behavior.get("eventId") or ""):
+                        continue
+                    event_name = str(behavior["eventId"])
+                    cue_context = {
+                        **common,
+                        "kind": "levelScriptAudioCueBehaviorEvent",
+                        "semanticRole": "authoredLevelScriptCueBehaviorEventRequest",
+                        "eventName": event_name,
+                        "cueName": cue_name,
+                        "triggerRole": str(binding.get("role") or "invoke"),
+                        "sourceField": str(binding.get("sourceField") or ""),
+                        **lookup,
+                        "handlerScope": str(behavior.get("handlerScope") or ""),
+                        "handlerIndex": behavior.get("handlerIndex"),
+                        "expressionSide": str(behavior.get("expressionSide") or ""),
+                        "expressionPath": str(behavior.get("expressionPath") or ""),
+                        "exprType": behavior.get("exprType"),
+                        "evidence": "exactLevelScriptCueNameRuntimeHashAndCueBehaviorExpression",
+                        "triggerRequestEvidence": [
+                            "exactLevelScriptAudioCueName",
+                            "nativeAudioHashGeneratorCompute",
+                            "audioCueBehaviorExprType3",
+                        ],
+                        "triggerRuntimeActivationStatuses": [
+                            "levelScriptActionExecutionNotObserved",
+                            "cueInvocationAndExpressionEvaluationRequired",
+                        ],
+                    }
+                    if str(behavior.get("levelId") or ""):
+                        cue_context["levelId"] = str(behavior["levelId"])
+                    _append_context(contexts, seen, event_name, cue_context)
             control_role = LEVELSCRIPT_AUDIO_CONTROL_ROLES.get(action_name)
             if control_role:
                 control_actions.append({
@@ -1285,6 +1363,23 @@ def collect_levelscript_audio_semantics(
                 })
 
     event_context_count = sum(len(rows) for rows in contexts.values())
+    direct_event_context_count = sum(
+        context.get("kind") == "levelScriptAudioAction"
+        for rows in contexts.values()
+        for context in rows
+    )
+    cue_behavior_context_count = sum(
+        context.get("kind") == "levelScriptAudioCueBehaviorEvent"
+        for rows in contexts.values()
+        for context in rows
+    )
+    direct_event_names = sum(
+        any(context.get("kind") == "levelScriptAudioAction" for context in rows)
+        for rows in contexts.values()
+    )
+    cue_definition_statuses = Counter(
+        str(row.get("definitionStatus") or "unknown") for row in cue_invocations
+    )
     return {
         "eventContexts": dict(contexts),
         "cueInvocations": cue_invocations,
@@ -1297,9 +1392,12 @@ def collect_levelscript_audio_semantics(
             "targetAudioActionRecords": target_records,
             "decodedAudioActionRecords": decoded_records,
             "decodeFailures": decode_failures,
-            "constantEventRequestContexts": event_context_count,
-            "constantEventNames": len(contexts),
+            "eventRequestContexts": event_context_count,
+            "constantEventRequestContexts": direct_event_context_count,
+            "constantEventNames": direct_event_names,
             "cueInvocations": len(cue_invocations),
+            "cueBehaviorEventContexts": cue_behavior_context_count,
+            "cueDefinitionStatusCounts": dict(sorted(cue_definition_statuses.items())),
             "dynamicEventBindings": len(dynamic_event_bindings),
             "controlActions": len(control_actions),
             "dynamicControlBindings": len(dynamic_control_bindings),
@@ -1310,9 +1408,10 @@ def collect_levelscript_audio_semantics(
         },
         "evidenceBoundary": (
             "Exact union/member-count fields prove authored LevelScript requests and routing. "
-            "Only constant Event parameters become Wwise Event contexts. Dynamic Param bindings, cue names, "
-            "state/variable writes, playback handles, and placeholder-music ids remain typed control records; "
-            "action execution and live parameter values are not observed."
+            "Constant Event parameters and cue names joined through the native AudioHashGenerator and exact "
+            "AudioCue behavior expressions become Event contexts. Cue handler/condition evaluation, action "
+            "execution, dynamic Param values, state/variable writes, playback handles, and placeholder-music "
+            "ids are not observed."
         ),
     }
 
@@ -2081,6 +2180,7 @@ def build_event_rows(
             "objectTypeCounts": object_types,
             "selectionContainerTypes": selection_types,
             "containerEvidence": compact_container_evidence(evidence.get("containerEvidence") or []),
+            "musicNodeEvidence": evidence.get("musicNodeEvidence") or [],
             "unresolvedNodes": evidence.get("unresolvedNodes") or [],
             "source": evidence.get("source") or "wwiseHirc",
             "nestedReferenceConfidence": evidence.get("nestedReferenceConfidence") or "unknown",
@@ -2323,7 +2423,7 @@ def semantic_context_group(kind: Any) -> str:
         return "cutscene"
     if value in {"characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"}:
         return "animation"
-    if value == "levelScriptAudioAction":
+    if value in {"levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent"}:
         return "scripted"
     if value in {
         "table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger",
@@ -2354,7 +2454,8 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "runtimeActivationStatus", "sourceRoot", "sourcePathId", "sourceJsonPath",
             "signedValue", "eventHex", "sourceFile", "sourceVfsPath", "semanticPath",
             "sizzleSoundTriggerDistance", "ringProjectileSoundSmoothFactor",
-            "cueSignedId", "cueId", "cueHex", "handlerScope", "levelId",
+            "cueName", "cueSignedId", "cueId", "cueHex", "cueHashEvidence",
+            "definitionStatus", "handlerScope", "levelId",
             "handlerIndex", "expressionSide", "expressionPath", "exprType",
             "globalMusicCueField",
             "authoredEventId", "spawnerConfigId", "enemyLibraryIndex", "enemyId",
@@ -2456,7 +2557,10 @@ def build_audio_semantic_data(
     cue_semantics = collect_audio_cue_semantics(export_root)
     global_controls = collect_audio_global_control_semantics(export_root, cue_semantics)
     spawner_semantics = collect_spawner_pre_warn_semantics(export_root)
-    levelscript_semantics = collect_levelscript_audio_semantics(export_root)
+    levelscript_semantics = collect_levelscript_audio_semantics(
+        export_root,
+        cue_semantics=cue_semantics,
+    )
     managed_rtpc_parameters = [{
         "kind": "rtpcParameter",
         "parameterName": name,
@@ -2662,6 +2766,14 @@ def build_audio_semantic_data(
             "levelScriptAudioActionEvents": context_kind_event_counts.get("levelScriptAudioAction", 0),
             "levelScriptAudioActionContexts": context_kind_counts.get("levelScriptAudioAction", 0),
             "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
+            "levelScriptAudioCueInvocationsResolved": (
+                (levelscript_semantics.get("stats") or {}).get("cueDefinitionStatusCounts") or {}
+            ).get("resolved", 0),
+            "levelScriptAudioCueInvocationsMissing": (
+                (levelscript_semantics.get("stats") or {}).get("cueDefinitionStatusCounts") or {}
+            ).get("missing", 0),
+            "levelScriptAudioCueBehaviorEvents": context_kind_event_counts.get("levelScriptAudioCueBehaviorEvent", 0),
+            "levelScriptAudioCueBehaviorContexts": context_kind_counts.get("levelScriptAudioCueBehaviorEvent", 0),
             "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
             "levelScriptAudioControls": len(levelscript_semantics.get("controlActions") or []),
             "levelScriptDynamicControlBindings": len(levelscript_semantics.get("dynamicControlBindings") or []),
@@ -2708,6 +2820,15 @@ def build_audio_semantic_data(
                 ),
                 "rtpcParameters": len(global_controls.get("rtpcParameters") or []) + len(managed_rtpc_parameters),
                 "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
+                "levelScriptAudioCueInvocationsResolved": (
+                    (levelscript_semantics.get("stats") or {}).get("cueDefinitionStatusCounts") or {}
+                ).get("resolved", 0),
+                "levelScriptAudioCueInvocationsMissing": (
+                    (levelscript_semantics.get("stats") or {}).get("cueDefinitionStatusCounts") or {}
+                ).get("missing", 0),
+                "levelScriptAudioCueBehaviorEventContexts": (
+                    (levelscript_semantics.get("stats") or {}).get("cueBehaviorEventContexts") or 0
+                ),
                 "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
                 "levelScriptAudioControls": len(levelscript_semantics.get("controlActions") or []),
                 "levelScriptDynamicControlBindings": len(levelscript_semantics.get("dynamicControlBindings") or []),
@@ -2727,7 +2848,7 @@ def build_audio_semantic_data(
             "levelScriptDynamicAudioBindings": levelscript_semantics.get("dynamicEventBindings") or [],
             "levelScriptAudioControls": levelscript_semantics.get("controlActions") or [],
             "levelScriptDynamicControlBindings": levelscript_semantics.get("dynamicControlBindings") or [],
-            "evidenceBoundary": "Cue behavior exprType=3 values and constant LevelScript Event parameters are Event requests. exprType=8 strings, LevelScript cue names, dynamic Params, state/variable writes, playback handles, placeholder-music ids, musicCue* values, and RTPC names remain typed controls until an exact runtime value/definition edge is recovered.",
+            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, and LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions are Event requests. Cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, musicCue* values, and RTPC names remain typed controls or unresolved runtime state.",
         },
         "runtimeModel": runtime_model,
         "evidenceBoundary": {
