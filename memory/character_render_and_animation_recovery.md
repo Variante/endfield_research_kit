@@ -60,11 +60,15 @@ NPC archetypes are imported as labeled source kits.
   the normal core with fallback and occlusion disabled. Matching read-only
   Unity/game settings select `3840x2160`; at that 16:9 aspect, native AABB,
   authored OBB, point-sphere, and spot-cone tests admit exactly 11 room lights
-  and reject only `Spot Light (20)`, retaining 17 as the combined authored
-  survivor upper bound. Character-light follower transforms/culling, other
-  aspects, and unrelated runtime lights remain open. Only an authorized
-  target-frame array capture can settle the live survivor order and final
-  retail `lightCount`.
+  and reject only `Spot Light (20)`. Installed layer data fixes recursive
+  Gacha assignment at layer 30. Identity prefab/Timeline placement, native
+  follower equations, and the original entrance/loop ACL streams close all six
+  character lights: their constant root motion removes to identity, no muscle
+  lanes are mapped, and every light passes across all 844 decoded QVV frames.
+  The exact known authored contribution is therefore 17, with its internal
+  priority/distance order closed. Other display aspects, runtime/custom
+  carry-in, the target-frame pointer/count, whole-list order, and final retail
+  `lightCount` remain open.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
@@ -262,12 +266,11 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Recover the six character-light follower transforms/cull outcomes, then the
-   retail survivor list from the source-closed 18-row input, exact selected-
-   aspect 11-row room subset, and 17-row combined upper bound while preserving
-   other display aspects and runtime/custom carry-in; populate
-   exact shadow, depth, GBuffer, irradiance, non-empty cookie, and VisibilitySH
-   inputs afterward.
+1. Recover the retail survivor list at the exact `HGCamera.DoECSCulling` return
+   boundary, starting from the source-closed 18-row authored input and exact
+   selected-aspect 17-row authored result while preserving runtime/custom
+   carry-in and other display aspects; populate exact shadow, depth, GBuffer,
+   irradiance, non-empty cookie, and VisibilitySH inputs afterward.
 2. Validate selected paths against accepted retail captures.
 3. Extend exact texture/mip and material-variant support only where visible.
 4. Generalize animation from a second exact Avatar/clip oracle.

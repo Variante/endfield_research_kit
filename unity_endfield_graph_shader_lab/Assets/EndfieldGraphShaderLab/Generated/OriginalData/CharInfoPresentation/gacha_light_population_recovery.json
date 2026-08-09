@@ -1,8 +1,8 @@
 {
-  "schema": "endfield.gacha-light-population-recovery.v3",
-  "status": "zhuangfy_gacha_selected_aspect_authored_room_subset_source_closed",
+  "schema": "endfield.gacha-light-population-recovery.v4",
+  "status": "zhuangfy_gacha_selected_aspect_known_authored_survivors_source_closed",
   "runtimeReady": false,
-  "outcome": "Installed Lua selects only light_overview from light_chr_0030_zhuangfy, initializes its four CharInfoLightFollower components, and selects the 12-light SceneLight6Rarity room group for rarity 6. The resulting known serialized Unity-Light candidate union is exactly 18 enabled lights: 3 type 0 and 15 type 2, with no authored cookies and one character-light shadow request. The shipped normal native path disables fallback and Gacha occlusion. The selected installed-client state is independently stored as 3840x2160 by Unity and the game. At that 16:9 aspect, native AABB, authored OBB, and type-specific geometry admit exactly 11 room rows and reject only Spot Light (20), retaining the known authored survivor upper bound of 17. This still does not close the target-frame LightCullResult, dynamic/custom lights, final order, or lightCount.",
+  "outcome": "Installed Lua selects only light_overview from light_chr_0030_zhuangfy, initializes its four CharInfoLightFollower components, and selects the 12-light SceneLight6Rarity room group for rarity 6. The resulting known serialized Unity-Light candidate union is exactly 18 enabled lights: 3 type 0 and 15 type 2, with no authored cookies and one character-light shadow request. The shipped normal native path disables fallback and Gacha occlusion. The selected installed-client state is independently stored as 3840x2160 by Unity and the game. At that 16:9 aspect, native AABB, authored OBB, and type-specific geometry admit exactly 11 room rows and reject only Spot Light (20). Installed layer data, identity placement, two decoded ACL pose streams, constant root motion, and the native follower equations admit all six character rows at the settled loop boundary and throughout both authored clips. The exact known authored contribution is therefore 17. This still does not close runtime/custom carry-in, the target-frame LightCullResult pointer/count, whole-list order, or retail lightCount.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -16,6 +16,10 @@
       "sizeBytes": 62925560,
       "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
     },
+    "globalGameManagers": {
+      "sizeBytes": 1271008,
+      "sha256": "191619377ff312b785aae10faec8a75e39caf1ba60016ad08eff040b8c54f20d"
+    },
     "roomChunk": {
       "sizeBytes": 1094286601,
       "sha256": "4b4ae868dc333fd5b22fc30e667d3156675178bfffd57b93e0e4b625c89f0b26"
@@ -27,6 +31,10 @@
     "gachaLua": {
       "sizeBytes": 24265,
       "sha256": "94815321515ebf7d4067f60f2f6e2a1d25611bc2e40f712e22cd40a6d159ae19"
+    },
+    "uiConstLua": {
+      "sizeBytes": 50226,
+      "sha256": "a2b5798cbf4500e0a3e12e2747ab04b412efe1789b3198d19557f868415e7ea5"
     },
     "characterTable": {
       "sizeBytes": 9709956,
@@ -59,6 +67,74 @@
     "rotatehouse": {
       "sizeBytes": 1492,
       "sha256": "3cac5172e91bb3cddf1a8c6db8e8550620abbfb0c957905f39538b8c97baded4"
+    },
+    "actorTimelineAudit": {
+      "sizeBytes": 6160,
+      "sha256": "575b8b4967cf3458e93b6e883679a19bb985b0888a1d8fde5f81876bf14dfdee"
+    },
+    "zhuangfyManifest": {
+      "sizeBytes": 6775751,
+      "sha256": "63bd1cbc2de2acfa8cb507d1186dec736cbdbaacf4c861e803b802a04b1e8ae9"
+    },
+    "actorTrack": {
+      "sizeBytes": 21834,
+      "sha256": "2b37d07f4a2b6964a7cf66d10de2bd41211af8e78ceba1ce03c2647eecfece31"
+    },
+    "actorPlayableEntrance": {
+      "sizeBytes": 6623,
+      "sha256": "55b80868b750786b07c38dff5bc71fa0517b950acbb669d8f68acf1d22461e1e"
+    },
+    "actorPlayableLoop": {
+      "sizeBytes": 6622,
+      "sha256": "2b24eed5a1488a722e516730fa557e904259213f3f655b79240749aa1f558bed"
+    },
+    "actorClipEntrance": {
+      "sizeBytes": 1683994,
+      "sha256": "5a977b29300ba8991bad2c5bdad82eed99c38d07722ebaa2b649061818dc0803"
+    },
+    "actorClipLoop": {
+      "sizeBytes": 842569,
+      "sha256": "387593a1d02d8d02232101839c1e8e73f0dc30788e5f17deb2798cb2ce5048f7"
+    },
+    "actorSampleEntrance": {
+      "sizeBytes": 102783893,
+      "sha256": "5271fee6c466d8a87a743d65c9ab9944c10e16ea9ebab2fe7aab070bea3fc2d5"
+    },
+    "actorSampleLoop": {
+      "sizeBytes": 32251418,
+      "sha256": "3bd36a3968fb043e1221aa9f54932a40100c8c9f7f2df533c3df1f28f410a80e"
+    },
+    "gachaRoomRoot": {
+      "sizeBytes": 1698,
+      "sha256": "4b90b2c1b0cf270b19d44a48d07216d072548e10c3b49e9a0759d0a0faa1ae8f"
+    },
+    "timelineRoot": {
+      "sizeBytes": 945,
+      "sha256": "7af46240c5880c8f38b71df0cf3a743b888827704cfdc4357240cc3561fd37b2"
+    },
+    "actorPrefabRoot": {
+      "sizeBytes": 1350,
+      "sha256": "bd22ee727957046e5ddcfa49f82e8c2a461745ac10289914d329afabafe22a88"
+    },
+    "actorContainer": {
+      "sizeBytes": 776,
+      "sha256": "28f697ca93516ed65065f6925b546dbc0c46fc9f4d7b45d47356596d1320782e"
+    },
+    "actorModel": {
+      "sizeBytes": 2158,
+      "sha256": "5a68fb202e1dfd72d41f8247d3d2f54a46bbed6f53ada7638a97dc95650283bb"
+    },
+    "actorSkeletonRoot": {
+      "sizeBytes": 1378,
+      "sha256": "4a98c8341b807f830f7ec13c1a8c325e2910f9bc9dd155313b455d02ab80563d"
+    },
+    "aclSampler": {
+      "sizeBytes": 308224,
+      "sha256": "2805096f5df56d7a0f3790ded815955fc4227f2f8decf941d4a1e88e1ab586df"
+    },
+    "aclSamplerSource": {
+      "sizeBytes": 9272,
+      "sha256": "c44bd1a08ecbf3ea4f46107d6faf084218fee7df33616fd59d44aaa4a797d1e2"
     }
   },
   "selection": {
@@ -70,12 +146,168 @@
     "otherDirectChildrenActive": false,
     "selectedChildActive": true,
     "initLightFollowerOnSelectedChild": true,
+    "characterParent": "GachaRoom/TimelineRoot",
+    "lightPrefabParent": "character root",
+    "recursiveLayerAssignment": "UIConst.GACHA_LAYER after follower initialization",
     "roomRarityRules": {
       "SceneLight6Rarity": "rarity >= 6",
       "SceneLight5Rarity": "rarity == 5",
       "SceneLight4Rarity": "rarity <= 4"
     },
+    "gachaLayer": {
+      "name": "Gacha",
+      "index": 30,
+      "recordMask": "0x40000000",
+      "activeRecordFlags": "0x00000701",
+      "selectedViewMask": "0x40010008",
+      "maskGatePasses": true,
+      "installedLayerArrayOffset": 42220,
+      "installedLayerCount": 32
+    },
     "activeRoomGroup": "SceneLight6Rarity"
+  },
+  "actorPlacement": {
+    "roomToTimelineRoot": [
+      {
+        "name": "GachaRoom",
+        "identity": true
+      },
+      {
+        "name": "TimelineRoot",
+        "identity": true
+      }
+    ],
+    "characterPrefabChain": [
+      {
+        "name": "gacha_char_zhuangfy",
+        "identity": true
+      },
+      {
+        "name": "Actor",
+        "identity": true
+      },
+      {
+        "name": "chr_0030_zhuangfy_uimodel",
+        "identity": true
+      },
+      {
+        "name": "Root",
+        "identity": true
+      }
+    ],
+    "worldPlacement": "identity before Animation Track evaluation"
+  },
+  "actorPose": {
+    "bindingPath": "Actor/chr_0030_zhuangfy_uimodel",
+    "trackOffsetMode": "ApplyTransformOffsets",
+    "trackPosition": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "trackRotation": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "removeStartOffset": true,
+    "settledLoopStart": 10.7,
+    "headLocalStaticTransform": {
+      "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/Head_Local",
+      "position": [
+        0.000101776124,
+        0.00038796186,
+        4.119872e-06
+      ],
+      "rotation": [
+        -0.5000004,
+        0.49999958,
+        0.49999955,
+        0.5000005
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        0.999999
+      ]
+    },
+    "clips": [
+      {
+        "name": "A_actor_zhuangfy_gacha",
+        "qvvFrameCount": 643,
+        "qvvTrackCount": 437,
+        "directFollowerChainTrackIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "mappedMuscleClipInputs": "Motion/Root 0..13 only; no muscle lanes",
+        "rootMotion": {
+          "compressedBytes": 176,
+          "compressedSha256": "187f1d3589b7a9edfb539cc4ae42c5fb85b066055a16e6a6b1829fd22ac24f1c",
+          "trackCount": 21,
+          "sampleCount": 642,
+          "sampleRate": 60.0,
+          "constantTransform": {
+            "translation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              -1.99737087e-07,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          "removeStartOffsetResult": "identity for every decoded sample"
+        }
+      },
+      {
+        "name": "A_actor_zhuangfy_ui_overview_loop_01",
+        "qvvFrameCount": 201,
+        "qvvTrackCount": 437,
+        "directFollowerChainTrackIndices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "mappedMuscleClipInputs": "Motion/Root 0..13 only; no muscle lanes",
+        "rootMotion": {
+          "compressedBytes": 176,
+          "compressedSha256": "97e5c18f78b64e5a2aa2968b9764e14ef99828d4ae03f4a187fba578e719db97",
+          "trackCount": 21,
+          "sampleCount": 200,
+          "sampleRate": 60.0,
+          "constantTransform": {
+            "translation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              -1.99737087e-07,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          "removeStartOffsetResult": "identity for every decoded sample"
+        }
+      }
+    ]
   },
   "serializedCharacterPrefab": {
     "root": "light_chr_0030_zhuangfy",
@@ -152,6 +384,16 @@
           "2": 10,
           "0": 1
         }
+      }
+    ],
+    "selectedHierarchyIdentity": [
+      {
+        "name": "light_chr_0030_zhuangfy",
+        "transformPathId": -9083612443678366389
+      },
+      {
+        "name": "light_overview",
+        "transformPathId": 2303848947698345291
       }
     ]
   },
@@ -597,67 +839,271 @@
           "pathId": 5596195539603203403,
           "name": "FogLight_1 (2)",
           "type": 0,
+          "range": 1.27,
+          "spotAngle": 134.45074,
           "priority": 0,
           "enabled": true,
           "cookiePathId": 0,
           "shadowType": 0,
           "characterOnly": true,
-          "hasFollower": true
+          "enableOBBCullingBox": false,
+          "serializedPosition": [
+            0.0031997114,
+            1.1716309,
+            -1.2722286
+          ],
+          "serializedRotation": [
+            0.0,
+            0.16064721,
+            0.0,
+            0.9870119
+          ],
+          "serializedForward": [
+            0.31712141566824514,
+            0.0,
+            0.9483849470149599
+          ],
+          "hasFollower": true,
+          "follower": {
+            "componentPathId": -5879688204900981429,
+            "followType": 0,
+            "followableNodeType": 0,
+            "followableNodeName": "BIP001",
+            "positionOffset": [
+              -0.006203383,
+              0.15475464,
+              -1.2597849
+            ],
+            "localPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localRotationEulerDegrees": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "sourceRawSha256": "0cbee782355e3c158f9ab5284c2acbe97af4ea371d9e0cecac69d09b82703266"
+          }
         },
         {
           "pathId": -8453137644262742709,
           "name": "Point Light_overview (2)",
           "type": 2,
+          "range": 0.18078613,
+          "spotAngle": 74.889656,
           "priority": 0,
           "enabled": true,
           "cookiePathId": 0,
           "shadowType": 0,
           "characterOnly": true,
-          "hasFollower": true
+          "enableOBBCullingBox": false,
+          "serializedPosition": [
+            0.03244598,
+            1.8253174,
+            0.09039359
+          ],
+          "serializedRotation": [
+            -0.021662079,
+            -0.04203,
+            -0.045427307,
+            -0.99784803
+          ],
+          "serializedForward": [
+            0.08584720519025445,
+            -0.03941230626805968,
+            0.9955284664316009
+          ],
+          "hasFollower": true,
+          "follower": {
+            "componentPathId": -8805812542336293557,
+            "followType": 1,
+            "followableNodeType": 1,
+            "followableNodeName": "HEAD_LOCAL",
+            "positionOffset": [
+              -0.011272084,
+              0.32943726,
+              -0.04694616
+            ],
+            "localPosition": [
+              0.027347863,
+              0.27911133,
+              0.060423512
+            ],
+            "localRotationEulerDegrees": [
+              356.20636,
+              357.311,
+              2.1218061
+            ],
+            "sourceRawSha256": "9d95a0a42befb19c7497b28ac5497c609889c5c0f389543246491385ad69e9c1"
+          }
         },
         {
           "pathId": -7593216169862781621,
           "name": "RimLight_2 (4)",
           "type": 0,
+          "range": 2.3,
+          "spotAngle": 115.4677,
           "priority": 0,
           "enabled": true,
           "cookiePathId": 0,
           "shadowType": 0,
           "characterOnly": true,
-          "hasFollower": false
+          "enableOBBCullingBox": false,
+          "serializedPosition": [
+            -1.642,
+            0.635,
+            -0.002
+          ],
+          "serializedRotation": [
+            -0.04117698,
+            0.7741396,
+            -0.086204946,
+            0.6257644
+          ],
+          "serializedForward": [
+            0.975957275208057,
+            -0.0819351444248124,
+            -0.20197531798848628
+          ],
+          "hasFollower": false,
+          "follower": null
         },
         {
           "pathId": 5090866064179373387,
           "name": "SpecLight_1 (8)",
           "type": 2,
+          "range": 0.10291336,
+          "spotAngle": 74.889656,
           "priority": 0,
           "enabled": true,
           "cookiePathId": 0,
           "shadowType": 0,
           "characterOnly": true,
-          "hasFollower": true
+          "enableOBBCullingBox": false,
+          "serializedPosition": [
+            -0.0036733095,
+            1.396637,
+            0.13779551
+          ],
+          "serializedRotation": [
+            0.0,
+            -0.85918504,
+            0.0,
+            0.51166505
+          ],
+          "serializedForward": [
+            -0.8792298397524704,
+            -0.0,
+            -0.4763978262847611
+          ],
+          "hasFollower": true,
+          "follower": {
+            "componentPathId": -973381299431692981,
+            "followType": 0,
+            "followableNodeType": 0,
+            "followableNodeName": "BIP001",
+            "positionOffset": [
+              -0.013076404,
+              0.37976074,
+              0.15023923
+            ],
+            "localPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localRotationEulerDegrees": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "sourceRawSha256": "d4f8e8f976e16155acb26454e897614720838aff44db1733ac2ecdd9ed72dc29"
+          }
         },
         {
           "pathId": -5300551612643891893,
           "name": "RimLight_2 (5)",
           "type": 2,
+          "range": 0.5296414,
+          "spotAngle": 108.36655,
           "priority": 0,
           "enabled": true,
           "cookiePathId": 0,
           "shadowType": 2,
           "characterOnly": true,
-          "hasFollower": false
+          "enableOBBCullingBox": false,
+          "serializedPosition": [
+            -0.397,
+            1.8294373,
+            0.242
+          ],
+          "serializedRotation": [
+            -0.2570091,
+            0.76333225,
+            -0.44640762,
+            0.38985953
+          ],
+          "serializedForward": [
+            0.8246463267996665,
+            -0.48111976107188753,
+            -0.2974595959150545
+          ],
+          "hasFollower": false,
+          "follower": null
         },
         {
           "pathId": -2406487440843233973,
           "name": "SpecLight_1 (11)",
           "type": 2,
+          "range": 0.06649223,
+          "spotAngle": 74.889656,
           "priority": 0,
           "enabled": true,
           "cookiePathId": 0,
           "shadowType": 0,
           "characterOnly": true,
-          "hasFollower": true
+          "enableOBBCullingBox": false,
+          "serializedPosition": [
+            0.01905923,
+            1.5653381,
+            0.11784378
+          ],
+          "serializedRotation": [
+            -0.001610286,
+            0.9024112,
+            -0.06466294,
+            0.4259932
+          ],
+          "serializedForward": [
+            0.7690502346326725,
+            -0.11533316779813907,
+            -0.6286970629938379
+          ],
+          "hasFollower": true,
+          "follower": {
+            "componentPathId": -5931864657590835893,
+            "followType": 1,
+            "followableNodeType": 1,
+            "followableNodeName": "HEAD_LOCAL",
+            "positionOffset": [
+              -0.046982616,
+              -9.1552734e-05,
+              0.10489852
+            ],
+            "localPosition": [
+              -0.005185985,
+              0.02462954,
+              0.11233266
+            ],
+            "localRotationEulerDegrees": [
+              12.654907,
+              121.05663,
+              353.37973
+            ],
+            "sourceRawSha256": "1f36de62d64ffa01d11fe8d107fa7fedff87f10c65ef1c09e030e61543e1d7c3"
+          }
         }
       ]
     }
@@ -715,8 +1161,14 @@
     ],
     "enumeration": "InitLightFollower calls GetComponentsInChildren<CharInfoLightFollower>(true), maps followableNodeType 0 to Bip001 and 1 to Head_Local, then initializes each component with that transform.",
     "lateTickModes": {
-      "0": "fixed world position offset",
-      "1": "parent-space position and rotation"
+      "0": {
+        "position": "target.worldPosition + positionOffset",
+        "rotation": "unchanged"
+      },
+      "1": {
+        "position": "target.worldPosition + target.worldRotation * localPosition",
+        "rotation": "target.worldRotation * Quaternion.Euler(localRotationEuler)"
+      }
     },
     "selectedFollowerCount": 4
   },
@@ -780,7 +1232,7 @@
       "Spot Light (20)"
     ],
     "authoredRoomMaximumContributionCount": 11,
-    "knownAuthoredSurvivorUpperBound": 17,
+    "preCharacterEvaluationKnownAuthoredUpperBound": 17,
     "remainingRoomOrderIfAdmitted": [
       "Spot Light (12)",
       "Spot Light (19)",
@@ -795,7 +1247,7 @@
       "Spot Light (10)"
     ],
     "nativeOutputOrder": "accepted non-directionals sort by ascending camera distance squared; SetupState then sorts types 0/2 by priority descending and distance ascending",
-    "firstOpenRoomBoundary": "room geometry is closed for the selected installed-client 3840x2160 state; character-light follower transforms and cull outcomes remain open",
+    "firstOpenBoundary": "all known authored room and character-light geometry is closed for the selected installed-client 3840x2160 state; runtime/custom carry-in and the native target-frame pointer/count remain open",
     "selectedAspectRoomGeometry": {
       "selectedResolution": {
         "source": "HKCU\\Software\\Hypergryph\\Endfield",
@@ -1308,7 +1760,692 @@
       ],
       "exactSelectedAspectRoomContributionCount": 11,
       "precisionBoundary": "Thresholds are float32 numerical roots for diagnostics; the selected 16:9 margins are well separated from zero and own the pass/fail claims."
-    }
+    },
+    "selectedAspectCharacterGeometry": {
+      "cameraSampleTime": {
+        "bits": "0x412B3333",
+        "value": 10.699999809265137
+      },
+      "targetActorClip": "A_actor_zhuangfy_ui_overview_loop_01",
+      "targetActorFrame": 0,
+      "targetClipLocalTime": 0.0,
+      "selectedAspectSurvivors": [
+        "FogLight_1 (2)",
+        "Point Light_overview (2)",
+        "RimLight_2 (4)",
+        "SpecLight_1 (8)",
+        "RimLight_2 (5)",
+        "SpecLight_1 (11)"
+      ],
+      "selectedAspectRejections": [],
+      "exactSelectedAspectCharacterContributionCount": 6,
+      "allEntranceAndLoopFrames": [
+        {
+          "name": "A_actor_zhuangfy_gacha",
+          "frameCount": 643,
+          "allSixAdmitted": true,
+          "worstMargins": [
+            {
+              "name": "FogLight_1 (2)",
+              "initialAabb": {
+                "plane": "near",
+                "margin": {
+                  "value": 2.7986414432525635,
+                  "bits": "0x40331CF1"
+                }
+              },
+              "typeGeometry": {
+                "plane": "near",
+                "margin": {
+                  "value": 2.6197285652160645,
+                  "bits": "0x4027A9A2"
+                }
+              }
+            },
+            {
+              "name": "Point Light_overview (2)",
+              "initialAabb": {
+                "plane": "top",
+                "margin": {
+                  "value": 0.6134334206581116,
+                  "bits": "0x3F1D09F9"
+                }
+              },
+              "typeGeometry": {
+                "plane": "top",
+                "margin": {
+                  "value": 0.44057297706604004,
+                  "bits": "0x3EE192C8"
+                }
+              }
+            },
+            {
+              "name": "RimLight_2 (4)",
+              "initialAabb": {
+                "plane": "near",
+                "margin": {
+                  "value": 5.638978481292725,
+                  "bits": "0x40B47283"
+                }
+              },
+              "typeGeometry": {
+                "plane": "near",
+                "margin": {
+                  "value": 5.434335708618164,
+                  "bits": "0x40ADE614"
+                }
+              }
+            },
+            {
+              "name": "SpecLight_1 (8)",
+              "initialAabb": {
+                "plane": "near",
+                "margin": {
+                  "value": 1.3343008756637573,
+                  "bits": "0x3FAACA5F"
+                }
+              },
+              "typeGeometry": {
+                "plane": "near",
+                "margin": {
+                  "value": 1.3283941745758057,
+                  "bits": "0x3FAA08D2"
+                }
+              }
+            },
+            {
+              "name": "RimLight_2 (5)",
+              "initialAabb": {
+                "plane": "near",
+                "margin": {
+                  "value": 1.7970869541168213,
+                  "bits": "0x3FE606F2"
+                }
+              },
+              "typeGeometry": {
+                "plane": "top",
+                "margin": {
+                  "value": 1.7078098058700562,
+                  "bits": "0x3FDA9983"
+                }
+              }
+            },
+            {
+              "name": "SpecLight_1 (11)",
+              "initialAabb": {
+                "plane": "top",
+                "margin": {
+                  "value": 0.9617702960968018,
+                  "bits": "0x3F763694"
+                }
+              },
+              "typeGeometry": {
+                "plane": "top",
+                "margin": {
+                  "value": 0.8981931209564209,
+                  "bits": "0x3F65EFFC"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "A_actor_zhuangfy_ui_overview_loop_01",
+          "frameCount": 201,
+          "allSixAdmitted": true,
+          "worstMargins": [
+            {
+              "name": "FogLight_1 (2)",
+              "initialAabb": {
+                "plane": "near",
+                "margin": {
+                  "value": 2.8917219638824463,
+                  "bits": "0x403911F9"
+                }
+              },
+              "typeGeometry": {
+                "plane": "near",
+                "margin": {
+                  "value": 2.7128090858459473,
+                  "bits": "0x402D9EAA"
+                }
+              }
+            },
+            {
+              "name": "Point Light_overview (2)",
+              "initialAabb": {
+                "plane": "top",
+                "margin": {
+                  "value": 0.9340162873268127,
+                  "bits": "0x3F6F1BB1"
+                }
+              },
+              "typeGeometry": {
+                "plane": "top",
+                "margin": {
+                  "value": 0.7611558437347412,
+                  "bits": "0x3F42DB1C"
+                }
+              }
+            },
+            {
+              "name": "RimLight_2 (4)",
+              "initialAabb": {
+                "plane": "near",
+                "margin": {
+                  "value": 5.638978481292725,
+                  "bits": "0x40B47283"
+                }
+              },
+              "typeGeometry": {
+                "plane": "near",
+                "margin": {
+                  "value": 5.434335708618164,
+                  "bits": "0x40ADE614"
+                }
+              }
+            },
+            {
+              "name": "SpecLight_1 (8)",
+              "initialAabb": {
+                "plane": "near",
+                "margin": {
+                  "value": 1.4273815155029297,
+                  "bits": "0x3FB6B470"
+                }
+              },
+              "typeGeometry": {
+                "plane": "near",
+                "margin": {
+                  "value": 1.421474814414978,
+                  "bits": "0x3FB5F2E3"
+                }
+              }
+            },
+            {
+              "name": "RimLight_2 (5)",
+              "initialAabb": {
+                "plane": "near",
+                "margin": {
+                  "value": 1.7970869541168213,
+                  "bits": "0x3FE606F2"
+                }
+              },
+              "typeGeometry": {
+                "plane": "top",
+                "margin": {
+                  "value": 1.7078098058700562,
+                  "bits": "0x3FDA9983"
+                }
+              }
+            },
+            {
+              "name": "SpecLight_1 (11)",
+              "initialAabb": {
+                "plane": "top",
+                "margin": {
+                  "value": 1.2367374897003174,
+                  "bits": "0x3F9E4D6A"
+                }
+              },
+              "typeGeometry": {
+                "plane": "top",
+                "margin": {
+                  "value": 1.1731603145599365,
+                  "bits": "0x3F962A1E"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "characterRows": [
+        {
+          "name": "FogLight_1 (2)",
+          "lightPathId": 5596195539603203403,
+          "type": 0,
+          "priority": 0,
+          "hasFollower": true,
+          "worldPosition": [
+            {
+              "value": -0.01632697880268097,
+              "bits": "0xBC85C028"
+            },
+            {
+              "value": 1.1918333768844604,
+              "bits": "0x3F988DFF"
+            },
+            {
+              "value": -1.292609691619873,
+              "bits": "0xBFA5743C"
+            }
+          ],
+          "positionEquation": "target.worldPosition + positionOffset",
+          "cameraDistanceSquared": {
+            "value": 9.23973560333252,
+            "bits": "0x4113D5F5"
+          },
+          "selectedAspectAdmitted": true,
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 2.9101715087890625,
+              "bits": "0x403A4040"
+            }
+          },
+          "typeGeometry": {
+            "kind": "spot_cone",
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 2.7312583923339844,
+              "bits": "0x402ECCF0"
+            }
+          }
+        },
+        {
+          "name": "Point Light_overview (2)",
+          "lightPathId": -8453137644262742709,
+          "type": 2,
+          "priority": 0,
+          "hasFollower": true,
+          "worldPosition": [
+            {
+              "value": -0.0018727611750364304,
+              "bits": "0xBAF57770"
+            },
+            {
+              "value": 1.823357343673706,
+              "bits": "0x3FE963C6"
+            },
+            {
+              "value": 0.10369397699832916,
+              "bits": "0x3DD45D82"
+            }
+          ],
+          "positionEquation": "target.worldPosition + target.worldRotation * localPosition",
+          "cameraDistanceSquared": {
+            "value": 3.042111873626709,
+            "bits": "0x4042B1F6"
+          },
+          "selectedAspectAdmitted": true,
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": 0.9368968605995178,
+              "bits": "0x3F6FD879"
+            }
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": 0.7640364170074463,
+              "bits": "0x3F4397E4"
+            }
+          }
+        },
+        {
+          "name": "RimLight_2 (4)",
+          "lightPathId": -7593216169862781621,
+          "type": 0,
+          "priority": 0,
+          "hasFollower": false,
+          "worldPosition": [
+            {
+              "value": -1.6419999599456787,
+              "bits": "0xBFD22D0E"
+            },
+            {
+              "value": 0.6349999904632568,
+              "bits": "0x3F228F5C"
+            },
+            {
+              "value": -0.0020000000949949026,
+              "bits": "0xBB03126F"
+            }
+          ],
+          "positionEquation": "serialized static transform under identity light root",
+          "cameraDistanceSquared": {
+            "value": 6.110769271850586,
+            "bits": "0x40C38B6C"
+          },
+          "selectedAspectAdmitted": true,
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 5.638978481292725,
+              "bits": "0x40B47283"
+            }
+          },
+          "typeGeometry": {
+            "kind": "spot_cone",
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 5.434335708618164,
+              "bits": "0x40ADE614"
+            }
+          }
+        },
+        {
+          "name": "SpecLight_1 (8)",
+          "lightPathId": 5090866064179373387,
+          "type": 2,
+          "priority": 0,
+          "hasFollower": true,
+          "worldPosition": [
+            {
+              "value": -0.02319999970495701,
+              "bits": "0xBCBE0DED"
+            },
+            {
+              "value": 1.4168394804000854,
+              "bits": "0x3FB55AFF"
+            },
+            {
+              "value": 0.11741439998149872,
+              "bits": "0x3DF076F6"
+            }
+          ],
+          "positionEquation": "target.worldPosition + positionOffset",
+          "cameraDistanceSquared": {
+            "value": 2.6869993209838867,
+            "bits": "0x402BF7CC"
+          },
+          "selectedAspectAdmitted": true,
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 1.4458309412002563,
+              "bits": "0x3FB910FD"
+            }
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 1.4399242401123047,
+              "bits": "0x3FB84F70"
+            }
+          }
+        },
+        {
+          "name": "RimLight_2 (5)",
+          "lightPathId": -5300551612643891893,
+          "type": 2,
+          "priority": 0,
+          "hasFollower": false,
+          "worldPosition": [
+            {
+              "value": -0.3970000147819519,
+              "bits": "0xBECB4396"
+            },
+            {
+              "value": 1.829437255859375,
+              "bits": "0x3FEA2B00"
+            },
+            {
+              "value": 0.24199999868869781,
+              "bits": "0x3E77CED9"
+            }
+          ],
+          "positionEquation": "serialized static transform under identity light root",
+          "cameraDistanceSquared": {
+            "value": 2.769850730895996,
+            "bits": "0x4031453C"
+          },
+          "selectedAspectAdmitted": true,
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 1.7970869541168213,
+              "bits": "0x3FE606F2"
+            }
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": 1.7078098058700562,
+              "bits": "0x3FDA9983"
+            }
+          }
+        },
+        {
+          "name": "SpecLight_1 (11)",
+          "lightPathId": -2406487440843233973,
+          "type": 2,
+          "priority": 0,
+          "hasFollower": true,
+          "worldPosition": [
+            {
+              "value": -0.019433733075857162,
+              "bits": "0xBC9F337E"
+            },
+            {
+              "value": 1.5622496604919434,
+              "bits": "0x3FC7F7CC"
+            },
+            {
+              "value": 0.09837055206298828,
+              "bits": "0x3DC97680"
+            }
+          ],
+          "positionEquation": "target.worldPosition + target.worldRotation * localPosition",
+          "cameraDistanceSquared": {
+            "value": 2.822427272796631,
+            "bits": "0x4034A2A6"
+          },
+          "selectedAspectAdmitted": true,
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": 1.249070405960083,
+              "bits": "0x3F9FE18A"
+            }
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": 1.1854932308197021,
+              "bits": "0x3F97BE3E"
+            }
+          }
+        }
+      ],
+      "precisionBoundary": "Claims use float32-style source equations; every target and all-frame minimum is separated from zero. Parent-mode light rotations are not needed because both selected parent followers are point lights."
+    },
+    "exactKnownAuthoredSurvivorCount": 17
+  },
+  "exactKnownAuthoredSelectedAspectSurvivors": {
+    "count": 17,
+    "setupStateRelativeOrder": [
+      "SpecLight_1 (8)",
+      "RimLight_2 (5)",
+      "SpecLight_1 (11)",
+      "Point Light_overview (2)",
+      "RimLight_2 (4)",
+      "FogLight_1 (2)",
+      "Spot Light (12)",
+      "Spot Light (19)",
+      "Linear Light (12)",
+      "Linear Light (13)",
+      "Linear Light (14)",
+      "Spot Light (17)",
+      "Linear Light (15)",
+      "Spot Light (18)",
+      "Spot Light (9)",
+      "Spot Light (11)",
+      "Spot Light (10)"
+    ],
+    "rows": [
+      {
+        "name": "SpecLight_1 (8)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 2.6869993209838867,
+          "bits": "0x402BF7CC"
+        }
+      },
+      {
+        "name": "RimLight_2 (5)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 2.769850730895996,
+          "bits": "0x4031453C"
+        }
+      },
+      {
+        "name": "SpecLight_1 (11)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 2.822427272796631,
+          "bits": "0x4034A2A6"
+        }
+      },
+      {
+        "name": "Point Light_overview (2)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 3.042111873626709,
+          "bits": "0x4042B1F6"
+        }
+      },
+      {
+        "name": "RimLight_2 (4)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 6.110769271850586,
+          "bits": "0x40C38B6C"
+        }
+      },
+      {
+        "name": "FogLight_1 (2)",
+        "source": "light_overview",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 9.23973560333252,
+          "bits": "0x4113D5F5"
+        }
+      },
+      {
+        "name": "Spot Light (12)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 73.17103576660156,
+          "bits": "0x42925792"
+        }
+      },
+      {
+        "name": "Spot Light (19)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 88.91108703613281,
+          "bits": "0x42B1D27A"
+        }
+      },
+      {
+        "name": "Linear Light (12)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 113.54882049560547,
+          "bits": "0x42E318FF"
+        }
+      },
+      {
+        "name": "Linear Light (13)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 138.00184631347656,
+          "bits": "0x430A0079"
+        }
+      },
+      {
+        "name": "Linear Light (14)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 152.18710327148438,
+          "bits": "0x43182FE6"
+        }
+      },
+      {
+        "name": "Spot Light (17)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 159.4006805419922,
+          "bits": "0x431F6693"
+        }
+      },
+      {
+        "name": "Linear Light (15)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 179.1670684814453,
+          "bits": "0x43332AC5"
+        }
+      },
+      {
+        "name": "Spot Light (18)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 195.24844360351562,
+          "bits": "0x43433F9A"
+        }
+      },
+      {
+        "name": "Spot Light (9)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 200.93649291992188,
+          "bits": "0x4348EFBE"
+        }
+      },
+      {
+        "name": "Spot Light (11)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 321.4896240234375,
+          "bits": "0x43A0BEAC"
+        }
+      },
+      {
+        "name": "Spot Light (10)",
+        "source": "SceneLight6Rarity",
+        "priority": 0,
+        "cameraDistanceSquared": {
+          "value": 414.9300231933594,
+          "bits": "0x43CF770B"
+        }
+      }
+    ],
+    "scope": "exact relative order of the 17 known authored survivors only; unknown persistent/global or runtime-created records may interleave"
   },
   "evidenceBoundary": {
     "closed": [
@@ -1319,19 +2456,24 @@
       "twelve selected SceneLight6Rarity room rows",
       "known 18-row authored type/cookie/shadow census",
       "installed native follower traversal, node selection, and transform modes",
+      "installed Gacha layer index 30, recursive assignment, and selected-view mask gate",
+      "identity GachaRoom/TimelineRoot, character prefab, model, and light-root placement",
+      "entrance and loop direct QVV pose chains with no mapped muscle lanes",
+      "constant decoded ACL root-motion streams and remove-start-offset identity result",
       "shipped normal candidate core with fallback and Gacha occlusion disabled",
       "generic room layer/mask gate for all twelve room rows",
       "read-only installed-client 3840x2160 selection from matching Unity and game registry values",
       "selected-aspect initial AABB, authored OBB, and type-specific geometry for all twelve room rows",
-      "exact 11-row selected-aspect room subset, Spot Light (20) rejection, and 17-row authored upper bound"
+      "exact 11-row selected-aspect room subset and Spot Light (20) rejection",
+      "exact six-row selected-aspect character subset at the settled loop boundary and across all 844 decoded QVV frames",
+      "exact 17-row known authored contribution and its internal priority/distance order"
     ],
     "open": [
       "target-frame HGCullingSystem.CullLights pointer/count and survivors",
-      "character-light cull outcomes and evaluated follower transforms",
       "room outcomes for display aspects other than this installed-client 16:9 selection",
       "persistent/global carry-in or runtime-created custom lights",
-      "final priority/distance order, LightDataBuffer rows, and lightCount"
+      "whole-list priority/distance order, LightDataBuffer rows, and lightCount"
     ],
-    "decision": "Use 18 as the exact known serialized input population, 11 as the exact selected-aspect authored room contribution, and 17 only as the combined authored survivor upper bound. Do not publish the latter as the retail survivor array or enable deferred pass 0 until the target-frame result is captured or otherwise source-closed."
+    "decision": "Use 18 as the exact known serialized input population, 11 as the exact selected-aspect authored room contribution, six as the exact character contribution, and 17 as the exact known authored survivor contribution. Do not publish those 17 rows as the complete retail survivor array or enable deferred pass 0 until runtime/custom carry-in and the native target-frame result are captured or otherwise source-closed."
   }
 }
