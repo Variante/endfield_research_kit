@@ -775,6 +775,21 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
 .mp-timeline-control-decision.is-conditional { border-left-color: #9a6c2f; }
 .mp-timeline-control-decision code,
 .mp-timeline-event-predicate code { overflow-wrap: anywhere; }
+.mp-timeline-spatial-context {
+  margin: 5px 0;
+  padding: 5px 7px;
+  border: 1px solid rgba(69, 115, 154, 0.28);
+  border-left: 3px solid #45739a;
+  border-radius: 4px;
+  background: rgba(69, 115, 154, 0.07);
+}
+.mp-timeline-spatial-context ul {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0;
+  padding-left: 18px;
+}
+.mp-timeline-spatial-context > small { color: var(--muted); }
 .mp-timeline-activation details > div {
   display: grid;
   gap: 2px;

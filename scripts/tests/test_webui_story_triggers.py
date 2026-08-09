@@ -191,6 +191,10 @@ for (const [key, category] of [
         self.assertIn("route.localTriggerVolumeContext", source)
         self.assertIn('t("timelineEmbeddedTriggerVolume")', source)
         self.assertIn("volume.waitSrvRes", source)
+        self.assertIn("timelineQuestSpatialContextsHtml", source)
+        self.assertIn("route?.questSpatialContexts", source)
+        self.assertIn('t("timelineEmbeddedQuestSpatialBoundary")', source)
+        self.assertIn("row.containmentMethod", source)
         self.assertIn("route.relatedOriginalFiles", source)
         self.assertIn(
             "A conditional path proves the authored route, not that its case was selected at runtime; parallel siblings remain unordered.",

@@ -771,8 +771,12 @@
       timelineEmbeddedTriggerVolumeBoundary: "The event selector resolves to this same-LevelScript volume. Its serialized fields contain no mission or quest foreign identity.",
       timelineEmbeddedMissionShell: "validated mission shell",
       timelineEmbeddedMissionAreaContext: "mission-area context only",
+      timelineEmbeddedQuestSpatialContext: "quest tracking points inside this trigger",
+      timelineEmbeddedQuestSpatialPoint: "typed tracking point",
+      timelineEmbeddedQuestSpatialContainment: "exact containment",
+      timelineEmbeddedQuestSpatialBoundary: "The original quest tracking target lies inside the exact event-selected trigger shape. This narrows spatial context only; it does not prove that the quest entered the volume, activated or owns playback, selected a branch, or orders Story files.",
       timelineEmbeddedActivationFiles: "related original files",
-      timelineEmbeddedActivationBoundary: "The typed event/action path proves parent-dialog playback, exact local trigger geometry proves where the event listens, and a unique LevelData member-22 host proves only the mission shell. A conditional path proves the authored route, not that its case was selected at runtime; parallel siblings remain unordered. None proves the activating quest or cross-Timeline order.",
+      timelineEmbeddedActivationBoundary: "The typed event/action path proves parent-dialog playback, exact local trigger geometry proves where the event listens, and a unique LevelData member-22 host proves only the mission shell. Typed quest tracking points inside that shape are spatial context, not activation. A conditional path proves the authored route, not that its case was selected at runtime; parallel siblings remain unordered. None proves the activating quest or cross-Timeline order.",
       timelineEmbeddedParallelFanout: "parallel fan-out; siblings unordered",
       timelineEmbeddedConditionalRoute: "conditional authored route",
       timelineEmbeddedSelectionUnobserved: "runtime selection not observed",
@@ -1523,8 +1527,12 @@
       timelineEmbeddedTriggerVolumeBoundary: "事件选择器解析到同一 LevelScript 中的该触发区域；其序列化字段不含使命或任务外键身份。",
       timelineEmbeddedMissionShell: "已验证使命外壳",
       timelineEmbeddedMissionAreaContext: "仅使命区域上下文",
+      timelineEmbeddedQuestSpatialContext: "位于该触发区域内的任务跟踪点",
+      timelineEmbeddedQuestSpatialPoint: "类型化跟踪点",
+      timelineEmbeddedQuestSpatialContainment: "精确包含关系",
+      timelineEmbeddedQuestSpatialBoundary: "原始任务跟踪目标位于事件精确选中的触发形状内。这只缩小空间上下文；不证明任务实际进入区域、激活或拥有播放、选择分支，也不证明 Story 文件顺序。",
       timelineEmbeddedActivationFiles: "相关原始文件",
-      timelineEmbeddedActivationBoundary: "类型化事件/动作路径证明父对话播放，精确本地触发区域证明事件监听位置，唯一的 LevelData member-22 宿主仅证明使命外壳。条件路径只证明作者编写了该路线，不证明运行时实际选择了该分支；并行同级保持无序。这些都不证明激活任务或跨 Timeline 顺序。",
+      timelineEmbeddedActivationBoundary: "类型化事件/动作路径证明父对话播放，精确本地触发区域证明事件监听位置，唯一的 LevelData member-22 宿主仅证明使命外壳。位于该形状内的类型化任务跟踪点只是空间上下文，不是激活证据。条件路径只证明作者编写了该路线，不证明运行时实际选择了该分支；并行同级保持无序。这些都不证明激活任务或跨 Timeline 顺序。",
       timelineEmbeddedParallelFanout: "并行分流；同级无序",
       timelineEmbeddedConditionalRoute: "作者编写的条件路线",
       timelineEmbeddedSelectionUnobserved: "未观测到运行时选择",
@@ -3588,6 +3596,23 @@
     </details>`;
   }
 
+  function timelineQuestSpatialContextsHtml(route) {
+    const contexts = (route?.questSpatialContexts || []).filter((row) => row?.questId);
+    if (!contexts.length) return "";
+    const rows = contexts.map((row) => {
+      const point = row.trackingPosition || {};
+      const pointText = [point.x, point.y, point.z].every((value) => value != null)
+        ? `(${point.x}, ${point.y}, ${point.z})`
+        : "?";
+      const identity = row.missionAreaId || row.npcProxyId || row.sourceType || "tracking";
+      const containment = row.containmentMethod === "sphere_radius"
+        ? `distance=${row.distanceToCenter ?? "?"}, margin=${row.boundaryMargin ?? "?"}`
+        : Object.entries(row.boundaryMargins || {}).map(([axis, value]) => `${axis}=${value}`).join(", ");
+      return `<li><code>${esc(row.questId)}</code> <b>${esc(row.trackingType || t("timelineEmbeddedQuestSpatialPoint"))}</b> <code>${esc(identity)}</code><br><small>${esc(t("timelineEmbeddedQuestSpatialPoint"))} <code>${esc(pointText)}</code>${containment ? ` · ${esc(t("timelineEmbeddedQuestSpatialContainment"))} <code>${esc(containment)}</code>` : ""}</small></li>`;
+    }).join("");
+    return `<details class="mp-timeline-spatial-context"><summary>${esc(t("timelineEmbeddedQuestSpatialContext"))} <span>${contexts.length}</span></summary><ul>${rows}</ul><small>${esc(t("timelineEmbeddedQuestSpatialBoundary"))}</small></details>`;
+  }
+
   function missionTimelineActivationHtml() {
     const missionId = String(state.missionId || state.mission?.mission?.id || "");
     const audit = state.index?.storyCoverage?.timelineEmbeddedStoryRuntimeAudit || {};
@@ -3606,8 +3631,9 @@
           : t("timelineEmbeddedConditionalRoute");
         return `<small class="mp-timeline-control-decision ${conditional ? "is-conditional" : "is-parallel"}"><b>${esc(label)}</b> <code>${esc(decision.selectedEdge || "?")}</code>${conditional ? `<br>${esc(t("timelineEmbeddedSelectionUnobserved"))}` : ""}</small>`;
       }).join("");
+      const spatialContexts = timelineQuestSpatialContextsHtml(route);
       const files = (route.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.role || "file")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}<br><code>${esc(file.path || "")}</code></small>`).join("");
-      return `<article><header><code>${esc(route.levelId || "?")}/${esc(route.scriptId || "?")}</code><b>${esc(route.dialogKey || "?")}</b></header><p><code>${esc(route.headerName || "?")} #${esc(route.headerLocalId ?? "?")}</code> &rarr; <code>#${esc(route.playActionLocalId ?? "?")} ${esc(route.playActionName || "play_dialog")}</code></p><p>${storyKeys}</p>${path ? `<ol>${path}</ol>` : ""}${decisions}<details><summary>${esc(t("timelineEmbeddedActivationFiles"))} <span>${(route.relatedOriginalFiles || []).length}</span></summary>${files}</details></article>`;
+      return `<article><header><code>${esc(route.levelId || "?")}/${esc(route.scriptId || "?")}</code><b>${esc(route.dialogKey || "?")}</b></header><p><code>${esc(route.headerName || "?")} #${esc(route.headerLocalId ?? "?")}</code> &rarr; <code>#${esc(route.playActionLocalId ?? "?")} ${esc(route.playActionName || "play_dialog")}</code></p><p>${storyKeys}</p>${path ? `<ol>${path}</ol>` : ""}${decisions}${spatialContexts}<details><summary>${esc(t("timelineEmbeddedActivationFiles"))} <span>${(route.relatedOriginalFiles || []).length}</span></summary>${files}</details></article>`;
     }).join("");
     return `<details class="mp-mission-story mp-timeline-activation" data-weight="context" open><summary>${esc(t("timelineEmbeddedActivationChain"))} <span>${routes.length}</span></summary>${routeHtml}<small class="mp-timeline-activation-boundary">${esc(t("timelineEmbeddedActivationBoundary"))}</small></details>`;
   }
@@ -3930,7 +3956,7 @@
         const triggerHtml = triggerVolumes ? `<details open><summary>${esc(t("timelineEmbeddedTriggerVolume"))} <span>${(triggerContext.triggerVolumes || []).length}</span></summary>${triggerVolumes}<small>${esc(t("timelineEmbeddedTriggerVolumeBoundary"))}</small></details>` : "";
         const missionAreas = (route.missionAreaReferences || []).map((reference) => `<small><code>${esc(reference.missionId || "?")}</code> / <code>${esc(reference.questId || "?")}</code> / <code>${esc(reference.missionAreaId || "?")}</code></small>`).join("");
         const files = (route.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.role || "file")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}<br><code>${esc(file.path || "")}</code></small>`).join("");
-        return `<article><header><b>${esc(t("timelineEmbeddedActivationRoute"))}</b><code>${esc(route.levelId || "?")}/${esc(route.scriptId || "?")}</code></header><p><code>${esc(route.headerName || "?")} #${esc(route.headerLocalId ?? "?")}</code> &rarr; <code>#${esc(route.playActionLocalId ?? "?")} ${esc(route.playActionName || "play_dialog")}</code> &rarr; <code>${esc(route.dialogKey || "?")}</code></p>${eventPredicate}${actionChain ? `<ol>${actionChain}</ol>` : ""}${controlDecisions}${triggerHtml}${missions ? `<p><strong>${esc(t("timelineEmbeddedMissionShell"))}</strong> ${missions}</p>` : ""}${missionAreas ? `<details><summary>${esc(t("timelineEmbeddedMissionAreaContext"))} <span>${(route.missionAreaReferences || []).length}</span></summary>${missionAreas}</details>` : ""}${files ? `<details><summary>${esc(t("timelineEmbeddedActivationFiles"))} <span>${(route.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}<small class="mp-timeline-activation-boundary">${esc(t("timelineEmbeddedActivationBoundary"))}</small></article>`;
+        return `<article><header><b>${esc(t("timelineEmbeddedActivationRoute"))}</b><code>${esc(route.levelId || "?")}/${esc(route.scriptId || "?")}</code></header><p><code>${esc(route.headerName || "?")} #${esc(route.headerLocalId ?? "?")}</code> &rarr; <code>#${esc(route.playActionLocalId ?? "?")} ${esc(route.playActionName || "play_dialog")}</code> &rarr; <code>${esc(route.dialogKey || "?")}</code></p>${eventPredicate}${actionChain ? `<ol>${actionChain}</ol>` : ""}${controlDecisions}${triggerHtml}${missions ? `<p><strong>${esc(t("timelineEmbeddedMissionShell"))}</strong> ${missions}</p>` : ""}${missionAreas ? `<details><summary>${esc(t("timelineEmbeddedMissionAreaContext"))} <span>${(route.missionAreaReferences || []).length}</span></summary>${missionAreas}</details>` : ""}${timelineQuestSpatialContextsHtml(route)}${files ? `<details><summary>${esc(t("timelineEmbeddedActivationFiles"))} <span>${(route.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}<small class="mp-timeline-activation-boundary">${esc(t("timelineEmbeddedActivationBoundary"))}</small></article>`;
       }).join("")}</section>` : "";
       return `<details class="mp-timeline-runtime"><summary><strong>${esc(t("timelineEmbeddedRuntime"))}</strong> <span>${rows.length}</span></summary><p><strong>${esc(t("timelineEmbeddedRuntimeChain"))}</strong></p>${chain}${activationHtml}${controlChain}${clips}<small>${esc(t("timelineEmbeddedRuntimeBoundary"))}</small></details>`;
     };
