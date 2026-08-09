@@ -75,6 +75,13 @@ processes while map-filtered asset conversion remains sharded. Reduce
 - AnimationClip fixes must preserve runtime curves and fail visibly on new
   layouts.
 - Audio decoding separates shared media from language voice.
+- The CLI intentionally stops at WEM or decoded WAV: `build_audio.py` now uses
+  the WAV path as an intermediate and converts browser-facing output to
+  lossless FLAC with `ffmpeg`, deleting the temporary WAV only after an atomic
+  replacement succeeds. FLAC preserves decoded PCM samples and reduces disk
+  use substantially, but unusual source channel layouts have produced
+  converter metadata warnings and need a dedicated layout audit before being
+  called fully certified.
 - Projectile managed references use current IL2CPP field order plus guarded
   path-plus-id/id-only gameplay-tag variants. A projectile component is marked
   exact only when its full prefix, movement dictionary, effect lists, alert,

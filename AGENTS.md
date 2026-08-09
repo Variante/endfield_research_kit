@@ -108,6 +108,10 @@ maintenance. The audio builder writes shared SFX/music once under
 `export_full/structured/Audio/shared/` and language voice under
 `export_full/structured/Audio/<LANG>/`, parses Wwise bank event-to-media links,
 and post-processes generated conversation JSON with playable `audioSrc` links.
+AnimeStudio decodes Wwise media to temporary WAV files; `build_audio.py`
+converts the browser-facing output to lossless FLAC by default and removes the
+temporary WAV after successful conversion. The FLAC step requires `ffmpeg`;
+use `--audio-format wav` to retain WAV or `--format wem` for legacy WEM output.
 It also writes the compact
 per-language Gameplay skill/enemy SFX sidecar from exact SkillData/BuffData
 references and Wwise event traversal. The default exporter mode is
@@ -180,6 +184,7 @@ python scripts\build_presentation_data.py --languages CN
 python scripts\story_recovery\build_option_override_coverage_audit.py --language CN
 python scripts\build_assets.py
 python scripts\build_audio.py
+python scripts\convert_audio_to_flac.py --audio-root export_full\structured\Audio --dry-run
 python scripts\download_bilibili_video.py --dry-run
 python scripts\pack_webui.py
 ```

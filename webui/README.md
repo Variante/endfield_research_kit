@@ -74,6 +74,13 @@ sidecars independently. Missing optional sidecars must degrade to the base
 record instead of breaking the page. Presentation and combat builders expose a
 visible degraded reason when their source graph is absent or stale.
 
+Playable recovered audio is served from
+`/export_full/structured/Audio/{shared,<LANG>}/`. The normal builder emits
+lossless `.flac` files and writes those paths into Story, cutscene, projectile,
+and Gameplay sound payloads; the frontend uses the same native audio control
+for FLAC and WAV links. Legacy WEM files remain indexable for diagnostics but
+are not a browser-playable output format.
+
 ## Runtime overrides
 
 Manual inputs live under `webui/overrides/`:

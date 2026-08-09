@@ -86,6 +86,11 @@ installed client. Use `--export-from-game` only for an intentional fresh
 extraction. Asset export modes are `--focused-assets`, `--default-assets`, and
 `--debug-assets`; use `--animestudio-jobs N` to reduce peak memory.
 
+Audio served by the WebUI is lossless FLAC by default. `export_assets.bat` (or
+`export.bat --with-assets`) converts decoded WAV audio and relinks generated
+Story/Gameplay data; the conversion requires `ffmpeg` when WAV files are
+present.
+
 To build more languages:
 
 ```bat
