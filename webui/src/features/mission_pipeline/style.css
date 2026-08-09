@@ -1044,6 +1044,13 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
   margin: 2px 0;
 }
 
+.mp-dialog-finish-task-shape {
+  border-top: 1px solid rgba(111, 76, 164, 0.16);
+  border-bottom: 1px solid rgba(111, 76, 164, 0.16);
+  background: rgba(111, 76, 164, 0.035);
+  line-height: 1.55;
+}
+
 .mp-contract-details {
   border-top: 1px solid var(--border);
   background: #fbfcfc;

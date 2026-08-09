@@ -366,6 +366,18 @@ for (const [key, category] of [
         self.assertIn('t("extraThreadSiblingBoundary")', source)
         self.assertIn("extraThreadScheduler.relatedOriginalFiles", source)
 
+    def test_mission_pipeline_surfaces_generic_task_lifecycle_and_carriers(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("levelScriptTaskLifecycleAudit", source)
+        self.assertIn("serverStateApplicationChain", source)
+        self.assertIn("processingConditionCallCount", source)
+        self.assertIn("dialogFinishTaskDefinitionHtml", source)
+        self.assertIn("definition.taskTypeName", source)
+        self.assertIn("definition.conditionTypeCounts", source)
+        self.assertIn("externalTaskIdentityCarriers", source)
+        self.assertIn('t("dialogFinishTaskUncarried")', source)
+        self.assertIn("does not identify a mission owner or Story-file order", source)
+
     def test_mission_pipeline_labels_declared_story_variant_aggregates(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("mission.storyAggregateShell === true", source)

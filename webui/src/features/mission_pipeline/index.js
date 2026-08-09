@@ -401,6 +401,18 @@
       dialogFinishTaskExactConsumers: "exact LevelScript consumers",
       dialogFinishTaskCompleteMaps: "complete maps",
       dialogFinishTaskFragments: "bounded fragments",
+      dialogFinishTaskLifecycle: "Binary-validated task lifecycle",
+      dialogFinishTaskLifecycleHint: "Server state is forwarded through the generic LevelScript task runtime. Processing activates and binds every authored condition; condition changes report the exact level/script/task/condition identity. This does not identify a mission owner or Story-file order.",
+      dialogFinishTaskDefinition: "Authored task shape",
+      dialogFinishTaskType: "task type",
+      dialogFinishTaskFlags: "flags",
+      dialogFinishTaskConditions: "conditions",
+      dialogFinishTaskUntracked: "untracked",
+      dialogFinishTaskTracked: "tracked",
+      dialogFinishTaskManual: "manual check",
+      dialogFinishTaskAutomatic: "automatic check",
+      dialogFinishTaskCarrier: "exact external script/task carriers",
+      dialogFinishTaskUncarried: "task identities with no external carrier",
       dialogFinishAuthoredTaskStat: "authored finish→task dependencies",
       dialogFinishUnresolvedEndpointStat: "task consumers without an authored endpoint",
       dialogFinishAnyContextStat: "mission any-finish contexts",
@@ -1458,6 +1470,18 @@
       dialogFinishTaskExactConsumers: "精确 LevelScript 消费端",
       dialogFinishTaskCompleteMaps: "完整任务图",
       dialogFinishTaskFragments: "有界片段",
+      dialogFinishTaskLifecycle: "二进制验证的任务生命周期",
+      dialogFinishTaskLifecycleHint: "服务端状态通过通用 LevelScript 任务运行时传递。Processing 会激活并绑定每个原始条件；条件变化按 level/script/task/condition 精确身份上报。这不证明使命归属或剧情文件顺序。",
+      dialogFinishTaskDefinition: "原始任务结构",
+      dialogFinishTaskType: "任务类型",
+      dialogFinishTaskFlags: "标志",
+      dialogFinishTaskConditions: "条件",
+      dialogFinishTaskUntracked: "不跟踪",
+      dialogFinishTaskTracked: "可跟踪",
+      dialogFinishTaskManual: "手动检查",
+      dialogFinishTaskAutomatic: "自动检查",
+      dialogFinishTaskCarrier: "精确外部 script/task 载体",
+      dialogFinishTaskUncarried: "无外部载体的任务身份",
       dialogFinishAuthoredTaskStat: "原始完成端点→任务依赖",
       dialogFinishUnresolvedEndpointStat: "缺少原始结束端点的任务消费端",
       dialogFinishAnyContextStat: "使命任意完成上下文",
@@ -2596,6 +2620,12 @@
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.exactConsumerCoverage || 0).toLocaleString()} / ${Number(recoveryCounts.exactMissionConsumers || 0).toLocaleString()} ${esc(t("dialogFinishExactCoverageStat"))}: ${Number(recoveryCounts.publishedDependencies || 0).toLocaleString()} ${esc(t("dialogFinishBranchStat"))} + ${Number(recoveryCounts.publishedEndpointDependencies || 0).toLocaleString()} ${esc(t("dialogFinishEndpointStat"))} · ${Number(recoveryCounts.dialogTreeValidatedFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogTreeValidatedFinishEndpoints"))} / ${Number(recoveryCounts.dialogTreeRejectedFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogTreeRejectedFinishEndpoints"))}</span>`);
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskSharedConsumerDependencies || 0).toLocaleString()} ${esc(t("dialogFinishTaskStat"))} / ${Number(recoveryCounts.levelScriptTaskSameMissionShellDependencies || 0).toLocaleString()} ${esc(t("dialogFinishOwnedTaskStat"))} · ${Number(recoveryCounts.levelScriptTaskExactFinishConsumers || 0).toLocaleString()} ${esc(t("dialogFinishTaskExactConsumers"))} (${Number(recoveryCounts.levelScriptTaskSharedConsumerCompleteMaps || 0).toLocaleString()} ${esc(t("dialogFinishTaskCompleteMaps"))} + ${Number(recoveryCounts.levelScriptTaskSharedConsumerFragments || 0).toLocaleString()} ${esc(t("dialogFinishTaskFragments"))})</span>`);
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskAuthoredFinishDependencies || 0).toLocaleString()} ${esc(t("dialogFinishAuthoredTaskStat"))} / ${Number(recoveryCounts.levelScriptTaskUnresolvedAuthoredFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogFinishUnresolvedEndpointStat"))} · ${Number(recoveryCounts.levelScriptTaskAnyFinishMissionContexts || 0).toLocaleString()} ${esc(t("dialogFinishAnyContextStat"))} · ${Number(recoveryCounts.levelScriptTaskMissionScriptContexts || 0).toLocaleString()} ${esc(t("dialogFinishScriptContextStat"))}</span>`);
+      sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskExternalIdentityCarriers || 0).toLocaleString()} ${esc(t("dialogFinishTaskCarrier"))} / ${Number(recoveryCounts.levelScriptTaskExternalUncarriedIdentities || 0).toLocaleString()} ${esc(t("dialogFinishTaskUncarried"))}</span>`);
+      const lifecycle = state.index?.runtimeContract?.levelScriptTaskLifecycleAudit || {};
+      if (lifecycle.validation?.status === "validated") {
+        const chain = (lifecycle.serverStateApplicationChain || []).map((symbol) => `<code>${esc(symbol)}</code>`).join(" &rarr; ");
+        sourceNode.insertAdjacentHTML("beforeend", `<span><strong>${esc(t("dialogFinishTaskLifecycle"))}:</strong> ${chain} · ${Number(lifecycle.processingConditionCallCount || 0).toLocaleString()} ${esc(t("dialogFinishTaskConditions"))}</span><small>${esc(lifecycle.boundary || t("dialogFinishTaskLifecycleHint"))}</small>`);
+      }
     }
   }
 
@@ -4178,6 +4208,18 @@
     </details>${nonMissionContentHtml(nonMissionRows)}`;
   }
 
+  function dialogFinishTaskDefinitionHtml(row) {
+    const definition = row?.taskDefinition;
+    if (!definition) return "";
+    const conditionTypes = Object.entries(definition.conditionTypeCounts || {})
+      .map(([name, count]) => `<code>${esc(name)}=${Number(count).toLocaleString()}</code>`)
+      .join(" ");
+    const tracking = definition.canBeTracked ? t("dialogFinishTaskTracked") : t("dialogFinishTaskUntracked");
+    const checking = definition.needManualCheck ? t("dialogFinishTaskManual") : t("dialogFinishTaskAutomatic");
+    const carriers = row.externalTaskIdentityCarriers || [];
+    return `<p class="mp-dialog-finish-task-shape"><strong>${esc(t("dialogFinishTaskDefinition"))}:</strong> ${esc(t("dialogFinishTaskType"))} <code>${esc(definition.taskTypeName || (definition.taskType ?? "?"))}</code> · ${esc(t("dialogFinishTaskFlags"))} <code>${esc(tracking)}</code> <code>${esc(checking)}</code> · ${Number(definition.conditionCount || 0).toLocaleString()} ${esc(t("dialogFinishTaskConditions"))} ${conditionTypes}</p><small><strong>${esc(t("dialogFinishTaskCarrier"))}:</strong> ${Number(carriers.length).toLocaleString()}</small>`;
+  }
+
   function dialogFinishUnmatchedTaskDependenciesHtml() {
     const rows = state.index?.dialogFinishBranchRecovery
       ?.missionRuntimeUnmatchedLevelScriptTaskFinishDependencies || [];
@@ -4192,6 +4234,7 @@
         return `<article class="mp-dialog-finish-unmatched-row">
           <header><a href="${esc(storyHref(row.dialogId || ""))}"><code>${esc(row.dialogId || "?")}</code></a><b>${esc(t("finish"))} ${esc(row.finishId ?? "?")}</b><i>&rarr;</i><code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}</code></header>
           <p><strong>${esc(t("dialogFinishTaskConsumer"))}:</strong> <code>${esc(taskId)}</code> / <code>${esc(row.taskConditionId || "?")}</code> / <code>${esc(row.taskMapDecodeStatus || "?")}</code></p>
+          ${dialogFinishTaskDefinitionHtml(row)}
           <small>${esc(t("dialogFinishTaskOwnershipGap"))} · exact ${Number(contexts.exactFinishPlacements || 0).toLocaleString()} / any ${Number(contexts.anyFinishPlacements || 0).toLocaleString()} / script ${Number(contexts.exactScriptPlacements || 0).toLocaleString()}</small>
           ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
         </article>`;
@@ -6370,6 +6413,7 @@
       return `<details open class="mp-quest-task-dependency mp-dialog-finish-branch-dependency mp-dialog-finish-task-dependency">
         <summary><b>${esc(t("dialogFinishLevelScriptTaskDependencies"))}</b> ${options}<i>&rarr;</i><code>${esc(row.dialogId || "?")} / ${esc(t("finish"))} ${esc(row.finishId ?? "?")}</code><i>&rarr;</i><code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}</code> ${taskId}</summary>
         <p><strong>${esc(t("dialogFinishTaskConsumer"))}:</strong> <code>${esc(row.taskConditionId || "?")}</code> / <code>CheckTalkOptionFinish</code> / <code>${esc(row.taskMapDecodeStatus || "?")}</code></p>
+        ${dialogFinishTaskDefinitionHtml(row)}
         ${ownerHtml}
         <small>${esc(row.evidenceBoundary || t("dialogFinishLevelScriptTaskDependencyHint"))}</small>
         ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}

@@ -7484,6 +7484,117 @@ def load_levelscript_task_authority_contract(
     }
 
 
+def load_levelscript_task_lifecycle_contract(
+    audit_path: Path = DEFAULT_PROTOCOL_REGISTRY_AUDIT,
+) -> dict[str, Any]:
+    """Revalidate the current-binary generic task-condition lifecycle."""
+    validator = "levelscript_task_lifecycle_contract"
+    if not audit_path.is_file():
+        raise RuntimeError(
+            f"validator={validator} gate=auditExists expected=file "
+            f"actual=missing source={audit_path}"
+        )
+    audit = read_json(audit_path)
+    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
+        raise RuntimeError(
+            f"validator={validator} gate=auditSchema "
+            "expected='endfieldProtocolRegistryAudit.v20' "
+            f"actual={audit.get('_schema')!r} source={audit_path}"
+        )
+    contract = audit.get("levelScriptTaskLifecycle") or {}
+    expected = {
+        "schema": "levelScriptTaskLifecycle.v1",
+        "classification": "generic_server_selected_task_condition_lifecycle",
+        "status": "validated",
+        "states": {"None": 0, "Processing": 1, "Completed": 2},
+        "taskTypes": {
+            "None": 0,
+            "Main": 1,
+            "Extra": 2,
+            "Fail": 3,
+            "Custom": 4,
+        },
+        "stateArgumentForwarding": True,
+        "conditionProgressSender": (
+            "Beyond.Gameplay.GameplayNetwork.SendLevelScriptUpdateTaskProgress"
+        ),
+        "conditionIdentityFieldReads": [
+            "levelScriptPtr",
+            "levelNum",
+            "taskKey",
+            "conditionId",
+        ],
+    }
+    actual = {
+        "schema": contract.get("schema"),
+        "classification": contract.get("classification"),
+        "status": (contract.get("validation") or {}).get("status"),
+        "states": contract.get("scriptTaskStateEnum"),
+        "taskTypes": contract.get("levelScriptTaskTypeEnum"),
+        "stateArgumentForwarding": contract.get("stateArgumentForwarding"),
+        "conditionProgressSender": contract.get("conditionProgressSender"),
+        "conditionIdentityFieldReads": contract.get(
+            "conditionIdentityFieldReads"
+        ),
+    }
+    if actual != expected:
+        raise RuntimeError(
+            f"validator={validator} gate=contractShape "
+            f"expected={expected!r} actual={actual!r} source={audit_path}"
+        )
+    processing_calls = contract.get("processingConditionCallCount")
+    if not isinstance(processing_calls, int) or processing_calls < 1:
+        raise RuntimeError(
+            f"validator={validator} gate=processingConditionCallCount "
+            f"expected=>=1 actual={processing_calls!r} source={audit_path}"
+        )
+    expected_operations = [
+        "Beyond.Gameplay.GameCondition+ResultChange..ctor",
+        "System.Delegate.Combine",
+        "Beyond.Gameplay.GameCondition.Activate",
+        "Beyond.Gameplay.GameCondition.BindingEvent",
+    ]
+    if contract.get("conditionProcessingOperations") != expected_operations:
+        raise RuntimeError(
+            f"validator={validator} gate=conditionProcessingOperations "
+            f"expected={expected_operations!r} "
+            f"actual={contract.get('conditionProcessingOperations')!r} "
+            f"source={audit_path}"
+        )
+    source = audit.get("source") or {}
+    related_files: list[dict[str, Any]] = []
+    for path_key, hash_key, kind in (
+        ("gameAssembly", "gameAssemblySha256", "original_game_binary"),
+        ("metadata", "metadataSha256", "original_game_metadata"),
+    ):
+        source_text = str(source.get(path_key) or "")
+        expected_hash = str(source.get(hash_key) or "").lower()
+        source_path = Path(source_text)
+        if not source_text or not source_path.is_file():
+            raise RuntimeError(
+                f"validator={validator} gate=sourceExists expected=file "
+                f"actual=missing source={source_text or path_key}"
+            )
+        actual_hash = sha256_path(source_path)
+        if actual_hash != expected_hash:
+            raise RuntimeError(
+                f"validator={validator} gate=sourceHash "
+                f"expected={expected_hash!r} actual={actual_hash!r} "
+                f"source={source_path}"
+            )
+        related_files.append({
+            "kind": kind,
+            "sourceFile": str(source_path.resolve()),
+            "sha256": actual_hash,
+            "relationship": "generic_levelscript_task_lifecycle",
+        })
+    return {
+        **contract,
+        "source": repo_path(audit_path),
+        "relatedOriginalFiles": related_files,
+    }
+
+
 def load_levelscript_start_policy_contract(
     audit_path: Path = DEFAULT_PROTOCOL_REGISTRY_AUDIT,
 ) -> dict[str, Any]:
@@ -11550,6 +11661,7 @@ def build_all(
         load_action_extra_thread_scheduler_contract()
     )
     task_authority_contract = load_levelscript_task_authority_contract()
+    task_lifecycle_contract = load_levelscript_task_lifecycle_contract()
     start_policy_contract = load_levelscript_start_policy_contract()
     manual_self_control_contract = (
         load_levelscript_manual_self_control_contract()
@@ -11565,6 +11677,7 @@ def build_all(
         "stateUpdateApplicationAudit": state_update_contract,
         "actionExtraThreadSchedulerAudit": extra_thread_scheduler_contract,
         "levelScriptTaskAuthorityAudit": task_authority_contract,
+        "levelScriptTaskLifecycleAudit": task_lifecycle_contract,
         "levelScriptStartPolicyAudit": start_policy_contract,
         "levelScriptManualSelfControlAudit": manual_self_control_contract,
         "levelScriptActivationControlAudit": activation_control_contract,

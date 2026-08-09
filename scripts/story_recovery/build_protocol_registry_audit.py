@@ -3887,6 +3887,533 @@ def runtime_type_field_offsets(
     }
 
 
+def validate_levelscript_task_lifecycle_observation(
+    observation: dict[str, Any],
+    *,
+    source_file: str,
+    source_hashes: dict[str, str],
+) -> dict[str, Any]:
+    """Fail closed on the reusable LevelScript task-state pattern.
+
+    The validator deliberately checks structural discoveries rather than a
+    catalog of scene, script, task, or dialog ids.  That keeps task recovery
+    build-wide and makes current-binary drift actionable.
+    """
+    failures: list[dict[str, Any]] = []
+
+    def check(gate: str, expected: Any, actual: Any) -> None:
+        if actual == expected:
+            return
+        failures.append({
+            "validator": "levelscript_task_lifecycle_contract",
+            "gate": gate,
+            "expected": expected,
+            "actual": actual,
+            "sourceFile": source_file,
+            "sourceHashes": source_hashes,
+        })
+
+    check(
+        "scriptTaskStateEnum",
+        {"None": 0, "Processing": 1, "Completed": 2},
+        observation.get("scriptTaskStateEnum"),
+    )
+    check(
+        "levelScriptTaskTypeEnum",
+        {"None": 0, "Main": 1, "Extra": 2, "Fail": 3, "Custom": 4},
+        observation.get("levelScriptTaskTypeEnum"),
+    )
+    check(
+        "serverStateApplicationChain",
+        [
+            "Beyond.Gameplay.Core.LevelScriptManager.UpdateLevelScriptTaskState",
+            "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateTaskState",
+            (
+                "Beyond.Gameplay.Core.LevelScriptRuntime+"
+                "ScriptTaskRuntime.UpdateTaskState"
+            ),
+        ],
+        observation.get("serverStateApplicationChain"),
+    )
+    check(
+        "stateArgumentForwarding",
+        True,
+        observation.get("stateArgumentForwarding"),
+    )
+    condition_calls = int(observation.get("processingConditionCallCount") or 0)
+    if condition_calls < 1:
+        check("processingConditionCallCount", ">=1", condition_calls)
+    check(
+        "conditionProcessingOperations",
+        [
+            "Beyond.Gameplay.GameCondition+ResultChange..ctor",
+            "System.Delegate.Combine",
+            "Beyond.Gameplay.GameCondition.Activate",
+            "Beyond.Gameplay.GameCondition.BindingEvent",
+        ],
+        observation.get("conditionProcessingOperations"),
+    )
+    check(
+        "conditionProgressSender",
+        "Beyond.Gameplay.GameplayNetwork.SendLevelScriptUpdateTaskProgress",
+        observation.get("conditionProgressSender"),
+    )
+    check(
+        "conditionIdentityFieldReads",
+        ["levelScriptPtr", "levelNum", "taskKey", "conditionId"],
+        observation.get("conditionIdentityFieldReads"),
+    )
+    return {
+        "status": "validation_failed" if failures else "validated",
+        "validator": "levelscript_task_lifecycle_contract",
+        "failures": failures,
+    }
+
+
+def levelscript_task_lifecycle_contract(
+    metadata: Any,
+    defaults: dict[int, tuple[int, int]],
+    helper: Any,
+    gameassembly_path: Path,
+    mapper_path: Path = NATIVE_MAPPER_HELPER,
+    metadata_path: Path = DEFAULT_METADATA,
+) -> dict[str, Any]:
+    """Recover the generic server-selected LevelScript task lifecycle.
+
+    Types and methods are discovered from metadata field/method shapes.  The
+    resulting contract contains no scene-, mission-, script-, task-, or dialog-
+    specific ids.
+    """
+    mapper = load_native_mapper(mapper_path)
+    pe = mapper.PeImage(gameassembly_path)
+    metadata_registration = mapper.find_metadata_registration(
+        pe, mapper.DEFAULT_CODE_REGISTRATION
+    )
+    if metadata_registration is None:
+        raise RuntimeError(
+            "validator=levelscript_task_lifecycle_contract "
+            "gate=metadataRegistration expected=present actual=missing "
+            f"source={gameassembly_path}"
+        )
+    metadata_summary = mapper.metadata_registration_summary(
+        pe, metadata_registration
+    )
+    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    ranges = mapper.image_method_ranges(metadata)
+    pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
+        pe, metadata, modules, ranges
+    )
+    sorted_pointers = sorted({
+        pointer
+        for pointers in pointers_by_image.values()
+        for pointer in pointers
+        if pointer
+    })
+    source_hashes = {
+        "gameAssemblySha256": file_sha256(gameassembly_path),
+        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
+    }
+
+    def type_methods(type_def: Any) -> dict[str, list[dict[str, Any]]]:
+        rows: dict[str, list[dict[str, Any]]] = {}
+        for method in metadata.methods_for(type_def):
+            row = helper.method_row(metadata, method)
+            rows.setdefault(str(row["name"]), []).append(row)
+        return rows
+
+    def discover_type(
+        *,
+        required_fields: set[str],
+        required_methods: set[str],
+        gate: str,
+    ) -> Any:
+        candidates = []
+        for type_def in metadata.types:
+            fields = {
+                metadata.string(field.name_index)
+                for field in metadata.fields_for(type_def)
+            }
+            if not required_fields <= fields:
+                continue
+            methods = set(type_methods(type_def))
+            if required_methods <= methods:
+                candidates.append(type_def)
+        if len(candidates) != 1:
+            raise RuntimeError(
+                "validator=levelscript_task_lifecycle_contract "
+                f"gate={gate} expected=1 actual="
+                f"{[metadata.type_full_name(row) for row in candidates]!r} "
+                f"source={gameassembly_path} hashes={source_hashes!r}"
+            )
+        return candidates[0]
+
+    task_runtime = discover_type(
+        required_fields={
+            "m_state",
+            "scriptPtr",
+            "taskKey",
+            "taskType",
+            "canBeTracked",
+            "needManualCheck",
+            "conditionDict",
+        },
+        required_methods={
+            "UpdateTaskState",
+            "_OnTaskStateProcessing",
+            "_OnTaskStateCompleted",
+            "_OnTaskStateNone",
+        },
+        gate="uniqueScriptTaskRuntimeShape",
+    )
+    task_condition = discover_type(
+        required_fields={
+            "levelScriptPtr",
+            "levelNum",
+            "taskKey",
+            "conditionId",
+            "condition",
+            "isCompleted",
+        },
+        required_methods={
+            "OnTaskStateProcessing",
+            "_OnConditionResultChanged",
+            "OnTaskStateNone",
+            "OnTaskStateCompleted",
+        },
+        gate="uniqueTaskConditionShape",
+    )
+
+    def unique_method(type_def: Any, name: str) -> dict[str, Any]:
+        rows = type_methods(type_def).get(name) or []
+        if len(rows) != 1:
+            raise RuntimeError(
+                "validator=levelscript_task_lifecycle_contract "
+                f"gate=uniqueMethod type={metadata.type_full_name(type_def)} "
+                f"method={name} expected=1 actual={len(rows)} "
+                f"source={gameassembly_path} hashes={source_hashes!r}"
+            )
+        return full_method_mapper_row(metadata, helper, int(rows[0]["index"]))
+
+    def map_method(row: dict[str, Any], limit: int = 8192) -> dict[str, Any]:
+        image_range = ranges.get(str(row["image"]))
+        pointers = pointers_by_image.get(str(row["image"])) or []
+        if not image_range:
+            raise RuntimeError(f"missing method range for {row['image']}")
+        slot = int(row["methodIndex"]) - int(image_range["methodStart"])
+        if not 0 <= slot < len(pointers) or not pointers[slot]:
+            raise RuntimeError(
+                f"no native pointer for {row['type']}.{row['method']}"
+            )
+        pointer = int(pointers[slot])
+        scan_size, next_pointer = mapper.estimate_scan_size(
+            pointer, sorted_pointers, limit
+        )
+        body_bytes = pe.bytes_at_va(pointer, scan_size)
+        body = mapper.build_method_body_summary(
+            row,
+            body_bytes,
+            pointer,
+            method_by_pointer,
+            pe=pe,
+            max_instructions=2400,
+        )
+        return {
+            "symbol": f"{row['type']}.{row['method']}",
+            "token": row["token"],
+            "methodIndex": row["methodIndex"],
+            "va": f"0x{pointer:x}",
+            "rva": f"0x{pe.file_offset_for_va(pointer)[2]:x}",
+            "scanBytes": scan_size,
+            "nextMethodPointerVa": (
+                f"0x{next_pointer:x}" if next_pointer else None
+            ),
+            "bodySha256": hashlib.sha256(body_bytes).hexdigest(),
+            "bodySummary": body,
+            "decodedInstructions": mapper.decode_x64_subset(
+                body_bytes, pointer, stop_offset=scan_size
+            ),
+        }
+
+    def call_rows(mapped: dict[str, Any]) -> list[dict[str, Any]]:
+        return list((mapped.get("bodySummary") or {}).get("calls") or [])
+
+    def calls_to(
+        mapped: dict[str, Any], type_name: str, method_name: str
+    ) -> list[dict[str, Any]]:
+        return [
+            call
+            for call in call_rows(mapped)
+            if any(
+                target.get("type") == type_name
+                and target.get("method") == method_name
+                for target in call.get("resolved") or []
+            )
+        ]
+
+    task_runtime_name = metadata.type_full_name(task_runtime)
+    task_condition_name = metadata.type_full_name(task_condition)
+    inner_update = map_method(unique_method(task_runtime, "UpdateTaskState"))
+    processing = map_method(unique_method(task_runtime, "_OnTaskStateProcessing"))
+    condition_processing = map_method(
+        unique_method(task_condition, "OnTaskStateProcessing")
+    )
+    result_changed = map_method(
+        unique_method(task_condition, "_OnConditionResultChanged")
+    )
+
+    # Discover the typed server handler from its protobuf parameter, then walk
+    # each exact native call target rather than pinning method indices.
+    handler_candidates: list[dict[str, Any]] = []
+    for type_def in metadata.types:
+        for method in metadata.methods_for(type_def):
+            row = helper.method_row(metadata, method)
+            parameter_types = [
+                str(param.get("typeName") or "").split("+", 1)[0]
+                for param in row.get("parameterDetails") or []
+            ]
+            if (
+                "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE"
+                in parameter_types
+                and str(row.get("name") or "").startswith(("Handle_", "_Handle_"))
+                and not metadata.type_full_name(type_def).startswith("Proto.")
+            ):
+                handler_candidates.append(
+                    full_method_mapper_row(metadata, helper, int(row["index"]))
+                )
+    if len(handler_candidates) != 1:
+        handler_symbols = [
+            f"{row['type']}.{row['method']}" for row in handler_candidates
+        ]
+        raise RuntimeError(
+            "validator=levelscript_task_lifecycle_contract "
+            "gate=uniqueTypedStateHandler expected=1 actual="
+            f"{handler_symbols!r} "
+            f"source={gameassembly_path} hashes={source_hashes!r}"
+        )
+    handler = map_method(handler_candidates[0])
+    handler_calls = [
+        (call, target)
+        for call in call_rows(handler)
+        for target in call.get("resolved") or []
+        if target.get("method") == "UpdateLevelScriptTaskState"
+    ]
+    if len(handler_calls) != 1:
+        raise RuntimeError(
+            "validator=levelscript_task_lifecycle_contract "
+            "gate=handlerUpdateCall expected=1 actual="
+            f"{len(handler_calls)} source={gameassembly_path} hashes={source_hashes!r}"
+        )
+    manager_target = handler_calls[0][1]
+    manager_update = map_method(
+        full_method_mapper_row(
+            metadata, helper, int(manager_target["methodIndex"])
+        )
+    )
+    outer_calls = [
+        (call, target)
+        for call in call_rows(manager_update)
+        for target in call.get("resolved") or []
+        if target.get("method") == "UpdateTaskState"
+        and target.get("type") == "Beyond.Gameplay.Core.LevelScriptRuntime"
+    ]
+    if len(outer_calls) != 1:
+        raise RuntimeError(
+            "validator=levelscript_task_lifecycle_contract "
+            "gate=managerRuntimeUpdateCall expected=1 actual="
+            f"{len(outer_calls)} source={gameassembly_path} hashes={source_hashes!r}"
+        )
+    outer_update = map_method(
+        full_method_mapper_row(
+            metadata, helper, int(outer_calls[0][1]["methodIndex"])
+        )
+    )
+    inner_calls = calls_to(outer_update, task_runtime_name, "UpdateTaskState")
+
+    # The task-condition processing body is hot/cold split in the current
+    # binary. Discover its outbound cold block from the native jump, then
+    # resolve its calls through the current method-pointer index.
+    condition_pointer = int(condition_processing["va"], 16)
+    condition_end = condition_pointer + int(condition_processing["scanBytes"])
+    cold_targets: list[int] = []
+    for instruction in condition_processing["decodedInstructions"]:
+        text = str(instruction.get("text") or "")
+        match = re.fullmatch(r"jmp 0x([0-9a-f]+)", text, re.I)
+        if not match:
+            continue
+        target = int(match.group(1), 16)
+        if not condition_pointer <= target < condition_end:
+            cold_targets.append(target)
+    cold_operations: list[str] = []
+    cold_blocks: list[dict[str, Any]] = []
+    for target in sorted(set(cold_targets)):
+        block_bytes = pe.bytes_at_va(target, 224)
+        instructions = mapper.decode_x64_subset(
+            block_bytes, target, stop_offset=len(block_bytes)
+        )
+        operations: list[str] = []
+        for instruction in instructions:
+            match = re.fullmatch(
+                r"call 0x([0-9a-f]+)",
+                str(instruction.get("text") or ""),
+                re.I,
+            )
+            if not match:
+                continue
+            call_target = int(match.group(1), 16)
+            for resolved in method_by_pointer.get(call_target, []):
+                symbol = f"{resolved.get('type')}.{resolved.get('method')}"
+                operations.append(symbol)
+                cold_operations.append(symbol)
+        cold_blocks.append({
+            "va": f"0x{target:x}",
+            "scanBytes": len(block_bytes),
+            "bodySha256": hashlib.sha256(block_bytes).hexdigest(),
+            "resolvedCalls": operations,
+        })
+
+    processing_calls = calls_to(
+        processing, task_condition_name, "OnTaskStateProcessing"
+    )
+    progress_calls = calls_to(
+        result_changed,
+        "Beyond.Gameplay.GameplayNetwork",
+        "SendLevelScriptUpdateTaskProgress",
+    )
+    condition_offsets = runtime_type_field_offsets(
+        metadata, pe, metadata_summary, task_condition.index
+    )
+    identity_field_names = [
+        name
+        for name in ("levelScriptPtr", "levelNum", "taskKey", "conditionId")
+        if any(
+            access.get("origin") == f"this+0x{condition_offsets[name]:x}"
+            for access in (result_changed.get("bodySummary") or {}).get(
+                "fieldAccesses"
+            ) or []
+        )
+    ]
+    required_condition_operations = [
+        "Beyond.Gameplay.GameCondition+ResultChange..ctor",
+        "System.Delegate.Combine",
+        "Beyond.Gameplay.GameCondition.Activate",
+        "Beyond.Gameplay.GameCondition.BindingEvent",
+    ]
+    observed_operations = [
+        symbol for symbol in required_condition_operations if symbol in cold_operations
+    ]
+    state_forwarding = (
+        len(inner_calls) == 1
+        and (outer_calls[0][0].get("argumentOrigins") or {}).get("r8")
+        == "param:taskState"
+        and (inner_calls[0].get("argumentOrigins") or {}).get("rdx")
+        == "param:newState"
+    )
+    observation = {
+        "scriptTaskStateEnum": {
+            str(row["name"]): int(row["id"])
+            for row in enum_members(
+                metadata, defaults, "Beyond.GEnums.ScriptTaskState"
+            )
+        },
+        "levelScriptTaskTypeEnum": {
+            str(row["name"]): int(row["id"])
+            for row in enum_members(
+                metadata, defaults, "Beyond.Gameplay.LevelScriptTaskType"
+            )
+        },
+        "serverStateApplicationChain": [
+            manager_update["symbol"],
+            outer_update["symbol"],
+            inner_update["symbol"],
+        ],
+        "stateArgumentForwarding": state_forwarding,
+        "processingConditionCallCount": len(processing_calls),
+        "conditionProcessingOperations": observed_operations,
+        "conditionProgressSender": (
+            "Beyond.Gameplay.GameplayNetwork.SendLevelScriptUpdateTaskProgress"
+            if len(progress_calls) == 1 else None
+        ),
+        "conditionIdentityFieldReads": identity_field_names,
+    }
+    validation = validate_levelscript_task_lifecycle_observation(
+        observation,
+        source_file=str(gameassembly_path.resolve()),
+        source_hashes=source_hashes,
+    )
+    public_methods = {
+        name: {
+            key: value
+            for key, value in mapped.items()
+            if key not in {"bodySummary", "decodedInstructions"}
+        }
+        for name, mapped in (
+            ("serverStateHandler", handler),
+            ("managerUpdate", manager_update),
+            ("runtimeUpdate", outer_update),
+            ("taskRuntimeUpdate", inner_update),
+            ("taskStateProcessing", processing),
+            ("conditionStateProcessing", condition_processing),
+            ("conditionResultChanged", result_changed),
+        )
+    }
+    return {
+        "schema": "levelScriptTaskLifecycle.v1",
+        "classification": "generic_server_selected_task_condition_lifecycle",
+        "discoveryPattern": {
+            "taskRuntime": "unique metadata field+method shape",
+            "taskCondition": "unique metadata field+method shape",
+            "serverHandler": (
+                "unique current method accepting the typed task-state protobuf"
+            ),
+            "application": "resolved native call chain and parameter provenance",
+            "conditionActivation": (
+                "resolved Processing handler calls plus its discovered hot/cold block"
+            ),
+        },
+        "taskRuntimeType": task_runtime_name,
+        "taskConditionType": task_condition_name,
+        "scriptTaskStateEnum": observation["scriptTaskStateEnum"],
+        "levelScriptTaskTypeEnum": observation["levelScriptTaskTypeEnum"],
+        "methods": public_methods,
+        "serverStateApplicationChain": observation[
+            "serverStateApplicationChain"
+        ],
+        "stateArgumentForwarding": state_forwarding,
+        "processingConditionCallCount": len(processing_calls),
+        "conditionProcessingOperations": observed_operations,
+        "conditionProcessingColdBlocks": cold_blocks,
+        "conditionProgressSender": observation["conditionProgressSender"],
+        "conditionIdentityFieldReads": identity_field_names,
+        "finding": (
+            "The typed server task-state packet is forwarded through the generic "
+            "LevelScript manager and runtime to one ScriptTaskRuntime. Its Processing "
+            "handler walks task conditions; each condition installs a result-change "
+            "delegate, activates and binds its authored GameCondition, and reports "
+            "changes with the exact level/script/task/condition identity."
+        ),
+        "boundary": (
+            "This proves the reusable client task-condition lifecycle after the server "
+            "selects a scene/script/task identity. It does not expose server selection "
+            "policy, attach the task to a mission, choose a Story branch, or establish "
+            "scene-file order. IFix replacement bodies and server-only logic remain "
+            "outside the static bound."
+        ),
+        "relatedOriginalFiles": [
+            {
+                "kind": "original_game_binary",
+                "sourceFile": str(gameassembly_path.resolve()),
+                "sha256": source_hashes["gameAssemblySha256"],
+            },
+            {
+                "kind": "original_game_metadata",
+                "sourceFile": str(metadata_path.resolve()),
+                "sha256": source_hashes["metadataSha256"],
+            },
+        ],
+        "validation": validation,
+    }
+
+
 def discover_state_update_handlers(
     metadata: Any,
     helper: Any,
@@ -7724,6 +8251,14 @@ def build_report(
         gameassembly_path,
         mapper_path,
     )
+    task_lifecycle_contract = levelscript_task_lifecycle_contract(
+        metadata,
+        defaults,
+        helper,
+        gameassembly_path,
+        mapper_path,
+        metadata_path,
+    )
     native_hooks_by_message_id: dict[int, list[str]] = {}
     for hook_name, hook in native_task_paths["hooks"].items():
         message_id = hook.get("messageId")
@@ -7882,6 +8417,10 @@ def build_report(
                 )
                 == "validated"
             ),
+            "levelScriptTaskLifecycleValidated": (
+                (task_lifecycle_contract.get("validation") or {}).get("status")
+                == "validated"
+            ),
             "actionExtraThreadWriterMethods": len(
                 extra_thread_scheduler_census["extraThreadExecuteMethods"]
             ),
@@ -7932,6 +8471,7 @@ def build_report(
             "levelScriptActivationControl": (
                 activation_control_contract["boundary"]
             ),
+            "levelScriptTaskLifecycle": task_lifecycle_contract["boundary"],
             "missionClientEvent": (
                 "Message 125 has a current-build native handler that interns its exact "
                 "missionId/eventName pair and publishes the resulting key through "
@@ -7976,6 +8516,7 @@ def build_report(
         "levelScriptStartPolicy": start_policy_contract,
         "levelScriptManualSelfControl": manual_self_control_contract,
         "levelScriptActivationControl": activation_control_contract,
+        "levelScriptTaskLifecycle": task_lifecycle_contract,
         "message125EventBusSpecializations": event_bus_census,
         "missionEventConstructorXrefs": MISSION_EVENT_CONSTRUCTOR_XREF_FINDING,
         "missionEventAssetCoverage": mission_event_assets,
@@ -8058,6 +8599,10 @@ def render_markdown(report: dict[str, Any]) -> str:
             "- LevelScript public-state / SubGame interaction activation control: "
             f"**{'validated' if summary['levelScriptActivationControlValidated'] else 'failed'}**"
         ),
+        (
+            "- Generic LevelScript task-condition lifecycle: "
+            f"**{'validated' if summary['levelScriptTaskLifecycleValidated'] else 'failed'}**"
+        ),
         f"- Runtime-hook manifest SHA-256: `{report['source']['runtimeHookManifestSha256']}`",
         "",
         "## Evidence boundary",
@@ -8119,6 +8664,31 @@ def render_markdown(report: dict[str, Any]) -> str:
                 scope=md_escape(str(hook.get("captureScope", ""))),
             )
         )
+    task_lifecycle = report.get("levelScriptTaskLifecycle") or {}
+    lines.extend([
+        "",
+        "## Generic LevelScript task lifecycle",
+        "",
+        md_escape(task_lifecycle.get("finding") or "[task lifecycle unavailable]"),
+        "",
+        (
+            "Application chain: "
+            + " -> ".join(
+                f"`{md_escape(str(symbol))}`"
+                for symbol in task_lifecycle.get("serverStateApplicationChain") or []
+            )
+        ),
+        "",
+        (
+            "Processing-time condition operations: "
+            + ", ".join(
+                f"`{md_escape(str(symbol))}`"
+                for symbol in task_lifecycle.get("conditionProcessingOperations") or []
+            )
+        ),
+        "",
+        md_escape(task_lifecycle.get("boundary") or ""),
+    ])
     coverage = report["missionEventAssetCoverage"]
     event_bus = report["message125EventBusSpecializations"]
     lines.extend(
@@ -8907,6 +9477,14 @@ def current_report_status(
             "LevelScript activation-control validation is "
             f"{activation_control_validation.get('status')!r}"
         )
+    task_lifecycle_validation = (
+        (report.get("levelScriptTaskLifecycle") or {}).get("validation") or {}
+    )
+    if task_lifecycle_validation.get("status") != "validated":
+        return False, (
+            "LevelScript task-lifecycle validation is "
+            f"{task_lifecycle_validation.get('status')!r}"
+        )
     source = report.get("source") or {}
     checks = (
         (metadata_path, "metadataSha256"),
@@ -9096,14 +9674,25 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+    task_lifecycle_validation = report["levelScriptTaskLifecycle"]["validation"]
+    if task_lifecycle_validation["status"] != "validated":
+        first = task_lifecycle_validation["failures"][0]
+        print(
+            "LevelScript task-lifecycle validator failed: "
+            f"validator={first['validator']} gate={first['gate']} "
+            f"expected={first['expected']!r} actual={first['actual']!r} "
+            f"source={first['sourceFile']}",
+            file=sys.stderr,
+        )
+        return 1
     print(
         f"wrote {args.json_output} and {args.markdown_output}: "
         f"{report['summary']['totalMessages']} messages, "
         f"{report['summary']['selectedSchemas']} selected schemas, "
         f"{report['summary']['stateUpdateApplicationCandidatesValidated']}/"
         f"{report['summary']['stateUpdateApplicationCandidates']} state-update paths validated, "
-        "LevelScript start policy, manual self-control, activation control, and "
-        "ActionBase extra-thread scheduler validated"
+        "LevelScript start policy, manual self-control, activation control, task "
+        "lifecycle, and ActionBase extra-thread scheduler validated"
     )
     return 0
 

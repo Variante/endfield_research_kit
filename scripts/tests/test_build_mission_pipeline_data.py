@@ -321,6 +321,49 @@ TASK_AUTHORITY_CONTRACT_FIXTURE = {
     "validation": {"status": "validated"},
 }
 
+TASK_LIFECYCLE_CONTRACT_FIXTURE = {
+    "schema": "levelScriptTaskLifecycle.v1",
+    "classification": "generic_server_selected_task_condition_lifecycle",
+    "scriptTaskStateEnum": {"None": 0, "Processing": 1, "Completed": 2},
+    "levelScriptTaskTypeEnum": {
+        "None": 0,
+        "Main": 1,
+        "Extra": 2,
+        "Fail": 3,
+        "Custom": 4,
+    },
+    "serverStateApplicationChain": [
+        "Beyond.Gameplay.Core.LevelScriptManager.UpdateLevelScriptTaskState",
+        "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateTaskState",
+        (
+            "Beyond.Gameplay.Core.LevelScriptRuntime+"
+            "ScriptTaskRuntime.UpdateTaskState"
+        ),
+    ],
+    "stateArgumentForwarding": True,
+    "processingConditionCallCount": 2,
+    "conditionProcessingOperations": [
+        "Beyond.Gameplay.GameCondition+ResultChange..ctor",
+        "System.Delegate.Combine",
+        "Beyond.Gameplay.GameCondition.Activate",
+        "Beyond.Gameplay.GameCondition.BindingEvent",
+    ],
+    "conditionProgressSender": (
+        "Beyond.Gameplay.GameplayNetwork.SendLevelScriptUpdateTaskProgress"
+    ),
+    "conditionIdentityFieldReads": [
+        "levelScriptPtr",
+        "levelNum",
+        "taskKey",
+        "conditionId",
+    ],
+    "relatedOriginalFiles": [
+        {"kind": "original_game_binary"},
+        {"kind": "original_game_metadata"},
+    ],
+    "validation": {"status": "validated", "failures": []},
+}
+
 EXTRA_THREAD_SCHEDULER_CONTRACT_FIXTURE = {
     "schema": "actionExtraThreadSchedulerCensus.v1",
     "classification": "typed_children_launch_as_parallel_extra_threads",
@@ -1082,6 +1125,60 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "gate=taskPacketSchema",
             ):
                 pipeline.load_levelscript_task_authority_contract(audit_path)
+
+    def test_levelscript_task_lifecycle_revalidates_generic_binary_contract(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            gameassembly.write_bytes(b"fixture-gameassembly")
+            metadata.write_bytes(b"fixture-metadata")
+            audit_path = root / "protocol_registry_audit.json"
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v20",
+                "source": {
+                    "gameAssembly": str(gameassembly),
+                    "gameAssemblySha256": hashlib.sha256(
+                        gameassembly.read_bytes()
+                    ).hexdigest(),
+                    "metadata": str(metadata),
+                    "metadataSha256": hashlib.sha256(
+                        metadata.read_bytes()
+                    ).hexdigest(),
+                },
+                "levelScriptTaskLifecycle": TASK_LIFECYCLE_CONTRACT_FIXTURE,
+            }), encoding="utf-8")
+
+            contract = pipeline.load_levelscript_task_lifecycle_contract(
+                audit_path
+            )
+
+        self.assertEqual(contract["validation"]["status"], "validated")
+        self.assertEqual(contract["processingConditionCallCount"], 2)
+        self.assertEqual(len(contract["relatedOriginalFiles"]), 2)
+
+    def test_levelscript_task_lifecycle_fails_closed_on_state_drift(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "protocol_registry_audit.json"
+            contract = {
+                **TASK_LIFECYCLE_CONTRACT_FIXTURE,
+                "scriptTaskStateEnum": {
+                    "None": 0,
+                    "Processing": 4,
+                    "Completed": 2,
+                },
+            }
+            audit_path.write_text(json.dumps({
+                "_schema": "endfieldProtocolRegistryAudit.v20",
+                "levelScriptTaskLifecycle": contract,
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "validator=levelscript_task_lifecycle_contract "
+                "gate=contractShape",
+            ):
+                pipeline.load_levelscript_task_lifecycle_contract(audit_path)
 
     def test_levelscript_start_policy_revalidates_generic_binary_contract(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -4969,6 +5066,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     )
     @patch.object(
         pipeline,
+        "load_levelscript_task_lifecycle_contract",
+        return_value=TASK_LIFECYCLE_CONTRACT_FIXTURE,
+    )
+    @patch.object(
+        pipeline,
         "load_levelscript_task_authority_contract",
         return_value=TASK_AUTHORITY_CONTRACT_FIXTURE,
     )
@@ -4978,7 +5080,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         return_value=STATE_UPDATE_CONTRACT_FIXTURE,
     )
     def test_build_all_writes_lazy_index_and_mission_payload(
-        self, _state_loader, _task_loader, _scheduler_loader
+        self, _state_loader, _task_loader, _lifecycle_loader, _scheduler_loader
     ):
         self.maxDiff = None
         with tempfile.TemporaryDirectory() as temporary:
@@ -5105,6 +5207,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     )
     @patch.object(
         pipeline,
+        "load_levelscript_task_lifecycle_contract",
+        return_value=TASK_LIFECYCLE_CONTRACT_FIXTURE,
+    )
+    @patch.object(
+        pipeline,
         "load_levelscript_task_authority_contract",
         return_value=TASK_AUTHORITY_CONTRACT_FIXTURE,
     )
@@ -5117,6 +5224,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self,
         _state_loader,
         _task_loader,
+        _lifecycle_loader,
         _scheduler_loader,
     ):
         with tempfile.TemporaryDirectory() as temporary:
@@ -5182,6 +5290,11 @@ class MissionPipelineBuilderTests(unittest.TestCase):
     )
     @patch.object(
         pipeline,
+        "load_levelscript_task_lifecycle_contract",
+        return_value=TASK_LIFECYCLE_CONTRACT_FIXTURE,
+    )
+    @patch.object(
+        pipeline,
         "load_levelscript_task_authority_contract",
         return_value=TASK_AUTHORITY_CONTRACT_FIXTURE,
     )
@@ -5194,6 +5307,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self,
         _state_loader,
         _task_loader,
+        _lifecycle_loader,
         _scheduler_loader,
     ):
         with tempfile.TemporaryDirectory() as temporary:
