@@ -81,14 +81,26 @@ never promotes an edge.
   deserialization, producer, recorder, and consumer methods. FullSerializer
   creates reflected objects uninitialized and assigns only JSON-present fields,
   so an omitted `Int32 finishId` is admitted as runtime-default zero; malformed
-  explicit values still fail closed. The current corpus yields 35 exact
+  explicit values still fail closed. The installed selection path also proves
+  that `NormalOptionData.index` is passed unchanged through the option handler
+  and controller to `DialogTree.Continue`, where it selects the physical
+  outgoing connection. `DialogTreeExOptionNode` edges remain in that physical
+  list, so normal-option list ordinal and option/connection-count equality are
+  not route evidence. The shared decoder uses only the serialized index (or
+  binary-validated omitted-`Int32` zero), and never filename, suffix, layout,
+  OCR, or override signals. Across all 2,579 original DialogTrees, 2,682
+  authored option nodes contain 4,403 normal options: 4,383 routes validate,
+  while 20 fail closed, including seven options under five nodes without usable
+  graph identity. Sixty-seven extra-option nodes validate the binary pattern;
+  77 unequal-count nodes are retained rather than categorically rejected.
+  The mission-observed subset validates 1,199 routes in 434 files and rejects
+  one out-of-bounds authored route. The current corpus yields 35 exact
   option-to-objective dependencies across 17 missions, with 65 default-backed
   DialogTree producer rows and 101 exact consumers still unresolved. Option IDs
   are localization values, not global branch identities: `dlg_sm2l1m1_3`
   reuses two IDs under distinct option nodes reached through different IfNode
   arms, so producer agreement is scoped by original node and option slot.
-  Duplicate Timeline clips must agree within their runtime option scope; three
-  malformed connection-count shapes remain rejected. These rows prove an
+  Duplicate Timeline clips must agree within their runtime option scope. These rows prove an
   objective dependency, not player selection, dialog activation, server
   successor choice, or total Story-file order.
 
@@ -200,7 +212,9 @@ Reject as proof:
    current sparse partial order into a total order by heuristic sorting.
 5. Revisit option gaps only when new runtime route evidence appears; most
    no-route rows are single-option acknowledgements or already bounded
-   cosmetic/shared definitions.
+   cosmetic/shared definitions. Investigate the 20 corpus-level rejected
+   normal-option routes by their structured identity/index diagnostics; do not
+   repair them with positional replication or object-specific exceptions.
 
 The current source-only gap queue ranks actionable isolated scenes by mission.
 Use it as a work queue, not as a proposed Story order.

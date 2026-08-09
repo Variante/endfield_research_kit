@@ -32,7 +32,11 @@ def option_node(option_ids: list[str]) -> dict:
     return {
         "$id": "option",
         "$type": "Beyond.Gameplay.DialogTreeOptionNode, Gameplay.Beyond",
-        "_normalOptions": [{"_optionId": value} for value in option_ids],
+        "_normalOptions": [
+            {"_optionId": value, "index": ordinal}
+            for ordinal, value in enumerate(option_ids)
+        ],
+        "_hasExOption": False,
     }
 
 
@@ -55,7 +59,7 @@ def connection(target: str) -> dict:
 
 
 class DialogTreeRouteTests(unittest.TestCase):
-    def test_recovers_positional_option_finish_routes(self) -> None:
+    def test_recovers_serialized_connection_index_finish_routes(self) -> None:
         outer = text_asset(
             [
                 option_node(["option_fixture_1_001", "option_fixture_1_002"]),
@@ -137,7 +141,7 @@ class DialogTreeRouteTests(unittest.TestCase):
         self.assertEqual(rows, [])
         self.assertEqual(rejected[0]["actual"], "invalid_serialized_value")
 
-    def test_connection_count_mismatch_fails_closed(self) -> None:
+    def test_out_of_bounds_route_fails_closed_without_discarding_valid_route(self) -> None:
         outer = text_asset(
             [
                 option_node(["option_fixture_1_001", "option_fixture_1_002"]),
@@ -148,10 +152,39 @@ class DialogTreeRouteTests(unittest.TestCase):
         rows, rejected = audit.decode_dialog_tree_finish_routes(
             outer, source_file="fixture.json"
         )
-        self.assertEqual(rows, [])
-        self.assertEqual(rejected[0]["gate"], "positionalOptionConnections")
-        self.assertEqual(rejected[0]["expected"], 2)
+        self.assertEqual(
+            [(row["optionId"], row["finishId"]) for row in rows],
+            [("option_fixture_1_001", 1)],
+        )
+        self.assertEqual(rejected[0]["gate"], "normalOptionConnectionIndexBounds")
+        self.assertEqual(rejected[0]["expected"]["maximumExclusive"], 1)
         self.assertEqual(rejected[0]["actual"], 1)
+
+    def test_extra_option_edge_does_not_break_physical_index_mapping(self) -> None:
+        option = option_node(["option_fixture_1_001", "option_fixture_1_002"])
+        option["_normalOptions"][1]["index"] = 2
+        option["_hasExOption"] = True
+        extra = {
+            "$id": "extra",
+            "$type": "Beyond.Gameplay.DialogTreeExOptionNode, Gameplay.Beyond",
+        }
+        outer = text_asset(
+            [option, finish_node("finish1", 1), extra, finish_node("finish2", 2)],
+            [connection("finish1"), connection("extra"), connection("finish2")],
+        )
+        coverage: dict = {}
+        rows, rejected = audit.decode_dialog_tree_finish_routes(
+            outer,
+            source_file="fixture.json",
+            route_coverage=coverage,
+        )
+        self.assertEqual(rejected, [])
+        self.assertEqual(
+            [(row["optionId"], row["finishId"]) for row in rows],
+            [("option_fixture_1_001", 1), ("option_fixture_1_002", 2)],
+        )
+        self.assertEqual(coverage["counts"]["extraOptionNodes"], 1)
+        self.assertEqual(coverage["counts"]["connectionCountMismatchNodes"], 1)
 
     def test_non_object_option_row_fails_closed(self) -> None:
         node = option_node(["option_fixture_1_001"])
@@ -288,12 +321,21 @@ class NativeContractTests(unittest.TestCase):
             mapper = type(
                 "Mapper",
                 (),
-                {"PeImage": lambda _path: self.FakePe(_path, body)},
+                {
+                    "PeImage": lambda _path: self.FakePe(_path, body),
+                    "load_catalog_module": lambda: type(
+                        "Catalog", (), {"Metadata": lambda _path: type("Metadata", (), {"types": []})()}
+                    ),
+                    "metadata_registration_summary": lambda _pe, _address: {
+                        "fieldOffsets": "0x1"
+                    },
+                },
             )
             with (
                 patch.object(audit, "EXPECTED_GAME_ASSEMBLY_SHA256", hashlib.sha256(b"game").hexdigest()),
                 patch.object(audit, "EXPECTED_METADATA_SHA256", hashlib.sha256(b"metadata").hexdigest()),
                 patch.object(audit, "NATIVE_METHODS", methods),
+                patch.object(audit, "EXPECTED_RUNTIME_FIELD_OFFSETS", {}),
                 patch.object(audit, "_load_mapper", return_value=mapper),
             ):
                 result = audit.validate_native_contract(game, metadata)

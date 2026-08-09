@@ -5,6 +5,10 @@ from .anime_assets import *
 from .scene_graph import *
 from .level_bindings import *
 from .mission_flow import *
+from .dialog_tree_option_routes import (
+    DIALOG_TREE_RUNTIME_DEFAULTS,
+    recover_dialog_tree_option_routes,
+)
 
 def _dialog_tree_scene_prefix(value: str) -> str | None:
     if not isinstance(value, str):
@@ -1781,6 +1785,13 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             preds[t].append(s)
             succs[s].append(t)
 
+    option_route_recovery = recover_dialog_tree_option_routes(
+        nodes,
+        conns,
+        runtime_defaults=DIALOG_TREE_RUNTIME_DEFAULTS,
+    )
+    option_routes_by_node_id = option_route_recovery.get("routesByNodeId") or {}
+
     def node_type(node_id: str) -> str:
         node = by_id.get(node_id)
         return _node_short_type(node) if node else ""
@@ -2275,16 +2286,32 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
         return fragment
 
     for opt_node in option_nodes:
-        opt_entries = [
-            entry for entry in (opt_node.get("_normalOptions") or [])
-            if isinstance(entry, dict) and entry.get("_optionId")
-        ]
+        opt_entries_with_routes = []
+        routes_by_ordinal = {
+            route.get("optionOrdinal"): route
+            for route in option_routes_by_node_id.get(str(opt_node["$id"]), [])
+            if isinstance(route, dict)
+        }
+        for option_ordinal, entry in enumerate(opt_node.get("_normalOptions") or []):
+            if not isinstance(entry, dict) or not entry.get("_optionId"):
+                continue
+            opt_entries_with_routes.append(
+                (entry, routes_by_ordinal.get(option_ordinal) or {})
+            )
+        opt_entries = [entry for entry, _route in opt_entries_with_routes]
         if not opt_entries:
             continue
 
-        targets = list(succs.get(opt_node["$id"], []))
-        if len(targets) == 1 and len(opt_entries) > 1:
-            targets = targets * len(opt_entries)
+        targets = [
+            str(route.get("targetNodeId") or "") or None
+            if route.get("status") == "validated"
+            else None
+            for _entry, route in opt_entries_with_routes
+        ]
+        route_by_option_id = {
+            str(entry["_optionId"]): route
+            for entry, route in opt_entries_with_routes
+        }
 
         paths_by_option: dict[str, list[str]] = {}
         target_node_by_option: dict[str, str | None] = {}
@@ -2403,11 +2430,27 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
                 opt_id = entry["_optionId"]
                 if opt_id not in target_opt_ids:
                     continue
-                target = targets[idx] if idx < len(targets) else None
+                target = target_node_by_option.get(opt_id)
                 summary = summarize_option_target(target)
                 summary = classify_option_target_summary(summary, target_key, opt_node["$id"])
+                route_evidence = route_by_option_id.get(opt_id) or {}
                 option_summary = {
                     "optionId": opt_id,
+                    "routeEvidence": {
+                        key: route_evidence[key]
+                        for key in (
+                            "status",
+                            "evidenceKind",
+                            "optionOrdinal",
+                            "connectionIndex",
+                            "connectionIndexSource",
+                            "targetNodeId",
+                            "targetNodeType",
+                            "issue",
+                            "warning",
+                        )
+                        if key in route_evidence
+                    },
                     **summary,
                 }
                 summaries.append(option_summary)
@@ -2583,6 +2626,13 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             **line_order_debug,
         },
         "optionIds": option_ids,
+        "optionRouteRecovery": {
+            "schemaVersion": option_route_recovery.get("schemaVersion"),
+            "evidencePolicy": option_route_recovery.get("evidencePolicy"),
+            "counts": option_route_recovery.get("counts") or {},
+            "nodes": option_route_recovery.get("nodes") or [],
+            "issues": option_route_recovery.get("issues") or [],
+        },
         "terminalCounts": terminal_counts,
         "after": after_map,
         "branches": branch_map,
@@ -2623,6 +2673,7 @@ def _load_dialog_tree_file(tree_key: str) -> dict | None:
         "lineGraph": source.get("lineGraph") or {},
         "lineOrder": source.get("lineOrder") or {},
         "optionIds": source.get("optionIds") or [],
+        "optionRouteRecovery": source.get("optionRouteRecovery") or {},
         "terminalCounts": source.get("terminalCounts") or {},
         "after": source.get("after") or {},
         "branches": source.get("branches") or {},
@@ -2671,6 +2722,7 @@ def _load_related_dialog_tree_files(conv_key: str, original_line_ids: list[str] 
             "lineGraph": source.get("lineGraph") or {},
             "lineOrder": source.get("lineOrder") or {},
             "optionIds": source.get("optionIds") or [],
+            "optionRouteRecovery": source.get("optionRouteRecovery") or {},
             "terminalCounts": source.get("terminalCounts") or {},
             "after": source.get("after") or {},
             "branches": source.get("branches") or {},

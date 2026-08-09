@@ -14,9 +14,10 @@ def option_node(node_id: str, *option_ids: str) -> dict:
         "$id": node_id,
         "$type": "Beyond.Gameplay.DialogTreeOptionNode",
         "_normalOptions": [
-            {"_optionId": option_id}
-            for option_id in option_ids
+            {"_optionId": option_id, "index": ordinal}
+            for ordinal, option_id in enumerate(option_ids)
         ],
+        "_hasExOption": False,
     }
 
 
@@ -176,6 +177,47 @@ class DialogTreeConditionalOptionTests(unittest.TestCase):
             first_option.get("outcomeKind"),
             "authoredConditionalBranch",
         )
+
+    def test_out_of_bounds_option_is_not_duplicated_onto_only_edge(self) -> None:
+        options = option_node(
+            "1",
+            "option_dlg_test_3_1_001",
+            "option_dlg_test_3_1_002",
+        )
+        payload = {
+            "type": "Beyond.Gameplay.DialogTree",
+            "nodes": [
+                node(
+                    "0",
+                    "Beyond.Gameplay.DialogTreeTrunkNode",
+                    trunk_id="dlg_test_3_001",
+                ),
+                options,
+                node("2", "Beyond.Gameplay.DialogTreeFinishNode"),
+            ],
+            "connections": [connection("0", "1"), connection("1", "2")],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "dlg_test_3.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            dialog_tree._DIALOG_TREE_SOURCE_CACHE.clear()
+            with patch.object(dialog_tree, "_find_anime_tree_path", return_value=path):
+                source = dialog_tree._load_dialog_tree_source("dlg_test_3")
+
+        routes = source["optionRouteRecovery"]["nodes"][0]["routes"]
+        self.assertEqual(routes[0]["targetNodeId"], "2")
+        self.assertEqual(routes[1]["status"], "rejected")
+        self.assertEqual(
+            routes[1]["issue"]["gate"], "normalOptionConnectionIndexBounds"
+        )
+        scene_options = source["sceneLinks"][0]["options"]
+        invalid = next(
+            row
+            for row in scene_options
+            if row["optionId"] == "option_dlg_test_3_1_002"
+        )
+        self.assertEqual(invalid["routeEvidence"]["status"], "rejected")
+        self.assertNotIn("firstLineId", invalid)
 
 
 if __name__ == "__main__":

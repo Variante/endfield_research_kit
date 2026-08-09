@@ -4,6 +4,10 @@ import hashlib
 from functools import lru_cache
 
 from .context import *
+from .dialog_tree_option_routes import (
+    DIALOG_TREE_RUNTIME_DEFAULTS,
+    recover_dialog_tree_option_routes,
+)
 
 
 _DIALOG_TREE_TYPE = "Beyond.Gameplay.DialogTree"
@@ -325,6 +329,11 @@ def extract_dialog_tree_definition_evidence(
             str(row["_sourceNode"]["$ref"]),
             str(row["_targetNode"]["$ref"]),
         ))
+    option_route_recovery = recover_dialog_tree_option_routes(
+        nodes,
+        connections,
+        runtime_defaults=DIALOG_TREE_RUNTIME_DEFAULTS,
+    )
     incoming_node_ids = {target for _source, target in typed_connections}
     line_connections = [
         {
@@ -369,6 +378,13 @@ def extract_dialog_tree_definition_evidence(
         ),
         "optionGroupCount": option_group_count,
         "branchingOptionGroupCount": branching_option_group_count,
+        "optionRouteRecovery": {
+            "schemaVersion": option_route_recovery.get("schemaVersion"),
+            "evidencePolicy": option_route_recovery.get("evidencePolicy"),
+            "counts": option_route_recovery.get("counts") or {},
+            "nodes": option_route_recovery.get("nodes") or [],
+            "issues": option_route_recovery.get("issues") or [],
+        },
         "evidenceKind": "exact_dialog_tree_definition",
         "activationBoundary": (
             "the MissionRuntime condition observes this DialogTree root; the "
