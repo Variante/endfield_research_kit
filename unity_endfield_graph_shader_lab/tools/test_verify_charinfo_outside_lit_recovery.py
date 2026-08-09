@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import hashlib
 import importlib.util
 import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -86,6 +88,50 @@ class SourceTextEvidenceTests(unittest.TestCase):
                 "canonical-LF SHA-256.*does not match pinned",
             ):
                 verifier.require_text_hash(path, "0" * 64)
+
+
+class HdplsMatrixFormulaContractTests(unittest.TestCase):
+    @staticmethod
+    def load_current_contract() -> tuple[dict[str, object], dict[str, object]]:
+        contract = json.loads(
+            verifier.BINDING_CONTRACT_PATH.read_text(encoding="utf-8")
+        )
+        binding = next(
+            row
+            for row in contract["identified_unnamed_constant_buffer_roles"]
+            if row["role"] == "HDPunctualLightCharacterShadowData"
+        )
+        native = binding["native_producer"]
+        audit = json.loads(
+            verifier.repo_path(native["audit_path"]).read_text(encoding="utf-8")
+        )
+        return native, audit
+
+    def test_current_matrix_formula_contract_passes(self) -> None:
+        native, audit = self.load_current_contract()
+        verifier.verify_hdpls_matrix_formula_contract(
+            native,
+            audit,
+            Path("fixture_contract.json"),
+        )
+
+    def test_direction_epsilon_failure_is_actionable(self) -> None:
+        native, audit = self.load_current_contract()
+        changed = copy.deepcopy(audit)
+        changed["matrix_production"]["light_direction"][
+            "direction_epsilon"
+        ] = 0.001
+        with self.assertRaisesRegex(
+            AssertionError,
+            "HDPLS matrix-production validator failed: "
+            "check=matrix_production.light_direction; "
+            "source=fixture_contract.json; expected=.*actual=.*0.001",
+        ):
+            verifier.verify_hdpls_matrix_formula_contract(
+                native,
+                changed,
+                Path("fixture_contract.json"),
+            )
 
 
 if __name__ == "__main__":

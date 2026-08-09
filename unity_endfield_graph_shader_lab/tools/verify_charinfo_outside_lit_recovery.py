@@ -97,6 +97,129 @@ def require_tokens(path: Path, tokens: list[str]) -> None:
             raise AssertionError(f"{path}: missing token {token!r}")
 
 
+def require_hdpls_matrix_value(
+    source: Path,
+    check: str,
+    actual: object,
+    expected: object,
+) -> None:
+    if actual != expected:
+        raise AssertionError(
+            "HDPLS matrix-production validator failed: "
+            f"check={check}; source={source}; "
+            f"expected={expected!r}; actual={actual!r}"
+        )
+
+
+def verify_hdpls_matrix_formula_contract(
+    hdpls_native: dict[str, object],
+    hdpls_audit: dict[str, object],
+    source: Path = BINDING_CONTRACT_PATH,
+) -> None:
+    matrix_production = hdpls_audit["matrix_production"]
+    checks = (
+        (
+            "native.matrix_formula_scope",
+            hdpls_native["matrix_formula_scope"],
+            "installed non-IFix-patched GetShadowParamsFromCharacter id 0x877 "
+            "and HGShadowUtils spot-row branches",
+        ),
+        (
+            "native.character_shadow_transform",
+            hdpls_native["character_shadow_transform"],
+            "radius=length(bounds.extents); direction=bounds.center-lightPosition; "
+            "rotation=LookRotation(direction) when distance>1e-5 else "
+            "light.localToWorldMatrix.rotation; "
+            "localToWorld=TRS(lightPosition,rotation,one)",
+        ),
+        (
+            "native.character_spot_angle",
+            hdpls_native["character_spot_angle"],
+            "radius<=1e-6 -> 0.1 degrees; radius+1e-5>=distance -> 179.9 "
+            "degrees; else clamp(2*asinf(clamp(radius/distance,0,1))*"
+            "57.295780181884766,0.1,179.9)",
+        ),
+        (
+            "matrix_production.scope",
+            matrix_production["scope"],
+            "installed GetShadowParamsFromCharacter non-IFix-patched branch "
+            "(IFix patch id 0x877) followed by the installed non-IFix-patched "
+            "HGShadowUtils spot-row branch",
+        ),
+        (
+            "matrix_production.character_sphere",
+            matrix_production["character_sphere"],
+            {
+                "center": "bounds.center",
+                "radius": "length(bounds.extents)",
+                "radius_threshold": 1e-6,
+            },
+        ),
+        (
+            "matrix_production.light_direction",
+            matrix_production["light_direction"],
+            {
+                "light_position": "HGSharedLightData.worldPosition",
+                "direction": "bounds.center - light_position",
+                "distance": "length(direction)",
+                "direction_epsilon": 1e-5,
+            },
+        ),
+        (
+            "matrix_production.local_to_world",
+            matrix_production["local_to_world"],
+            {
+                "rotation": (
+                    "Quaternion.LookRotation(direction) when distance>1e-5; "
+                    "otherwise HGSharedLightData.localToWorldMatrix.rotation"
+                ),
+                "matrix": "Matrix4x4.TRS(light_position, rotation, Vector3.one)",
+            },
+        ),
+        (
+            "matrix_production.spot_angle_degrees",
+            matrix_production["spot_angle_degrees"],
+            {
+                "radius_le_threshold": 0.1,
+                "radius_plus_epsilon_ge_distance": 179.9,
+                "general": (
+                    "clamp(2*asinf(clamp(radius/distance,0,1))*"
+                    "57.295780181884766,0.1,179.9)"
+                ),
+            },
+        ),
+        (
+            "matrix_production.shadow_utility_chain.view",
+            matrix_production["shadow_utility_chain"]["view"],
+            "inverse(derived localToWorld), then negate m20,m21,m22,m23",
+        ),
+        (
+            "matrix_production.shadow_utility_chain.world_to_shadow",
+            matrix_production["shadow_utility_chain"]["world_to_shadow"],
+            {
+                "formula": "B * (P' * V)",
+                "reversedZ": (
+                    "when UsesReversedZBuffer, P' negates m20,m21,m22,m23"
+                ),
+                "scaleBiasB": (
+                    "diag(0.5,0.5,0.5,1) with translation (0.5,0.5,0.5)"
+                ),
+                "storedField": "_PunctualLightWorldToShadow[row]",
+            },
+        ),
+        (
+            "matrix_production.render_pass_bias",
+            matrix_production["render_pass_bias"],
+            {
+                "depth_bias": "hdplsDepthBias.value -> pass data +0x10",
+                "normal_bias": "hdplsNormalBias.value -> pass data +0x14",
+            },
+        ),
+    )
+    for check, actual, expected in checks:
+        require_hdpls_matrix_value(source, check, actual, expected)
+
+
 def verify_visibility_sh_unity_replay() -> None:
     payload = json.loads(
         VISIBILITY_RUNTIME_PATH.read_text(encoding="utf-8")
@@ -2454,6 +2577,7 @@ def verify_selected_resolver_binding_contract() -> None:
         ("setting_parameters_native_path", "setting_parameters_native_sha256"),
         ("setting_getters_metadata_path", "setting_getters_metadata_sha256"),
         ("setting_getters_native_path", "setting_getters_native_sha256"),
+        ("punctual_row_audit_path", "punctual_row_audit_sha256"),
     ):
         require_hash(
             repo_path(hdpls_native[path_key]),
@@ -2519,7 +2643,9 @@ def verify_selected_resolver_binding_contract() -> None:
     assert hdpls_audit["schema"] == (
         "endfield.hdpls-character-shadow-data-audit.v1"
     )
-    assert hdpls_audit["verdict"] == "SETTLED_ACTIVE_FRAME_CAPTURE_REQUIRED"
+    assert hdpls_audit["verdict"] == (
+        "UNPATCHED_MATRIX_PRODUCTION_CLOSED_ACTIVE_FRAME_CAPTURE_REQUIRED"
+    )
     assert hdpls_audit["publication_allowed"] is False
     assert hdpls_audit["layout"]["reflected_size_bytes"] == 3568
     assert hdpls_audit["layout"]["native_requested_size_bytes"] == 3552
@@ -2535,6 +2661,13 @@ def verify_selected_resolver_binding_contract() -> None:
     assert hdpls_audit["frame_lifecycle"]["screen_space_channels"] == (
         "56 entries reset to 0"
     )
+    assert hdpls_audit["frame_lifecycle"]["matrix_and_params"] == {
+        "active_rows": (
+            "overwritten from the binary-closed unpatched matrix and "
+            "atlas-rect formulas"
+        ),
+        "unused_rows": "persistent static storage; not reset each frame",
+    }
     hdpls_formulas = hdpls_audit["frame_derived_formulas"]
     assert hdpls_formulas["setting_field_offsets"] == {
         "hdplsCharacterShadowEnabled": "0x368",
@@ -2573,8 +2706,13 @@ def verify_selected_resolver_binding_contract() -> None:
             "sets bit (requestIndex & 31)"
         ),
     }
+    verify_hdpls_matrix_formula_contract(
+        hdpls_native,
+        hdpls_audit,
+        BINDING_CONTRACT_PATH,
+    )
     assert len(hdpls_audit["capture_boundary"]["required"]) == 3
-    assert len(hdpls_audit["capture_boundary"]["offline_closed"]) == 8
+    assert len(hdpls_audit["capture_boundary"]["offline_closed"]) == 10
     for path_key, hash_key in (
         ("disassembly_path", "disassembly_sha256"),
         ("metadata_path", "metadata_sha256"),
@@ -2583,6 +2721,7 @@ def verify_selected_resolver_binding_contract() -> None:
         ("setting_parameters_native_path", "setting_parameters_native_sha256"),
         ("setting_getters_metadata_path", "setting_getters_metadata_sha256"),
         ("setting_getters_native_path", "setting_getters_native_sha256"),
+        ("punctual_row_audit_path", "punctual_row_audit_sha256"),
         ("selected_shader_path", "selected_shader_sha256"),
         ("source_sidecar_path", "source_sidecar_sha256"),
         ("constant_buffer_audit_path", "constant_buffer_audit_sha256"),
@@ -2886,6 +3025,7 @@ def main() -> int:
         "selected .y-only read path, exact 0xDE0 CBHandle/command size, "
         "0x100-aligned CPU tail-write safety, target-D3D11 224-constant c222 visibility, "
         "exact HDPLS setting/default, atlas/rect/texel/global/world-position/selector formulas, "
+        "exact installed-unpatched Bounds/light-to-TRS/spot-angle/reversed-Z matrix chain, "
         "and fail-closed active-frame boundary), "
         "all 25 sampled texture "
         "roles, exact installed CharInfo Volume/Environment state that gates "

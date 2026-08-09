@@ -2059,9 +2059,18 @@ with a `4x2` tile grid through eight requests or `8x4` above eight. Each active
 params row is its normalized tile `xyxy`; atlas texel size is
 `(1/(2S),1/S,2S,S)`, global params are `(softness,0,0,0)`, screen-space
 positions are `float4(HGSharedLightData.worldPosition.xyz,0)`, and both channel
-and bit selectors have exact native formulas. Settled matrices/params, live
-inputs and resulting active selector values, plus matching HDPLS/atlas contents
-remain capture-only.
+and bit selectors have exact native formulas. The installed unpatched
+`GetShadowParamsFromCharacter` path is now closed too: it treats
+`Bounds.extents` as a bounding-sphere radius, aims from the light position at
+the bounds center (falling back to the light rotation below a `1e-5` direction
+epsilon), builds `TRS(lightPosition,rotation,one)`, and derives a `0.1..179.9`
+degree cone from `2*asin(radius/distance)`. `FrameSetup` feeds this result and
+the light near/far/guard values through the already closed reversed-Z
+`ExtractSpotLightMatrix` / `GetShadowTransform` path, stores the matrix by
+request index, and forwards the HDPLS depth/normal bias to the caster pass.
+Live IFix `0x877` state, bounds/light/settings values, resulting active rows and
+selectors, unused persistent rows, and matching HDPLS/atlas contents remain
+capture-only.
 The remaining
 16 texture names are now pinned from their original sampling behavior and the
 hash/offset-pinned installed IL2CPP shader-property table: low-resolution
