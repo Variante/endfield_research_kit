@@ -226,17 +226,138 @@ class AudioCategoryTests(unittest.TestCase):
         )
         self.assertNotIn(unrelated_sound, result["visitedObjectIds"])
 
-    def test_typed_hirc_traversal_fails_closed_on_music_node(self) -> None:
+    def test_typed_hirc_traversal_resolves_v150_music_graph_and_track_media(self) -> None:
+        def node_base(parent_id: int) -> bytes:
+            return bytes(4) + pack("<II", 0, parent_id)
+
+        def common_music_prefix(parent_id: int, child_ids: list[int]) -> bytes:
+            return b"".join([
+                bytes([0]),
+                node_base(parent_id),
+                bytes(7),
+                pack("<I", len(child_ids)),
+                *(pack("<I", child_id) for child_id in child_ids),
+                pack("<ddfBBBI", 1.0, 0.0, 120.0, 4, 4, 0, 0),
+            ])
+
+        event_id = 1
+        action_id = 2
+        switch_id = 10
+        ranseq_id = 11
+        segment_id = 12
+        track_id = 13
+        media_id = 777
+
+        switch_data = b"".join([
+            common_music_prefix(0, [ranseq_id]),
+            pack("<I", 0),  # transition rules
+            bytes([1]),
+            pack("<II", 1, 0x12345678),
+            bytes([0]),
+            pack("<I", 24),
+            bytes([0]),
+            pack("<IIHH", 0, 0x00010001, 1, 100),
+            pack("<IIHH", 0x87654321, ranseq_id, 1, 100),
+        ])
+        ranseq_data = b"".join([
+            common_music_prefix(switch_id, [segment_id]),
+            pack("<I", 0),  # transition rules
+            pack("<I", 2),
+            pack("<IIIIhhhIHBB", 0, 100, 1, 0, 1, 1, 1, 50, 0, 1, 0),
+            pack("<IIIIhhhIHBB", segment_id, 101, 0, 0xFFFFFFFF, 1, 1, 1, 50, 0, 0, 0),
+        ])
+        segment_data = b"".join([
+            common_music_prefix(ranseq_id, [track_id]),
+            pack("<dI", 3000.0, 1),
+            pack("<Id", 1, 0.0),
+            b"Entry\x00",
+        ])
+        track_data = b"".join([
+            bytes([0]),
+            pack("<I", 1),
+            pack("<IBIIB", 0x00040001, 2, media_id, 2048, 0x80),
+            pack("<I", 1),
+            pack("<III4d", 0, media_id, 0, 0.0, 0.0, 0.0, 3000.0),
+            pack("<I", 1),  # subtracks
+            pack("<I", 0),  # automation items
+            node_base(segment_id),
+        ])
+        objects = {
+            event_id: {"type": 4, "data": bytes([1]) + pack("<I", action_id)},
+            action_id: {"type": 3, "data": pack("<HI", 0x0403, switch_id)},
+            switch_id: {"type": 12, "data": switch_data},
+            ranseq_id: {"type": 13, "data": ranseq_data},
+            segment_id: {"type": 10, "data": segment_data},
+            track_id: {"type": 11, "data": track_data},
+        }
+
+        result = build_audio.traverse_hirc_event(event_id, objects, {media_id}, bank_version=150)
+        self.assertEqual(result["mediaIds"], [media_id])
+        self.assertEqual(result["traversalStatus"], "complete")
+        self.assertEqual(result["unresolvedNodes"], [])
+        self.assertEqual(
+            [row["objectType"] for row in result["musicNodeEvidence"]],
+            [12, 13, 10, 11],
+        )
+        switch = result["musicNodeEvidence"][0]
+        self.assertEqual(switch["treeDepth"], 1)
+        self.assertEqual(switch["treeLeaves"][0]["audioNodeId"], ranseq_id)
+        ranseq = result["musicNodeEvidence"][1]
+        self.assertEqual(ranseq["selectionTypeLabels"], ["continuousSequence", "none"])
+        self.assertEqual(ranseq["playlistItems"][1]["segmentId"], segment_id)
+        track = result["musicNodeEvidence"][3]
+        self.assertEqual(track["sources"][0]["mediaId"], media_id)
+        self.assertEqual(result["mediaEvidence"][0]["musicTrackObjectIds"], [track_id])
+        self.assertEqual(result["mediaEvidence"][0]["selectionPaths"], [[
+            "musicSwitchCandidate",
+            "musicPlaylistCandidate",
+            "musicTrack",
+            "musicTrackSource",
+        ]])
+
+    def test_v150_empty_music_children_require_unique_typed_tail(self) -> None:
+        node_base = bytes(4) + pack("<II", 0, 0)
+        segment_data = b"".join([
+            bytes([0]),
+            node_base,
+            bytes(7),
+            pack("<I", 0),
+            pack("<ddfBBBI", 1.0, 0.0, 120.0, 4, 4, 0, 0),
+            pack("<dI", 0.0, 0),
+        ])
         objects = {
             1: {"type": 4, "data": bytes([1]) + pack("<I", 2)},
             2: {"type": 3, "data": pack("<HI", 0x0403, 3)},
-            3: {"type": 10, "data": pack("<I", 777)},
-            777: {"type": 2, "data": bytes(30)},
+            3: {"type": 10, "data": segment_data},
+        }
+
+        result = build_audio.traverse_hirc_event(1, objects, set(), bank_version=150)
+        self.assertEqual(result["traversalStatus"], "complete")
+        self.assertEqual(result["mediaIds"], [])
+        self.assertEqual(result["containerEvidence"][0]["childCount"], 0)
+        self.assertEqual(result["containerEvidence"][0]["parserConfidence"], "typedTailExactEmpty")
+
+    def test_typed_hirc_traversal_fails_closed_on_truncated_music_track(self) -> None:
+        objects = {
+            1: {"type": 4, "data": bytes([1]) + pack("<I", 2)},
+            2: {"type": 3, "data": pack("<HI", 0x0403, 3)},
+            # A media-looking U32 in a malformed MusicTrack is not a source edge.
+            3: {"type": 11, "data": pack("<II", 1, 777)},
         }
         result = build_audio.traverse_hirc_event(1, objects, {777})
         self.assertEqual(result["mediaIds"], [])
         self.assertEqual(result["traversalStatus"], "partial")
-        self.assertEqual(result["unresolvedNodes"][0]["reason"], "unsupportedTypedNode")
+        self.assertEqual(result["unresolvedNodes"][0]["reason"], "musicTrackPrefixUnresolved")
+
+    def test_typed_hirc_traversal_rejects_music_nodes_from_non_v150_bank(self) -> None:
+        objects = {
+            1: {"type": 4, "data": bytes([1]) + pack("<I", 2)},
+            2: {"type": 3, "data": pack("<HI", 0x0403, 3)},
+            3: {"type": 11, "data": bytes(64)},
+        }
+        result = build_audio.traverse_hirc_event(1, objects, set(), bank_version=154)
+        self.assertEqual(result["mediaIds"], [])
+        self.assertEqual(result["unresolvedNodes"][0]["reason"], "unsupportedMusicBankVersion")
 
     def test_play_event_follows_nested_event_actions(self) -> None:
         sound = bytearray(30)
