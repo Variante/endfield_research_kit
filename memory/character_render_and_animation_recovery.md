@@ -101,8 +101,14 @@ NPC archetypes are imported as labeled source kits.
   through eight entries or `8x4` above eight at the default. Normalized tile
   rectangles, `(1/(2S),1/S,2S,S)` texel size, `(softness,0,0,0)` global params,
   `float4(worldPosition,0)` screen-space positions, and both selector writes are
-  exact. Only settled matrices/params, their live inputs and resulting selector
-  values, plus matching HDPLS/atlas resources remain open for this buffer.
+  exact. The installed unpatched character-matrix path is also closed:
+  `Bounds.extents` supplies a bounding-sphere radius, the light aims at the
+  bounds center with a `1e-5` degenerate-direction fallback, the cone is
+  `clamp(2*asin(radius/distance),0.1°,179.9°)`, and the derived TRS plus
+  light near/far/guard feeds the exact reversed-Z spot-shadow transform. Depth
+  and normal bias also reach the caster pass exactly. Live IFix `0x877` state,
+  input values, active rows/selectors, unused persistent rows, and matching
+  HDPLS/atlas resources remain capture-only.
 
 ## Main rendering gap
 
