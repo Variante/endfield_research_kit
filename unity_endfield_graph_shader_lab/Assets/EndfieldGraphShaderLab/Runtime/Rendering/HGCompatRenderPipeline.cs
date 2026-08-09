@@ -411,6 +411,8 @@ namespace EndfieldGraphShaderLab
             recoveredReflectionProbeFallback;
         private readonly EndfieldRecoveredVisibilitySHConstants
             recoveredVisibilitySHConstants;
+        private readonly EndfieldRecoveredDeferredTransformVariables
+            recoveredDeferredTransformVariables;
         private readonly EndfieldRecoveredPunctualShadowProducer
             recoveredPunctualShadowProducer;
         private readonly EndfieldRecoveredPreGBufferDiagnostic
@@ -472,6 +474,8 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredPreTransparentSceneColorFormatFailure;
         private bool loggedRecoveredReflectionFrameActivation;
         private bool loggedRecoveredReflectionFrameFailure;
+        private bool loggedRecoveredDeferredTransformActivation;
+        private bool loggedRecoveredDeferredTransformFailure;
 
         private static int[] CreateBloomMipIds(string prefix)
         {
@@ -500,6 +504,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredReflectionProbeFallback();
             recoveredVisibilitySHConstants =
                 new EndfieldRecoveredVisibilitySHConstants();
+            recoveredDeferredTransformVariables =
+                new EndfieldRecoveredDeferredTransformVariables();
             recoveredPunctualShadowProducer =
                 new EndfieldRecoveredPunctualShadowProducer();
             recoveredScreenDirectAudit =
@@ -591,6 +597,7 @@ namespace EndfieldGraphShaderLab
             recoveredDeferredGBufferFrame?.Dispose();
             recoveredVisibilitySHProducer?.Dispose();
             recoveredPunctualShadowProducer?.Dispose();
+            recoveredDeferredTransformVariables?.Dispose();
             recoveredVisibilitySHConstants?.Dispose();
             recoveredReflectionProbeFallback?.Dispose();
             recoveredLightBinning?.Dispose();
@@ -1025,6 +1032,7 @@ namespace EndfieldGraphShaderLab
             ApplyLightingGlobals(commandBuffer);
             recoveredReflectionProbeFallback.ResetPublication(commandBuffer);
             recoveredVisibilitySHConstants.ResetPublication(commandBuffer);
+            recoveredDeferredTransformVariables.ResetPublication(commandBuffer);
             bool recoveredCanonicalBinningReady =
                 recoveredLightBinning.PrepareCamera(
                 camera,
@@ -1106,8 +1114,48 @@ namespace EndfieldGraphShaderLab
                             loggedRecoveredReflectionFrameActivation = true;
                         }
                         recoveredCanonicalFrameResourcesReady = true;
+                        if (EndfieldRecoveredDeferredTransformVariables.IsRequested)
+                        {
+                            bool recoveredDeferredTransformsReady =
+                                recoveredDeferredTransformVariables
+                                    .PrepareAndPublish(
+                                        camera,
+                                        true,
+                                        commandBuffer,
+                                        out string transformFailure);
+                            if (recoveredDeferredTransformsReady)
+                            {
+                                if (!loggedRecoveredDeferredTransformActivation)
+                                {
+                                    Debug.Log(
+                                        "Recovered selected deferred " +
+                                        "_TransformVariables b30 reads are active " +
+                                        "for the physical CharInfo camera; pass0=" +
+                                        "disabled.");
+                                    loggedRecoveredDeferredTransformActivation = true;
+                                }
+                            }
+                            else if (!loggedRecoveredDeferredTransformFailure)
+                            {
+                                Debug.LogWarning(
+                                    "Recovered selected deferred " +
+                                    "_TransformVariables failed closed: " +
+                                    transformFailure + ".");
+                                loggedRecoveredDeferredTransformFailure = true;
+                            }
+                        }
                     }
                 }
+            }
+            if (EndfieldRecoveredDeferredTransformVariables.IsRequested &&
+                !recoveredCanonicalFrameResourcesReady &&
+                !loggedRecoveredDeferredTransformFailure)
+            {
+                Debug.LogWarning(
+                    "Recovered selected deferred _TransformVariables failed " +
+                    "closed: canonical binning/reflection/" +
+                    "VisibilitySHConstData prerequisites are not ready.");
+                loggedRecoveredDeferredTransformFailure = true;
             }
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();

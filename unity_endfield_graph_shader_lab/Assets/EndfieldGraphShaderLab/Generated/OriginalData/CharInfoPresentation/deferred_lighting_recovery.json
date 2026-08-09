@@ -3,7 +3,7 @@
   "recovered_at": "2026-07-17",
   "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
-  "outcome": "The original HGRP/Lit HGBuffer stages, GBuffer renderer-list LightMode, five-color-target DefaultDeferred render-graph topology, HGRP deferred resolver shader family, HighEnd GBuffer formats, native draw entry points, unpatched render-parameter initializer, and current installed CharInfo draw route are recovered. A default-off same-camera SphereOutside sidecar now binds the exact logical five-MRT formats plus D32S8, applies the source material's depth/stencil state and transform, and produces bit-identical 640x720 readbacks on D3D11 and D3D12 without changing the presented beauty frame. It remains non-presented and never enables pass 0. The selected physical Gacha camera is source-closed RenderWithAlpha=false, so the callback invokes the WriteAlpha helper but submits no WriteAlpha draws. Future/network patch state, render-graph physical resource identity/lifetime, a binding-compatible pass-0 implementation, and remaining frame-produced lighting resources are not recovered. A forward/PBR substitute is not equivalent and must not activate SphereOutside.",
+  "outcome": "The original HGRP/Lit HGBuffer stages, GBuffer renderer-list LightMode, five-color-target DefaultDeferred render-graph topology, HGRP deferred resolver shader family, HighEnd GBuffer formats, native draw entry points, unpatched render-parameter initializer, and current installed CharInfo draw route are recovered. A default-off same-camera SphereOutside sidecar now binds the exact logical five-MRT formats plus D32S8, applies the source material's depth/stencil state and transform, and produces bit-identical 640x720 readbacks on D3D11 and D3D12 without changing the presented beauty frame. The selected pass-0 _TransformVariables b30 reads are also source-closed for view, inverse-view, inverse GPU view-projection, and camera-position fields and publish bit-exactly in the same frame while all unclosed rows remain zero. Both transports remain non-presented/default-off and never enable pass 0. The selected physical Gacha camera is source-closed RenderWithAlpha=false, so the callback invokes the WriteAlpha helper but submits no WriteAlpha draws. Future/network patch state, render-graph physical resource identity/lifetime, a binding-compatible pass-0 implementation, and remaining frame-produced lighting resources are not recovered. A forward/PBR substitute is not equivalent and must not activate SphereOutside.",
   "selected_hgbuffer": {
     "shader": "HGRP/Lit",
     "pass": "HGBuffer",
@@ -90,20 +90,74 @@
     "sources": {
       "producer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs", "sha256": "93b63fa4508c56d2c232c78997224532d1b76b716bbcc23cdf12467bb1996013"},
       "shader": {"path": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharInfoHGRPLitUnavailable.shader", "sha256": "e957bcb140a066a452423f32efc5bd3195f410094943562c96376cff44d2d23e"},
-      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "cf92850c82deefbdbd4201bb27a790e6bafe27ebad0fe5f3e3075edfa32466a9"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "bccc0e00f3415a882e6f729cb8f6deee15c7625f74999ddcf23545264fe7fcd6"},
       "material_source": {"path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/Materials/M_CharInfo_outside.raw.json", "sha256": "45b4e36ddf66010b838abdbad0e7bf8906d5cf2ec2ea9997771bd14c75ecfaf7"}
     },
     "validation": {
       "gpu_reports": {
-        "d3d11": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d11.json", "sha256": "74fb5d3538b29092155b34c3549515aa803a97b7e5364875e618861c59408c91", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d11.log", "log_sha256": "5698db7a8f25e47ee74a9a33513db34c1e8192f75f5381e59dbadc95c95502b9"},
-        "d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d12.json", "sha256": "0287f86a64ca45b9e4f670b32f5f8d4484f8b1235b1a4817bd3d01903d15332a", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d12.log", "log_sha256": "9a3ff0ba1d3097f4791f43ab2acef3d446467cc1396b34083c9912edaed02317"}
+        "d3d11": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d11.json", "sha256": "567092ede34d1db339ec986284f09bf1fd981f44651687741789505cc7f889df", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d11.log", "log_sha256": "2687e8f2d8782d82545dad66f6c6d1413c5daed88c664e355f9f82718c913ed2"},
+        "d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d12.json", "sha256": "f722522c3333989f8936643afc41b22a8754bb795ae6c5f36e0952dcc21e38b7", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d12.log", "log_sha256": "fcdb5c975b8f24c7d3814336d82637e91b83ead7f2ea73e8183392c543f6a0c6"}
       },
-      "fail_closed_d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_fail_closed_d3d12.json", "sha256": "8c924c70bcb0077e04f8f9d22cc07f3e18731f32e56dec8c830f739954c8688c", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_fail_closed_d3d12.log", "log_sha256": "08643547d705a67dbb29493821d9ff6340e4aaaee1ae943cba4946a4a45cdc05"},
+      "fail_closed_d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_fail_closed_d3d12.json", "sha256": "70b07b7aa74339619c6a015a9e0c9c4dfa24628dddaddae403a7f47bfd9c1aa0", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_fail_closed_d3d12.log", "log_sha256": "631d3b04bdc91209a5641fa1eb08a2300b2d3d223693e6f130f4a173023a89ec"},
       "validator": {"path": "tools/verify_deferred_gbuffer_frame_log.py", "sha256": "5a68cc17709d480f900bca388f1f4dabedafd47e02f0aa8048eed9fe90a1b253"},
       "tests": {"path": "tools/test_verify_deferred_gbuffer_frame_log.py", "sha256": "941e3500ce24e0f552e07c8b14fa99d3e3eb5e35495004515293b96c200f4823"},
       "wrapper": {"path": "verify_recovered_deferred_gbuffer_frame.bat", "sha256": "c1ecdcd3ae4433be02498b9da8cc2620d7c331a9385058da7fe4f57f00336921"},
       "beauty_unchanged": true,
       "cross_api_readbacks_bit_exact": true
+    }
+  },
+  "selected_deferred_transform_variables_transport": {
+    "status": "selected original pass-0 b30 reads source-closed and same-frame GPU-closed; unselected rows stay zero and pass 0 remains disabled",
+    "default_off": true,
+    "published_by_default": false,
+    "pass0_consumer_enabled": false,
+    "selector": "ENDFIELD_RECOVERED_DEFERRED_TRANSFORM_VARIABLES",
+    "canonical_property": "_TransformVariables",
+    "original_dxbc_bridge_property": "EndfieldCB0",
+    "ready_property": "_EndfieldRecoveredDeferredTransformVariablesReady",
+    "pass0_subset_ready_property": "_EndfieldRecoveredDeferredPass0InputSubsetReady",
+    "logical_size_bytes": 1312,
+    "logical_vector_count": 82,
+    "d3d11_bridge_size_bytes": 720,
+    "selected_used_vector_count": 13,
+    "selected_used_vectors": [0, 1, 2, 3, 4, 5, 6, 7, 24, 25, 26, 27, 44],
+    "selected_used_fields": {
+      "_ViewMatrix": {"byte_offset": 0, "register": 0, "vector_count": 4},
+      "_InvViewMatrix": {"byte_offset": 64, "register": 4, "vector_count": 4},
+      "_InvViewProjMatrix": {"byte_offset": 384, "register": 24, "vector_count": 4},
+      "_WorldSpaceCameraPos_Internal": {"byte_offset": 704, "register": 44, "vector_count": 1}
+    },
+    "producer_formula": {
+      "view": "physical Camera.worldToCameraMatrix",
+      "inverse_view": "inverse(view)",
+      "inverse_view_projection": "inverse(GL.GetGPUProjectionMatrix(camera.projectionMatrix, true) * view)",
+      "world_space_camera_position": "physical Camera.transform.position.xyz with w=0 because the selected consumer reads xyz only",
+      "packing": "D3D physical column registers"
+    },
+    "boundary": "Only the four fields present in the selected original fragment's partial constant-buffer metadata are source-closed. The other 69 float4 rows remain history/jitter/stereo producer work and are explicitly zero-filled.",
+    "required_same_frame_resources": ["_BinningBuffer", "_ReflectionProbeOctTextureArray", "ReflectionProbeGlobalData", "VisibilitySHConstData"],
+    "source_audit": {"path": "scratch/character_recovery/deferred_transform_variables/audit.json", "sha256": "402a8ddb90b1555a78f5e9fd7c7456c1fa5658bb9f55fd1acae9abd2ae516e3b"},
+    "sources": {
+      "contract": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs", "sha256": "152fb8b7c6c63bd7e6c5f0fb0e8222b37e92e431bcb35557acdd60d062d44089"},
+      "owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariables.cs", "sha256": "a1b1e2de67b9ce1501c7aa2ebecec016e5be8a87e753abcf3dcc856b646d39ee"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "bccc0e00f3415a882e6f729cb8f6deee15c7625f74999ddcf23545264fe7fcd6"},
+      "probe": {"path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredDeferredTransformVariablesProbe.compute", "sha256": "8d88e212bddfa13a5985db7a5e392ec3a0e5df40411dbb848b8a7e7ee2486910"},
+      "batch_verifier": {"path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredDeferredTransformVariablesBatchVerifier.cs", "sha256": "b27b97ae89ee90800268cf4d77fab41a291c03035627d607cb7723feaceb8f9f"},
+      "source_auditor": {"path": "tools/audit_deferred_transform_variables.py", "sha256": "248de36524cd21fff287ecdae71a302d65b40ac756aa19ef3ee5364361fee163"},
+      "validator": {"path": "tools/verify_deferred_transform_variables.py", "sha256": "e7574d34dbdfb313f4bc9f68ec270b7813c1402f3723a661a83a205ae0ec15fe"},
+      "validator_tests": {"path": "tools/test_verify_deferred_transform_variables.py", "sha256": "377d5fbd9cbeaf5b3f5e8a00ea0de6b9f34c61f25c703738d549cfdd9ff74ca2"},
+      "wrapper": {"path": "verify_recovered_deferred_transform_variables.bat", "sha256": "907e279fadf7a80402b66f2a78297d6e188f236a40afb57c0be3237154d45353"}
+    },
+    "validation": {
+      "frame_report": {"path": "scratch/character_recovery/deferred_transform_variables/frame_validation.json", "sha256": "81ae9f3750c779fe7887727430886f6e1baaa280b5435b8ed1459df51f8a8467"},
+      "gpu_reports": {
+        "d3d11": {"path": "scratch/character_recovery/deferred_transform_variables/gpu_validation_d3d11.json", "sha256": "34f195862a761240644c6bd4a41d9699be53d652381db75023e4812f43f63ca3", "log_path": "scratch/character_recovery/deferred_transform_variables/unity_frame_d3d11.log", "log_sha256": "442fe001f7326f393e625b1c6fec31040a9fb7e5b91af8e9282440a70bd23ac4", "beauty_sha256": "1753e0bd900dfc068e2604632122136a4abf047af0ef5ba9607f17abc8a27ec7"},
+        "d3d12": {"path": "scratch/character_recovery/deferred_transform_variables/gpu_validation_d3d12.json", "sha256": "e3de8d0a02bc647034094c4ad02297bee13478f1e8f1d2d6d43c2fc41842d155", "log_path": "scratch/character_recovery/deferred_transform_variables/unity_frame_d3d12.log", "log_sha256": "2657e435460a5246c9835d233c2c17c41de2b5ffff7fab279f5d63b44d8f8d39", "beauty_sha256": "59902c424de630a496364d57e404a5a72bcbcc42712bf7ef6935900d7500cac3"}
+      },
+      "fail_closed_d3d12": {"log_path": "scratch/character_recovery/deferred_transform_variables/unity_fail_closed_d3d12.log", "log_sha256": "c4b2510b8302cf9759fedc91a8ae2e962e9b66b7304850048ddf6d09c4967def", "beauty_sha256": "59902c424de630a496364d57e404a5a72bcbcc42712bf7ef6935900d7500cac3"},
+      "cross_api_words_bit_exact": true,
+      "unresolved_registers_zero": true,
+      "beauty_unchanged": true
     }
   },
   "default_deferred_gbuffer_submission": {

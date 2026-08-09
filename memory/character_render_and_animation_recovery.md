@@ -71,6 +71,11 @@ NPC archetypes are imported as labeled source kits.
   nonzero pixels, while an upstream-off run keeps canonical publication closed.
   A retail settled-frame capture, exact retail posed/view-culled records,
   target-frame light survivors, and the pass-0 consumer remain open.
+- The selected original pass-0 `_TransformVariables` b30 reads are now
+  source-closed for view, inverse-view, inverse GPU view-projection, and camera
+  position. The default-off same-frame publisher reads all 1,312 bytes back
+  identically on D3D11/D3D12; its 13 selected vectors match and the other 69
+  history/jitter/stereo rows remain zero. Pass 0 is still disabled.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData` layout. The native
   `HGShadowConstantBufferUtils` transport allocates the full buffer, copies one
   of four exact same-offset sections (CSM 1,024; Punctual 6,144; Character

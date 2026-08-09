@@ -1472,6 +1472,241 @@ def verify_deferred_gbuffer_frame_transport(recovery: dict[str, object]) -> None
     )
 
 
+def require_deferred_transform_variables_value(
+    source: Path,
+    check: str,
+    actual: object,
+    expected: object,
+) -> None:
+    if actual != expected:
+        raise AssertionError(
+            "Deferred TransformVariables validator failed: "
+            f"check={check}; source={source}; "
+            f"expected={expected!r}; actual={actual!r}"
+        )
+
+
+def verify_deferred_transform_variables_gpu_report(
+    report: dict[str, object],
+    api: str,
+    source: Path,
+) -> None:
+    expected_vectors = [
+        0, 1, 2, 3, 4, 5, 6, 7, 24, 25, 26, 27, 44
+    ]
+    require_deferred_transform_variables_value(
+        source,
+        f"transform_variables.{api}.identity",
+        (
+            report["schema"],
+            report["valid"],
+            report["graphicsApi"],
+            report["defaultOff"],
+            report["pass0ConsumerEnabled"],
+            report["bufferBytes"],
+            report["vectorCount"],
+            report["d3d11SelectedBytes"],
+        ),
+        (
+            "endfield-recovered-deferred-transform-variables-validation-v1",
+            True,
+            api,
+            True,
+            False,
+            1312,
+            82,
+            720,
+        ),
+    )
+    require_deferred_transform_variables_value(
+        source,
+        f"transform_variables.{api}.selected_vectors",
+        report["selectedUsedVectors"],
+        expected_vectors,
+    )
+    require_deferred_transform_variables_value(
+        source,
+        f"transform_variables.{api}.publication",
+        (
+            report["publicationReturnedReady"],
+            report["readyObserved"],
+            report["allPublishedWordsMatch"],
+            report["selectedConsumerWordsMatch"],
+            report["unresolvedRegistersZero"],
+            report["viewInverseRoundTrip"],
+            report["worldClipRoundTrip"],
+            report["failures"],
+        ),
+        (True, True, True, True, True, True, True, []),
+    )
+    require_deferred_transform_variables_value(
+        source,
+        f"transform_variables.{api}.words",
+        report["actualWords"],
+        report["expectedWords"],
+    )
+    require_deferred_transform_variables_value(
+        source,
+        f"transform_variables.{api}.word_count",
+        len(report["actualWords"]),
+        328,
+    )
+    require_deferred_transform_variables_value(
+        source,
+        f"transform_variables.{api}.fail_closed_gates",
+        [
+            (row["gate"], row["rejected"], row["diagnosticMatched"])
+            for row in report["failClosedGates"]
+        ],
+        [
+            ("destination_size", True, True),
+            ("nonfinite_camera", True, True),
+            ("singular_view", True, True),
+        ],
+    )
+
+
+def verify_deferred_transform_variables_transport(
+    recovery: dict[str, object],
+) -> None:
+    contract = json.loads(BINDING_CONTRACT_PATH.read_text(encoding="utf-8"))
+    transport = recovery["selected_deferred_transform_variables_transport"]
+    require_deferred_transform_variables_value(
+        RECOVERY_PATH,
+        "transform_variables.contract_transport",
+        contract["selected_deferred_transform_variables_transport"],
+        transport,
+    )
+    require_deferred_transform_variables_value(
+        RECOVERY_PATH,
+        "transform_variables.state",
+        (
+            transport["default_off"],
+            transport["published_by_default"],
+            transport["pass0_consumer_enabled"],
+            transport["logical_size_bytes"],
+            transport["logical_vector_count"],
+            transport["d3d11_bridge_size_bytes"],
+            transport["selected_used_vector_count"],
+        ),
+        (True, False, False, 1312, 82, 720, 13),
+    )
+
+    require_hash(
+        LAB_ROOT / transport["source_audit"]["path"],
+        transport["source_audit"]["sha256"],
+    )
+    for entry in transport["sources"].values():
+        require_hash(LAB_ROOT / entry["path"], entry["sha256"])
+
+    validation = transport["validation"]
+    frame_report_path = LAB_ROOT / validation["frame_report"]["path"]
+    require_hash(frame_report_path, validation["frame_report"]["sha256"])
+    frame_report = json.loads(frame_report_path.read_text(encoding="utf-8"))
+    require_deferred_transform_variables_value(
+        frame_report_path,
+        "transform_variables.frame_summary",
+        (
+            frame_report["valid"],
+            frame_report["defaultOff"],
+            frame_report["pass0ConsumerEnabled"],
+            frame_report["crossApiWordsBitExact"],
+            frame_report["unresolvedRegistersZero"],
+            frame_report["beautyUnchanged"],
+            frame_report["failClosedWithoutCanonicalPrerequisites"],
+        ),
+        (True, True, False, True, True, True, True),
+    )
+
+    reports: dict[str, dict[str, object]] = {}
+    active_token = (
+        "Recovered selected deferred _TransformVariables b30 reads are active "
+        "for the physical CharInfo camera; pass0=disabled."
+    )
+    for api in ("d3d11", "d3d12"):
+        evidence = validation["gpu_reports"][api]
+        report_path = LAB_ROOT / evidence["path"]
+        log_path = LAB_ROOT / evidence["log_path"]
+        require_hash(report_path, evidence["sha256"])
+        require_unity_log(
+            log_path,
+            evidence["log_sha256"],
+            [
+                f"Forcing GfxDevice: Direct3D {11 if api == 'd3d11' else 12}",
+                "Recovered canonical CharInfo binning + reflection oct/global + exact VisibilitySHConstData frame resources are active",
+                active_token,
+                "Exiting batchmode successfully now!",
+            ],
+        )
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        verify_deferred_transform_variables_gpu_report(report, api, report_path)
+        reports[api] = report
+        beauty = frame_report["evidence"][api]["beauty"]
+        require_hash(LAB_ROOT / beauty["path"], evidence["beauty_sha256"])
+
+    require_deferred_transform_variables_value(
+        RECOVERY_PATH,
+        "transform_variables.cross_api_words",
+        reports["d3d11"]["actualWords"],
+        reports["d3d12"]["actualWords"],
+    )
+
+    fail = validation["fail_closed_d3d12"]
+    require_unity_log(
+        LAB_ROOT / fail["log_path"],
+        fail["log_sha256"],
+        [
+            "Forcing GfxDevice: Direct3D 12",
+            "Recovered selected deferred _TransformVariables failed closed: canonical binning/reflection/VisibilitySHConstData prerequisites are not ready.",
+            "Exiting batchmode successfully now!",
+        ],
+    )
+    fail_beauty = frame_report["evidence"]["failClosedD3D12"]["beauty"]
+    require_hash(LAB_ROOT / fail_beauty["path"], fail["beauty_sha256"])
+
+    sources = transport["sources"]
+    require_tokens(
+        LAB_ROOT / sources["contract"]["path"],
+        [
+            "SizeBytes = 1312",
+            "D3D11SelectedSizeBytes = 720",
+            "ViewFirstVector = 0",
+            "InverseViewFirstVector = 4",
+            "InverseViewProjectionFirstVector = 24",
+            "CameraPositionVector = 44",
+            "GL.GetGPUProjectionMatrix(",
+            "Array.Clear(destination, 0, destination.Length)",
+            "PackD3DColumnRegisters",
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / sources["owner"]["path"],
+        [
+            "ENDFIELD_RECOVERED_DEFERRED_TRANSFORM_VARIABLES",
+            'Shader.PropertyToID("_TransformVariables")',
+            'Shader.PropertyToID("EndfieldCB0")',
+            '"_EndfieldRecoveredDeferredTransformVariablesReady"',
+            '"_EndfieldRecoveredDeferredPass0InputSubsetReady"',
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / sources["pipeline"]["path"],
+        [
+            "EndfieldRecoveredDeferredTransformVariables",
+            ".PrepareAndPublish(",
+            '"_TransformVariables b30 reads are active "',
+            '"VisibilitySHConstData prerequisites are not ready."',
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / sources["probe"]["path"],
+        [
+            "cbuffer _TransformVariables",
+            "float4 _EndfieldRecoveredDeferredTransformVectors[82]",
+        ],
+    )
+
+
 def require_hdpls_matrix_value(
     source: Path,
     check: str,
@@ -5010,6 +5245,7 @@ def main() -> int:
     verify_native_map(recovery)
     verify_selected_resolver_binding_contract()
     verify_deferred_gbuffer_frame_transport(recovery)
+    verify_deferred_transform_variables_transport(recovery)
     verify_fail_closed(recovery)
     verify_visibility_sh_unity_replay()
     print(
@@ -5068,7 +5304,9 @@ def main() -> int:
         "constant transport, and the D3D11/D3D12-identical nonzero canonical "
         "VisibilitySH frame publication, plus the source-camera 640x720 exact "
         "five-MRT SphereOutside HGBuffer sidecar with D32S8 depth and "
-        "D3D11/D3D12-identical readbacks are pinned; canonical publication and "
+        "D3D11/D3D12-identical readbacks, and the selected b30 view/inverse-view/"
+        "inverse-GPU-view-projection/camera-position words with zeroed unclosed "
+        "rows are pinned; canonical publication and "
         "pass-0 presentation remain default-off because the CharInfo-frame "
         "runtime contract is not closed."
     )
