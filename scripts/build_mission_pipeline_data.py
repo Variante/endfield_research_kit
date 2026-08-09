@@ -1519,9 +1519,11 @@ RUNTIME_CONTRACT = {
         ),
         "bindScriptFinding": (
             "The installed MemoryPack setter stores bindScriptId at row offset +0x50. "
-            "WorldChallengeGame.SendQuit reads that exact field, resolves the LevelScript, "
-            "calls LevelScriptRuntime.ManualEnd, and then sends the stop request. Audited "
-            "concrete and shared OnStart paths do not read bindScriptId."
+            "InteractiveLogicChallengeStartPoint._OnInteract resolves the typed row, "
+            "reads that exact field, resolves the LevelScript, and calls "
+            "LevelScriptRuntime.ManualStart. WorldChallengeGame.SendQuit reads the same "
+            "field before ManualEnd and the stop request. These prove the generic bound-"
+            "script lifecycle, not which interaction occurred."
         ),
         "ownershipBoundary": (
             "No audited GameMechanics lifecycle packet carries missionId, questId, "
@@ -3130,6 +3132,21 @@ RUNTIME_CONTRACT = {
             "confidence": "native_proven",
         },
         {
+            "symbol": (
+                "InteractiveLogicChallengeStartPoint._OnInteract -> "
+                "LevelScriptRuntime.ManualStart"
+            ),
+            "address": "0x18713e548 + 0x34a -> 0x186faac74",
+            "finding": (
+                "Resolves the typed SubGame row from m_subGameId, reads "
+                "bindScriptId at exact row offset +0x50, resolves that LevelScript, "
+                "and calls ManualStart. This proves a generic interaction-start "
+                "carrier for the exact bound script, not that an interaction fired, "
+                "which mission owns Story playback, or Story order."
+            ),
+            "confidence": "native_proven",
+        },
+        {
             "symbol": "MissionSystem.OnSubConditionProgressChanged",
             "address": "0x183a6fc20",
             "finding": "Sends an absolute CS_UPDATE_QUEST_OBJECTIVE operation for the changed condition id.",
@@ -4548,8 +4565,9 @@ def load_subgame_mission_bindings(
 ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
     """Load exact mission/script identities co-authored in typed SubGame rows.
 
-    The relation is deliberately mission-shell context. It never attaches a
-    quest or Story file, even when the bound script has native playback.
+    The relation is deliberately mission-shell context. Authored task lanes are
+    retained so later generic recovery can require an exact script/task carrier.
+    It never attaches a quest or Story file merely because the script is bound.
     """
     if table_path is None or not table_path.is_file():
         return {}, {
@@ -4589,6 +4607,28 @@ def load_subgame_mission_bindings(
         runtime_type = str(raw.get("$type") or "")
         if "," in runtime_type:
             runtime_type = runtime_type.split(",", 1)[0]
+        task_lanes: dict[str, list[dict[str, Any]]] = {}
+        for source_field, lane in (
+            ("mainTasks", "main"),
+            ("extraTasks", "extra"),
+            ("failTasks", "fail"),
+        ):
+            values = raw.get(source_field)
+            if not isinstance(values, list):
+                raise ValueError(
+                    "SubGame task lane is not an array: "
+                    f"source={table_path} subGameId={subgame_id} "
+                    f"lane={source_field} actual={type(values).__name__}"
+                )
+            task_lanes[lane] = [
+                {
+                    key: value
+                    for key, value in task.items()
+                    if key in {"taskId", "levelScriptId", "failInfo"}
+                }
+                for task in values
+                if isinstance(task, dict) and str(task.get("taskId") or "")
+            ]
         bindings[mission_id].append({
             "subGameId": str(subgame_id),
             "bindScriptId": str(script_id),
@@ -4602,6 +4642,7 @@ def load_subgame_mission_bindings(
             "confidence": "typed_original_data",
             "source": repo_path(table_path),
             "storyBinding": False,
+            "taskLanes": task_lanes,
             "networkIdentity": {
                 "authoredKeyField": "gameId",
                 "authoredKeyValue": str(subgame_id),
@@ -4633,15 +4674,27 @@ def load_subgame_mission_bindings(
         },
         "bindScriptNativeEvidence": {
             "serializedFieldOffset": "0x50",
-            "knownConsumer": "WorldChallengeGame.SendQuit",
-            "knownConsumerAddress": "0x186f60cc8",
-            "knownEffect": "LevelScriptManager.TryGetLevelScript -> LevelScriptRuntime.ManualEnd -> send stop request",
-            "auditedOnStartConsumerFound": False,
+            "startConsumer": "InteractiveLogicChallengeStartPoint._OnInteract",
+            "startConsumerToken": "0x0600231a",
+            "startConsumerAddress": "0x18713e548",
+            "startEffect": (
+                "SubGame table lookup -> bindScriptId read -> "
+                "LevelScriptManager.TryGetLevelScript -> LevelScriptRuntime.ManualStart"
+            ),
+            "stopConsumer": "WorldChallengeGame.SendQuit",
+            "stopConsumerAddress": "0x186f60cc8",
+            "stopEffect": (
+                "LevelScriptManager.TryGetLevelScript -> "
+                "LevelScriptRuntime.ManualEnd -> send stop request"
+            ),
+            "auditedOnStartConsumerFound": True,
         },
         "evidenceBoundary": (
-            "Exact typed mission↔SubGame↔LevelScript shell only; no quest or Story "
-            "attachment is inferred from co-membership. OCR, manual, and gameplay "
-            "cross-references cannot promote this relation."
+            "Exact typed mission-to-SubGame-to-LevelScript shell and authored task "
+            "lanes only; the binary proves the generic interaction ManualStart "
+            "carrier but not that it fired. No quest or Story attachment is inferred "
+            "from co-membership. OCR, manual, and gameplay cross-references cannot "
+            "promote this relation."
         ),
     }
 

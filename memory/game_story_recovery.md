@@ -124,6 +124,18 @@ never promotes an edge.
 - Exact native playback actions, event headers, predicates, and local control
   graphs are decoded from original LevelScript data with hash-pinned binary
   contracts.
+- The active LevelScript overlay (`Persistent` over the matching
+  `StreamingAssets` path) contains 230 validated `CheckTalkOptionFinish`
+  consumers: 42 exact nonnegative finish ids and 188 any-finish checks. A
+  schema-driven decoder recovers complete task maps, while a bounded fragment
+  scanner admits a condition from mixed maps only when the union payload,
+  dictionary key, member-count envelope, and trailing objective fields all
+  agree. Joining exact finish state to MissionRuntime publishes 15 objective
+  placements across 14 task rows and 13 missions (12 complete maps and three
+  bounded fragments). One row, `c28m3`, also has an exact same-mission SubGame
+  task carrier. This proves shared branch-state fan-out and a mission shell,
+  not task activation, player choice, server successor selection, or Story
+  order. Twenty-eight exact LevelScript consumers remain unmatched.
 - Split/fan-out scheduling preserves sibling actions as parallel or unordered.
   Array/list position is never chronology.
 - Parent-dialog activation uses the same corpus-wide typed control-path walker,
@@ -218,14 +230,17 @@ Reject as proof:
 1. Recover a typed mission/quest owner for the 156 unlinked Story files that
    already have exact native playback, especially repeated LevelScript
    receiver families.
-2. Find any client-visible carrier for server-side mission/quest successor
+2. Extend the general LevelScript task-union decoder for the remaining mixed
+   maps, then investigate the 28 exact unmatched finish consumers. Preserve
+   fragment task identity as unresolved unless the enclosing map validates.
+3. Find any client-visible carrier for server-side mission/quest successor
    selection or LevelScript activation policy. Current state/update packets do
    not co-carry Story ownership.
-3. Resolve source-bounded parent-dialog and Timeline placements only when a new
+4. Resolve source-bounded parent-dialog and Timeline placements only when a new
    exact producer/consumer or mission foreign key appears.
-4. Improve within-mission order through strong relations. Do not turn the
+5. Improve within-mission order through strong relations. Do not turn the
    current sparse partial order into a total order by heuristic sorting.
-5. Revisit option gaps only when new runtime route evidence appears; most
+6. Revisit option gaps only when new runtime route evidence appears; most
    no-route rows are single-option acknowledgements or already bounded
    cosmetic/shared definitions. The 20 corpus-level rejected normal-option
    routes are structurally classified; revisit them only if a new original

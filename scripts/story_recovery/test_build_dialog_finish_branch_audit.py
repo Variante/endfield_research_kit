@@ -395,6 +395,187 @@ class PipelinePublicationTests(unittest.TestCase):
             self.assertEqual(index["counts"]["dialogFinishEndpointDependencies"], 1)
             self.assertEqual(index["counts"]["dialogFinishExactConsumerCoverage"], 2)
 
+    def test_publishes_shared_task_consumer_and_exact_subgame_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = {
+                "missions": [{"id": "mission_fixture", "file": "mission.json"}],
+                "counts": {},
+            }
+            payload = {
+                "mission": {
+                    "nativeRuntimeBindings": [
+                        {
+                            "subGameId": "subgame_fixture",
+                            "bindScriptId": "4242",
+                        }
+                    ]
+                },
+                "nodes": [
+                    {
+                        "id": "quest_fixture",
+                        "objectives": [
+                            {"index": 0, "conditionId": "mission_condition"}
+                        ],
+                    }
+                ],
+            }
+            shared = {
+                "missionId": "mission_fixture",
+                "questId": "quest_fixture",
+                "objectiveIndex": 0,
+                "missionConditionId": "mission_condition",
+                "dialogId": "dlg_fixture",
+                "finishId": 2,
+                "scriptId": "4242",
+                "taskConditionId": "task_condition",
+                "missionShellRelationship": "same_mission_shell",
+                "missionShellOwner": {
+                    "missionId": "mission_fixture",
+                    "subGameId": "subgame_fixture",
+                    "scriptId": "4242",
+                    "taskId": "deadbeef",
+                },
+            }
+            report = {
+                "schemaVersion": "dialogFinishMissionBranchAudit.v6",
+                "status": "validated",
+                "evidencePolicy": "fixture",
+                "counts": {},
+                "producerFamilyCounts": {},
+                "nativeContract": {},
+                "dependencies": [],
+                "endpointDependencies": [],
+                "levelScriptTaskSharedConsumerDependencies": [shared],
+            }
+
+            published = audit.publish_to_pipeline_index(
+                index,
+                report,
+                {"mission_fixture": payload},
+                root,
+            )
+
+            self.assertEqual(1, published)
+            objective = payload["nodes"][0]["objectives"][0]
+            self.assertEqual(
+                "task_condition",
+                objective["dialogFinishLevelScriptTaskDependencies"][0][
+                    "taskConditionId"
+                ],
+            )
+            binding = payload["mission"]["nativeRuntimeBindings"][0]
+            self.assertEqual(
+                "dlg_fixture",
+                binding["dialogFinishTaskDependencies"][0]["dialogId"],
+            )
+            self.assertEqual(
+                1,
+                index["counts"]["dialogFinishOwnedLevelScriptTaskDependencies"],
+            )
+
+
+class LevelScriptTaskConsumerTests(unittest.TestCase):
+    @staticmethod
+    def _condition_row(finish_id: int = 2) -> dict:
+        constant = lambda value: {
+            "value": value,
+            "idRef": -1,
+            "paramSource": 0,
+            "path": None,
+        }
+        return {
+            "conditionKey": "cafefeed",
+            "condition": {
+                "type": "CheckTalkOptionFinish",
+                "conditionOffset": 42,
+                "conditionOffsetHex": "0x2a",
+                "conditionUnionTag": "0x009f",
+                "nativeMappingId": "fixture",
+                "dialogId": constant("dlg_fixture"),
+                "finishId": constant(finish_id),
+            },
+        }
+
+    def test_overlay_is_data_driven_and_persistent_wins(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            streaming = root / "StreamingAssets" / "LevelScriptData"
+            persistent = root / "Persistent" / "LevelScriptData"
+            for source, body in ((streaming, b"streaming"), (persistent, b"persistent")):
+                target = source / "level_fixture" / "4242.json"
+                target.parent.mkdir(parents=True)
+                target.write_bytes(body)
+            decoded = [{
+                "tasks": [{
+                    "taskKey": "deadbeef",
+                    "conditions": [self._condition_row()],
+                }]
+            }]
+            with (
+                patch.object(
+                    audit,
+                    "decode_levelscript_task_conditions",
+                    side_effect=lambda data, _script: decoded if data == b"persistent" else [],
+                ),
+                patch.object(
+                    audit,
+                    "scan_levelscript_task_condition_fragments",
+                    return_value=[],
+                ),
+            ):
+                rows, census = audit._collect_levelscript_task_finish_consumers(
+                    (streaming, persistent)
+                )
+            self.assertEqual(1, len(rows))
+            self.assertIn("Persistent", rows[0]["sourceFile"])
+            self.assertEqual("deadbeef", rows[0]["taskId"])
+            self.assertEqual(1, census["shadowedPathCount"])
+            self.assertEqual(1, census["changedOverrideCount"])
+
+    def test_indirect_finish_param_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            streaming = Path(tmp) / "StreamingAssets" / "LevelScriptData"
+            persistent = Path(tmp) / "Persistent" / "LevelScriptData"
+            target = streaming / "level_fixture" / "4242.json"
+            target.parent.mkdir(parents=True)
+            target.write_bytes(b"fixture")
+            persistent.mkdir(parents=True)
+            row = self._condition_row()
+            row["condition"]["finishId"]["paramSource"] = 1000
+            decoded = [{"tasks": [{"taskKey": "deadbeef", "conditions": [row]}]}]
+            with (
+                patch.object(audit, "decode_levelscript_task_conditions", return_value=decoded),
+                patch.object(audit, "scan_levelscript_task_condition_fragments", return_value=[]),
+            ):
+                rows, census = audit._collect_levelscript_task_finish_consumers(
+                    (streaming, persistent)
+                )
+            self.assertEqual([], rows)
+            self.assertEqual(1, census["rejectedIndirectOrMalformedParamCount"])
+
+    def test_subgame_owner_requires_unique_exact_script_task_carrier(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            table = Path(tmp) / "SubGameInstanceDataTable.json"
+            rows = {}
+            for suffix in ("a", "b"):
+                subgame_id = f"subgame_{suffix}"
+                rows[subgame_id] = {
+                    "id": subgame_id,
+                    "$type": "Fixture.DungeonSubGameData, Fixture",
+                    "dungeonMissionId": f"mission_{suffix}",
+                    "bindScriptId": 4242,
+                    "mainTasks": [{"taskId": "deadbeef"}],
+                    "extraTasks": [],
+                    "failTasks": [],
+                }
+            table.write_text(json.dumps({"dataTable": rows}), encoding="utf-8")
+
+            owners, census = audit._load_subgame_task_owners(table)
+
+            self.assertNotIn(("4242", "deadbeef"), owners)
+            self.assertEqual(1, len(census["ambiguousTaskOwners"]))
+
 
 class NativeContractTests(unittest.TestCase):
     class FakePe:
