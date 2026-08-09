@@ -802,6 +802,9 @@ LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID = (
 LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID = (
     "gameassembly-2026-07-11-memorypack-play-fmv-action-fields"
 )
+LEVELSCRIPT_NATIVE_AUDIO_ACTION_MAPPING_ID = (
+    "gameassembly-2026-08-09-memorypack-audio-action-fields"
+)
 NOISY_PROPERTY_PREFIXES = (
     "$",
     "#",
@@ -6294,6 +6297,346 @@ def _decode_tagged_string_parameter_at(
     return text, field_end
 
 
+def _decode_audio_param_tail(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode the audio-action Param tail, including getter source ``-1``."""
+    if cursor + 12 > len(payload):
+        return None
+    id_ref, param_source, path_size = struct.unpack_from("<iii", payload, cursor)
+    cursor += 12
+    if id_ref < -1 or param_source < -1 or param_source > 0x10000:
+        return None
+    if path_size == -1:
+        path = None
+    elif 0 <= path_size <= 1024 and cursor + path_size <= len(payload):
+        try:
+            path = payload[cursor : cursor + path_size].decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+        cursor += path_size
+    else:
+        return None
+    return {"idRef": id_ref, "paramSource": param_source, "path": path}, cursor
+
+
+def _decode_audio_scalar_param(
+    payload: bytes,
+    cursor: int,
+    value_kind: str,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode a string/bool/i32/float audio Param with its exact binding."""
+    if cursor >= len(payload) or payload[cursor] != 0x04:
+        return None
+    if value_kind == "string":
+        if cursor + 5 > len(payload):
+            return None
+        size = struct.unpack_from("<i", payload, cursor + 1)[0]
+        value_cursor = cursor + 5
+        if size == -1:
+            value = None
+        elif 0 <= size <= 1024 and value_cursor + size <= len(payload):
+            try:
+                value = payload[value_cursor : value_cursor + size].decode("utf-8")
+            except UnicodeDecodeError:
+                return None
+            value_cursor += size
+        else:
+            return None
+    elif value_kind == "bool":
+        if cursor + 2 > len(payload) or payload[cursor + 1] not in (0, 1):
+            return None
+        value = bool(payload[cursor + 1])
+        value_cursor = cursor + 2
+    elif value_kind == "i32":
+        if cursor + 5 > len(payload):
+            return None
+        value = struct.unpack_from("<i", payload, cursor + 1)[0]
+        value_cursor = cursor + 5
+    elif value_kind == "float":
+        if cursor + 5 > len(payload):
+            return None
+        raw_value = struct.unpack_from("<f", payload, cursor + 1)[0]
+        if not math.isfinite(raw_value):
+            return None
+        value = _round_float(raw_value)
+        value_cursor = cursor + 5
+    else:
+        return None
+    tail = _decode_audio_param_tail(payload, value_cursor)
+    if tail is None:
+        return None
+    detail, end = tail
+    return {"value": value, **detail}, end
+
+
+def _decode_audio_string_param(payload: bytes, cursor: int) -> tuple[dict[str, Any], int] | None:
+    return _decode_audio_scalar_param(payload, cursor, "string")
+
+
+def _decode_audio_bool_param(payload: bytes, cursor: int) -> tuple[dict[str, Any], int] | None:
+    return _decode_audio_scalar_param(payload, cursor, "bool")
+
+
+def _decode_audio_i32_param(payload: bytes, cursor: int) -> tuple[dict[str, Any], int] | None:
+    return _decode_audio_scalar_param(payload, cursor, "i32")
+
+
+def _decode_audio_float_param(payload: bytes, cursor: int) -> tuple[dict[str, Any], int] | None:
+    return _decode_audio_scalar_param(payload, cursor, "float")
+
+
+def _decode_audio_entity_param(payload: bytes, cursor: int) -> tuple[dict[str, Any], int] | None:
+    decoded = _decode_constant_entity_ptr_param(payload, cursor)
+    if decoded is None:
+        return None
+    detail, end = decoded
+    if detail.get("idRef", -2) < -1:
+        return None
+    if not -1 <= detail.get("paramSource", -2) <= 0x10000:
+        return None
+    return detail, end
+
+
+def _decode_vector3_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode one authored ``Param<Vector3>`` and its binding tail."""
+    if cursor + 13 > len(payload) or payload[cursor] != 0x04:
+        return None
+    raw = struct.unpack_from("<fff", payload, cursor + 1)
+    if not all(math.isfinite(value) for value in raw):
+        return None
+    tail = _decode_audio_param_tail(payload, cursor + 13)
+    if tail is None:
+        return None
+    detail, end = tail
+    return {
+        "value": {
+            "x": _round_float(raw[0]),
+            "y": _round_float(raw[1]),
+            "z": _round_float(raw[2]),
+        },
+        **detail,
+    }, end
+
+
+def _decode_nullable_audio_field(
+    payload: bytes,
+    cursor: int,
+    decoder: Any,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode a nullable MemoryPack audio-action field.
+
+    ``Param<T>`` and ``ParamOutput<T>`` are reference members. The installed
+    blobs serialize an absent member as one ``0xff`` byte and a present member
+    with its ordinary typed formatter.
+    """
+    if cursor < len(payload) and payload[cursor] == 0xFF:
+        return {"present": False, "bindingKind": "null"}, cursor + 1
+    decoded = decoder(payload, cursor)
+    if decoded is None:
+        return None
+    detail, end = decoded
+    detail = {"present": True, **detail}
+    if "idRef" in detail:
+        detail["bindingKind"] = (
+            "constant"
+            if detail.get("idRef") == -1
+            and detail.get("paramSource") == 0
+            and detail.get("path") is None
+            else "dynamic"
+        )
+    else:
+        detail["bindingKind"] = "output"
+    return detail, end
+
+
+def _finish_audio_action_fields(
+    payload: bytes,
+    end: int,
+    detail: dict[str, Any],
+) -> dict[str, Any]:
+    """Accept exact audio fields plus proven outer ActionMap list framing.
+
+    The final physical action in a serialized list can be followed, before
+    the next UID record, by one list count or by an empty-list count and the
+    following list count. Those u32 values are container framing, not action
+    fields. Current installed records use only these three bounded forms.
+    """
+    trailer = payload[end:]
+    framing: list[int] = []
+    if not trailer:
+        pass
+    elif len(trailer) == 4:
+        framing = [struct.unpack_from("<I", trailer, 0)[0]]
+    elif len(trailer) == 8 and trailer[:4] == b"\x00\x00\x00\x00":
+        framing = list(struct.unpack_from("<II", trailer, 0))
+    else:
+        return {}
+    if any(value > 0x10000 for value in framing):
+        return {}
+    out = {
+        **detail,
+        "consumedBytes": end,
+        "payloadShape": "audio-action-exact-current-build-memorypack-fields",
+        "nativeMappingId": LEVELSCRIPT_NATIVE_AUDIO_ACTION_MAPPING_ID,
+    }
+    if framing:
+        out["trailingActionMapFramingU32s"] = framing
+    return out
+
+
+def _decode_audio_action(
+    payload: bytes,
+    semantic_key: tuple[int, int],
+) -> dict[str, Any]:
+    """Decode the installed high-yield ActionBase audio field layouts.
+
+    The union tag/member-count pair selects one exact generated MemoryPack
+    formatter. Every declared derived member is decoded in generated-setter
+    order. Literal Event/cue bindings are emitted only for constant string
+    parameters; dynamic parameters retain idRef/source/path evidence without
+    being promoted to an authored name.
+    """
+    layouts: dict[
+        tuple[int, int],
+        tuple[str, tuple[tuple[str, Any], ...]],
+    ] = {
+        (0x034C, 0x0C): (
+            "PlayAudiAtPosition",
+            (
+                ("audioPlayingId", _decode_param_output),
+                ("key", _decode_audio_string_param),
+                ("position", _decode_vector3_param),
+                ("stopOnRelease", _decode_audio_bool_param),
+            ),
+        ),
+        (0x034E, 0x0B): (
+            "PlayAudio",
+            (
+                ("audioPlayingId", _decode_param_output),
+                ("key", _decode_audio_string_param),
+                ("stopOnRelease", _decode_audio_bool_param),
+            ),
+        ),
+        (0x034F, 0x10): (
+            "PlayAudioAndWait",
+            (
+                ("eventName", _decode_audio_string_param),
+                ("playCompleteThreshold", _decode_audio_float_param),
+                ("playingId", _decode_param_output),
+                ("playType", _decode_audio_i32_param),
+                ("position", _decode_vector3_param),
+                ("stopAudioOnRelease", _decode_audio_bool_param),
+                ("targetEntity", _decode_audio_entity_param),
+                ("targetProxy", _decode_audio_string_param),
+            ),
+        ),
+        (0x0352, 0x0C): (
+            "PlayAudioOnTarget",
+            (
+                ("audioKey", _decode_audio_string_param),
+                ("audioPlayingId", _decode_param_output),
+                ("stopOnRelease", _decode_audio_bool_param),
+                ("target", _decode_audio_entity_param),
+            ),
+        ),
+        (0x036B, 0x13): (
+            "PostAudioCue",
+            (
+                ("behaviourType", _decode_audio_i32_param),
+                ("boolParam", _decode_audio_bool_param),
+                ("boolParam1", _decode_audio_bool_param),
+                ("boolParam2", _decode_audio_bool_param),
+                ("cueHandlerId", _decode_param_output),
+                ("floatParam", _decode_audio_float_param),
+                ("intParam", _decode_audio_i32_param),
+                ("name", _decode_audio_string_param),
+                ("placeholderMusicFadeInType", _decode_audio_i32_param),
+                ("stringParam", _decode_audio_string_param),
+                ("volume0To10", _decode_audio_float_param),
+            ),
+        ),
+        (0x0371, 0x0B): (
+            "PostAudioStatusEvent",
+            (
+                ("onlyTriggerExitAfterNodeTriggered", _decode_audio_bool_param),
+                ("statusEnterEvent", _decode_audio_string_param),
+                ("statusExitEvent", _decode_audio_string_param),
+            ),
+        ),
+        (0x0373, 0x0C): (
+            "PostMusicEvent",
+            (
+                ("musicEvent", _decode_audio_string_param),
+                ("musicEventOnRelease", _decode_audio_string_param),
+                ("musicEventType", _decode_audio_i32_param),
+                ("playingId", _decode_param_output),
+            ),
+        ),
+    }
+    layout = layouts.get(semantic_key)
+    if layout is None:
+        return {}
+    action_name, serialized_fields = layout
+    cursor = 0
+    fields: dict[str, dict[str, Any]] = {}
+    for field_name, decoder in serialized_fields:
+        decoded = _decode_nullable_audio_field(payload, cursor, decoder)
+        if decoded is None:
+            return {}
+        field_detail, cursor = decoded
+        fields[field_name] = {
+            "sourceField": f"_{field_name}",
+            **field_detail,
+        }
+
+    event_roles = {
+        "PlayAudiAtPosition": (("key", "play"),),
+        "PlayAudio": (("key", "play"),),
+        "PlayAudioAndWait": (("eventName", "play"),),
+        "PlayAudioOnTarget": (("audioKey", "play"),),
+        "PostAudioStatusEvent": (
+            ("statusEnterEvent", "statusEnter"),
+            ("statusExitEvent", "statusExit"),
+        ),
+        "PostMusicEvent": (
+            ("musicEvent", "post"),
+            ("musicEventOnRelease", "release"),
+        ),
+    }
+    event_bindings = []
+    for field_name, role in event_roles.get(action_name, ()):
+        field = fields[field_name]
+        value = field.get("value")
+        if field.get("bindingKind") == "constant" and isinstance(value, str) and value:
+            event_bindings.append({
+                "eventName": value,
+                "role": role,
+                "sourceField": field["sourceField"],
+            })
+    cue_bindings = []
+    if action_name == "PostAudioCue":
+        field = fields["name"]
+        value = field.get("value")
+        if field.get("bindingKind") == "constant" and isinstance(value, str) and value:
+            cue_bindings.append({
+                "cueName": value,
+                "role": "invoke",
+                "sourceField": field["sourceField"],
+            })
+
+    return _finish_audio_action_fields(payload, cursor, _drop_empty({
+        "action": action_name,
+        "fields": fields,
+        "eventBindings": event_bindings,
+        "cueBindings": cue_bindings,
+    }))
+
+
 def _decode_fmv_action(
     payload: bytes,
     payload_start: int,
@@ -6561,6 +6904,18 @@ def decode_levelscript_record_payload(
         fmv_action = _decode_fmv_action(payload, payload_start, record)
         if fmv_action:
             out["fmvAction"] = fmv_action
+    if semantic_key in {
+        (0x034C, 0x0C),
+        (0x034E, 0x0B),
+        (0x034F, 0x10),
+        (0x0352, 0x0C),
+        (0x036B, 0x13),
+        (0x0371, 0x0B),
+        (0x0373, 0x0C),
+    }:
+        audio_action = _decode_audio_action(payload, semantic_key)
+        if audio_action:
+            out["audioAction"] = audio_action
     if semantic_key == (0x031E, 0x0C):
         npc_patrol_start = _decode_npc_patrol_start_action(payload)
         if npc_patrol_start:
