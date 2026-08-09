@@ -132,6 +132,12 @@ UNITY_DISPATCH_CULL_JOBS_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGCullingSystem::DispatchBatchCullingJobs"
 )
 
+UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_INDEX = 10320
+UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_VA = 0x180175A10
+UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGTreeRender::CreateRendererList"
+)
+
 UNITY_CULL_VIEW_BODIES = {
     "injected_binding": (
         0x1800F9790,
@@ -224,16 +230,6 @@ UNITY_SCHEDULED_CULL_BODIES = {
         0x60,
         "e0404f9a11a72bc0c563e51e1c55fe16c4e5df6a4740a7f07501c32ec09254f5",
     ),
-    "renderer_candidate_serializer": (
-        0x18106FD70,
-        0x1DC,
-        "285455b0862cf34c1b0aaeb7b198489c9dc805d7e3921424b07d75239fdfe0f2",
-    ),
-    "renderer_candidate_deserializer": (
-        0x1810701C0,
-        0x26C,
-        "9ad71baa660f3e2547417faad460a8667bc22e98f4c2360c7f8f8a4e2cff3d72",
-    ),
 }
 
 UNITY_SCHEDULED_CULL_SLICES = {
@@ -255,6 +251,42 @@ UNITY_SCHEDULED_CULL_SLICES = {
         "f3420f5c449020f30f59dbf3410f5f4808f30f59d2f30f59c0"
         "f30f584934f30f58daf30f59c9f30f58d80f2fcb0f93c0c3",
     ),
+}
+
+UNITY_HGTREE_BODIES = {
+    "instance_serializer": (
+        0x18106F9A0,
+        0x3C9,
+        "be21b07910174f9d037140711484fbfe345baae4d785b7ef5e035bd1d12195f9",
+    ),
+    "renderer_serializer": (
+        0x18106FD70,
+        0x1DC,
+        "285455b0862cf34c1b0aaeb7b198489c9dc805d7e3921424b07d75239fdfe0f2",
+    ),
+    "renderer_deserializer": (
+        0x1810701C0,
+        0x26C,
+        "9ad71baa660f3e2547417faad460a8667bc22e98f4c2360c7f8f8a4e2cff3d72",
+    ),
+    "create_renderer_list_binding": (
+        0x180175A10,
+        0x23B,
+        "2afe0023cdadb52d43ea6601fa38a555276b189da8cb2389fc0a0bcf43cad47e",
+    ),
+    "renderer_list_manager_dispatch": (
+        0x180A5E320,
+        0x13E,
+        "1e962452aa30d8f735f5ecf1f0323b139eac72f9276d193d032cef33bf77d03c",
+    ),
+}
+
+UNITY_HGTREE_SLICES = {
+    "instance_renderer_array_to_nested_serializer": (
+        0x18106FAE2,
+        "896c24204c8d050b59cb00488bce488d15658ace00e884b976ff"
+        "488bd6488d4c2430e867020000",
+    ),
     "renderer_lod_offsets_write": (
         0x18106FEB6,
         "4c8b05934dcf004c8d4f14488d1540e7da00896c2420"
@@ -267,9 +299,34 @@ UNITY_SCHEDULED_CULL_SLICES = {
         "488d57144533c94c8d0509e2da00488bcbe8c9bd26ff"
         "488d57184533c94c8d050be2da00488bcb",
     ),
+    "create_renderer_list_to_manager": (
+        0x180175B6A,
+        "488d4d5fe84d6a8e00f30f10457f8bd00f28def30f11442420"
+        "0f28d7488bcbe892878e00",
+    ),
+    "manager_virtual_slot_158": (
+        0x180A5E380,
+        "488b074c8d4424548bd5488bc84c8b0841ff9158010000",
+    ),
+    "manager_virtual_slot_160": (
+        0x180A5E402,
+        "488b074c8d442460488bc8488b104c8b8a600100008bd541ffd1",
+    ),
 }
 
-UNITY_RENDERER_CANDIDATE_FIELD_NAMES = {
+UNITY_HGTREE_FIELD_NAMES = {
+    0x181D253F8: "HGTreeRenderer",
+    0x181D25408: "HGTreeInstance",
+    0x181E1E4F4: "bounds",
+    0x181E1E560: "rendererHalfSize",
+    0x181E1E578: "objectFlags",
+    0x181D774E8: "renderers",
+    0x181E1E588: "rendererOffsets",
+    0x181E1E598: "colliderData",
+    0x181E1E5A8: "colliderMeshes",
+    0x181E1E5B8: "objectToWorld",
+    0x181E1E5C8: "param0",
+    0x181E1E5D0: "param1",
     0x181E1E5D8: "batchKey",
     0x181E1E5E8: "renderFlags",
     0x181CF20A0: "mesh",
@@ -957,24 +1014,6 @@ def validate_unity_scheduled_culling_boundary(
             }
         )
 
-    field_names = []
-    for virtual_address, expected_name in (
-        UNITY_RENDERER_CANDIDATE_FIELD_NAMES.items()
-    ):
-        actual_name = image.cstring(virtual_address)
-        require(
-            "unity_scheduled_cull_renderer_candidate_field_name",
-            actual_name,
-            expected_name,
-            image.path,
-        )
-        field_names.append(
-            {
-                "virtualAddress": f"0x{virtual_address:X}",
-                "name": actual_name,
-            }
-        )
-
     return {
         "internalCall": {
             "index": UNITY_DISPATCH_CULL_JOBS_ICALL_INDEX,
@@ -1007,7 +1046,143 @@ def validate_unity_scheduled_culling_boundary(
                 "prove that later renderer/entity jobs omit the threshold"
             ),
         },
-        "rendererCandidateRecord": {
+        "evidenceBoundary": {
+            "closed": [
+                "DispatchBatchCullingJobs internal-call binding and native call chain",
+                "camera-type predicate selection",
+                "standard six-plane AABB predicate",
+                "cameraType 0x80 sphere/distance predicate",
+                "absence of cull-view +0x18 from those two selected predicates",
+            ],
+            "open": [
+                "the later renderer/entity consumer, if any, of cull-view +0x18",
+                "whether the installed zero view threshold makes that later gate unconditional",
+                "target-frame runtime overrides and final survivor rows",
+            ],
+        },
+        "verifiedBodies": bodies,
+        "verifiedInstructionSlices": slices,
+    }
+
+
+def validate_unity_hgtree_renderer_boundary(
+    image: PEImage,
+) -> dict[str, object]:
+    """Pin HGTreeRenderer ownership without merging it into scheduled culling."""
+
+    require("unity_player_image_base", image.image_base, 0x180000000, image.path)
+    target = image.u64(
+        UNITY_ICALL_FUNCTION_TABLE_VA
+        + UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_INDEX * 8
+    )
+    name_pointer = image.u64(
+        UNITY_ICALL_NAME_TABLE_VA
+        + UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_INDEX * 8
+    )
+    name = image.cstring(name_pointer)
+    require(
+        "unity_hgtree_create_renderer_list_icall_target",
+        target,
+        UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_hgtree_create_renderer_list_icall_name",
+        name,
+        UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_NAME,
+        image.path,
+    )
+
+    bodies = []
+    for label, (virtual_address, size_bytes, expected_hash) in (
+        UNITY_HGTREE_BODIES.items()
+    ):
+        body = image.read(virtual_address, size_bytes)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        require(
+            f"unity_hgtree_{label}_sha256",
+            actual_hash,
+            expected_hash,
+            image.path,
+        )
+        bodies.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size_bytes,
+                "sha256": actual_hash,
+            }
+        )
+
+    slices = []
+    for label, (virtual_address, expected_hex) in UNITY_HGTREE_SLICES.items():
+        expected = bytes.fromhex(expected_hex)
+        actual = image.read(virtual_address, len(expected))
+        require(f"unity_hgtree_{label}", actual, expected, image.path)
+        slices.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": len(actual),
+                "sha256": hashlib.sha256(actual).hexdigest(),
+            }
+        )
+
+    field_names = []
+    for virtual_address, expected_name in UNITY_HGTREE_FIELD_NAMES.items():
+        actual_name = image.cstring(virtual_address)
+        require(
+            "unity_hgtree_field_name",
+            actual_name,
+            expected_name,
+            image.path,
+        )
+        field_names.append(
+            {
+                "virtualAddress": f"0x{virtual_address:X}",
+                "name": actual_name,
+            }
+        )
+
+    return {
+        "internalCall": {
+            "index": UNITY_HGTREE_CREATE_RENDERER_LIST_ICALL_INDEX,
+            "name": name,
+            "targetVirtualAddress": f"0x{target:X}",
+            "managedParameters": [
+                "viewHandle",
+                "renderFlagsMask",
+                "renderFlagsValue",
+                "lightModeMask",
+                "context",
+                "drawableFeedbackPtr",
+                "noAlphaTest",
+            ],
+        },
+        "callChain": [
+            "0x180175A10 HGTreeRender::CreateRendererList binding",
+            "0x180A5E320 renderer-list manager dispatch",
+            "registered batch-group virtual slot +0x158",
+            "registered batch-group virtual slot +0x160",
+        ],
+        "treeInstance": {
+            "nativeTypeName": "HGTreeInstance",
+            "rendererArrayField": "renderers",
+            "rendererElementType": "HGTreeRenderer",
+            "otherFields": [
+                "bounds",
+                "rendererHalfSize",
+                "objectFlags",
+                "rendererOffsets",
+                "colliderData",
+                "colliderMeshes",
+                "objectToWorld",
+                "param0",
+                "param1",
+            ],
+        },
+        "rendererRecord": {
+            "nativeTypeName": "HGTreeRenderer",
             "sizeBytes": 28,
             "fields": [
                 {"name": "batchKey", "offset": "0x00", "sizeBytes": 4},
@@ -1026,26 +1201,30 @@ def validate_unity_scheduled_culling_boundary(
                     "sizeBytes": 4,
                 },
             ],
-            "evidence": (
-                "independent retail serializer and deserializer offsets plus "
-                "embedded native field names"
-            ),
             "fieldNameEvidence": field_names,
-            "notCullViewRecord": True,
+        },
+        "separationFromScheduledCulling": {
+            "separateEntryAndOwnershipProven": True,
+            "reason": (
+                "the record is nested under HGTreeInstance.renderers and its "
+                "renderer-list entry is a separate HGTreeRender internal call; "
+                "the pinned DispatchBatchCullingJobs predicates do not reference "
+                "this serializer lineage"
+            ),
+            "doesNotCloseCullViewScreenThresholdEquation": True,
         },
         "evidenceBoundary": {
             "closed": [
-                "DispatchBatchCullingJobs internal-call binding and native call chain",
-                "camera-type predicate selection",
-                "standard six-plane AABB predicate",
-                "cameraType 0x80 sphere/distance predicate",
-                "absence of cull-view +0x18 from those two selected predicates",
-                "the distinct 28-byte renderer candidate LOD record layout",
+                "HGTreeInstance owns a renderers array of HGTreeRenderer",
+                "the exact 28-byte HGTreeRenderer serialized layout",
+                "HGTreeRender::CreateRendererList binding and manager dispatch",
+                "manager dispatch through registered batch-group virtual slots +0x158/+0x160",
+                "HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation",
             ],
             "open": [
-                "later renderer/entity LOD comparison that combines view and candidate screen thresholds",
-                "whether the installed zero view threshold makes that later gate unconditional",
-                "target-frame runtime overrides and final survivor rows",
+                "concrete registered batch-group virtual targets",
+                "the HGTreeRenderer LOD max/min comparison equation",
+                "the unrelated scheduled cull-view +0x18 consumer",
             ],
         },
         "verifiedBodies": bodies,
@@ -1239,6 +1418,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     unity_scheduled_culling_boundary = (
         validate_unity_scheduled_culling_boundary(PEImage(UNITY_PLAYER))
     )
+    unity_hgtree_renderer_boundary = validate_unity_hgtree_renderer_boundary(
+        PEImage(UNITY_PLAYER)
+    )
 
     ifix = json.loads(IFIX_STATE.read_text(encoding="utf-8"))
     require(
@@ -1255,8 +1437,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v4",
-        "status": "installed_cap_cull_view_dispatch_predicates_and_capture_abi_source_closed",
+        "schema": "endfield.recovered-light-cull-cap.v5",
+        "status": "installed_cap_dispatch_predicates_hgtree_ownership_and_capture_abi_source_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -1269,10 +1451,13 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "also closes the scheduled view layout and visibility-then-camera-mask "
             "gate. DispatchBatchCullingJobs selects an exact six-plane AABB "
             "predicate, except cameraType 0x80 selects an exact sphere/distance "
-            "predicate; neither reads cull-view +0x18. A separate 28-byte renderer "
-            "candidate record owns LOD max/min squared at +0x14/+0x18. The later "
-            "view/candidate screen-threshold equation, target-frame pointer/count, "
-            "and unrelated live native lights remain capture-only."
+            "predicate; neither reads cull-view +0x18. The previously separate "
+            "28-byte record is now identified exactly as HGTreeRenderer nested "
+            "under HGTreeInstance.renderers, and its CreateRendererList entry "
+            "uses a separate HGTreeRender manager/virtual-dispatch path. It is "
+            "therefore not evidence for the scheduled cull-view threshold. The "
+            "scheduled +0x18 consumer, HGTree LOD equation, target-frame "
+            "pointer/count, and unrelated live native lights remain open."
         ),
         "installedInputs": {
             "gameAssembly": {
@@ -1358,6 +1543,7 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "unityPlayerScheduledCullingBoundary": (
                 unity_scheduled_culling_boundary
             ),
+            "unityPlayerHGTreeRendererBoundary": unity_hgtree_renderer_boundary,
             "desktopNoSecondTruncation": True,
         },
         "sourceFiles": {
@@ -1386,14 +1572,17 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the 148-byte VisibleLight capture stride plus SetupState type, priority, and world-position offsets",
                 "the AddCullViewByMatrix binding, six-plane constructor, view layout, and generic visibility/mask gate order",
                 "the DispatchBatchCullingJobs binding, camera-type predicate split, and exact selected predicates",
-                "the distinct 28-byte renderer candidate LOD record with max/min squared fields at +0x14/+0x18",
+                "HGTreeInstance ownership and the exact 28-byte HGTreeRenderer LOD record",
+                "the separate HGTreeRender CreateRendererList manager/virtual-dispatch path",
+                "the correction that HGTreeRenderer is not evidence for the scheduled cull-view +0x18 equation",
             ],
             "captureOnly": [
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
-                "the later renderer/entity equation combining view and candidate screen-size thresholds",
+                "the later scheduled renderer/entity consumer, if any, of cull-view +0x18",
                 "whether the installed zero view threshold makes that later gate unconditional",
+                "the concrete HGTree batch-group virtual targets and LOD comparison equation",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -1426,9 +1615,9 @@ def main() -> int:
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
-        "scheduled cull-view layout, dispatch predicates, distinct renderer "
-        "LOD record, mask order, 16-byte result, and 148-byte capture-row ABI "
-        "closed."
+        "scheduled cull-view layout, dispatch predicates, separate HGTreeRenderer "
+        "ownership/dispatch, mask order, 16-byte result, and 148-byte capture-row "
+        "ABI closed."
     )
     return 0
 
