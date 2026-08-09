@@ -16,8 +16,12 @@ SPEC.loader.exec_module(audio_semantics)
 class AudioSemanticDataTests(unittest.TestCase):
     def test_event_categories_preserve_unknowns(self) -> None:
         self.assertEqual(audio_semantics.event_category("au_sfx_test"), "sfx")
+        self.assertEqual(audio_semantics.event_category("au_chr_test_attack"), "sfx")
+        self.assertEqual(audio_semantics.event_category("au_eny_test_hit"), "sfx")
         self.assertEqual(audio_semantics.event_category("au_music_test"), "music")
         self.assertEqual(audio_semantics.event_category("au_amb_wind"), "ambience")
+        self.assertEqual(audio_semantics.event_category("au_rtpc_speed"), "control")
+        self.assertEqual(audio_semantics.event_category("au_vibration_test"), "control")
         self.assertEqual(audio_semantics.event_category("unproven_name"), "unknown")
 
     def test_missing_metadata_degrades_without_runtime_claims(self) -> None:
