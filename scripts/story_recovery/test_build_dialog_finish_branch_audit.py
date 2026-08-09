@@ -73,7 +73,7 @@ class DialogTreeRouteTests(unittest.TestCase):
             [("option_fixture_1_001", 1), ("option_fixture_1_002", 2)],
         )
 
-    def test_missing_finish_id_is_not_defaulted(self) -> None:
+    def test_missing_finish_id_fails_closed_without_runtime_contract(self) -> None:
         outer = text_asset(
             [option_node(["option_fixture_1_001"]), finish_node("finish", None, serialized=False)],
             [connection("finish")],
@@ -83,6 +83,59 @@ class DialogTreeRouteTests(unittest.TestCase):
         )
         self.assertEqual(rows, [])
         self.assertEqual(rejected[0]["gate"], "serializedFinishId")
+        self.assertEqual(
+            rejected[0]["actual"], "missing_without_validated_default"
+        )
+
+    def test_missing_finish_id_uses_validated_managed_int_default(self) -> None:
+        outer = text_asset(
+            [option_node(["option_fixture_1_001"]), finish_node("finish", None, serialized=False)],
+            [connection("finish")],
+        )
+        rows, rejected = audit.decode_dialog_tree_finish_routes(
+            outer,
+            source_file="fixture.json",
+            runtime_defaults={
+                "status": "validated",
+                "managedValueTypeDefaults": {"System.Int32": 0},
+            },
+        )
+        self.assertEqual(rejected, [])
+        self.assertEqual(rows[0]["finishId"], 0)
+        self.assertEqual(rows[0]["finishIdSource"], "runtime_default")
+
+    def test_explicit_finish_id_wins_over_runtime_default(self) -> None:
+        outer = text_asset(
+            [option_node(["option_fixture_1_001"]), finish_node("finish", 7)],
+            [connection("finish")],
+        )
+        rows, rejected = audit.decode_dialog_tree_finish_routes(
+            outer,
+            source_file="fixture.json",
+            runtime_defaults={
+                "status": "validated",
+                "managedValueTypeDefaults": {"System.Int32": 0},
+            },
+        )
+        self.assertEqual(rejected, [])
+        self.assertEqual(rows[0]["finishId"], 7)
+        self.assertEqual(rows[0]["finishIdSource"], "serialized_explicit")
+
+    def test_invalid_explicit_finish_id_is_not_replaced_by_default(self) -> None:
+        outer = text_asset(
+            [option_node(["option_fixture_1_001"]), finish_node("finish", True)],
+            [connection("finish")],
+        )
+        rows, rejected = audit.decode_dialog_tree_finish_routes(
+            outer,
+            source_file="fixture.json",
+            runtime_defaults={
+                "status": "validated",
+                "managedValueTypeDefaults": {"System.Int32": 0},
+            },
+        )
+        self.assertEqual(rows, [])
+        self.assertEqual(rejected[0]["actual"], "invalid_serialized_value")
 
     def test_connection_count_mismatch_fails_closed(self) -> None:
         outer = text_asset(
@@ -158,8 +211,53 @@ class TimelineRouteTests(unittest.TestCase):
             }
         )
         self.assertEqual(rows, [])
-        self.assertEqual(rejected[0]["gate"], "timelineOptionFinishAgreement")
-        self.assertEqual(rejected[0]["actual"], [1, 2])
+        self.assertEqual(rejected[0]["gate"], "timelineOptionScopeAgreement")
+        self.assertEqual(rejected[0]["finishIds"], [1, 2])
+
+
+class ProducerScopeTests(unittest.TestCase):
+    def test_reused_option_id_in_distinct_nodes_is_not_a_conflict(self) -> None:
+        rows = [
+            {
+                "dialogId": "dlg_fixture",
+                "optionId": "option_shared",
+                "finishId": finish_id,
+                "finishIdSource": "serialized_explicit",
+                "producerFamily": "dialog_tree_finish_node",
+                "producerScope": {
+                    "kind": "dialog_tree_option_node",
+                    "key": f"node:{node_id}:option:0",
+                },
+                "sourceFiles": [],
+            }
+            for node_id, finish_id in (("6", 0), ("15", 3))
+        ]
+        accepted, conflicts = audit._normalize_producers(rows)
+        self.assertEqual(len(accepted), 2)
+        self.assertEqual(conflicts, [])
+        reused = audit._collect_reused_option_scopes(accepted)
+        self.assertEqual(len(reused), 1)
+        self.assertEqual(reused[0]["finishIds"], [0, 3])
+
+    def test_conflicting_finish_within_one_runtime_scope_fails_closed(self) -> None:
+        rows = [
+            {
+                "dialogId": "dlg_fixture",
+                "optionId": "option_shared",
+                "finishId": finish_id,
+                "finishIdSource": "serialized_explicit",
+                "producerFamily": "dialog_tree_finish_node",
+                "producerScope": {
+                    "kind": "dialog_tree_option_node",
+                    "key": "node:6:option:0",
+                },
+                "sourceFiles": [],
+            }
+            for finish_id in (0, 3)
+        ]
+        accepted, conflicts = audit._normalize_producers(rows)
+        self.assertEqual(accepted, [])
+        self.assertEqual(conflicts[0]["gate"], "producerScopeAgreement")
 
 
 class NativeContractTests(unittest.TestCase):

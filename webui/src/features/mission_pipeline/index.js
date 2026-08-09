@@ -374,6 +374,11 @@
       dialogFinishProducer: "Original producer",
       dialogFinishConsumer: "Mission consumer",
       dialogFinishBranchStat: "exact option→objective branches",
+      dialogFinishRuntimeDefault: "runtime-default Int32 0",
+      dialogFinishExplicitValue: "explicit finishId",
+      dialogFinishProducerScope: "Runtime branch scope",
+      dialogFinishDefaultStat: "runtime-default producers",
+      dialogFinishReusedScopeStat: "option IDs reused across node scopes",
       clientActions: "Client actions after synchronized state",
       source: "Source",
       protocol: "Selected quest network pipeline",
@@ -1381,6 +1386,11 @@
       dialogFinishProducer: "原始产生端",
       dialogFinishConsumer: "任务消费端",
       dialogFinishBranchStat: "精确选项→目标分支",
+      dialogFinishRuntimeDefault: "运行时默认 Int32 0",
+      dialogFinishExplicitValue: "显式 finishId",
+      dialogFinishProducerScope: "运行时分支作用域",
+      dialogFinishDefaultStat: "运行时默认值产生端",
+      dialogFinishReusedScopeStat: "跨节点作用域复用的选项 ID",
       clientActions: "状态同步后的客户端动作",
       source: "来源",
       protocol: "所选任务节点的网络管线",
@@ -2485,7 +2495,7 @@
       ${changedFiles.length ? `<code>${esc(changedFiles.join(", "))}</code>` : ""}
       <span>${esc(t("sourceMissingFiles"))}: ${Number(missingFiles.length).toLocaleString()}</span>
       ${state.index?.storyCoverage?.luaStoryPlaybackEvidence?.status ? `<span>${esc(t("luaPlaybackAudit"))}: <strong>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.status)}</strong> · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.scannedPlaybackCalls || 0).toLocaleString()} calls · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.acceptedTableCarrierCalls || 0).toLocaleString()} table-owned · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherCallCount || 0).toLocaleString()} runtime branches / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherFamilyCount || 0).toLocaleString()} queue family · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleContract?.nativeProducerCount || 0).toLocaleString()} native producers / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleContract?.typedActionProducerTypeCount || 0).toLocaleString()} typed actions · ${Number(state.index.storyCoverage.counts?.nativeCinematicProducerRouteAttachments || 0).toLocaleString()} mission-route attachments · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.unresolvedPlaybackCalls || 0).toLocaleString()} authored unresolved · <code>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.auditSha256 || "")}</code></span>` : ""}
-      ${state.index?.dialogFinishBranchRecovery?.status ? `<span>${esc(t("dialogFinishBranchDependencies"))}: <strong>${esc(state.index.dialogFinishBranchRecovery.status)}</strong> · ${Number(state.index.dialogFinishBranchRecovery.counts?.publishedDependencies || 0).toLocaleString()} ${esc(t("dialogFinishBranchStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.missions || 0).toLocaleString()} ${esc(t("missions"))} · <code>${esc(state.index.dialogFinishBranchRecovery.reportJson || "")}</code></span>` : ""}
+      ${state.index?.dialogFinishBranchRecovery?.status ? `<span>${esc(t("dialogFinishBranchDependencies"))}: <strong>${esc(state.index.dialogFinishBranchRecovery.status)}</strong> · ${Number(state.index.dialogFinishBranchRecovery.counts?.publishedDependencies || 0).toLocaleString()} ${esc(t("dialogFinishBranchStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.dialogTreeRuntimeDefaultFinishRows || 0).toLocaleString()} ${esc(t("dialogFinishDefaultStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.reusedOptionIdsAcrossScopes || 0).toLocaleString()} ${esc(t("dialogFinishReusedScopeStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.missions || 0).toLocaleString()} ${esc(t("missions"))} · <code>${esc(state.index.dialogFinishBranchRecovery.reportJson || "")}</code></span>` : ""}
     `;
   }
 
@@ -6179,10 +6189,18 @@
     const dialogFinishBranchDependencies = (objective.dialogFinishBranchDependencies || []).map((row) => {
       const options = (row.optionIds || []).map((optionId) => `<code>${esc(optionId)}</code>`).join(" ");
       const producers = (row.producerFamilies || []).map((family) => `<code>${esc(family)}</code>`).join(" ");
+      const producerEvidence = row.producerEvidence || [];
+      const finishIdSources = new Set(producerEvidence.flatMap((producer) => producer.finishIdSources || []));
+      const defaultBadge = finishIdSources.has("runtime_default") ? `<span>${esc(t("dialogFinishRuntimeDefault"))}</span>` : `<span>${esc(t("dialogFinishExplicitValue"))}</span>`;
+      const producerScopes = producerEvidence.map((producer) => {
+        const scope = producer.producerScope || {};
+        return `<small><strong>${esc(t("dialogFinishProducerScope"))}:</strong> <code>${esc(scope.kind || "?")}</code> <code>${esc(scope.key || "?")}</code> · <code>${esc((producer.finishIdSources || []).join("+") || "unknown")}</code></small>`;
+      }).join("");
       const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
       return `<details open class="mp-quest-task-dependency mp-dialog-finish-branch-dependency">
-        <summary><b>${esc(t("dialogFinishBranchDependencies"))}</b> ${options}<i>&rarr;</i><code>${esc(row.dialogId || "?")} / ${esc(t("finish"))} ${esc(row.finishId ?? "?")}</code><i>&rarr;</i><code>${esc(row.questId || questId)} / #${esc(row.objectiveIndex ?? "?")}</code></summary>
+        <summary><b>${esc(t("dialogFinishBranchDependencies"))}</b> ${options}<i>&rarr;</i><code>${esc(row.dialogId || "?")} / ${esc(t("finish"))} ${esc(row.finishId ?? "?")}</code><i>&rarr;</i><code>${esc(row.questId || questId)} / #${esc(row.objectiveIndex ?? "?")}</code> ${defaultBadge}</summary>
         <p><strong>${esc(t("dialogFinishProducer"))}:</strong> ${producers || `<code>?</code>`}</p>
+        ${producerScopes}
         <small><strong>${esc(t("dialogFinishConsumer"))}:</strong> <code>${esc(row.conditionId || "?")}</code> / <code>CheckTalkOptionFinish</code></small>
         <small>${esc(row.evidenceBoundary || t("dialogFinishBranchDependencyHint"))}</small>
         ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
