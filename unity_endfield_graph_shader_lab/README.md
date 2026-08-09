@@ -1998,9 +1998,14 @@ source-closed: `Punctual Shadowmap` is `4T x 4T` with no dynamic casters and
 shadow-map sampling, and no mip/UAV/MSAA. The enabled path imports its RTHandle
 and binds `_PunctualLightShadowTexV2`; the disabled path binds the exact
 `HGRenderGraphDefaultResources.defaultShadowTexture`. Publication remains
-fail-closed until the platform-resolved depth format, settled dimensions and
-texels/cache allocation, and matching 6,144-byte section are captured together
-immediately before `0x189b57155`. Binding 37 now has its native
+fail-closed, but the default sizing inputs are now binary-closed too:
+`HGSettingParameters` constructs `T=512`, environment/movable dynamic caps
+`6/2`, force-cull distance `200`, and screen-size minimum `0.001`; the manager
+sums `N=8`, squares the threshold, and derives a `3072x2048` atlas before any
+runtime setting override. A matching capture immediately before
+`0x189b57155` is still required for overridden target `N/T`, the platform-
+resolved depth format, texels/cache allocation, and the 6,144-byte section.
+Binding 37 now has its native
 `HGLightCookieManager` initialization,
 32-record atlas/matrix layout, exact 2,560-byte upload, and `-1` no-cookie guard
 closed. A default-off publisher emits the exact all-zero buffer only for the
