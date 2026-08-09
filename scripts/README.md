@@ -174,8 +174,10 @@ media to WAV internally; the builder converts the browser-facing files to
 lossless FLAC and removes the temporary WAV after each successful conversion.
 `ffmpeg` is required when conversion is needed. Pass `--audio-format wav` to
 retain WAV, or `--format wem` to keep the legacy compact WEM output. Exact
-Wwise event traversal can yield multiple media candidates; unresolved runtime
-switch/random selection is preserved.
+Wwise v150 traversal follows typed Event/Action/container/Sound edges and can
+yield multiple possible media leaves. Play roots, selector/layer relations,
+partial traversal, and decoded-content equivalence remain separate; unresolved
+runtime selection is never labeled as a set of equivalent choices.
 
 `build_audio.py` also refreshes the debug-only Audio view. Run
 `python scripts\build_audio_semantics.py --language CN` independently when the
