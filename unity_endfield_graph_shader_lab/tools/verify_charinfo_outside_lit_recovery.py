@@ -1695,6 +1695,48 @@ def verify_selected_resolver_binding_contract() -> None:
     assert "12 authored room lights are not a valid substitute" in (
         light_binning_native["remaining_boundary"]
     )
+    light_cull_audit_path = repo_path(
+        light_binning_native["light_cull_result_audit_path"]
+    )
+    require_hash(
+        light_cull_audit_path,
+        light_binning_native["light_cull_result_audit_sha256"],
+    )
+    light_cull_audit = json.loads(
+        light_cull_audit_path.read_text(encoding="utf-8")
+    )
+    assert light_cull_audit["schema"] == (
+        "endfield.gacha-light-cull-result-audit.v1"
+    )
+    assert light_cull_audit["verdict"] == "CAPTURE_REQUIRED"
+    assert light_cull_audit["productionPatch"] is False
+    for pin in light_cull_audit["sourcePins"].values():
+        require_hash(repo_path(pin["path"]), pin["sha256"])
+    assert light_cull_audit["nativeResult"]["fields"] == [
+        "IntPtr visibleLightsPtr",
+        "int visibleLightCount",
+    ]
+    cull_producer = light_cull_audit["producer"]
+    assert cull_producer["method"] == (
+        "UnityEngine.HyperGryph.HGCullingSystem.CullLights"
+    )
+    assert cull_producer["allDirectGameAssemblyCallersClosed"] is True
+    assert cull_producer["directCallCount"] == 2
+    assert cull_producer["onlyCaller"] == (
+        "HG.Rendering.Runtime.HGCamera.DoECSCulling"
+    )
+    assert cull_producer["exactMaxCountAtBothSites"] == 256
+    assert [row["offset"] for row in cull_producer["callSites"]] == [
+        "0x63e",
+        "0x7e4",
+    ]
+    assert all(row["maxCount"] == 256 for row in cull_producer["callSites"])
+    assert light_cull_audit["consumer"]["method"] == (
+        "HG.Rendering.Runtime.LightClusteringPassConstructor.SetupState"
+    )
+    assert "no process attachment or injection was performed" in (
+        light_cull_audit["nextCaptureBoundary"]["safety"]
+    )
 
     light_binning_transport = identified[0]["unity_transport"]
     assert light_binning_transport["activation_policy"] == (
@@ -2080,7 +2122,9 @@ def main() -> int:
         "and the exact selected Vulkan fragment's 5 named / 4 debug-anonymous "
         "constant buffers (including b32 _LightBinningConstants with its "
         "exact native 48-byte producer layout and D3D11/D3D12-verified "
-        "default-off isolated-count transport, exact b34 ShadowData identity, and b37 "
+        "default-off isolated-count transport, plus the unique native "
+        "CullLights producer, both HGCamera call sites and 256-candidate "
+        "handoff before the still-open target-frame array, exact b34 ShadowData identity, and b37 "
         "LightCookieData role, plus exact b38 "
         "HDPunctualLightCharacterShadowData identity), all 25 sampled texture "
         "roles, exact installed CharInfo Volume/Environment state that gates "
