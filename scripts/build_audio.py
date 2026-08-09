@@ -51,8 +51,22 @@ PROJECTILE_DATA_REL = Path("data/gameplay/projectiles.json")
 PROJECTILE_EVENT_PREFIX = "projectile-event:"
 GAMEPLAY_INDEX_REL = Path("data/lang/{language}/gameplay/index.json")
 GAMEPLAY_SFX_REL = Path("data/lang/{language}/gameplay/sound_effects.json")
+GAMEPLAY_SFX_ANIMATION_CATALOG_NAME = "sound_effects_animation_catalog.json"
+GAMEPLAY_SFX_ANIMATION_EVIDENCE_NAME = "sound_effects_animation_evidence.json"
 GAMEPLAY_AUDIO_EVENT_BYTES_RE = re.compile(rb"\b(?:au|bark|radio)_[A-Za-z0-9_]{2,160}\b")
 GAMEPLAY_BUFF_BYTES_RE = re.compile(rb"\bbuff_[A-Za-z0-9_]{2,160}\b")
+ANIMATION_CLIP_HASH_SUFFIX_RE = re.compile(r"_p[0-9a-f]{16}$", re.IGNORECASE)
+ANIMATION_ACTOR_RE = re.compile(r"^A_(actor|monster)_([^_]+)_", re.IGNORECASE)
+ENEMY_ID_TOKEN_RE = re.compile(r"^eny_\d+_([^_]+)", re.IGNORECASE)
+CHARACTER_ID_TOKEN_RE = re.compile(r"^chr_\d+_([^_]+)", re.IGNORECASE)
+ENEMY_ANIM_CONFIG_RE = re.compile(r"anim_cfg_eny_\d+_([^./\\]+)\.asset$", re.IGNORECASE)
+ANIMATION_AUDIO_FUNCTIONS = frozenset({
+    "PostAudioEvent",
+    "PostAudioEventAdvance",
+    "PostAudioEventAtPosition",
+    "OnCustomFootStep",
+})
+GAMEPLAY_PROFILE_VOICE_RE = re.compile(r"(?:_combat_|_mono_(?:attack|skill))", re.IGNORECASE)
 GAMEPLAY_AUDIO_LINK_FIELDS = (
     "src", "mediaId", "format", "bytes", "audioScope", "audioCategory",
     "audioCategoryDetail", "sourceBlock", "sourceBlockLabel", "sourceBank",
@@ -257,6 +271,435 @@ def gameplay_config_records(export_root: Path, family: str) -> dict[str, dict[st
     return records
 
 
+def iter_json_strings(value: Any):
+    """Yield scalar strings from a decoded JSON value."""
+
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for child in value.values():
+            yield from iter_json_strings(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from iter_json_strings(child)
+
+
+def enemy_template_source_files(export_root: Path) -> dict[str, list[Path]]:
+    """Index recovered EnemyData MonoBehaviours once for focused lookups."""
+
+    result: dict[str, list[Path]] = defaultdict(list)
+    seen: set[Path] = set()
+    for source in ("Persistent", "StreamingAssets"):
+        root = export_root / "recovered" / "AnimeStudio-cli" / source / "json_by_type" / "MonoBehaviour"
+        if not root.exists():
+            continue
+        for path in root.glob("data_eny_*_p*.json"):
+            resolved = path.resolve()
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            prefix, separator, suffix = path.stem.rpartition("_p")
+            if not separator or not suffix or not re.fullmatch(r"[0-9a-f]+", suffix, re.IGNORECASE):
+                continue
+            identity = prefix.removeprefix("data_")
+            result[identity].append(path)
+    return {identity: sorted(paths) for identity, paths in sorted(result.items())}
+
+
+def enemy_template_skill_references(
+    export_root: Path,
+    enemies: list[dict[str, Any]],
+    known_skill_ids: set[str],
+    source_files: dict[str, list[Path]] | None = None,
+) -> dict[str, dict[str, set[str]]]:
+    """Return enemy -> SkillData ids recovered inside AbilitySystemData.
+
+    Enemy variants frequently execute SkillData authored under a different
+    canonical enemy id.  Matching only the current enemy-id prefix therefore
+    hides otherwise playable attack audio.  The recovered EnemyData
+    MonoBehaviours preserve the exact SkillData identifiers in their
+    AbilitySystemData payload (including partially decoded string-hint tails),
+    so require an exact match to an exported SkillData id before accepting the
+    relationship.
+    """
+
+    indexed_files = source_files if source_files is not None else enemy_template_source_files(export_root)
+    result: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
+    seen_paths: set[Path] = set()
+    for enemy in enemies:
+        owner_id = str(enemy.get("id") or "").strip()
+        if not owner_id:
+            continue
+        identities = {
+            str(value or "").strip()
+            for value in (enemy.get("id"), enemy.get("templateId"), *(enemy.get("variantIds") or []))
+            if str(value or "").strip()
+        }
+        for identity in sorted(identities):
+            for path in indexed_files.get(identity) or []:
+                resolved = path.resolve()
+                if resolved in seen_paths:
+                    continue
+                seen_paths.add(resolved)
+                payload = load_json(path, {})
+                references = ((payload.get("references") or {}).get("RefIds") or []) if isinstance(payload, dict) else []
+                matched: set[str] = set()
+                for reference in references:
+                    if not isinstance(reference, dict):
+                        continue
+                    type_info = reference.get("type") or {}
+                    if str(type_info.get("class") or "") != "AbilitySystemData":
+                        continue
+                    matched.update(
+                        value
+                        for value in iter_json_strings(reference.get("data") or {})
+                        if value in known_skill_ids
+                    )
+                if not matched:
+                    continue
+                try:
+                    source = normalize_posix(path.relative_to(export_root))
+                except ValueError:
+                    source = normalize_posix(path)
+                for skill_id in matched:
+                    result[owner_id][skill_id].add(source)
+    return {
+        owner_id: {skill_id: sources for skill_id, sources in sorted(skills.items())}
+        for owner_id, skills in sorted(result.items())
+    }
+
+
+def enemy_template_animation_tokens(
+    export_root: Path,
+    enemies: list[dict[str, Any]],
+    source_files: dict[str, list[Path]] | None = None,
+) -> dict[str, dict[str, set[str]]]:
+    """Return enemy -> animation actor tokens with exact source files."""
+
+    indexed_files = source_files if source_files is not None else enemy_template_source_files(export_root)
+    result: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
+    for enemy in enemies:
+        owner_id = str(enemy.get("id") or "").strip()
+        if not owner_id:
+            continue
+        identities = {
+            str(value or "").strip()
+            for value in (enemy.get("id"), enemy.get("templateId"), *(enemy.get("variantIds") or []))
+            if str(value or "").strip()
+        }
+        for identity in sorted(identities):
+            direct = ENEMY_ID_TOKEN_RE.match(identity)
+            if direct:
+                result[owner_id][direct.group(1).lower()].add("EnemyTable identity")
+            seen_paths: set[Path] = set()
+            for path in indexed_files.get(identity) or []:
+                resolved = path.resolve()
+                if resolved in seen_paths:
+                    continue
+                seen_paths.add(resolved)
+                payload = load_json(path, {})
+                try:
+                    source = normalize_posix(path.relative_to(export_root))
+                except ValueError:
+                    source = normalize_posix(path)
+                for value in iter_json_strings(payload):
+                    match = ENEMY_ANIM_CONFIG_RE.search(value)
+                    if match:
+                        result[owner_id][match.group(1).lower()].add(source)
+    return {
+        owner_id: {token: sources for token, sources in sorted(tokens.items())}
+        for owner_id, tokens in sorted(result.items())
+    }
+
+
+def animation_clip_action_kind(clip_name: str) -> str:
+    value = clip_name.lower()
+    if re.search(r"(?:^|_)(?:attack\d*|atk\d*|normal_attack|power_attack)(?:_|$)", value):
+        return "attack"
+    if re.search(r"(?:^|_)(?:skill\d*|combo|ultimate)(?:_|$)", value):
+        return "skill"
+    if re.search(r"(?:^|_)(?:damage|damaged|hit|death|die|down|break)(?:_|$)", value):
+        return "reaction"
+    if re.search(r"(?:^|_)(?:walk|run|move|turn|land|jump|fall|dash|sprint|idle)(?:_|$)", value):
+        return "movement"
+    return "action"
+
+
+def gameplay_character_token_owners(entries: list[dict[str, Any]]) -> dict[str, list[str]]:
+    token_owners: dict[str, set[str]] = defaultdict(set)
+    for entry in entries:
+        if not isinstance(entry, dict) or entry.get("kind") != "character":
+            continue
+        owner_id = str(entry.get("id") or "").strip()
+        if not owner_id:
+            continue
+        direct = CHARACTER_ID_TOKEN_RE.match(owner_id)
+        if direct:
+            token_owners[direct.group(1).lower()].add(owner_id)
+        for group in entry.get("skillGroups") or []:
+            for skill_id in group.get("actionSkillIds") or []:
+                match = CHARACTER_ID_TOKEN_RE.match(str(skill_id or ""))
+                if match:
+                    token_owners[match.group(1).lower()].add(owner_id)
+    return {token: sorted(owners) for token, owners in sorted(token_owners.items())}
+
+
+def profile_voice_action_kind(vo_id: str) -> str:
+    value = vo_id.lower()
+    if "_mono_attack" in value:
+        return "attackVoice"
+    if "_mono_skill" in value or "_combat_skill" in value:
+        return "skillVoice"
+    if "_combat_hurt" in value or "_combat_dead" in value:
+        return "reactionVoice"
+    return "combatVoice"
+
+
+def collect_gameplay_profile_voices(
+    export_root: Path,
+    entries: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Collect exact CharacterTable combat/profile voice ownership."""
+
+    character_table = {}
+    character_source = ""
+    for source in ("Persistent", "StreamingAssets"):
+        path = export_root / "structured" / source / "Table" / "CharacterTable.json"
+        payload = load_json(path, {})
+        if isinstance(payload, dict) and payload:
+            character_table = payload
+            try:
+                character_source = normalize_posix(path.relative_to(export_root))
+            except ValueError:
+                character_source = normalize_posix(path)
+            break
+
+    trigger_keys: set[str] = set()
+    for source in ("Persistent", "StreamingAssets"):
+        path = export_root / "structured" / source / "Table" / "AIBark.json"
+        payload = load_json(path, {})
+        if not isinstance(payload, dict):
+            continue
+        for value in payload.values():
+            rows = value.get("array") if isinstance(value, dict) else None
+            for row in rows or []:
+                if not isinstance(row, dict):
+                    continue
+                trigger_keys.update(str(key or "").strip() for key in row.get("triggerKey") or [] if str(key or "").strip())
+        if trigger_keys:
+            break
+    sorted_triggers = sorted(trigger_keys, key=lambda value: (-len(value), value))
+
+    token_owners = gameplay_character_token_owners(entries)
+    owners: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: set[tuple[str, str]] = set()
+    for character_id, row in sorted(character_table.items()):
+        if not isinstance(row, dict):
+            continue
+        match = CHARACTER_ID_TOKEN_RE.match(str(character_id or ""))
+        if not match:
+            continue
+        for owner_id in token_owners.get(match.group(1).lower()) or []:
+            for voice in row.get("profileVoice") or []:
+                if not isinstance(voice, dict):
+                    continue
+                vo_id = str(voice.get("voId") or "").strip()
+                if not vo_id or not GAMEPLAY_PROFILE_VOICE_RE.search(vo_id):
+                    continue
+                key = (owner_id, vo_id.lower())
+                if key in seen:
+                    continue
+                seen.add(key)
+                tail = vo_id[len(str(character_id)) + 1:] if vo_id.lower().startswith(str(character_id).lower() + "_") else vo_id
+                trigger_key = next(
+                    (candidate for candidate in sorted_triggers if tail == candidate or tail.startswith(candidate + "_")),
+                    "",
+                )
+                owners[owner_id].append({
+                    "id": vo_id,
+                    "actionKind": profile_voice_action_kind(vo_id),
+                    "characterId": character_id,
+                    "profileVoiceIndex": voice.get("voiceIndex"),
+                    "triggerKey": trigger_key,
+                    "source": character_source,
+                })
+    return {
+        "owners": [
+            {"ownerId": owner_id, "voices": sorted(voices, key=lambda row: str(row.get("id") or ""))}
+            for owner_id, voices in sorted(owners.items())
+        ],
+        "counts": {
+            "profileVoiceRefs": sum(len(voices) for voices in owners.values()),
+            "profileVoiceOwners": len(owners),
+            "profileVoiceRefsWithTrigger": sum(
+                1 for voices in owners.values() for voice in voices if voice.get("triggerKey")
+            ),
+        },
+    }
+
+
+def animation_clip_audio_events(data: bytes) -> tuple[str, list[dict[str, Any]]]:
+    """Read the small scalar event portion of an exported Unity .anim YAML."""
+
+    clip_name = ""
+    current: dict[str, Any] | None = None
+    events: list[dict[str, Any]] = []
+    in_events = False
+    event_index = -1
+
+    def finish() -> None:
+        nonlocal current
+        if current and current.get("function") in ANIMATION_AUDIO_FUNCTIONS and current.get("eventId"):
+            events.append(current)
+        current = None
+
+    for raw_line in data.splitlines():
+        line = raw_line.decode("utf-8", errors="replace")
+        if not clip_name and line.startswith("  m_Name: "):
+            clip_name = line.removeprefix("  m_Name: ").strip().strip("'\"")
+        elif line == "  m_Events:":
+            in_events = True
+        elif in_events and line.startswith("  - time: "):
+            finish()
+            event_index += 1
+            raw_time = line.removeprefix("  - time: ").strip()
+            try:
+                time_value: float | str = float(raw_time)
+            except ValueError:
+                time_value = raw_time
+            current = {"index": event_index, "time": time_value}
+        elif current is not None and line.startswith("    functionName: "):
+            current["function"] = line.removeprefix("    functionName: ").strip().strip("'\"")
+        elif current is not None and line.startswith("    data: "):
+            current["eventId"] = line.removeprefix("    data: ").strip().strip("'\"")
+        elif current is not None and line.startswith("    floatParameter: "):
+            raw_value = line.removeprefix("    floatParameter: ").strip()
+            try:
+                current["floatParameter"] = float(raw_value)
+            except ValueError:
+                current["floatParameter"] = raw_value
+        elif current is not None and line.startswith("    intParameter: "):
+            raw_value = line.removeprefix("    intParameter: ").strip()
+            try:
+                current["intParameter"] = int(raw_value)
+            except ValueError:
+                current["intParameter"] = raw_value
+    finish()
+    return clip_name, events
+
+
+def collect_gameplay_animation_audio(
+    export_root: Path,
+    entries: list[dict[str, Any]],
+    enemies: list[dict[str, Any]],
+    enemy_source_files: dict[str, list[Path]] | None = None,
+) -> dict[str, Any]:
+    """Collect exact AnimationClip audio callbacks with bounded actor ownership."""
+
+    token_owners: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for token, owner_ids in gameplay_character_token_owners(entries).items():
+        for owner_id in owner_ids:
+            token_owners[("actor", token)].append({
+                "ownerKind": "character",
+                "ownerId": owner_id,
+                "ownershipSources": ["Gameplay character/action identifiers"],
+            })
+
+    enemy_tokens = enemy_template_animation_tokens(export_root, enemies, enemy_source_files)
+    for owner_id, tokens in enemy_tokens.items():
+        for token, sources in tokens.items():
+            token_owners[("monster", token)].append({
+                "ownerKind": "enemy",
+                "ownerId": owner_id,
+                "ownershipSources": sorted(sources),
+            })
+
+    root = (
+        export_root
+        / "recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"
+    )
+    owners: dict[tuple[str, str], dict[str, Any]] = {}
+    scanned_clips = 0
+    matched_clips = 0
+    callback_rows = 0
+    if root.exists():
+        for pattern in ("A_actor_*.anim", "A_monster_*.anim"):
+            for path in sorted(root.glob(pattern)):
+                scanned_clips += 1
+                filename_clip_name = ANIMATION_CLIP_HASH_SUFFIX_RE.sub("", path.stem)
+                filename_match = ANIMATION_ACTOR_RE.match(filename_clip_name)
+                if not filename_match:
+                    continue
+                matched_owners = token_owners.get(
+                    (filename_match.group(1).lower(), filename_match.group(2).lower())
+                ) or []
+                if not matched_owners:
+                    continue
+                try:
+                    data = path.read_bytes()
+                except OSError:
+                    continue
+                if b"functionName: PostAudio" not in data and b"functionName: OnCustomFootStep" not in data:
+                    continue
+                clip_name, clip_events = animation_clip_audio_events(data)
+                if not clip_events:
+                    continue
+                matched_clips += 1
+                callback_rows += len(clip_events)
+                clip_kind = animation_clip_action_kind(clip_name)
+                try:
+                    clip_source = normalize_posix(path.relative_to(export_root))
+                except ValueError:
+                    clip_source = normalize_posix(path)
+                for owner in matched_owners:
+                    owner_key = (owner["ownerKind"], owner["ownerId"])
+                    record = owners.setdefault(owner_key, {
+                        **owner,
+                        "events": defaultdict(list),
+                    })
+                    for event in clip_events:
+                        record["events"][event["eventId"]].append({
+                            "kind": "animationClipEvent",
+                            "clip": clip_name,
+                            "clipSource": clip_source,
+                            "actionKind": clip_kind,
+                            "eventIndex": event.get("index"),
+                            "time": event.get("time"),
+                            "function": event.get("function"),
+                            "floatParameter": event.get("floatParameter"),
+                            "intParameter": event.get("intParameter"),
+                        })
+
+    event_names = {
+        event_id
+        for owner in owners.values()
+        for event_id in owner["events"]
+    }
+    normalized_owners: list[dict[str, Any]] = []
+    for owner in owners.values():
+        normalized_owners.append({
+            **owner,
+            "events": {
+                event_id: sorted(
+                    evidence,
+                    key=lambda row: (str(row.get("clip") or ""), float(row.get("time") or 0), str(row.get("function") or "")),
+                )
+                for event_id, evidence in sorted(owner["events"].items())
+            },
+        })
+    return {
+        "eventNames": event_names,
+        "owners": sorted(normalized_owners, key=lambda row: (row["ownerKind"], row["ownerId"])),
+        "counts": {
+            "animationAudioClipsScanned": scanned_clips,
+            "animationAudioClipsOwned": matched_clips,
+            "animationAudioCallbackRows": callback_rows,
+            "animationAudioEventNames": len(event_names),
+            "animationAudioOwnerEventRefs": sum(len(owner["events"]) for owner in owners.values()),
+        },
+    }
+
+
 def gameplay_buff_audio(
     initial_buff_ids: set[str],
     buff_records: dict[str, dict[str, Any]],
@@ -322,37 +765,74 @@ def collect_gameplay_audio_references(
 
     skill_records = gameplay_config_records(export_root, "SkillData")
     buff_records = gameplay_config_records(export_root, "BuffData")
+    enemy_source_files = enemy_template_source_files(export_root)
+    enemy_template_skills = enemy_template_skill_references(
+        export_root,
+        enemies,
+        set(skill_records),
+        enemy_source_files,
+    )
+    template_owners_by_skill: dict[str, list[tuple[str, set[str]]]] = defaultdict(list)
+    for enemy_id, skills in enemy_template_skills.items():
+        for skill_id, sources in skills.items():
+            template_owners_by_skill[skill_id].append((enemy_id, sources))
     owners: list[dict[str, Any]] = []
     event_names: set[str] = set()
     owned_skill_ids: set[str] = set()
 
     for skill_id, record in sorted(skill_records.items()):
-        owner_kind = ""
-        owner_id = ""
-        group_id = ""
-        confidence = ""
+        matched_owners: list[dict[str, Any]] = []
         if skill_id in character_skills:
-            owner_kind = "character"
             owner_id, group_id = character_skills[skill_id]
-            confidence = "direct"
+            matched_owners.append({
+                "ownerKind": "character",
+                "ownerId": owner_id,
+                "groupId": group_id,
+                "confidence": "direct",
+                "ownershipMethod": "gameplaySkillId",
+                "ownershipSources": [],
+            })
         else:
             character_match = next(
                 (candidate for candidate in character_skill_ids if skill_id.startswith(candidate + "_")),
                 None,
             )
             if character_match:
-                owner_kind = "character"
                 owner_id, group_id = character_skills[character_match]
-                confidence = "inferred"
+                matched_owners.append({
+                    "ownerKind": "character",
+                    "ownerId": owner_id,
+                    "groupId": group_id,
+                    "confidence": "inferred",
+                    "ownershipMethod": "playableSkillFamilyPrefix",
+                    "ownershipSources": [],
+                })
+
+        for enemy_id, ownership_sources in template_owners_by_skill.get(skill_id) or []:
+            matched_owners.append({
+                "ownerKind": "enemy",
+                "ownerId": enemy_id,
+                "groupId": "",
+                "confidence": "inferred",
+                "ownershipMethod": "enemyTemplateAbilitySystemSkill",
+                "ownershipSources": sorted(ownership_sources),
+            })
+
+        if not any(owner["ownerKind"] == "enemy" for owner in matched_owners):
             enemy_match = next(
                 ((candidate, enemy_id) for candidate, enemy_id in enemy_ids if skill_id == candidate or skill_id.startswith(candidate + "_")),
                 None,
             )
-            if not owner_kind and enemy_match:
-                owner_kind = "enemy"
-                owner_id = enemy_match[1]
-                confidence = "inferred"
-        if not owner_kind or not owner_id:
+            if enemy_match:
+                matched_owners.append({
+                    "ownerKind": "enemy",
+                    "ownerId": enemy_match[1],
+                    "groupId": "",
+                    "confidence": "inferred",
+                    "ownershipMethod": "enemyIdPrefix",
+                    "ownershipSources": [],
+                })
+        if not matched_owners:
             continue
 
         event_evidence: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -368,15 +848,22 @@ def collect_gameplay_audio_references(
             continue
         owned_skill_ids.add(skill_id)
         event_names.update(event_evidence)
-        owners.append({
-            "ownerKind": owner_kind,
-            "ownerId": owner_id,
-            "groupId": group_id,
-            "skillId": skill_id,
-            "confidence": confidence,
-            "sources": sorted(record.get("sources") or set()),
-            "events": dict(event_evidence),
-        })
+        seen_owner_keys: set[tuple[str, str, str]] = set()
+        for matched_owner in matched_owners:
+            owner_key = (
+                str(matched_owner.get("ownerKind") or ""),
+                str(matched_owner.get("ownerId") or ""),
+                str(matched_owner.get("groupId") or ""),
+            )
+            if owner_key in seen_owner_keys:
+                continue
+            seen_owner_keys.add(owner_key)
+            owners.append({
+                **matched_owner,
+                "skillId": skill_id,
+                "sources": sorted(record.get("sources") or set()),
+                "events": dict(event_evidence),
+            })
 
     for enemy in enemies:
         owner_id = str(enemy.get("id") or "")
@@ -391,6 +878,8 @@ def collect_gameplay_audio_references(
             "groupId": "",
             "skillId": "",
             "confidence": "direct",
+            "ownershipMethod": "enemyBornBuffField",
+            "ownershipSources": [],
             "sources": [],
             "events": {
                 event_id: [{"kind": "enemyBornBuffData", "buffIds": sorted(buff_ids)}]
@@ -398,14 +887,28 @@ def collect_gameplay_audio_references(
             },
         })
 
+    animation_audio = collect_gameplay_animation_audio(
+        export_root,
+        entries,
+        enemies,
+        enemy_source_files,
+    )
+    profile_voices = collect_gameplay_profile_voices(export_root, entries)
+    event_names.update(animation_audio.get("eventNames") or set())
     return {
         "eventNames": event_names,
         "owners": owners,
+        "animationOwners": animation_audio.get("owners") or [],
+        "profileVoiceOwners": profile_voices.get("owners") or [],
         "counts": {
             "gameplayCharacterSkills": len(character_skills),
             "audioOwnedSkills": len(owned_skill_ids),
             "audioReferences": sum(len(owner.get("events") or {}) for owner in owners),
             "audioEventNames": len(event_names),
+            "enemyTemplatesWithSkillReferences": len(enemy_template_skills),
+            "enemyTemplateSkillReferences": sum(len(skills) for skills in enemy_template_skills.values()),
+            **(animation_audio.get("counts") or {}),
+            **(profile_voices.get("counts") or {}),
         },
     }
 
@@ -424,6 +927,7 @@ def link_gameplay_audio(
     references: dict[str, Any],
     event_audio_by_id: dict[str, list[dict[str, Any]]],
     event_evidence: list[dict[str, Any]],
+    dialog_audio_by_id: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, int]:
     """Write compact character-skill/enemy SFX sidecar with playable candidates."""
 
@@ -462,9 +966,13 @@ def link_gameplay_audio(
 
     characters: dict[str, dict[str, Any]] = {}
     enemies: dict[str, dict[str, Any]] = {}
+    animation_event_catalog: dict[str, dict[str, Any]] = {}
     discovered_refs = 0
     linked_refs = 0
     candidate_count = 0
+    animation_linked_refs = 0
+    animation_candidate_count = 0
+    profile_voice_linked_refs = 0
     for owner in references.get("owners") or []:
         event_rows: list[dict[str, Any]] = []
         for event_id, evidence in sorted((owner.get("events") or {}).items()):
@@ -487,6 +995,8 @@ def link_gameplay_audio(
             if skill_id and skill_id not in group["skillIds"]:
                 group["skillIds"].append(skill_id)
             group.setdefault("ownershipConfidence", []).append(owner.get("confidence") or "direct")
+            group.setdefault("ownershipMethods", []).append(owner.get("ownershipMethod") or "")
+            group.setdefault("ownershipSources", []).extend(owner.get("ownershipSources") or [])
             existing = {str(row.get("id") or ""): row for row in group["events"]}
             for event in event_rows:
                 event_id = str(event.get("id") or "")
@@ -494,13 +1004,17 @@ def link_gameplay_audio(
                     event["sourceSkillIds"] = [skill_id] if skill_id else []
                     group["events"].append(event)
                     existing[event_id] = event
-                elif skill_id and skill_id not in existing[event_id].setdefault("sourceSkillIds", []):
-                    existing[event_id]["sourceSkillIds"].append(skill_id)
+                else:
+                    existing[event_id].setdefault("evidence", []).extend(event.get("evidence") or [])
+                    if skill_id and skill_id not in existing[event_id].setdefault("sourceSkillIds", []):
+                        existing[event_id]["sourceSkillIds"].append(skill_id)
         elif owner_kind == "enemy":
             skill_id = str(owner.get("skillId") or "")
             record = enemies.setdefault(owner_id, {
                 "skillIds": [],
                 "ownershipConfidence": [],
+                "ownershipMethods": [],
+                "ownershipSources": [],
                 "includesSpawnBuffAudio": False,
                 "events": [],
             })
@@ -509,45 +1023,197 @@ def link_gameplay_audio(
             if not skill_id:
                 record["includesSpawnBuffAudio"] = True
             record["ownershipConfidence"].append(owner.get("confidence") or "inferred")
+            record["ownershipMethods"].append(owner.get("ownershipMethod") or "")
+            record["ownershipSources"].extend(owner.get("ownershipSources") or [])
             existing = {str(row.get("id") or ""): row for row in record["events"]}
             for event in event_rows:
                 event_id = str(event.get("id") or "")
                 if event_id not in existing:
+                    event["sourceSkillIds"] = [skill_id] if skill_id else []
                     record["events"].append(event)
                     existing[event_id] = event
                 else:
                     existing[event_id].setdefault("evidence", []).extend(event.get("evidence") or [])
+                    if skill_id and skill_id not in existing[event_id].setdefault("sourceSkillIds", []):
+                        existing[event_id]["sourceSkillIds"].append(skill_id)
+
+    for owner in references.get("animationOwners") or []:
+        owner_kind = str(owner.get("ownerKind") or "")
+        owner_id = str(owner.get("ownerId") or "")
+        if owner_kind not in {"character", "enemy"}:
+            continue
+        resolved_events: list[dict[str, Any]] = []
+        for event_id, evidence in sorted((owner.get("events") or {}).items()):
+            discovered_refs += 1
+            linked = linked_event(event_id)
+            if not linked:
+                continue
+            linked_refs += 1
+            animation_linked_refs += 1
+            candidates = int(linked.get("playableCandidates") or 0)
+            candidate_count += candidates
+            animation_candidate_count += candidates
+            action_kinds = sorted({str(row.get("actionKind") or "action") for row in evidence})
+            clips = sorted({str(row.get("clip") or "") for row in evidence if row.get("clip")})
+            event = {
+                "id": event_id,
+                "foundInWwise": linked.get("foundInWwise"),
+                "playableCandidates": linked.get("playableCandidates"),
+                "runtimeSelection": linked.get("runtimeSelection"),
+                "evidence": evidence,
+                "actionKinds": action_kinds,
+                "sourceAnimationClips": clips,
+            }
+            animation_event_catalog.setdefault(event_id.lower(), linked)
+            resolved_events.append(event)
+        if not resolved_events:
+            continue
+        if owner_kind == "character":
+            record = characters.setdefault(owner_id, {"groups": {}})
+        else:
+            record = enemies.setdefault(owner_id, {
+                "skillIds": [],
+                "ownershipConfidence": [],
+                "ownershipMethods": [],
+                "ownershipSources": [],
+                "includesSpawnBuffAudio": False,
+                "events": [],
+            })
+        record["animationOwnershipConfidence"] = "inferred"
+        record["animationOwnershipMethod"] = "animationClipActorToken"
+        record.setdefault("animationOwnershipSources", []).extend(owner.get("ownershipSources") or [])
+        animation_events = record.setdefault("animationEvents", [])
+        existing = {str(row.get("id") or ""): row for row in animation_events}
+        for event in resolved_events:
+            event_id = str(event.get("id") or "")
+            if event_id not in existing:
+                animation_events.append(event)
+                existing[event_id] = event
+            else:
+                current = existing[event_id]
+                current.setdefault("evidence", []).extend(event.get("evidence") or [])
+                current["actionKinds"] = sorted(
+                    set(current.get("actionKinds") or []).union(event.get("actionKinds") or [])
+                )
+                current["sourceAnimationClips"] = sorted(
+                    set(current.get("sourceAnimationClips") or []).union(event.get("sourceAnimationClips") or [])
+                )
+
+    for owner in references.get("profileVoiceOwners") or []:
+        owner_id = str(owner.get("ownerId") or "")
+        if not owner_id:
+            continue
+        resolved_voices: list[dict[str, Any]] = []
+        for voice in owner.get("voices") or []:
+            voice_id = str(voice.get("id") or "")
+            if not voice_id:
+                continue
+            discovered_refs += 1
+            audio = (dialog_audio_by_id or {}).get(voice_id.lower())
+            if not audio:
+                continue
+            compact = compact_gameplay_audio_link(audio)
+            if not compact.get("src"):
+                continue
+            linked_refs += 1
+            profile_voice_linked_refs += 1
+            candidate_count += 1
+            resolved_voices.append({
+                "id": voice_id,
+                "actionKinds": [voice.get("actionKind") or "combatVoice"],
+                "runtimeSelection": "profileVoiceEntry",
+                "playableCandidates": 1,
+                "audio": [compact],
+                "evidence": [{
+                    "kind": "characterProfileVoice",
+                    "characterId": voice.get("characterId"),
+                    "profileVoiceIndex": voice.get("profileVoiceIndex"),
+                    "triggerKey": voice.get("triggerKey") or "",
+                    "source": voice.get("source") or "",
+                }],
+            })
+        if resolved_voices:
+            record = characters.setdefault(owner_id, {"groups": {}})
+            record.setdefault("profileVoices", []).extend(resolved_voices)
 
     for value in characters.values():
         for group in value.get("groups", {}).values():
             group["skillIds"].sort()
             group["ownershipConfidence"] = "inferred" if "inferred" in group.pop("ownershipConfidence", []) else "direct"
+            group["ownershipMethods"] = sorted(set(filter(None, group.get("ownershipMethods") or [])))
+            group["ownershipSources"] = sorted(set(filter(None, group.get("ownershipSources") or [])))
             group["events"].sort(key=lambda row: str(row.get("id") or ""))
+        value["animationOwnershipSources"] = sorted(set(filter(None, value.get("animationOwnershipSources") or [])))
+        value.get("animationEvents", []).sort(key=lambda row: str(row.get("id") or ""))
+        value.get("profileVoices", []).sort(key=lambda row: str(row.get("id") or ""))
     for value in enemies.values():
         value["skillIds"].sort()
         value["events"].sort(key=lambda row: str(row.get("id") or ""))
         value["ownershipConfidence"] = "inferred" if "inferred" in value.pop("ownershipConfidence", []) else "direct"
+        value["ownershipMethods"] = sorted(set(filter(None, value.get("ownershipMethods") or [])))
+        value["ownershipSources"] = sorted(set(filter(None, value.get("ownershipSources") or [])))
+        value["animationOwnershipSources"] = sorted(set(filter(None, value.get("animationOwnershipSources") or [])))
+        value.get("animationEvents", []).sort(key=lambda row: str(row.get("id") or ""))
 
     stats = {
         **(references.get("counts") or {}),
         "gameplayAudioRefs": discovered_refs,
         "gameplayAudioRefsLinked": linked_refs,
         "gameplayAudioCandidates": candidate_count,
+        "animationAudioRefsLinked": animation_linked_refs,
+        "animationAudioCandidates": animation_candidate_count,
+        "profileVoiceRefsLinked": profile_voice_linked_refs,
         "charactersWithPlayableSfx": len(characters),
         "enemiesWithPlayableSfx": len(enemies),
     }
     path = webui_root / Path(str(GAMEPLAY_SFX_REL).format(language=language))
-    json_dump(path, {
+    animation_evidence: dict[str, dict[str, list[dict[str, Any]]]] = {
+        "characters": {},
+        "enemies": {},
+    }
+    for bucket_name, bucket in (("characters", characters), ("enemies", enemies)):
+        for owner_id, owner in bucket.items():
+            evidence_events: list[dict[str, Any]] = []
+            for event in owner.get("animationEvents") or []:
+                evidence_events.append({
+                    "id": event.get("id"),
+                    "actionKinds": event.get("actionKinds") or [],
+                    "sourceAnimationClips": event.get("sourceAnimationClips") or [],
+                    "evidence": event.get("evidence") or [],
+                })
+                clips = event.get("sourceAnimationClips") or []
+                event["animationClipCount"] = len(clips)
+                event["sourceAnimationClips"] = clips[:4]
+                event["animationOccurrenceCount"] = len(event.get("evidence") or [])
+                event.pop("evidence", None)
+            if evidence_events:
+                animation_evidence[bucket_name][owner_id] = evidence_events
+    json_dump(path.with_name(GAMEPLAY_SFX_ANIMATION_CATALOG_NAME), {
         "schemaVersion": 1,
         "language": language,
+        "events": animation_event_catalog,
+    })
+    json_dump(path.with_name(GAMEPLAY_SFX_ANIMATION_EVIDENCE_NAME), {
+        "schemaVersion": 1,
+        "language": language,
+        **animation_evidence,
+    })
+    json_dump(path, {
+        "schemaVersion": 2,
+        "language": language,
         "counts": stats,
+        "animationEventCatalogPath": GAMEPLAY_SFX_ANIMATION_CATALOG_NAME,
+        "animationEvidencePath": GAMEPLAY_SFX_ANIMATION_EVIDENCE_NAME,
         "characters": characters,
         "enemies": enemies,
         "scope": {
-            "source": "Exact length-prefixed SkillData/BuffData event references plus Wwise HIRC event traversal",
+            "source": "SkillData/BuffData event references, EnemyData ability bundles, AnimationClip audio callbacks, CharacterTable profile voices, and Wwise HIRC traversal",
             "characterOwnership": "direct gameplay skill id",
             "characterFamilyOwnership": "longest playable skill id prefix inferred for authored child SkillData",
-            "enemyOwnership": "enemy id prefix inferred unless attached through an exact born-buff field",
+            "enemyOwnership": "exact SkillData identifiers recovered from enemy-template AbilitySystemData, with enemy-id prefix fallback and exact born-buff fields",
+            "enemyTemplateBoundary": "AbilitySystemData containment is exact, while identifiers preserved only in partially decoded string-hint tails remain ownership-inferred.",
+            "animationOwnership": "exact AnimationClip callback, timestamp, and payload; actor ownership inferred from exact character/enemy animation tokens and recovered enemy animation-config reuse",
+            "profileVoiceOwnership": "direct CharacterTable.profileVoice ownership linked to the exact AudioDialog path stem; bark/random selection remains unresolved",
             "runtimeSelection": "Switch/random container selection remains unresolved when an event has multiple candidates.",
         },
     })
@@ -3282,6 +3948,7 @@ def build_audio(args: argparse.Namespace) -> int:
         gameplay_audio_references,
         event_audio_by_id,
         event_evidence,
+        dialog_audio,
     )
 
     index_payload = {

@@ -104,6 +104,13 @@ class AudioSemanticDataTests(unittest.TestCase):
             gameplay_path.write_text(json.dumps({
                 "characters": {
                     "chr_test": {
+                        "animationOwnershipConfidence": "inferred",
+                        "animationEvents": [{
+                            "id": "au_sfx_test",
+                            "actionKinds": ["attack"],
+                            "sourceAnimationClips": ["A_actor_test_battle_attack1"],
+                            "evidence": [{"time": 0.25, "function": "PostAudioEvent"}],
+                        }],
                         "groups": {
                             "normal": {
                                 "ownershipConfidence": "direct",
@@ -187,7 +194,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(event["candidateCount"], 1)
             self.assertEqual(
                 {row["kind"] for row in event["contexts"]},
-                {"characterSkill", "table", "cutsceneTimeline"},
+                {"characterSkill", "characterAnimation", "table", "cutsceneTimeline"},
             )
             self.assertEqual(media["eventIds"], ["au_sfx_test"])
             self.assertIn("eventMedia", payload["evidenceBoundary"])

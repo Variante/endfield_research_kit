@@ -546,7 +546,10 @@ def _append_context(
 
 
 def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list[dict[str, Any]]]:
-    payload = load_json(webui_root / f"data/lang/{language}/gameplay/sound_effects.json", {})
+    gameplay_path = webui_root / f"data/lang/{language}/gameplay/sound_effects.json"
+    payload = load_json(gameplay_path, {})
+    evidence_path = str(payload.get("animationEvidencePath") or "") if isinstance(payload, dict) else ""
+    animation_evidence = load_json(gameplay_path.with_name(evidence_path), {}) if evidence_path else {}
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
     for owner_kind, bucket_name in (("character", "characters"), ("enemy", "enemies")):
@@ -576,6 +579,25 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
                     if skill_ids:
                         context["skillIds"] = list(skill_ids)[:12]
                     _append_context(contexts, seen, event.get("id"), context)
+            evidence_bucket = animation_evidence.get(bucket_name) if isinstance(animation_evidence, dict) else None
+            animation_events = (
+                evidence_bucket.get(owner_id)
+                if isinstance(evidence_bucket, dict) and isinstance(evidence_bucket.get(owner_id), list)
+                else owner.get("animationEvents") or []
+            )
+            for event in animation_events:
+                if not isinstance(event, dict):
+                    continue
+                evidence = event.get("evidence") or []
+                context = {
+                    "kind": "characterAnimation" if owner_kind == "character" else "enemyAnimation",
+                    "ownerId": owner_id,
+                    "confidence": owner.get("animationOwnershipConfidence") or "inferred",
+                    "actionKinds": list(event.get("actionKinds") or [])[:8],
+                    "animationClips": list(event.get("sourceAnimationClips") or [])[:12],
+                    "animationOccurrenceCount": len(evidence),
+                }
+                _append_context(contexts, seen, event.get("id"), context)
     return dict(contexts)
 
 
