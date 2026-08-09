@@ -121,9 +121,14 @@ NPC archetypes are imported as labeled source kits.
   `Unity.Mathematics.math.f32tof16` close the word order and IEEE conversion;
   all 11 analytic candidates map authored corners back to the unit box within
   `0.002611`. Exact signed-zero bits and one `Spot Light (12)` reciprocal at a
-  one-float32-ULP half boundary still need the opaque UnityPlayer internal body
-  or a retail buffer capture. Target-frame color/transforms, runtime carry-in,
-  and final byte-exact b31 rows remain open.
+  one-float32-ULP half boundary still need the exact UnityPlayer matrix-inverse
+  output or a retail buffer capture. Pinned `globalgamemanagers` objects prove
+  Linear color space and linear light intensity; all 11 rows disable color
+  temperature, distance/far-show falloff, animation, multistate, and flicker.
+  UnityPlayer `finalColor`, `Color.linear`, animation-disable, and flicker
+  bodies therefore close exact b31 record0.xyz bits as linearized authored RGB
+  times intensity, with falloff/flicker both 1. Target-frame transforms,
+  record0.w, runtime carry-in, and final byte-exact b31 rows remain open.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData`; the selected
   resolver reads only its Punctual rows `c64..c400` (bytes 1,024..6,415).
   Native allocation, four-section copy/bind transport, atlas sizing/format,

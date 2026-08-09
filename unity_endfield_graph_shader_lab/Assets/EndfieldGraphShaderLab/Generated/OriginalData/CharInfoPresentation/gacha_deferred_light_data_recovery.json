@@ -1,13 +1,33 @@
 {
-  "schema": "endfield.gacha-deferred-light-data-recovery.v3",
-  "status": "room_obb_pack_schema_and_quantized_candidates_closed",
+  "schema": "endfield.gacha-deferred-light-data-recovery.v4",
+  "status": "room_record0_color_and_obb_candidates_closed",
   "installedInputs": {
     "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
     "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
     "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "globalGameManagersSha256": "191619377ff312b785aae10faec8a75e39caf1ba60016ad08eff040b8c54f20d",
     "selectedFragmentSha256": "44dc5090af87a8f65ffca870f9e02b8525c4cfe14f84cf8feaa3ea6c49e4b9db",
     "gachaPopulationSha256": "02e15c70197bcd96f804007fe042fcb46577c0014d956d78a28f2d96162e189a",
     "roomHierarchySha256": "bf26b44919a7563bd6c7ee137346d7f8880bb1a32911a8972c586b2bb0c87db9"
+  },
+  "originalGlobalLightingSettings": {
+    "sourcePath": "Endfield_Data/globalgamemanagers",
+    "playerSettings": {
+      "pathId": 1,
+      "fileOffset": "0x1000",
+      "sizeBytes": 728,
+      "rawObjectSha256": "bb2752bf4f4dd43d7885e01520c992289330ea8efdf7321ea926cb7cb149b3d6",
+      "activeColorSpace": "Linear",
+      "activeColorSpaceValue": 1
+    },
+    "graphicsSettings": {
+      "pathId": 7,
+      "fileOffset": "0xD8B28",
+      "sizeBytes": 826,
+      "rawObjectSha256": "8bbfff1de820c06fb150aa4093391bff3ad080eba65f4230d83496ed84b94563",
+      "lightsUseLinearIntensity": true,
+      "lightsUseColorTemperature": true
+    }
   },
   "nativeProducer": {
     "method": "HG.Rendering.Runtime.LightCulling.PrepareCPUData",
@@ -115,6 +135,36 @@
       ]
     },
     "resolvedCalls": [
+      {
+        "offset": "0x064C",
+        "target": "0x189D03E58",
+        "method": "LightExtensions.GetLightFalloff"
+      },
+      {
+        "offset": "0x066B",
+        "target": "0x183A1D9B0",
+        "method": "UnityEngine.Color.op_Implicit"
+      },
+      {
+        "offset": "0x0683",
+        "target": "0x183796500",
+        "method": "UnityEngine.Color.op_Multiply color by falloff"
+      },
+      {
+        "offset": "0x0693",
+        "target": "0x18B3BDEF0",
+        "method": "HGSharedLightData.get_flickerScale_Injected"
+      },
+      {
+        "offset": "0x06AB",
+        "target": "0x183796500",
+        "method": "UnityEngine.Color.op_Multiply color by flickerScale"
+      },
+      {
+        "offset": "0x06C6",
+        "target": "0x18328FB00",
+        "method": "Unity.Mathematics.float4.op_Implicit"
+      },
       {
         "offset": "0x08DB",
         "target": "0x1832040F0",
@@ -272,6 +322,61 @@
         }
       }
     },
+    "lightFalloff": {
+      "method": "HG.Rendering.Runtime.LightExtensions.GetLightFalloff",
+      "methodIndex": 285215,
+      "virtualAddress": "0x189D03E58",
+      "fileOffset": "0x9D02458",
+      "sizeBytes": 391,
+      "bodySha256": "dbb121bbf91f191001755e9290988f4f287fb9fcc1c65cd09254452474a2509d",
+      "selectedRowsResult": 1.0,
+      "reason": "useCullingDistance=false and useFarDistanceShow=false"
+    },
+    "unityPlayerLightColor": {
+      "internalCallTable": {
+        "entryCount": 3962,
+        "nameTableFileOffset": "0x20D27B0",
+        "functionTableFileOffset": "0x20CAA00",
+        "resolvedEntries": [
+          {
+            "index": 1752,
+            "name": "UnityEngine.Light::set_enableLightAnimation",
+            "namePointer": "0x181CC2158",
+            "functionPointer": "0x1800D4B40"
+          },
+          {
+            "index": 1940,
+            "name": "UnityEngine.HGSharedLightData::get_finalColor_Injected",
+            "namePointer": "0x181CC4A70",
+            "functionPointer": "0x18011FE60"
+          },
+          {
+            "index": 1982,
+            "name": "UnityEngine.HGSharedLightData::get_flickerScale_Injected",
+            "namePointer": "0x181CC55C0",
+            "functionPointer": "0x180123330"
+          }
+        ]
+      },
+      "finalColor": {
+        "updateVirtualAddress": "0x1803844E0",
+        "updateBodySha256": "39cbb35b17202949963e8cb4ed54a9d1e31067ae1c26c766c191c80e004b5e1d",
+        "colorLinearVirtualAddress": "0x18034C690",
+        "colorLinearBodySha256": "83785743304ef92949c2b53f43ba6b1fd9e30655b389f61a1f56a334babd608f",
+        "selectedRowsFormula": "UnityPlayer Color.linear(serialized color) * intensity",
+        "selectedRowsUseColorTemperature": false
+      },
+      "flickerScale": {
+        "nativeVirtualAddress": "0x18036D480",
+        "nativeBodySha256": "622b04cd8adaf7bc219e4d56c9dc574f89f324e55128c2ca2c96c624254d3f1b",
+        "disabledAnimationResult": 1.0
+      },
+      "lightAnimation": {
+        "nativeVirtualAddress": "0x1803569F0",
+        "nativeBodySha256": "911725357c454b8224102d6b34d32f12d912f9cadbbfcc26aa64dda8b3bb83c6",
+        "disabledPath": "stores false and removes an existing runtime animation component"
+      }
+    },
     "obbHalfPacking": {
       "packTwoHalfValuesAsFloat": {
         "method": "HG.Rendering.Runtime.HGUtils.PackTwoHalfValuesAsFloat",
@@ -331,6 +436,23 @@
     "allUnshadowed": true,
     "allCookieFree": true,
     "allAdditionalComponentsResolved": true,
+    "allColorTemperatureDisabled": true,
+    "allDistanceFalloffDisabled": true,
+    "allFarDistanceShowDisabled": true,
+    "allLightAnimationDisabled": true,
+    "record0ColorSummary": {
+      "globalColorSpace": "Linear",
+      "lightsUseLinearIntensity": true,
+      "allUseColorTemperature": false,
+      "allFalloff": 1.0,
+      "allFlickerScale": 1.0,
+      "exactCandidateCount": 11,
+      "closedLanes": [
+        "record0.x",
+        "record0.y",
+        "record0.z"
+      ]
+    },
     "obbHalfPackingSummary": {
       "producerFormula": "inverse TRS of authored relative position, ZXY Euler orientation, and half extents",
       "wordPlacement": "six row-major half2 words in record5.xyz then record6.xyz",
@@ -385,6 +507,22 @@
           1.0
         ],
         "intensity": 100.0,
+        "useColorTemperature": false,
+        "colorTemperature": 6570.0,
+        "useCullingDistance": false,
+        "cullingDistance": 100.0,
+        "falloffDistance": 100.0,
+        "useFarDistanceShow": false,
+        "farDistanceShowDistance": 10.0,
+        "farDistanceShowFalloffDistance": 12.0,
+        "lightAnimation": {
+          "enabled": false,
+          "multiStateEnabled": false,
+          "flickerEnabled": false,
+          "flickerStylePathId": 0,
+          "stateCount": 0,
+          "transitionCount": 0
+        },
         "range": 10.0,
         "innerSpotAngleDegrees": 90.0,
         "outerSpotAngleDegrees": 140.0,
@@ -436,6 +574,41 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 1.0,
           "falloffExponent": -1.0
+        },
+        "record0Color": {
+          "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+          "serializedColorBits": [
+            "0x3F800000",
+            "0x3F4DCDCE",
+            "0x3F008081",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColorBits": [
+            "0x3F800000",
+            "0x3F1C4971",
+            "0x3E5D0A8B",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColor": [
+            1.0,
+            0.6104956269264221,
+            0.2158605307340622,
+            1.0
+          ],
+          "intensity": 100.0,
+          "intensityBits": "0x42C80000",
+          "falloff": 1.0,
+          "flickerScale": 1.0,
+          "record0RgbBits": [
+            "0x42C80000",
+            "0x427432C1",
+            "0x41ACB03D"
+          ],
+          "record0Rgb": [
+            100.0,
+            61.049564361572266,
+            21.5860538482666
+          ]
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -535,6 +708,22 @@
           1.0
         ],
         "intensity": 4.0,
+        "useColorTemperature": false,
+        "colorTemperature": 6000.0,
+        "useCullingDistance": false,
+        "cullingDistance": 100.0,
+        "falloffDistance": 100.0,
+        "useFarDistanceShow": false,
+        "farDistanceShowDistance": 10.0,
+        "farDistanceShowFalloffDistance": 12.0,
+        "lightAnimation": {
+          "enabled": false,
+          "multiStateEnabled": false,
+          "flickerEnabled": false,
+          "flickerStylePathId": 0,
+          "stateCount": 0,
+          "transitionCount": 0
+        },
         "range": 7.0468225,
         "innerSpotAngleDegrees": 0.0,
         "outerSpotAngleDegrees": 150.1144,
@@ -586,6 +775,41 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 10.0,
           "falloffExponent": -1.0
+        },
+        "record0Color": {
+          "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+          "serializedColorBits": [
+            "0x3F800000",
+            "0x3F43870E",
+            "0x3ECCCCCC",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColorBits": [
+            "0x3F800000",
+            "0x3F0B53AD",
+            "0x3E080EA2",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColor": [
+            1.0,
+            0.5442455410957336,
+            0.13286831974983215,
+            1.0
+          ],
+          "intensity": 4.0,
+          "intensityBits": "0x40800000",
+          "falloff": 1.0,
+          "flickerScale": 1.0,
+          "record0RgbBits": [
+            "0x40800000",
+            "0x400B53AD",
+            "0x3F080EA2"
+          ],
+          "record0Rgb": [
+            4.0,
+            2.1769821643829346,
+            0.5314732789993286
+          ]
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -683,6 +907,22 @@
           1.0
         ],
         "intensity": 60.0,
+        "useColorTemperature": false,
+        "colorTemperature": 6570.0,
+        "useCullingDistance": false,
+        "cullingDistance": 100.0,
+        "falloffDistance": 100.0,
+        "useFarDistanceShow": false,
+        "farDistanceShowDistance": 10.0,
+        "farDistanceShowFalloffDistance": 12.0,
+        "lightAnimation": {
+          "enabled": false,
+          "multiStateEnabled": false,
+          "flickerEnabled": false,
+          "flickerStylePathId": 0,
+          "stateCount": 0,
+          "transitionCount": 0
+        },
         "range": 10.0,
         "innerSpotAngleDegrees": 21.80208,
         "outerSpotAngleDegrees": 30.0,
@@ -734,6 +974,41 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 1.0,
           "falloffExponent": -1.0
+        },
+        "record0Color": {
+          "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+          "serializedColorBits": [
+            "0x3F800000",
+            "0x3F43870E",
+            "0x3ECCCCCC",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColorBits": [
+            "0x3F800000",
+            "0x3F0B53AD",
+            "0x3E080EA2",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColor": [
+            1.0,
+            0.5442455410957336,
+            0.13286831974983215,
+            1.0
+          ],
+          "intensity": 60.0,
+          "intensityBits": "0x42700000",
+          "falloff": 1.0,
+          "flickerScale": 1.0,
+          "record0RgbBits": [
+            "0x42700000",
+            "0x42029E72",
+            "0x40FF1B70"
+          ],
+          "record0Rgb": [
+            60.0,
+            32.65473175048828,
+            7.972099304199219
+          ]
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -829,6 +1104,22 @@
           1.0
         ],
         "intensity": 60.0,
+        "useColorTemperature": false,
+        "colorTemperature": 6570.0,
+        "useCullingDistance": false,
+        "cullingDistance": 100.0,
+        "falloffDistance": 100.0,
+        "useFarDistanceShow": false,
+        "farDistanceShowDistance": 10.0,
+        "farDistanceShowFalloffDistance": 12.0,
+        "lightAnimation": {
+          "enabled": false,
+          "multiStateEnabled": false,
+          "flickerEnabled": false,
+          "flickerStylePathId": 0,
+          "stateCount": 0,
+          "transitionCount": 0
+        },
         "range": 10.0,
         "innerSpotAngleDegrees": 21.80208,
         "outerSpotAngleDegrees": 30.0,
@@ -880,6 +1171,41 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 1.0,
           "falloffExponent": -1.0
+        },
+        "record0Color": {
+          "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+          "serializedColorBits": [
+            "0x3F800000",
+            "0x3F43870E",
+            "0x3ECCCCCC",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColorBits": [
+            "0x3F800000",
+            "0x3F0B53AD",
+            "0x3E080EA2",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColor": [
+            1.0,
+            0.5442455410957336,
+            0.13286831974983215,
+            1.0
+          ],
+          "intensity": 60.0,
+          "intensityBits": "0x42700000",
+          "falloff": 1.0,
+          "flickerScale": 1.0,
+          "record0RgbBits": [
+            "0x42700000",
+            "0x42029E72",
+            "0x40FF1B70"
+          ],
+          "record0Rgb": [
+            60.0,
+            32.65473175048828,
+            7.972099304199219
+          ]
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -975,6 +1301,22 @@
           1.0
         ],
         "intensity": 100.0,
+        "useColorTemperature": false,
+        "colorTemperature": 6570.0,
+        "useCullingDistance": false,
+        "cullingDistance": 100.0,
+        "falloffDistance": 100.0,
+        "useFarDistanceShow": false,
+        "farDistanceShowDistance": 10.0,
+        "farDistanceShowFalloffDistance": 12.0,
+        "lightAnimation": {
+          "enabled": false,
+          "multiStateEnabled": false,
+          "flickerEnabled": false,
+          "flickerStylePathId": 0,
+          "stateCount": 0,
+          "transitionCount": 0
+        },
         "range": 14.0,
         "innerSpotAngleDegrees": 21.80208,
         "outerSpotAngleDegrees": 30.0,
@@ -1026,6 +1368,41 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 1.0,
           "falloffExponent": -1.0
+        },
+        "record0Color": {
+          "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+          "serializedColorBits": [
+            "0x3F800000",
+            "0x3F43870E",
+            "0x3ECCCCCC",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColorBits": [
+            "0x3F800000",
+            "0x3F0B53AD",
+            "0x3E080EA2",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColor": [
+            1.0,
+            0.5442455410957336,
+            0.13286831974983215,
+            1.0
+          ],
+          "intensity": 100.0,
+          "intensityBits": "0x42C80000",
+          "falloff": 1.0,
+          "flickerScale": 1.0,
+          "record0RgbBits": [
+            "0x42C80000",
+            "0x4259B2BE",
+            "0x415496DD"
+          ],
+          "record0Rgb": [
+            100.0,
+            54.42455291748047,
+            13.286831855773926
+          ]
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -1121,6 +1498,22 @@
           1.0
         ],
         "intensity": 4.0,
+        "useColorTemperature": false,
+        "colorTemperature": 6000.0,
+        "useCullingDistance": false,
+        "cullingDistance": 100.0,
+        "falloffDistance": 100.0,
+        "useFarDistanceShow": false,
+        "farDistanceShowDistance": 10.0,
+        "farDistanceShowFalloffDistance": 12.0,
+        "lightAnimation": {
+          "enabled": false,
+          "multiStateEnabled": false,
+          "flickerEnabled": false,
+          "flickerStylePathId": 0,
+          "stateCount": 0,
+          "transitionCount": 0
+        },
         "range": 5.0,
         "innerSpotAngleDegrees": 0.0,
         "outerSpotAngleDegrees": 150.1144,
@@ -1172,6 +1565,41 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 10.0,
           "falloffExponent": -1.0
+        },
+        "record0Color": {
+          "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+          "serializedColorBits": [
+            "0x3F800000",
+            "0x3F4DCDCE",
+            "0x3F008081",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColorBits": [
+            "0x3F800000",
+            "0x3F1C4971",
+            "0x3E5D0A8B",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColor": [
+            1.0,
+            0.6104956269264221,
+            0.2158605307340622,
+            1.0
+          ],
+          "intensity": 4.0,
+          "intensityBits": "0x40800000",
+          "falloff": 1.0,
+          "flickerScale": 1.0,
+          "record0RgbBits": [
+            "0x40800000",
+            "0x401C4971",
+            "0x3F5D0A8B"
+          ],
+          "record0Rgb": [
+            4.0,
+            2.4419825077056885,
+            0.8634421229362488
+          ]
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -1269,6 +1697,22 @@
           1.0
         ],
         "intensity": 100.0,
+        "useColorTemperature": false,
+        "colorTemperature": 6570.0,
+        "useCullingDistance": false,
+        "cullingDistance": 100.0,
+        "falloffDistance": 100.0,
+        "useFarDistanceShow": false,
+        "farDistanceShowDistance": 10.0,
+        "farDistanceShowFalloffDistance": 12.0,
+        "lightAnimation": {
+          "enabled": false,
+          "multiStateEnabled": false,
+          "flickerEnabled": false,
+          "flickerStylePathId": 0,
+          "stateCount": 0,
+          "transitionCount": 0
+        },
         "range": 14.0,
         "innerSpotAngleDegrees": 21.80208,
         "outerSpotAngleDegrees": 30.0,
@@ -1320,6 +1764,41 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 1.0,
           "falloffExponent": -1.0
+        },
+        "record0Color": {
+          "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+          "serializedColorBits": [
+            "0x3F800000",
+            "0x3F43870E",
+            "0x3ECCCCCC",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColorBits": [
+            "0x3F800000",
+            "0x3F0B53AD",
+            "0x3E080EA2",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColor": [
+            1.0,
+            0.5442455410957336,
+            0.13286831974983215,
+            1.0
+          ],
+          "intensity": 100.0,
+          "intensityBits": "0x42C80000",
+          "falloff": 1.0,
+          "flickerScale": 1.0,
+          "record0RgbBits": [
+            "0x42C80000",
+            "0x4259B2BE",
+            "0x415496DD"
+          ],
+          "record0Rgb": [
+            100.0,
+            54.42455291748047,
+            13.286831855773926
+          ]
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -1415,6 +1894,22 @@
           1.0
         ],
         "intensity": 4.0,
+        "useColorTemperature": false,
+        "colorTemperature": 6000.0,
+        "useCullingDistance": false,
+        "cullingDistance": 100.0,
+        "falloffDistance": 100.0,
+        "useFarDistanceShow": false,
+        "farDistanceShowDistance": 10.0,
+        "farDistanceShowFalloffDistance": 12.0,
+        "lightAnimation": {
+          "enabled": false,
+          "multiStateEnabled": false,
+          "flickerEnabled": false,
+          "flickerStylePathId": 0,
+          "stateCount": 0,
+          "transitionCount": 0
+        },
         "range": 5.0,
         "innerSpotAngleDegrees": 0.0,
         "outerSpotAngleDegrees": 150.1144,
@@ -1466,6 +1961,41 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 10.0,
           "falloffExponent": -1.0
+        },
+        "record0Color": {
+          "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+          "serializedColorBits": [
+            "0x3F800000",
+            "0x3F4DCDCE",
+            "0x3F008081",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColorBits": [
+            "0x3F800000",
+            "0x3F1C4971",
+            "0x3E5D0A8B",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColor": [
+            1.0,
+            0.6104956269264221,
+            0.2158605307340622,
+            1.0
+          ],
+          "intensity": 4.0,
+          "intensityBits": "0x40800000",
+          "falloff": 1.0,
+          "flickerScale": 1.0,
+          "record0RgbBits": [
+            "0x40800000",
+            "0x401C4971",
+            "0x3F5D0A8B"
+          ],
+          "record0Rgb": [
+            4.0,
+            2.4419825077056885,
+            0.8634421229362488
+          ]
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -1563,6 +2093,22 @@
           1.0
         ],
         "intensity": 60.0,
+        "useColorTemperature": false,
+        "colorTemperature": 6000.0,
+        "useCullingDistance": false,
+        "cullingDistance": 100.0,
+        "falloffDistance": 100.0,
+        "useFarDistanceShow": false,
+        "farDistanceShowDistance": 10.0,
+        "farDistanceShowFalloffDistance": 12.0,
+        "lightAnimation": {
+          "enabled": false,
+          "multiStateEnabled": false,
+          "flickerEnabled": false,
+          "flickerStylePathId": 0,
+          "stateCount": 0,
+          "transitionCount": 0
+        },
         "range": 6.9279203,
         "innerSpotAngleDegrees": 0.0,
         "outerSpotAngleDegrees": 150.1144,
@@ -1614,6 +2160,41 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 10.0,
           "falloffExponent": -1.0
+        },
+        "record0Color": {
+          "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+          "serializedColorBits": [
+            "0x3F800000",
+            "0x3F43186D",
+            "0x3E99999A",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColorBits": [
+            "0x3F800000",
+            "0x3F0AA371",
+            "0x3D95FE50",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColor": [
+            1.0,
+            0.5415564179420471,
+            0.07323896884918213,
+            1.0
+          ],
+          "intensity": 60.0,
+          "intensityBits": "0x42700000",
+          "falloff": 1.0,
+          "flickerScale": 1.0,
+          "record0RgbBits": [
+            "0x42700000",
+            "0x4201F93A",
+            "0x408C9E6B"
+          ],
+          "record0Rgb": [
+            60.0,
+            32.493385314941406,
+            4.394338130950928
+          ]
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -1711,6 +2292,22 @@
           1.0
         ],
         "intensity": 30.0,
+        "useColorTemperature": false,
+        "colorTemperature": 7000.0,
+        "useCullingDistance": false,
+        "cullingDistance": 100.0,
+        "falloffDistance": 100.0,
+        "useFarDistanceShow": false,
+        "farDistanceShowDistance": 10.0,
+        "farDistanceShowFalloffDistance": 12.0,
+        "lightAnimation": {
+          "enabled": false,
+          "multiStateEnabled": false,
+          "flickerEnabled": false,
+          "flickerStylePathId": 0,
+          "stateCount": 0,
+          "transitionCount": 0
+        },
         "range": 20.0,
         "innerSpotAngleDegrees": 0.0,
         "outerSpotAngleDegrees": 150.1144,
@@ -1762,6 +2359,41 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 0.0,
           "falloffExponent": -1.0
+        },
+        "record0Color": {
+          "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+          "serializedColorBits": [
+            "0x3F800000",
+            "0x3F2FAFB0",
+            "0x3E4CCCCC",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColorBits": [
+            "0x3F800000",
+            "0x3EDB7D54",
+            "0x3D0798DC",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColor": [
+            1.0,
+            0.4286905527114868,
+            0.03310476243495941,
+            1.0
+          ],
+          "intensity": 30.0,
+          "intensityBits": "0x41F00000",
+          "falloff": 1.0,
+          "flickerScale": 1.0,
+          "record0RgbBits": [
+            "0x41F00000",
+            "0x414DC57F",
+            "0x3F7E3E9C"
+          ],
+          "record0Rgb": [
+            30.0,
+            12.860716819763184,
+            0.99314284324646
+          ]
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -1859,6 +2491,22 @@
           1.0
         ],
         "intensity": 140.0,
+        "useColorTemperature": false,
+        "colorTemperature": 7000.0,
+        "useCullingDistance": false,
+        "cullingDistance": 100.0,
+        "falloffDistance": 100.0,
+        "useFarDistanceShow": false,
+        "farDistanceShowDistance": 10.0,
+        "farDistanceShowFalloffDistance": 12.0,
+        "lightAnimation": {
+          "enabled": false,
+          "multiStateEnabled": false,
+          "flickerEnabled": false,
+          "flickerStylePathId": 0,
+          "stateCount": 0,
+          "transitionCount": 0
+        },
         "range": 15.0,
         "innerSpotAngleDegrees": 0.0,
         "outerSpotAngleDegrees": 150.1144,
@@ -1910,6 +2558,41 @@
           "characterOnly": false,
           "volumetricScatteringIntensity": 0.0,
           "falloffExponent": -1.0
+        },
+        "record0Color": {
+          "producerFormula": "VisibleLight.finalColor.rgb * GetLightFalloff * flickerScale",
+          "serializedColorBits": [
+            "0x3F800000",
+            "0x3F4DCDCE",
+            "0x3F008081",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColorBits": [
+            "0x3F800000",
+            "0x3F1C4971",
+            "0x3E5D0A8B",
+            "0x3F800000"
+          ],
+          "unityPlayerLinearColor": [
+            1.0,
+            0.6104956269264221,
+            0.2158605307340622,
+            1.0
+          ],
+          "intensity": 140.0,
+          "intensityBits": "0x430C0000",
+          "falloff": 1.0,
+          "flickerScale": 1.0,
+          "record0RgbBits": [
+            "0x430C0000",
+            "0x42AAF054",
+            "0x41F1C388"
+          ],
+          "record0Rgb": [
+            140.0,
+            85.46939086914062,
+            30.220474243164062
+          ]
         },
         "obbPackedTransform": {
           "producerFormula": "inverse(TRS(relativePosition, Quaternion.Euler(ZXY degrees), halfExtents))",
@@ -2008,13 +2691,17 @@
       "the corresponding producer lanes record3.yzw, record4.xyzw, and record6.w",
       "the OBB producer call chain: relative position, half extents, ZXY Euler orientation, inverse TRS, and six row-major half pairs",
       "the installed HGUtils/math.f32tof16 method bodies, x-low/y-high word layout, and record5.xyz/record6.xyz placement",
-      "six-word analytic OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003"
+      "six-word analytic OBB candidates for all eleven rows and every non-boundary half payload; decoded candidates return every authored corner to the unit-box boundary within 0.003",
+      "the installed PlayerSettings Linear color space and GraphicsSettings linear-light-intensity/color-temperature flags from pinned globalgamemanagers objects",
+      "the UnityPlayer finalColor producer, Color.linear body, light-animation disable path, and flickerScale inactive fallback of exactly 1.0",
+      "all eleven rows disable per-light color temperature, culling-distance/far-show falloff, animation, multistate, and flicker; their state tables and flicker references are empty",
+      "exact UnityPlayer-derived record0.xyz IEEE-754 candidates for all eleven rows: linearized serialized RGB times intensity, with falloff and flickerScale both 1"
     ],
     "open": [
-      "exact float32 color/intensity helper results and camera-relative position/direction values at the target frame",
+      "camera-relative position/direction values at the target frame and the exact record0.w kind/shadow discriminator payload",
       "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, and shadow/cookie cache indices",
       "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
     ],
-    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including their additional-light lanes and bounded OBB transform candidates. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame transforms, color/intensity helpers, and runtime list boundary are closed."
+    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, including their record0.xyz color, additional-light lanes, and bounded OBB transform candidates. Do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary bits, target-frame transforms, record0.w, and runtime list boundary are closed."
   }
 }
