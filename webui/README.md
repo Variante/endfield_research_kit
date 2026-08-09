@@ -29,6 +29,11 @@ Normal navigation exposes:
 - **Updates:** differences between previous and current exported game data.
 
 **Mission Pipeline** is experimental and appears only with `Show debug info`.
+**Audio** is also debug-only. It exposes the current binary-validated runtime
+model, Wwise HIRC object families, authored event contexts, candidate media,
+and the physical decoded-media inventory without presenting candidates as a
+live playback trace.
+
 The standalone Progression and Combat & Projectiles pages are retired. Their
 useful player-facing data now appears in Gameplay; raw combat relationships,
 projectile matching evidence, and unresolved ownership remain debug-only.
@@ -42,6 +47,7 @@ projectile matching evidence, and unresolved ownership remain debug-only.
 - `reference.js`, `assets.js`, `updates.js`: Text, Assets, and Updates pages.
 - `src/features/characters/`: Characters page and live override editing.
 - `src/features/gameplay/`: Gameplay page and integrations.
+- `src/features/audio/`: lazy, virtualized debug Audio page.
 - `src/features/mission_pipeline/`: experimental mission evidence view.
 - `src/features/{economy,world,presentation,projectiles,combat}/`: semantic
   payload integrations used by Gameplay or debug views.
@@ -59,6 +65,7 @@ data/lang/<LANG>/reference/
 data/lang/<LANG>/characters/index.json
 data/lang/<LANG>/gameplay/index.json
 data/lang/<LANG>/gameplay/sound_effects.json
+data/lang/<LANG>/audio/{index,events,media}.json
 data/lang/<LANG>/{economy,world,presentation}/index.json
 data/gameplay/projectiles.json
 data/mission_pipeline/
@@ -74,7 +81,9 @@ sidecars independently. Missing optional sidecars must degrade to the base
 record instead of breaking the page. Presentation and combat builders expose a
 visible degraded reason when their source graph is absent or stale.
 
-Playable recovered audio is served from
+The Audio overview and Event inventory load only when its debug view is opened;
+the larger media inventory remains deferred until the Media mode is selected.
+Both lists are virtualized. Playable recovered audio is served from
 `/export_full/structured/Audio/{shared,<LANG>}/`. The normal builder emits
 lossless `.flac` files and writes those paths into Story, cutscene, projectile,
 and Gameplay sound payloads; the frontend uses the same native audio control
@@ -106,8 +115,8 @@ rejected, and merging a flagged source clears that flag.
 - Source panels, mission evidence, and Story order editing stay behind
   `Show debug info`.
 - Story reset returns to Story sort while preserving expanded mission groups.
-- Disabling debug while Mission Pipeline is active moves to a visible page and
-  normalizes the URL.
+- Disabling debug while Audio or Mission Pipeline is active moves to Gameplay
+  and normalizes the URL.
 
 ### Story and media
 
@@ -173,7 +182,9 @@ After frontend or data changes:
 
 1. Reuse or start the default server.
 2. Confirm Story, Characters, Gameplay, Assets, Text, and Updates load.
-3. Toggle debug and confirm Mission Pipeline appears and hides cleanly.
+3. Toggle debug and confirm Audio and Mission Pipeline appear and hide cleanly.
+   In Audio, confirm Events loads first, Media loads on demand, and disabling
+   debug returns to Gameplay.
 4. Check Story reset/filter behavior and the inline SNS fixtures.
 5. Open a playable character and an enemy; verify progression, variants,
    projectiles, sounds, and linked assets degrade cleanly when optional data is

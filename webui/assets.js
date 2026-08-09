@@ -14,13 +14,15 @@
     "story",
     "characters",
     "gameplay",
+    "audio",
     "mission-pipeline",
     "assets",
     "reference",
     "updates",
   ]);
-  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline"]);
+  const DEBUG_ONLY_VIEWS = new Set(["audio", "mission-pipeline"]);
   const DEBUG_VIEW_FALLBACKS = Object.freeze({
+    audio: "gameplay",
     "mission-pipeline": "gameplay",
   });
   const RETIRED_VIEW_FALLBACKS = Object.freeze({ projectiles: "gameplay" });
@@ -642,6 +644,7 @@
       story: "storyPageTitle",
       characters: "charactersPageTitle",
       gameplay: "gameplayPageTitle",
+      audio: "audioPageTitle",
       "mission-pipeline": "missionPipelinePageTitle",
       assets: "assetsPageTitle",
       reference: "referencePageTitle",

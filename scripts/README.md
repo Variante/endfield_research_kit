@@ -65,6 +65,7 @@ Prefer focused tests, direct probes, and data-only builds during the batch.
 | `build_presentation_data.py` | Presentation semantic data |
 | `build_assets.py` | Assets, Story media, and Gameplay asset indexes |
 | `build_audio.py` | Lossless FLAC audio decode/relink and Gameplay SFX sidecar |
+| `build_audio_semantics.py` | Debug Audio runtime/event/media semantic payloads |
 | `convert_audio_to_flac.py` | Standalone WAV-to-FLAC migration helper |
 | `pack_webui.py` | Static package plus FLAC-only audio/media archives |
 
@@ -175,6 +176,12 @@ lossless FLAC and removes the temporary WAV after each successful conversion.
 retain WAV, or `--format wem` to keep the legacy compact WEM output. Exact
 Wwise event traversal can yield multiple media candidates; unresolved runtime
 switch/random selection is preserved.
+
+`build_audio.py` also refreshes the debug-only Audio view. Run
+`python scripts\build_audio_semantics.py --language CN` independently when the
+authoritative audio index is already current and only its semantic payload or
+frontend changed. The compact overview and Event data load on view activation;
+the large decoded-media inventory loads only when its Media mode is selected.
 
 For a one-off migration of an existing export, preview first and then run:
 
