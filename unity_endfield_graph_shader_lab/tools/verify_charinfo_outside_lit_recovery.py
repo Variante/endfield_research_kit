@@ -1962,6 +1962,9 @@ def verify_selected_resolver_binding_contract() -> None:
     assert "N=8" in shadow_native["setting_defaults"]
     assert "3072x2048" in shadow_native["setting_defaults"]
     assert "Depth16" in shadow_native["atlas_descriptor"]
+    assert "D16_UNorm" in shadow_native[
+        "pinned_d3d12_physical_resolution"
+    ]
     assert "_PunctualLightShadowTexV2" in shadow_native[
         "atlas_enabled_binding"
     ]
@@ -1974,6 +1977,14 @@ def verify_selected_resolver_binding_contract() -> None:
         repo_path(shadow_native["atlas_auditor_path"]),
         shadow_native["atlas_auditor_sha256"],
     )
+    require_hash(
+        repo_path(shadow_native["atlas_descriptor_probe_path"]),
+        shadow_native["atlas_descriptor_probe_sha256"],
+    )
+    require_text_hash(
+        repo_path(shadow_native["atlas_descriptor_probe_source_path"]),
+        shadow_native["atlas_descriptor_probe_source_sha256"],
+    )
     punctual_atlas_audit = json.loads(
         repo_path(shadow_native["atlas_audit_path"]).read_text(encoding="utf-8")
     )
@@ -1981,7 +1992,8 @@ def verify_selected_resolver_binding_contract() -> None:
         "endfield.punctual-shadow-atlas-audit.v1"
     )
     assert punctual_atlas_audit["verdict"] == (
-        "ALLOCATION_AND_BINDING_CLOSED_SETTLED_ATLAS_CAPTURE_REQUIRED"
+        "ALLOCATION_BINDING_AND_PINNED_D3D12_FORMAT_CLOSED_"
+        "TARGET_FRAME_CAPTURE_REQUIRED"
     )
     assert punctual_atlas_audit["publication_allowed"] is False
     assert punctual_atlas_audit["allocation"]["name"] == "Punctual Shadowmap"
@@ -2018,6 +2030,26 @@ def verify_selected_resolver_binding_contract() -> None:
     assert punctual_defaults["derivedDynamicCasterCount"] == 8
     assert punctual_defaults["derivedAtlasWidth"] == 3072
     assert punctual_defaults["derivedAtlasHeight"] == 2048
+    punctual_physical = punctual_atlas_audit["pinned_d3d12_resolution"]
+    assert punctual_physical["unityVersion"] == "2022.3.62f3"
+    assert punctual_physical["graphicsDeviceType"] == "Direct3D12"
+    assert punctual_physical["actualGraphicsFormat"] == "R8G8B8A8_UNorm"
+    assert punctual_physical["actualDepthStencilFormat"] == "D16_UNorm"
+    assert punctual_physical["usesReversedZBuffer"] is True
+    assert punctual_physical[
+        "rawDepthAndComparisonSamplingExecuted"
+    ] is True
+    assert punctual_physical["d16QuantizationMatches"] is True
+    assert punctual_physical["genericSampleSupportQuery"] is False
+    punctual_probe = json.loads(
+        repo_path(shadow_native["atlas_descriptor_probe_path"])
+        .read_text(encoding="utf-8")
+    )
+    assert punctual_probe["actualDepthStencilFormat"] == "D16_UNorm"
+    assert punctual_probe["descriptorMatches"] is True
+    assert punctual_probe["depthSubElementSamplingExecuted"] is True
+    assert punctual_probe["reversedZEndpointsMatch"] is True
+    assert punctual_probe["d16QuantizationMatches"] is True
     assert punctual_atlas_audit["enabled_path"]["shader_property"] == (
         "_PunctualLightShadowTexV2"
     )
@@ -2522,7 +2554,8 @@ def main() -> int:
         "handoff before the still-open target-frame array, exact b34 ShadowData identity, "
         "11,440-byte four-section native transport, selected punctual-only read span, "
         "exact 56-row punctual frame writer, enabled section-1 push callback, disabled "
-        "texture-only path, and fail-closed pre-push capture boundary, plus b37 "
+        "texture-only path, pinned D3D12 D16_UNorm resolution/reversed-Z/quantization, "
+        "and fail-closed pre-push capture boundary, plus b37 "
         "LightCookieData native layout/upload plus D3D11/D3D12-verified default-off "
         "zero-cookie isolated transport, plus exact b38 "
         "HDPunctualLightCharacterShadowData identity, native reset/push owner, "

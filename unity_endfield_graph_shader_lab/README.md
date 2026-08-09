@@ -2002,10 +2002,14 @@ fail-closed, but the default sizing inputs are now binary-closed too:
 `HGSettingParameters` constructs `T=512`, environment/movable dynamic caps
 `6/2`, force-cull distance `200`, and screen-size minimum `0.001`; the manager
 sums `N=8`, squares the threshold, and derives a `3072x2048` atlas before any
-runtime setting override. A matching capture immediately before
-`0x189b57155` is still required for overridden target `N/T`, the platform-
-resolved depth format, texels/cache allocation, and the 6,144-byte section.
-Binding 37 now has its native
+runtime setting override. The exact request also GPU-resolves to `D16_UNorm`
+on the pinned Unity 2022.3.62f3 D3D12 backend; raw depth loads, comparison
+samples, reversed-Z endpoints, and an intermediate value's exact D16
+quantization pass. Re-run this check with
+`probe_punctual_shadow_atlas_descriptor.bat`. A matching capture immediately
+before `0x189b57155` is still required for overridden target `N/T`, target-
+client resource confirmation, texels/cache allocation, and the 6,144-byte
+section. Binding 37 now has its native
 `HGLightCookieManager` initialization,
 32-record atlas/matrix layout, exact 2,560-byte upload, and `-1` no-cookie guard
 closed. A default-off publisher emits the exact all-zero buffer only for the
