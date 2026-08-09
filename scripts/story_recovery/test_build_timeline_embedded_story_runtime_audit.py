@@ -35,6 +35,14 @@ def body_row(type_name: str, method: str, targets: list[tuple[str, str]]) -> dic
 
 
 class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
+    @staticmethod
+    def npc_proxy_contract() -> dict:
+        return {
+            "validation": {"status": "validated", "failures": []},
+            "nativeMappingId": "npc-proxy-dialog-selection-native-v2",
+            "activeRowSelection": "one_based_external_index_stored_zero_based",
+        }
+
     def test_nested_director_recovery_uses_exact_reference_chain(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             extract = Path(temporary) / "timeline_extract"
@@ -807,6 +815,181 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
         failure = result["validation"]["failures"][0]
         self.assertEqual("parent_dialog_trigger_volume_selector", failure["gate"])
         self.assertEqual([80001], failure["actual"]["missingSlotIds"])
+
+    def test_npc_proxy_runtime_contract_is_shape_driven(self) -> None:
+        catalog = {"matchedTypes": [{
+            "fullName": "Beyond.Gameplay.Core.NpcRuntimeProxyExData",
+            "fields": [{"name": "dialogId"}, {"name": "missionId"}],
+        }, {
+            "fullName": "Beyond.Gameplay.Core.NpcProxy",
+            "fields": [{"name": "m_activeCondIndex"}],
+        }, {
+            "fullName": "Beyond.Gameplay.Core.NpcInteractComponent",
+            "fields": [],
+        }]}
+
+        def native_row(type_name, method, parameter, accesses, calls=()):
+            return {
+                "type": type_name,
+                "method": method,
+                "token": f"token-{method}",
+                "mappingStatus": "mapped",
+                "methodPointerVa": f"va-{method}",
+                "parameterDetails": ([{"name": parameter}] if parameter else []),
+                "methodBodySummary": {"fieldAccesses": accesses},
+                "directCalls": [{"resolved": [
+                    {"type": target_type, "method": target_method}
+                    for target_type, target_method in calls
+                ]}] if calls else [],
+            }
+
+        body_map = {"bodyTargets": [
+            native_row(
+                "Beyond.Gameplay.Core.NpcProxy", "ChangeActiveCondition",
+                "newActiveCondIndex",
+                [{"origin": "param:newActiveCondIndex-0x1", "kind": "read"},
+                 {"origin": "this+0x30", "kind": "write"}],
+            ),
+            native_row(
+                "Beyond.Gameplay.Core.NpcProxy", "get_activeCondIndex", None,
+                [{"origin": "this+0x30", "kind": "read"}],
+            ),
+            native_row(
+                "Beyond.Gameplay.Core.NpcInteractComponent",
+                "_TryGetNpcProxyInteractDialogId", "dialogId",
+                [{"origin": "param:dialogId", "kind": "write"}],
+            ),
+            native_row(
+                "Beyond.Gameplay.Core.NpcProxy", "_IsMissionConflict",
+                "missionId", [],
+                [("Beyond.Gameplay.MissionSystem", "GetMissionData")],
+            ),
+        ]}
+        result = audit.analyze_npc_proxy_dialog_runtime_contract(catalog, body_map)
+        self.assertEqual("validated", result["validation"]["status"])
+        self.assertEqual(
+            "one_based_external_index_stored_zero_based",
+            result["activeRowSelection"],
+        )
+        self.assertFalse(result["evidenceBoundary"]["questActivation"])
+        self.assertFalse(result["evidenceBoundary"]["storyOrderEvidence"])
+
+    def test_npc_proxy_runtime_contract_failure_names_drifted_gate(self) -> None:
+        result = audit.analyze_npc_proxy_dialog_runtime_contract(
+            {"matchedTypes": [{
+                "fullName": "Beyond.Gameplay.Core.NpcRuntimeProxyExData",
+                "fields": [{"name": "dialogId"}],
+            }]},
+            {"source": "fixture", "bodyTargets": []},
+        )
+        self.assertEqual("failed", result["validation"]["status"])
+        self.assertEqual(
+            "npc_proxy_dialog_carrier_fields",
+            result["validation"]["failures"][0]["gate"],
+        )
+        self.assertEqual("fixture", result["validation"]["failures"][0]["sourceFile"])
+
+    def test_parent_dialog_configuration_uses_exact_pair_and_unique_tracking(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            table = root / "NpcProxyExDataTable.json"
+            missions = root / "MissionRuntimeAsset"
+            missions.mkdir()
+            mission = missions / "mission_general.json"
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            table.write_text(json.dumps({"data": {"proxy_general": [{
+                "dialogId": "dlg_general_parent",
+                "missionId": "mission_general",
+            }]}}), encoding="utf-8")
+            mission.write_text("{}", encoding="utf-8")
+            gameassembly.write_bytes(b"binary")
+            metadata.write_bytes(b"metadata")
+            timeline_rows = [{
+                "key": "black_general",
+                "dialogKey": "dlg_general_parent",
+            }]
+            result = audit.join_parent_dialog_configuration_contexts(
+                timeline_rows,
+                self.npc_proxy_contract(),
+                npc_proxy_ex_path=table,
+                mission_runtime_root=missions,
+                gameassembly=gameassembly,
+                metadata=metadata,
+                mission_tracking_rows=[{
+                    "missionId": "mission_general",
+                    "questId": "mission_general_q#4",
+                    "objectiveIndex": 1,
+                    "trackingIndex": 0,
+                    "type": "NpcProxyTrackingInfo",
+                    "scene": "level_general",
+                    "npcProxyId": "proxy_general",
+                    "missionRuntimeSourceFile": str(mission),
+                }],
+            )
+        self.assertEqual("validated", result["validation"]["status"])
+        self.assertEqual(1, result["counts"]["configurationContexts"])
+        context = result["contexts"][0]
+        self.assertEqual("mission_general", context["missionId"])
+        self.assertEqual(["mission_general_q#4"], context["candidateQuestIds"])
+        self.assertTrue(context["questNavigationContext"])
+        self.assertFalse(context["parentDialogPlayback"])
+        self.assertFalse(context["questActivation"])
+        self.assertFalse(context["branchSelection"])
+        self.assertFalse(context["storyOrderEvidence"])
+        self.assertFalse(context["serverSelectionObserved"])
+        self.assertEqual(
+            [context["id"]],
+            timeline_rows[0]["parentDialogConfigurationContextIds"],
+        )
+        roles = {row["role"] for row in context["relatedOriginalFiles"]}
+        self.assertEqual({
+            "npc_proxy_dialog_configuration",
+            "quest_tracking_mission_runtime",
+            "original_game_binary",
+            "original_global_metadata",
+        }, roles)
+
+    def test_parent_dialog_configuration_fails_closed_for_shared_proxy(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            table = root / "NpcProxyExDataTable.json"
+            missions = root / "MissionRuntimeAsset"
+            missions.mkdir()
+            (missions / "mission_general.json").write_text("{}", encoding="utf-8")
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            gameassembly.write_bytes(b"binary")
+            metadata.write_bytes(b"metadata")
+            table.write_text(json.dumps({"data": {"proxy_general": [{
+                "dialogId": "dlg_general_parent",
+                "missionId": "mission_general",
+            }, {
+                "dialogId": "dlg_wrong_mission",
+                "missionId": "mission_other",
+            }]}}), encoding="utf-8")
+            tracking = [{
+                "missionId": "mission_general",
+                "questId": quest_id,
+                "type": "NpcProxyTrackingInfo",
+                "npcProxyId": "proxy_general",
+            } for quest_id in ("mission_general_q#1", "mission_general_q#2")]
+            result = audit.join_parent_dialog_configuration_contexts(
+                [{"key": "black_general", "dialogKey": "dlg_general_parent"}],
+                self.npc_proxy_contract(),
+                npc_proxy_ex_path=table,
+                mission_runtime_root=missions,
+                gameassembly=gameassembly,
+                metadata=metadata,
+                mission_tracking_rows=tracking,
+            )
+        context = result["contexts"][0]
+        self.assertFalse(context["questNavigationContext"])
+        self.assertEqual(
+            "ambiguous_multiple_tracking_quests",
+            context["questNavigationStatus"],
+        )
+        self.assertEqual(0, result["counts"]["storyOrderEdges"])
 
     def test_candidate_level_discovery_uses_dialog_bytes_not_names(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

@@ -235,6 +235,188 @@ def analyze_runtime_contract(
     }
 
 
+def analyze_npc_proxy_dialog_runtime_contract(
+    catalog: dict[str, Any],
+    body_map: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate the general mission-scoped NPC dialog selection shape.
+
+    The contract is discovered from managed field/method names and native body
+    flow. It intentionally contains no authored mission, quest, proxy, dialog,
+    address, or token allowlist. A patch that changes the carrier or selection
+    shape therefore fails closed instead of silently inheriting old semantics.
+    """
+    wanted_types = {
+        "Beyond.Gameplay.Core.NpcRuntimeProxyExData",
+        "Beyond.Gameplay.Core.NpcInteractComponent",
+        "Beyond.Gameplay.Core.NpcProxy",
+    }
+    types = {
+        str(row.get("fullName") or ""): row
+        for row in catalog.get("matchedTypes") or []
+        if str(row.get("fullName") or "") in wanted_types
+    }
+    bodies: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in body_map.get("bodyTargets") or []:
+        key = (str(row.get("type") or ""), str(row.get("method") or ""))
+        bodies[key].append(row)
+
+    failures: list[dict[str, Any]] = []
+
+    def fail(gate: str, expected: Any, actual: Any) -> None:
+        failures.append(validation_failure(
+            gate,
+            expected,
+            actual,
+            str(body_map.get("source") or "installed metadata/GameAssembly"),
+        ))
+
+    carrier = types.get("Beyond.Gameplay.Core.NpcRuntimeProxyExData") or {}
+    carrier_fields = {
+        str(field.get("name") or "") for field in carrier.get("fields") or []
+    }
+    expected_carrier_fields = {"dialogId", "missionId"}
+    if not expected_carrier_fields.issubset(carrier_fields):
+        fail(
+            "npc_proxy_dialog_carrier_fields",
+            sorted(expected_carrier_fields),
+            sorted(carrier_fields),
+        )
+
+    proxy = types.get("Beyond.Gameplay.Core.NpcProxy") or {}
+    proxy_fields = {
+        str(field.get("name") or "") for field in proxy.get("fields") or []
+    }
+    if "m_activeCondIndex" not in proxy_fields:
+        fail("npc_proxy_active_index_field", "m_activeCondIndex", sorted(proxy_fields))
+
+    method_specs = {
+        ("Beyond.Gameplay.Core.NpcProxy", "ChangeActiveCondition"): (
+            "newActiveCondIndex",
+        ),
+        ("Beyond.Gameplay.Core.NpcProxy", "get_activeCondIndex"): (),
+        (
+            "Beyond.Gameplay.Core.NpcInteractComponent",
+            "_TryGetNpcProxyInteractDialogId",
+        ): ("dialogId",),
+        ("Beyond.Gameplay.Core.NpcProxy", "_IsMissionConflict"): ("missionId",),
+    }
+    selected: dict[tuple[str, str], dict[str, Any]] = {}
+    for key, expected_parameters in method_specs.items():
+        matches = [
+            row for row in bodies.get(key) or []
+            if row.get("mappingStatus") == "mapped" and row.get("methodPointerVa")
+        ]
+        if len(matches) != 1:
+            fail(
+                "npc_proxy_native_method_mapping",
+                {"type": key[0], "method": key[1], "mappedCount": 1},
+                {"mappedCount": len(matches)},
+            )
+            continue
+        row = matches[0]
+        actual_parameters = tuple(
+            str(parameter.get("name") or "")
+            for parameter in row.get("parameterDetails") or []
+        )
+        if actual_parameters != expected_parameters:
+            fail(
+                "npc_proxy_native_method_parameters",
+                {"type": key[0], "method": key[1], "parameters": expected_parameters},
+                {"parameters": actual_parameters},
+            )
+            continue
+        selected[key] = row
+
+    change = selected.get(("Beyond.Gameplay.Core.NpcProxy", "ChangeActiveCondition")) or {}
+    change_accesses = (change.get("methodBodySummary") or {}).get("fieldAccesses") or []
+    one_based_read = any(
+        row.get("origin") == "param:newActiveCondIndex-0x1"
+        for row in change_accesses
+    )
+    active_index_writes = {
+        str(row.get("origin") or "")
+        for row in change_accesses
+        if row.get("kind") == "write"
+    }
+    getter = selected.get(("Beyond.Gameplay.Core.NpcProxy", "get_activeCondIndex")) or {}
+    getter_reads = {
+        str(row.get("origin") or "")
+        for row in (getter.get("methodBodySummary") or {}).get("fieldAccesses") or []
+        if row.get("kind") == "read"
+    }
+    shared_active_storage = sorted(active_index_writes & getter_reads)
+    if not one_based_read or not shared_active_storage:
+        fail(
+            "npc_proxy_one_based_active_row_selection",
+            {"subtractOne": True, "sharedStoredField": True},
+            {
+                "subtractOne": one_based_read,
+                "sharedStoredFieldOrigins": shared_active_storage,
+            },
+        )
+
+    interact = selected.get((
+        "Beyond.Gameplay.Core.NpcInteractComponent",
+        "_TryGetNpcProxyInteractDialogId",
+    )) or {}
+    interact_summary = interact.get("methodBodySummary") or {}
+    if not any(
+        row.get("origin") == "param:dialogId" and row.get("kind") == "write"
+        for row in interact_summary.get("fieldAccesses") or []
+    ):
+        fail(
+            "npc_proxy_dialog_output_flow",
+            "native write through dialogId output parameter",
+            interact_summary.get("fieldAccesses") or [],
+        )
+
+    conflict = selected.get(("Beyond.Gameplay.Core.NpcProxy", "_IsMissionConflict")) or {}
+    conflict_calls = {
+        (str(target.get("type") or ""), str(target.get("method") or ""))
+        for call in conflict.get("directCalls") or []
+        for target in call.get("resolved") or []
+    }
+    if ("Beyond.Gameplay.MissionSystem", "GetMissionData") not in conflict_calls:
+        fail(
+            "npc_proxy_mission_conflict_consumer",
+            "Beyond.Gameplay.MissionSystem.GetMissionData",
+            sorted(f"{type_name}.{method}" for type_name, method in conflict_calls),
+        )
+
+    compact_methods = []
+    for key in method_specs:
+        row = selected.get(key)
+        if not row:
+            continue
+        compact_methods.append({
+            "type": key[0],
+            "method": key[1],
+            "token": row.get("token"),
+            "va": row.get("methodPointerVa"),
+        })
+    return {
+        "validation": {
+            "status": "validated" if not failures else "failed",
+            "failures": failures,
+        },
+        "nativeMappingId": "npc-proxy-dialog-selection-native-v2",
+        "carrierType": "Beyond.Gameplay.Core.NpcRuntimeProxyExData",
+        "carrierFields": sorted(expected_carrier_fields & carrier_fields),
+        "activeIndexField": "m_activeCondIndex" if "m_activeCondIndex" in proxy_fields else "",
+        "activeRowSelection": "one_based_external_index_stored_zero_based",
+        "methods": compact_methods,
+        "evidenceBoundary": {
+            "missionDialogConfigurationCarrier": True,
+            "oneBasedActiveRowSelection": True,
+            "serverSelectionObserved": False,
+            "questActivation": False,
+            "branchSelection": False,
+            "storyOrderEvidence": False,
+        },
+    }
+
+
 def analyze_control_runtime_contract(
     catalog: dict[str, Any],
     body_map: dict[str, Any],
@@ -1141,6 +1323,268 @@ def join_parent_dialog_activation_routes(
     }
 
 
+def join_parent_dialog_configuration_contexts(
+    rows: list[dict[str, Any]],
+    native_contract: dict[str, Any],
+    *,
+    npc_proxy_ex_path: Path,
+    mission_runtime_root: Path,
+    gameassembly: Path,
+    metadata: Path,
+    mission_tracking_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Join Timeline parents to mission-scoped NPC dialog configuration.
+
+    This general join follows identities authored in the original corpus:
+
+    ``Timeline child -> parent dialog key``
+    ``NpcProxyEx data[proxy].dialogId + missionId``
+    ``MissionRuntime typed NpcProxyTrackingInfo.npcProxyId``
+
+    The authored mission/dialog pair always establishes mission configuration
+    context. A quest-navigation context is published only when the exact proxy
+    is tracked by one quest in that same mission. Neither relation is promoted
+    to parent playback, activation, branch selection, or Story order.
+    """
+    failures = list((native_contract.get("validation") or {}).get("failures") or [])
+    if (native_contract.get("validation") or {}).get("status") != "validated":
+        return {
+            "validation": {"status": "failed", "failures": failures},
+            "contexts": [],
+            "counts": {},
+        }
+    try:
+        raw = json.loads(npc_proxy_ex_path.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as error:
+        failures.append(validation_failure(
+            "npc_proxy_ex_source",
+            "readable JSON object with data mapping",
+            f"{type(error).__name__}: {error}",
+            repo_path(npc_proxy_ex_path),
+        ))
+        return {
+            "validation": {"status": "failed", "failures": failures},
+            "contexts": [],
+            "counts": {},
+        }
+    proxy_groups = raw.get("data") if isinstance(raw, dict) else None
+    if not isinstance(proxy_groups, dict):
+        failures.append(validation_failure(
+            "npc_proxy_ex_schema",
+            "top-level data object",
+            type(proxy_groups).__name__,
+            repo_path(npc_proxy_ex_path),
+        ))
+        return {
+            "validation": {"status": "failed", "failures": failures},
+            "contexts": [],
+            "counts": {},
+        }
+
+    dialog_to_story: dict[str, set[str]] = defaultdict(set)
+    for row in rows:
+        dialog_key = str(row.get("dialogKey") or "").strip()
+        story_key = str(row.get("key") or "").strip()
+        if dialog_key and story_key:
+            dialog_to_story[dialog_key].add(story_key)
+    wanted = set(dialog_to_story)
+
+    tracking_by_mission_proxy: dict[tuple[str, str], list[dict[str, Any]]] = (
+        defaultdict(list)
+    )
+    for tracking in mission_tracking_rows:
+        if not isinstance(tracking, dict):
+            continue
+        tracking_type = str(tracking.get("type") or "").rsplit(".", 1)[-1]
+        mission_id = str(tracking.get("missionId") or "").strip()
+        proxy_id = str(tracking.get("npcProxyId") or "").strip()
+        if tracking_type == "NpcProxyTrackingInfo" and mission_id and proxy_id:
+            tracking_by_mission_proxy[(mission_id, proxy_id)].append(tracking)
+
+    shared_files = [
+        hashed_source_record(npc_proxy_ex_path, "npc_proxy_dialog_configuration"),
+        hashed_source_record(gameassembly, "original_game_binary"),
+        hashed_source_record(metadata, "original_global_metadata"),
+    ]
+    contexts: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for raw_proxy_id, raw_rows in sorted(proxy_groups.items()):
+        proxy_id = str(raw_proxy_id or "").strip()
+        proxy_rows = raw_rows if isinstance(raw_rows, list) else [raw_rows]
+        for row_index, proxy_row in enumerate(proxy_rows):
+            if not proxy_id or not isinstance(proxy_row, dict):
+                continue
+            dialog_key = str(proxy_row.get("dialogId") or "").strip()
+            mission_id = str(proxy_row.get("missionId") or "").strip()
+            if dialog_key not in wanted or not mission_id:
+                continue
+            matching_tracking = tracking_by_mission_proxy.get(
+                (mission_id, proxy_id), []
+            )
+            quest_ids = sorted({
+                str(tracking.get("questId") or "").strip()
+                for tracking in matching_tracking
+                if tracking.get("questId")
+            })
+            unique_quest = len(quest_ids) == 1
+            context_id = (
+                f"npc-proxy-dialog:{mission_id}:{proxy_id}:{dialog_key}:{row_index}"
+            )
+            if context_id in seen_ids:
+                continue
+            seen_ids.add(context_id)
+            mission_source = mission_runtime_root / f"{mission_id}.json"
+            related_files = list(shared_files)
+            if mission_source.is_file():
+                related_files.append(hashed_source_record(
+                    mission_source,
+                    "quest_tracking_mission_runtime",
+                ))
+            compact_tracking = [{
+                key: tracking.get(key)
+                for key in (
+                    "missionId", "questId", "objectiveIndex", "trackingIndex",
+                    "type", "scene", "npcProxyId", "position",
+                    "missionRuntimeSourceFile", "missionRuntimeSourcePath",
+                )
+                if tracking.get(key) not in (None, "", [], {})
+            } for tracking in matching_tracking]
+            contexts.append({
+                "id": context_id,
+                "dialogKey": dialog_key,
+                "storyKeys": sorted(dialog_to_story[dialog_key]),
+                "missionId": mission_id,
+                "npcProxyId": proxy_id,
+                "npcProxyExRowIndex": row_index,
+                "sourcePath": f"$.data.{proxy_id}[{row_index}]",
+                "nativeMappingId": native_contract.get("nativeMappingId"),
+                "activeRowSelection": native_contract.get("activeRowSelection"),
+                "questNavigationContext": unique_quest,
+                "questNavigationStatus": (
+                    "exact_unique_typed_npc_proxy_tracking_quest"
+                    if unique_quest else (
+                        "ambiguous_multiple_tracking_quests"
+                        if quest_ids else "no_typed_tracking_quest"
+                    )
+                ),
+                "candidateQuestIds": quest_ids,
+                "trackingRows": compact_tracking,
+                "missionConfigurationContext": True,
+                "parentDialogPlayback": False,
+                "questActivation": False,
+                "branchSelection": False,
+                "storyOrderEvidence": False,
+                "serverSelectionObserved": False,
+                "relatedOriginalFiles": sorted(
+                    related_files,
+                    key=lambda value: (
+                        str(value.get("role") or ""),
+                        str(value.get("path") or ""),
+                    ),
+                ),
+            })
+
+    contexts.sort(key=lambda value: value["id"])
+    ids_by_dialog: dict[str, list[str]] = defaultdict(list)
+    mission_ids: set[str] = set()
+    quest_ids: set[str] = set()
+    for context in contexts:
+        ids_by_dialog[str(context["dialogKey"])].append(str(context["id"]))
+        mission_ids.add(str(context["missionId"]))
+        quest_ids.update(str(value) for value in context["candidateQuestIds"])
+    for row in rows:
+        context_ids = ids_by_dialog.get(str(row.get("dialogKey") or ""), [])
+        row["parentDialogConfigurationContextIds"] = context_ids
+        row["missionConfigurationContext"] = bool(context_ids)
+
+    matched_dialogs = set(ids_by_dialog)
+    return {
+        "validation": {"status": "validated", "failures": []},
+        "nativeContract": native_contract,
+        "contexts": contexts,
+        "unresolvedParentDialogs": [{
+            "dialogKey": dialog_key,
+            "reason": "no_exact_mission_scoped_npc_proxy_dialog_configuration",
+        } for dialog_key in sorted(wanted - matched_dialogs)],
+        "counts": {
+            "parentDialogKeys": len(wanted),
+            "configurationContexts": len(contexts),
+            "parentDialogsWithConfigurationContext": len(matched_dialogs),
+            "missionConfigurationContexts": len(contexts),
+            "uniqueMissionIds": len(mission_ids),
+            "questNavigationContexts": sum(
+                bool(context.get("questNavigationContext")) for context in contexts
+            ),
+            "uniqueQuestIds": len(quest_ids),
+            "parentDialogPlaybackEdges": 0,
+            "questActivationEdges": 0,
+            "branchSelectionEdges": 0,
+            "storyOrderEdges": 0,
+        },
+        "evidenceBoundary": {
+            "missionConfigurationContext": True,
+            "questNavigationContext": "unique_typed_same_mission_proxy_only",
+            "parentDialogPlayback": False,
+            "questActivation": False,
+            "branchSelection": False,
+            "storyOrderEvidence": False,
+            "serverSelectionObserved": False,
+            "ocrOrManualOverrideUsed": False,
+        },
+    }
+
+
+def recover_parent_dialog_configuration_contexts(
+    rows: list[dict[str, Any]],
+    native_contract: dict[str, Any],
+    *,
+    gameassembly: Path,
+    metadata: Path,
+    npc_proxy_ex_path: Path | None = None,
+    mission_runtime_root: Path | None = None,
+) -> dict[str, Any]:
+    """Run the corpus-wide NPC configuration join for all parent dialogs."""
+    story_context, level_bindings, _header_audit = _story_recovery_modules()
+    npc_proxy_ex_path = npc_proxy_ex_path or story_context.NPC_PROXY_EX_PATH
+    mission_runtime_root = mission_runtime_root or story_context.MRA_DIR
+    relevant_missions: set[str] = set()
+    wanted = {
+        str(row.get("dialogKey") or "").strip()
+        for row in rows if row.get("dialogKey")
+    }
+    try:
+        proxy_groups = (
+            json.loads(npc_proxy_ex_path.read_text(encoding="utf-8-sig")).get("data")
+            or {}
+        )
+    except (OSError, json.JSONDecodeError, AttributeError):
+        proxy_groups = {}
+    if isinstance(proxy_groups, dict):
+        for raw_rows in proxy_groups.values():
+            for proxy_row in raw_rows if isinstance(raw_rows, list) else [raw_rows]:
+                if (
+                    isinstance(proxy_row, dict)
+                    and str(proxy_row.get("dialogId") or "").strip() in wanted
+                    and str(proxy_row.get("missionId") or "").strip()
+                ):
+                    relevant_missions.add(
+                        str(proxy_row.get("missionId") or "").strip()
+                    )
+    tracking_rows = level_bindings.build_resolved_mission_tracking_context_rows(
+        relevant_missions,
+        mission_runtime_root=mission_runtime_root,
+    ) if relevant_missions else []
+    return join_parent_dialog_configuration_contexts(
+        rows,
+        native_contract,
+        npc_proxy_ex_path=npc_proxy_ex_path,
+        mission_runtime_root=mission_runtime_root,
+        gameassembly=gameassembly,
+        metadata=metadata,
+        mission_tracking_rows=tracking_rows,
+    )
+
+
 def recover_parent_dialog_activation_routes(
     rows: list[dict[str, Any]],
     *,
@@ -1844,6 +2288,53 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         include_all_members=True,
         body_context=0,
     )
+    npc_proxy_type_pattern = re.compile(
+        r"^Beyond\.Gameplay\.Core\."
+        r"(?:NpcRuntimeProxyExData|NpcInteractComponent|NpcProxy)$"
+    )
+    npc_proxy_catalog = catalog_module.build_catalog(
+        metadata,
+        npc_proxy_type_pattern,
+        re.compile(r"(?!)"),
+        re.compile(
+            r"^(?:ChangeActiveCondition|get_activeCondIndex|"
+            r"_TryGetNpcProxyInteractDialogId|_IsMissionConflict)$"
+        ),
+        npc_proxy_type_pattern,
+        re.compile(r".*"),
+        only_focus=False,
+        include_all_members=True,
+        body_context=0,
+    )
+    wanted_npc_methods = {
+        ("Beyond.Gameplay.Core.NpcProxy", "ChangeActiveCondition"),
+        ("Beyond.Gameplay.Core.NpcProxy", "get_activeCondIndex"),
+        (
+            "Beyond.Gameplay.Core.NpcInteractComponent",
+            "_TryGetNpcProxyInteractDialogId",
+        ),
+        ("Beyond.Gameplay.Core.NpcProxy", "_IsMissionConflict"),
+    }
+    npc_proxy_catalog["bodyTargets"] = [
+        row for row in npc_proxy_catalog.get("bodyTargets") or []
+        if (str(row.get("type") or ""), str(row.get("method") or ""))
+        in wanted_npc_methods
+    ]
+    # Map the control and NPC methods in one native pass. The analyzers select
+    # their own typed targets, so adding a new carrier family stays a catalog
+    # operation rather than a per-object address patch.
+    combined_targets: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for row in [
+        *(control_catalog.get("bodyTargets") or []),
+        *(npc_proxy_catalog.get("bodyTargets") or []),
+    ]:
+        identity = (
+            str(row.get("type") or ""),
+            str(row.get("method") or ""),
+            str(row.get("token") or ""),
+        )
+        combined_targets[identity] = row
+    control_catalog["bodyTargets"] = list(combined_targets.values())
     with tempfile.TemporaryDirectory(prefix="endfield-timeline-text-") as temp:
         catalog_path = Path(temp) / "catalog.json"
         catalog_path.write_text(json.dumps(catalog), encoding="utf-8")
@@ -1871,6 +2362,18 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         failure = (control_contract["validation"]["failures"] or [{}])[0]
         raise RuntimeError(
             "timeline controlled-director runtime validation failed: "
+            f"validator={failure.get('validator')}; gate={failure.get('gate')}; "
+            f"source={failure.get('sourceFile')}; expected={failure.get('expected')!r}; "
+            f"actual={failure.get('actual')!r}"
+        )
+    npc_proxy_contract = analyze_npc_proxy_dialog_runtime_contract(
+        npc_proxy_catalog,
+        control_body_map,
+    )
+    if npc_proxy_contract["validation"]["status"] != "validated":
+        failure = (npc_proxy_contract["validation"]["failures"] or [{}])[0]
+        raise RuntimeError(
+            "NPC proxy dialog runtime validation failed: "
             f"validator={failure.get('validator')}; gate={failure.get('gate')}; "
             f"source={failure.get('sourceFile')}; expected={failure.get('expected')!r}; "
             f"actual={failure.get('actual')!r}"
@@ -1941,9 +2444,23 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             f"source={failure.get('sourceFile')}; expected={failure.get('expected')!r}; "
             f"actual={failure.get('actual')!r}"
         )
+    configuration = recover_parent_dialog_configuration_contexts(
+        rows,
+        npc_proxy_contract,
+        gameassembly=args.gameassembly,
+        metadata=args.metadata,
+    )
+    if configuration["validation"]["status"] != "validated":
+        failure = (configuration["validation"]["failures"] or [{}])[0]
+        raise RuntimeError(
+            "timeline parent-dialog configuration validation failed: "
+            f"validator={failure.get('validator')}; gate={failure.get('gate')}; "
+            f"source={failure.get('sourceFile')}; expected={failure.get('expected')!r}; "
+            f"actual={failure.get('actual')!r}"
+        )
     edges = local_order_edges(rows)
     return {
-        "schemaVersion": "timelineEmbeddedStoryRuntimeAudit.v5",
+        "schemaVersion": "timelineEmbeddedStoryRuntimeAudit.v6",
         "source": {
             "gameAssembly": str(args.gameassembly),
             "gameAssemblySha256": sha256_path(args.gameassembly),
@@ -1957,6 +2474,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "controlRuntimeContract": control_contract["validation"],
             "directorHosts": director_hosts["validation"],
             "parentDialogActivation": activation["validation"],
+            "parentDialogConfiguration": configuration["validation"],
             "storyLineIndex": line_validation,
         },
         "runtimeContract": contract,
@@ -1964,6 +2482,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "directorHosts": director_hosts,
         "parentDialogActivation": activation,
         "activationRoutes": activation["routes"],
+        "parentDialogConfiguration": configuration,
+        "configurationContexts": configuration["contexts"],
         "counts": {
             "runtimeCarrierFamilies": len(contract["families"]),
             "serializedClipRows": len(rows),
@@ -1992,6 +2512,15 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "questSpatialContextQuestIds": (
                 activation["counts"]["questSpatialContextQuestIds"]
             ),
+            "parentDialogConfigurationContexts": (
+                configuration["counts"]["configurationContexts"]
+            ),
+            "parentDialogsWithConfigurationContext": (
+                configuration["counts"]["parentDialogsWithConfigurationContext"]
+            ),
+            "questNavigationContexts": (
+                configuration["counts"]["questNavigationContexts"]
+            ),
             "branchSelectionEdges": 0,
             "parallelFanoutActivationRoutes": sum(
                 bool(route.get("parallelFanout")) for route in activation["routes"]
@@ -2018,6 +2547,12 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 "typed_tracking_point_inside_exact_selected_trigger_shape_only"
             ),
             "questActivation": False,
+            "missionConfigurationContext": (
+                "exact_npc_proxy_ex_mission_dialog_pair_only"
+            ),
+            "questNavigationContext": (
+                "unique_typed_same_mission_npc_proxy_tracking_only"
+            ),
             "branchSelection": False,
             "crossTimelineOrder": False,
             "ocrOrManualOverrideUsed": False,
@@ -2125,6 +2660,14 @@ def render_markdown(report: dict[str, Any]) -> str:
         lines.append(
             f"- unresolved `{unresolved.get('dialogKey')}`: "
             f"`{unresolved.get('reason')}`"
+        )
+    lines.extend(["", "## Parent Dialog Configuration Context", ""])
+    for context in report.get("configurationContexts") or []:
+        quests = ", ".join(context.get("candidateQuestIds") or []) or "unresolved"
+        lines.append(
+            f"- `{context['dialogKey']}` -> mission `{context['missionId']}` / "
+            f"proxy `{context['npcProxyId']}`; quest navigation `{quests}`; "
+            "parent playback, activation, branch selection, and Story order unresolved"
         )
     lines.append("")
     return "\n".join(lines)

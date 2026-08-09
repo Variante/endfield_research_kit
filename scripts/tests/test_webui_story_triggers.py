@@ -196,6 +196,16 @@ for (const [key, category] of [
         self.assertIn('t("timelineEmbeddedQuestSpatialBoundary")', source)
         self.assertIn("row.containmentMethod", source)
         self.assertIn("route.relatedOriginalFiles", source)
+        self.assertIn("timelineConfigurationContextsById", source)
+        self.assertIn("row.parentDialogConfigurationContextIds", source)
+        self.assertIn("missionTimelineConfigurationHtml", source)
+        self.assertIn('t("timelineEmbeddedConfigurationRoute")', source)
+        self.assertIn("context.questNavigationContext", source)
+        self.assertIn("context.relatedOriginalFiles", source)
+        self.assertIn(
+            "This is configuration/navigation context, not proof of parent playback, quest activation, branch selection, or Story order.",
+            source,
+        )
         self.assertIn(
             "A conditional path proves the authored route, not that its case was selected at runtime; parallel siblings remain unordered.",
             source,
