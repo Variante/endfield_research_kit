@@ -67,6 +67,21 @@ class AudioCategoryTests(unittest.TestCase):
             "voice",
         )
 
+    def test_hirc_summary_keeps_raw_types_and_marks_runtime_selectors(self) -> None:
+        counts, labels, selectors = build_audio.summarize_hirc_object_types(
+            {
+                1: {"type": 4},
+                2: {"type": 3},
+                3: {"type": 6},
+                4: {"type": 99},
+            },
+            {1, 2, 3, 4, 5},
+        )
+        self.assertEqual(counts, {"3": 1, "4": 1, "6": 1, "99": 1})
+        self.assertEqual(labels["6"], "switchContainer")
+        self.assertEqual(labels["99"], "type99")
+        self.assertEqual(selectors, [6])
+
 
 class AudioDumperTests(unittest.TestCase):
     def test_all_mode_runs_once_per_vfs_source(self) -> None:
@@ -107,6 +122,40 @@ class AudioDumperTests(unittest.TestCase):
             (root / "same.flac").write_bytes(b"flac")
             files = build_audio.iter_audio_files(root)
             self.assertEqual([path.suffix for path in files], [".flac", ".wav"])
+
+    def test_media_id_collisions_preserve_distinct_physical_occurrences(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            source = root / "Audio/shared"
+            (source / "wwise/sfx").mkdir(parents=True)
+            (source / "wwise/unknown").mkdir(parents=True)
+            (source / "wwise/sfx/42.flac").write_bytes(b"preferred")
+            (source / "wwise/sfx/42.wav").write_bytes(b"legacy")
+            (source / "wwise/unknown/42.flac").write_bytes(b"other occurrence")
+
+            index = build_audio.collect_audio_files(
+                root / "Audio",
+                root,
+                source,
+                "shared",
+                "CN",
+                build_audio.LANGUAGES["CN"],
+            )
+
+            self.assertEqual(len(index), 2)
+            self.assertEqual({row["format"] for row in index.values()}, {"flac"})
+            self.assertEqual(
+                {row["rel"] for row in index.values()},
+                {"wwise/sfx/42.flac", "wwise/unknown/42.flac"},
+            )
+
+    def test_cross_scope_merge_keeps_later_lookup_priority_and_both_files(self) -> None:
+        shared = {"42": {"id": "42", "storageRoot": "shared", "rel": "wwise/42.flac"}}
+        language = {"42": {"id": "42", "storageRoot": "CN", "rel": "voice/42.flac"}}
+        merged = build_audio.merge_audio_file_indexes(shared, language)
+        self.assertEqual(len(merged), 2)
+        self.assertEqual(merged["42"]["storageRoot"], "CN")
+        self.assertIn("42@shared:wwise/42.flac", merged)
 
 
 class ProjectileAudioLinkTests(unittest.TestCase):

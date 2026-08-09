@@ -9,7 +9,7 @@ import json
 import re
 import subprocess
 import time
-from collections import defaultdict, deque
+from collections import Counter, defaultdict, deque
 from pathlib import Path, PurePosixPath
 from struct import unpack_from
 from typing import Any
@@ -18,6 +18,25 @@ try:
     from convert_audio_to_flac import convert_audio_root
 except ImportError:  # Imported as scripts.build_audio from repository-root tests.
     from scripts.convert_audio_to_flac import convert_audio_root
+
+try:
+    from build_audio_semantics import (
+        HIRC_OBJECT_TYPE_LABELS,
+        SELECTION_HIRC_TYPES,
+        build_audio_semantic_data,
+        collect_metadata_audio_literals,
+        collect_table_audio_event_hashes,
+        hashed_event_key,
+    )
+except ImportError:  # Imported as scripts.build_audio from repository-root tests.
+    from scripts.build_audio_semantics import (
+        HIRC_OBJECT_TYPE_LABELS,
+        SELECTION_HIRC_TYPES,
+        build_audio_semantic_data,
+        collect_metadata_audio_literals,
+        collect_table_audio_event_hashes,
+        hashed_event_key,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,6 +134,7 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])[^\\/]*banks\.pck$"
+EVENT_EVIDENCE_SCHEMA_VERSION = 3
 
 LANGUAGE_AUDIO_BLOCKS = ("voice",)
 SHARED_AUDIO_STORAGE = "shared"
@@ -1066,6 +1086,32 @@ def u32_values(data: bytes) -> list[int]:
     return values
 
 
+def summarize_hirc_object_types(
+    objects: dict[int, dict[str, Any]],
+    visited: set[int],
+) -> tuple[dict[str, int], dict[str, str], list[int]]:
+    """Return raw HIRC family counts plus labels and selection containers.
+
+    Raw type numbers remain authoritative.  Names are presentation labels for
+    the families observed in Endfield's current banks; their presence proves a
+    possible runtime selector, not which branch was selected.
+    """
+
+    counts = Counter(
+        int(objects[object_id].get("type") or 0)
+        for object_id in visited
+        if object_id in objects
+    )
+    return (
+        {str(object_type): count for object_type, count in sorted(counts.items())},
+        {
+            str(object_type): HIRC_OBJECT_TYPE_LABELS.get(object_type, f"type{object_type}")
+            for object_type in sorted(counts)
+        },
+        sorted(object_type for object_type in counts if object_type in SELECTION_HIRC_TYPES),
+    )
+
+
 VOICE_BATCH_PREFIX_REGEX = re.compile(r"^v\d+d\d+/", re.IGNORECASE)
 
 
@@ -1496,8 +1542,15 @@ def collect_audio_files(
     decoded_source_by_rel = decoded_source_by_rel or {}
     prior_source_by_rel = prior_source_by_rel or {}
     by_id: dict[str, dict[str, Any]] = {}
+    seen_occurrences: set[str] = set()
     for path in iter_audio_files(source_root):
         rel = normalize_posix(path.relative_to(source_root))
+        occurrence_key = normalize_posix(PurePosixPath(rel).with_suffix("")).lower()
+        # Keep the preferred FLAC/WAV/WEM for one physical path stem while
+        # preserving same-media-id occurrences in distinct folders or banks.
+        if occurrence_key in seen_occurrences:
+            continue
+        seen_occurrences.add(occurrence_key)
         audio_id = path.stem.lower()
         stat = path.stat()
         metadata = source_metadata_for_rel(
@@ -1520,8 +1573,36 @@ def collect_audio_files(
         for key, value in audio_path_tags_for_rel(rel).items():
             entry.setdefault(key, value)
         apply_audio_category(entry)
-        by_id.setdefault(audio_id, entry)
+        lookup_key = audio_id
+        if lookup_key in by_id:
+            entry["duplicateAudioId"] = audio_id
+            lookup_key = f"{audio_id}@{storage_root}:{rel.lower()}"
+        by_id[lookup_key] = entry
     return by_id
+
+
+def merge_audio_file_indexes(
+    *indexes: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Merge lookup indexes without dropping cross-scope physical files.
+
+    Later indexes retain the canonical media-id key (language voice therefore
+    keeps the historical lookup priority), while an earlier collision is moved
+    to a stable occurrence key for inventory and debug-page use.
+    """
+
+    merged: dict[str, dict[str, Any]] = {}
+    for index in indexes:
+        for key, entry in index.items():
+            if key in merged:
+                previous = merged.pop(key)
+                previous_rel = normalize_posix(str(previous.get("rel") or "")).lower()
+                previous_storage = str(previous.get("storageRoot") or "")
+                previous_id = str(previous.get("id") or key)
+                previous["duplicateAudioId"] = previous_id
+                merged[f"{previous_id}@{previous_storage}:{previous_rel}"] = previous
+            merged[key] = entry
+    return merged
 
 def build_dialog_audio_index(
     audio_dialog_paths: list[Path],
@@ -2053,6 +2134,8 @@ def collect_event_audio_index(
     audio_by_id: dict[str, dict[str, Any]],
     args: argparse.Namespace,
     explicit_event_hashes: set[int] | None = None,
+    explicit_event_names_by_hash: dict[int, str] | None = None,
+    hirc_summary: dict[str, Any] | None = None,
 ) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]]:
     explicit_event_hashes = {
         int(value) & 0xFFFFFFFF
@@ -2062,12 +2145,14 @@ def collect_event_audio_index(
     if not event_names and not explicit_event_hashes:
         return {}, []
 
-    wanted_by_hash: dict[int, str] = {
-        fnv1_32(name.lower()): name
-        for name in event_names
-    }
+    wanted_by_hash: dict[int, str] = {}
+    for name in sorted(event_names, key=lambda value: (value.lower(), value)):
+        wanted_by_hash.setdefault(fnv1_32(name.lower()), name)
     for event_hash in explicit_event_hashes:
-        wanted_by_hash.setdefault(event_hash, projectile_event_key(event_hash))
+        wanted_by_hash.setdefault(
+            event_hash,
+            (explicit_event_names_by_hash or {}).get(event_hash) or hashed_event_key(event_hash),
+        )
     numeric_audio_ids = {
         int(audio_id)
         for audio_id in audio_by_id
@@ -2080,17 +2165,32 @@ def collect_event_audio_index(
     event_evidence: dict[tuple[str, int], dict[str, Any]] = {}
     seen_links: set[tuple[str, str]] = set()
 
-    for bank_name, bank_data in event_bank_payloads(args):
+    package_payloads = event_bank_payloads(args)
+    summary_type_counts: Counter[int] = Counter()
+    summary_bank_versions: Counter[int] = Counter()
+    embedded_bank_count = 0
+    hirc_object_count = 0
+    for bank_name, bank_data in package_payloads:
         try:
             bank_payloads = iter_akpk_bank_payloads_from_bytes(bank_data, bank_name)
         except ValueError:
             continue
         for bank_id, bank_payload in bank_payloads:
+            embedded_bank_count += 1
+            for tag, body in iter_bnk_sections(bank_payload):
+                if tag == b"BKHD" and len(body) >= 4:
+                    summary_bank_versions[unpack_from("<I", body, 0)[0]] += 1
+                    break
             objects = parse_hirc_objects(bank_payload)
             if not objects:
                 continue
-            for event_hash, event_name in wanted_by_hash.items():
-                event_object = objects.get(event_hash)
+            hirc_object_count += len(objects)
+            summary_type_counts.update(
+                int(obj.get("type") or 0) for obj in objects.values()
+            )
+            for event_hash in sorted(set(objects).intersection(wanted_by_hash)):
+                event_name = wanted_by_hash[event_hash]
+                event_object = objects[event_hash]
                 if not event_object or event_object.get("type") != 4:
                     continue
                 action_ids = hirc_event_action_ids(event_object.get("data") or b"")
@@ -2120,16 +2220,24 @@ def collect_event_audio_index(
                             queue.append(value)
 
                 evidence_key = (event_name.lower(), bank_id)
+                object_type_counts, object_type_labels, selection_object_types = (
+                    summarize_hirc_object_types(objects, visited)
+                )
                 event_evidence[evidence_key] = {
+                    "schemaVersion": EVENT_EVIDENCE_SCHEMA_VERSION,
                     "eventId": event_name,
                     "eventHash": event_hash,
                     "bankId": bank_id,
                     "bank": bank_name,
                     "actionIds": action_ids,
                     "visitedObjectIds": sorted(visited),
+                    "objectTypeCounts": object_type_counts,
+                    "objectTypeLabels": object_type_labels,
+                    "selectionObjectTypes": selection_object_types,
                     "mediaIds": media_ids,
                     "resolvedMediaCount": len(media_ids),
                     "source": "wwiseHirc",
+                    "nestedReferenceConfidence": "candidate",
                 }
                 for media_id in media_ids:
                     audio_entry = audio_by_id.get(str(media_id))
@@ -2150,6 +2258,31 @@ def collect_event_audio_index(
                         "source": "wwiseHirc",
                     }
                     event_links[event_name.lower()].append(linked)
+
+    if hirc_summary is not None:
+        hirc_summary.clear()
+        hirc_summary.update({
+            "source": "wwiseBankHircInventory",
+            "packageCount": len(package_payloads),
+            "embeddedBankCount": embedded_bank_count,
+            "hircObjectCount": hirc_object_count,
+            "bankVersions": {
+                str(version): count
+                for version, count in sorted(summary_bank_versions.items())
+            },
+            "objectTypeCounts": {
+                str(object_type): count
+                for object_type, count in sorted(summary_type_counts.items())
+            },
+            "objectTypeLabels": {
+                str(object_type): HIRC_OBJECT_TYPE_LABELS.get(object_type, f"type{object_type}")
+                for object_type in sorted(summary_type_counts)
+            },
+            "evidenceBoundary": (
+                "Exact serialized HIRC object-family counts; this inventory does not "
+                "evaluate switch, random, sequence, layer, or music selection at runtime."
+            ),
+        })
 
     return dict(event_links), sorted(
         event_evidence.values(),
@@ -2253,6 +2386,8 @@ def load_cached_event_audio_index(
         return None
     if expected_format and str(payload.get("format") or "").lower() != expected_format.lower():
         return None
+    if int(payload.get("eventEvidenceSchemaVersion") or 0) < EVENT_EVIDENCE_SCHEMA_VERSION:
+        return None
     wanted_names = {
         str(name or "").strip().lower()
         for name in event_names
@@ -2266,7 +2401,11 @@ def load_cached_event_audio_index(
     cached_names = _event_name_set(payload.get("eventNames"))
     cached_hashes = {
         int(value) & 0xFFFFFFFF
-        for value in (payload.get("projectileEventHashes") or [])
+        for value in (
+            payload.get("explicitEventHashes")
+            or payload.get("projectileEventHashes")
+            or []
+        )
         if isinstance(value, int)
     }
     if wanted_names and (not cached_names or not wanted_names.issubset(cached_names)):
@@ -3026,7 +3165,7 @@ def build_audio(args: argparse.Namespace) -> int:
         decoded_source_by_rel,
         prior_source_by_rel,
     )
-    generic_audio = {**shared_audio, **language_audio}
+    generic_audio = merge_audio_file_indexes(shared_audio, language_audio)
     dialog_audio = build_dialog_audio_index(
         audio_dialog_paths,
         args.audio_root,
@@ -3042,6 +3181,12 @@ def build_audio(args: argparse.Namespace) -> int:
     if not conv_dir.exists():
         raise SystemExit(f"Conversation directory not found: {conv_dir}")
     event_names = collect_audio_event_names(conv_dir, args.export_root)
+    metadata_path = args.game_root / "il2cpp_data" / "Metadata" / "global-metadata.dat"
+    if not metadata_path.is_file():
+        cached_metadata_path = args.export_root / "recovered" / "il2cpp" / "global-metadata.dat"
+        metadata_path = cached_metadata_path if cached_metadata_path.is_file() else None
+    binary_managed_event_names = set(collect_metadata_audio_literals(metadata_path))
+    event_names.update(binary_managed_event_names)
     fmv_attach_overrides = load_narrative_video_attach_overrides(args.webui_root)
     audio_source_overrides = load_narrative_video_audio_source_overrides(args.webui_root)
     cutscene_audio_events = collect_fmv_cutscene_audio_events(
@@ -3068,6 +3213,16 @@ def build_audio(args: argparse.Namespace) -> int:
     )
     event_names.update(gameplay_audio_references.get("eventNames") or set())
     projectile_event_hashes = projectile_sound_hashes(args.webui_root)
+    table_event_hashes = collect_table_audio_event_hashes(args.export_root)
+    explicit_event_hashes = projectile_event_hashes | table_event_hashes
+    explicit_event_names_by_hash = {
+        event_hash: (
+            projectile_event_key(event_hash)
+            if event_hash in projectile_event_hashes
+            else hashed_event_key(event_hash)
+        )
+        for event_hash in explicit_event_hashes
+    }
     cached_event_index = (
         load_cached_event_audio_index(
             language_root,
@@ -3075,21 +3230,27 @@ def build_audio(args: argparse.Namespace) -> int:
             args.audio_root,
             args.webui_root,
             language,
-            projectile_event_hashes,
+            explicit_event_hashes,
             expected_format=output_format,
         )
         if args.skip_decode
         else None
     )
+    hirc_summary: dict[str, Any] = {}
     if cached_event_index is not None:
         event_audio_by_id, event_evidence = cached_event_index
+        prior_index = load_json(language_root / "index.json", {})
+        if isinstance(prior_index, dict) and isinstance(prior_index.get("hircSummary"), dict):
+            hirc_summary = dict(prior_index["hircSummary"])
         print("Audio events: reused existing event-media index")
     else:
         event_audio_by_id, event_evidence = collect_event_audio_index(
             event_names,
             audio_by_id,
             args,
-            projectile_event_hashes,
+            explicit_event_hashes,
+            explicit_event_names_by_hash,
+            hirc_summary,
         )
     event_entries = [
         entry
@@ -3128,6 +3289,7 @@ def build_audio(args: argparse.Namespace) -> int:
         "language": language,
         "dumperLanguage": language_info["dumper"],
         "format": output_format,
+        "eventEvidenceSchemaVersion": EVENT_EVIDENCE_SCHEMA_VERSION,
         "sourceFormat": args.format,
         "block": args.block,
         "decodeBlocks": list(selected_audio_blocks(args.block)),
@@ -3149,11 +3311,23 @@ def build_audio(args: argparse.Namespace) -> int:
         },
         "eventNames": sorted(event_names),
         "projectileEventHashes": sorted(projectile_event_hashes),
+        "tableEventHashes": sorted(table_event_hashes),
+        "explicitEventHashes": sorted(explicit_event_hashes),
+        "binaryManagedEventNames": sorted(binary_managed_event_names),
+        "hircSummary": hirc_summary,
         "eventEvidence": event_evidence,
         "events": sorted(event_entries, key=lambda item: (str(item.get("eventId") or ""), int(item.get("mediaId") or 0))),
         "entries": sorted(audio_by_id.values(), key=lambda item: (str(item.get("id") or ""), str(item.get("rel") or ""))),
     }
     json_dump(language_root / "index.json", index_payload)
+    semantic_payload = build_audio_semantic_data(
+        index_payload,
+        language=language,
+        export_root=args.export_root,
+        webui_root=args.webui_root,
+        metadata_path=metadata_path,
+        cutscene_events=cutscene_audio_events,
+    )
 
     elapsed = time.time() - started
     scope_counts = source_summary.get("byScope", {})
@@ -3170,7 +3344,8 @@ def build_audio(args: argparse.Namespace) -> int:
         f" {link_stats['lineAudioLinked']:,}/{link_stats['lineAudioRefs']:,} line refs linked,"
         f" {link_stats['conversationAudioEventsLinked']:,}/{link_stats['conversationAudioEvents']:,} conversation event refs linked,"
         f" {link_stats['cutsceneAudioEventsLinked']:,}/{link_stats['cutsceneAudioEvents']:,} cutscene event refs linked,"
-        f" {link_stats['conversationFilesChanged']:,} conv files updated"
+        f" {link_stats['conversationFilesChanged']:,} conv files updated,"
+        f" {semantic_payload['counts']['runtimeSystems']:,} binary-validated runtime systems"
         f" in {elapsed:.1f}s"
     )
     return 0
