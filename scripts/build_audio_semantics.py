@@ -123,7 +123,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 7
+AUDIO_SEMANTIC_SCHEMA_VERSION = 8
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 4
 
 
@@ -2542,6 +2542,7 @@ def build_event_rows(
             "traversalStatus": evidence.get("traversalStatus") or "unknown",
             "actionIds": evidence.get("actionIds") or [],
             "actionEvidence": evidence.get("actionEvidence") or [],
+            "actionDispatchEvidence": evidence.get("actionDispatchEvidence") or {},
             "rootPlayActionCount": int(evidence.get("rootPlayActionCount") or 0),
             "rootStopActionCount": int(evidence.get("rootStopActionCount") or 0),
             "visitedObjectCount": len(evidence.get("visitedObjectIds") or []),

@@ -126,6 +126,11 @@ class AudioSemanticDataTests(unittest.TestCase):
             "treeLeaves": [{"audioNodeId": 11, "pathKeys": [22]}],
             "structureStatus": "typedExactV150",
         }
+        dispatch = {
+            "playbackActionCount": 2,
+            "timingClass": "coDispatchWithAuthoredDelayDifference",
+            "explicitDelayActionCount": 1,
+        }
         rows, _, _ = audio_semantics.build_event_rows({
             "eventNames": ["au_music_fixture"],
             "events": [],
@@ -135,10 +140,12 @@ class AudioSemanticDataTests(unittest.TestCase):
                 "bankId": 9,
                 "traversalStatus": "complete",
                 "musicNodeEvidence": [music_node],
+                "actionDispatchEvidence": dispatch,
             }],
         }, {})
 
         self.assertEqual(rows[0]["evidence"][0]["musicNodeEvidence"], [music_node])
+        self.assertEqual(rows[0]["evidence"][0]["actionDispatchEvidence"], dispatch)
 
     def test_event_categories_preserve_unknowns(self) -> None:
         self.assertEqual(audio_semantics.event_category("au_sfx_test"), "sfx")
