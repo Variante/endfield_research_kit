@@ -80,6 +80,16 @@ class PackWebuiAudioTests(unittest.TestCase):
         self.assertIn('section(text("relatedSoundEffects"), renderCharacterSoundEffects', detail_renderer)
         self.assertGreater(detail_renderer.index("trailingAudio"), detail_renderer.index("renderIntegratedSections"))
 
+    def test_audio_page_surfaces_typed_music_branch_evidence(self) -> None:
+        project_root = SCRIPT.parents[1]
+        source = (project_root / "webui" / "src" / "features" / "audio" / "index.js").read_text(encoding="utf-8")
+
+        self.assertIn('musicSwitchCandidate: "relationMusicSwitch"', source)
+        self.assertIn('musicPlaylistCandidate: "relationMusicPlaylist"', source)
+        self.assertIn('musicTrackSource: "relationMusicSource"', source)
+        self.assertIn('asArray(evidence?.musicNodeEvidence)', source)
+        self.assertIn('asArray(node?.selectionTypeLabels)', source)
+
 
 if __name__ == "__main__":
     unittest.main()
