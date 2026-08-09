@@ -2204,11 +2204,14 @@ punctual records and pass 0 remain open.
 `ShaderVariablesGlobal` b35 is now exactly scoped before implementation. The
 selected body references 33 fields, and installed native reset producers close
 atmosphere rows c71..c76, height-fog rows c77..c82, and disabled-volumetric rows
-c83..c87. Perspective c4.w, mip bias c26.x, binning/environment c28/c29,
-inactive IV parameters c132..c134, and disabled wetness c156.x are also closed;
-frame count is read only behind the exact-zero volumetric gate. The D3D11
-`EndfieldCB1` bridge remains deliberately unpublished because c3.y, c30.xy,
-c31.x, and default SH c135..c137 still affect live selected control flow.
+c83..c87. Current constructors, `IsActive`/camera getters, and the selected
+CharInfo/global/LookDev VolumeProfiles close c30 as `(0,0,1,1)`; the
+`HGSettingParameters` default and every shipped platform/tier override close
+c31.x as `reflectionProbeMaxSampleMip=7`. Perspective c4.w, mip bias c26.x,
+binning/environment c28/c29, inactive IV parameters c132..c134, and disabled
+wetness c156.x are also closed; frame count is read only behind the exact-zero
+volumetric gate. The D3D11 `EndfieldCB1` bridge remains deliberately unpublished
+because c3.y and default SH c135..c137 still affect live selected control flow.
 Unused rows are not guessed, and pass 0 remains disabled.
 
 The remaining streamed
