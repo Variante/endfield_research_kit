@@ -6,7 +6,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
+import struct
+import winreg
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
@@ -16,6 +19,7 @@ LAB_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAB_ROOT.parent
 GAME_ROOT = Path(r"D:/Program Files/Endfield Game")
 GAME_ASSEMBLY = GAME_ROOT / "GameAssembly.dll"
+UNITY_PLAYER = GAME_ROOT / "UnityPlayer.dll"
 GLOBAL_METADATA = GAME_ROOT / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat"
 ROOM_CHUNK = (
     GAME_ROOT
@@ -68,6 +72,11 @@ GACHA_CULL_VIEW_AUDIT = (
 GACHA_SELECTED_LIST_AUDIT = (
     REPO_ROOT / "scratch/reverse_engineering/gacha_light_selected_list/audit.json"
 )
+ROTATEHOUSE = (
+    REPO_ROOT
+    / "scratch/animestudio/zhuangfy_gacha_start_order/gacharoom_raw_dump/"
+    "GameObject/rotatehouse_pB2306755E2A9ADE0.json"
+)
 OUTPUT = (
     LAB_ROOT
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
@@ -76,6 +85,7 @@ OUTPUT = (
 
 EXPECTED_HASHES = {
     "gameAssembly": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "unityPlayer": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
     "globalMetadata": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
     "roomChunk": "4b4ae868dc333fd5b22fc30e667d3156675178bfffd57b93e0e4b625c89f0b26",
     "charInfoChunk": "db94219ee4f522a824c32ec979c2dc5bfd7b1013b4e45c18b77fb3ae4809694e",
@@ -87,6 +97,56 @@ EXPECTED_HASHES = {
     "nativeCullReport": "f7b6e9b6407bb26555491c13f9895b712a9219218c19ac07efd56d7c947d7d7e",
     "gachaCullViewAudit": "4717ddd564f0eee2e1742024660e233e09865b4a301a4b7566aaca6844011dc4",
     "gachaSelectedListAudit": "7b3624526a77102fb075cdc1ad98277eb6746b5a1853faa1fd2ad2032951e1b3",
+    "rotatehouse": "3cac5172e91bb3cddf1a8c6db8e8550620abbfb0c957905f39538b8c97baded4",
+}
+
+REGISTRY_KEY = r"Software\Hypergryph\Endfield"
+RESOLUTION_VALUES = {
+    "screenWidth": "Screenmanager Resolution Width_h182942802",
+    "screenHeight": "Screenmanager Resolution Height_h2627697771",
+    "videoWidth": "video_resolution_width_h583690364",
+    "videoHeight": "video_resolution_height_h2517654917",
+}
+
+UNITY_NATIVE_REGIONS = {
+    "initial_light_aabb_frustum_test": (
+        0x181050470,
+        0x3F1,
+        "0f2359a78c27699a894d4106fa9bb5b1277d021a6c75d3e9a2fec41252f450e5",
+    ),
+    "spot_cone_aabb_builder": (
+        0x18034CE46,
+        0x740,
+        "eb5c9bd7f97cfaa2bf560af4ed6e5d795362731514ebba0dcbda106aef6af7f8",
+    ),
+    "authored_obb_corner_builder": (
+        0x18104C270,
+        0x612,
+        "ef5638a695fb5007113b432037bd23d9b56e3acd96a802a69441d475d1c7dd32",
+    ),
+    "spot_cone_plane_test": (
+        0x1810516D0,
+        0x34D,
+        "eb053dc111374f16a856b187471298699f3df4189928ea5ecfda778d0c70fc20",
+    ),
+    "authored_obb_plane_test": (
+        0x181052329,
+        0x1D1,
+        "39240124eedac93d1dce993460270242f39c73582027ba247775211decb17550",
+    ),
+}
+
+GAME_NATIVE_REGIONS = {
+    "GameSetting._AddScreenResolution": (
+        0x184498160,
+        0x130,
+        "17f0b8cf9ea2d13f740342cca50ca3fe68cf51bccead7a0e7cdaa6f459f90fcd",
+    ),
+    "GameSetting._AddScreenResolution_portrait_swap": (
+        0x1852BFA54,
+        8,
+        "56e0c82b57c29be8ec5add44328d1e313b0a2f507df6ea39ad7968b97adcf9d3",
+    ),
 }
 
 ROOM_SURVIVOR_SUBSEQUENCE = [
@@ -184,6 +244,190 @@ def verified_hash(name: str, path: Path) -> dict[str, object]:
 
 def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def f32(value: float) -> float:
+    return struct.unpack("<f", struct.pack("<f", float(value)))[0]
+
+
+def float_evidence(value: float) -> dict[str, object]:
+    rounded = f32(value)
+    return {
+        "value": rounded,
+        "bits": f"0x{struct.unpack('<I', struct.pack('<f', rounded))[0]:08X}",
+    }
+
+
+class PEImage:
+    def __init__(self, path: Path) -> None:
+        self.data = path.read_bytes()
+        pe = struct.unpack_from("<I", self.data, 0x3C)[0]
+        require("pe_signature", self.data[pe : pe + 4], b"PE\0\0", path)
+        count = struct.unpack_from("<H", self.data, pe + 6)[0]
+        optional_size = struct.unpack_from("<H", self.data, pe + 20)[0]
+        optional = pe + 24
+        require("pe64_magic", struct.unpack_from("<H", self.data, optional)[0], 0x20B, path)
+        self.image_base = struct.unpack_from("<Q", self.data, optional + 24)[0]
+        cursor = optional + optional_size
+        self.sections: list[tuple[int, int, int, int]] = []
+        for _ in range(count):
+            virtual_size, virtual_address, raw_size, raw_offset = struct.unpack_from(
+                "<IIII", self.data, cursor + 8
+            )
+            self.sections.append((virtual_address, virtual_size, raw_offset, raw_size))
+            cursor += 40
+
+    def read(self, virtual_address: int, size: int) -> bytes:
+        rva = virtual_address - self.image_base
+        for section_va, virtual_size, raw_offset, raw_size in self.sections:
+            if section_va <= rva < section_va + max(virtual_size, raw_size):
+                delta = rva - section_va
+                require("pe_region_in_raw_section", delta + size <= raw_size, True, hex(virtual_address))
+                return self.data[raw_offset + delta : raw_offset + delta + size]
+        raise AssertionError(
+            "Gacha light-population audit failed: "
+            "validator=gacha_light_population; check=pe_virtual_address; "
+            f"source={virtual_address:#x}; expected='mapped section'; actual='unmapped'"
+        )
+
+
+def validate_native_regions(path: Path, regions: dict[str, tuple[int, int, str]]) -> list[dict[str, object]]:
+    image = PEImage(path)
+    rows = []
+    for name, (virtual_address, size, expected_hash) in regions.items():
+        body = image.read(virtual_address, size)
+        actual = hashlib.sha256(body).hexdigest()
+        require(f"native_region_{name}_sha256", actual, expected_hash, path)
+        rows.append(
+            {
+                "name": name,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size,
+                "sha256": actual,
+            }
+        )
+    return rows
+
+
+def validate_installed_resolution(values: dict[str, int], source: Path | str) -> dict[str, object]:
+    expected = {name: 3840 if "Width" in name else 2160 for name in values}
+    require("installed_resolution_values", values, expected, source)
+    require("installed_resolution_pairs_match", (values["screenWidth"], values["screenHeight"]), (values["videoWidth"], values["videoHeight"]), source)
+    width = values["videoWidth"]
+    height = values["videoHeight"]
+    return {
+        "source": f"HKCU\\{REGISTRY_KEY}",
+        "valueNames": RESOLUTION_VALUES,
+        "screenManager": {"width": values["screenWidth"], "height": values["screenHeight"]},
+        "gameVideo": {"width": width, "height": height},
+        "aspect": float_evidence(width / height),
+        "scope": "read-only selected state for this installed-client fixture, not a universal supported-aspect claim",
+    }
+
+
+def read_installed_resolution() -> dict[str, object]:
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, REGISTRY_KEY) as key:
+        values = {name: int(winreg.QueryValueEx(key, value_name)[0]) for name, value_name in RESOLUTION_VALUES.items()}
+    return validate_installed_resolution(values, f"HKCU\\{REGISTRY_KEY}")
+
+
+def vector_values(rows: list[dict[str, object]]) -> list[float]:
+    return [float(row["value"]) for row in rows]
+
+
+def quaternion_multiply(a: list[float], b: list[float]) -> list[float]:
+    ax, ay, az, aw = a
+    bx, by, bz, bw = b
+    return [
+        f32(aw * bx + ax * bw + ay * bz - az * by),
+        f32(aw * by - ax * bz + ay * bw + az * bx),
+        f32(aw * bz + ax * by - ay * bx + az * bw),
+        f32(aw * bw - ax * bx - ay * by - az * bz),
+    ]
+
+
+def quaternion_rotate(q: list[float], value: list[float]) -> list[float]:
+    x, y, z, w = q
+    vx, vy, vz = value
+    return [
+        f32((1.0 - 2.0 * (y * y + z * z)) * vx + 2.0 * (x * y - z * w) * vy + 2.0 * (x * z + y * w) * vz),
+        f32(2.0 * (x * y + z * w) * vx + (1.0 - 2.0 * (x * x + z * z)) * vy + 2.0 * (y * z - x * w) * vz),
+        f32(2.0 * (x * z - y * w) * vx + 2.0 * (y * z + x * w) * vy + (1.0 - 2.0 * (x * x + y * y)) * vz),
+    ]
+
+
+def dot(a: list[float], b: list[float]) -> float:
+    return f32(a[0] * b[0] + a[1] * b[1] + a[2] * b[2])
+
+
+def settled_frustum_planes(camera: dict[str, Any], aspect: float) -> list[tuple[str, list[float], float]]:
+    position = vector_values(camera["position"])
+    right = vector_values(camera["axes"]["right"])
+    up = vector_values(camera["axes"]["up"])
+    forward = vector_values(camera["axes"]["forward"])
+    vertical_scale = float(camera["verticalProjectionScale"]["value"])
+    horizontal_scale = f32(vertical_scale / aspect)
+    normals = [
+        ("left", [f32(forward[i] + horizontal_scale * right[i]) for i in range(3)]),
+        ("right", [f32(forward[i] - horizontal_scale * right[i]) for i in range(3)]),
+        ("bottom", [f32(forward[i] + vertical_scale * up[i]) for i in range(3)]),
+        ("top", [f32(forward[i] - vertical_scale * up[i]) for i in range(3)]),
+    ]
+    planes = [(name, normal, f32(-dot(normal, position))) for name, normal in normals]
+    base = f32(-dot(forward, position))
+    planes.append(("near", forward, f32(base - float(camera["near"]["value"]))))
+    planes.append(("far", [f32(-value) for value in forward], f32(-base + float(camera["far"]["value"]))))
+    return planes
+
+
+def zxy_rotation_axes(degrees: dict[str, float]) -> list[list[float]]:
+    # Unity rotation order 4: Z, then X, then Y (R = Ry * Rx * Rz).
+    z, x, y = [math.radians(float(degrees[key])) for key in ("z", "x", "y")]
+    cz, sz = math.cos(z), math.sin(z)
+    cx, sx = math.cos(x), math.sin(x)
+    cy, sy = math.cos(y), math.sin(y)
+    rz = [[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]]
+    rx = [[1.0, 0.0, 0.0], [0.0, cx, -sx], [0.0, sx, cx]]
+    ry = [[cy, 0.0, sy], [0.0, 1.0, 0.0], [-sy, 0.0, cy]]
+
+    def multiply(left: list[list[float]], right_matrix: list[list[float]]) -> list[list[float]]:
+        return [[f32(sum(left[row][k] * right_matrix[k][column] for k in range(3))) for column in range(3)] for row in range(3)]
+
+    return multiply(ry, multiply(rx, rz))
+
+
+def aabb_margin(plane: tuple[str, list[float], float], center: list[float], extents: list[float]) -> float:
+    _, normal, distance = plane
+    return f32(dot(normal, center) + distance + sum(abs(normal[i]) * extents[i] for i in range(3)))
+
+
+def obb_margin(plane: tuple[str, list[float], float], center: list[float], half: list[float], axes: list[list[float]]) -> float:
+    _, normal, distance = plane
+    support = sum(abs(sum(normal[i] * axes[i][column] for i in range(3))) * half[column] for column in range(3))
+    return f32(dot(normal, center) + distance + support)
+
+
+def sphere_margin(plane: tuple[str, list[float], float], center: list[float], radius: float) -> float:
+    _, normal, distance = plane
+    return f32(dot(normal, center) + distance + radius * math.sqrt(dot(normal, normal)))
+
+
+def cone_margin(plane: tuple[str, list[float], float], apex: list[float], forward: list[float], length: float, half_angle_degrees: float) -> float:
+    _, normal, distance = plane
+    apex_signed = f32(dot(normal, apex) + distance)
+    base_center = [f32(apex[i] + forward[i] * length) for i in range(3)]
+    axis_dot = dot(normal, forward)
+    perpendicular = math.sqrt(max(0.0, dot(normal, normal) - axis_dot * axis_dot))
+    radius = length * math.tan(math.radians(half_angle_degrees))
+    rim_signed = f32(dot(normal, base_center) + distance + radius * perpendicular)
+    return max(apex_signed, rim_signed)
+
+
+def validate_room_survivor_names(
+    admitted: list[str], rejected: list[str], source: Path | str
+) -> None:
+    require("selected_aspect_room_survivors", admitted, ROOM_SURVIVOR_SUBSEQUENCE, source)
+    require("selected_aspect_room_rejections", rejected, ["Spot Light (20)"], source)
 
 
 def validate_lua_contract(text: str, source: Path | str) -> dict[str, object]:
@@ -421,16 +665,177 @@ def validate_room_population(
                 "pathId": path_id,
                 "name": row["name"],
                 "type": int(data["m_Type"]),
+                "range": float(data["m_Range"]),
+                "spotAngle": float(data["m_SpotAngle"]),
                 "priority": int(data["m_LightPriority"]),
                 "enabled": True,
                 "renderingLayerMask": 1,
                 "cookiePathId": 0,
                 "shadowType": 0,
+                "enableOBBCullingBox": bool(data["m_EnableOBBCullingBox"]),
+                "cullingBoxRelativePosition": data["m_CullingBoxRelativePosition"],
+                "cullingBoxHalfExtents": data["m_CullingBoxHalfExtents"],
+                "cullingBoxOrientation": data["m_CullingBoxOrientation"],
+                "localRotation": row["localRotation"],
                 "sourceRawSha256": data["$animestudio"]["rawDataSha256"],
             }
         )
     require("room_selected_type_counts", Counter(row["type"] for row in rows), Counter({2: 11, 0: 1}), light_root)
     return sorted(rows, key=lambda row: row["pathId"])
+
+
+def validate_room_geometry(
+    view: dict[str, Any],
+    room_rows: list[dict[str, object]],
+    resolution: dict[str, object],
+) -> dict[str, object]:
+    camera = view["settledCamera"]
+    aspect = float(resolution["aspect"]["value"])
+    parent_rotation_data = load_json(ROTATEHOUSE)["m_Transform"]["m_LocalRotation"]
+    parent_rotation = [float(parent_rotation_data[key]) for key in ("X", "Y", "Z", "W")]
+    source_rows = view["authoredRoomRowsInStrictNativeDistanceOrder"]
+    source_by_name = {row["name"]: row for row in source_rows}
+    room_by_name = {str(row["name"]): row for row in room_rows}
+    require("geometry_room_membership", set(source_by_name), set(room_by_name), GACHA_CULL_VIEW_AUDIT)
+
+    def evaluate(row: dict[str, object], selected_aspect: float) -> dict[str, object]:
+        source = source_by_name[str(row["name"])]
+        world = vector_values(source["worldPosition"])
+        planes = settled_frustum_planes(camera, selected_aspect)
+        light_type = int(row["type"])
+        light_range = float(row["range"])
+
+        if light_type == 2:
+            bounds_center = world
+            bounds_extents = [light_range, light_range, light_range]
+            forward = None
+        else:
+            local_rotation_data = row["localRotation"]
+            local_rotation = [float(local_rotation_data[key]) for key in ("X", "Y", "Z", "W")]
+            world_rotation = quaternion_multiply(parent_rotation, local_rotation)
+            forward = quaternion_rotate(world_rotation, [0.0, 0.0, 1.0])
+            cone_radius = light_range * math.tan(math.radians(float(row["spotAngle"]) * 0.5))
+            base_center = [f32(world[i] + forward[i] * light_range) for i in range(3)]
+            minimum = []
+            maximum = []
+            for axis in range(3):
+                disk_extent = cone_radius * math.sqrt(max(0.0, 1.0 - forward[axis] * forward[axis]))
+                minimum.append(min(world[axis], base_center[axis] - disk_extent))
+                maximum.append(max(world[axis], base_center[axis] + disk_extent))
+            bounds_center = [f32((minimum[i] + maximum[i]) * 0.5) for i in range(3)]
+            bounds_extents = [f32((maximum[i] - minimum[i]) * 0.5) for i in range(3)]
+
+        initial = [(plane[0], aabb_margin(plane, bounds_center, bounds_extents)) for plane in planes]
+        initial_min = min(initial, key=lambda item: item[1])
+
+        if bool(row["enableOBBCullingBox"]):
+            relative = row["cullingBoxRelativePosition"]
+            half_data = row["cullingBoxHalfExtents"]
+            center = [f32(world[i] + float(relative[key])) for i, key in enumerate(("x", "y", "z"))]
+            half = [float(half_data[key]) for key in ("x", "y", "z")]
+            axes = zxy_rotation_axes(row["cullingBoxOrientation"])
+            obb = [(plane[0], obb_margin(plane, center, half, axes)) for plane in planes]
+            obb_min = min(obb, key=lambda item: item[1])
+            obb_pass = obb_min[1] >= 0.0
+        else:
+            obb_min = ("disabled", math.inf)
+            obb_pass = True
+
+        if light_type == 2:
+            geometry = [(plane[0], sphere_margin(plane, world, light_range)) for plane in planes]
+            geometry_kind = "point_sphere"
+        else:
+            assert forward is not None
+            geometry = [
+                (
+                    plane[0],
+                    cone_margin(
+                        plane,
+                        world,
+                        forward,
+                        light_range,
+                        float(row["spotAngle"]) * 0.5,
+                    ),
+                )
+                for plane in planes
+            ]
+            geometry_kind = "spot_cone"
+        geometry_min = min(geometry, key=lambda item: item[1])
+        admitted = initial_min[1] >= 0.0 and obb_pass and geometry_min[1] >= 0.0
+        return {
+            "admitted": admitted,
+            "initialAabbMinimum": initial_min,
+            "authoredObbMinimum": obb_min,
+            "typeGeometryKind": geometry_kind,
+            "typeGeometryMinimum": geometry_min,
+            "forward": forward,
+        }
+
+    ordered = []
+    for source in source_rows:
+        row = room_by_name[source["name"]]
+        result = evaluate(row, aspect)
+        threshold = None
+        if source["name"] != "Spot Light (20)":
+            low, high = 0.1, aspect
+            require(f"geometry_{source['name']}_selected_aspect_admitted", result["admitted"], True, RESOLUTION_VALUES["videoWidth"])
+            if evaluate(row, low)["admitted"]:
+                threshold = {"atOrBelowSearchFloor": float_evidence(low)}
+            else:
+                for _ in range(40):
+                    middle = (low + high) * 0.5
+                    if evaluate(row, middle)["admitted"]:
+                        high = middle
+                    else:
+                        low = middle
+                threshold = {"numericalRoot": float_evidence(high)}
+        ordered.append(
+            {
+                "name": source["name"],
+                "lightPathId": int(row["pathId"]),
+                "type": int(row["type"]),
+                "selectedAspectAdmitted": bool(result["admitted"]),
+                "minimumAspectApprox": threshold,
+                "initialAabb": {
+                    "result": result["initialAabbMinimum"][1] >= 0.0,
+                    "minimumPlane": result["initialAabbMinimum"][0],
+                    "minimumSupportMargin": float_evidence(result["initialAabbMinimum"][1]),
+                },
+                "authoredObb": {
+                    "enabled": bool(row["enableOBBCullingBox"]),
+                    "result": result["authoredObbMinimum"][1] >= 0.0 if bool(row["enableOBBCullingBox"]) else "skipped",
+                    "minimumPlane": result["authoredObbMinimum"][0],
+                    "minimumSupportMargin": float_evidence(result["authoredObbMinimum"][1]) if bool(row["enableOBBCullingBox"]) else None,
+                    "orientationOrder": "Unity ZXY" if bool(row["enableOBBCullingBox"]) else None,
+                },
+                "typeGeometry": {
+                    "kind": result["typeGeometryKind"],
+                    "result": result["typeGeometryMinimum"][1] >= 0.0,
+                    "minimumPlane": result["typeGeometryMinimum"][0],
+                    "minimumSupportMargin": float_evidence(result["typeGeometryMinimum"][1]),
+                },
+            }
+        )
+
+    admitted = [row["name"] for row in ordered if row["selectedAspectAdmitted"]]
+    rejected = [row["name"] for row in ordered if not row["selectedAspectAdmitted"]]
+    validate_room_survivor_names(admitted, rejected, GACHA_CULL_VIEW_AUDIT)
+    require("selected_aspect_initial_aabb_all", all(row["initialAabb"]["result"] for row in ordered), True, GACHA_CULL_VIEW_AUDIT)
+    require("selected_aspect_obb_all_enabled", all(row["authoredObb"]["result"] in (True, "skipped") for row in ordered), True, GACHA_CULL_VIEW_AUDIT)
+    return {
+        "selectedResolution": resolution,
+        "cameraSampleTime": camera["time"],
+        "verticalFovDegrees": camera["verticalFovDegrees"],
+        "nativePlaneConvention": "inside when signed support is nonnegative",
+        "roomRowsInNativeDistanceOrder": ordered,
+        "exactSelectedAspectRoomSurvivors": admitted,
+        "exactSelectedAspectRoomRejections": rejected,
+        "exactSelectedAspectRoomContributionCount": len(admitted),
+        "precisionBoundary": (
+            "Thresholds are float32 numerical roots for diagnostics; the selected 16:9 "
+            "margins are well separated from zero and own the pass/fail claims."
+        ),
+    }
 
 
 def validate_operator_population(
@@ -581,6 +986,7 @@ def validate_native_cull_boundary(
 def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
     source_paths = {
         "gameAssembly": GAME_ASSEMBLY,
+        "unityPlayer": UNITY_PLAYER,
         "globalMetadata": GLOBAL_METADATA,
         "roomChunk": ROOM_CHUNK,
         "charInfoChunk": CHARINFO_CHUNK,
@@ -592,6 +998,7 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
         "nativeCullReport": NATIVE_CULL_REPORT,
         "gachaCullViewAudit": GACHA_CULL_VIEW_AUDIT,
         "gachaSelectedListAudit": GACHA_SELECTED_LIST_AUDIT,
+        "rotatehouse": ROTATEHOUSE,
     }
     source_hashes = (
         {name: verified_hash(name, path) for name, path in source_paths.items()}
@@ -612,11 +1019,23 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
     operator_rows = validate_operator_population(load_json(OPERATOR_LIGHTS), prefab_rows)
     room_rows = validate_room_population(load_json(ROOM_HIERARCHY), ROOM_LIGHT_ROOT)
     native_rows = validate_native_methods(GAME_ASSEMBLY)
+    native_geometry_regions = {
+        "unityPlayer": validate_native_regions(UNITY_PLAYER, UNITY_NATIVE_REGIONS),
+        "gameAssembly": validate_native_regions(GAME_ASSEMBLY, GAME_NATIVE_REGIONS),
+    }
+    installed_resolution = read_installed_resolution()
+    cull_view = load_json(GACHA_CULL_VIEW_AUDIT)
     native_cull_boundary = validate_native_cull_boundary(
         load_json(NATIVE_CULL_REPORT),
-        load_json(GACHA_CULL_VIEW_AUDIT),
+        cull_view,
         load_json(GACHA_SELECTED_LIST_AUDIT),
         room_rows,
+    )
+    room_geometry = validate_room_geometry(cull_view, room_rows, installed_resolution)
+    native_cull_boundary["selectedAspectRoomGeometry"] = room_geometry
+    native_cull_boundary["firstOpenRoomBoundary"] = (
+        "room geometry is closed for the selected installed-client 3840x2160 state; "
+        "character-light follower transforms and cull outcomes remain open"
     )
     union = room_rows + operator_rows
     type_counts = Counter(row["type"] for row in union)
@@ -625,8 +1044,8 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
     require("authored_union_cookie_count", sum(bool(row["cookiePathId"]) for row in union), 0, "room + character overview")
 
     return {
-        "schema": "endfield.gacha-light-population-recovery.v2",
-        "status": "zhuangfy_gacha_authored_population_and_first_native_exclusion_source_closed",
+        "schema": "endfield.gacha-light-population-recovery.v3",
+        "status": "zhuangfy_gacha_selected_aspect_authored_room_subset_source_closed",
         "runtimeReady": False,
         "outcome": (
             "Installed Lua selects only light_overview from light_chr_0030_zhuangfy, "
@@ -635,8 +1054,11 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
             "serialized Unity-Light candidate union is exactly 18 enabled lights: "
             "3 type 0 and 15 type 2, with no authored cookies and one character-light "
             "shadow request. The shipped normal native path disables fallback and Gacha "
-            "occlusion; Spot Light (20) is aspect-independently rejected, tightening the "
-            "known authored survivor upper bound to 17. This still does not close the "
+            "occlusion. The selected installed-client state is independently stored as "
+            "3840x2160 by Unity and the game. At that 16:9 aspect, native AABB, authored "
+            "OBB, and type-specific geometry admit exactly 11 room rows and reject only "
+            "Spot Light (20), retaining the known authored survivor upper bound of 17. "
+            "This still does not close the "
             "target-frame LightCullResult, dynamic/custom lights, final order, or lightCount."
         ),
         "installedInputs": source_hashes,
@@ -669,6 +1091,7 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
             },
             "selectedFollowerCount": 4,
         },
+        "nativeGeometryMethods": native_geometry_regions,
         "nativeCullBoundary": native_cull_boundary,
         "evidenceBoundary": {
             "closed": [
@@ -681,18 +1104,21 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
                 "installed native follower traversal, node selection, and transform modes",
                 "shipped normal candidate core with fallback and Gacha occlusion disabled",
                 "generic room layer/mask gate for all twelve room rows",
-                "aspect-independent rejection of Spot Light (20) and 17-row authored upper bound",
+                "read-only installed-client 3840x2160 selection from matching Unity and game registry values",
+                "selected-aspect initial AABB, authored OBB, and type-specific geometry for all twelve room rows",
+                "exact 11-row selected-aspect room subset, Spot Light (20) rejection, and 17-row authored upper bound",
             ],
             "open": [
                 "target-frame HGCullingSystem.CullLights pointer/count and survivors",
-                "aspect-dependent AABB outcomes for the other eleven room rows",
                 "character-light cull outcomes and evaluated follower transforms",
+                "room outcomes for display aspects other than this installed-client 16:9 selection",
                 "persistent/global carry-in or runtime-created custom lights",
                 "final priority/distance order, LightDataBuffer rows, and lightCount",
             ],
             "decision": (
-                "Use 18 as the exact known serialized input population and 17 only as its "
-                "current native survivor upper bound. Do not publish either as the retail "
+                "Use 18 as the exact known serialized input population, 11 as the exact "
+                "selected-aspect authored room contribution, and 17 only as the combined "
+                "authored survivor upper bound. Do not publish the latter as the retail "
                 "survivor array or enable deferred pass 0 until the target-frame result is "
                 "captured or otherwise source-closed."
             ),
