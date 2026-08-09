@@ -50,10 +50,10 @@ def finish_node(node_id: str, finish_id: int | None, *, serialized: bool = True)
     return node
 
 
-def connection(target: str) -> dict:
+def connection(target: str, source: str = "option") -> dict:
     return {
         "$type": "Beyond.Gameplay.DialogTreeConnection",
-        "_sourceNode": {"$ref": "option"},
+        "_sourceNode": {"$ref": source},
         "_targetNode": {"$ref": target},
     }
 
@@ -200,6 +200,49 @@ class DialogTreeRouteTests(unittest.TestCase):
         self.assertEqual(rejected[0]["gate"], "uniqueOptionIds")
 
 
+class DialogTreeFinishEndpointTests(unittest.TestCase):
+    def test_recovers_exact_prime_reachable_endpoint_with_source_binding(self) -> None:
+        prime = {
+            "$id": "prime",
+            "$type": "Beyond.Gameplay.DialogTreeTrunkNode, Gameplay.Beyond",
+        }
+        outer = text_asset(
+            [prime, finish_node("finish", 3)],
+            [connection("finish", "prime")],
+        )
+        rows, rejected, coverage = audit.decode_dialog_tree_finish_endpoints(
+            outer,
+            source_file="fixture.json",
+        )
+        self.assertEqual(rejected, [])
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["finishId"], 3)
+        self.assertEqual(rows[0]["nodePath"], ["prime", "finish"])
+        self.assertEqual(rows[0]["predecessorNodeTypes"], ["DialogTreeTrunkNode"])
+        self.assertEqual(
+            rows[0]["sourceFiles"][0]["relationship"],
+            "exact_prime_reachable_finish_endpoint",
+        )
+        self.assertEqual(coverage["counts"]["validatedFinishEndpoints"], 1)
+
+    def test_detached_finish_definition_is_not_published(self) -> None:
+        prime = {
+            "$id": "prime",
+            "$type": "Beyond.Gameplay.DialogTreeTrunkNode, Gameplay.Beyond",
+        }
+        outer = text_asset([prime, finish_node("finish", 3)], [])
+        rows, rejected, coverage = audit.decode_dialog_tree_finish_endpoints(
+            outer,
+            source_file="fixture.json",
+        )
+        self.assertEqual(rows, [])
+        self.assertEqual(
+            rejected[0]["failureClass"],
+            "finish_node_not_reachable_from_prime",
+        )
+        self.assertEqual(coverage["counts"]["rejectedFinishEndpoints"], 1)
+
+
 class TimelineRouteTests(unittest.TestCase):
     def test_duplicate_clips_agree_and_are_collapsed(self) -> None:
         option = {
@@ -291,6 +334,66 @@ class ProducerScopeTests(unittest.TestCase):
         accepted, conflicts = audit._normalize_producers(rows)
         self.assertEqual(accepted, [])
         self.assertEqual(conflicts[0]["gate"], "producerScopeAgreement")
+
+
+class PipelinePublicationTests(unittest.TestCase):
+    def test_publishes_option_and_endpoint_dependencies_as_separate_tiers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = {
+                "missions": [{"id": "mission_fixture", "file": "mission.json"}],
+                "counts": {},
+            }
+            payload = {
+                "nodes": [
+                    {
+                        "id": "quest_fixture",
+                        "objectives": [
+                            {
+                                "index": 0,
+                                "conditionId": "condition_fixture",
+                            }
+                        ],
+                    }
+                ]
+            }
+            common = {
+                "missionId": "mission_fixture",
+                "questId": "quest_fixture",
+                "objectiveIndex": 0,
+                "conditionId": "condition_fixture",
+            }
+            report = {
+                "schemaVersion": "dialogFinishMissionBranchAudit.v5",
+                "status": "validated",
+                "evidencePolicy": "fixture",
+                "counts": {},
+                "producerFamilyCounts": {},
+                "nativeContract": {},
+                "dependencies": [{**common, "dialogId": "dlg_option", "finishId": 1}],
+                "endpointDependencies": [
+                    {**common, "dialogId": "dlg_endpoint", "finishId": 0}
+                ],
+            }
+            published = audit.publish_to_pipeline_index(
+                index,
+                report,
+                {"mission_fixture": payload},
+                root,
+            )
+            self.assertEqual(published, 2)
+            objective = payload["nodes"][0]["objectives"][0]
+            self.assertEqual(
+                objective["dialogFinishBranchDependencies"][0]["dialogId"],
+                "dlg_option",
+            )
+            self.assertEqual(
+                objective["dialogFinishEndpointDependencies"][0]["dialogId"],
+                "dlg_endpoint",
+            )
+            self.assertEqual(index["counts"]["dialogFinishBranchDependencies"], 1)
+            self.assertEqual(index["counts"]["dialogFinishEndpointDependencies"], 1)
+            self.assertEqual(index["counts"]["dialogFinishExactConsumerCoverage"], 2)
 
 
 class NativeContractTests(unittest.TestCase):

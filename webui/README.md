@@ -185,6 +185,13 @@ sns_topic_map02_lv005_12002
   `Int32 0`. Reused localization option IDs stay separated by runtime scope.
   Each row remains a dependency, not an observed player choice or
   server-selected successor.
+- Exact finish consumers without a proven option route are shown separately as
+  endpoint-only dependencies. The shared recovery walks typed original
+  DialogTrees from the binary-proven first serialized node, validates exact
+  connection identities, and admits only reachable finish nodes. These cards
+  expose the prime-node path, predecessor types, value source, and hashed
+  DialogTree, MissionRuntime, binary, and metadata files. They prove an authored
+  endpoint-to-objective dependency, not the route or choice that reaches it.
 - Original DialogTree definition cards expose normal-option route validation.
   The binary-proven `NormalOptionData.index` selects a physical outgoing edge,
   including positions around extra-option edges, and `ShowOptions` sets

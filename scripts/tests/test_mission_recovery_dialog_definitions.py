@@ -28,21 +28,40 @@ class MissionRecoveryDialogDefinitionTests(unittest.TestCase):
         self.assertEqual(definition, dialog_trees["dlg_fixture_1"])
         self.assertEqual([], unresolved)
 
-    def test_timeline_remains_preferred_when_present(self) -> None:
+    def test_timeline_and_dialog_tree_are_retained_independently(self) -> None:
         refs = [{"sceneKey": "dlg_fixture_1", "kind": "dlg"}]
         timeline_entry = {"timeline": "dlgtl_fixture_1"}
         loader_calls: list[str] = []
+        definition = {
+            "sceneKey": "dlg_fixture_1",
+            "assetType": "Beyond.Gameplay.DialogTree",
+            "evidenceKind": "exact_dialog_tree_definition",
+        }
 
         timeline, dialog_trees, unresolved = attach_timeline_evidence(
             refs,
             {"dlg_fixture_1": [timeline_entry]},
-            dialog_tree_loader=lambda key: loader_calls.append(key),
+            dialog_tree_loader=lambda key: loader_calls.append(key) or definition,
+        )
+
+        self.assertEqual([timeline_entry], timeline["dlg_fixture_1"])
+        self.assertEqual(definition, dialog_trees["dlg_fixture_1"])
+        self.assertEqual([], unresolved)
+        self.assertEqual(["dlg_fixture_1"], loader_calls)
+
+    def test_timeline_without_dialog_tree_is_not_reported_as_missing_both(self) -> None:
+        refs = [{"sceneKey": "dlg_fixture_1", "kind": "dlg"}]
+        timeline_entry = {"timeline": "dlgtl_fixture_1"}
+
+        timeline, dialog_trees, unresolved = attach_timeline_evidence(
+            refs,
+            {"dlg_fixture_1": [timeline_entry]},
+            dialog_tree_loader=lambda _key: None,
         )
 
         self.assertEqual([timeline_entry], timeline["dlg_fixture_1"])
         self.assertEqual({}, dialog_trees)
         self.assertEqual([], unresolved)
-        self.assertEqual([], loader_calls)
 
     def test_missing_both_sources_reports_actionable_diagnostic(self) -> None:
         source = {"file": "fixture.json", "field": "condition._dialogId"}

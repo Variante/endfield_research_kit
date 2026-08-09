@@ -368,6 +368,8 @@
       dialogTreeNormalOptions: "normal options",
       dialogTreeValidatedRoutes: "validated normal-option routes",
       dialogTreeRejectedRoutes: "rejected normal-option routes",
+      dialogTreeValidatedFinishEndpoints: "validated prime-reachable finish endpoints",
+      dialogTreeRejectedFinishEndpoints: "rejected finish endpoints",
       dialogTreeDefaultIndexes: "runtime-default connection indexes",
       dialogTreeMismatchNodes: "unequal option/connection nodes",
       dialogTreeExtraOptionNodes: "extra-option nodes",
@@ -386,9 +388,14 @@
       dialogTreeFailureObserver: "failure guard",
       dialogFinishBranchDependencies: "Option outcome → mission objective",
       dialogFinishBranchDependencyHint: "An original option outcome writes the exact finish number required by this objective. This proves a causal branch dependency, not the observed player choice, dialog activation, server-selected successor, or total Story-file order.",
+      dialogFinishEndpointDependencies: "Authored finish endpoint → mission objective",
+      dialogFinishEndpointDependencyHint: "An exact original finish node is reachable from the binary-proven serialized prime node and emits the finish number required by this objective. The route or player choice that reaches it remains unknown.",
+      dialogFinishPrimePath: "Prime-node path",
       dialogFinishProducer: "Original producer",
       dialogFinishConsumer: "Mission consumer",
       dialogFinishBranchStat: "exact option→objective branches",
+      dialogFinishEndpointStat: "endpoint-only dependencies",
+      dialogFinishExactCoverageStat: "exact finish consumers covered",
       dialogFinishRuntimeDefault: "runtime-default Int32 0",
       dialogFinishExplicitValue: "explicit finishId",
       dialogFinishProducerScope: "Runtime branch scope",
@@ -1395,6 +1402,8 @@
       dialogTreeNormalOptions: "普通选项",
       dialogTreeValidatedRoutes: "已验证普通选项路径",
       dialogTreeRejectedRoutes: "已拒绝普通选项路径",
+      dialogTreeValidatedFinishEndpoints: "已验证主入口可达结束端点",
+      dialogTreeRejectedFinishEndpoints: "已拒绝结束端点",
       dialogTreeDefaultIndexes: "运行时默认连接索引",
       dialogTreeMismatchNodes: "选项/连接数量不等的节点",
       dialogTreeExtraOptionNodes: "额外选项节点",
@@ -1413,9 +1422,14 @@
       dialogTreeFailureObserver: "失败条件",
       dialogFinishBranchDependencies: "选项结果 → 任务目标",
       dialogFinishBranchDependencyHint: "原始选项结果写入了该目标所要求的精确完成编号。这证明因果分支依赖，但不证明玩家实际选择、对话激活、服务端选择的后继或完整剧情文件顺序。",
+      dialogFinishEndpointDependencies: "原始结束端点 → 任务目标",
+      dialogFinishEndpointDependencyHint: "精确的原始结束节点从二进制证明的序列化主入口节点可达，并产生该目标所需的完成编号。到达它的路径或玩家选择仍未知。",
+      dialogFinishPrimePath: "主入口节点路径",
       dialogFinishProducer: "原始产生端",
       dialogFinishConsumer: "任务消费端",
       dialogFinishBranchStat: "精确选项→目标分支",
+      dialogFinishEndpointStat: "仅结束端点依赖",
+      dialogFinishExactCoverageStat: "已覆盖精确完成条件",
       dialogFinishRuntimeDefault: "运行时默认 Int32 0",
       dialogFinishExplicitValue: "显式 finishId",
       dialogFinishProducerScope: "运行时分支作用域",
@@ -2494,6 +2508,8 @@
       [counts.envTalkQuestContextFiles, t("envTalkContextStat")],
       [counts.envTalkStateContextFiles, t("envTalkStateContextStat")],
       [counts.dialogFinishBranchDependencies, t("dialogFinishBranchStat")],
+      [counts.dialogFinishEndpointDependencies, t("dialogFinishEndpointStat")],
+      [counts.dialogFinishExactConsumerCoverage, t("dialogFinishExactCoverageStat")],
     ];
     if (state.index?.runtimeTrace) stats.push([runtimeCounts.storyPlaybacks, t("runtimeObserved")]);
     node.innerHTML = stats.map(([value, label]) => `<strong>${Number(value || 0).toLocaleString()}</strong><span>${esc(label)}</span>`).join("");
@@ -2527,6 +2543,10 @@
       ${state.index?.storyCoverage?.luaStoryPlaybackEvidence?.status ? `<span>${esc(t("luaPlaybackAudit"))}: <strong>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.status)}</strong> · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.scannedPlaybackCalls || 0).toLocaleString()} calls · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.acceptedTableCarrierCalls || 0).toLocaleString()} table-owned · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherCallCount || 0).toLocaleString()} runtime branches / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleDispatcherFamilyCount || 0).toLocaleString()} queue family · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleContract?.nativeProducerCount || 0).toLocaleString()} native producers / ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.runtimeHandleContract?.typedActionProducerTypeCount || 0).toLocaleString()} typed actions · ${Number(state.index.storyCoverage.counts?.nativeCinematicProducerRouteAttachments || 0).toLocaleString()} mission-route attachments · ${Number(state.index.storyCoverage.luaStoryPlaybackEvidence.unresolvedPlaybackCalls || 0).toLocaleString()} authored unresolved · <code>${esc(state.index.storyCoverage.luaStoryPlaybackEvidence.auditSha256 || "")}</code></span>` : ""}
       ${state.index?.dialogFinishBranchRecovery?.status ? `<span>${esc(t("dialogFinishBranchDependencies"))}: <strong>${esc(state.index.dialogFinishBranchRecovery.status)}</strong> · ${Number(state.index.dialogFinishBranchRecovery.counts?.publishedDependencies || 0).toLocaleString()} ${esc(t("dialogFinishBranchStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.dialogTreeValidatedNormalOptionRoutes || 0).toLocaleString()} ${esc(t("dialogTreeValidatedRoutes"))} / ${Number(state.index.dialogFinishBranchRecovery.counts?.dialogTreeRejectedNormalOptionRoutes || 0).toLocaleString()} ${esc(t("dialogTreeRejectedRoutes"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.dialogTreeConnectionCountMismatchNodes || 0).toLocaleString()} ${esc(t("dialogTreeMismatchNodes"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.corpusRejectedNormalOptionRoutes || 0).toLocaleString()} ${esc(t("dialogTreeCorpusRouteGaps"))}: ${Number(state.index.dialogFinishBranchRecovery.counts?.corpusUnreferencedOptionDefinitionRoutes || 0).toLocaleString()} ${esc(t("dialogTreeUnreferencedDefinitionRoutes"))} / ${Number(state.index.dialogFinishBranchRecovery.counts?.corpusLinkedNormalOptionsWithoutOutgoingConnections || 0).toLocaleString()} ${esc(t("dialogTreeZeroEdgeRoutes"))} / ${Number(state.index.dialogFinishBranchRecovery.counts?.corpusSerializedConnectionIndexesOutOfBounds || 0).toLocaleString()} ${esc(t("dialogTreeOutOfBoundsRoutes"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.dialogTreeRuntimeDefaultFinishRows || 0).toLocaleString()} ${esc(t("dialogFinishDefaultStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.reusedOptionIdsAcrossScopes || 0).toLocaleString()} ${esc(t("dialogFinishReusedScopeStat"))} · ${Number(state.index.dialogFinishBranchRecovery.counts?.missions || 0).toLocaleString()} ${esc(t("missions"))} · <code>${esc(state.index.dialogFinishBranchRecovery.reportJson || "")}</code></span>` : ""}
     `;
+    if (state.index?.dialogFinishBranchRecovery?.status) {
+      const recoveryCounts = state.index.dialogFinishBranchRecovery.counts || {};
+      sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.exactConsumerCoverage || 0).toLocaleString()} / ${Number(recoveryCounts.exactMissionConsumers || 0).toLocaleString()} ${esc(t("dialogFinishExactCoverageStat"))}: ${Number(recoveryCounts.publishedDependencies || 0).toLocaleString()} ${esc(t("dialogFinishBranchStat"))} + ${Number(recoveryCounts.publishedEndpointDependencies || 0).toLocaleString()} ${esc(t("dialogFinishEndpointStat"))} · ${Number(recoveryCounts.dialogTreeValidatedFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogTreeValidatedFinishEndpoints"))} / ${Number(recoveryCounts.dialogTreeRejectedFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogTreeRejectedFinishEndpoints"))}</span>`);
+    }
   }
 
   function missionName(id) {
@@ -6236,6 +6256,26 @@
         ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
       </details>`;
     }).join("");
+    const dialogFinishEndpointDependencies = (objective.dialogFinishEndpointDependencies || []).map((row) => {
+      const producerEvidence = row.producerEvidence || [];
+      const finishNodes = producerEvidence.map((producer) => `<code>${esc(producer.finishNodeId || "?")}</code>`).join(" ");
+      const valueSources = [...new Set(producerEvidence.map((producer) => producer.finishIdSource || "unknown"))];
+      const defaultBadge = valueSources.includes("runtime_default") ? `<span>${esc(t("dialogFinishRuntimeDefault"))}</span>` : `<span>${esc(t("dialogFinishExplicitValue"))}</span>`;
+      const endpointPaths = producerEvidence.map((producer) => {
+        const path = (producer.nodePath || []).join(" → ") || "?";
+        const predecessors = (producer.predecessorNodeTypes || []).join(" + ") || "?";
+        return `<small><strong>${esc(t("dialogFinishPrimePath"))}:</strong> <code>${esc(path)}</code> · ${esc(t("predecessor"))}: <code>${esc(predecessors)}</code></small>`;
+      }).join("");
+      const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
+      return `<details open class="mp-quest-task-dependency mp-dialog-finish-branch-dependency">
+        <summary><b>${esc(t("dialogFinishEndpointDependencies"))}</b> <code>${esc(row.dialogId || "?")} / ${esc(t("finish"))} ${esc(row.finishId ?? "?")}</code><i>&rarr;</i><code>${esc(row.questId || questId)} / #${esc(row.objectiveIndex ?? "?")}</code> ${defaultBadge}</summary>
+        <p><strong>${esc(t("dialogFinishProducer"))}:</strong> ${finishNodes || `<code>?</code>`}</p>
+        ${endpointPaths}
+        <small><strong>${esc(t("dialogFinishConsumer"))}:</strong> <code>${esc(row.conditionId || "?")}</code> / <code>CheckTalkOptionFinish</code></small>
+        <small>${esc(row.evidenceBoundary || t("dialogFinishEndpointDependencyHint"))}</small>
+        ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
+      </details>`;
+    }).join("");
     const taskDependencies = (objective.levelScriptTaskDependencies || []).map((row) => {
       const metadata = row.taskMetadata || {};
       const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
@@ -6269,7 +6309,7 @@
     }).join("");
     return `<article class="mp-objective"><header><strong>${esc(t("objectives"))} ${objective.index}</strong><span class="mp-authority is-${esc(objective.authority)}">${esc(objective.authority)}</span></header>
       <p>${esc(objective.descriptionKey || t("noObjective"))}</p>
-      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${dialogFinishBranchDependencies}${levelScriptSources}${nativeLevelScriptControlAttachments}${taskDependencies}
+      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${dialogFinishBranchDependencies}${dialogFinishEndpointDependencies}${levelScriptSources}${nativeLevelScriptControlAttachments}${taskDependencies}
       ${objectiveTrackingHtml(objective.tracking)}
       ${renderConditionTree(objective.condition)}
     </article>`;
@@ -6281,6 +6321,8 @@
     const rows = definitions.map((row) => {
       const routeRecovery = row.optionRouteRecovery || {};
       const routeCounts = routeRecovery.counts || {};
+      const finishEndpointRecovery = row.finishEndpointRecovery || {};
+      const finishEndpointCounts = finishEndpointRecovery.counts || {};
       const facts = [
         `${Number((row.lineIds || []).length)} ${t("dialogTreeLines")}`,
         `${Number(row.nodeCount || 0)} ${t("dialogTreeNodes")}`,
@@ -6288,6 +6330,8 @@
         `${Number(row.branchingOptionGroupCount || 0)} ${t("dialogTreeBranchGroups")}`,
         `${Number(routeCounts.validatedNormalOptionRoutes || 0)} ${t("dialogTreeValidatedRoutes")}`,
         `${Number(routeCounts.rejectedNormalOptionRoutes || 0)} ${t("dialogTreeRejectedRoutes")}`,
+        `${Number(finishEndpointCounts.validatedFinishEndpoints || 0)} ${t("dialogTreeValidatedFinishEndpoints")}`,
+        `${Number(finishEndpointCounts.rejectedFinishEndpoints || 0)} ${t("dialogTreeRejectedFinishEndpoints")}`,
       ];
       const routeNodes = (routeRecovery.nodes || []).filter((routeNode) =>
         routeNode.normalOptionCount !== routeNode.outgoingConnectionCount
@@ -6303,6 +6347,14 @@
         }).join("");
         return `<article class="mp-action"><small><code>${esc(routeNode.nodeId || "?")}</code> · ${Number(routeNode.normalOptionCount || 0)} ${esc(t("dialogTreeNormalOptions"))} / ${Number(routeNode.outgoingConnectionCount || 0)} ${esc(t("dialogTreeConnections"))} · ${esc(t("dialogTreeIncomingConnections"))} ${Number(routeNode.incomingConnectionCount || 0)} · ${esc(t("dialogTreeRoutingClass"))} <code>${esc(routeNode.routingClass || "unclassified")}</code></small><ul>${routes}</ul></article>`;
       }).join("")}</details>` : "";
+      const finishEndpoints = finishEndpointRecovery.endpoints || [];
+      const finishEndpointTopology = finishEndpoints.length ? `<details class="mp-dialog-tree-route-topology"><summary><b>${esc(t("dialogFinishEndpointDependencies"))}</b> · ${Number(finishEndpointCounts.validatedFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogTreeValidatedFinishEndpoints"))} / ${Number(finishEndpointCounts.rejectedFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogTreeRejectedFinishEndpoints"))}</summary><small>${esc(t("dialogFinishEndpointDependencyHint"))}</small><ul>${finishEndpoints.map((endpoint) => {
+        const finishValue = endpoint.finishId == null ? "?" : endpoint.finishId;
+        const path = (endpoint.nodePath || []).join(" → ");
+        const predecessors = (endpoint.predecessorNodeTypes || []).join(" + ");
+        const failure = endpoint.status === "validated" ? "" : ` · <strong>${esc(endpoint.status || "rejected")}</strong> · <code>${esc(endpoint.failureClass || "unclassified_finish_endpoint_failure")}</code> · ${esc(endpoint.issue?.gate || "validation_failed")}`;
+        return `<li><code>${esc(endpoint.nodeId || `#${endpoint.nodeOrdinal ?? "?"}`)}</code> · ${esc(t("finish"))} <code>${esc(finishValue)}</code> (${esc(endpoint.finishIdSource || "?")})${path ? ` · ${esc(t("dialogFinishPrimePath"))} <code>${esc(path)}</code>` : ""}${predecessors ? ` · ${esc(t("predecessor"))} <code>${esc(predecessors)}</code>` : ""}${failure}</li>`;
+      }).join("")}</ul></details>` : "";
       const observers = (row.missionObservers || []).map((observer) => {
         const relation = observer.relation === "failed_condition"
           ? t("dialogTreeFailureObserver")
@@ -6320,6 +6372,7 @@
         <small>SHA-256 <code>${esc(row.sourceSha256 || "")}</code></small>
         ${routeCounts.runtimeDefaultConnectionIndexes ? `<small>${Number(routeCounts.runtimeDefaultConnectionIndexes).toLocaleString()} ${esc(t("dialogTreeDefaultIndexes"))}</small>` : ""}
         ${routeTopology}
+        ${finishEndpointTopology}
         <small>${esc(t("dialogTreeNoOrder"))}</small>
       </article>`;
     }).join("");
