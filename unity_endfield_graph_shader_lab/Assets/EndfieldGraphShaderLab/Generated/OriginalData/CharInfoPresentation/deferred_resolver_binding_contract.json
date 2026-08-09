@@ -3,6 +3,7 @@
   "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
   "outcome": "The exact original Vulkan fragment for the current installed Default Lit Full Lighting resolver candidate is exported and decompiled. Five named constant-buffer bindings and the core GBuffer/depth/screen-shadow/wetness/SSR/AO texture roles plus the binning byte-address buffer are now closed. Binding 32 is role-identified as the 48-byte _LightBinningConstants buffer, its exact native producer field layout and upload are source-closed, and a default-off Unity publisher is D3D11/D3D12 GPU-verified for source-closed isolated Overview light counts. Offline IL2CPP/xref recovery additionally closes LightCullResult as pointer+count, its unique HGCullingSystem.CullLights producer, both direct HGCamera.DoECSCulling call sites, their exact 256-candidate cap, and the first SetupState consumer. The target-frame native pointer contents/count and therefore final retail lightCount remain capture-only. Binding 34 is source-closed as the 11,440-byte ShadowData layout. Binding 37 now has its exact 32-entry/2,560-byte native initialization and upload closed; a default-off zero-cookie publisher is D3D11/D3D12 GPU-verified for the source-closed isolated Wulfa/Zhuangfy Overview lists, while non-empty retail atlas values remain capture-only. Binding 38 is source-closed as the exact 3,568-byte HDPunctualLightCharacterShadowData layout by a matching original ScreenSpaceShadowResolve sidecar; its native manager, per-frame reset, push-pass packing, selected .y-only consumer, active D16 atlas and RGBA8 screen-resolve resource lifecycle, and exact pre-bind capture boundary are now closed. The deferred binding is the resolved _HDPLSScreenSpaceShadowMask, while _HDPLSTex is the raw atlas input. The hash-pinned installed Persistent IFix table has 30 Gameplay.Beyond targets and replaces neither HDPLS wrapper-gated method, proving the recovered non-IFix branches are the current on-disk route; future/network patches remain a version boundary. An inactive frame clears all 56 channel selectors and binds white to both globals, preventing stale-frame reuse, but persistent/frame-derived fields and active pixels prevent claiming a byte-exact full fixture. All four debug-anonymous constant-buffer roles are therefore closed. Binary sampling behavior plus hash/offset-pinned installed shader identifiers close all 25 sampled texture roles. Exact installed CharInfo VolumeProfiles and HGEnvironmentPhase now source-close the scene's disabled wetness, volumetric-fog, cloud-shadow, ASM, and directional-shadow controls while proving that reflection remains live. All three serialized CharInfo BC6H Cubemaps are recovered exactly. The installed LightBinningXYCS and LightBinningZCS assets, all eight D3D11/Vulkan kernel programs, exact BinningData ABI, shared-buffer offsets, and XY/Z dispatch formulas are binary-source-closed. A default-off raw ByteAddressBuffer bridge composes the exact recovered light words with the source-closed zero-local-reflection tail and reads the full canonical _BinningBuffer back bit-exactly on D3D11 and D3D12. The installed ReflectionProbeBinningCS asset, exact one-Cubemap slice-0 host contract, 576x576x32 RGBAHalf oct cache, and 4,160-byte ReflectionProbeGlobalData producer are also binary-source-closed. The compatibility pipeline now co-publishes these reflection resources beside the preserved canonical buffer in the same camera command stream only when the exact T_hdri_env_char_01 asset and both readiness gates succeed; D3D11/D3D12 probes close the combined transport. The native VisibilitySHConstData b33 producer is now closed for all 128 bytes: it zero-fills the full source struct, overwrites fixed rows 0..2 and frame rows 3..4, then copies untouched zero rows 5..7. A default-off publisher reads all 32 words back bit-exactly on D3D11/D3D12 and joins the same fail-closed frame gate. Retail target-frame light survivors and pass-0 activation remain open. The retail deferred and volumetric binders close both selected disabled texture paths: invalid wetness is Unity's white Texture2D, while disabled volumetric fog publishes the game's exact 1x1x1 black ASTC_4x4 Texture3D. The retail capsule-shadow pass additionally closes the VisibilitySH output descriptor as bilinear/clamp R16G16B16A16_SFloat and its empty/disabled publication as Texture2D.blackTexture. Both exact LUT payloads, the native 128x48-byte output ABI, exact native posed transform-to-record packing, Wulfa/Zhuang's ten authored candidates, and the selected additive producer pass are also source-closed. Complete pass-0 publication, settled posed capsule records and view-cull survivors, and remaining live per-frame pixels are not yet closed.",
+  "latest_recovery": "The default-off source-backed Wulfa capsule pass now publishes its nonzero half-resolution output as canonical _VisibilitySHRT only when binning, reflection, and b33 are ready in the same frame. D3D11/D3D12 produce identical 320x360 RGBAHalf bytes; an upstream-off D3D12 run keeps canonical publication fail-closed. The pass-0 consumer and retail settled-frame equivalence remain open.",
   "source_filter": {
     "path": "scratch/reverse_engineering/sphereoutside_deferred_variant/deferred_lighting_filter.json",
     "sha256": "37e0a45e2aad998ad85a2f6a213139a94b1f6e5cff83ea4bdc3bc6f86508d4ee",
@@ -164,7 +165,7 @@
         "source_cubemap_asset_path": "Assets/EndfieldGraphShaderLab/Generated/Environment/T_hdri_env_char_01.asset",
         "source_payload_sha256": "948f8d8dfb77e1b29171c4b04caaa679202e06624ab7be2203719e11ca6ee7b7",
         "runtime_pipeline_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
-        "runtime_pipeline_sha256": "119f5ffadc241b3e5756a7d3dbbf52b2acf2db1d07431b8f781768a9ef627e28",
+        "runtime_pipeline_sha256": "a42dd830348d4e21f9d0f17f34ab37887b20dea9fa8741e9053e63e46be44cb3",
         "reflection_owner_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredReflectionProbeFallback.cs",
         "reflection_owner_sha256": "be0946e41f49e3c2862e03ea4a75763001893ca20ff3c75d78ae950f0ac745d1",
         "lighting_volume_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldHGRPCharacterLightingVolume.cs",
@@ -363,8 +364,9 @@
     }
   },
   "visibility_sh_resource_binding": {
-    "status": "binary-source-closed for the exact VisibilitySH target, black empty/disabled fallback, both shipped LUT payloads/descriptors, native 128x48-byte output ABI, exact transform-to-record packing, selected pass-2 producer, and all 128 b33 bytes; pass-0 publication remains default-off",
-    "published_by_lab": false,
+    "status": "binary-source-closed for the exact VisibilitySH target, black empty/disabled fallback, both shipped LUT payloads/descriptors, native 128x48-byte output ABI, exact transform-to-record packing, selected pass-2 producer, all 128 b33 bytes, and default-off same-frame canonical publication; the pass-0 consumer remains disabled",
+    "published_by_lab": true,
+    "published_by_default": false,
     "constants_transport": {
       "status": "all 128 native producer bytes source-closed: fixed rows 0..2, frame rows 3..4, and zero-filled rows 5..7; D3D11/D3D12 global binding bit-exact",
       "published_by_default": false,
@@ -382,7 +384,7 @@
       "owner_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredVisibilitySHConstants.cs",
       "owner_sha256": "5ef73bd512b9e4a7ad51af7b15565bb45962da8123280d44caca5754b987e597",
       "pipeline_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
-      "pipeline_sha256": "119f5ffadc241b3e5756a7d3dbbf52b2acf2db1d07431b8f781768a9ef627e28",
+      "pipeline_sha256": "a42dd830348d4e21f9d0f17f34ab37887b20dea9fa8741e9053e63e46be44cb3",
       "probe_path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredVisibilitySHConstantsProbe.compute",
       "probe_sha256": "dbc1f765472cf60a4943cb921ef46c040d3682bad28b30604a60626e37ca1861",
       "verifier_path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredVisibilitySHConstantsBatchVerifier.cs",
@@ -405,9 +407,78 @@
       },
       "actual_scene_oracle": {
         "log_path": "../scratch/charinfo_ready_subset_diagnostic_20260714/wulfa_partial_non_original.log",
-        "log_sha256": "d3a1ad873d599ba6a07902766f3f7e0a17bec45c68b02c13e1ce770beeb0d2e5",
+        "log_sha256": "e5e1630525e08cb533b89cbd43f10afe229c584781d2c35f033ec4c8f59476e8",
         "png_path": "../scratch/charinfo_ready_subset_diagnostic_20260714/wulfa_partial_non_original.png",
         "png_sha256": "59902c424de630a496364d57e404a5a72bcbcc42712bf7ef6935900d7500cac3"
+      }
+    },
+    "canonical_frame_transport": {
+      "status": "default-off source-backed Wulfa frame publishes the nonzero half-resolution RGBAHalf producer output as canonical _VisibilitySHRT only while exact binning, reflection, and b33 prerequisites are ready; pass-0 consumption remains disabled",
+      "published_by_default": false,
+      "environment_selector": "ENDFIELD_RECOVERED_VISIBILITY_SH=1",
+      "upstream_selector": "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER=1",
+      "canonical_property": "_VisibilitySHRT",
+      "ready_property": "_EndfieldRecoveredVisibilitySHReady",
+      "pass0_consumer_enabled": false,
+      "required_same_frame_resources": [
+        "_BinningBuffer",
+        "_ReflectionProbeOctTextureArray",
+        "ReflectionProbeGlobalData",
+        "VisibilitySHConstData"
+      ],
+      "producer_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredVisibilitySHProducer.cs",
+      "producer_sha256": "c4d477dc95f02a7e09c5fdf09d06df1caed4eb448dafa02580dad36f4483a31a",
+      "pipeline_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
+      "pipeline_sha256": "a42dd830348d4e21f9d0f17f34ab37887b20dea9fa8741e9053e63e46be44cb3",
+      "shader_path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredVisibilitySH.shader",
+      "shader_sha256": "5df7633dd265cef8b80257ec655f8e3211e78c45a2ac70e6024a752dd486fd45",
+      "payload_path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredVisibilitySH/visibility_sh_runtime.json",
+      "payload_sha256": "4665b740470dd19c514e37041accc951621370869d48a8a3d21d5d072ae2ae53",
+      "native_audit_path": "scratch/character_recovery/visibility_capsule_runtime/visibility_capsule_runtime.json",
+      "native_audit_sha256": "2a68681336b4a83f350b19e7385aefe069021ae0d1303967677dfe34df9574ab",
+      "validator_path": "tools/verify_visibility_sh_frame_log.py",
+      "validator_sha256": "4a41bca62a0d6ba0e1cf756807d009098228f0679ba4ec28039bf6abf9106c89",
+      "validator_test_path": "tools/test_verify_visibility_sh_frame_log.py",
+      "validator_test_sha256": "a66d09fec2aa659e205342fdcabb9fce2df4e202335268480e01ee0dfb6054a9",
+      "wrapper_path": "verify_recovered_visibility_sh_frame.bat",
+      "wrapper_sha256": "5375e7a0c7e71efd670ed52756b628a793566ec9f8528c7448c2dd8593034ca6",
+      "fixture": {
+        "actor": "Wulfa",
+        "authored_capsules": 10,
+        "survivor_order": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+        "capsule_bytes_sha256": "687ab01a054e6ef9d07e982de605489de181da089e221e14b450b108161bd5c1",
+        "readback_width": 320,
+        "readback_height": 360,
+        "readback_byte_count": 921600,
+        "nonzero_pixels": 20006,
+        "rgba_half_sha256": "ceaa3f173c90ffbdffa6062f9b046863ebd16fb554101856b8e0126a9d0cdb52"
+      },
+      "gpu_reports": {
+        "d3d11": {
+          "path": "scratch/character_recovery/visibility_sh_frame/gpu_validation_d3d11.json",
+          "sha256": "c7b87c9273797fb69cf7aa2a824cafad164ab8c7640a59d86c274eb3b9155d5e",
+          "log_path": "scratch/character_recovery/visibility_sh_frame/unity_validation_d3d11.log",
+          "log_sha256": "b1cf0b15ebce6440a0edefeaa5dfac55d1c64d562118ea82d1d79b9d1dff0716",
+          "beauty_path": "scratch/character_recovery/visibility_sh_frame/wulfa_beauty_d3d11.png",
+          "beauty_sha256": "1753e0bd900dfc068e2604632122136a4abf047af0ef5ba9607f17abc8a27ec7"
+        },
+        "d3d12": {
+          "path": "scratch/character_recovery/visibility_sh_frame/gpu_validation_d3d12.json",
+          "sha256": "91fbf8b411d7cff9af641e6cca66a0af9623f613005bf09ad9023f43a1037311",
+          "log_path": "scratch/character_recovery/visibility_sh_frame/unity_validation_d3d12.log",
+          "log_sha256": "36c1d7adfce426fddb045484b699d55514c5c0a3755eb52e03c44684289d5cb8",
+          "beauty_path": "scratch/character_recovery/visibility_sh_frame/wulfa_beauty_d3d12.png",
+          "beauty_sha256": "59902c424de630a496364d57e404a5a72bcbcc42712bf7ef6935900d7500cac3"
+        }
+      },
+      "fail_closed_report": {
+        "path": "scratch/character_recovery/visibility_sh_frame/gpu_fail_closed_d3d12.json",
+        "sha256": "cbe14683bb6c1800d33cba3d26d48f01e9cb0256608d239cf26be4553a7838c0",
+        "log_path": "scratch/character_recovery/visibility_sh_frame/unity_fail_closed_d3d12.log",
+        "log_sha256": "e2b094981a77e28a4338e80a140656bd85cb59d23bb4c78237a22a1f4402e3ea",
+        "gate": "canonical binning selector absent",
+        "diagnostic_output_nonzero": true,
+        "canonical_publication": "fail-closed"
       }
     },
     "audit_path": "scratch/character_recovery/charinfo_pass0_resources/deferred_resource_layouts.json",

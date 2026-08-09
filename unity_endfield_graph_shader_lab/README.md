@@ -2188,7 +2188,13 @@ The native 128-byte `VisibilitySHConstData` b33 layout is also fully closed.
 The producer zero-fills all 128 source bytes, overwrites fixed rows 0..2 and
 camera-derived rows 3..4, then copies untouched zero rows 5..7. All 32 words
 join that same default-off frame gate and read back bit-exactly on D3D11/D3D12;
-the selected deferred consumer itself reads bytes 32..63.
+the selected deferred consumer itself reads bytes 32..63. The recovered Wulfa
+capsule pass now co-publishes its half-resolution result as canonical
+`_VisibilitySHRT` only while this full frame gate is ready. D3D11/D3D12 read
+the same 320x360 RGBAHalf bytes (20,006 nonzero pixels), and an upstream-off
+D3D12 run proves canonical publication fails closed while the diagnostic output
+remains available. This is source-backed current-pose output, not a retail
+settled-frame capture, and the pass-0 consumer remains disabled.
 The original pass-0 consumer remains deliberately disabled. The remaining streamed
 `m_defaultIV` voxel contents/per-frame parameters, light/shadow resources,
 settled VisibilitySH `PassInput.enabled`, exact posed record values and
@@ -2213,6 +2219,8 @@ python tools\verify_charinfo_outside_lit_recovery.py
 verify_recovered_canonical_binning_buffer.bat --all
 verify_recovered_canonical_reflection_frame.bat --all
 verify_recovered_visibility_sh_constants.bat --all
+verify_recovered_visibility_sh_frame.bat --all
+verify_recovered_visibility_sh_frame.bat --fail-closed-d3d12
 verify_sphereoutside_hgbuffer_diagnostic.bat
 verify_charinfo_shadow_receiver_recovery.bat
 ```

@@ -58,9 +58,12 @@ NPC archetypes are imported as labeled source kits.
   fixed rows and frame dimensions/scales are now source-closed. The producer's
   pinned 128-byte zero-fill proves untouched rows 5..7 are exact zero, so all
   32 words—not only the selected consumer's bytes 32..63—read back bit-exactly
-  on D3D11/D3D12 under that same frame gate. The settled retail VisibilitySH
-  texture, live posed/view-culled capsules, target-frame light survivors, and
-  pass-0 activation remain open.
+  on D3D11/D3D12 under that same frame gate. The source-backed Wulfa capsule
+  pass now publishes its canonical `_VisibilitySHRT` only when that gate is
+  ready: D3D11/D3D12 produce the same 320x360 RGBAHalf hash with 20,006
+  nonzero pixels, while an upstream-off run keeps canonical publication closed.
+  A retail settled-frame capture, exact retail posed/view-culled records,
+  target-frame light survivors, and the pass-0 consumer remain open.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData` layout. The native
   `HGShadowConstantBufferUtils` transport allocates the full buffer, copies one
   of four exact same-offset sections (CSM 1,024; Punctual 6,144; Character
