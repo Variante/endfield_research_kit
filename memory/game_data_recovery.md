@@ -188,6 +188,21 @@ init, entity-init, audio-state-transition, and music/lifecycle Event contexts;
 state masks are high-level engine lifecycle conditions, not Wwise SetState
 operations.
 
+Interactive physics audio is now an exact authored layer rather than a string
+scan. Current `PhysicsAudioComponentData` is BaseComponentData union tag
+`0x00be`, member count 1, containing one complete 21-entry dynamic-property
+map. The sole current definition, `int_kickable_ball`, supplies six non-empty
+movement/hit/rotation Event requests plus the
+`rtpc_int_kickable_ball_speed` velocity-squared RTPC; its other two RTPC fields
+and general rotation-loop Event are authored empty strings. `InteractiveTable`
+proves that `int_kickable_ball` and alias `int_tumble_weed` consume the same
+definition, so Audio keeps one definition with two consumers. Source SHA-256,
+component/property offsets, authored keys (including the two shipped spelling
+mismatches), and runtime-field mappings remain visible. This proves serialized
+configuration and native `ApplyProperties` assignment shape, not component
+instantiation, physics thresholds being crossed, RTPC updates, Event posting,
+or Wwise branch playback.
+
 Projectile audio preserves seven exact uint32 Wwise Event slots per decoded
 projectile: launch, loop, reach, hit, block, finish, and proximity sizzle. The
 current 265 nonzero field occurrences cover 123 Events; 96 previously
