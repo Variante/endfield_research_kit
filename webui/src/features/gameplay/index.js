@@ -27,8 +27,6 @@
     item: "badge-mail",
   };
   const TEXTS = window.WebUI.gameplayTexts;
-  const GAMEPLAY_SOUND_CANDIDATES = new Map();
-
   const {
     $,
     applyTemplate,
@@ -1177,11 +1175,11 @@
 
   function gameplaySoundCountText(events) {
     const rows = events || [];
-    const candidates = rows.reduce((total, event) => {
+    const possibleFiles = rows.reduce((total, event) => {
       const resolved = (event.audio || []).filter((audio) => audio?.src).length;
-      return total + (resolved || Number(event.playableCandidates || 0));
+      return total + (resolved || Number(event.possibleMediaCount || event.playableCandidates || 0));
     }, 0);
-    return `${rows.length} ${text("soundEvents")} · ${candidates} ${text("projectilePlayableCandidates")}`;
+    return `${rows.length} ${text("soundEvents")} · ${possibleFiles} ${text("soundPossibleFiles")}`;
   }
 
   function gameplayAudioEventHref(eventId) {
@@ -1236,17 +1234,51 @@
     return `${text("soundActionShared")}: ${labels.slice(0, 2).join(" / ")}${labels.length > 2 ? ` +${labels.length - 2}` : ""}`;
   }
 
-  function renderGameplaySoundCandidate(event, audio) {
+  function gameplaySoundRelationLabels(relations) {
+    const labels = {
+      randomAlternative: "soundRelationRandom",
+      sequenceItem: "soundRelationSequence",
+      switchCandidate: "soundRelationSwitch",
+      layerChild: "soundRelationLayer",
+      groupChild: "soundRelationGroup",
+      directSound: "soundRelationDirect",
+    };
+    return [...new Set((relations || []).map((value) => labels[value] ? text(labels[value]) : readableIntegrationId(value)))];
+  }
+
+  function gameplaySoundMediaEvidence(audio) {
+    const rows = audio?.wwiseMediaEvidence || [];
+    const roots = [...new Set(rows.flatMap((row) => row?.rootActionIds || []).filter((value) => Number.isInteger(value)))];
+    const relations = gameplaySoundRelationLabels(rows.flatMap((row) => row?.relationTypes || []));
+    const soundObjects = rows.reduce((total, row) => total + Number(row?.soundObjectCount || 0), 0);
+    return { roots, relations, soundObjects };
+  }
+
+  function renderGameplaySoundEvidence(event, audio) {
+    const roots = Number(event?.playRootCount || 0) || new Set(audio.flatMap((row) => gameplaySoundMediaEvidence(row).roots)).size;
+    const relations = gameplaySoundRelationLabels(event?.mediaRelationTypes || audio.flatMap((row) => (row?.wwiseMediaEvidence || []).flatMap((evidence) => evidence?.relationTypes || [])));
+    const isPartial = event?.traversalStatus === "partial";
+    const status = isPartial ? text("soundTraversalPartial") : event?.traversalStatus === "complete" ? text("soundTraversalTyped") : text("soundTraversalDirect");
+    const branch = roots ? `${roots} ${text("soundPlayBranches")}` : text("soundDirectMedia");
+    return `<div class="gameplay-sfx-evidence"><span>${escapeHtml(branch)}</span>${relations.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}<span class="${isPartial ? "is-partial" : ""}">${escapeHtml(status)}</span></div>`;
+  }
+
+  function renderGameplaySoundCandidates(event, audio) {
     if (!audio.length) return "";
-    const eventKey = String(event?.id || "").toLowerCase();
-    GAMEPLAY_SOUND_CANDIDATES.set(eventKey, audio);
-    const initialLabel = STATE.showDebug && audio[0].mediaId
-      ? `1 / ${audio.length} · ${audio[0].mediaId}`
-      : `1 / ${audio.length}`;
-    const picker = audio.length > 1
-      ? `<div class="gameplay-sfx-candidate-picker"><span>${escapeHtml(text("soundCandidateSelect"))}</span><button type="button" data-gameplay-sfx-nav="-1" aria-label="${escapeHtml(text("soundCandidatePrevious"))}">‹</button><output data-gameplay-sfx-position>${escapeHtml(initialLabel)}</output><button type="button" data-gameplay-sfx-nav="1" aria-label="${escapeHtml(text("soundCandidateNext"))}">›</button></div>`
-      : "";
-    return `<div class="gameplay-projectile-audio-candidate" data-gameplay-sfx-player data-gameplay-sfx-event="${escapeHtml(eventKey)}" data-gameplay-sfx-index="0">${picker}<audio controls preload="none" src="${escapeHtml(audio[0].src)}"></audio></div>`;
+    const cards = audio.map((candidate, index) => {
+      const evidence = gameplaySoundMediaEvidence(candidate);
+      const visibleMeta = [
+        `${text("soundPossibleFile")} ${index + 1}`,
+        evidence.roots.length ? `${evidence.roots.length} ${text("soundPlayBranches")}` : "",
+        ...evidence.relations,
+        Number(candidate.contentEquivalentCount || 0) > 1 ? `${text("soundEquivalentContent")} ×${candidate.contentEquivalentCount}` : "",
+      ].filter(Boolean).join(" · ");
+      const debugMeta = STATE.showDebug
+        ? `<code>${escapeHtml([candidate.mediaId ? `media ${candidate.mediaId}` : "", evidence.soundObjects ? `${evidence.soundObjects} Sound objects` : ""].filter(Boolean).join(" · "))}</code>`
+        : "";
+      return `<div class="gameplay-projectile-audio-candidate gameplay-sfx-possible-file"><audio controls preload="none" src="${escapeHtml(candidate.src)}"></audio><small>${escapeHtml(visibleMeta)}</small>${debugMeta}</div>`;
+    }).join("");
+    return `<template data-gameplay-sfx-list><div class="gameplay-sfx-possible-files">${cards}</div></template><p class="gameplay-sfx-list-placeholder">${escapeHtml(text("soundOpenToList"))}</p>`;
   }
 
   function renderGameplaySoundEvents(events) {
@@ -1257,8 +1289,10 @@
       const clips = event.sourceAnimationClips || [];
       const trigger = (event.evidence || []).map((row) => row?.triggerKey).find(Boolean) || "";
       const technical = STATE.showDebug ? `<details class="gameplay-sfx-technical"><summary>${escapeHtml(text("projectileTechnical"))}</summary><code class="gameplay-sfx-event-id">${escapeHtml(event.id || "")}</code>${evidenceIds.length ? `<code>${escapeHtml(evidenceIds.join(" / "))}</code>` : ""}${clips.length ? `<code>${escapeHtml(clips.join(" / "))}</code>` : ""}${trigger ? `<code>${escapeHtml(trigger)}</code>` : ""}<a data-gameplay-audio-event href="${escapeHtml(gameplayAudioEventHref(event.id))}">${escapeHtml(text("openInAudio"))}</a></details>` : "";
-      const candidateCount = audio.length || Number(event.playableCandidates || 0);
-      return `<details class="gameplay-projectile-audio-phase"><summary><strong>${escapeHtml(gameplaySoundEventName(event.id) || text("soundEvent"))}</strong><span>${escapeHtml(`${candidateCount} ${text("projectilePlayableCandidates")}`)}</span></summary>${technical}${renderGameplaySoundCandidate(event, audio)}</details>`;
+      const possibleCount = audio.length || Number(event.possibleMediaCount || event.playableCandidates || 0);
+      const roots = Number(event.playRootCount || 0);
+      const branch = roots ? `${roots} ${text("soundPlayBranches")}` : text("soundDirectMedia");
+      return `<details class="gameplay-projectile-audio-phase"><summary><strong>${escapeHtml(gameplaySoundEventName(event.id) || text("soundEvent"))}</strong><span>${escapeHtml(`${branch} · ${possibleCount} ${text("soundPossibleFiles")}`)}</span></summary>${renderGameplaySoundEvidence(event, audio)}${technical}${renderGameplaySoundCandidates(event, audio)}</details>`;
     }).join("");
   }
 
@@ -1317,8 +1351,8 @@
   }
 
   function renderGameplaySoundGroup(events, options = {}) {
-    const playableEvents = gameplayResolvedSoundEvents(events).filter((event) => (event.audio || []).some((candidate) => candidate?.src) || Number(event.playableCandidates || 0) > 0);
-    const playable = playableEvents.reduce((total, event) => total + ((event.audio || []).filter((candidate) => candidate?.src).length || Number(event.playableCandidates || 0)), 0);
+    const playableEvents = gameplayResolvedSoundEvents(events).filter((event) => (event.audio || []).some((candidate) => candidate?.src) || Number(event.possibleMediaCount || event.playableCandidates || 0) > 0);
+    const playable = playableEvents.reduce((total, event) => total + ((event.audio || []).filter((candidate) => candidate?.src).length || Number(event.possibleMediaCount || event.playableCandidates || 0)), 0);
     if (!playable) return "";
     const confidence = options.confidence ? integrationConfidence(options.confidence) : "";
     return `<details class="gameplay-related-sfx"><summary><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(gameplaySoundCountText(playableEvents))}</span>${confidence}</summary><p>${escapeHtml(options.note || text("soundRuntimeNote"))}</p>${renderGameplaySoundActionGroups(playableEvents)}</details>`;
@@ -1356,11 +1390,16 @@
         sourceSkillIds: [...new Set([...(previous.sourceSkillIds || []), ...(event.sourceSkillIds || [])])],
         sourceAnimationClips: [...new Set([...(previous.sourceAnimationClips || []), ...(event.sourceAnimationClips || [])])],
         evidence: [...(previous.evidence || []), ...(event.evidence || [])],
+        playRootCount: Math.max(Number(previous.playRootCount || 0), Number(event.playRootCount || 0)),
+        playRootActionIds: [...new Set([...(previous.playRootActionIds || []), ...(event.playRootActionIds || [])])],
+        mediaRelationTypes: [...new Set([...(previous.mediaRelationTypes || []), ...(event.mediaRelationTypes || [])])],
+        traversalStatus: previous.traversalStatus === "partial" || event.traversalStatus === "partial" ? "partial" : (event.traversalStatus || previous.traversalStatus),
+        possibleMediaCount: Math.max(Number(previous.possibleMediaCount || 0), Number(event.possibleMediaCount || 0)),
         playableCandidates: Math.max(Number(previous.playableCandidates || 0), Number(event.playableCandidates || 0)),
       });
     }
     const playableEvents = gameplayResolvedSoundEvents([...merged.values()])
-      .filter((event) => (event.audio || []).some((candidate) => candidate?.src) || Number(event.playableCandidates || 0) > 0);
+      .filter((event) => (event.audio || []).some((candidate) => candidate?.src) || Number(event.possibleMediaCount || event.playableCandidates || 0) > 0);
     if (!playableEvents.length) return "";
     const confidence = integrationConfidence(
       sounds.ownershipConfidence === "inferred" || sounds.animationOwnershipConfidence === "inferred" ? "inferred" : "direct",
@@ -2716,27 +2755,14 @@
         audioTab.click();
       });
     });
-    if (!window.WebUI.enhanceMediaPlayers) return;
-    root.querySelectorAll("[data-gameplay-sfx-nav]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const shell = button.closest("[data-gameplay-sfx-player]");
-        const player = shell?.querySelector("audio");
-        const candidates = GAMEPLAY_SOUND_CANDIDATES.get(String(shell?.dataset.gameplaySfxEvent || "")) || [];
-        if (!player || !candidates.length) return;
-        const delta = Number(button.dataset.gameplaySfxNav || 0);
-        const next = (Number(shell.dataset.gameplaySfxIndex || 0) + delta + candidates.length) % candidates.length;
-        const candidate = candidates[next];
-        if (!candidate?.src) return;
-        shell.dataset.gameplaySfxIndex = String(next);
-        player.pause();
-        player.src = candidate.src;
-        player.load();
-        const position = shell.querySelector("[data-gameplay-sfx-position]");
-        if (position) position.textContent = STATE.showDebug && candidate.mediaId
-          ? `${next + 1} / ${candidates.length} · ${candidate.mediaId}`
-          : `${next + 1} / ${candidates.length}`;
+    const materializeSoundLists = (container) => {
+      container.querySelectorAll("template[data-gameplay-sfx-list]").forEach((template) => {
+        if (template.parentElement?.closest("details") !== container) return;
+        const placeholder = template.nextElementSibling;
+        template.replaceWith(template.content.cloneNode(true));
+        if (placeholder?.classList.contains("gameplay-sfx-list-placeholder")) placeholder.remove();
       });
-    });
+    };
     const isRevealed = (media) => {
       for (let node = media.parentElement; node && node !== root; node = node.parentElement) {
         if (node.tagName === "DETAILS" && !node.open) return false;
@@ -2744,6 +2770,7 @@
       return true;
     };
     const enhanceVisible = () => {
+      if (!window.WebUI.enhanceMediaPlayers) return;
       root.querySelectorAll("audio:not([data-media-player]), video:not([data-media-player])").forEach((media) => {
         if (!isRevealed(media) || !media.parentElement) return;
         window.WebUI.enhanceMediaPlayers(media.parentElement);
@@ -2752,7 +2779,10 @@
     enhanceVisible();
     root.querySelectorAll("details").forEach((details) => {
       details.addEventListener("toggle", () => {
-        if (details.open) enhanceVisible();
+        if (details.open) {
+          materializeSoundLists(details);
+          enhanceVisible();
+        }
       });
     });
   }
