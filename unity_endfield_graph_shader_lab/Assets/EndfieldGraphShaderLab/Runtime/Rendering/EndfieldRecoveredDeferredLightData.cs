@@ -133,7 +133,8 @@ namespace EndfieldGraphShaderLab
                     0,
                     EndfieldRecoveredDeferredLightDataContract.SizeBytes);
                 commandBuffer.SetGlobalFloat(ReadyId, 1.0f);
-                commandBuffer.SetGlobalFloat(Pass0SubsetReadyId, 1.0f);
+                // The combined subset gate is raised only after the matching
+                // b34 ShadowData/atlas publication succeeds later this frame.
                 return true;
             }
             catch (Exception exception)
@@ -221,11 +222,10 @@ namespace EndfieldGraphShaderLab
             punctualLightCount = 0;
             failure = null;
             if (!rig.sourceBackedClusteredNprLightLoop ||
-                !rig.sourceBackedLightBinningMembership ||
-                !rig.sourceBackedIsolatedPunctualSoftShadowProducer)
+                !rig.sourceBackedLightBinningMembership)
             {
                 failure =
-                    "clustered NPR, canonical binning, and isolated punctual-shadow semantics must all be enabled";
+                    "clustered NPR and canonical binning must both be enabled";
                 return false;
             }
             if (rig.actorRoot == null)

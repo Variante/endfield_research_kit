@@ -85,38 +85,21 @@ NPC archetypes are imported as labeled source kits.
   `EndfieldCB4` bridge on both APIs; unknown words remain zero, same-frame
   activation is fail-closed, beauty is unchanged, and pass 0 remains disabled.
   General-scene punctual payloads are still unrecovered.
-- Deferred binding 34 is the exact 11,440-byte `ShadowData` layout. The native
-  `HGShadowConstantBufferUtils` transport allocates the full buffer, copies one
-  of four exact same-offset sections (CSM 1,024; Punctual 6,144; Character
-  2,048; ASM 2,224 bytes), then binds the full size. The selected resolver
-  reads only Punctual bytes 1,024..6,415. Its enabled frame writer serializes
-  all 56 matrix/params/params2 rows plus texel size before callback `b__49_2`
-  publishes section enum 1 and binds the atlas. The disabled callback binds
-  only a default texture and never publishes b34, so no neutral fixture is
-  proven. The matching native `Punctual Shadowmap` RTHandle is now closed too:
-  `4T x 4T` with no dynamic casters, otherwise
-  `(ceil(N/4)+4)T x 4T`; one Depth16 Tex2D slice, Point/Clamp, shadow-map
-  sampling, and no mip/UAV/MSAA. The enabled path imports and binds this
-  RTHandle; the disabled path uses the exact
-  `HGRenderGraphDefaultResources.defaultShadowTexture`. Constructor defaults
-  are now closed as enabled, `T=512`, environment/movable caps `6/2`, cull
-  distance `200`, and screen minimum `0.001`; the manager derives `N=8` and
-  `3072x2048` before runtime overrides. The exact request resolves to
-  `D16_UNorm` on pinned Unity 2022.3.62f3 D3D12; raw/comparison sampling,
-  reversed-Z endpoints, and exact D16 quantization pass. Cache population is
-  now binary-closed too: static rows 0..39 are nested 12/12/16 slots at
-  `T`/`T/2`/`T/4`; dynamic caster `i` uses row `40+i` and tile
-  `(4+floor(i/4), i mod 4)*T`; point/spot indices are 0..5/0. Unchanged static
-  depth is reused, only one prioritized static allocation/migration redraw can
-  run per frame, same-level pressure evicts the oldest visit, and dynamic rows
-  redraw every frame. The installed unpatched row math is now closed: exact
-  point-face bases/guarded projection or spot inverse-view feed reversed-Z
-  `B*(P*V)`; PCF_3x3 stores zero depth bias, 1.5-scaled normal bias, base texel
-  size, and saturated distance-faded strength; Params2 is normalized atlas
-  `xyxy`, and texel size is `(1/W,1/H,W,H)`. Live IFix state, overridden target
-  `N/T`, caster/light inputs, target-client resource confirmation, atlas texels,
-  and settled b34 values still require one capture immediately before
-  `0x189b57155`.
+- Deferred binding 34 is the exact 11,440-byte `ShadowData`; the selected
+  resolver reads only its Punctual rows `c64..c400` (bytes 1,024..6,415).
+  Native allocation, four-section copy/bind transport, atlas sizing/format,
+  cache scheduling, point/spot matrix math, PCF_3x3 bias, strength fade,
+  normalized rects, and texel size remain binary-source-closed. A default-off
+  same-frame publisher now closes the isolated CharInfo punctual subset:
+  Wulfa row 4 produces spot slot 40 and Zhuangfy row 4 produces point slots
+  40..45, each with the matching `6144x4096` D16 atlas. The full 715 vectors
+  and D3D11 `EndfieldCB5` 401-vector prefix read back bit-exactly on both APIs;
+  all unowned sections stay zero, missing prerequisites fail closed, and Wulfa
+  active/control beauty is identical. Every isolated light is `CharacterOnly`,
+  so the selected pass-0 consumer exits before its first b34 or atlas read;
+  pass 0 remains disabled. General-scene/static-cache rows, retail physical
+  resource identity and settled atlas pixels, runtime IFix/setting overrides,
+  and the non-punctual sections remain open.
 - Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
   initialization/upload and `cookieIndex >= 0` consumer guard closed. The
   source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off

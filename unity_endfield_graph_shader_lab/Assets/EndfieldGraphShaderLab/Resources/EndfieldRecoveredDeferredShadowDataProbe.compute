@@ -1,0 +1,46 @@
+// Reads the canonical b34 ShadowData and the selected D3D11 CB5 bridge.
+
+#pragma kernel ReadbackNamed
+#pragma kernel ReadbackBridge
+#pragma target 5.0
+
+cbuffer _ShadowData
+{
+    float4 _EndfieldRecoveredDeferredShadowDataVectors[715];
+};
+
+cbuffer EndfieldCB5
+{
+    float4 _EndfieldRecoveredDeferredShadowDataBridgeVectors[401];
+};
+
+float _EndfieldRecoveredDeferredShadowDataReady;
+RWStructuredBuffer<uint> _EndfieldRecoveredDeferredShadowDataReadback;
+
+void WriteVector(uint vectorIndex, float4 value)
+{
+    uint4 bits = asuint(value);
+    uint first = 1u + vectorIndex * 4u;
+    _EndfieldRecoveredDeferredShadowDataReadback[first + 0u] = bits.x;
+    _EndfieldRecoveredDeferredShadowDataReadback[first + 1u] = bits.y;
+    _EndfieldRecoveredDeferredShadowDataReadback[first + 2u] = bits.z;
+    _EndfieldRecoveredDeferredShadowDataReadback[first + 3u] = bits.w;
+}
+
+[numthreads(1, 1, 1)]
+void ReadbackNamed(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    _EndfieldRecoveredDeferredShadowDataReadback[0] =
+        asuint(_EndfieldRecoveredDeferredShadowDataReady);
+    for (uint vectorIndex = 0u; vectorIndex < 715u; ++vectorIndex)
+        WriteVector(vectorIndex, _EndfieldRecoveredDeferredShadowDataVectors[vectorIndex]);
+}
+
+[numthreads(1, 1, 1)]
+void ReadbackBridge(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    _EndfieldRecoveredDeferredShadowDataReadback[0] =
+        asuint(_EndfieldRecoveredDeferredShadowDataReady);
+    for (uint vectorIndex = 0u; vectorIndex < 401u; ++vectorIndex)
+        WriteVector(vectorIndex, _EndfieldRecoveredDeferredShadowDataBridgeVectors[vectorIndex]);
+}
