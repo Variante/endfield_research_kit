@@ -2152,6 +2152,111 @@ def verify_selected_resolver_binding_contract() -> None:
     assert "56-row ShadowData" in punctual_cache_audit[
         "captureBoundary"
     ]["open"]
+    assert "PCF_3x3" in shadow_native["row_production"]
+    assert "1.5*q" in shadow_native["row_production"]
+    assert "saturate" in shadow_native["strength_fade"]
+    assert "non-IFix-patched" in shadow_native["native_branch_boundary"]
+    for path_key, hash_key, text_file in [
+        ("row_audit_path", "row_audit_sha256", False),
+        ("row_auditor_path", "row_auditor_sha256", True),
+        ("row_disassembler_path", "row_disassembler_sha256", True),
+        ("row_disassembly_path", "row_disassembly_sha256", False),
+        ("row_metadata_path", "row_metadata_sha256", False),
+        ("row_native_map_path", "row_native_map_sha256", False),
+        ("row_cctor_metadata_path", "row_cctor_metadata_sha256", False),
+        ("row_cctor_native_map_path", "row_cctor_native_map_sha256", False),
+    ]:
+        verifier = require_text_hash if text_file else require_hash
+        verifier(
+            repo_path(shadow_native[path_key]),
+            shadow_native[hash_key],
+        )
+    punctual_row_audit = json.loads(
+        repo_path(shadow_native["row_audit_path"]).read_text(
+            encoding="utf-8"
+        )
+    )
+    assert punctual_row_audit["schema"] == (
+        "endfield.punctual-shadow-row-audit.v1"
+    )
+    assert punctual_row_audit["verdict"] == (
+        "UNPATCHED_ROW_PRODUCTION_CLOSED_TARGET_FRAME_VALUES_"
+        "CAPTURE_REQUIRED"
+    )
+    assert punctual_row_audit["publication_allowed"] is False
+    assert punctual_row_audit["rowAssignment"] == {
+        "static": "cache slot 0..39 writes the same ShadowData row",
+        "dynamic": "dynamic caster i writes row 40+i",
+        "finalSerialization": "all 56 rows are serialized every enabled frame",
+    }
+    assert punctual_row_audit["projection"] == {
+        "near": "n=max(light.shadowNearPlane, 0.0001)",
+        "far": "f=clamp(light.shadowFarPlane, n, 10000000*n)",
+        "spotHalfAngleRadians": (
+            "0.5*pi/180*clamp(spotAngle+guardAngle, 0, 179.9)"
+        ),
+        "pointHalfAngleRadians": (
+            "0.5*pi/180*clamp(90+2, 0, 179.9)"
+        ),
+        "matrix": (
+            "m00=m11=cot(halfAngle); m22=-(f+n)/(f-n); "
+            "m23=-2*f*n/(f-n); m32=-1; other entries zero"
+        ),
+        "pointGuardAngleDegrees": 2.0,
+        "spotGuardAngle": "light.shadowGuardAngle",
+    }
+    punctual_view = punctual_row_audit["view"]
+    assert punctual_view["spot"] == (
+        "inverse(light.localToWorldMatrix), then negate m20,m21,m22,m23"
+    )
+    assert punctual_view["pointFaceBasis"] == [
+        [[0, 0, -1], [0, -1, 0], [-1, 0, 0]],
+        [[0, 0, 1], [0, -1, 0], [1, 0, 0]],
+        [[1, 0, 0], [0, 0, 1], [0, -1, 0]],
+        [[1, 0, 0], [0, 0, -1], [0, 1, 0]],
+        [[1, 0, 0], [0, -1, 0], [0, 0, -1]],
+        [[-1, 0, 0], [0, -1, 0], [0, 0, 1]],
+    ]
+    punctual_world_to_shadow = punctual_row_audit["worldToShadow"]
+    assert punctual_world_to_shadow["formula"] == "B * (P' * V)"
+    assert "m20,m21,m22,m23" in punctual_world_to_shadow["reversedZ"]
+    assert punctual_world_to_shadow["scaleBiasB"] == (
+        "diag(0.5,0.5,0.5,1) with translation (0.5,0.5,0.5)"
+    )
+    punctual_params = punctual_row_audit["params"]
+    assert punctual_params["baseTexelWorldSize"] == (
+        "q=2/(projection.m00*shadowResolution)"
+    )
+    assert punctual_params["sampleMode"] == (
+        "PCF_3x3 enum value 2; bias multiplier 1.5"
+    )
+    assert punctual_params["storedFormula"] == (
+        "(0, 1.5*q*light.shadowNormalBias, q, fadedStrength)"
+    )
+    assert punctual_params["staticResolution"] == (
+        "the selected cache slot width (T, T/2, or T/4)"
+    )
+    assert punctual_params["dynamicResolution"] == "T"
+    punctual_strength = punctual_params["strength"]
+    assert punctual_strength["formula"] == (
+        "lerp(0, light.shadowStrength, saturate(t))"
+    )
+    assert punctual_strength["ratio"] == (
+        "t=(c-d)/(c-light.shadowFadeRatio*c)"
+    )
+    assert punctual_row_audit["params2"]["storedFormula"] == (
+        "(rect.xMin/atlasWidth, rect.yMin/atlasHeight, "
+        "rect.xMax/atlasWidth, rect.yMax/atlasHeight)"
+    )
+    assert punctual_row_audit["texelSize"]["storedFormula"] == (
+        "(1/atlasWidth, 1/atlasHeight, atlasWidth, atlasHeight)"
+    )
+    assert punctual_row_audit["nativeBranchBoundary"]["scope"] == (
+        "the installed non-IFix-patched native branches"
+    )
+    assert "IFix patch state" in punctual_row_audit["captureBoundary"][
+        "required"
+    ]
     assert (
         identified[2]["role"],
         identified[2]["symbol"],
@@ -2649,6 +2754,7 @@ def main() -> int:
         "exact 56-row punctual frame writer, enabled section-1 push callback, disabled "
         "texture-only path, pinned D3D12 D16_UNorm resolution/reversed-Z/quantization, "
         "exact 40-static/40+i-dynamic cache slots and single-static-redraw scheduling, "
+        "exact unpatched point/spot matrix, PCF bias, strength-fade, rect, and texel-size row production, "
         "and fail-closed pre-push capture boundary, plus b37 "
         "LightCookieData native layout/upload plus D3D11/D3D12-verified default-off "
         "zero-cookie isolated transport, plus exact b38 "

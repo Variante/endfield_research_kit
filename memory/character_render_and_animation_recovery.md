@@ -67,9 +67,14 @@ NPC archetypes are imported as labeled source kits.
   `(4+floor(i/4), i mod 4)*T`; point/spot indices are 0..5/0. Unchanged static
   depth is reused, only one prioritized static allocation/migration redraw can
   run per frame, same-level pressure evicts the oldest visit, and dynamic rows
-  redraw every frame. Overridden target `N/T`, live caster membership, target-
-  client resource confirmation, atlas texels, and matching b34 values still
-  require one capture immediately before `0x189b57155`.
+  redraw every frame. The installed unpatched row math is now closed: exact
+  point-face bases/guarded projection or spot inverse-view feed reversed-Z
+  `B*(P*V)`; PCF_3x3 stores zero depth bias, 1.5-scaled normal bias, base texel
+  size, and saturated distance-faded strength; Params2 is normalized atlas
+  `xyxy`, and texel size is `(1/W,1/H,W,H)`. Live IFix state, overridden target
+  `N/T`, caster/light inputs, target-client resource confirmation, atlas texels,
+  and settled b34 values still require one capture immediately before
+  `0x189b57155`.
 - Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
   initialization/upload and `cookieIndex >= 0` consumer guard closed. The
   source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off
