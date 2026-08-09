@@ -767,6 +767,11 @@
       timelineEmbeddedDirectorBoundary: "Director and ControlPlayableAsset links prove playback composition only; they do not identify the mission/quest activator or server-selected branch.",
       timelineEmbeddedActivationChain: "exact parent-dialog activation",
       timelineEmbeddedActivationRoute: "native event/action route",
+      timelineEmbeddedConfigurationChain: "mission-scoped parent-dialog configuration",
+      timelineEmbeddedConfigurationRoute: "NPC proxy configuration context",
+      timelineEmbeddedConfigurationSelection: "one-based active row selection",
+      timelineEmbeddedQuestNavigation: "exact quest navigation context",
+      timelineEmbeddedConfigurationBoundary: "The original NpcProxyEx row pairs this parent dialog with a mission. A quest is shown only when one typed MissionRuntime NPC-proxy tracking consumer matches that exact mission and proxy. The installed binary validates one-based active-row selection and separate dialog/mission consumers, but the observed server-selected row is unavailable. This is configuration/navigation context, not proof of parent playback, quest activation, branch selection, or Story order.",
       timelineEmbeddedTriggerVolume: "exact local trigger geometry",
       timelineEmbeddedTriggerVolumeBoundary: "The event selector resolves to this same-LevelScript volume. Its serialized fields contain no mission or quest foreign identity.",
       timelineEmbeddedMissionShell: "validated mission shell",
@@ -1523,6 +1528,11 @@
       timelineEmbeddedDirectorBoundary: "Director 与 ControlPlayableAsset 链仅证明播放组成；它们不识别使命/任务激活者或服务器选择的分支。",
       timelineEmbeddedActivationChain: "精确父对话激活链",
       timelineEmbeddedActivationRoute: "原生事件/动作路径",
+      timelineEmbeddedConfigurationChain: "使命范围内的父对话配置",
+      timelineEmbeddedConfigurationRoute: "NPC 代理配置上下文",
+      timelineEmbeddedConfigurationSelection: "从一开始计数的活动行选择",
+      timelineEmbeddedQuestNavigation: "精确任务导航上下文",
+      timelineEmbeddedConfigurationBoundary: "原始 NpcProxyEx 行将该父对话与使命直接配对。仅当一个类型化 MissionRuntime NPC 代理跟踪消费者匹配同一使命与代理时才显示任务。已安装二进制验证了从一开始计数的活动行选择，以及分离的对话与使命消费者，但无法观测服务器实际选择的行。这只是配置/导航上下文，不证明父对话播放、任务激活、分支选择或 Story 顺序。",
       timelineEmbeddedTriggerVolume: "精确本地触发区域",
       timelineEmbeddedTriggerVolumeBoundary: "事件选择器解析到同一 LevelScript 中的该触发区域；其序列化字段不含使命或任务外键身份。",
       timelineEmbeddedMissionShell: "已验证使命外壳",
@@ -3638,6 +3648,39 @@
     return `<details class="mp-mission-story mp-timeline-activation" data-weight="context" open><summary>${esc(t("timelineEmbeddedActivationChain"))} <span>${routes.length}</span></summary>${routeHtml}<small class="mp-timeline-activation-boundary">${esc(t("timelineEmbeddedActivationBoundary"))}</small></details>`;
   }
 
+  function timelineConfigurationContextsHtml(contexts, { missionSummary = false } = {}) {
+    const rows = (contexts || []).filter((context) => context?.id && context?.missionId);
+    if (!rows.length) return "";
+    const audit = state.index?.storyCoverage?.timelineEmbeddedStoryRuntimeAudit || {};
+    const contract = audit.parentDialogConfiguration?.nativeContract || {};
+    const methods = (contract.methods || []).map((method) =>
+      `<small><code>${esc(method.type || "?")}.${esc(method.method || "?")}</code> <code>${esc(method.va || "?")}</code></small>`,
+    ).join("");
+    const cards = rows.map((context) => {
+      const stories = (context.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ");
+      const quests = (context.candidateQuestIds || []).map((questId) => `<code>${esc(questId)}</code>`).join(" ");
+      const tracking = (context.trackingRows || []).map((row) =>
+        `<small><code>${esc(row.questId || "?")}</code> / <code>${esc(row.type || "NpcProxyTrackingInfo")}</code> / objective <code>${esc(row.objectiveIndex ?? "?")}</code> / tracking <code>${esc(row.trackingIndex ?? "?")}</code><br><code>${esc(row.missionRuntimeSourcePath || "")}</code></small>`,
+      ).join("");
+      const files = (context.relatedOriginalFiles || []).map((file) =>
+        `<small><code>${esc(file.role || "file")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}<br><code>${esc(file.path || "")}</code></small>`,
+      ).join("");
+      return `<article><header><b>${esc(t("timelineEmbeddedConfigurationRoute"))}</b><code>${esc(context.missionId)}</code></header><p><code>${esc(context.npcProxyId || "?")}</code> &rarr; <code>${esc(context.dialogKey || "?")}</code>${stories ? ` &rarr; ${stories}` : ""}</p><p><strong>${esc(t("timelineEmbeddedConfigurationSelection"))}</strong> <code>${esc(context.activeRowSelection || contract.activeRowSelection || "?")}</code></p>${context.questNavigationContext ? `<p><strong>${esc(t("timelineEmbeddedQuestNavigation"))}</strong> ${quests}</p>${tracking}` : `<p><code>${esc(context.questNavigationStatus || "no_typed_tracking_quest")}</code></p>`}${methods}<details><summary>${esc(t("timelineEmbeddedActivationFiles"))} <span>${(context.relatedOriginalFiles || []).length}</span></summary>${files}</details></article>`;
+    }).join("");
+    const detailClass = missionSummary
+      ? "mp-mission-story mp-timeline-activation mp-timeline-configuration"
+      : "mp-timeline-configuration";
+    return `<details class="${detailClass}" data-weight="context"${missionSummary ? " open" : ""}><summary>${esc(t("timelineEmbeddedConfigurationChain"))} <span>${rows.length}</span></summary>${cards}<small class="mp-timeline-activation-boundary">${esc(t("timelineEmbeddedConfigurationBoundary"))}</small></details>`;
+  }
+
+  function missionTimelineConfigurationHtml() {
+    const missionId = String(state.missionId || state.mission?.mission?.id || "");
+    const contexts = (
+      state.index?.storyCoverage?.timelineEmbeddedStoryRuntimeAudit?.configurationContexts || []
+    ).filter((context) => String(context?.missionId || "") === missionId);
+    return timelineConfigurationContextsHtml(contexts, { missionSummary: true });
+  }
+
   function missionStateDependenciesHtml() {
     const rows = (state.localized?.flow?.missionStateStoryDependencies || [])
       .filter((row) => row && row.key);
@@ -3878,6 +3921,11 @@
         .filter((row) => row?.id)
         .map((row) => [row.id, row]),
     );
+    const timelineConfigurationContextsById = new Map(
+      (timelineRuntimeAudit.configurationContexts || [])
+        .filter((row) => row?.id)
+        .map((row) => [row.id, row]),
+    );
     const timelineRuntimeHtml = (key) => {
       const rows = timelineRuntimeRowsByKey.get(key) || [];
       if (!rows.length) return "";
@@ -3897,6 +3945,15 @@
         if (route && !seenActivationRoutes.has(routeId)) {
           seenActivationRoutes.add(routeId);
           activationRoutes.push(route);
+        }
+      }));
+      const configurationContexts = [];
+      const seenConfigurationContexts = new Set();
+      rows.forEach((row) => (row.parentDialogConfigurationContextIds || []).forEach((contextId) => {
+        const context = timelineConfigurationContextsById.get(contextId);
+        if (context && !seenConfigurationContexts.has(contextId)) {
+          seenConfigurationContexts.add(contextId);
+          configurationContexts.push(context);
         }
       }));
       const directorHtml = directorHosts.map((host) => {
@@ -3958,7 +4015,8 @@
         const files = (route.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.role || "file")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}<br><code>${esc(file.path || "")}</code></small>`).join("");
         return `<article><header><b>${esc(t("timelineEmbeddedActivationRoute"))}</b><code>${esc(route.levelId || "?")}/${esc(route.scriptId || "?")}</code></header><p><code>${esc(route.headerName || "?")} #${esc(route.headerLocalId ?? "?")}</code> &rarr; <code>#${esc(route.playActionLocalId ?? "?")} ${esc(route.playActionName || "play_dialog")}</code> &rarr; <code>${esc(route.dialogKey || "?")}</code></p>${eventPredicate}${actionChain ? `<ol>${actionChain}</ol>` : ""}${controlDecisions}${triggerHtml}${missions ? `<p><strong>${esc(t("timelineEmbeddedMissionShell"))}</strong> ${missions}</p>` : ""}${missionAreas ? `<details><summary>${esc(t("timelineEmbeddedMissionAreaContext"))} <span>${(route.missionAreaReferences || []).length}</span></summary>${missionAreas}</details>` : ""}${timelineQuestSpatialContextsHtml(route)}${files ? `<details><summary>${esc(t("timelineEmbeddedActivationFiles"))} <span>${(route.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}<small class="mp-timeline-activation-boundary">${esc(t("timelineEmbeddedActivationBoundary"))}</small></article>`;
       }).join("")}</section>` : "";
-      return `<details class="mp-timeline-runtime"><summary><strong>${esc(t("timelineEmbeddedRuntime"))}</strong> <span>${rows.length}</span></summary><p><strong>${esc(t("timelineEmbeddedRuntimeChain"))}</strong></p>${chain}${activationHtml}${controlChain}${clips}<small>${esc(t("timelineEmbeddedRuntimeBoundary"))}</small></details>`;
+      const configurationHtml = timelineConfigurationContextsHtml(configurationContexts);
+      return `<details class="mp-timeline-runtime"><summary><strong>${esc(t("timelineEmbeddedRuntime"))}</strong> <span>${rows.length}</span></summary><p><strong>${esc(t("timelineEmbeddedRuntimeChain"))}</strong></p>${chain}${activationHtml}${configurationHtml}${controlChain}${clips}<small>${esc(t("timelineEmbeddedRuntimeBoundary"))}</small></details>`;
     };
     return `<details class="mp-mission-story mp-unassigned-story" data-weight="context">
       <summary>${esc(t("unassignedStory"))} <span>${keys.length}</span></summary>
@@ -5152,6 +5210,7 @@
     ["story", "summarySectionStory", () => [
       missionStoryConnectionsHtml(),
       missionTimelineActivationHtml(),
+      missionTimelineConfigurationHtml(),
       missionStateDependenciesHtml(),
       envTalkContextHtml(),
     ]],

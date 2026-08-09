@@ -87,8 +87,17 @@ never promotes an edge.
   audit validates 13 of 14 parent dialogs (15 of 16 embedded Story keys) across
   nine mission shells: four routes cross an unordered `Split` fan-out and one
   crosses a conditional `SwitchInt` case whose runtime selection is unobserved.
-  The remaining `dlg_c13m3_7` occurrence is a property/default reference, not a
-  playback action, and stays unresolved.
+  The remaining `dlg_c13m3_7` has no native playback action. Its exact
+  `NpcProxyEx` row instead co-identifies mission `c13m3`, the parent dialog, and
+  proxy `andrew_map01_c13m3Safe`; that same proxy has one typed MissionRuntime
+  tracking consumer in `c13m3_q#4`. This is mission configuration plus quest
+  navigation context, not parent playback, activation, branch selection, or
+  Story order.
+- The NPC configuration join is corpus-wide and patch-sensitive. Installed
+  metadata must expose the mission/dialog carrier, and mapped native bodies
+  must prove the one-based active-row conversion, dialog output flow, and
+  mission-conflict lookup before any row is published. No mission, quest,
+  proxy, dialog, token, address, OCR, or override allowlist participates.
 - The same 13-route audit now resolves every typed MissionRuntime tracking row
   through the maintained original MissionArea/NPC-proxy tables and tests its
   point against the exact event-selected serialized trigger shape. The general
@@ -96,6 +105,12 @@ never promotes an edge.
   quest IDs). These are quest spatial candidates only: containment does not
   prove entry, activation, ownership, branch selection, or Story-file order;
   unsupported or multiply matching shapes fail closed.
+- Four activation routes have no contained tracking point. Three have no
+  MissionRuntime reference to their playback LevelScript; `e5m1_q#6` observes
+  script `10100060000` reaching stage 1, but the trigger/dialog arm ends in an
+  opaque server handoff and does not prove which server transition advances
+  that stage. They remain activation-with-mission-shell evidence, not quest
+  activation.
 - Branch, IfElse, Switch, loop, and wait/outcome families retain active,
   inactive, non-Story, and playback-bearing arms separately. A branch only
   creates order when its runtime semantics and the relevant source-to-target
