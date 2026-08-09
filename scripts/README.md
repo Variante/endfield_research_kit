@@ -66,7 +66,7 @@ Prefer focused tests, direct probes, and data-only builds during the batch.
 | `build_assets.py` | Assets, Story media, and Gameplay asset indexes |
 | `build_audio.py` | Lossless FLAC audio decode/relink and Gameplay SFX sidecar |
 | `convert_audio_to_flac.py` | Standalone WAV-to-FLAC migration helper |
-| `pack_webui.py` | Static package and optional media archives |
+| `pack_webui.py` | Static package plus FLAC-only audio/media archives |
 
 Typical focused commands:
 
@@ -83,6 +83,10 @@ python scripts\build_assets.py
 python scripts\build_audio.py
 python scripts\pack_webui.py
 ```
+
+`pack_webui.bat` and `pack_webui.py` include only the current decoded `.flac`
+files in the standalone audio archive. Older `.wav` and `.wem` files are
+ignored even if they remain beside an export.
 
 `build_projectile_data.py --require-exact` fails if an emitted projectile does
 not consume its validated managed-reference boundary. Missing playable-skill
