@@ -563,7 +563,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     "unionTag": 0x034E,
                     "serializedMemberCount": 0x0B,
                 }
-                return {"targetCount": 3, "rows": [{
+                return {"targetCount": 5, "rows": [{
                     "record": common_record,
                     "actionMapRole": "actionList#1 root",
                     "audioAction": {
@@ -591,6 +591,27 @@ class AudioSemanticDataTests(unittest.TestCase):
                         "fields": {"name": {"sourceField": "_name", "bindingKind": "constant", "value": "cue_test"}},
                         "cueBindings": [{"cueName": "cue_test", "role": "invoke", "sourceField": "_name"}],
                     },
+                }, {
+                    "record": {**common_record, "start": 96, "unionTag": 0x0307, "serializedMemberCount": 0x0B},
+                    "actionMapRole": "actionList#4 linked",
+                    "audioAction": {
+                        "action": "ManualSetMusicState",
+                        "fields": {
+                            "baseState": {"sourceField": "_baseState", "bindingKind": "constant", "value": 2},
+                            "battleIntensityState": {"sourceField": "_battleIntensityState", "bindingKind": "constant", "value": 1},
+                            "battleState": {"sourceField": "_battleState", "bindingKind": "constant", "value": 3},
+                        },
+                    },
+                }, {
+                    "record": {**common_record, "start": 120, "unionTag": 0x04AC, "serializedMemberCount": 0x0A},
+                    "actionMapRole": "actionList#5 linked",
+                    "audioAction": {
+                        "action": "StopAudio",
+                        "fields": {
+                            "audioId": {"sourceField": "_audioId", "bindingKind": "dynamic", "paramSource": 100, "path": "$28@_audioPlayingId"},
+                            "fadeTimeMs": {"sourceField": "_fadeTimeMs", "bindingKind": "constant", "value": 100},
+                        },
+                    },
                 }]}
 
             semantics = audio_semantics.collect_levelscript_audio_semantics(
@@ -607,8 +628,14 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(semantics["cueInvocations"][0]["cueName"], "cue_test")
             self.assertEqual(semantics["cueInvocations"][0]["definitionStatus"], "runtimeNameToCueDefinitionUnresolved")
             self.assertEqual(semantics["dynamicEventBindings"][0]["binding"]["path"], "Start_music")
-            self.assertEqual(semantics["stats"]["decodedAudioActionRecords"], 3)
+            self.assertEqual(semantics["controlActions"][0]["controlRole"], "musicStateOverride")
+            self.assertEqual(semantics["controlActions"][0]["fields"]["baseState"]["value"], 2)
+            self.assertEqual(semantics["dynamicControlBindings"][0]["controlRole"], "playingAudioStop")
+            self.assertEqual(semantics["dynamicControlBindings"][0]["binding"]["path"], "$28@_audioPlayingId")
+            self.assertEqual(semantics["stats"]["decodedAudioActionRecords"], 5)
             self.assertEqual(semantics["stats"]["constantEventRequestContexts"], 1)
+            self.assertEqual(semantics["stats"]["controlActions"], 2)
+            self.assertEqual(semantics["stats"]["dynamicControlBindings"], 1)
 
     def test_builds_compact_lazy_shards_with_evidence_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:

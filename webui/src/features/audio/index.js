@@ -44,6 +44,8 @@
       rtpcParameters: "RTPC parameters",
       levelScriptCueInvocations: "LevelScript cue invocations",
       levelScriptDynamicBindings: "LevelScript dynamic Event bindings",
+      levelScriptControls: "LevelScript audio controls",
+      levelScriptDynamicControls: "LevelScript dynamic control bindings",
       corpus: "Corpus",
       selectRecord: "Select an event or media record from the left.",
       overview: "Overview",
@@ -149,6 +151,8 @@
       rtpcParameters: "RTPC \u53c2\u6570",
       levelScriptCueInvocations: "LevelScript Cue \u8c03\u7528",
       levelScriptDynamicBindings: "LevelScript \u52a8\u6001 Event \u7ed1\u5b9a",
+      levelScriptControls: "LevelScript \u97f3\u9891\u63a7\u5236",
+      levelScriptDynamicControls: "LevelScript \u52a8\u6001\u63a7\u5236\u7ed1\u5b9a",
       corpus: "\u6570\u636e\u96c6",
       selectRecord: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u4e2a\u4e8b\u4ef6\u6216\u5a92\u4f53\u8bb0\u5f55\u3002",
       overview: "\u6982\u89c8",
@@ -1325,12 +1329,25 @@
       for (const [key, value] of Object.entries(counts)) grid.appendChild(statNode(humanize(key), typeof value === "number" ? formatNumber(value) : value));
       section.appendChild(grid);
     }
+    const formatControlFields = (row) => Object.entries(row.fields || {}).map(([name, field]) => {
+      let value = field?.value;
+      if (field?.bindingKind === "dynamic" || field?.bindingKind === "output") {
+        value = field.path || `${humanize(field.bindingKind)} source ${field.paramSource ?? "?"}`;
+      } else if (field?.present === false) {
+        value = "null";
+      } else if (value && typeof value === "object") {
+        value = JSON.stringify(value);
+      }
+      return `${name}=${value ?? "?"}`;
+    }).join(", ");
     const groups = [
       ["rtpcParameters", asArray(catalog.rtpcParameters), (row) => `${row.parameterName || t("unknown")} / ${row.field || humanize(row.evidence || "")}`],
       ["globalMusicCues", asArray(catalog.audioGlobalMusicCueRefs), (row) => `${row.field || t("unknown")} / ${row.cueHex || row.cueId || "?"} / ${humanize(row.definitionStatus || "unknown")}`],
       ["cueOperands", asArray(catalog.audioCueExpressionOperands), (row) => `${row.stringValue || t("unknown")} / ${row.cueHex || "?"} / ${humanize(row.expressionSide || "")} / ${row.expressionPath || ""}`],
       ["levelScriptCueInvocations", asArray(catalog.levelScriptAudioCueInvocations), (row) => `${row.cueName || t("unknown")} / ${row.levelScriptId || "?"} / ${humanize(row.action || "")}`],
       ["levelScriptDynamicBindings", asArray(catalog.levelScriptDynamicAudioBindings), (row) => `${row.levelScriptId || "?"} / ${humanize(row.action || "")} / ${row.sourceField || "?"} / ${row.binding?.path || humanize(row.resolutionStatus || "")}`],
+      ["levelScriptControls", asArray(catalog.levelScriptAudioControls), (row) => `${humanize(row.action || "")} / ${humanize(row.controlRole || "")} / ${row.levelScriptId || "?"} / ${formatControlFields(row)}`],
+      ["levelScriptDynamicControls", asArray(catalog.levelScriptDynamicControlBindings), (row) => `${row.levelScriptId || "?"} / ${humanize(row.action || "")} / ${row.sourceField || "?"} / ${row.binding?.path || humanize(row.resolutionStatus || "")}`],
     ];
     for (const [labelKey, rows, formatRow] of groups) {
       if (!rows.length) continue;
