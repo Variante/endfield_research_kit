@@ -1202,13 +1202,17 @@
     else if (event?.triggerBindingStatus === "exactEnemyBornBuffConfig") values.push(text("soundExactEnemyBornTrigger"));
     else if (event?.triggerBindingStatus === "inferredSkillConfigOwner") values.push(text("soundInferredSkillTrigger"));
     const relationLabels = {
-      skillDataEventField: "soundTriggerSkillData",
+      skillDataEventReference: "soundTriggerSkillData",
       skillBuffChain: "soundTriggerBuffChain",
       enemyBornBuffChain: "soundTriggerEnemyBornBuff",
       buffPlaySoundAction: "soundTriggerPlaySoundAction",
     };
     for (const relation of event?.triggerRelationTypes || []) {
       values.push(text(relationLabels[relation] || relation));
+    }
+    for (const binding of event?.triggerBindings || []) {
+      if (binding?.runtimeActivationStatus === "conditionAndTimingUnresolved") values.push(text("soundTriggerConditionUnresolved"));
+      else if (binding?.runtimeActivationStatus === "authoredFrameWindowRecoveredConditionUnresolved") values.push(text("soundTriggerFrameConditionUnresolved"));
     }
     return [...new Set(values.filter(Boolean))];
   }
@@ -1304,12 +1308,16 @@
     const branch = roots ? `${roots} ${text("soundPlayBranches")}` : text("soundDirectMedia");
     const relationLabels = selectorRelations.length ? selectorRelations : relations;
     const triggerLabels = gameplaySoundTriggerLabels(event);
-    const playSoundActions = (event?.triggerBindings || []).flatMap((binding) => binding?.playSoundActions || []);
+    const playSoundActions = [...new Map(
+      (event?.triggerBindings || [])
+        .flatMap((binding) => binding?.playSoundActions || [])
+        .map((action) => [JSON.stringify(action), action]),
+    ).values()];
     const playSoundLabels = playSoundActions.map((action) => {
       const frameWindow = `${text("soundPlaySoundFrame")} ${action?.startFrame ?? "?"}-${action?.endFrame ?? "?"}`;
       const lifetime = action?.stopOnEnd
         ? `${text("soundPlaySoundStopOnEnd")} / ${Number(action?.stopFadeDurationMs || 0)} ms`
-        : text("soundPlaySoundContinues");
+        : text("soundPlaySoundNotStoppedOnEnd");
       return `${frameWindow} / ${lifetime}`;
     });
     return `<div class="gameplay-sfx-evidence">${triggerLabels.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}${playSoundLabels.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}<span>${escapeHtml(branch)}</span>${animationCallbacks ? `<span>${escapeHtml(`${animationCallbacks} ${text("soundAuthoredCallbacks")} / ${animationClips} ${text("soundAnimationClips")}`)}</span>` : ""}${definitions ? `<span>${escapeHtml(`${definitions} ${text("soundBankDefinitions")}`)}</span>` : ""}${stopActions ? `<span>${escapeHtml(`${stopActions} ${text("soundStopActions")}`)}</span>` : ""}${relationLabels.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}<span class="${isPartial ? "is-partial" : ""}">${escapeHtml(status)}</span></div>`;

@@ -93,9 +93,10 @@ are not a browser-playable output format. Event details list every typed
 possible media leaf together and group it by Play root and Random, Sequence,
 Switch/State, Layer, or direct-Sound evidence. Partial typed graphs and
 byte-identical decoded content under distinct media ids remain explicit.
-Skill contexts separately tag exact Gameplay-action-to-SkillData ownership and
+Skill contexts separately tag exact Gameplay-action-to-SkillData dependencies and
 inferred child-skill-family ownership. Their evidence records whether the Event
-was found directly in SkillData or through an exact BuffData chain, while
+was found as a complete length-prefixed reference in SkillData or through an
+exact BuffData chain; the generic scan does not recover a field/callsite, and
 runtime condition/timing remains explicitly unresolved for dependency-only
 rows. Decoded BuffData `PlaySoundActionData` adds exact authored frame windows,
 stop/fade lifetime, routing, selector hints, and time-dilation controls for the
@@ -103,6 +104,11 @@ recovered subset; `TargetSettings`, live activation, and Wwise branch selection
 remain explicit gaps. Exact PlaySound actions have their own Audio Event filter
 and stay visible even when no displayed skill owner is proven. All trigger tags
 and source/action fields are searchable.
+Interactive-object contexts keep global model/sub-template defaults separate
+from per-entity `InteractiveData` component overrides. Both expose exact
+lifecycle/custom state, identity, source path, and Event evidence; global audio
+policy adds entity-init and enter/exit state-mask Event mappings. These are
+authored state-entry requests, not live traces or Wwise SetState operations.
 
 ## Runtime overrides
 

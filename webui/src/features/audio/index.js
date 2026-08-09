@@ -49,6 +49,8 @@
       actions: "Actions / objects",
       recordType: "Record type",
       playbackEvent: "Playback event",
+      wwiseEvent: "Wwise Event",
+      authoredEventReference: "Authored Event reference (bank object unresolved)",
       controlEvent: "Control event",
       decodedMedia: "Decoded media",
       contextGroups: "Semantic contexts",
@@ -58,11 +60,13 @@
       contextAnimation: "Animation",
       contextSharedPlayableAnimation: "Shared playable-character animation",
       contextFootstepSystem: "Footstep / material system",
-      contextExactSkillTrigger: "Exact skill-config request",
+      contextExactSkillTrigger: "Exact skill-config Event reference",
       contextInferredSkillTrigger: "Inferred skill ownership",
       contextAuthoredPlaySoundAction: "Authored PlaySound action",
+      contextInteractiveTrigger: "Interactive object trigger",
+      contextGlobalLifecycle: "Global audio lifecycle",
       contextAuthoredConfig: "Authored config",
-      contextManagedRuntime: "Managed runtime",
+      contextManagedRuntime: "Managed-code literal",
       contextDialogMedia: "Dialog media",
       contextNone: "No linked authored context",
       relationRuntimeSelected: "Typed runtime-selected branches",
@@ -138,6 +142,8 @@
       actions: "\u52a8\u4f5c / \u5bf9\u8c61",
       recordType: "\u8bb0\u5f55\u7c7b\u578b",
       playbackEvent: "\u64ad\u653e\u4e8b\u4ef6",
+      wwiseEvent: "Wwise Event",
+      authoredEventReference: "\u521b\u4f5c Event \u5f15\u7528\uff08\u672a\u89e3\u6790\u5230\u97f3\u9891\u5e93\u5bf9\u8c61\uff09",
       controlEvent: "\u63a7\u5236\u4e8b\u4ef6",
       decodedMedia: "\u5df2\u89e3\u7801\u5a92\u4f53",
       contextGroups: "\u8bed\u4e49\u4e0a\u4e0b\u6587",
@@ -147,11 +153,13 @@
       contextAnimation: "\u52a8\u753b",
       contextSharedPlayableAnimation: "\u53ef\u73a9\u89d2\u8272\u5171\u7528\u52a8\u753b",
       contextFootstepSystem: "\u811a\u6b65 / \u6750\u8d28\u7cfb\u7edf",
-      contextExactSkillTrigger: "\u7cbe\u786e\u6280\u80fd\u914d\u7f6e\u8bf7\u6c42",
+      contextExactSkillTrigger: "\u7cbe\u786e\u6280\u80fd\u914d\u7f6e Event \u5f15\u7528",
       contextInferredSkillTrigger: "\u63a8\u65ad\u6280\u80fd\u5f52\u5c5e",
       contextAuthoredPlaySoundAction: "\u521b\u4f5c PlaySound \u52a8\u4f5c",
+      contextInteractiveTrigger: "\u4ea4\u4e92\u7269\u4ef6\u89e6\u53d1",
+      contextGlobalLifecycle: "\u5168\u5c40\u97f3\u9891\u751f\u547d\u5468\u671f",
       contextAuthoredConfig: "\u914d\u7f6e\u8868",
-      contextManagedRuntime: "\u6258\u7ba1\u8fd0\u884c\u65f6",
+      contextManagedRuntime: "\u6258\u7ba1\u4ee3\u7801\u5b57\u9762\u91cf",
       contextDialogMedia: "\u5bf9\u8bdd\u5a92\u4f53",
       contextNone: "\u65e0\u5df2\u94fe\u63a5\u7684\u521b\u4f5c\u4e0a\u4e0b\u6587",
       relationRuntimeSelected: "\u7c7b\u578b\u5316\u8fd0\u884c\u65f6\u5206\u652f",
@@ -291,6 +299,8 @@
     exactSkillTrigger: "contextExactSkillTrigger",
     inferredSkillTrigger: "contextInferredSkillTrigger",
     authoredPlaySoundAction: "contextAuthoredPlaySoundAction",
+    interactiveTrigger: "contextInteractiveTrigger",
+    globalLifecycle: "contextGlobalLifecycle",
     authoredConfig: "contextAuthoredConfig",
     managedRuntime: "contextManagedRuntime",
     dialogMedia: "contextDialogMedia",
@@ -321,14 +331,15 @@
 
   function recordType(record, kind) {
     if (kind === "media") return "decodedMedia";
-    return recordCategory(record) === "control" ? "controlEvent" : "playbackEvent";
+    if (recordCategory(record) === "control") return "controlEvent";
+    return record?.foundInWwise ? "wwiseEvent" : "authoredEventReference";
   }
 
   function contextGroup(kind) {
     if (["characterSkill", "enemySkill", "buffPlaySoundAction"].includes(kind)) return "gameplay";
     if (kind === "cutsceneTimeline") return "cutscene";
     if (["characterAnimation", "enemyAnimation"].includes(kind)) return "animation";
-    if (["table", "tableEventHash"].includes(kind)) return "authoredConfig";
+    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "audioGlobalConfigEvent", "audioGlobalConfigEventHash"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
     return "";
   }
@@ -347,6 +358,8 @@
       if (context.triggerBindingStatus === "exactSkillConfig") tags.add("exactSkillTrigger");
       else if (context.triggerBindingStatus === "inferredSkillConfigOwner") tags.add("inferredSkillTrigger");
       if (Number(context.triggerPlaySoundActionCount || 0) > 0) tags.add("authoredPlaySoundAction");
+      if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(context.kind)) tags.add("interactiveTrigger");
+      if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash"].includes(context.kind)) tags.add("globalLifecycle");
     }
     if (Number(record?.playableCharacterAnimationOwnerCount || 0) > 1 || record?.animationContextScope === "sharedPlayableCharacters") {
       tags.add("sharedPlayableAnimation");
@@ -354,8 +367,14 @@
     if (asArray(record?.animationFunctions).includes("OnCustomFootStep")) tags.add("footstepSystem");
     if (kind === "media") {
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
+      const inheritedMediaTags = new Set([
+        "gameplay", "cutscene", "animation", "authoredConfig", "managedRuntime",
+        "sharedPlayableAnimation", "footstepSystem", "interactiveTrigger", "globalLifecycle",
+      ]);
       for (const eventId of asArray(record?.eventIds)) {
-        for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) tags.add(tag);
+        for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
+          if (inheritedMediaTags.has(tag)) tags.add(tag);
+        }
       }
     }
     if (!tags.size) tags.add("none");
@@ -413,6 +432,9 @@
       ...asArray(record?.contexts).flatMap((context) => context && typeof context === "object" ? [
         context.kind, context.ownerId, context.groupId, context.storyKey, context.table, context.path,
         context.semanticRole, context.confidence, context.animationOwnershipScope, context.possibleMediaScope,
+        context.modelId, context.subTemplateId, context.triggerStateId, context.triggerStateName,
+        context.triggerCustomState, context.ownerKind, context.stateDirection, context.audioStateMask, context.description,
+        context.componentIndex, context.sourceOffset, context.sourceFingerprint, ...asArray(context.sourcePaths),
         context.clipReachability, context.triggerBindingStatus, ...asArray(context.skillIds), ...asArray(context.actionKinds),
         ...asArray(context.triggerRequestEvidence), ...asArray(context.triggerRuntimeActivationStatuses),
         ...asArray(context.triggerRelationTypes), ...asArray(context.triggerOwnershipMethods),
@@ -1274,6 +1296,7 @@
       const counts = [];
       if (asArray(system.fields).length) counts.push(`${asArray(system.fields).length} fields`);
       if (asArray(system.methods).length) counts.push(`${asArray(system.methods).length} methods`);
+      if (system.enumValues && typeof system.enumValues === "object") counts.push(`${Object.keys(system.enumValues).length} enum values`);
       card.innerHTML = `<div class="audio-runtime-system-head"><code>${esc(type)}</code>${layer ? `<span>${esc(layer)}</span>` : ""}</div>${meaning ? `<p>${esc(meaning)}</p>` : ""}${counts.length ? `<small>${esc(counts.join(" · "))}</small>` : ""}`;
       list.appendChild(card);
     }
@@ -1292,6 +1315,19 @@
     if (context?.path) parts.push(context.path);
     if (context?.semanticRole) parts.push(humanize(context.semanticRole));
     if (context?.confidence) parts.push(context.confidence);
+    if (context?.modelId) parts.push(`model ${context.modelId}`);
+    if (context?.subTemplateId) parts.push(`sub-template ${context.subTemplateId}`);
+    if (context?.triggerStateName || context?.triggerStateId !== undefined) {
+      parts.push(`trigger state ${context.triggerStateName || "unknown"} (${context.triggerStateId ?? "?"})`);
+    }
+    if (context?.triggerCustomState) parts.push(`custom state ${context.triggerCustomState}`);
+    if (context?.ownerKind) parts.push(`${context.ownerKind} ${context.ownerId || ""}`.trim());
+    if (context?.componentIndex !== undefined) parts.push(`component ${context.componentIndex}`);
+    if (context?.sourceOffset !== undefined) parts.push(`source offset 0x${Number(context.sourceOffset).toString(16)}`);
+    if (context?.stateDirection) parts.push(`${context.stateDirection} state mask ${context.audioStateMask ?? "?"}`);
+    if (context?.description) parts.push(context.description);
+    const sourcePaths = asArray(context?.sourcePaths).filter(Boolean);
+    if (sourcePaths.length) parts.push(sourcePaths.length === 1 ? sourcePaths[0] : `${sourcePaths[0]} +${sourcePaths.length - 1}`);
     if (context?.triggerBindingStatus) parts.push(humanize(context.triggerBindingStatus));
     const requestEvidence = asArray(context?.triggerRequestEvidence).filter(Boolean);
     if (requestEvidence.length) parts.push(requestEvidence.map(humanize).join(" / "));
@@ -1311,7 +1347,7 @@
     for (const action of playSoundActions) {
       const actionParts = [
         `PlaySound frame ${action.startFrame ?? "?"}-${action.endFrame ?? "?"}`,
-        action.stopOnEnd ? `stop on end / ${action.stopFadeDurationMs ?? 0} ms fade` : "continues after action end",
+        action.stopOnEnd ? `stop on end / ${action.stopFadeDurationMs ?? 0} ms fade` : "not stopped by this action's end",
         action.useTempEmitter ? "temporary emitter" : "",
         action.followMountPoint ? `follow mount ${action.mountPoint || "(unnamed)"}` : "",
         action.useWeaponMountPoint ? `weapon ${action.weaponIndex ?? "?"} / ${action.weaponMountPoint || "mount"}` : "",

@@ -160,6 +160,90 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(len(contexts["au_sfx_radio_transition"]), 1)
             self.assertIn("Persistent", contexts["au_sfx_radio_transition"][0]["source"])
 
+    def test_collects_interactive_lifecycle_and_global_policy_events(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            mono_root = root / "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/MonoBehaviour"
+            mono_root.mkdir(parents=True)
+            (mono_root / "InteractiveAudioSetting_p1.json").write_text(json.dumps({
+                "subTemplateList": [{
+                    "modelId": "int_ore_model",
+                    "subTemplateId": "int_ore",
+                    "audioList": [{"state": 14, "audio": ["au_item_ore_collect"]}],
+                    "customAudioList": [{
+                        "audioState": "door_open",
+                        "audioEvent": "au_int_door_open",
+                        "desc": "Open door",
+                    }],
+                }],
+            }), encoding="utf-8")
+            (mono_root / "AudioGlobalConfig_p2.json").write_text(json.dumps({
+                "gameplayMusicStartEvent": "au_music_main",
+                "initEvents": ["au_sfx_init"],
+                "charInitEvent": {
+                    "_keyData": ["chr_test"],
+                    "_valueData": [{"_id": -2}],
+                },
+                "audioStatesIn": {
+                    "_keyData": [512],
+                    "_valueData": [{"_ids": [{"_id": 123}]}],
+                },
+            }), encoding="utf-8")
+            runtime_model = {"systems": [{
+                "type": "Beyond.Gameplay.Core.InteractiveAudioComponent+EAudioTriggerState",
+                "enumValues": {"Collect": 14},
+            }]}
+
+            contexts = audio_semantics.collect_table_contexts(root, runtime_model)
+
+            collect = contexts["au_item_ore_collect"][0]
+            self.assertEqual(collect["kind"], "interactiveAudioTrigger")
+            self.assertEqual(collect["triggerStateName"], "Collect")
+            self.assertEqual(collect["modelId"], "int_ore_model")
+            custom = contexts["au_int_door_open"][0]
+            self.assertEqual(custom["triggerCustomState"], "door_open")
+            self.assertEqual(custom["description"], "Open door")
+            self.assertEqual(contexts["au_music_main"][0]["semanticRole"], "gameplayMusicStartEvent")
+            char_init = contexts["#0xfffffffe"][0]
+            self.assertEqual(char_init["ownerId"], "chr_test")
+            self.assertEqual(char_init["ownerKind"], "character")
+            state_in = contexts["#0x0000007b"][0]
+            self.assertEqual(state_in["stateDirection"], "enter")
+            self.assertEqual(state_in["audioStateMask"], 512)
+            self.assertEqual(
+                audio_semantics.collect_table_audio_event_names(root),
+                {"au_int_door_open", "au_item_ore_collect", "au_music_main", "au_sfx_init"},
+            )
+            component_root = root / "structured/StreamingAssets/Data/Json/Interactive/InteractiveData"
+            component_root.mkdir(parents=True)
+            (component_root / "data_int_fixture.json").write_bytes(b"fixture")
+
+            def decode_fixture(_path: Path, _data: bytes, _size: int) -> dict:
+                return {"decoded": {"componentAudioComponents": [{
+                    "index": 2,
+                    "audioRows": [{
+                        "state": 13,
+                        "stateName": "Destroy",
+                        "events": ["au_int_fixture_break"],
+                    }],
+                    "customRows": [{
+                        "event": "au_int_fixture_open",
+                        "name": "panel_open",
+                        "note": "Open panel",
+                    }],
+                }]}}
+
+            component_contexts = audio_semantics.collect_interactive_component_contexts(
+                root,
+                decoder=decode_fixture,
+            )
+            lifecycle = component_contexts["au_int_fixture_break"][0]
+            self.assertEqual(lifecycle["triggerStateName"], "Destroy")
+            self.assertEqual(lifecycle["ownerId"], "data_int_fixture")
+            custom_component = component_contexts["au_int_fixture_open"][0]
+            self.assertEqual(custom_component["triggerCustomState"], "panel_open")
+            self.assertEqual(custom_component["componentIndex"], 2)
+
     def test_builds_compact_lazy_shards_with_evidence_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
@@ -315,6 +399,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(event["animationFunctions"], ["OnCustomFootStep"])
             self.assertEqual(set(event_summary["contextGroups"]), {"gameplay", "animation", "authoredConfig", "cutscene"})
             skill_context = next(context for context in event["contexts"] if context["kind"] == "characterSkill")
+            action_context = next(context for context in event["contexts"] if context["kind"] == "buffPlaySoundAction")
             self.assertEqual(skill_context["triggerBindingStatus"], "exactSkillConfig")
             self.assertEqual(skill_context["triggerRelationTypes"], ["buffPlaySoundAction", "skillBuffChain"])
             self.assertEqual(skill_context["triggerRequestEvidence"], ["exactAuthoredPlaySoundAction"])
@@ -323,7 +408,8 @@ class AudioSemanticDataTests(unittest.TestCase):
                 ["authoredFrameWindowRecoveredConditionUnresolved"],
             )
             self.assertEqual(skill_context["triggerPlaySoundActionCount"], 1)
-            self.assertEqual(skill_context["triggerPlaySoundActions"][0]["startFrame"], 17)
+            self.assertNotIn("triggerPlaySoundActions", skill_context)
+            self.assertEqual(action_context["triggerPlaySoundActions"][0]["startFrame"], 17)
             self.assertEqual(event_summary["triggerBindingStatuses"], ["exactSkillConfig"])
             self.assertIn("authoredFrameWindowRecoveredConditionUnresolved", event_summary["contextSearch"])
             self.assertEqual(event_summary["triggerPlaySoundActionCount"], 1)
