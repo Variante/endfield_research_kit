@@ -56,6 +56,8 @@
       contextGameplay: "Gameplay",
       contextCutscene: "Cutscene / story",
       contextAnimation: "Animation",
+      contextSharedPlayableAnimation: "Shared playable-character animation",
+      contextFootstepSystem: "Footstep / material system",
       contextAuthoredConfig: "Authored config",
       contextManagedRuntime: "Managed runtime",
       contextDialogMedia: "Dialog media",
@@ -140,6 +142,8 @@
       contextGameplay: "\u73a9\u6cd5",
       contextCutscene: "\u8fc7\u573a / \u5267\u60c5",
       contextAnimation: "\u52a8\u753b",
+      contextSharedPlayableAnimation: "\u53ef\u73a9\u89d2\u8272\u5171\u7528\u52a8\u753b",
+      contextFootstepSystem: "\u811a\u6b65 / \u6750\u8d28\u7cfb\u7edf",
       contextAuthoredConfig: "\u914d\u7f6e\u8868",
       contextManagedRuntime: "\u6258\u7ba1\u8fd0\u884c\u65f6",
       contextDialogMedia: "\u5bf9\u8bdd\u5a92\u4f53",
@@ -276,6 +280,8 @@
     gameplay: "contextGameplay",
     cutscene: "contextCutscene",
     animation: "contextAnimation",
+    sharedPlayableAnimation: "contextSharedPlayableAnimation",
+    footstepSystem: "contextFootstepSystem",
     authoredConfig: "contextAuthoredConfig",
     managedRuntime: "contextManagedRuntime",
     dialogMedia: "contextDialogMedia",
@@ -325,6 +331,10 @@
       const group = contextGroup(normalize(context.kind));
       if (group) tags.add(group);
     }
+    if (Number(record?.playableCharacterAnimationOwnerCount || 0) > 1 || record?.animationContextScope === "sharedPlayableCharacters") {
+      tags.add("sharedPlayableAnimation");
+    }
+    if (asArray(record?.animationFunctions).includes("OnCustomFootStep")) tags.add("footstepSystem");
     if (kind === "media") {
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       for (const eventId of asArray(record?.eventIds)) {
@@ -385,7 +395,9 @@
       ...asArray(taxonomy.relationTags).flatMap((value) => [value, taxonomyLabel(value)]),
       ...asArray(record?.contexts).flatMap((context) => context && typeof context === "object" ? [
         context.kind, context.ownerId, context.groupId, context.storyKey, context.table, context.path,
-        context.semanticRole, context.confidence, ...asArray(context.skillIds), ...asArray(context.actionKinds), ...asArray(context.animationClips),
+        context.semanticRole, context.confidence, context.animationOwnershipScope, context.possibleMediaScope,
+        context.clipReachability, ...asArray(context.skillIds), ...asArray(context.actionKinds),
+        ...asArray(context.animationFunctions), ...asArray(context.animationClipContexts), ...asArray(context.animationClips),
       ] : []),
     ];
     return values.filter((value) => value !== undefined && value !== null).join("\n").toLowerCase();
@@ -1263,6 +1275,16 @@
     if (skillIds.length) parts.push(skillIds.length === 1 ? skillIds[0] : `${skillIds[0]} +${skillIds.length - 1}`);
     const actionKinds = asArray(context?.actionKinds).filter(Boolean);
     if (actionKinds.length) parts.push(actionKinds.map(humanize).join(" / "));
+    if (Number(context?.animationOwnerCount || 0) > 1) {
+      parts.push(`${context.animationOwnerCount} ${kind === "characterAnimation" ? "playable character" : "enemy template"} animation owners`);
+    }
+    if (context?.animationOwnershipScope) parts.push(humanize(context.animationOwnershipScope));
+    if (context?.possibleMediaScope) parts.push(humanize(context.possibleMediaScope));
+    const functions = asArray(context?.animationFunctions).filter(Boolean);
+    if (functions.length) parts.push(functions.join(" / "));
+    const clipContexts = asArray(context?.animationClipContexts).filter(Boolean);
+    if (clipContexts.length) parts.push(clipContexts.map(humanize).join(" / "));
+    if (context?.clipReachability) parts.push(`clip reachability: ${context.clipReachability}`);
     const clips = asArray(context?.animationClips).filter(Boolean);
     if (clips.length) parts.push(clips.length === 1 ? clips[0] : `${clips[0]} +${clips.length - 1}`);
     return [...new Set(parts.filter(Boolean))].join(" · ");
@@ -1309,6 +1331,8 @@
           ["Wwise", raw.foundInWwise], [t("typedTraversal"), raw.traversalStatus], [t("playRoots"), raw.playRootCount],
           [t("possibleMedia"), raw.possibleMediaCount ?? raw.candidateCount], [t("uniqueContent"), raw.uniqueDecodedContentCount],
           [t("equivalentContent"), raw.contentEquivalentLeafCount], ["Runtime selection", raw.runtimeSelection], ["Contexts", raw.contextCount],
+          ["Playable animation owners", raw.playableCharacterAnimationOwnerCount], ["Animation scope", raw.animationContextScope],
+          ["Animation callbacks", asArray(raw.animationFunctions).join(" / ")],
         ]
       : [
           [t("recordType"), t(record.objectType)], [t("id"), raw.mediaId ?? raw.id], [t("category"), record.category], [t("scope"), record.scope],
