@@ -130,6 +130,10 @@ def compact_source(meta: dict[str, Any] | None, kind: str) -> dict[str, Any] | N
         "explicitConnectionIndexes",
         "connectionCountMismatchNodes",
         "extraOptionNodes",
+        "unreferencedOptionDefinitionNodes",
+        "linkedOptionNodesWithoutOutgoingConnections",
+        "linkedOptionNodesWithPartialIndexCoverage",
+        "serializedConnectionIndexesOutOfBounds",
     ):
         if route_counts.get(key):
             signal_counts[key] = route_counts[key]

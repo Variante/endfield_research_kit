@@ -99,6 +99,48 @@ class DialogTreeOptionRouteTests(unittest.TestCase):
         self.assertEqual(
             routes[1]["issue"]["expected"], {"minimum": 0, "maximumExclusive": 1}
         )
+        self.assertEqual(
+            routes[1]["failureClass"],
+            "serialized_connection_index_out_of_bounds",
+        )
+        self.assertEqual(
+            recovered["nodes"][0]["routingClass"],
+            "linked_option_node_with_partial_index_coverage",
+        )
+        self.assertEqual(recovered["nodes"][0]["nodeOrdinal"], 0)
+        self.assertEqual(
+            recovered["counts"]["linkedOptionNodesWithPartialIndexCoverage"],
+            1,
+        )
+        self.assertEqual(
+            recovered["counts"]["serializedConnectionIndexesOutOfBounds"], 1
+        )
+
+    def test_linked_option_node_without_edges_is_not_treated_as_terminal(self) -> None:
+        recovered = recover_dialog_tree_option_routes(
+            [option_node([{"_optionId": "option_a", "index": 0}])],
+            [],
+            runtime_defaults=DIALOG_TREE_RUNTIME_DEFAULTS,
+        )
+        node_row = recovered["nodes"][0]
+        route = node_row["routes"][0]
+        self.assertEqual(
+            node_row["routingClass"],
+            "linked_option_node_without_outgoing_connections",
+        )
+        self.assertEqual(node_row["incomingConnectionCount"], 0)
+        self.assertEqual(
+            route["failureClass"],
+            "linked_option_node_without_outgoing_connections",
+        )
+        self.assertEqual(
+            recovered["counts"]["linkedOptionNodesWithoutOutgoingConnections"],
+            1,
+        )
+        self.assertEqual(
+            recovered["counts"]["linkedNormalOptionsWithoutOutgoingConnections"],
+            1,
+        )
 
     def test_shared_physical_edge_requires_both_authored_indexes(self) -> None:
         recovered = recover_dialog_tree_option_routes(
@@ -129,9 +171,20 @@ class DialogTreeOptionRouteTests(unittest.TestCase):
         )
         self.assertEqual(recovered["counts"]["authoredOptionNodes"], 1)
         self.assertEqual(recovered["counts"]["unrecoverableOptionNodes"], 1)
+        self.assertEqual(
+            recovered["counts"]["unreferencedOptionDefinitionNodes"], 1
+        )
+        self.assertEqual(
+            recovered["counts"]["unreferencedOptionDefinitionRoutes"], 1
+        )
         self.assertEqual(recovered["counts"]["rejectedNormalOptionRoutes"], 1)
+        self.assertEqual(
+            recovered["nodes"][0]["routingClass"],
+            "unreferenced_option_definition",
+        )
         route = recovered["nodes"][0]["routes"][0]
         self.assertEqual(route["status"], "rejected")
+        self.assertEqual(route["failureClass"], "unreferenced_option_definition")
         self.assertEqual(route["issue"]["gate"], "nodeIdentity")
 
 

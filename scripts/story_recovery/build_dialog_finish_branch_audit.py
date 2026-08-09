@@ -72,6 +72,9 @@ EXPECTED_METADATA_SHA256 = (
 )
 EXPECTED_METADATA_REGISTRATION = 0x18B921C30
 EXPECTED_RUNTIME_FIELD_OFFSETS = {
+    "Beyond.Gameplay.DialogTreeOptionBase": {
+        "<doNext>k__BackingField": 0x54,
+    },
     "Beyond.Gameplay.NormalOptionData": {
         "main": 0x70,
         "index": 0x80,
@@ -156,14 +159,36 @@ NATIVE_METHODS = {
             "DialogTreeExOptionNode connection"
         ),
     },
+    "DialogTreeOptionBase..ctor": {
+        "token": "0x06003a06",
+        "va": 0x1872A6544,
+        "bytes": 112,
+        "sha256": "54f809b09e6662c82aff3d38f018de4dc8dac5c6a0e534c4ff83b92577b47dcb",
+        "contract": (
+            "initializes doNext true on constructed option data before runtime "
+            "option display"
+        ),
+    },
+    "DialogManager.ShowOptions": {
+        "token": "0x0600f789",
+        "va": 0x186E19790,
+        "bytes": 1064,
+        "sha256": "096e5a7226944be950d98ceac9efaa715f2f091f424def60091bc80a577ae119",
+        "contract": (
+            "writes DialogTreeOptionBase.doNext true while registering each "
+            "normal option; the one false write belongs to the bounded "
+            "auto-selected default path before SelectIndex"
+        ),
+    },
     "NormalOptionHandler.OnSelectWhenOptionEnd": {
         "token": "0x0600fa1e",
         "va": 0x186E512B0,
         "bytes": 176,
         "sha256": "10fac7b20f31417754dd81e2ec8955cc50ac369f9348e4a05e96cee675213416",
         "contract": (
-            "reads NormalOptionData.index at the MetadataRegistration-backed "
-            "0x80 field and passes it to DialogManager.SelectDialogTreeIndex"
+            "checks DialogTreeOptionBase.doNext, then reads NormalOptionData.index "
+            "at the MetadataRegistration-backed 0x80 field and passes it to "
+            "DialogManager.SelectDialogTreeIndex"
         ),
     },
     "DialogManager.SelectDialogTreeIndex": {
@@ -501,6 +526,8 @@ def decode_dialog_tree_finish_routes(
                 rejected.append(
                     {
                         "sourceFile": source_file,
+                        "routingClass": node_summary.get("routingClass"),
+                        "failureClass": route.get("failureClass"),
                         **(route.get("issue") or {}),
                     }
                 )
@@ -831,6 +858,12 @@ def _summarize_dialog_tree_route_coverage(
             bounded = {
                 "sourceFile": source_file,
                 "nodeId": node.get("nodeId"),
+                "nodeOrdinal": node.get("nodeOrdinal"),
+                "routingClass": node.get("routingClass"),
+                "serializedReferenceIdentity": node.get(
+                    "serializedReferenceIdentity"
+                ),
+                "incomingConnectionCount": node.get("incomingConnectionCount"),
                 "normalOptionCount": node.get("normalOptionCount"),
                 "outgoingConnectionCount": node.get("outgoingConnectionCount"),
                 "extraOptionConnectionIndices": node.get(
@@ -851,14 +884,14 @@ def _summarize_dialog_tree_route_coverage(
                 if isinstance(route, dict) and route.get("status") != "validated":
                     invalid_routes.append(
                         {
-                            "sourceFile": source_file,
-                            "nodeId": node.get("nodeId"),
+                            **bounded,
                             "optionId": route.get("optionId"),
                             "optionOrdinal": route.get("optionOrdinal"),
                             "connectionIndex": route.get("connectionIndex"),
                             "connectionIndexSource": route.get(
                                 "connectionIndexSource"
                             ),
+                            "failureClass": route.get("failureClass"),
                             "issue": route.get("issue") or {},
                         }
                     )
@@ -871,7 +904,9 @@ def _summarize_dialog_tree_route_coverage(
         "evidenceBoundary": (
             "Counts describe only exact original DialogTree files observed by "
             "Mission Pipeline. Unequal option/connection counts are retained "
-            "when serialized indexes validate; invalid indexes fail closed."
+            "when serialized indexes validate. Unreferenced definitions, linked "
+            "nodes without outgoing edges, and out-of-bounds indexes remain "
+            "separate fail-closed classes."
         ),
     }
 
@@ -1108,7 +1143,7 @@ def build_report(
         )
     )
     report = {
-        "schemaVersion": "dialogFinishMissionBranchAudit.v3",
+        "schemaVersion": "dialogFinishMissionBranchAudit.v4",
         "status": "validated",
         "validator": validator,
         "evidencePolicy": (
@@ -1117,7 +1152,9 @@ def build_report(
             "admitted. A DialogTree normal option selects the physical outgoing "
             "edge stored in NormalOptionData.index. An omitted DialogTree Int32 "
             "is admitted as zero only under the hash-locked FullSerializer "
-            "reflected-field default contract. OCR and manual overrides are not read."
+            "reflected-field default contract. ShowOptions sets doNext before "
+            "selection, so missing physical successors are retained as failures, "
+            "not reclassified as terminal choices. OCR and manual overrides are not read."
         ),
         "nativeContract": native_contract,
         "sources": {
@@ -1154,6 +1191,15 @@ def build_report(
             "dialogTreeExtraOptionNodes": tree_route_counts.get(
                 "extraOptionNodes", 0
             ),
+            "dialogTreeUnreferencedOptionDefinitionNodes": tree_route_counts.get(
+                "unreferencedOptionDefinitionNodes", 0
+            ),
+            "dialogTreeLinkedOptionNodesWithoutOutgoingConnections": tree_route_counts.get(
+                "linkedOptionNodesWithoutOutgoingConnections", 0
+            ),
+            "dialogTreeLinkedOptionNodesWithPartialIndexCoverage": tree_route_counts.get(
+                "linkedOptionNodesWithPartialIndexCoverage", 0
+            ),
             "corpusDialogTreeFiles": corpus_route_coverage.get(
                 "dialogTreeFileCount", 0
             ),
@@ -1168,6 +1214,24 @@ def build_report(
             ),
             "corpusUnrecoverableOptionNodes": corpus_route_counts.get(
                 "unrecoverableOptionNodes", 0
+            ),
+            "corpusUnreferencedOptionDefinitionNodes": corpus_route_counts.get(
+                "unreferencedOptionDefinitionNodes", 0
+            ),
+            "corpusUnreferencedOptionDefinitionRoutes": corpus_route_counts.get(
+                "unreferencedOptionDefinitionRoutes", 0
+            ),
+            "corpusLinkedOptionNodesWithoutOutgoingConnections": corpus_route_counts.get(
+                "linkedOptionNodesWithoutOutgoingConnections", 0
+            ),
+            "corpusLinkedNormalOptionsWithoutOutgoingConnections": corpus_route_counts.get(
+                "linkedNormalOptionsWithoutOutgoingConnections", 0
+            ),
+            "corpusLinkedOptionNodesWithPartialIndexCoverage": corpus_route_counts.get(
+                "linkedOptionNodesWithPartialIndexCoverage", 0
+            ),
+            "corpusSerializedConnectionIndexesOutOfBounds": corpus_route_counts.get(
+                "serializedConnectionIndexesOutOfBounds", 0
             ),
             "corpusValidatedNormalOptionRoutes": corpus_route_counts.get(
                 "validatedNormalOptionRoutes", 0
@@ -1289,6 +1353,7 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Unequal option/connection nodes admitted by exact index / extra-option nodes: {counts.get('dialogTreeConnectionCountMismatchNodes', 0)} / {counts.get('dialogTreeExtraOptionNodes', 0)}",
         f"- Full typed corpus: {counts.get('corpusDialogTreeFiles', 0)} DialogTrees, {counts.get('corpusDialogTreeOptionNodes', 0)} authored option nodes, {counts.get('corpusAuthoredNormalOptions', 0)} normal options",
         f"- Full-corpus validated / rejected routes: {counts.get('corpusValidatedNormalOptionRoutes', 0)} / {counts.get('corpusRejectedNormalOptionRoutes', 0)}; unrecoverable-identity option nodes: {counts.get('corpusUnrecoverableOptionNodes', 0)}",
+        f"- Full-corpus rejected-route structure: {counts.get('corpusUnreferencedOptionDefinitionRoutes', 0)} unreferenced definition options; {counts.get('corpusLinkedNormalOptionsWithoutOutgoingConnections', 0)} options on linked zero-edge nodes; {counts.get('corpusSerializedConnectionIndexesOutOfBounds', 0)} out-of-bounds indexes on partially connected nodes",
         f"- Full-corpus unequal-count / extra-option nodes: {counts.get('corpusConnectionCountMismatchNodes', 0)} / {counts.get('corpusExtraOptionNodes', 0)}",
         f"- Published dependencies: {counts.get('publishedDependencies', 0)}",
         f"- Missions / quests: {counts.get('missions', 0)} / {counts.get('quests', 0)}",
