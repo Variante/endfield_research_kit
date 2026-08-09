@@ -245,7 +245,42 @@ def verify_hdpls_resource_lifecycle_contract(
         (
             "audit.verdict",
             hdpls_audit["verdict"],
-            "RESOURCE_LIFECYCLE_CLOSED_ACTIVE_PIXELS_CAPTURE_REQUIRED",
+            "INSTALLED_IFIX_AND_RESOURCE_LIFECYCLE_CLOSED_"
+            "ACTIVE_PIXELS_CAPTURE_REQUIRED",
+        ),
+        (
+            "installed_ifix_state",
+            hdpls_audit["installed_ifix_state"],
+            {
+                "scope": "hash-pinned files currently installed on this machine",
+                "base_ifix_file_count": 0,
+                "persistent_ifix_file_count": 1,
+                "persistent_target_count": 30,
+                "checked_hdpls_signatures": [
+                    {
+                        "type": (
+                            "HG.Rendering.Runtime."
+                            "HGHDPLSCharacterShadowManager"
+                        ),
+                        "method": "GetShadowParamsFromCharacter",
+                        "wrapper_gate": "0x877",
+                    },
+                    {
+                        "type": (
+                            "HG.Rendering.Runtime."
+                            "ScreenSpaceShadowMaskPassConstructor"
+                        ),
+                        "method": "RenderHDPLSScreenSpaceShadowResolve",
+                        "wrapper_gate": "0x890",
+                    },
+                ],
+                "matching_target_count": 0,
+                "current_route": "both recovered non-IFix branches",
+                "version_boundary": (
+                    "future/network, memory-only, or differently installed "
+                    "patches remain outside this static snapshot"
+                ),
+            },
         ),
         (
             "native.texture_roles",
@@ -2703,6 +2738,18 @@ def verify_selected_resolver_binding_contract() -> None:
         "screen_resolve_global": "_HDPLSScreenSpaceShadowMask",
         "deferred_binding_22": "_HDPLSScreenSpaceShadowMask",
     }
+    assert hdpls_native["installed_ifix_state"] == {
+        "base_file_count": 0,
+        "persistent_file_count": 1,
+        "persistent_target_count": 30,
+        "hdpls_target_count": 0,
+        "current_route": "both recovered non-IFix branches",
+        "future_patch_boundary": True,
+    }
+    require_hash(
+        repo_path(hdpls_native["installed_ifix_state_path"]),
+        hdpls_native["installed_ifix_state_sha256"],
+    )
     require_hash(
         repo_path(hdpls_native["audit_path"]),
         hdpls_native["audit_sha256"],
@@ -2796,7 +2843,8 @@ def verify_selected_resolver_binding_contract() -> None:
         "endfield.hdpls-character-shadow-data-audit.v1"
     )
     assert hdpls_audit["verdict"] == (
-        "RESOURCE_LIFECYCLE_CLOSED_ACTIVE_PIXELS_CAPTURE_REQUIRED"
+        "INSTALLED_IFIX_AND_RESOURCE_LIFECYCLE_CLOSED_"
+        "ACTIVE_PIXELS_CAPTURE_REQUIRED"
     )
     assert hdpls_audit["publication_allowed"] is False
     assert hdpls_audit["layout"]["reflected_size_bytes"] == 3568
@@ -2869,7 +2917,7 @@ def verify_selected_resolver_binding_contract() -> None:
         BINDING_CONTRACT_PATH,
     )
     assert len(hdpls_audit["capture_boundary"]["required"]) == 3
-    assert len(hdpls_audit["capture_boundary"]["offline_closed"]) == 12
+    assert len(hdpls_audit["capture_boundary"]["offline_closed"]) == 13
     for path_key, hash_key in (
         ("disassembly_path", "disassembly_sha256"),
         ("metadata_path", "metadata_sha256"),
@@ -2882,6 +2930,7 @@ def verify_selected_resolver_binding_contract() -> None:
         ("resource_metadata_path", "resource_metadata_sha256"),
         ("resolve_shader_path", "resolve_shader_sha256"),
         ("resolve_dxbc_sidecar_path", "resolve_dxbc_sidecar_sha256"),
+        ("installed_ifix_state_path", "installed_ifix_state_sha256"),
         ("selected_shader_path", "selected_shader_sha256"),
         ("source_sidecar_path", "source_sidecar_sha256"),
         ("constant_buffer_audit_path", "constant_buffer_audit_sha256"),

@@ -165,6 +165,22 @@ class HdplsResourceLifecycleContractTests(unittest.TestCase):
                 Path("fixture_contract.json"),
             )
 
+    def test_installed_ifix_target_count_failure_is_actionable(self) -> None:
+        native, audit = self.load_current_contract()
+        changed = copy.deepcopy(audit)
+        changed["installed_ifix_state"]["persistent_target_count"] = 31
+        with self.assertRaisesRegex(
+            AssertionError,
+            "HDPLS resource-lifecycle validator failed: "
+            "check=installed_ifix_state; source=fixture_contract.json; "
+            "expected=.*30.*actual=.*31",
+        ):
+            verifier.verify_hdpls_resource_lifecycle_contract(
+                native,
+                changed,
+                Path("fixture_contract.json"),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

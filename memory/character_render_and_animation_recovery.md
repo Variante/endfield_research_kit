@@ -111,9 +111,11 @@ NPC archetypes are imported as labeled source kits.
   the reduced/full-size RGBA8 `_HDPLSScreenSpaceShadowMask` consumed by
   deferred binding 22. Their RenderGraph dependencies and global publication
   are closed; inactive frames clear all selectors and bind white to both slots,
-  so stale resources cannot escape. Live IFix `0x877/0x890` state, input
-  values, active rows/selectors, unused persistent rows, atlas texels, and
-  resolved RGBA pixels remain capture-only.
+  so stale resources cannot escape. The hash-pinned installed Persistent IFix
+  table has 30 targets and replaces neither `0x877` nor `0x890` owner method,
+  closing the current on-disk branch choice; future/network patches remain a
+  version boundary. Live input values, active rows/selectors, unused persistent
+  rows, atlas texels, and resolved RGBA pixels remain capture-only.
 
 ## Main rendering gap
 
