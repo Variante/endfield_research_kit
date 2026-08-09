@@ -1109,6 +1109,116 @@ def verify_visibility_sh_constants_gpu_report(
         require_visibility_sh_constants_value(source, check, actual, expected)
 
 
+def verify_visibility_sh_frame_report(
+    transport: dict[str, object],
+    report: dict[str, object],
+    api: str,
+    expected_publication: str,
+    source: Path = BINDING_CONTRACT_PATH,
+) -> None:
+    fixture = transport["fixture"]
+    checks = (
+        (
+            f"frame_report.{api}.{expected_publication}.schema",
+            report["schema"],
+            "endfield-recovered-visibility-sh-frame-validation-v1",
+        ),
+        (f"frame_report.{api}.{expected_publication}.valid", report["valid"], True),
+        (
+            f"frame_report.{api}.{expected_publication}.identity",
+            (
+                report["graphicsApi"],
+                report["defaultOff"],
+                report["canonicalProperty"],
+                report["canonicalReadyProperty"],
+                report["expectedCanonicalPublication"],
+                report["pass0ConsumerEnabled"],
+            ),
+            (
+                api,
+                True,
+                "_VisibilitySHRT",
+                "_EndfieldRecoveredVisibilitySHReady",
+                expected_publication,
+                False,
+            ),
+        ),
+        (
+            f"frame_report.{api}.{expected_publication}.capsules",
+            report["capsuleFixture"],
+            {
+                "actor": fixture["actor"],
+                "count": fixture["authored_capsules"],
+                "stride": 48,
+                "order": fixture["survivor_order"],
+                "sha256": fixture["capsule_bytes_sha256"],
+            },
+        ),
+        (
+            f"frame_report.{api}.{expected_publication}.active",
+            (
+                report["activeFrame"]["actor"],
+                report["activeFrame"]["survivors"],
+                report["activeFrame"]["authored"],
+                report["activeFrame"]["order"],
+                report["activeFrame"]["width"],
+                report["activeFrame"]["height"],
+                report["activeFrame"]["canonicalPublication"],
+            ),
+            (
+                fixture["actor"],
+                fixture["authored_capsules"],
+                fixture["authored_capsules"],
+                fixture["survivor_order"],
+                fixture["readback_width"],
+                fixture["readback_height"],
+                expected_publication,
+            ),
+        ),
+        (
+            f"frame_report.{api}.{expected_publication}.gpu",
+            report["gpuReadback"],
+            {
+                "actor": fixture["actor"],
+                "width": fixture["readback_width"],
+                "height": fixture["readback_height"],
+                "byteCount": fixture["readback_byte_count"],
+                "nonzeroPixels": fixture["nonzero_pixels"],
+                "sha256": fixture["rgba_half_sha256"],
+            },
+        ),
+        (
+            f"frame_report.{api}.{expected_publication}.sources",
+            (
+                report["sources"]["producer"]["sha256"],
+                report["sources"]["pipeline"]["sha256"],
+                report["sources"]["nativeAudit"]["sha256"],
+            ),
+            (
+                transport["producer_sha256"],
+                transport["pipeline_sha256"],
+                transport["native_audit_sha256"],
+            ),
+        ),
+        (
+            f"frame_report.{api}.{expected_publication}.beauty",
+            (
+                report["beautyFrame"]["sha256"],
+                report["beautyFrame"]["expectedSha256"],
+                report["beautyFrame"]["unchanged"],
+            ),
+            (
+                report["beautyFrame"]["expectedSha256"],
+                report["beautyFrame"]["expectedSha256"],
+                True,
+            ),
+        ),
+        (f"frame_report.{api}.{expected_publication}.failures", report["failures"], []),
+    )
+    for check, actual, expected in checks:
+        require_visibility_sh_constants_value(source, check, actual, expected)
+
+
 def require_hdpls_matrix_value(
     source: Path,
     check: str,
@@ -2697,7 +2807,8 @@ def verify_selected_resolver_binding_contract() -> None:
     )
 
     visibility_resource = contract["visibility_sh_resource_binding"]
-    assert visibility_resource["published_by_lab"] is False
+    assert visibility_resource["published_by_lab"] is True
+    assert visibility_resource["published_by_default"] is False
     assert "source-closed" in visibility_resource["status"]
     visibility_constants = visibility_resource["constants_transport"]
     assert visibility_constants["published_by_default"] is False
@@ -2799,6 +2910,104 @@ def verify_selected_resolver_binding_contract() -> None:
             "Exiting batchmode successfully now!",
         ],
     )
+    visibility_frame = visibility_resource["canonical_frame_transport"]
+    assert visibility_frame["published_by_default"] is False
+    assert visibility_frame["pass0_consumer_enabled"] is False
+    assert visibility_frame["required_same_frame_resources"] == [
+        "_BinningBuffer",
+        "_ReflectionProbeOctTextureArray",
+        "ReflectionProbeGlobalData",
+        "VisibilitySHConstData",
+    ]
+    for path_key, hash_key in (
+        ("producer_path", "producer_sha256"),
+        ("pipeline_path", "pipeline_sha256"),
+        ("shader_path", "shader_sha256"),
+        ("payload_path", "payload_sha256"),
+        ("native_audit_path", "native_audit_sha256"),
+        ("validator_path", "validator_sha256"),
+        ("validator_test_path", "validator_test_sha256"),
+        ("wrapper_path", "wrapper_sha256"),
+    ):
+        require_hash(
+            LAB_ROOT / visibility_frame[path_key],
+            visibility_frame[hash_key],
+        )
+    require_tokens(
+        LAB_ROOT / visibility_frame["producer_path"],
+        [
+            "bool canonicalFrameResourcesReady)",
+            "CanonicalOutputId,",
+            "canonicalFrameResourcesReady",
+            "? (Texture)resources.color",
+            ": Texture2D.blackTexture",
+            '"canonicalPublication="',
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / visibility_frame["pipeline_path"],
+        [
+            "bool recoveredCanonicalFrameResourcesReady = false;",
+            "recoveredCanonicalFrameResourcesReady = true;",
+            "recoveredVisibilitySHProducer.Render(",
+            "recoveredCanonicalFrameResourcesReady);",
+        ],
+    )
+    for api, evidence in visibility_frame["gpu_reports"].items():
+        report_path = LAB_ROOT / evidence["path"]
+        require_hash(report_path, evidence["sha256"])
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        verify_visibility_sh_frame_report(
+            visibility_frame,
+            report,
+            api,
+            "ready",
+            BINDING_CONTRACT_PATH,
+        )
+        require_hash(LAB_ROOT / evidence["beauty_path"], evidence["beauty_sha256"])
+        require_unity_log(
+            LAB_ROOT / evidence["log_path"],
+            evidence["log_sha256"],
+            [
+                "exact VisibilitySHConstData frame resources are active",
+                "Recovered VisibilitySH CPU capsule fixture: actor=Wulfa, count=10",
+                "canonicalPublication=ready",
+                "nonzeroPixels=20006",
+                visibility_frame["fixture"]["rgba_half_sha256"],
+                "Exiting batchmode successfully now!",
+            ],
+        )
+    fail_closed = visibility_frame["fail_closed_report"]
+    fail_report_path = LAB_ROOT / fail_closed["path"]
+    require_hash(fail_report_path, fail_closed["sha256"])
+    fail_report = json.loads(fail_report_path.read_text(encoding="utf-8"))
+    verify_visibility_sh_frame_report(
+        visibility_frame,
+        fail_report,
+        "d3d12",
+        "fail-closed",
+        BINDING_CONTRACT_PATH,
+    )
+    fail_log_path = LAB_ROOT / fail_closed["log_path"]
+    require_unity_log(
+        fail_log_path,
+        fail_closed["log_sha256"],
+        [
+            "Recovered VisibilitySH CPU capsule fixture: actor=Wulfa, count=10",
+            "canonicalPublication=fail-closed",
+            "nonzeroPixels=20006",
+            visibility_frame["fixture"]["rgba_half_sha256"],
+            "Exiting batchmode successfully now!",
+        ],
+    )
+    if "exact VisibilitySHConstData frame resources are active" in (
+        fail_log_path.read_text(encoding="utf-8", errors="replace")
+    ):
+        raise AssertionError(
+            "VisibilitySH frame validator failed: "
+            "check=fail_closed_upstream_absent; "
+            f"source={fail_log_path}; expected=False; actual=True"
+        )
     require_hash(
         LAB_ROOT / visibility_resource["audit_path"],
         visibility_resource["audit_sha256"],
@@ -4601,8 +4810,9 @@ def main() -> int:
         "slice-0 oct producer, the 4,160-byte global-buffer producer and "
         "serialized CharInfo SH-luminance fallback, plus the default-off "
         "D3D11/D3D12 bit-exact canonical light/zero-reflection binning, "
-        "same-frame reflection resources, and the full exact 128-byte b33 "
-        "constant transport are pinned; presentation remains "
+        "same-frame reflection resources, the full exact 128-byte b33 "
+        "constant transport, and the D3D11/D3D12-identical nonzero canonical "
+        "VisibilitySH frame publication are pinned; presentation remains "
         "default-off because the CharInfo-frame runtime contract is not closed."
     )
     return 0

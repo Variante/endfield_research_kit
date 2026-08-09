@@ -1026,7 +1026,8 @@ namespace EndfieldGraphShaderLab
                 renderWidth,
                 renderHeight,
                 operatorLightRig,
-                commandBuffer);
+                    commandBuffer);
+            bool recoveredCanonicalFrameResourcesReady = false;
             if (recoveredCanonicalBinningReady)
             {
                 string reflectionFailure;
@@ -1088,14 +1089,18 @@ namespace EndfieldGraphShaderLab
                             loggedRecoveredReflectionFrameFailure = true;
                         }
                     }
-                    else if (!loggedRecoveredReflectionFrameActivation)
+                    else
                     {
-                        Debug.Log(
-                            "Recovered canonical CharInfo binning + reflection " +
-                            "oct/global + exact VisibilitySHConstData " +
-                            "frame resources are active for the exact " +
-                            "no-local-probe fixture.");
-                        loggedRecoveredReflectionFrameActivation = true;
+                        if (!loggedRecoveredReflectionFrameActivation)
+                        {
+                            Debug.Log(
+                                "Recovered canonical CharInfo binning + reflection " +
+                                "oct/global + exact VisibilitySHConstData " +
+                                "frame resources are active for the exact " +
+                                "no-local-probe fixture.");
+                            loggedRecoveredReflectionFrameActivation = true;
+                        }
+                        recoveredCanonicalFrameResourcesReady = true;
                     }
                 }
             }
@@ -1159,7 +1164,8 @@ namespace EndfieldGraphShaderLab
                 camera,
                 preGBufferFrame,
                 canonicalColorTarget,
-                canonicalDepthTarget);
+                canonicalDepthTarget,
+                recoveredCanonicalFrameResourcesReady);
             bool recoveredScreenShadowMaskReady =
                 recoveredScreenShadowMaskDiagnostic.Render(
                 context,
