@@ -103,6 +103,57 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         ):
             AUDIT.validate_record0_discriminator_native(bytes(body))
 
+    def test_native_static_record_terms(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = stream.read(AUDIT.PREPARE_CPU_DATA_SIZE)
+            stream.seek(AUDIT.VISIBLE_LIGHT_GET_RANGE_FILE_OFFSET)
+            range_getter = stream.read(AUDIT.VISIBLE_LIGHT_GET_RANGE_SIZE)
+            stream.seek(AUDIT.SCALAR_COS_FILE_OFFSET)
+            scalar_cos = stream.read(AUDIT.SCALAR_COS_SIZE)
+            stream.seek(AUDIT.GET_LIGHT_FALLOFF_DEFAULT_FILE_OFFSET)
+            one = stream.read(4)
+            stream.seek(AUDIT.SPOT_ANGLE_DIVISOR_FILE_OFFSET)
+            angle_divisor = stream.read(4)
+            stream.seek(AUDIT.SPOT_ANGLE_PI_FILE_OFFSET)
+            angle_pi = stream.read(4)
+        result = AUDIT.validate_static_record_terms_native(
+            body, range_getter, scalar_cos, one, angle_divisor, angle_pi
+        )
+        self.assertEqual(result["visibleLightRange"]["fieldOffset"], "0x68")
+        self.assertEqual(
+            result["visibleLightRange"]["record1WFormula"],
+            "1.0f / VisibleLight.range",
+        )
+        self.assertEqual(
+            result["spotRecord2"]["selectedGoldenBits"]["outerCos"],
+            "0x3EAF1D40",
+        )
+
+    def test_changed_static_record_sequence_fails_closed(self) -> None:
+        with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
+            stream.seek(AUDIT.PREPARE_CPU_DATA_FILE_OFFSET)
+            body = bytearray(stream.read(AUDIT.PREPARE_CPU_DATA_SIZE))
+            stream.seek(AUDIT.VISIBLE_LIGHT_GET_RANGE_FILE_OFFSET)
+            range_getter = stream.read(AUDIT.VISIBLE_LIGHT_GET_RANGE_SIZE)
+            stream.seek(AUDIT.SCALAR_COS_FILE_OFFSET)
+            scalar_cos = stream.read(AUDIT.SCALAR_COS_SIZE)
+            stream.seek(AUDIT.GET_LIGHT_FALLOFF_DEFAULT_FILE_OFFSET)
+            one = stream.read(4)
+            stream.seek(AUDIT.SPOT_ANGLE_DIVISOR_FILE_OFFSET)
+            angle_divisor = stream.read(4)
+            stream.seek(AUDIT.SPOT_ANGLE_PI_FILE_OFFSET)
+            angle_pi = stream.read(4)
+        body[0xCFD] ^= 1
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=spot_inner_angle_scale_sequence; source=.*GameAssembly.dll; "
+            r"expected=.*actual=",
+        ):
+            AUDIT.validate_static_record_terms_native(
+                bytes(body), range_getter, scalar_cos, one, angle_divisor, angle_pi
+            )
+
     def test_native_additional_data_layout(self) -> None:
         with AUDIT.GAME_ASSEMBLY.open("rb") as stream:
             stream.seek(AUDIT.GET_LIGHT_NPR_DATA_FILE_OFFSET)
@@ -316,6 +367,75 @@ class GachaDeferredLightDataAuditTests(unittest.TestCase):
         self.assertEqual(
             AUDIT.recover_record0_discriminator(shadow_spot)["record0W"], 2.0
         )
+
+    def test_selected_room_record1_inverse_range_payloads(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        rows = AUDIT.room_light_rows(population, hierarchy)
+        recovered = [AUDIT.recover_record1_inverse_range(row) for row in rows]
+        self.assertEqual(
+            [row["record1WBits"] for row in recovered],
+            [
+                "0x3DCCCCCD",
+                "0x3E115050",
+                "0x3DCCCCCD",
+                "0x3DCCCCCD",
+                "0x3D924925",
+                "0x3E4CCCCD",
+                "0x3D924925",
+                "0x3E4CCCCD",
+                "0x3E13CEC6",
+                "0x3D4CCCCD",
+                "0x3D888889",
+            ],
+        )
+
+    def test_selected_room_record2_static_payloads(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        rows = AUDIT.room_light_rows(population, hierarchy)
+        recovered = [AUDIT.recover_record2_static_terms(row) for row in rows]
+        self.assertEqual(recovered[0]["record2ZBits"], "0x3EAF1D40")
+        self.assertEqual(recovered[0]["record2WBits"], "0x402F4D02")
+        self.assertEqual(
+            sum(row["record2ZBits"] == "0x41900000" for row in recovered), 4
+        )
+        self.assertEqual(
+            sum(row["record2ZBits"] == "0xBF800000" for row in recovered), 6
+        )
+        self.assertEqual(sum(row["record2WClosed"] for row in recovered), 1)
+
+    def test_unknown_record1_range_fails_closed(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        row = copy.deepcopy(AUDIT.room_light_rows(population, hierarchy)[0])
+        row["range"] = 3.0
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=room_.*_record1_range_known; source=.*Light.*; "
+            r"expected=True; actual=False",
+        ):
+            AUDIT.recover_record1_inverse_range(row)
+
+    def test_changed_record2_input_fails_closed(self) -> None:
+        population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
+        hierarchy = json.loads(AUDIT.ROOM_HIERARCHY.read_text(encoding="utf-8"))
+        rows = AUDIT.room_light_rows(population, hierarchy)
+        changed_spot = copy.deepcopy(rows[0])
+        changed_spot["outerSpotAngleDegrees"] = 139.0
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=room_.*_record2_spot_angles; source=.*Light.*; expected=.*actual=",
+        ):
+            AUDIT.recover_record2_static_terms(changed_spot)
+        changed_point = copy.deepcopy(rows[1])
+        changed_point["linearLightLength"] = 2.0
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"check=room_.*_record2_point_length; source=.*Light.*; "
+            r"expected=True; actual=False",
+        ):
+            AUDIT.recover_record2_static_terms(changed_point)
 
     def test_unknown_record0_light_type_fails_closed(self) -> None:
         population = json.loads(AUDIT.GACHA_POPULATION.read_text(encoding="utf-8"))
