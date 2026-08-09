@@ -39,6 +39,13 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def sha256_text_lf(path: Path) -> str:
+    """Hash source text canonically across Git LF/CRLF checkout policy."""
+    return hashlib.sha256(
+        path.read_bytes().replace(b"\r\n", b"\n")
+    ).hexdigest()
+
+
 def repo_path(relative: str) -> Path:
     return REPO_ROOT.joinpath(*relative.split("/"))
 
@@ -50,6 +57,17 @@ def require_hash(path: Path, expected: str) -> None:
     if actual != expected:
         raise AssertionError(
             f"{path}: SHA-256 {actual} does not match pinned {expected}"
+        )
+
+
+def require_text_hash(path: Path, expected: str) -> None:
+    if not path.is_file():
+        raise AssertionError(f"missing pinned source text: {path}")
+    actual = sha256_text_lf(path)
+    if actual != expected:
+        raise AssertionError(
+            f"{path}: canonical-LF SHA-256 {actual} does not match "
+            f"pinned {expected}"
         )
 
 
@@ -1652,6 +1670,98 @@ def verify_selected_resolver_binding_contract() -> None:
         identified[0]["size"],
     ) == ("_LightBinningConstants", "_28_29", 3, 32, 48)
     assert identified[0]["status"].startswith("binary-role-identified")
+    light_binning_native = identified[0]["native_producer"]
+    require_hash(
+        repo_path(light_binning_native["audit_path"]),
+        light_binning_native["audit_sha256"],
+    )
+    assert light_binning_native["owner"] == "LightCulling+0x60"
+    assert light_binning_native["upload_size_bytes"] == 48
+    assert light_binning_native["light_cap"] == 32
+    assert light_binning_native["layout"] == [
+        "int lightCount@0",
+        "int numTiles@4",
+        "int actualWidth@8",
+        "int actualHeight@12",
+        "float tileSize@16",
+        "float numTilesX@20",
+        "float numTilesY@24",
+        "float numSliceZ@28",
+        "float nearClipPlane@32",
+        "float farClipPlane@36",
+        "float zBinSlice@40",
+        "float invZBinSlice@44",
+    ]
+    assert "12 authored room lights are not a valid substitute" in (
+        light_binning_native["remaining_boundary"]
+    )
+
+    light_binning_transport = identified[0]["unity_transport"]
+    assert light_binning_transport["activation_policy"] == (
+        "default-off-fail-closed"
+    )
+    assert light_binning_transport["environment_variable"] == (
+        "ENDFIELD_RECOVERED_LIGHT_BINNING_CONSTANTS"
+    )
+    assert light_binning_transport["command_line_argument"] == (
+        "-endfield-recovered-light-binning-constants"
+    )
+    assert light_binning_transport["ready_property"] == (
+        "_EndfieldRecoveredLightBinningConstantsReady"
+    )
+    for path_key, hash_key in (
+        ("contract_path", "contract_sha256"),
+        ("runtime_path", "runtime_sha256"),
+        ("probe_path", "probe_sha256"),
+        ("verifier_path", "verifier_sha256"),
+    ):
+        require_text_hash(
+            repo_path(light_binning_transport[path_key]),
+            light_binning_transport[hash_key],
+        )
+
+    light_binning_gpu = light_binning_transport["gpu_validation"]
+    for api in ("d3d11", "d3d12"):
+        report_path = repo_path(
+            light_binning_gpu[f"{api}_report_path"]
+        )
+        require_hash(
+            report_path,
+            light_binning_gpu[f"{api}_report_sha256"],
+        )
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        assert report["schema"] == (
+            "endfield-recovered-light-binning-constants-validation-v1"
+        )
+        assert report["valid"] is True
+        assert report["graphicsApi"] == api
+        assert report["canonicalBindingDefaultOff"] is True
+        assert report["retailWholeSceneLightListClosed"] is False
+        assert report["sourceAuditHashMatches"] is True
+        assert report["managedSizeBytes"] == 48
+        assert report["globalConstantBufferGpuReadbackMatches"] is True
+        assert report["fixtureLightCount"] == 8
+        assert report["fixtureNumTiles"] == 8160
+        assert len(report["fields"]) == 12
+        assert all(field["matches"] for field in report["fields"])
+        assert len(report["failClosedGates"]) == 5
+        assert all(
+            gate["rejected"] and gate["diagnosticMatched"]
+            for gate in report["failClosedGates"]
+        )
+        assert report["failures"] == []
+        require_unity_log(
+            repo_path(light_binning_gpu[f"{api}_log_path"]),
+            light_binning_gpu[f"{api}_log_sha256"],
+            [
+                "Recovered LightBinningConstants validation passed:",
+                "size=48",
+                "GPU words=12/12",
+                "fail-closed gates=5/5",
+                f"api={api}",
+                "Retail whole-scene light list remains open.",
+            ],
+        )
     assert (
         identified[1]["role"],
         identified[1]["symbol"],
@@ -1968,8 +2078,9 @@ def main() -> int:
         "runtime resolver shader/Material chain, and global-texture "
         "plus scene-color/depth attachment, ref-0 sphere stencil provenance, "
         "and the exact selected Vulkan fragment's 5 named / 4 debug-anonymous "
-        "constant buffers (including binary identification of b32 as "
-        "_LightBinningConstants, exact b34 ShadowData identity, and b37 "
+        "constant buffers (including b32 _LightBinningConstants with its "
+        "exact native 48-byte producer layout and D3D11/D3D12-verified "
+        "default-off isolated-count transport, exact b34 ShadowData identity, and b37 "
         "LightCookieData role, plus exact b38 "
         "HDPunctualLightCharacterShadowData identity), all 25 sampled texture "
         "roles, exact installed CharInfo Volume/Environment state that gates "
