@@ -123,8 +123,8 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 6
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 3
+AUDIO_SEMANTIC_SCHEMA_VERSION = 7
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 4
 
 
 def runtime_spec(
@@ -248,6 +248,49 @@ RUNTIME_SYSTEM_SPECS = (
             "SwitchAudioCustomState", "SwitchAudioState", "_SwitchState", "_EnterState",
             "_PostAudioEvent", "_ExitState", "_ProcessAudio", "_ProcessCustomAudio",
         ),
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Core.PhysicsAudioComponentData",
+        "physics_audio",
+        (
+            "Authored interactive-object movement, impact, and rotation Event/RTPC settings. "
+            "The current MemoryPack payload is one inherited dynamic-property map whose "
+            "21 keys are assigned by ApplyProperties."
+        ),
+        fields=(
+            "<needTrackMovement>k__BackingField",
+            "<onHitAccelerationSqrThreshold>k__BackingField",
+            "<onStartMoveAudioEvent>k__BackingField",
+            "<onStopMoveAudioEvent>k__BackingField",
+            "<onHitAudioEvent>k__BackingField",
+            "<onHitMaxPlayPerMove>k__BackingField",
+            "<onHitMinIntervalTime>k__BackingField",
+            "<velocitySqrRtpc>k__BackingField",
+            "<accelerationSqrRtpc>k__BackingField",
+            "<needTrackRotation>k__BackingField",
+            "<onRotationLoopAudioEvent>k__BackingField",
+            "<onRotationLoopStartAngularVelocitySqr>k__BackingField",
+            "<onRotationLoopEndAngularVelocitySqr>k__BackingField",
+            "<onRotationOneShotAudioEvent>k__BackingField",
+            "<onRotationOneShotTriggerRatio>k__BackingField",
+            "<onRotationGroundLoopAudioEvent>k__BackingField",
+            "<onRotationGroundLoopStartAngularVelocitySqr>k__BackingField",
+            "<onRotationGroundLoopEndAngularVelocitySqr>k__BackingField",
+            "<onRotationGroundOneShotAudioEvent>k__BackingField",
+            "<onRotationGroundOneShotTriggerRatio>k__BackingField",
+            "<angularVelocitySqrRtpc>k__BackingField",
+        ),
+        methods=("ApplyProperties", "get_interactiveComponentType"),
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Core.PhysicsAudioComponent",
+        "physics_audio",
+        (
+            "Runtime component that owns the physics-audio Mono bridge. Static metadata "
+            "does not show which configured object was instantiated or updated."
+        ),
+        fields=("m_audioPhysicsMono",),
+        methods=("GetAudioPhysicsMono", "InitSelf", "OnRelease"),
     ),
     runtime_spec(
         "Beyond.Gameplay.Core.InteractiveAudioComponent+EAudioTriggerState",
@@ -1545,6 +1588,332 @@ def collect_interactive_component_contexts(
     return dict(contexts)
 
 
+def collect_physics_audio_semantics(
+    export_root: Path,
+    *,
+    component_decoder: Any | None = None,
+    table_decoder: Any | None = None,
+) -> dict[str, Any]:
+    """Recover exact PhysicsAudio Event/RTPC contexts and consumer aliases.
+
+    ``InteractiveTable`` is the ownership boundary: its core-template path
+    identifies the one serialized definition, while ``interactiveDataDict``
+    identifies every configured object id that consumes that definition.
+    StreamingAssets/Persistent mirrors must agree byte-for-byte before either
+    table or template data is accepted.
+    """
+    if component_decoder is None or table_decoder is None:
+        try:
+            from story_builder.interactive_binary import (
+                decode_interactive_table,
+                find_physics_audio_components,
+            )
+        except ImportError:
+            from scripts.story_builder.interactive_binary import (
+                decode_interactive_table,
+                find_physics_audio_components,
+            )
+        component_decoder = component_decoder or find_physics_audio_components
+        table_decoder = table_decoder or decode_interactive_table
+
+    source_roots = ("StreamingAssets", "Persistent")
+    table_paths = [
+        export_root / "structured" / source_root / "Data/Json/Interactive/InteractiveTable.json"
+        for source_root in source_roots
+    ]
+    table_versions: dict[str, list[tuple[str, Path]]] = defaultdict(list)
+    table_data: dict[str, bytes] = {}
+    failures: list[dict[str, Any]] = []
+    for source_root, path in zip(source_roots, table_paths):
+        if not path.is_file():
+            continue
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            failures.append({"source": normalize_posix(path.relative_to(export_root)), "error": str(exc)})
+            continue
+        digest = hashlib.sha256(data).hexdigest()
+        table_versions[digest].append((source_root, path))
+        table_data[digest] = data
+
+    empty_stats = {
+        "status": "unavailable" if not table_versions else "failed",
+        "interactiveTablePhysicalFiles": sum(len(rows) for rows in table_versions.values()),
+        "interactiveTableContentVersions": len(table_versions),
+        "templateDefinitionsScanned": 0,
+        "templatePhysicalFiles": 0,
+        "physicsAudioDefinitions": 0,
+        "physicsAudioComponents": 0,
+        "physicsAudioEventContexts": 0,
+        "distinctPhysicsAudioEvents": 0,
+        "physicsAudioRtpcControls": 0,
+        "physicsAudioConsumerIdentities": 0,
+        "physicsAudioAliasIdentities": 0,
+        "failureSamples": failures[:16],
+    }
+    boundary = (
+        "The exact tag-0x00BE/member-1, 21-key PhysicsAudio dynamic-property map and "
+        "InteractiveTable ownership/alias rows prove authored movement, impact, rotation, "
+        "and RTPC configuration. They do not prove component instantiation, physics state "
+        "changes, RTPC updates, Event posting, or a selected Wwise playback branch."
+    )
+    if not table_versions:
+        return {
+            "eventContexts": {}, "rtpcParameters": [], "definitions": [],
+            "stats": empty_stats, "evidenceBoundary": boundary,
+        }
+    if len(table_versions) != 1:
+        empty_stats["status"] = "conflictingMirrors"
+        empty_stats["failureSamples"] = [{
+            "source": "InteractiveTable.json",
+            "error": "StreamingAssets/Persistent content hashes differ",
+            "sha256": sorted(table_versions),
+        }]
+        return {
+            "eventContexts": {}, "rtpcParameters": [], "definitions": [],
+            "stats": empty_stats, "evidenceBoundary": boundary,
+        }
+
+    table_sha256 = next(iter(table_versions))
+    table_sources = table_versions[table_sha256]
+    table_source_paths = [
+        normalize_posix(path.relative_to(export_root)) for _root, path in table_sources
+    ]
+    try:
+        table = table_decoder(table_data[table_sha256])
+    except (UnicodeDecodeError, struct.error, ValueError) as exc:
+        empty_stats["failureSamples"] = [{
+            "source": table_source_paths[0], "error": str(exc), "sha256": table_sha256,
+        }]
+        return {
+            "eventContexts": {}, "rtpcParameters": [], "definitions": [],
+            "stats": empty_stats, "evidenceBoundary": boundary,
+        }
+    if not isinstance(table, dict):
+        empty_stats["failureSamples"] = [{
+            "source": table_source_paths[0], "error": "InteractiveTable decoder returned no object",
+        }]
+        return {
+            "eventContexts": {}, "rtpcParameters": [], "definitions": [],
+            "stats": empty_stats, "evidenceBoundary": boundary,
+        }
+
+    core_paths = table.get("coreTemplatePaths") or {}
+    object_to_template = table.get("objectToTemplate") or {}
+    consumers_by_template: dict[str, list[str]] = defaultdict(list)
+    for consumer_id, template_id in object_to_template.items():
+        consumers_by_template[str(template_id)].append(str(consumer_id))
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    rtpc_parameters: list[dict[str, Any]] = []
+    definitions: list[dict[str, Any]] = []
+    template_physical_files = 0
+    template_definitions_scanned = 0
+    component_count = 0
+    consumer_ids: set[str] = set()
+    alias_ids: set[str] = set()
+    accepted_template_versions = 0
+
+    for template_id, raw_template_path in sorted(core_paths.items()):
+        template_path = normalize_posix(str(raw_template_path or ""))
+        pure_path = PurePosixPath(template_path)
+        if (
+            pure_path.is_absolute()
+            or ".." in pure_path.parts
+            or not template_path.startswith("Data/Json/Interactive/InteractiveData/")
+        ):
+            continue
+        existing: list[tuple[str, Path, bytes, str]] = []
+        for source_root in source_roots:
+            path = export_root / "structured" / source_root / Path(*pure_path.parts)
+            if not path.is_file():
+                continue
+            try:
+                data = path.read_bytes()
+            except OSError as exc:
+                if len(failures) < 16:
+                    failures.append({"source": normalize_posix(path.relative_to(export_root)), "error": str(exc)})
+                continue
+            existing.append((source_root, path, data, hashlib.sha256(data).hexdigest()))
+        if not existing:
+            continue
+        template_definitions_scanned += 1
+        template_physical_files += len(existing)
+        version_hashes = {digest for _root, _path, _data, digest in existing}
+        if len(version_hashes) != 1:
+            relevant_components = False
+            relevant_decode_error = ""
+            for _source_root, _path, version_data, _digest in existing:
+                try:
+                    relevant_components = bool(component_decoder(version_data)) or relevant_components
+                except (UnicodeDecodeError, struct.error, ValueError) as exc:
+                    relevant_decode_error = str(exc)
+            # Overlay differences in unrelated Interactive definitions do not
+            # weaken this bounded PhysicsAudio audit.  A differing definition
+            # is a blocker only when at least one version contains the exact
+            # PhysicsAudio anchor or fails after reaching that anchor.
+            if (relevant_components or relevant_decode_error) and len(failures) < 16:
+                failures.append({
+                    "source": template_path,
+                    "error": (
+                        "StreamingAssets/Persistent PhysicsAudio template content hashes differ"
+                        + (f": {relevant_decode_error}" if relevant_decode_error else "")
+                    ),
+                    "sha256": sorted(version_hashes),
+                })
+            continue
+        template_sha256 = existing[0][3]
+        source_paths = [
+            normalize_posix(path.relative_to(export_root)) for _root, path, _data, _digest in existing
+        ]
+        try:
+            components = component_decoder(existing[0][2])
+        except (UnicodeDecodeError, struct.error, ValueError) as exc:
+            if len(failures) < 16:
+                failures.append({
+                    "source": source_paths[0], "error": str(exc), "sha256": template_sha256,
+                })
+            continue
+        if not isinstance(components, list) or not components:
+            continue
+        accepted_template_versions += 1
+        configured_consumers = sorted(set(consumers_by_template.get(str(template_id), [])))
+        consumer_ids.update(configured_consumers)
+        alias_ids.update(value for value in configured_consumers if value != str(template_id))
+        for component_occurrence_index, component in enumerate(components):
+            if not isinstance(component, dict):
+                continue
+            component_count += 1
+            properties = [row for row in component.get("properties") or [] if isinstance(row, dict)]
+            definition = {
+                "kind": "physicsAudioDefinition",
+                "definitionOwnerId": str(template_id),
+                "templatePath": template_path,
+                "consumerIds": configured_consumers,
+                "consumerAliasIds": [value for value in configured_consumers if value != str(template_id)],
+                "componentOccurrenceIndex": component_occurrence_index,
+                "componentTag": component.get("unionTag"),
+                "componentTagHex": str(component.get("unionTagHex") or ""),
+                "serializedMemberCount": component.get("memberCount"),
+                "propertyCount": component.get("propertyCount"),
+                "sourceOffset": component.get("sourceOffset"),
+                "propertyMapOffset": component.get("propertyMapOffset"),
+                "endOffset": component.get("endOffset"),
+                "sourcePaths": source_paths,
+                "sourceRoots": [root for root, _path, _data, _digest in existing],
+                "sourceSha256": template_sha256,
+                "interactiveTableSourcePaths": table_source_paths,
+                "interactiveTableSha256": table_sha256,
+                "schemaMappingId": str(component.get("schemaMappingId") or ""),
+                "runtimeMappingId": str(component.get("runtimeMappingId") or ""),
+                "schemaStatus": str(component.get("schemaStatus") or ""),
+                "properties": properties,
+            }
+            definitions.append(definition)
+            common = {
+                "ownerId": str(template_id),
+                "definitionOwnerId": str(template_id),
+                "ownerKind": "interactivePhysicsAudioDefinition",
+                "consumerIds": configured_consumers,
+                "consumerAliasIds": definition["consumerAliasIds"],
+                "confidence": "direct",
+                "table": "InteractiveTable",
+                "templatePath": template_path,
+                "componentOccurrenceIndex": component_occurrence_index,
+                "componentTag": component.get("unionTag"),
+                "componentTagHex": str(component.get("unionTagHex") or ""),
+                "serializedMemberCount": component.get("memberCount"),
+                "propertyCount": component.get("propertyCount"),
+                "sourceOffset": component.get("sourceOffset"),
+                "componentEndOffset": component.get("endOffset"),
+                "sourcePaths": source_paths,
+                "sourceRoots": definition["sourceRoots"],
+                "sourceFingerprint": template_sha256,
+                "sourceSha256": template_sha256,
+                "interactiveTableSourcePaths": table_source_paths,
+                "interactiveTableSha256": table_sha256,
+                "schemaMappingId": definition["schemaMappingId"],
+                "runtimeMappingId": definition["runtimeMappingId"],
+                "schemaStatus": definition["schemaStatus"],
+                "runtimeActivationStatus": "physicsAudioRuntimeExecutionNotObserved",
+            }
+            for row in properties:
+                value = row.get("value")
+                event_role = str(row.get("eventRole") or "")
+                rtpc_role = str(row.get("rtpcRole") or "")
+                row_common = {
+                    **common,
+                    "authoredProperty": str(row.get("authoredKey") or ""),
+                    "runtimeField": str(row.get("runtimeField") or ""),
+                    "propertySourceOffset": row.get("propertySourceOffset", row.get("sourceOffset")),
+                    "propertyValueSourceOffset": row.get("valueSourceOffset"),
+                    "valueType": row.get("valueType"),
+                    "valueTypeName": str(row.get("valueTypeName") or ""),
+                    "semanticPath": (
+                        "PhysicsAudioComponentData.propertyList["
+                        + str(row.get("authoredKey") or "")
+                        + "]"
+                    ),
+                }
+                if event_role and isinstance(value, str) and value.strip():
+                    event_name = value.strip()
+                    _append_context(contexts, seen, event_name, {
+                        **row_common,
+                        "kind": "physicsAudioComponentEvent",
+                        "semanticRole": "authoredInteractivePhysicsAudioEvent",
+                        "eventName": event_name,
+                        "triggerRole": event_role,
+                        "triggerRequestEvidence": [
+                            "exactPhysicsAudioComponentDynamicProperty",
+                            "exactInteractiveTableTemplateOwnership",
+                        ],
+                        "triggerRuntimeActivationStatuses": [
+                            "physicsAudioComponentInstantiationAndThresholdStateRequired"
+                        ],
+                    })
+                if rtpc_role and isinstance(value, str) and value.strip():
+                    rtpc_parameters.append({
+                        **row_common,
+                        "kind": "physicsAudioRtpcParameter",
+                        "parameterName": value.strip(),
+                        "controlRole": rtpc_role,
+                        "semanticRole": "authoredInteractivePhysicsAudioRtpc",
+                        "wwiseEventStatus": "notApplicable",
+                        "evidence": "exactPhysicsAudioComponentDynamicProperty",
+                    })
+
+    event_context_count = sum(len(rows) for rows in contexts.values())
+    stats = {
+        "status": "complete" if not failures else "partial",
+        "interactiveTablePhysicalFiles": sum(len(rows) for rows in table_versions.values()),
+        "interactiveTableContentVersions": len(table_versions),
+        "interactiveTableSourcePaths": table_source_paths,
+        "interactiveTableSha256": table_sha256,
+        "coreTemplateCount": int(table.get("coreTemplateCount") or len(core_paths)),
+        "interactiveDataCount": int(table.get("interactiveDataCount") or len(object_to_template)),
+        "templateDefinitionsScanned": template_definitions_scanned,
+        "templatePhysicalFiles": template_physical_files,
+        "physicsAudioTemplateVersions": accepted_template_versions,
+        "physicsAudioDefinitions": len(definitions),
+        "physicsAudioComponents": component_count,
+        "physicsAudioEventContexts": event_context_count,
+        "distinctPhysicsAudioEvents": len(contexts),
+        "physicsAudioRtpcControls": len(rtpc_parameters),
+        "physicsAudioConsumerIdentities": len(consumer_ids),
+        "physicsAudioAliasIdentities": len(alias_ids),
+        "failureSamples": failures[:16],
+        "evidenceBoundary": boundary,
+    }
+    return {
+        "eventContexts": dict(contexts),
+        "rtpcParameters": rtpc_parameters,
+        "definitions": definitions,
+        "stats": stats,
+        "evidenceBoundary": boundary,
+    }
+
+
 def collect_authored_runtime_config_contexts(
     export_root: Path,
     runtime_model: dict[str, Any] | None = None,
@@ -2341,6 +2710,13 @@ def build_event_rows(
         ):
             category = "sfx"
             category_evidence = "exactSpawnerPreWarnAudioField"
+        if category == "unknown" and any(
+            context.get("kind") == "physicsAudioComponentEvent"
+            for context in event_contexts
+            if isinstance(context, dict)
+        ):
+            category = "sfx"
+            category_evidence = "exactPhysicsAudioComponentEventField"
         rows.append({
             "id": key,
             "name": display_names.get(key, key),
@@ -2429,7 +2805,7 @@ def semantic_context_group(kind: Any) -> str:
         "table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger",
         "audioGlobalConfigEvent", "audioGlobalConfigEventHash",
         "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent",
-        "spawnerPreWarnAudio",
+        "spawnerPreWarnAudio", "physicsAudioComponentEvent",
     }:
         return "authoredConfig"
     if value == "binaryManagedLiteral":
@@ -2465,7 +2841,12 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "recordIndex", "recordStart", "recordUid", "recordLocalId",
             "actionMapRole", "unionTag", "serializedMemberCount",
             "nativeMappingId", "payloadShape", "eventName", "triggerRole",
-            "sourceField",
+            "sourceField", "definitionOwnerId", "templatePath", "componentTag",
+            "componentTagHex", "componentEndOffset", "propertyCount",
+            "componentOccurrenceIndex",
+            "authoredProperty", "runtimeField", "propertySourceOffset",
+            "propertyValueSourceOffset", "valueType", "valueTypeName",
+            "runtimeMappingId", "interactiveTableSha256",
         ):
             value = context.get(key)
             if value not in (None, "", []):
@@ -2477,6 +2858,8 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "triggerOwnershipMethods", "triggerEvidenceKinds", "triggerBuffIds",
             "triggerSourcePaths",
             "sourcePaths",
+            "sourceRoots", "consumerIds", "consumerAliasIds",
+            "interactiveTableSourcePaths",
             "authoredSkillIds",
             "bornBuffIds", "preWarnEffectFixedRotation",
         ):
@@ -2557,6 +2940,7 @@ def build_audio_semantic_data(
     cue_semantics = collect_audio_cue_semantics(export_root)
     global_controls = collect_audio_global_control_semantics(export_root, cue_semantics)
     spawner_semantics = collect_spawner_pre_warn_semantics(export_root)
+    physics_audio_semantics = collect_physics_audio_semantics(export_root)
     levelscript_semantics = collect_levelscript_audio_semantics(
         export_root,
         cue_semantics=cue_semantics,
@@ -2572,6 +2956,7 @@ def build_audio_semantic_data(
         collect_gameplay_contexts(webui_root, language),
         collect_projectile_contexts(webui_root),
         spawner_semantics.get("eventContexts") or {},
+        physics_audio_semantics.get("eventContexts") or {},
         levelscript_semantics.get("eventContexts") or {},
         collect_table_contexts(
             export_root,
@@ -2603,6 +2988,13 @@ def build_audio_semantic_data(
         row for row in events
         if any(
             isinstance(context, dict) and context.get("kind") == "spawnerPreWarnAudio"
+            for context in row.get("contexts") or []
+        )
+    ]
+    physics_audio_event_rows = [
+        row for row in events
+        if any(
+            isinstance(context, dict) and context.get("kind") == "physicsAudioComponentEvent"
             for context in row.get("contexts") or []
         )
     ]
@@ -2763,6 +3155,18 @@ def build_audio_semantic_data(
             "spawnerPreWarnAudioEventsUnresolved": sum(
                 not row.get("foundInWwise") for row in spawner_event_rows
             ),
+            "physicsAudioEvents": context_kind_event_counts.get("physicsAudioComponentEvent", 0),
+            "physicsAudioEventContexts": context_kind_counts.get("physicsAudioComponentEvent", 0),
+            "physicsAudioEventsFoundInWwise": sum(
+                bool(row.get("foundInWwise")) for row in physics_audio_event_rows
+            ),
+            "physicsAudioEventsUnresolved": sum(
+                not row.get("foundInWwise") for row in physics_audio_event_rows
+            ),
+            "physicsAudioRtpcControls": len(physics_audio_semantics.get("rtpcParameters") or []),
+            "physicsAudioConsumerIdentities": (
+                (physics_audio_semantics.get("stats") or {}).get("physicsAudioConsumerIdentities") or 0
+            ),
             "levelScriptAudioActionEvents": context_kind_event_counts.get("levelScriptAudioAction", 0),
             "levelScriptAudioActionContexts": context_kind_counts.get("levelScriptAudioAction", 0),
             "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
@@ -2803,6 +3207,10 @@ def build_audio_semantic_data(
         "hircSummary": audio_index.get("hircSummary") or {},
         "triggerCatalog": {
             "spawnerPreWarnAudio": spawner_semantics.get("stats") or {},
+            "physicsAudio": {
+                **(physics_audio_semantics.get("stats") or {}),
+                "definitions": physics_audio_semantics.get("definitions") or [],
+            },
             "levelScriptAudio": levelscript_semantics.get("stats") or {},
         },
         "controlCatalog": {
@@ -2819,6 +3227,7 @@ def build_audio_semantic_data(
                     for row in global_controls.get("audioGlobalMusicCueRefs") or []
                 ),
                 "rtpcParameters": len(global_controls.get("rtpcParameters") or []) + len(managed_rtpc_parameters),
+                "physicsAudioRtpcParameters": len(physics_audio_semantics.get("rtpcParameters") or []),
                 "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
                 "levelScriptAudioCueInvocationsResolved": (
                     (levelscript_semantics.get("stats") or {}).get("cueDefinitionStatusCounts") or {}
@@ -2844,11 +3253,12 @@ def build_audio_semantic_data(
             "audioCueExpressionOperands": cue_semantics.get("expressionOperands") or [],
             "audioGlobalMusicCueRefs": global_controls.get("audioGlobalMusicCueRefs") or [],
             "rtpcParameters": (global_controls.get("rtpcParameters") or []) + managed_rtpc_parameters,
+            "physicsAudioRtpcParameters": physics_audio_semantics.get("rtpcParameters") or [],
             "levelScriptAudioCueInvocations": levelscript_semantics.get("cueInvocations") or [],
             "levelScriptDynamicAudioBindings": levelscript_semantics.get("dynamicEventBindings") or [],
             "levelScriptAudioControls": levelscript_semantics.get("controlActions") or [],
             "levelScriptDynamicControlBindings": levelscript_semantics.get("dynamicControlBindings") or [],
-            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, and LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions are Event requests. Cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, musicCue* values, and RTPC names remain typed controls or unresolved runtime state.",
+            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, and non-empty PhysicsAudio Event properties are authored requests. PhysicsAudio RTPC names, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state.",
         },
         "runtimeModel": runtime_model,
         "evidenceBoundary": {
@@ -2859,6 +3269,7 @@ def build_audio_semantic_data(
             "authoredEventHash": "Signed table integers are normalized to uint32 only in event-designated fields; row and field prove semantic ownership even when no string name is known.",
             "projectileSound": "A nonzero decoded projectile sound slot proves the projectile lifecycle field references the uint32 Wwise Event. It does not prove that the projectile was spawned, that the lifecycle phase executed, or which Wwise media branch was selected.",
             "spawnerPreWarnAudio": "The current mc13 SpawnerEnemyLibraryItem preWarnAudioEventKey proves an authored enemy-spawn pre-warning request and its row-local timing/effect/enemy/template source. It does not prove that the spawner executed or that a Wwise branch played; unresolved authored names remain visible.",
+            "physicsAudio": physics_audio_semantics.get("evidenceBoundary") or "",
             "levelScriptAudio": levelscript_semantics.get("evidenceBoundary") or "",
             "audioCue": "Only behaviourExpr exprType=3 string values are Event requests. exprType=8 strings are runtime cue-variable operands; AudioGlobal musicCue fields are cue references, and RTPC names are control parameters.",
             "runtimeMetadata": "IL2CPP names prove shipped system structure, not live call order or active state.",

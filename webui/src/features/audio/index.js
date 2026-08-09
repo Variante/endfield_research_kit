@@ -39,9 +39,11 @@
       runtimeComponents: "Runtime components",
       hircInventory: "Wwise HIRC inventory",
       controlCatalog: "Audio controls / cue catalog",
+      physicsAudioCatalog: "Physics / environment audio definitions",
       cueOperands: "Cue expression operands",
       globalMusicCues: "Global music cue references",
       rtpcParameters: "RTPC parameters",
+      physicsAudioRtpcParameters: "Physics / environment RTPC parameters",
       levelScriptCueInvocations: "LevelScript cue invocations",
       levelScriptDynamicBindings: "LevelScript dynamic Event bindings",
       levelScriptControls: "LevelScript audio controls",
@@ -76,6 +78,7 @@
       contextAuthoredPlaySoundAction: "Authored PlaySound action",
       contextProjectileTrigger: "Projectile lifecycle sound",
       contextSpawnerPreWarn: "Enemy-spawner pre-warning",
+      contextPhysicsEnvironment: "Physics / environment",
       contextInteractiveTrigger: "Interactive object trigger",
       contextGlobalLifecycle: "Global audio lifecycle",
       contextAudioCueTrigger: "Audio cue behavior Event",
@@ -154,9 +157,11 @@
       runtimeComponents: "\u8fd0\u884c\u65f6\u7ec4\u4ef6",
       hircInventory: "Wwise HIRC \u5e93\u5b58",
       controlCatalog: "\u97f3\u9891\u63a7\u5236 / Cue \u76ee\u5f55",
+      physicsAudioCatalog: "\u7269\u7406 / \u73af\u5883\u97f3\u9891\u5b9a\u4e49",
       cueOperands: "Cue \u8868\u8fbe\u5f0f\u64cd\u4f5c\u6570",
       globalMusicCues: "\u5168\u5c40\u97f3\u4e50 Cue \u5f15\u7528",
       rtpcParameters: "RTPC \u53c2\u6570",
+      physicsAudioRtpcParameters: "\u7269\u7406 / \u73af\u5883 RTPC \u53c2\u6570",
       levelScriptCueInvocations: "LevelScript Cue \u8c03\u7528",
       levelScriptDynamicBindings: "LevelScript \u52a8\u6001 Event \u7ed1\u5b9a",
       levelScriptControls: "LevelScript \u97f3\u9891\u63a7\u5236",
@@ -191,6 +196,7 @@
       contextAuthoredPlaySoundAction: "\u521b\u4f5c PlaySound \u52a8\u4f5c",
       contextProjectileTrigger: "\u6295\u5c04\u7269\u751f\u547d\u5468\u671f\u97f3\u6548",
       contextSpawnerPreWarn: "\u654c\u4eba\u751f\u6210\u5668\u9884\u8b66\u97f3\u6548",
+      contextPhysicsEnvironment: "\u7269\u7406 / \u73af\u5883",
       contextInteractiveTrigger: "\u4ea4\u4e92\u7269\u4ef6\u89e6\u53d1",
       contextGlobalLifecycle: "\u5168\u5c40\u97f3\u9891\u751f\u547d\u5468\u671f",
       contextAudioCueTrigger: "Audio Cue \u884c\u4e3a Event",
@@ -348,6 +354,7 @@
     authoredPlaySoundAction: "contextAuthoredPlaySoundAction",
     projectileTrigger: "contextProjectileTrigger",
     spawnerPreWarnTrigger: "contextSpawnerPreWarn",
+    physicsEnvironment: "contextPhysicsEnvironment",
     interactiveTrigger: "contextInteractiveTrigger",
     globalLifecycle: "contextGlobalLifecycle",
     audioCueTrigger: "contextAudioCueTrigger",
@@ -394,7 +401,7 @@
     if (kind === "cutsceneTimeline") return "cutscene";
     if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
     if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent"].includes(kind)) return "scripted";
-    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio"].includes(kind)) return "authoredConfig";
+    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "physicsAudioComponentEvent", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
     return "";
   }
@@ -404,6 +411,7 @@
     const addContextKindTags = (contextKind) => {
       if (contextKind === "projectileSoundField") tags.add("projectileTrigger");
       if (contextKind === "spawnerPreWarnAudio") tags.add("spawnerPreWarnTrigger");
+      if (contextKind === "physicsAudioComponentEvent") tags.add("physicsEnvironment");
       if (["audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "levelScriptAudioCueBehaviorEvent"].includes(contextKind)) tags.add("audioCueTrigger");
       if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(contextKind)) tags.add("interactiveTrigger");
       if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("globalLifecycle");
@@ -433,7 +441,7 @@
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
         "gameplay", "cutscene", "animation", "scripted", "authoredConfig", "managedRuntime",
-        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
+        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "physicsEnvironment", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
@@ -504,6 +512,11 @@
         context.authoredEventId, context.spawnerConfigId, context.enemyLibraryIndex, context.enemyId,
         context.bornTemplateId, context.enemyLevel, context.spawnerEnemyKey, context.preWarnTime,
         context.preWarnEffectKey, ...asArray(context.preWarnEffectFixedRotation), ...asArray(context.bornBuffIds),
+        context.definitionOwnerId, context.templatePath, context.componentTag, context.componentTagHex,
+        context.componentOccurrenceIndex,
+        context.propertyCount, context.authoredProperty, context.runtimeField,
+        ...asArray(context.consumerIds), ...asArray(context.consumerAliasIds),
+        ...asArray(context.interactiveTableSourcePaths), context.interactiveTableSha256,
         context.action, context.levelScriptId, context.sourcePath, context.sourceSha256,
         context.recordUid, context.recordLocalId, context.actionMapRole, context.eventName,
         context.triggerRole, context.sourceField,
@@ -1293,6 +1306,8 @@
     if (hirc && typeof hirc === "object" && Object.keys(hirc).length) panel.appendChild(hircInventorySection(hirc));
     const controlCatalog = state.index?.controlCatalog;
     if (controlCatalog && typeof controlCatalog === "object") panel.appendChild(controlCatalogSection(controlCatalog));
+    const physicsAudioCatalog = state.index?.triggerCatalog?.physicsAudio;
+    if (physicsAudioCatalog && typeof physicsAudioCatalog === "object") panel.appendChild(physicsAudioCatalogSection(physicsAudioCatalog));
     const systems = asArray(runtime.systems).filter((value) => value && typeof value === "object");
     if (systems.length) panel.appendChild(runtimeSystemsSection(systems));
     const boundaryCandidate = runtime.boundary ?? state.index?.evidenceBoundary;
@@ -1362,6 +1377,7 @@
     }).join(", ");
     const groups = [
       ["rtpcParameters", asArray(catalog.rtpcParameters), (row) => `${row.parameterName || t("unknown")} / ${row.field || humanize(row.evidence || "")}`],
+      ["physicsAudioRtpcParameters", asArray(catalog.physicsAudioRtpcParameters), (row) => `${row.parameterName || t("unknown")} / ${humanize(row.controlRole || "")} / ${row.definitionOwnerId || row.ownerId || "?"} / ${row.authoredProperty || "?"} -> ${row.runtimeField || "?"}`],
       ["globalMusicCues", asArray(catalog.audioGlobalMusicCueRefs), (row) => `${row.field || t("unknown")} / ${row.cueHex || row.cueId || "?"} / ${humanize(row.definitionStatus || "unknown")}`],
       ["cueOperands", asArray(catalog.audioCueExpressionOperands), (row) => `${row.stringValue || t("unknown")} / ${row.cueHex || "?"} / ${humanize(row.expressionSide || "")} / ${row.expressionPath || ""}`],
       ["levelScriptCueInvocations", asArray(catalog.levelScriptAudioCueInvocations), (row) => `${row.cueName || t("unknown")} / ${row.cueHex || "?"} / ${humanize(row.definitionStatus || "unknown")} / ${row.levelScriptId || "?"} / ${humanize(row.action || "")}`],
@@ -1383,6 +1399,57 @@
         values.appendChild(chip);
       }
       details.append(summary, values);
+      section.appendChild(details);
+    }
+    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
+    return section;
+  }
+
+  function physicsAudioCatalogSection(catalog) {
+    const section = document.createElement("div");
+    section.style.marginTop = "14px";
+    const heading = document.createElement("div");
+    heading.className = "audio-fact-label";
+    heading.textContent = t("physicsAudioCatalog");
+    section.appendChild(heading);
+    const facts = [
+      ["Definitions", catalog.physicsAudioDefinitions],
+      ["Event requests", catalog.physicsAudioEventContexts],
+      ["RTPC controls", catalog.physicsAudioRtpcControls],
+      ["Configured consumers", catalog.physicsAudioConsumerIdentities],
+      ["Aliases", catalog.physicsAudioAliasIdentities],
+    ].filter(([, value]) => value !== undefined && value !== null);
+    if (facts.length) {
+      const grid = document.createElement("div");
+      grid.className = "audio-stat-grid";
+      for (const [label, value] of facts) grid.appendChild(statNode(label, formatNumber(value)));
+      section.appendChild(grid);
+    }
+    for (const definition of asArray(catalog.definitions)) {
+      if (!definition || typeof definition !== "object") continue;
+      const details = document.createElement("details");
+      details.className = "audio-runtime-system";
+      const summary = document.createElement("summary");
+      const consumers = asArray(definition.consumerIds).filter(Boolean);
+      summary.textContent = `${definition.definitionOwnerId || t("unknown")} / ${definition.componentTagHex || definition.componentTag || "?"} / ${formatNumber(definition.propertyCount || 0)} properties / ${formatNumber(consumers.length)} consumers`;
+      const values = document.createElement("div");
+      values.className = "audio-chip-list";
+      for (const property of asArray(definition.properties)) {
+        if (!property || typeof property !== "object") continue;
+        const chip = document.createElement("span");
+        const rawValue = property.value === "" ? '""' : property.value;
+        chip.textContent = `${property.authoredKey || "?"} -> ${property.runtimeField || "?"} = ${rawValue ?? "null"}`;
+        values.appendChild(chip);
+      }
+      const evidence = document.createElement("p");
+      evidence.className = "audio-detail-note";
+      evidence.textContent = [
+        consumers.length ? `consumers ${consumers.join(", ")}` : "",
+        definition.sourceSha256 ? `SHA-256 ${definition.sourceSha256}` : "",
+        definition.sourceOffset !== undefined ? `component 0x${Number(definition.sourceOffset).toString(16)}-0x${Number(definition.endOffset).toString(16)}` : "",
+        ...asArray(definition.sourcePaths),
+      ].filter(Boolean).join(" / ");
+      details.append(summary, values, evidence);
       section.appendChild(details);
     }
     if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
@@ -1470,6 +1537,17 @@
     if (context?.preWarnEffectKey) parts.push(`effect ${context.preWarnEffectKey}`);
     const preWarnRotation = asArray(context?.preWarnEffectFixedRotation);
     if (preWarnRotation.length) parts.push(`effect rotation ${preWarnRotation.join(", ")}`);
+    if (context?.definitionOwnerId) parts.push(`physics definition ${context.definitionOwnerId}`);
+    if (context?.templatePath) parts.push(context.templatePath);
+    const physicsConsumers = asArray(context?.consumerIds).filter(Boolean);
+    if (physicsConsumers.length) parts.push(`configured consumers ${physicsConsumers.join(", ")}`);
+    if (context?.componentTagHex || context?.componentTag !== undefined) {
+      parts.push(`component tag ${context.componentTagHex || context.componentTag} / mc${context.serializedMemberCount ?? "?"}`);
+    }
+    if (context?.componentOccurrenceIndex !== undefined) parts.push(`PhysicsAudio occurrence ${context.componentOccurrenceIndex}`);
+    if (context?.authoredProperty) parts.push(`${context.authoredProperty} -> ${context.runtimeField || "runtime field unknown"}`);
+    if (context?.propertySourceOffset !== undefined) parts.push(`property offset 0x${Number(context.propertySourceOffset).toString(16)}`);
+    if (context?.interactiveTableSha256) parts.push(`InteractiveTable SHA-256 ${context.interactiveTableSha256}`);
     if (context?.levelScriptId) parts.push(`LevelScript ${context.levelScriptId}`);
     if (context?.action) parts.push(humanize(context.action));
     if (context?.triggerRole) parts.push(`request role ${humanize(context.triggerRole)}`);

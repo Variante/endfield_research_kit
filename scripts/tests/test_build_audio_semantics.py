@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from struct import pack
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "build_audio_semantics.py"
@@ -173,6 +174,12 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("targetSettings", data["fields"])
         self.assertIn("useWeaponMountPoint", data["fields"])
         self.assertIn("useTimeDilationPauseAndSeek", data["fields"])
+        physics = specs["Beyond.Gameplay.Core.PhysicsAudioComponentData"]
+        self.assertEqual(physics["layer"], "physics_audio")
+        self.assertEqual(len(physics["fields"]), 21)
+        self.assertIn("<onStartMoveAudioEvent>k__BackingField", physics["fields"])
+        self.assertIn("<angularVelocitySqrRtpc>k__BackingField", physics["fields"])
+        self.assertIn("ApplyProperties", physics["methods"])
 
     def test_runtime_cache_schema_invalidates_changed_system_catalog(self) -> None:
         stale = {
@@ -551,6 +558,137 @@ class AudioSemanticDataTests(unittest.TestCase):
             )
             self.assertIn("spawnerPreWarnAudio", unresolved_summary["contextKinds"])
             self.assertIn("sc_fixture", unresolved_summary["contextSearch"])
+
+    def test_physics_audio_contexts_preserve_aliases_offsets_and_rtpc_control(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            webui_root = Path(raw_root) / "webui"
+            template_rel = "Data/Json/Interactive/InteractiveData/data_int_kickable_ball.json"
+            for source_root in ("StreamingAssets", "Persistent"):
+                table_path = export_root / "structured" / source_root / "Data/Json/Interactive/InteractiveTable.json"
+                table_path.parent.mkdir(parents=True, exist_ok=True)
+                table_path.write_bytes(b"same-table")
+                template_path = export_root / "structured" / source_root / template_rel
+                template_path.parent.mkdir(parents=True, exist_ok=True)
+                template_path.write_bytes(b"same-template")
+
+            def table_decoder(data: bytes) -> dict:
+                self.assertEqual(data, b"same-table")
+                return {
+                    "coreTemplateCount": 1,
+                    "interactiveDataCount": 2,
+                    "coreTemplatePaths": {"int_kickable_ball": template_rel},
+                    "objectToTemplate": {
+                        "int_kickable_ball": "int_kickable_ball",
+                        "int_tumble_weed": "int_kickable_ball",
+                    },
+                }
+
+            property_rows = []
+            for index, (authored_key, runtime_field, value, event_role, rtpc_role) in enumerate((
+                ("on_start_move_audio_event", "onStartMoveAudioEvent", "au_int_ball_start", "movementStart", ""),
+                ("on_stop_move_audio_event", "onStopMoveAudioEvent", "au_int_ball_stop", "movementStop", ""),
+                ("on_hit_audio_event", "onHitAudioEvent", "au_int_ball_hit", "movementHit", ""),
+                ("on_rotation_loop_audio_event", "onRotationLoopAudioEvent", "", "rotationLoop", ""),
+                ("on_rotation_one_shot_audio_event", "onRotationOneShotAudioEvent", "au_int_ball_scatter", "rotationOneShot", ""),
+                ("on_rotation_ground_loop_audio_event", "onRotationGroundLoopAudioEvent", "au_int_ball_loop", "groundRotationLoop", ""),
+                ("on_rotation_ground_one_shot_audio_event", "onRotationGroundOneShotAudioEvent", "au_int_ball_ground", "groundRotationOneShot", ""),
+                ("velocity_sqr_rtpc", "velocitySqrRtpc", "rtpc_int_ball_speed", "", "movementVelocitySquared"),
+                ("acceleration_sqr_rtpc", "accelerationSqrRtpc", "", "", "movementAccelerationSquared"),
+                ("angular_velocity_sqr_rtpc", "angularVelocitySqrRtpc", "", "", "rotationAngularVelocitySquared"),
+            )):
+                property_rows.append({
+                    "index": index,
+                    "propertySourceOffset": 0x900 + index * 16,
+                    "valueSourceOffset": 0x908 + index * 16,
+                    "authoredKey": authored_key,
+                    "runtimeField": runtime_field,
+                    "eventRole": event_role,
+                    "rtpcRole": rtpc_role,
+                    "valueType": 7,
+                    "valueTypeName": "string",
+                    "value": value,
+                })
+
+            def component_decoder(data: bytes) -> list[dict]:
+                self.assertEqual(data, b"same-template")
+                return [{
+                    "sourceOffset": 0x8C7,
+                    "propertyMapOffset": 0x8C9,
+                    "endOffset": 0xE5B,
+                    "unionTag": 0xBE,
+                    "unionTagHex": "0x00be",
+                    "memberCount": 1,
+                    "propertyCount": 21,
+                    "schemaMappingId": "fixture-memorypack",
+                    "runtimeMappingId": "fixture-runtime",
+                    "schemaStatus": "exact-current-complete-property-map",
+                    "properties": property_rows,
+                }]
+
+            semantics = audio_semantics.collect_physics_audio_semantics(
+                export_root,
+                component_decoder=component_decoder,
+                table_decoder=table_decoder,
+            )
+
+            self.assertEqual(semantics["stats"]["status"], "complete")
+            self.assertEqual(semantics["stats"]["physicsAudioEventContexts"], 6)
+            self.assertEqual(semantics["stats"]["physicsAudioRtpcControls"], 1)
+            self.assertEqual(semantics["stats"]["physicsAudioConsumerIdentities"], 2)
+            self.assertEqual(semantics["stats"]["physicsAudioAliasIdentities"], 1)
+            start = semantics["eventContexts"]["au_int_ball_start"][0]
+            self.assertEqual(start["definitionOwnerId"], "int_kickable_ball")
+            self.assertEqual(start["consumerIds"], ["int_kickable_ball", "int_tumble_weed"])
+            self.assertEqual(start["componentTag"], 0xBE)
+            self.assertEqual(start["serializedMemberCount"], 1)
+            self.assertEqual(start["sourceOffset"], 0x8C7)
+            self.assertEqual(start["propertySourceOffset"], 0x900)
+            self.assertEqual(start["authoredProperty"], "on_start_move_audio_event")
+            self.assertEqual(start["runtimeField"], "onStartMoveAudioEvent")
+            self.assertEqual(start["runtimeActivationStatus"], "physicsAudioRuntimeExecutionNotObserved")
+            rtpc = semantics["rtpcParameters"][0]
+            self.assertEqual(rtpc["parameterName"], "rtpc_int_ball_speed")
+            self.assertEqual(rtpc["controlRole"], "movementVelocitySquared")
+
+            with patch.object(
+                audio_semantics,
+                "collect_physics_audio_semantics",
+                return_value=semantics,
+            ):
+                payload = audio_semantics.build_audio_semantic_data(
+                    {
+                        "eventNames": ["au_int_ball_start"],
+                        "events": [],
+                        "eventEvidence": [{
+                            "eventId": "au_int_ball_start",
+                            "eventHash": 123,
+                            "bankId": 7,
+                            "bank": "main_banks.pck",
+                            "traversalStatus": "complete",
+                        }],
+                        "entries": [],
+                    },
+                    language="CN",
+                    export_root=export_root,
+                    webui_root=webui_root,
+                    metadata_path=None,
+                )
+            self.assertEqual(payload["counts"]["physicsAudioEvents"], 6)
+            self.assertEqual(payload["counts"]["physicsAudioEventsFoundInWwise"], 1)
+            self.assertEqual(payload["counts"]["physicsAudioEventsUnresolved"], 5)
+            self.assertEqual(payload["controlCatalog"]["counts"]["physicsAudioRtpcParameters"], 1)
+            self.assertEqual(
+                payload["controlCatalog"]["physicsAudioRtpcParameters"][0]["parameterName"],
+                "rtpc_int_ball_speed",
+            )
+            summaries = json.loads(
+                (webui_root / "data/lang/CN/audio/events.json").read_text(encoding="utf-8")
+            )["events"]
+            start_summary = next(row for row in summaries if row["id"] == "au_int_ball_start")
+            self.assertIn("physicsAudioComponentEvent", start_summary["contextKinds"])
+            self.assertIn("int_tumble_weed", start_summary["contextSearch"])
+            self.assertIn("on_start_move_audio_event", start_summary["contextSearch"])
 
     def test_collects_owner_unresolved_animation_callbacks_as_debug_contexts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
