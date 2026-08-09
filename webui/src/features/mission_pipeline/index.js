@@ -413,6 +413,10 @@
       dialogFinishTaskAutomatic: "automatic check",
       dialogFinishTaskCarrier: "exact external script/task carriers",
       dialogFinishTaskUncarried: "task identities with no external carrier",
+      dialogFinishTaskCarrierScope: "active files in typed carrier census",
+      dialogFinishTaskCarrierJsonFiles: "typed JSON files",
+      dialogFinishTaskCarrierJsonCandidates: "typed-JSON exact-task candidates",
+      dialogFinishTaskCarrierNonJsonFiles: "serialized files excluded",
       dialogFinishAuthoredTaskStat: "authored finish→task dependencies",
       dialogFinishUnresolvedEndpointStat: "task consumers without an authored endpoint",
       dialogFinishAnyContextStat: "mission any-finish contexts",
@@ -1482,6 +1486,10 @@
       dialogFinishTaskAutomatic: "自动检查",
       dialogFinishTaskCarrier: "精确外部 script/task 载体",
       dialogFinishTaskUncarried: "无外部载体的任务身份",
+      dialogFinishTaskCarrierScope: "类型化载体普查中的活动文件",
+      dialogFinishTaskCarrierJsonFiles: "类型化 JSON 文件",
+      dialogFinishTaskCarrierJsonCandidates: "类型化 JSON 精确任务候选",
+      dialogFinishTaskCarrierNonJsonFiles: "已排除的序列化文件",
       dialogFinishAuthoredTaskStat: "原始完成端点→任务依赖",
       dialogFinishUnresolvedEndpointStat: "缺少原始结束端点的任务消费端",
       dialogFinishAnyContextStat: "使命任意完成上下文",
@@ -2621,6 +2629,7 @@
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskSharedConsumerDependencies || 0).toLocaleString()} ${esc(t("dialogFinishTaskStat"))} / ${Number(recoveryCounts.levelScriptTaskSameMissionShellDependencies || 0).toLocaleString()} ${esc(t("dialogFinishOwnedTaskStat"))} · ${Number(recoveryCounts.levelScriptTaskExactFinishConsumers || 0).toLocaleString()} ${esc(t("dialogFinishTaskExactConsumers"))} (${Number(recoveryCounts.levelScriptTaskExactCompleteMapConsumers || 0).toLocaleString()} ${esc(t("dialogFinishTaskCompleteMaps"))} + ${Number(recoveryCounts.levelScriptTaskExactBoundedFragmentConsumers || 0).toLocaleString()} ${esc(t("dialogFinishTaskFragments"))})</span>`);
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskAuthoredFinishDependencies || 0).toLocaleString()} ${esc(t("dialogFinishAuthoredTaskStat"))} / ${Number(recoveryCounts.levelScriptTaskUnresolvedAuthoredFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogFinishUnresolvedEndpointStat"))} · ${Number(recoveryCounts.levelScriptTaskAnyFinishMissionContexts || 0).toLocaleString()} ${esc(t("dialogFinishAnyContextStat"))} · ${Number(recoveryCounts.levelScriptTaskMissionScriptContexts || 0).toLocaleString()} ${esc(t("dialogFinishScriptContextStat"))}</span>`);
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskExternalIdentityCarriers || 0).toLocaleString()} ${esc(t("dialogFinishTaskCarrier"))} / ${Number(recoveryCounts.levelScriptTaskExternalUncarriedIdentities || 0).toLocaleString()} ${esc(t("dialogFinishTaskUncarried"))}</span>`);
+      sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskCarrierActiveLogicalFiles || 0).toLocaleString()} ${esc(t("dialogFinishTaskCarrierScope"))} · ${Number(recoveryCounts.levelScriptTaskCarrierTypedJsonFiles || 0).toLocaleString()} ${esc(t("dialogFinishTaskCarrierJsonFiles"))} / ${Number(recoveryCounts.levelScriptTaskCarrierNonJsonFiles || 0).toLocaleString()} ${esc(t("dialogFinishTaskCarrierNonJsonFiles"))} · ${Number(recoveryCounts.levelScriptTaskCarrierTypedJsonCandidates || 0).toLocaleString()} ${esc(t("dialogFinishTaskCarrierJsonCandidates"))}</span>`);
       const lifecycle = state.index?.runtimeContract?.levelScriptTaskLifecycleAudit || {};
       if (lifecycle.validation?.status === "validated") {
         const chain = (lifecycle.serverStateApplicationChain || []).map((symbol) => `<code>${esc(symbol)}</code>`).join(" &rarr; ");

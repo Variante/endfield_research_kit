@@ -80,30 +80,18 @@ DEFAULT_TASK_CARRIER_ROOTS = (
     / "structured"
     / "StreamingAssets"
     / "Data"
-    / "Json"
-    / "GameplayConfig",
-    ROOT
-    / "export_full"
-    / "structured"
-    / "StreamingAssets"
-    / "Data"
-    / "Json"
-    / "MissionRuntimeAsset",
+    / "Json",
     ROOT
     / "export_full"
     / "structured"
     / "Persistent"
     / "Data"
-    / "Json"
-    / "GameplayConfig",
-    ROOT
-    / "export_full"
-    / "structured"
-    / "Persistent"
-    / "Data"
-    / "Json"
-    / "MissionRuntimeAsset",
+    / "Json",
 )
+TASK_CARRIER_DEFINITION_FAMILIES = {
+    "LevelScriptData",
+    "LevelScriptTemplateData",
+}
 DEFAULT_SUBGAME_TABLES = (
     ROOT
     / "export_full"
@@ -1637,8 +1625,9 @@ def _scan_exact_task_identity_carriers(
     This is a general field-shape census.  It does not know table names,
     mission ids, script ids, or task ids in advance; the exact task identities
     come from the active LevelScript decoder.  LevelScriptData itself and the
-    task-description table are excluded because they define or label tasks
-    rather than independently carrying runtime ownership.
+    task-definition families are excluded because they define or label tasks
+    rather than independently carrying runtime ownership. Every other active
+    structured JSON family is admitted through the same minimal-object rule.
     """
     validator = "dialog_finish_exact_task_identity_carrier_census"
     identities = sorted({
@@ -1650,6 +1639,7 @@ def _scan_exact_task_identity_carriers(
     task_ids = {task_id for _script_id, task_id in identities}
     active: dict[str, Path] = {}
     root_rows: list[dict[str, Any]] = []
+    scanned_families: set[str] = set()
     physical_files = 0
     shadowed_files = 0
     for priority, root in enumerate(roots):
@@ -1660,12 +1650,25 @@ def _scan_exact_task_identity_carriers(
             )
         root_count = 0
         for path in sorted(root.rglob("*.json")):
-            relative = path.relative_to(root).as_posix()
-            if Path(relative).name == "ScriptTaskExtraInfoTable.json":
+            relative_path = path.relative_to(root)
+            family = (
+                relative_path.parts[0]
+                if root.name == "Json" and len(relative_path.parts) > 1
+                else root.name
+            )
+            if family in TASK_CARRIER_DEFINITION_FAMILIES:
                 continue
-            logical_relative = f"{root.name}/{relative}"
+            if relative_path.name == "ScriptTaskExtraInfoTable.json":
+                continue
+            relative = relative_path.as_posix()
+            logical_relative = (
+                relative
+                if root.name == "Json"
+                else f"{root.name}/{relative}"
+            )
             root_count += 1
             physical_files += 1
+            scanned_families.add(family)
             if logical_relative in active:
                 shadowed_files += 1
             active[logical_relative] = path
@@ -1698,6 +1701,8 @@ def _scan_exact_task_identity_carriers(
         tuple[str, str, str], list[dict[str, Any]]
     ] = defaultdict(list)
     parsed_candidate_files = 0
+    typed_json_files = 0
+    non_json_files = 0
     rejected_candidate_files: list[dict[str, str]] = []
     task_id_pattern = re.compile(
         b"(?:" + b"|".join(
@@ -1706,7 +1711,16 @@ def _scan_exact_task_identity_carriers(
         ) + b")"
     )
     for relative, path in sorted(active.items()):
-        data = path.read_bytes()
+        with path.open("rb") as handle:
+            prefix = handle.read(64)
+            json_prefix = prefix
+            if json_prefix.startswith(b"\xef\xbb\xbf"):
+                json_prefix = json_prefix[3:]
+            if not json_prefix.lstrip().startswith((b"{", b"[")):
+                non_json_files += 1
+                continue
+            data = prefix + handle.read()
+        typed_json_files += 1
         if not task_id_pattern.search(data):
             continue
         digest = hashlib.sha256(data).hexdigest()
@@ -1839,12 +1853,14 @@ def _scan_exact_task_identity_carriers(
         )
     )
     return {
-        "schema": "exactTaskIdentityCarrierCensus.v1",
-        "scope": ["GameplayConfig", "MissionRuntimeAsset"],
+        "schema": "exactTaskIdentityCarrierCensus.v2",
+        "scope": sorted(scanned_families),
         "roots": root_rows,
         "overlayRule": "later root wins; Persistent overrides StreamingAssets",
         "physicalFileCount": physical_files,
         "activeLogicalFileCount": len(active),
+        "typedJsonFileCount": typed_json_files,
+        "nonJsonFileCount": non_json_files,
         "shadowedFileCount": shadowed_files,
         "resolvedTaskIdentityCount": len(identities),
         "parsedCandidateFileCount": parsed_candidate_files,
@@ -1861,14 +1877,16 @@ def _scan_exact_task_identity_carriers(
         "carriers": carriers,
         "ambiguousMinimalCarriers": ambiguous,
         "evidenceBoundary": (
-            "The active original GameplayConfig and MissionRuntimeAsset overlays are "
-            "searched for minimal objects that structurally co-carry an exact decoded "
-            "script/task tuple. "
+            "Every active original structured JSON family except LevelScript task "
+            "definitions is searched for minimal objects that structurally co-carry "
+            "an exact decoded script/task tuple. A bounded prefix gate classifies "
+            "typed JSON before full payload reads; serialized binary files are "
+            "counted but cannot become carriers. "
             "Mission or quest identity is reported only when that same minimal object "
             "contains a typed id field. Names, numeric proximity, file order, OCR, and "
             "manual overrides never create a carrier. A carrier proves co-location, "
             "not runtime activation, Story ownership, branching, or order. Other "
-            "structured families remain outside this maintained typed-carrier census."
+            "binary-only object internals remain outside this typed-JSON census."
         ),
     }
 
@@ -2861,7 +2879,8 @@ def build_report(
             "evidence tiers. The current binary validates the generic server-state "
             "application and Processing-time condition activation/reporting lifecycle. "
             "A field-shape census independently reports minimal exact script/task "
-            "co-carriers in typed GameplayConfig and MissionRuntime sources. Neither "
+            "co-carriers across every active typed structured-JSON family outside "
+            "LevelScript definitions. Neither "
             "tier infers server selection policy, task activation in a particular "
             "session, mission ownership, branch choice, or cross-file order. "
             "OCR and manual overrides are not read."
@@ -3095,6 +3114,18 @@ def build_report(
             ),
             "levelScriptTaskExternalUncarriedIdentities": (
                 task_identity_carrier_census["un_carriedTaskIdentityCount"]
+            ),
+            "levelScriptTaskCarrierActiveLogicalFiles": (
+                task_identity_carrier_census["activeLogicalFileCount"]
+            ),
+            "levelScriptTaskCarrierTypedJsonCandidates": (
+                task_identity_carrier_census["parsedCandidateFileCount"]
+            ),
+            "levelScriptTaskCarrierTypedJsonFiles": (
+                task_identity_carrier_census["typedJsonFileCount"]
+            ),
+            "levelScriptTaskCarrierNonJsonFiles": (
+                task_identity_carrier_census["nonJsonFileCount"]
             ),
         },
         "producerFamilyCounts": dict(
@@ -3423,6 +3454,7 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Active LevelScript finish consumers: {counts.get('levelScriptTaskFinishConsumers', 0)} total; {counts.get('levelScriptTaskExactFinishConsumers', 0)} exact / {counts.get('levelScriptTaskAnyFinishConsumers', 0)} any-finish",
         f"- Exact branch-relevant task consumers: {counts.get('levelScriptTaskExactCompleteMapConsumers', 0)} complete-map rows across {counts.get('levelScriptTaskResolvedExactTaskIdentities', 0)} resolved tasks; {counts.get('levelScriptTaskExactBoundedFragmentConsumers', 0)} bounded fragments",
         f"- Generic typed external carrier census: {counts.get('levelScriptTaskExternalIdentityCarriers', 0)} carriers ({counts.get('levelScriptTaskExternalMissionCarriers', 0)} with mission identity); {counts.get('levelScriptTaskExternalUncarriedIdentities', 0)} task identities remain uncarried",
+        f"- Carrier search scope: {counts.get('levelScriptTaskCarrierActiveLogicalFiles', 0)} active structured files; {counts.get('levelScriptTaskCarrierTypedJsonFiles', 0)} typed JSON / {counts.get('levelScriptTaskCarrierNonJsonFiles', 0)} serialized non-JSON; {counts.get('levelScriptTaskCarrierTypedJsonCandidates', 0)} exact-task JSON candidates",
         f"- Authored finish endpoint -> exact LevelScript task dependencies: {counts.get('levelScriptTaskAuthoredFinishDependencies', 0)}; unresolved authored endpoints: {counts.get('levelScriptTaskUnresolvedAuthoredFinishEndpoints', 0)}",
         f"- Shared MissionRuntime/LevelScript finish dependencies: {counts.get('levelScriptTaskSharedConsumerDependencies', 0)} placements across {counts.get('levelScriptTaskSharedConsumerMissions', 0)} missions",
         f"- Shared dependencies from complete maps / bounded mixed-map fragments: {counts.get('levelScriptTaskSharedConsumerCompleteMaps', 0)} / {counts.get('levelScriptTaskSharedConsumerFragments', 0)}",
