@@ -13,10 +13,12 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import re
 import sys
 import tempfile
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -33,6 +35,20 @@ DEFAULT_METADATA = (
     / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 )
 DEFAULT_STORY_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "conv"
+DEFAULT_OUTPUT_ROOT = ROOT / "export_full"
+DEFAULT_EXTRACT_DIR = (
+    DEFAULT_OUTPUT_ROOT / "recovered" / "AnimeStudio-cli" / "timeline_extract"
+)
+DEFAULT_GAME_ROOT = Path(
+    os.environ.get(
+        "ENDFIELD_GAME_ROOT",
+        r"D:\Program Files\Endfield Game\Endfield_Data",
+    )
+)
+DEFAULT_ANIMESTUDIO_CLI = (
+    ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin"
+    / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
+)
 DEFAULT_JSON = (
     ROOT / "reports" / "story" / "recovery"
     / "timeline_embedded_story_runtime_audit.json"
@@ -200,6 +216,161 @@ def analyze_runtime_contract(
     }
 
 
+def analyze_control_runtime_contract(
+    catalog: dict[str, Any],
+    body_map: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate the general nested-director control path in the retail binary."""
+    body_by_key: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in body_map.get("bodyTargets") or []:
+        body_by_key[(str(row.get("type") or ""), str(row.get("method") or ""))].append(row)
+
+    control_fields = {
+        "sourceGameObject", "prefabGameObject", "updateDirector",
+        "directorControlPath",
+    }
+    control_methods = {
+        "CreatePlayable", "ResolveSourceGameObject", "GetControllableDirectors",
+        "SearchHierarchyAndConnectDirector", "ConnectPlayablesToMixer",
+        "ConnectMixerAndPlayable", "CreateActivationPlayable",
+    }
+    root_fields = {"_director", "_timelineName"}
+    root_methods = {"get_topDirector"}
+
+    control_candidates = []
+    root_candidates = []
+    for row in catalog.get("matchedTypes") or []:
+        fields = {str(value.get("name") or "") for value in row.get("fields") or []}
+        methods = {str(value.get("name") or "") for value in row.get("methods") or []}
+        if control_fields.issubset(fields) and control_methods.issubset(methods):
+            control_candidates.append(row)
+        if root_fields.issubset(fields) and root_methods.issubset(methods):
+            root_candidates.append(row)
+
+    failures: list[dict[str, Any]] = []
+    if len(control_candidates) != 1:
+        failures.append(validation_failure(
+            "control_playable_type_discovery", 1,
+            [row.get("fullName") for row in control_candidates],
+            "global-metadata.dat",
+        ))
+    if len(root_candidates) != 1:
+        failures.append(validation_failure(
+            "cutscene_root_type_discovery", 1,
+            [row.get("fullName") for row in root_candidates],
+            "global-metadata.dat",
+        ))
+    if failures:
+        return {"validation": {"status": "failed", "failures": failures}}
+
+    control_type = str(control_candidates[0]["fullName"])
+    root_type = str(root_candidates[0]["fullName"])
+    mapped_methods: dict[str, dict[str, Any]] = {}
+    for method in sorted(control_methods):
+        rows = body_by_key.get((control_type, method), [])
+        mapped = [row for row in rows if row.get("mappingStatus") == "mapped"]
+        if len(mapped) != 1:
+            failures.append(validation_failure(
+                "control_playable_method_body", f"one mapped {method}",
+                len(mapped), control_type,
+            ))
+            continue
+        mapped_methods[method] = mapped[0]
+
+    top_rows = [
+        row for row in body_by_key.get((root_type, "get_topDirector"), [])
+        if row.get("mappingStatus") == "mapped"
+    ]
+    if len(top_rows) != 1:
+        failures.append(validation_failure(
+            "cutscene_root_top_director_body", "one mapped get_topDirector",
+            len(top_rows), root_type,
+        ))
+    else:
+        final_rax = str(
+            ((top_rows[0].get("methodBodySummary") or {})
+             .get("finalRegisterOrigins") or {}).get("rax") or ""
+        )
+        if final_rax != "this+0x20":
+            failures.append(validation_failure(
+                "cutscene_root_director_field", "get_topDirector returns this+0x20",
+                final_rax, root_type,
+            ))
+
+    required_create_targets = {
+        (control_type, "ResolveSourceGameObject"),
+        (control_type, "GetControllableDirectors"),
+        (control_type, "SearchHierarchyAndConnectDirector"),
+        (control_type, "ConnectPlayablesToMixer"),
+    }
+    create_targets = (
+        resolved_targets(mapped_methods["CreatePlayable"])
+        if "CreatePlayable" in mapped_methods else set()
+    )
+    missing_targets = sorted(
+        f"{a}::{b}" for a, b in required_create_targets - create_targets
+    )
+    if missing_targets:
+        failures.append(validation_failure(
+            "control_playable_create_chain",
+            sorted(f"{a}::{b}" for a, b in required_create_targets),
+            sorted(f"{a}::{b}" for a, b in create_targets),
+            control_type,
+        ))
+
+    helper_targets = {
+        "SearchHierarchyAndConnectDirector": {
+            ("UnityEngine.Timeline.DirectorControlPlayable", "Create"),
+        },
+        "ConnectPlayablesToMixer": {
+            (control_type, "ConnectMixerAndPlayable"),
+        },
+        "ConnectMixerAndPlayable": {
+            ("UnityEngine.Playables.PlayableExtensions", "SetInputWeight"),
+        },
+    }
+    for method, required in helper_targets.items():
+        actual = resolved_targets(mapped_methods[method]) if method in mapped_methods else set()
+        if not required.issubset(actual):
+            failures.append(validation_failure(
+                "control_playable_helper_chain",
+                sorted(f"{a}::{b}" for a, b in required),
+                sorted(f"{a}::{b}" for a, b in actual),
+                f"{control_type}::{method}",
+            ))
+
+    def compact_method(row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "token": row.get("token"),
+            "methodIndex": row.get("methodIndex"),
+            "va": row.get("methodPointerVa"),
+            "calls": sorted(
+                f"{a}::{b}" for a, b in resolved_targets(row)
+            ),
+        }
+
+    return {
+        "validation": {
+            "status": "validated" if not failures else "failed",
+            "failures": failures,
+        },
+        "controlPlayableAsset": {
+            "type": control_type,
+            "serializedFields": sorted(control_fields),
+            "methods": {
+                name: compact_method(row)
+                for name, row in sorted(mapped_methods.items())
+            },
+        },
+        "cutsceneRoot": {
+            "type": root_type,
+            "serializedFields": sorted(root_fields),
+            "getTopDirector": compact_method(top_rows[0]) if len(top_rows) == 1 else {},
+            "directorFieldOrigin": "this+0x20" if len(top_rows) == 1 else "",
+        },
+    }
+
+
 def story_line_index(story_root: Path) -> tuple[dict[str, str], dict[str, Any]]:
     owners: dict[str, set[str]] = defaultdict(set)
     files = sorted(story_root.glob("*.json"))
@@ -292,6 +463,469 @@ def enrich_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return enriched
 
 
+class ExportedObjectResolver:
+    """Resolve extracted Unity objects by exact serialized-file/PathID identity."""
+
+    def __init__(self, extract_dir: Path) -> None:
+        self.extract_dir = extract_dir
+        self.paths_by_suffix: dict[str, list[Path]] = defaultdict(list)
+        self.payload_cache: dict[Path, dict[str, Any]] = {}
+        suffix_re = re.compile(r"_p([0-9A-Fa-f]{16})\.json$")
+        for type_name in ("MonoBehaviour", "PlayableDirector"):
+            for path in extract_dir.glob(f"*/{type_name}/*.json"):
+                match = suffix_re.search(path.name)
+                if match:
+                    self.paths_by_suffix[match.group(1).upper()].append(path)
+
+    def load(self, path: Path) -> dict[str, Any]:
+        if path not in self.payload_cache:
+            payload = json.loads(path.read_text(encoding="utf-8-sig"))
+            if not isinstance(payload, dict):
+                raise RuntimeError(f"expected object JSON: {path}")
+            self.payload_cache[path] = payload
+        return self.payload_cache[path]
+
+    def resolve(
+        self,
+        source_file: str,
+        path_id: int,
+    ) -> tuple[Path, dict[str, Any]] | None:
+        suffix = f"{path_id & 0xFFFFFFFFFFFFFFFF:016X}"
+        matches = []
+        for path in self.paths_by_suffix.get(suffix, []):
+            payload = self.load(path)
+            meta = payload.get("$animestudio") or {}
+            if (
+                str(meta.get("sourceFile") or "") == source_file
+                and int(meta.get("pathId") or 0) == path_id
+            ):
+                matches.append((path, payload))
+        if len(matches) > 1:
+            raise RuntimeError(
+                "validator=timeline_embedded_story_runtime failed: "
+                "gate=unique_exported_object_identity; "
+                f"source={source_file}; expected=1; actual={len(matches)}; "
+                f"pathId={path_id}"
+            )
+        return matches[0] if matches else None
+
+
+def resolved_pointer_identity(
+    payload: dict[str, Any],
+    pointer_path: str,
+) -> tuple[str, int] | None:
+    meta = payload.get("$animestudio") or {}
+    for pointer in meta.get("pptrReferences") or []:
+        if (
+            isinstance(pointer, dict)
+            and pointer.get("path") == pointer_path
+            and str(pointer.get("resolutionStatus") or "").startswith("resolved")
+        ):
+            source_file = str(
+                pointer.get("targetSourceFile")
+                or pointer.get("expectedTargetSourceFile")
+                or meta.get("sourceFile")
+                or ""
+            )
+            path_id = pointer.get("targetPathId", pointer.get("pathId"))
+            if source_file and isinstance(path_id, int) and path_id:
+                return source_file, path_id
+    return None
+
+
+def director_records(
+    resolver: ExportedObjectResolver,
+) -> list[dict[str, Any]]:
+    records = []
+    for path in sorted(resolver.extract_dir.glob("*/PlayableDirector/*.json")):
+        payload = resolver.load(path)
+        meta = payload.get("$animestudio") or {}
+        playable = resolved_pointer_identity(payload, "$.m_PlayableAsset")
+        game_object = resolved_pointer_identity(payload, "$.m_GameObject")
+        if playable is None or game_object is None:
+            continue
+        exposed = []
+        references = ((payload.get("m_ExposedReferences") or {}).get("m_References") or [])
+        for index, item in enumerate(references):
+            if not isinstance(item, dict):
+                continue
+            key = str(item.get("Key") or "")
+            pointer = resolved_pointer_identity(
+                payload,
+                f"$.m_ExposedReferences.m_References[{index}].second",
+            )
+            if pointer is None:
+                value = item.get("Value") or {}
+                path_id = value.get("m_PathID") if isinstance(value, dict) else None
+                if isinstance(path_id, int) and path_id and int(value.get("m_FileID") or 0) == 0:
+                    pointer = (str(meta.get("sourceFile") or ""), path_id)
+            if key and pointer is not None:
+                exposed.append({"key": key, "target": pointer})
+        records.append({
+            "path": path,
+            "payload": payload,
+            "identity": (str(meta.get("sourceFile") or ""), int(meta.get("pathId") or 0)),
+            "gameObject": game_object,
+            "playableAsset": playable,
+            "exposedReferences": exposed,
+            "sourceOffset": int(meta.get("sourceOffset") or 0),
+        })
+    return records
+
+
+def same_serialized_file_component_paths(
+    resolver: ExportedObjectResolver,
+    directors: list[dict[str, Any]],
+) -> list[Path]:
+    """Use extraction provenance to bound component scans to exact files."""
+    wanted_by_chunk: dict[Path, dict[int, set[str]]] = defaultdict(
+        lambda: defaultdict(set)
+    )
+    for director in directors:
+        chunk_root = director["path"].parent.parent
+        wanted_by_chunk[chunk_root][director["sourceOffset"]].add(
+            director["identity"][0]
+        )
+    candidates: set[Path] = set()
+    for chunk_root, wanted_offsets in wanted_by_chunk.items():
+        filter_path = chunk_root / "filter_data.json"
+        try:
+            inventory = json.loads(filter_path.read_text(encoding="utf-8-sig"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                "validator=timeline_embedded_story_runtime failed: "
+                "gate=timeline_filter_inventory; "
+                f"source={filter_path}; expected=valid JSON; actual={exc}"
+            ) from exc
+        for row in inventory if isinstance(inventory, list) else []:
+            if not isinstance(row, dict) or row.get("Type") != "MonoBehaviour":
+                continue
+            offset = row.get("Offset")
+            path_id = row.get("PathID")
+            if not isinstance(offset, int) or not isinstance(path_id, int):
+                continue
+            for source_file in wanted_offsets.get(offset, set()):
+                resolved = resolver.resolve(source_file, path_id)
+                if resolved is not None:
+                    candidates.add(resolved[0])
+    return sorted(candidates)
+
+
+def cutscene_root_records(
+    resolver: ExportedObjectResolver,
+    wanted_directors: set[tuple[str, int]],
+    candidate_paths: list[Path],
+) -> dict[tuple[str, int], list[dict[str, Any]]]:
+    roots: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
+    director_tokens = tuple(str(path_id).encode("ascii") for _, path_id in wanted_directors)
+    if not director_tokens:
+        return roots
+    paths = candidate_paths
+
+    def is_candidate(path: Path) -> bool:
+        try:
+            raw = path.read_bytes()
+        except OSError:
+            return False
+        return (
+            b'"_timelineName"' in raw
+            and b'"_director"' in raw
+            and any(token in raw for token in director_tokens)
+        )
+
+    with ThreadPoolExecutor(max_workers=min(16, (os.cpu_count() or 4) * 2)) as pool:
+        candidates = [
+            path for path, matched in zip(paths, pool.map(is_candidate, paths))
+            if matched
+        ]
+    for path in candidates:
+        payload = resolver.load(path)
+        timeline_name = payload.get("_timelineName")
+        director = resolved_pointer_identity(payload, "$._director")
+        if not isinstance(timeline_name, str) or not timeline_name or director not in wanted_directors:
+            continue
+        roots[director].append({
+            "path": path,
+            "payload": payload,
+            "timelineName": timeline_name,
+            "identity": (
+                str((payload.get("$animestudio") or {}).get("sourceFile") or ""),
+                int((payload.get("$animestudio") or {}).get("pathId") or 0),
+            ),
+        })
+    return roots
+
+
+def parent_control_clips(
+    resolver: ExportedObjectResolver,
+    parent_director: dict[str, Any],
+    exposed_key: str,
+) -> list[dict[str, Any]]:
+    parent_timeline_identity = parent_director["playableAsset"]
+    resolved_timeline = resolver.resolve(*parent_timeline_identity)
+    if resolved_timeline is None:
+        return []
+    timeline_path, timeline_payload = resolved_timeline
+    matches = []
+    for track_index, _ in enumerate(timeline_payload.get("m_Tracks") or []):
+        track_identity = resolved_pointer_identity(
+            timeline_payload, f"$.m_Tracks[{track_index}]"
+        )
+        if track_identity is None:
+            continue
+        resolved_track = resolver.resolve(*track_identity)
+        if resolved_track is None:
+            continue
+        track_path, track_payload = resolved_track
+        for clip_index, clip in enumerate(track_payload.get("m_Clips") or []):
+            if not isinstance(clip, dict):
+                continue
+            asset_identity = resolved_pointer_identity(
+                track_payload, f"$.m_Clips[{clip_index}].m_Asset"
+            )
+            if asset_identity is None:
+                continue
+            resolved_asset = resolver.resolve(*asset_identity)
+            if resolved_asset is None:
+                continue
+            asset_path, asset_payload = resolved_asset
+            source = asset_payload.get("sourceGameObject") or {}
+            if (
+                str(source.get("exposedName") or "") != exposed_key
+                or int(asset_payload.get("updateDirector") or 0) != 1
+            ):
+                continue
+            matches.append({
+                "parentTimelineIdentity": parent_timeline_identity,
+                "parentTimelinePath": timeline_path,
+                "trackIdentity": track_identity,
+                "trackPath": track_path,
+                "controlAssetIdentity": asset_identity,
+                "controlAssetPath": asset_path,
+                "clipIndex": clip_index,
+                "clipStart": clip.get("m_Start"),
+                "clipDuration": clip.get("m_Duration"),
+                "clipOptionIndex": clip.get("optionIndex"),
+                "useAutoBinding": bool(asset_payload.get("useAutoBinding")),
+                "autoBindingPath": str(asset_payload.get("autoBindingPath") or ""),
+                "directorControlPath": str(asset_payload.get("directorControlPath") or ""),
+                "active": bool(asset_payload.get("active")),
+            })
+    return matches
+
+
+def recover_director_hosts(
+    rows: list[dict[str, Any]],
+    extract_dir: Path,
+) -> dict[str, Any]:
+    """Close exact reverse PPtrs through director and ControlPlayableAsset data."""
+    resolver = ExportedObjectResolver(extract_dir)
+    directors = director_records(resolver)
+    targets: dict[tuple[str, int], set[str]] = defaultdict(set)
+    for row in rows:
+        targets[(str(row["sourceFile"]), int(row["rootPathId"]))].add(str(row["key"]))
+    child_directors = [row for row in directors if row["playableAsset"] in targets]
+    child_by_game_object: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
+    for row in child_directors:
+        child_by_game_object[row["gameObject"]].append(row)
+
+    parent_candidates = []
+    for parent in directors:
+        for exposed in parent["exposedReferences"]:
+            children = child_by_game_object.get(exposed["target"], [])
+            if not children:
+                continue
+            controls = parent_control_clips(resolver, parent, exposed["key"])
+            for child in children:
+                for control in controls:
+                    parent_candidates.append({
+                        "child": child,
+                        "parent": parent,
+                        "exposed": exposed,
+                        "control": control,
+                    })
+
+    wanted_directors = {
+        row["identity"] for row in child_directors
+    } | {
+        row["parent"]["identity"] for row in parent_candidates
+    }
+    relevant_directors = [
+        row for row in directors if row["identity"] in wanted_directors
+    ]
+    roots_by_director = cutscene_root_records(
+        resolver,
+        wanted_directors,
+        same_serialized_file_component_paths(resolver, relevant_directors),
+    )
+    host_rows = []
+    for child in child_directors:
+        story_keys = sorted(targets[child["playableAsset"]])
+        direct_roots = roots_by_director.get(child["identity"], [])
+        related = [original_file_record(str(child["path"]), "story_playable_director")]
+        for root in direct_roots:
+            related.append(original_file_record(str(root["path"]), "cutscene_root"))
+        host_rows.append({
+            "storyKeys": story_keys,
+            "timelineIdentity": {
+                "sourceFile": child["playableAsset"][0],
+                "pathId": str(child["playableAsset"][1]),
+            },
+            "directorIdentity": {
+                "sourceFile": child["identity"][0],
+                "pathId": str(child["identity"][1]),
+            },
+            "directorGameObjectIdentity": {
+                "sourceFile": child["gameObject"][0],
+                "pathId": str(child["gameObject"][1]),
+            },
+            "relation": (
+                "cutscene_root_director_playback"
+                if direct_roots else "playable_director_instance"
+            ),
+            "cutsceneRoots": [
+                {
+                    "timelineName": root["timelineName"],
+                    "sourceFile": root["identity"][0],
+                    "pathId": str(root["identity"][1]),
+                }
+                for root in direct_roots
+            ],
+            "controlChains": [],
+            "relatedOriginalFiles": related,
+        })
+
+    host_by_child = {
+        (row["directorIdentity"]["sourceFile"], int(row["directorIdentity"]["pathId"])): row
+        for row in host_rows
+    }
+    for candidate in parent_candidates:
+        child = candidate["child"]
+        parent = candidate["parent"]
+        control = candidate["control"]
+        parent_roots = roots_by_director.get(parent["identity"], [])
+        related_paths = (
+            (parent["path"], "parent_playable_director"),
+            (control["parentTimelinePath"], "parent_timeline_asset"),
+            (control["trackPath"], "parent_control_track"),
+            (control["controlAssetPath"], "control_playable_asset"),
+        )
+        chain_files = [original_file_record(str(path), role) for path, role in related_paths]
+        chain_files.extend(
+            original_file_record(str(root["path"]), "cutscene_root")
+            for root in parent_roots
+        )
+        chain = {
+            "relation": "exposed_reference_controlled_director_playback",
+            "exposedReferenceKey": candidate["exposed"]["key"],
+            "resolvedGameObjectIdentity": {
+                "sourceFile": candidate["exposed"]["target"][0],
+                "pathId": str(candidate["exposed"]["target"][1]),
+            },
+            "parentDirectorIdentity": {
+                "sourceFile": parent["identity"][0],
+                "pathId": str(parent["identity"][1]),
+            },
+            "parentTimelineIdentity": {
+                "sourceFile": control["parentTimelineIdentity"][0],
+                "pathId": str(control["parentTimelineIdentity"][1]),
+            },
+            "controlTrackIdentity": {
+                "sourceFile": control["trackIdentity"][0],
+                "pathId": str(control["trackIdentity"][1]),
+            },
+            "controlAssetIdentity": {
+                "sourceFile": control["controlAssetIdentity"][0],
+                "pathId": str(control["controlAssetIdentity"][1]),
+            },
+            "clipIndex": control["clipIndex"],
+            "clipStart": control["clipStart"],
+            "clipDuration": control["clipDuration"],
+            "clipOptionIndex": control["clipOptionIndex"],
+            "useAutoBinding": control["useAutoBinding"],
+            "autoBindingPath": control["autoBindingPath"],
+            "directorControlPath": control["directorControlPath"],
+            "active": control["active"],
+            "cutsceneRoots": [
+                {
+                    "timelineName": root["timelineName"],
+                    "sourceFile": root["identity"][0],
+                    "pathId": str(root["identity"][1]),
+                }
+                for root in parent_roots
+            ],
+            "relatedOriginalFiles": chain_files,
+            "missionOwnership": False,
+            "branchSelection": False,
+            "crossTimelineOrder": False,
+        }
+        host = host_by_child[child["identity"]]
+        host["controlChains"].append(chain)
+        host["relation"] = "exposed_reference_controlled_director_playback"
+        known = {(file["role"], file["path"]) for file in host["relatedOriginalFiles"]}
+        for file in chain_files:
+            identity = (file["role"], file["path"])
+            if identity not in known:
+                host["relatedOriginalFiles"].append(file)
+                known.add(identity)
+
+    for host in host_rows:
+        host["controlChains"].sort(key=lambda row: (
+            str(row["parentDirectorIdentity"]["sourceFile"]),
+            int(row["parentDirectorIdentity"]["pathId"]),
+            int(row["clipIndex"]),
+        ))
+        host["relatedOriginalFiles"].sort(key=lambda row: (row["role"], row["path"]))
+    host_rows.sort(key=lambda row: (
+        row["storyKeys"], row["directorIdentity"]["sourceFile"],
+        int(row["directorIdentity"]["pathId"]),
+    ))
+    roots_with_directors = {row["playableAsset"] for row in child_directors}
+    missing_roots = [
+        {
+            "sourceFile": source_file,
+            "pathId": str(path_id),
+            "storyKeys": sorted(targets[(source_file, path_id)]),
+        }
+        for source_file, path_id in sorted(targets)
+        if (source_file, path_id) not in roots_with_directors
+    ]
+    return {
+        "validation": {
+            "status": "validated",
+            "missingDirectorRoots": missing_roots,
+        },
+        "rows": host_rows,
+        "counts": {
+            "timelineRoots": len(targets),
+            "rootsWithDirectorInstances": len(roots_with_directors),
+            "rootsWithoutDirectorInstances": len(missing_roots),
+            "directorInstances": len(host_rows),
+            "directCutsceneRootInstances": sum(
+                bool(row["cutsceneRoots"]) for row in host_rows
+            ),
+            "controlledDirectorInstances": sum(
+                bool(row["controlChains"]) for row in host_rows
+            ),
+            "controlChains": sum(len(row["controlChains"]) for row in host_rows),
+            "storyKeysWithDirectorInstances": len({
+                key for row in host_rows for key in row["storyKeys"]
+            }),
+        },
+        "evidenceBoundary": {
+            "playableDirectorReferencesTimeline": True,
+            "exposedReferenceResolvesDirectorGameObject": True,
+            "controlPlayableTargetsResolvedGameObject": True,
+            "runtimeDirectorControl": True,
+            "cutsceneRootScope": "same_serialized_file_as_director",
+            "missionOwnership": False,
+            "questActivation": False,
+            "branchSelection": False,
+            "crossTimelineOrder": False,
+        },
+    }
+
+
 def local_order_edges(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     groups: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
@@ -342,7 +976,11 @@ def mapper_args(
         metadata=metadata_path,
         catalog=catalog_path,
         code_registration=args.code_registration,
-        include_generic_instantiations=False,
+        # Timeline control helpers call generic PlayableExtensions methods.
+        # Excluding generic instantiations would turn a mapped retail call into
+        # a false unresolved edge and must fail closed instead of weakening the
+        # runtime contract.
+        include_generic_instantiations=True,
         metadata_registration="",
         head_bytes=32,
         max_scan_bytes=0x6000,
@@ -379,15 +1017,48 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         include_all_members=True,
         body_context=0,
     )
+    control_catalog = catalog_module.build_catalog(
+        metadata,
+        re.compile(r"(?:ControlPlayableAsset|CutsceneRootComponent)$"),
+        re.compile(r"(?!)"),
+        re.compile(
+            r"^(?:CreatePlayable|ResolveSourceGameObject|GetControllableDirectors|"
+            r"SearchHierarchyAndConnectDirector|ConnectPlayablesToMixer|"
+            r"ConnectMixerAndPlayable|CreateActivationPlayable|get_topDirector)$"
+        ),
+        re.compile(r"(?:ControlPlayableAsset|CutsceneRootComponent)$"),
+        re.compile(r".*"),
+        only_focus=False,
+        include_all_members=True,
+        body_context=0,
+    )
     with tempfile.TemporaryDirectory(prefix="endfield-timeline-text-") as temp:
         catalog_path = Path(temp) / "catalog.json"
         catalog_path.write_text(json.dumps(catalog), encoding="utf-8")
         body_map = mapper.build_report(mapper_args(args, args.metadata, catalog_path))
+        control_catalog_path = Path(temp) / "control_catalog.json"
+        control_catalog_path.write_text(
+            json.dumps(control_catalog), encoding="utf-8"
+        )
+        control_body_map = mapper.build_report(
+            mapper_args(args, args.metadata, control_catalog_path)
+        )
     contract = analyze_runtime_contract(catalog, body_map)
     if contract["validation"]["status"] != "validated":
         failure = (contract["validation"]["failures"] or [{}])[0]
         raise RuntimeError(
             "timeline embedded Story runtime validation failed: "
+            f"validator={failure.get('validator')}; gate={failure.get('gate')}; "
+            f"source={failure.get('sourceFile')}; expected={failure.get('expected')!r}; "
+            f"actual={failure.get('actual')!r}"
+        )
+    control_contract = analyze_control_runtime_contract(
+        control_catalog, control_body_map
+    )
+    if control_contract["validation"]["status"] != "validated":
+        failure = (control_contract["validation"]["failures"] or [{}])[0]
+        raise RuntimeError(
+            "timeline controlled-director runtime validation failed: "
             f"validator={failure.get('validator')}; gate={failure.get('gate')}; "
             f"source={failure.get('sourceFile')}; expected={failure.get('expected')!r}; "
             f"actual={failure.get('actual')!r}"
@@ -416,9 +1087,38 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         line_id_to_story_key=line_index,
         playable_asset_type_names=families,
     ))
+    director_hosts = recover_director_hosts(rows, args.extract_dir)
+    hosts_by_timeline: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for host in director_hosts["rows"]:
+        identity = host["timelineIdentity"]
+        hosts_by_timeline[(
+            str(identity["sourceFile"]), str(identity["pathId"])
+        )].append(host)
+    for row in rows:
+        hosts = [
+            host for host in hosts_by_timeline.get(
+                (str(row["sourceFile"]), str(row["rootPathId"])), []
+            )
+            if row["key"] in host["storyKeys"]
+        ]
+        row["directorHosts"] = hosts
+        row["directorPlaybackComposition"] = any(
+            host["relation"] != "playable_director_instance" for host in hosts
+        )
+        known_files = {
+            (file["role"], file["path"])
+            for file in row["relatedOriginalFiles"]
+        }
+        for host in hosts:
+            for file in host["relatedOriginalFiles"]:
+                identity = (file["role"], file["path"])
+                if identity not in known_files:
+                    row["relatedOriginalFiles"].append(file)
+                    known_files.add(identity)
+        row["relatedOriginalFiles"].sort(key=lambda file: (file["role"], file["path"]))
     edges = local_order_edges(rows)
     return {
-        "schemaVersion": "timelineEmbeddedStoryRuntimeAudit.v1",
+        "schemaVersion": "timelineEmbeddedStoryRuntimeAudit.v2",
         "source": {
             "gameAssembly": str(args.gameassembly),
             "gameAssemblySha256": sha256_path(args.gameassembly),
@@ -429,15 +1129,24 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "validation": {
             "status": "validated",
             "runtimeContract": contract["validation"],
+            "controlRuntimeContract": control_contract["validation"],
+            "directorHosts": director_hosts["validation"],
             "storyLineIndex": line_validation,
         },
         "runtimeContract": contract,
+        "controlRuntimeContract": control_contract,
+        "directorHosts": director_hosts,
         "counts": {
             "runtimeCarrierFamilies": len(contract["families"]),
             "serializedClipRows": len(rows),
             "uniqueStoryKeys": len({row["key"] for row in rows}),
             "timelines": len({row["timeline"] for row in rows}),
             "localOrderEdges": len(edges),
+            "directorInstances": director_hosts["counts"]["directorInstances"],
+            "controlledDirectorInstances": (
+                director_hosts["counts"]["controlledDirectorInstances"]
+            ),
+            "controlChains": director_hosts["counts"]["controlChains"],
             "missionOwnershipEdges": 0,
             "branchSelectionEdges": 0,
         },
@@ -447,6 +1156,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "runtimePresentation": True,
             "serializedTimelineContainment": True,
             "sameTrackNonOverlappingClipOrder": True,
+            "playableDirectorInstances": True,
+            "exposedReferenceControlChains": True,
             "missionOwnership": False,
             "questActivation": False,
             "branchSelection": False,
@@ -467,6 +1178,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- unique Story keys: `{counts['uniqueStoryKeys']}`",
         f"- Timeline roots: `{counts['timelines']}`",
         f"- proven same-track local-order edges: `{counts['localOrderEdges']}`",
+        f"- exact PlayableDirector instances: `{counts['directorInstances']}`",
+        "- exposed-reference controlled director instances: "
+        f"`{counts['controlledDirectorInstances']}`",
+        f"- exact nested control chains: `{counts['controlChains']}`",
         f"- GameAssembly SHA-256: `{report['source']['gameAssemblySha256']}`",
         f"- metadata SHA-256: `{report['source']['metadataSha256']}`",
         "",
@@ -480,13 +1195,21 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"CreatePlayable `{family['createPlayable']['va']}` -> "
             f"{', '.join(f'`{value}`' for value in family['createPlayable']['behaviourInitializers'])}"
         )
+    control = report["controlRuntimeContract"]["controlPlayableAsset"]
+    lines.append(
+        f"- `{control['type']}` CreatePlayable "
+        f"`{control['methods']['CreatePlayable']['va']}` resolves the source "
+        "GameObject, discovers/directs PlayableDirectors, and connects them to "
+        "the playable mixer."
+    )
     lines.extend([
         "",
         "## Evidence Boundary",
         "",
         "The installed binary proves that these serialized text fields are resolved and "
         "passed into live Timeline behaviours. Exact PathID links prove the playable, "
-        "clip, track, and Actor root. Non-overlapping clip times prove only local order "
+        "clip, track, Actor root, PlayableDirector instances, and any published "
+        "ExposedReference/ControlPlayableAsset chain. Non-overlapping clip times prove only local order "
         "inside one track and option lane. They do not prove the owning mission/quest, "
         "which branch is selected, or any order across Timeline roots. OCR and manual "
         "overrides are not used.",
@@ -500,6 +1223,14 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"`{row['clipStart']}`s for `{row['clipDuration']}`s; "
             f"dialog `{row.get('dialogKey') or 'unresolved'}`; CAB `{row['sourceFile']}`"
         )
+    lines.extend(["", "## Controlled Director Hosts", ""])
+    for host in report["directorHosts"]["rows"]:
+        lines.append(
+            f"- `{', '.join(host['storyKeys'])}`: `{host['relation']}`; "
+            f"director `{host['directorIdentity']['sourceFile']}` / "
+            f"`{host['directorIdentity']['pathId']}`; "
+            f"control chains `{len(host['controlChains'])}`"
+        )
     lines.append("")
     return "\n".join(lines)
 
@@ -510,6 +1241,7 @@ def build_default_report() -> dict[str, Any]:
         gameassembly=DEFAULT_GAMEASSEMBLY,
         metadata=DEFAULT_METADATA,
         story_root=DEFAULT_STORY_ROOT,
+        extract_dir=DEFAULT_EXTRACT_DIR,
         code_registration="0x18b9217d0",
     ))
 
@@ -519,6 +1251,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gameassembly", type=Path, default=DEFAULT_GAMEASSEMBLY)
     parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
     parser.add_argument("--story-root", type=Path, default=DEFAULT_STORY_ROOT)
+    parser.add_argument("--extract-dir", type=Path, default=DEFAULT_EXTRACT_DIR)
     parser.add_argument("--code-registration", default="0x18b9217d0")
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MD)

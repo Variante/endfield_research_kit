@@ -4,6 +4,7 @@ import unittest
 import json
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from scripts.story_recovery import build_timeline_embedded_story_runtime_audit as audit
@@ -34,6 +35,152 @@ def body_row(type_name: str, method: str, targets: list[tuple[str, str]]) -> dic
 
 
 class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
+    def test_nested_director_recovery_uses_exact_reference_chain(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            extract = Path(temporary) / "timeline_extract"
+            chunk = extract / "CHUNK-GENERAL"
+            mono = chunk / "MonoBehaviour"
+            directors = chunk / "PlayableDirector"
+            mono.mkdir(parents=True)
+            directors.mkdir(parents=True)
+
+            def object_path(folder: Path, name: str, path_id: int) -> Path:
+                return folder / f"{name}_p{path_id & 0xFFFFFFFFFFFFFFFF:016X}.json"
+
+            def write_object(
+                folder: Path,
+                name: str,
+                source_file: str,
+                path_id: int,
+                payload: dict,
+                pointers: list[dict],
+                source_offset: int,
+            ) -> None:
+                object_path(folder, name, path_id).write_text(json.dumps({
+                    "$animestudio": {
+                        "pathId": path_id,
+                        "sourceFile": source_file,
+                        "sourceOffset": source_offset,
+                        "pptrReferences": pointers,
+                    },
+                    **payload,
+                }), encoding="utf-8")
+
+            def pointer(path: str, source_file: str, path_id: int) -> dict:
+                return {
+                    "path": path,
+                    "resolutionStatus": "resolved",
+                    "targetSourceFile": source_file,
+                    "targetPathId": path_id,
+                }
+
+            write_object(
+                directors, "ChildDirector", "CAB-host", 200,
+                {
+                    "m_GameObject": {"m_FileID": 0, "m_PathID": 300},
+                    "m_PlayableAsset": {"m_FileID": 1, "m_PathID": 100},
+                    "m_ExposedReferences": {"m_References": []},
+                },
+                [
+                    pointer("$.m_GameObject", "CAB-host", 300),
+                    pointer("$.m_PlayableAsset", "CAB-story", 100),
+                ],
+                77,
+            )
+            write_object(
+                directors, "ParentDirector", "CAB-host", 400,
+                {
+                    "m_GameObject": {"m_FileID": 0, "m_PathID": 500},
+                    "m_PlayableAsset": {"m_FileID": 1, "m_PathID": 600},
+                    "m_ExposedReferences": {"m_References": [{
+                        "Key": "general-key",
+                        "Value": {"m_FileID": 0, "m_PathID": 300},
+                    }]},
+                },
+                [
+                    pointer("$.m_GameObject", "CAB-host", 500),
+                    pointer("$.m_PlayableAsset", "CAB-parent", 600),
+                    pointer(
+                        "$.m_ExposedReferences.m_References[0].second",
+                        "CAB-host", 300,
+                    ),
+                ],
+                77,
+            )
+            write_object(
+                mono, "ParentTimeline", "CAB-parent", 600,
+                {"m_Tracks": [{"m_FileID": 0, "m_PathID": 700}]},
+                [pointer("$.m_Tracks[0]", "CAB-parent", 700)],
+                88,
+            )
+            write_object(
+                mono, "ControlTrack", "CAB-parent", 700,
+                {"m_Clips": [{
+                    "m_Start": 1.5,
+                    "m_Duration": 4.0,
+                    "optionIndex": 2,
+                    "m_Asset": {"m_FileID": 0, "m_PathID": 800},
+                }]},
+                [pointer("$.m_Clips[0].m_Asset", "CAB-parent", 800)],
+                88,
+            )
+            write_object(
+                mono, "ControlAsset", "CAB-parent", 800,
+                {
+                    "sourceGameObject": {"exposedName": "general-key"},
+                    "updateDirector": 1,
+                    "useAutoBinding": 1,
+                    "autoBindingPath": "Actor",
+                    "active": 1,
+                },
+                [],
+                88,
+            )
+            write_object(
+                mono, "RootComponent", "CAB-host", 900,
+                {
+                    "_timelineName": "timeline_general",
+                    "_director": {"m_FileID": 0, "m_PathID": 400},
+                },
+                [pointer("$._director", "CAB-host", 400)],
+                77,
+            )
+            (chunk / "filter_data.json").write_text(json.dumps([
+                {"Type": "MonoBehaviour", "Offset": 77, "PathID": 900},
+            ]), encoding="utf-8")
+
+            with patch.object(
+                audit,
+                "original_file_record",
+                side_effect=lambda path, role: {"path": path, "role": role},
+            ):
+                result = audit.recover_director_hosts([{
+                    "sourceFile": "CAB-story",
+                    "rootPathId": "100",
+                    "key": "story_general",
+                }], extract)
+
+        self.assertEqual(1, result["counts"]["directorInstances"])
+        self.assertEqual(1, result["counts"]["controlChains"])
+        host = result["rows"][0]
+        self.assertEqual(
+            "exposed_reference_controlled_director_playback",
+            host["relation"],
+        )
+        chain = host["controlChains"][0]
+        self.assertEqual("general-key", chain["exposedReferenceKey"])
+        self.assertEqual("400", chain["parentDirectorIdentity"]["pathId"])
+        self.assertEqual("timeline_general", chain["cutsceneRoots"][0]["timelineName"])
+        self.assertFalse(chain["missionOwnership"])
+
+    def test_mapper_includes_generic_instantiations_for_playable_extensions(self) -> None:
+        args = SimpleNamespace(
+            gameassembly=Path("gameassembly"),
+            code_registration="0x1",
+        )
+        mapped = audit.mapper_args(args, Path("metadata"), Path("catalog"))
+        self.assertTrue(mapped.include_generic_instantiations)
+
     def test_original_path_ids_are_published_as_exact_decimal_strings(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "record.json"
@@ -98,6 +245,122 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
         self.assertEqual("localized_text_resolution", failure["gate"])
         self.assertEqual(type_name, failure["sourceFile"])
         self.assertIn("Beyond.I18n.I18nUtils::TryGetText", failure["actual"])
+
+    def test_control_runtime_contract_is_discovered_from_shape_and_calls(self) -> None:
+        control_type = "UnityEngine.Timeline.GeneralControlPlayableAsset"
+        root_type = "Beyond.Gameplay.View.GeneralCutsceneRootComponent"
+        control_methods = [
+            "CreatePlayable", "ResolveSourceGameObject", "GetControllableDirectors",
+            "SearchHierarchyAndConnectDirector", "ConnectPlayablesToMixer",
+            "ConnectMixerAndPlayable", "CreateActivationPlayable",
+        ]
+        catalog = {"matchedTypes": [
+            {
+                "fullName": control_type,
+                "fields": [{"name": value} for value in (
+                    "sourceGameObject", "prefabGameObject", "updateDirector",
+                    "directorControlPath",
+                )],
+                "methods": [{"name": value} for value in control_methods],
+            },
+            {
+                "fullName": root_type,
+                "fields": [{"name": "_director"}, {"name": "_timelineName"}],
+                "methods": [{"name": "get_topDirector"}],
+            },
+        ]}
+        targets = {
+            "CreatePlayable": [
+                (control_type, "ResolveSourceGameObject"),
+                (control_type, "GetControllableDirectors"),
+                (control_type, "SearchHierarchyAndConnectDirector"),
+                (control_type, "ConnectPlayablesToMixer"),
+            ],
+            "SearchHierarchyAndConnectDirector": [
+                ("UnityEngine.Timeline.DirectorControlPlayable", "Create"),
+            ],
+            "ConnectPlayablesToMixer": [(control_type, "ConnectMixerAndPlayable")],
+            "ConnectMixerAndPlayable": [
+                ("UnityEngine.Playables.PlayableExtensions", "SetInputWeight"),
+            ],
+        }
+        rows = [
+            body_row(control_type, method, targets.get(method, []))
+            for method in control_methods
+        ]
+        top = body_row(root_type, "get_topDirector", [])
+        top["methodBodySummary"] = {
+            "finalRegisterOrigins": {"rax": "this+0x20"},
+        }
+        rows.append(top)
+
+        result = audit.analyze_control_runtime_contract(
+            catalog, {"bodyTargets": rows}
+        )
+
+        self.assertEqual("validated", result["validation"]["status"])
+        self.assertEqual(control_type, result["controlPlayableAsset"]["type"])
+        self.assertEqual("this+0x20", result["cutsceneRoot"]["directorFieldOrigin"])
+
+    def test_control_runtime_contract_reports_missing_generic_helper(self) -> None:
+        control_type = "UnityEngine.Timeline.GeneralControlPlayableAsset"
+        root_type = "Beyond.Gameplay.View.GeneralCutsceneRootComponent"
+        control_methods = [
+            "CreatePlayable", "ResolveSourceGameObject", "GetControllableDirectors",
+            "SearchHierarchyAndConnectDirector", "ConnectPlayablesToMixer",
+            "ConnectMixerAndPlayable", "CreateActivationPlayable",
+        ]
+        catalog = {"matchedTypes": [
+            {
+                "fullName": control_type,
+                "fields": [{"name": value} for value in (
+                    "sourceGameObject", "prefabGameObject", "updateDirector",
+                    "directorControlPath",
+                )],
+                "methods": [{"name": value} for value in control_methods],
+            },
+            {
+                "fullName": root_type,
+                "fields": [{"name": "_director"}, {"name": "_timelineName"}],
+                "methods": [{"name": "get_topDirector"}],
+            },
+        ]}
+        targets = {
+            "CreatePlayable": [
+                (control_type, "ResolveSourceGameObject"),
+                (control_type, "GetControllableDirectors"),
+                (control_type, "SearchHierarchyAndConnectDirector"),
+                (control_type, "ConnectPlayablesToMixer"),
+            ],
+            "SearchHierarchyAndConnectDirector": [
+                ("UnityEngine.Timeline.DirectorControlPlayable", "Create"),
+            ],
+            "ConnectPlayablesToMixer": [(control_type, "ConnectMixerAndPlayable")],
+            # Deliberately omit generic PlayableExtensions.SetInputWeight.
+            "ConnectMixerAndPlayable": [],
+        }
+        rows = [
+            body_row(control_type, method, targets.get(method, []))
+            for method in control_methods
+        ]
+        top = body_row(root_type, "get_topDirector", [])
+        top["methodBodySummary"] = {
+            "finalRegisterOrigins": {"rax": "this+0x20"},
+        }
+        rows.append(top)
+
+        result = audit.analyze_control_runtime_contract(
+            catalog, {"bodyTargets": rows}
+        )
+
+        self.assertEqual("failed", result["validation"]["status"])
+        failure = result["validation"]["failures"][0]
+        self.assertEqual("control_playable_helper_chain", failure["gate"])
+        self.assertIn("SetInputWeight", " ".join(failure["expected"]))
+        self.assertEqual(
+            f"{control_type}::ConnectMixerAndPlayable",
+            failure["sourceFile"],
+        )
 
     def test_local_order_uses_time_not_clip_or_filename_order(self) -> None:
         common = {
