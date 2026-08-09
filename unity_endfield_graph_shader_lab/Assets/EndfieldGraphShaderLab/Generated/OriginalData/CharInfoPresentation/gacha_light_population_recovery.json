@@ -1,8 +1,8 @@
 {
-  "schema": "endfield.gacha-light-population-recovery.v1",
-  "status": "zhuangfy_gacha_authored_unity_light_population_source_closed",
+  "schema": "endfield.gacha-light-population-recovery.v2",
+  "status": "zhuangfy_gacha_authored_population_and_first_native_exclusion_source_closed",
   "runtimeReady": false,
-  "outcome": "Installed Lua selects only light_overview from light_chr_0030_zhuangfy, initializes its four CharInfoLightFollower components, and selects the 12-light SceneLight6Rarity room group for rarity 6. The resulting known serialized Unity-Light candidate union is exactly 18 enabled lights: 3 type 0 and 15 type 2, with no authored cookies and one character-light shadow request. This closes authored activation, not the target-frame native LightCullResult, dynamic/custom lights, final order, or lightCount.",
+  "outcome": "Installed Lua selects only light_overview from light_chr_0030_zhuangfy, initializes its four CharInfoLightFollower components, and selects the 12-light SceneLight6Rarity room group for rarity 6. The resulting known serialized Unity-Light candidate union is exactly 18 enabled lights: 3 type 0 and 15 type 2, with no authored cookies and one character-light shadow request. The shipped normal native path disables fallback and Gacha occlusion; Spot Light (20) is aspect-independently rejected, tightening the known authored survivor upper bound to 17. This still does not close the target-frame LightCullResult, dynamic/custom lights, final order, or lightCount.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -39,6 +39,18 @@
     "operatorLights": {
       "sizeBytes": 1657381,
       "sha256": "706f66b89aa209371df50956e9f1525026ce4a8a1f19a85210fc35d3b2c23ac8"
+    },
+    "nativeCullReport": {
+      "sizeBytes": 17366,
+      "sha256": "f7b6e9b6407bb26555491c13f9895b712a9219218c19ac07efd56d7c947d7d7e"
+    },
+    "gachaCullViewAudit": {
+      "sizeBytes": 21657,
+      "sha256": "4717ddd564f0eee2e1742024660e233e09865b4a301a4b7566aaca6844011dc4"
+    },
+    "gachaSelectedListAudit": {
+      "sizeBytes": 27692,
+      "sha256": "7b3624526a77102fb075cdc1ad98277eb6746b5a1853faa1fd2ad2032951e1b3"
     }
   },
   "selection": {
@@ -412,6 +424,35 @@
     },
     "selectedFollowerCount": 4
   },
+  "nativeCullBoundary": {
+    "shippedCandidateCore": "normal; useFallbackLightCulling=false",
+    "gachaOcclusionDimensions": [
+      0,
+      0
+    ],
+    "gachaOcclusionActive": false,
+    "genericFlagMaskGateClosedForAll12RoomLights": true,
+    "guaranteedAbsentRoomLights": [
+      "Spot Light (20)"
+    ],
+    "authoredRoomMaximumContributionCount": 11,
+    "knownAuthoredSurvivorUpperBound": 17,
+    "remainingRoomOrderIfAdmitted": [
+      "Spot Light (12)",
+      "Spot Light (19)",
+      "Linear Light (12)",
+      "Linear Light (13)",
+      "Linear Light (14)",
+      "Spot Light (17)",
+      "Linear Light (15)",
+      "Spot Light (18)",
+      "Spot Light (9)",
+      "Spot Light (11)",
+      "Spot Light (10)"
+    ],
+    "nativeOutputOrder": "accepted non-directionals sort by ascending camera distance squared; SetupState then sorts types 0/2 by priority descending and distance ascending",
+    "firstOpenRoomBoundary": "the synchronous AABB/plane result for the other eleven room rows depends on live horizontal planes derived from final render-target aspect"
+  },
   "evidenceBoundary": {
     "closed": [
       "installed Lua prefab path and direct-child activation rule",
@@ -420,14 +461,18 @@
       "six selected light_overview rows and four follower records",
       "twelve selected SceneLight6Rarity room rows",
       "known 18-row authored type/cookie/shadow census",
-      "installed native follower traversal, node selection, and transform modes"
+      "installed native follower traversal, node selection, and transform modes",
+      "shipped normal candidate core with fallback and Gacha occlusion disabled",
+      "generic room layer/mask gate for all twelve room rows",
+      "aspect-independent rejection of Spot Light (20) and 17-row authored upper bound"
     ],
     "open": [
       "target-frame HGCullingSystem.CullLights pointer/count and survivors",
-      "screen-size, frustum, occlusion, and distance rejection",
+      "aspect-dependent AABB outcomes for the other eleven room rows",
+      "character-light cull outcomes and evaluated follower transforms",
       "persistent/global carry-in or runtime-created custom lights",
       "final priority/distance order, LightDataBuffer rows, and lightCount"
     ],
-    "decision": "Use these 18 rows as the exact known serialized input population. Do not publish them as the retail survivor array or enable deferred pass 0 until the native target-frame result is captured or otherwise source-closed."
+    "decision": "Use 18 as the exact known serialized input population and 17 only as its current native survivor upper bound. Do not publish either as the retail survivor array or enable deferred pass 0 until the target-frame result is captured or otherwise source-closed."
   }
 }

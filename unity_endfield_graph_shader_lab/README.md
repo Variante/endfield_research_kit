@@ -1499,7 +1499,14 @@ therefore 18 lights (3 type 0, 15 type 2), with no authored cookies and one
 character-light shadow request. Run
 `python tools\audit_gacha_light_population.py --check` to validate the pinned
 Lua, tables, prefabs, group membership, and native follower-method evidence.
-This is the authored input boundary, not the target-frame survivor array.
+The same audit now also pins the native normal candidate core. The shipped
+Gacha route has `useFallbackLightCulling=false` and `0 x 0` occlusion
+dimensions. At the settled held-camera sample, `Spot Light (20)` is rejected
+by an aspect-independent top-plane test, reducing the known authored survivor
+upper bound from 18 to 17; the other 11 room rows keep an exact conditional
+relative order. Their horizontal AABB results still depend on the live final
+render-target aspect, and character-light culling plus unrelated live lights
+remain open, so neither 18 nor 17 is the target-frame survivor array.
 Offline IL2CPP/xref recovery now fixes the handoff precisely:
 `LightCullResult` is `visibleLightsPtr + visibleLightCount`; its only direct
 producer is `HGCullingSystem.CullLights`, both GameAssembly call sites belong

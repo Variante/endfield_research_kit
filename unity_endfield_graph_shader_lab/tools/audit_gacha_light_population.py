@@ -58,6 +58,16 @@ OPERATOR_LIGHTS = (
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
     "RenderParameters/operator_lights.json"
 )
+NATIVE_CULL_REPORT = (
+    REPO_ROOT
+    / "scratch/reverse_engineering/clustered_light_native_culling/report.json"
+)
+GACHA_CULL_VIEW_AUDIT = (
+    REPO_ROOT / "scratch/reverse_engineering/gacha_light_cull_view/audit.json"
+)
+GACHA_SELECTED_LIST_AUDIT = (
+    REPO_ROOT / "scratch/reverse_engineering/gacha_light_selected_list/audit.json"
+)
 OUTPUT = (
     LAB_ROOT
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
@@ -74,7 +84,24 @@ EXPECTED_HASHES = {
     "gachaCharTable": "05c1b414bab1f3fbb7a9a983c7193c40ccf0884d6cb50edf7469d8ee05dd50fb",
     "roomHierarchy": "bf26b44919a7563bd6c7ee137346d7f8880bb1a32911a8972c586b2bb0c87db9",
     "operatorLights": "706f66b89aa209371df50956e9f1525026ce4a8a1f19a85210fc35d3b2c23ac8",
+    "nativeCullReport": "f7b6e9b6407bb26555491c13f9895b712a9219218c19ac07efd56d7c947d7d7e",
+    "gachaCullViewAudit": "4717ddd564f0eee2e1742024660e233e09865b4a301a4b7566aaca6844011dc4",
+    "gachaSelectedListAudit": "7b3624526a77102fb075cdc1ad98277eb6746b5a1853faa1fd2ad2032951e1b3",
 }
+
+ROOM_SURVIVOR_SUBSEQUENCE = [
+    "Spot Light (12)",
+    "Spot Light (19)",
+    "Linear Light (12)",
+    "Linear Light (13)",
+    "Linear Light (14)",
+    "Spot Light (17)",
+    "Linear Light (15)",
+    "Spot Light (18)",
+    "Spot Light (9)",
+    "Spot Light (11)",
+    "Spot Light (10)",
+]
 
 NATIVE_METHODS = {
     "CharUIModelMono.InitLightFollower": {
@@ -451,6 +478,106 @@ def validate_native_methods(game_assembly: Path) -> list[dict[str, object]]:
     return rows
 
 
+def validate_native_cull_boundary(
+    native: dict[str, Any],
+    view: dict[str, Any],
+    selected: dict[str, Any],
+    room_rows: list[dict[str, object]],
+) -> dict[str, object]:
+    require(
+        "native_cull_status",
+        native["status"],
+        "native candidate producer substantially source-closed; scheduled generic cull-view internals remain bounded open",
+        NATIVE_CULL_REPORT,
+    )
+    require(
+        "normal_path_fallback",
+        view["nativeProof"]["fallbackMode"][
+            "useFallbackLightCullingOnSourceClosedShippedRoute"
+        ],
+        False,
+        GACHA_CULL_VIEW_AUDIT,
+    )
+    require(
+        "gacha_occlusion_dimensions",
+        view["nativeProof"]["occlusion"]["addCullViewDimensions"],
+        [0, 0],
+        GACHA_CULL_VIEW_AUDIT,
+    )
+    strongest = view["strongestExactOutput"]
+    require(
+        "room_native_maximum",
+        int(strongest["authoredRoomMaximumContributionCount"]),
+        11,
+        GACHA_CULL_VIEW_AUDIT,
+    )
+    require(
+        "room_exact_exclusion",
+        strongest["excludedAuthoredRoomRows"],
+        ["Spot Light (20)"],
+        GACHA_CULL_VIEW_AUDIT,
+    )
+    require(
+        "room_survivor_subsequence",
+        strongest["remainingAuthoredRoomOrderIsExactSubsequenceOf"],
+        ROOM_SURVIVOR_SUBSEQUENCE,
+        GACHA_CULL_VIEW_AUDIT,
+    )
+    selected_output = selected["strongestExactOutput"]
+    require(
+        "selected_generic_gate",
+        selected_output["genericFlagMaskGateClosedForAll12"],
+        True,
+        GACHA_SELECTED_LIST_AUDIT,
+    )
+    require(
+        "selected_exact_exclusion",
+        selected_output["guaranteedAbsent"],
+        ["Spot Light (20)"],
+        GACHA_SELECTED_LIST_AUDIT,
+    )
+    require(
+        "selected_survivor_subsequence",
+        selected_output["remainingStrictRelativeOrderIfAdmitted"],
+        ROOM_SURVIVOR_SUBSEQUENCE,
+        GACHA_SELECTED_LIST_AUDIT,
+    )
+    require(
+        "room_excluded_row_membership",
+        "Spot Light (20)" in {row["name"] for row in room_rows},
+        True,
+        ROOM_HIERARCHY,
+    )
+    for source, audit in (
+        (GACHA_CULL_VIEW_AUDIT, view),
+        (GACHA_SELECTED_LIST_AUDIT, selected),
+    ):
+        require(
+            f"{source.parent.name}_offline_only",
+            set(audit["noRuntimeLaunches"].values()),
+            {False},
+            source,
+        )
+    return {
+        "shippedCandidateCore": "normal; useFallbackLightCulling=false",
+        "gachaOcclusionDimensions": [0, 0],
+        "gachaOcclusionActive": False,
+        "genericFlagMaskGateClosedForAll12RoomLights": True,
+        "guaranteedAbsentRoomLights": ["Spot Light (20)"],
+        "authoredRoomMaximumContributionCount": 11,
+        "knownAuthoredSurvivorUpperBound": 17,
+        "remainingRoomOrderIfAdmitted": ROOM_SURVIVOR_SUBSEQUENCE,
+        "nativeOutputOrder": (
+            "accepted non-directionals sort by ascending camera distance squared; "
+            "SetupState then sorts types 0/2 by priority descending and distance ascending"
+        ),
+        "firstOpenRoomBoundary": (
+            "the synchronous AABB/plane result for the other eleven room rows depends "
+            "on live horizontal planes derived from final render-target aspect"
+        ),
+    }
+
+
 def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
     source_paths = {
         "gameAssembly": GAME_ASSEMBLY,
@@ -462,6 +589,9 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
         "gachaCharTable": GACHA_CHAR_TABLE,
         "roomHierarchy": ROOM_HIERARCHY,
         "operatorLights": OPERATOR_LIGHTS,
+        "nativeCullReport": NATIVE_CULL_REPORT,
+        "gachaCullViewAudit": GACHA_CULL_VIEW_AUDIT,
+        "gachaSelectedListAudit": GACHA_SELECTED_LIST_AUDIT,
     }
     source_hashes = (
         {name: verified_hash(name, path) for name, path in source_paths.items()}
@@ -482,6 +612,12 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
     operator_rows = validate_operator_population(load_json(OPERATOR_LIGHTS), prefab_rows)
     room_rows = validate_room_population(load_json(ROOM_HIERARCHY), ROOM_LIGHT_ROOT)
     native_rows = validate_native_methods(GAME_ASSEMBLY)
+    native_cull_boundary = validate_native_cull_boundary(
+        load_json(NATIVE_CULL_REPORT),
+        load_json(GACHA_CULL_VIEW_AUDIT),
+        load_json(GACHA_SELECTED_LIST_AUDIT),
+        room_rows,
+    )
     union = room_rows + operator_rows
     type_counts = Counter(row["type"] for row in union)
     require("authored_union_count", len(union), 18, "room + character overview")
@@ -489,8 +625,8 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
     require("authored_union_cookie_count", sum(bool(row["cookiePathId"]) for row in union), 0, "room + character overview")
 
     return {
-        "schema": "endfield.gacha-light-population-recovery.v1",
-        "status": "zhuangfy_gacha_authored_unity_light_population_source_closed",
+        "schema": "endfield.gacha-light-population-recovery.v2",
+        "status": "zhuangfy_gacha_authored_population_and_first_native_exclusion_source_closed",
         "runtimeReady": False,
         "outcome": (
             "Installed Lua selects only light_overview from light_chr_0030_zhuangfy, "
@@ -498,8 +634,10 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
             "12-light SceneLight6Rarity room group for rarity 6. The resulting known "
             "serialized Unity-Light candidate union is exactly 18 enabled lights: "
             "3 type 0 and 15 type 2, with no authored cookies and one character-light "
-            "shadow request. This closes authored activation, not the target-frame native "
-            "LightCullResult, dynamic/custom lights, final order, or lightCount."
+            "shadow request. The shipped normal native path disables fallback and Gacha "
+            "occlusion; Spot Light (20) is aspect-independently rejected, tightening the "
+            "known authored survivor upper bound to 17. This still does not close the "
+            "target-frame LightCullResult, dynamic/custom lights, final order, or lightCount."
         ),
         "installedInputs": source_hashes,
         "selection": {
@@ -531,6 +669,7 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
             },
             "selectedFollowerCount": 4,
         },
+        "nativeCullBoundary": native_cull_boundary,
         "evidenceBoundary": {
             "closed": [
                 "installed Lua prefab path and direct-child activation rule",
@@ -540,17 +679,22 @@ def build_report(*, verify_hashes: bool = True) -> dict[str, object]:
                 "twelve selected SceneLight6Rarity room rows",
                 "known 18-row authored type/cookie/shadow census",
                 "installed native follower traversal, node selection, and transform modes",
+                "shipped normal candidate core with fallback and Gacha occlusion disabled",
+                "generic room layer/mask gate for all twelve room rows",
+                "aspect-independent rejection of Spot Light (20) and 17-row authored upper bound",
             ],
             "open": [
                 "target-frame HGCullingSystem.CullLights pointer/count and survivors",
-                "screen-size, frustum, occlusion, and distance rejection",
+                "aspect-dependent AABB outcomes for the other eleven room rows",
+                "character-light cull outcomes and evaluated follower transforms",
                 "persistent/global carry-in or runtime-created custom lights",
                 "final priority/distance order, LightDataBuffer rows, and lightCount",
             ],
             "decision": (
-                "Use these 18 rows as the exact known serialized input population. Do not "
-                "publish them as the retail survivor array or enable deferred pass 0 until "
-                "the native target-frame result is captured or otherwise source-closed."
+                "Use 18 as the exact known serialized input population and 17 only as its "
+                "current native survivor upper bound. Do not publish either as the retail "
+                "survivor array or enable deferred pass 0 until the target-frame result is "
+                "captured or otherwise source-closed."
             ),
         },
     }
