@@ -2015,9 +2015,17 @@ spot-like lights index 0. Unchanged static slots reuse depth, while at most one
 static allocation/migration redraw runs per frame; its priority is large-to-
 small, small-to-large, then new allocation. Allocation pressure evicts the
 oldest `lastVisitedTime` at the requested level, whereas every selected dynamic
-caster redraws each frame. A matching capture immediately before `0x189b57155`
-is still required for overridden target `N/T`, live caster membership, target-
-client resource confirmation, atlas texels, and the matching 6,144-byte section.
+caster redraws each frame. The installed unpatched row formulas are now closed
+too. Point faces use the exact six 3-vector bases and a guarded 92-degree
+projection; spot lights use inverse local-to-world with the view Z row negated
+and their authored angle/guard. Both feed reversed-Z `B*(P*V)`. With
+`q=2/(projection.m00*shadowResolution)`, PCF_3x3 (enum 2) stores
+`(0, 1.5*q*normalBias, q, fadedStrength)`; strength fades as
+`lerp(0, shadowStrength, saturate((c-d)/(c-fadeRatio*c)))`. Params2 is the
+normalized atlas `xyxy`, and texel size is `(1/W,1/H,W,H)`. A matching capture
+immediately before `0x189b57155` is still required for live IFix state,
+overridden target `N/T`, caster/light inputs, target-client resource
+confirmation, atlas texels, and the settled 6,144-byte section.
 Binding 37 now has its native
 `HGLightCookieManager` initialization,
 32-record atlas/matrix layout, exact 2,560-byte upload, and `-1` no-cookie guard
