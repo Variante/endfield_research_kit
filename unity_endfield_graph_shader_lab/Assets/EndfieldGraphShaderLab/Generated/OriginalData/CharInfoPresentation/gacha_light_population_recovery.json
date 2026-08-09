@@ -1,0 +1,433 @@
+{
+  "schema": "endfield.gacha-light-population-recovery.v1",
+  "status": "zhuangfy_gacha_authored_unity_light_population_source_closed",
+  "runtimeReady": false,
+  "outcome": "Installed Lua selects only light_overview from light_chr_0030_zhuangfy, initializes its four CharInfoLightFollower components, and selects the 12-light SceneLight6Rarity room group for rarity 6. The resulting known serialized Unity-Light candidate union is exactly 18 enabled lights: 3 type 0 and 15 type 2, with no authored cookies and one character-light shadow request. This closes authored activation, not the target-frame native LightCullResult, dynamic/custom lights, final order, or lightCount.",
+  "installedInputs": {
+    "gameAssembly": {
+      "sizeBytes": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "sizeBytes": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "roomChunk": {
+      "sizeBytes": 1094286601,
+      "sha256": "4b4ae868dc333fd5b22fc30e667d3156675178bfffd57b93e0e4b625c89f0b26"
+    },
+    "charInfoChunk": {
+      "sizeBytes": 1040864172,
+      "sha256": "db94219ee4f522a824c32ec979c2dc5bfd7b1013b4e45c18b77fb3ae4809694e"
+    },
+    "gachaLua": {
+      "sizeBytes": 24265,
+      "sha256": "94815321515ebf7d4067f60f2f6e2a1d25611bc2e40f712e22cd40a6d159ae19"
+    },
+    "characterTable": {
+      "sizeBytes": 9709956,
+      "sha256": "50392af8d8c93854b99e5342b4b70c049b68d2da306e366325d749ba77bf4779"
+    },
+    "gachaCharTable": {
+      "sizeBytes": 6616,
+      "sha256": "05c1b414bab1f3fbb7a9a983c7193c40ccf0884d6cb50edf7469d8ee05dd50fb"
+    },
+    "roomHierarchy": {
+      "sizeBytes": 34519,
+      "sha256": "bf26b44919a7563bd6c7ee137346d7f8880bb1a32911a8972c586b2bb0c87db9"
+    },
+    "operatorLights": {
+      "sizeBytes": 1657381,
+      "sha256": "706f66b89aa209371df50956e9f1525026ce4a8a1f19a85210fc35d3b2c23ac8"
+    }
+  },
+  "selection": {
+    "characterId": "chr_0030_zhuangfy",
+    "rarity": 6,
+    "timelineAssetName": "gacha_char_zhuangfy",
+    "characterLightPrefabEquation": "Assets/Beyond/DynamicAssets/Gameplay/Prefabs/CharInfo/AdditionalLights/light_<charId>.prefab",
+    "selectedChild": "light_overview",
+    "otherDirectChildrenActive": false,
+    "selectedChildActive": true,
+    "initLightFollowerOnSelectedChild": true,
+    "roomRarityRules": {
+      "SceneLight6Rarity": "rarity >= 6",
+      "SceneLight5Rarity": "rarity == 5",
+      "SceneLight4Rarity": "rarity <= 4"
+    },
+    "activeRoomGroup": "SceneLight6Rarity"
+  },
+  "serializedCharacterPrefab": {
+    "root": "light_chr_0030_zhuangfy",
+    "totalLightCount": 44,
+    "groups": [
+      {
+        "name": "light_document",
+        "pathId": 114660774365865291,
+        "serializedActiveSelf": true,
+        "lightCount": 6,
+        "followerCount": 4,
+        "characterOnlyCount": 6,
+        "typeCounts": {
+          "0": 2,
+          "2": 4
+        }
+      },
+      {
+        "name": "light_equip",
+        "pathId": -4122620703443081909,
+        "serializedActiveSelf": false,
+        "lightCount": 6,
+        "followerCount": 1,
+        "characterOnlyCount": 6,
+        "typeCounts": {
+          "2": 4,
+          "0": 2
+        }
+      },
+      {
+        "name": "light_overview",
+        "pathId": -1840922393885432501,
+        "serializedActiveSelf": false,
+        "lightCount": 6,
+        "followerCount": 4,
+        "characterOnlyCount": 6,
+        "typeCounts": {
+          "2": 4,
+          "0": 2
+        }
+      },
+      {
+        "name": "light_skill",
+        "pathId": -736313027726760629,
+        "serializedActiveSelf": false,
+        "lightCount": 8,
+        "followerCount": 0,
+        "characterOnlyCount": 7,
+        "typeCounts": {
+          "0": 3,
+          "2": 5
+        }
+      },
+      {
+        "name": "light_upgrade",
+        "pathId": 7162434402683692363,
+        "serializedActiveSelf": false,
+        "lightCount": 7,
+        "followerCount": 5,
+        "characterOnlyCount": 7,
+        "typeCounts": {
+          "2": 5,
+          "0": 2
+        }
+      },
+      {
+        "name": "light_weapon",
+        "pathId": -2373901316435892917,
+        "serializedActiveSelf": false,
+        "lightCount": 11,
+        "followerCount": 0,
+        "characterOnlyCount": 11,
+        "typeCounts": {
+          "2": 10,
+          "0": 1
+        }
+      }
+    ]
+  },
+  "knownActiveAuthoredCandidates": {
+    "count": 18,
+    "typeCounts": {
+      "0": 3,
+      "2": 15
+    },
+    "cookieCount": 0,
+    "shadowRequestCount": 1,
+    "room": {
+      "group": "SceneLight6Rarity",
+      "count": 12,
+      "lights": [
+        {
+          "pathId": -7516039918534742560,
+          "name": "Linear Light (12)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "44e9b1e45db49c8b99245bad64fca6fed34c8502b62757085f470f31b8e84781"
+        },
+        {
+          "pathId": -6003850056218071584,
+          "name": "Linear Light (13)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "89b558afb131f4c20defb11809ded9c9491cb25e3291bf39b48818db0e9d5da1"
+        },
+        {
+          "pathId": -4966856337038791200,
+          "name": "Linear Light (14)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "29a8edc793b0490f29fe5ef1ecc09cb7313313109fc78f0035c4ed83ea5763e4"
+        },
+        {
+          "pathId": -2247457476464562720,
+          "name": "Linear Light (15)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "a7a45026da45d4004f09faa85af7129c0d70a96e5511c28e7754dc31b155470b"
+        },
+        {
+          "pathId": 1177420952804240864,
+          "name": "Spot Light (18)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "f532705bda89417f404bde246f557d449af231cbb5a3db63867cbb32f2b09b35"
+        },
+        {
+          "pathId": 3145527971969281504,
+          "name": "Spot Light (12)",
+          "type": 0,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "720742dae08665fde2674a86311217b29e78545fd2dd5c9742dfd9d5ec1a2330"
+        },
+        {
+          "pathId": 4336752956264328672,
+          "name": "Spot Light (17)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "7bd820b8bf1b443dd989681b5e406bb628f03aaf038996301e360e87f31982f5"
+        },
+        {
+          "pathId": 4491921571221515744,
+          "name": "Spot Light (20)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "f699b53f7b9a4463b9b99c49f9222e6bd1caaf1335cb157849277d5a1e9389a2"
+        },
+        {
+          "pathId": 6723905289426087392,
+          "name": "Spot Light (19)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "da218e4caf6e4a3aa8f620317f12c670004b801541b420a9e6b88ac9419eb23c"
+        },
+        {
+          "pathId": 7037844248082165216,
+          "name": "Spot Light (9)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "ca50f80494de46082daa63b0f8505fab2e988b4987d69f5c17c155a5cfb6a176"
+        },
+        {
+          "pathId": 7142192322960010720,
+          "name": "Spot Light (11)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "db14d0a346abcb4d38677d093bce62b18db02cb1f4b25bcce5dfa04b70c3a69d"
+        },
+        {
+          "pathId": 7763697698425908704,
+          "name": "Spot Light (10)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "renderingLayerMask": 1,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "sourceRawSha256": "fbf47c37b3391ded9e8046cc6150330f9cf158bc037889b591028412629b561d"
+        }
+      ]
+    },
+    "character": {
+      "group": "light_overview",
+      "count": 6,
+      "lights": [
+        {
+          "pathId": 5596195539603203403,
+          "name": "FogLight_1 (2)",
+          "type": 0,
+          "priority": 0,
+          "enabled": true,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "characterOnly": true,
+          "hasFollower": true
+        },
+        {
+          "pathId": -8453137644262742709,
+          "name": "Point Light_overview (2)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "characterOnly": true,
+          "hasFollower": true
+        },
+        {
+          "pathId": -7593216169862781621,
+          "name": "RimLight_2 (4)",
+          "type": 0,
+          "priority": 0,
+          "enabled": true,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "characterOnly": true,
+          "hasFollower": false
+        },
+        {
+          "pathId": 5090866064179373387,
+          "name": "SpecLight_1 (8)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "characterOnly": true,
+          "hasFollower": true
+        },
+        {
+          "pathId": -5300551612643891893,
+          "name": "RimLight_2 (5)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "cookiePathId": 0,
+          "shadowType": 2,
+          "characterOnly": true,
+          "hasFollower": false
+        },
+        {
+          "pathId": -2406487440843233973,
+          "name": "SpecLight_1 (11)",
+          "type": 2,
+          "priority": 0,
+          "enabled": true,
+          "cookiePathId": 0,
+          "shadowType": 0,
+          "characterOnly": true,
+          "hasFollower": true
+        }
+      ]
+    }
+  },
+  "nativeFollowerContract": {
+    "methods": [
+      {
+        "method": "CharUIModelMono.InitLightFollower",
+        "methodIndex": 49713,
+        "virtualAddress": "0x186C25FA0",
+        "fileOffset": 113395104,
+        "sizeBytes": 220,
+        "sha256": "9259bd577548c38e5eb44b1c6b02d5379a448048d888ff646a866a398d7cb4a1"
+      },
+      {
+        "method": "CharUIModelMono._GetFollowableNode",
+        "methodIndex": 49714,
+        "virtualAddress": "0x186C29FD0",
+        "fileOffset": 113411536,
+        "sizeBytes": 116,
+        "sha256": "c0f00babeb5c1f6d717788a099c5cfc6d824a0e633149b1805f16e7e15ef817f"
+      },
+      {
+        "method": "CharInfoLightFollower.InitCharLightFollower",
+        "methodIndex": 16388,
+        "virtualAddress": "0x1872ECF0C",
+        "fileOffset": 120501516,
+        "sizeBytes": 220,
+        "sha256": "fd263394528933a30655f5a52b42c790dbce0f91ed2475619a01ccff25f80379"
+      },
+      {
+        "method": "CharInfoLightFollower.LateTick",
+        "methodIndex": 16387,
+        "virtualAddress": "0x1872ECFE8",
+        "fileOffset": 120501736,
+        "sizeBytes": 188,
+        "sha256": "d274f9b13d6f0275e4791bee11ba6a34980fc30391dfcfbe6f12369e57707bd8"
+      },
+      {
+        "method": "CharInfoLightFollower._FollowWithFixedOffset",
+        "methodIndex": 16389,
+        "virtualAddress": "0x1872ED108",
+        "fileOffset": 120502024,
+        "sizeBytes": 264,
+        "sha256": "0eaa0ce1b9c6aa70feb71d85175be340ab7598bbfa1d4ba05644b252297cbc12"
+      },
+      {
+        "method": "CharInfoLightFollower._FollowWithParent",
+        "methodIndex": 16390,
+        "virtualAddress": "0x1872ED210",
+        "fileOffset": 120502288,
+        "sizeBytes": 504,
+        "sha256": "27fdafe4771dd013713e4ae37a2132e102e949a47f0047843d48d6092c01821d"
+      }
+    ],
+    "enumeration": "InitLightFollower calls GetComponentsInChildren<CharInfoLightFollower>(true), maps followableNodeType 0 to Bip001 and 1 to Head_Local, then initializes each component with that transform.",
+    "lateTickModes": {
+      "0": "fixed world position offset",
+      "1": "parent-space position and rotation"
+    },
+    "selectedFollowerCount": 4
+  },
+  "evidenceBoundary": {
+    "closed": [
+      "installed Lua prefab path and direct-child activation rule",
+      "rarity-6 GachaRoom group selection",
+      "all 44 serialized character-prefab Unity Lights and six page groups",
+      "six selected light_overview rows and four follower records",
+      "twelve selected SceneLight6Rarity room rows",
+      "known 18-row authored type/cookie/shadow census",
+      "installed native follower traversal, node selection, and transform modes"
+    ],
+    "open": [
+      "target-frame HGCullingSystem.CullLights pointer/count and survivors",
+      "screen-size, frustum, occlusion, and distance rejection",
+      "persistent/global carry-in or runtime-created custom lights",
+      "final priority/distance order, LightDataBuffer rows, and lightCount"
+    ],
+    "decision": "Use these 18 rows as the exact known serialized input population. Do not publish them as the retail survivor array or enable deferred pass 0 until the native target-frame result is captured or otherwise source-closed."
+  }
+}

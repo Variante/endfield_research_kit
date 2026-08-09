@@ -1491,7 +1491,15 @@ zero bytes and clears `_EndfieldRecoveredLightBinningConstantsReady`. Run
 field offsets, and failure diagnostics on D3D11 and D3D12. The verified Wulfa
 fixture has 8 isolated lights and 120x68 tiles at 3840x2160. It is not the
 retail room census: the native whole-scene candidate/survivor list and final
-`lightCount` remain open, and the 12 authored room lights are not substituted.
+`lightCount` remain open. Installed Gacha Lua now proves that Zhuangfy selects
+the six-light `light_overview` character group, initializes its four
+`CharInfoLightFollower` components, and activates the 12-light
+`SceneLight6Rarity` room group. The exact known serialized candidate union is
+therefore 18 lights (3 type 0, 15 type 2), with no authored cookies and one
+character-light shadow request. Run
+`python tools\audit_gacha_light_population.py --check` to validate the pinned
+Lua, tables, prefabs, group membership, and native follower-method evidence.
+This is the authored input boundary, not the target-frame survivor array.
 Offline IL2CPP/xref recovery now fixes the handoff precisely:
 `LightCullResult` is `visibleLightsPtr + visibleLightCount`; its only direct
 producer is `HGCullingSystem.CullLights`, both GameAssembly call sites belong
