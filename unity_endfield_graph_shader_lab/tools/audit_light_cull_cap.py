@@ -126,6 +126,12 @@ UNITY_ADD_CULL_VIEW_ICALL_NAME = (
     "UnityEngine.HyperGryph.HGCullingSystem::AddCullViewByMatrix"
 )
 
+UNITY_DISPATCH_CULL_JOBS_ICALL_INDEX = 3315
+UNITY_DISPATCH_CULL_JOBS_ICALL_VA = 0x1800FAFC0
+UNITY_DISPATCH_CULL_JOBS_ICALL_NAME = (
+    "UnityEngine.HyperGryph.HGCullingSystem::DispatchBatchCullingJobs"
+)
+
 UNITY_CULL_VIEW_BODIES = {
     "injected_binding": (
         0x1800F9790,
@@ -180,6 +186,97 @@ UNITY_CULL_VIEW_SLICES = {
         "488b9c2470020000488d14f9488bbc24600200004885d27403"
         "4c892a4881c478020000415d5dc3",
     ),
+}
+
+UNITY_SCHEDULED_CULL_BODIES = {
+    "dispatch_binding": (
+        0x1800FAFC0,
+        0x19,
+        "5374f3351e8db1e2c98274dcc8fe4304eec2138606b4d88231fc96c7d41c391e",
+    ),
+    "dispatch_outer": (
+        0x181053400,
+        0x32E,
+        "b894f16e1cc3c7bbfba8c3efed4184eebc75cc5700e4eb89b7009f3064ce3fbd",
+    ),
+    "dispatch_copy_and_schedule": (
+        0x181053010,
+        0x3E7,
+        "49163e4ac499ee881865d2fb39c85faa58a7ea91d684b320e5ca3b72a29a4557",
+    ),
+    "scheduled_batch_core": (
+        0x181053730,
+        0x2CFE,
+        "e98d6f1048d417b86a65a9a8328e6edf7fbc9f2d91e3c94464e4586e1bb5eb45",
+    ),
+    "standard_predicate_wrapper": (
+        0x180FEAEB0,
+        0x21,
+        "8c83c911f9db7bddebde8c12e9433b63ce67479df1b141819dff9e476149a241",
+    ),
+    "six_plane_aabb_predicate": (
+        0x181049010,
+        0x9C,
+        "06fe6ad29ba950c501467a9d52f7a43326795ed425ea286bb6e474523825e4fc",
+    ),
+    "camera_type_0x80_sphere_predicate": (
+        0x180FEAEF0,
+        0x60,
+        "e0404f9a11a72bc0c563e51e1c55fe16c4e5df6a4740a7f07501c32ec09254f5",
+    ),
+    "renderer_candidate_serializer": (
+        0x18106FD70,
+        0x1DC,
+        "285455b0862cf34c1b0aaeb7b198489c9dc805d7e3921424b07d75239fdfe0f2",
+    ),
+    "renderer_candidate_deserializer": (
+        0x1810701C0,
+        0x26C,
+        "9ad71baa660f3e2547417faad460a8667bc22e98f4c2360c7f8f8a4e2cff3d72",
+    ),
+}
+
+UNITY_SCHEDULED_CULL_SLICES = {
+    "view_predicate_selection": (
+        0x181053A14,
+        "4d8b34c04c8d3d9174f9ff488d05ca74f9ff41817e2c80000000"
+        "4c0f44f8",
+    ),
+    "view_predicate_call": (
+        0x181053C41,
+        "418b4e28498b4538f7d1448b04064423c1498bce44890406"
+        "4c8d420c41ffd784c07406418b4e28eb03418bcc498b4538"
+        "0b0c30890c06",
+    ),
+    "camera_type_0x80_equation": (
+        0x180FEAEF0,
+        "488b41104f8d14c9f30f1012f30f105a04f3410f1008"
+        "f3420f5c5c901cf3410f5f4804f3420f5c549018f30f104208"
+        "f3420f5c449020f30f59dbf3410f5f4808f30f59d2f30f59c0"
+        "f30f584934f30f58daf30f59c9f30f58d80f2fcb0f93c0c3",
+    ),
+    "renderer_lod_offsets_write": (
+        0x18106FEB6,
+        "4c8b05934dcf004c8d4f14488d1540e7da00896c2420"
+        "488bcee8acb576ff488b4640488b564848c1e205488b08"
+        "c7440a0c04000000488bcee8edc276ff4c8b05564dcf00"
+        "4c8d4f18488d151be7da00896c2420488bcee86fb576ff",
+    ),
+    "renderer_lod_offsets_read": (
+        0x1810703F1,
+        "488d57144533c94c8d0509e2da00488bcbe8c9bd26ff"
+        "488d57184533c94c8d050be2da00488bcb",
+    ),
+}
+
+UNITY_RENDERER_CANDIDATE_FIELD_NAMES = {
+    0x181E1E5D8: "batchKey",
+    0x181E1E5E8: "renderFlags",
+    0x181CF20A0: "mesh",
+    0x181CF2268: "material",
+    0x181E1E5F8: "subMeshIndex",
+    0x181E1E608: "lodScreenSizeMaxSquared",
+    0x181E1E620: "lodScreenSizeMinSquared",
 }
 
 UNITY_CULLING_SLICES = {
@@ -784,8 +881,170 @@ def validate_unity_cull_view_constructor(image: PEImage) -> dict[str, object]:
                 "generic visibility then culling-mask evaluation order",
             ],
             "open": [
-                "downstream scheduled-job screen-size threshold equation",
+                "later renderer/entity screen-size threshold equation",
                 "a separate consumer, if any, for the forwarded sceneCullingMask slot",
+                "target-frame runtime overrides and final survivor rows",
+            ],
+        },
+        "verifiedBodies": bodies,
+        "verifiedInstructionSlices": slices,
+    }
+
+
+def validate_unity_scheduled_culling_boundary(
+    image: PEImage,
+) -> dict[str, object]:
+    require("unity_player_image_base", image.image_base, 0x180000000, image.path)
+    target = image.u64(
+        UNITY_ICALL_FUNCTION_TABLE_VA
+        + UNITY_DISPATCH_CULL_JOBS_ICALL_INDEX * 8
+    )
+    name_pointer = image.u64(
+        UNITY_ICALL_NAME_TABLE_VA
+        + UNITY_DISPATCH_CULL_JOBS_ICALL_INDEX * 8
+    )
+    name = image.cstring(name_pointer)
+    require(
+        "unity_dispatch_cull_jobs_icall_target",
+        target,
+        UNITY_DISPATCH_CULL_JOBS_ICALL_VA,
+        image.path,
+    )
+    require(
+        "unity_dispatch_cull_jobs_icall_name",
+        name,
+        UNITY_DISPATCH_CULL_JOBS_ICALL_NAME,
+        image.path,
+    )
+
+    bodies = []
+    for label, (
+        virtual_address,
+        size_bytes,
+        expected_hash,
+    ) in UNITY_SCHEDULED_CULL_BODIES.items():
+        body = image.read(virtual_address, size_bytes)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        require(
+            f"unity_scheduled_cull_{label}_sha256",
+            actual_hash,
+            expected_hash,
+            image.path,
+        )
+        bodies.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": size_bytes,
+                "sha256": actual_hash,
+            }
+        )
+
+    slices = []
+    for label, (
+        virtual_address,
+        expected_hex,
+    ) in UNITY_SCHEDULED_CULL_SLICES.items():
+        expected = bytes.fromhex(expected_hex)
+        actual = image.read(virtual_address, len(expected))
+        require(f"unity_scheduled_cull_{label}", actual, expected, image.path)
+        slices.append(
+            {
+                "label": label,
+                "virtualAddress": f"0x{virtual_address:X}",
+                "sizeBytes": len(actual),
+                "sha256": hashlib.sha256(actual).hexdigest(),
+            }
+        )
+
+    field_names = []
+    for virtual_address, expected_name in (
+        UNITY_RENDERER_CANDIDATE_FIELD_NAMES.items()
+    ):
+        actual_name = image.cstring(virtual_address)
+        require(
+            "unity_scheduled_cull_renderer_candidate_field_name",
+            actual_name,
+            expected_name,
+            image.path,
+        )
+        field_names.append(
+            {
+                "virtualAddress": f"0x{virtual_address:X}",
+                "name": actual_name,
+            }
+        )
+
+    return {
+        "internalCall": {
+            "index": UNITY_DISPATCH_CULL_JOBS_ICALL_INDEX,
+            "name": name,
+            "targetVirtualAddress": f"0x{target:X}",
+        },
+        "callChain": [
+            "0x1800FAFC0 internal-call binding",
+            "0x181053400 outer dispatch",
+            "0x181053010 copy/schedule path",
+            "0x181053730 scheduled batch core",
+        ],
+        "perViewVisibilityPredicate": {
+            "selection": (
+                "cameraType == 0x80 selects 0x180FEAEF0; all other values "
+                "select 0x180FEAEB0 -> 0x181049010"
+            ),
+            "standard": (
+                "six normalized view planes at +0x58/+0x5C test the candidate "
+                "AABB center and extent"
+            ),
+            "cameraType0x80": (
+                "distanceSquared <= (max(candidateExtent) + "
+                "view.occlusionScreenSizeMinimumSquared@+0x34)^2"
+            ),
+            "screenSizeMinimumSquaredAt0x18Read": False,
+            "boundary": (
+                "the two complete hash-pinned predicates selected by this "
+                "dispatch stage do not read cull-view +0x18; this does not "
+                "prove that later renderer/entity jobs omit the threshold"
+            ),
+        },
+        "rendererCandidateRecord": {
+            "sizeBytes": 28,
+            "fields": [
+                {"name": "batchKey", "offset": "0x00", "sizeBytes": 4},
+                {"name": "renderFlags", "offset": "0x04", "sizeBytes": 4},
+                {"name": "mesh", "offset": "0x08", "sizeBytes": 4},
+                {"name": "material", "offset": "0x0C", "sizeBytes": 4},
+                {"name": "subMeshIndex", "offset": "0x10", "sizeBytes": 4},
+                {
+                    "name": "lodScreenSizeMaxSquared",
+                    "offset": "0x14",
+                    "sizeBytes": 4,
+                },
+                {
+                    "name": "lodScreenSizeMinSquared",
+                    "offset": "0x18",
+                    "sizeBytes": 4,
+                },
+            ],
+            "evidence": (
+                "independent retail serializer and deserializer offsets plus "
+                "embedded native field names"
+            ),
+            "fieldNameEvidence": field_names,
+            "notCullViewRecord": True,
+        },
+        "evidenceBoundary": {
+            "closed": [
+                "DispatchBatchCullingJobs internal-call binding and native call chain",
+                "camera-type predicate selection",
+                "standard six-plane AABB predicate",
+                "cameraType 0x80 sphere/distance predicate",
+                "absence of cull-view +0x18 from those two selected predicates",
+                "the distinct 28-byte renderer candidate LOD record layout",
+            ],
+            "open": [
+                "later renderer/entity LOD comparison that combines view and candidate screen thresholds",
+                "whether the installed zero view threshold makes that later gate unconditional",
                 "target-frame runtime overrides and final survivor rows",
             ],
         },
@@ -977,6 +1236,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     unity_cull_view_constructor = validate_unity_cull_view_constructor(
         PEImage(UNITY_PLAYER)
     )
+    unity_scheduled_culling_boundary = (
+        validate_unity_scheduled_culling_boundary(PEImage(UNITY_PLAYER))
+    )
 
     ifix = json.loads(IFIX_STATE.read_text(encoding="utf-8"))
     require(
@@ -993,8 +1255,8 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
     require("ifix_hgrp_targets", hgrp_targets, [], IFIX_STATE)
 
     return {
-        "schema": "endfield.recovered-light-cull-cap.v3",
-        "status": "installed_cap_cull_view_native_producer_and_capture_abi_source_closed",
+        "schema": "endfield.recovered-light-cull-cap.v4",
+        "status": "installed_cap_cull_view_dispatch_predicates_and_capture_abi_source_closed",
         "outcome": (
             "The installed Windows desktop route resolves PunctualLightMaxCount "
             "to 256. SetupState accepts only VisibleLight types 0/2, sorts by "
@@ -1005,8 +1267,12 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "native candidate gates, 16-byte LightCullResult, and 148-byte "
             "VisibleLight capture stride are source-closed. AddCullViewByMatrix "
             "also closes the scheduled view layout and visibility-then-camera-mask "
-            "gate. Its downstream screen-threshold job formula, the target-frame "
-            "pointer/count and unrelated live native lights remain capture-only."
+            "gate. DispatchBatchCullingJobs selects an exact six-plane AABB "
+            "predicate, except cameraType 0x80 selects an exact sphere/distance "
+            "predicate; neither reads cull-view +0x18. A separate 28-byte renderer "
+            "candidate record owns LOD max/min squared at +0x14/+0x18. The later "
+            "view/candidate screen-threshold equation, target-frame pointer/count, "
+            "and unrelated live native lights remain capture-only."
         ),
         "installedInputs": {
             "gameAssembly": {
@@ -1089,6 +1355,9 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
             "gameAssemblyHandoff": native_handoff,
             "unityPlayerCandidateProducer": unity_native_producer,
             "unityPlayerCullViewConstructor": unity_cull_view_constructor,
+            "unityPlayerScheduledCullingBoundary": (
+                unity_scheduled_culling_boundary
+            ),
             "desktopNoSecondTruncation": True,
         },
         "sourceFiles": {
@@ -1116,12 +1385,15 @@ def build_audit(extracted_root: Path) -> dict[str, object]:
                 "the 16-byte LightCullResult pointer/count ABI and NativeArray projection",
                 "the 148-byte VisibleLight capture stride plus SetupState type, priority, and world-position offsets",
                 "the AddCullViewByMatrix binding, six-plane constructor, view layout, and generic visibility/mask gate order",
+                "the DispatchBatchCullingJobs binding, camera-type predicate split, and exact selected predicates",
+                "the distinct 28-byte renderer candidate LOD record with max/min squared fields at +0x14/+0x18",
             ],
             "captureOnly": [
                 "target-frame LightCullResult pointer, count, and 148-byte rows",
                 "unrelated active native lights",
                 "arbitrary/asymmetric final selected-view planes",
-                "the downstream scheduled-job screen-size threshold equation",
+                "the later renderer/entity equation combining view and candidate screen-size thresholds",
+                "whether the installed zero view threshold makes that later gate unconditional",
                 "any separate consumer of the forwarded sceneCullingMask slot",
                 "future or separately delivered IFix/settings payloads",
             ],
@@ -1154,8 +1426,9 @@ def main() -> int:
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
         "Light-cull audit passed: desktop cap=256; native producer/handoff, "
-        "scheduled cull-view layout, mask order, 16-byte result, and 148-byte "
-        "capture-row ABI closed."
+        "scheduled cull-view layout, dispatch predicates, distinct renderer "
+        "LOD record, mask order, 16-byte result, and 148-byte capture-row ABI "
+        "closed."
     )
     return 0
 
