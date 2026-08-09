@@ -785,11 +785,11 @@ def attach_timeline_evidence(
         entries = timeline_index.get(scene_key, [])
         if entries:
             evidence.setdefault(scene_key, entries)
-        elif kind == "dlg":
+        if kind == "dlg":
             dialog_tree = dialog_tree_loader(scene_key)
             if isinstance(dialog_tree, dict):
                 dialog_tree_evidence.setdefault(scene_key, dialog_tree)
-            else:
+            elif not entries:
                 unresolved.append({
                     "kind": "missingDialogTimelineAndDialogTreeEvidence",
                     "sceneKey": scene_key,

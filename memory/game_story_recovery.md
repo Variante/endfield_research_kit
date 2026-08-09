@@ -99,9 +99,19 @@ never promotes an edge.
   partially connected node. Sixty-seven extra-option nodes validate the binary
   pattern; 77 unequal-count nodes are retained rather than categorically rejected.
   The mission-observed subset validates 1,199 routes in 434 files and rejects
-  one out-of-bounds authored route. The current corpus yields 35 exact
-  option-to-objective dependencies across 17 missions, with 65 default-backed
-  DialogTree producer rows and 101 exact consumers still unresolved. Option IDs
+  one out-of-bounds authored route. The installed `Graph.get_primeNode` returns
+  the first serialized node and `DialogTree.OnGraphStarted` enters it when a
+  current node is absent. A shared structural walker therefore validates exact
+  connection identities and admits only finish nodes reachable from that prime
+  node; it never reads dialog names, filename suffixes, editor layout, OCR, or
+  overrides. Across the full typed corpus, 3,121 finish endpoints validate and
+  69 fail closed. The mission-linked subset validates 622 endpoints and rejects
+  15 across 478 original files. Timeline and DialogTree evidence are retained
+  independently, so a Timeline no longer suppresses the corresponding original
+  DialogTree definition. All 136 exact nonnegative MissionRuntime consumers are
+  now covered: 35 have an exact option-to-objective route across 17 missions,
+  while 101 are endpoint-only dependencies across 57 missions and do not claim
+  a route or player choice. No exact consumer remains unresolved. Option IDs
   are localization values, not global branch identities: `dlg_sm2l1m1_3`
   reuses two IDs under distinct option nodes reached through different IfNode
   arms, so producer agreement is scoped by original node and option slot.

@@ -31,6 +31,9 @@ from scripts.story_builder.dialog_tree_option_routes import (
     resolve_serialized_field,
     short_type as _short_type,
 )
+from scripts.story_builder.dialog_tree_finish_endpoints import (
+    recover_dialog_tree_finish_endpoints,
+)
 
 
 ROOT = _REPO_ROOT
@@ -91,6 +94,23 @@ NATIVE_METHODS = {
         "bytes": 144,
         "sha256": "0e2c39227f5f81f5d96e8ef8d04984540f1deb5d773963191d5e0d0dc751498b",
         "contract": "passes the authored JSON to NodeCanvas Graph.Deserialize",
+    },
+    "NodeCanvas.Framework.Graph.get_primeNode": {
+        "token": "0x06001109",
+        "va": 0x18306D980,
+        "bytes": 112,
+        "sha256": "327d2c5ab57cf630fa0dd3e72ffc9596fa2761f97a6d02b5b62b099a5d4af85e",
+        "contract": "returns allNodes[0] when the serialized node list is nonempty",
+    },
+    "DialogTree.OnGraphStarted": {
+        "token": "0x06003a77",
+        "va": 0x1872A969C,
+        "bytes": 352,
+        "sha256": "833998a346f36ea53a4d79c5e123b0e02905e5d376ec15db527c73ed5d389592",
+        "contract": (
+            "uses Graph.primeNode when no current node exists and tail-enters "
+            "that exact node through DialogTree.EnterNode"
+        ),
     },
     "NodeCanvas.Graph.Deserialize": {
         "token": "0x060010c3",
@@ -611,6 +631,91 @@ def decode_dialog_tree_finish_routes(
     return rows, rejected
 
 
+def decode_dialog_tree_finish_endpoints(
+    outer: Any,
+    *,
+    source_file: str,
+    runtime_defaults: dict[str, Any] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """Decode exact prime-reachable finish endpoints from one TextAsset."""
+    if not isinstance(outer, dict) or not isinstance(outer.get("m_Script"), str):
+        failure = {"sourceFile": source_file, "gate": "textAssetScript"}
+        return [], [failure], {}
+    try:
+        payload = json.loads(
+            base64.b64decode(outer["m_Script"], validate=True).decode("utf-8-sig")
+        )
+    except (binascii.Error, UnicodeDecodeError, json.JSONDecodeError, ValueError):
+        failure = {"sourceFile": source_file, "gate": "dialogTreeDecode"}
+        return [], [failure], {}
+    if (
+        not isinstance(payload, dict)
+        or payload.get("type") != "Beyond.Gameplay.DialogTree"
+        or not isinstance(payload.get("nodes"), list)
+        or not isinstance(payload.get("connections"), list)
+    ):
+        failure = {"sourceFile": source_file, "gate": "dialogTreeSchema"}
+        return [], [failure], {}
+    dialog_id = str(outer.get("m_Name") or outer.get("Name") or "").strip()
+    if not dialog_id:
+        failure = {"sourceFile": source_file, "gate": "dialogIdentity"}
+        return [], [failure], {}
+
+    recovered = recover_dialog_tree_finish_endpoints(
+        payload["nodes"],
+        payload["connections"],
+        runtime_defaults=runtime_defaults,
+    )
+    coverage = {
+        "schemaVersion": recovered.get("schemaVersion"),
+        "sourceFile": source_file,
+        "primeNodeId": recovered.get("primeNodeId"),
+        "counts": recovered.get("counts") or {},
+        "endpoints": recovered.get("endpoints") or [],
+        "issues": recovered.get("issues") or [],
+    }
+    rows: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    for endpoint in recovered.get("endpoints") or []:
+        if endpoint.get("status") != "validated":
+            rejected.append(
+                {
+                    "sourceFile": source_file,
+                    "nodeId": endpoint.get("nodeId"),
+                    "nodeOrdinal": endpoint.get("nodeOrdinal"),
+                    "failureClass": endpoint.get("failureClass"),
+                    **(endpoint.get("issue") or {}),
+                }
+            )
+            continue
+        rows.append(
+            {
+                "dialogId": dialog_id,
+                "finishId": endpoint.get("finishId"),
+                "finishIdSource": endpoint.get("finishIdSource"),
+                "producerFamily": "dialog_tree_prime_reachable_finish_endpoint",
+                "finishNodeId": endpoint.get("nodeId"),
+                "finishNodeOrdinal": endpoint.get("nodeOrdinal"),
+                "primeNodeId": endpoint.get("primeNodeId"),
+                "incomingConnectionCount": endpoint.get(
+                    "incomingConnectionCount"
+                ),
+                "predecessorNodeIds": endpoint.get("predecessorNodeIds") or [],
+                "predecessorNodeTypes": endpoint.get("predecessorNodeTypes") or [],
+                "nodePath": endpoint.get("nodePath") or [],
+                "connectionPath": endpoint.get("connectionPath") or [],
+                "sourceFiles": [
+                    {
+                        "kind": "dialog_tree_text_asset",
+                        "sourceFile": source_file,
+                        "relationship": "exact_prime_reachable_finish_endpoint",
+                    }
+                ],
+            }
+        )
+    return rows, rejected, coverage
+
+
 def decode_timeline_finish_routes(
     payload: Any,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -806,6 +911,9 @@ def _collect_dialog_tree_producers(
     list[dict[str, Any]],
     list[dict[str, Any]],
     list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
 ]:
     source_files = sorted(
         {
@@ -820,6 +928,9 @@ def _collect_dialog_tree_producers(
     rows: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
     route_coverage: list[dict[str, Any]] = []
+    endpoint_rows: list[dict[str, Any]] = []
+    endpoint_rejected: list[dict[str, Any]] = []
+    endpoint_coverage: list[dict[str, Any]] = []
     for source_file in source_files:
         path = resolve_source(source_file)
         if not path.is_file():
@@ -828,16 +939,34 @@ def _collect_dialog_tree_producers(
                 f"expected=file actual=missing source={path}"
             )
         source_route_coverage: dict[str, Any] = {}
+        outer = read_json(path)
         decoded, failures = decode_dialog_tree_finish_routes(
-            read_json(path),
+            outer,
             source_file=source_label(path),
             runtime_defaults=runtime_defaults,
             route_coverage=source_route_coverage,
         )
+        decoded_endpoints, endpoint_failures, source_endpoint_coverage = (
+            decode_dialog_tree_finish_endpoints(
+                outer,
+                source_file=source_label(path),
+                runtime_defaults=runtime_defaults,
+            )
+        )
         rows.extend(decoded)
         rejected.extend(failures)
         route_coverage.append(source_route_coverage)
-    return rows, rejected, route_coverage
+        endpoint_rows.extend(decoded_endpoints)
+        endpoint_rejected.extend(endpoint_failures)
+        endpoint_coverage.append(source_endpoint_coverage)
+    return (
+        rows,
+        rejected,
+        route_coverage,
+        endpoint_rows,
+        endpoint_rejected,
+        endpoint_coverage,
+    )
 
 
 def _summarize_dialog_tree_route_coverage(
@@ -911,18 +1040,56 @@ def _summarize_dialog_tree_route_coverage(
     }
 
 
-def _collect_dialog_tree_route_corpus(
+def _summarize_dialog_tree_finish_endpoint_coverage(
+    sources: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
+    """Aggregate bounded prime-reachable finish diagnostics by source file."""
+    source_rows = list(sources)
+    totals: Counter[str] = Counter()
+    rejected: list[dict[str, Any]] = []
+    for source in source_rows:
+        source_file = str(source.get("sourceFile") or "")
+        totals.update(source.get("counts") or {})
+        for endpoint in source.get("endpoints") or []:
+            if not isinstance(endpoint, dict) or endpoint.get("status") == "validated":
+                continue
+            rejected.append(
+                {
+                    "sourceFile": source_file,
+                    "nodeId": endpoint.get("nodeId"),
+                    "nodeOrdinal": endpoint.get("nodeOrdinal"),
+                    "finishId": endpoint.get("finishId"),
+                    "finishIdSource": endpoint.get("finishIdSource"),
+                    "failureClass": endpoint.get("failureClass"),
+                    "issue": endpoint.get("issue") or {},
+                }
+            )
+    return {
+        "sourceFileCount": len(source_rows),
+        "counts": dict(sorted(totals.items())),
+        "rejectedFinishEndpoints": rejected,
+        "evidenceBoundary": (
+            "Only finish nodes reachable from the binary-proven serialized "
+            "prime node through exact DialogTreeConnection references are "
+            "accepted. A matching endpoint proves the authored finish value, "
+            "not the route taken to reach it."
+        ),
+    }
+
+
+def _collect_dialog_tree_corpus_coverage(
     root: Path,
     *,
     runtime_defaults: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Validate the same route contract over every typed DialogTree source."""
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Validate option routes and finish endpoints over every DialogTree."""
     if not root.is_dir():
         raise AuditValidationError(
             "validator=dialog_finish_branch_recovery gate=dialogTreeCorpusRoot "
             f"expected=directory actual=missing source={root}"
         )
     coverage_sources: list[dict[str, Any]] = []
+    finish_endpoint_sources: list[dict[str, Any]] = []
     scanned_json_files = 0
     for path in sorted(root.rglob("*.json")):
         scanned_json_files += 1
@@ -949,6 +1116,11 @@ def _collect_dialog_tree_route_corpus(
             payload["connections"],
             runtime_defaults=runtime_defaults,
         )
+        finish_endpoints = recover_dialog_tree_finish_endpoints(
+            payload["nodes"],
+            payload["connections"],
+            runtime_defaults=runtime_defaults,
+        )
         coverage_sources.append(
             {
                 "sourceFile": source_label(path),
@@ -957,15 +1129,26 @@ def _collect_dialog_tree_route_corpus(
                 "issues": recovered.get("issues") or [],
             }
         )
-    summary = _summarize_dialog_tree_route_coverage(coverage_sources)
-    summary.update(
-        {
-            "sourceRoot": source_label(root),
-            "scannedJsonFiles": scanned_json_files,
-            "dialogTreeFileCount": len(coverage_sources),
-        }
+        finish_endpoint_sources.append(
+            {
+                "sourceFile": source_label(path),
+                "counts": finish_endpoints.get("counts") or {},
+                "endpoints": finish_endpoints.get("endpoints") or [],
+                "issues": finish_endpoints.get("issues") or [],
+            }
+        )
+    route_summary = _summarize_dialog_tree_route_coverage(coverage_sources)
+    endpoint_summary = _summarize_dialog_tree_finish_endpoint_coverage(
+        finish_endpoint_sources
     )
-    return summary
+    shared = {
+        "sourceRoot": source_label(root),
+        "scannedJsonFiles": scanned_json_files,
+        "dialogTreeFileCount": len(coverage_sources),
+    }
+    route_summary.update(shared)
+    endpoint_summary.update(shared)
+    return route_summary, endpoint_summary
 
 
 def _normalize_producers(
@@ -1058,18 +1241,32 @@ def build_report(
     native_contract = native_contract or validate_native_contract()
     consumers, payloads = _collect_mission_consumers(index, pipeline_root)
     runtime_defaults = native_contract.get("serializedFieldDefaults") or {}
-    tree_rows, tree_rejected, tree_route_sources = _collect_dialog_tree_producers(
-        payloads, runtime_defaults=runtime_defaults
-    )
+    (
+        tree_rows,
+        tree_rejected,
+        tree_route_sources,
+        finish_endpoint_rows,
+        finish_endpoint_rejected,
+        finish_endpoint_sources,
+    ) = _collect_dialog_tree_producers(payloads, runtime_defaults=runtime_defaults)
     tree_route_coverage = _summarize_dialog_tree_route_coverage(
         tree_route_sources
     )
     tree_route_counts = tree_route_coverage.get("counts") or {}
-    corpus_route_coverage = _collect_dialog_tree_route_corpus(
-        dialog_tree_root,
-        runtime_defaults=runtime_defaults,
+    finish_endpoint_coverage = _summarize_dialog_tree_finish_endpoint_coverage(
+        finish_endpoint_sources
+    )
+    finish_endpoint_counts = finish_endpoint_coverage.get("counts") or {}
+    corpus_route_coverage, corpus_finish_endpoint_coverage = (
+        _collect_dialog_tree_corpus_coverage(
+            dialog_tree_root,
+            runtime_defaults=runtime_defaults,
+        )
     )
     corpus_route_counts = corpus_route_coverage.get("counts") or {}
+    corpus_finish_endpoint_counts = (
+        corpus_finish_endpoint_coverage.get("counts") or {}
+    )
     timeline_payload = read_json(timeline_orders_path) if timeline_orders_path.is_file() else {}
     timeline_rows, timeline_rejected = decode_timeline_finish_routes(timeline_payload)
     producers, conflicts = _normalize_producers([*tree_rows, *timeline_rows])
@@ -1077,6 +1274,13 @@ def build_report(
     producers_by_finish: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
     for producer in producers:
         producers_by_finish[(producer["dialogId"], producer["finishId"])].append(producer)
+    finish_endpoints_by_finish: dict[
+        tuple[str, int], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for endpoint in finish_endpoint_rows:
+        finish_endpoints_by_finish[
+            (endpoint["dialogId"], endpoint["finishId"])
+        ].append(endpoint)
 
     hash_cache: dict[Path, str] = {}
     binary_files = [
@@ -1092,49 +1296,91 @@ def build_report(
         },
     ]
     dependencies: list[dict[str, Any]] = []
+    endpoint_dependencies: list[dict[str, Any]] = []
     unresolved: list[dict[str, Any]] = []
     for consumer in consumers:
         matches = producers_by_finish.get((consumer["dialogId"], consumer["finishId"]), [])
-        if not matches:
-            unresolved.append(consumer)
-            continue
-        options = sorted({row["optionId"] for row in matches})
-        source_rows = [
-            source for row in matches for source in row.get("sourceFiles") or []
-        ]
-        if consumer["missionSource"]:
-            source_rows.append(
+        if matches:
+            options = sorted({row["optionId"] for row in matches})
+            source_rows = [
+                source for row in matches for source in row.get("sourceFiles") or []
+            ]
+            if consumer["missionSource"]:
+                source_rows.append(
+                    {
+                        "kind": "mission_runtime",
+                        "sourceFile": consumer["missionSource"],
+                        "relationship": "exact_finish_condition_consumer",
+                    }
+                )
+            source_rows.extend(binary_files)
+            dependencies.append(
                 {
-                    "kind": "mission_runtime",
-                    "sourceFile": consumer["missionSource"],
-                    "relationship": "exact_finish_condition_consumer",
+                    **consumer,
+                    "classification": (
+                        "unique_option_outcome_dependency"
+                        if len(options) == 1
+                        else "option_outcome_set_dependency"
+                    ),
+                    "optionIds": options,
+                    "producerFamilies": sorted(
+                        {family for row in matches for family in row["producerFamilies"]}
+                    ),
+                    "producerEvidence": matches,
+                    "relatedOriginalFiles": _hash_source_rows(
+                        source_rows, hash_cache, validator=validator
+                    ),
+                    "evidenceBoundary": (
+                        "The authored option outcome produces the exact finish number "
+                        "required by this quest objective. This is a causal branch "
+                        "dependency, not proof of player selection, dialog activation, "
+                        "server successor choice, or total Story-file order."
+                    ),
                 }
             )
-        source_rows.extend(binary_files)
-        dependencies.append(
-            {
-                **consumer,
-                "classification": (
-                    "unique_option_outcome_dependency"
-                    if len(options) == 1
-                    else "option_outcome_set_dependency"
-                ),
-                "optionIds": options,
-                "producerFamilies": sorted(
-                    {family for row in matches for family in row["producerFamilies"]}
-                ),
-                "producerEvidence": matches,
-                "relatedOriginalFiles": _hash_source_rows(
-                    source_rows, hash_cache, validator=validator
-                ),
-                "evidenceBoundary": (
-                    "The authored option outcome produces the exact finish number "
-                    "required by this quest objective. This is a causal branch "
-                    "dependency, not proof of player selection, dialog activation, "
-                    "server successor choice, or total Story-file order."
-                ),
-            }
+            continue
+
+        endpoint_matches = finish_endpoints_by_finish.get(
+            (consumer["dialogId"], consumer["finishId"]), []
         )
+        if endpoint_matches:
+            source_rows = [
+                source
+                for row in endpoint_matches
+                for source in row.get("sourceFiles") or []
+            ]
+            if consumer["missionSource"]:
+                source_rows.append(
+                    {
+                        "kind": "mission_runtime",
+                        "sourceFile": consumer["missionSource"],
+                        "relationship": "exact_finish_condition_consumer",
+                    }
+                )
+            source_rows.extend(binary_files)
+            endpoint_dependencies.append(
+                {
+                    **consumer,
+                    "classification": "authored_finish_endpoint_dependency",
+                    "producerFamilies": [
+                        "dialog_tree_prime_reachable_finish_endpoint"
+                    ],
+                    "producerEvidence": endpoint_matches,
+                    "relatedOriginalFiles": _hash_source_rows(
+                        source_rows, hash_cache, validator=validator
+                    ),
+                    "evidenceBoundary": (
+                        "An exact finish node is reachable from the binary-proven "
+                        "serialized prime node and emits the value required by this "
+                        "quest objective. This proves an authored endpoint dependency, "
+                        "not the route or player choice that reaches it, dialog "
+                        "activation, server successor choice, or total Story-file order."
+                    ),
+                }
+            )
+            continue
+
+        unresolved.append(consumer)
 
     dependencies.sort(
         key=lambda row: (
@@ -1142,14 +1388,25 @@ def build_report(
             row["dialogId"], row["finishId"], row["optionIds"],
         )
     )
+    endpoint_dependencies.sort(
+        key=lambda row: (
+            row["missionId"],
+            row["questId"],
+            row["objectiveIndex"] or 0,
+            row["dialogId"],
+            row["finishId"],
+        )
+    )
     report = {
-        "schemaVersion": "dialogFinishMissionBranchAudit.v4",
+        "schemaVersion": "dialogFinishMissionBranchAudit.v5",
         "status": "validated",
         "validator": validator,
         "evidencePolicy": (
             "Only exact nonnegative dialog finish IDs shared by an original "
-            "DialogTree/Timeline option producer and MissionRuntime objective are "
-            "admitted. A DialogTree normal option selects the physical outgoing "
+            "MissionRuntime objective and either an authored option producer or a "
+            "prime-reachable DialogTree finish endpoint are admitted. Option-routed "
+            "and endpoint-only dependencies remain separate. A DialogTree normal "
+            "option selects the physical outgoing "
             "edge stored in NormalOptionData.index. An omitted DialogTree Int32 "
             "is admitted as zero only under the hash-locked FullSerializer "
             "reflected-field default contract. ShowOptions sets doNext before "
@@ -1190,6 +1447,24 @@ def build_report(
             ),
             "dialogTreeExtraOptionNodes": tree_route_counts.get(
                 "extraOptionNodes", 0
+            ),
+            "dialogTreeFinishEndpointSourceFiles": finish_endpoint_coverage.get(
+                "sourceFileCount", 0
+            ),
+            "dialogTreeAuthoredFinishNodes": finish_endpoint_counts.get(
+                "authoredFinishNodes", 0
+            ),
+            "dialogTreeValidatedFinishEndpoints": finish_endpoint_counts.get(
+                "validatedFinishEndpoints", 0
+            ),
+            "dialogTreeRejectedFinishEndpoints": finish_endpoint_counts.get(
+                "rejectedFinishEndpoints", 0
+            ),
+            "dialogTreeExplicitFinishEndpoints": finish_endpoint_counts.get(
+                "explicitFinishIds", 0
+            ),
+            "dialogTreeRuntimeDefaultFinishEndpoints": finish_endpoint_counts.get(
+                "runtimeDefaultFinishIds", 0
             ),
             "dialogTreeUnreferencedOptionDefinitionNodes": tree_route_counts.get(
                 "unreferencedOptionDefinitionNodes", 0
@@ -1245,15 +1520,42 @@ def build_report(
             "corpusExtraOptionNodes": corpus_route_counts.get(
                 "extraOptionNodes", 0
             ),
+            "corpusAuthoredFinishNodes": corpus_finish_endpoint_counts.get(
+                "authoredFinishNodes", 0
+            ),
+            "corpusValidatedFinishEndpoints": corpus_finish_endpoint_counts.get(
+                "validatedFinishEndpoints", 0
+            ),
+            "corpusRejectedFinishEndpoints": corpus_finish_endpoint_counts.get(
+                "rejectedFinishEndpoints", 0
+            ),
+            "corpusUnreferencedFinishDefinitions": corpus_finish_endpoint_counts.get(
+                "unreferencedFinishDefinitions", 0
+            ),
+            "corpusUnreachableFinishNodes": corpus_finish_endpoint_counts.get(
+                "unreachableFinishNodes", 0
+            ),
             "timelineProducerRows": len(timeline_rows),
             "acceptedOptionProducers": len(producers),
+            "finishEndpointProducerRows": len(finish_endpoint_rows),
             "publishedDependencies": len(dependencies),
+            "publishedEndpointDependencies": len(endpoint_dependencies),
+            "totalPublishedDependencies": len(dependencies)
+            + len(endpoint_dependencies),
+            "exactConsumerCoverage": len(dependencies)
+            + len(endpoint_dependencies),
             "uniqueOptionDependencies": sum(
                 row["classification"] == "unique_option_outcome_dependency"
                 for row in dependencies
             ),
             "missions": len({row["missionId"] for row in dependencies}),
             "quests": len({row["questId"] for row in dependencies}),
+            "endpointMissions": len(
+                {row["missionId"] for row in endpoint_dependencies}
+            ),
+            "endpointQuests": len(
+                {row["questId"] for row in endpoint_dependencies}
+            ),
             "unresolvedExactConsumers": len(unresolved),
             "rejectedProducerShapes": len(tree_rejected) + len(timeline_rejected),
             "conflictingOptionProducers": len(conflicts),
@@ -1264,9 +1566,13 @@ def build_report(
         ),
         "dialogTreeOptionRouteCoverage": tree_route_coverage,
         "dialogTreeOptionRouteCorpusCoverage": corpus_route_coverage,
+        "dialogTreeFinishEndpointCoverage": finish_endpoint_coverage,
+        "dialogTreeFinishEndpointCorpusCoverage": corpus_finish_endpoint_coverage,
         "dependencies": dependencies,
+        "endpointDependencies": endpoint_dependencies,
         "unresolvedExactConsumers": unresolved,
         "rejectedProducerShapes": [*tree_rejected, *timeline_rejected],
+        "rejectedFinishEndpointShapes": finish_endpoint_rejected,
         "conflictingOptionProducers": conflicts,
         "reusedOptionIdsAcrossScopes": reused_option_scopes,
     }
@@ -1282,7 +1588,13 @@ def publish_to_pipeline_index(
     by_quest: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for row in report.get("dependencies") or []:
         by_quest[(row["missionId"], row["questId"])].append(row)
+    endpoint_by_quest: dict[
+        tuple[str, str], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for row in report.get("endpointDependencies") or []:
+        endpoint_by_quest[(row["missionId"], row["questId"])].append(row)
     published = 0
+    published_endpoints = 0
     for summary in index.get("missions") or []:
         if not isinstance(summary, dict):
             continue
@@ -1291,36 +1603,61 @@ def publish_to_pipeline_index(
         if not payload:
             continue
         mission_rows: list[dict[str, Any]] = []
+        mission_endpoint_rows: list[dict[str, Any]] = []
         for node in payload.get("nodes") or []:
             if not isinstance(node, dict):
                 continue
             node.pop("dialogFinishBranchDependencies", None)
+            node.pop("dialogFinishEndpointDependencies", None)
             rows = by_quest.get((mission_id, str(node.get("id") or "")), [])
-            if not rows:
-                continue
-            node["dialogFinishBranchDependencies"] = rows
-            mission_rows.extend(rows)
+            endpoint_rows = endpoint_by_quest.get(
+                (mission_id, str(node.get("id") or "")), []
+            )
+            if rows:
+                node["dialogFinishBranchDependencies"] = rows
+                mission_rows.extend(rows)
+            if endpoint_rows:
+                node["dialogFinishEndpointDependencies"] = endpoint_rows
+                mission_endpoint_rows.extend(endpoint_rows)
             for objective in node.get("objectives") or []:
                 if not isinstance(objective, dict):
                     continue
+                objective.pop("dialogFinishBranchDependencies", None)
+                objective.pop("dialogFinishEndpointDependencies", None)
                 objective_rows = [
                     row for row in rows
                     if row.get("objectiveIndex") == objective.get("index")
                     and row.get("conditionId") == str(objective.get("conditionId") or "")
                 ]
+                objective_endpoint_rows = [
+                    row
+                    for row in endpoint_rows
+                    if row.get("objectiveIndex") == objective.get("index")
+                    and row.get("conditionId")
+                    == str(objective.get("conditionId") or "")
+                ]
                 if objective_rows:
                     objective["dialogFinishBranchDependencies"] = objective_rows
-                else:
-                    objective.pop("dialogFinishBranchDependencies", None)
+                if objective_endpoint_rows:
+                    objective["dialogFinishEndpointDependencies"] = (
+                        objective_endpoint_rows
+                    )
         payload["dialogFinishBranchRecovery"] = {
             "schema": report.get("schemaVersion"),
             "status": report.get("status"),
             "dependencyCount": len(mission_rows),
+            "endpointDependencyCount": len(mission_endpoint_rows),
+            "exactConsumerCoverageCount": len(mission_rows)
+            + len(mission_endpoint_rows),
             "evidenceBoundary": report.get("evidencePolicy"),
         }
         summary["dialogFinishBranchDependencyCount"] = len(mission_rows)
+        summary["dialogFinishEndpointDependencyCount"] = len(
+            mission_endpoint_rows
+        )
         write_json(pipeline_root / str(summary.get("file") or ""), payload)
         published += len(mission_rows)
+        published_endpoints += len(mission_endpoint_rows)
     index["dialogFinishBranchRecovery"] = {
         "schema": report.get("schemaVersion"),
         "status": report.get("status"),
@@ -1331,7 +1668,11 @@ def publish_to_pipeline_index(
         "reportMarkdown": source_label(DEFAULT_MARKDOWN),
     }
     index.setdefault("counts", {})["dialogFinishBranchDependencies"] = published
-    return published
+    index["counts"]["dialogFinishEndpointDependencies"] = published_endpoints
+    index["counts"]["dialogFinishExactConsumerCoverage"] = (
+        published + published_endpoints
+    )
+    return published + published_endpoints
 
 
 def markdown_report(report: dict[str, Any]) -> str:
@@ -1351,12 +1692,17 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Validated / rejected normal-option routes: {counts.get('dialogTreeValidatedNormalOptionRoutes', 0)} / {counts.get('dialogTreeRejectedNormalOptionRoutes', 0)}",
         f"- Explicit / runtime-default connection indexes: {counts.get('dialogTreeExplicitConnectionIndexes', 0)} / {counts.get('dialogTreeRuntimeDefaultConnectionIndexes', 0)}",
         f"- Unequal option/connection nodes admitted by exact index / extra-option nodes: {counts.get('dialogTreeConnectionCountMismatchNodes', 0)} / {counts.get('dialogTreeExtraOptionNodes', 0)}",
+        f"- Mission-linked validated / rejected finish endpoints: {counts.get('dialogTreeValidatedFinishEndpoints', 0)} / {counts.get('dialogTreeRejectedFinishEndpoints', 0)}",
+        f"- Mission-linked explicit / runtime-default finish endpoints: {counts.get('dialogTreeExplicitFinishEndpoints', 0)} / {counts.get('dialogTreeRuntimeDefaultFinishEndpoints', 0)}",
         f"- Full typed corpus: {counts.get('corpusDialogTreeFiles', 0)} DialogTrees, {counts.get('corpusDialogTreeOptionNodes', 0)} authored option nodes, {counts.get('corpusAuthoredNormalOptions', 0)} normal options",
         f"- Full-corpus validated / rejected routes: {counts.get('corpusValidatedNormalOptionRoutes', 0)} / {counts.get('corpusRejectedNormalOptionRoutes', 0)}; unrecoverable-identity option nodes: {counts.get('corpusUnrecoverableOptionNodes', 0)}",
         f"- Full-corpus rejected-route structure: {counts.get('corpusUnreferencedOptionDefinitionRoutes', 0)} unreferenced definition options; {counts.get('corpusLinkedNormalOptionsWithoutOutgoingConnections', 0)} options on linked zero-edge nodes; {counts.get('corpusSerializedConnectionIndexesOutOfBounds', 0)} out-of-bounds indexes on partially connected nodes",
         f"- Full-corpus unequal-count / extra-option nodes: {counts.get('corpusConnectionCountMismatchNodes', 0)} / {counts.get('corpusExtraOptionNodes', 0)}",
-        f"- Published dependencies: {counts.get('publishedDependencies', 0)}",
-        f"- Missions / quests: {counts.get('missions', 0)} / {counts.get('quests', 0)}",
+        f"- Full-corpus validated / rejected finish endpoints: {counts.get('corpusValidatedFinishEndpoints', 0)} / {counts.get('corpusRejectedFinishEndpoints', 0)}",
+        f"- Published option-routed / endpoint-only dependencies: {counts.get('publishedDependencies', 0)} / {counts.get('publishedEndpointDependencies', 0)}",
+        f"- Exact consumer coverage: {counts.get('exactConsumerCoverage', 0)} / {counts.get('exactMissionConsumers', 0)}",
+        f"- Option-routed missions / quests: {counts.get('missions', 0)} / {counts.get('quests', 0)}",
+        f"- Endpoint-only missions / quests: {counts.get('endpointMissions', 0)} / {counts.get('endpointQuests', 0)}",
         f"- Unresolved exact consumers: {counts.get('unresolvedExactConsumers', 0)}",
         f"- Rejected / conflicting producer shapes: {counts.get('rejectedProducerShapes', 0)} / {counts.get('conflictingOptionProducers', 0)}",
         f"- Localization option IDs reused across runtime scopes: {counts.get('reusedOptionIdsAcrossScopes', 0)}",
@@ -1374,6 +1720,38 @@ def markdown_report(report: dict[str, Any]) -> str:
             f"{', '.join(f'`{value}`' for value in row['producerFamilies'])} | "
             f"{', '.join(f'`{value}`' for value in sorted({source for producer in row.get('producerEvidence') or [] for source in producer.get('finishIdSources') or []}))} |"
         )
+    lines.extend(["", "## Recovered endpoint-only dependencies", ""])
+    endpoint_rows = report.get("endpointDependencies") or []
+    if endpoint_rows:
+        lines.extend(
+            [
+                "| Mission | Quest | Dialog finish | Finish node | Prime path | Value source |",
+                "| --- | --- | --- | --- | --- | --- |",
+            ]
+        )
+        for row in endpoint_rows:
+            evidence = row.get("producerEvidence") or []
+            finish_nodes = sorted(
+                {str(item.get("finishNodeId") or "") for item in evidence}
+            )
+            paths = sorted(
+                {
+                    " -> ".join(str(value) for value in item.get("nodePath") or [])
+                    for item in evidence
+                }
+            )
+            sources = sorted(
+                {str(item.get("finishIdSource") or "") for item in evidence}
+            )
+            lines.append(
+                f"| `{row['missionId']}` | `{row['questId']}` | "
+                f"`{row['dialogId']}` / `{row['finishId']}` | "
+                f"{', '.join(f'`{value}`' for value in finish_nodes)} | "
+                f"{', '.join(f'`{value}`' for value in paths)} | "
+                f"{', '.join(f'`{value}`' for value in sources)} |"
+            )
+    else:
+        lines.append("- None.")
     lines.extend(["", "## Reused localization IDs", ""])
     reused = report.get("reusedOptionIdsAcrossScopes") or []
     if reused:
@@ -1444,8 +1822,8 @@ def main() -> int:
         write_json(index_path, index)
     print(
         "dialog finish branch audit: "
-        f"{report['counts']['publishedDependencies']} dependencies, "
-        f"{report['counts']['missions']} missions, "
+        f"{report['counts']['publishedDependencies']} option dependencies, "
+        f"{report['counts']['publishedEndpointDependencies']} endpoint-only dependencies, "
         f"{report['counts']['unresolvedExactConsumers']} unresolved exact consumers"
     )
     return 0

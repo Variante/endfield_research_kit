@@ -8,6 +8,7 @@ from .dialog_tree_option_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
     recover_dialog_tree_option_routes,
 )
+from .dialog_tree_finish_endpoints import recover_dialog_tree_finish_endpoints
 
 
 _DIALOG_TREE_TYPE = "Beyond.Gameplay.DialogTree"
@@ -334,6 +335,11 @@ def extract_dialog_tree_definition_evidence(
         connections,
         runtime_defaults=DIALOG_TREE_RUNTIME_DEFAULTS,
     )
+    finish_endpoint_recovery = recover_dialog_tree_finish_endpoints(
+        nodes,
+        connections,
+        runtime_defaults=DIALOG_TREE_RUNTIME_DEFAULTS,
+    )
     incoming_node_ids = {target for _source, target in typed_connections}
     line_connections = [
         {
@@ -385,6 +391,7 @@ def extract_dialog_tree_definition_evidence(
             "nodes": option_route_recovery.get("nodes") or [],
             "issues": option_route_recovery.get("issues") or [],
         },
+        "finishEndpointRecovery": finish_endpoint_recovery,
         "evidenceKind": "exact_dialog_tree_definition",
         "activationBoundary": (
             "the MissionRuntime condition observes this DialogTree root; the "
