@@ -13,6 +13,51 @@ assert SPEC.loader is not None
 SPEC.loader.exec_module(audio_semantics)
 
 
+def mp_string(value: str | None) -> bytes:
+    if value is None:
+        return pack("<I", 0xFFFFFFFF)
+    encoded = value.encode("utf-8")
+    return pack("<I", len(encoded)) + encoded
+
+
+def spawner_enemy_item(event_id: str, *, enemy_id: str, template_id: str | None, effect_id: str, time: float) -> bytes:
+    return (
+        b"\x0d\xff"
+        + pack("<I", 0)
+        + mp_string(template_id)
+        + mp_string(enemy_id)
+        + pack("<i", 20)
+        + b"\x00"
+        + mp_string("fixture-key")
+        + mp_string(None)
+        + pack("<i", 0)
+        + mp_string(event_id)
+        + pack("<ffff", 0.0, 0.0, 0.0, 1.0)
+        + mp_string(effect_id)
+        + pack("<f", time)
+    )
+
+
+def spawner_config_fixture() -> bytes:
+    rows = [
+        spawner_enemy_item(
+            "au_interactive_monsterspawn_white_2s",
+            enemy_id="eny_0018_lbtough_train",
+            template_id=None,
+            effect_id="P_monsterspawn_summon_02_2s",
+            time=2.0,
+        ),
+        spawner_enemy_item(
+            "au_int_electric_fence_hit",
+            enemy_id="eny_fixture",
+            template_id="eny_template_fixture",
+            effect_id="P_monsterspawn_summon_01_1s",
+            time=1.0,
+        ),
+    ]
+    return b"\x05" + mp_string("sc_fixture") + pack("<I", len(rows)) + b"".join(rows) + b"unused-tail"
+
+
 class AudioSemanticDataTests(unittest.TestCase):
     def test_direct_and_content_equivalent_media_keep_honest_counts(self) -> None:
         media = []
@@ -396,6 +441,110 @@ class AudioSemanticDataTests(unittest.TestCase):
             hashed = next(row for row in rows if row["hash"] == 0xFFFFFFFE)
             self.assertEqual(hashed["category"], "sfx")
             self.assertEqual(hashed["categoryEvidence"], "exactProjectileSoundField")
+
+    def test_spawner_pre_warn_context_preserves_unresolved_authored_event(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            export_root = root / "export_full"
+            webui_root = root / "webui"
+            spawner_path = (
+                export_root
+                / "structured/StreamingAssets/Data/Json/SpawnerConfig/base01_dg001/sc_fixture.json"
+            )
+            spawner_path.parent.mkdir(parents=True)
+            spawner_path.write_bytes(spawner_config_fixture())
+
+            semantics = audio_semantics.collect_spawner_pre_warn_semantics(export_root)
+            stats = semantics["stats"]
+            self.assertEqual(stats["status"], "complete")
+            self.assertEqual(stats["sourceFiles"], 1)
+            self.assertEqual(stats["decodedFiles"], 1)
+            self.assertEqual(stats["enemyRows"], 2)
+            self.assertEqual(stats["preWarnAudioContexts"], 2)
+            self.assertEqual(stats["distinctPreWarnAudioEvents"], 2)
+            unresolved = semantics["eventContexts"]["au_interactive_monsterspawn_white_2s"][0]
+            self.assertEqual(unresolved["kind"], "spawnerPreWarnAudio")
+            self.assertEqual(unresolved["enemyId"], "eny_0018_lbtough_train")
+            self.assertEqual(unresolved["bornTemplateId"], "")
+            self.assertEqual(unresolved["preWarnTime"], 2.0)
+            self.assertEqual(unresolved["preWarnEffectKey"], "P_monsterspawn_summon_02_2s")
+            self.assertEqual(unresolved["path"], "enemyLibrary[0].preWarnAudioEventKey")
+            self.assertEqual(len(unresolved["sourceFingerprint"]), 64)
+
+            payload = audio_semantics.build_audio_semantic_data(
+                {
+                    "eventNames": ["au_int_electric_fence_hit"],
+                    "events": [],
+                    "eventEvidence": [{
+                        "eventId": "au_int_electric_fence_hit",
+                        "eventHash": 123,
+                        "bankId": 7,
+                        "bank": "main_banks.pck",
+                        "traversalStatus": "complete",
+                    }],
+                    "entries": [],
+                },
+                language="CN",
+                export_root=export_root,
+                webui_root=webui_root,
+                metadata_path=None,
+            )
+            self.assertEqual(payload["counts"]["spawnerPreWarnAudioEvents"], 2)
+            self.assertEqual(payload["counts"]["spawnerPreWarnAudioContexts"], 2)
+            self.assertEqual(payload["counts"]["spawnerPreWarnAudioEventsFoundInWwise"], 1)
+            self.assertEqual(payload["counts"]["spawnerPreWarnAudioEventsUnresolved"], 1)
+            self.assertEqual(payload["triggerCatalog"]["spawnerPreWarnAudio"]["decodedFiles"], 1)
+            event_summaries = json.loads(
+                (webui_root / "data/lang/CN/audio/events.json").read_text(encoding="utf-8")
+            )["events"]
+            unresolved_summary = next(
+                row for row in event_summaries
+                if row["id"] == "au_interactive_monsterspawn_white_2s"
+            )
+            self.assertFalse(unresolved_summary["foundInWwise"])
+            self.assertEqual(unresolved_summary["category"], "sfx")
+            self.assertEqual(
+                unresolved_summary["categoryEvidence"],
+                "exactSpawnerPreWarnAudioField",
+            )
+            self.assertIn("spawnerPreWarnAudio", unresolved_summary["contextKinds"])
+            self.assertIn("sc_fixture", unresolved_summary["contextSearch"])
+
+    def test_collects_owner_unresolved_animation_callbacks_as_debug_contexts(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            gameplay_path = root / "data/lang/CN/gameplay/sound_effects.json"
+            gameplay_path.parent.mkdir(parents=True)
+            gameplay_path.write_text(json.dumps({
+                "animationEvidencePath": "sound_effects_animation_evidence.json",
+                "characters": {},
+                "enemies": {},
+            }), encoding="utf-8")
+            gameplay_path.with_name("sound_effects_animation_evidence.json").write_text(json.dumps({
+                "ownerUnresolved": [{
+                    "id": "au_ui_generic",
+                    "actionKinds": ["action"],
+                    "animationFunctions": ["PostAudioEvent"],
+                    "animationClipContexts": ["ui"],
+                    "sourceAnimationClips": ["UI_Generic"],
+                    "clipReachability": "unresolved",
+                    "authoredEventIds": ["au_ui_generic"],
+                    "evidence": [{
+                        "clipSource": "AnimationClip/UI_Generic.anim",
+                        "time": 0.5,
+                        "function": "PostAudioEvent",
+                    }],
+                }],
+            }), encoding="utf-8")
+
+            contexts = audio_semantics.collect_gameplay_contexts(root, "CN")
+
+            context = contexts["au_ui_generic"][0]
+            self.assertEqual(context["kind"], "animationCallbackOwnerUnresolved")
+            self.assertEqual(context["confidence"], "exactCallbackOwnerUnresolved")
+            self.assertEqual(context["ownerStatus"], "unresolved")
+            self.assertEqual(context["animationOccurrenceCount"], 1)
+            self.assertEqual(context["sourcePaths"], ["AnimationClip/UI_Generic.anim"])
 
     def test_builds_compact_lazy_shards_with_evidence_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:

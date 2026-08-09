@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import struct
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -19,13 +18,16 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from common import EXPORT_ROOT, LANG_DIR, rel_path, write_json
+from story_builder.spawner_binary import (
+    SpawnerEnemyLibraryDecodeError,
+    decode_spawner_enemy_library,
+)
 
 
 TABLE_REL = Path("structured") / "StreamingAssets" / "Table"
 DATA_JSON_REL = Path("structured") / "StreamingAssets" / "Data" / "Json"
 FALLBACK_TABLE_REL = Path("structured") / "Persistent" / "Table"
 FALLBACK_DATA_JSON_REL = Path("structured") / "Persistent" / "Data" / "Json"
-NULL_COUNT = 0xFFFFFFFF
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -110,110 +112,36 @@ def relation(source: str, target: str, kind: str, evidence: str, confidence: str
     return source, target, kind, confidence, evidence
 
 
-def mp_u32(data: bytes, offset: int, field: str, max_count: int = 50_000) -> tuple[int, int]:
-    if offset + 4 > len(data):
-        raise ValueError(f"{field}:truncated")
-    value = struct.unpack_from("<I", data, offset)[0]
-    if value != NULL_COUNT and value > max_count:
-        raise ValueError(f"{field}:count={value}")
-    return value, offset + 4
-
-
-def mp_i32(data: bytes, offset: int, field: str) -> tuple[int, int]:
-    if offset + 4 > len(data):
-        raise ValueError(f"{field}:truncated")
-    return struct.unpack_from("<i", data, offset)[0], offset + 4
-
-
-def mp_f32(data: bytes, offset: int, field: str) -> tuple[float, int]:
-    if offset + 4 > len(data):
-        raise ValueError(f"{field}:truncated")
-    return round(struct.unpack_from("<f", data, offset)[0], 4), offset + 4
-
-
-def mp_bool(data: bytes, offset: int, field: str) -> tuple[bool, int]:
-    if offset >= len(data) or data[offset] not in (0, 1):
-        raise ValueError(f"{field}:invalid")
-    return bool(data[offset]), offset + 1
-
-
-def mp_string(data: bytes, offset: int, field: str, max_length: int = 2048) -> tuple[str, int]:
-    length, offset = mp_u32(data, offset, field, max_length)
-    if length == NULL_COUNT:
-        return "", offset
-    end = offset + length
-    if end > len(data):
-        raise ValueError(f"{field}:truncated-string")
-    try:
-        return data[offset:end].decode("utf-8"), end
-    except UnicodeDecodeError as exc:
-        raise ValueError(f"{field}:invalid-utf8") from exc
-
-
-def decode_spawner_buff(data: bytes, offset: int) -> tuple[str, int]:
-    if offset >= len(data) or data[offset] != 2:
-        raise ValueError("buff:member-count")
-    offset += 1
-    count, offset = mp_u32(data, offset, "buff.blackboards", 256)
-    if count == NULL_COUNT:
-        count = 0
-    for _ in range(count):
-        if offset >= len(data) or data[offset] != 4:
-            raise ValueError("blackboard:member-count")
-        offset += 1
-        _key, offset = mp_string(data, offset, "blackboard.key", 256)
-        _use_string, offset = mp_bool(data, offset, "blackboard.useString")
-        _value_float, offset = mp_f32(data, offset, "blackboard.valueFloat")
-        _value_string, offset = mp_string(data, offset, "blackboard.valueString", 512)
-    return mp_string(data, offset, "buff.id", 256)
-
-
 def decode_spawner(path: Path) -> dict[str, Any] | None:
     """Decode the exact, guarded SpawnerConfig enemy-library prefix."""
     try:
-        data = path.read_bytes()
-        if not data or data[0] != 5:
-            return None
-        offset = 1
-        config_id, offset = mp_string(data, offset, "configId", 512)
-        count, offset = mp_u32(data, offset, "enemyLibrary", 10_000)
-        if count == NULL_COUNT:
-            count = 0
+        decoded = decode_spawner_enemy_library(path.read_bytes())
         enemies: list[dict[str, Any]] = []
-        for index in range(count):
-            if offset >= len(data) or data[offset] != 11:
-                raise ValueError("enemy:member-count")
-            offset += 1
-            buff_count, offset = mp_u32(data, offset, "enemy.buffs", 256)
-            if buff_count == NULL_COUNT:
-                buff_count = 0
-            buffs: list[str] = []
-            for _ in range(buff_count):
-                buff_id, offset = decode_spawner_buff(data, offset)
-                if buff_id:
-                    buffs.append(buff_id)
-            enemy_id, offset = mp_string(data, offset, "enemy.id", 256)
-            enemy_level, offset = mp_i32(data, offset, "enemy.level")
-            forced, offset = mp_bool(data, offset, "enemy.forceToBattle")
-            key, offset = mp_string(data, offset, "enemy.key", 256)
-            ai, offset = mp_string(data, offset, "enemy.overrideAI", 512)
-            gait, offset = mp_i32(data, offset, "enemy.patrolGait")
-            audio, offset = mp_string(data, offset, "enemy.preWarnAudio", 512)
-            rotation = []
-            for axis in range(4):
-                value, offset = mp_f32(data, offset, f"enemy.preWarnRotation[{axis}]")
-                rotation.append(value)
-            effect, offset = mp_string(data, offset, "enemy.preWarnEffect", 512)
-            prewarn_time, offset = mp_f32(data, offset, "enemy.preWarnTime")
-            enemies.append({
-                "index": index, "enemyId": enemy_id, "enemyLevel": enemy_level,
-                "forceToBattle": forced, "key": key, "overrideAIConfig": ai,
-                "patrolGait": gait, "bornBuffIds": sorted(set(buffs)),
-                "preWarnAudioId": audio, "preWarnEffectId": effect,
-                "preWarnEffectFixedRotation": rotation, "preWarnTime": prewarn_time,
+        for enemy in decoded["enemyLibrary"]:
+            born_buff_ids = sorted({
+                str(buff.get("buffId") or "")
+                for buff in enemy.get("bornBuffList") or []
+                if isinstance(buff, dict) and buff.get("buffId")
             })
-        return {"configId": config_id or path.stem, "enemyLibrary": enemies}
-    except (OSError, ValueError, struct.error):
+            # Keep the established compact World payload shape. Audio consumes
+            # the exact parser row directly and retains its richer evidence.
+            enemies.append({
+                "index": enemy.get("index"),
+                "enemyId": enemy.get("enemyId") or "",
+                "bornTemplateId": enemy.get("bornTemplateId") or "",
+                "enemyLevel": enemy.get("enemyLevel"),
+                "forceToBattle": bool(enemy.get("forceToBattle")),
+                "key": enemy.get("key") or "",
+                "overrideAIConfig": enemy.get("overrideAIConfig") or "",
+                "patrolGait": enemy.get("patrolGait"),
+                "bornBuffIds": born_buff_ids,
+                "preWarnAudioId": enemy.get("preWarnAudioEventKey") or "",
+                "preWarnEffectId": enemy.get("preWarnEffectKey") or "",
+                "preWarnEffectFixedRotation": enemy.get("preWarnEffectFixedRotation") or [],
+                "preWarnTime": enemy.get("preWarnTime"),
+            })
+        return {"configId": decoded.get("configId") or path.stem, "enemyLibrary": enemies}
+    except (OSError, SpawnerEnemyLibraryDecodeError):
         return None
 
 

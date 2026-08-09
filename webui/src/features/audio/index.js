@@ -64,10 +64,12 @@
       contextAnimation: "Animation",
       contextSharedPlayableAnimation: "Shared playable-character animation",
       contextFootstepSystem: "Footstep / material system",
+      contextOwnerUnresolvedAnimation: "Animation owner unresolved",
       contextExactSkillTrigger: "Exact skill-config Event reference",
       contextInferredSkillTrigger: "Inferred skill ownership",
       contextAuthoredPlaySoundAction: "Authored PlaySound action",
       contextProjectileTrigger: "Projectile lifecycle sound",
+      contextSpawnerPreWarn: "Enemy-spawner pre-warning",
       contextInteractiveTrigger: "Interactive object trigger",
       contextGlobalLifecycle: "Global audio lifecycle",
       contextAudioCueTrigger: "Audio cue behavior Event",
@@ -163,10 +165,12 @@
       contextAnimation: "\u52a8\u753b",
       contextSharedPlayableAnimation: "\u53ef\u73a9\u89d2\u8272\u5171\u7528\u52a8\u753b",
       contextFootstepSystem: "\u811a\u6b65 / \u6750\u8d28\u7cfb\u7edf",
+      contextOwnerUnresolvedAnimation: "\u52a8\u753b\u5f52\u5c5e\u672a\u89e3\u6790",
       contextExactSkillTrigger: "\u7cbe\u786e\u6280\u80fd\u914d\u7f6e Event \u5f15\u7528",
       contextInferredSkillTrigger: "\u63a8\u65ad\u6280\u80fd\u5f52\u5c5e",
       contextAuthoredPlaySoundAction: "\u521b\u4f5c PlaySound \u52a8\u4f5c",
       contextProjectileTrigger: "\u6295\u5c04\u7269\u751f\u547d\u5468\u671f\u97f3\u6548",
+      contextSpawnerPreWarn: "\u654c\u4eba\u751f\u6210\u5668\u9884\u8b66\u97f3\u6548",
       contextInteractiveTrigger: "\u4ea4\u4e92\u7269\u4ef6\u89e6\u53d1",
       contextGlobalLifecycle: "\u5168\u5c40\u97f3\u9891\u751f\u547d\u5468\u671f",
       contextAudioCueTrigger: "Audio Cue \u884c\u4e3a Event",
@@ -308,10 +312,12 @@
     animation: "contextAnimation",
     sharedPlayableAnimation: "contextSharedPlayableAnimation",
     footstepSystem: "contextFootstepSystem",
+    ownerUnresolvedAnimation: "contextOwnerUnresolvedAnimation",
     exactSkillTrigger: "contextExactSkillTrigger",
     inferredSkillTrigger: "contextInferredSkillTrigger",
     authoredPlaySoundAction: "contextAuthoredPlaySoundAction",
     projectileTrigger: "contextProjectileTrigger",
+    spawnerPreWarnTrigger: "contextSpawnerPreWarn",
     interactiveTrigger: "contextInteractiveTrigger",
     globalLifecycle: "contextGlobalLifecycle",
     audioCueTrigger: "contextAudioCueTrigger",
@@ -352,8 +358,8 @@
   function contextGroup(kind) {
     if (["characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField"].includes(kind)) return "gameplay";
     if (kind === "cutsceneTimeline") return "cutscene";
-    if (["characterAnimation", "enemyAnimation"].includes(kind)) return "animation";
-    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent"].includes(kind)) return "authoredConfig";
+    if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
+    if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
     return "";
   }
@@ -362,9 +368,11 @@
     const tags = new Set(asArray(record?.contextGroups).filter(Boolean));
     const addContextKindTags = (contextKind) => {
       if (contextKind === "projectileSoundField") tags.add("projectileTrigger");
+      if (contextKind === "spawnerPreWarnAudio") tags.add("spawnerPreWarnTrigger");
       if (["audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("audioCueTrigger");
       if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(contextKind)) tags.add("interactiveTrigger");
       if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("globalLifecycle");
+      if (contextKind === "animationCallbackOwnerUnresolved") tags.add("ownerUnresolvedAnimation");
     };
     for (const contextKind of asArray(record?.contextKinds)) addContextKindTags(contextKind);
     for (const status of asArray(record?.triggerBindingStatuses)) {
@@ -389,7 +397,7 @@
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
         "gameplay", "cutscene", "animation", "authoredConfig", "managedRuntime",
-        "sharedPlayableAnimation", "footstepSystem", "projectileTrigger", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
+        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "projectileTrigger", "spawnerPreWarnTrigger", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
@@ -457,6 +465,9 @@
         context.modelId, context.subTemplateId, context.triggerStateId, context.triggerStateName,
         context.triggerCustomState, context.ownerKind, context.stateDirection, context.audioStateMask, context.description,
         context.componentIndex, context.sourceOffset, context.sourceFingerprint, ...asArray(context.sourcePaths),
+        context.authoredEventId, context.spawnerConfigId, context.enemyLibraryIndex, context.enemyId,
+        context.bornTemplateId, context.enemyLevel, context.spawnerEnemyKey, context.preWarnTime,
+        context.preWarnEffectKey, ...asArray(context.preWarnEffectFixedRotation), ...asArray(context.bornBuffIds),
         context.clipReachability, context.triggerBindingStatus, ...asArray(context.skillIds), ...asArray(context.actionKinds),
         ...asArray(context.triggerRequestEvidence), ...asArray(context.triggerRuntimeActivationStatuses),
         ...asArray(context.triggerRelationTypes), ...asArray(context.triggerOwnershipMethods),
@@ -1396,6 +1407,15 @@
     if (context?.projectileId) parts.push(`projectile ${context.projectileId}`);
     if (context?.projectileKey) parts.push(context.projectileKey);
     if (context?.soundField) parts.push(`${humanize(context.soundField)} / ${humanize(context.triggerPhase || "")}`);
+    if (context?.spawnerConfigId) parts.push(`spawner ${context.spawnerConfigId}`);
+    if (context?.enemyId) parts.push(`enemy ${context.enemyId}`);
+    if (context?.bornTemplateId) parts.push(`born template ${context.bornTemplateId}`);
+    if (context?.enemyLevel !== undefined) parts.push(`enemy level ${context.enemyLevel}`);
+    if (context?.spawnerEnemyKey) parts.push(`spawn key ${context.spawnerEnemyKey}`);
+    if (context?.preWarnTime !== undefined) parts.push(`pre-warning time ${context.preWarnTime}`);
+    if (context?.preWarnEffectKey) parts.push(`effect ${context.preWarnEffectKey}`);
+    const preWarnRotation = asArray(context?.preWarnEffectFixedRotation);
+    if (preWarnRotation.length) parts.push(`effect rotation ${preWarnRotation.join(", ")}`);
     if (context?.eventHash !== undefined) parts.push(`Event 0x${Number(context.eventHash).toString(16).padStart(8, "0")}`);
     if (context?.signedValue !== undefined) parts.push(`serialized int32 ${context.signedValue}`);
     if (context?.runtimeActivationStatus) parts.push(humanize(context.runtimeActivationStatus));
@@ -1406,6 +1426,7 @@
     if (context?.sourceRoot || context?.sourcePathId) parts.push(`${context.sourceRoot || "source"} PathID ${context.sourcePathId || "?"}`);
     if (context?.sourceFile) parts.push(`CAB ${context.sourceFile}`);
     if (context?.sourceVfsPath) parts.push(context.sourceVfsPath);
+    if (context?.sourceFingerprint) parts.push(`source SHA-256 ${context.sourceFingerprint}`);
     if (context?.semanticPath) parts.push(context.semanticPath);
     const sourcePaths = asArray(context?.sourcePaths).filter(Boolean);
     if (sourcePaths.length) parts.push(sourcePaths.length === 1 ? sourcePaths[0] : `${sourcePaths[0]} +${sourcePaths.length - 1}`);
