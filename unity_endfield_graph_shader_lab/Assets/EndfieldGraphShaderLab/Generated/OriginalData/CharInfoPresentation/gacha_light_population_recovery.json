@@ -1,12 +1,16 @@
 {
-  "schema": "endfield.gacha-light-population-recovery.v2",
-  "status": "zhuangfy_gacha_authored_population_and_first_native_exclusion_source_closed",
+  "schema": "endfield.gacha-light-population-recovery.v3",
+  "status": "zhuangfy_gacha_selected_aspect_authored_room_subset_source_closed",
   "runtimeReady": false,
-  "outcome": "Installed Lua selects only light_overview from light_chr_0030_zhuangfy, initializes its four CharInfoLightFollower components, and selects the 12-light SceneLight6Rarity room group for rarity 6. The resulting known serialized Unity-Light candidate union is exactly 18 enabled lights: 3 type 0 and 15 type 2, with no authored cookies and one character-light shadow request. The shipped normal native path disables fallback and Gacha occlusion; Spot Light (20) is aspect-independently rejected, tightening the known authored survivor upper bound to 17. This still does not close the target-frame LightCullResult, dynamic/custom lights, final order, or lightCount.",
+  "outcome": "Installed Lua selects only light_overview from light_chr_0030_zhuangfy, initializes its four CharInfoLightFollower components, and selects the 12-light SceneLight6Rarity room group for rarity 6. The resulting known serialized Unity-Light candidate union is exactly 18 enabled lights: 3 type 0 and 15 type 2, with no authored cookies and one character-light shadow request. The shipped normal native path disables fallback and Gacha occlusion. The selected installed-client state is independently stored as 3840x2160 by Unity and the game. At that 16:9 aspect, native AABB, authored OBB, and type-specific geometry admit exactly 11 room rows and reject only Spot Light (20), retaining the known authored survivor upper bound of 17. This still does not close the target-frame LightCullResult, dynamic/custom lights, final order, or lightCount.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
       "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "unityPlayer": {
+      "sizeBytes": 38194232,
+      "sha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2"
     },
     "globalMetadata": {
       "sizeBytes": 62925560,
@@ -51,6 +55,10 @@
     "gachaSelectedListAudit": {
       "sizeBytes": 27692,
       "sha256": "7b3624526a77102fb075cdc1ad98277eb6746b5a1853faa1fd2ad2032951e1b3"
+    },
+    "rotatehouse": {
+      "sizeBytes": 1492,
+      "sha256": "3cac5172e91bb3cddf1a8c6db8e8550620abbfb0c957905f39538b8c97baded4"
     }
   },
   "selection": {
@@ -163,132 +171,420 @@
           "pathId": -7516039918534742560,
           "name": "Linear Light (12)",
           "type": 2,
+          "range": 10.0,
+          "spotAngle": 30.0,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": true,
+          "cullingBoxRelativePosition": {
+            "x": 1.0759821,
+            "y": -2.1362376,
+            "z": 0.8755455
+          },
+          "cullingBoxHalfExtents": {
+            "x": 1.1103137,
+            "y": 2.5167449,
+            "z": 10.0
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 1.6822746,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": -0.0,
+            "Y": -0.0032145553,
+            "Z": -0.0,
+            "W": 0.9999948
+          },
           "sourceRawSha256": "44e9b1e45db49c8b99245bad64fca6fed34c8502b62757085f470f31b8e84781"
         },
         {
           "pathId": -6003850056218071584,
           "name": "Linear Light (13)",
           "type": 2,
+          "range": 10.0,
+          "spotAngle": 30.0,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": true,
+          "cullingBoxRelativePosition": {
+            "x": -1.0767765,
+            "y": -2.1280732,
+            "z": 0.9132333
+          },
+          "cullingBoxHalfExtents": {
+            "x": 1.1103137,
+            "y": 2.5167449,
+            "z": 10.0
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 1.6822791,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": -0.0,
+            "Y": -0.0032145553,
+            "Z": -0.0,
+            "W": 0.9999948
+          },
           "sourceRawSha256": "89b558afb131f4c20defb11809ded9c9491cb25e3291bf39b48818db0e9d5da1"
         },
         {
           "pathId": -4966856337038791200,
           "name": "Linear Light (14)",
           "type": 2,
+          "range": 14.0,
+          "spotAngle": 30.0,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": true,
+          "cullingBoxRelativePosition": {
+            "x": 3.0690973,
+            "y": -2.6728835,
+            "z": 0.8993182
+          },
+          "cullingBoxHalfExtents": {
+            "x": 1.1103134,
+            "y": 3.0615554,
+            "z": 10.0
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 1.6822729,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": -0.0,
+            "Y": -0.0032145553,
+            "Z": -0.0,
+            "W": 0.9999948
+          },
           "sourceRawSha256": "29a8edc793b0490f29fe5ef1ecc09cb7313313109fc78f0035c4ed83ea5763e4"
         },
         {
           "pathId": -2247457476464562720,
           "name": "Linear Light (15)",
           "type": 2,
+          "range": 14.0,
+          "spotAngle": 30.0,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": true,
+          "cullingBoxRelativePosition": {
+            "x": -2.1162224,
+            "y": -2.3353767,
+            "z": 0.87074184
+          },
+          "cullingBoxHalfExtents": {
+            "x": 1.1103139,
+            "y": 2.7240484,
+            "z": 10.0
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 1.6822791,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": -0.0,
+            "Y": -0.0032145553,
+            "Z": -0.0,
+            "W": 0.9999948
+          },
           "sourceRawSha256": "a7a45026da45d4004f09faa85af7129c0d70a96e5511c28e7754dc31b155470b"
         },
         {
           "pathId": 1177420952804240864,
           "name": "Spot Light (18)",
           "type": 2,
+          "range": 5.0,
+          "spotAngle": 150.1144,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": true,
+          "cullingBoxRelativePosition": {
+            "x": 1.2049856,
+            "y": 1.3005152,
+            "z": -0.23785019
+          },
+          "cullingBoxHalfExtents": {
+            "x": 2.1709516,
+            "y": 0.8664541,
+            "z": 2.9571095
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": -0.7066396,
+            "Y": 0.025701396,
+            "Z": -0.025701396,
+            "W": -0.7066396
+          },
           "sourceRawSha256": "f532705bda89417f404bde246f557d449af231cbb5a3db63867cbb32f2b09b35"
         },
         {
           "pathId": 3145527971969281504,
           "name": "Spot Light (12)",
           "type": 0,
+          "range": 10.0,
+          "spotAngle": 140.0,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": true,
+          "cullingBoxRelativePosition": {
+            "x": 0.7330458,
+            "y": -6.433196,
+            "z": 0.5580988
+          },
+          "cullingBoxHalfExtents": {
+            "x": 6.5248904,
+            "y": 0.6183853,
+            "z": 10.962412
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": 0.012852895,
+            "Y": 0.70699,
+            "Z": -0.70699,
+            "W": 0.012852895
+          },
           "sourceRawSha256": "720742dae08665fde2674a86311217b29e78545fd2dd5c9742dfd9d5ec1a2330"
         },
         {
           "pathId": 4336752956264328672,
           "name": "Spot Light (17)",
           "type": 2,
+          "range": 5.0,
+          "spotAngle": 150.1144,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": true,
+          "cullingBoxRelativePosition": {
+            "x": -1.3343492,
+            "y": 1.3305151,
+            "z": -0.59385014
+          },
+          "cullingBoxHalfExtents": {
+            "x": 2.2124114,
+            "y": 0.8664541,
+            "z": 2.9571095
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": -0.7066396,
+            "Y": 0.025701396,
+            "Z": -0.025701396,
+            "W": -0.7066396
+          },
           "sourceRawSha256": "7bd820b8bf1b443dd989681b5e406bb628f03aaf038996301e360e87f31982f5"
         },
         {
           "pathId": 4491921571221515744,
           "name": "Spot Light (20)",
           "type": 2,
+          "range": 3.9027147,
+          "spotAngle": 150.1144,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": false,
+          "cullingBoxRelativePosition": {
+            "x": -0.20409894,
+            "y": 1.5955153,
+            "z": -2.789011
+          },
+          "cullingBoxHalfExtents": {
+            "x": 3.8251476,
+            "y": 0.8664541,
+            "z": 2.1664677
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": -0.7066396,
+            "Y": 0.025701396,
+            "Z": -0.025701396,
+            "W": -0.7066396
+          },
           "sourceRawSha256": "f699b53f7b9a4463b9b99c49f9222e6bd1caaf1335cb157849277d5a1e9389a2"
         },
         {
           "pathId": 6723905289426087392,
           "name": "Spot Light (19)",
           "type": 2,
+          "range": 7.0468225,
+          "spotAngle": 150.1144,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": true,
+          "cullingBoxRelativePosition": {
+            "x": -0.20409894,
+            "y": 1.5955153,
+            "z": -2.789011
+          },
+          "cullingBoxHalfExtents": {
+            "x": 3.8251476,
+            "y": 0.8664541,
+            "z": 2.1664677
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": -0.7066396,
+            "Y": 0.025701396,
+            "Z": -0.025701396,
+            "W": -0.7066396
+          },
           "sourceRawSha256": "da218e4caf6e4a3aa8f620317f12c670004b801541b420a9e6b88ac9419eb23c"
         },
         {
           "pathId": 7037844248082165216,
           "name": "Spot Light (9)",
           "type": 2,
+          "range": 6.9279203,
+          "spotAngle": 150.1144,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": true,
+          "cullingBoxRelativePosition": {
+            "x": -0.49392867,
+            "y": -1.5946023,
+            "z": 0.7165575
+          },
+          "cullingBoxHalfExtents": {
+            "x": 6.800811,
+            "y": 3.6230037,
+            "z": 4.69168
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": -0.7066396,
+            "Y": 0.025701396,
+            "Z": -0.025701396,
+            "W": -0.7066396
+          },
           "sourceRawSha256": "ca50f80494de46082daa63b0f8505fab2e988b4987d69f5c17c155a5cfb6a176"
         },
         {
           "pathId": 7142192322960010720,
           "name": "Spot Light (11)",
           "type": 2,
+          "range": 20.0,
+          "spotAngle": 150.1144,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": true,
+          "cullingBoxRelativePosition": {
+            "x": -0.9361551,
+            "y": -2.7084107,
+            "z": -2.112834
+          },
+          "cullingBoxHalfExtents": {
+            "x": 7.930528,
+            "y": 2.1084466,
+            "z": 5.588236
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": -0.70699,
+            "Y": 0.012852839,
+            "Z": -0.012852839,
+            "W": -0.70699
+          },
           "sourceRawSha256": "db14d0a346abcb4d38677d093bce62b18db02cb1f4b25bcce5dfa04b70c3a69d"
         },
         {
           "pathId": 7763697698425908704,
           "name": "Spot Light (10)",
           "type": 2,
+          "range": 15.0,
+          "spotAngle": 150.1144,
           "priority": 0,
           "enabled": true,
           "renderingLayerMask": 1,
           "cookiePathId": 0,
           "shadowType": 0,
+          "enableOBBCullingBox": true,
+          "cullingBoxRelativePosition": {
+            "x": -0.9361546,
+            "y": -4.2274466,
+            "z": -4.4271173
+          },
+          "cullingBoxHalfExtents": {
+            "x": 10.325,
+            "y": 3.1371279,
+            "z": 5.6767054
+          },
+          "cullingBoxOrientation": {
+            "x": -0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "localRotation": {
+            "X": -0.70699,
+            "Y": 0.012852839,
+            "Z": -0.012852839,
+            "W": -0.70699
+          },
           "sourceRawSha256": "fbf47c37b3391ded9e8046cc6150330f9cf158bc037889b591028412629b561d"
         }
       ]
@@ -424,6 +720,54 @@
     },
     "selectedFollowerCount": 4
   },
+  "nativeGeometryMethods": {
+    "unityPlayer": [
+      {
+        "name": "initial_light_aabb_frustum_test",
+        "virtualAddress": "0x181050470",
+        "sizeBytes": 1009,
+        "sha256": "0f2359a78c27699a894d4106fa9bb5b1277d021a6c75d3e9a2fec41252f450e5"
+      },
+      {
+        "name": "spot_cone_aabb_builder",
+        "virtualAddress": "0x18034CE46",
+        "sizeBytes": 1856,
+        "sha256": "eb5c9bd7f97cfaa2bf560af4ed6e5d795362731514ebba0dcbda106aef6af7f8"
+      },
+      {
+        "name": "authored_obb_corner_builder",
+        "virtualAddress": "0x18104C270",
+        "sizeBytes": 1554,
+        "sha256": "ef5638a695fb5007113b432037bd23d9b56e3acd96a802a69441d475d1c7dd32"
+      },
+      {
+        "name": "spot_cone_plane_test",
+        "virtualAddress": "0x1810516D0",
+        "sizeBytes": 845,
+        "sha256": "eb053dc111374f16a856b187471298699f3df4189928ea5ecfda778d0c70fc20"
+      },
+      {
+        "name": "authored_obb_plane_test",
+        "virtualAddress": "0x181052329",
+        "sizeBytes": 465,
+        "sha256": "39240124eedac93d1dce993460270242f39c73582027ba247775211decb17550"
+      }
+    ],
+    "gameAssembly": [
+      {
+        "name": "GameSetting._AddScreenResolution",
+        "virtualAddress": "0x184498160",
+        "sizeBytes": 304,
+        "sha256": "17f0b8cf9ea2d13f740342cca50ca3fe68cf51bccead7a0e7cdaa6f459f90fcd"
+      },
+      {
+        "name": "GameSetting._AddScreenResolution_portrait_swap",
+        "virtualAddress": "0x1852BFA54",
+        "sizeBytes": 8,
+        "sha256": "56e0c82b57c29be8ec5add44328d1e313b0a2f507df6ea39ad7968b97adcf9d3"
+      }
+    ]
+  },
   "nativeCullBoundary": {
     "shippedCandidateCore": "normal; useFallbackLightCulling=false",
     "gachaOcclusionDimensions": [
@@ -451,7 +795,520 @@
       "Spot Light (10)"
     ],
     "nativeOutputOrder": "accepted non-directionals sort by ascending camera distance squared; SetupState then sorts types 0/2 by priority descending and distance ascending",
-    "firstOpenRoomBoundary": "the synchronous AABB/plane result for the other eleven room rows depends on live horizontal planes derived from final render-target aspect"
+    "firstOpenRoomBoundary": "room geometry is closed for the selected installed-client 3840x2160 state; character-light follower transforms and cull outcomes remain open",
+    "selectedAspectRoomGeometry": {
+      "selectedResolution": {
+        "source": "HKCU\\Software\\Hypergryph\\Endfield",
+        "valueNames": {
+          "screenWidth": "Screenmanager Resolution Width_h182942802",
+          "screenHeight": "Screenmanager Resolution Height_h2627697771",
+          "videoWidth": "video_resolution_width_h583690364",
+          "videoHeight": "video_resolution_height_h2517654917"
+        },
+        "screenManager": {
+          "width": 3840,
+          "height": 2160
+        },
+        "gameVideo": {
+          "width": 3840,
+          "height": 2160
+        },
+        "aspect": {
+          "value": 1.7777777910232544,
+          "bits": "0x3FE38E39"
+        },
+        "scope": "read-only selected state for this installed-client fixture, not a universal supported-aspect claim"
+      },
+      "cameraSampleTime": {
+        "bits": "0x412B3333",
+        "value": 10.699999809265137
+      },
+      "verticalFovDegrees": {
+        "bits": "0x42107EFE",
+        "value": 36.12401580810547
+      },
+      "nativePlaneConvention": "inside when signed support is nonnegative",
+      "roomRowsInNativeDistanceOrder": [
+        {
+          "name": "Spot Light (12)",
+          "lightPathId": 3145527971969281504,
+          "type": 0,
+          "selectedAspectAdmitted": true,
+          "minimumAspectApprox": {
+            "atOrBelowSearchFloor": {
+              "value": 0.10000000149011612,
+              "bits": "0x3DCCCCCD"
+            }
+          },
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 33.8995361328125,
+              "bits": "0x42079920"
+            }
+          },
+          "authoredObb": {
+            "enabled": true,
+            "result": true,
+            "minimumPlane": "bottom",
+            "minimumSupportMargin": {
+              "value": 11.868432998657227,
+              "bits": "0x413DE51A"
+            },
+            "orientationOrder": "Unity ZXY"
+          },
+          "typeGeometry": {
+            "kind": "spot_cone",
+            "result": true,
+            "minimumPlane": "bottom",
+            "minimumSupportMargin": {
+              "value": 21.512462615966797,
+              "bits": "0x41AC1986"
+            }
+          }
+        },
+        {
+          "name": "Spot Light (19)",
+          "lightPathId": 6723905289426087392,
+          "type": 2,
+          "selectedAspectAdmitted": true,
+          "minimumAspectApprox": {
+            "atOrBelowSearchFloor": {
+              "value": 0.10000000149011612,
+              "bits": "0x3DCCCCCD"
+            }
+          },
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 16.272294998168945,
+              "bits": "0x41822DA9"
+            }
+          },
+          "authoredObb": {
+            "enabled": true,
+            "result": true,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": 8.392971992492676,
+              "bits": "0x4106499D"
+            },
+            "orientationOrder": "Unity ZXY"
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 15.867842674255371,
+              "bits": "0x417DE2AF"
+            }
+          }
+        },
+        {
+          "name": "Linear Light (12)",
+          "lightPathId": -7516039918534742560,
+          "type": 2,
+          "selectedAspectAdmitted": true,
+          "minimumAspectApprox": {
+            "numericalRoot": {
+              "value": 0.6417862772941589,
+              "bits": "0x3F244C1B"
+            }
+          },
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 19.776355743408203,
+              "bits": "0x419E35FA"
+            }
+          },
+          "authoredObb": {
+            "enabled": true,
+            "result": true,
+            "minimumPlane": "left",
+            "minimumSupportMargin": {
+              "value": 11.88310718536377,
+              "bits": "0x413E2135"
+            },
+            "orientationOrder": "Unity ZXY"
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 19.20240592956543,
+              "bits": "0x41999E87"
+            }
+          }
+        },
+        {
+          "name": "Linear Light (13)",
+          "lightPathId": -6003850056218071584,
+          "type": 2,
+          "selectedAspectAdmitted": true,
+          "minimumAspectApprox": {
+            "numericalRoot": {
+              "value": 1.2567284107208252,
+              "bits": "0x3FA0DC7A"
+            }
+          },
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 19.276212692260742,
+              "bits": "0x419A35AF"
+            }
+          },
+          "authoredObb": {
+            "enabled": true,
+            "result": true,
+            "minimumPlane": "right",
+            "minimumSupportMargin": {
+              "value": 5.312068462371826,
+              "bits": "0x40A9FC77"
+            },
+            "orientationOrder": "Unity ZXY"
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "right",
+            "minimumSupportMargin": {
+              "value": 16.576940536499023,
+              "bits": "0x41849D93"
+            }
+          }
+        },
+        {
+          "name": "Linear Light (14)",
+          "lightPathId": -4966856337038791200,
+          "type": 2,
+          "selectedAspectAdmitted": true,
+          "minimumAspectApprox": {
+            "numericalRoot": {
+              "value": 0.5521131753921509,
+              "bits": "0x3F0D574A"
+            }
+          },
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 23.637310028076172,
+              "bits": "0x41BD1936"
+            }
+          },
+          "authoredObb": {
+            "enabled": true,
+            "result": true,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": 12.174440383911133,
+              "bits": "0x4142CA82"
+            },
+            "orientationOrder": "Unity ZXY"
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 22.833782196044922,
+              "bits": "0x41B6AB96"
+            }
+          }
+        },
+        {
+          "name": "Spot Light (17)",
+          "lightPathId": 4336752956264328672,
+          "type": 2,
+          "selectedAspectAdmitted": true,
+          "minimumAspectApprox": {
+            "atOrBelowSearchFloor": {
+              "value": 0.10000000149011612,
+              "bits": "0x3DCCCCCD"
+            }
+          },
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 17.39116668701172,
+              "bits": "0x418B211C"
+            }
+          },
+          "authoredObb": {
+            "enabled": true,
+            "result": true,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": 10.597326278686523,
+              "bits": "0x41298EA6"
+            },
+            "orientationOrder": "Unity ZXY"
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 17.10419273376465,
+              "bits": "0x4188D563"
+            }
+          }
+        },
+        {
+          "name": "Linear Light (15)",
+          "lightPathId": -2247457476464562720,
+          "type": 2,
+          "selectedAspectAdmitted": true,
+          "minimumAspectApprox": {
+            "numericalRoot": {
+              "value": 1.229874610900879,
+              "bits": "0x3F9D6C88"
+            }
+          },
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 23.409719467163086,
+              "bits": "0x41BB471B"
+            }
+          },
+          "authoredObb": {
+            "enabled": true,
+            "result": true,
+            "minimumPlane": "right",
+            "minimumSupportMargin": {
+              "value": 5.569304943084717,
+              "bits": "0x40B237BF"
+            },
+            "orientationOrder": "Unity ZXY"
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 22.606189727783203,
+              "bits": "0x41B4D97A"
+            }
+          }
+        },
+        {
+          "name": "Spot Light (18)",
+          "lightPathId": 1177420952804240864,
+          "type": 2,
+          "selectedAspectAdmitted": true,
+          "minimumAspectApprox": {
+            "numericalRoot": {
+              "value": 0.40276679396629333,
+              "bits": "0x3ECE3773"
+            }
+          },
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "right",
+            "minimumSupportMargin": {
+              "value": 17.206802368164062,
+              "bits": "0x4189A788"
+            }
+          },
+          "authoredObb": {
+            "enabled": true,
+            "result": true,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": 10.59732723236084,
+              "bits": "0x41298EA7"
+            },
+            "orientationOrder": "Unity ZXY"
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "right",
+            "minimumSupportMargin": {
+              "value": 13.26441764831543,
+              "bits": "0x41543B0E"
+            }
+          }
+        },
+        {
+          "name": "Spot Light (9)",
+          "lightPathId": 7037844248082165216,
+          "type": 2,
+          "selectedAspectAdmitted": true,
+          "minimumAspectApprox": {
+            "atOrBelowSearchFloor": {
+              "value": 0.10000000149011612,
+              "bits": "0x3DCCCCCD"
+            }
+          },
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 20.853233337402344,
+              "bits": "0x41A6D36C"
+            }
+          },
+          "authoredObb": {
+            "enabled": true,
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 17.615819931030273,
+              "bits": "0x418CED33"
+            },
+            "orientationOrder": "Unity ZXY"
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 20.455604553222656,
+              "bits": "0x41A3A514"
+            }
+          }
+        },
+        {
+          "name": "Spot Light (20)",
+          "lightPathId": 4491921571221515744,
+          "type": 2,
+          "selectedAspectAdmitted": false,
+          "minimumAspectApprox": null,
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": 0.8290665149688721,
+              "bits": "0x3F543DB4"
+            }
+          },
+          "authoredObb": {
+            "enabled": false,
+            "result": "skipped",
+            "minimumPlane": "disabled",
+            "minimumSupportMargin": null,
+            "orientationOrder": null
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": false,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": -2.902552604675293,
+              "bits": "0xC039C36C"
+            }
+          }
+        },
+        {
+          "name": "Spot Light (11)",
+          "lightPathId": 7142192322960010720,
+          "type": 2,
+          "selectedAspectAdmitted": true,
+          "minimumAspectApprox": {
+            "atOrBelowSearchFloor": {
+              "value": 0.10000000149011612,
+              "bits": "0x3DCCCCCD"
+            }
+          },
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 38.470645904541016,
+              "bits": "0x4219E1F1"
+            }
+          },
+          "authoredObb": {
+            "enabled": true,
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 24.9748477935791,
+              "bits": "0x41C7CC7D"
+            },
+            "orientationOrder": "Unity ZXY"
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 37.32274627685547,
+              "bits": "0x42154A7E"
+            }
+          }
+        },
+        {
+          "name": "Spot Light (10)",
+          "lightPathId": 7763697698425908704,
+          "type": 2,
+          "selectedAspectAdmitted": true,
+          "minimumAspectApprox": {
+            "atOrBelowSearchFloor": {
+              "value": 0.10000000149011612,
+              "bits": "0x3DCCCCCD"
+            }
+          },
+          "initialAabb": {
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 33.50779724121094,
+              "bits": "0x420607FC"
+            }
+          },
+          "authoredObb": {
+            "enabled": true,
+            "result": true,
+            "minimumPlane": "top",
+            "minimumSupportMargin": {
+              "value": 23.0046443939209,
+              "bits": "0x41B80983"
+            },
+            "orientationOrder": "Unity ZXY"
+          },
+          "typeGeometry": {
+            "kind": "point_sphere",
+            "result": true,
+            "minimumPlane": "near",
+            "minimumSupportMargin": {
+              "value": 32.646873474121094,
+              "bits": "0x42029666"
+            }
+          }
+        }
+      ],
+      "exactSelectedAspectRoomSurvivors": [
+        "Spot Light (12)",
+        "Spot Light (19)",
+        "Linear Light (12)",
+        "Linear Light (13)",
+        "Linear Light (14)",
+        "Spot Light (17)",
+        "Linear Light (15)",
+        "Spot Light (18)",
+        "Spot Light (9)",
+        "Spot Light (11)",
+        "Spot Light (10)"
+      ],
+      "exactSelectedAspectRoomRejections": [
+        "Spot Light (20)"
+      ],
+      "exactSelectedAspectRoomContributionCount": 11,
+      "precisionBoundary": "Thresholds are float32 numerical roots for diagnostics; the selected 16:9 margins are well separated from zero and own the pass/fail claims."
+    }
   },
   "evidenceBoundary": {
     "closed": [
@@ -464,15 +1321,17 @@
       "installed native follower traversal, node selection, and transform modes",
       "shipped normal candidate core with fallback and Gacha occlusion disabled",
       "generic room layer/mask gate for all twelve room rows",
-      "aspect-independent rejection of Spot Light (20) and 17-row authored upper bound"
+      "read-only installed-client 3840x2160 selection from matching Unity and game registry values",
+      "selected-aspect initial AABB, authored OBB, and type-specific geometry for all twelve room rows",
+      "exact 11-row selected-aspect room subset, Spot Light (20) rejection, and 17-row authored upper bound"
     ],
     "open": [
       "target-frame HGCullingSystem.CullLights pointer/count and survivors",
-      "aspect-dependent AABB outcomes for the other eleven room rows",
       "character-light cull outcomes and evaluated follower transforms",
+      "room outcomes for display aspects other than this installed-client 16:9 selection",
       "persistent/global carry-in or runtime-created custom lights",
       "final priority/distance order, LightDataBuffer rows, and lightCount"
     ],
-    "decision": "Use 18 as the exact known serialized input population and 17 only as its current native survivor upper bound. Do not publish either as the retail survivor array or enable deferred pass 0 until the target-frame result is captured or otherwise source-closed."
+    "decision": "Use 18 as the exact known serialized input population, 11 as the exact selected-aspect authored room contribution, and 17 only as the combined authored survivor upper bound. Do not publish the latter as the retail survivor array or enable deferred pass 0 until the target-frame result is captured or otherwise source-closed."
   }
 }

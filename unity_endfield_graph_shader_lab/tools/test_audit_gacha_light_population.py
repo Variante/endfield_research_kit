@@ -68,6 +68,53 @@ def native_cull_fixtures() -> tuple[dict, dict, dict, list[dict]]:
 
 
 class GachaLightPopulationAuditTests(unittest.TestCase):
+    def test_installed_resolution_gate(self) -> None:
+        result = AUDIT.validate_installed_resolution(
+            {
+                "screenWidth": 3840,
+                "screenHeight": 2160,
+                "videoWidth": 3840,
+                "videoHeight": 2160,
+            },
+            "fixture registry",
+        )
+        self.assertEqual(result["gameVideo"], {"width": 3840, "height": 2160})
+
+    def test_installed_resolution_mismatch_reports_values(self) -> None:
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=gacha_light_population; check=installed_resolution_values;.*"
+            r"actual=.*1920",
+        ):
+            AUDIT.validate_installed_resolution(
+                {
+                    "screenWidth": 3840,
+                    "screenHeight": 2160,
+                    "videoWidth": 1920,
+                    "videoHeight": 1080,
+                },
+                "fixture registry",
+            )
+
+    def test_selected_aspect_room_survivor_gate(self) -> None:
+        AUDIT.validate_room_survivor_names(
+            AUDIT.ROOM_SURVIVOR_SUBSEQUENCE,
+            ["Spot Light (20)"],
+            "fixture geometry",
+        )
+
+    def test_selected_aspect_room_survivor_mismatch_reports_names(self) -> None:
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"validator=gacha_light_population; check=selected_aspect_room_survivors;.*"
+            r"actual=\['Spot Light \(12\)'\]",
+        ):
+            AUDIT.validate_room_survivor_names(
+                ["Spot Light (12)"],
+                ["Spot Light (20)"],
+                "fixture geometry",
+            )
+
     def test_successful_lua_gate(self) -> None:
         result = AUDIT.validate_lua_contract(GOOD_LUA, "fixture.lua")
         self.assertEqual(result["selectedChild"], "light_overview")

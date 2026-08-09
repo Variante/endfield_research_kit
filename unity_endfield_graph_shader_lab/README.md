@@ -1501,12 +1501,14 @@ character-light shadow request. Run
 Lua, tables, prefabs, group membership, and native follower-method evidence.
 The same audit now also pins the native normal candidate core. The shipped
 Gacha route has `useFallbackLightCulling=false` and `0 x 0` occlusion
-dimensions. At the settled held-camera sample, `Spot Light (20)` is rejected
-by an aspect-independent top-plane test, reducing the known authored survivor
-upper bound from 18 to 17; the other 11 room rows keep an exact conditional
-relative order. Their horizontal AABB results still depend on the live final
-render-target aspect, and character-light culling plus unrelated live lights
-remain open, so neither 18 nor 17 is the target-frame survivor array.
+dimensions. Read-only installed-client registry values independently store
+`3840x2160` in Unity and game settings. At that selected 16:9 aspect, the
+hash-pinned native AABB, authored OBB, point-sphere, and spot-cone paths admit
+exactly 11 room rows; only `Spot Light (20)` is rejected. This closes the
+selected-aspect authored room subset while retaining 17 as the combined
+authored survivor upper bound. Character-light follower transforms/culling,
+other display aspects, and unrelated live lights remain open, so 17 is not the
+target-frame survivor array.
 Offline IL2CPP/xref recovery now fixes the handoff precisely:
 `LightCullResult` is `visibleLightsPtr + visibleLightCount`; its only direct
 producer is `HGCullingSystem.CullLights`, both GameAssembly call sites belong

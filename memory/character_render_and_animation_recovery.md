@@ -57,11 +57,12 @@ NPC archetypes are imported as labeled source kits.
   prefabs now close the known authored input as 6 `light_overview` lights + 12
   `SceneLight6Rarity` lights: 3 type 0, 15 type 2, zero authored cookies, one
   shadow request, and four bone followers. The shipped Gacha cull route uses
-  the normal core with fallback and occlusion disabled; its settled camera
-  sample rejects `Spot Light (20)` independently of aspect, tightening the
-  known authored survivor upper bound to 17. The other room AABB outcomes
-  still depend on live horizontal planes/final aspect, while character-light
-  culling and unrelated runtime lights remain open. Only an authorized
+  the normal core with fallback and occlusion disabled. Matching read-only
+  Unity/game settings select `3840x2160`; at that 16:9 aspect, native AABB,
+  authored OBB, point-sphere, and spot-cone tests admit exactly 11 room lights
+  and reject only `Spot Light (20)`, retaining 17 as the combined authored
+  survivor upper bound. Character-light follower transforms/culling, other
+  aspects, and unrelated runtime lights remain open. Only an authorized
   target-frame array capture can settle the live survivor order and final
   retail `lightCount`.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
@@ -261,9 +262,10 @@ runtime code, or shaders rather than hand-editing generated prefabs.
 
 ## Highest-value next work
 
-1. Recover the remaining aspect-dependent room AABB and character-light cull
-   outcomes, then the retail survivor list from the source-closed 18-row input
-   / 17-row upper bound while preserving runtime/custom carry-in; populate
+1. Recover the six character-light follower transforms/cull outcomes, then the
+   retail survivor list from the source-closed 18-row input, exact selected-
+   aspect 11-row room subset, and 17-row combined upper bound while preserving
+   other display aspects and runtime/custom carry-in; populate
    exact shadow, depth, GBuffer, irradiance, non-empty cookie, and VisibilitySH
    inputs afterward.
 2. Validate selected paths against accepted retail captures.
