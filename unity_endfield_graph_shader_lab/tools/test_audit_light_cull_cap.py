@@ -198,6 +198,45 @@ class LightCullCapAuditTests(unittest.TestCase):
             ):
                 AUDIT.validate_unity_cull_view_constructor(image)
 
+    def test_unity_scheduled_culling_boundary(self) -> None:
+        result = AUDIT.validate_unity_scheduled_culling_boundary(
+            AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        )
+        self.assertEqual(result["internalCall"]["index"], 3315)
+        self.assertFalse(
+            result["perViewVisibilityPredicate"][
+                "screenSizeMinimumSquaredAt0x18Read"
+            ]
+        )
+        self.assertEqual(result["rendererCandidateRecord"]["sizeBytes"], 28)
+        self.assertEqual(
+            result["rendererCandidateRecord"]["fields"][-1],
+            {
+                "name": "lodScreenSizeMinSquared",
+                "offset": "0x18",
+                "sizeBytes": 4,
+            },
+        )
+
+    def test_changed_scheduled_cull_predicate_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x180FEAEF0 and size == 0x60:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_scheduled_cull_camera_type_0x80_sphere_predicate_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_scheduled_culling_boundary(image)
+
 
 if __name__ == "__main__":
     unittest.main()

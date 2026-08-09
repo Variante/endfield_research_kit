@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v3",
-  "status": "installed_cap_cull_view_native_producer_and_capture_abi_source_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. Its downstream screen-threshold job formula, the target-frame pointer/count and unrelated live native lights remain capture-only.",
+  "schema": "endfield.recovered-light-cull-cap.v4",
+  "status": "installed_cap_cull_view_dispatch_predicates_and_capture_abi_source_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. DispatchBatchCullingJobs selects an exact six-plane AABB predicate, except cameraType 0x80 selects an exact sphere/distance predicate; neither reads cull-view +0x18. A separate 28-byte renderer candidate record owns LOD max/min squared at +0x14/+0x18. The later view/candidate screen-threshold equation, target-frame pointer/count, and unrelated live native lights remain capture-only.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -468,7 +468,7 @@
           "generic visibility then culling-mask evaluation order"
         ],
         "open": [
-          "downstream scheduled-job screen-size threshold equation",
+          "later renderer/entity screen-size threshold equation",
           "a separate consumer, if any, for the forwarded sceneCullingMask slot",
           "target-frame runtime overrides and final survivor rows"
         ]
@@ -538,6 +538,201 @@
         }
       ]
     },
+    "unityPlayerScheduledCullingBoundary": {
+      "internalCall": {
+        "index": 3315,
+        "name": "UnityEngine.HyperGryph.HGCullingSystem::DispatchBatchCullingJobs",
+        "targetVirtualAddress": "0x1800FAFC0"
+      },
+      "callChain": [
+        "0x1800FAFC0 internal-call binding",
+        "0x181053400 outer dispatch",
+        "0x181053010 copy/schedule path",
+        "0x181053730 scheduled batch core"
+      ],
+      "perViewVisibilityPredicate": {
+        "selection": "cameraType == 0x80 selects 0x180FEAEF0; all other values select 0x180FEAEB0 -> 0x181049010",
+        "standard": "six normalized view planes at +0x58/+0x5C test the candidate AABB center and extent",
+        "cameraType0x80": "distanceSquared <= (max(candidateExtent) + view.occlusionScreenSizeMinimumSquared@+0x34)^2",
+        "screenSizeMinimumSquaredAt0x18Read": false,
+        "boundary": "the two complete hash-pinned predicates selected by this dispatch stage do not read cull-view +0x18; this does not prove that later renderer/entity jobs omit the threshold"
+      },
+      "rendererCandidateRecord": {
+        "sizeBytes": 28,
+        "fields": [
+          {
+            "name": "batchKey",
+            "offset": "0x00",
+            "sizeBytes": 4
+          },
+          {
+            "name": "renderFlags",
+            "offset": "0x04",
+            "sizeBytes": 4
+          },
+          {
+            "name": "mesh",
+            "offset": "0x08",
+            "sizeBytes": 4
+          },
+          {
+            "name": "material",
+            "offset": "0x0C",
+            "sizeBytes": 4
+          },
+          {
+            "name": "subMeshIndex",
+            "offset": "0x10",
+            "sizeBytes": 4
+          },
+          {
+            "name": "lodScreenSizeMaxSquared",
+            "offset": "0x14",
+            "sizeBytes": 4
+          },
+          {
+            "name": "lodScreenSizeMinSquared",
+            "offset": "0x18",
+            "sizeBytes": 4
+          }
+        ],
+        "evidence": "independent retail serializer and deserializer offsets plus embedded native field names",
+        "fieldNameEvidence": [
+          {
+            "virtualAddress": "0x181E1E5D8",
+            "name": "batchKey"
+          },
+          {
+            "virtualAddress": "0x181E1E5E8",
+            "name": "renderFlags"
+          },
+          {
+            "virtualAddress": "0x181CF20A0",
+            "name": "mesh"
+          },
+          {
+            "virtualAddress": "0x181CF2268",
+            "name": "material"
+          },
+          {
+            "virtualAddress": "0x181E1E5F8",
+            "name": "subMeshIndex"
+          },
+          {
+            "virtualAddress": "0x181E1E608",
+            "name": "lodScreenSizeMaxSquared"
+          },
+          {
+            "virtualAddress": "0x181E1E620",
+            "name": "lodScreenSizeMinSquared"
+          }
+        ],
+        "notCullViewRecord": true
+      },
+      "evidenceBoundary": {
+        "closed": [
+          "DispatchBatchCullingJobs internal-call binding and native call chain",
+          "camera-type predicate selection",
+          "standard six-plane AABB predicate",
+          "cameraType 0x80 sphere/distance predicate",
+          "absence of cull-view +0x18 from those two selected predicates",
+          "the distinct 28-byte renderer candidate LOD record layout"
+        ],
+        "open": [
+          "later renderer/entity LOD comparison that combines view and candidate screen thresholds",
+          "whether the installed zero view threshold makes that later gate unconditional",
+          "target-frame runtime overrides and final survivor rows"
+        ]
+      },
+      "verifiedBodies": [
+        {
+          "label": "dispatch_binding",
+          "virtualAddress": "0x1800FAFC0",
+          "sizeBytes": 25,
+          "sha256": "5374f3351e8db1e2c98274dcc8fe4304eec2138606b4d88231fc96c7d41c391e"
+        },
+        {
+          "label": "dispatch_outer",
+          "virtualAddress": "0x181053400",
+          "sizeBytes": 814,
+          "sha256": "b894f16e1cc3c7bbfba8c3efed4184eebc75cc5700e4eb89b7009f3064ce3fbd"
+        },
+        {
+          "label": "dispatch_copy_and_schedule",
+          "virtualAddress": "0x181053010",
+          "sizeBytes": 999,
+          "sha256": "49163e4ac499ee881865d2fb39c85faa58a7ea91d684b320e5ca3b72a29a4557"
+        },
+        {
+          "label": "scheduled_batch_core",
+          "virtualAddress": "0x181053730",
+          "sizeBytes": 11518,
+          "sha256": "e98d6f1048d417b86a65a9a8328e6edf7fbc9f2d91e3c94464e4586e1bb5eb45"
+        },
+        {
+          "label": "standard_predicate_wrapper",
+          "virtualAddress": "0x180FEAEB0",
+          "sizeBytes": 33,
+          "sha256": "8c83c911f9db7bddebde8c12e9433b63ce67479df1b141819dff9e476149a241"
+        },
+        {
+          "label": "six_plane_aabb_predicate",
+          "virtualAddress": "0x181049010",
+          "sizeBytes": 156,
+          "sha256": "06fe6ad29ba950c501467a9d52f7a43326795ed425ea286bb6e474523825e4fc"
+        },
+        {
+          "label": "camera_type_0x80_sphere_predicate",
+          "virtualAddress": "0x180FEAEF0",
+          "sizeBytes": 96,
+          "sha256": "e0404f9a11a72bc0c563e51e1c55fe16c4e5df6a4740a7f07501c32ec09254f5"
+        },
+        {
+          "label": "renderer_candidate_serializer",
+          "virtualAddress": "0x18106FD70",
+          "sizeBytes": 476,
+          "sha256": "285455b0862cf34c1b0aaeb7b198489c9dc805d7e3921424b07d75239fdfe0f2"
+        },
+        {
+          "label": "renderer_candidate_deserializer",
+          "virtualAddress": "0x1810701C0",
+          "sizeBytes": 620,
+          "sha256": "9ad71baa660f3e2547417faad460a8667bc22e98f4c2360c7f8f8a4e2cff3d72"
+        }
+      ],
+      "verifiedInstructionSlices": [
+        {
+          "label": "view_predicate_selection",
+          "virtualAddress": "0x181053A14",
+          "sizeBytes": 30,
+          "sha256": "09a4cd726411f2e11e4b813ca59a3168f8264543731ba03ee614b9600a2161b8"
+        },
+        {
+          "label": "view_predicate_call",
+          "virtualAddress": "0x181053C41",
+          "sizeBytes": 54,
+          "sha256": "f6e75fabd9492ce09ec019e2efff31611b1951aba41bd3d60203d1959e8c982b"
+        },
+        {
+          "label": "camera_type_0x80_equation",
+          "virtualAddress": "0x180FEAEF0",
+          "sizeBytes": 96,
+          "sha256": "e0404f9a11a72bc0c563e51e1c55fe16c4e5df6a4740a7f07501c32ec09254f5"
+        },
+        {
+          "label": "renderer_lod_offsets_write",
+          "virtualAddress": "0x18106FEB6",
+          "sizeBytes": 91,
+          "sha256": "43994561214bd65b537bb217fabe9340cedbd1a8f7bd425132111e72106853e3"
+        },
+        {
+          "label": "renderer_lod_offsets_read",
+          "virtualAddress": "0x1810703F1",
+          "sizeBytes": 39,
+          "sha256": "d21aad86fe8306dc75ca9f521de6f21d0f02d8238bd22915b1b2d8c539f47ca1"
+        }
+      ]
+    },
     "desktopNoSecondTruncation": true
   },
   "sourceFiles": {
@@ -573,13 +768,16 @@
       "both GameAssembly DoECSCulling call sites and their exact input/result registers",
       "the 16-byte LightCullResult pointer/count ABI and NativeArray projection",
       "the 148-byte VisibleLight capture stride plus SetupState type, priority, and world-position offsets",
-      "the AddCullViewByMatrix binding, six-plane constructor, view layout, and generic visibility/mask gate order"
+      "the AddCullViewByMatrix binding, six-plane constructor, view layout, and generic visibility/mask gate order",
+      "the DispatchBatchCullingJobs binding, camera-type predicate split, and exact selected predicates",
+      "the distinct 28-byte renderer candidate LOD record with max/min squared fields at +0x14/+0x18"
     ],
     "captureOnly": [
       "target-frame LightCullResult pointer, count, and 148-byte rows",
       "unrelated active native lights",
       "arbitrary/asymmetric final selected-view planes",
-      "the downstream scheduled-job screen-size threshold equation",
+      "the later renderer/entity equation combining view and candidate screen-size thresholds",
+      "whether the installed zero view threshold makes that later gate unconditional",
       "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
     ]

@@ -1535,8 +1535,16 @@ camera's `cullingMask` lands at view `+0x4`; the squared
 default route. Native candidate evaluation tests synchronous visibility bit 0,
 then mask-enabled bit 0, then `view.cullingMask & candidate.layerMask`.
 `sceneCullingMask` is forwarded but the complete hash-pinned constructor does
-not read its slot. Any separate consumer and the downstream scheduled-job
-screen-threshold equation remain explicit boundaries.
+not read its slot. Internal call 3315 now closes the next dispatch boundary:
+normal views select the exact six-plane AABB predicate, while
+`cameraType == 0x80` selects the exact sphere/distance predicate; neither reads
+view `+0x18`. Independent retail serializer/deserializer code fixes a distinct
+28-byte renderer candidate record as `batchKey`, `renderFlags`, `mesh`,
+`material`, `subMeshIndex`, `lodScreenSizeMaxSquared`, and
+`lodScreenSizeMinSquared`, with the LOD pair at `+0x14/+0x18`. The later
+renderer/entity job equation combining those candidate bounds with the view
+threshold, any separate `sceneCullingMask` consumer, and whether zero makes the
+later gate unconditional remain explicit boundaries.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
 binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
 value still requires an explicitly authorized target-frame capture of that
