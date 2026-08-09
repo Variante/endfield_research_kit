@@ -51,8 +51,14 @@ NPC archetypes are imported as labeled source kits.
   all 56 matrix/params/params2 rows plus texel size before callback `b__49_2`
   publishes section enum 1 and binds the atlas. The disabled callback binds
   only a default texture and never publishes b34, so no neutral fixture is
-  proven. Capture the settled section and matching
-  `_PunctualLightShadowTexV2` immediately before `0x189b57155`.
+  proven. The matching native `Punctual Shadowmap` RTHandle is now closed too:
+  `4T x 4T` with no dynamic casters, otherwise
+  `(ceil(N/4)+4)T x 4T`; one Depth16 Tex2D slice, Point/Clamp, shadow-map
+  sampling, and no mip/UAV/MSAA. The enabled path imports and binds this
+  RTHandle; the disabled path uses the exact
+  `HGRenderGraphDefaultResources.defaultShadowTexture`. Platform-resolved
+  depth format, settled dimensions/texels/cache allocation, and matching b34
+  values still require one capture immediately before `0x189b57155`.
 - Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
   initialization/upload and `cookieIndex >= 0` consumer guard closed. The
   source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off

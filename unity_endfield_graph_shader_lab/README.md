@@ -1992,9 +1992,15 @@ only. The exact enabled frame writer is also pinned: it serializes all 56
 matrix/params/params2 rows plus atlas texel size, then callback `b__49_2`
 publishes section enum `1` and binds the atlas. The disabled callback binds
 only a RenderGraph default texture and does not publish b34, so it proves no
-zero/neutral buffer. Publication remains fail-closed until the settled 6,144-
-byte section and matching `_PunctualLightShadowTexV2` are captured together
-immediately before the callback bind at `0x189b57155`. Binding 37 now has its native
+zero/neutral buffer. The matching atlas allocation and binding are now
+source-closed: `Punctual Shadowmap` is `4T x 4T` with no dynamic casters and
+`(ceil(N/4)+4)T x 4T` otherwise, with one Depth16 Tex2D slice, Point/Clamp,
+shadow-map sampling, and no mip/UAV/MSAA. The enabled path imports its RTHandle
+and binds `_PunctualLightShadowTexV2`; the disabled path binds the exact
+`HGRenderGraphDefaultResources.defaultShadowTexture`. Publication remains
+fail-closed until the platform-resolved depth format, settled dimensions and
+texels/cache allocation, and matching 6,144-byte section are captured together
+immediately before `0x189b57155`. Binding 37 now has its native
 `HGLightCookieManager` initialization,
 32-record atlas/matrix layout, exact 2,560-byte upload, and `-1` no-cookie guard
 closed. A default-off publisher emits the exact all-zero buffer only for the
