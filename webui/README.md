@@ -179,9 +179,11 @@ sns_topic_map02_lv005_12002
   server-selected successor.
 - Original DialogTree definition cards expose normal-option route validation.
   The binary-proven `NormalOptionData.index` selects a physical outgoing edge,
-  including positions around extra-option edges. Unequal option/connection
-  counts are allowed when exact indexes resolve; invalid or identity-less
-  authored routes remain visible and fail closed. OCR and manual overrides are
+  including positions around extra-option edges, and `ShowOptions` sets
+  `doNext` before normal selection. Unequal option/connection counts are allowed
+  when exact indexes resolve. Unreferenced definitions, linked zero-edge nodes,
+  and out-of-bounds indexes remain visibly distinct and fail closed; a missing
+  edge is not presented as a terminal choice. OCR and manual overrides are
   never route evidence.
 - Manual Story order and OCR proposals are cross-reference material, not graph
   evidence.

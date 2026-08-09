@@ -64,6 +64,7 @@ def _unrecoverable_option_routes(
     node_id: str,
     node_ordinal: int,
     issue: dict[str, Any],
+    failure_class: str,
 ) -> list[dict[str, Any]]:
     """Retain every option under a node whose graph identity is unusable."""
     if not isinstance(option_rows, list):
@@ -83,6 +84,7 @@ def _unrecoverable_option_routes(
                 "optionId": option_id,
                 "status": "rejected",
                 "evidenceKind": "normal_option_serialized_connection_index",
+                "failureClass": failure_class,
                 "issue": {
                     **issue,
                     "optionOrdinal": option_ordinal,
@@ -107,6 +109,7 @@ def recover_dialog_tree_option_routes(
     """
     defaults = runtime_defaults or {}
     node_by_id: dict[str, dict[str, Any]] = {}
+    node_ordinal_by_id: dict[str, int] = {}
     issues: list[dict[str, Any]] = []
     counts: Counter[str] = Counter()
     unrecoverable_node_rows: list[dict[str, Any]] = []
@@ -136,14 +139,19 @@ def recover_dialog_tree_option_routes(
                     node_id=node_id,
                     node_ordinal=ordinal,
                     issue=issue,
+                    failure_class="unreferenced_option_definition",
                 )
                 counts["unrecoverableOptionNodes"] += 1
+                counts["unreferencedOptionDefinitionNodes"] += 1
                 counts["rejectedNormalOptionRoutes"] += len(routes)
                 counts["unrecoverableNormalOptionRoutes"] += len(routes)
+                counts["unreferencedOptionDefinitionRoutes"] += len(routes)
                 unrecoverable_node_rows.append(
                     {
                         "nodeId": None,
                         "nodeOrdinal": ordinal,
+                        "routingClass": "unreferenced_option_definition",
+                        "serializedReferenceIdentity": False,
                         "normalOptionCount": (
                             len(option_rows) if isinstance(option_rows, list) else 0
                         ),
@@ -166,6 +174,7 @@ def recover_dialog_tree_option_routes(
                     node_id=node_id,
                     node_ordinal=ordinal,
                     issue=issue,
+                    failure_class="ambiguous_node_identity",
                 )
                 counts["unrecoverableOptionNodes"] += 1
                 counts["rejectedNormalOptionRoutes"] += len(routes)
@@ -174,6 +183,8 @@ def recover_dialog_tree_option_routes(
                     {
                         "nodeId": node_id,
                         "nodeOrdinal": ordinal,
+                        "routingClass": "ambiguous_node_identity",
+                        "serializedReferenceIdentity": True,
                         "normalOptionCount": (
                             len(option_rows) if isinstance(option_rows, list) else 0
                         ),
@@ -184,8 +195,10 @@ def recover_dialog_tree_option_routes(
                 )
             continue
         node_by_id[node_id] = node
+        node_ordinal_by_id[node_id] = ordinal
 
     targets_by_source: dict[str, list[str]] = defaultdict(list)
+    incoming_by_target: Counter[str] = Counter()
     for ordinal, connection in enumerate(connections):
         if not isinstance(connection, dict):
             issues.append(
@@ -209,6 +222,7 @@ def recover_dialog_tree_option_routes(
             )
             continue
         targets_by_source[source_id].append(target_id)
+        incoming_by_target[target_id] += 1
 
     node_rows: list[dict[str, Any]] = list(unrecoverable_node_rows)
     routes_by_node_id: dict[str, list[dict[str, Any]]] = {}
@@ -229,6 +243,7 @@ def recover_dialog_tree_option_routes(
             continue
 
         outgoing = list(targets_by_source.get(node_id, []))
+        incoming_count = incoming_by_target.get(node_id, 0)
         extra_indices = [
             index
             for index, target_id in enumerate(outgoing)
@@ -292,6 +307,7 @@ def recover_dialog_tree_option_routes(
                     "actual": type(option).__name__,
                 }
                 route["issue"] = issue
+                route["failureClass"] = "invalid_normal_option_shape"
                 node_issues.append(issue)
                 routes.append(route)
                 counts["rejectedNormalOptionRoutes"] += 1
@@ -305,6 +321,7 @@ def recover_dialog_tree_option_routes(
                     "optionOrdinal": option_ordinal,
                 }
                 route["issue"] = issue
+                route["failureClass"] = "missing_normal_option_identity"
                 node_issues.append(issue)
                 routes.append(route)
                 counts["rejectedNormalOptionRoutes"] += 1
@@ -329,11 +346,17 @@ def recover_dialog_tree_option_routes(
                     "actual": index_source,
                 }
                 route["issue"] = issue
+                route["failureClass"] = "invalid_serialized_connection_index"
                 node_issues.append(issue)
                 routes.append(route)
                 counts["rejectedNormalOptionRoutes"] += 1
                 continue
             if connection_index < 0 or connection_index >= len(outgoing):
+                failure_class = (
+                    "linked_option_node_without_outgoing_connections"
+                    if not outgoing
+                    else "serialized_connection_index_out_of_bounds"
+                )
                 issue = {
                     "gate": "normalOptionConnectionIndexBounds",
                     "nodeId": node_id,
@@ -346,6 +369,7 @@ def recover_dialog_tree_option_routes(
                     "actual": connection_index,
                 }
                 route["issue"] = issue
+                route["failureClass"] = failure_class
                 node_issues.append(issue)
                 routes.append(route)
                 counts["rejectedNormalOptionRoutes"] += 1
@@ -373,9 +397,37 @@ def recover_dialog_tree_option_routes(
         issues.extend(node_issues)
         routes_by_node_id[node_id] = routes
         unmapped_indices = sorted(set(range(len(outgoing))) - referenced_indices)
+        rejected_route_count = sum(
+            route.get("status") != "validated" for route in routes
+        )
+        out_of_bounds_route_count = sum(
+            route.get("failureClass")
+            == "serialized_connection_index_out_of_bounds"
+            for route in routes
+        )
+        if not outgoing and option_rows:
+            routing_class = "linked_option_node_without_outgoing_connections"
+            counts["linkedOptionNodesWithoutOutgoingConnections"] += 1
+            counts["linkedNormalOptionsWithoutOutgoingConnections"] += len(
+                option_rows
+            )
+        elif rejected_route_count:
+            routing_class = "linked_option_node_with_partial_index_coverage"
+            counts["linkedOptionNodesWithPartialIndexCoverage"] += 1
+            counts["serializedConnectionIndexesOutOfBounds"] += (
+                out_of_bounds_route_count
+            )
+        elif len(option_rows) != len(outgoing):
+            routing_class = "unequal_count_node_with_exact_index_coverage"
+        else:
+            routing_class = "exact_index_coverage"
         node_rows.append(
             {
                 "nodeId": node_id,
+                "nodeOrdinal": node_ordinal_by_id[node_id],
+                "routingClass": routing_class,
+                "serializedReferenceIdentity": True,
+                "incomingConnectionCount": incoming_count,
                 "normalOptionCount": len(option_rows),
                 "outgoingConnectionCount": len(outgoing),
                 "hasExtraOption": has_extra,

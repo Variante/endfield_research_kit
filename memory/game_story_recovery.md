@@ -88,11 +88,16 @@ never promotes an edge.
   list, so normal-option list ordinal and option/connection-count equality are
   not route evidence. The shared decoder uses only the serialized index (or
   binary-validated omitted-`Int32` zero), and never filename, suffix, layout,
-  OCR, or override signals. Across all 2,579 original DialogTrees, 2,682
-  authored option nodes contain 4,403 normal options: 4,383 routes validate,
-  while 20 fail closed, including seven options under five nodes without usable
-  graph identity. Sixty-seven extra-option nodes validate the binary pattern;
-  77 unequal-count nodes are retained rather than categorically rejected.
+  OCR, or override signals. `DialogManager.ShowOptions` also sets the
+  hash-validated `DialogTreeOptionBase.doNext` field before selection, so an
+  absent physical edge is not a terminal-choice signal. Across all 2,579
+  original DialogTrees, 2,682 authored option nodes contain 4,403 normal
+  options: 4,383 routes validate while 20 fail closed. Those 20 are now fully
+  partitioned by original graph structure: seven options are unreferenced
+  definitions without serialized graph identity, eight belong to five linked
+  nodes with no outgoing edge, and five carry an out-of-bounds index on a
+  partially connected node. Sixty-seven extra-option nodes validate the binary
+  pattern; 77 unequal-count nodes are retained rather than categorically rejected.
   The mission-observed subset validates 1,199 routes in 434 files and rejects
   one out-of-bounds authored route. The current corpus yields 35 exact
   option-to-objective dependencies across 17 missions, with 65 default-backed
@@ -100,9 +105,9 @@ never promotes an edge.
   are localization values, not global branch identities: `dlg_sm2l1m1_3`
   reuses two IDs under distinct option nodes reached through different IfNode
   arms, so producer agreement is scoped by original node and option slot.
-  Duplicate Timeline clips must agree within their runtime option scope. These rows prove an
-  objective dependency, not player selection, dialog activation, server
-  successor choice, or total Story-file order.
+  Duplicate Timeline clips must agree within their runtime option scope. These
+  rows prove an objective dependency, not player selection, dialog activation,
+  server successor choice, or total Story-file order.
 
 ## LevelScript and native conclusions
 
@@ -212,9 +217,10 @@ Reject as proof:
    current sparse partial order into a total order by heuristic sorting.
 5. Revisit option gaps only when new runtime route evidence appears; most
    no-route rows are single-option acknowledgements or already bounded
-   cosmetic/shared definitions. Investigate the 20 corpus-level rejected
-   normal-option routes by their structured identity/index diagnostics; do not
-   repair them with positional replication or object-specific exceptions.
+   cosmetic/shared definitions. The 20 corpus-level rejected normal-option
+   routes are structurally classified; revisit them only if a new original
+   connection or native fallback appears. Do not repair them with positional
+   replication or object-specific exceptions.
 
 The current source-only gap queue ranks actionable isolated scenes by mission.
 Use it as a work queue, not as a proposed Story order.
