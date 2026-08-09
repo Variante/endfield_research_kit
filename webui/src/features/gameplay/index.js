@@ -3,7 +3,7 @@
   const COLLAPSED_KINDS_STORAGE_KEY = "gameplay_collapsed_kinds";
   const LEVEL_FRACTION_STORAGE_KEY = "gameplay_level_fraction";
   const GAMEPLAY_DATA_VERSION = "20260809-gp10";
-  const GAMEPLAY_INTEGRATION_VERSION = "20260809-sfx2";
+  const GAMEPLAY_INTEGRATION_VERSION = "20260809-sfx3";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   // Fixed display order for the data-type groups in the list.
   const KIND_ORDER = ["character", "weapon", "equipment", "item", "enemy"];
@@ -1266,10 +1266,22 @@
   function renderGameplaySoundEvidence(event, audio) {
     const roots = Number(event?.playRootCount || 0) || new Set(audio.flatMap((row) => gameplaySoundMediaEvidence(row).roots)).size;
     const relations = gameplaySoundRelationLabels(event?.mediaRelationTypes || audio.flatMap((row) => (row?.wwiseMediaEvidence || []).flatMap((evidence) => evidence?.relationTypes || [])));
+    const selectorEvidence = event?.selectorEvidence || {};
+    const selectorRelations = Object.entries(selectorEvidence.containers || {}).map(([relation, counts]) => {
+      const label = gameplaySoundRelationLabels([relation])[0] || readableIntegrationId(relation);
+      return `${label}: ${Number(counts?.nodeCount || 0)} ${text("soundSelectorNodes")} / ${Number(counts?.childEdgeCount || 0)} ${text("soundSelectorEdges")}`;
+    });
+    const definitions = Number(selectorEvidence.bankDefinitionCount || 0);
+    const stopActions = Number(selectorEvidence.rootStopActionCount || 0);
+    const animationCallbacks = Number(event?.animationOccurrenceCount || 0)
+      || (event?.evidence || []).filter((row) => row?.kind === "animationClipEvent").length;
+    const animationClips = Number(event?.animationClipCount || 0)
+      || new Set((event?.sourceAnimationClips || []).filter(Boolean)).size;
     const isPartial = event?.traversalStatus === "partial";
     const status = isPartial ? text("soundTraversalPartial") : event?.traversalStatus === "complete" ? text("soundTraversalTyped") : text("soundTraversalDirect");
     const branch = roots ? `${roots} ${text("soundPlayBranches")}` : text("soundDirectMedia");
-    return `<div class="gameplay-sfx-evidence"><span>${escapeHtml(branch)}</span>${relations.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}<span class="${isPartial ? "is-partial" : ""}">${escapeHtml(status)}</span></div>`;
+    const relationLabels = selectorRelations.length ? selectorRelations : relations;
+    return `<div class="gameplay-sfx-evidence"><span>${escapeHtml(branch)}</span>${animationCallbacks ? `<span>${escapeHtml(`${animationCallbacks} ${text("soundAuthoredCallbacks")} / ${animationClips} ${text("soundAnimationClips")}`)}</span>` : ""}${definitions ? `<span>${escapeHtml(`${definitions} ${text("soundBankDefinitions")}`)}</span>` : ""}${stopActions ? `<span>${escapeHtml(`${stopActions} ${text("soundStopActions")}`)}</span>` : ""}${relationLabels.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}<span class="${isPartial ? "is-partial" : ""}">${escapeHtml(status)}</span></div>`;
   }
 
   function renderGameplaySoundCandidateList(event, audio) {
@@ -1378,12 +1390,15 @@
     return `<details class="gameplay-related-sfx"><summary><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(gameplaySoundCountText(playableEvents, options))}</span>${confidence}</summary><p>${escapeHtml(options.note || text("soundRuntimeNote"))}</p>${renderGameplaySoundActionGroups(playableEvents, options)}</details>`;
   }
 
-  function renderActiveSkillSoundEffects(group) {
-    const groups = STATE.integration.soundEffects?.characters?.[STATE.selected?.id]?.groups || {};
-    const soundGroup = groups[group?.id] || {};
-    return renderGameplaySoundGroup(soundGroup.events || [], {
-      confidence: soundGroup.ownershipConfidence === "inferred" ? "inferred" : "",
-    });
+  function renderCharacterSkillSounds(entry) {
+    const groups = STATE.integration.soundEffects?.characters?.[entry?.id]?.groups || {};
+    return (entry?.skillGroups || []).map((group) => {
+      const soundGroup = groups[group?.id] || {};
+      return renderGameplaySoundGroup(soundGroup.events || [], {
+        label: group?.name || group?.typeLabel || text("relatedSoundEffects"),
+        confidence: soundGroup.ownershipConfidence === "inferred" ? "inferred" : "",
+      });
+    }).join("");
   }
 
   function renderEnemySoundEffects(entry) {
@@ -1449,6 +1464,10 @@
       confidence: "direct",
       note: text("profileVoiceNote"),
     })}`;
+  }
+
+  function renderCharacterSoundEffects(entry) {
+    return `${renderCharacterSkillSounds(entry)}${renderCharacterAnimationSounds(entry)}`;
   }
 
   function renderCharacterProjectileCompact(match) {
@@ -1596,7 +1615,6 @@
         <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
         ${renderActiveSkillCombatMeta(group)}
         ${renderDescription(group.description)}
-        ${renderActiveSkillSoundEffects(group)}
       </div>
       ${renderActiveSkillLevels(group)}
       ${renderActiveSkillProjectiles(group)}
@@ -1643,7 +1661,6 @@
       facts,
       body: [
         section(text("characterAssets"), characterAssets),
-        section(text("characterActionAudio"), renderCharacterAnimationSounds(entry)),
         section(text("characterSkills"), skillRows || unresolvedProjectiles ? `${skillRows ? `<div class="gameplay-active-skill-table${STATE.showDebug ? " is-debug" : ""}">${renderActiveSkillTableHeader()}<p class="gameplay-projectile-coverage-note">${escapeHtml(text("projectileCoverageNote"))}</p>${skillRows}</div>` : ""}${unresolvedProjectiles}` : ""),
         section(text("talents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : "")),
         section(text("characterBreakthroughs"), renderCharacterBreakthroughs(entry)),
@@ -2858,7 +2875,9 @@
     const integrated = renderIntegratedSections(entry);
     const trailingAudio = entry.kind === "enemy"
       ? section(text("relatedSoundEffects"), renderEnemySoundEffects(entry))
-      : "";
+      : entry.kind === "character"
+        ? section(text("relatedSoundEffects"), renderCharacterSoundEffects(entry))
+        : "";
     gp$("#gameplay-detail-body").innerHTML = `${rendered.body || ""}${integrated}${trailingAudio}`;
     bindGameplayMediaPlayers(detail);
     bindIntegratedLinks(detail);
