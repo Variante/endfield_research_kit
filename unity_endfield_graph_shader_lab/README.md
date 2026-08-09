@@ -2201,7 +2201,7 @@ original DXBC-shell `EndfieldCB4` bridge, with unknown words zero and unchanged
 beauty output. This source-closes only that consumer subset; general-scene
 punctual records and pass 0 remain open.
 
-`ShaderVariablesGlobal` b35 is now exactly scoped before implementation. The
+`ShaderVariablesGlobal` b35 is now exactly scoped and transported. The
 selected body references 33 fields, and installed native reset producers close
 atmosphere rows c71..c76, height-fog rows c77..c82, and disabled-volumetric rows
 c83..c87. Current constructors, `IsActive`/camera getters, and the selected
@@ -2218,9 +2218,12 @@ environment volume selects `CharInfo_Env`; installed
 c135..c137 each equal the serialized ambient-SH reorder
 `(SH3,SH1,SH2,SH0) * skyDirectIntensity`, exactly
 `(-0.0075507611,0.4722373188,0.0121708093,1.0963056087)`. All selected b35
-value producers are now source-closed. The D3D11 `EndfieldCB1` bridge remains
-deliberately unpublished pending a default-off publisher and D3D11/D3D12 GPU
-verifier. Unused rows are not guessed, and pass 0 remains disabled.
+value producers are source-closed. A default-off publisher binds the full
+200-vector canonical buffer and the 157-vector D3D11 `EndfieldCB1` prefix.
+D3D11/D3D12 read back 800/800 and 628/628 words exactly; raw c28 integer
+offsets are preserved, all unselected rows stay zero, same-frame Wulfa
+activation succeeds, and missing canonical prerequisites fail closed without
+changing D3D12 beauty. Pass 0 remains disabled.
 
 The remaining streamed
 `m_defaultIV` voxel contents/per-frame parameters, light/shadow resources,
@@ -2254,6 +2257,7 @@ verify_recovered_deferred_gbuffer_frame.bat --all
 verify_recovered_deferred_gbuffer_frame.bat --fail-closed-d3d12
 verify_recovered_deferred_transform_variables.bat --all
 python tools\audit_deferred_shader_variables_global.py --check
+verify_recovered_shader_variables_global.bat --all
 verify_sphereoutside_hgbuffer_diagnostic.bat
 verify_charinfo_shadow_receiver_recovery.bat
 ```

@@ -3,10 +3,11 @@
   "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
   "outcome": "The exact original Vulkan fragment for the current installed Default Lit Full Lighting resolver candidate is exported and decompiled. Five named constant-buffer bindings and the core GBuffer/depth/screen-shadow/wetness/SSR/AO texture roles plus the binning byte-address buffer are now closed. Binding 32 is role-identified as the 48-byte _LightBinningConstants buffer, its exact native producer field layout and upload are source-closed, and a default-off Unity publisher is D3D11/D3D12 GPU-verified for source-closed isolated Overview light counts. Offline IL2CPP/xref recovery additionally closes LightCullResult as pointer+count, its unique HGCullingSystem.CullLights producer, both direct HGCamera.DoECSCulling call sites, their exact 256-candidate cap, and the first SetupState consumer. The target-frame native pointer contents/count and therefore final retail lightCount remain capture-only. Binding 34 is source-closed as the 11,440-byte ShadowData layout. Binding 37 now has its exact 32-entry/2,560-byte native initialization and upload closed; a default-off zero-cookie publisher is D3D11/D3D12 GPU-verified for the source-closed isolated Wulfa/Zhuangfy Overview lists, while non-empty retail atlas values remain capture-only. Binding 38 is source-closed as the exact 3,568-byte HDPunctualLightCharacterShadowData layout by a matching original ScreenSpaceShadowResolve sidecar; its native manager, per-frame reset, push-pass packing, selected .y-only consumer, active D16 atlas and RGBA8 screen-resolve resource lifecycle, and exact pre-bind capture boundary are now closed. The deferred binding is the resolved _HDPLSScreenSpaceShadowMask, while _HDPLSTex is the raw atlas input. The hash-pinned installed Persistent IFix table has 30 Gameplay.Beyond targets and replaces neither HDPLS wrapper-gated method, proving the recovered non-IFix branches are the current on-disk route; future/network patches remain a version boundary. An inactive frame clears all 56 channel selectors and binds white to both globals, preventing stale-frame reuse, but persistent/frame-derived fields and active pixels prevent claiming a byte-exact full fixture. All four debug-anonymous constant-buffer roles are therefore closed. Binary sampling behavior plus hash/offset-pinned installed shader identifiers close all 25 sampled texture roles. Exact installed CharInfo VolumeProfiles and HGEnvironmentPhase now source-close the scene's disabled wetness, volumetric-fog, cloud-shadow, ASM, and directional-shadow controls while proving that reflection remains live. All three serialized CharInfo BC6H Cubemaps are recovered exactly. The installed LightBinningXYCS and LightBinningZCS assets, all eight D3D11/Vulkan kernel programs, exact BinningData ABI, shared-buffer offsets, and XY/Z dispatch formulas are binary-source-closed. A default-off raw ByteAddressBuffer bridge composes the exact recovered light words with the source-closed zero-local-reflection tail and reads the full canonical _BinningBuffer back bit-exactly on D3D11 and D3D12. The installed ReflectionProbeBinningCS asset, exact one-Cubemap slice-0 host contract, 576x576x32 RGBAHalf oct cache, and 4,160-byte ReflectionProbeGlobalData producer are also binary-source-closed. The compatibility pipeline now co-publishes these reflection resources beside the preserved canonical buffer in the same camera command stream only when the exact T_hdri_env_char_01 asset and both readiness gates succeed; D3D11/D3D12 probes close the combined transport. The native VisibilitySHConstData b33 producer is now closed for all 128 bytes: it zero-fills the full source struct, overwrites fixed rows 0..2 and frame rows 3..4, then copies untouched zero rows 5..7. A default-off publisher reads all 32 words back bit-exactly on D3D11/D3D12 and joins the same fail-closed frame gate. Retail target-frame light survivors and pass-0 activation remain open. The retail deferred and volumetric binders close both selected disabled texture paths: invalid wetness is Unity's white Texture2D, while disabled volumetric fog publishes the game's exact 1x1x1 black ASTC_4x4 Texture3D. The retail capsule-shadow pass additionally closes the VisibilitySH output descriptor as bilinear/clamp R16G16B16A16_SFloat and its empty/disabled publication as Texture2D.blackTexture. Both exact LUT payloads, the native 128x48-byte output ABI, exact native posed transform-to-record packing, Wulfa/Zhuang's ten authored candidates, and the selected additive producer pass are also source-closed. Complete pass-0 publication, settled posed capsule records and view-cull survivors, and remaining live per-frame pixels are not yet closed.",
-  "latest_recovery": "The hash-pinned b35 audit now source-closes the last unknown selected constants c135..c137. The enabled weight-1 CharInfo Global Env Volume selects CharInfo_Env PathID 1201129019072041203; useCustomIVDefaultSH=false and skyDirectIntensity=1 select skyAmbientSH. Installed HGRenderPathBase and HGEnvironmentUtils code proves the exact RGB reorder (SH3,SH1,SH2,SH0), yielding the same float4 [-0.007550761103630066,0.47223731875419617,0.01217080932110548,1.0963056087493896] in c135/c136/c137. EndfieldCB1 remains deliberately unpublished pending a default-off runtime publisher and GPU binding verifier. Pass 0 remains disabled.",
+  "latest_recovery": "All selected b35 value producers are source-closed, and a default-off ShaderVariablesGlobal/EndfieldCB1 publisher is now integrated. It writes the 3,200-byte canonical buffer plus the 2,512-byte D3D11 prefix, preserves raw int32 c28 offsets, leaves every unselected row zero, and rejects missing canonical resources, wrong dimensions/camera/lens/environment, or wrong destination size. D3D11/D3D12 read back canonical 800/800 and EndfieldCB1 628/628 words exactly; both APIs activate in the Wulfa same-frame path, the D3D12 missing-prerequisite run fails closed, and its beauty hash remains unchanged. Pass 0 remains disabled.",
   "deferred_gbuffer_frame_transport": {
     "status": "source-camera five-MRT producer GPU-closed as a non-presented sidecar; canonical publication and pass 0 remain disabled",
     "default_off": true,
+    "publisher_implemented": true,
     "published": false,
     "pass0_consumer_enabled": false,
     "source_renderer_disabled": true,
@@ -154,11 +155,15 @@
     "remaining_boundary": "general-scene/static-cache rows, non-punctual sections, retail physical identity and settled atlas pixels, runtime IFix/setting overrides, and pass 0 remain open"
   },
   "selected_shader_variables_global_boundary": {
-    "status": "selected b35 consumer reads exactly scoped and all selected value producers source-closed; runtime transport remains unpublished",
+    "status": "selected b35 values source-closed and default-off canonical/EndfieldCB1 transport GPU-closed on D3D11/D3D12; pass 0 remains disabled",
+    "default_off": true,
     "published": false,
+    "published_by_default": false,
     "pass0_consumer_enabled": false,
+    "selector": "ENDFIELD_RECOVERED_SHADER_VARIABLES_GLOBAL",
     "canonical_property": "ShaderVariablesGlobal",
     "original_dxbc_bridge_property": "EndfieldCB1",
+    "ready_property": "_EndfieldRecoveredShaderVariablesGlobalReady",
     "logical_size_bytes": 3200,
     "logical_vector_count": 200,
     "d3d11_selected_size_bytes": 2512,
@@ -172,7 +177,32 @@
     "branch_dead_rows": "c26.w and downstream c84..c87 reads are gated off by exact c83.z=0",
     "remaining_selected_rows": [],
     "dynamic_formula_boundary": "c0.zw inverse screen dimensions are producer-defined but target-size dynamic",
-    "activation_decision": "selected values no longer block EndfieldCB1; keep it unpublished and pass 0 disabled until a default-off runtime publisher and GPU binding verifier are implemented"
+    "transport": {"canonical_words": 800, "d3d11_bridge_words": 628, "selected_vectors": 32, "unselected_vectors_zero": true, "c28_packing": "raw int32 bit patterns", "same_frame_prerequisites": "canonical binning/reflection/VisibilitySHConstData plus deferred TransformVariables"},
+    "sources": {
+      "contract": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs", "sha256": "6a9dba4552546da194db1d582c1a6232bd7026fa326aeb2aee1ee642eb1032bf"},
+      "owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs", "sha256": "d71b4c74f908397e35969c67eab2f38bb292612efe30de57e5cdf43fc327fdd8"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "2028e29eb90afc3b61c22b3534204edfec88e6d63a352e16aecbf8c112d2d9ac"},
+      "probe": {"path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredShaderVariablesGlobalProbe.compute", "sha256": "48c22703ef2f4cb3f90550b96517a04d99d4ba35471a3770873391aca54d9a1f"},
+      "batch_verifier": {"path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredShaderVariablesGlobalBatchVerifier.cs", "sha256": "bbfbd5f1780a8d73eac2c82ae8e034b91f9b5c2d65faef633705241722180a08"},
+      "validator": {"path": "tools/verify_shader_variables_global.py", "sha256": "dc737db2e8765230d9c2c0211bd72ef9ee35dc40f5db3baba11c952342ca4c2a"},
+      "validator_tests": {"path": "tools/test_verify_shader_variables_global.py", "sha256": "0d6612b9025440338d514e5241209f92ee235079fa0799f4b3d7af3850c6acd0"},
+      "wrapper": {"path": "verify_recovered_shader_variables_global.bat", "sha256": "42a802169e4b481da328052cb002d015311ee626bca056ac55b8d97147c2012a"}
+    },
+    "validation": {
+      "summary": {"path": "scratch/character_recovery/shader_variables_global/validation_summary.json", "sha256": "75fa2e97893c8aea98da4093fe2fac4f860252b59d4f6240322630c435fcd943"},
+      "gpu_reports": {
+        "d3d11": {"path": "scratch/character_recovery/shader_variables_global/gpu_validation_d3d11.json", "sha256": "39aa3dcb104aac7e750c9bc6dd5557da28fcb8d9fe2f12cd4d140a134abdcec2", "beauty_sha256": "1753e0bd900dfc068e2604632122136a4abf047af0ef5ba9607f17abc8a27ec7"},
+        "d3d12": {"path": "scratch/character_recovery/shader_variables_global/gpu_validation_d3d12.json", "sha256": "b33891abbbe92626a08baaaed070fc26696f01b1771e83f426cadc0102bd0abb", "beauty_sha256": "59902c424de630a496364d57e404a5a72bcbcc42712bf7ef6935900d7500cac3"}
+      },
+      "fail_closed_d3d12": {"log_path": "scratch/character_recovery/shader_variables_global/unity_fail_closed_d3d12.log", "log_sha256": "1f70c313b7f9e7a2283c67efa51b3c32535c2f98084c224115b361e49e4ea8cb", "beauty_sha256": "59902c424de630a496364d57e404a5a72bcbcc42712bf7ef6935900d7500cac3"},
+      "canonical_words_bit_exact": true,
+      "d3d11_bridge_words_bit_exact": true,
+      "same_frame_activation": true,
+      "unselected_rows_zero": true,
+      "fail_closed_without_canonical_prerequisites": true,
+      "d3d12_fail_closed_beauty_unchanged": true
+    },
+    "activation_decision": "transport may be explicitly enabled for the selected source-closed frame; pass 0 remains disabled until its remaining textures/pixels and binding-compatible resolve are closed"
   },
   "source_filter": {
     "path": "scratch/reverse_engineering/sphereoutside_deferred_variant/deferred_lighting_filter.json",
@@ -2707,7 +2737,8 @@
       "partial": true,
       "selected_field_count": 33,
       "source_closed_rows": "c3.y, c4.w, c26.x, c28, c29, c30, c31.x, c71..c87, c132..c137, c156.x",
-      "remaining_selected_rows": []
+      "remaining_selected_rows": [],
+      "transport": "default-off canonical 200-vector and EndfieldCB1 157-vector-prefix publisher; 32 selected rows GPU-exact on D3D11/D3D12 and all unselected rows zero"
     },
     {
       "name": "ReflectionProbeGlobalData",
@@ -4447,7 +4478,7 @@
   "remaining_blockers": [
     "For binding 32, capture the target-frame HGCullingSystem.CullLights pointer/count at the exact HGCamera.DoECSCulling return boundary, then preserve SetupState's selected order and final lightCount. Binding 34's isolated Wulfa/Zhuangfy punctual rows and matching D16 atlas are now same-frame closed; recover general-scene/static-cache rows, non-punctual sections, retail physical identity and settled pixels rather than extrapolating from that narrow fixture. Binding 38 still needs its full settled payload and matching active resources. Binding 37's zero-cookie isolated state is closed, while non-empty whole-scene cookie values remain capture-only.",
     "Capture and reproduce the remaining shadow and cookie resources plus exact retail settled VisibilitySH posed pa/pb/dir values and the matching retail-view survivors/target. The current installed settings lifecycle/defaults, both shipped VisibilitySH LUT payloads/descriptors, native 128x48-byte output ABI, exact posed transform-to-record formula, conservative culling cube/plane test, Wulfa/Zhuang's authored candidates, selected additive producer pass, and all 128 b33 producer bytes are now exact; two independent isolated Unity D3D12 runs retain all ten records in registration order and reproduce byte-identical numeric record fixtures and GPU outputs. Those fixtures validate the lab transport but do not substitute for retail settled-frame evidence. A future downloaded IFix patch remains an explicit version boundary. The live V2 irradiance owner, six A/B texture descriptors/order, zero fallback, publication bridge, installed /aiTest path construction, complete IV VFS suffix absence, marker-2/marker-3 index record shapes, and exact missing-map inactive state are closed. Generic reflection/external ReloadIndexFileV2 invocation, populated transient atlas dimensions, and live per-frame IV parameters remain open. The VisibilitySH output descriptor and exact black empty/disabled fallback are closed. The exact LightBinningXYCS/ZCS programs, host ABI, offsets, dispatch formulas, default-off canonical raw combined-buffer transport, reflection oct/global co-publication, and complete b33 transport are closed on D3D11/D3D12. Retail target-frame light survivors and pass-0 activation remain open. The exact disabled wetness and _IntegratedLightScattering placeholders are closed but likewise remain unpublished.",
-    "For ShaderVariablesGlobal b35, the selected body uses 33 fields rather than the nominal 200-vector declaration. Installed HGCamera code and the serialized Zhuangfy Overview lens close c3.y=0.1; exact native reset producers close c71..c87; installed constructors, getter chains, VolumeProfiles, and settings close c30=(0,0,1,1) and c31.x=7. The selected route also closes c4.w, c26.x, c28, c29, c132..c134, c156.x, and c135..c137 from the exact CharInfo ambient SH producer chain. All selected value producers are now source-closed; c0.zw remains a known same-target runtime formula. EndfieldCB1 still needs a default-off publisher and GPU binding verifier. The other 69 _TransformVariables history/jitter/stereo rows and general-scene _LightDataBuffer punctual terms remain deliberately zero until a consumer or producer requires them.",
+    "For ShaderVariablesGlobal b35, the selected body uses 33 fields rather than the nominal 200-vector declaration. All selected value producers are source-closed, including c135..c137 from the exact CharInfo ambient SH chain and dynamic c0.zw from target dimensions. A default-off publisher now binds the 200-vector canonical buffer and 157-vector EndfieldCB1 prefix; 32 selected rows read back bit-exactly on D3D11/D3D12, raw c28 integer offsets are preserved, every unselected row stays zero, same-frame activation succeeds, and missing canonical prerequisites fail closed without changing D3D12 beauty. Pass 0 remains disabled. The other 69 _TransformVariables history/jitter/stereo rows and general-scene _LightDataBuffer punctual terms remain deliberately zero until a consumer or producer requires them.",
     "Promote the now GPU-closed same-camera five-MRT plus D32S8 sidecar through a canonical render-graph-equivalent lifetime only together with a binding-compatible pass-0 resolver. Submit WriteAlpha only on a future source-closed route where RenderWithAlpha is true; the current installed Gacha route is false and submits none."
   ]
 }

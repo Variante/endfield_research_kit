@@ -51,6 +51,7 @@
   "same_camera_hgbuffer_sidecar": {
     "status": "source-camera five-MRT producer GPU-closed as a non-presented sidecar; canonical publication and pass 0 remain disabled",
     "default_off": true,
+    "publisher_implemented": true,
     "published": false,
     "pass0_consumer_enabled": false,
     "source_renderer_disabled": true,
@@ -257,11 +258,15 @@
     "remaining_boundary": "general-scene and static-cache ShadowData rows, non-punctual sections, retail physical-resource identity and settled atlas pixels, runtime IFix/setting overrides, and a binding-compatible pass-0 consumer remain open"
   },
   "selected_shader_variables_global_boundary": {
-    "status": "selected b35 consumer reads exactly scoped and all selected value producers source-closed; runtime transport remains unpublished",
+    "status": "selected b35 values source-closed and default-off canonical/EndfieldCB1 transport GPU-closed on D3D11/D3D12; pass 0 remains disabled",
+    "default_off": true,
     "published": false,
+    "published_by_default": false,
     "pass0_consumer_enabled": false,
+    "selector": "ENDFIELD_RECOVERED_SHADER_VARIABLES_GLOBAL",
     "canonical_property": "ShaderVariablesGlobal",
     "original_dxbc_bridge_property": "EndfieldCB1",
+    "ready_property": "_EndfieldRecoveredShaderVariablesGlobalReady",
     "logical_size_bytes": 3200,
     "logical_vector_count": 200,
     "d3d11_selected_size_bytes": 2512,
@@ -275,7 +280,9 @@
     "branch_dead_rows": "c26.w and downstream c84..c87 reads are gated off by exact c83.z=0",
     "remaining_selected_rows": [],
     "dynamic_formula_boundary": "c0.zw inverse screen dimensions are producer-defined but target-size dynamic",
-    "activation_decision": "selected values no longer block EndfieldCB1; keep it unpublished and pass 0 disabled until a default-off runtime publisher and GPU binding verifier are implemented"
+    "transport": {"canonical_words": 800, "d3d11_bridge_words": 628, "selected_vectors": 32, "unselected_vectors_zero": true, "c28_packing": "raw int32 bit patterns", "same_frame_prerequisites": "canonical binning/reflection/VisibilitySHConstData plus deferred TransformVariables"},
+    "validation": {"summary_path": "scratch/character_recovery/shader_variables_global/validation_summary.json", "summary_sha256": "75fa2e97893c8aea98da4093fe2fac4f860252b59d4f6240322630c435fcd943", "d3d11_gpu_report_sha256": "39aa3dcb104aac7e750c9bc6dd5557da28fcb8d9fe2f12cd4d140a134abdcec2", "d3d12_gpu_report_sha256": "b33891abbbe92626a08baaaed070fc26696f01b1771e83f426cadc0102bd0abb", "canonical_words_bit_exact": true, "d3d11_bridge_words_bit_exact": true, "same_frame_activation": true, "fail_closed_without_canonical_prerequisites": true, "d3d12_fail_closed_beauty_unchanged": true},
+    "activation_decision": "transport may be explicitly enabled for the selected source-closed frame; pass 0 remains disabled until its remaining textures/pixels and binding-compatible resolve are closed"
   },
   "default_deferred_gbuffer_submission": {
     "selected_installed_route": "HGRenderPathDefaultDeferred -> GBufferPassConstructor.ConstructPass",
@@ -816,7 +823,7 @@
   "unresolved_exact_contract": [
     "A future/network-patched CharInfo result of InitDeferredLightingRenderParams. The current installed Persistent target table is exact and excludes InitDeferredLightingRenderParams plus the 0x19c/0x19d feature-switch accessors, but a later delivered table could replace them.",
     "Retail render-graph physical resource identity, alias lifetime, and settled contents. The lab now closes the source-camera 640x720 logical five-MRT plus D32S8 producer route and its cross-API bytes, but the non-presented sidecar is not evidence of physical render-graph equivalence.",
-    "All selected ShaderVariablesGlobal value producers are now source-closed. Exact c135..c137 come from the enabled weight-1 CharInfo environment phase, its skyAmbientSH coefficients, the installed SH 3/1/2/0 reorder, and exact skyDirectIntensity=1; c0.zw remains a known target-size runtime formula. EndfieldCB1 still needs a default-off publisher and GPU binding verifier before pass-0 activation. Exact c3.y=0.1, c30=(0,0,1,1), c31.x=7, fog reset rows, inactive V2 IV params, wetness, mip bias, binning/environment rows, and the full ReflectionProbeGlobalData plus CB2 prefix are closed.",
+    "All selected ShaderVariablesGlobal value producers are source-closed. Its default-off canonical/EndfieldCB1 publisher now reads back 800/800 and 628/628 words exactly on D3D11/D3D12, preserves raw c28 integer offsets, zeroes every unselected row, activates in the same Wulfa frame, and fails closed without canonical prerequisites while leaving D3D12 beauty unchanged. Pass 0 remains disabled pending remaining texture/pixel inputs and a binding-compatible resolve. Exact c3.y=0.1, c30=(0,0,1,1), c31.x=7, c135..c137, fog reset rows, inactive V2 IV params, wetness, mip bias, binning/environment rows, and the full ReflectionProbeGlobalData plus CB2 prefix are closed.",
     "Frame-produced AO, SSR, planar reflection, screen-space shadow mask, subsurface, fog-LUT, and wetness bindings, including exact neutral bindings for disabled features.",
     "Canonical promotion plus a resource-binding-compatible pass-0 lighting implementation in the lab SRP. The simple resource-free WriteAlpha program and its three exact render-state variants are ported and D3D12-validated, but correctly remain unsubmitted for the source-closed RenderWithAlpha=false selected Gacha route; the recovered pass-0 lighting dump still contains bytecode/disassembly rather than directly importable ShaderLab source for Unity's current binding model."
   ],
