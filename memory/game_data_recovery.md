@@ -145,6 +145,21 @@ does not prove that a current controller can reach the clip or which Wwise
 container branch wins at runtime. Canonical Wwise events therefore retain
 per-clip owner contexts rather than one global owner.
 
+Playable-character callback ownership must not be extended to every leaf of a
+shared Event. The apparent 10,000-plus per-character totals were sums of
+Event-to-possible-media associations: 375 animation Events are used by multiple
+playable characters, and generic `player_fol_*` footstep/cloth selectors account
+for most of the expansion. For example, `player_fol_fs_walk` is used by 26
+characters and has 2,326 typed possible leaves behind three Play roots, 38
+Switch containers, two Layers, and 817 Random containers. The shipped
+`FootStepHandler` separately updates material and water switches, so those
+leaves are a global runtime selector surface, not character-owned files. The
+Gameplay UI separates single-owner callbacks from shared animation systems;
+the Audio view tags shared playable-animation and footstep/material Events.
+Animation Event identity is lowercased for the Wwise join while every authored
+spelling is retained as evidence, preventing case-only callbacks from
+duplicating candidate associations.
+
 Two additional Gameplay joins fill gaps outside SkillData/BuffData. Exact
 SkillData strings embedded in recovered `EnemyData.AbilitySystemData` allow
 enemy variants to reuse their authored template skill bundle, with the
@@ -175,7 +190,8 @@ cache invalidation, identify Timeline/native audio receivers and activation
 paths, and validate chronology against a captured game session. Gameplay
 follow-up should finish the partial `EnemyData.AbilitySystemData` mode-tail
 decoder, connect animation clips through controllers instead of filename
-ownership alone, and recover native effect-audio components for the remaining
+ownership alone, recover per-callback material/water/switch values where the
+binary permits it, and recover native effect-audio components for the remaining
 silent templates. Keep source WEM ids, authored references, control/state
 objects, possible media leaves, and observed live playback separate in reports
 and WebUI labels.

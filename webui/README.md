@@ -161,6 +161,11 @@ sns_topic_map02_lv005_12002
   projectile template.
 - Exact Wwise media candidates stay grouped when switch/random selection is
   unresolved. Direct and inferred skill/enemy ownership are labeled.
+- Character-owned animation callbacks and shared Wwise animation systems are
+  separate Gameplay groups. Shared footstep/cloth/material Events show owner
+  counts and global reachable leaves without presenting those leaves as the
+  character's private sound library; opening one Event still lists every
+  playable file together.
 - Gameplay thumbnails and model paths link back to the matching Assets entry.
 
 ### Mission Pipeline
