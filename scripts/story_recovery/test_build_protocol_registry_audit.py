@@ -59,6 +59,9 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 "levelScriptActivationControl": {
                     "validation": {"status": "validated", "failures": []},
                 },
+                "levelScriptTaskLifecycle": {
+                    "validation": {"status": "validated", "failures": []},
+                },
                 "actionExtraThreadSchedulerCensus": {
                     "validation": {"status": "validated", "failures": []},
                 },
@@ -68,6 +71,20 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
                 audit.current_report_status(report_path, metadata, gameassembly),
                 (True, "validated report hashes match original inputs"),
             )
+            payload = json.loads(report_path.read_text(encoding="utf-8"))
+            del payload["levelScriptTaskLifecycle"]
+            report_path.write_text(json.dumps(payload), encoding="utf-8")
+            current, reason = audit.current_report_status(
+                report_path,
+                metadata,
+                gameassembly,
+            )
+            self.assertFalse(current)
+            self.assertIn("task-lifecycle validation", reason)
+            payload["levelScriptTaskLifecycle"] = {
+                "validation": {"status": "validated", "failures": []},
+            }
+            report_path.write_text(json.dumps(payload), encoding="utf-8")
             metadata.write_bytes(b"changed")
             current, reason = audit.current_report_status(
                 report_path,
@@ -1218,6 +1235,96 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         self.assertEqual(
             validation["failures"][0]["actual"],
             [{"method": "StartFixture", "origin": "param:msg+0x30"}],
+        )
+        self.assertEqual(validation["failures"][0]["sourceFile"], "GameAssembly.dll")
+
+    def test_levelscript_task_lifecycle_validator_accepts_generic_pattern(self):
+        validation = audit.validate_levelscript_task_lifecycle_observation(
+            {
+                "scriptTaskStateEnum": {
+                    "None": 0,
+                    "Processing": 1,
+                    "Completed": 2,
+                },
+                "levelScriptTaskTypeEnum": {
+                    "None": 0,
+                    "Main": 1,
+                    "Extra": 2,
+                    "Fail": 3,
+                    "Custom": 4,
+                },
+                "serverStateApplicationChain": [
+                    "Beyond.Gameplay.Core.LevelScriptManager.UpdateLevelScriptTaskState",
+                    "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateTaskState",
+                    (
+                        "Beyond.Gameplay.Core.LevelScriptRuntime+"
+                        "ScriptTaskRuntime.UpdateTaskState"
+                    ),
+                ],
+                "stateArgumentForwarding": True,
+                "processingConditionCallCount": 2,
+                "conditionProcessingOperations": [
+                    "Beyond.Gameplay.GameCondition+ResultChange..ctor",
+                    "System.Delegate.Combine",
+                    "Beyond.Gameplay.GameCondition.Activate",
+                    "Beyond.Gameplay.GameCondition.BindingEvent",
+                ],
+                "conditionProgressSender": (
+                    "Beyond.Gameplay.GameplayNetwork."
+                    "SendLevelScriptUpdateTaskProgress"
+                ),
+                "conditionIdentityFieldReads": [
+                    "levelScriptPtr",
+                    "levelNum",
+                    "taskKey",
+                    "conditionId",
+                ],
+            },
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "fixture"},
+        )
+
+        self.assertEqual(validation["status"], "validated")
+        self.assertEqual(validation["failures"], [])
+
+    def test_levelscript_task_lifecycle_validator_reports_bounded_drift(self):
+        validation = audit.validate_levelscript_task_lifecycle_observation(
+            {
+                "scriptTaskStateEnum": {
+                    "None": 0,
+                    "Processing": 4,
+                    "Completed": 2,
+                },
+                "levelScriptTaskTypeEnum": {
+                    "None": 0,
+                    "Main": 1,
+                    "Extra": 2,
+                    "Fail": 3,
+                    "Custom": 4,
+                },
+                "serverStateApplicationChain": [],
+                "stateArgumentForwarding": False,
+                "processingConditionCallCount": 0,
+                "conditionProcessingOperations": [],
+                "conditionProgressSender": None,
+                "conditionIdentityFieldReads": [],
+            },
+            source_file="GameAssembly.dll",
+            source_hashes={"gameAssemblySha256": "fixture"},
+        )
+
+        self.assertEqual(validation["status"], "validation_failed")
+        self.assertEqual(
+            [failure["gate"] for failure in validation["failures"]],
+            [
+                "scriptTaskStateEnum",
+                "serverStateApplicationChain",
+                "stateArgumentForwarding",
+                "processingConditionCallCount",
+                "conditionProcessingOperations",
+                "conditionProgressSender",
+                "conditionIdentityFieldReads",
+            ],
         )
         self.assertEqual(validation["failures"][0]["sourceFile"], "GameAssembly.dll")
 

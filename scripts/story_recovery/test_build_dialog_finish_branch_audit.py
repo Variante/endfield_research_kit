@@ -669,6 +669,9 @@ class LevelScriptTaskConsumerTests(unittest.TestCase):
             decoded = [{
                 "tasks": [{
                     "taskKey": "deadbeef",
+                    "taskType": 0,
+                    "canBeTracked": False,
+                    "needManualCheck": False,
                     "conditions": [self._condition_row()],
                 }]
             }]
@@ -690,6 +693,20 @@ class LevelScriptTaskConsumerTests(unittest.TestCase):
             self.assertEqual(1, len(rows))
             self.assertIn("Persistent", rows[0]["sourceFile"])
             self.assertEqual("deadbeef", rows[0]["taskId"])
+            self.assertEqual(
+                {
+                    "taskType": 0,
+                    "canBeTracked": False,
+                    "needManualCheck": False,
+                    "conditionCount": 1,
+                    "mainObjectiveConditionCount": 0,
+                    "objectiveEnums": [],
+                    "conditionTypeCounts": {"CheckTalkOptionFinish": 1},
+                },
+                rows[0]["taskDefinition"],
+            )
+            self.assertEqual(1, census["resolvedTaskCount"])
+            self.assertEqual({"0": 1}, census["resolvedTaskTypeCounts"])
             self.assertEqual(1, census["shadowedPathCount"])
             self.assertEqual(1, census["changedOverrideCount"])
 
@@ -735,6 +752,74 @@ class LevelScriptTaskConsumerTests(unittest.TestCase):
 
             self.assertNotIn(("4242", "deadbeef"), owners)
             self.assertEqual(1, len(census["ambiguousTaskOwners"]))
+
+    def test_task_carrier_census_discovers_minimal_typed_object(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            streaming = root / "StreamingAssets" / "GameplayConfig"
+            persistent = root / "Persistent" / "GameplayConfig"
+            mission_streaming = root / "StreamingAssets" / "MissionRuntimeAsset"
+            mission_persistent = root / "Persistent" / "MissionRuntimeAsset"
+            for directory in (
+                streaming,
+                persistent,
+                mission_streaming,
+                mission_persistent,
+            ):
+                directory.mkdir(parents=True)
+            payload = {
+                "dataTable": {
+                    "fixture": {
+                        "$type": "Fixture.DungeonSubGameData, Fixture",
+                        "dungeonMissionId": "mission_fixture",
+                        "bindScriptId": 4242,
+                        "mainTasks": [{"taskId": "deadbeef"}],
+                    },
+                    "unrelated_script": {"bindScriptId": 9999},
+                    "unrelated_task": {"taskId": "deadbeef"},
+                }
+            }
+            for directory in (streaming, persistent):
+                (directory / "FixtureTable.json").write_text(
+                    json.dumps(payload), encoding="utf-8"
+                )
+            consumers = [{"scriptId": "4242", "taskId": "deadbeef"}]
+
+            census = audit._scan_exact_task_identity_carriers(
+                consumers,
+                (
+                    streaming,
+                    mission_streaming,
+                    persistent,
+                    mission_persistent,
+                ),
+            )
+
+            self.assertEqual(1, census["carrierCount"])
+            self.assertEqual(1, census["missionCarrierCount"])
+            self.assertEqual(1, census["shadowedFileCount"])
+            carrier = census["carriers"][0]
+            self.assertEqual("$/dataTable/fixture", carrier["jsonPath"])
+            self.assertEqual(["mission_fixture"], carrier["missionIds"])
+            self.assertIn("Persistent", carrier["sourceFile"])
+
+    def test_task_carrier_census_reports_non_json_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "GameplayConfig"
+            root.mkdir(parents=True)
+            (root / "broken.json").write_bytes(b"deadbeef\x00\xff")
+
+            census = audit._scan_exact_task_identity_carriers(
+                [{"scriptId": "4242", "taskId": "deadbeef"}],
+                (root,),
+            )
+
+            self.assertEqual(0, census["carrierCount"])
+            self.assertEqual(1, census["rejectedCandidateFileCount"])
+            self.assertEqual(
+                "jsonDecode",
+                census["rejectedCandidateFiles"][0]["gate"],
+            )
 
 
 class NativeContractTests(unittest.TestCase):
