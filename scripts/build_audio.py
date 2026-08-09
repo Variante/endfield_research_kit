@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import re
 import subprocess
@@ -70,7 +71,7 @@ GAMEPLAY_PROFILE_VOICE_RE = re.compile(r"(?:_combat_|_mono_(?:attack|skill))", r
 GAMEPLAY_AUDIO_LINK_FIELDS = (
     "src", "mediaId", "format", "bytes", "audioScope", "audioCategory",
     "audioCategoryDetail", "sourceBlock", "sourceBlockLabel", "sourceBank",
-    "bankId", "bank",
+    "bankId", "bank", "wwiseMediaEvidence", "contentSha256",
 )
 PROJECTILE_SOUND_FIELDS = (
     "launchSound",
@@ -148,7 +149,20 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])[^\\/]*banks\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 3
+EVENT_EVIDENCE_SCHEMA_VERSION = 6
+
+# Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
+# value is a little-endian U16 whose high byte is the operation and low byte is
+# the action scope.  Only Play and PlayEvent introduce downward playback
+# edges; Stop and the other control actions must not be followed as media.
+HIRC_ACTION_OPERATION_LABELS = {
+    0x0100: "stop",
+    0x0400: "play",
+    0x2100: "playEvent",
+}
+HIRC_PLAYBACK_ACTION_OPERATIONS = frozenset({0x0400, 0x2100})
+HIRC_TYPED_CHILD_CONTAINER_TYPES = frozenset({5, 6, 7, 9})
+HIRC_AUDIO_NODE_TYPES = frozenset({2, 5, 6, 7, 9})
 
 LANGUAGE_AUDIO_BLOCKS = ("voice",)
 SHARED_AUDIO_STORAGE = "shared"
@@ -914,11 +928,25 @@ def collect_gameplay_audio_references(
 
 
 def compact_gameplay_audio_link(entry: dict[str, Any]) -> dict[str, Any]:
-    return {
+    compact = {
         key: entry[key]
         for key in GAMEPLAY_AUDIO_LINK_FIELDS
         if entry.get(key) is not None
     }
+    if compact.get("wwiseMediaEvidence"):
+        compact["wwiseMediaEvidence"] = [
+            {
+                key: row[key]
+                for key in (
+                    "rootActionIds", "soundObjectCount", "relationTypes",
+                    "selectionPaths", "bankId", "bankPackage",
+                )
+                if row.get(key) not in (None, "", [])
+            }
+            for row in compact["wwiseMediaEvidence"]
+            if isinstance(row, dict)
+        ]
+    return compact
 
 
 def link_gameplay_audio(
@@ -929,13 +957,14 @@ def link_gameplay_audio(
     event_evidence: list[dict[str, Any]],
     dialog_audio_by_id: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, int]:
-    """Write compact character-skill/enemy SFX sidecar with playable candidates."""
+    """Write compact Gameplay SFX sidecar with typed possible media leaves."""
 
-    found_events = {
-        str(row.get("eventId") or "").strip().lower()
-        for row in event_evidence
-        if isinstance(row, dict) and str(row.get("eventId") or "").strip()
-    }
+    event_evidence_by_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in event_evidence:
+        event_key = str(row.get("eventId") or "").strip().lower() if isinstance(row, dict) else ""
+        if event_key:
+            event_evidence_by_id[event_key].append(row)
+    found_events = set(event_evidence_by_id)
     event_cache: dict[str, dict[str, Any] | None] = {}
 
     def linked_event(event_id: str) -> dict[str, Any] | None:
@@ -954,11 +983,53 @@ def link_gameplay_audio(
         if not media:
             event_cache[event_key] = None
             return None
+        content_counts = Counter(
+            str(row.get("contentSha256") or "")
+            for row in media
+            if row.get("contentSha256")
+        )
+        for row in media:
+            content_hash = str(row.get("contentSha256") or "")
+            if content_hash and content_counts[content_hash] > 1:
+                row["contentEquivalentCount"] = content_counts[content_hash]
+        evidence_rows = event_evidence_by_id.get(event_key, [])
+        root_action_ids = sorted({
+            int(root_action_id)
+            for item in media
+            for row in item.get("wwiseMediaEvidence") or []
+            for root_action_id in row.get("rootActionIds") or []
+            if isinstance(root_action_id, int)
+        })
+        relation_types = sorted({
+            str(relation)
+            for item in media
+            for row in item.get("wwiseMediaEvidence") or []
+            for relation in row.get("relationTypes") or []
+            if str(relation)
+        })
+        traversal_status = (
+            "partial" if any(row.get("traversalStatus") == "partial" for row in evidence_rows)
+            else "complete" if evidence_rows else "unresolved"
+        )
         value = {
             "id": event_id,
             "foundInWwise": event_key in found_events,
+            "possibleMediaCount": len(media),
             "playableCandidates": len(media),
-            "runtimeSelection": "unresolved" if len(media) > 1 else "singleCandidate",
+            "playRootCount": len(root_action_ids) or max(
+                (int(row.get("rootPlayActionCount") or 0) for row in evidence_rows),
+                default=0,
+            ),
+            "playRootActionIds": root_action_ids,
+            "mediaRelationTypes": relation_types,
+            "traversalStatus": traversal_status,
+            "unresolvedNodeCount": sum(len(row.get("unresolvedNodes") or []) for row in evidence_rows),
+            "runtimeSelection": (
+                "runtimeBranchUnresolved" if any(value != "directSound" for value in relation_types)
+                else "multiplePlayRootsTimingUnresolved" if len(root_action_ids) > 1
+                else "singlePossibleMedia" if len(media) == 1
+                else "multiplePossibleMediaUnresolved"
+            ),
             "audio": media,
         }
         event_cache[event_key] = value
@@ -973,6 +1044,7 @@ def link_gameplay_audio(
     animation_linked_refs = 0
     animation_candidate_count = 0
     profile_voice_linked_refs = 0
+    profile_voice_media_keys: set[str] = set()
     for owner in references.get("owners") or []:
         event_rows: list[dict[str, Any]] = []
         for event_id, evidence in sorted((owner.get("events") or {}).items()):
@@ -1118,6 +1190,7 @@ def link_gameplay_audio(
             linked_refs += 1
             profile_voice_linked_refs += 1
             candidate_count += 1
+            profile_voice_media_keys.add(str(compact.get("src") or compact.get("mediaId") or voice_id))
             resolved_voices.append({
                 "id": voice_id,
                 "actionKinds": [voice.get("actionKind") or "combatVoice"],
@@ -1155,13 +1228,29 @@ def link_gameplay_audio(
         value["animationOwnershipSources"] = sorted(set(filter(None, value.get("animationOwnershipSources") or [])))
         value.get("animationEvents", []).sort(key=lambda row: str(row.get("id") or ""))
 
+    unique_event_media_pairs = sum(
+        len(value.get("audio") or [])
+        for value in event_cache.values()
+        if isinstance(value, dict)
+    )
+    unique_playable_files = {
+        str(audio.get("src") or audio.get("mediaId") or "")
+        for value in event_cache.values()
+        if isinstance(value, dict)
+        for audio in value.get("audio") or []
+        if audio.get("src") or audio.get("mediaId")
+    }
+    unique_playable_files.update(profile_voice_media_keys)
     stats = {
         **(references.get("counts") or {}),
         "gameplayAudioRefs": discovered_refs,
         "gameplayAudioRefsLinked": linked_refs,
-        "gameplayAudioCandidates": candidate_count,
+        "gameplayAudioCandidates": unique_event_media_pairs + len(profile_voice_media_keys),
+        "gameplayPossibleMediaAssociations": candidate_count,
+        "gameplayUniqueEventMediaPairs": unique_event_media_pairs,
+        "gameplayUniquePlayableFiles": len(unique_playable_files),
         "animationAudioRefsLinked": animation_linked_refs,
-        "animationAudioCandidates": animation_candidate_count,
+        "animationAudioPossibleMediaAssociations": animation_candidate_count,
         "profileVoiceRefsLinked": profile_voice_linked_refs,
         "charactersWithPlayableSfx": len(characters),
         "enemiesWithPlayableSfx": len(enemies),
@@ -1214,7 +1303,7 @@ def link_gameplay_audio(
             "enemyTemplateBoundary": "AbilitySystemData containment is exact, while identifiers preserved only in partially decoded string-hint tails remain ownership-inferred.",
             "animationOwnership": "exact AnimationClip callback, timestamp, and payload; actor ownership inferred from exact character/enemy animation tokens and recovered enemy animation-config reuse",
             "profileVoiceOwnership": "direct CharacterTable.profileVoice ownership linked to the exact AudioDialog path stem; bark/random selection remains unresolved",
-            "runtimeSelection": "Switch/random container selection remains unresolved when an event has multiple candidates.",
+            "runtimeSelection": "Possible media files come from typed Wwise v150 edges and are grouped by Play root and selector relation; the live branch selected by switches, states, random/sequence containers, and layers remains unresolved.",
         },
     })
     return stats
@@ -1240,7 +1329,7 @@ def link_projectile_audio(
     event_audio_by_id: dict[str, list[dict[str, Any]]],
     event_evidence: list[dict[str, Any]],
 ) -> dict[str, int]:
-    """Attach exact HIRC event-to-media candidates to projectile sound fields."""
+    """Attach typed HIRC event-to-media leaves to projectile sound fields."""
 
     path = webui_root / PROJECTILE_DATA_REL
     payload = load_json(path, {})
@@ -1326,7 +1415,7 @@ def link_projectile_audio(
     payload["audioLinks"] = {
         **stats,
         "source": "Wwise HIRC event traversal",
-        "note": "Playable files are event media candidates; runtime switch/container selection is not recovered.",
+        "note": "Playable files are typed possible media leaves; Play roots and runtime switch/container selection remain unresolved.",
     }
     json_dump(path, payload)
     return stats
@@ -1745,11 +1834,291 @@ def hirc_action_target_id(data: bytes) -> int | None:
     return unpack_from("<I", data, 2)[0]
 
 
-def u32_values(data: bytes) -> list[int]:
-    values: list[int] = []
-    for pos in range(0, max(0, len(data) - 3)):
-        values.append(unpack_from("<I", data, pos)[0])
-    return values
+def hirc_action_type(data: bytes) -> int | None:
+    if len(data) < 2:
+        return None
+    return unpack_from("<H", data, 0)[0]
+
+
+def hirc_sound_media_id(data: bytes) -> int | None:
+    """Return the v150 AkBankSourceData source ID from a Sound object.
+
+    The current banks serialize U32 plugin ID at offset 0, U8 stream type at
+    offset 4, and U32 source/media ID at offset 5.  The U32 at offset 22 in
+    current Sound objects is the parent node and must never be traversed as a
+    child reference.
+    """
+
+    if len(data) < 9:
+        return None
+    return unpack_from("<I", data, 5)[0]
+
+
+def hirc_object_parent_id(object_type: int, data: bytes) -> int | None:
+    if object_type == 2:
+        offset = 22
+    elif object_type in HIRC_TYPED_CHILD_CONTAINER_TYPES:
+        offset = 8
+    else:
+        return None
+    if len(data) < offset + 4:
+        return None
+    return unpack_from("<I", data, offset)[0]
+
+
+def hirc_reciprocal_child_list(
+    object_id: int,
+    object_type: int,
+    data: bytes,
+    objects: dict[int, dict[str, Any]],
+) -> tuple[list[int], int] | None:
+    """Locate one v150 Children array and prove it through parent backlinks.
+
+    Parameter-node headers have variable-length property blocks, so the child
+    count is not at one fixed byte offset.  We scan only for a bounded
+    ``U32 count`` + contiguous ``count * U32 child IDs`` structure, then
+    require every referenced same-bank HIRC object to expose the reciprocal
+    parent ID at its type-defined field.  The earliest reciprocal block is the
+    authored Children array; later repetitions are switch maps/playlists.
+    """
+
+    if object_type not in HIRC_TYPED_CHILD_CONTAINER_TYPES:
+        return None
+    for offset in range(0, max(0, len(data) - 7)):
+        count = unpack_from("<I", data, offset)[0]
+        if count <= 0 or count > (len(data) - offset - 4) // 4:
+            continue
+        children = [
+            unpack_from("<I", data, offset + 4 + index * 4)[0]
+            for index in range(count)
+        ]
+        if any(child_id not in objects for child_id in children):
+            continue
+        if any(
+            int(objects[child_id].get("type") or 0) not in HIRC_AUDIO_NODE_TYPES
+            or hirc_object_parent_id(
+                int(objects[child_id].get("type") or 0),
+                objects[child_id].get("data") or b"",
+            ) != object_id
+            for child_id in children
+        ):
+            continue
+        return children, offset
+    return None
+
+
+def hirc_media_relation_types(path_object_types: list[int]) -> list[str]:
+    relations: list[str] = []
+    for object_type, label in (
+        (5, "randomOrSequenceBranch"),
+        (6, "switchOrStateBranch"),
+        (9, "layerBranch"),
+        (7, "actorMixerBranch"),
+    ):
+        if object_type in path_object_types:
+            relations.append(label)
+    return relations or ["directSound"]
+
+
+def hirc_random_sequence_properties(data: bytes, children_offset: int) -> dict[str, Any]:
+    """Decode the fixed v150 RanSeq tail immediately before Children."""
+
+    if children_offset < 24:
+        return {}
+    mode = data[children_offset - 2]
+    random_mode = data[children_offset - 3]
+    flags = data[children_offset - 1]
+    transition_mode = data[children_offset - 4]
+    return {
+        "mode": mode,
+        "modeLabel": {0: "random", 1: "sequence"}.get(mode, f"mode{mode}"),
+        "randomMode": random_mode,
+        "randomModeLabel": {0: "normal", 1: "shuffle"}.get(random_mode, f"mode{random_mode}"),
+        "transitionMode": transition_mode,
+        "flags": flags,
+        "flagLabels": [
+            label
+            for bit, label in (
+                (0, "usesWeight"),
+                (1, "resetPlaylistAtEachPlay"),
+                (2, "restartBackward"),
+                (3, "continuous"),
+                (4, "global"),
+            )
+            if flags & (1 << bit)
+        ],
+    }
+
+
+def traverse_hirc_event(
+    event_id: int,
+    objects: dict[int, dict[str, Any]],
+    decoded_media_ids: set[int] | None = None,
+) -> dict[str, Any]:
+    """Traverse one Event using only typed, downward v150 HIRC edges."""
+
+    decoded_media_ids = decoded_media_ids or set()
+    event_object = objects.get(event_id) or {}
+    root_action_ids = hirc_event_action_ids(event_object.get("data") or b"")
+    queue: deque[tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[str, ...]]] = deque(
+        (action_id, action_id, (event_id,), (4,), ()) for action_id in root_action_ids
+    )
+    visited: set[int] = {event_id}
+    visited_paths: set[tuple[int, int]] = set()
+    source_media_ids: list[int] = []
+    resolved_media_ids: list[int] = []
+    media_evidence_by_id: dict[int, dict[str, Any]] = {}
+    action_evidence: list[dict[str, Any]] = []
+    container_evidence: list[dict[str, Any]] = []
+    unresolved_nodes: list[dict[str, Any]] = []
+    root_operations: dict[int, int | None] = {}
+
+    while queue:
+        object_id, root_action_id, path_ids, path_types, path_relations = queue.popleft()
+        visit_key = (object_id, root_action_id)
+        if visit_key in visited_paths:
+            continue
+        visited_paths.add(visit_key)
+        visited.add(object_id)
+        obj = objects.get(object_id)
+        if not obj:
+            unresolved_nodes.append({
+                "objectId": object_id,
+                "rootActionId": root_action_id,
+                "reason": "missingSameBankObject",
+            })
+            continue
+        object_type = int(obj.get("type") or 0)
+        data = obj.get("data") or b""
+        current_path_ids = (*path_ids, object_id)
+        current_path_types = (*path_types, object_type)
+
+        if object_type == 4:
+            for action_id in hirc_event_action_ids(data):
+                queue.append((action_id, root_action_id, current_path_ids, current_path_types, path_relations))
+            continue
+
+        if object_type == 3:
+            action_type = hirc_action_type(data)
+            operation = (action_type & 0xFF00) if action_type is not None else None
+            target_id = hirc_action_target_id(data)
+            target_type = int((objects.get(target_id) or {}).get("type") or 0) if target_id is not None else 0
+            if object_id in root_action_ids:
+                root_operations[object_id] = operation
+            traversed = operation in HIRC_PLAYBACK_ACTION_OPERATIONS and target_id is not None
+            action_evidence.append({
+                "actionId": object_id,
+                "rootActionId": root_action_id,
+                "actionType": action_type,
+                "operation": HIRC_ACTION_OPERATION_LABELS.get(operation, f"operation0x{operation:04x}" if operation is not None else "truncated"),
+                "scope": (action_type & 0x00FF) if action_type is not None else None,
+                "targetId": target_id,
+                "targetType": target_type or None,
+                "traversed": traversed,
+            })
+            if traversed:
+                queue.append((target_id, root_action_id, current_path_ids, current_path_types, path_relations))
+            continue
+
+        if object_type == 2:
+            media_id = hirc_sound_media_id(data)
+            if media_id is None:
+                unresolved_nodes.append({
+                    "objectId": object_id,
+                    "objectType": object_type,
+                    "rootActionId": root_action_id,
+                    "reason": "truncatedSoundSource",
+                })
+                continue
+            if media_id not in source_media_ids:
+                source_media_ids.append(media_id)
+            if media_id in decoded_media_ids and media_id not in resolved_media_ids:
+                resolved_media_ids.append(media_id)
+            media_row = media_evidence_by_id.setdefault(media_id, {
+                "mediaId": media_id,
+                "decoded": media_id in decoded_media_ids,
+                "soundObjectIds": set(),
+                "rootActionIds": set(),
+                "relationTypes": set(),
+                "selectionPaths": set(),
+            })
+            relations = tuple(path_relations) or ("directSound",)
+            media_row["soundObjectIds"].add(object_id)
+            media_row["rootActionIds"].add(root_action_id)
+            media_row["relationTypes"].update(relations)
+            media_row["selectionPaths"].add(relations)
+            continue
+
+        if object_type in HIRC_TYPED_CHILD_CONTAINER_TYPES:
+            parsed = hirc_reciprocal_child_list(object_id, object_type, data, objects)
+            if not parsed:
+                unresolved_nodes.append({
+                    "objectId": object_id,
+                    "objectType": object_type,
+                    "rootActionId": root_action_id,
+                    "reason": "childrenListUnresolved",
+                })
+                continue
+            child_ids, offset = parsed
+            container_row = {
+                "objectId": object_id,
+                "objectType": object_type,
+                "rootActionId": root_action_id,
+                "childrenOffset": offset,
+                "childCount": len(child_ids),
+                "parserConfidence": "reciprocalParentExact",
+            }
+            if object_type == 5:
+                container_row.update(hirc_random_sequence_properties(data, offset))
+                relation = "sequenceItem" if container_row.get("mode") == 1 else "randomAlternative"
+            elif object_type == 6:
+                relation = "switchCandidate"
+            elif object_type == 9:
+                relation = "layerChild"
+            else:
+                relation = "groupChild"
+            container_row["edgeKind"] = relation
+            container_evidence.append(container_row)
+            child_relations = (*path_relations, relation)
+            for child_id in child_ids:
+                queue.append((child_id, root_action_id, current_path_ids, current_path_types, child_relations))
+            continue
+
+        unresolved_nodes.append({
+            "objectId": object_id,
+            "objectType": object_type,
+            "rootActionId": root_action_id,
+            "reason": "unsupportedTypedNode",
+        })
+
+    media_evidence = [
+        {
+            "mediaId": media_id,
+            "decoded": bool(row["decoded"]),
+            "soundObjectCount": len(row["soundObjectIds"]),
+            "soundObjectIds": sorted(row["soundObjectIds"]),
+            "rootActionIds": sorted(row["rootActionIds"]),
+            "relationTypes": sorted(row["relationTypes"]),
+            "selectionPaths": [list(path) for path in sorted(row["selectionPaths"])],
+        }
+        for media_id, row in sorted(media_evidence_by_id.items())
+    ]
+    return {
+        "actionIds": root_action_ids,
+        "rootPlayActionCount": sum(
+            operation in HIRC_PLAYBACK_ACTION_OPERATIONS
+            for operation in root_operations.values()
+        ),
+        "rootStopActionCount": sum(operation == 0x0100 for operation in root_operations.values()),
+        "visitedObjectIds": sorted(visited),
+        "sourceMediaIds": source_media_ids,
+        "mediaIds": resolved_media_ids,
+        "mediaEvidence": media_evidence,
+        "actionEvidence": action_evidence,
+        "containerEvidence": container_evidence,
+        "unresolvedNodes": unresolved_nodes,
+        "traversalStatus": "partial" if unresolved_nodes else "complete",
+    }
 
 
 def summarize_hirc_object_types(
@@ -2829,7 +3198,25 @@ def collect_event_audio_index(
 
     event_links: dict[str, list[dict[str, Any]]] = defaultdict(list)
     event_evidence: dict[tuple[str, int], dict[str, Any]] = {}
-    seen_links: set[tuple[str, str]] = set()
+    linked_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    content_hash_by_path: dict[str, str] = {}
+
+    def content_sha256(entry: dict[str, Any]) -> str:
+        path = entry_audio_path(args.audio_root, str(args.language or "CN").upper(), entry)
+        path_key = str(path)
+        if path_key in content_hash_by_path:
+            return content_hash_by_path[path_key]
+        if not path.is_file():
+            content_hash_by_path[path_key] = ""
+            return ""
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        value = digest.hexdigest()
+        content_hash_by_path[path_key] = value
+        entry["contentSha256"] = value
+        return value
 
     package_payloads = event_bank_payloads(args)
     summary_type_counts: Counter[int] = Counter()
@@ -2843,9 +3230,11 @@ def collect_event_audio_index(
             continue
         for bank_id, bank_payload in bank_payloads:
             embedded_bank_count += 1
+            bank_version: int | None = None
             for tag, body in iter_bnk_sections(bank_payload):
                 if tag == b"BKHD" and len(body) >= 4:
-                    summary_bank_versions[unpack_from("<I", body, 0)[0]] += 1
+                    bank_version = unpack_from("<I", body, 0)[0]
+                    summary_bank_versions[bank_version] += 1
                     break
             objects = parse_hirc_objects(bank_payload)
             if not objects:
@@ -2859,31 +3248,10 @@ def collect_event_audio_index(
                 event_object = objects[event_hash]
                 if not event_object or event_object.get("type") != 4:
                     continue
-                action_ids = hirc_event_action_ids(event_object.get("data") or b"")
-                queue: deque[int] = deque(action_ids)
-                visited: set[int] = {event_hash}
-                media_ids: list[int] = []
-                while queue:
-                    object_id = queue.popleft()
-                    if object_id in visited:
-                        continue
-                    visited.add(object_id)
-                    obj = objects.get(object_id)
-                    if not obj:
-                        continue
-                    object_type = int(obj.get("type") or 0)
-                    data = obj.get("data") or b""
-                    if object_id in numeric_audio_ids:
-                        media_ids.append(object_id)
-                    if object_type == 3:
-                        target = hirc_action_target_id(data)
-                        if target is not None:
-                            queue.append(target)
-                    for value in u32_values(data):
-                        if value in numeric_audio_ids and value not in media_ids:
-                            media_ids.append(value)
-                        if value in objects and value not in visited:
-                            queue.append(value)
+                traversal = traverse_hirc_event(event_hash, objects, numeric_audio_ids)
+                action_ids = traversal["actionIds"]
+                visited = set(traversal["visitedObjectIds"])
+                media_ids = traversal["mediaIds"]
 
                 evidence_key = (event_name.lower(), bank_id)
                 object_type_counts, object_type_labels, selection_object_types = (
@@ -2894,25 +3262,51 @@ def collect_event_audio_index(
                     "eventId": event_name,
                     "eventHash": event_hash,
                     "bankId": bank_id,
+                    "bankVersion": bank_version,
                     "bank": bank_name,
                     "actionIds": action_ids,
+                    "actionEvidence": traversal["actionEvidence"],
+                    "rootPlayActionCount": traversal["rootPlayActionCount"],
+                    "rootStopActionCount": traversal["rootStopActionCount"],
                     "visitedObjectIds": sorted(visited),
                     "objectTypeCounts": object_type_counts,
                     "objectTypeLabels": object_type_labels,
                     "selectionObjectTypes": selection_object_types,
+                    "containerEvidence": traversal["containerEvidence"],
+                    "mediaEvidence": traversal["mediaEvidence"],
+                    "sourceMediaIds": traversal["sourceMediaIds"],
                     "mediaIds": media_ids,
                     "resolvedMediaCount": len(media_ids),
+                    "unresolvedNodes": traversal["unresolvedNodes"],
+                    "traversalStatus": traversal["traversalStatus"],
+                    "edgeParser": "wwise150TypedReciprocalChildren",
                     "source": "wwiseHirc",
-                    "nestedReferenceConfidence": "candidate",
+                    "nestedReferenceConfidence": "typedExact" if not traversal["unresolvedNodes"] else "typedPartial",
                 }
+                media_evidence_by_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
+                for row in traversal["mediaEvidence"]:
+                    if row.get("decoded"):
+                        media_evidence_by_id[int(row["mediaId"])].append({
+                            key: row[key]
+                            for key in (
+                                "mediaId", "soundObjectCount", "soundObjectIds",
+                                "rootActionIds", "relationTypes", "selectionPaths",
+                            )
+                            if row.get(key) not in (None, "", [])
+                        })
                 for media_id in media_ids:
                     audio_entry = audio_by_id.get(str(media_id))
                     if not audio_entry:
                         continue
                     link_key = (event_name.lower(), str(media_id))
-                    if link_key in seen_links:
+                    if link_key in linked_by_key:
+                        existing = linked_by_key[link_key]
+                        existing_evidence = existing.setdefault("wwiseMediaEvidence", [])
+                        for row in media_evidence_by_id.get(media_id, []):
+                            bank_row = {**row, "bankId": bank_id, "bankPackage": PurePosixPath(bank_name.replace("\\", "/")).name}
+                            if bank_row not in existing_evidence:
+                                existing_evidence.append(bank_row)
                         continue
-                    seen_links.add(link_key)
                     linked = {
                         **audio_entry,
                         "id": event_name,
@@ -2922,8 +3316,14 @@ def collect_event_audio_index(
                         "bankId": bank_id,
                         "bank": bank_name,
                         "source": "wwiseHirc",
+                        "contentSha256": content_sha256(audio_entry),
+                        "wwiseMediaEvidence": [
+                            {**row, "bankId": bank_id, "bankPackage": PurePosixPath(bank_name.replace("\\", "/")).name}
+                            for row in media_evidence_by_id.get(media_id, [])
+                        ],
                     }
                     event_links[event_name.lower()].append(linked)
+                    linked_by_key[link_key] = linked
 
     if hirc_summary is not None:
         hirc_summary.clear()
@@ -2945,8 +3345,10 @@ def collect_event_audio_index(
                 for object_type in sorted(summary_type_counts)
             },
             "evidenceBoundary": (
-                "Exact serialized HIRC object-family counts; this inventory does not "
-                "evaluate switch, random, sequence, layer, or music selection at runtime."
+                "Exact serialized HIRC object-family counts. Event, Action, Sound, and "
+                "types 5/6/7/9 use typed downward edges with reciprocal parent proof; "
+                "music nodes 10-13 and unresolved child structures fail closed. Runtime "
+                "switch, random, sequence, and layer selection is not evaluated."
             ),
         })
 
