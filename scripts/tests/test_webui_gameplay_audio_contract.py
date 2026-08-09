@@ -1,0 +1,121 @@
+from __future__ import annotations
+
+import shutil
+import subprocess
+import unittest
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[2]
+GAMEPLAY = ROOT / "webui" / "src" / "features" / "gameplay" / "index.js"
+
+
+@unittest.skipUnless(shutil.which("node"), "Node.js is required for WebUI JavaScript tests")
+class GameplayAudioContractTests(unittest.TestCase):
+    def run_node(self, source: str) -> None:
+        completed = subprocess.run(
+            ["node", "-e", source],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(
+            completed.returncode,
+            0,
+            msg=f"Node test failed:\nSTDOUT:\n{completed.stdout}\nSTDERR:\n{completed.stderr}",
+        )
+
+    def test_duplicate_page_end_events_merge_without_losing_candidates_or_evidence(self) -> None:
+        source = GAMEPLAY.read_text(encoding="utf-8")
+        body = source.split("  function mergeGameplaySoundEvents", 1)[1].split(
+            "\n  function renderGameplaySoundEvidence", 1
+        )[0]
+        function_source = "function mergeGameplaySoundEvents" + body
+        self.run_node(
+            f"""
+const assert = require("node:assert/strict");
+{function_source}
+const merged = mergeGameplaySoundEvents([
+  {{
+    id: "au_test",
+    audio: [{{src: "/a.flac", mediaId: 1}}],
+    sourceSkillIds: ["skill_a"],
+    triggerBindings: [{{groupId: "group_a"}}],
+    evidence: [{{skillId: "skill_a"}}],
+    playRootActionIds: [10],
+    mediaRelationTypes: ["randomAlternative"],
+    triggerRelationTypes: ["skillDataEventReference"],
+    selectorEvidence: {{
+      bankDefinitionCount: 1,
+      rootStopActionCount: 0,
+      containers: {{randomAlternative: {{nodeCount: 1, childEdgeCount: 2}}}},
+    }},
+    possibleMediaCount: 1,
+  }},
+  {{
+    id: "AU_TEST",
+    audio: [{{src: "/b.flac", mediaId: 2}}],
+    sourceSkillIds: ["skill_b"],
+    triggerBindings: [{{groupId: "group_b"}}],
+    evidence: [{{skillId: "skill_b"}}],
+    playRootActionIds: [20],
+    mediaRelationTypes: ["switchCandidate"],
+    triggerRelationTypes: ["skillBuffChain"],
+    selectorEvidence: {{
+      bankDefinitionCount: 2,
+      rootStopActionCount: 1,
+      containers: {{
+        randomAlternative: {{nodeCount: 3, childEdgeCount: 4}},
+        switchCandidate: {{nodeCount: 5, childEdgeCount: 6}},
+      }},
+    }},
+    possibleMediaCount: 2,
+  }},
+]);
+assert.equal(merged.length, 1);
+assert.deepEqual(merged[0].audio.map((row) => row.src), ["/a.flac", "/b.flac"]);
+assert.deepEqual(merged[0].sourceSkillIds, ["skill_a", "skill_b"]);
+assert.deepEqual(merged[0].triggerBindings.map((row) => row.groupId), ["group_a", "group_b"]);
+assert.deepEqual(merged[0].playRootActionIds, [10, 20]);
+assert.deepEqual(merged[0].mediaRelationTypes, ["randomAlternative", "switchCandidate"]);
+assert.deepEqual(merged[0].triggerRelationTypes, ["skillDataEventReference", "skillBuffChain"]);
+assert.equal(merged[0].selectorEvidence.bankDefinitionCount, 2);
+assert.equal(merged[0].selectorEvidence.rootStopActionCount, 1);
+assert.deepEqual(merged[0].selectorEvidence.containers, {{
+  randomAlternative: {{nodeCount: 3, childEdgeCount: 4}},
+  switchCandidate: {{nodeCount: 5, childEdgeCount: 6}},
+}});
+assert.equal(merged[0].possibleMediaCount, 2);
+"""
+        )
+
+    def test_audio_placement_and_lazy_event_contract(self) -> None:
+        source = GAMEPLAY.read_text(encoding="utf-8")
+        inline = source.split("  function renderActiveSkillSoundEffects", 1)[1].split(
+            "\n  function renderEnemySoundEffects", 1
+        )[0]
+        trailing = source.split("  function renderCharacterSkillSounds", 1)[1].split(
+            "\n  function renderActiveSkillSoundEffects", 1
+        )[0]
+        enemy = source.split("  function renderEnemySoundEffects", 1)[1].split(
+            "\n  function renderCharacterAnimationSounds", 1
+        )[0]
+
+        self.assertIn(".filter(gameplaySoundHasExactSkillTrigger)", inline)
+        self.assertIn("!gameplaySoundHasExactSkillTrigger(event)", trailing)
+        self.assertIn("mergeGameplaySoundEvents(events)", trailing)
+        self.assertIn("flattenGroups: true", enemy)
+        self.assertIn(
+            'gp$("#gameplay-detail-body").innerHTML = `${rendered.body || ""}${integrated}${trailingAudio}`;',
+            source,
+        )
+        self.assertIn('<template data-gameplay-sfx-list="${escapeHtml(key)}"></template>', source)
+        self.assertIn('details.addEventListener("toggle"', source)
+        self.assertIn("renderGameplaySoundEvidence(event, audio)", source)
+        self.assertIn('text("soundPlayBranches")', source)
+        self.assertIn("selectorEvidence.containers", source)
+
+
+if __name__ == "__main__":
+    unittest.main()
