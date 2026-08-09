@@ -1823,7 +1823,127 @@ def verify_selected_resolver_binding_contract() -> None:
         identified[2]["binding"],
         identified[2]["size"],
     ) == ("LightCookieData", "_44_45", 3, 37, 2560)
-    assert identified[2]["status"].startswith("binary-role-identified")
+    assert identified[2]["status"].startswith("binary-source-closed")
+    light_cookie_native = identified[2]["native_producer"]
+    require_hash(
+        repo_path(light_cookie_native["audit_path"]),
+        light_cookie_native["audit_sha256"],
+    )
+    require_text_hash(
+        repo_path(light_cookie_native["auditor_path"]),
+        light_cookie_native["auditor_sha256"],
+    )
+    require_text_hash(
+        repo_path(light_cookie_native["disassembler_path"]),
+        light_cookie_native["disassembler_sha256"],
+    )
+    assert light_cookie_native["owner"] == (
+        "HG.Rendering.Runtime.HGLightCookieManager"
+    )
+    assert light_cookie_native["upload_size_bytes"] == 2560
+    assert light_cookie_native["light_cap"] == 32
+    assert light_cookie_native["missing_cookie_index"] == -1
+
+    light_cookie_audit = json.loads(
+        repo_path(light_cookie_native["audit_path"]).read_text(encoding="utf-8")
+    )
+    assert light_cookie_audit["schema"] == "endfield.light-cookie-data-audit.v1"
+    assert light_cookie_audit["decision"]["verdict"] == (
+        "ISOLATED_ZERO_COOKIE_TRANSPORT_ALLOWED"
+    )
+    for pin in light_cookie_audit["inputs"].values():
+        require_hash(repo_path(pin["path"]), pin["sha256"])
+    assert light_cookie_audit["layout"] == {
+        "atlasScaleOffset": {
+            "count": 32,
+            "offsetBytes": 0,
+            "sizeBytes": 512,
+            "strideBytes": 16,
+        },
+        "constantBufferSizeBytes": 2560,
+        "maxCookieCount": 32,
+        "worldOrDirectionToCookie": {
+            "count": 32,
+            "offsetBytes": 512,
+            "sizeBytes": 2048,
+            "strideBytes": 64,
+        },
+    }
+    assert light_cookie_audit["producer"]["noCookieIndex"] == -1
+    assert light_cookie_audit["consumer"]["guard"] == (
+        "both punctual-light paths sample only when packed cookieIndex >= 0"
+    )
+
+    light_cookie_transport = identified[2]["unity_transport"]
+    assert light_cookie_transport["activation_policy"] == (
+        "default-off-fail-closed"
+    )
+    assert light_cookie_transport["environment_variable"] == (
+        "ENDFIELD_RECOVERED_LIGHT_COOKIE_DATA"
+    )
+    assert light_cookie_transport["command_line_argument"] == (
+        "-endfield-recovered-light-cookie-data"
+    )
+    assert light_cookie_transport["ready_property"] == (
+        "_EndfieldRecoveredLightCookieDataReady"
+    )
+    assert light_cookie_transport["constant_buffer_property"] == (
+        "_LightCookieData"
+    )
+    assert light_cookie_transport["texture_property"] == "_LightCookie"
+    for path_key, hash_key in (
+        ("contract_path", "contract_sha256"),
+        ("runtime_path", "runtime_sha256"),
+        ("probe_path", "probe_sha256"),
+        ("verifier_path", "verifier_sha256"),
+    ):
+        require_text_hash(
+            repo_path(light_cookie_transport[path_key]),
+            light_cookie_transport[hash_key],
+        )
+
+    light_cookie_gpu = light_cookie_transport["gpu_validation"]
+    assert light_cookie_gpu["fixture_sha256"] == (
+        "e6cd3da342352c5b26a08d49f7d25589c7bb64c347c9cabb5224f09d3ee5bd89"
+    )
+    for api, device in (
+        ("d3d11", "Direct3D11"),
+        ("d3d12", "Direct3D12"),
+    ):
+        report_path = repo_path(light_cookie_gpu[f"{api}_report_path"])
+        require_hash(
+            report_path,
+            light_cookie_gpu[f"{api}_report_sha256"],
+        )
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        assert report["schema"] == (
+            "endfield.recovered-light-cookie-data-gpu-validation.v1"
+        )
+        assert report["graphicsDeviceType"] == device
+        assert report["sizeBytes"] == 2560
+        assert report["atlasBytes"] == 512
+        assert report["matrixBytes"] == 2048
+        assert report["vectorCount"] == 160
+        assert report["wordCount"] == 640
+        assert report["fixtureSha256"] == light_cookie_gpu["fixture_sha256"]
+        assert report["gpuReadbackSha256"] == report["fixtureSha256"]
+        assert report["gpuReadbackMatches"] is True
+        assert report["zeroCookieFrameAccepted"] is True
+        assert len(report["failClosedGates"]) == 3
+        assert all(row["rejected"] for row in report["failClosedGates"])
+        assert all(row["diagnostic"] for row in report["failClosedGates"])
+        assert report["failures"] == []
+        require_unity_log(
+            repo_path(light_cookie_gpu[f"{api}_log_path"]),
+            light_cookie_gpu[f"{api}_log_sha256"],
+            [
+                "Recovered LightCookieData validation passed:",
+                "exact 2,560-byte layout",
+                "640/640 GPU words",
+                f"API={api}",
+                "Non-empty retail cookie atlases remain open.",
+            ],
+        )
     assert (
         identified[3]["role"],
         identified[3]["symbol"],
@@ -2125,7 +2245,8 @@ def main() -> int:
         "default-off isolated-count transport, plus the unique native "
         "CullLights producer, both HGCamera call sites and 256-candidate "
         "handoff before the still-open target-frame array, exact b34 ShadowData identity, and b37 "
-        "LightCookieData role, plus exact b38 "
+        "LightCookieData native layout/upload plus D3D11/D3D12-verified default-off "
+        "zero-cookie isolated transport, plus exact b38 "
         "HDPunctualLightCharacterShadowData identity), all 25 sampled texture "
         "roles, exact installed CharInfo Volume/Environment state that gates "
         "wetness and volumetric-fog sampling while retaining live reflection, "
