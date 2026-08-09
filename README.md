@@ -1,15 +1,15 @@
 # Endfield Research Kit
 
 Endfield Research Kit turns a local Windows installation of Endfield into an
-offline static research browser. The WebUI exposes recovered Story, Text
-Tables, Gameplay, Assets, game-update comparisons, and an experimental Mission
-Pipeline.
+offline static research browser. The WebUI brings recovered Story, character
+identities, gameplay data, exported assets, localized text, and game-update
+comparisons into one searchable interface.
 
 <p>
-  <img src="res/story_screenshot.png" alt="Story browser with mission list, reconstructed dialog, filters, and debug controls" height="150">
-  <img src="res/story_screenshot2.png" alt="Story browser showing recovered dialog detail with media and evidence panels" height="150">
-  <img src="res/story_screenshot4.png" alt="Asset browser showing exported OBJ models" height="150">
-  <img src="res/story_screenshot3.png" alt="Text Tables browser with searchable localized table rows" height="150">
+  <img src="res/story_screenshot.png" alt="Story browser showing text_e8m1_1 with its recovered reading image and dialog" height="150">
+  <img src="res/story_screenshot2.png" alt="Gameplay browser showing 诀 with character skills, progression, projectiles, and audio" height="150">
+  <img src="res/story_screenshot3.png" alt="Asset browser previewing the Endministrator female cloth OBJ model" height="150">
+  <img src="res/story_screenshot4.png" alt="Updates browser showing the modified m_cs_video_dlg_sm2l6m1_9.mp4 entry" height="150">
 </p>
 
 > Research only. Use a legally obtained client, do not redistribute proprietary
@@ -31,19 +31,34 @@ notepad endfield_paths.bat
 ```
 
 Set `ENDFIELD_GAME_ROOT` to the installed `Endfield_Data` directory.
-`setup_first_time.bat` initializes AnimeStudio, builds the CLI, exports the
-core WebUI data, and starts or reuses:
+`setup_first_time.bat` initializes and builds AnimeStudio, exports the core
+WebUI data, and starts or reuses:
 
 ```text
 http://127.0.0.1:8765/
 ```
 
-Use `--no-serve` to build without starting the server.
+Pass `--no-serve` to build without starting the server.
+
+## What is in the WebUI
+
+- **Story:** reconstructed dialog, radio, SNS, cutscenes, options, media, and
+  evidence-aware ordering.
+- **Characters:** grouped names and identity evidence from tables, Story, and
+  exported assets, with live merge and display-name overrides.
+- **Gameplay:** characters, weapons, equipment, enemies, usable items,
+  progression requirements, skills, projectile summaries, related assets, and
+  playable recovered sound effects.
+- **Assets:** exported images, models, materials, video, and metadata.
+- **Text:** searchable localized table rows.
+- **Updates:** exported game-data differences between saved versions.
+- **Mission Pipeline:** an experimental quest/Story evidence view available
+  only when `Show debug info` is enabled.
 
 ## Common commands
 
 ```bat
-:: Rebuild the WebUI from the existing export_full
+:: Rebuild from the current export_full
 .\export.bat
 
 :: Refresh Story and assets from the installed game
@@ -61,25 +76,17 @@ Use `--no-serve` to build without starting the server.
 :: Refresh assets and CN audio from the installed game
 .\export_assets.bat --export-from-game
 
-:: Serve the static WebUI
+:: Serve or package the WebUI
 python serve.py
-
-:: Package the WebUI
 .\pack_webui.bat
 ```
 
-`export.bat` reuses `export_full/` by default and checks that it matches the
-installed game. Use `--export-from-game` only when the installed data changed
-or a fresh extraction is intentional.
+`export.bat` reuses `export_full/` by default and verifies it against the
+installed client. Use `--export-from-game` only for an intentional fresh
+extraction. Asset export modes are `--focused-assets`, `--default-assets`, and
+`--debug-assets`; use `--animestudio-jobs N` to reduce peak memory.
 
-Asset refresh modes:
-
-- `--focused-assets`: smaller browser-referenced texture export.
-- `--default-assets`: normal WebUI image/model/material/audio export.
-- `--debug-assets`: broad diagnostic conversion.
-- `--animestudio-jobs N`: reduce concurrency when memory is limited.
-
-To build additional languages:
+To build more languages:
 
 ```bat
 python scripts\story_builder\build.py --languages CN EN JP --default-language CN
@@ -104,131 +111,62 @@ python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 .\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline
 ```
 
-Updates compare exported game-data roots, not `webui/`, `reports/`, `memory/`,
-or local source edits.
+Updates compare exported game-data roots. Local changes under `webui/`,
+`reports/`, `memory/`, or `scratch/` are never game-data updates.
 
-## Current recovery status
+## Recovery snapshot
 
 ### Story
 
-- 5,564 unique Story files across 606 pipeline missions.
-- 4,237 files have an accepted mission/context connection (**76.1%**).
-- 4,462 have a normalized trigger/context route (**80.2%**).
-- 1,327 remain unlinked; 156 already have exact native playback but lack a
-  mission/quest activation bridge.
-- 27 exact ordered-`Branch` contexts across four missions now expose every
-  serialized arm and its original-binary hashes; no multi-arm Story-order edge
-  is admitted until a second arm is proven by an original path or runtime trace.
-- The corpus-wide original-binary census covers 81 unique serialized `Branch`
-  groups / 227 slots / 37 exact playback-bearing arms across both copied
-  LevelScript roots; zero groups currently carry playback on two arms. The
-  WebUI also shows each arm's exact reachable native action names/classes,
-  302 nested mapped controls (4 `Branch`, 50 `Split`, 116 `IfElseAction`, and
-  132 `SwitchInt`), 465 nested playback arms, and 208 nested controls with
-  playback on multiple alternatives. All 233 playback-bearing nested controls
-  currently have exact binary predicates (0 playback-predicate gaps), plus 601
-  decoded nested control references and 793 nested serialized slots (629 exact
-  active / 164 explicit inactive). The family schema is mapping-derived and
-  reports 0 arm-schema gaps; the inventory stays context-only and refuses to
-  guess order or ownership.
-  The same binary-driven decoder now covers `SwitchIntLarger` generically:
-  16 copied records across 12 original LevelScript paths (8 deduplicated
-  controls), with only `map01_lv001/2100280004.json` reaching the exact
-  `sm1l1m9` → `dlg_sm1l1m9_5` Story path. Its case targets are inactive, so no
-  new order edge is admitted; the WebUI exposes the complete family census
-  and shows `SwitchIntLarger: 8`. The dungeon copies are also attached to
-  exact `e10m4d5`/`e10m1d5` mission context through their authored
-  MissionRuntime LevelScript property/stage conditions; this does not promote
-  them to Story ownership or inter-file order.
-  The same original-binary projector now exposes five
-  `WaitForSecondsInTriggerVolume` controls as success/fail outcomes in two
-  attached LevelScript files; waiting/current-action and next-tick delay paths
-  remain context, not inferred Story order.
-- A general original-binary Encounter contract now adds exact controller and
-  related LevelData/SpawnerConfig context for 27 of those Story keys. Its
-  LsmPtr module namespace is shown separately from the receiver LevelScript,
-  without inventing mission ownership or order.
-- The receiver audit now recovers the underlying pattern generically: all 15
-  serialized `@<module>_<field>` families are censused by native value shape
-  (including the eight base lifecycle-only families), with stable family keys
-  and exact LevelData sources. New module families no longer require an
-  object-specific recovery function; only a separately binary-validated
-  semantic contract may add a label, and none adds mission ownership or order.
-- Two exact mission-named LevelData receiver contexts (`e9m3` /
-  `cutscene_e9m3_2` and `e3m6` / `cutscene_e3m5_3`) are now visible with their
-  original LevelData and LevelScript files; the filename token and validated
-  dictionary are container context only, not activation, ownership, playback,
-  branch, or Story-order evidence.
-- A general recursive ActionHeader validator now exposes all 30 exact receiver
-  playback gates, including AND/OR/NOT/ALL trees, comparisons, property/stage,
-  LSM-completion, and interactive-state leaves, without treating those local
-  predicates as mission ownership or cross-Story order.
-- All 259 named native branch predicates are operand-decoded where their
-  current binary layout is supported; the pipeline reports 264 semantic
-  predicates including inline forms, with 0 class-only and 0 unresolved.
-- Parallel Split semantics now come from a general original-binary scheduler
-  census rather than an action-name rule: two writer methods and all three
-  direct scheduler calls validate, covering 44 branch groups and 77 exact
-  Story transitions while keeping sibling slots unordered.
-- A general installed-binary quest-lifecycle rule adds 22 exact same-quest
-  objective-to-succeed-action Story edges across 18 missions; each carries its
-  original MissionRuntime and binary hashes without inferring server branch choice.
-- The same general dispatcher census proves Fail=4 and Succeed=2 across every
-  current AOT fallback path, while finding no Start=1 producer. The WebUI keeps
-  60 authored start roots visible in quest inspectors; 57 have typed Story
-  references, and the 53 candidate-scene matches appear as attached definition
-  cards without turning them into scene order.
-- Installed metadata now names every authored fork arm's numeric `questType`
-  (`Normal`, `Block`, or `Optional`) and `showMode` (`AlwaysShow` or
-  `AlwaysHide`). The complete direct-consumer audit finds seven quest-type
-  methods: the sole `Optional` comparison sets the exact objective-display
-  `optional` flag, while two `Block` comparisons emit a global notification
-  only after lifecycle application. Five visibility methods make zero
-  lifecycle calls. These labels explain client presentation and notification,
-  but do not select or exclude a successor.
-- The source-only graph is cycle-free, but proves order for only **1.54%** of
-  possible within-mission scene pairs. It is a partial order, not a canonical
-  full playthrough.
+- The current CN coverage report contains 5,563 unique Story files across 490
+  pipeline missions.
+- 4,236 files have an accepted pipeline connection (76.1%); 4,457 have at
+  least one normalized trigger or context route (80.1%).
+- 1,327 files remain unlinked. Of those, 156 already have exact native
+  playback but still lack a mission or quest activation bridge.
+- The source-only graph is cycle-free, but proves only 1.54% of possible
+  within-mission pairs. It is intentionally a partial order, not a claimed
+  canonical playthrough.
 
-The largest missing Story source is a server/runtime ownership bridge joining
-LevelScripts to missions and quests. Details:
+Current counts and evidence breakdowns live in
+[`reports/story/build/mission_pipeline_story_binding_coverage_CN.md`](reports/story/build/mission_pipeline_story_binding_coverage_CN.md)
+and [`reports/mission_order/source_story_partial_order_CN.md`](reports/mission_order/source_story_partial_order_CN.md).
+Stable conclusions and the recovery queue live in
 [`memory/game_story_recovery.md`](memory/game_story_recovery.md).
 
 ### Character models and animation
 
 - All 30 playable models are imported and render successfully.
-- All 156 canonical post-model identities have generated prefab paths:
-  30 playables, 2 NPC characters, 1 cutscene clone, 94 enemies, and 29
+- All 156 canonical post-model identities have generated prefab paths: 30
+  playables, 2 NPC characters, 1 cutscene clone, 94 enemies, and 29
   ability/prop actors.
-- Playable UI animation recovery includes 754 body clips and 321 private
+- Playable UI animation recovery covers 754 body clips and 321 private
   item/deco clips.
-- Static playable Overview assets are highly recovered, but retail rendering
-  parity is not reached. CharacterNPR coverage is roughly 60–75%; the complete
-  CharInfo/HGRP frame is roughly 35–50%.
+- Static Overview reconstruction is strong, but original HGRP lighting,
+  shadows, material state, controller execution, IK, facial behavior, physics,
+  and non-playable animation remain incomplete.
 
-The main remaining work is HGRP lighting, shadows, depth/GBuffer/deferred
-composition, live material state, controller execution, IK, facial behavior,
-physics, and non-playable animation. Details:
-[`memory/character_render_and_animation_recovery.md`](memory/character_render_and_animation_recovery.md).
+See
+[`memory/character_render_and_animation_recovery.md`](memory/character_render_and_animation_recovery.md)
+for the current evidence boundary.
 
 ## Repository layout
 
-- `webui/`: static browser and generated data.
-- `scripts/`: export, build, update, audio, and packaging tools.
+- `webui/`: static browser, runtime overrides, and generated data.
+- `scripts/`: maintained export, build, update, audio, and packaging tools.
 - `tools/AnimeStudio/`: tracked exporter fork.
 - `export_full/`: generated extraction from the installed client.
-- `reports/`: generated audits grouped by topic.
+- `reports/`: generated inventories and audits grouped by topic.
 - `memory/`: concise current conclusions and recovery queues.
-- `scratch/`: revisitable experiments.
-- `tmp/`: disposable intermediates.
-- `unity_endfield_graph_shader_lab/`: character rendering/animation recovery.
+- `scratch/`: revisitable experiments; `tmp/`: disposable intermediates.
+- `unity_endfield_graph_shader_lab/`: character rendering and animation lab.
 
 Further documentation:
 
-- [`scripts/README.md`](scripts/README.md): maintained command and script map.
-- [`webui/README.md`](webui/README.md): frontend scope and data contract.
-- [`memory/README.md`](memory/README.md): recovery-status index.
-- `AGENTS.md`: detailed contributor and automation rules.
+- [`scripts/README.md`](scripts/README.md): command and script map.
+- [`webui/README.md`](webui/README.md): frontend scope and data contracts.
+- [`memory/README.md`](memory/README.md): recovery-topic index.
+- `AGENTS.md`: contributor and automation rules.
 
 ## Acknowledgements
 
@@ -242,11 +180,8 @@ this research workflow possible.
 Special thanks to these LLM-driven community wiki projects. They are not
 affiliated with this repository, but they are useful public references:
 
-- [AIC | Endfield Industrial Terminal](https://endfield.prts.chat/) is an
-  AI-assisted Endfield wiki/reference project for browsing organized public
-  game information.
-- [PRTS | Rhodes Island Terminal](https://prts.chat/) is an AI-assisted
-  Arknights wiki/reference project covering the broader setting.
+- [AIC | Endfield Industrial Terminal](https://endfield.prts.chat/)
+- [PRTS | Rhodes Island Terminal](https://prts.chat/)
 
 These resources complement this local research workspace; important claims
 should still be checked against primary game data.

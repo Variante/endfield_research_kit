@@ -3775,23 +3775,11 @@ function renderItem(row) {
   const kindNm = meta.name;
   const triggerSummary = STATE.showDebug ? storyTriggerCompactText(e.k) : null;
 
-  // Story order position badge – always visible in story sort mode
-  let storyOrderPositionBadge = "";
-  if (inStorySort) {
-    const orderDetail = storyOrderDetailForEntry(e);
-    if (orderDetail && storyOrderBadgeClass(orderDetail)) {
-      const pos = Number(orderDetail.position) + 1;
-      const badgeCls = storyOrderBadgeClass(orderDetail);
-      const badgeTitle = escapeHtml(`${uiText("storyOrderBadgeTitle") || "Recovered order"} #${pos}`);
-      storyOrderPositionBadge =
-        `<span class="story-order-badge ${badgeCls}" title="${badgeTitle}">#${pos}</span>`;
-    }
-  }
-
+  // Recovered order remains available to sorting and debug controls, but the
+  // numeric position is intentionally not repeated beside every file title.
   div.innerHTML =
     `<div class="item-line1">` +
       `<span class="badge ${kindCls}">${escapeHtml(kindNm)}</span>` +
-      storyOrderPositionBadge +
       phaseChip +
       ocrRankChip +
       `<span class="item-key">${highlightTextFragment(displayEntryTitle(e), STATE.filters.q)}</span>` +

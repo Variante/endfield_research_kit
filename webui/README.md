@@ -1,7 +1,7 @@
 # WebUI
 
-`webui/` is a static browser for generated Endfield research data. It is the
-primary supported user interface.
+`webui/` is the primary supported interface: a static browser over generated
+Endfield research data.
 
 ## Run
 
@@ -12,49 +12,43 @@ From the repository root:
 python serve.py
 ```
 
-Reuse `http://127.0.0.1:8765/` if it is already running.
+Reuse `http://127.0.0.1:8765/` when it is already running. Generated payloads
+under `webui/data/` are builder outputs and must not be edited by hand.
 
 ## Pages
 
-- **Story:** recovered dialog, radio, SNS, cutscenes, options, media, and
-  evidence.
-- **Characters:** grouped identity evidence — names, evidence groups, and
-  assets — across CharacterTable, NpcTable, SNSChatTable, TextTable, and
-  story actor/asset markers, with manual merge overrides.
-- **Text Tables:** searchable localized table rows.
-- **Gameplay:** curated character, weapon, ability, progression, economy, and
-  world records. Playable-character details include breakthrough material
-  requirements; each detail view also surfaces related progression and linked
-  image/model assets.
-- **Mission Pipeline (experimental):** quest DAG plus evidence-typed Story
-  trigger chains.
+Normal navigation exposes:
+
+- **Story:** dialog, radio, SNS, cutscenes, options, media, recovery labels,
+  and evidence-aware ordering.
+- **Characters:** grouped names, source evidence, aliases, and linked assets.
+- **Gameplay:** characters, weapons, equipment, enemies, usable items,
+  progression requirements, skills, projectiles, assets, and recovered audio.
 - **Assets:** exported images, models, materials, video, and metadata.
+- **Text:** searchable localized table rows.
 - **Updates:** differences between previous and current exported game data.
 
-Standalone Mission Pipeline is experimental and appears only with `Show debug
-info`. The former standalone Combat & Projectiles page is retired; its useful
-projectile summaries and playable audio stay with character skills in Gameplay.
-SkillData/BuffData sound effects also appear as compact players on character
-skills and enemy details when their Wwise media can be resolved.
-Gameplay combat relationships remain debug-only. Character skill rows keep a
-compact player-facing projectile behavior summary visible normally and explain
-when a skill has no linked separate projectile template; raw projectile identity,
-source, matching evidence, and unresolved ownership remain debug-only.
+**Mission Pipeline** is experimental and appears only with `Show debug info`.
+The standalone Progression and Combat & Projectiles pages are retired. Their
+useful player-facing data now appears in Gameplay; raw combat relationships,
+projectile matching evidence, and unresolved ownership remain debug-only.
 
-## Main files
+## Frontend map
 
-- `index.html`: application shell.
-- `style.css`: shared layout and media presentation.
-- `app.js`: loading and Story rendering.
-- `app_tree.js`: navigation, grouping, and filters.
-- `app_labels.js`: shared labels and formatting.
-- `reference.js`: Text Tables.
-- `assets.js`: Assets.
-- `updates.js`: Updates.
+- `index.html`: application shell and page containers.
+- `style.css`: shared layout, controls, cards, and media presentation.
+- `app.js`, `app_tree.js`, `app_labels.js`: Story loading, rendering, tree,
+  labels, filters, and shared media behavior.
+- `reference.js`, `assets.js`, `updates.js`: Text, Assets, and Updates pages.
+- `src/features/characters/`: Characters page and live override editing.
+- `src/features/gameplay/`: Gameplay page and integrations.
+- `src/features/mission_pipeline/`: experimental mission evidence view.
+- `src/features/{economy,world,presentation,projectiles,combat}/`: semantic
+  payload integrations used by Gameplay or debug views.
 
-Generated payloads live under `webui/data/`; do not hand-edit them.
+## Data contract
 
-## Data layout
+Important generated roots:
 
 ```text
 data/manifest.json
@@ -62,327 +56,64 @@ data/lang/<LANG>/index.json
 data/lang/<LANG>/conv/
 data/lang/<LANG>/mission/
 data/lang/<LANG>/reference/
+data/lang/<LANG>/characters/index.json
+data/lang/<LANG>/gameplay/index.json
+data/lang/<LANG>/gameplay/sound_effects.json
+data/lang/<LANG>/{economy,world,presentation}/index.json
+data/gameplay/projectiles.json
 data/mission_pipeline/
 data/assets/index.json
 data/assets/gameplay_refs.json
+data/assets/story_media.json
+data/assets/videos.json
 data/updates/latest.json
 ```
 
-Manual runtime inputs live under `webui/overrides/`:
+Gameplay loads its base index and optional combat, projectile, audio, and asset
+sidecars independently. Missing optional sidecars must degrade to the base
+record instead of breaking the page. Presentation and combat builders expose a
+visible degraded reason when their source graph is absent or stale.
 
-- `story_order.json`: complete user-managed mission order.
-- `options.json`: manual option positions and responses.
-- `narrative_videos.json`: explicit video attachment/suppression rules.
-- `character_merges.json`: manual identity merges for the Characters page,
-  plus a `flagged` list of ids marked "needs a merge, target unknown" —
-  both edited live from that page's UI (no rebuild needed).
+## Runtime overrides
 
-Rebuild Story data after editing `story_order.json`, `options.json`, or
-`narrative_videos.json`.
+Manual inputs live under `webui/overrides/`:
+
+- `story_order.json`: complete user-managed order for each mission.
+- `options.json`: manual option positions and response routes.
+- `narrative_videos.json`: explicit video attachment, suppression, and audio
+  inheritance rules.
+- `character_merges.json`: additive identity merges and a `flagged` queue.
+- `character_name_overrides.json`: replacement display names keyed by the same
+  canonical character ids.
+
+Story overrides require a Story rebuild. Character merges and display names
+are edited live from the Characters page through `serve.py`; they do not
+require rebuilding generated character data. Self-merges and cycles are
+rejected, and merging a flagged source clears that flag.
 
 ## Behavior contract
 
-- Recovery issue and method filters stay visible in all modes.
-- Debug panels and manual order controls are behind `Show debug info`.
-- Reset returns to Story sort and preserves expanded mission groups.
-- Disabling debug from a hidden page returns to a visible page and URL.
-- Gameplay details load the Combat, Projectile, skill/enemy sound-effect, and compact asset sidecars
-  independently. Character skill rows show one compact projectile behavior
-  summary plus playable sound links in normal mode. Expand a projectile entry
-  and use the player under `Related sound effects`. The column covers only
-  linked separate projectile templates; direct skill actions/effects, melee
-  hitboxes, summons, and unrecovered runtime links can have no row.
-  `Show debug info` adds raw identifiers,
-  source coordinates, match evidence, combat relationships, and the unresolved
-  internal-projectile block. Missing sidecars degrade to the base record.
-  - Playable projectile sounds are exact Wwise-event media candidates. Multiple
-    candidates remain grouped because runtime switch/random selection is not
-    statically recovered. Projectile, character-skill, and enemy SFX use the
-    same enhanced audio player as Story lines, including seek, volume,
-    waveform, and download controls. Hidden Gameplay candidates are upgraded
-    lazily when their sound group opens.
-  - Character-skill sound ownership is direct for exact playable skill ids and
-    visibly inferred for authored child SkillData families. Enemy sound
-    ownership is visibly inferred from the longest exact enemy/variant-id
-    prefix unless an explicit born-buff field supplies the link. Unowned global
-    SkillData is not promoted to an entity.
-  - Playable-character details keep identity assets in Character stats,
-    breakthrough material requirements in the character detail,
-    combat/projectile evidence inside the matching skill group, and
-    skill/talent costs, icons, and source coordinates in their existing structures; potential
-    pictures stay inside the corresponding potential row. Do not append duplicate
-    entity-level panels after the character detail.
-- Gameplay image thumbnails and model paths link back to the selected item in
-  Assets; the compact `gameplay_refs.json` sidecar is regenerated from the
-  broad exported asset index.
-- Enemy details keep only the highest-ranked original image. Variant rows form
-  a selectable difference table with no per-variant Story link; selecting a
-  row swaps the exact referenced attribute template. Enemy stat sliders expose
-  only authored `EnemyAttributeTemplateTable` points and never interpolate or
-  derive missing level coordinates. Combat links show original table/field
-  coordinates, authored values, semantic boundaries, and direct-versus-matched
-  confidence.
-- Characters groups identity records under one entry per matching display
-  name, then re-keys each group by its smallest constituent record id (a
-  table/asset key, not localized text) so the id — and anything stored
-  against it in `overrides/character_merges.json` — stays valid across
-  language builds.
-- Characters identities built from exported-asset filenames exclude a
-  code-reviewed, source-commented allowlist of non-character tokens and
-  filename families (`EXCLUDED_TOKENS`, `EXCLUDED_FILENAME_FRAGMENTS` in
-  `scripts/build_character_data.py`): config/table files, VFX materials,
-  generic props, and positional/numbered UI icons. See that script's
-  "Characters catalog" contract in `scripts/README.md` before adding to
-  either list.
-- Manual Characters merges (`overrides/character_merges.json`) are additive
-  on top of automatic grouping, never a rebuild input: the target inherits
-  every name, evidence group, and alias from the source, cycles/self-merges
-  are rejected, and an id flagged "needs merge, target unknown" clears
-  automatically once it is actually merged.
-- Mission Pipeline distinguishes ownership, context, definition-only rows, and
-  unresolved native playback.
-- Mission objective cards expose every complete authored LevelScript task
-  tuple, its task display metadata, and hash-checked MissionRuntime,
-  LevelScriptData, and ScriptTaskExtraInfoTable files. These rows are completion
-  dependencies only; they do not claim script activation, Story ownership,
-  branch selection, or scene-file order.
-- Its authored-structure panel expands every MissionRuntime quest fork into
-  main/auxiliary arms, typed objective and failure guards, terminal state, and
-  exact first common descendant. Each arm shows its sibling-exclusive quest
-  corridor, exact typed Story relations, and hash-checked arm-related original
-  files. It links the hash-validated original runtime file and labels
-  server-side arm selection and exclusivity as unresolved.
-- Every authored fork now includes a server-application card derived from the
-  original binary and metadata. It shows the exact arm `questId` values,
-  packet fields, handler, `Processing -> StartQuest` and
-  `Completed -> SucceedQuest` routes, source hashes, and the explicit boundary
-  that the client applies but does not select the successor arm.
-- The same card shows the binary-validated enable/pause matrix: enabled and
-  unpaused starts, enabled and paused remains paused, and disabled reaches
-  `DisableQuest` for either pause value. It also labels `prevQuestState` as
-  serialized but unread, links the exact binary and metadata hashes, and does
-  not promote these application routes to server arm policy or Story order.
-- Its native-boundary panel shows the generally discovered mission/quest
-  identity+state application paths, the exact lifecycle identity flow, the
-  absence of a client successor selector, and the hash-validated original
-  `GameAssembly.dll` and `global-metadata.dat` sources. Each displayed quest
-  fork also shows the binary-derived `StartQuest` boundary: objective-list
-  reads, zero predecessor/flow reads, zero topology traversal calls, and both
-  exact related original files. The same card exposes the whole-client
-  topology-field census: verified direct `GetQuestInfo` callers, the deprecated
-  predecessor-description reader, display-only flow comparator, main-path
-  context/cache consumers, and zero topology-driven lifecycle calls.
-  Fork arms also show installed-metadata names for `questType` and `showMode`.
-  The authority card exposes all seven quest-type consumer methods, the two
-  post-lifecycle `Block` notification corridors, the exact
-  `ObjectiveShowData.optional` write, all five visibility consumer methods,
-  and zero visibility-driven lifecycle calls. These are presentation and
-  post-application notification semantics, not evidence of arm activation or
-  exclusivity.
-  Predecessor forks remain topology rather than claimed server branch choice.
-- Story branch context cards retain both producer `sourceFiles` and already
-  normalized `relatedOriginalFiles`, including the exact GameAssembly and
-  metadata hashes cited by binary validators. Missing MissionRuntime namespaces
-  with that context appear as graph-neutral Story-branch shells; the files are
-  definition/validation context, never ownership, activation, or Story order.
-- The managed-carrier card shows the cycle-safe fixed-point census, maximum
-  shortest type path, Entity/shared-runtime aggregate closures, zero exact
-  indexed Entity/component type labels plus the truncated-scalar boundary, and the binary, metadata, and two
-  original-object-index files used for that boundary. Type-graph reachability
-  alone never creates a mission ownership or order edge.
-- The native cross-system card shows the complete hash-pinned direct-call
-  census across MissionSystem, DynamicScene, LevelScript, and Story APIs,
-  plus the fixed-point consumer closure and the metadata-backed deferred chain
-  `mission/quest state -> pending component set -> BeforeTick -> condition
-  update -> RefreshEntityStatus`. The same card shows the complete managed
-  mission/quest runtime surface and the tracking-only LevelScript caller: it
-  writes `sceneId` but never `missionId`. It links the original binary and
-  metadata hashes. The same card exposes all 13 managed callable fields, five
-  typed binding entry methods, and five current native binding calls: each
-  stays within MissionSystem or LevelScriptRuntime, with zero cross-family
-  bindings. These runtime contexts remain distinct from LevelScript activation,
-  Story ownership, playback causality, and order.
-- Story-order panels show binary-proven quest-success lifecycle edges as
-  `objective Story completed -> server success state -> succeed client action`.
-  Each edge links its exact quest relations and expands the hash-checked
-  MissionRuntime, `GameAssembly.dll`, and metadata files. This proves relative
-  order only for the matching same-quest pair, not that success occurred or
-  which successor branch the server selected.
-- Story-order panels also show exact mission-observed LevelScript contexts when
-  a typed objective names the same `(level, script)` as native Story playback.
-  They expose the quest, condition/property, Story keys, and related original
-  files while visibly preserving unresolved ownership, activation, property
-  writer, and order.
-- DialogTree conditional Story edges are discovered across the serialized
-  corpus, not by mission-specific declarations. Their cards show the typed
-  predicate, binary-validated true/false connection ordinals, complete carrier
-  line arms, and the exact DialogTree TextAsset plus `GameAssembly.dll` files;
-  ambiguous or incomplete routes remain absent with a bounded diagnostic.
-- The same panel lists exact same-Story authored `DialogTreeIfNode` routes from
-  the corpus-wide validator. Each row shows both serialized arms, nested
-  condition operands, the binary polarity contract, and the related TextAsset
-  plus `GameAssembly.dll`; these are selection-evidence rows only and never
-  imply a file-order edge or mission trigger.
-- The same panel lists authored quest-start Story actions separately when the
-  current installed-binary census has no slot-1 dispatcher. Each row exposes
-  its quest, action, Story file, boundary, and hash-checked MissionRuntime,
-  `GameAssembly.dll`, and metadata files. These definition rows are counted
-  visibly but never become order edges; quest inspectors use the same dispatch
-  badge on every client action.
-- Post-playback `CallServer` rows show their complete binary-decoded serialized
-  contract and exact related `LevelScriptData` file, while keeping correlation
-  labels and argument parameters explicitly non-owning.
-- BlackBox recovery shells show the exact SubGame row, bound LevelScript,
-  separate main/extra/fail task lanes, complete decoded task conditions,
-  condition formulas, objective display keys, typed parent playback, and the
-  complete serialized event/action graph. Ordered Branch sequences, Split
-  fan-outs, conditional choices, loops, convergences, Story targets,
-  runtime-shadowed duplicate-id records, and missing-slot normal terminals
-  remain distinct from separate event roots and from parents
-  that are definition-only. Task topology is never presented as a successor
-  graph or Story order, and action edges never order separate event roots.
-- Story-order panels attach compact original LevelScript graphs only through an
-  exact native event-to-Story path. They show the related file and semantic
-  control actions, active last-serialized runtime slots, and shadowed physical
-  records without treating the rest of the file as mission chronology.
-- The runtime-authority panel shows the structurally discovered ActionBase
-  extra-thread scheduler, every admitted composite writer shape, exact native
-  method/token/field evidence, and binary/metadata hashes. Parallel Story
-  transition badges appear only when this current-build contract validates;
-  sibling action slots remain explicitly unordered.
-- Native branch cards show typed predicate operands when the current binary
-  union, formatter field order, payload shape, and runtime consumer all agree;
-  embedded root `GameCondition` unions and local getter references retain
-  their nested type/operand details, while opaque or changed shapes remain
-  visibly unresolved.
-- Cross-boundary native branch cards open by default, badge Story files outside
-  the nominal mission group, show the installed runtime mapping, and attach the
-  hashed LevelScript, MissionRuntime, binary, and metadata inputs. Parallel
-  Split arms and conditional alternatives remain explicitly non-chronological.
-- Native branch cards show the complete original serialized arm shape when its
-  runtime-active action map matches the installed binary mapping. Story arms,
-  active non-Story entry actions, inactive target slots, arm-exclusive action
-  topology, shared downstream actions, and related hash-addressed original
-  files remain visibly distinct; non-Story arms never imply Story ownership,
-  chronology, or mission membership.
-- Corpus serialized-Branch diagnostics also summarize mapping-derived nested
-  controls: each `Branch`, `IfElseAction`, `SwitchInt`, `SwitchIntLarger`, `SwitchString`,
-  `Split`, `WhileAction`, or the binary-mapped
-  `WaitForSecondsInTriggerVolume` outcome family retains its serialized arms,
-  exact reachable
-  playback keys, and binary predicate when proven. Missing family fields are
-  shown as fail-closed schema gaps. Multi-playback nested controls are
-  displayed as conditional context; they never become file-order edges or
-  ownership claims.
-- Mission objective cards also expose every generic binary-decoded typed
-  control observed by an authored LevelScript condition. The control detail,
-  exact serialized outgoing edges, event roots, mapping id, and hash-addressed
-  source file are mission-context evidence only; a `CheckLevelScript*`
-  condition does not establish Story ownership or inter-file order.
-- Mission Pipeline includes every recovered native branch placement. Late
-  Story-only shells receive the full source-order row, while a missing Story
-  namespace becomes a labeled variant aggregate only when its generated bundle
-  explicitly declares validated MissionRuntime variants. The aggregate links
-  those variant missions and shows their hash-addressed original files, without
-  presenting the aggregate as a MissionRuntime mission or ownership proof.
-- Mission-state alternative cards preserve every Story file on both exact
-  serialized arms, including cross-mission nominal groupings, and expose the
-  related original LevelScript, MissionRuntime, binary, and metadata files.
-  They are labeled as alternative selection rather than Story order or
-  ownership.
-- Exact native receiver cards also expose the corpus-driven serialized module
-  property-family census. Every `@<module>_<field>` group with at least two
-  fields is shown with its value-type/atom-count shapes, stable family key, and
-  exact LevelData source. The generic namespace rule is binary-validated and
-  does not require per-object declarations; family repetition remains
-  non-owning context until a typed mission/quest foreign key is proven.
-- Exact native receiver cards recognize the reusable `EncounterBase<T>` /
-  `EncounterData` property contract structurally and show its validated
-  LevelData host, LsmPtr module namespace, receiver LevelScript, and typed
-  SpawnerConfig dependency. Module and receiver ids are kept distinct, zero
-  spawners are labeled explicitly, and these remain non-owning with no branch
-  or order edge.
-- Exact native receiver cards also show generally decoded
-  `ActionHeader._validate` playback gates. Predicate type, operands, local
-  header/getter/action ids, recursive getter-node count/depth, and the original
-  LevelScript file stay visible. AND/OR/NOT/ALL trees are rendered from typed
-  child references while missing, cyclic, or unknown children fail closed;
-  the UI labels them as receiver-local branches, never mission ownership,
-  cross-Story order, or proof of a later server write.
-- Receiver cards with decoded tasks show the binary-validated
-  scene/script/task protocol identity, exact `lt:p`/`lt:mp` LevelData progress
-  properties, and hashes for attached original binaries and data files. The
-  panel keeps this server-backed task lifecycle separate from mission/quest
-  ownership and scene-file ordering.
-- Every receiver whose serialized start type is `SameWithActive` also shows
-  the generic binary-validated `Active + unfinished -> PreStart` transition,
-  the discovered runtime method/enum values, and exact binary/metadata hashes.
-  The panel keeps the still-missing mission/server activation source and
-  cross-Story order visibly unresolved.
-- Receiver cards with a matching serialized current-context ManualStart row
-  show the binary-validated `CURRENT_LEVEL_ID + CURRENT_SCRIPT_ID -> hosting
-  script -> ManualStart -> PreStart` carrier, its authored event/action local-id
-  link, native method addresses, and exact binary/metadata hashes. This is a
-  local self-start edge only; mission ownership, branch selection, and
-  cross-Story order remain explicitly unresolved.
-- Every receiver card shows the binary-validated public state application path
-  and its scene/script/state-only packet boundary. Cards with an exact typed
-  SubGame binding additionally show the original-data
-  `SubGame id -> bindScriptId -> LevelScript -> ManualStart` interaction
-  carrier. Both panels attach current binary/metadata hashes while keeping
-  mission ownership, server branch selection, and cross-Story order unresolved.
-- Every receiver card also shows the binary-validated client start-request
-  lifecycle: `ManualStart flag -> PreStart -> CS start request ->
-  PreStartActionRunning`, including sender addresses, true/false runtime request
-  arguments, and the zero-direct-caller boundary on the public network API.
-  This remains the later Start lifecycle and does not promote the request path
-  to ownership or ordering.
-- Every exact receiver card now shows its original serialized header phase and
-  the generic binary-validated `Setup -> ActiveBegin -> enable Active(0)` path.
-  All 161 receiver headers are Active-phase, including validated runtime-
-  shadowed maps. The 54 manual scripts therefore do not need ManualStart for
-  receiver availability. Each card also joins its exact validated LevelData
-  type to the generic binary selector. All 95 current receivers are non-
-  `SubLevelScript` and visibly show `Enabled -> active-area gate -> PreActive ->
-  active=true -> WaitForStateActive`. Each card also shows its directly decoded
-  original sphere/box activation geometry and the binary-validated active/
-  outside-list gate behavior. The public-state row distinguishes the full-scene
-  `SC_SELF_SCENE_INFO` snapshot from incremental state notifications and shows
-  that both are server-derived. The UI still labels the unavailable server-side
-  selection rule, player position and playthrough-specific spatial result,
-  server acceptance, event occurrence, mission owner, branch choice, and
-  cross-Story order unresolved.
-- Above the exact receiver cards, a corpus-wide original structured-data census
-  shows candidate files, visited records, direct identity carriers, receiver
-  matches, and unreviewed shapes. Only exact script and mission/quest fields in
-  one record count; the panel explicitly excludes filename, ancestor, OCR, and
-  override proximity from evidence.
-- Mission order panels also attach a generic mission-named LevelData receiver
-  context when the exact LevelData filename token matches a pipeline mission
-  and its validated member-22 `LevelScriptBriefData` dictionary contains the
-  receiver. The panel links the original LevelData and LevelScript files while
-  keeping activation, ownership, playback, branch selection, and Story order
-  false; filename proximity alone is never promoted.
-- Mission Pipeline opens source-bounded activation gaps in the order panel and
-  shows exact ReadingPopUp/RichContent row identities for definition-only text
-  files and
-  lists exact recovered definition files, tables, non-owning LevelData context,
-  and internal Timelines without promoting OCR or manual order to evidence.
-- Quest diagnostics list the exact original-data files and decoded property or
-  NPC-proxy record that bounds a non-owning co-membership; authored DialogTree
-  branch context remains visible even when it cannot identify a unique trigger.
-- Mission order is never inferred from registration, source-file order, or
-  code addresses.
-- Identifier-only Combat ownership remains visibly inferred.
+### Shared navigation
 
-## Inline media
+- Recovery issue and method filters remain visible in normal and debug modes.
+- Source panels, mission evidence, and Story order editing stay behind
+  `Show debug info`.
+- Story reset returns to Story sort while preserving expanded mission groups.
+- Disabling debug while Mission Pipeline is active moves to a visible page and
+  normalizes the URL.
+
+### Story and media
 
 - `sns_emoji_*` renders as small inline emoji with no hover or modal.
-- `sns_image_*`, `sns_sticker_*`, and related non-emoji media render at normal
-  proportions.
-- Hover and modal previews stay bounded by the viewport.
+- `sns_image_*`, `sns_sticker_*`, and related non-emoji media preserve normal
+  image proportions.
+- Hover and modal previews remain inside their frame and the viewport.
+- Definition-only rows, non-owning context, exact playback, and mission
+  ownership remain visibly distinct.
+- Mission or scene order is never inferred from registration, source-list
+  order, file order, or code addresses.
 
-Useful fixtures:
+Useful inline-media fixtures:
 
 ```text
 test_sns_emojicomment
@@ -390,21 +121,53 @@ test_sns_sticker
 sns_topic_map02_lv005_12002
 ```
 
+### Characters and Gameplay
+
+- Character groups use canonical ids derived from constituent table/asset ids,
+  not localized display text, so overrides survive language builds.
+- Filename-derived identities pass documented exclusion lists in
+  `scripts/build_character_data.py`; add exclusions only after tracing the
+  exact false-positive source family.
+- Playable-character details keep breakthrough requirements, skill/talent
+  costs, potential art, stats, and identity assets in their owning sections.
+- Skill glyphs stay centered in circular controls. Normal-skill, Ultimate, and
+  Combo discs use the owning character's exact `CharTypeTable.json` color:
+  Cryst `#21C6D0`, Fire `#FF623D`, Natural `#9EDC23`, Physical `#888888`, and
+  Pulse `#FFC000`; Normal Attack remains neutral.
+- Enemy variants are a selectable difference table. Stat controls expose only
+  authored points and never interpolate missing levels.
+- Character skill rows show one compact linked-projectile summary and playable
+  sound groups in normal mode. A skill may legitimately have no separate
+  projectile template.
+- Exact Wwise media candidates stay grouped when switch/random selection is
+  unresolved. Direct and inferred skill/enemy ownership are labeled.
+- Gameplay thumbnails and model paths link back to the matching Assets entry.
+
+### Mission Pipeline
+
+- Trigger cards preserve evidence type and original source boundaries.
+- Native playback without a mission owner remains explicitly unassigned.
+- Definition-only rows never become activation, ownership, or order evidence.
+- Quest topology and client-applied state do not prove server successor
+  selection.
+- Manual Story order and OCR proposals are cross-reference material, not graph
+  evidence.
+
+Detailed, changing Mission Pipeline inventories belong in generated reports;
+stable Story conclusions belong in `memory/game_story_recovery.md`.
+
 ## Verification
 
-After frontend changes:
+After frontend or data changes:
 
-1. Reuse or start the local server.
-2. Confirm Story and Text Tables load.
-3. Check normal and debug navigation.
-4. Verify Mission Pipeline unresolved/definition-only labeling.
-5. Check emoji, sticker, image, hover, and modal behavior.
-6. Open a Gameplay character/enemy and confirm progression and asset sections
-   render normally; enable debug and confirm combat/projectile sections appear.
-7. Confirm no generated data contract changed unintentionally.
+1. Reuse or start the default server.
+2. Confirm Story, Characters, Gameplay, Assets, Text, and Updates load.
+3. Toggle debug and confirm Mission Pipeline appears and hides cleanly.
+4. Check Story reset/filter behavior and the inline SNS fixtures.
+5. Open a playable character and an enemy; verify progression, variants,
+   projectiles, sounds, and linked assets degrade cleanly when optional data is
+   unavailable.
+6. Check the browser console for new errors.
 
-## Scope
-
-Keep this README focused on frontend behavior. User setup belongs in the root
-`README.md`, script contracts in `scripts/README.md`, and durable recovery
-status in `memory/`.
+User setup belongs in the root `README.md`, script contracts in
+`scripts/README.md`, and durable recovery status in `memory/`.

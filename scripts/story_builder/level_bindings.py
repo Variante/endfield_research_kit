@@ -1682,6 +1682,7 @@ def _levelscript_native_control_paths_to_record(
         pair = levelscript_record_semantic_key(record)
         texts = _levelscript_record_texts(record)
         detail = decoded(record)
+        control_runtime = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS.get(pair) or {}
         predicate: dict = {}
         getter_local_id = None
         if pair == (0x00FF, 0x0B):
@@ -1812,6 +1813,8 @@ def _levelscript_native_control_paths_to_record(
                 "serializedMemberCount": record.get("serializedMemberCount"),
                 "actionName": levelscript_native_action_name_from_pair(pair),
                 "recordClass": LEVELSCRIPT_OPCODE_TABLE.get(pair, ""),
+                "controlKind": control_runtime.get("kind"),
+                "controlRuntimeMappingId": control_runtime.get("mappingId"),
                 "texts": texts[:8],
                 "callServerContract": (
                     compact_callserver_serialized_contract(

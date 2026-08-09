@@ -248,6 +248,9 @@ the stdlib-only export path.
 - `webui/reference.js`: raw text-table browser
 - `webui/updates.js`: installed-game update feed
 - `webui/assets.js`: exported asset browser
+- `webui/src/features/characters/`: grouped identity browser and live overrides
+- `webui/src/features/gameplay/`: curated gameplay browser and semantic sidecars
+- `webui/src/features/mission_pipeline/`: debug-only experimental mission view
 
 ## Runtime Overrides
 
@@ -351,6 +354,16 @@ These overrides are applied by the Story builder, so run `export.bat` or
 `python scripts\story_builder\build.py --languages CN --default-language CN`
 after editing them.
 
+Character identity overrides are live inputs and do not require a rebuild:
+
+- `webui/overrides/character_merges.json` stores additive source-to-target
+  merges plus ids flagged as needing a still-unknown target.
+- `webui/overrides/character_name_overrides.json` stores replacement display
+  names keyed by the same canonical ids.
+
+The Characters page writes both through `serve.py`. Self-merges and cycles are
+rejected, and merging a flagged source clears its flag.
+
 ## Inline Image Rules
 
 Current Story/Text Tables inline image behavior:
@@ -383,6 +396,9 @@ python serve.py
 Then verify:
 
 - Story tab still loads
+- Characters, Gameplay, Assets, Text, and Updates still load
+- Mission Pipeline appears only in debug mode and disabling debug while it is
+  active returns to a visible page
 - SNS emoji stays inline without popover/modal behavior
 - SNS stickers and SNS images render with normal rectangular proportions
 - preview popovers and the modal image do not overflow their border or the

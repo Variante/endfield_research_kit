@@ -1334,9 +1334,16 @@
     return `<div class="gameplay-active-skill-header" aria-hidden="true">${columns.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}</div>`;
   }
 
-  function renderActiveSkillRow(group) {
+  function renderActiveSkillRow(group, character) {
+    const skillType = characterSkillIconType(group);
+    const elementToken = String(character?.element || "").trim().toLowerCase();
+    const elementClass = ["normal-skill", "ultimate", "combo"].includes(skillType)
+      && ["cryst", "fire", "natural", "physical", "pulse"].includes(elementToken)
+      ? `gameplay-attack-skill-element-${elementToken}`
+      : "";
     const groupIcon = renderGameplayTokenIcon(group.iconId, group.name || group.id, {
-      skillType: characterSkillIconType(group),
+      skillType,
+      className: elementClass,
     });
     const meta = [group.typeLabel, group.id, group.iconId ? `${text("iconId")}: ${group.iconId}` : ""].filter(Boolean).join(" / ");
     return `<article class="gameplay-active-skill-row">
@@ -1383,7 +1390,7 @@
       fact(text("defaultWeapon"), entry.defaultWeaponName || entry.defaultWeaponId),
       fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
     ].filter(Boolean);
-    const skillRows = (entry.skillGroups || []).map(renderActiveSkillRow).join("");
+    const skillRows = (entry.skillGroups || []).map((group) => renderActiveSkillRow(group, entry)).join("");
     const unresolvedProjectiles = renderUnassignedCharacterProjectiles(entry);
     const talentGroups = renderTalentGroups(entry.talentGroups || []);
     const talentCards = (entry.talents || []).map(renderTalentCard).join("");

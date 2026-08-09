@@ -514,10 +514,40 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
                     }],
                 }],
             }}
+            playback_index = {"dlg_general_parent": [{
+                "levelId": "level_general",
+                "scriptId": "70001",
+                "sourceFile": str(levelscript),
+                "recordOffset": 16,
+                "localId": 6,
+                "actionCode": "0x2000",
+                "actionKind": "0x00",
+                "actionName": "StartDialogAction",
+                "recordClass": "play_dialog",
+                "nativeEventOwners": [{
+                    "status": "exact_serialized_control_path",
+                    "headerName": "ScriptEvent_OnGeneralEvent",
+                    "headerLocalId": 5,
+                    "targetLocalId": 6,
+                    "eventDetail": {
+                        "type": "ScriptEvent_OnGeneralEvent",
+                        "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                        "triggerSlotIdFilter": 80007,
+                    },
+                    "path": [{
+                        "edge": "ActionHeader.nextId",
+                        "localId": 6,
+                        "actionName": "StartDialogAction",
+                        "recordClass": "play_dialog",
+                        "texts": ["dlg_general_parent"],
+                    }],
+                }],
+            }]}
 
             result = audit.join_parent_dialog_activation_routes(
                 timeline_rows,
                 header_report,
+                playback_index,
                 mission_hosts,
                 {},
                 gameassembly=gameassembly,
@@ -557,7 +587,7 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
                     "file": "missing.json",
                     "header": {"localId": 2},
                     "headerName": "ScriptEvent_OnGeneralEvent",
-                    "runtimeSlotStatus": "active-final-serialized-slot",
+                    "runtimeSlotStatus": "inactive-shadowed-slot",
                     "runtimeSlotMappingId": "mapping",
                     "targetStatus": "action-list",
                     "chainStatus": "truncated",
@@ -565,6 +595,25 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
                     "sceneTexts": ["dlg_general"],
                 }],
             },
+            {"dlg_general": [{
+                "levelId": "level_general",
+                "scriptId": "1",
+                "sourceFile": "missing.json",
+                "recordOffset": 8,
+                "localId": 3,
+                "actionName": "StartDialogAction",
+                "recordClass": "play_dialog",
+                "nativeEventOwners": [{
+                    "status": "exact_serialized_control_path",
+                    "headerName": "ScriptEvent_OnGeneralEvent",
+                    "headerLocalId": 2,
+                    "targetLocalId": 3,
+                    "path": [{
+                        "edge": "ActionHeader.nextId", "localId": 3,
+                        "recordClass": "play_dialog", "texts": ["dlg_general"],
+                    }],
+                }],
+            }]},
             {},
             {},
             gameassembly=Path("unused"),
@@ -574,8 +623,72 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
         self.assertEqual("failed", result["validation"]["status"])
         failure = result["validation"]["failures"][0]
         self.assertEqual("parent_dialog_event_action_path", failure["gate"])
-        self.assertEqual("truncated", failure["actual"]["chainStatus"])
+        self.assertEqual(
+            "inactive-shadowed-slot", failure["actual"]["runtimeSlotStatus"]
+        )
         self.assertEqual("missing.json", failure["sourceFile"])
+
+    def test_activation_control_decisions_preserve_typed_branch_semantics(self) -> None:
+        path = [
+            {
+                "edge": "ActionHeader.nextId",
+                "localId": 10,
+                "actionName": "Split",
+                "controlKind": "parallel_fanout",
+                "controlRuntimeMappingId": "binary-split",
+            },
+            {
+                "edge": "Split.actions[1]",
+                "localId": 11,
+                "actionName": "SwitchInt",
+                "controlKind": "conditional_choice",
+                "controlRuntimeMappingId": "binary-switch",
+                "branchPredicate": {
+                    "status": "exact_unique_getter",
+                    "getterName": "GetLevelScriptStage",
+                },
+            },
+            {
+                "edge": "SwitchInt.case[0]=0",
+                "localId": 12,
+                "actionName": "StartDialogAction",
+                "recordClass": "play_dialog",
+                "texts": ["dlg_general"],
+            },
+        ]
+
+        decisions = audit._activation_control_decisions(path)
+
+        self.assertEqual(["parallel_fanout", "conditional_choice"], [
+            row["controlKind"] for row in decisions
+        ])
+        self.assertEqual("unordered", decisions[0]["siblingOrder"])
+        self.assertFalse(decisions[0]["selectionObserved"])
+        self.assertEqual("SwitchInt.case[0]=0", decisions[1]["selectedEdge"])
+        self.assertEqual(
+            "GetLevelScriptStage",
+            decisions[1]["branchPredicate"]["getterName"],
+        )
+        self.assertFalse(decisions[1]["selectionObserved"])
+
+    def test_parent_dialog_without_playback_is_unresolved_not_inferred(self) -> None:
+        rows = [{"key": "black_general", "dialogKey": "dlg_property_only"}]
+        result = audit.join_parent_dialog_activation_routes(
+            rows,
+            {"summary": {}, "headerRows": []},
+            {},
+            {},
+            {},
+            gameassembly=Path("unused"),
+            metadata=Path("unused"),
+            mission_runtime_root=Path("unused"),
+        )
+        self.assertEqual("validated", result["validation"]["status"])
+        self.assertEqual([], result["routes"])
+        self.assertEqual(
+            "no_exact_native_playback_action",
+            result["unresolvedParentDialogs"][0]["reason"],
+        )
 
     def test_parent_dialog_trigger_selector_fails_closed(self) -> None:
         rows = [{"key": "black_general", "dialogKey": "dlg_general"}]
@@ -601,6 +714,7 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
                         "matchedSlotIds": [],
                         "missingSlotIds": [80001],
                     },
+                    "targetLocalId": 3,
                     "runtimeSlotStatus": "active-final-serialized-slot",
                     "runtimeSlotMappingId": mapping,
                     "targetStatus": "action-list",
@@ -614,6 +728,30 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
                     "chain": [],
                 }],
             },
+            {"dlg_general": [{
+                "levelId": "level_general",
+                "scriptId": "1",
+                "sourceFile": "level_general/1.json",
+                "recordOffset": 16,
+                "localId": 3,
+                "actionName": "StartDialogAction",
+                "recordClass": "play_dialog",
+                "nativeEventOwners": [{
+                    "status": "exact_serialized_control_path",
+                    "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    "headerLocalId": 2,
+                    "targetLocalId": 3,
+                    "eventDetail": {
+                        "type": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                        "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                        "triggerSlotIdFilter": 80001,
+                    },
+                    "path": [{
+                        "edge": "ActionHeader.nextId", "localId": 3,
+                        "recordClass": "play_dialog", "texts": ["dlg_general"],
+                    }],
+                }],
+            }]},
             {},
             {},
             gameassembly=Path("unused"),

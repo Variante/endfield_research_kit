@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal EnableDelayedExpansion
 
 set "PROJECT_DIR=%~dp0"
 set "PROJECT_PATH=%PROJECT_DIR:~0,-1%"
@@ -26,11 +26,11 @@ if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
 
 if /I "%MODE%"=="--d3d11" (
   call :run_api d3d11
-  exit /b %ERRORLEVEL%
+  exit /b !ERRORLEVEL!
 )
 if /I "%MODE%"=="--d3d12" (
   call :run_api d3d12
-  exit /b %ERRORLEVEL%
+  exit /b !ERRORLEVEL!
 )
 if /I not "%MODE%"=="--all" (
   echo Usage: %~nx0 [--all^|--d3d11^|--d3d12]
