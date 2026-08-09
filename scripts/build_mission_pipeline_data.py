@@ -12249,6 +12249,20 @@ def _story_branch_related_original_files(
                         add_source(row)
             for source in source_values(value.get("sourceFiles")):
                 add_source(source)
+            # Authored branch projections use both plural ``sourceFiles`` and
+            # singular ``sourceFile`` fields.  Walk the singular shape as
+            # well; this keeps the collector corpus-driven instead of
+            # requiring each branch producer (dialog options, tree nodes,
+            # native controls, and validation records) to be named here.
+            singular_source = value.get("sourceFile")
+            expected_singular_hash = str(
+                value.get("sourceSha256") or value.get("sha256") or ""
+            )
+            for source in source_values(singular_source):
+                add_source(
+                    source,
+                    expected_hash=expected_singular_hash,
+                )
             for child in value.values():
                 walk(child)
         elif isinstance(value, list):
