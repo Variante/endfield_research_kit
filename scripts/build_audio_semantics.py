@@ -635,8 +635,15 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
                     "ownerId": owner_id,
                     "confidence": owner.get("animationOwnershipConfidence") or "inferred",
                     "actionKinds": list(event.get("actionKinds") or [])[:8],
+                    "animationFunctions": list(event.get("animationFunctions") or [])[:8],
+                    "animationClipContexts": list(event.get("animationClipContexts") or [])[:8],
                     "animationClips": list(event.get("sourceAnimationClips") or [])[:12],
                     "animationOccurrenceCount": len(evidence),
+                    "animationOwnerCount": int(event.get("animationOwnerCount") or 0),
+                    "animationOwnershipScope": event.get("animationOwnershipScope") or "",
+                    "possibleMediaScope": event.get("possibleMediaScope") or "",
+                    "clipReachability": event.get("clipReachability") or "unresolved",
+                    "authoredEventIds": list(event.get("authoredEventIds") or [])[:8],
                 }
                 _append_context(contexts, seen, event.get("id"), context)
     return dict(contexts)
@@ -935,6 +942,29 @@ def build_event_rows(
         if event_hash is not None:
             event_contexts.extend(contexts.get(event_hash_context_key(event_hash), []))
         evidence_rows = evidence_by_event.get(key, [])
+        character_animation_owner_ids = sorted({
+            str(context.get("ownerId") or "")
+            for context in event_contexts
+            if context.get("kind") == "characterAnimation" and context.get("ownerId")
+        })
+        enemy_animation_owner_ids = sorted({
+            str(context.get("ownerId") or "")
+            for context in event_contexts
+            if context.get("kind") == "enemyAnimation" and context.get("ownerId")
+        })
+        animation_functions = sorted({
+            str(value)
+            for context in event_contexts
+            for value in context.get("animationFunctions") or []
+            if str(value)
+        })
+        animation_context_scope = (
+            "sharedPlayableCharacters" if len(character_animation_owner_ids) > 1
+            else "singlePlayableCharacter" if character_animation_owner_ids
+            else "sharedEnemyTemplates" if len(enemy_animation_owner_ids) > 1
+            else "singleEnemyTemplate" if enemy_animation_owner_ids
+            else ""
+        )
         selection_types = sorted({
             value
             for evidence in evidence_rows
@@ -993,6 +1023,10 @@ def build_event_rows(
             "contextCount": len(event_contexts),
             "contextStoredCount": len(event_contexts),
             "contextsTruncated": False,
+            "playableCharacterAnimationOwnerCount": len(character_animation_owner_ids),
+            "enemyAnimationOwnerCount": len(enemy_animation_owner_ids),
+            "animationContextScope": animation_context_scope,
+            "animationFunctions": animation_functions,
             "contexts": event_contexts,
             "evidence": evidence_rows,
             "media": event_candidates,
@@ -1063,11 +1097,12 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         for key in (
             "kind", "ownerId", "groupId", "storyKey", "table", "path",
             "semanticRole", "confidence", "skillId", "actionKind", "clip",
+            "animationOwnershipScope", "possibleMediaScope",
         ):
             value = context.get(key)
             if value not in (None, "", []):
                 context_search.add(str(value))
-        for key in ("skillIds", "actionKinds", "animationClips"):
+        for key in ("skillIds", "actionKinds", "animationClips", "animationFunctions", "animationClipContexts", "authoredEventIds"):
             context_search.update(str(value) for value in context.get(key) or [] if str(value))
     media = row.get("media") or []
     scopes = sorted({str(value.get("audioScope") or value.get("storageRoot") or "") for value in media if value.get("audioScope") or value.get("storageRoot")})
@@ -1079,6 +1114,8 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         "runtimeSelection", "mediaRelationTypes", "selectionContainerTypes",
         "traversalStatus", "unresolvedNodeCount", "contextCount",
         "contextStoredCount", "contextsTruncated",
+        "playableCharacterAnimationOwnerCount", "enemyAnimationOwnerCount",
+        "animationContextScope", "animationFunctions",
     )
     summary = {key: row[key] for key in keys if row.get(key) not in (None, "", [])}
     summary.update({
@@ -1198,6 +1235,14 @@ def build_audio_semantic_data(
             "typedTraversalComplete": sum(row.get("traversalStatus") == "complete" for row in events),
             "typedTraversalPartial": sum(row.get("traversalStatus") == "partial" for row in events),
             "eventsWithMultiplePlayRoots": sum(int(row.get("playRootCount") or 0) > 1 for row in events),
+            "sharedPlayableCharacterAnimationEvents": sum(
+                int(row.get("playableCharacterAnimationOwnerCount") or 0) > 1
+                for row in events
+            ),
+            "footstepSystemEvents": sum(
+                "OnCustomFootStep" in (row.get("animationFunctions") or [])
+                for row in events
+            ),
             "binaryManagedAudioLiterals": len(managed_literal_names),
             "binaryManagedLiteralWwiseEvents": managed_literal_hirc_matches,
             "authoredTableEventHashes": len(table_event_hashes),
@@ -1222,6 +1267,7 @@ def build_audio_semantic_data(
             "decodedMedia": "A decoded FLAC/WAV/WEM is a source media object, not proof that it played.",
             "eventMedia": "Possible media leaves use typed Wwise v150 Event -> Action -> reciprocal Children -> Sound source edges. Play roots and random/sequence/switch/layer relations are preserved; runtime selection is not evaluated. Unsupported music nodes and unparsed child structures fail closed.",
             "authoredContext": "Table, Timeline, SkillData, and BuffData references prove authored consumers, not a live playback trace.",
+            "animationOwnership": "An AnimationClip callback proves that the owned clip requests the Event. If the same Event is used by multiple playable characters, its complete Wwise leaf graph is a shared selector surface and is not character-specific media ownership.",
             "authoredEventHash": "Signed table integers are normalized to uint32 only in event-designated fields; row and field prove semantic ownership even when no string name is known.",
             "runtimeMetadata": "IL2CPP names prove shipped system structure, not live call order or active state.",
         },
