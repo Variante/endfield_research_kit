@@ -117,14 +117,17 @@ NPC archetypes are imported as labeled source kits.
   version boundary. Live input values, active rows/selectors, unused persistent
   rows, atlas texels, and resolved RGBA pixels remain capture-only.
 
-- The live V2 irradiance owner remains `m_defaultIV`, but its installed map-path
-  boundary is now narrower: the unpatched new-map branch appends
-  `/aiTest/index.bytes`, which is absent from all 224 shipped IV files; current
-  IFix, direct managed calls, and decoded Lua provide no alternate owner. Four
-  exact indices close the marker-2/marker-3 record layouts, and one extracted
-  gacha payload is byte-covered by its index but belongs to the old gacha
-  manager, not CharInfo. Native missing-map behavior, indirect reloads,
-  transient atlas dimensions, and per-frame IV parameters remain open.
+- The installed no-reload CharInfo V2 irradiance route is now closed as
+  inactive. `SetMap` enters native clear state 4, releases all six full-size
+  clipmaps, then an empty or unresolved path settles in state 2. The result
+  publishes one shared 1x1x1 Unity default 3D zero texture to all six slots and
+  default parameters `0/0/0/(0,1/3,0,0)`; it does not retain zero-filled
+  128x64 clipmaps. `/aiTest/index.bytes` is absent from all 224 shipped IV
+  files. `ReloadIndexFileV2` and `StreamingInNewMapV2` each have only their
+  IL2CPP method-table pointer, with no direct managed, Lua, or installed IFix
+  owner. Generic reflection/external reload remains a boundary; if observed,
+  its caller path, populated atlas dimensions, parameters, and texels must be
+  recovered separately.
 
 ## Main rendering gap
 
