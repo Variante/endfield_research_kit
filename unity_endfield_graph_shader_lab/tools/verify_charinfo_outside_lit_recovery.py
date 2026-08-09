@@ -1875,6 +1875,85 @@ def verify_selected_resolver_binding_contract() -> None:
     assert shadow_audit["capture_boundary"]["recommended_hook"].endswith(
         "PunctualLight (enum 1)"
     )
+    assert shadow_native["frame_writer_owner"] == (
+        "HG.Rendering.Runtime.HGPunctualLightShadowManagerV2"
+    )
+    assert shadow_native["max_shadow_caster_count"] == 56
+    assert "all 56 matrix/params/params2 rows" in shadow_native["enabled_writer"]
+    assert "does not write or publish ShadowData" in shadow_native[
+        "disabled_writer"
+    ]
+    require_hash(
+        repo_path(shadow_native["frame_writer_audit_path"]),
+        shadow_native["frame_writer_audit_sha256"],
+    )
+    require_text_hash(
+        repo_path(shadow_native["frame_writer_auditor_path"]),
+        shadow_native["frame_writer_auditor_sha256"],
+    )
+    require_text_hash(
+        repo_path(shadow_native["frame_writer_disassembler_path"]),
+        shadow_native["frame_writer_disassembler_sha256"],
+    )
+    require_hash(
+        repo_path(shadow_native["frame_writer_disassembly_path"]),
+        shadow_native["frame_writer_disassembly_sha256"],
+    )
+    require_hash(
+        repo_path(shadow_native["frame_writer_metadata_path"]),
+        shadow_native["frame_writer_metadata_sha256"],
+    )
+    require_hash(
+        repo_path(shadow_native["frame_writer_native_map_path"]),
+        shadow_native["frame_writer_native_map_sha256"],
+    )
+    punctual_writer_audit = json.loads(
+        repo_path(shadow_native["frame_writer_audit_path"]).read_text(
+            encoding="utf-8"
+        )
+    )
+    assert punctual_writer_audit["schema"] == (
+        "endfield.punctual-shadow-writer-audit.v1"
+    )
+    assert punctual_writer_audit["verdict"] == (
+        "ACTIVE_WRITER_CLOSED_SETTLED_FRAME_CAPTURE_REQUIRED"
+    )
+    assert punctual_writer_audit["publication_allowed"] is False
+    assert punctual_writer_audit["manager"]["max_shadow_caster_count"] == 56
+    assert punctual_writer_audit["enabled_frame_writer"]["regions"] == [
+        {
+            "field": "_PunctualLightWorldToShadow[56]",
+            "offset": 1024,
+            "size": 3584,
+        },
+        {
+            "field": "_PunctualLightShadowParams[56]",
+            "offset": 4608,
+            "size": 896,
+        },
+        {
+            "field": "_PunctualLightShadowParams2[56]",
+            "offset": 5504,
+            "size": 896,
+        },
+        {
+            "field": "_PunctualLightShadowTexelSize",
+            "offset": 6400,
+            "size": 16,
+        },
+    ]
+    assert punctual_writer_audit["enabled_frame_writer"]["publication"] == (
+        "SetGlobalConstantBuffer(PunctualLight enum 1), then SetGlobalTexture"
+    )
+    assert punctual_writer_audit["disabled_frame"][
+        "shadow_data_publication"
+    ] is False
+    assert punctual_writer_audit["disabled_frame"][
+        "neutral_fixture_proven"
+    ] is False
+    assert punctual_writer_audit["capture_boundary"]["recommended_hook"].endswith(
+        "VA 0x189b57155"
+    )
     assert (
         identified[2]["role"],
         identified[2]["symbol"],
@@ -2369,7 +2448,8 @@ def main() -> int:
         "CullLights producer, both HGCamera call sites and 256-candidate "
         "handoff before the still-open target-frame array, exact b34 ShadowData identity, "
         "11,440-byte four-section native transport, selected punctual-only read span, "
-        "and fail-closed section-1 capture boundary, plus b37 "
+        "exact 56-row punctual frame writer, enabled section-1 push callback, disabled "
+        "texture-only path, and fail-closed pre-push capture boundary, plus b37 "
         "LightCookieData native layout/upload plus D3D11/D3D12-verified default-off "
         "zero-cookie isolated transport, plus exact b38 "
         "HDPunctualLightCharacterShadowData identity, native reset/push owner, "

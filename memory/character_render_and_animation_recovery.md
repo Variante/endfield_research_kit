@@ -47,9 +47,12 @@ NPC archetypes are imported as labeled source kits.
   `HGShadowConstantBufferUtils` transport allocates the full buffer, copies one
   of four exact same-offset sections (CSM 1,024; Punctual 6,144; Character
   2,048; ASM 2,224 bytes), then binds the full size. The selected resolver
-  reads only Punctual bytes 1,024..6,415. Publication remains fail-closed;
-  capture the settled Punctual section and matching
-  `_PunctualLightShadowTexV2` together at section enum 1.
+  reads only Punctual bytes 1,024..6,415. Its enabled frame writer serializes
+  all 56 matrix/params/params2 rows plus texel size before callback `b__49_2`
+  publishes section enum 1 and binds the atlas. The disabled callback binds
+  only a default texture and never publishes b34, so no neutral fixture is
+  proven. Capture the settled section and matching
+  `_PunctualLightShadowTexV2` immediately before `0x189b57155`.
 - Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
   initialization/upload and `cookieIndex >= 0` consumer guard closed. The
   source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off
