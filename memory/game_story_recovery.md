@@ -82,6 +82,13 @@ never promotes an edge.
   contracts.
 - Split/fan-out scheduling preserves sibling actions as parallel or unordered.
   Array/list position is never chronology.
+- Parent-dialog activation uses the same corpus-wide typed control-path walker,
+  including non-linear edges rather than a dialog-specific chain. The current
+  audit validates 13 of 14 parent dialogs (15 of 16 embedded Story keys) across
+  nine mission shells: four routes cross an unordered `Split` fan-out and one
+  crosses a conditional `SwitchInt` case whose runtime selection is unobserved.
+  The remaining `dlg_c13m3_7` occurrence is a property/default reference, not a
+  playback action, and stays unresolved.
 - Branch, IfElse, Switch, loop, and wait/outcome families retain active,
   inactive, non-Story, and playback-bearing arms separately. A branch only
   creates order when its runtime semantics and the relevant source-to-target
