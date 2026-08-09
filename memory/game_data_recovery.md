@@ -107,6 +107,17 @@ tail. The `au_music_main`, `au_music_meta`, and `au_music_login` roots reach
 authored music graph and possible leaves; live music state, cue conditions,
 switch values, playlist position, and the selected track remain unobserved.
 
+Version-150 playback Actions now expose their exact scalar and ranged property
+bundles plus the Play/PlayEvent tail. In the current banks all 20,322 Play and
+361 PlayEvent bodies consume exactly; authored fields include 180 DelayTime,
+1,065 TransitionTime, and 47 Probability occurrences across those operations.
+For Gameplay, 568 Events dispatch multiple playback Actions: 550 have no
+serialized delay on any Action and 18 have explicit differing delay state or
+value. The UI therefore calls the former `coDispatchNoExplicitDelay`, never
+proven simultaneous; probability remains an unevaluated Action gate, Action
+ordinal is membership rather than sequence order, and absent delay is not
+synthesized as explicit zero.
+
 The current binary also proves that audio is not one flat event namespace.
 `AudioAdapter` separately exposes event posting, states, switches, RTPCs,
 listeners, spatial objects, seek/stop, and bank lifetime. `AudioManager` owns
