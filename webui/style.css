@@ -5454,29 +5454,46 @@ body.is-resizing-filter * {
   font-size: 9px;
 }
 
-.gameplay-sfx-candidate-picker {
-  display: grid;
-  grid-template-columns: auto auto minmax(48px, 1fr) auto;
-  align-items: center;
-  gap: 7px;
+.gameplay-sfx-evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 6px 0;
+}
+
+.gameplay-sfx-evidence span {
+  padding: 2px 6px;
+  border: 1px solid rgba(var(--fg-rgb), 0.14);
+  border-radius: 999px;
   color: var(--muted);
+  background: rgba(var(--fg-rgb), 0.025);
   font-size: 9px;
 }
 
-.gameplay-sfx-candidate-picker button {
-  width: 24px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid rgba(var(--fg-rgb), 0.14);
-  border-radius: 5px;
-  color: var(--text);
-  background: var(--panel);
-  cursor: pointer;
-  font-size: 14px;
+.gameplay-sfx-evidence span.is-partial {
+  border-color: rgba(224, 164, 67, 0.42);
+  color: #d19a42;
 }
 
-.gameplay-sfx-candidate-picker output {
-  text-align: center;
+.gameplay-sfx-possible-files {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.gameplay-sfx-possible-file {
+  min-width: 0;
+}
+
+.gameplay-sfx-possible-file small,
+.gameplay-sfx-possible-file code {
+  display: block;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.gameplay-sfx-list-placeholder {
+  margin: 6px 0 0;
   color: var(--muted);
   font-size: 9px;
 }
