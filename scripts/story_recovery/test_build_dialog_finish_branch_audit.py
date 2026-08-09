@@ -798,12 +798,16 @@ class LevelScriptTaskConsumerTests(unittest.TestCase):
             self.assertEqual(1, census["carrierCount"])
             self.assertEqual(1, census["missionCarrierCount"])
             self.assertEqual(1, census["shadowedFileCount"])
+            self.assertEqual(
+                ["GameplayConfig"],
+                census["scope"],
+            )
             carrier = census["carriers"][0]
             self.assertEqual("$/dataTable/fixture", carrier["jsonPath"])
             self.assertEqual(["mission_fixture"], carrier["missionIds"])
             self.assertIn("Persistent", carrier["sourceFile"])
 
-    def test_task_carrier_census_reports_non_json_candidates(self) -> None:
+    def test_task_carrier_census_excludes_non_json_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "GameplayConfig"
             root.mkdir(parents=True)
@@ -815,10 +819,59 @@ class LevelScriptTaskConsumerTests(unittest.TestCase):
             )
 
             self.assertEqual(0, census["carrierCount"])
-            self.assertEqual(1, census["rejectedCandidateFileCount"])
+            self.assertEqual(0, census["rejectedCandidateFileCount"])
+            self.assertEqual(0, census["typedJsonFileCount"])
+            self.assertEqual(1, census["nonJsonFileCount"])
+
+    def test_task_carrier_census_scans_all_typed_json_families(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            roots = []
+            payload = {
+                "rows": [{
+                    "$type": "Fixture.Owner, Fixture",
+                    "missionId": "mission_fixture",
+                    "scriptId": 4242,
+                    "taskId": "deadbeef",
+                }],
+            }
+            for layer in ("StreamingAssets", "Persistent"):
+                json_root = root / layer / "Data" / "Json"
+                roots.append(json_root)
+                carrier_root = json_root / "GameplayConfig"
+                carrier_root.mkdir(parents=True)
+                (carrier_root / "carrier.json").write_text(
+                    json.dumps(payload),
+                    encoding="utf-8",
+                )
+            level_data = roots[1] / "LevelData"
+            level_data.mkdir()
+            (level_data / "serialized.json").write_bytes(
+                b"deadbeef\x00\xff"
+            )
+            definition_root = roots[1] / "LevelScriptData"
+            definition_root.mkdir()
+            (definition_root / "definition.json").write_text(
+                json.dumps(payload),
+                encoding="utf-8",
+            )
+
+            census = audit._scan_exact_task_identity_carriers(
+                [{"scriptId": "4242", "taskId": "deadbeef"}],
+                roots,
+            )
+
+            self.assertEqual("exactTaskIdentityCarrierCensus.v2", census["schema"])
+            self.assertEqual(["GameplayConfig", "LevelData"], census["scope"])
+            self.assertEqual(3, census["physicalFileCount"])
+            self.assertEqual(2, census["activeLogicalFileCount"])
+            self.assertEqual(1, census["shadowedFileCount"])
+            self.assertEqual(1, census["carrierCount"])
+            self.assertEqual(1, census["typedJsonFileCount"])
+            self.assertEqual(1, census["nonJsonFileCount"])
             self.assertEqual(
-                "jsonDecode",
-                census["rejectedCandidateFiles"][0]["gate"],
+                "GameplayConfig/carrier.json",
+                census["carriers"][0]["relativePath"],
             )
 
 
