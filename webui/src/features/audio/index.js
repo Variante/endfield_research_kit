@@ -1000,6 +1000,7 @@
     const facts = record.kind === "events"
       ? [
           [t("id"), raw.eventId ?? raw.id], [t("hash"), raw.eventHash ?? raw.hash], [t("category"), record.category],
+          ["Category evidence", raw.categoryEvidence],
           [t("scope"), record.scope], [t("source"), record.source], [t("bank"), raw.bank ?? raw.sourceBank ?? raw.bankId ?? raw.evidence?.[0]?.bank],
           ["Wwise", raw.foundInWwise], ["Runtime selection", raw.runtimeSelection], ["Candidates", raw.candidateCount], ["Contexts", raw.contextCount],
         ]
