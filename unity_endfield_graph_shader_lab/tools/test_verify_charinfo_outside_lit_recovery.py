@@ -134,5 +134,37 @@ class HdplsMatrixFormulaContractTests(unittest.TestCase):
             )
 
 
+class HdplsResourceLifecycleContractTests(unittest.TestCase):
+    @staticmethod
+    def load_current_contract() -> tuple[dict[str, object], dict[str, object]]:
+        return HdplsMatrixFormulaContractTests.load_current_contract()
+
+    def test_current_resource_lifecycle_contract_passes(self) -> None:
+        native, audit = self.load_current_contract()
+        verifier.verify_hdpls_resource_lifecycle_contract(
+            native,
+            audit,
+            Path("fixture_contract.json"),
+        )
+
+    def test_screen_output_binding_failure_is_actionable(self) -> None:
+        native, audit = self.load_current_contract()
+        changed = copy.deepcopy(audit)
+        changed["resource_lifecycle"]["screen_resolve"]["shader"][
+            "global_output"
+        ] = "HGShaderIDs._HDPLSTex"
+        with self.assertRaisesRegex(
+            AssertionError,
+            "HDPLS resource-lifecycle validator failed: "
+            "check=screen_resolve.shader; source=fixture_contract.json; "
+            "expected=.*_HDPLSScreenSpaceShadowMask.*actual=.*_HDPLSTex",
+        ):
+            verifier.verify_hdpls_resource_lifecycle_contract(
+                native,
+                changed,
+                Path("fixture_contract.json"),
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

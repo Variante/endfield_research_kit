@@ -106,9 +106,14 @@ NPC archetypes are imported as labeled source kits.
   bounds center with a `1e-5` degenerate-direction fallback, the cone is
   `clamp(2*asin(radius/distance),0.1°,179.9°)`, and the derived TRS plus
   light near/far/guard feeds the exact reversed-Z spot-shadow transform. Depth
-  and normal bias also reach the caster pass exactly. Live IFix `0x877` state,
-  input values, active rows/selectors, unused persistent rows, and matching
-  HDPLS/atlas resources remain capture-only.
+  and normal bias also reach the caster pass exactly. Resource recovery now
+  distinguishes the request-gated `2S x S` D16 `_HDPLSTex` caster atlas from
+  the reduced/full-size RGBA8 `_HDPLSScreenSpaceShadowMask` consumed by
+  deferred binding 22. Their RenderGraph dependencies and global publication
+  are closed; inactive frames clear all selectors and bind white to both slots,
+  so stale resources cannot escape. Live IFix `0x877/0x890` state, input
+  values, active rows/selectors, unused persistent rows, atlas texels, and
+  resolved RGBA pixels remain capture-only.
 
 ## Main rendering gap
 
