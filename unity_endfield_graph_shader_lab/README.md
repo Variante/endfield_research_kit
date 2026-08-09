@@ -1523,6 +1523,11 @@ closes the installed Windows desktop `PunctualLightMaxCount` at 256; native
 `SetupState` sorts priority descending and then squared camera distance
 ascending before taking `min(survivors, cap)`. The equal upstream/settings
 caps prove that the settings layer cannot truncate this result a second time.
+The maintained audit now verifies the current GameAssembly call registers and
+return copies plus the UnityPlayer candidate gates directly. It closes the
+16-byte `LightCullResult` layout and the consumer's 148-byte `VisibleLight`
+stride, including type `+0x00`, priority `+0x70`, and world position `+0x74`;
+future capture can therefore reject truncated rows deterministically.
 Run `python tools\audit_light_cull_cap.py --check` to validate the pinned
 binary, settings, IFix, route, cap, and ordering evidence. Closing the retail
 value still requires an explicitly authorized target-frame capture of that

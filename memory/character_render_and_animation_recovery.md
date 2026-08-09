@@ -68,7 +68,12 @@ NPC archetypes are imported as labeled source kits.
   The exact known authored contribution is therefore 17, with its internal
   priority/distance order closed. Other display aspects, runtime/custom
   carry-in, the target-frame pointer/count, whole-list order, and final retail
-  `lightCount` remain open.
+  `lightCount` remain open. The maintained cap audit now directly pins both
+  `DoECSCulling` call sites through the UnityPlayer candidate core: its native
+  gates, hidden-sret handoff, 16-byte `LightCullResult`, and 148-byte
+  `VisibleLight` capture stride are source-closed. An authorized target-frame
+  capture therefore has an exact pointer/count/row decoding contract, but no
+  live values are inferred offline.
 - Installed `LightBinningXYCS`/`LightBinningZCS` recovery now pins all eight
   D3D11/Vulkan kernel programs plus the exact 28-byte `BinningData` ABI,
   32-pixel/2,048-slice layout, 8x8/64x1 dispatch formulas, and shared light +
