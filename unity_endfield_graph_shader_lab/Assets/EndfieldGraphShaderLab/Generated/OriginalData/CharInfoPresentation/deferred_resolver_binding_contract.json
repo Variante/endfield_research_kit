@@ -2222,15 +2222,38 @@
       "set": 3,
       "binding": 34,
       "size": 11440,
-      "status": "source-closed by exact selected layout match against original ShadowReceiver metadata",
+      "status": "source-closed layout plus native four-section allocation/copy/bind transport; settled punctual payload remains capture-only",
       "source_metadata_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/ShaderEvidence/ShadowReceiver.fragment.metadata.json",
       "source_metadata_sha256": "2a3136eec2cae762ac5c89cc56e8891457cf0547b23b53a48a250934e71ac533",
       "evidence": [
         "five _CSMWorldToShadow matrices begin at byte 0 / c0",
         "15 _CharacterWorldToShadow matrices begin at byte 7168 / c448",
         "_ASMWorldToShadowBaseMat and _ASMIndirectWorldToShadow begin at bytes 9216/9280 / c576/c580",
-        "128 _ASMIndirectParams vectors begin at byte 9392 / c587"
-      ]
+        "128 _ASMIndirectParams vectors begin at byte 9392 / c587",
+        "the native owner allocates one 11,440-byte buffer and updates CSM/PunctualLight/Character/ASM as exact same-offset section copies before binding the full buffer",
+        "the selected deferred resolver reads only _PunctualLightWorldToShadow[56], _PunctualLightShadowParams[56], _PunctualLightShadowParams2[56], and _PunctualLightShadowTexelSize at bytes 1024..6415",
+        "the remaining 752 bytes of the 6,144-byte PunctualLight section and every other ShadowData section are declaration-only in the selected resolver"
+      ],
+      "native_producer": {
+        "audit_path": "scratch/reverse_engineering/shadow_data/audit.json",
+        "audit_sha256": "26b768495bf1a54f3975ce55420d128581dd8d2937884e8c6cb1f89be049786b",
+        "auditor_path": "scratch/reverse_engineering/shadow_data/audit_shadow_data.py",
+        "auditor_sha256": "e6f67a1c772bba2efe39801a3638255ce732665aec98b2e10d53ade108d8898d",
+        "disassembler_path": "scratch/reverse_engineering/shadow_data/disassemble_shadow_data.py",
+        "disassembler_sha256": "ce25d1c637c17f0a9e8c7dccd2ea829354bc13b134a81419a0fb5b07049c17c3",
+        "native_disassembly_path": "scratch/reverse_engineering/shadow_data/native_disassembly.json",
+        "native_disassembly_sha256": "559ba3224fd82b75350c40be1f8e6049348d8b34e8d46228e4f28054e80f1590",
+        "metadata_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/screen_shadow_content/shadow_cb_metadata.json",
+        "metadata_sha256": "ba07caed4198e3bc26bceb5d6717c7918b073e899068c2a62458b8a641e1ad56",
+        "owner": "HG.Rendering.Runtime.HGShadowConstantBufferUtils",
+        "size_bytes": 11440,
+        "punctual_section_offset_bytes": 1024,
+        "punctual_section_size_bytes": 6144,
+        "selected_read_span": "bytes 1024..6415",
+        "publication_policy": "fail closed; no target-frame ShadowData fixture is published",
+        "capture_boundary": "capture shadowData bytes 1024..7167 at SetGlobalConstantBuffer entry for PunctualLight enum 1, together with _PunctualLightShadowTexV2",
+        "remaining_boundary": "settled target-frame punctual matrices, parameters, atlas rectangles/texel size, index mapping, and matching depth atlas require capture"
+      }
     },
     {
       "role": "LightCookieData",

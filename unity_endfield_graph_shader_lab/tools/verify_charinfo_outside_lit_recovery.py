@@ -1816,6 +1816,65 @@ def verify_selected_resolver_binding_contract() -> None:
         LAB_ROOT / identified[1]["source_metadata_path"],
         identified[1]["source_metadata_sha256"],
     )
+    shadow_native = identified[1]["native_producer"]
+    assert shadow_native["owner"] == (
+        "HG.Rendering.Runtime.HGShadowConstantBufferUtils"
+    )
+    assert shadow_native["size_bytes"] == 11440
+    assert shadow_native["punctual_section_offset_bytes"] == 1024
+    assert shadow_native["punctual_section_size_bytes"] == 6144
+    assert shadow_native["selected_read_span"] == "bytes 1024..6415"
+    assert shadow_native["publication_policy"].startswith("fail closed")
+    require_hash(
+        repo_path(shadow_native["audit_path"]),
+        shadow_native["audit_sha256"],
+    )
+    require_text_hash(
+        repo_path(shadow_native["auditor_path"]),
+        shadow_native["auditor_sha256"],
+    )
+    require_text_hash(
+        repo_path(shadow_native["disassembler_path"]),
+        shadow_native["disassembler_sha256"],
+    )
+    require_hash(
+        repo_path(shadow_native["native_disassembly_path"]),
+        shadow_native["native_disassembly_sha256"],
+    )
+    require_hash(
+        repo_path(shadow_native["metadata_path"]),
+        shadow_native["metadata_sha256"],
+    )
+    shadow_audit = json.loads(
+        repo_path(shadow_native["audit_path"]).read_text(encoding="utf-8")
+    )
+    assert shadow_audit["schema"] == "endfield.shadow-data-audit.v1"
+    assert shadow_audit["verdict"] == (
+        "PUNCTUAL_SECTION_NATIVE_TRANSPORT_CLOSED_"
+        "SETTLED_VALUES_CAPTURE_REQUIRED"
+    )
+    assert shadow_audit["publication_allowed"] is False
+    assert shadow_audit["layout"]["size_bytes"] == 11440
+    assert shadow_audit["layout"]["sections"] == [
+        {"name": "CSM", "enum": 0, "offset": 0, "size": 1024},
+        {
+            "name": "PunctualLight",
+            "enum": 1,
+            "offset": 1024,
+            "size": 6144,
+        },
+        {"name": "Character", "enum": 2, "offset": 7168, "size": 2048},
+        {"name": "ASM", "enum": 3, "offset": 9216, "size": 2224},
+    ]
+    assert shadow_audit["layout"]["selected_read_span"] == (
+        "bytes 1024..6415"
+    )
+    assert shadow_audit["layout"]["punctual_padding_not_read"] == (
+        "bytes 6416..7167"
+    )
+    assert shadow_audit["capture_boundary"]["recommended_hook"].endswith(
+        "PunctualLight (enum 1)"
+    )
     assert (
         identified[2]["role"],
         identified[2]["symbol"],
@@ -2308,7 +2367,9 @@ def main() -> int:
         "exact native 48-byte producer layout and D3D11/D3D12-verified "
         "default-off isolated-count transport, plus the unique native "
         "CullLights producer, both HGCamera call sites and 256-candidate "
-        "handoff before the still-open target-frame array, exact b34 ShadowData identity, and b37 "
+        "handoff before the still-open target-frame array, exact b34 ShadowData identity, "
+        "11,440-byte four-section native transport, selected punctual-only read span, "
+        "and fail-closed section-1 capture boundary, plus b37 "
         "LightCookieData native layout/upload plus D3D11/D3D12-verified default-off "
         "zero-cookie isolated transport, plus exact b38 "
         "HDPunctualLightCharacterShadowData identity, native reset/push owner, "
