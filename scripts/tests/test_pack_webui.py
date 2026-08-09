@@ -62,6 +62,19 @@ class PackWebuiAudioTests(unittest.TestCase):
 
             self.assertEqual([path.name for path in files], ["current.flac"])
 
+    def test_gameplay_audio_renders_only_in_the_trailing_detail_section(self) -> None:
+        project_root = SCRIPT.parents[1]
+        source = (project_root / "webui" / "src" / "features" / "gameplay" / "index.js").read_text(encoding="utf-8")
+        skill_row = source[source.index("function renderActiveSkillRow"):source.index("function renderWeaponDetail")]
+        character_detail = source[source.index("function renderCharacterDetail"):source.index("function renderEquipmentSuit")]
+        detail_renderer = source[source.index("function renderDetail(entry)"):source.index("function renderListNote")]
+
+        self.assertNotIn("renderActiveSkillSoundEffects", skill_row)
+        self.assertNotIn('section(text("characterActionAudio")', character_detail)
+        self.assertIn('entry.kind === "character"', detail_renderer)
+        self.assertIn('section(text("relatedSoundEffects"), renderCharacterSoundEffects', detail_renderer)
+        self.assertGreater(detail_renderer.index("trailingAudio"), detail_renderer.index("renderIntegratedSections"))
+
 
 if __name__ == "__main__":
     unittest.main()

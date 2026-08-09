@@ -80,8 +80,11 @@ Runtime overrides:
   constituent table/asset id rather than display text.
 - Gameplay owns breakthrough requirements, authored enemy stat points,
   selectable enemy variants, linked assets, compact projectile behavior, and
-  playable Story-style sound controls. Character Normal Skill, Ultimate, and
-  Combo discs preserve the exact element colors authored in
+  playable Story-style sound controls. Character and enemy audio is one final
+  detail section after normal and integrated content, never embedded in skill
+  cards; shared selector events expose bank, Stop, selector-node, and child-edge
+  evidence before their together-listed files. Character Normal Skill,
+  Ultimate, and Combo discs preserve the exact element colors authored in
   `CharTypeTable.json`; Normal Attack remains neutral.
 - A skill can legitimately have no separate projectile template. Exact,
   inferred, and unresolved skill/enemy/projectile ownership stay distinct.

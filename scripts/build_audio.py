@@ -1009,6 +1009,36 @@ def link_gameplay_audio(
             if content_hash and content_counts[content_hash] > 1:
                 row["contentEquivalentCount"] = content_counts[content_hash]
         evidence_rows = event_evidence_by_id.get(event_key, [])
+        selector_containers: dict[str, dict[str, int]] = {}
+        seen_selector_nodes: set[tuple[int, int]] = set()
+        for definition_index, evidence_row in enumerate(evidence_rows):
+            bank_id = int(evidence_row.get("bankId") or definition_index)
+            for container in evidence_row.get("containerEvidence") or []:
+                if not isinstance(container, dict):
+                    continue
+                object_id = int(container.get("objectId") or 0)
+                node_key = (bank_id, object_id)
+                if object_id and node_key in seen_selector_nodes:
+                    continue
+                if object_id:
+                    seen_selector_nodes.add(node_key)
+                object_type = int(container.get("objectType") or 0)
+                if object_type == 5:
+                    selector_kind = "sequenceItem" if int(container.get("mode") or 0) == 1 else "randomAlternative"
+                else:
+                    selector_kind = {
+                        6: "switchCandidate",
+                        7: "groupChild",
+                        9: "layerChild",
+                    }.get(object_type, str(container.get("edgeKind") or "unknown"))
+                counts = selector_containers.setdefault(selector_kind, {"nodeCount": 0, "childEdgeCount": 0})
+                counts["nodeCount"] += 1
+                counts["childEdgeCount"] += int(container.get("childCount") or 0)
+        selector_evidence = {
+            "bankDefinitionCount": len(evidence_rows),
+            "rootStopActionCount": sum(int(row.get("rootStopActionCount") or 0) for row in evidence_rows),
+            "containers": selector_containers,
+        }
         root_action_ids = sorted({
             int(root_action_id)
             for item in media
@@ -1040,6 +1070,7 @@ def link_gameplay_audio(
             "mediaRelationTypes": relation_types,
             "traversalStatus": traversal_status,
             "unresolvedNodeCount": sum(len(row.get("unresolvedNodes") or []) for row in evidence_rows),
+            "selectorEvidence": selector_evidence,
             "runtimeSelection": (
                 "runtimeBranchUnresolved" if any(value != "directSound" for value in relation_types)
                 else "multiplePlayRootsTimingUnresolved" if len(root_action_ids) > 1
@@ -1186,6 +1217,7 @@ def link_gameplay_audio(
                 "playableCandidates": linked.get("playableCandidates"),
                 "playRootCount": linked.get("playRootCount"),
                 "mediaRelationTypes": linked.get("mediaRelationTypes") or [],
+                "selectorEvidence": linked.get("selectorEvidence") or {},
                 "traversalStatus": linked.get("traversalStatus"),
                 "runtimeSelection": linked.get("runtimeSelection"),
                 "evidence": evidence,

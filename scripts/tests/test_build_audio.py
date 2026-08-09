@@ -649,7 +649,28 @@ AnimationClip:
                 "CN",
                 references,
                 {"player_fol_fs_walk": media},
-                [{"eventId": "player_fol_fs_walk", "traversalStatus": "complete"}],
+                [{
+                    "eventId": "player_fol_fs_walk",
+                    "bankId": 100,
+                    "traversalStatus": "complete",
+                    "rootStopActionCount": 1,
+                    "containerEvidence": [{
+                        "objectId": 10,
+                        "objectType": 5,
+                        "mode": 0,
+                        "childCount": 12,
+                    }, {
+                        "objectId": 20,
+                        "objectType": 6,
+                        "childCount": 4,
+                    }, {
+                        # The same node can be reached from more than one Play root;
+                        # compact evidence counts the graph node only once.
+                        "objectId": 20,
+                        "objectType": 6,
+                        "childCount": 4,
+                    }],
+                }],
             )
 
             payload = json.loads(
@@ -667,6 +688,12 @@ AnimationClip:
             self.assertEqual(event_a["id"], "player_fol_fs_walk")
             self.assertEqual(event_a["authoredEventIds"], ["Player_FOL_FS_Walk", "player_fol_fs_walk"])
             self.assertEqual(event_a["eventAliases"], ["Player_FOL_FS_Walk"])
+            self.assertEqual(event_a["selectorEvidence"]["bankDefinitionCount"], 1)
+            self.assertEqual(event_a["selectorEvidence"]["rootStopActionCount"], 1)
+            self.assertEqual(event_a["selectorEvidence"]["containers"], {
+                "randomAlternative": {"nodeCount": 1, "childEdgeCount": 12},
+                "switchCandidate": {"nodeCount": 1, "childEdgeCount": 4},
+            })
             self.assertEqual(payload["characters"]["chr_a"]["metrics"]["sharedAnimationEventCount"], 1)
             self.assertEqual(payload["characters"]["chr_a"]["metrics"]["uniqueEventMediaPairCount"], 2)
             self.assertEqual(stats["characterAnimationUniqueEvents"], 1)

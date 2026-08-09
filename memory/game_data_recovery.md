@@ -158,7 +158,9 @@ Gameplay UI separates single-owner callbacks from shared animation systems;
 the Audio view tags shared playable-animation and footstep/material Events.
 Animation Event identity is lowercased for the Wwise join while every authored
 spelling is retained as evidence, preventing case-only callbacks from
-duplicating candidate associations.
+duplicating candidate associations. The compact Gameplay sidecar retains bank
+definition and root Stop counts plus per-selector node and child-edge totals,
+so a large possible-leaf count remains auditable without loading raw HIRC data.
 
 Two additional Gameplay joins fill gaps outside SkillData/BuffData. Exact
 SkillData strings embedded in recovered `EnemyData.AbilitySystemData` allow

@@ -165,7 +165,10 @@ sns_topic_map02_lv005_12002
   separate Gameplay groups. Shared footstep/cloth/material Events show owner
   counts and global reachable leaves without presenting those leaves as the
   character's private sound library; opening one Event still lists every
-  playable file together.
+  playable file together. Character and enemy audio appears only as the final
+  detail section, after normal and integrated content rather than inside skill
+  cards; compact bank, Stop, selector-node, and child-edge counts substantiate
+  large Wwise fan-outs.
 - Gameplay thumbnails and model paths link back to the matching Assets entry.
 
 ### Mission Pipeline
