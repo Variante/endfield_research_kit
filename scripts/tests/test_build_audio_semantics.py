@@ -546,6 +546,70 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(context["animationOccurrenceCount"], 1)
             self.assertEqual(context["sourcePaths"], ["AnimationClip/UI_Generic.anim"])
 
+    def test_collects_levelscript_constant_events_and_keeps_dynamic_and_cue_controls_separate(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root)
+            for source, marker in (("StreamingAssets", b"base"), ("Persistent", b"override")):
+                path = export_root / f"structured/{source}/Data/Json/LevelScriptData/map/test.json"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(marker)
+
+            def decode_file(_path: Path, data: bytes) -> dict:
+                self.assertEqual(data, b"override")
+                common_record = {
+                    "start": 24,
+                    "uid": "00112233445566778899aabbccddeeff",
+                    "localId": 7,
+                    "unionTag": 0x034E,
+                    "serializedMemberCount": 0x0B,
+                }
+                return {"targetCount": 3, "rows": [{
+                    "record": common_record,
+                    "actionMapRole": "actionList#1 root",
+                    "audioAction": {
+                        "action": "PlayAudio",
+                        "nativeMappingId": "binary-test",
+                        "payloadShape": "exact",
+                        "fields": {
+                            "key": {"sourceField": "_key", "bindingKind": "constant", "value": "au_ls_play", "idRef": -1, "paramSource": 0},
+                            "stopOnRelease": {"sourceField": "_stopOnRelease", "bindingKind": "constant", "value": True},
+                        },
+                        "eventBindings": [{"eventName": "au_ls_play", "role": "play", "sourceField": "_key"}],
+                    },
+                }, {
+                    "record": {**common_record, "start": 48},
+                    "actionMapRole": "actionList#2 linked",
+                    "audioAction": {
+                        "action": "PlayAudio",
+                        "fields": {"key": {"sourceField": "_key", "bindingKind": "dynamic", "idRef": -1, "paramSource": 200, "path": "Start_music"}},
+                    },
+                }, {
+                    "record": {**common_record, "start": 72, "unionTag": 0x036B, "serializedMemberCount": 0x13},
+                    "actionMapRole": "actionList#3 linked",
+                    "audioAction": {
+                        "action": "PostAudioCue",
+                        "fields": {"name": {"sourceField": "_name", "bindingKind": "constant", "value": "cue_test"}},
+                        "cueBindings": [{"cueName": "cue_test", "role": "invoke", "sourceField": "_name"}],
+                    },
+                }]}
+
+            semantics = audio_semantics.collect_levelscript_audio_semantics(
+                export_root,
+                decode_file=decode_file,
+            )
+
+            context = semantics["eventContexts"]["au_ls_play"][0]
+            self.assertEqual(context["kind"], "levelScriptAudioAction")
+            self.assertEqual(context["sourceRoot"], "Persistent")
+            self.assertEqual(context["triggerRole"], "play")
+            self.assertEqual(context["fields"]["stopOnRelease"]["value"], True)
+            self.assertEqual(audio_semantics.semantic_context_group(context["kind"]), "scripted")
+            self.assertEqual(semantics["cueInvocations"][0]["cueName"], "cue_test")
+            self.assertEqual(semantics["cueInvocations"][0]["definitionStatus"], "runtimeNameToCueDefinitionUnresolved")
+            self.assertEqual(semantics["dynamicEventBindings"][0]["binding"]["path"], "Start_music")
+            self.assertEqual(semantics["stats"]["decodedAudioActionRecords"], 3)
+            self.assertEqual(semantics["stats"]["constantEventRequestContexts"], 1)
+
     def test_builds_compact_lazy_shards_with_evidence_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)

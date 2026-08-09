@@ -200,6 +200,14 @@ This proves authored spawn-warning requests, not that a spawner executed.
 Every current `bornBehaviorData` value is null, so a future non-null member-18
 payload fails closed until an authored fixture proves its serialized layout.
 
+Seven current LevelScript audio ActionBase layouts now decode from their exact
+union tag/member count and generated-setter field order. The overlaid corpus has
+1,690/1,690 decoded records: 1,390 constant Event requests, 290 named AudioCue
+invocations, and 22 dynamic Event parameters. Constant Events receive exact
+script/action/role/routing contexts in Audio. Cue names and dynamic parameters
+remain separate control records because the runtime cue-definition lookup and
+live Param values are not yet recovered; no name is synthesized for them.
+
 `AudioCueTable` is an expression system rather than a flat Event list. The
 current 175 cue definitions contain 291 handlers: only 325 `behaviourExpr`
 nodes with `exprType=3` are exact downstream Event requests (229 unique Event
