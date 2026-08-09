@@ -29,6 +29,7 @@ import subprocess
 import sys
 import time
 from collections import Counter, defaultdict, deque
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
@@ -1914,16 +1915,24 @@ def load_targeted_full_monobehaviour_records(
     return records_by_key, children_by_parent, timeline_roots
 
 
-def _black_text_ids_from_payload(payload: dict) -> list[str]:
-    """Return serialized black-screen text ids from a Timeline playable asset."""
+def _timeline_text_ids_from_payload(payload: dict) -> list[str]:
+    """Return non-empty serialized text ids from a Timeline playable asset."""
     out: list[str] = []
     for field_name, value in payload.items():
         if field_name != "_textId" and not re.fullmatch(r"_textId_\d+", field_name):
             continue
         text_id = str(value or "").strip()
-        if text_id.startswith("black_"):
+        if text_id:
             out.append(text_id)
     return sorted(set(out))
+
+
+def _black_text_ids_from_payload(payload: dict) -> list[str]:
+    """Return serialized black-screen text ids from a Timeline playable asset."""
+    return [
+        text_id for text_id in _timeline_text_ids_from_payload(payload)
+        if text_id.startswith("black_")
+    ]
 
 
 def _timeline_payload_entries(payload: dict) -> list[tuple[str, dict]]:
@@ -1945,12 +1954,18 @@ def _timeline_payload_entries(payload: dict) -> list[tuple[str, dict]]:
     return out
 
 
-def recover_black_timeline_attachments(
+def recover_timeline_text_attachments(
     line_orders_path_str: str = str(DEFAULT_ORDER_OUT),
     extract_dir_str: str = str(DEFAULT_EXTRACT_DIR),
     dialog_registry_path_str: str = str(DEFAULT_DIALOG_REGISTRY),
+    *,
+    line_id_to_story_key: dict[str, str] | None = None,
+    playable_asset_type_names: tuple[str, ...] = (
+        "LeftSubtitlePlayableAsset",
+        "DialogCenterTextPlayableAsset",
+    ),
 ) -> list[dict]:
-    """Recover exact black-screen -> dialog Timeline containment.
+    """Recover exact Story-line -> dialog Timeline containment.
 
     The join stays entirely on original extracted Unity data:
     serialized ``_textId[_N]`` fields on subtitle/center-text playable assets,
@@ -1959,6 +1974,13 @@ def recover_black_timeline_attachments(
     the already-recovered exact root -> dialog entry in
     ``timeline_line_orders.json``. Roots without either original-data join are
     returned with an empty ``dialogKey`` and must remain debug-only.
+
+    Playable asset filenames are supplied by the caller's runtime type census;
+    track containers are discovered by their general serialized Track/Trunk
+    shape. When ``line_id_to_story_key`` is supplied, only exact emitted line
+    ownership from that index is admitted. The compatibility default accepts
+    black-screen line ids and derives their Story root by removing the final
+    numeric line suffix.
 
     This targeted pass intentionally indexes filenames lazily instead of
     reparsing every MonoBehaviour JSON in the large Timeline extraction.
@@ -2066,19 +2088,15 @@ def recover_black_timeline_attachments(
                 continue
             asset_paths = sorted({
                 path
-                for pattern in (
-                    "*LeftSubtitlePlayableAsset*.json",
-                    "*DialogCenterTextPlayableAsset*.json",
-                )
-                for path in fast_glob_files(mono_dir, pattern)
+                for type_name in playable_asset_type_names
+                for path in fast_glob_files(mono_dir, f"*{type_name}*.json")
             })
             track_paths = sorted({
                 path
                 for pattern in (
-                    "*Left Subtitle Track*.json",
-                    "*Dialog Trunk Track*.json",
-                    # Some serialized Dialog Trunk tracks keep only the
-                    # authored object name ``Trunk`` in the export.
+                    "*Track*.json",
+                    # Some serialized track containers keep only the authored
+                    # object name ``Trunk`` in the export.
                     "Trunk_p*.json",
                 )
                 for path in fast_glob_files(mono_dir, pattern)
@@ -2122,7 +2140,19 @@ def recover_black_timeline_attachments(
             if not asset_meta:
                 continue
             payload = load_json(asset_path)
-            text_ids = _black_text_ids_from_payload(payload if isinstance(payload, dict) else {})
+            text_ids = _timeline_text_ids_from_payload(
+                payload if isinstance(payload, dict) else {}
+            )
+            if line_id_to_story_key is not None:
+                text_ids = [
+                    text_id for text_id in text_ids
+                    if text_id in line_id_to_story_key
+                ]
+            else:
+                text_ids = [
+                    text_id for text_id in text_ids
+                    if text_id.startswith("black_")
+                ]
             if not text_ids:
                 continue
             key = (str(asset_meta["sourceFile"]), int(asset_meta["pathId"]))
@@ -2135,6 +2165,39 @@ def recover_black_timeline_attachments(
             }
         if not black_assets:
             continue
+
+        # A broad Track filename scan is intentionally used so new carrier
+        # families do not require a hand-maintained companion-track list. Read
+        # candidate bytes concurrently and retain only files whose serialized
+        # clip array names one of the exact playable PathIDs discovered above.
+        # JSON parsing then stays bounded to actual reverse-PPtr candidates.
+        asset_id_tokens = tuple(
+            str(path_id).encode("ascii")
+            for source_file, path_id in black_assets
+        )
+
+        def references_recovered_asset(path: Path) -> bool:
+            try:
+                data = path.read_bytes()
+            except OSError:
+                return False
+            return b'"m_Clips"' in data and any(
+                token in data for token in asset_id_tokens
+            )
+
+        if len(track_paths) > 32:
+            with ThreadPoolExecutor(max_workers=min(16, (os.cpu_count() or 4) * 2)) as pool:
+                track_paths = [
+                    path for path, matched in zip(
+                        track_paths,
+                        pool.map(references_recovered_asset, track_paths),
+                    )
+                    if matched
+                ]
+        else:
+            track_paths = [
+                path for path in track_paths if references_recovered_asset(path)
+            ]
 
         for track_path in track_paths:
             track_meta = metadata(track_path)
@@ -2222,11 +2285,15 @@ def recover_black_timeline_attachments(
                         join_kind = "source_timeline_unique"
                     dialog_key = joined_entries[0][1] if len(joined_entries) == 1 else ""
                 for text_id in asset["textIds"]:
-                    black_key = re.sub(r"_\d+$", "", text_id)
-                    if not black_key.startswith("black_") or black_key == text_id:
+                    story_key = (
+                        str(line_id_to_story_key.get(text_id) or "")
+                        if line_id_to_story_key is not None
+                        else re.sub(r"_\d+$", "", text_id)
+                    )
+                    if not story_key or story_key == text_id:
                         continue
                     recovered.append({
-                        "key": black_key,
+                        "key": story_key,
                         "textId": text_id,
                         "dialogKey": dialog_key,
                         "timeline": timeline,
@@ -2243,6 +2310,7 @@ def recover_black_timeline_attachments(
                         "clipIndex": clip_index,
                         "clipStart": as_float(clip.get("m_Start")),
                         "clipDuration": as_float(clip.get("m_Duration")),
+                        "clipOptionIndex": as_int(clip.get("optionIndex")),
                         "rootPath": root_rel,
                         "rootPathId": int(root_meta["pathId"]),
                         "rootName": str(root_meta.get("name") or root_path.stem),
@@ -2275,6 +2343,19 @@ def recover_black_timeline_attachments(
             row["clipIndex"],
             row["textId"],
         ),
+    )
+
+
+def recover_black_timeline_attachments(
+    line_orders_path_str: str = str(DEFAULT_ORDER_OUT),
+    extract_dir_str: str = str(DEFAULT_EXTRACT_DIR),
+    dialog_registry_path_str: str = str(DEFAULT_DIALOG_REGISTRY),
+) -> list[dict]:
+    """Compatibility wrapper for black-screen Timeline containment."""
+    return recover_timeline_text_attachments(
+        line_orders_path_str,
+        extract_dir_str,
+        dialog_registry_path_str,
     )
 
 

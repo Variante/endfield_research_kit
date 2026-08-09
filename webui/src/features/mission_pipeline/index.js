@@ -757,6 +757,10 @@
       relationSnsMissionLink: "SNS row explicitly links this conversation to the mission",
       relationTimelineBlack: "serialized Timeline contains this black-screen Story inside a dialog root",
       relationTimelineBlackUnresolved: "serialized Timeline root is proven; its dialog/mission anchor is unresolved",
+      timelineEmbeddedRuntime: "exact Timeline runtime presentation",
+      timelineEmbeddedClip: "serialized clip",
+      timelineEmbeddedRuntimeChain: "installed-binary runtime chain",
+      timelineEmbeddedRuntimeBoundary: "This proves live Timeline presentation and local clip timing only. It does not prove mission/quest ownership, branch selection, or cross-Timeline order.",
       relationDialogNarrativeAction: "typed DialogTree action presents this black-screen text inside its parent dialog",
       relationDialogNarrativeActionUnscoped: "typed DialogTree containment is exact; parent mission/quest placement is unresolved",
       relationDialogLeftSubtitleAction: "typed DialogTree action presents this text in the local left-subtitle UI",
@@ -1487,6 +1491,10 @@
       relationSnsMissionLink: "SNS 原始表记录将该会话明确连接到此使命",
       relationTimelineBlack: "序列化 Timeline 将该黑屏剧情包含在对话根节点中",
       relationTimelineBlackUnresolved: "已证明序列化 Timeline 根节点，但尚未解析对话或使命锚点",
+      timelineEmbeddedRuntime: "精确 Timeline 运行时呈现",
+      timelineEmbeddedClip: "序列化片段",
+      timelineEmbeddedRuntimeChain: "已安装二进制运行链",
+      timelineEmbeddedRuntimeBoundary: "这仅证明 Timeline 实时呈现与局部片段时序；不证明使命/任务归属、分支选择或跨 Timeline 顺序。",
       relationDialogNarrativeAction: "类型化 DialogTree 动作在父对话中呈现该黑屏文本",
       relationDialogNarrativeActionUnscoped: "DialogTree 包含关系精确，但父对话的使命或任务位置尚未解析",
       relationDialogLeftSubtitleAction: "类型化 DialogTree 动作在本地左侧字幕界面中呈现该文本",
@@ -3770,6 +3778,24 @@
         .filter((row) => row && row.key)
         .map((row) => [row.key, row]),
     );
+    const timelineRuntimeAudit = state.index?.storyCoverage?.timelineEmbeddedStoryRuntimeAudit || {};
+    const timelineRuntimeRowsByKey = new Map();
+    (timelineRuntimeAudit.rows || []).forEach((row) => {
+      if (!row?.key) return;
+      if (!timelineRuntimeRowsByKey.has(row.key)) timelineRuntimeRowsByKey.set(row.key, []);
+      timelineRuntimeRowsByKey.get(row.key).push(row);
+    });
+    const runtimeFamilies = timelineRuntimeAudit.runtimeContract?.families || [];
+    const timelineRuntimeHtml = (key) => {
+      const rows = timelineRuntimeRowsByKey.get(key) || [];
+      if (!rows.length) return "";
+      const clips = rows.map((row) => {
+        const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.role || "file")}</code> <code>${esc(file.sourceFile || "")}</code> / PathID <code>${esc(file.pathId ?? "?")}</code>${file.rawDataSha256 ? ` / SHA-256 <code>${esc(file.rawDataSha256)}</code>` : ""}<br><code>${esc(file.path || "")}</code></small>`).join("");
+        return `<article><p><strong>${esc(t("timelineEmbeddedClip"))}</strong> <code>${esc(row.timeline || "?")}</code> <code>${Number(row.clipStart || 0).toFixed(3)}s + ${Number(row.clipDuration || 0).toFixed(3)}s</code> <code>optionIndex=${esc(row.clipOptionIndex ?? "?")}</code></p><small><code>${esc(row.textId || "")}</code> / <code>${esc(row.dialogKey || "unresolved")}</code> / <code>${esc(row.sourceFile || "")}</code></small>${files}</article>`;
+      }).join("");
+      const chain = runtimeFamilies.map((family) => `<small><code>${esc(family.type || "")}</code> <code>CreatePlayable ${esc(family.createPlayable?.va || "?")}</code> &rarr; ${(family.createPlayable?.behaviourInitializers || []).map((value) => `<code>${esc(value)}</code>`).join(" ")}</small>`).join("");
+      return `<details class="mp-timeline-runtime"><summary><strong>${esc(t("timelineEmbeddedRuntime"))}</strong> <span>${rows.length}</span></summary><p><strong>${esc(t("timelineEmbeddedRuntimeChain"))}</strong></p>${chain}${clips}<small>${esc(t("timelineEmbeddedRuntimeBoundary"))}</small></details>`;
+    };
     return `<details class="mp-mission-story mp-unassigned-story" data-weight="context">
       <summary>${esc(t("unassignedStory"))} <span>${keys.length}</span></summary>
       <div class="mp-story-files"><section class="mp-story-group is-context">
@@ -3786,13 +3812,13 @@
             nativeMappingId: nativeRow?.nativeMappingId || "",
             source: [containmentRow.source, nativeRow?.source].filter(Boolean).join("; "),
           } : (nativeRow || definitionOnlyByKey.get(key));
-          return storyConnectionLink(evidenceRow || {
+          return `<div class="mp-unassigned-story-row">${storyConnectionLink(evidenceRow || {
             key,
             relation: "unassigned_story",
             direction: "context",
             confidence: "unassigned",
             source: t("unassignedStoryHint"),
-          }, "context");
+          }, "context")}${timelineRuntimeHtml(key)}</div>`;
         }).join("")}
       </section></div>
       <small>${esc(t("unassignedStoryHint"))}</small>

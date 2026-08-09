@@ -169,6 +169,17 @@ for (const [key, category] of [
         self.assertIn("context.relatedOriginalFiles", source)
         self.assertIn("nativeReceiverStoryContextHint", source)
 
+    def test_mission_pipeline_surfaces_timeline_runtime_without_promoting_owner(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("timelineEmbeddedStoryRuntimeAudit", source)
+        self.assertIn("timelineRuntimeHtml", source)
+        self.assertIn('t("timelineEmbeddedRuntimeChain")', source)
+        self.assertIn("file.rawDataSha256", source)
+        self.assertIn(
+            "It does not prove mission/quest ownership, branch selection, or cross-Timeline order.",
+            source,
+        )
+
     def test_mission_pipeline_surfaces_fixed_point_carrier_closure(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("metadata?.maximumShortestPathDepth", source)
