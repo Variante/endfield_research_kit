@@ -153,7 +153,7 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])[^\\/]*banks\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 6
+EVENT_EVIDENCE_SCHEMA_VERSION = 7
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
 # value is a little-endian U16 whose high byte is the operation and low byte is
@@ -165,8 +165,15 @@ HIRC_ACTION_OPERATION_LABELS = {
     0x2100: "playEvent",
 }
 HIRC_PLAYBACK_ACTION_OPERATIONS = frozenset({0x0400, 0x2100})
-HIRC_TYPED_CHILD_CONTAINER_TYPES = frozenset({5, 6, 7, 9})
-HIRC_AUDIO_NODE_TYPES = frozenset({2, 5, 6, 7, 9})
+HIRC_MUSIC_NODE_TYPES = frozenset({10, 11, 12, 13})
+HIRC_MUSIC_PARENT_NODE_TYPES = frozenset({10, 12, 13})
+HIRC_MUSIC_CHILD_TYPES = {
+    10: frozenset({11}),
+    12: frozenset({10, 12, 13}),
+    13: frozenset({10, 12, 13}),
+}
+HIRC_TYPED_CHILD_CONTAINER_TYPES = frozenset({5, 6, 7, 9, *HIRC_MUSIC_PARENT_NODE_TYPES})
+HIRC_AUDIO_NODE_TYPES = frozenset({2, 5, 6, 7, 9, *HIRC_MUSIC_NODE_TYPES})
 
 LANGUAGE_AUDIO_BLOCKS = ("voice",)
 SHARED_AUDIO_STORAGE = "shared"
@@ -2549,9 +2556,151 @@ def hirc_sound_media_id(data: bytes) -> int | None:
     return unpack_from("<I", data, 5)[0]
 
 
+def _hirc_v150_u32(data: bytes, offset: int) -> tuple[int, int]:
+    if offset < 0 or offset + 4 > len(data):
+        raise ValueError("truncated v150 U32")
+    return unpack_from("<I", data, offset)[0], offset + 4
+
+
+def _hirc_v150_node_base_parent(data: bytes, offset: int) -> tuple[int, int]:
+    """Decode the v150 NodeBase prefix through its DirectParentID field.
+
+    FX and metadata lists are variable length.  Reading their authored counts is
+    required before the bus and parent IDs; treating the parent as an arbitrary
+    U32 at a guessed offset would make reciprocal child proof circular.
+    """
+
+    if offset < 0 or offset + 2 > len(data):
+        raise ValueError("truncated v150 initial FX header")
+    offset += 1  # bIsOverrideParentFX
+    effect_count = data[offset]
+    offset += 1
+    if effect_count:
+        offset += 1  # bBypassAll
+        effect_bytes = effect_count * 6  # U8 index + U32 ID + U8 flags
+        if offset + effect_bytes > len(data):
+            raise ValueError("truncated v150 initial FX list")
+        offset += effect_bytes
+
+    if offset + 2 > len(data):
+        raise ValueError("truncated v150 metadata header")
+    offset += 1  # bIsOverrideParentMetadata
+    metadata_count = data[offset]
+    offset += 1
+    metadata_bytes = metadata_count * 6  # U8 index + U32 ID + U8 share-set flag
+    if offset + metadata_bytes > len(data):
+        raise ValueError("truncated v150 metadata list")
+    offset += metadata_bytes
+
+    _override_bus_id, offset = _hirc_v150_u32(data, offset)
+    parent_id, offset = _hirc_v150_u32(data, offset)
+    return parent_id, offset
+
+
+def hirc_v150_music_track(data: bytes) -> dict[str, Any] | None:
+    """Decode the typed prefix of a v150 MusicTrack.
+
+    This reaches every AkBankSourceData row and the NodeBase parent without
+    interpreting the later property/RTPC payload.  Every variable-length list
+    is bounded against the enclosing HIRC object's bytes and failures return
+    ``None`` rather than searching for media-looking integers.
+    """
+
+    try:
+        if len(data) < 5:
+            raise ValueError("truncated v150 MusicTrack header")
+        flags = data[0]
+        source_count, offset = _hirc_v150_u32(data, 1)
+        sources: list[dict[str, Any]] = []
+        for _ in range(source_count):
+            plugin_id, offset = _hirc_v150_u32(data, offset)
+            if offset + 10 > len(data):
+                raise ValueError("truncated v150 MusicTrack source")
+            stream_type = data[offset]
+            media_id = unpack_from("<I", data, offset + 1)[0]
+            memory_size = unpack_from("<I", data, offset + 5)[0]
+            source_bits = data[offset + 9]
+            offset += 10
+            plugin_parameter_size = 0
+            if plugin_id & 0x0F == 2:
+                plugin_parameter_size, offset = _hirc_v150_u32(data, offset)
+                if offset + plugin_parameter_size > len(data):
+                    raise ValueError("truncated v150 MusicTrack plugin parameters")
+                offset += plugin_parameter_size
+            sources.append({
+                "mediaId": media_id,
+                "pluginId": plugin_id,
+                "pluginType": plugin_id & 0x0F,
+                "streamType": stream_type,
+                "inMemoryMediaSize": memory_size,
+                "sourceBits": source_bits,
+                "pluginParameterSize": plugin_parameter_size,
+            })
+
+        playlist_count, offset = _hirc_v150_u32(data, offset)
+        playlist_items: list[dict[str, Any]] = []
+        for _ in range(playlist_count):
+            if offset + 44 > len(data):
+                raise ValueError("truncated v150 MusicTrack playlist")
+            playlist_items.append({
+                "trackId": unpack_from("<I", data, offset)[0],
+                "mediaId": unpack_from("<I", data, offset + 4)[0],
+                "eventId": unpack_from("<I", data, offset + 8)[0],
+            })
+            offset += 44  # IDs above + four F64 clip timing values.
+        subtrack_count = None
+        if playlist_count:
+            subtrack_count, offset = _hirc_v150_u32(data, offset)
+
+        automation_count, offset = _hirc_v150_u32(data, offset)
+        automation_point_count = 0
+        for _ in range(automation_count):
+            if offset + 12 > len(data):
+                raise ValueError("truncated v150 MusicTrack automation header")
+            point_count = unpack_from("<I", data, offset + 8)[0]
+            offset += 12
+            point_bytes = point_count * 12  # F32 From + F32 To + U32 interpolation.
+            if offset + point_bytes > len(data):
+                raise ValueError("truncated v150 MusicTrack automation points")
+            offset += point_bytes
+            automation_point_count += point_count
+
+        node_base_offset = offset
+        parent_id, _parent_end = _hirc_v150_node_base_parent(data, node_base_offset)
+        return {
+            "flags": flags,
+            "parentId": parent_id,
+            "nodeBaseOffset": node_base_offset,
+            "sourceCount": source_count,
+            "sources": sources,
+            "playlistItemCount": playlist_count,
+            "playlistItems": playlist_items,
+            "subtrackCount": subtrack_count,
+            "automationCount": automation_count,
+            "automationPointCount": automation_point_count,
+        }
+    except (ValueError, OverflowError):
+        return None
+
+
+def _hirc_v150_music_parent_id(data: bytes) -> int | None:
+    try:
+        # v150 MusicSegment/Switch/RanSeq begin with a U8 MIDI override flag,
+        # followed by the common NodeBase prefix.
+        parent_id, _offset = _hirc_v150_node_base_parent(data, 1)
+        return parent_id
+    except (ValueError, OverflowError):
+        return None
+
+
 def hirc_object_parent_id(object_type: int, data: bytes) -> int | None:
     if object_type == 2:
         offset = 22
+    elif object_type == 11:
+        track = hirc_v150_music_track(data)
+        return int(track["parentId"]) if track else None
+    elif object_type in HIRC_MUSIC_PARENT_NODE_TYPES:
+        return _hirc_v150_music_parent_id(data)
     elif object_type in HIRC_TYPED_CHILD_CONTAINER_TYPES:
         offset = 8
     else:
@@ -2579,6 +2728,7 @@ def hirc_reciprocal_child_list(
 
     if object_type not in HIRC_TYPED_CHILD_CONTAINER_TYPES:
         return None
+    allowed_child_types = HIRC_MUSIC_CHILD_TYPES.get(object_type, HIRC_AUDIO_NODE_TYPES)
     for offset in range(0, max(0, len(data) - 7)):
         count = unpack_from("<I", data, offset)[0]
         if count <= 0 or count > (len(data) - offset - 4) // 4:
@@ -2590,7 +2740,7 @@ def hirc_reciprocal_child_list(
         if any(child_id not in objects for child_id in children):
             continue
         if any(
-            int(objects[child_id].get("type") or 0) not in HIRC_AUDIO_NODE_TYPES
+            int(objects[child_id].get("type") or 0) not in allowed_child_types
             or hirc_object_parent_id(
                 int(objects[child_id].get("type") or 0),
                 objects[child_id].get("data") or b"",
@@ -2600,6 +2750,327 @@ def hirc_reciprocal_child_list(
             continue
         return children, offset
     return None
+
+
+def _hirc_v150_music_common_tail(
+    data: bytes,
+    children_offset: int,
+    child_count: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode the fixed v150 music meter/stinger tail after Children."""
+
+    try:
+        offset = children_offset + 4 + child_count * 4
+        if offset + 27 > len(data):
+            raise ValueError("truncated v150 music meter")
+        grid_period = unpack_from("<d", data, offset)[0]
+        grid_offset = unpack_from("<d", data, offset + 8)[0]
+        tempo = unpack_from("<f", data, offset + 16)[0]
+        time_signature_numerator = data[offset + 20]
+        time_signature_beat = data[offset + 21]
+        meter_override = bool(data[offset + 22])
+        stinger_count = unpack_from("<I", data, offset + 23)[0]
+        offset += 27
+        stinger_bytes = stinger_count * 24
+        if offset + stinger_bytes > len(data):
+            raise ValueError("truncated v150 music stingers")
+        stingers = [
+            {
+                "triggerId": unpack_from("<I", data, offset + index * 24)[0],
+                "segmentId": unpack_from("<I", data, offset + index * 24 + 4)[0],
+                "syncType": unpack_from("<I", data, offset + index * 24 + 8)[0],
+                "cueFilterHash": unpack_from("<I", data, offset + index * 24 + 12)[0],
+            }
+            for index in range(stinger_count)
+        ]
+        offset += stinger_bytes
+        return ({
+            "gridPeriod": grid_period,
+            "gridOffset": grid_offset,
+            "tempo": tempo,
+            "timeSignatureNumerator": time_signature_numerator,
+            "timeSignatureBeat": time_signature_beat,
+            "meterOverride": meter_override,
+            "stingerCount": stinger_count,
+            "stingers": stingers,
+        }, offset)
+    except (ValueError, OverflowError):
+        return None
+
+
+def _hirc_v150_music_transition_tail(
+    data: bytes,
+    offset: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode v150 MusicTransAware rules far enough to reach selector data."""
+
+    try:
+        rule_count, offset = _hirc_v150_u32(data, offset)
+        rules: list[dict[str, Any]] = []
+        for _ in range(rule_count):
+            source_count, offset = _hirc_v150_u32(data, offset)
+            source_bytes = source_count * 4
+            if offset + source_bytes > len(data):
+                raise ValueError("truncated v150 music transition sources")
+            source_ids = [unpack_from("<I", data, offset + index * 4)[0] for index in range(source_count)]
+            offset += source_bytes
+            destination_count, offset = _hirc_v150_u32(data, offset)
+            destination_bytes = destination_count * 4
+            if offset + destination_bytes > len(data):
+                raise ValueError("truncated v150 music transition destinations")
+            destination_ids = [
+                unpack_from("<I", data, offset + index * 4)[0]
+                for index in range(destination_count)
+            ]
+            offset += destination_bytes
+            if offset + 48 > len(data):
+                raise ValueError("truncated v150 music transition rule")
+            # Source rule is 21 bytes; destination rule is 26 bytes in v150.
+            offset += 47
+            has_transition_segment = bool(data[offset])
+            offset += 1
+            transition_segment_id = None
+            if has_transition_segment:
+                if offset + 30 > len(data):
+                    raise ValueError("truncated v150 music transition segment")
+                transition_segment_id = unpack_from("<I", data, offset)[0]
+                offset += 30
+            rules.append({
+                "sourceIds": source_ids,
+                "destinationIds": destination_ids,
+                "transitionSegmentId": transition_segment_id,
+            })
+        return ({"transitionRuleCount": rule_count, "transitionRules": rules}, offset)
+    except (ValueError, OverflowError):
+        return None
+
+
+def hirc_v150_music_segment_structure(
+    data: bytes,
+    children_offset: int,
+    child_count: int,
+) -> dict[str, Any] | None:
+    common = _hirc_v150_music_common_tail(data, children_offset, child_count)
+    if not common:
+        return None
+    common_row, offset = common
+    try:
+        if offset + 12 > len(data):
+            raise ValueError("truncated v150 MusicSegment")
+        duration = unpack_from("<d", data, offset)[0]
+        marker_count = unpack_from("<I", data, offset + 8)[0]
+        offset += 12
+        markers: list[dict[str, Any]] = []
+        for _ in range(marker_count):
+            if offset + 12 > len(data):
+                raise ValueError("truncated v150 MusicSegment marker")
+            marker_id = unpack_from("<I", data, offset)[0]
+            position = unpack_from("<d", data, offset + 4)[0]
+            offset += 12
+            name_end = data.find(b"\x00", offset)
+            if name_end < 0:
+                raise ValueError("unterminated v150 MusicSegment marker")
+            marker_name = data[offset:name_end].decode("utf-8", errors="replace")
+            offset = name_end + 1
+            markers.append({"id": marker_id, "position": position, "name": marker_name})
+        if offset != len(data):
+            raise ValueError("unexpected v150 MusicSegment trailing bytes")
+        return {**common_row, "duration": duration, "markerCount": marker_count, "markers": markers}
+    except (ValueError, OverflowError):
+        return None
+
+
+def hirc_v150_music_switch_structure(
+    data: bytes,
+    children_offset: int,
+    child_count: int,
+) -> dict[str, Any] | None:
+    common = _hirc_v150_music_common_tail(data, children_offset, child_count)
+    if not common:
+        return None
+    common_row, offset = common
+    transitions = _hirc_v150_music_transition_tail(data, offset)
+    if not transitions:
+        return None
+    transition_row, offset = transitions
+    try:
+        if offset + 5 > len(data):
+            raise ValueError("truncated v150 MusicSwitch header")
+        continue_playback = bool(data[offset])
+        tree_depth = unpack_from("<I", data, offset + 1)[0]
+        offset += 5
+        argument_bytes = tree_depth * 4
+        if offset + argument_bytes + tree_depth > len(data):
+            raise ValueError("truncated v150 MusicSwitch arguments")
+        group_ids = [unpack_from("<I", data, offset + index * 4)[0] for index in range(tree_depth)]
+        offset += argument_bytes
+        group_types = list(data[offset:offset + tree_depth])
+        offset += tree_depth
+        tree_size, offset = _hirc_v150_u32(data, offset)
+        if offset + 1 + tree_size != len(data) or tree_size % 12:
+            raise ValueError("invalid v150 MusicSwitch decision tree size")
+        tree_mode = data[offset]
+        offset += 1
+        tree_data = data[offset:offset + tree_size]
+        raw_nodes = [
+            {
+                "key": unpack_from("<I", tree_data, index)[0],
+                "value": unpack_from("<I", tree_data, index + 4)[0],
+                "weight": unpack_from("<H", tree_data, index + 8)[0],
+                "probability": unpack_from("<H", tree_data, index + 10)[0],
+            }
+            for index in range(0, tree_size, 12)
+        ]
+        leaves: list[dict[str, Any]] = []
+        visited: set[int] = set()
+
+        def visit(index: int, depth: int, path: tuple[int, ...]) -> None:
+            if index < 0 or index >= len(raw_nodes) or index in visited:
+                raise ValueError("invalid v150 MusicSwitch tree topology")
+            visited.add(index)
+            node = raw_nodes[index]
+            current_path = (*path, int(node["key"]))
+            if depth >= tree_depth:
+                leaves.append({
+                    "audioNodeId": int(node["value"]),
+                    "pathKeys": list(current_path),
+                    "weight": int(node["weight"]),
+                    "probability": int(node["probability"]),
+                })
+                return
+            child_index = int(node["value"]) & 0xFFFF
+            child_count_value = (int(node["value"]) >> 16) & 0xFFFF
+            if not child_count_value or child_index + child_count_value > len(raw_nodes):
+                raise ValueError("invalid v150 MusicSwitch child range")
+            for child in range(child_index, child_index + child_count_value):
+                visit(child, depth + 1, current_path)
+
+        if raw_nodes:
+            visit(0, 0, ())
+        if len(visited) != len(raw_nodes):
+            raise ValueError("unreachable v150 MusicSwitch tree nodes")
+        return {
+            **common_row,
+            **transition_row,
+            "continuePlayback": continue_playback,
+            "treeDepth": tree_depth,
+            "arguments": [
+                {"groupId": group_id, "groupType": group_types[index]}
+                for index, group_id in enumerate(group_ids)
+            ],
+            "treeMode": tree_mode,
+            "treeNodeCount": len(raw_nodes),
+            "treeLeafCount": len(leaves),
+            "treeLeaves": leaves,
+        }
+    except (ValueError, OverflowError):
+        return None
+
+
+def hirc_v150_music_random_sequence_structure(
+    data: bytes,
+    children_offset: int,
+    child_count: int,
+) -> dict[str, Any] | None:
+    common = _hirc_v150_music_common_tail(data, children_offset, child_count)
+    if not common:
+        return None
+    common_row, offset = common
+    transitions = _hirc_v150_music_transition_tail(data, offset)
+    if not transitions:
+        return None
+    transition_row, offset = transitions
+    try:
+        playlist_count, offset = _hirc_v150_u32(data, offset)
+        items: list[dict[str, Any]] = []
+
+        def read_item(depth: int, parent_index: int | None) -> None:
+            nonlocal offset
+            if len(items) >= playlist_count or offset + 30 > len(data):
+                raise ValueError("truncated v150 MusicRanSeq playlist")
+            segment_id = unpack_from("<I", data, offset)[0]
+            playlist_item_id = unpack_from("<I", data, offset + 4)[0]
+            nested_count = unpack_from("<I", data, offset + 8)[0]
+            selection_type = unpack_from("<I", data, offset + 12)[0]
+            row = {
+                "index": len(items),
+                "parentIndex": parent_index,
+                "depth": depth,
+                "segmentId": segment_id,
+                "playlistItemId": playlist_item_id,
+                "childCount": nested_count,
+                "selectionType": selection_type,
+                "selectionTypeLabel": {
+                    0: "continuousSequence",
+                    1: "stepSequence",
+                    2: "continuousRandom",
+                    3: "stepRandom",
+                    0xFFFFFFFF: "none",
+                }.get(selection_type, f"type{selection_type}"),
+                "loop": unpack_from("<h", data, offset + 16)[0],
+                "loopMin": unpack_from("<h", data, offset + 18)[0],
+                "loopMax": unpack_from("<h", data, offset + 20)[0],
+                "weight": unpack_from("<I", data, offset + 22)[0],
+                "avoidRepeatCount": unpack_from("<H", data, offset + 26)[0],
+                "usesWeight": bool(data[offset + 28]),
+                "shuffle": bool(data[offset + 29]),
+            }
+            offset += 30
+            item_index = len(items)
+            items.append(row)
+            for _ in range(nested_count):
+                read_item(depth + 1, item_index)
+
+        if playlist_count:
+            read_item(0, None)
+        if len(items) != playlist_count or offset != len(data):
+            raise ValueError("invalid v150 MusicRanSeq playlist size")
+        return {
+            **common_row,
+            **transition_row,
+            "playlistItemCount": playlist_count,
+            "playlistItems": items,
+            "selectionTypeLabels": sorted({str(row["selectionTypeLabel"]) for row in items}),
+        }
+    except (ValueError, OverflowError, RecursionError):
+        return None
+
+
+def hirc_v150_music_structure(
+    object_type: int,
+    data: bytes,
+    children_offset: int,
+    child_count: int,
+) -> dict[str, Any] | None:
+    parser = {
+        10: hirc_v150_music_segment_structure,
+        12: hirc_v150_music_switch_structure,
+        13: hirc_v150_music_random_sequence_structure,
+    }.get(object_type)
+    return parser(data, children_offset, child_count) if parser else None
+
+
+def hirc_v150_empty_music_children(
+    object_type: int,
+    data: bytes,
+) -> tuple[list[int], int, dict[str, Any]] | None:
+    """Prove an empty music Children array through a unique typed tail parse.
+
+    Empty lists have no child parent backlinks.  A zero count is accepted only
+    when exactly one offset lets the complete type-specific meter/transition/
+    selector tail consume the HIRC object to its exact end.
+    """
+
+    matches: list[tuple[list[int], int, dict[str, Any]]] = []
+    for offset in range(0, max(0, len(data) - 3)):
+        if unpack_from("<I", data, offset)[0] != 0:
+            continue
+        structure = hirc_v150_music_structure(object_type, data, offset, 0)
+        if structure:
+            matches.append(([], offset, structure))
+            if len(matches) > 1:
+                return None
+    return matches[0] if len(matches) == 1 else None
 
 
 def hirc_media_relation_types(path_object_types: list[int]) -> list[str]:
@@ -2649,6 +3120,7 @@ def traverse_hirc_event(
     event_id: int,
     objects: dict[int, dict[str, Any]],
     decoded_media_ids: set[int] | None = None,
+    bank_version: int | None = 150,
 ) -> dict[str, Any]:
     """Traverse one Event using only typed, downward v150 HIRC edges."""
 
@@ -2665,8 +3137,37 @@ def traverse_hirc_event(
     media_evidence_by_id: dict[int, dict[str, Any]] = {}
     action_evidence: list[dict[str, Any]] = []
     container_evidence: list[dict[str, Any]] = []
+    music_node_evidence: list[dict[str, Any]] = []
     unresolved_nodes: list[dict[str, Any]] = []
     root_operations: dict[int, int | None] = {}
+
+    def record_media(
+        media_id: int,
+        object_id: int,
+        object_type: int,
+        root_action_id: int,
+        relations: tuple[str, ...],
+    ) -> None:
+        if media_id not in source_media_ids:
+            source_media_ids.append(media_id)
+        if media_id in decoded_media_ids and media_id not in resolved_media_ids:
+            resolved_media_ids.append(media_id)
+        media_row = media_evidence_by_id.setdefault(media_id, {
+            "mediaId": media_id,
+            "decoded": media_id in decoded_media_ids,
+            "soundObjectIds": set(),
+            "musicTrackObjectIds": set(),
+            "rootActionIds": set(),
+            "relationTypes": set(),
+            "selectionPaths": set(),
+        })
+        if object_type == 2:
+            media_row["soundObjectIds"].add(object_id)
+        elif object_type == 11:
+            media_row["musicTrackObjectIds"].add(object_id)
+        media_row["rootActionIds"].add(root_action_id)
+        media_row["relationTypes"].update(relations)
+        media_row["selectionPaths"].add(relations)
 
     while queue:
         object_id, root_action_id, path_ids, path_types, path_relations = queue.popleft()
@@ -2687,6 +3188,16 @@ def traverse_hirc_event(
         data = obj.get("data") or b""
         current_path_ids = (*path_ids, object_id)
         current_path_types = (*path_types, object_type)
+
+        if object_type in HIRC_MUSIC_NODE_TYPES and bank_version != 150:
+            unresolved_nodes.append({
+                "objectId": object_id,
+                "objectType": object_type,
+                "rootActionId": root_action_id,
+                "reason": "unsupportedMusicBankVersion",
+                "bankVersion": bank_version,
+            })
+            continue
 
         if object_type == 4:
             for action_id in hirc_event_action_ids(data):
@@ -2725,27 +3236,52 @@ def traverse_hirc_event(
                     "reason": "truncatedSoundSource",
                 })
                 continue
-            if media_id not in source_media_ids:
-                source_media_ids.append(media_id)
-            if media_id in decoded_media_ids and media_id not in resolved_media_ids:
-                resolved_media_ids.append(media_id)
-            media_row = media_evidence_by_id.setdefault(media_id, {
-                "mediaId": media_id,
-                "decoded": media_id in decoded_media_ids,
-                "soundObjectIds": set(),
-                "rootActionIds": set(),
-                "relationTypes": set(),
-                "selectionPaths": set(),
-            })
             relations = tuple(path_relations) or ("directSound",)
-            media_row["soundObjectIds"].add(object_id)
-            media_row["rootActionIds"].add(root_action_id)
-            media_row["relationTypes"].update(relations)
-            media_row["selectionPaths"].add(relations)
+            record_media(media_id, object_id, object_type, root_action_id, relations)
+            continue
+
+        if object_type == 11:
+            track = hirc_v150_music_track(data)
+            if not track:
+                unresolved_nodes.append({
+                    "objectId": object_id,
+                    "objectType": object_type,
+                    "rootActionId": root_action_id,
+                    "reason": "musicTrackPrefixUnresolved",
+                })
+                continue
+            music_node_evidence.append({
+                "objectId": object_id,
+                "objectType": object_type,
+                "rootActionId": root_action_id,
+                "nodeKind": "musicTrack",
+                "parentId": track["parentId"],
+                "sourceCount": track["sourceCount"],
+                "sources": track["sources"],
+                "playlistItemCount": track["playlistItemCount"],
+                "playlistItems": track["playlistItems"],
+                "subtrackCount": track["subtrackCount"],
+                "automationCount": track["automationCount"],
+                "automationPointCount": track["automationPointCount"],
+                "parserConfidence": "typedExactV150",
+            })
+            relations = (*path_relations, "musicTrackSource")
+            for source in track["sources"]:
+                media_id = int(source.get("mediaId") or 0)
+                if media_id:
+                    record_media(media_id, object_id, object_type, root_action_id, relations)
             continue
 
         if object_type in HIRC_TYPED_CHILD_CONTAINER_TYPES:
             parsed = hirc_reciprocal_child_list(object_id, object_type, data, objects)
+            structure = None
+            parser_confidence = "reciprocalParentExact"
+            if not parsed and object_type in HIRC_MUSIC_PARENT_NODE_TYPES:
+                empty_music = hirc_v150_empty_music_children(object_type, data)
+                if empty_music:
+                    child_ids, offset, structure = empty_music
+                    parsed = (child_ids, offset)
+                    parser_confidence = "typedTailExactEmpty"
             if not parsed:
                 unresolved_nodes.append({
                     "objectId": object_id,
@@ -2761,7 +3297,7 @@ def traverse_hirc_event(
                 "rootActionId": root_action_id,
                 "childrenOffset": offset,
                 "childCount": len(child_ids),
-                "parserConfidence": "reciprocalParentExact",
+                "parserConfidence": parser_confidence,
             }
             if object_type == 5:
                 container_row.update(hirc_random_sequence_properties(data, offset))
@@ -2770,10 +3306,45 @@ def traverse_hirc_event(
                 relation = "switchCandidate"
             elif object_type == 9:
                 relation = "layerChild"
+            elif object_type == 10:
+                relation = "musicTrack"
+                structure = structure or hirc_v150_music_structure(object_type, data, offset, len(child_ids))
+                node_kind = "musicSegment"
+            elif object_type == 12:
+                relation = "musicSwitchCandidate"
+                structure = structure or hirc_v150_music_structure(object_type, data, offset, len(child_ids))
+                node_kind = "musicSwitchContainer"
+            elif object_type == 13:
+                relation = "musicPlaylistCandidate"
+                structure = structure or hirc_v150_music_structure(object_type, data, offset, len(child_ids))
+                node_kind = "musicRandomSequenceContainer"
             else:
                 relation = "groupChild"
             container_row["edgeKind"] = relation
             container_evidence.append(container_row)
+            if object_type in HIRC_MUSIC_PARENT_NODE_TYPES:
+                music_row = {
+                    **container_row,
+                    "nodeKind": node_kind,
+                    "childIds": child_ids,
+                }
+                if structure:
+                    music_row.update(structure)
+                    music_row["structureStatus"] = "typedExactV150"
+                else:
+                    music_row["structureStatus"] = "structureTailUnresolved"
+                    unresolved_nodes.append({
+                        "objectId": object_id,
+                        "objectType": object_type,
+                        "rootActionId": root_action_id,
+                        "reason": "musicStructureTailUnresolved",
+                    })
+                music_node_evidence.append(music_row)
+                if not structure:
+                    # Reciprocal parent proof identifies a likely Children block,
+                    # but music edges are traversed only when the serialized tail
+                    # starting at that exact boundary also parses to object end.
+                    continue
             child_relations = (*path_relations, relation)
             for child_id in child_ids:
                 queue.append((child_id, root_action_id, current_path_ids, current_path_types, child_relations))
@@ -2790,8 +3361,14 @@ def traverse_hirc_event(
         {
             "mediaId": media_id,
             "decoded": bool(row["decoded"]),
-            "soundObjectCount": len(row["soundObjectIds"]),
-            "soundObjectIds": sorted(row["soundObjectIds"]),
+            **({
+                "soundObjectCount": len(row["soundObjectIds"]),
+                "soundObjectIds": sorted(row["soundObjectIds"]),
+            } if row["soundObjectIds"] else {}),
+            **({
+                "musicTrackObjectCount": len(row["musicTrackObjectIds"]),
+                "musicTrackObjectIds": sorted(row["musicTrackObjectIds"]),
+            } if row["musicTrackObjectIds"] else {}),
             "rootActionIds": sorted(row["rootActionIds"]),
             "relationTypes": sorted(row["relationTypes"]),
             "selectionPaths": [list(path) for path in sorted(row["selectionPaths"])],
@@ -2811,6 +3388,7 @@ def traverse_hirc_event(
         "mediaEvidence": media_evidence,
         "actionEvidence": action_evidence,
         "containerEvidence": container_evidence,
+        "musicNodeEvidence": music_node_evidence,
         "unresolvedNodes": unresolved_nodes,
         "traversalStatus": "partial" if unresolved_nodes else "complete",
     }
@@ -3943,7 +4521,12 @@ def collect_event_audio_index(
                 event_object = objects[event_hash]
                 if not event_object or event_object.get("type") != 4:
                     continue
-                traversal = traverse_hirc_event(event_hash, objects, numeric_audio_ids)
+                traversal = traverse_hirc_event(
+                    event_hash,
+                    objects,
+                    numeric_audio_ids,
+                    bank_version=bank_version,
+                )
                 action_ids = traversal["actionIds"]
                 visited = set(traversal["visitedObjectIds"])
                 media_ids = traversal["mediaIds"]
@@ -3968,13 +4551,14 @@ def collect_event_audio_index(
                     "objectTypeLabels": object_type_labels,
                     "selectionObjectTypes": selection_object_types,
                     "containerEvidence": traversal["containerEvidence"],
+                    "musicNodeEvidence": traversal["musicNodeEvidence"],
                     "mediaEvidence": traversal["mediaEvidence"],
                     "sourceMediaIds": traversal["sourceMediaIds"],
                     "mediaIds": media_ids,
                     "resolvedMediaCount": len(media_ids),
                     "unresolvedNodes": traversal["unresolvedNodes"],
                     "traversalStatus": traversal["traversalStatus"],
-                    "edgeParser": "wwise150TypedReciprocalChildren",
+                    "edgeParser": "wwise150TypedReciprocalChildrenAndMusic",
                     "source": "wwiseHirc",
                     "nestedReferenceConfidence": "typedExact" if not traversal["unresolvedNodes"] else "typedPartial",
                 }
@@ -3985,6 +4569,7 @@ def collect_event_audio_index(
                             key: row[key]
                             for key in (
                                 "mediaId", "soundObjectCount", "soundObjectIds",
+                                "musicTrackObjectCount", "musicTrackObjectIds",
                                 "rootActionIds", "relationTypes", "selectionPaths",
                             )
                             if row.get(key) not in (None, "", [])
@@ -4041,9 +4626,11 @@ def collect_event_audio_index(
             },
             "evidenceBoundary": (
                 "Exact serialized HIRC object-family counts. Event, Action, Sound, and "
-                "types 5/6/7/9 use typed downward edges with reciprocal parent proof; "
-                "music nodes 10-13 and unresolved child structures fail closed. Runtime "
-                "switch, random, sequence, and layer selection is not evaluated."
+                "types 5/6/7/9 use typed downward edges with reciprocal parent proof. "
+                "Version-150 MusicSegment/Track/Switch/RanSeq nodes use bounded typed "
+                "prefixes, exact track sources, and reciprocal music children; truncated, "
+                "non-v150, and unresolved structures fail closed. Runtime switch, random, "
+                "sequence, transition, and layer selection is not evaluated."
             ),
         })
 
