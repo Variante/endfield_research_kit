@@ -683,12 +683,18 @@ AnimationClip:
             payload = json.loads((webui_root / "data/lang/CN/gameplay/sound_effects.json").read_text(encoding="utf-8"))
             events = payload["characters"]["chr_test"]["groups"]["normal"]["events"]
             self.assertEqual(stats["gameplayAudioRefsLinked"], 4)
+            self.assertEqual(stats["gameplaySerializedAudioRefs"], 5)
+            self.assertEqual(stats["gameplayReferenceOnlyAudioRefs"], 1)
             self.assertEqual(stats["animationAudioRefsLinked"], 1)
             self.assertEqual(stats["profileVoiceRefsLinked"], 1)
-            self.assertEqual([row["id"] for row in events], ["au_yes"])
-            self.assertEqual(events[0]["triggerBindingStatus"], "exactSkillConfig")
-            self.assertEqual(events[0]["triggerRelationTypes"], ["skillDataEventReference"])
-            self.assertEqual(events[0]["triggerBindings"][0]["ownershipMethod"], "gameplaySkillId")
+            self.assertEqual([row["id"] for row in events], ["au_no", "au_yes"])
+            unresolved, resolved = events
+            self.assertFalse(unresolved["foundInWwise"])
+            self.assertFalse(unresolved["hasPlayableMedia"])
+            self.assertEqual(unresolved["runtimeSelection"], "eventNotFoundInWwise")
+            self.assertEqual(resolved["triggerBindingStatus"], "exactSkillConfig")
+            self.assertEqual(resolved["triggerRelationTypes"], ["skillDataEventReference"])
+            self.assertEqual(resolved["triggerBindings"][0]["ownershipMethod"], "gameplaySkillId")
             enemy = payload["enemies"]["eny_test"]
             self.assertEqual(enemy["ownershipConfidence"], "inferred")
             self.assertEqual(enemy["skillIds"], ["eny_test_attack"])
