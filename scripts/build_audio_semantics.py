@@ -112,6 +112,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
+AUDIO_SEMANTIC_SCHEMA_VERSION = 3
 
 
 def runtime_spec(
@@ -423,8 +424,48 @@ def compact_media(entry: dict[str, Any]) -> dict[str, Any]:
         "audioScope", "audioCategory", "audioCategoryDetail", "sourceBlock",
         "sourceBlockLabel", "sourceLanguage", "sourceBank", "bankId", "bank",
         "audioDialogKey", "audioDialogPath", "speakerChannel", "voType", "duration",
+        "wwiseMediaEvidence", "contentSha256",
     )
-    return {key: entry[key] for key in keys if entry.get(key) not in (None, "", [])}
+    compact = {key: entry[key] for key in keys if entry.get(key) not in (None, "", [])}
+    if compact.get("wwiseMediaEvidence"):
+        compact["wwiseMediaEvidence"] = [
+            {
+                key: row[key]
+                for key in (
+                    "rootActionIds", "soundObjectCount", "relationTypes",
+                    "selectionPaths", "bankId", "bankPackage",
+                )
+                if row.get(key) not in (None, "", [])
+            }
+            for row in compact["wwiseMediaEvidence"]
+            if isinstance(row, dict)
+        ]
+    return compact
+
+
+def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
+    summary: dict[tuple[int, str, str], dict[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        object_type = int(row.get("objectType") or 0)
+        edge_kind = str(row.get("edgeKind") or "unknown")
+        mode_label = str(row.get("modeLabel") or "")
+        key = (object_type, edge_kind, mode_label)
+        target = summary.setdefault(key, {
+            "objectType": object_type,
+            "edgeKind": edge_kind,
+            "modeLabel": mode_label,
+            "nodeCount": 0,
+            "childCount": 0,
+            "parserConfidence": row.get("parserConfidence"),
+        })
+        target["nodeCount"] += 1
+        target["childCount"] += int(row.get("childCount") or 0)
+    return [
+        {key: value for key, value in row.items() if value not in (None, "", [])}
+        for row in summary.values()
+    ]
 
 
 def _metadata_module() -> Any:
@@ -794,14 +835,22 @@ def build_event_rows(
         ]
         compact_evidence = {
             "bankId": evidence.get("bankId"),
+            "bankVersion": evidence.get("bankVersion"),
             "bank": evidence.get("bank"),
+            "edgeParser": evidence.get("edgeParser"),
+            "traversalStatus": evidence.get("traversalStatus") or "unknown",
             "actionIds": evidence.get("actionIds") or [],
+            "actionEvidence": evidence.get("actionEvidence") or [],
+            "rootPlayActionCount": int(evidence.get("rootPlayActionCount") or 0),
+            "rootStopActionCount": int(evidence.get("rootStopActionCount") or 0),
             "visitedObjectCount": len(evidence.get("visitedObjectIds") or []),
             "mediaIds": evidence.get("mediaIds") or [],
             "objectTypeCounts": object_types,
             "selectionContainerTypes": selection_types,
+            "containerEvidence": compact_container_evidence(evidence.get("containerEvidence") or []),
+            "unresolvedNodes": evidence.get("unresolvedNodes") or [],
             "source": evidence.get("source") or "wwiseHirc",
-            "nestedReferenceConfidence": evidence.get("nestedReferenceConfidence") or "candidate",
+            "nestedReferenceConfidence": evidence.get("nestedReferenceConfidence") or "unknown",
         }
         evidence_by_event[key].append(compact_evidence)
         bank_name = str(evidence.get("bank") or "")
@@ -863,6 +912,20 @@ def build_event_rows(
             candidates.get(key, []),
             key=lambda row: (int(row.get("mediaId") or 0), str(row.get("src") or "")),
         )
+        content_counts = Counter(
+            str(row.get("contentSha256") or "")
+            for row in event_candidates
+            if row.get("contentSha256")
+        )
+        for candidate in event_candidates:
+            content_hash = str(candidate.get("contentSha256") or "")
+            if content_hash and content_counts[content_hash] > 1:
+                candidate["contentEquivalentCount"] = content_counts[content_hash]
+        unique_content_keys = {
+            str(row.get("contentSha256") or row.get("src") or row.get("mediaId") or "")
+            for row in event_candidates
+            if row.get("contentSha256") or row.get("src") or row.get("mediaId")
+        }
         for candidate in event_candidates:
             marker = str(candidate.get("src") or candidate.get("rel") or candidate.get("mediaId") or "")
             if marker and key not in media_to_events[marker]:
@@ -877,6 +940,35 @@ def build_event_rows(
             for evidence in evidence_rows
             for value in evidence.get("selectionContainerTypes") or []
         })
+        media_relation_types = sorted({
+            str(relation)
+            for candidate in event_candidates
+            for media_evidence in candidate.get("wwiseMediaEvidence") or []
+            for relation in media_evidence.get("relationTypes") or []
+            if str(relation)
+        })
+        play_root_ids = sorted({
+            int(root_action_id)
+            for candidate in event_candidates
+            for media_evidence in candidate.get("wwiseMediaEvidence") or []
+            for root_action_id in media_evidence.get("rootActionIds") or []
+            if isinstance(root_action_id, int)
+        })
+        traversal_status = (
+            "partial" if any(row.get("traversalStatus") == "partial" for row in evidence_rows)
+            else "complete" if evidence_rows else "unresolved"
+        )
+        branch_relations = [value for value in media_relation_types if value != "directSound"]
+        if branch_relations or selection_types:
+            runtime_selection = "runtimeBranchUnresolved"
+        elif len(play_root_ids) > 1:
+            runtime_selection = "multiplePlayRootsTimingUnresolved"
+        elif len(event_candidates) == 1:
+            runtime_selection = "singlePossibleMedia"
+        elif event_candidates:
+            runtime_selection = "multiplePossibleMediaUnresolved"
+        else:
+            runtime_selection = "unresolved"
         rows.append({
             "id": key,
             "name": display_names.get(key, key),
@@ -884,11 +976,24 @@ def build_event_rows(
             "category": event_category(key),
             "categoryEvidence": "namePrefix" if event_category(key) != "unknown" else "unclassified",
             "foundInWwise": bool(evidence_rows),
+            "possibleMediaCount": len(event_candidates),
+            "uniqueDecodedContentCount": len(unique_content_keys),
+            "contentEquivalentLeafCount": sum(max(0, count - 1) for count in content_counts.values()),
             "candidateCount": len(event_candidates),
-            "runtimeSelection": "unresolved" if selection_types or len(event_candidates) > 1 else ("singleCandidate" if event_candidates else "unresolved"),
+            "playRootCount": len(play_root_ids) or max(
+                (int(row.get("rootPlayActionCount") or 0) for row in evidence_rows),
+                default=0,
+            ),
+            "playRootActionIds": play_root_ids,
+            "runtimeSelection": runtime_selection,
+            "mediaRelationTypes": media_relation_types,
             "selectionContainerTypes": selection_types,
+            "traversalStatus": traversal_status,
+            "unresolvedNodeCount": sum(len(row.get("unresolvedNodes") or []) for row in evidence_rows),
             "contextCount": len(event_contexts),
-            "contexts": event_contexts[:40],
+            "contextStoredCount": len(event_contexts),
+            "contextsTruncated": False,
+            "contexts": event_contexts,
             "evidence": evidence_rows,
             "media": event_candidates,
         })
@@ -924,7 +1029,7 @@ def build_media_rows(audio_index: dict[str, Any], media_to_events: dict[str, lis
         event_ids = media_to_events.get(reverse_key, [])
         compact["eventCount"] = len(event_ids)
         if event_ids:
-            compact["eventIds"] = event_ids[:16]
+            compact["eventIds"] = event_ids
         rows.append(compact)
     rows.sort(key=lambda row: (
         str(row.get("audioCategory") or "unknown"),
@@ -932,6 +1037,59 @@ def build_media_rows(audio_index: dict[str, Any], media_to_events: dict[str, lis
         str(row.get("rel") or ""),
     ))
     return rows
+
+
+def semantic_context_group(kind: Any) -> str:
+    value = str(kind or "")
+    if value in {"characterSkill", "enemySkill"}:
+        return "gameplay"
+    if value == "cutsceneTimeline":
+        return "cutscene"
+    if value in {"characterAnimation", "enemyAnimation"}:
+        return "animation"
+    if value in {"table", "tableEventHash"}:
+        return "authoredConfig"
+    if value == "binaryManagedLiteral":
+        return "managedRuntime"
+    return ""
+
+
+def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
+    contexts = row.get("contexts") or []
+    context_search: set[str] = set()
+    for context in contexts:
+        if not isinstance(context, dict):
+            continue
+        for key in (
+            "kind", "ownerId", "groupId", "storyKey", "table", "path",
+            "semanticRole", "confidence", "skillId", "actionKind", "clip",
+        ):
+            value = context.get(key)
+            if value not in (None, "", []):
+                context_search.add(str(value))
+        for key in ("skillIds", "actionKinds", "animationClips"):
+            context_search.update(str(value) for value in context.get(key) or [] if str(value))
+    media = row.get("media") or []
+    scopes = sorted({str(value.get("audioScope") or value.get("storageRoot") or "") for value in media if value.get("audioScope") or value.get("storageRoot")})
+    banks = sorted({str(value.get("bankPackage") or "") for evidence in media for value in evidence.get("wwiseMediaEvidence") or [] if value.get("bankPackage")})
+    keys = (
+        "id", "name", "hash", "category", "categoryEvidence", "foundInWwise",
+        "possibleMediaCount", "candidateCount", "uniqueDecodedContentCount",
+        "contentEquivalentLeafCount", "playRootCount", "playRootActionIds",
+        "runtimeSelection", "mediaRelationTypes", "selectionContainerTypes",
+        "traversalStatus", "unresolvedNodeCount", "contextCount",
+        "contextStoredCount", "contextsTruncated",
+    )
+    summary = {key: row[key] for key in keys if row.get(key) not in (None, "", [])}
+    summary.update({
+        "contextGroups": sorted({semantic_context_group(context.get("kind")) for context in contexts if isinstance(context, dict)} - {""}),
+        "contextSearch": sorted(context_search),
+        "scope": scopes[0] if len(scopes) == 1 else "mixed" if scopes else "unknown",
+        "source": "wwiseHirc" if row.get("foundInWwise") else "authoredContext",
+        "bankPackages": banks,
+        "detailShard": detail_shard,
+    })
+    return summary
 
 
 def build_audio_semantic_data(
@@ -962,6 +1120,11 @@ def build_audio_semantic_data(
     }
     event_categories = Counter(str(row.get("category") or "unknown") for row in events)
     media_categories = Counter(str(row.get("audioCategory") or "unknown") for row in media)
+    media_relations = Counter(
+        str(relation)
+        for row in events
+        for relation in row.get("mediaRelationTypes") or []
+    )
     linked_events = sum(1 for row in events if row.get("foundInWwise"))
     selection_events = sum(1 for row in events if row.get("selectionContainerTypes"))
     managed_literal_keys = {name.lower() for name in managed_literal_names}
@@ -986,19 +1149,32 @@ def build_audio_semantic_data(
     out_root = webui_root / f"data/lang/{language}/audio"
     events_name = "events.json"
     media_name = "media.json"
+    event_details: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    event_summaries: list[dict[str, Any]] = []
+    for row in events:
+        bucket_value = int(row.get("hash") or int(hashlib.sha256(str(row.get("id") or "").encode("utf-8")).hexdigest()[:8], 16)) & 0x3F
+        detail_shard = f"event_details/{bucket_value:02x}.json"
+        event_details[detail_shard].append(row)
+        event_summaries.append(event_summary_row(row, detail_shard))
+    for detail_shard, detail_rows in event_details.items():
+        json_dump(out_root / detail_shard, {
+            "schemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
+            "language": language,
+            "events": detail_rows,
+        })
     json_dump(out_root / events_name, {
-        "schemaVersion": 1,
+        "schemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
         "language": language,
-        "events": events,
+        "events": event_summaries,
     })
     json_dump(out_root / media_name, {
-        "schemaVersion": 1,
+        "schemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
         "language": language,
         "media": media,
     })
 
     payload = {
-        "schemaVersion": 1,
+        "schemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
         "generated": audio_index.get("generated") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "language": language,
         "debugOnly": True,
@@ -1009,14 +1185,19 @@ def build_audio_semantic_data(
             "counts": audio_index.get("counts") or {},
         },
         "shards": {"events": events_name, "media": media_name},
+        "eventDetailShardCount": len(event_details),
         "counts": {
             "decodedMedia": len(media),
             "eventRecords": len(events),
             "namedEvents": len(named_event_ids),
             "eventsFoundInWwise": linked_events,
-            "eventMediaCandidates": sum(int(row.get("candidateCount") or 0) for row in events),
+            "eventPossibleMedia": sum(int(row.get("possibleMediaCount") or 0) for row in events),
+            "eventMediaCandidates": sum(int(row.get("possibleMediaCount") or 0) for row in events),
             "banksWithNamedEvents": len(banks),
             "runtimeSelectionUnresolved": selection_events,
+            "typedTraversalComplete": sum(row.get("traversalStatus") == "complete" for row in events),
+            "typedTraversalPartial": sum(row.get("traversalStatus") == "partial" for row in events),
+            "eventsWithMultiplePlayRoots": sum(int(row.get("playRootCount") or 0) > 1 for row in events),
             "binaryManagedAudioLiterals": len(managed_literal_names),
             "binaryManagedLiteralWwiseEvents": managed_literal_hirc_matches,
             "authoredTableEventHashes": len(table_event_hashes),
@@ -1027,6 +1208,7 @@ def build_audio_semantic_data(
         "coverage": {
             "eventCategories": dict(sorted(event_categories.items())),
             "mediaCategories": dict(sorted(media_categories.items())),
+            "eventMediaRelations": dict(sorted(media_relations.items())),
             "runtimeLayers": dict(sorted(runtime_layers.items())),
         },
         "categories": [
@@ -1038,7 +1220,7 @@ def build_audio_semantic_data(
         "runtimeModel": runtime_model,
         "evidenceBoundary": {
             "decodedMedia": "A decoded FLAC/WAV/WEM is a source media object, not proof that it played.",
-            "eventMedia": "Event-to-media candidates come from Wwise HIRC traversal. Switch/random/music containers remain runtime-selected.",
+            "eventMedia": "Possible media leaves use typed Wwise v150 Event -> Action -> reciprocal Children -> Sound source edges. Play roots and random/sequence/switch/layer relations are preserved; runtime selection is not evaluated. Unsupported music nodes and unparsed child structures fail closed.",
             "authoredContext": "Table, Timeline, SkillData, and BuffData references prove authored consumers, not a live playback trace.",
             "authoredEventHash": "Signed table integers are normalized to uint32 only in event-designated fields; row and field prove semantic ownership even when no string name is known.",
             "runtimeMetadata": "IL2CPP names prove shipped system structure, not live call order or active state.",

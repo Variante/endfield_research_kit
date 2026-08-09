@@ -14,6 +14,44 @@ SPEC.loader.exec_module(audio_semantics)
 
 
 class AudioSemanticDataTests(unittest.TestCase):
+    def test_direct_and_content_equivalent_media_keep_honest_counts(self) -> None:
+        media = []
+        for media_id in (10, 11):
+            media.append({
+                "id": "au_sfx_same",
+                "eventId": "au_sfx_same",
+                "eventHash": 5,
+                "mediaId": media_id,
+                "src": f"/audio/{media_id}.flac",
+                "rel": f"wwise/sfx/{media_id}.flac",
+                "contentSha256": "abc",
+                "wwiseMediaEvidence": [{
+                    "rootActionIds": [7],
+                    "soundObjectCount": 1,
+                    "relationTypes": ["directSound"],
+                    "bankId": 9,
+                }],
+            })
+        rows, _, _ = audio_semantics.build_event_rows({
+            "eventNames": ["au_sfx_same"],
+            "events": media,
+            "eventEvidence": [{
+                "eventId": "au_sfx_same",
+                "eventHash": 5,
+                "bankId": 9,
+                "actionIds": [7],
+                "rootPlayActionCount": 1,
+                "traversalStatus": "complete",
+                "mediaIds": [10, 11],
+            }],
+        }, {})
+        event = rows[0]
+        self.assertEqual(event["possibleMediaCount"], 2)
+        self.assertEqual(event["uniqueDecodedContentCount"], 1)
+        self.assertEqual(event["contentEquivalentLeafCount"], 1)
+        self.assertEqual(event["runtimeSelection"], "multiplePossibleMediaUnresolved")
+        self.assertEqual([row["contentEquivalentCount"] for row in event["media"]], [2, 2])
+
     def test_event_categories_preserve_unknowns(self) -> None:
         self.assertEqual(audio_semantics.event_category("au_sfx_test"), "sfx")
         self.assertEqual(audio_semantics.event_category("au_chr_test_attack"), "sfx")
@@ -183,15 +221,20 @@ class AudioSemanticDataTests(unittest.TestCase):
             out_root = webui_root / "data/lang/CN/audio"
             event_payload = json.loads((out_root / "events.json").read_text(encoding="utf-8"))
             media_payload = json.loads((out_root / "media.json").read_text(encoding="utf-8"))
-            event = next(row for row in event_payload["events"] if row["id"] == "au_sfx_test")
+            event_summary = next(row for row in event_payload["events"] if row["id"] == "au_sfx_test")
+            detail_payload = json.loads((out_root / event_summary["detailShard"]).read_text(encoding="utf-8"))
+            event = next(row for row in detail_payload["events"] if row["id"] == "au_sfx_test")
             media = media_payload["media"][0]
 
             self.assertEqual(payload["shards"], {"events": "events.json", "media": "media.json"})
             self.assertTrue(payload["debugOnly"])
             self.assertEqual(payload["runtimeModel"]["status"], "degraded")
-            self.assertEqual(event["runtimeSelection"], "unresolved")
+            self.assertEqual(event["runtimeSelection"], "runtimeBranchUnresolved")
             self.assertEqual(event["selectionContainerTypes"], ["switchContainer"])
             self.assertEqual(event["candidateCount"], 1)
+            self.assertEqual(event["possibleMediaCount"], 1)
+            self.assertEqual(set(event_summary["contextGroups"]), {"gameplay", "animation", "authoredConfig", "cutscene"})
+            self.assertGreater(payload["eventDetailShardCount"], 0)
             self.assertEqual(
                 {row["kind"] for row in event["contexts"]},
                 {"characterSkill", "characterAnimation", "table", "cutsceneTimeline"},

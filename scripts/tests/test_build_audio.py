@@ -82,6 +82,107 @@ class AudioCategoryTests(unittest.TestCase):
         self.assertEqual(labels["99"], "type99")
         self.assertEqual(selectors, [6])
 
+    def test_typed_hirc_traversal_uses_reciprocal_children_and_sound_source(self) -> None:
+        event_id = 100
+        play_action = 101
+        stop_action = 102
+        container_id = 200
+        sound_a = 301
+        sound_b = 302
+        unrelated_sound = 303
+
+        event_data = bytes([2]) + pack("<II", play_action, stop_action)
+        play_data = pack("<HI", 0x0403, container_id)
+        stop_data = pack("<HI", 0x0103, unrelated_sound)
+        container_data = bytearray(80)
+        container_data[8:12] = pack("<I", 999)
+        # Incidental object/media-looking integers are not typed child edges.
+        container_data[16:20] = pack("<I", unrelated_sound)
+        children_offset = 40
+        container_data[children_offset - 3] = 0
+        container_data[children_offset - 2] = 0
+        container_data[children_offset - 1] = 0x12
+        container_data[children_offset:children_offset + 12] = pack("<III", 2, sound_a, sound_b)
+
+        def sound_data(media_id: int, parent_id: int) -> bytes:
+            data = bytearray(30)
+            data[5:9] = pack("<I", media_id)
+            data[22:26] = pack("<I", parent_id)
+            return bytes(data)
+
+        objects = {
+            event_id: {"type": 4, "data": event_data},
+            play_action: {"type": 3, "data": play_data},
+            stop_action: {"type": 3, "data": stop_data},
+            container_id: {"type": 5, "data": bytes(container_data)},
+            sound_a: {"type": 2, "data": sound_data(401, container_id)},
+            sound_b: {"type": 2, "data": sound_data(402, container_id)},
+            unrelated_sound: {"type": 2, "data": sound_data(499, 777)},
+        }
+
+        result = build_audio.traverse_hirc_event(event_id, objects, {401, 402, 499})
+        self.assertEqual(result["mediaIds"], [401, 402])
+        self.assertEqual(result["rootPlayActionCount"], 1)
+        self.assertEqual(result["rootStopActionCount"], 1)
+        self.assertEqual(result["containerEvidence"][0]["childrenOffset"], children_offset)
+        self.assertEqual(result["containerEvidence"][0]["modeLabel"], "random")
+        self.assertEqual(result["containerEvidence"][0]["flagLabels"], [
+            "resetPlaylistAtEachPlay", "global",
+        ])
+        self.assertEqual(
+            {tuple(row["relationTypes"]) for row in result["mediaEvidence"]},
+            {("randomAlternative",)},
+        )
+        self.assertNotIn(unrelated_sound, result["visitedObjectIds"])
+
+    def test_typed_hirc_traversal_fails_closed_on_music_node(self) -> None:
+        objects = {
+            1: {"type": 4, "data": bytes([1]) + pack("<I", 2)},
+            2: {"type": 3, "data": pack("<HI", 0x0403, 3)},
+            3: {"type": 10, "data": pack("<I", 777)},
+            777: {"type": 2, "data": bytes(30)},
+        }
+        result = build_audio.traverse_hirc_event(1, objects, {777})
+        self.assertEqual(result["mediaIds"], [])
+        self.assertEqual(result["traversalStatus"], "partial")
+        self.assertEqual(result["unresolvedNodes"][0]["reason"], "unsupportedTypedNode")
+
+    def test_play_event_follows_nested_event_actions(self) -> None:
+        sound = bytearray(30)
+        sound[5:9] = pack("<I", 99)
+        objects = {
+            1: {"type": 4, "data": bytes([1]) + pack("<I", 2)},
+            2: {"type": 3, "data": pack("<HI", 0x2103, 3)},
+            3: {"type": 4, "data": bytes([1]) + pack("<I", 4)},
+            4: {"type": 3, "data": pack("<HI", 0x0403, 5)},
+            5: {"type": 2, "data": bytes(sound)},
+        }
+        result = build_audio.traverse_hirc_event(1, objects, {99})
+        self.assertEqual(result["mediaIds"], [99])
+        self.assertEqual([row["operation"] for row in result["actionEvidence"]], ["playEvent", "play"])
+
+    def test_shared_sound_keeps_every_play_root_without_duplicate_media(self) -> None:
+        sound = bytearray(30)
+        sound[5:9] = pack("<I", 99)
+        objects = {
+            1: {"type": 4, "data": bytes([2]) + pack("<II", 2, 3)},
+            2: {"type": 3, "data": pack("<HI", 0x0403, 4)},
+            3: {"type": 3, "data": pack("<HI", 0x0403, 4)},
+            4: {"type": 2, "data": bytes(sound)},
+        }
+        result = build_audio.traverse_hirc_event(1, objects, {99})
+        self.assertEqual(result["mediaIds"], [99])
+        self.assertEqual(result["rootPlayActionCount"], 2)
+        self.assertEqual(result["mediaEvidence"], [{
+            "mediaId": 99,
+            "decoded": True,
+            "soundObjectCount": 1,
+            "soundObjectIds": [4],
+            "rootActionIds": [2, 3],
+            "relationTypes": ["directSound"],
+            "selectionPaths": [["directSound"]],
+        }])
+
 
 class AudioDumperTests(unittest.TestCase):
     def test_all_mode_runs_once_per_vfs_source(self) -> None:
