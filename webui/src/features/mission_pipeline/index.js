@@ -401,6 +401,18 @@
       dialogFinishTaskExactConsumers: "exact LevelScript consumers",
       dialogFinishTaskCompleteMaps: "complete maps",
       dialogFinishTaskFragments: "bounded fragments",
+      dialogFinishAuthoredTaskStat: "authored finish→task dependencies",
+      dialogFinishUnresolvedEndpointStat: "task consumers without an authored endpoint",
+      dialogFinishAnyContextStat: "mission any-finish contexts",
+      dialogFinishScriptContextStat: "mission→active-script contexts",
+      dialogFinishAnyTaskContexts: "Any-finish mission context",
+      dialogFinishAnyTaskContextHint: "This mission objective accepts any recorded finish for the dialog, while the related original LevelScript task consumes the displayed exact finish. The binary predicate proves compatibility, not task activation, ownership, or Story order.",
+      dialogFinishMissionScriptContexts: "Mission→active LevelScript context",
+      dialogFinishMissionScriptContextHint: "This objective reads the exact active LevelScript containing the displayed task finish consumer. It is an original-file observation context, not proof that the mission starts or owns the task, dialog, or Story order.",
+      dialogFinishUnmatchedTaskDependencies: "Authored finish→task dependencies without an exact mission finish match",
+      dialogFinishUnmatchedTaskDependenciesHint: "Every row joins a prime-reachable authored DialogTree finish endpoint to an exact original LevelScript task consumer. Mission ownership remains explicitly unresolved unless a typed SubGame row co-carries the script and task IDs.",
+      levelScriptActiveOverlay: "active LevelScript overlay",
+      levelScriptShadowedSources: "shadowed fallback sources",
       dialogFinishPrimePath: "Prime-node path",
       dialogFinishProducer: "Original producer",
       dialogFinishConsumer: "Mission consumer",
@@ -1446,6 +1458,18 @@
       dialogFinishTaskExactConsumers: "精确 LevelScript 消费端",
       dialogFinishTaskCompleteMaps: "完整任务图",
       dialogFinishTaskFragments: "有界片段",
+      dialogFinishAuthoredTaskStat: "原始完成端点→任务依赖",
+      dialogFinishUnresolvedEndpointStat: "缺少原始结束端点的任务消费端",
+      dialogFinishAnyContextStat: "使命任意完成上下文",
+      dialogFinishScriptContextStat: "使命→活动脚本上下文",
+      dialogFinishAnyTaskContexts: "任意完成使命上下文",
+      dialogFinishAnyTaskContextHint: "该使命目标接受此对话的任意已记录完成值，而相关原始 LevelScript 任务消费显示的精确值。二进制谓词只证明两者兼容，不证明任务激活、归属或剧情顺序。",
+      dialogFinishMissionScriptContexts: "使命→活动 LevelScript 上下文",
+      dialogFinishMissionScriptContextHint: "该目标读取包含所示任务完成条件的精确活动 LevelScript。这是原始文件观察上下文，不证明使命启动或拥有该任务、对话或剧情顺序。",
+      dialogFinishUnmatchedTaskDependencies: "无精确使命完成匹配的原始完成端点→任务依赖",
+      dialogFinishUnmatchedTaskDependenciesHint: "每一行都把从主入口可达的原始 DialogTree 结束端点连接到精确的原始 LevelScript 任务消费端。除非类型化 SubGame 记录同时携带脚本与任务 ID，否则使命归属保持未解析。",
+      levelScriptActiveOverlay: "活动 LevelScript 覆盖层",
+      levelScriptShadowedSources: "被覆盖的后备来源",
       dialogFinishPrimePath: "主入口节点路径",
       dialogFinishProducer: "原始产生端",
       dialogFinishConsumer: "任务消费端",
@@ -2571,6 +2595,7 @@
       const recoveryCounts = state.index.dialogFinishBranchRecovery.counts || {};
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.exactConsumerCoverage || 0).toLocaleString()} / ${Number(recoveryCounts.exactMissionConsumers || 0).toLocaleString()} ${esc(t("dialogFinishExactCoverageStat"))}: ${Number(recoveryCounts.publishedDependencies || 0).toLocaleString()} ${esc(t("dialogFinishBranchStat"))} + ${Number(recoveryCounts.publishedEndpointDependencies || 0).toLocaleString()} ${esc(t("dialogFinishEndpointStat"))} · ${Number(recoveryCounts.dialogTreeValidatedFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogTreeValidatedFinishEndpoints"))} / ${Number(recoveryCounts.dialogTreeRejectedFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogTreeRejectedFinishEndpoints"))}</span>`);
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskSharedConsumerDependencies || 0).toLocaleString()} ${esc(t("dialogFinishTaskStat"))} / ${Number(recoveryCounts.levelScriptTaskSameMissionShellDependencies || 0).toLocaleString()} ${esc(t("dialogFinishOwnedTaskStat"))} · ${Number(recoveryCounts.levelScriptTaskExactFinishConsumers || 0).toLocaleString()} ${esc(t("dialogFinishTaskExactConsumers"))} (${Number(recoveryCounts.levelScriptTaskSharedConsumerCompleteMaps || 0).toLocaleString()} ${esc(t("dialogFinishTaskCompleteMaps"))} + ${Number(recoveryCounts.levelScriptTaskSharedConsumerFragments || 0).toLocaleString()} ${esc(t("dialogFinishTaskFragments"))})</span>`);
+      sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskAuthoredFinishDependencies || 0).toLocaleString()} ${esc(t("dialogFinishAuthoredTaskStat"))} / ${Number(recoveryCounts.levelScriptTaskUnresolvedAuthoredFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogFinishUnresolvedEndpointStat"))} · ${Number(recoveryCounts.levelScriptTaskAnyFinishMissionContexts || 0).toLocaleString()} ${esc(t("dialogFinishAnyContextStat"))} · ${Number(recoveryCounts.levelScriptTaskMissionScriptContexts || 0).toLocaleString()} ${esc(t("dialogFinishScriptContextStat"))}</span>`);
     }
   }
 
@@ -4153,6 +4178,27 @@
     </details>${nonMissionContentHtml(nonMissionRows)}`;
   }
 
+  function dialogFinishUnmatchedTaskDependenciesHtml() {
+    const rows = state.index?.dialogFinishBranchRecovery
+      ?.missionRuntimeUnmatchedLevelScriptTaskFinishDependencies || [];
+    if (!rows.length) return "";
+    return `<details class="mp-mission-story mp-dialog-finish-unmatched" data-weight="context" open>
+      <summary>${esc(t("dialogFinishUnmatchedTaskDependencies"))} <span>${rows.length.toLocaleString()}</span></summary>
+      <small>${esc(t("dialogFinishUnmatchedTaskDependenciesHint"))}</small>
+      <div class="mp-dialog-finish-unmatched-list">${rows.map((row) => {
+        const taskId = row.taskId || t("dialogFinishTaskIdentityUnresolved");
+        const contexts = row.missionContextSummary || {};
+        const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
+        return `<article class="mp-dialog-finish-unmatched-row">
+          <header><a href="${esc(storyHref(row.dialogId || ""))}"><code>${esc(row.dialogId || "?")}</code></a><b>${esc(t("finish"))} ${esc(row.finishId ?? "?")}</b><i>&rarr;</i><code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}</code></header>
+          <p><strong>${esc(t("dialogFinishTaskConsumer"))}:</strong> <code>${esc(taskId)}</code> / <code>${esc(row.taskConditionId || "?")}</code> / <code>${esc(row.taskMapDecodeStatus || "?")}</code></p>
+          <small>${esc(t("dialogFinishTaskOwnershipGap"))} · exact ${Number(contexts.exactFinishPlacements || 0).toLocaleString()} / any ${Number(contexts.anyFinishPlacements || 0).toLocaleString()} / script ${Number(contexts.exactScriptPlacements || 0).toLocaleString()}</small>
+          ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
+        </article>`;
+      }).join("")}</div>
+    </details>`;
+  }
+
   function questTopologyHtml() {
     const topology = state.mission?.questTopology;
     const forks = topology?.forks || [];
@@ -5231,9 +5277,10 @@
   function renderNonMissionOverview() {
     const target = byId("mp-non-mission-overview");
     if (!target) return;
-    target.innerHTML = nonMissionContentHtml(
-      Array.from(nonMissionContentByKey().values()),
-    );
+    target.innerHTML = [
+      nonMissionContentHtml(Array.from(nonMissionContentByKey().values())),
+      dialogFinishUnmatchedTaskDependenciesHtml(),
+    ].join("");
   }
 
   function missionPropertiesHtml() {
@@ -6328,6 +6375,31 @@
         ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
       </details>`;
     }).join("");
+    const dialogFinishAnyTaskContexts = (objective.dialogFinishLevelScriptTaskAnyFinishContexts || []).map((row) => {
+      const taskId = row.taskId || t("dialogFinishTaskIdentityUnresolved");
+      const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
+      return `<details open class="mp-quest-task-dependency mp-dialog-finish-task-context is-any-finish-context">
+        <summary><b>${esc(t("dialogFinishAnyTaskContexts"))}</b> <code>${esc(row.dialogId || "?")} / ${esc(t("anyFinish"))}</code><i>&harr;</i><code>${esc(t("finish"))} ${esc(row.finishId ?? "?")}</code><i>&rarr;</i><code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}</code></summary>
+        <p><strong>${esc(t("dialogFinishTaskConsumer"))}:</strong> <code>${esc(taskId)}</code> / <code>${esc(row.taskConditionId || "?")}</code></p>
+        <small><strong>${esc(t("dialogFinishTaskOwnershipGap"))}</strong></small>
+        <small>${esc(row.evidenceBoundary || t("dialogFinishAnyTaskContextHint"))}</small>
+        ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
+      </details>`;
+    }).join("");
+    const dialogFinishMissionScriptContexts = (objective.dialogFinishLevelScriptTaskMissionScriptContexts || []).map((row) => {
+      const taskId = row.taskId || t("dialogFinishTaskIdentityUnresolved");
+      const overlay = row.levelScriptOverlay || {};
+      const shadowed = overlay.shadowedSources || [];
+      const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
+      return `<details open class="mp-quest-task-dependency mp-dialog-finish-task-context is-script-context">
+        <summary><b>${esc(t("dialogFinishMissionScriptContexts"))}</b> <code>${esc(row.missionConditionType || "condition")}</code><i>&rarr;</i><code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}</code><i>&rarr;</i><code>${esc(row.dialogId || "?")} / ${esc(t("finish"))} ${esc(row.finishId ?? "?")}</code></summary>
+        <p><strong>${esc(t("dialogFinishTaskConsumer"))}:</strong> <code>${esc(taskId)}</code> / <code>${esc(row.taskConditionId || "?")}</code></p>
+        ${overlay.activeSourceFile ? `<small><strong>${esc(t("levelScriptActiveOverlay"))}:</strong> <code>${esc(overlay.activeSourceFile)}</code> / SHA-256 <code>${esc(overlay.activeSha256 || "")}</code></small>` : ""}
+        ${shadowed.length ? `<small><strong>${esc(t("levelScriptShadowedSources"))}:</strong> ${shadowed.map((source) => `<code>${esc(source.sourceFile || "?")}</code>`).join(" ")}</small>` : ""}
+        <small>${esc(row.evidenceBoundary || t("dialogFinishMissionScriptContextHint"))}</small>
+        ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
+      </details>`;
+    }).join("");
     const taskDependencies = (objective.levelScriptTaskDependencies || []).map((row) => {
       const metadata = row.taskMetadata || {};
       const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
@@ -6339,7 +6411,9 @@
       const countText = ["actionList", "getterList", "headerList"].map((name) => `${name}=${counts[name] ?? "?"}`).join(" / ");
       const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
       const statusLabel = row.actionMapStatus === "exact_empty_action_map" ? t("levelScriptExactEmptyMap") : t("levelScriptExecutableMap");
-      return `<details${row.actionMapStatus === "exact_empty_action_map" ? " open" : ""} class="mp-quest-task-dependency"><summary><b>${esc(t("levelScriptSource"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}</code> <span>${esc(statusLabel)}</span></summary><p><code>${esc(countText)}</code>${row.serializedTailRecordCount ? ` 路 ${esc(t("levelScriptTailRecords"))}: ${Number(row.serializedTailRecordCount).toLocaleString()}` : ""}</p><small>${esc(row.evidenceBoundary || "")}</small>${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}</details>`;
+      const overlay = row.levelScriptOverlay || {};
+      const shadowed = overlay.shadowedSources || [];
+      return `<details${row.actionMapStatus === "exact_empty_action_map" ? " open" : ""} class="mp-quest-task-dependency"><summary><b>${esc(t("levelScriptSource"))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}</code> <span>${esc(statusLabel)}</span></summary><p><code>${esc(countText)}</code>${row.serializedTailRecordCount ? ` · ${esc(t("levelScriptTailRecords"))}: ${Number(row.serializedTailRecordCount).toLocaleString()}` : ""}</p>${overlay.activeSourceFile ? `<small><strong>${esc(t("levelScriptActiveOverlay"))}:</strong> <code>${esc(overlay.activeSourceFile)}</code> / SHA-256 <code>${esc(overlay.activeSha256 || "")}</code></small>` : ""}${shadowed.length ? `<small><strong>${esc(t("levelScriptShadowedSources"))}:</strong> ${shadowed.map((source) => `<code>${esc(source.sourceFile || "?")}</code>${source.sha256 ? ` <code>${esc(source.sha256)}</code>` : ""}`).join(" ")}</small>` : ""}<small>${esc(row.evidenceBoundary || "")}</small>${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}</details>`;
     }).join("");
     const nativeLevelScriptControlAttachments = (objective.levelScriptSources || []).map((row) => {
       const evidence = row.nativeControlEvidence || {};
@@ -6361,7 +6435,7 @@
     }).join("");
     return `<article class="mp-objective"><header><strong>${esc(t("objectives"))} ${objective.index}</strong><span class="mp-authority is-${esc(objective.authority)}">${esc(objective.authority)}</span></header>
       <p>${esc(objective.descriptionKey || t("noObjective"))}</p>
-      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${dialogFinishBranchDependencies}${dialogFinishEndpointDependencies}${dialogFinishLevelScriptTaskDependencies}${levelScriptSources}${nativeLevelScriptControlAttachments}${taskDependencies}
+      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${dialogFinishBranchDependencies}${dialogFinishEndpointDependencies}${dialogFinishLevelScriptTaskDependencies}${dialogFinishAnyTaskContexts}${dialogFinishMissionScriptContexts}${levelScriptSources}${nativeLevelScriptControlAttachments}${taskDependencies}
       ${objectiveTrackingHtml(objective.tracking)}
       ${renderConditionTree(objective.condition)}
     </article>`;

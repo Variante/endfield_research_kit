@@ -41,6 +41,46 @@ class LevelScriptSourceEvidenceTests(unittest.TestCase):
         )
         self.assertEqual(len(rows[0]["relatedOriginalFiles"][0]["sha256"]), 64)
 
+    def test_persistent_level_script_overlay_wins_and_retains_shadowed_hash(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            streaming = root / "StreamingAssets" / "LevelScriptData"
+            persistent = root / "Persistent" / "LevelScriptData"
+            fallback = streaming / "level_a" / "1001.json"
+            override = persistent / "level_a" / "1001.json"
+            fallback.parent.mkdir(parents=True)
+            override.parent.mkdir(parents=True)
+            fallback.write_bytes(
+                b"\x1b\x02\x03" + struct.pack("<III", 0, 0, 0) + b"fallback"
+            )
+            override.write_bytes(
+                b"\x1b\x02\x03" + struct.pack("<III", 0, 0, 0) + b"override"
+            )
+            condition = {
+                "$type": "Fixture.CheckLevelScriptPropertyBool",
+                "uniqueId": "condition_a",
+                "_sceneId": "level_a",
+                "_scriptId": {"scriptId": 1001},
+            }
+
+            rows = pipeline.level_script_source_evidence(
+                condition,
+                level_script_roots=(streaming, persistent),
+            )
+
+        self.assertEqual(1, len(rows))
+        overlay = rows[0]["levelScriptOverlay"]
+        self.assertTrue(overlay["changedOverride"])
+        self.assertTrue(overlay["activeSourceFile"].endswith(
+            "Persistent/LevelScriptData/level_a/1001.json"
+        ))
+        self.assertEqual(1, len(overlay["shadowedSources"]))
+        self.assertFalse(overlay["shadowedSources"][0]["sameBytesAsActive"])
+        self.assertEqual(
+            rows[0]["relatedOriginalFiles"][0]["sourceFile"],
+            overlay["activeSourceFile"],
+        )
+
     def test_native_control_evidence_is_generic_and_event_reachable(self) -> None:
         topology = {
             "schema": "levelScriptNativeActionTopology.v4",
