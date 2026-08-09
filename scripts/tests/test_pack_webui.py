@@ -62,14 +62,19 @@ class PackWebuiAudioTests(unittest.TestCase):
 
             self.assertEqual([path.name for path in files], ["current.flac"])
 
-    def test_gameplay_audio_renders_only_in_the_trailing_detail_section(self) -> None:
+    def test_gameplay_exact_skill_audio_is_inline_and_other_audio_trails(self) -> None:
         project_root = SCRIPT.parents[1]
         source = (project_root / "webui" / "src" / "features" / "gameplay" / "index.js").read_text(encoding="utf-8")
         skill_row = source[source.index("function renderActiveSkillRow"):source.index("function renderWeaponDetail")]
         character_detail = source[source.index("function renderCharacterDetail"):source.index("function renderEquipmentSuit")]
         detail_renderer = source[source.index("function renderDetail(entry)"):source.index("function renderListNote")]
 
-        self.assertNotIn("renderActiveSkillSoundEffects", skill_row)
+        self.assertIn("renderActiveSkillSoundEffects(group, character)", skill_row)
+        self.assertIn(".filter(gameplaySoundHasExactSkillTrigger)", source)
+        self.assertIn(".filter((event) => !gameplaySoundHasExactSkillTrigger(event))", source)
+        self.assertIn('buffPlaySoundAction: "soundTriggerPlaySoundAction"', source)
+        self.assertIn('text("soundPlaySoundFrame")', source)
+        self.assertIn("[1, 2, 3].includes(payload.schemaVersion)", source)
         self.assertNotIn('section(text("characterActionAudio")', character_detail)
         self.assertIn('entry.kind === "character"', detail_renderer)
         self.assertIn('section(text("relatedSoundEffects"), renderCharacterSoundEffects', detail_renderer)

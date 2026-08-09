@@ -16,6 +16,65 @@ SPEC.loader.exec_module(build_audio)
 
 
 class AudioCategoryTests(unittest.TestCase):
+    def test_current_play_sound_union_tag_matches_binary_formatter_audit(self) -> None:
+        from scripts import build_data_index
+
+        self.assertEqual(build_data_index.BUFF_PLAY_SOUND_ACTION_TAG, 0x010D)
+        self.assertEqual(
+            build_data_index.BUFF_ABILITY_ACTION_TAG_NAMES[0x010D],
+            "Core_PlaySoundAction_PlaySoundActionData",
+        )
+        self.assertEqual(build_data_index.BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS[0x010D], 22)
+
+    def test_collects_and_merges_decoded_buff_play_sound_actions(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root)
+            sources = [
+                "structured/StreamingAssets/Data/Json/BuffData/buff_timed.json",
+                "structured/Persistent/Data/Json/BuffData/buff_timed.json",
+            ]
+            for source in sources:
+                path = export_root / source
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"fixture")
+            decoded = [(
+                {
+                    "index": 2,
+                    "startFrame": 17,
+                    "endFrame": 34,
+                },
+                {
+                    "onlyExecuteWhenSourceIsGuard": False,
+                    "onlyExecuteWhenSourceIsMainChar": True,
+                },
+                {
+                    "soundEvent": "au_test_timed",
+                    "prefix": {"isEnable": True, "serverActionIndex": 9},
+                    "stopOnEnd": True,
+                    "stopFadeDurationMs": 300,
+                    "targetSettingsEnvelopePartial": {
+                        "semanticStatus": "partial-target-settings-envelope-opaque",
+                        "shape": "string-slot",
+                        "stringSlotValue": "smart_target",
+                    },
+                },
+            )]
+            result = build_audio.collect_buff_play_sound_actions(
+                export_root,
+                {"buff_timed": {"sources": set(sources)}},
+                decoder=lambda *_args: decoded,
+            )
+
+            rows = result["byBuffEvent"]["buff_timed"]["au_test_timed"]
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["startFrame"], 17)
+            self.assertEqual(rows[0]["endFrame"], 34)
+            self.assertTrue(rows[0]["onlyExecuteWhenSourceIsMainChar"])
+            self.assertTrue(rows[0]["stopOnEnd"])
+            self.assertEqual(rows[0]["targetSelector"], "smart_target")
+            self.assertEqual(rows[0]["sourcePaths"], sources[::-1])
+            self.assertEqual(result["counts"]["buffPlaySoundActionOccurrences"], 1)
+
     def test_wav_decode_defaults_to_lossless_flac_output(self) -> None:
         self.assertEqual(
             build_audio.audio_output_format(argparse.Namespace(format="wav", audio_format=None)),
@@ -540,6 +599,7 @@ AnimationClip:
                     "groupId": "normal",
                     "skillId": "chr_test_normal",
                     "confidence": "direct",
+                    "ownershipMethod": "gameplaySkillId",
                     "events": {"au_yes": [{"kind": "skillData"}], "au_no": [{"kind": "skillData"}]},
                 }, {
                     "ownerKind": "enemy",
@@ -547,6 +607,7 @@ AnimationClip:
                     "groupId": "",
                     "skillId": "eny_test_attack",
                     "confidence": "inferred",
+                    "ownershipMethod": "enemyIdPrefix",
                     "events": {"au_yes": [{"kind": "skillData"}]},
                 }],
                 "animationOwners": [{
@@ -592,10 +653,14 @@ AnimationClip:
             self.assertEqual(stats["animationAudioRefsLinked"], 1)
             self.assertEqual(stats["profileVoiceRefsLinked"], 1)
             self.assertEqual([row["id"] for row in events], ["au_yes"])
+            self.assertEqual(events[0]["triggerBindingStatus"], "exactSkillConfig")
+            self.assertEqual(events[0]["triggerRelationTypes"], ["skillDataEventField"])
+            self.assertEqual(events[0]["triggerBindings"][0]["ownershipMethod"], "gameplaySkillId")
             enemy = payload["enemies"]["eny_test"]
             self.assertEqual(enemy["ownershipConfidence"], "inferred")
             self.assertEqual(enemy["skillIds"], ["eny_test_attack"])
             self.assertEqual([row["id"] for row in enemy["events"]], ["au_yes"])
+            self.assertEqual(enemy["events"][0]["triggerBindingStatus"], "inferredSkillConfigOwner")
             animation = payload["enemies"]["eny_animation"]
             self.assertEqual(animation["animationOwnershipConfidence"], "inferred")
             self.assertEqual(animation["animationEvents"][0]["actionKinds"], ["attack"])
@@ -749,6 +814,127 @@ AnimationClip:
             self.assertEqual(stats["gameplayRawPossibleMediaAssociations"], 4)
             self.assertEqual(stats["gameplayPossibleMediaAssociations"], 2)
             self.assertEqual(payload["characters"]["chr_test"]["metrics"]["skillEventAssociationCount"], 1)
+
+    def test_exact_and_inferred_trigger_statuses_remain_per_event(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            webui_root = Path(raw_root)
+            references = {
+                "eventNames": {"au_exact", "au_inferred"},
+                "owners": [{
+                    "ownerKind": "character",
+                    "ownerId": "chr_test",
+                    "groupId": "normal",
+                    "skillId": "chr_test_normal",
+                    "confidence": "direct",
+                    "ownershipMethod": "gameplaySkillId",
+                    "sources": ["SkillData/chr_test_normal.json"],
+                    "events": {"au_exact": [{"kind": "skillData", "skillId": "chr_test_normal"}]},
+                }, {
+                    "ownerKind": "character",
+                    "ownerId": "chr_test",
+                    "groupId": "normal",
+                    "skillId": "chr_test_normal_followup",
+                    "confidence": "inferred",
+                    "ownershipMethod": "playableSkillFamilyPrefix",
+                    "sources": ["SkillData/chr_test_normal_followup.json"],
+                    "events": {"au_inferred": [{"kind": "skillBuffData", "buffIds": ["buff_followup"]}]},
+                }],
+                "animationOwners": [],
+                "profileVoiceOwners": [],
+                "counts": {},
+            }
+            build_audio.link_gameplay_audio(
+                webui_root,
+                "CN",
+                references,
+                {
+                    "au_exact": [{"src": "data/audio/shared/exact.wav", "mediaId": 1}],
+                    "au_inferred": [{"src": "data/audio/shared/inferred.wav", "mediaId": 2}],
+                },
+                [{"eventId": "au_exact"}, {"eventId": "au_inferred"}],
+            )
+
+            payload = json.loads(
+                (webui_root / "data/lang/CN/gameplay/sound_effects.json").read_text(encoding="utf-8")
+            )
+            group = payload["characters"]["chr_test"]["groups"]["normal"]
+            events = {event["id"]: event for event in group["events"]}
+            self.assertEqual(group["ownershipConfidence"], "inferred")
+            self.assertEqual(events["au_exact"]["triggerBindingStatus"], "exactSkillConfig")
+            self.assertEqual(events["au_exact"]["triggerBindings"][0]["requestEvidence"], "exactAuthoredDependency")
+            self.assertEqual(events["au_exact"]["triggerBindings"][0]["runtimeActivationStatus"], "conditionAndTimingUnresolved")
+            self.assertEqual(events["au_inferred"]["triggerBindingStatus"], "inferredSkillConfigOwner")
+            self.assertEqual(events["au_inferred"]["triggerRelationTypes"], ["skillBuffChain"])
+            self.assertEqual(events["au_inferred"]["triggerBindings"][0]["buffIds"], ["buff_followup"])
+            self.assertEqual(group.get("skillIds"), ["chr_test_normal", "chr_test_normal_followup"])
+            self.assertEqual(payload["characters"]["chr_test"]["metrics"]["exactSkillTriggerEventCount"], 1)
+            self.assertEqual(payload["characters"]["chr_test"]["metrics"]["inferredSkillTriggerEventCount"], 1)
+            self.assertEqual(payload["counts"]["exactSkillConfigTriggerRefs"], 1)
+            self.assertEqual(payload["counts"]["inferredSkillConfigOwnerRefs"], 1)
+
+    def test_play_sound_action_binding_preserves_frame_window_and_lifecycle(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            webui_root = Path(raw_root)
+            play_sound = {
+                "buffId": "buff_test_timed",
+                "eventId": "au_exact_timed",
+                "startFrame": 17,
+                "endFrame": 34,
+                "stopOnEnd": True,
+                "stopFadeDurationMs": 300,
+                "targetSettingsStatus": "partial-target-settings-envelope-opaque",
+                "targetSelector": "smart_target",
+                "sourcePaths": ["structured/StreamingAssets/Data/Json/BuffData/buff_test_timed.json"],
+                "runtimeConditionStatus": "unresolved",
+            }
+            references = {
+                "eventNames": {"au_exact_timed"},
+                "authoredPlaySoundActions": [play_sound],
+                "owners": [{
+                    "ownerKind": "character",
+                    "ownerId": "chr_test",
+                    "groupId": "normal",
+                    "skillId": "chr_test_normal",
+                    "confidence": "direct",
+                    "ownershipMethod": "gameplaySkillId",
+                    "sources": ["SkillData/chr_test_normal.json"],
+                    "events": {"au_exact_timed": [{
+                        "kind": "skillBuffData",
+                        "skillId": "chr_test_normal",
+                        "buffIds": ["buff_test_timed"],
+                        "playSoundActions": [play_sound],
+                    }]},
+                }],
+                "animationOwners": [],
+                "profileVoiceOwners": [],
+                "counts": {},
+            }
+            build_audio.link_gameplay_audio(
+                webui_root,
+                "CN",
+                references,
+                {"au_exact_timed": [{"src": "data/audio/shared/timed.wav", "mediaId": 3}]},
+                [{"eventId": "au_exact_timed"}],
+            )
+
+            payload = json.loads(
+                (webui_root / "data/lang/CN/gameplay/sound_effects.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(payload["schemaVersion"], 3)
+            self.assertEqual(payload["authoredPlaySoundActions"][0]["startFrame"], 17)
+            event = payload["characters"]["chr_test"]["groups"]["normal"]["events"][0]
+            binding = event["triggerBindings"][0]
+            self.assertEqual(event["triggerBindingStatus"], "exactSkillConfig")
+            self.assertEqual(event["triggerRelationTypes"], ["buffPlaySoundAction", "skillBuffChain"])
+            self.assertEqual(binding["requestEvidence"], "exactAuthoredPlaySoundAction")
+            self.assertEqual(
+                binding["runtimeActivationStatus"],
+                "authoredFrameWindowRecoveredConditionUnresolved",
+            )
+            self.assertEqual(binding["playSoundActions"][0]["startFrame"], 17)
+            self.assertEqual(binding["playSoundActions"][0]["endFrame"], 34)
+            self.assertTrue(binding["playSoundActions"][0]["stopOnEnd"])
+            self.assertTrue(any(path.endswith("buff_test_timed.json") for path in binding["sourcePaths"]))
 
 
 if __name__ == "__main__":

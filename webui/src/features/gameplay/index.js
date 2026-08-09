@@ -1191,6 +1191,28 @@
       || Number(event?.animationOwnerCount || 0) > 1;
   }
 
+  function gameplaySoundHasExactSkillTrigger(event) {
+    return event?.triggerBindingStatus === "exactSkillConfig"
+      || (event?.triggerBindings || []).some((binding) => binding?.status === "exactSkillConfig");
+  }
+
+  function gameplaySoundTriggerLabels(event) {
+    const values = [];
+    if (event?.triggerBindingStatus === "exactSkillConfig") values.push(text("soundExactSkillTrigger"));
+    else if (event?.triggerBindingStatus === "exactEnemyBornBuffConfig") values.push(text("soundExactEnemyBornTrigger"));
+    else if (event?.triggerBindingStatus === "inferredSkillConfigOwner") values.push(text("soundInferredSkillTrigger"));
+    const relationLabels = {
+      skillDataEventField: "soundTriggerSkillData",
+      skillBuffChain: "soundTriggerBuffChain",
+      enemyBornBuffChain: "soundTriggerEnemyBornBuff",
+      buffPlaySoundAction: "soundTriggerPlaySoundAction",
+    };
+    for (const relation of event?.triggerRelationTypes || []) {
+      values.push(text(relationLabels[relation] || relation));
+    }
+    return [...new Set(values.filter(Boolean))];
+  }
+
   function gameplayAudioEventHref(eventId) {
     const url = new URL(window.location.href);
     url.searchParams.delete("gameplay");
@@ -1281,7 +1303,16 @@
     const status = isPartial ? text("soundTraversalPartial") : event?.traversalStatus === "complete" ? text("soundTraversalTyped") : text("soundTraversalDirect");
     const branch = roots ? `${roots} ${text("soundPlayBranches")}` : text("soundDirectMedia");
     const relationLabels = selectorRelations.length ? selectorRelations : relations;
-    return `<div class="gameplay-sfx-evidence"><span>${escapeHtml(branch)}</span>${animationCallbacks ? `<span>${escapeHtml(`${animationCallbacks} ${text("soundAuthoredCallbacks")} / ${animationClips} ${text("soundAnimationClips")}`)}</span>` : ""}${definitions ? `<span>${escapeHtml(`${definitions} ${text("soundBankDefinitions")}`)}</span>` : ""}${stopActions ? `<span>${escapeHtml(`${stopActions} ${text("soundStopActions")}`)}</span>` : ""}${relationLabels.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}<span class="${isPartial ? "is-partial" : ""}">${escapeHtml(status)}</span></div>`;
+    const triggerLabels = gameplaySoundTriggerLabels(event);
+    const playSoundActions = (event?.triggerBindings || []).flatMap((binding) => binding?.playSoundActions || []);
+    const playSoundLabels = playSoundActions.map((action) => {
+      const frameWindow = `${text("soundPlaySoundFrame")} ${action?.startFrame ?? "?"}-${action?.endFrame ?? "?"}`;
+      const lifetime = action?.stopOnEnd
+        ? `${text("soundPlaySoundStopOnEnd")} / ${Number(action?.stopFadeDurationMs || 0)} ms`
+        : text("soundPlaySoundContinues");
+      return `${frameWindow} / ${lifetime}`;
+    });
+    return `<div class="gameplay-sfx-evidence">${triggerLabels.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}${playSoundLabels.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}<span>${escapeHtml(branch)}</span>${animationCallbacks ? `<span>${escapeHtml(`${animationCallbacks} ${text("soundAuthoredCallbacks")} / ${animationClips} ${text("soundAnimationClips")}`)}</span>` : ""}${definitions ? `<span>${escapeHtml(`${definitions} ${text("soundBankDefinitions")}`)}</span>` : ""}${stopActions ? `<span>${escapeHtml(`${stopActions} ${text("soundStopActions")}`)}</span>` : ""}${relationLabels.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}<span class="${isPartial ? "is-partial" : ""}">${escapeHtml(status)}</span></div>`;
   }
 
   function renderGameplaySoundCandidateList(event, audio) {
@@ -1394,11 +1425,23 @@
     const groups = STATE.integration.soundEffects?.characters?.[entry?.id]?.groups || {};
     return (entry?.skillGroups || []).map((group) => {
       const soundGroup = groups[group?.id] || {};
-      return renderGameplaySoundGroup(soundGroup.events || [], {
+      const events = (soundGroup.events || []).filter((event) => !gameplaySoundHasExactSkillTrigger(event));
+      return renderGameplaySoundGroup(events, {
         label: group?.name || group?.typeLabel || text("relatedSoundEffects"),
         confidence: soundGroup.ownershipConfidence === "inferred" ? "inferred" : "",
       });
     }).join("");
+  }
+
+  function renderActiveSkillSoundEffects(group, character) {
+    const groups = STATE.integration.soundEffects?.characters?.[character?.id]?.groups || {};
+    const soundGroup = groups[group?.id] || {};
+    const events = (soundGroup.events || []).filter(gameplaySoundHasExactSkillTrigger);
+    return renderGameplaySoundGroup(events, {
+      label: text("exactSkillSoundEffects"),
+      confidence: "direct",
+      note: text("soundExactSkillTriggerNote"),
+    });
   }
 
   function renderEnemySoundEffects(entry) {
@@ -1615,6 +1658,7 @@
         <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
         ${renderActiveSkillCombatMeta(group)}
         ${renderDescription(group.description)}
+        ${renderActiveSkillSoundEffects(group, character)}
       </div>
       ${renderActiveSkillLevels(group)}
       ${renderActiveSkillProjectiles(group)}
@@ -3240,7 +3284,7 @@
     const requests = [
       ["combat", integrationPath("combat", nextLanguage), (payload) => payload && Array.isArray(payload.nodes) && Array.isArray(payload.edges)],
       ["projectiles", integrationPath("projectiles", nextLanguage), (payload) => payload && Array.isArray(payload.entries)],
-      ["soundEffects", integrationPath("soundEffects", nextLanguage), (payload) => payload && [1, 2].includes(payload.schemaVersion) && payload.characters && payload.enemies],
+      ["soundEffects", integrationPath("soundEffects", nextLanguage), (payload) => payload && [1, 2, 3].includes(payload.schemaVersion) && payload.characters && payload.enemies],
       ["assets", integrationPath("assets", nextLanguage), (payload) => payload && payload.entries && typeof payload.entries === "object"],
     ];
     const promise = Promise.all(requests.map(async ([kind, path, validator]) => {

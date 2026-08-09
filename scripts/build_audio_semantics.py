@@ -113,6 +113,7 @@ HIRC_OBJECT_TYPE_LABELS = {
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
 AUDIO_SEMANTIC_SCHEMA_VERSION = 3
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 2
 
 
 def runtime_spec(
@@ -180,6 +181,42 @@ RUNTIME_SYSTEM_SPECS = (
             "<roomManager>k__BackingField", "<npcSystem>k__BackingField",
         ),
         methods=("PostEvent", "PostAudioCue", "SetRtpc", "SetSwitch", "PlaySoundAtPosition", "LoadLevel"),
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Core.PlaySoundAction",
+        "skill_actions",
+        (
+            "Executes authored ability sound actions, retains every returned playing id, "
+            "supports object-, position-, and weapon-mount posting, seeks for time dilation, "
+            "and stops retained instances with the configured fade when the action ends."
+        ),
+        fields=(
+            "m_audioInstanceIds", "m_startTimestamp", "m_isInTimeDilation",
+            "m_isPausingForTimeDilation", "m_timeDilationPassedUnscaledTime",
+        ),
+        methods=(
+            "OnCreate", "ExecuteInternal", "_DoPlaySound", "_PlaySoundByWeaponMountPoint",
+            "_DoPostEvent", "_DoPostEventAtPosition", "_IsSourceFromMainCharacter",
+            "_InitialSeek", "_TimeDilationSeek", "OnTick", "OnEnd", "_StopAllSoundInstance",
+        ),
+    ),
+    runtime_spec(
+        "Beyond.Gameplay.Core.PlaySoundAction+PlaySoundActionData",
+        "skill_actions",
+        (
+            "Authored ability sound-request controls: event identity, interrupt and playback seek, "
+            "stop/fade lifetime, target/emitter and mount-point routing, weapon routing, and "
+            "time-dilation pause/seek thresholds."
+        ),
+        fields=(
+            "_soundEvent", "_stopOnEnd", "_stopFadeDurationMs", "_canInterruptTimeMs",
+            "_intrptFadeDurationMs", "_jumpToWhenPlayMs", "_useTempEmitter", "targetSettings",
+            "mountPoint", "followMountPoint", "useWeaponMountPoint", "weaponIndex",
+            "weaponMountPoint", "useTimeDilationPauseAndSeek", "timeDilationPauseThreshold",
+            "timeDilationSeekThreshold", "timeDilationFadeOutDurationMs",
+            "timeDilationFadeInDurationMs",
+        ),
+        methods=("get_actionType", "get_isNonLoopEvent", "get_showTempEmitterWarning"),
     ),
     runtime_spec(
         "Beyond.Gameplay.Audio.AudioMusicSystem",
@@ -479,6 +516,8 @@ def _metadata_module() -> Any:
 
 
 def _runtime_cache_hit(cache: dict[str, Any], sha256: str, size: int) -> dict[str, Any] | None:
+    if cache.get("schemaVersion") != RUNTIME_MODEL_CACHE_SCHEMA_VERSION:
+        return None
     fingerprint = cache.get("sourceFingerprint") if isinstance(cache, dict) else None
     runtime = cache.get("runtimeModel") if isinstance(cache, dict) else None
     if not isinstance(fingerprint, dict) or not isinstance(runtime, dict):
@@ -563,7 +602,7 @@ def build_runtime_model(metadata_path: Path | None, export_root: Path) -> dict[s
         "missingTypes": missing_types,
     }
     json_dump(cache_path, {
-        "schemaVersion": 1,
+        "schemaVersion": RUNTIME_MODEL_CACHE_SCHEMA_VERSION,
         "sourceFingerprint": {"sha256": sha256, "size": size},
         "runtimeModel": runtime,
     })
@@ -593,6 +632,23 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
     animation_evidence = load_json(gameplay_path.with_name(evidence_path), {}) if evidence_path else {}
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
+    for action in payload.get("authoredPlaySoundActions") or []:
+        if not isinstance(action, dict):
+            continue
+        context = {
+            "kind": "buffPlaySoundAction",
+            "confidence": "direct",
+            "semanticRole": "authoredAbilitySoundAction",
+            "triggerRequestEvidence": ["exactAuthoredPlaySoundAction"],
+            "triggerRuntimeActivationStatuses": ["authoredFrameWindowRecoveredConditionUnresolved"],
+            "triggerRelationTypes": ["buffPlaySoundAction"],
+            "triggerEvidenceKinds": ["buffPlaySoundActionData"],
+            "triggerBuffIds": [str(action.get("buffId") or "")],
+            "triggerSourcePaths": list(action.get("sourcePaths") or []),
+            "triggerPlaySoundActionCount": 1,
+            "triggerPlaySoundActions": [action],
+        }
+        _append_context(contexts, seen, action.get("eventId"), context)
     for owner_kind, bucket_name in (("character", "characters"), ("enemy", "enemies")):
         bucket = payload.get(bucket_name) if isinstance(payload, dict) else None
         if not isinstance(bucket, dict):
@@ -609,11 +665,68 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
                 for event in group.get("events") or []:
                     if not isinstance(event, dict):
                         continue
+                    trigger_bindings = [
+                        binding for binding in event.get("triggerBindings") or []
+                        if isinstance(binding, dict)
+                    ]
+                    trigger_play_sound_actions: list[dict[str, Any]] = []
+                    seen_trigger_actions: set[str] = set()
+                    for binding in trigger_bindings:
+                        for action in binding.get("playSoundActions") or []:
+                            if not isinstance(action, dict):
+                                continue
+                            marker = json.dumps(action, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                            if marker in seen_trigger_actions:
+                                continue
+                            seen_trigger_actions.add(marker)
+                            trigger_play_sound_actions.append(action)
                     context = {
                         "kind": "characterSkill" if owner_kind == "character" else "enemySkill",
                         "ownerId": owner_id,
-                        "confidence": group.get("ownershipConfidence") or owner.get("ownershipConfidence") or "",
+                        "confidence": (
+                            "direct" if event.get("triggerBindingStatus") in {"exactSkillConfig", "exactEnemyBornBuffConfig"}
+                            else group.get("ownershipConfidence") or owner.get("ownershipConfidence") or ""
+                        ),
+                        "triggerBindingStatus": event.get("triggerBindingStatus") or "",
+                        "triggerBindingCount": len(trigger_bindings),
+                        "triggerRequestEvidence": sorted({
+                            str(binding.get("requestEvidence") or "")
+                            for binding in trigger_bindings
+                            if binding.get("requestEvidence")
+                        })[:4],
+                        "triggerRuntimeActivationStatuses": sorted({
+                            str(binding.get("runtimeActivationStatus") or "")
+                            for binding in trigger_bindings
+                            if binding.get("runtimeActivationStatus")
+                        })[:4],
+                        "triggerRelationTypes": list(event.get("triggerRelationTypes") or [])[:8],
+                        "triggerOwnershipMethods": sorted({
+                            str(binding.get("ownershipMethod") or "")
+                            for binding in trigger_bindings
+                            if binding.get("ownershipMethod")
+                        })[:8],
+                        "triggerEvidenceKinds": sorted({
+                            str(kind)
+                            for binding in trigger_bindings
+                            for kind in binding.get("evidenceKinds") or []
+                            if str(kind)
+                        })[:8],
+                        "triggerBuffIds": sorted({
+                            str(buff_id)
+                            for binding in trigger_bindings
+                            for buff_id in binding.get("buffIds") or []
+                            if str(buff_id)
+                        })[:12],
+                        "triggerSourcePaths": sorted({
+                            str(path)
+                            for binding in trigger_bindings
+                            for path in binding.get("sourcePaths") or []
+                            if str(path)
+                        })[:12],
                     }
+                    if trigger_play_sound_actions:
+                        context["triggerPlaySoundActionCount"] = len(trigger_play_sound_actions)
+                        context["triggerPlaySoundActions"] = trigger_play_sound_actions
                     if group_id:
                         context["groupId"] = group_id
                     skill_ids = event.get("sourceSkillIds") or group.get("skillIds") or owner.get("skillIds")
@@ -1075,7 +1188,7 @@ def build_media_rows(audio_index: dict[str, Any], media_to_events: dict[str, lis
 
 def semantic_context_group(kind: Any) -> str:
     value = str(kind or "")
-    if value in {"characterSkill", "enemySkill"}:
+    if value in {"characterSkill", "enemySkill", "buffPlaySoundAction"}:
         return "gameplay"
     if value == "cutsceneTimeline":
         return "cutscene"
@@ -1097,13 +1210,27 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         for key in (
             "kind", "ownerId", "groupId", "storyKey", "table", "path",
             "semanticRole", "confidence", "skillId", "actionKind", "clip",
-            "animationOwnershipScope", "possibleMediaScope",
+            "animationOwnershipScope", "possibleMediaScope", "triggerBindingStatus",
         ):
             value = context.get(key)
             if value not in (None, "", []):
                 context_search.add(str(value))
-        for key in ("skillIds", "actionKinds", "animationClips", "animationFunctions", "animationClipContexts", "authoredEventIds"):
+        for key in (
+            "skillIds", "actionKinds", "animationClips", "animationFunctions",
+            "animationClipContexts", "authoredEventIds", "triggerRequestEvidence",
+            "triggerRuntimeActivationStatuses", "triggerRelationTypes",
+            "triggerOwnershipMethods", "triggerEvidenceKinds", "triggerBuffIds",
+            "triggerSourcePaths",
+        ):
             context_search.update(str(value) for value in context.get(key) or [] if str(value))
+        for action in context.get("triggerPlaySoundActions") or []:
+            if not isinstance(action, dict):
+                continue
+            for value in action.values():
+                if isinstance(value, (str, int, float, bool)) and value not in ("", None):
+                    context_search.add(str(value))
+                elif isinstance(value, list):
+                    context_search.update(str(item) for item in value if str(item))
     media = row.get("media") or []
     scopes = sorted({str(value.get("audioScope") or value.get("storageRoot") or "") for value in media if value.get("audioScope") or value.get("storageRoot")})
     banks = sorted({str(value.get("bankPackage") or "") for evidence in media for value in evidence.get("wwiseMediaEvidence") or [] if value.get("bankPackage")})
@@ -1120,12 +1247,28 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
     summary = {key: row[key] for key in keys if row.get(key) not in (None, "", [])}
     summary.update({
         "contextGroups": sorted({semantic_context_group(context.get("kind")) for context in contexts if isinstance(context, dict)} - {""}),
+        "triggerBindingStatuses": sorted({
+            str(context.get("triggerBindingStatus") or "")
+            for context in contexts
+            if isinstance(context, dict) and context.get("triggerBindingStatus")
+        }),
         "contextSearch": sorted(context_search),
         "scope": scopes[0] if len(scopes) == 1 else "mixed" if scopes else "unknown",
         "source": "wwiseHirc" if row.get("foundInWwise") else "authoredContext",
         "bankPackages": banks,
         "detailShard": detail_shard,
     })
+    canonical_play_sound_contexts = [
+        context for context in contexts
+        if isinstance(context, dict) and context.get("kind") == "buffPlaySoundAction"
+    ]
+    trigger_play_sound_action_count = sum(
+        int(context.get("triggerPlaySoundActionCount") or 0)
+        for context in (canonical_play_sound_contexts or contexts)
+        if isinstance(context, dict)
+    )
+    if trigger_play_sound_action_count:
+        summary["triggerPlaySoundActionCount"] = trigger_play_sound_action_count
     return summary
 
 
@@ -1182,6 +1325,42 @@ def build_audio_semantic_data(
     )
     runtime_systems = runtime_model.get("systems") or []
     runtime_layers = Counter(str(row.get("layer") or "unknown") for row in runtime_systems)
+    trigger_status_context_counts = Counter(
+        str(context.get("triggerBindingStatus") or "")
+        for row in events
+        for context in row.get("contexts") or []
+        if isinstance(context, dict) and context.get("triggerBindingStatus")
+    )
+    trigger_status_event_counts = Counter(
+        status
+        for row in events
+        for status in {
+            str(context.get("triggerBindingStatus") or "")
+            for context in row.get("contexts") or []
+            if isinstance(context, dict) and context.get("triggerBindingStatus")
+        }
+    )
+    play_sound_action_contexts = sum(
+        context.get("kind") == "buffPlaySoundAction"
+        for row in events
+        for context in row.get("contexts") or []
+        if isinstance(context, dict) and context.get("triggerPlaySoundActionCount")
+    )
+    play_sound_action_events = sum(
+        any(
+            isinstance(context, dict)
+            and context.get("kind") == "buffPlaySoundAction"
+            and context.get("triggerPlaySoundActionCount")
+            for context in row.get("contexts") or []
+        )
+        for row in events
+    )
+    play_sound_action_occurrences = sum(
+        int(context.get("triggerPlaySoundActionCount") or 0)
+        for row in events
+        for context in row.get("contexts") or []
+        if isinstance(context, dict) and context.get("kind") == "buffPlaySoundAction"
+    )
 
     out_root = webui_root / f"data/lang/{language}/audio"
     events_name = "events.json"
@@ -1248,6 +1427,15 @@ def build_audio_semantic_data(
             "authoredTableEventHashes": len(table_event_hashes),
             "authoredTableEventHashesFound": table_event_hash_matches,
             "runtimeSystems": len(runtime_systems),
+            "authoredPlaySoundActionEvents": play_sound_action_events,
+            "authoredPlaySoundActionContexts": play_sound_action_contexts,
+            "authoredPlaySoundActionOccurrences": play_sound_action_occurrences,
+            "exactSkillConfigTriggerEvents": trigger_status_event_counts.get("exactSkillConfig", 0),
+            "inferredSkillConfigOwnerEvents": trigger_status_event_counts.get("inferredSkillConfigOwner", 0),
+            "exactEnemyBornBuffTriggerEvents": trigger_status_event_counts.get("exactEnemyBornBuffConfig", 0),
+            "exactSkillConfigTriggerContexts": trigger_status_context_counts.get("exactSkillConfig", 0),
+            "inferredSkillConfigOwnerContexts": trigger_status_context_counts.get("inferredSkillConfigOwner", 0),
+            "exactEnemyBornBuffTriggerContexts": trigger_status_context_counts.get("exactEnemyBornBuffConfig", 0),
             "runtimeTypesMissing": len(runtime_model.get("missingTypes") or []),
         },
         "coverage": {

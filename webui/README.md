@@ -93,6 +93,16 @@ are not a browser-playable output format. Event details list every typed
 possible media leaf together and group it by Play root and Random, Sequence,
 Switch/State, Layer, or direct-Sound evidence. Partial typed graphs and
 byte-identical decoded content under distinct media ids remain explicit.
+Skill contexts separately tag exact Gameplay-action-to-SkillData ownership and
+inferred child-skill-family ownership. Their evidence records whether the Event
+was found directly in SkillData or through an exact BuffData chain, while
+runtime condition/timing remains explicitly unresolved for dependency-only
+rows. Decoded BuffData `PlaySoundActionData` adds exact authored frame windows,
+stop/fade lifetime, routing, selector hints, and time-dilation controls for the
+recovered subset; `TargetSettings`, live activation, and Wwise branch selection
+remain explicit gaps. Exact PlaySound actions have their own Audio Event filter
+and stay visible even when no displayed skill owner is proven. All trigger tags
+and source/action fields are searchable.
 
 ## Runtime overrides
 
@@ -156,19 +166,22 @@ sns_topic_map02_lv005_12002
   Pulse `#FFC000`; Normal Attack remains neutral.
 - Enemy variants are a selectable difference table. Stat controls expose only
   authored points and never interpolate missing levels.
-- Character skill rows show one compact linked-projectile summary and playable
-  sound groups in normal mode. A skill may legitimately have no separate
-  projectile template.
-- Exact Wwise media candidates stay grouped when switch/random selection is
-  unresolved. Direct and inferred skill/enemy ownership are labeled.
+- Character skill rows show one compact linked-projectile summary and only the
+  playable Events proven through that displayed Gameplay action id's exact
+  SkillData or BuffData dependency chain. A skill may legitimately have no
+  separate projectile template.
+- Typed Wwise possible-media leaves are listed together, with Play roots and
+  switch/state/random/sequence/layer evidence shown separately; the UI does
+  not present them as equivalent choices or observed live playback. Direct and
+  inferred skill/enemy ownership are labeled.
 - Character-owned animation callbacks and shared Wwise animation systems are
   separate Gameplay groups. Shared footstep/cloth/material Events show owner
   counts and global reachable leaves without presenting those leaves as the
   character's private sound library; opening one Event still lists every
-  playable file together. Character and enemy audio appears only as the final
-  detail section, after normal and integrated content rather than inside skill
-  cards; compact bank, Stop, selector-node, and child-edge counts substantiate
-  large Wwise fan-outs.
+  playable file together. Inferred character-skill links, animation systems,
+  and profile voice remain in the final character section; enemy audio remains
+  at the end of the enemy page. Compact bank, Stop, selector-node, and
+  child-edge counts substantiate large Wwise fan-outs.
 - Gameplay thumbnails and model paths link back to the matching Assets entry.
 
 ### Mission Pipeline
