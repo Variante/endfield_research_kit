@@ -1962,6 +1962,70 @@ def verify_selected_resolver_binding_contract() -> None:
         LAB_ROOT / identified[3]["source_metadata_path"],
         identified[3]["source_metadata_sha256"],
     )
+    hdpls_native = identified[3]["native_producer"]
+    assert hdpls_native["owner"] == (
+        "HG.Rendering.Runtime.HGHDPLSCharacterShadowManager"
+    )
+    assert hdpls_native["upload_callback"] == (
+        "HGHDPLSCharacterShadowManager+<>c.<.cctor>b__33_1"
+    )
+    assert hdpls_native["reflected_size_bytes"] == 3568
+    assert hdpls_native["native_requested_size_bytes"] == 3552
+    assert hdpls_native["publication_policy"].startswith("fail closed")
+    require_hash(
+        repo_path(hdpls_native["audit_path"]),
+        hdpls_native["audit_sha256"],
+    )
+    require_text_hash(
+        repo_path(hdpls_native["auditor_path"]),
+        hdpls_native["auditor_sha256"],
+    )
+    require_text_hash(
+        repo_path(hdpls_native["disassembler_path"]),
+        hdpls_native["disassembler_sha256"],
+    )
+    require_hash(
+        repo_path(hdpls_native["native_disassembly_path"]),
+        hdpls_native["native_disassembly_sha256"],
+    )
+    require_hash(
+        repo_path(hdpls_native["metadata_path"]),
+        hdpls_native["metadata_sha256"],
+    )
+
+    hdpls_audit = json.loads(
+        repo_path(hdpls_native["audit_path"]).read_text(encoding="utf-8")
+    )
+    assert hdpls_audit["schema"] == (
+        "endfield.hdpls-character-shadow-data-audit.v1"
+    )
+    assert hdpls_audit["verdict"] == "SETTLED_ACTIVE_FRAME_CAPTURE_REQUIRED"
+    assert hdpls_audit["publication_allowed"] is False
+    assert hdpls_audit["layout"]["reflected_size_bytes"] == 3568
+    assert hdpls_audit["layout"]["native_requested_size_bytes"] == 3552
+    assert hdpls_audit["layout"]["selected_read_region"] == (
+        "uint4[56] at bytes 2560..3455; only .y is read"
+    )
+    assert hdpls_audit["frame_lifecycle"]["screen_space_shadow_indices"] == (
+        "4 entries reset to -1"
+    )
+    assert hdpls_audit["frame_lifecycle"]["character_indices"] == (
+        "56 entries reset to 0"
+    )
+    assert hdpls_audit["frame_lifecycle"]["screen_space_channels"] == (
+        "56 entries reset to 0"
+    )
+    assert len(hdpls_audit["capture_boundary"]["required"]) == 4
+    for path_key, hash_key in (
+        ("disassembly_path", "disassembly_sha256"),
+        ("metadata_path", "metadata_sha256"),
+        ("selected_shader_path", "selected_shader_sha256"),
+        ("source_sidecar_path", "source_sidecar_sha256"),
+    ):
+        require_hash(
+            repo_path(hdpls_audit["sources"][path_key]),
+            hdpls_audit["sources"][hash_key],
+        )
 
     roles = {
         row["role"]: (row["symbol"], row["set"], row["binding"])
@@ -2247,7 +2311,9 @@ def main() -> int:
         "handoff before the still-open target-frame array, exact b34 ShadowData identity, and b37 "
         "LightCookieData native layout/upload plus D3D11/D3D12-verified default-off "
         "zero-cookie isolated transport, plus exact b38 "
-        "HDPunctualLightCharacterShadowData identity), all 25 sampled texture "
+        "HDPunctualLightCharacterShadowData identity, native reset/push owner, "
+        "selected .y-only read path, and fail-closed pre-bind capture boundary), "
+        "all 25 sampled texture "
         "roles, exact installed CharInfo Volume/Environment state that gates "
         "wetness and volumetric-fog sampling while retaining live reflection, "
         "the deferred binder's white wetness fallback and exact 1x1x1 black "

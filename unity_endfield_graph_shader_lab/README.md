@@ -1991,7 +1991,18 @@ source-closed Wulfa/Zhuangfy isolated Overview lists; all 640 words read back
 bit-exactly on D3D11 and D3D12. Any cookie-bearing light fails closed because
 non-empty retail atlas allocation, pixels, transforms, and settled whole-scene
 values remain open. Exact original `ScreenSpaceShadowResolve` metadata identifies b38 as
-the 3,568-byte `HDPunctualLightCharacterShadowData` layout. The remaining
+the 3,568-byte `HDPunctualLightCharacterShadowData` layout. Its installed
+`HGHDPLSCharacterShadowManager` owner, static storage, per-frame resets, push-
+pass packing, and selected resolver access are now pinned. `FrameSetup` clears
+all 56 character-index/channel pairs before candidate processing; the selected
+fragment reads only each pair's `.y`, so an inactive frame provably chooses the
+punctual-atlas fallback. This is not a byte-exact zero-buffer fixture: matrices
+and params are persistent, atlas/global values are frame-derived, and the
+callback requests `0xDE0` bytes while writing the reflected final float4 at
+`+0xDE0`, then binds the allocator-returned size. Publication therefore remains
+fail-closed. Settled active values and the allocator-returned size must be
+captured immediately before `CommandBuffer.SetGlobalConstantBufferInternal0`.
+The remaining
 16 texture names are now pinned from their original sampling behavior and the
 hash/offset-pinned installed IL2CPP shader-property table: low-resolution
 directional shadow/ramp, HDPLS, punctual atlas, cookie, multiscattering LUT,
