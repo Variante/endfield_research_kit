@@ -33,6 +33,8 @@ webui/data/assets/index.json
 webui/data/assets/gameplay_refs.json
 webui/data/assets/story_media.json
 webui/data/assets/videos.json
+webui/data/lang/<LANG>/audio/index.json
+webui/data/lang/<LANG>/audio/{events,media}.json
 webui/data/lang/<LANG>/gameplay/sound_effects.json
 reports/assets/
 reports/source_graph/
@@ -61,6 +63,10 @@ unique binding.
 - Material, texture, shader, controller, animation, audio, and video links.
 - Compact Gameplay-to-image/model links and playable Wwise-event media
   candidates for projectiles, character skills, and bounded enemy ownership.
+- Debug-only audio semantics that keep Wwise Event identity, numeric media id,
+  and each physical `(storageRoot, relativePath)` occurrence separate. Same-id
+  files in different folders or language/shared scopes remain visible instead
+  of being collapsed by filename stem.
 - Exact character post-model enumeration and baseline prefab generation.
 - Selected static world placements and gameplay/entity associations.
 
