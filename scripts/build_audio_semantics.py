@@ -123,7 +123,7 @@ HIRC_OBJECT_TYPE_LABELS = {
     13: "musicRandomSequenceContainer",
 }
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 3
+AUDIO_SEMANTIC_SCHEMA_VERSION = 4
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 3
 
 
@@ -1064,6 +1064,209 @@ def collect_spawner_pre_warn_semantics(
         ),
     }
     return {"eventContexts": dict(contexts), "stats": stats}
+
+
+LEVELSCRIPT_AUDIO_EVENT_FIELDS: dict[str, tuple[tuple[str, str], ...]] = {
+    "PlayAudiAtPosition": (("key", "play"),),
+    "PlayAudio": (("key", "play"),),
+    "PlayAudioAndWait": (("eventName", "play"),),
+    "PlayAudioOnTarget": (("audioKey", "play"),),
+    "PostAudioStatusEvent": (("statusEnterEvent", "statusEnter"), ("statusExitEvent", "statusExit")),
+    "PostMusicEvent": (("musicEvent", "post"), ("musicEventOnRelease", "release")),
+}
+
+
+def collect_levelscript_audio_semantics(
+    export_root: Path,
+    *,
+    decode_file: Any | None = None,
+) -> dict[str, Any]:
+    """Collect exact LevelScript Event/cue requests and dynamic bindings."""
+
+    if decode_file is None:
+        try:
+            from story_builder.levelscript_binary import (
+                decode_levelscript_record_payload,
+                extract_levelscript_uid_records,
+                levelscript_action_map_membership,
+                levelscript_record_semantic_key,
+            )
+        except ImportError:
+            from scripts.story_builder.levelscript_binary import (
+                decode_levelscript_record_payload,
+                extract_levelscript_uid_records,
+                levelscript_action_map_membership,
+                levelscript_record_semantic_key,
+            )
+        target_keys = {
+            (0x034C, 0x0C), (0x034E, 0x0B), (0x034F, 0x10),
+            (0x0352, 0x0C), (0x036B, 0x13), (0x0371, 0x0B),
+            (0x0373, 0x0C),
+        }
+
+        def decode_file(_path: Path, data: bytes) -> dict[str, Any]:
+            records = extract_levelscript_uid_records(data)
+            _action_map, memberships = levelscript_action_map_membership(data, records)
+            rows: list[dict[str, Any]] = []
+            target_count = 0
+            for index, record in enumerate(records):
+                if levelscript_record_semantic_key(record) not in target_keys:
+                    continue
+                target_count += 1
+                next_start = (
+                    int(records[index + 1].get("start") or 0)
+                    if index + 1 < len(records)
+                    else len(data)
+                )
+                detail = decode_levelscript_record_payload(
+                    data,
+                    record,
+                    next_start=next_start,
+                    action_map_role=memberships.get(int(record.get("start") or 0)),
+                )
+                audio_action = detail.get("audioAction") if isinstance(detail, dict) else None
+                if isinstance(audio_action, dict):
+                    rows.append({
+                        "record": record,
+                        "actionMapRole": str(memberships.get(int(record.get("start") or 0)) or ""),
+                        "audioAction": audio_action,
+                    })
+            return {"targetCount": target_count, "rows": rows}
+
+    overlay: dict[str, tuple[str, Path]] = {}
+    for source_root in ("StreamingAssets", "Persistent"):
+        root = export_root / "structured" / source_root / "Data" / "Json" / "LevelScriptData"
+        if not root.exists():
+            continue
+        for path in root.rglob("*.json"):
+            overlay[path.relative_to(root).as_posix()] = (source_root, path)
+
+    contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: dict[str, set[str]] = defaultdict(set)
+    cue_invocations: list[dict[str, Any]] = []
+    dynamic_event_bindings: list[dict[str, Any]] = []
+    action_counts: Counter[str] = Counter()
+    source_files_with_actions = 0
+    target_records = 0
+    decoded_records = 0
+    decode_failures = 0
+
+    def compact_fields(fields: Any) -> dict[str, dict[str, Any]]:
+        if not isinstance(fields, dict):
+            return {}
+        return {
+            str(name): {
+                key: value
+                for key, value in field.items()
+                if key in {"sourceField", "present", "bindingKind", "value", "idRef", "paramSource", "path"}
+                and value not in (None, "", [])
+            }
+            for name, field in fields.items()
+            if isinstance(field, dict)
+        }
+
+    for relative_path, (source_root, path) in sorted(overlay.items()):
+        try:
+            data = path.read_bytes()
+            decoded = decode_file(path, data) or {}
+        except (OSError, ValueError):
+            decode_failures += 1
+            continue
+        rows = (decoded.get("rows") or []) if isinstance(decoded, dict) else []
+        target_records += int(decoded.get("targetCount") or len(rows)) if isinstance(decoded, dict) else len(rows)
+        if rows:
+            source_files_with_actions += 1
+        source_path = normalize_posix(path.relative_to(export_root))
+        source_sha256 = hashlib.sha256(data).hexdigest()
+        levelscript_id = str(PurePosixPath(relative_path).with_suffix(""))
+        for row_index, row in enumerate(rows):
+            if not isinstance(row, dict):
+                continue
+            action = row.get("audioAction") if isinstance(row.get("audioAction"), dict) else {}
+            record = row.get("record") if isinstance(row.get("record"), dict) else {}
+            action_name = str(action.get("action") or "")
+            if not action_name:
+                continue
+            decoded_records += 1
+            action_counts[action_name] += 1
+            fields = compact_fields(action.get("fields"))
+            common = {
+                "confidence": "direct",
+                "semanticRole": "authoredLevelScriptAudioAction",
+                "action": action_name,
+                "levelScriptId": levelscript_id,
+                "sourceRoot": source_root,
+                "sourcePath": source_path,
+                "sourceSha256": source_sha256,
+                "recordIndex": row_index,
+                "recordStart": int(record.get("start") or 0),
+                "recordUid": str(record.get("uid") or ""),
+                "recordLocalId": record.get("localId"),
+                "actionMapRole": str(row.get("actionMapRole") or ""),
+                "unionTag": record.get("unionTag"),
+                "serializedMemberCount": record.get("serializedMemberCount"),
+                "nativeMappingId": str(action.get("nativeMappingId") or ""),
+                "payloadShape": str(action.get("payloadShape") or ""),
+                "fields": fields,
+                "runtimeActivationStatus": "levelScriptActionExecutionNotObserved",
+            }
+            for binding in action.get("eventBindings") or []:
+                if not isinstance(binding, dict) or not str(binding.get("eventName") or ""):
+                    continue
+                _append_context(contexts, seen, binding["eventName"], {
+                    **common,
+                    "kind": "levelScriptAudioAction",
+                    "eventName": str(binding["eventName"]),
+                    "triggerRole": str(binding.get("role") or "play"),
+                    "sourceField": str(binding.get("sourceField") or ""),
+                })
+            for binding in action.get("cueBindings") or []:
+                if not isinstance(binding, dict) or not str(binding.get("cueName") or ""):
+                    continue
+                cue_invocations.append({
+                    **common,
+                    "kind": "levelScriptAudioCueInvocation",
+                    "cueName": str(binding["cueName"]),
+                    "triggerRole": str(binding.get("role") or "invoke"),
+                    "sourceField": str(binding.get("sourceField") or ""),
+                    "definitionStatus": "runtimeNameToCueDefinitionUnresolved",
+                })
+            for field_name, role in LEVELSCRIPT_AUDIO_EVENT_FIELDS.get(action_name, ()):
+                field = fields.get(field_name) or {}
+                if field.get("bindingKind") != "dynamic":
+                    continue
+                dynamic_event_bindings.append({
+                    **common,
+                    "kind": "levelScriptDynamicAudioBinding",
+                    "triggerRole": role,
+                    "sourceField": str(field.get("sourceField") or f"_{field_name}"),
+                    "binding": field,
+                    "resolutionStatus": "runtimeParamValueUnresolved",
+                })
+
+    event_context_count = sum(len(rows) for rows in contexts.values())
+    return {
+        "eventContexts": dict(contexts),
+        "cueInvocations": cue_invocations,
+        "dynamicEventBindings": dynamic_event_bindings,
+        "stats": {
+            "sourceFiles": len(overlay),
+            "sourceFilesWithAudioActions": source_files_with_actions,
+            "targetAudioActionRecords": target_records,
+            "decodedAudioActionRecords": decoded_records,
+            "decodeFailures": decode_failures,
+            "constantEventRequestContexts": event_context_count,
+            "constantEventNames": len(contexts),
+            "cueInvocations": len(cue_invocations),
+            "dynamicEventBindings": len(dynamic_event_bindings),
+            "actionCounts": dict(sorted(action_counts.items())),
+        },
+        "evidenceBoundary": (
+            "Exact union/member-count fields prove authored LevelScript requests and routing. "
+            "Only constant Event parameters become Wwise Event contexts. Dynamic Param bindings and cue names "
+            "remain control records; action execution and live parameter values are not observed."
+        ),
+    }
 
 
 def _first_recovered_mono_behaviour(export_root: Path, stem: str) -> Path | None:
@@ -2072,6 +2275,8 @@ def semantic_context_group(kind: Any) -> str:
         return "cutscene"
     if value in {"characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"}:
         return "animation"
+    if value == "levelScriptAudioAction":
+        return "scripted"
     if value in {
         "table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger",
         "audioGlobalConfigEvent", "audioGlobalConfigEventHash",
@@ -2107,6 +2312,11 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "authoredEventId", "spawnerConfigId", "enemyLibraryIndex", "enemyId",
             "bornTemplateId", "enemyLevel", "spawnerEnemyKey", "preWarnTime",
             "preWarnEffectKey", "schemaMappingId", "schemaStatus",
+            "action", "levelScriptId", "sourcePath", "sourceSha256",
+            "recordIndex", "recordStart", "recordUid", "recordLocalId",
+            "actionMapRole", "unionTag", "serializedMemberCount",
+            "nativeMappingId", "payloadShape", "eventName", "triggerRole",
+            "sourceField",
         ):
             value = context.get(key)
             if value not in (None, "", []):
@@ -2130,6 +2340,13 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
                     context_search.add(str(value))
                 elif isinstance(value, list):
                     context_search.update(str(item) for item in value if str(item))
+        for field_name, field in (context.get("fields") or {}).items():
+            context_search.add(str(field_name))
+            if not isinstance(field, dict):
+                continue
+            for value in field.values():
+                if isinstance(value, (str, int, float, bool)) and value not in ("", None):
+                    context_search.add(str(value))
     media = row.get("media") or []
     scopes = sorted({str(value.get("audioScope") or value.get("storageRoot") or "") for value in media if value.get("audioScope") or value.get("storageRoot")})
     banks = sorted({str(value.get("bankPackage") or "") for evidence in media for value in evidence.get("wwiseMediaEvidence") or [] if value.get("bankPackage")})
@@ -2191,6 +2408,7 @@ def build_audio_semantic_data(
     cue_semantics = collect_audio_cue_semantics(export_root)
     global_controls = collect_audio_global_control_semantics(export_root, cue_semantics)
     spawner_semantics = collect_spawner_pre_warn_semantics(export_root)
+    levelscript_semantics = collect_levelscript_audio_semantics(export_root)
     managed_rtpc_parameters = [{
         "kind": "rtpcParameter",
         "parameterName": name,
@@ -2202,6 +2420,7 @@ def build_audio_semantic_data(
         collect_gameplay_contexts(webui_root, language),
         collect_projectile_contexts(webui_root),
         spawner_semantics.get("eventContexts") or {},
+        levelscript_semantics.get("eventContexts") or {},
         collect_table_contexts(
             export_root,
             runtime_model,
@@ -2392,6 +2611,10 @@ def build_audio_semantic_data(
             "spawnerPreWarnAudioEventsUnresolved": sum(
                 not row.get("foundInWwise") for row in spawner_event_rows
             ),
+            "levelScriptAudioActionEvents": context_kind_event_counts.get("levelScriptAudioAction", 0),
+            "levelScriptAudioActionContexts": context_kind_counts.get("levelScriptAudioAction", 0),
+            "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
+            "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
             "authoredPlaySoundActionEvents": play_sound_action_events,
             "authoredPlaySoundActionContexts": play_sound_action_contexts,
             "authoredPlaySoundActionOccurrences": play_sound_action_occurrences,
@@ -2418,6 +2641,7 @@ def build_audio_semantic_data(
         "hircSummary": audio_index.get("hircSummary") or {},
         "triggerCatalog": {
             "spawnerPreWarnAudio": spawner_semantics.get("stats") or {},
+            "levelScriptAudio": levelscript_semantics.get("stats") or {},
         },
         "controlCatalog": {
             "schemaVersion": 1,
@@ -2433,6 +2657,8 @@ def build_audio_semantic_data(
                     for row in global_controls.get("audioGlobalMusicCueRefs") or []
                 ),
                 "rtpcParameters": len(global_controls.get("rtpcParameters") or []) + len(managed_rtpc_parameters),
+                "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
+                "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
             },
             "audioCueDefinitions": [
                 {key: value for key, value in definition.items() if key not in {"behaviorEvents", "expressionOperands"}}
@@ -2445,7 +2671,9 @@ def build_audio_semantic_data(
             "audioCueExpressionOperands": cue_semantics.get("expressionOperands") or [],
             "audioGlobalMusicCueRefs": global_controls.get("audioGlobalMusicCueRefs") or [],
             "rtpcParameters": (global_controls.get("rtpcParameters") or []) + managed_rtpc_parameters,
-            "evidenceBoundary": "Cue behavior exprType=3 values are Event requests. exprType=8 strings are runtime cue operands, musicCue* values are cue IDs, and RTPC names are parameters; none of those controls is promoted to a Wwise Event without an exact Event operation.",
+            "levelScriptAudioCueInvocations": levelscript_semantics.get("cueInvocations") or [],
+            "levelScriptDynamicAudioBindings": levelscript_semantics.get("dynamicEventBindings") or [],
+            "evidenceBoundary": "Cue behavior exprType=3 values and constant LevelScript Event parameters are Event requests. exprType=8 strings, LevelScript cue names, dynamic Event Params, musicCue* values, and RTPC names remain typed controls until an exact runtime value/definition edge is recovered.",
         },
         "runtimeModel": runtime_model,
         "evidenceBoundary": {
@@ -2456,6 +2684,7 @@ def build_audio_semantic_data(
             "authoredEventHash": "Signed table integers are normalized to uint32 only in event-designated fields; row and field prove semantic ownership even when no string name is known.",
             "projectileSound": "A nonzero decoded projectile sound slot proves the projectile lifecycle field references the uint32 Wwise Event. It does not prove that the projectile was spawned, that the lifecycle phase executed, or which Wwise media branch was selected.",
             "spawnerPreWarnAudio": "The current mc13 SpawnerEnemyLibraryItem preWarnAudioEventKey proves an authored enemy-spawn pre-warning request and its row-local timing/effect/enemy/template source. It does not prove that the spawner executed or that a Wwise branch played; unresolved authored names remain visible.",
+            "levelScriptAudio": levelscript_semantics.get("evidenceBoundary") or "",
             "audioCue": "Only behaviourExpr exprType=3 string values are Event requests. exprType=8 strings are runtime cue-variable operands; AudioGlobal musicCue fields are cue references, and RTPC names are control parameters.",
             "runtimeMetadata": "IL2CPP names prove shipped system structure, not live call order or active state.",
         },

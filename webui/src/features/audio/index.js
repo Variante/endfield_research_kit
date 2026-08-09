@@ -42,6 +42,8 @@
       cueOperands: "Cue expression operands",
       globalMusicCues: "Global music cue references",
       rtpcParameters: "RTPC parameters",
+      levelScriptCueInvocations: "LevelScript cue invocations",
+      levelScriptDynamicBindings: "LevelScript dynamic Event bindings",
       corpus: "Corpus",
       selectRecord: "Select an event or media record from the left.",
       overview: "Overview",
@@ -65,6 +67,8 @@
       contextSharedPlayableAnimation: "Shared playable-character animation",
       contextFootstepSystem: "Footstep / material system",
       contextOwnerUnresolvedAnimation: "Animation owner unresolved",
+      contextScripted: "LevelScript",
+      contextLevelScriptTrigger: "Scripted audio trigger",
       contextExactSkillTrigger: "Exact skill-config Event reference",
       contextInferredSkillTrigger: "Inferred skill ownership",
       contextAuthoredPlaySoundAction: "Authored PlaySound action",
@@ -143,6 +147,8 @@
       cueOperands: "Cue \u8868\u8fbe\u5f0f\u64cd\u4f5c\u6570",
       globalMusicCues: "\u5168\u5c40\u97f3\u4e50 Cue \u5f15\u7528",
       rtpcParameters: "RTPC \u53c2\u6570",
+      levelScriptCueInvocations: "LevelScript Cue \u8c03\u7528",
+      levelScriptDynamicBindings: "LevelScript \u52a8\u6001 Event \u7ed1\u5b9a",
       corpus: "\u6570\u636e\u96c6",
       selectRecord: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u4e2a\u4e8b\u4ef6\u6216\u5a92\u4f53\u8bb0\u5f55\u3002",
       overview: "\u6982\u89c8",
@@ -166,6 +172,8 @@
       contextSharedPlayableAnimation: "\u53ef\u73a9\u89d2\u8272\u5171\u7528\u52a8\u753b",
       contextFootstepSystem: "\u811a\u6b65 / \u6750\u8d28\u7cfb\u7edf",
       contextOwnerUnresolvedAnimation: "\u52a8\u753b\u5f52\u5c5e\u672a\u89e3\u6790",
+      contextScripted: "LevelScript \u811a\u672c",
+      contextLevelScriptTrigger: "\u811a\u672c\u97f3\u9891\u89e6\u53d1",
       contextExactSkillTrigger: "\u7cbe\u786e\u6280\u80fd\u914d\u7f6e Event \u5f15\u7528",
       contextInferredSkillTrigger: "\u63a8\u65ad\u6280\u80fd\u5f52\u5c5e",
       contextAuthoredPlaySoundAction: "\u521b\u4f5c PlaySound \u52a8\u4f5c",
@@ -313,6 +321,8 @@
     sharedPlayableAnimation: "contextSharedPlayableAnimation",
     footstepSystem: "contextFootstepSystem",
     ownerUnresolvedAnimation: "contextOwnerUnresolvedAnimation",
+    scripted: "contextScripted",
+    levelScriptTrigger: "contextLevelScriptTrigger",
     exactSkillTrigger: "contextExactSkillTrigger",
     inferredSkillTrigger: "contextInferredSkillTrigger",
     authoredPlaySoundAction: "contextAuthoredPlaySoundAction",
@@ -359,6 +369,7 @@
     if (["characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField"].includes(kind)) return "gameplay";
     if (kind === "cutsceneTimeline") return "cutscene";
     if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
+    if (kind === "levelScriptAudioAction") return "scripted";
     if (["table", "tableEventHash", "interactiveAudioTrigger", "interactiveComponentTrigger", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
     return "";
@@ -373,6 +384,7 @@
       if (["interactiveAudioTrigger", "interactiveComponentTrigger"].includes(contextKind)) tags.add("interactiveTrigger");
       if (["audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioGlobalMusicCueBehaviorEvent"].includes(contextKind)) tags.add("globalLifecycle");
       if (contextKind === "animationCallbackOwnerUnresolved") tags.add("ownerUnresolvedAnimation");
+      if (contextKind === "levelScriptAudioAction") tags.add("levelScriptTrigger");
     };
     for (const contextKind of asArray(record?.contextKinds)) addContextKindTags(contextKind);
     for (const status of asArray(record?.triggerBindingStatuses)) {
@@ -396,8 +408,8 @@
     if (kind === "media") {
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
-        "gameplay", "cutscene", "animation", "authoredConfig", "managedRuntime",
-        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "projectileTrigger", "spawnerPreWarnTrigger", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
+        "gameplay", "cutscene", "animation", "scripted", "authoredConfig", "managedRuntime",
+        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "interactiveTrigger", "globalLifecycle", "audioCueTrigger",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
@@ -468,6 +480,9 @@
         context.authoredEventId, context.spawnerConfigId, context.enemyLibraryIndex, context.enemyId,
         context.bornTemplateId, context.enemyLevel, context.spawnerEnemyKey, context.preWarnTime,
         context.preWarnEffectKey, ...asArray(context.preWarnEffectFixedRotation), ...asArray(context.bornBuffIds),
+        context.action, context.levelScriptId, context.sourcePath, context.sourceSha256,
+        context.recordUid, context.recordLocalId, context.actionMapRole, context.eventName,
+        context.triggerRole, context.sourceField,
         context.clipReachability, context.triggerBindingStatus, ...asArray(context.skillIds), ...asArray(context.actionKinds),
         ...asArray(context.triggerRequestEvidence), ...asArray(context.triggerRuntimeActivationStatuses),
         ...asArray(context.triggerRelationTypes), ...asArray(context.triggerOwnershipMethods),
@@ -1314,6 +1329,8 @@
       ["rtpcParameters", asArray(catalog.rtpcParameters), (row) => `${row.parameterName || t("unknown")} / ${row.field || humanize(row.evidence || "")}`],
       ["globalMusicCues", asArray(catalog.audioGlobalMusicCueRefs), (row) => `${row.field || t("unknown")} / ${row.cueHex || row.cueId || "?"} / ${humanize(row.definitionStatus || "unknown")}`],
       ["cueOperands", asArray(catalog.audioCueExpressionOperands), (row) => `${row.stringValue || t("unknown")} / ${row.cueHex || "?"} / ${humanize(row.expressionSide || "")} / ${row.expressionPath || ""}`],
+      ["levelScriptCueInvocations", asArray(catalog.levelScriptAudioCueInvocations), (row) => `${row.cueName || t("unknown")} / ${row.levelScriptId || "?"} / ${humanize(row.action || "")}`],
+      ["levelScriptDynamicBindings", asArray(catalog.levelScriptDynamicAudioBindings), (row) => `${row.levelScriptId || "?"} / ${humanize(row.action || "")} / ${row.sourceField || "?"} / ${row.binding?.path || humanize(row.resolutionStatus || "")}`],
     ];
     for (const [labelKey, rows, formatRow] of groups) {
       if (!rows.length) continue;
@@ -1416,6 +1433,21 @@
     if (context?.preWarnEffectKey) parts.push(`effect ${context.preWarnEffectKey}`);
     const preWarnRotation = asArray(context?.preWarnEffectFixedRotation);
     if (preWarnRotation.length) parts.push(`effect rotation ${preWarnRotation.join(", ")}`);
+    if (context?.levelScriptId) parts.push(`LevelScript ${context.levelScriptId}`);
+    if (context?.action) parts.push(humanize(context.action));
+    if (context?.triggerRole) parts.push(`request role ${humanize(context.triggerRole)}`);
+    if (context?.sourceField) parts.push(context.sourceField);
+    if (context?.actionMapRole) parts.push(context.actionMapRole);
+    if (context?.recordUid || context?.recordLocalId !== undefined) parts.push(`record ${context.recordUid || "?"} / local ${context.recordLocalId ?? "?"}`);
+    if (context?.sourcePath) parts.push(context.sourcePath);
+    if (context?.sourceSha256) parts.push(`SHA-256 ${context.sourceSha256}`);
+    for (const [fieldName, field] of Object.entries(context?.fields || {})) {
+      if (!field || typeof field !== "object") continue;
+      const value = field.value !== undefined
+        ? (typeof field.value === "object" ? JSON.stringify(field.value) : String(field.value))
+        : field.path || "";
+      parts.push(`${field.sourceField || fieldName}: ${humanize(field.bindingKind || "unknown")}${value ? ` = ${value}` : ""}`);
+    }
     if (context?.eventHash !== undefined) parts.push(`Event 0x${Number(context.eventHash).toString(16).padStart(8, "0")}`);
     if (context?.signedValue !== undefined) parts.push(`serialized int32 ${context.signedValue}`);
     if (context?.runtimeActivationStatus) parts.push(humanize(context.runtimeActivationStatus));
