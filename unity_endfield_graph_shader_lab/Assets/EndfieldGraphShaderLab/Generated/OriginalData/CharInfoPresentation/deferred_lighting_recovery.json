@@ -3,7 +3,7 @@
   "recovered_at": "2026-07-17",
   "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
-  "outcome": "The original HGRP/Lit HGBuffer stages, GBuffer renderer-list LightMode, five-color-target DefaultDeferred render-graph topology, HGRP deferred resolver shader family, HighEnd GBuffer formats, native draw entry points, unpatched render-parameter initializer, and current installed CharInfo draw route are recovered. The selected Gacha SceneColor format/descriptor policy and clear are recovered as B10G11R11_UFloatPack32 with Point/Clamp and (0.025,0.07,0.19,0); exact dimensions, possible live MSAA mutation, physical aliasing, and retirement remain runtime boundaries. The runtime-resource PPtrs and runtime Material construction for DeferredLighting, DeferredLightingPerLight, and DeferredLightingWriteAlpha are exact. The selected physical Gacha camera is source-closed RenderWithAlpha=false, so the callback invokes the WriteAlpha helper but submits no WriteAlpha draws. Future/network patch state, the exact executed resolver program pair, physical scene-color allocation/lifetime, and frame-produced lighting resources are not recovered. A forward/PBR substitute is not equivalent and must not activate SphereOutside.",
+  "outcome": "The original HGRP/Lit HGBuffer stages, GBuffer renderer-list LightMode, five-color-target DefaultDeferred render-graph topology, HGRP deferred resolver shader family, HighEnd GBuffer formats, native draw entry points, unpatched render-parameter initializer, and current installed CharInfo draw route are recovered. A default-off same-camera SphereOutside sidecar now binds the exact logical five-MRT formats plus D32S8, applies the source material's depth/stencil state and transform, and produces bit-identical 640x720 readbacks on D3D11 and D3D12 without changing the presented beauty frame. It remains non-presented and never enables pass 0. The selected physical Gacha camera is source-closed RenderWithAlpha=false, so the callback invokes the WriteAlpha helper but submits no WriteAlpha draws. Future/network patch state, render-graph physical resource identity/lifetime, a binding-compatible pass-0 implementation, and remaining frame-produced lighting resources are not recovered. A forward/PBR substitute is not equivalent and must not activate SphereOutside.",
   "selected_hgbuffer": {
     "shader": "HGRP/Lit",
     "pass": "HGBuffer",
@@ -48,6 +48,64 @@
     "gbuffer_c": "R8G8B8A8_SRGB",
     "binding_note": "With scene motion vectors enabled, the observed five MRTs are scene color, motion, GBuffer A, GBuffer B, and GBuffer C. Native code selects GBuffer handles by ID rather than assuming a fixed MRT number."
   },
+  "same_camera_hgbuffer_sidecar": {
+    "status": "source-camera five-MRT producer GPU-closed as a non-presented sidecar; canonical publication and pass 0 remain disabled",
+    "default_off": true,
+    "published": false,
+    "pass0_consumer_enabled": false,
+    "source_renderer_disabled": true,
+    "selector": "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
+    "source_camera": {
+      "name": "MainCamera",
+      "route": "the physical CharInfo camera projection plus SphereOutside source transform"
+    },
+    "extent": {
+      "width": 640,
+      "height": 720,
+      "byte_count_per_attachment": 1843200
+    },
+    "attachment_signature": "B10G11R11/A2B10G10R10/A2B10G10R10/A2B10G10R10/R8G8B8A8_SRGB+D32S8",
+    "attachments": {
+      "SceneColor": "B10G11R11_UFloatPack32",
+      "SceneMV": "A2B10G10R10_UNormPack32",
+      "GBufferA": "A2B10G10R10_UNormPack32",
+      "GBufferB": "A2B10G10R10_UNormPack32",
+      "GBufferC": "R8G8B8A8_SRGB",
+      "DepthStencil": "D32_SFloat_S8_UInt"
+    },
+    "material_state": {
+      "_CullMode": 0,
+      "_ZTestGBuffer": 4,
+      "_ZWriteGBuffer": 1,
+      "_StencilRef": 0,
+      "_StencilOpGBuffer": 2
+    },
+    "readbacks": {
+      "SceneColor": {"format": "B10G11R11_UFloatPack32", "nonzero_bytes": 0, "sha256": "8df6d450b5a7cb358b9e8373af9fd9304e5912389c644f6c4bc66068380e88a3"},
+      "SceneMV": {"format": "A2B10G10R10_UNormPack32", "nonzero_bytes": 1382400, "sha256": "bd540907f59ca28745feaa98ab9685611b2f39af8965bfa06c2e39f4565c2bd0"},
+      "GBufferA": {"format": "A2B10G10R10_UNormPack32", "nonzero_bytes": 1382400, "sha256": "3bdc871afc50d227293199b9126e69a2f7e9337ab4550cc6a39f8135651c9683"},
+      "GBufferB": {"format": "A2B10G10R10_UNormPack32", "nonzero_bytes": 1842098, "sha256": "18e66cdee5523d33c9629a61436a3c2feee97fc2321efc67f922265505094125"},
+      "GBufferC": {"format": "R8G8B8A8_SRGB", "nonzero_bytes": 1382400, "sha256": "b6ffa8536d9c20724bbd90c514cde0a80e0cb3e95911bd5a3293b8d320bbfa56"}
+    },
+    "sources": {
+      "producer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs", "sha256": "93b63fa4508c56d2c232c78997224532d1b76b716bbcc23cdf12467bb1996013"},
+      "shader": {"path": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharInfoHGRPLitUnavailable.shader", "sha256": "e957bcb140a066a452423f32efc5bd3195f410094943562c96376cff44d2d23e"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "cf92850c82deefbdbd4201bb27a790e6bafe27ebad0fe5f3e3075edfa32466a9"},
+      "material_source": {"path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/Materials/M_CharInfo_outside.raw.json", "sha256": "45b4e36ddf66010b838abdbad0e7bf8906d5cf2ec2ea9997771bd14c75ecfaf7"}
+    },
+    "validation": {
+      "gpu_reports": {
+        "d3d11": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d11.json", "sha256": "74fb5d3538b29092155b34c3549515aa803a97b7e5364875e618861c59408c91", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d11.log", "log_sha256": "5698db7a8f25e47ee74a9a33513db34c1e8192f75f5381e59dbadc95c95502b9"},
+        "d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d12.json", "sha256": "0287f86a64ca45b9e4f670b32f5f8d4484f8b1235b1a4817bd3d01903d15332a", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d12.log", "log_sha256": "9a3ff0ba1d3097f4791f43ab2acef3d446467cc1396b34083c9912edaed02317"}
+      },
+      "fail_closed_d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_fail_closed_d3d12.json", "sha256": "8c924c70bcb0077e04f8f9d22cc07f3e18731f32e56dec8c830f739954c8688c", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_fail_closed_d3d12.log", "log_sha256": "08643547d705a67dbb29493821d9ff6340e4aaaee1ae943cba4946a4a45cdc05"},
+      "validator": {"path": "tools/verify_deferred_gbuffer_frame_log.py", "sha256": "5a68cc17709d480f900bca388f1f4dabedafd47e02f0aa8048eed9fe90a1b253"},
+      "tests": {"path": "tools/test_verify_deferred_gbuffer_frame_log.py", "sha256": "941e3500ce24e0f552e07c8b14fa99d3e3eb5e35495004515293b96c200f4823"},
+      "wrapper": {"path": "verify_recovered_deferred_gbuffer_frame.bat", "sha256": "c1ecdcd3ae4433be02498b9da8cc2620d7c331a9385058da7fe4f57f00336921"},
+      "beauty_unchanged": true,
+      "cross_api_readbacks_bit_exact": true
+    }
+  },
   "default_deferred_gbuffer_submission": {
     "selected_installed_route": "HGRenderPathDefaultDeferred -> GBufferPassConstructor.ConstructPass",
     "shader_pass_name": "HGBuffer",
@@ -88,8 +146,8 @@
       "transient_render_graph_texture": true,
       "physical_allocation_source_closed": false
     },
-    "first_unresolved_resource_producer": "Settled Gacha SceneColor exact dimensions and possible live MSAA mutation, followed by render-graph physical alias selection and retirement",
-    "lab_boundary": "Adding LightMode GBuffer to the compatibility opaque list alone is invalid because that path does not bind the exact five color targets plus depth or run the deferred consumer."
+    "first_unresolved_resource_producer": "Canonical render-graph identity/lifetime for the source-camera five-MRT frame, followed by a binding-compatible pass-0 consumer and its remaining live frame resources",
+    "lab_boundary": "The default-off sidecar now binds and reads back the exact logical five color formats plus D32S8 with the source camera and transform, but it deliberately does not publish those textures canonically, add an ordinary GBuffer presentation route, or run deferred pass 0."
   },
   "runtime_resolver_resources": {
     "runtime_resources_path_id": 5613980184714137857,
@@ -575,10 +633,10 @@
   },
   "unresolved_exact_contract": [
     "A future/network-patched CharInfo result of InitDeferredLightingRenderParams. The current installed Persistent target table is exact and excludes InitDeferredLightingRenderParams plus the 0x19c/0x19d feature-switch accessors, but a later delivered table could replace them.",
-    "Live SceneColor dimensions and physical alias lifetime. The selected logical format, Point/Clamp descriptor policy, exact clear, 1x MSAA state, resolver Load/Store, read-only scene-depth attachment, ref-0 sphere stencil route, PassData-to-HGShaderIDs routing, installed fallback selection, and exact executed pass-0 D3D11 program pair are closed, but live resource contents and physical instance identity remain open.",
+    "Retail render-graph physical resource identity, alias lifetime, and settled contents. The lab now closes the source-camera 640x720 logical five-MRT plus D32S8 producer route and its cross-API bytes, but the non-presented sidecar is not evidence of physical render-graph equivalence.",
     "Frame-produced main-light, shadow, tiled/clustered light-loop, irradiance, reflection, exposure, camera, and history constants/resources.",
     "Frame-produced AO, SSR, planar reflection, screen-space shadow mask, subsurface, fog-LUT, and wetness bindings, including exact neutral bindings for disabled features.",
-    "A resource-binding-compatible pass-0 lighting implementation in the lab SRP. The simple resource-free WriteAlpha program and its three exact render-state variants are ported and D3D12-validated, but correctly remain unsubmitted for the source-closed RenderWithAlpha=false selected Gacha route; the recovered pass-0 lighting dump still contains bytecode/disassembly rather than directly importable ShaderLab source for Unity's current binding model."
+    "Canonical promotion plus a resource-binding-compatible pass-0 lighting implementation in the lab SRP. The simple resource-free WriteAlpha program and its three exact render-state variants are ported and D3D12-validated, but correctly remain unsubmitted for the source-closed RenderWithAlpha=false selected Gacha route; the recovered pass-0 lighting dump still contains bytecode/disassembly rather than directly importable ShaderLab source for Unity's current binding model."
   ],
   "required_next_capture": {
     "target": "one settled original-client CharInfo frame with SphereOutside visible",

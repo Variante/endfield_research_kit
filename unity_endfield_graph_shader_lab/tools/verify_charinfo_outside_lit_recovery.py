@@ -1219,6 +1219,259 @@ def verify_visibility_sh_frame_report(
         require_visibility_sh_constants_value(source, check, actual, expected)
 
 
+def require_deferred_gbuffer_frame_value(
+    source: Path,
+    check: str,
+    actual: object,
+    expected: object,
+) -> None:
+    if actual != expected:
+        raise AssertionError(
+            "Deferred HGBuffer frame validator failed: "
+            f"check={check}; source={source}; "
+            f"expected={expected!r}; actual={actual!r}"
+        )
+
+
+def verify_deferred_gbuffer_frame_report(
+    transport: dict[str, object],
+    report: dict[str, object],
+    api: str,
+    expect_fail_closed: bool = False,
+    source: Path = BINDING_CONTRACT_PATH,
+) -> None:
+    expected_readbacks = transport["readbacks"]
+    checks = (
+        (
+            f"frame_report.{api}.schema",
+            report["schema"],
+            "endfield-recovered-deferred-gbuffer-frame-validation-v1",
+        ),
+        (f"frame_report.{api}.valid", report["valid"], True),
+        (
+            f"frame_report.{api}.identity",
+            (
+                report["graphicsApi"],
+                report["defaultOff"],
+                report["expectedFailClosed"],
+                report["canonicalPublication"],
+                report["pass0ConsumerEnabled"],
+            ),
+            (api, True, expect_fail_closed, False, False),
+        ),
+        (
+            f"frame_report.{api}.sources",
+            (
+                report["sources"]["producer"]["sha256"],
+                report["sources"]["shader"]["sha256"],
+                report["sources"]["pipeline"]["sha256"],
+                report["sources"]["materialSource"]["sha256"],
+            ),
+            (
+                transport["sources"]["producer"]["sha256"],
+                transport["sources"]["shader"]["sha256"],
+                transport["sources"]["pipeline"]["sha256"],
+                transport["sources"]["material_source"]["sha256"],
+            ),
+        ),
+        (
+            f"frame_report.{api}.beauty",
+            (
+                report["beautyFrame"]["sha256"],
+                report["beautyFrame"]["expectedSha256"],
+                report["beautyFrame"]["unchanged"],
+            ),
+            (
+                report["beautyFrame"]["expectedSha256"],
+                report["beautyFrame"]["expectedSha256"],
+                True,
+            ),
+        ),
+        (f"frame_report.{api}.failures", report["failures"], []),
+    )
+    for check, actual, expected in checks:
+        require_deferred_gbuffer_frame_value(source, check, actual, expected)
+
+    if expect_fail_closed:
+        require_deferred_gbuffer_frame_value(
+            source,
+            f"frame_report.{api}.fail_closed_payload",
+            (report["activeFrame"], report["gpuReadbacks"]),
+            ({}, {}),
+        )
+        return
+
+    active = report["activeFrame"]
+    require_deferred_gbuffer_frame_value(
+        source,
+        f"frame_report.{api}.active",
+        active,
+        {
+            "camera": transport["source_camera"]["name"],
+            "width": transport["extent"]["width"],
+            "height": transport["extent"]["height"],
+            "attachments": transport["attachment_signature"],
+            "sourceRendererDisabled": True,
+            "pass0ConsumerEnabled": False,
+        },
+    )
+    require_deferred_gbuffer_frame_value(
+        source,
+        f"frame_report.{api}.readbacks",
+        report["gpuReadbacks"],
+        {
+            role: {
+                "camera": transport["source_camera"]["name"],
+                "width": transport["extent"]["width"],
+                "height": transport["extent"]["height"],
+                "format": values["format"],
+                "byteCount": transport["extent"]["byte_count_per_attachment"],
+                "nonzeroBytes": values["nonzero_bytes"],
+                "sha256": values["sha256"],
+            }
+            for role, values in expected_readbacks.items()
+        },
+    )
+
+
+def verify_deferred_gbuffer_frame_transport(recovery: dict[str, object]) -> None:
+    contract = json.loads(BINDING_CONTRACT_PATH.read_text(encoding="utf-8"))
+    transport = recovery["same_camera_hgbuffer_sidecar"]
+    require_deferred_gbuffer_frame_value(
+        RECOVERY_PATH,
+        "contract.transport",
+        contract["deferred_gbuffer_frame_transport"],
+        transport,
+    )
+    require_deferred_gbuffer_frame_value(
+        RECOVERY_PATH,
+        "transport.state",
+        (
+            transport["default_off"],
+            transport["published"],
+            transport["pass0_consumer_enabled"],
+            transport["source_renderer_disabled"],
+        ),
+        (True, False, False, True),
+    )
+    require_deferred_gbuffer_frame_value(
+        RECOVERY_PATH,
+        "transport.material_state",
+        transport["material_state"],
+        {
+            "_CullMode": 0,
+            "_ZTestGBuffer": 4,
+            "_ZWriteGBuffer": 1,
+            "_StencilRef": 0,
+            "_StencilOpGBuffer": 2,
+        },
+    )
+
+    for entry in transport["sources"].values():
+        require_hash(LAB_ROOT / entry["path"], entry["sha256"])
+    validation = transport["validation"]
+    for entry in (
+        validation["validator"],
+        validation["tests"],
+        validation["wrapper"],
+    ):
+        require_hash(LAB_ROOT / entry["path"], entry["sha256"])
+
+    reports: dict[str, dict[str, object]] = {}
+    for api in ("d3d11", "d3d12"):
+        evidence = validation["gpu_reports"][api]
+        report_path = LAB_ROOT / evidence["path"]
+        log_path = LAB_ROOT / evidence["log_path"]
+        require_hash(report_path, evidence["sha256"])
+        require_unity_log(
+            log_path,
+            evidence["log_sha256"],
+            [
+                f"Forcing GfxDevice: Direct3D {11 if api == 'd3d11' else 12}",
+                "Recovered SphereOutside same-frame HGBuffer sidecar active:",
+                "Recovered deferred HGBuffer GPU readback: role=SceneColor",
+                "Recovered deferred HGBuffer GPU readback: role=GBufferC",
+                "Exiting batchmode successfully now!",
+            ],
+        )
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        verify_deferred_gbuffer_frame_report(transport, report, api)
+        reports[api] = report
+    require_deferred_gbuffer_frame_value(
+        RECOVERY_PATH,
+        "transport.cross_api_readbacks",
+        reports["d3d11"]["gpuReadbacks"],
+        reports["d3d12"]["gpuReadbacks"],
+    )
+
+    evidence = validation["fail_closed_d3d12"]
+    report_path = LAB_ROOT / evidence["path"]
+    log_path = LAB_ROOT / evidence["log_path"]
+    require_hash(report_path, evidence["sha256"])
+    require_unity_log(
+        log_path,
+        evidence["log_sha256"],
+        [
+            "Forcing GfxDevice: Direct3D 12",
+            "Recovered SphereOutside same-frame HGBuffer sidecar failed closed: "
+            "canonical binning/reflection/VisibilitySHConstData prerequisites "
+            "are not ready.",
+            "Exiting batchmode successfully now!",
+        ],
+    )
+    fail_report = json.loads(report_path.read_text(encoding="utf-8"))
+    verify_deferred_gbuffer_frame_report(
+        transport,
+        fail_report,
+        "d3d12",
+        expect_fail_closed=True,
+    )
+
+    producer = LAB_ROOT / transport["sources"]["producer"]["path"]
+    shader = LAB_ROOT / transport["sources"]["shader"]["path"]
+    pipeline = LAB_ROOT / transport["sources"]["pipeline"]["path"]
+    require_tokens(
+        producer,
+        [
+            "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
+            "RecoveredSphereOutsideHGBufferFrame",
+            "GraphicsFormat.B10G11R11_UFloatPack32",
+            "GraphicsFormat.A2B10G10R10_UNormPack32",
+            "GraphicsFormat.R8G8B8A8_SRGB",
+            "GraphicsFormat.D32_SFloat_S8_UInt",
+            "command.SetGlobalMatrix(",
+            "GpuViewProjectionId,",
+            "command.RequestAsyncReadback",
+            "command.SetRenderTarget(",
+            "canonicalColorTarget,",
+            "canonicalDepthTarget);",
+            'pass0ConsumerEnabled=false',
+        ],
+    )
+    require_tokens(
+        shader,
+        [
+            'Name "RecoveredSphereOutsideHGBufferFrame"',
+            "Cull [_CullMode]",
+            "ZTest [_ZTestGBuffer]",
+            "ZWrite [_ZWriteGBuffer]",
+            "Ref [_StencilRef]",
+            "Pass [_StencilOpGBuffer]",
+            "float4 sceneColor : SV_Target0;",
+            "float4 gBufferC : SV_Target4;",
+            "_EndfieldRecoveredDeferredGpuViewProjection",
+        ],
+    )
+    require_tokens(
+        pipeline,
+        [
+            "EndfieldRecoveredDeferredGBufferFrame",
+            "recoveredDeferredGBufferFrame.Render(",
+            "recoveredCanonicalFrameResourcesReady,",
+        ],
+    )
+
+
 def require_hdpls_matrix_value(
     source: Path,
     check: str,
@@ -2280,7 +2533,7 @@ def verify_fail_closed(recovery: dict[str, object]) -> None:
         "exact executed deferred-resolver D3D11 pass-0 program pair" in blocker
         for blocker in unresolved
     )
-    assert any("live resource contents" in blocker for blocker in unresolved)
+    assert any("settled contents" in blocker for blocker in unresolved)
 
     manifest = json.loads((SOURCE_ROOT / "source_manifest.json").read_text())
     assert manifest["complete"] is False
@@ -4756,6 +5009,7 @@ def main() -> int:
     verify_resolvers(recovery)
     verify_native_map(recovery)
     verify_selected_resolver_binding_contract()
+    verify_deferred_gbuffer_frame_transport(recovery)
     verify_fail_closed(recovery)
     verify_visibility_sh_unity_replay()
     print(
@@ -4812,8 +5066,11 @@ def main() -> int:
         "D3D11/D3D12 bit-exact canonical light/zero-reflection binning, "
         "same-frame reflection resources, the full exact 128-byte b33 "
         "constant transport, and the D3D11/D3D12-identical nonzero canonical "
-        "VisibilitySH frame publication are pinned; presentation remains "
-        "default-off because the CharInfo-frame runtime contract is not closed."
+        "VisibilitySH frame publication, plus the source-camera 640x720 exact "
+        "five-MRT SphereOutside HGBuffer sidecar with D32S8 depth and "
+        "D3D11/D3D12-identical readbacks are pinned; canonical publication and "
+        "pass-0 presentation remain default-off because the CharInfo-frame "
+        "runtime contract is not closed."
     )
     return 0
 

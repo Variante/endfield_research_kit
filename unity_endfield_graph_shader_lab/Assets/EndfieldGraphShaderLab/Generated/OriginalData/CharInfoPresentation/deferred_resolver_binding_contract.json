@@ -3,7 +3,65 @@
   "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
   "outcome": "The exact original Vulkan fragment for the current installed Default Lit Full Lighting resolver candidate is exported and decompiled. Five named constant-buffer bindings and the core GBuffer/depth/screen-shadow/wetness/SSR/AO texture roles plus the binning byte-address buffer are now closed. Binding 32 is role-identified as the 48-byte _LightBinningConstants buffer, its exact native producer field layout and upload are source-closed, and a default-off Unity publisher is D3D11/D3D12 GPU-verified for source-closed isolated Overview light counts. Offline IL2CPP/xref recovery additionally closes LightCullResult as pointer+count, its unique HGCullingSystem.CullLights producer, both direct HGCamera.DoECSCulling call sites, their exact 256-candidate cap, and the first SetupState consumer. The target-frame native pointer contents/count and therefore final retail lightCount remain capture-only. Binding 34 is source-closed as the 11,440-byte ShadowData layout. Binding 37 now has its exact 32-entry/2,560-byte native initialization and upload closed; a default-off zero-cookie publisher is D3D11/D3D12 GPU-verified for the source-closed isolated Wulfa/Zhuangfy Overview lists, while non-empty retail atlas values remain capture-only. Binding 38 is source-closed as the exact 3,568-byte HDPunctualLightCharacterShadowData layout by a matching original ScreenSpaceShadowResolve sidecar; its native manager, per-frame reset, push-pass packing, selected .y-only consumer, active D16 atlas and RGBA8 screen-resolve resource lifecycle, and exact pre-bind capture boundary are now closed. The deferred binding is the resolved _HDPLSScreenSpaceShadowMask, while _HDPLSTex is the raw atlas input. The hash-pinned installed Persistent IFix table has 30 Gameplay.Beyond targets and replaces neither HDPLS wrapper-gated method, proving the recovered non-IFix branches are the current on-disk route; future/network patches remain a version boundary. An inactive frame clears all 56 channel selectors and binds white to both globals, preventing stale-frame reuse, but persistent/frame-derived fields and active pixels prevent claiming a byte-exact full fixture. All four debug-anonymous constant-buffer roles are therefore closed. Binary sampling behavior plus hash/offset-pinned installed shader identifiers close all 25 sampled texture roles. Exact installed CharInfo VolumeProfiles and HGEnvironmentPhase now source-close the scene's disabled wetness, volumetric-fog, cloud-shadow, ASM, and directional-shadow controls while proving that reflection remains live. All three serialized CharInfo BC6H Cubemaps are recovered exactly. The installed LightBinningXYCS and LightBinningZCS assets, all eight D3D11/Vulkan kernel programs, exact BinningData ABI, shared-buffer offsets, and XY/Z dispatch formulas are binary-source-closed. A default-off raw ByteAddressBuffer bridge composes the exact recovered light words with the source-closed zero-local-reflection tail and reads the full canonical _BinningBuffer back bit-exactly on D3D11 and D3D12. The installed ReflectionProbeBinningCS asset, exact one-Cubemap slice-0 host contract, 576x576x32 RGBAHalf oct cache, and 4,160-byte ReflectionProbeGlobalData producer are also binary-source-closed. The compatibility pipeline now co-publishes these reflection resources beside the preserved canonical buffer in the same camera command stream only when the exact T_hdri_env_char_01 asset and both readiness gates succeed; D3D11/D3D12 probes close the combined transport. The native VisibilitySHConstData b33 producer is now closed for all 128 bytes: it zero-fills the full source struct, overwrites fixed rows 0..2 and frame rows 3..4, then copies untouched zero rows 5..7. A default-off publisher reads all 32 words back bit-exactly on D3D11/D3D12 and joins the same fail-closed frame gate. Retail target-frame light survivors and pass-0 activation remain open. The retail deferred and volumetric binders close both selected disabled texture paths: invalid wetness is Unity's white Texture2D, while disabled volumetric fog publishes the game's exact 1x1x1 black ASTC_4x4 Texture3D. The retail capsule-shadow pass additionally closes the VisibilitySH output descriptor as bilinear/clamp R16G16B16A16_SFloat and its empty/disabled publication as Texture2D.blackTexture. Both exact LUT payloads, the native 128x48-byte output ABI, exact native posed transform-to-record packing, Wulfa/Zhuang's ten authored candidates, and the selected additive producer pass are also source-closed. Complete pass-0 publication, settled posed capsule records and view-cull survivors, and remaining live per-frame pixels are not yet closed.",
-  "latest_recovery": "The default-off source-backed Wulfa capsule pass now publishes its nonzero half-resolution output as canonical _VisibilitySHRT only when binning, reflection, and b33 are ready in the same frame. D3D11/D3D12 produce identical 320x360 RGBAHalf bytes; an upstream-off D3D12 run keeps canonical publication fail-closed. The pass-0 consumer and retail settled-frame equivalence remain open.",
+  "latest_recovery": "A default-off same-camera SphereOutside sidecar now binds the exact logical five-MRT HGBuffer formats plus D32S8, applies the source material state and transform, and produces bit-identical 640x720 readbacks on D3D11 and D3D12 without changing the beauty frame. It fails closed when canonical binning/reflection/b33 prerequisites are absent. Canonical publication, physical render-graph identity, and pass 0 remain open; the installed RenderWithAlpha=false route submits no WriteAlpha draw.",
+  "deferred_gbuffer_frame_transport": {
+    "status": "source-camera five-MRT producer GPU-closed as a non-presented sidecar; canonical publication and pass 0 remain disabled",
+    "default_off": true,
+    "published": false,
+    "pass0_consumer_enabled": false,
+    "source_renderer_disabled": true,
+    "selector": "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
+    "source_camera": {
+      "name": "MainCamera",
+      "route": "the physical CharInfo camera projection plus SphereOutside source transform"
+    },
+    "extent": {
+      "width": 640,
+      "height": 720,
+      "byte_count_per_attachment": 1843200
+    },
+    "attachment_signature": "B10G11R11/A2B10G10R10/A2B10G10R10/A2B10G10R10/R8G8B8A8_SRGB+D32S8",
+    "attachments": {
+      "SceneColor": "B10G11R11_UFloatPack32",
+      "SceneMV": "A2B10G10R10_UNormPack32",
+      "GBufferA": "A2B10G10R10_UNormPack32",
+      "GBufferB": "A2B10G10R10_UNormPack32",
+      "GBufferC": "R8G8B8A8_SRGB",
+      "DepthStencil": "D32_SFloat_S8_UInt"
+    },
+    "material_state": {
+      "_CullMode": 0,
+      "_ZTestGBuffer": 4,
+      "_ZWriteGBuffer": 1,
+      "_StencilRef": 0,
+      "_StencilOpGBuffer": 2
+    },
+    "readbacks": {
+      "SceneColor": {"format": "B10G11R11_UFloatPack32", "nonzero_bytes": 0, "sha256": "8df6d450b5a7cb358b9e8373af9fd9304e5912389c644f6c4bc66068380e88a3"},
+      "SceneMV": {"format": "A2B10G10R10_UNormPack32", "nonzero_bytes": 1382400, "sha256": "bd540907f59ca28745feaa98ab9685611b2f39af8965bfa06c2e39f4565c2bd0"},
+      "GBufferA": {"format": "A2B10G10R10_UNormPack32", "nonzero_bytes": 1382400, "sha256": "3bdc871afc50d227293199b9126e69a2f7e9337ab4550cc6a39f8135651c9683"},
+      "GBufferB": {"format": "A2B10G10R10_UNormPack32", "nonzero_bytes": 1842098, "sha256": "18e66cdee5523d33c9629a61436a3c2feee97fc2321efc67f922265505094125"},
+      "GBufferC": {"format": "R8G8B8A8_SRGB", "nonzero_bytes": 1382400, "sha256": "b6ffa8536d9c20724bbd90c514cde0a80e0cb3e95911bd5a3293b8d320bbfa56"}
+    },
+    "sources": {
+      "producer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs", "sha256": "93b63fa4508c56d2c232c78997224532d1b76b716bbcc23cdf12467bb1996013"},
+      "shader": {"path": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharInfoHGRPLitUnavailable.shader", "sha256": "e957bcb140a066a452423f32efc5bd3195f410094943562c96376cff44d2d23e"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "cf92850c82deefbdbd4201bb27a790e6bafe27ebad0fe5f3e3075edfa32466a9"},
+      "material_source": {"path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/Materials/M_CharInfo_outside.raw.json", "sha256": "45b4e36ddf66010b838abdbad0e7bf8906d5cf2ec2ea9997771bd14c75ecfaf7"}
+    },
+    "validation": {
+      "gpu_reports": {
+        "d3d11": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d11.json", "sha256": "74fb5d3538b29092155b34c3549515aa803a97b7e5364875e618861c59408c91", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d11.log", "log_sha256": "5698db7a8f25e47ee74a9a33513db34c1e8192f75f5381e59dbadc95c95502b9"},
+        "d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_validation_d3d12.json", "sha256": "0287f86a64ca45b9e4f670b32f5f8d4484f8b1235b1a4817bd3d01903d15332a", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_validation_d3d12.log", "log_sha256": "9a3ff0ba1d3097f4791f43ab2acef3d446467cc1396b34083c9912edaed02317"}
+      },
+      "fail_closed_d3d12": {"path": "scratch/character_recovery/deferred_gbuffer_frame/gpu_fail_closed_d3d12.json", "sha256": "8c924c70bcb0077e04f8f9d22cc07f3e18731f32e56dec8c830f739954c8688c", "log_path": "scratch/character_recovery/deferred_gbuffer_frame/unity_fail_closed_d3d12.log", "log_sha256": "08643547d705a67dbb29493821d9ff6340e4aaaee1ae943cba4946a4a45cdc05"},
+      "validator": {"path": "tools/verify_deferred_gbuffer_frame_log.py", "sha256": "5a68cc17709d480f900bca388f1f4dabedafd47e02f0aa8048eed9fe90a1b253"},
+      "tests": {"path": "tools/test_verify_deferred_gbuffer_frame_log.py", "sha256": "941e3500ce24e0f552e07c8b14fa99d3e3eb5e35495004515293b96c200f4823"},
+      "wrapper": {"path": "verify_recovered_deferred_gbuffer_frame.bat", "sha256": "c1ecdcd3ae4433be02498b9da8cc2620d7c331a9385058da7fe4f57f00336921"},
+      "beauty_unchanged": true,
+      "cross_api_readbacks_bit_exact": true
+    }
+  },
   "source_filter": {
     "path": "scratch/reverse_engineering/sphereoutside_deferred_variant/deferred_lighting_filter.json",
     "sha256": "37e0a45e2aad998ad85a2f6a213139a94b1f6e5cff83ea4bdc3bc6f86508d4ee",
@@ -165,7 +223,7 @@
         "source_cubemap_asset_path": "Assets/EndfieldGraphShaderLab/Generated/Environment/T_hdri_env_char_01.asset",
         "source_payload_sha256": "948f8d8dfb77e1b29171c4b04caaa679202e06624ab7be2203719e11ca6ee7b7",
         "runtime_pipeline_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
-        "runtime_pipeline_sha256": "a42dd830348d4e21f9d0f17f34ab37887b20dea9fa8741e9053e63e46be44cb3",
+        "runtime_pipeline_sha256": "cf92850c82deefbdbd4201bb27a790e6bafe27ebad0fe5f3e3075edfa32466a9",
         "reflection_owner_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredReflectionProbeFallback.cs",
         "reflection_owner_sha256": "be0946e41f49e3c2862e03ea4a75763001893ca20ff3c75d78ae950f0ac745d1",
         "lighting_volume_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldHGRPCharacterLightingVolume.cs",
@@ -384,7 +442,7 @@
       "owner_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredVisibilitySHConstants.cs",
       "owner_sha256": "5ef73bd512b9e4a7ad51af7b15565bb45962da8123280d44caca5754b987e597",
       "pipeline_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
-      "pipeline_sha256": "a42dd830348d4e21f9d0f17f34ab37887b20dea9fa8741e9053e63e46be44cb3",
+      "pipeline_sha256": "cf92850c82deefbdbd4201bb27a790e6bafe27ebad0fe5f3e3075edfa32466a9",
       "probe_path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredVisibilitySHConstantsProbe.compute",
       "probe_sha256": "dbc1f765472cf60a4943cb921ef46c040d3682bad28b30604a60626e37ca1861",
       "verifier_path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredVisibilitySHConstantsBatchVerifier.cs",
@@ -429,7 +487,7 @@
       "producer_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredVisibilitySHProducer.cs",
       "producer_sha256": "c4d477dc95f02a7e09c5fdf09d06df1caed4eb448dafa02580dad36f4483a31a",
       "pipeline_path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
-      "pipeline_sha256": "a42dd830348d4e21f9d0f17f34ab37887b20dea9fa8741e9053e63e46be44cb3",
+      "pipeline_sha256": "cf92850c82deefbdbd4201bb27a790e6bafe27ebad0fe5f3e3075edfa32466a9",
       "shader_path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredVisibilitySH.shader",
       "shader_sha256": "5df7633dd265cef8b80257ec655f8e3211e78c45a2ac70e6024a752dd486fd45",
       "payload_path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredVisibilitySH/visibility_sh_runtime.json",
@@ -456,26 +514,26 @@
       "gpu_reports": {
         "d3d11": {
           "path": "scratch/character_recovery/visibility_sh_frame/gpu_validation_d3d11.json",
-          "sha256": "c7b87c9273797fb69cf7aa2a824cafad164ab8c7640a59d86c274eb3b9155d5e",
+          "sha256": "6640493266424cced2e519c330a83b0f514b1722265d067e41bedaaecb73a4fc",
           "log_path": "scratch/character_recovery/visibility_sh_frame/unity_validation_d3d11.log",
-          "log_sha256": "b1cf0b15ebce6440a0edefeaa5dfac55d1c64d562118ea82d1d79b9d1dff0716",
+          "log_sha256": "9793cdf1df0caf19c07c86f5560f47f962723d7689c434ff9732a45a4a0d194a",
           "beauty_path": "scratch/character_recovery/visibility_sh_frame/wulfa_beauty_d3d11.png",
           "beauty_sha256": "1753e0bd900dfc068e2604632122136a4abf047af0ef5ba9607f17abc8a27ec7"
         },
         "d3d12": {
           "path": "scratch/character_recovery/visibility_sh_frame/gpu_validation_d3d12.json",
-          "sha256": "91fbf8b411d7cff9af641e6cca66a0af9623f613005bf09ad9023f43a1037311",
+          "sha256": "3773c46bb2a9253c2db88fb5c1eeb7f3f43407a58ffe6a58f429f1bf679ab555",
           "log_path": "scratch/character_recovery/visibility_sh_frame/unity_validation_d3d12.log",
-          "log_sha256": "36c1d7adfce426fddb045484b699d55514c5c0a3755eb52e03c44684289d5cb8",
+          "log_sha256": "7f4a5b784409193c693c37b78a6acafa854d40fbdf1e0ca2f81247f26bd8c78f",
           "beauty_path": "scratch/character_recovery/visibility_sh_frame/wulfa_beauty_d3d12.png",
           "beauty_sha256": "59902c424de630a496364d57e404a5a72bcbcc42712bf7ef6935900d7500cac3"
         }
       },
       "fail_closed_report": {
         "path": "scratch/character_recovery/visibility_sh_frame/gpu_fail_closed_d3d12.json",
-        "sha256": "cbe14683bb6c1800d33cba3d26d48f01e9cb0256608d239cf26be4553a7838c0",
+        "sha256": "3c71e22c5c90db1a1a38ff414e2450ffb2e464487274a12a04ef92d920701f8a",
         "log_path": "scratch/character_recovery/visibility_sh_frame/unity_fail_closed_d3d12.log",
-        "log_sha256": "e2b094981a77e28a4338e80a140656bd85cb59d23bb4c78237a22a1f4402e3ea",
+        "log_sha256": "27685ff29e3252b905232cb056056336e9b6a4d651035dd356423fd88d2a70fa",
         "gate": "canonical binning selector absent",
         "diagnostic_output_nonzero": true,
         "canonical_publication": "fail-closed"
@@ -4236,6 +4294,6 @@
     "For binding 32, capture the target-frame HGCullingSystem.CullLights pointer/count at the now exact HGCamera.DoECSCulling return boundary, then preserve SetupState's selected order and final lightCount; its producer/caller/consumer chain, 256-candidate cap, 48-byte ABI, native upload, derivable fields, default-off isolated-count publisher, and D3D11/D3D12 transport are closed. Populate binding 34 with exact settled CharInfo per-frame ShadowData. Binding 38's native owner, reset, packing, .y-only selected consumer, and pre-bind capture boundary are closed; capture its allocator-returned size, full settled payload, and matching shadow resources rather than treating the inactive selector reset as a byte-exact full fixture. Binding 37's zero-cookie isolated state is closed, while non-empty whole-scene cookie values still require capture.",
     "Capture and reproduce the remaining shadow and cookie resources plus exact retail settled VisibilitySH posed pa/pb/dir values and the matching retail-view survivors/target. The current installed settings lifecycle/defaults, both shipped VisibilitySH LUT payloads/descriptors, native 128x48-byte output ABI, exact posed transform-to-record formula, conservative culling cube/plane test, Wulfa/Zhuang's authored candidates, selected additive producer pass, and all 128 b33 producer bytes are now exact; two independent isolated Unity D3D12 runs retain all ten records in registration order and reproduce byte-identical numeric record fixtures and GPU outputs. Those fixtures validate the lab transport but do not substitute for retail settled-frame evidence. A future downloaded IFix patch remains an explicit version boundary. The live V2 irradiance owner, six A/B texture descriptors/order, zero fallback, publication bridge, installed /aiTest path construction, complete IV VFS suffix absence, marker-2/marker-3 index record shapes, and exact missing-map inactive state are closed. Generic reflection/external ReloadIndexFileV2 invocation, populated transient atlas dimensions, and live per-frame IV parameters remain open. The VisibilitySH output descriptor and exact black empty/disabled fallback are closed. The exact LightBinningXYCS/ZCS programs, host ABI, offsets, dispatch formulas, default-off canonical raw combined-buffer transport, reflection oct/global co-publication, and complete b33 transport are closed on D3D11/D3D12. Retail target-frame light survivors and pass-0 activation remain open. The exact disabled wetness and _IntegratedLightScattering placeholders are closed but likewise remain unpublished.",
     "Capture or derive the remaining settled per-frame values for used named and unnamed constants outside the closed ReflectionProbeGlobalData and complete VisibilitySHConstData producer.",
-    "Move the validated SphereOutside HGBuffer packing into the exact depth/render-graph route and implement a binding-compatible pass-0 resolver plus conditionally selected WriteAlpha passes before enabling the renderer."
+    "Promote the now GPU-closed same-camera five-MRT plus D32S8 sidecar through a canonical render-graph-equivalent lifetime only together with a binding-compatible pass-0 resolver. Submit WriteAlpha only on a future source-closed route where RenderWithAlpha is true; the current installed Gacha route is false and submits none."
   ]
 }
