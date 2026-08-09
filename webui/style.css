@@ -5419,6 +5419,71 @@ body.is-resizing-filter * {
   line-height: 1.4;
 }
 
+.gameplay-sfx-action {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.08);
+}
+
+.gameplay-sfx-action > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.gameplay-sfx-action > summary span {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.gameplay-sfx-candidate-picker {
+  display: grid;
+  grid-template-columns: auto auto minmax(48px, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.gameplay-sfx-candidate-picker button {
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(var(--fg-rgb), 0.14);
+  border-radius: 5px;
+  color: var(--text);
+  background: var(--panel);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.gameplay-sfx-candidate-picker output {
+  text-align: center;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.gameplay-sfx-technical {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.gameplay-sfx-technical > summary {
+  cursor: pointer;
+}
+
+.gameplay-sfx-technical code,
+.gameplay-sfx-technical a {
+  display: block;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 .gameplay-sfx-event-id {
   display: block;
   margin: 4px 0;
