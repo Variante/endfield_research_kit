@@ -753,6 +753,189 @@ def gameplay_buff_audio(
     return events
 
 
+def collect_buff_play_sound_actions(
+    export_root: Path,
+    buff_records: dict[str, dict[str, Any]],
+    *,
+    decoder: Any | None = None,
+) -> dict[str, Any]:
+    """Decode exact current-build PlaySound timeline actions from BuffData.
+
+    The generic string scan proves only that a BuffData dependency contains an
+    event id.  The MemoryPack action decoder additionally recovers the authored
+    timeline frame window and the PlaySoundActionData lifetime/routing controls.
+    TargetSettings remains a bounded opaque envelope, so these rows deliberately
+    stop short of claiming that the runtime condition or target was selected.
+    """
+
+    if decoder is None:
+        try:
+            from build_data_index import (
+                BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS,
+                BUFF_PLAY_SOUND_ACTION_TAG,
+                MEMORYPACK_UNION_WIDE_TAG,
+                consume_buff_play_sound_action,
+            )
+        except ImportError:  # Imported as scripts.build_audio from repository-root tests.
+            from scripts.build_data_index import (
+                BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS,
+                BUFF_PLAY_SOUND_ACTION_TAG,
+                MEMORYPACK_UNION_WIDE_TAG,
+                consume_buff_play_sound_action,
+            )
+
+        member_count = BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS[BUFF_PLAY_SOUND_ACTION_TAG]
+        signature = bytes([MEMORYPACK_UNION_WIDE_TAG]) + int(BUFF_PLAY_SOUND_ACTION_TAG).to_bytes(2, "little") + bytes([member_count])
+
+        def decoder(_path: Path, data: bytes, _size: int) -> list[tuple[dict[str, Any], dict[str, Any], dict[str, Any]]]:
+            """Find locally self-bounded single-item PlaySound timeline records.
+
+            This deliberately does not depend on the broad BuffData schema or
+            tail parser.  The current records have a one-item SequenceActionData
+            envelope immediately before the typed union item and the two guard
+            booleans/startFrame/ForceSyncAnimData boundary immediately after it.
+            """
+
+            rows: list[tuple[dict[str, Any], dict[str, Any], dict[str, Any]]] = []
+            position = data.find(signature)
+            while position >= 0:
+                record_start = position - 10
+                try:
+                    if (
+                        record_start < 0
+                        or data[record_start] != 4
+                        or data[position - 5] != 3
+                        or unpack_from("<I", data, position - 4)[0] != 1
+                    ):
+                        raise ValueError("not-single-item-timeline-envelope")
+                    end_frame = unpack_from("<i", data, record_start + 1)[0]
+                    action, action_end = consume_buff_play_sound_action(
+                        data,
+                        position,
+                        len(data),
+                        3,
+                        member_count,
+                    )
+                    if action_end + 7 > len(data):
+                        raise ValueError("truncated-timeline-suffix")
+                    only_guard = data[action_end]
+                    only_main_char = data[action_end + 1]
+                    if only_guard not in (0, 1) or only_main_char not in (0, 1):
+                        raise ValueError("invalid-timeline-guard-bool")
+                    start_frame = unpack_from("<i", data, action_end + 2)[0]
+                    if data[action_end + 6] != 4:
+                        raise ValueError("missing-force-sync-boundary")
+                    rows.append((
+                        {"index": len(rows), "startFrame": start_frame, "endFrame": end_frame},
+                        {
+                            "onlyExecuteWhenSourceIsGuard": bool(only_guard),
+                            "onlyExecuteWhenSourceIsMainChar": bool(only_main_char),
+                        },
+                        action,
+                    ))
+                except (IndexError, ValueError):
+                    pass
+                position = data.find(signature, position + 1)
+            return rows
+
+    merged: dict[tuple[Any, ...], dict[str, Any]] = {}
+    decoded_files = 0
+    decode_failures = 0
+    for buff_id, record in sorted(buff_records.items()):
+        for source in sorted(record.get("sources") or set()):
+            path = export_root / PurePosixPath(str(source))
+            try:
+                data = path.read_bytes()
+                decoded_actions = decoder(path, data, len(data)) or []
+            except (OSError, ValueError):
+                decode_failures += 1
+                continue
+            if not decoded_actions:
+                continue
+            source_has_play_sound = False
+            for action_index, (timeline, sequence, action) in enumerate(decoded_actions):
+                event_id = str(action.get("soundEvent") or "").strip()
+                if not event_id:
+                    continue
+                source_has_play_sound = True
+                prefix = action.get("prefix") or {}
+                target = action.get("targetSettingsEnvelopePartial") or {}
+                row = {
+                    "buffId": buff_id,
+                    "eventId": event_id,
+                    "timelineActionIndex": timeline.get("index"),
+                    "actionDataIndex": action_index,
+                    "startFrame": timeline.get("startFrame"),
+                    "endFrame": timeline.get("endFrame"),
+                    "onlyExecuteWhenSourceIsGuard": bool(sequence.get("onlyExecuteWhenSourceIsGuard")),
+                    "onlyExecuteWhenSourceIsMainChar": bool(sequence.get("onlyExecuteWhenSourceIsMainChar")),
+                    "isEnabled": bool(prefix.get("isEnable")),
+                    "priorityLevel": prefix.get("priorityLevel"),
+                    "priorityOffset": prefix.get("priorityOffset"),
+                    "serverActionIndex": prefix.get("serverActionIndex"),
+                    "canInterruptTimeMs": action.get("canInterruptTimeMs"),
+                    "interruptFadeDurationMs": action.get("intrptFadeDurationMs"),
+                    "jumpToWhenPlayMs": action.get("jumpToWhenPlayMs"),
+                    "stopFadeDurationMs": action.get("stopFadeDurationMs"),
+                    "stopOnEnd": bool(action.get("stopOnEnd")),
+                    "useTempEmitter": bool(action.get("useTempEmitter")),
+                    "followMountPoint": bool(action.get("followMountPoint")),
+                    "mountPoint": str(action.get("mountPoint") or ""),
+                    "targetSettingsStatus": str(target.get("semanticStatus") or "unresolved"),
+                    "targetSettingsShape": str(target.get("shape") or ""),
+                    "targetSelector": str(target.get("stringSlotValue") or ""),
+                    "timeDilationFadeInDurationMs": action.get("timeDilationFadeInDurationMs"),
+                    "timeDilationFadeOutDurationMs": action.get("timeDilationFadeOutDurationMs"),
+                    "timeDilationPauseThreshold": action.get("timeDilationPauseThreshold"),
+                    "timeDilationSeekThreshold": action.get("timeDilationSeekThreshold"),
+                    "useTimeDilationPauseAndSeek": bool(action.get("useTimeDilationPauseAndSeek")),
+                    "useWeaponMountPoint": bool(action.get("useWeaponMountPoint")),
+                    "weaponIndex": action.get("weaponIndex"),
+                    "weaponMountPoint": str(action.get("weaponMountPoint") or ""),
+                    "sourcePaths": [str(source)],
+                    "evidence": "memoryPackPlaySoundActionData",
+                    "runtimeConditionStatus": "unresolved",
+                }
+                marker = tuple(
+                    json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                    for key, value in row.items()
+                    if key not in {"sourcePaths"}
+                )
+                existing = merged.get(marker)
+                if existing is None:
+                    merged[marker] = row
+                else:
+                    existing["sourcePaths"] = sorted(set(existing["sourcePaths"]).union(row["sourcePaths"]))
+            if source_has_play_sound:
+                decoded_files += 1
+
+    by_buff_event: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
+    for row in merged.values():
+        by_buff_event[str(row["buffId"])][str(row["eventId"]).lower()].append(row)
+    return {
+        "byBuffEvent": {
+            buff_id: {
+                event_id: sorted(
+                    rows,
+                    key=lambda row: (
+                        int(row.get("startFrame") or 0),
+                        int(row.get("endFrame") or 0),
+                        int(row.get("serverActionIndex") or 0),
+                    ),
+                )
+                for event_id, rows in sorted(events.items())
+            }
+            for buff_id, events in sorted(by_buff_event.items())
+        },
+        "counts": {
+            "buffPlaySoundDecodedSourceFiles": decoded_files,
+            "buffPlaySoundDecodeFailures": decode_failures,
+            "buffPlaySoundActionOccurrences": len(merged),
+            "buffPlaySoundUniqueEvents": len({str(row["eventId"]).lower() for row in merged.values()}),
+        },
+    }
+
+
 def collect_gameplay_audio_references(
     webui_root: Path,
     export_root: Path,
@@ -795,6 +978,16 @@ def collect_gameplay_audio_references(
 
     skill_records = gameplay_config_records(export_root, "SkillData")
     buff_records = gameplay_config_records(export_root, "BuffData")
+    buff_play_sound = collect_buff_play_sound_actions(export_root, buff_records)
+    buff_play_sound_by_id = buff_play_sound.get("byBuffEvent") or {}
+
+    def play_sound_rows(event_id: str, buff_ids: set[str]) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        event_key = event_id.lower()
+        for buff_id in sorted(buff_ids):
+            rows.extend((buff_play_sound_by_id.get(buff_id) or {}).get(event_key) or [])
+        return rows
+
     enemy_source_files = enemy_template_source_files(export_root)
     enemy_template_skills = enemy_template_skill_references(
         export_root,
@@ -807,7 +1000,17 @@ def collect_gameplay_audio_references(
         for skill_id, sources in skills.items():
             template_owners_by_skill[skill_id].append((enemy_id, sources))
     owners: list[dict[str, Any]] = []
-    event_names: set[str] = set()
+    authored_play_sound_actions = [
+        row
+        for events in (buff_play_sound.get("byBuffEvent") or {}).values()
+        for rows in events.values()
+        for row in rows
+    ]
+    event_names: set[str] = {
+        str(row.get("eventId") or "").lower()
+        for row in authored_play_sound_actions
+        if str(row.get("eventId") or "")
+    }
     owned_skill_ids: set[str] = set()
 
     for skill_id, record in sorted(skill_records.items()):
@@ -869,11 +1072,15 @@ def collect_gameplay_audio_references(
         for event_id in sorted(record.get("events") or set()):
             event_evidence[event_id].append({"kind": "skillData", "skillId": skill_id})
         for event_id, buff_ids in gameplay_buff_audio(set(record.get("buffs") or set()), buff_records).items():
-            event_evidence[event_id].append({
+            evidence = {
                 "kind": "skillBuffData",
                 "skillId": skill_id,
                 "buffIds": sorted(buff_ids),
-            })
+            }
+            actions = play_sound_rows(event_id, buff_ids)
+            if actions:
+                evidence["playSoundActions"] = actions
+            event_evidence[event_id].append(evidence)
         if not event_evidence:
             continue
         owned_skill_ids.add(skill_id)
@@ -912,7 +1119,15 @@ def collect_gameplay_audio_references(
             "ownershipSources": [],
             "sources": [],
             "events": {
-                event_id: [{"kind": "enemyBornBuffData", "buffIds": sorted(buff_ids)}]
+                event_id: [{
+                    "kind": "enemyBornBuffData",
+                    "buffIds": sorted(buff_ids),
+                    **(
+                        {"playSoundActions": play_sound_rows(event_id, buff_ids)}
+                        if play_sound_rows(event_id, buff_ids)
+                        else {}
+                    ),
+                }]
                 for event_id, buff_ids in sorted(buff_events.items())
             },
         })
@@ -928,6 +1143,7 @@ def collect_gameplay_audio_references(
     return {
         "eventNames": event_names,
         "owners": owners,
+        "authoredPlaySoundActions": authored_play_sound_actions,
         "animationOwners": animation_audio.get("owners") or [],
         "profileVoiceOwners": profile_voices.get("owners") or [],
         "counts": {
@@ -937,6 +1153,7 @@ def collect_gameplay_audio_references(
             "audioEventNames": len(event_names),
             "enemyTemplatesWithSkillReferences": len(enemy_template_skills),
             "enemyTemplateSkillReferences": sum(len(skills) for skills in enemy_template_skills.values()),
+            **(buff_play_sound.get("counts") or {}),
             **(animation_audio.get("counts") or {}),
             **(profile_voices.get("counts") or {}),
         },
@@ -982,6 +1199,80 @@ def link_gameplay_audio(
             event_evidence_by_id[event_key].append(row)
     found_events = set(event_evidence_by_id)
     event_cache: dict[str, dict[str, Any] | None] = {}
+
+    def gameplay_trigger_binding(owner: dict[str, Any], evidence: list[dict[str, Any]]) -> dict[str, Any]:
+        owner_kind = str(owner.get("ownerKind") or "")
+        confidence = str(owner.get("confidence") or "inferred")
+        method = str(owner.get("ownershipMethod") or "")
+        evidence_kinds = sorted({str(row.get("kind") or "") for row in evidence if isinstance(row, dict) and row.get("kind")})
+        relation_types: list[str] = []
+        if "skillData" in evidence_kinds:
+            relation_types.append("skillDataEventField")
+        if "skillBuffData" in evidence_kinds:
+            relation_types.append("skillBuffChain")
+        if "enemyBornBuffData" in evidence_kinds:
+            relation_types.append("enemyBornBuffChain")
+        play_sound_actions = [
+            action
+            for row in evidence
+            if isinstance(row, dict)
+            for action in row.get("playSoundActions") or []
+            if isinstance(action, dict)
+        ]
+        if play_sound_actions:
+            relation_types.append("buffPlaySoundAction")
+        if owner_kind == "character" and confidence == "direct" and method == "gameplaySkillId":
+            status = "exactSkillConfig"
+        elif owner_kind == "enemy" and confidence == "direct" and method == "enemyBornBuffField":
+            status = "exactEnemyBornBuffConfig"
+        else:
+            status = "inferredSkillConfigOwner"
+        if play_sound_actions:
+            request_evidence = (
+                "exactAuthoredPlaySoundAction"
+                if status != "inferredSkillConfigOwner"
+                else "inferredOwnerExactAuthoredPlaySoundAction"
+            )
+            activation_status = "authoredFrameWindowRecoveredConditionUnresolved"
+        else:
+            request_evidence = (
+                "exactAuthoredDependency"
+                if status != "inferredSkillConfigOwner"
+                else "inferredOwnerExactAuthoredDependency"
+            )
+            activation_status = "conditionAndTimingUnresolved"
+        binding = {
+            "status": status,
+            "requestEvidence": request_evidence,
+            "runtimeActivationStatus": activation_status,
+            "ownerKind": owner_kind,
+            "ownerId": str(owner.get("ownerId") or ""),
+            "groupId": str(owner.get("groupId") or ""),
+            "skillId": str(owner.get("skillId") or ""),
+            "confidence": confidence,
+            "ownershipMethod": method,
+            "relationTypes": relation_types,
+            "evidenceKinds": evidence_kinds,
+            "buffIds": sorted({
+                str(buff_id)
+                for row in evidence
+                if isinstance(row, dict)
+                for buff_id in row.get("buffIds") or []
+                if str(buff_id)
+            }),
+            "sourcePaths": sorted(set(filter(None, [
+                *(owner.get("sources") or []),
+                *(owner.get("ownershipSources") or []),
+                *(
+                    source_path
+                    for action in play_sound_actions
+                    for source_path in action.get("sourcePaths") or []
+                ),
+            ]))),
+        }
+        if play_sound_actions:
+            binding["playSoundActions"] = play_sound_actions
+        return binding
 
     def linked_event(event_id: str) -> dict[str, Any] | None:
         event_key = event_id.lower()
@@ -1123,7 +1414,11 @@ def link_gameplay_audio(
                 continue
             linked_refs += 1
             candidate_count += int(linked.get("playableCandidates") or 0)
-            event_rows.append({**linked, "evidence": evidence})
+            event_rows.append({
+                **linked,
+                "evidence": evidence,
+                "triggerBindings": [gameplay_trigger_binding(owner, evidence)],
+            })
         if not event_rows:
             continue
         owner_kind = str(owner.get("ownerKind") or "")
@@ -1147,6 +1442,16 @@ def link_gameplay_audio(
                     existing[event_id] = event
                 else:
                     existing[event_id].setdefault("evidence", []).extend(event.get("evidence") or [])
+                    bindings = existing[event_id].setdefault("triggerBindings", [])
+                    binding_markers = {
+                        json.dumps(binding, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                        for binding in bindings
+                    }
+                    for binding in event.get("triggerBindings") or []:
+                        marker = json.dumps(binding, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                        if marker not in binding_markers:
+                            binding_markers.add(marker)
+                            bindings.append(binding)
                     if skill_id and skill_id not in existing[event_id].setdefault("sourceSkillIds", []):
                         existing[event_id]["sourceSkillIds"].append(skill_id)
         elif owner_kind == "enemy":
@@ -1175,6 +1480,16 @@ def link_gameplay_audio(
                     existing[event_id] = event
                 else:
                     existing[event_id].setdefault("evidence", []).extend(event.get("evidence") or [])
+                    bindings = existing[event_id].setdefault("triggerBindings", [])
+                    binding_markers = {
+                        json.dumps(binding, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                        for binding in bindings
+                    }
+                    for binding in event.get("triggerBindings") or []:
+                        marker = json.dumps(binding, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                        if marker not in binding_markers:
+                            binding_markers.add(marker)
+                            bindings.append(binding)
                     if skill_id and skill_id not in existing[event_id].setdefault("sourceSkillIds", []):
                         existing[event_id]["sourceSkillIds"].append(skill_id)
 
@@ -1319,18 +1634,39 @@ def link_gameplay_audio(
             record = characters.setdefault(owner_id, {"groups": {}})
             record.setdefault("profileVoices", []).extend(resolved_voices)
 
+    def finalize_trigger_event(event: dict[str, Any]) -> None:
+        bindings = event.get("triggerBindings") or []
+        statuses = {str(binding.get("status") or "") for binding in bindings if isinstance(binding, dict)}
+        if "exactSkillConfig" in statuses:
+            event["triggerBindingStatus"] = "exactSkillConfig"
+        elif "exactEnemyBornBuffConfig" in statuses:
+            event["triggerBindingStatus"] = "exactEnemyBornBuffConfig"
+        elif bindings:
+            event["triggerBindingStatus"] = "inferredSkillConfigOwner"
+        event["triggerRelationTypes"] = sorted({
+            str(relation)
+            for binding in bindings
+            if isinstance(binding, dict)
+            for relation in binding.get("relationTypes") or []
+            if str(relation)
+        })
+
     for value in characters.values():
         for group in value.get("groups", {}).values():
             group["skillIds"].sort()
             group["ownershipConfidence"] = "inferred" if "inferred" in group.pop("ownershipConfidence", []) else "direct"
             group["ownershipMethods"] = sorted(set(filter(None, group.get("ownershipMethods") or [])))
             group["ownershipSources"] = sorted(set(filter(None, group.get("ownershipSources") or [])))
+            for event in group["events"]:
+                finalize_trigger_event(event)
             group["events"].sort(key=lambda row: str(row.get("id") or ""))
         value["animationOwnershipSources"] = sorted(set(filter(None, value.get("animationOwnershipSources") or [])))
         value.get("animationEvents", []).sort(key=lambda row: str(row.get("id") or ""))
         value.get("profileVoices", []).sort(key=lambda row: str(row.get("id") or ""))
     for value in enemies.values():
         value["skillIds"].sort()
+        for event in value["events"]:
+            finalize_trigger_event(event)
         value["events"].sort(key=lambda row: str(row.get("id") or ""))
         value["ownershipConfidence"] = "inferred" if "inferred" in value.pop("ownershipConfidence", []) else "direct"
         value["ownershipMethods"] = sorted(set(filter(None, value.get("ownershipMethods") or [])))
@@ -1390,6 +1726,8 @@ def link_gameplay_audio(
             "skillEventAssociationCount": len(skill_events),
             "skillUniqueEventCount": len({str(event.get("id") or "").lower() for event in skill_events if event.get("id")}),
             "skillPossibleMediaAssociationCount": sum(possible_media_count(event) for event in skill_events),
+            "exactSkillTriggerEventCount": sum(event.get("triggerBindingStatus") == "exactSkillConfig" for event in skill_events),
+            "inferredSkillTriggerEventCount": sum(event.get("triggerBindingStatus") != "exactSkillConfig" for event in skill_events),
             "animationEventCount": len(animation_events),
             "animationCallbackOccurrenceCount": sum(int(event.get("animationOccurrenceCount") or len(event.get("evidence") or [])) for event in animation_events),
             "animationPossibleMediaAssociationCount": sum(possible_media_count(event) for event in animation_events),
@@ -1476,6 +1814,18 @@ def link_gameplay_audio(
         for event in [*serialized_skill_events, *serialized_animation_events, *serialized_profile_voices]
     )
     serialized_animation_candidates = sum(possible_media_count(event) for event in serialized_animation_events)
+    serialized_exact_skill_triggers = sum(
+        event.get("triggerBindingStatus") == "exactSkillConfig"
+        for event in serialized_skill_events
+    )
+    serialized_exact_enemy_born_triggers = sum(
+        event.get("triggerBindingStatus") == "exactEnemyBornBuffConfig"
+        for event in serialized_skill_events
+    )
+    serialized_inferred_skill_triggers = sum(
+        event.get("triggerBindingStatus") == "inferredSkillConfigOwner"
+        for event in serialized_skill_events
+    )
     stats = {
         **(references.get("counts") or {}),
         "gameplayAudioRefs": discovered_refs,
@@ -1487,6 +1837,9 @@ def link_gameplay_audio(
         "gameplayPossibleMediaAssociations": serialized_candidate_associations,
         "gameplaySerializedPossibleMediaAssociations": serialized_candidate_associations,
         "gameplayRawPossibleMediaAssociations": candidate_count,
+        "exactSkillConfigTriggerRefs": serialized_exact_skill_triggers,
+        "exactEnemyBornBuffTriggerRefs": serialized_exact_enemy_born_triggers,
+        "inferredSkillConfigOwnerRefs": serialized_inferred_skill_triggers,
         "gameplayUniqueEventMediaPairs": unique_event_media_pairs,
         "gameplayUniquePlayableFiles": len(unique_playable_files),
         "animationAudioRefsLinked": len(serialized_animation_events),
@@ -1543,15 +1896,17 @@ def link_gameplay_audio(
         **animation_evidence,
     })
     json_dump(path, {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "language": language,
         "counts": stats,
         "animationEventCatalogPath": GAMEPLAY_SFX_ANIMATION_CATALOG_NAME,
         "animationEvidencePath": GAMEPLAY_SFX_ANIMATION_EVIDENCE_NAME,
+        "authoredPlaySoundActions": references.get("authoredPlaySoundActions") or [],
         "characters": characters,
         "enemies": enemies,
         "scope": {
-            "source": "SkillData/BuffData event references, EnemyData ability bundles, AnimationClip audio callbacks, CharacterTable profile voices, and Wwise HIRC traversal",
+            "source": "SkillData/BuffData event references, decoded BuffData PlaySound actions, EnemyData ability bundles, AnimationClip audio callbacks, CharacterTable profile voices, and Wwise HIRC traversal",
+            "playSoundActionBoundary": "Current MemoryPack PlaySoundActionData yields exact event, frame window, stop/fade, routing, and time-dilation controls. TargetSettings semantics and runtime activation conditions remain unresolved.",
             "characterOwnership": "direct gameplay skill id",
             "characterFamilyOwnership": "longest playable skill id prefix inferred for authored child SkillData",
             "enemyOwnership": "exact SkillData identifiers recovered from enemy-template AbilitySystemData, with enemy-id prefix fallback and exact born-buff fields",

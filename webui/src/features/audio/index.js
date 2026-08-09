@@ -58,6 +58,9 @@
       contextAnimation: "Animation",
       contextSharedPlayableAnimation: "Shared playable-character animation",
       contextFootstepSystem: "Footstep / material system",
+      contextExactSkillTrigger: "Exact skill-config request",
+      contextInferredSkillTrigger: "Inferred skill ownership",
+      contextAuthoredPlaySoundAction: "Authored PlaySound action",
       contextAuthoredConfig: "Authored config",
       contextManagedRuntime: "Managed runtime",
       contextDialogMedia: "Dialog media",
@@ -144,6 +147,9 @@
       contextAnimation: "\u52a8\u753b",
       contextSharedPlayableAnimation: "\u53ef\u73a9\u89d2\u8272\u5171\u7528\u52a8\u753b",
       contextFootstepSystem: "\u811a\u6b65 / \u6750\u8d28\u7cfb\u7edf",
+      contextExactSkillTrigger: "\u7cbe\u786e\u6280\u80fd\u914d\u7f6e\u8bf7\u6c42",
+      contextInferredSkillTrigger: "\u63a8\u65ad\u6280\u80fd\u5f52\u5c5e",
+      contextAuthoredPlaySoundAction: "\u521b\u4f5c PlaySound \u52a8\u4f5c",
       contextAuthoredConfig: "\u914d\u7f6e\u8868",
       contextManagedRuntime: "\u6258\u7ba1\u8fd0\u884c\u65f6",
       contextDialogMedia: "\u5bf9\u8bdd\u5a92\u4f53",
@@ -282,6 +288,9 @@
     animation: "contextAnimation",
     sharedPlayableAnimation: "contextSharedPlayableAnimation",
     footstepSystem: "contextFootstepSystem",
+    exactSkillTrigger: "contextExactSkillTrigger",
+    inferredSkillTrigger: "contextInferredSkillTrigger",
+    authoredPlaySoundAction: "contextAuthoredPlaySoundAction",
     authoredConfig: "contextAuthoredConfig",
     managedRuntime: "contextManagedRuntime",
     dialogMedia: "contextDialogMedia",
@@ -316,7 +325,7 @@
   }
 
   function contextGroup(kind) {
-    if (["characterSkill", "enemySkill"].includes(kind)) return "gameplay";
+    if (["characterSkill", "enemySkill", "buffPlaySoundAction"].includes(kind)) return "gameplay";
     if (kind === "cutsceneTimeline") return "cutscene";
     if (["characterAnimation", "enemyAnimation"].includes(kind)) return "animation";
     if (["table", "tableEventHash"].includes(kind)) return "authoredConfig";
@@ -326,10 +335,18 @@
 
   function recordContextTags(record, kind) {
     const tags = new Set(asArray(record?.contextGroups).filter(Boolean));
+    for (const status of asArray(record?.triggerBindingStatuses)) {
+      if (status === "exactSkillConfig") tags.add("exactSkillTrigger");
+      else if (status === "inferredSkillConfigOwner") tags.add("inferredSkillTrigger");
+    }
+    if (Number(record?.triggerPlaySoundActionCount || 0) > 0) tags.add("authoredPlaySoundAction");
     for (const context of asArray(record?.contexts)) {
       if (!context || typeof context !== "object") continue;
       const group = contextGroup(normalize(context.kind));
       if (group) tags.add(group);
+      if (context.triggerBindingStatus === "exactSkillConfig") tags.add("exactSkillTrigger");
+      else if (context.triggerBindingStatus === "inferredSkillConfigOwner") tags.add("inferredSkillTrigger");
+      if (Number(context.triggerPlaySoundActionCount || 0) > 0) tags.add("authoredPlaySoundAction");
     }
     if (Number(record?.playableCharacterAnimationOwnerCount || 0) > 1 || record?.animationContextScope === "sharedPlayableCharacters") {
       tags.add("sharedPlayableAnimation");
@@ -396,7 +413,11 @@
       ...asArray(record?.contexts).flatMap((context) => context && typeof context === "object" ? [
         context.kind, context.ownerId, context.groupId, context.storyKey, context.table, context.path,
         context.semanticRole, context.confidence, context.animationOwnershipScope, context.possibleMediaScope,
-        context.clipReachability, ...asArray(context.skillIds), ...asArray(context.actionKinds),
+        context.clipReachability, context.triggerBindingStatus, ...asArray(context.skillIds), ...asArray(context.actionKinds),
+        ...asArray(context.triggerRequestEvidence), ...asArray(context.triggerRuntimeActivationStatuses),
+        ...asArray(context.triggerRelationTypes), ...asArray(context.triggerOwnershipMethods),
+        ...asArray(context.triggerEvidenceKinds), ...asArray(context.triggerBuffIds), ...asArray(context.triggerSourcePaths),
+        ...asArray(context.triggerPlaySoundActions).flatMap((action) => action && typeof action === "object" ? Object.values(action).flat() : []),
         ...asArray(context.animationFunctions), ...asArray(context.animationClipContexts), ...asArray(context.animationClips),
       ] : []),
     ];
@@ -1271,6 +1292,34 @@
     if (context?.path) parts.push(context.path);
     if (context?.semanticRole) parts.push(humanize(context.semanticRole));
     if (context?.confidence) parts.push(context.confidence);
+    if (context?.triggerBindingStatus) parts.push(humanize(context.triggerBindingStatus));
+    const requestEvidence = asArray(context?.triggerRequestEvidence).filter(Boolean);
+    if (requestEvidence.length) parts.push(requestEvidence.map(humanize).join(" / "));
+    const activationStatuses = asArray(context?.triggerRuntimeActivationStatuses).filter(Boolean);
+    if (activationStatuses.length) parts.push(activationStatuses.map(humanize).join(" / "));
+    const triggerRelations = asArray(context?.triggerRelationTypes).filter(Boolean);
+    if (triggerRelations.length) parts.push(triggerRelations.map(humanize).join(" / "));
+    const triggerMethods = asArray(context?.triggerOwnershipMethods).filter(Boolean);
+    if (triggerMethods.length) parts.push(triggerMethods.map(humanize).join(" / "));
+    const triggerKinds = asArray(context?.triggerEvidenceKinds).filter(Boolean);
+    if (triggerKinds.length) parts.push(triggerKinds.map(humanize).join(" / "));
+    const triggerBuffIds = asArray(context?.triggerBuffIds).filter(Boolean);
+    if (triggerBuffIds.length) parts.push(triggerBuffIds.length === 1 ? triggerBuffIds[0] : `${triggerBuffIds[0]} +${triggerBuffIds.length - 1}`);
+    const triggerSourcePaths = asArray(context?.triggerSourcePaths).filter(Boolean);
+    if (triggerSourcePaths.length) parts.push(triggerSourcePaths.length === 1 ? triggerSourcePaths[0] : `${triggerSourcePaths[0]} +${triggerSourcePaths.length - 1}`);
+    const playSoundActions = asArray(context?.triggerPlaySoundActions).filter((value) => value && typeof value === "object");
+    for (const action of playSoundActions) {
+      const actionParts = [
+        `PlaySound frame ${action.startFrame ?? "?"}-${action.endFrame ?? "?"}`,
+        action.stopOnEnd ? `stop on end / ${action.stopFadeDurationMs ?? 0} ms fade` : "continues after action end",
+        action.useTempEmitter ? "temporary emitter" : "",
+        action.followMountPoint ? `follow mount ${action.mountPoint || "(unnamed)"}` : "",
+        action.useWeaponMountPoint ? `weapon ${action.weaponIndex ?? "?"} / ${action.weaponMountPoint || "mount"}` : "",
+        action.targetSelector ? `target ${action.targetSelector}` : "target settings unresolved",
+        action.useTimeDilationPauseAndSeek ? "time-dilation pause/seek" : "",
+      ].filter(Boolean);
+      parts.push(actionParts.join(" / "));
+    }
     const skillIds = asArray(context?.skillIds).filter(Boolean);
     if (skillIds.length) parts.push(skillIds.length === 1 ? skillIds[0] : `${skillIds[0]} +${skillIds.length - 1}`);
     const actionKinds = asArray(context?.actionKinds).filter(Boolean);

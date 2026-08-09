@@ -72,6 +72,34 @@ class AudioSemanticDataTests(unittest.TestCase):
             len(audio_semantics.RUNTIME_SYSTEM_SPECS),
         )
 
+    def test_runtime_model_covers_ability_sound_request_and_lifecycle(self) -> None:
+        specs = {row["type"]: row for row in audio_semantics.RUNTIME_SYSTEM_SPECS}
+        action = specs["Beyond.Gameplay.Core.PlaySoundAction"]
+        data = specs["Beyond.Gameplay.Core.PlaySoundAction+PlaySoundActionData"]
+
+        self.assertEqual(action["layer"], "skill_actions")
+        self.assertIn("m_audioInstanceIds", action["fields"])
+        self.assertIn("_DoPostEventAtPosition", action["methods"])
+        self.assertIn("_StopAllSoundInstance", action["methods"])
+        self.assertEqual(data["layer"], "skill_actions")
+        self.assertIn("_soundEvent", data["fields"])
+        self.assertIn("targetSettings", data["fields"])
+        self.assertIn("useWeaponMountPoint", data["fields"])
+        self.assertIn("useTimeDilationPauseAndSeek", data["fields"])
+
+    def test_runtime_cache_schema_invalidates_changed_system_catalog(self) -> None:
+        stale = {
+            "schemaVersion": audio_semantics.RUNTIME_MODEL_CACHE_SCHEMA_VERSION - 1,
+            "sourceFingerprint": {"sha256": "fixture", "size": 7},
+            "runtimeModel": {"systems": [{"type": "stale"}]},
+        }
+        self.assertIsNone(audio_semantics._runtime_cache_hit(stale, "fixture", 7))
+        stale["schemaVersion"] = audio_semantics.RUNTIME_MODEL_CACHE_SCHEMA_VERSION
+        self.assertEqual(
+            audio_semantics._runtime_cache_hit(stale, "fixture", 7),
+            stale["runtimeModel"],
+        )
+
     def test_recovers_exact_managed_audio_string_literals(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             path = Path(raw_root) / "global-metadata.dat"
@@ -140,6 +168,17 @@ class AudioSemanticDataTests(unittest.TestCase):
             gameplay_path = webui_root / "data/lang/CN/gameplay/sound_effects.json"
             gameplay_path.parent.mkdir(parents=True)
             gameplay_path.write_text(json.dumps({
+                "authoredPlaySoundActions": [{
+                    "buffId": "buff_test",
+                    "eventId": "au_sfx_test",
+                    "startFrame": 17,
+                    "endFrame": 34,
+                    "stopOnEnd": True,
+                    "stopFadeDurationMs": 300,
+                    "targetSelector": "smart_target",
+                    "targetSettingsStatus": "partial-target-settings-envelope-opaque",
+                    "sourcePaths": ["BuffData/buff_test.json"],
+                }],
                 "characters": {
                     "chr_test": {
                         "animationOwnershipConfidence": "inferred",
@@ -157,10 +196,30 @@ class AudioSemanticDataTests(unittest.TestCase):
                             "normal": {
                                 "ownershipConfidence": "direct",
                                 "skillIds": ["skill_test"],
-                                "events": [{
-                                    "id": "au_sfx_test",
-                                    "sourceSkillIds": ["skill_test"],
-                                }],
+                                 "events": [{
+                                     "id": "au_sfx_test",
+                                     "sourceSkillIds": ["skill_test"],
+                                     "triggerBindingStatus": "exactSkillConfig",
+                                     "triggerRelationTypes": ["buffPlaySoundAction", "skillBuffChain"],
+                                     "triggerBindings": [{
+                                         "status": "exactSkillConfig",
+                                         "requestEvidence": "exactAuthoredPlaySoundAction",
+                                         "runtimeActivationStatus": "authoredFrameWindowRecoveredConditionUnresolved",
+                                         "ownershipMethod": "gameplaySkillId",
+                                         "evidenceKinds": ["skillBuffData"],
+                                         "sourcePaths": ["BuffData/buff_test.json"],
+                                         "playSoundActions": [{
+                                             "buffId": "buff_test",
+                                             "eventId": "au_sfx_test",
+                                             "startFrame": 17,
+                                             "endFrame": 34,
+                                             "stopOnEnd": True,
+                                             "stopFadeDurationMs": 300,
+                                             "targetSelector": "smart_target",
+                                             "targetSettingsStatus": "partial-target-settings-envelope-opaque",
+                                         }],
+                                     }],
+                                 }],
                             }
                         }
                     },
@@ -255,10 +314,29 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(event["animationContextScope"], "sharedPlayableCharacters")
             self.assertEqual(event["animationFunctions"], ["OnCustomFootStep"])
             self.assertEqual(set(event_summary["contextGroups"]), {"gameplay", "animation", "authoredConfig", "cutscene"})
+            skill_context = next(context for context in event["contexts"] if context["kind"] == "characterSkill")
+            self.assertEqual(skill_context["triggerBindingStatus"], "exactSkillConfig")
+            self.assertEqual(skill_context["triggerRelationTypes"], ["buffPlaySoundAction", "skillBuffChain"])
+            self.assertEqual(skill_context["triggerRequestEvidence"], ["exactAuthoredPlaySoundAction"])
+            self.assertEqual(
+                skill_context["triggerRuntimeActivationStatuses"],
+                ["authoredFrameWindowRecoveredConditionUnresolved"],
+            )
+            self.assertEqual(skill_context["triggerPlaySoundActionCount"], 1)
+            self.assertEqual(skill_context["triggerPlaySoundActions"][0]["startFrame"], 17)
+            self.assertEqual(event_summary["triggerBindingStatuses"], ["exactSkillConfig"])
+            self.assertIn("authoredFrameWindowRecoveredConditionUnresolved", event_summary["contextSearch"])
+            self.assertEqual(event_summary["triggerPlaySoundActionCount"], 1)
+            self.assertEqual(payload["counts"]["exactSkillConfigTriggerEvents"], 1)
+            self.assertEqual(payload["counts"]["exactSkillConfigTriggerContexts"], 1)
+            self.assertEqual(payload["counts"]["authoredPlaySoundActionEvents"], 1)
+            self.assertEqual(payload["counts"]["authoredPlaySoundActionOccurrences"], 1)
+            self.assertEqual(skill_context["triggerOwnershipMethods"], ["gameplaySkillId"])
+            self.assertEqual(skill_context["triggerEvidenceKinds"], ["skillBuffData"])
             self.assertGreater(payload["eventDetailShardCount"], 0)
             self.assertEqual(
                 {row["kind"] for row in event["contexts"]},
-                {"characterSkill", "characterAnimation", "table", "cutsceneTimeline"},
+                {"buffPlaySoundAction", "characterSkill", "characterAnimation", "table", "cutsceneTimeline"},
             )
             self.assertEqual(media["eventIds"], ["au_sfx_test"])
             self.assertIn("eventMedia", payload["evidenceBoundary"])

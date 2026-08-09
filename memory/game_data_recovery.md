@@ -135,6 +135,34 @@ The strongest current authored playback joins are SkillData/BuffData audio
 references, Timeline/cutscene audio fields, and AudioDialog-to-lipsync
 `pathStem` associations. We do not yet have a complete runtime receiver,
 activation chronology, or proof of which branch was selected in a live game.
+Playable skill linkage is recorded per Event instead of inheriting a whole
+group's confidence. An exact Gameplay action id joined to the same SkillData
+file proves an authored skill request; a length-prefixed Event in that file is
+`skillDataEventField`, while an exact SkillData-to-BuffData reference walk is
+`skillBuffChain`. Child-skill family-prefix placement remains inferred. Even
+the exact dependency-only paths retain `conditionAndTimingUnresolved`: they
+prove that the skill configuration can request the Event, not which action
+node ran or which Wwise leaf was selected.
+
+The current BuffData MemoryPack union identifies `PlaySoundActionData` at tag
+`0x010d` with 22 serialized members (the common action prefix plus 18 sound
+fields). Fifteen authored occurrences across 12 Events now decode through an
+exact action boundary. They preserve start/end frames, enabled/priority data,
+interrupt and initial-seek milliseconds, stop-on-end/fade lifetime, temporary
+emitter and target/mount/weapon routing, and time-dilation pause/seek controls.
+IL2CPP metadata independently validates the 18 fields and the runtime
+`PlaySoundAction` lifecycle that stores playing ids, posts on an object or at a
+position, seeks, ticks, and stops retained instances on end. All 12 exact Event
+names hash to current Wwise Event objects and resolve to decoded media. The
+remaining `TargetSettings` payload is only byte-bounded, authored frames are
+not converted to wall-clock time, and the runtime activation condition remains
+unresolved. The Gameplay page therefore places only exact skill-config
+requests back on their skill rows, leaves inferred links in the final audio
+section, and never duplicates one Event between those placements. The Audio
+view exposes exact/inferred trigger filters, a separate authored-PlaySound-
+action filter, and the recovered action lifetime/routing evidence. Ownerless
+PlaySound actions remain canonical Audio contexts rather than being guessed
+onto a skill.
 Gameplay audio also consumes recovered Unity `AnimationClip.m_Events` rows for
 the exact `PostAudioEvent`, `PostAudioEventAdvance`,
 `PostAudioEventAtPosition`, and `OnCustomFootStep` callbacks. The callback
@@ -189,7 +217,9 @@ Next audio-recovery work should decode v150 switch-value mappings, Action
 delay/property bundles, and music types 10-13, then connect current music-table
 state/control rows to MusicTrack source media. Also fingerprint PCK inputs for
 cache invalidation, identify Timeline/native audio receivers and activation
-paths, and validate chronology against a captured game session. Gameplay
+paths, finish PlaySound `TargetSettings` and action-condition semantics, recover
+the other ability/AI/interactive audio-trigger action families, and validate
+chronology against a captured game session. Gameplay
 follow-up should finish the partial `EnemyData.AbilitySystemData` mode-tail
 decoder, connect animation clips through controllers instead of filename
 ownership alone, recover per-callback material/water/switch values where the

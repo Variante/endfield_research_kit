@@ -2313,7 +2313,7 @@ def read_buff_member1_empty_tag_field(
 
 BUFF_ABILITY_ACTION_TAG_SOURCE_NOTE = (
     "AbilityActionData union tags recovered from MemoryPack.Beyond formatter cctors with "
-    "GameAssembly CodeRegistration 0x18C439740; table is contiguous 0x0000..0x0165. "
+    "GameAssembly CodeRegistration 0x18C439740; the current table is contiguous 0x0000..0x0181. "
     "This compact map includes tags observed as first actions in current BuffData timelineActions."
 )
 BUFF_ABILITY_ACTION_TAG_NAMES = {
@@ -2349,7 +2349,7 @@ BUFF_ABILITY_ACTION_TAG_NAMES = {
     0x00e9: "Core_OverrideCameraFollowAction_OverrideCameraFollowActionData",
     0x00ef: "Core_PatrolTeleport_Data",
     0x00f8: "Core_PlayAnimationAction_PlayAnimationActionData",
-    0x00fc: "Core_PlaySoundAction_PlaySoundActionData",
+    0x010d: "Core_PlaySoundAction_PlaySoundActionData",
     0x00fe: "Core_PullAction_Data",
     0x0108: "Core_RecoverFromPoiseBreak_Data",
     0x010a: "Core_RecoverPoiseAction_Data",
@@ -2397,7 +2397,7 @@ BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS = {
     0x00e9: 12,
     0x00ef: 6,
     0x00f8: 12,
-    0x00fc: 22,
+    0x010d: 22,
     0x00fe: 17,
     0x0108: 5,
     0x010a: 11,
@@ -2476,7 +2476,7 @@ BUFF_CAMERA_IMPULSE_ACTION_TAG = 0x0020
 BUFF_EFFECT_ACTION_TAG = 0x0091
 BUFF_FIND_TARGET_ACTION_TAG = 0x009f
 BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x0134
-BUFF_PLAY_SOUND_ACTION_TAG = 0x00fc
+BUFF_PLAY_SOUND_ACTION_TAG = 0x010d
 BUFF_PATROL_TELEPORT_ACTION_TAG = 0x00ef
 BUFF_PLAY_ANIMATION_ACTION_TAG = 0x00f8
 BUFF_COMPARE_FLOAT_ACTION_TAG = 0x0047
