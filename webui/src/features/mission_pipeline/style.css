@@ -961,6 +961,41 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
   color: var(--text);
 }
 
+.mp-subgame-task-lanes {
+  flex-wrap: wrap;
+  justify-content: flex-start !important;
+  gap: 4px 8px !important;
+  padding-top: 5px;
+  border-top: 1px solid var(--border);
+}
+
+.mp-subgame-finish-task,
+.mp-dialog-finish-task-dependency {
+  margin-top: 6px;
+  border: 1px solid rgba(111, 76, 164, 0.28);
+  border-left: 3px solid #6f4ca4;
+  border-radius: 6px;
+  background: rgba(111, 76, 164, 0.045);
+}
+
+.mp-subgame-finish-task > summary,
+.mp-dialog-finish-task-dependency > summary {
+  padding: 6px 8px;
+  color: #5f3d92;
+  cursor: pointer;
+}
+
+.mp-subgame-finish-task > p,
+.mp-subgame-finish-task > small,
+.mp-subgame-finish-task > details,
+.mp-dialog-finish-task-dependency > p,
+.mp-dialog-finish-task-dependency > small,
+.mp-dialog-finish-task-dependency > details {
+  display: block;
+  margin: 0;
+  padding: 4px 8px;
+}
+
 .mp-contract-details {
   border-top: 1px solid var(--border);
   background: #fbfcfc;

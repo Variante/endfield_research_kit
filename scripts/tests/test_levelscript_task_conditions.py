@@ -6,6 +6,7 @@ import unittest
 from scripts.story_builder.levelscript_binary import (
     LEVELSCRIPT_TASK_CONDITION_MAPPING_ID,
     decode_levelscript_task_conditions,
+    scan_levelscript_task_condition_fragments,
 )
 
 
@@ -384,6 +385,40 @@ class LevelScriptTaskConditionTests(unittest.TestCase):
         )
         self.assertEqual("supportedConditionUnionTag", diagnostics[0]["gate"])
         self.assertEqual("0x0066", diagnostics[0]["conditionUnionTag"])
+
+    def test_fragment_scanner_recovers_supported_condition_from_mixed_map(self) -> None:
+        mixed = bytearray(levelscript_blob(task_entry()))
+        mixed[mixed.index(b"\x67\x07")] = 0x66
+        self.assertEqual(
+            [],
+            decode_levelscript_task_conditions(bytes(mixed), SCRIPT_ID),
+        )
+
+        rows = scan_levelscript_task_condition_fragments(
+            bytes(mixed),
+            SCRIPT_ID,
+            condition_types={"CheckTalkOptionFinish"},
+        )
+
+        self.assertEqual(1, len(rows))
+        self.assertEqual("unresolved_in_mixed_task_map", rows[0]["taskIdentityStatus"])
+        self.assertEqual("33333333", rows[0]["conditionKey"])
+        self.assertEqual("dlg_fixture", rows[0]["condition"]["dialogId"]["value"])
+        self.assertEqual(2, rows[0]["condition"]["finishId"]["value"])
+
+    def test_fragment_scanner_requires_exact_task_condition_envelope(self) -> None:
+        mixed = bytearray(levelscript_blob(task_entry()))
+        talk_offset = mixed.index(b"\x9f\x06")
+        mixed[talk_offset - 1] = 2
+
+        self.assertEqual(
+            [],
+            scan_levelscript_task_condition_fragments(
+                bytes(mixed),
+                SCRIPT_ID,
+                condition_types={"CheckTalkOptionFinish"},
+            ),
+        )
 
 
 if __name__ == "__main__":

@@ -7925,6 +7925,131 @@ def decode_levelscript_task_conditions(
     return list(signatures.values()) if len(signatures) == 1 else []
 
 
+def scan_levelscript_task_condition_fragments(
+    data: bytes,
+    script_id: int | str,
+    *,
+    condition_types: set[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Recover individually bounded task conditions from mixed task maps.
+
+    A complete task map cannot be decoded when even one neighboring condition
+    uses an unsupported union tag.  This scanner keeps the admission rule
+    structural instead of adding per-file exceptions: a supported condition
+    must sit inside one uniquely identified top-level task-map interval, have
+    an immediately preceding ``TaskCondition`` dictionary key equal to the
+    condition's serialized ``uniqueId``, consume its complete typed payload,
+    and have the exact trailing objective fields.
+
+    The surrounding task id is deliberately left unresolved because proving
+    it would require walking every preceding condition.  These fragments are
+    exact condition-consumer evidence, but never task ownership, mission
+    ownership, activation, or Story order.
+    """
+    try:
+        numeric_script_id = int(script_id)
+    except (TypeError, ValueError):
+        return []
+    if not data or data[0] not in (26, 27) or len(data) < 8:
+        return []
+
+    hosts: dict[tuple[int, int, int], dict[str, Any]] = {}
+    for script_id_offset in _u64_offsets(data, numeric_script_id):
+        host = _tail_candidate(data, script_id_offset)
+        task_count = host.get("taskMapCount")
+        task_map_offset = host.get("taskMapOffset")
+        if (
+            not host.get("startTypeName")
+            or host.get("taskMapStatus") != "present"
+            or not isinstance(task_count, int)
+            or not isinstance(task_map_offset, int)
+            or task_count <= 0
+            or task_count > 128
+        ):
+            continue
+        start = task_map_offset + 4
+        trigger_offset = host.get("triggerVolumesOffset")
+        end = (
+            int(trigger_offset)
+            if isinstance(trigger_offset, int) and trigger_offset > start
+            else len(data)
+        )
+        if start >= end:
+            continue
+        hosts.setdefault((task_map_offset, end, task_count), host)
+    if len(hosts) != 1:
+        return []
+
+    (task_map_offset, limit, task_count), host = next(iter(hosts.items()))
+    fragments: dict[tuple[int, int, str], dict[str, Any]] = {}
+    cursor = task_map_offset + 4
+    while cursor < limit:
+        decoded = _decode_levelscript_task_condition(data, cursor, limit)
+        if decoded is None:
+            cursor += 1
+            continue
+        condition, condition_end = decoded
+        condition_type = str(condition.get("type") or "")
+        condition_key = str(condition.get("uniqueId") or "")
+        if (
+            (condition_types is not None and condition_type not in condition_types)
+            or not re.fullmatch(r"[0-9a-f]{8}", condition_key)
+        ):
+            cursor += 1
+            continue
+
+        key_bytes = condition_key.encode("ascii")
+        condition_entry_offset = cursor - 4 - len(key_bytes) - 1
+        envelope_valid = (
+            condition_entry_offset >= task_map_offset + 4
+            and struct.unpack_from("<I", data, condition_entry_offset)[0]
+            == len(key_bytes)
+            and data[
+                condition_entry_offset + 4 : condition_entry_offset + 4 + len(key_bytes)
+            ]
+            == key_bytes
+            and data[cursor - 1] == 3
+        )
+        if not envelope_valid or condition_end + 5 > limit:
+            cursor += 1
+            continue
+        is_main_objective = data[condition_end]
+        objective_enum = struct.unpack_from("<i", data, condition_end + 1)[0]
+        if is_main_objective not in (0, 1) or not 0 <= objective_enum <= 0x100:
+            cursor += 1
+            continue
+
+        signature = (cursor, condition_end, condition_key)
+        fragments[signature] = {
+            "scriptId": str(numeric_script_id),
+            "levelScriptSerializedMemberCount": data[0],
+            "startType": str(host.get("startTypeName") or ""),
+            "taskMapOffset": task_map_offset,
+            "taskMapOffsetHex": _offset_hex(task_map_offset),
+            "taskMapCount": task_count,
+            "taskMapEndOffset": limit,
+            "taskMapEndOffsetHex": _offset_hex(limit),
+            "taskMapBoundaryStatus": (
+                "exact_trigger_volumes_offset"
+                if isinstance(host.get("triggerVolumesOffset"), int)
+                else "exact_file_boundary"
+            ),
+            "taskIdentityStatus": "unresolved_in_mixed_task_map",
+            "conditionKey": condition_key,
+            "conditionEntryOffset": condition_entry_offset,
+            "conditionEntryOffsetHex": _offset_hex(condition_entry_offset),
+            "taskConditionMemberCount": 3,
+            "isMainObjective": bool(is_main_objective),
+            "objectiveEnum": objective_enum,
+            "condition": condition,
+            "payloadShape": (
+                "validated-task-condition-fragment-inside-unique-top-level-task-map"
+            ),
+        }
+        cursor = condition_end + 5
+    return sorted(fragments.values(), key=lambda row: row["conditionEntryOffset"])
+
+
 def decode_levelscript_task_mission_state_dependencies(
     data: bytes,
     script_id: int | str,

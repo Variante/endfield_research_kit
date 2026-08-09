@@ -5173,6 +5173,9 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                     "modeId": "dungeon_test",
                     "modeType": 2,
                     "gameMechanicsType": 4,
+                    "mainTasks": [{"taskId": "deadbeef"}],
+                    "extraTasks": [],
+                    "failTasks": [],
                 },
                 "world_without_mission": {
                     "$type": "Beyond.Gameplay.Core.WorldChallengeSubGameData, Gameplay.Beyond",
@@ -5189,6 +5192,14 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             self.assertEqual(binding["dungeonMissionId"], "testm1")
             self.assertEqual(binding["relation"], "subgame_bind_script_runtime")
             self.assertFalse(binding["storyBinding"])
+            self.assertEqual(
+                binding["taskLanes"],
+                {
+                    "main": [{"taskId": "deadbeef"}],
+                    "extra": [],
+                    "fail": [],
+                },
+            )
             self.assertEqual(binding["networkIdentity"]["authoredKeyField"], "gameId")
             self.assertEqual(binding["networkIdentity"]["authoredKeyValue"], "dung_test")
             self.assertEqual(binding["networkIdentity"]["startRequest"], "CS_GAME_MECHANICS_REQ_START")
@@ -5206,8 +5217,12 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 index["nativeRuntimeRegistry"]["bindScriptNativeEvidence"]["serializedFieldOffset"],
                 "0x50",
             )
-            self.assertFalse(
+            self.assertTrue(
                 index["nativeRuntimeRegistry"]["bindScriptNativeEvidence"]["auditedOnStartConsumerFound"]
+            )
+            self.assertEqual(
+                index["nativeRuntimeRegistry"]["bindScriptNativeEvidence"]["startConsumerToken"],
+                "0x0600231a",
             )
             self.assertIn(
                 "SC_GAME_MECHANICS_SYNC_ENTER_GAME_INST.gameId",

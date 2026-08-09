@@ -390,6 +390,17 @@
       dialogFinishBranchDependencyHint: "An original option outcome writes the exact finish number required by this objective. This proves a causal branch dependency, not the observed player choice, dialog activation, server-selected successor, or total Story-file order.",
       dialogFinishEndpointDependencies: "Authored finish endpoint → mission objective",
       dialogFinishEndpointDependencyHint: "An exact original finish node is reachable from the binary-proven serialized prime node and emits the finish number required by this objective. The route or player choice that reaches it remains unknown.",
+      dialogFinishLevelScriptTaskDependencies: "Shared finish → LevelScript task",
+      dialogFinishLevelScriptTaskDependencyHint: "The same binary-proven dialog finish state is consumed by this mission objective and an original LevelScript task condition. This is branch-state fan-out, not proof that the task was active, that this mission owns the script, or cross-file order.",
+      dialogFinishTaskConsumer: "LevelScript task consumer",
+      dialogFinishTaskIdentityUnresolved: "task id unresolved in mixed map",
+      dialogFinishTaskMissionShell: "Exact SubGame mission shell",
+      dialogFinishTaskOwnershipGap: "Mission-shell owner unresolved",
+      dialogFinishTaskStat: "shared finish→task dependencies",
+      dialogFinishOwnedTaskStat: "same-mission SubGame task carriers",
+      dialogFinishTaskExactConsumers: "exact LevelScript consumers",
+      dialogFinishTaskCompleteMaps: "complete maps",
+      dialogFinishTaskFragments: "bounded fragments",
       dialogFinishPrimePath: "Prime-node path",
       dialogFinishProducer: "Original producer",
       dialogFinishConsumer: "Mission consumer",
@@ -1424,6 +1435,17 @@
       dialogFinishBranchDependencyHint: "原始选项结果写入了该目标所要求的精确完成编号。这证明因果分支依赖，但不证明玩家实际选择、对话激活、服务端选择的后继或完整剧情文件顺序。",
       dialogFinishEndpointDependencies: "原始结束端点 → 任务目标",
       dialogFinishEndpointDependencyHint: "精确的原始结束节点从二进制证明的序列化主入口节点可达，并产生该目标所需的完成编号。到达它的路径或玩家选择仍未知。",
+      dialogFinishLevelScriptTaskDependencies: "共享完成状态 → LevelScript 任务",
+      dialogFinishLevelScriptTaskDependencyHint: "同一项经二进制证明的对话完成状态，同时被该任务目标与原始 LevelScript 任务条件消费。这是分支状态扇出证据，不证明任务已激活、该使命拥有脚本或跨文件顺序。",
+      dialogFinishTaskConsumer: "LevelScript 任务消费端",
+      dialogFinishTaskIdentityUnresolved: "混合任务图中的任务 ID 未解析",
+      dialogFinishTaskMissionShell: "精确 SubGame 使命壳",
+      dialogFinishTaskOwnershipGap: "使命壳归属未解析",
+      dialogFinishTaskStat: "共享完成状态→任务依赖",
+      dialogFinishOwnedTaskStat: "同使命 SubGame 任务载体",
+      dialogFinishTaskExactConsumers: "精确 LevelScript 消费端",
+      dialogFinishTaskCompleteMaps: "完整任务图",
+      dialogFinishTaskFragments: "有界片段",
       dialogFinishPrimePath: "主入口节点路径",
       dialogFinishProducer: "原始产生端",
       dialogFinishConsumer: "任务消费端",
@@ -2510,6 +2532,8 @@
       [counts.dialogFinishBranchDependencies, t("dialogFinishBranchStat")],
       [counts.dialogFinishEndpointDependencies, t("dialogFinishEndpointStat")],
       [counts.dialogFinishExactConsumerCoverage, t("dialogFinishExactCoverageStat")],
+      [counts.dialogFinishLevelScriptTaskDependencies, t("dialogFinishTaskStat")],
+      [counts.dialogFinishOwnedLevelScriptTaskDependencies, t("dialogFinishOwnedTaskStat")],
     ];
     if (state.index?.runtimeTrace) stats.push([runtimeCounts.storyPlaybacks, t("runtimeObserved")]);
     node.innerHTML = stats.map(([value, label]) => `<strong>${Number(value || 0).toLocaleString()}</strong><span>${esc(label)}</span>`).join("");
@@ -2546,6 +2570,7 @@
     if (state.index?.dialogFinishBranchRecovery?.status) {
       const recoveryCounts = state.index.dialogFinishBranchRecovery.counts || {};
       sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.exactConsumerCoverage || 0).toLocaleString()} / ${Number(recoveryCounts.exactMissionConsumers || 0).toLocaleString()} ${esc(t("dialogFinishExactCoverageStat"))}: ${Number(recoveryCounts.publishedDependencies || 0).toLocaleString()} ${esc(t("dialogFinishBranchStat"))} + ${Number(recoveryCounts.publishedEndpointDependencies || 0).toLocaleString()} ${esc(t("dialogFinishEndpointStat"))} · ${Number(recoveryCounts.dialogTreeValidatedFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogTreeValidatedFinishEndpoints"))} / ${Number(recoveryCounts.dialogTreeRejectedFinishEndpoints || 0).toLocaleString()} ${esc(t("dialogTreeRejectedFinishEndpoints"))}</span>`);
+      sourceNode.insertAdjacentHTML("beforeend", `<span>${Number(recoveryCounts.levelScriptTaskSharedConsumerDependencies || 0).toLocaleString()} ${esc(t("dialogFinishTaskStat"))} / ${Number(recoveryCounts.levelScriptTaskSameMissionShellDependencies || 0).toLocaleString()} ${esc(t("dialogFinishOwnedTaskStat"))} · ${Number(recoveryCounts.levelScriptTaskExactFinishConsumers || 0).toLocaleString()} ${esc(t("dialogFinishTaskExactConsumers"))} (${Number(recoveryCounts.levelScriptTaskSharedConsumerCompleteMaps || 0).toLocaleString()} ${esc(t("dialogFinishTaskCompleteMaps"))} + ${Number(recoveryCounts.levelScriptTaskSharedConsumerFragments || 0).toLocaleString()} ${esc(t("dialogFinishTaskFragments"))})</span>`);
     }
   }
 
@@ -3771,7 +3796,14 @@
     if (!rows.length) return "";
     return `<details class="mp-mission-story mp-runtime-bindings mp-subgame-bindings" data-weight="strong" open>
       <summary>${esc(t("subGameBindings"))} <span>${rows.length}</span></summary>
-      <div class="mp-runtime-binding-grid">${rows.map((row) => { const network = row.networkIdentity || {}; return `<article>
+      <div class="mp-runtime-binding-grid">${rows.map((row) => {
+        const network = row.networkIdentity || {};
+        const taskLanes = Object.entries(row.taskLanes || {}).flatMap(([lane, tasks]) => (tasks || []).map((task) => `<span><code>${esc(lane)}</code> <code>${esc(task.taskId || "?")}</code></span>`)).join(" ");
+        const taskDependencies = (row.dialogFinishTaskDependencies || []).map((dependency) => {
+          const files = (dependency.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
+          return `<details open class="mp-subgame-finish-task"><summary><b>${esc(t("dialogFinishLevelScriptTaskDependencies"))}</b> <code>${esc(dependency.dialogId || "?")} / ${esc(t("finish"))} ${esc(dependency.finishId ?? "?")}</code></summary><p><code>${esc(dependency.taskId || "?")}</code> / <code>${esc(dependency.taskConditionId || "?")}</code> / <code>${esc(dependency.taskMapDecodeStatus || "?")}</code></p><small>${esc(dependency.evidenceBoundary || t("dialogFinishLevelScriptTaskDependencyHint"))}</small>${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(dependency.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}</details>`;
+        }).join("");
+        return `<article>
         <header><code>${esc(row.subGameId)}</code><b>${esc(row.confidence || "typed_original_data")}</b></header>
         <p><span>${esc(t("subGameScript"))}</span><code>${esc(row.bindScriptId)}</code></p>
         <p><span>${esc(t("subGameMode"))}</span><code>${esc(row.modeId || row.runtimeType || "—")}</code></p>
@@ -3783,6 +3815,8 @@
           <p class="is-send"><span>C → S · ${esc(t("subGameStopSend"))}</span><code>${esc(network.stopRequest || "CS_GAME_MECHANICS_REQ_STOP")}</code></p>
           <p class="is-return"><span>S → C · ${esc(t("subGameStopReturn"))}</span><code>${esc(network.leavePush || "SC_GAME_MECHANICS_SYNC_LEAVE_GAME_INST")}</code></p>
         </div>
+        ${taskLanes ? `<p class="mp-subgame-task-lanes"><span>${esc(t("offlineRecoverySubGameTaskLanes"))}</span>${taskLanes}</p>` : ""}
+        ${taskDependencies}
         <small>${esc(row.runtimeType || "")}</small>
         <small><b>${esc(t("subGameLifecycle"))}:</b> ${esc(t("subGameLifecycleHint"))}</small>
       </article>`; }).join("")}</div>
@@ -6276,6 +6310,24 @@
         ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
       </details>`;
     }).join("");
+    const dialogFinishLevelScriptTaskDependencies = (objective.dialogFinishLevelScriptTaskDependencies || []).map((row) => {
+      const options = (row.optionIds || []).map((optionId) => `<code>${esc(optionId)}</code>`).join(" ");
+      const owner = row.missionShellOwner || null;
+      const ownerHtml = owner
+        ? `<small><strong>${esc(t("dialogFinishTaskMissionShell"))}:</strong> <code>${esc(owner.missionId || "?")}</code> / <code>${esc(owner.subGameId || "?")}</code> / <code>${esc(owner.taskLane || "?")}</code></small>`
+        : `<small><strong>${esc(t("dialogFinishTaskOwnershipGap"))}</strong></small>`;
+      const taskId = row.taskId
+        ? `<code>${esc(row.taskId)}</code>`
+        : `<span>${esc(t("dialogFinishTaskIdentityUnresolved"))}</span>`;
+      const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
+      return `<details open class="mp-quest-task-dependency mp-dialog-finish-branch-dependency mp-dialog-finish-task-dependency">
+        <summary><b>${esc(t("dialogFinishLevelScriptTaskDependencies"))}</b> ${options}<i>&rarr;</i><code>${esc(row.dialogId || "?")} / ${esc(t("finish"))} ${esc(row.finishId ?? "?")}</code><i>&rarr;</i><code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}</code> ${taskId}</summary>
+        <p><strong>${esc(t("dialogFinishTaskConsumer"))}:</strong> <code>${esc(row.taskConditionId || "?")}</code> / <code>CheckTalkOptionFinish</code> / <code>${esc(row.taskMapDecodeStatus || "?")}</code></p>
+        ${ownerHtml}
+        <small>${esc(row.evidenceBoundary || t("dialogFinishLevelScriptTaskDependencyHint"))}</small>
+        ${files ? `<details><summary>${esc(t("relatedOriginalFile"))} <span>${(row.relatedOriginalFiles || []).length}</span></summary>${files}</details>` : ""}
+      </details>`;
+    }).join("");
     const taskDependencies = (objective.levelScriptTaskDependencies || []).map((row) => {
       const metadata = row.taskMetadata || {};
       const files = (row.relatedOriginalFiles || []).map((file) => `<small><code>${esc(file.kind || "file")}</code> <code>${esc(file.sourceFile || "")}</code>${file.sha256 ? ` / SHA-256 <code>${esc(file.sha256)}</code>` : ""}</small>`).join("");
@@ -6309,7 +6361,7 @@
     }).join("");
     return `<article class="mp-objective"><header><strong>${esc(t("objectives"))} ${objective.index}</strong><span class="mp-authority is-${esc(objective.authority)}">${esc(objective.authority)}</span></header>
       <p>${esc(objective.descriptionKey || t("noObjective"))}</p>
-      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${dialogFinishBranchDependencies}${dialogFinishEndpointDependencies}${levelScriptSources}${nativeLevelScriptControlAttachments}${taskDependencies}
+      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}${submissionRows}${submissionCoGates}${submissionLevelScriptCoGates}</div>${dialogFinishBranchDependencies}${dialogFinishEndpointDependencies}${dialogFinishLevelScriptTaskDependencies}${levelScriptSources}${nativeLevelScriptControlAttachments}${taskDependencies}
       ${objectiveTrackingHtml(objective.tracking)}
       ${renderConditionTree(objective.condition)}
     </article>`;

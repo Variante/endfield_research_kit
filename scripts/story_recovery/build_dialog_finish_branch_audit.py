@@ -34,6 +34,10 @@ from scripts.story_builder.dialog_tree_option_routes import (
 from scripts.story_builder.dialog_tree_finish_endpoints import (
     recover_dialog_tree_finish_endpoints,
 )
+from scripts.story_builder.levelscript_binary import (
+    decode_levelscript_task_conditions,
+    scan_levelscript_task_condition_fragments,
+)
 
 
 ROOT = _REPO_ROOT
@@ -53,6 +57,32 @@ DEFAULT_DIALOG_TREE_ROOT = (
     / "StreamingAssets"
     / "json_by_type"
     / "TextAsset"
+)
+DEFAULT_LEVELSCRIPT_ROOTS = (
+    ROOT
+    / "export_full"
+    / "structured"
+    / "StreamingAssets"
+    / "Data"
+    / "Json"
+    / "LevelScriptData",
+    ROOT
+    / "export_full"
+    / "structured"
+    / "Persistent"
+    / "Data"
+    / "Json"
+    / "LevelScriptData",
+)
+DEFAULT_SUBGAME_TABLE = (
+    ROOT
+    / "export_full"
+    / "structured"
+    / "StreamingAssets"
+    / "Data"
+    / "Json"
+    / "GameplayConfig"
+    / "SubGameInstanceDataTable.json"
 )
 DEFAULT_GAME_ASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
 DEFAULT_METADATA = Path(
@@ -903,6 +933,388 @@ def _collect_mission_consumers(
     return consumers, payloads
 
 
+def _validate_levelscript_task_contracts(
+    index: dict[str, Any],
+    native_contract: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate the binary-derived task and SubGame activation contracts."""
+    validator = "dialog_finish_levelscript_task_contract"
+    runtime = index.get("runtimeContract") or {}
+    task = runtime.get("levelScriptTaskAuthorityAudit") or {}
+    task_shape = {
+        "schema": task.get("schema"),
+        "status": (task.get("validation") or {}).get("status"),
+        "identityFields": task.get("identityFields"),
+        "missionQuestIdentityFields": task.get("missionQuestIdentityFields"),
+        "conditionResultToken": (
+            (task.get("nativePaths") or {}).get("conditionResultChanged") or {}
+        ).get("token"),
+    }
+    expected_task_shape = {
+        "schema": "levelScriptTaskAuthority.v1",
+        "status": "validated",
+        "identityFields": ["sceneNumId", "scriptId", "taskId"],
+        "missionQuestIdentityFields": [],
+        "conditionResultToken": "0x060121fe",
+    }
+    if task_shape != expected_task_shape:
+        raise AuditValidationError(
+            f"validator={validator} gate=taskAuthorityShape "
+            f"expected={expected_task_shape!r} actual={task_shape!r} "
+            f"source={task.get('source') or 'mission_pipeline/index.json'}"
+        )
+
+    activation = runtime.get("levelScriptActivationControlAudit") or {}
+    interaction = activation.get("subGameInteractionFlow") or {}
+    methods = activation.get("methods") or {}
+    activation_shape = {
+        "schema": activation.get("schema"),
+        "status": (activation.get("validation") or {}).get("status"),
+        "subGameIdFieldRead": interaction.get("subGameIdFieldRead"),
+        "bindScriptIdFieldRead": interaction.get("bindScriptIdFieldRead"),
+        "callsInCarrierOrder": interaction.get("callsInCarrierOrder"),
+        "manualStartCallCount": interaction.get("manualStartCallCount"),
+        "challengeToken": (methods.get("ChallengeOnInteract") or {}).get("token"),
+        "manualStartToken": (methods.get("ManualStart") or {}).get("token"),
+    }
+    expected_activation_shape = {
+        "schema": "levelScriptActivationControl.v6",
+        "status": "validated",
+        "subGameIdFieldRead": True,
+        "bindScriptIdFieldRead": True,
+        "callsInCarrierOrder": True,
+        "manualStartCallCount": 1,
+        "challengeToken": "0x0600231a",
+        "manualStartToken": "0x0601218f",
+    }
+    if activation_shape != expected_activation_shape:
+        raise AuditValidationError(
+            f"validator={validator} gate=subGameActivationShape "
+            f"expected={expected_activation_shape!r} actual={activation_shape!r} "
+            f"source={activation.get('source') or 'mission_pipeline/index.json'}"
+        )
+
+    expected_hashes = {
+        str(native_contract["gameAssembly"]["sha256"]).lower(),
+        str(native_contract["globalMetadata"]["sha256"]).lower(),
+    }
+    for label, contract in (("task", task), ("activation", activation)):
+        actual_hashes = {
+            str(row.get("sha256") or "").lower()
+            for row in contract.get("relatedOriginalFiles") or []
+            if isinstance(row, dict) and row.get("sha256")
+        }
+        if not expected_hashes <= actual_hashes:
+            raise AuditValidationError(
+                f"validator={validator} gate={label}BinaryHashAgreement "
+                f"expected={sorted(expected_hashes)!r} "
+                f"actual={sorted(actual_hashes)!r} "
+                f"source={contract.get('source') or 'mission_pipeline/index.json'}"
+            )
+    return {
+        "taskAuthority": {
+            "schema": task["schema"],
+            "source": task.get("source") or "",
+            "identityFields": task["identityFields"],
+            "missionQuestIdentityFields": [],
+            "conditionResultChanged": (
+                task.get("nativePaths") or {}
+            ).get("conditionResultChanged") or {},
+            "evidenceBoundary": task.get("evidenceBoundary") or "",
+        },
+        "subGameActivation": {
+            "schema": activation["schema"],
+            "source": activation.get("source") or "",
+            "subGameInteractionFlow": interaction,
+            "manualStart": methods.get("ManualStart") or {},
+            "challengeOnInteract": methods.get("ChallengeOnInteract") or {},
+            "evidenceBoundary": activation.get("evidenceBoundary") or "",
+        },
+    }
+
+
+def _constant_param_value(param: Any, value_type: type) -> Any:
+    """Return a constant MemoryPack Param value, or ``None`` when indirect."""
+    if (
+        not isinstance(param, dict)
+        or param.get("idRef") != -1
+        or param.get("paramSource") != 0
+        or param.get("path") is not None
+    ):
+        return None
+    value = param.get("value")
+    if value_type is int and isinstance(value, bool):
+        return None
+    return value if isinstance(value, value_type) else None
+
+
+def _levelscript_overlay(
+    roots: Iterable[Path],
+) -> tuple[list[tuple[str, str, Path]], dict[str, Any]]:
+    """Resolve the installed serialized overlay without per-file choices.
+
+    Roots are ordered from fallback to override.  The current export contract
+    is StreamingAssets followed by Persistent, so the latter wins for an
+    identical relative LevelScript identity.
+    """
+    validator = "dialog_finish_levelscript_task_census"
+    active: dict[str, tuple[str, str, Path, str]] = {}
+    physical_files = 0
+    shadowed = 0
+    changed_overrides = 0
+    root_rows: list[dict[str, Any]] = []
+    for priority, root in enumerate(roots):
+        if not root.is_dir():
+            raise AuditValidationError(
+                f"validator={validator} gate=levelScriptRoot expected=directory "
+                f"actual=missing source={root}"
+            )
+        root_count = 0
+        for path in sorted(root.rglob("*.json")):
+            try:
+                int(path.stem)
+            except ValueError:
+                continue
+            relative = path.relative_to(root).as_posix()
+            digest = sha256_file(path)
+            root_count += 1
+            physical_files += 1
+            previous = active.get(relative)
+            if previous is not None:
+                shadowed += 1
+                changed_overrides += previous[3] != digest
+            active[relative] = (path.parent.name, path.stem, path, digest)
+        root_rows.append({
+            "priority": priority,
+            "sourceRoot": source_label(root),
+            "fileCount": root_count,
+        })
+    rows = [
+        (level_id, script_id, path)
+        for level_id, script_id, path, _digest in active.values()
+    ]
+    rows.sort(key=lambda row: (row[0], int(row[1]), source_label(row[2])))
+    return rows, {
+        "roots": root_rows,
+        "overlayRule": "later root wins; Persistent overrides StreamingAssets",
+        "physicalFileCount": physical_files,
+        "activeLogicalFileCount": len(rows),
+        "shadowedPathCount": shadowed,
+        "changedOverrideCount": changed_overrides,
+    }
+
+
+def _collect_levelscript_task_finish_consumers(
+    roots: Iterable[Path] = DEFAULT_LEVELSCRIPT_ROOTS,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Scan the active LevelScript corpus for exact finish consumers."""
+    active_files, overlay = _levelscript_overlay(roots)
+    rows: list[dict[str, Any]] = []
+    complete_rows = 0
+    fragment_rows = 0
+    rejected_param_shapes = 0
+    files_with_consumers: set[str] = set()
+    for level_id, script_id, path in active_files:
+        data = path.read_bytes()
+        source_file = source_label(path)
+        source_hash = hashlib.sha256(data).hexdigest()
+        complete_signatures: set[tuple[str, int]] = set()
+        candidates: list[tuple[str | None, dict[str, Any], dict[str, Any], str]] = []
+        for host in decode_levelscript_task_conditions(data, script_id):
+            for task in host.get("tasks") or []:
+                for condition_row in task.get("conditions") or []:
+                    condition = condition_row.get("condition") or {}
+                    if condition.get("type") != "CheckTalkOptionFinish":
+                        continue
+                    signature = (
+                        str(condition_row.get("conditionKey") or ""),
+                        int(condition.get("conditionOffset") or -1),
+                    )
+                    complete_signatures.add(signature)
+                    candidates.append(
+                        (
+                            str(task.get("taskKey") or ""),
+                            condition_row,
+                            condition,
+                            "complete_task_map",
+                        )
+                    )
+        for fragment in scan_levelscript_task_condition_fragments(
+            data,
+            script_id,
+            condition_types={"CheckTalkOptionFinish"},
+        ):
+            condition = fragment.get("condition") or {}
+            signature = (
+                str(fragment.get("conditionKey") or ""),
+                int(condition.get("conditionOffset") or -1),
+            )
+            if signature in complete_signatures:
+                continue
+            candidates.append(
+                (None, fragment, condition, "bounded_condition_fragment")
+            )
+        for task_id, condition_row, condition, decode_status in candidates:
+            dialog_id = _constant_param_value(condition.get("dialogId"), str)
+            finish_id = _constant_param_value(condition.get("finishId"), int)
+            if not dialog_id or finish_id is None:
+                rejected_param_shapes += 1
+                continue
+            complete_rows += decode_status == "complete_task_map"
+            fragment_rows += decode_status == "bounded_condition_fragment"
+            files_with_consumers.add(source_file)
+            rows.append({
+                "dialogId": dialog_id,
+                "finishId": finish_id,
+                "levelId": level_id,
+                "scriptId": script_id,
+                "taskId": task_id,
+                "conditionId": str(condition_row.get("conditionKey") or ""),
+                "taskMapDecodeStatus": decode_status,
+                "taskIdentityStatus": (
+                    "exact_complete_task_map"
+                    if task_id
+                    else "unresolved_in_mixed_task_map"
+                ),
+                "conditionOffsetHex": condition.get("conditionOffsetHex"),
+                "conditionUnionTag": condition.get("conditionUnionTag"),
+                "nativeMappingId": condition.get("nativeMappingId"),
+                "sourceFile": source_file,
+                "sourceSha256": source_hash,
+            })
+    rows.sort(
+        key=lambda row: (
+            row["dialogId"],
+            row["finishId"],
+            row["levelId"],
+            int(row["scriptId"]),
+            row.get("taskId") or "",
+            row["conditionId"],
+        )
+    )
+    return rows, {
+        **overlay,
+        "filesWithFinishConsumers": len(files_with_consumers),
+        "finishConsumerCount": len(rows),
+        "completeTaskMapConsumerCount": complete_rows,
+        "boundedFragmentConsumerCount": fragment_rows,
+        "exactNonnegativeConsumerCount": sum(row["finishId"] >= 0 for row in rows),
+        "anyFinishConsumerCount": sum(row["finishId"] < 0 for row in rows),
+        "rejectedIndirectOrMalformedParamCount": rejected_param_shapes,
+        "evidenceBoundary": (
+            "The active Persistent-over-Streaming serialized overlay is scanned. "
+            "Complete task maps retain exact task ids; individually bounded "
+            "fragments retain exact condition identity but deliberately leave the "
+            "surrounding task id unresolved. Unsupported neighboring condition "
+            "types cannot create a consumer."
+        ),
+    }
+
+
+def _load_subgame_task_owners(
+    table_path: Path = DEFAULT_SUBGAME_TABLE,
+) -> tuple[dict[tuple[str, str], dict[str, Any]], dict[str, Any]]:
+    """Load unique mission/SubGame/script/task co-carriers from typed rows."""
+    validator = "dialog_finish_subgame_task_owner"
+    if not table_path.is_file():
+        raise AuditValidationError(
+            f"validator={validator} gate=subGameTable expected=file "
+            f"actual=missing source={table_path}"
+        )
+    payload = read_json(table_path)
+    table = payload.get("dataTable") if isinstance(payload, dict) else None
+    if not isinstance(table, dict):
+        raise AuditValidationError(
+            f"validator={validator} gate=dataTable expected=object "
+            f"actual={type(table).__name__} source={table_path}"
+        )
+    candidates: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    malformed: list[dict[str, Any]] = []
+    mission_script_rows = 0
+    for subgame_id, raw in sorted(table.items()):
+        if not isinstance(raw, dict):
+            continue
+        mission_id = raw.get("dungeonMissionId")
+        script_id = raw.get("bindScriptId")
+        if not isinstance(mission_id, str) or not mission_id:
+            continue
+        if not isinstance(script_id, int) or isinstance(script_id, bool) or script_id <= 0:
+            continue
+        mission_script_rows += 1
+        if str(raw.get("id") or "") != str(subgame_id):
+            malformed.append({
+                "subGameId": str(subgame_id),
+                "gate": "rowKeyEqualsId",
+                "expected": str(subgame_id),
+                "actual": raw.get("id"),
+            })
+            continue
+        for lane_field, lane in (
+            ("mainTasks", "main"),
+            ("extraTasks", "extra"),
+            ("failTasks", "fail"),
+        ):
+            task_rows = raw.get(lane_field)
+            if not isinstance(task_rows, list):
+                malformed.append({
+                    "subGameId": str(subgame_id),
+                    "gate": "taskLaneArray",
+                    "expected": "array",
+                    "actual": type(task_rows).__name__,
+                    "lane": lane,
+                })
+                continue
+            for task in task_rows:
+                task_id = str(task.get("taskId") or "") if isinstance(task, dict) else ""
+                if not re.fullmatch(r"[0-9a-f]{8}", task_id):
+                    malformed.append({
+                        "subGameId": str(subgame_id),
+                        "gate": "taskId",
+                        "expected": "eight lowercase hex characters",
+                        "actual": task_id,
+                        "lane": lane,
+                    })
+                    continue
+                candidates[(str(script_id), task_id)].append({
+                    "missionId": mission_id,
+                    "subGameId": str(subgame_id),
+                    "scriptId": str(script_id),
+                    "taskId": task_id,
+                    "taskLane": lane,
+                    "runtimeType": str(raw.get("$type") or "").split(",", 1)[0],
+                    "sourceFile": source_label(table_path),
+                })
+    ambiguous = [
+        {
+            "scriptId": key[0],
+            "taskId": key[1],
+            "candidates": value,
+        }
+        for key, value in sorted(candidates.items())
+        if len(value) != 1
+    ]
+    accepted = {
+        key: value[0]
+        for key, value in candidates.items()
+        if len(value) == 1
+    }
+    return accepted, {
+        "sourceFile": source_label(table_path),
+        "sourceSha256": sha256_file(table_path),
+        "rowCount": len(table),
+        "missionScriptRowCount": mission_script_rows,
+        "uniqueTaskOwnerCount": len(accepted),
+        "ambiguousTaskOwners": ambiguous,
+        "malformedRows": malformed,
+        "evidenceBoundary": (
+            "Only one typed row that co-carries dungeonMissionId, bindScriptId, "
+            "and the exact taskId in an authored task lane can identify a mission "
+            "shell for that task. It does not prove the script started or that its "
+            "Story playback belongs to the mission."
+        ),
+    }
+
+
 def _collect_dialog_tree_producers(
     payloads: dict[str, dict[str, Any]],
     *,
@@ -1236,10 +1648,22 @@ def build_report(
     dialog_tree_root: Path = DEFAULT_DIALOG_TREE_ROOT,
     *,
     native_contract: dict[str, Any] | None = None,
+    levelscript_roots: Iterable[Path] = DEFAULT_LEVELSCRIPT_ROOTS,
+    subgame_table_path: Path = DEFAULT_SUBGAME_TABLE,
 ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
     validator = "dialog_finish_branch_recovery"
     native_contract = native_contract or validate_native_contract()
+    levelscript_runtime_contract = _validate_levelscript_task_contracts(
+        index,
+        native_contract,
+    )
     consumers, payloads = _collect_mission_consumers(index, pipeline_root)
+    levelscript_consumers, levelscript_census = (
+        _collect_levelscript_task_finish_consumers(levelscript_roots)
+    )
+    subgame_task_owners, subgame_owner_census = _load_subgame_task_owners(
+        subgame_table_path
+    )
     runtime_defaults = native_contract.get("serializedFieldDefaults") or {}
     (
         tree_rows,
@@ -1397,8 +1821,132 @@ def build_report(
             row["finishId"],
         )
     )
+
+    exact_levelscript_consumers = [
+        row for row in levelscript_consumers if row["finishId"] >= 0
+    ]
+    levelscript_by_finish: dict[
+        tuple[str, int], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for row in exact_levelscript_consumers:
+        owner = (
+            subgame_task_owners.get((row["scriptId"], row["taskId"]))
+            if row.get("taskId")
+            else None
+        )
+        if owner:
+            row["missionShellOwner"] = owner
+        levelscript_by_finish[(row["dialogId"], row["finishId"])].append(row)
+
+    resolved_mission_dependencies = [*dependencies, *endpoint_dependencies]
+    shared_task_dependencies: list[dict[str, Any]] = []
+    matched_levelscript_signatures: set[tuple[Any, ...]] = set()
+    for mission_dependency in resolved_mission_dependencies:
+        task_matches = levelscript_by_finish.get(
+            (
+                mission_dependency["dialogId"],
+                mission_dependency["finishId"],
+            ),
+            [],
+        )
+        for task_consumer in task_matches:
+            owner = task_consumer.get("missionShellOwner")
+            owner_relationship = (
+                "same_mission_shell"
+                if owner
+                and owner.get("missionId") == mission_dependency["missionId"]
+                else "different_mission_shell"
+                if owner
+                else "mission_shell_unresolved"
+            )
+            source_rows = [
+                *(
+                    mission_dependency.get("relatedOriginalFiles") or []
+                ),
+                {
+                    "kind": "level_script",
+                    "sourceFile": task_consumer["sourceFile"],
+                    "relationship": "exact_dialog_finish_task_consumer",
+                },
+            ]
+            if owner:
+                source_rows.append({
+                    "kind": "subgame_instance_table",
+                    "sourceFile": owner["sourceFile"],
+                    "relationship": "exact_mission_script_task_co_carrier",
+                })
+            row = {
+                "missionId": mission_dependency["missionId"],
+                "questId": mission_dependency["questId"],
+                "objectiveIndex": mission_dependency["objectiveIndex"],
+                "missionConditionId": mission_dependency["conditionId"],
+                "dialogId": mission_dependency["dialogId"],
+                "finishId": mission_dependency["finishId"],
+                "producerClassification": mission_dependency["classification"],
+                "producerFamilies": mission_dependency.get("producerFamilies") or [],
+                "optionIds": mission_dependency.get("optionIds") or [],
+                "producerEvidence": mission_dependency.get("producerEvidence") or [],
+                "levelId": task_consumer["levelId"],
+                "scriptId": task_consumer["scriptId"],
+                "taskId": task_consumer.get("taskId"),
+                "taskConditionId": task_consumer["conditionId"],
+                "taskMapDecodeStatus": task_consumer["taskMapDecodeStatus"],
+                "taskIdentityStatus": task_consumer["taskIdentityStatus"],
+                "conditionOffsetHex": task_consumer.get("conditionOffsetHex"),
+                "missionShellOwner": owner,
+                "missionShellRelationship": owner_relationship,
+                "classification": "shared_exact_dialog_finish_consumer_dependency",
+                "relatedOriginalFiles": _hash_source_rows(
+                    source_rows,
+                    hash_cache,
+                    validator=validator,
+                ),
+                "evidenceBoundary": (
+                    "The binary-proven CheckTalkOptionFinish state is consumed by "
+                    "both this MissionRuntime objective and this original "
+                    "LevelScript task condition. This proves a shared branch-state "
+                    "fan-out, not that the task was active, that the mission owns "
+                    "the LevelScript, which option a player selected, or any "
+                    "cross-file chronology. Mission-shell ownership is shown only "
+                    "when one typed SubGame row also co-carries the exact script "
+                    "and task ids."
+                ),
+            }
+            shared_task_dependencies.append(row)
+            matched_levelscript_signatures.add((
+                task_consumer["levelId"],
+                task_consumer["scriptId"],
+                task_consumer.get("taskId"),
+                task_consumer["conditionId"],
+                task_consumer["dialogId"],
+                task_consumer["finishId"],
+            ))
+    shared_task_dependencies.sort(
+        key=lambda row: (
+            row["missionId"],
+            row["questId"],
+            row["objectiveIndex"] or 0,
+            row["levelId"],
+            int(row["scriptId"]),
+            row.get("taskId") or "",
+            row["taskConditionId"],
+        )
+    )
+    unmatched_levelscript_consumers = [
+        row
+        for row in exact_levelscript_consumers
+        if (
+            row["levelId"],
+            row["scriptId"],
+            row.get("taskId"),
+            row["conditionId"],
+            row["dialogId"],
+            row["finishId"],
+        )
+        not in matched_levelscript_signatures
+    ]
     report = {
-        "schemaVersion": "dialogFinishMissionBranchAudit.v5",
+        "schemaVersion": "dialogFinishMissionBranchAudit.v6",
         "status": "validated",
         "validator": validator,
         "evidencePolicy": (
@@ -1411,12 +1959,17 @@ def build_report(
             "is admitted as zero only under the hash-locked FullSerializer "
             "reflected-field default contract. ShowOptions sets doNext before "
             "selection, so missing physical successors are retained as failures, "
-            "not reclassified as terminal choices. OCR and manual overrides are not read."
+            "not reclassified as terminal choices. Exact LevelScript task "
+            "conditions that consume the same finish state are published as "
+            "fan-out dependencies without inferring task activation or ownership. "
+            "OCR and manual overrides are not read."
         ),
         "nativeContract": native_contract,
+        "levelScriptRuntimeContract": levelscript_runtime_contract,
         "sources": {
             "timelineOrders": source_label(timeline_orders_path),
             "pipelineIndex": source_label(pipeline_root / "index.json"),
+            "subGameTable": source_label(subgame_table_path),
         },
         "counts": {
             "exactMissionConsumers": len(consumers),
@@ -1560,6 +2113,41 @@ def build_report(
             "rejectedProducerShapes": len(tree_rejected) + len(timeline_rejected),
             "conflictingOptionProducers": len(conflicts),
             "reusedOptionIdsAcrossScopes": len(reused_option_scopes),
+            "levelScriptTaskFinishConsumers": len(levelscript_consumers),
+            "levelScriptTaskExactFinishConsumers": len(
+                exact_levelscript_consumers
+            ),
+            "levelScriptTaskAnyFinishConsumers": sum(
+                row["finishId"] < 0 for row in levelscript_consumers
+            ),
+            "levelScriptTaskSharedConsumerDependencies": len(
+                shared_task_dependencies
+            ),
+            "levelScriptTaskSharedConsumerRows": len(
+                matched_levelscript_signatures
+            ),
+            "levelScriptTaskSharedConsumerMissions": len({
+                row["missionId"] for row in shared_task_dependencies
+            }),
+            "levelScriptTaskSharedConsumerCompleteMaps": sum(
+                row["taskMapDecodeStatus"] == "complete_task_map"
+                for row in shared_task_dependencies
+            ),
+            "levelScriptTaskSharedConsumerFragments": sum(
+                row["taskMapDecodeStatus"] == "bounded_condition_fragment"
+                for row in shared_task_dependencies
+            ),
+            "levelScriptTaskMissionShellOwners": sum(
+                bool(row.get("missionShellOwner"))
+                for row in exact_levelscript_consumers
+            ),
+            "levelScriptTaskSameMissionShellDependencies": sum(
+                row["missionShellRelationship"] == "same_mission_shell"
+                for row in shared_task_dependencies
+            ),
+            "levelScriptTaskUnmatchedExactConsumers": len(
+                unmatched_levelscript_consumers
+            ),
         },
         "producerFamilyCounts": dict(
             sorted(Counter(family for row in producers for family in row["producerFamilies"]).items())
@@ -1568,8 +2156,15 @@ def build_report(
         "dialogTreeOptionRouteCorpusCoverage": corpus_route_coverage,
         "dialogTreeFinishEndpointCoverage": finish_endpoint_coverage,
         "dialogTreeFinishEndpointCorpusCoverage": corpus_finish_endpoint_coverage,
+        "levelScriptTaskConsumerCensus": {
+            **levelscript_census,
+            "exactConsumers": exact_levelscript_consumers,
+            "unmatchedExactConsumers": unmatched_levelscript_consumers,
+        },
+        "subGameTaskOwnerCensus": subgame_owner_census,
         "dependencies": dependencies,
         "endpointDependencies": endpoint_dependencies,
+        "levelScriptTaskSharedConsumerDependencies": shared_task_dependencies,
         "unresolvedExactConsumers": unresolved,
         "rejectedProducerShapes": [*tree_rejected, *timeline_rejected],
         "rejectedFinishEndpointShapes": finish_endpoint_rejected,
@@ -1593,8 +2188,15 @@ def publish_to_pipeline_index(
     ] = defaultdict(list)
     for row in report.get("endpointDependencies") or []:
         endpoint_by_quest[(row["missionId"], row["questId"])].append(row)
+    task_by_quest: dict[
+        tuple[str, str], list[dict[str, Any]]
+    ] = defaultdict(list)
+    for row in report.get("levelScriptTaskSharedConsumerDependencies") or []:
+        task_by_quest[(row["missionId"], row["questId"])].append(row)
     published = 0
     published_endpoints = 0
+    published_task_dependencies = 0
+    published_owned_task_dependencies = 0
     for summary in index.get("missions") or []:
         if not isinstance(summary, dict):
             continue
@@ -1604,13 +2206,18 @@ def publish_to_pipeline_index(
             continue
         mission_rows: list[dict[str, Any]] = []
         mission_endpoint_rows: list[dict[str, Any]] = []
+        mission_task_rows: list[dict[str, Any]] = []
         for node in payload.get("nodes") or []:
             if not isinstance(node, dict):
                 continue
             node.pop("dialogFinishBranchDependencies", None)
             node.pop("dialogFinishEndpointDependencies", None)
+            node.pop("dialogFinishLevelScriptTaskDependencies", None)
             rows = by_quest.get((mission_id, str(node.get("id") or "")), [])
             endpoint_rows = endpoint_by_quest.get(
+                (mission_id, str(node.get("id") or "")), []
+            )
+            task_rows = task_by_quest.get(
                 (mission_id, str(node.get("id") or "")), []
             )
             if rows:
@@ -1619,11 +2226,15 @@ def publish_to_pipeline_index(
             if endpoint_rows:
                 node["dialogFinishEndpointDependencies"] = endpoint_rows
                 mission_endpoint_rows.extend(endpoint_rows)
+            if task_rows:
+                node["dialogFinishLevelScriptTaskDependencies"] = task_rows
+                mission_task_rows.extend(task_rows)
             for objective in node.get("objectives") or []:
                 if not isinstance(objective, dict):
                     continue
                 objective.pop("dialogFinishBranchDependencies", None)
                 objective.pop("dialogFinishEndpointDependencies", None)
+                objective.pop("dialogFinishLevelScriptTaskDependencies", None)
                 objective_rows = [
                     row for row in rows
                     if row.get("objectiveIndex") == objective.get("index")
@@ -1636,12 +2247,40 @@ def publish_to_pipeline_index(
                     and row.get("conditionId")
                     == str(objective.get("conditionId") or "")
                 ]
+                objective_task_rows = [
+                    row
+                    for row in task_rows
+                    if row.get("objectiveIndex") == objective.get("index")
+                    and row.get("missionConditionId")
+                    == str(objective.get("conditionId") or "")
+                ]
                 if objective_rows:
                     objective["dialogFinishBranchDependencies"] = objective_rows
                 if objective_endpoint_rows:
                     objective["dialogFinishEndpointDependencies"] = (
                         objective_endpoint_rows
                     )
+                if objective_task_rows:
+                    objective["dialogFinishLevelScriptTaskDependencies"] = (
+                        objective_task_rows
+                    )
+        for binding in (payload.get("mission") or {}).get(
+            "nativeRuntimeBindings", []
+        ):
+            if not isinstance(binding, dict):
+                continue
+            binding.pop("dialogFinishTaskDependencies", None)
+            binding_rows = [
+                row
+                for row in mission_task_rows
+                for owner in [row.get("missionShellOwner")]
+                if isinstance(owner, dict)
+                and owner.get("missionId") == mission_id
+                and owner.get("subGameId") == binding.get("subGameId")
+                and owner.get("scriptId") == binding.get("bindScriptId")
+            ]
+            if binding_rows:
+                binding["dialogFinishTaskDependencies"] = binding_rows
         payload["dialogFinishBranchRecovery"] = {
             "schema": report.get("schemaVersion"),
             "status": report.get("status"),
@@ -1649,15 +2288,30 @@ def publish_to_pipeline_index(
             "endpointDependencyCount": len(mission_endpoint_rows),
             "exactConsumerCoverageCount": len(mission_rows)
             + len(mission_endpoint_rows),
+            "levelScriptTaskSharedConsumerDependencyCount": len(
+                mission_task_rows
+            ),
+            "levelScriptTaskMissionShellDependencyCount": sum(
+                row.get("missionShellRelationship") == "same_mission_shell"
+                for row in mission_task_rows
+            ),
             "evidenceBoundary": report.get("evidencePolicy"),
         }
         summary["dialogFinishBranchDependencyCount"] = len(mission_rows)
         summary["dialogFinishEndpointDependencyCount"] = len(
             mission_endpoint_rows
         )
+        summary["dialogFinishLevelScriptTaskDependencyCount"] = len(
+            mission_task_rows
+        )
         write_json(pipeline_root / str(summary.get("file") or ""), payload)
         published += len(mission_rows)
         published_endpoints += len(mission_endpoint_rows)
+        published_task_dependencies += len(mission_task_rows)
+        published_owned_task_dependencies += sum(
+            row.get("missionShellRelationship") == "same_mission_shell"
+            for row in mission_task_rows
+        )
     index["dialogFinishBranchRecovery"] = {
         "schema": report.get("schemaVersion"),
         "status": report.get("status"),
@@ -1672,7 +2326,13 @@ def publish_to_pipeline_index(
     index["counts"]["dialogFinishExactConsumerCoverage"] = (
         published + published_endpoints
     )
-    return published + published_endpoints
+    index["counts"]["dialogFinishLevelScriptTaskDependencies"] = (
+        published_task_dependencies
+    )
+    index["counts"]["dialogFinishOwnedLevelScriptTaskDependencies"] = (
+        published_owned_task_dependencies
+    )
+    return published + published_endpoints + published_task_dependencies
 
 
 def markdown_report(report: dict[str, Any]) -> str:
@@ -1706,6 +2366,11 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Unresolved exact consumers: {counts.get('unresolvedExactConsumers', 0)}",
         f"- Rejected / conflicting producer shapes: {counts.get('rejectedProducerShapes', 0)} / {counts.get('conflictingOptionProducers', 0)}",
         f"- Localization option IDs reused across runtime scopes: {counts.get('reusedOptionIdsAcrossScopes', 0)}",
+        f"- Active LevelScript finish consumers: {counts.get('levelScriptTaskFinishConsumers', 0)} total; {counts.get('levelScriptTaskExactFinishConsumers', 0)} exact / {counts.get('levelScriptTaskAnyFinishConsumers', 0)} any-finish",
+        f"- Shared MissionRuntime/LevelScript finish dependencies: {counts.get('levelScriptTaskSharedConsumerDependencies', 0)} placements across {counts.get('levelScriptTaskSharedConsumerMissions', 0)} missions",
+        f"- Shared dependencies from complete maps / bounded mixed-map fragments: {counts.get('levelScriptTaskSharedConsumerCompleteMaps', 0)} / {counts.get('levelScriptTaskSharedConsumerFragments', 0)}",
+        f"- Exact SubGame mission-shell task owners: {counts.get('levelScriptTaskMissionShellOwners', 0)} consumers; {counts.get('levelScriptTaskSameMissionShellDependencies', 0)} same-mission dependency placements",
+        f"- Exact LevelScript consumers without a MissionRuntime finish match: {counts.get('levelScriptTaskUnmatchedExactConsumers', 0)}",
         "",
         "## Recovered dependencies",
         "",
@@ -1752,6 +2417,31 @@ def markdown_report(report: dict[str, Any]) -> str:
             )
     else:
         lines.append("- None.")
+    lines.extend(["", "## Shared LevelScript task consumers", ""])
+    task_rows = report.get("levelScriptTaskSharedConsumerDependencies") or []
+    if task_rows:
+        lines.extend(
+            [
+                "| Mission | Quest | Dialog finish | LevelScript task consumer | Decode | Mission shell |",
+                "| --- | --- | --- | --- | --- | --- |",
+            ]
+        )
+        for row in task_rows:
+            task_id = row.get("taskId") or "task-id-unresolved"
+            owner = row.get("missionShellOwner") or {}
+            owner_text = (
+                f"`{owner.get('missionId')}` / `{owner.get('subGameId')}` / "
+                f"`{owner.get('taskLane')}`"
+                if owner
+                else "unresolved"
+            )
+            lines.append(
+                f"| `{row['missionId']}` | `{row['questId']}` | "
+                f"`{row['dialogId']}` / `{row['finishId']}` | "
+                f"`{row['levelId']}/{row['scriptId']}` / `{task_id}` / "
+                f"`{row['taskConditionId']}` | "
+                f"`{row['taskMapDecodeStatus']}` | {owner_text} |"
+            )
     lines.extend(["", "## Reused localization IDs", ""])
     reused = report.get("reusedOptionIdsAcrossScopes") or []
     if reused:
@@ -1798,6 +2488,17 @@ def main() -> int:
     parser.add_argument("--pipeline-root", type=Path, default=DEFAULT_PIPELINE_ROOT)
     parser.add_argument("--timeline-orders", type=Path, default=DEFAULT_TIMELINE_ORDERS)
     parser.add_argument("--dialog-tree-root", type=Path, default=DEFAULT_DIALOG_TREE_ROOT)
+    parser.add_argument(
+        "--streaming-levelscript-root",
+        type=Path,
+        default=DEFAULT_LEVELSCRIPT_ROOTS[0],
+    )
+    parser.add_argument(
+        "--persistent-levelscript-root",
+        type=Path,
+        default=DEFAULT_LEVELSCRIPT_ROOTS[1],
+    )
+    parser.add_argument("--subgame-table", type=Path, default=DEFAULT_SUBGAME_TABLE)
     parser.add_argument("--game-assembly", type=Path, default=DEFAULT_GAME_ASSEMBLY)
     parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
@@ -1813,6 +2514,11 @@ def main() -> int:
         args.timeline_orders,
         args.dialog_tree_root,
         native_contract=native,
+        levelscript_roots=(
+            args.streaming_levelscript_root,
+            args.persistent_levelscript_root,
+        ),
+        subgame_table_path=args.subgame_table,
     )
     write_json(args.json, report)
     args.markdown.parent.mkdir(parents=True, exist_ok=True)
@@ -1824,6 +2530,7 @@ def main() -> int:
         "dialog finish branch audit: "
         f"{report['counts']['publishedDependencies']} option dependencies, "
         f"{report['counts']['publishedEndpointDependencies']} endpoint-only dependencies, "
+        f"{report['counts']['levelScriptTaskSharedConsumerDependencies']} shared LevelScript task dependencies, "
         f"{report['counts']['unresolvedExactConsumers']} unresolved exact consumers"
     )
     return 0
