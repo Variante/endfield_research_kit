@@ -87,9 +87,12 @@ NPC archetypes are imported as labeled source kits.
   selected `.y`-only consumer closed. Inactive frames clear all 56 HDPLS
   channel selectors, proving the selected resolver falls back to the punctual
   atlas. Do not publish a full zero fixture: matrices/params persist, trailing
-  values are frame-derived, and the native callback requests 3,552 bytes while
-  writing the reflected final float4 at byte 3,552. Capture the allocator-
-  returned size and settled payload immediately before its global-buffer bind.
+  values are frame-derived, and the native callback logically binds 3,552
+  bytes while writing the reflected final float4 at byte 3,552. Installed
+  `UnityPlayer` recovery closes `CBHandle.size=3,552`, 16-byte length rounding,
+  and 256-byte allocation-start alignment: the next allocation begins at byte
+  3,584, so the final CPU write is safe in padding. GPU visibility of that last
+  float4 and the settled active payload/resources remain open.
 
 ## Main rendering gap
 

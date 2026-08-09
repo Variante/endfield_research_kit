@@ -2042,9 +2042,13 @@ fragment reads only each pair's `.y`, so an inactive frame provably chooses the
 punctual-atlas fallback. This is not a byte-exact zero-buffer fixture: matrices
 and params are persistent, atlas/global values are frame-derived, and the
 callback requests `0xDE0` bytes while writing the reflected final float4 at
-`+0xDE0`, then binds the allocator-returned size. Publication therefore remains
-fail-closed. Settled active values and the allocator-returned size must be
-captured immediately before `CommandBuffer.SetGlobalConstantBufferInternal0`.
+`+0xDE0`. Installed `UnityPlayer` recovery now proves that `CBHandle.size`, the
+serialized command, and global shader state all retain the logical `0xDE0`
+size. The ring keeps that length after 16-byte rounding but aligns allocation
+starts to `0x100`, so the next allocation begins at `0xE00` and the final CPU
+float4 is isolated in inter-allocation padding. Publication remains fail-closed:
+backend GPU visibility of bytes `0xDE0..0xDEF`, settled active values, and their
+matching resources remain open.
 The remaining
 16 texture names are now pinned from their original sampling behavior and the
 hash/offset-pinned installed IL2CPP shader-property table: low-resolution
