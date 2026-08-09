@@ -296,6 +296,22 @@ class VisibilitySHConstantsContractTests(unittest.TestCase):
                 Path("fixture_contract.json"),
             )
 
+    def test_native_zero_fill_failure_is_actionable(self) -> None:
+        transport, audit = self.load_current_contract()
+        changed = copy.deepcopy(audit)
+        changed["fullProducerInitialization"]["zeroRows"] = [5, 6]
+        with self.assertRaisesRegex(
+            AssertionError,
+            "VisibilitySHConstData validator failed: "
+            "check=audit.full_producer_initialization; "
+            "source=fixture_contract.json; expected=.*5, 6, 7.*actual=.*5, 6",
+        ):
+            verifier.verify_visibility_sh_constants_audit(
+                transport,
+                changed,
+                Path("fixture_contract.json"),
+            )
+
 
 class HdplsMatrixFormulaContractTests(unittest.TestCase):
     @staticmethod

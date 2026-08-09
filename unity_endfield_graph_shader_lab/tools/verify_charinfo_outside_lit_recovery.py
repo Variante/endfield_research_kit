@@ -901,6 +901,41 @@ def verify_visibility_sh_constants_audit(
             ),
         ),
         (
+            "audit.full_struct_zero_fill",
+            audit["nativeProducer"]["instructionWindows"]
+            ["full_struct_zero_fill"]["hex"],
+            "41bf80000000458bc733d2488d8c2410020000e8e35662f6",
+        ),
+        (
+            "audit.zero_tail_rows_copy",
+            audit["nativeProducer"]["instructionWindows"]
+            ["zero_tail_rows_copy"]["hex"],
+            (
+                "0f288424600200000f298424a0030000"
+                "0f288c24700200000f298c24b0030000"
+                "0f288424800200000f298424c0030000"
+            ),
+        ),
+        (
+            "audit.zero_fill_helper",
+            (
+                audit["nativeProducer"]["zeroFillHelper"]["va"],
+                audit["nativeProducer"]["zeroFillHelper"]["size"],
+                audit["nativeProducer"]["zeroFillHelper"]["sha256"],
+                audit["nativeProducer"]["zeroFillHelper"]["entryHex"],
+            ),
+            (
+                "0x18033b9d0",
+                904,
+                "13b97250d2c9f9ef32c2a569239dab8f"
+                "b26f3119b30493d0dd1149b4093e3bc7",
+                (
+                    "488bc14c8bc94c8d152346ccff0fb6d249bb0101010101010101"
+                    "4c0fafda66490f6e"
+                ),
+            ),
+        ),
+        (
             "audit.ab_params_bits",
             audit["fixedRows"]["abParams"]["wordBits"],
             ["0x3f800000", "0x3ea16095", "0x3f800000", "0x3f800000"],
@@ -941,6 +976,20 @@ def verify_visibility_sh_constants_audit(
                 ],
                 [[32, 47], [48, 63]],
             ),
+        ),
+        (
+            "audit.full_producer_initialization",
+            audit["fullProducerInitialization"],
+            {
+                "sizeBytes": 128,
+                "zeroFillValue": 0,
+                "sourceStackRange": "rsp+0x210..rsp+0x28f",
+                "uploadStackRange": "rsp+0x350..rsp+0x3cf",
+                "overwrittenRows": [0, 1, 2, 3, 4],
+                "zeroRows": [5, 6, 7],
+                "zeroTailByteRange": [80, 127],
+                "sourceClosed": True,
+            },
         ),
     )
     for check, actual, expected in checks:
@@ -996,7 +1045,7 @@ def verify_visibility_sh_constants_gpu_report(
         (
             f"gpu_report.{api}.schema",
             report["schema"],
-            "endfield-recovered-visibility-sh-constants-validation-v1",
+            "endfield-recovered-visibility-sh-constants-validation-v2",
         ),
         (f"gpu_report.{api}.valid", report["valid"], True),
         (f"gpu_report.{api}.graphics_api", report["graphicsApi"], api),
@@ -1005,6 +1054,11 @@ def verify_visibility_sh_constants_gpu_report(
             f"gpu_report.{api}.retail_visibility_texture_closed",
             report["retailVisibilityTextureClosed"],
             False,
+        ),
+        (
+            f"gpu_report.{api}.full_constant_buffer_source_closed",
+            report["fullConstantBufferSourceClosed"],
+            True,
         ),
         (
             f"gpu_report.{api}.source_audit",
@@ -1035,7 +1089,7 @@ def verify_visibility_sh_constants_gpu_report(
                 report["readyObserved"],
                 report["allPublishedWordsMatch"],
                 report["selectedDeferredWordsMatch"],
-                report["deterministicLabTailIsZero"],
+                report["nativeZeroTailMatch"],
             ),
             (True, True, True, True, True),
         ),
@@ -2682,6 +2736,7 @@ def verify_selected_resolver_binding_contract() -> None:
             "0x3EA16095u",
             "0x3E5B57C6u",
             "1.0f / outputWidth",
+            "native 0x80-byte zero-fill",
         ],
     )
     require_tokens(
@@ -2700,7 +2755,7 @@ def verify_selected_resolver_binding_contract() -> None:
             "recoveredVisibilitySHConstants.ResetPublication(commandBuffer);",
             "recoveredVisibilitySHConstants.PrepareAndPublish(",
             "recoveredReflectionProbeFallback.ResetPublication(",
-            "selected-consumer VisibilitySHConstData",
+            "exact VisibilitySHConstData",
         ],
     )
     require_tokens(
@@ -2726,6 +2781,7 @@ def verify_selected_resolver_binding_contract() -> None:
             evidence["log_sha256"],
             [
                 "Recovered VisibilitySHConstData validation passed:",
+                "all 32 native words exact",
                 "selected words=8/8",
                 "fail-closed gates=3/3",
                 f"api={api}",
@@ -2739,7 +2795,7 @@ def verify_selected_resolver_binding_contract() -> None:
         actual_scene["log_sha256"],
         [
             "Recovered canonical _BinningBuffer active",
-            "selected-consumer VisibilitySHConstData frame resources are active",
+            "exact VisibilitySHConstData frame resources are active",
             "Exiting batchmode successfully now!",
         ],
     )
@@ -3240,6 +3296,14 @@ def verify_selected_resolver_binding_contract() -> None:
         "ShaderVariablesGlobal": (3, 35, 3200),
         "ReflectionProbeGlobalData": (3, 36, 4160),
     }
+    visibility_named = next(
+        row
+        for row in contract["named_constant_buffers"]
+        if row["name"] == "VisibilitySHConstData"
+    )
+    assert visibility_named["partial"] is False
+    assert visibility_named["full_producer_closed"] is True
+    assert visibility_named["selected_consumer_closed"] is True
     unnamed = {
         (row["set"], row["binding"])
         for row in contract["unnamed_constant_buffers"]
@@ -4537,7 +4601,7 @@ def main() -> int:
         "slice-0 oct producer, the 4,160-byte global-buffer producer and "
         "serialized CharInfo SH-luminance fallback, plus the default-off "
         "D3D11/D3D12 bit-exact canonical light/zero-reflection binning, "
-        "same-frame reflection resources, and b33 selected-consumer "
+        "same-frame reflection resources, and the full exact 128-byte b33 "
         "constant transport are pinned; presentation remains "
         "default-off because the CharInfo-frame runtime contract is not closed."
     )

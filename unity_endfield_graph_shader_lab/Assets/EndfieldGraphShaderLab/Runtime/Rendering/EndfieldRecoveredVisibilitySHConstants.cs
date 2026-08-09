@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Publishes the source-closed VisibilitySHConstData rows alongside the
+    /// Publishes the exact installed VisibilitySHConstData rows alongside the
     /// default-off canonical CharInfo frame. This does not publish or invent a
     /// retail VisibilitySH texture.
     /// </summary>
@@ -92,7 +92,7 @@ namespace EndfieldGraphShaderLab
                 sizeof(float) * 4,
                 ComputeBufferType.Constant)
             {
-                name = "Recovered VisibilitySHConstData selected-consumer fixture"
+                name = "Recovered exact VisibilitySHConstData fixture"
             };
         }
     }

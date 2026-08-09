@@ -1092,7 +1092,7 @@ namespace EndfieldGraphShaderLab
                     {
                         Debug.Log(
                             "Recovered canonical CharInfo binning + reflection " +
-                            "oct/global + selected-consumer VisibilitySHConstData " +
+                            "oct/global + exact VisibilitySHConstData " +
                             "frame resources are active for the exact " +
                             "no-local-probe fixture.");
                         loggedRecoveredReflectionFrameActivation = true;
