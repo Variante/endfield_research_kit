@@ -56,9 +56,12 @@ NPC archetypes are imported as labeled source kits.
   `(ceil(N/4)+4)T x 4T`; one Depth16 Tex2D slice, Point/Clamp, shadow-map
   sampling, and no mip/UAV/MSAA. The enabled path imports and binds this
   RTHandle; the disabled path uses the exact
-  `HGRenderGraphDefaultResources.defaultShadowTexture`. Platform-resolved
-  depth format, settled dimensions/texels/cache allocation, and matching b34
-  values still require one capture immediately before `0x189b57155`.
+  `HGRenderGraphDefaultResources.defaultShadowTexture`. Constructor defaults
+  are now closed as enabled, `T=512`, environment/movable caps `6/2`, cull
+  distance `200`, and screen minimum `0.001`; the manager derives `N=8` and
+  `3072x2048` before runtime overrides. Platform-resolved depth format,
+  overridden target `N/T`, texels/cache allocation, and matching b34 values
+  still require one capture immediately before `0x189b57155`.
 - Deferred binding 37 now has its exact native 2,560-byte `LightCookieData`
   initialization/upload and `cookieIndex >= 0` consumer guard closed. The
   source-closed Wulfa/Zhuangfy Overview lists have no cookies, so a default-off

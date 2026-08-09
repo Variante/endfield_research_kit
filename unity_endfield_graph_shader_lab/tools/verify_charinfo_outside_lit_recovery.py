@@ -1958,6 +1958,9 @@ def verify_selected_resolver_binding_contract() -> None:
     assert shadow_native["atlas_size"].startswith(
         "N == 0 ? 4*T x 4*T : (ceil(N*0.25)+4)*T x 4*T"
     )
+    assert "T=512" in shadow_native["setting_defaults"]
+    assert "N=8" in shadow_native["setting_defaults"]
+    assert "3072x2048" in shadow_native["setting_defaults"]
     assert "Depth16" in shadow_native["atlas_descriptor"]
     assert "_PunctualLightShadowTexV2" in shadow_native[
         "atlas_enabled_binding"
@@ -2003,6 +2006,18 @@ def verify_selected_resolver_binding_contract() -> None:
         "bindTextureMS": False,
         "memoryless": 0,
     }
+    punctual_defaults = punctual_atlas_audit["setting_defaults"]
+    assert punctual_defaults["punctualLightShadowEnabled"] is True
+    assert punctual_defaults["punctualLightTileMaxSize"] == 512
+    assert punctual_defaults["punctualLightForceCullDistance"] == 200.0
+    assert punctual_defaults["punctualLightEnvDynamicCasterCount"] == 6
+    assert punctual_defaults["punctualLightMovableDynamicCasterCount"] == 2
+    assert 0.0009999999 < punctual_defaults[
+        "punctualLightShadowScreenSizeMin"
+    ] < 0.0010000002
+    assert punctual_defaults["derivedDynamicCasterCount"] == 8
+    assert punctual_defaults["derivedAtlasWidth"] == 3072
+    assert punctual_defaults["derivedAtlasHeight"] == 2048
     assert punctual_atlas_audit["enabled_path"]["shader_property"] == (
         "_PunctualLightShadowTexV2"
     )

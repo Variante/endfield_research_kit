@@ -2222,7 +2222,7 @@
       "set": 3,
       "binding": 34,
       "size": 11440,
-      "status": "source-closed layout plus native four-section allocation/copy/bind transport and punctual-atlas allocation/binding; settled punctual payload and atlas texels remain capture-only",
+      "status": "source-closed layout plus native four-section allocation/copy/bind transport, punctual-atlas allocation/binding, and constructor-default sizing; settled punctual payload and atlas texels remain capture-only",
       "source_metadata_path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/ShaderEvidence/ShadowReceiver.fragment.metadata.json",
       "source_metadata_sha256": "2a3136eec2cae762ac5c89cc56e8891457cf0547b23b53a48a250934e71ac533",
       "evidence": [
@@ -2236,6 +2236,7 @@
         "the enabled HGPunctualLightShadowManagerV2 path serializes all 56 managed matrix/params/params2 rows and the atlas texel-size vector before b__49_2 publishes section enum 1",
         "the disabled b__49_1 path binds only a RenderGraph default texture and never publishes ShadowData, so it does not prove a zero or neutral constant-buffer payload",
         "the matching Punctual Shadowmap RTHandle uses the native N/T-dependent atlas size, one Tex2D slice, Depth16, R8G8B8A8_SRGB numeric format, Point/Clamp, no mip/UAV/MSAA, and isShadowMap=true",
+        "HGSettingParameters constructs the punctual defaults as enabled, T=512, force-cull distance 200, environment/movable dynamic caps 6/2, and screen-size minimum 0.001; the manager sums N=8 and therefore requests 3072x2048 before any runtime override",
         "the enabled path imports that RTHandle into RenderGraph and b__49_2 binds its TextureHandle as _PunctualLightShadowTexV2; the disabled path uses the exact HGRenderGraphDefaultResources.defaultShadowTexture field"
       ],
       "native_producer": {
@@ -2262,9 +2263,9 @@
         "frame_writer_native_map_path": "scratch/reverse_engineering/punctual_shadow_data/native.json",
         "frame_writer_native_map_sha256": "83d01d64c8ecd07282ad68d7adae7cdeb41c7a67dc70088acb1dc1a711d360b7",
         "atlas_audit_path": "scratch/reverse_engineering/punctual_shadow_data/atlas_audit.json",
-        "atlas_audit_sha256": "23e7a4a0f7f5e9611991334416f3f21c9b593aff84920878dfe96d217fc6850f",
+        "atlas_audit_sha256": "da4d5a4d2328d0fd3689ee39502db67522d2a9ecb15337d3d8255ae3e75a359e",
         "atlas_auditor_path": "scratch/reverse_engineering/punctual_shadow_data/audit_punctual_shadow_atlas.py",
-        "atlas_auditor_sha256": "e9e377184a468b5513c0d5c359ee409c0c010d6f194c475bb9c2fd0a13459387",
+        "atlas_auditor_sha256": "0b894a68844e013fe39b86aa28f3c0a91b4c1b26712fcb4db2c625095818e5e9",
         "owner": "HG.Rendering.Runtime.HGShadowConstantBufferUtils",
         "frame_writer_owner": "HG.Rendering.Runtime.HGPunctualLightShadowManagerV2",
         "max_shadow_caster_count": 56,
@@ -2272,6 +2273,7 @@
         "disabled_writer": "b__49_1 binds the RenderGraph default texture but does not write or publish ShadowData; no neutral buffer fixture is proven",
         "atlas_name": "Punctual Shadowmap",
         "atlas_size": "N == 0 ? 4*T x 4*T : (ceil(N*0.25)+4)*T x 4*T, where N is the dynamic punctual-shadow caster count and T is the base tile size",
+        "setting_defaults": "punctual shadows enabled; T=512; force-cull distance=200; environment/movable dynamic caps=6/2; screen-size minimum=0.001 (manager stores its square); N=8 derives a 3072x2048 atlas before runtime overrides",
         "atlas_descriptor": "one Tex2D slice; Depth16; R8G8B8A8_SRGB numeric format; Point/Clamp; no mip, UAV, or MSAA; isShadowMap=true",
         "atlas_enabled_binding": "imports RTHandle this+0x58, converts the pass TextureHandle, and binds _PunctualLightShadowTexV2 in b__49_2",
         "atlas_disabled_binding": "copies HGRenderGraphDefaultResources.defaultShadowTexture at this+0x100 and binds it in b__49_1",
@@ -2281,7 +2283,7 @@
         "selected_read_span": "bytes 1024..6415",
         "publication_policy": "fail closed; no target-frame ShadowData fixture is published",
         "capture_boundary": "capture shadowData bytes 1024..7167 and the matching physical atlas in b__49_2 immediately before SetGlobalConstantBuffer at VA 0x189b57155",
-        "remaining_boundary": "platform-resolved physical depth format, settled target-frame atlas dimensions/texels/cache allocation, punctual matrices/parameters/rectangles/texel size, and index mapping require one matching capture"
+        "remaining_boundary": "runtime-overridden target N/T (if different from constructor defaults), platform-resolved physical depth format, target-frame atlas texels/cache allocation, punctual matrices/parameters/rectangles/texel size, and index mapping require one matching capture"
       }
     },
     {
