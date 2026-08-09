@@ -1202,7 +1202,7 @@ def link_gameplay_audio(
         if event_key:
             event_evidence_by_id[event_key].append(row)
     found_events = set(event_evidence_by_id)
-    event_cache: dict[str, dict[str, Any] | None] = {}
+    event_cache: dict[str, dict[str, Any]] = {}
 
     def gameplay_trigger_binding(owner: dict[str, Any], evidence: list[dict[str, Any]]) -> dict[str, Any]:
         owner_kind = str(owner.get("ownerKind") or "")
@@ -1278,7 +1278,7 @@ def link_gameplay_audio(
             binding["playSoundActions"] = play_sound_actions
         return binding
 
-    def linked_event(event_id: str) -> dict[str, Any] | None:
+    def linked_event(event_id: str) -> dict[str, Any]:
         event_key = event_id.lower()
         if event_key in event_cache:
             return event_cache[event_key]
@@ -1291,9 +1291,6 @@ def link_gameplay_audio(
                 continue
             seen.add(key)
             media.append(compact)
-        if not media:
-            event_cache[event_key] = None
-            return None
         content_counts = Counter(
             str(row.get("contentSha256") or "")
             for row in media
@@ -1355,6 +1352,7 @@ def link_gameplay_audio(
         value = {
             "id": event_id,
             "foundInWwise": event_key in found_events,
+            "hasPlayableMedia": bool(media),
             "possibleMediaCount": len(media),
             "playableCandidates": len(media),
             "playRootCount": len(root_action_ids) or max(
@@ -1367,7 +1365,9 @@ def link_gameplay_audio(
             "unresolvedNodeCount": sum(len(row.get("unresolvedNodes") or []) for row in evidence_rows),
             "selectorEvidence": selector_evidence,
             "runtimeSelection": (
-                "runtimeBranchUnresolved" if any(value != "directSound" for value in relation_types)
+                "eventNotFoundInWwise" if event_key not in found_events
+                else "noDecodedPossibleMedia" if not media
+                else "runtimeBranchUnresolved" if any(value != "directSound" for value in relation_types)
                 else "multiplePlayRootsTimingUnresolved" if len(root_action_ids) > 1
                 else "singlePossibleMedia" if len(media) == 1
                 else "multiplePossibleMediaUnresolved"
@@ -1414,10 +1414,10 @@ def link_gameplay_audio(
         for event_id, evidence in sorted((owner.get("events") or {}).items()):
             discovered_refs += 1
             linked = linked_event(event_id)
-            if not linked:
-                continue
-            linked_refs += 1
-            candidate_count += int(linked.get("playableCandidates") or 0)
+            candidates = int(linked.get("playableCandidates") or 0)
+            if candidates:
+                linked_refs += 1
+                candidate_count += candidates
             event_rows.append({
                 **linked,
                 "evidence": evidence,
@@ -1506,13 +1506,12 @@ def link_gameplay_audio(
         for event_id, evidence in normalized_animation_events(owner):
             discovered_refs += 1
             linked = linked_event(event_id)
-            if not linked:
-                continue
-            linked_refs += 1
-            animation_linked_refs += 1
             candidates = int(linked.get("playableCandidates") or 0)
-            candidate_count += candidates
-            animation_candidate_count += candidates
+            if candidates:
+                linked_refs += 1
+                animation_linked_refs += 1
+                candidate_count += candidates
+                animation_candidate_count += candidates
             action_kinds = sorted({str(row.get("actionKind") or "action") for row in evidence})
             clips = sorted({str(row.get("clip") or "") for row in evidence if row.get("clip")})
             functions = sorted({str(row.get("function") or "") for row in evidence if row.get("function")})
@@ -1812,7 +1811,11 @@ def link_gameplay_audio(
         for owner in characters.values()
         for event in owner.get("profileVoices") or []
     ]
-    serialized_linked_refs = len(serialized_skill_events) + len(serialized_animation_events) + len(serialized_profile_voices)
+    serialized_refs = len(serialized_skill_events) + len(serialized_animation_events) + len(serialized_profile_voices)
+    serialized_playable_refs = sum(
+        possible_media_count(event) > 0
+        for event in [*serialized_skill_events, *serialized_animation_events, *serialized_profile_voices]
+    )
     serialized_candidate_associations = sum(
         possible_media_count(event)
         for event in [*serialized_skill_events, *serialized_animation_events, *serialized_profile_voices]
@@ -1834,8 +1837,9 @@ def link_gameplay_audio(
         **(references.get("counts") or {}),
         "gameplayAudioRefs": discovered_refs,
         "gameplayAudioRefsDiscovered": discovered_refs,
-        "gameplayAudioRefsLinked": serialized_linked_refs,
-        "gameplaySerializedAudioRefs": serialized_linked_refs,
+        "gameplayAudioRefsLinked": serialized_playable_refs,
+        "gameplaySerializedAudioRefs": serialized_refs,
+        "gameplayReferenceOnlyAudioRefs": serialized_refs - serialized_playable_refs,
         "gameplayRawAudioRefsLinked": linked_refs,
         "gameplayAudioCandidates": unique_event_media_pairs + len(profile_voice_media_keys),
         "gameplayPossibleMediaAssociations": serialized_candidate_associations,
@@ -1846,7 +1850,8 @@ def link_gameplay_audio(
         "inferredSkillConfigOwnerRefs": serialized_inferred_skill_triggers,
         "gameplayUniqueEventMediaPairs": unique_event_media_pairs,
         "gameplayUniquePlayableFiles": len(unique_playable_files),
-        "animationAudioRefsLinked": len(serialized_animation_events),
+        "animationAudioRefsLinked": sum(possible_media_count(event) > 0 for event in serialized_animation_events),
+        "animationAudioRefsSerialized": len(serialized_animation_events),
         "animationAudioRawRefsLinked": animation_linked_refs,
         "animationAudioPossibleMediaAssociations": serialized_animation_candidates,
         "animationAudioRawPossibleMediaAssociations": animation_candidate_count,
@@ -1918,6 +1923,7 @@ def link_gameplay_audio(
             "animationOwnership": "exact AnimationClip callback, timestamp, and payload; actor ownership inferred from exact character/enemy animation tokens and recovered enemy animation-config reuse; current-controller clip reachability remains unresolved",
             "animationMediaBoundary": "An owned clip proves that its callback requests the Event. Shared playable-character Events expose a shared Wwise selector graph; its reachable leaves are not attributed to one character until switch/state values are decoded.",
             "profileVoiceOwnership": "direct CharacterTable.profileVoice ownership linked to the exact AudioDialog path stem; bark/random selection remains unresolved",
+            "referenceOnlyBoundary": "Exact SkillData/BuffData and owned AnimationClip trigger contexts remain serialized when the Event is absent from current Wwise banks or has no decoded possible media; Gameplay only renders records with playable files.",
             "runtimeSelection": "Possible media files come from typed Wwise v150 edges and are grouped by Play root and selector relation; the live branch selected by switches, states, random/sequence containers, and layers remains unresolved.",
         },
     })
