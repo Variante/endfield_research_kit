@@ -77,11 +77,19 @@ never promotes an edge.
 - Exact option-outcome dependencies are recovered generically by joining an
   authored DialogTree finish node or Timeline finish-number override to a
   nonnegative MissionRuntime `CheckTalkOptionFinish` operand. The installed
-  binary and metadata are hash/body-pinned for the producer, recorder, and
-  consumer methods. The current corpus yields eight unique option-to-objective
-  dependencies across seven missions. Duplicate clips must agree; missing
-  finish fields and conflicting option producers fail closed. These rows prove
-  an objective dependency, not player selection, dialog activation, server
+  binary and metadata are hash/body-pinned for import, FullSerializer reflected
+  deserialization, producer, recorder, and consumer methods. FullSerializer
+  creates reflected objects uninitialized and assigns only JSON-present fields,
+  so an omitted `Int32 finishId` is admitted as runtime-default zero; malformed
+  explicit values still fail closed. The current corpus yields 35 exact
+  option-to-objective dependencies across 17 missions, with 65 default-backed
+  DialogTree producer rows and 101 exact consumers still unresolved. Option IDs
+  are localization values, not global branch identities: `dlg_sm2l1m1_3`
+  reuses two IDs under distinct option nodes reached through different IfNode
+  arms, so producer agreement is scoped by original node and option slot.
+  Duplicate Timeline clips must agree within their runtime option scope; three
+  malformed connection-count shapes remain rejected. These rows prove an
+  objective dependency, not player selection, dialog activation, server
   successor choice, or total Story-file order.
 
 ## LevelScript and native conclusions

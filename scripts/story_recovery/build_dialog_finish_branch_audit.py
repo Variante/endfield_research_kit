@@ -51,6 +51,50 @@ EXPECTED_METADATA_SHA256 = (
     "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
 )
 NATIVE_METHODS = {
+    "DialogTree.ImportFromJson": {
+        "token": "0x06003a7f",
+        "va": 0x1872A946C,
+        "bytes": 144,
+        "sha256": "0e2c39227f5f81f5d96e8ef8d04984540f1deb5d773963191d5e0d0dc751498b",
+        "contract": "passes the authored JSON to NodeCanvas Graph.Deserialize",
+    },
+    "NodeCanvas.Graph.Deserialize": {
+        "token": "0x060010c3",
+        "va": 0x183114AB0,
+        "bytes": 1040,
+        "sha256": "6625564e124290623f307e03d2edb7dd01b59a1dc5eb410e5e82bf3d25ee2e44",
+        "contract": (
+            "uses JSONSerializer.TryDeserializeOverwrite for the graph source"
+        ),
+    },
+    "JSONSerializer.TryDeserializeOverwrite<System.Object>": {
+        "token": "0x06001756",
+        "va": 0x183113B60,
+        "bytes": 256,
+        "sha256": "38cb9f2978747c9c5206efb4147e0389cd0cc7f3290eeb128681937b4ea67a72",
+        "contract": "passes an existing instance to FullSerializer deserialization",
+    },
+    "fsReflectedConverter.TryDeserialize": {
+        "token": "0x060018bf",
+        "va": 0x18360DA00,
+        "bytes": 880,
+        "sha256": "81afac7887a0533e9faf9ecf3c2b3d39af42625fc061192cfea76aa9ee3db572",
+        "contract": (
+            "sets a reflected field only after its JSON-name lookup succeeds; "
+            "an absent field is left at its initialized managed value"
+        ),
+    },
+    "fsMetaType.CreateInstance": {
+        "token": "0x0600183e",
+        "va": 0x183604F50,
+        "bytes": 128,
+        "sha256": "dee02a026414a74bd96d292a6a825a224da0642717e5d425b72a16deb6223a2c",
+        "contract": (
+            "creates reflected objects through FormatterServices."
+            "GetSafeUninitializedObject, whose managed value-type fields start "
+            "at their zero/default value"
+        ),
+    },
     "DialogTreeFinishNode.DoExecute": {
         "token": "0x06003b86",
         "va": 0x1872A4F80,
@@ -182,6 +226,20 @@ def validate_native_contract(
             "sha256": EXPECTED_METADATA_SHA256,
         },
         "methods": methods,
+        "serializedFieldDefaults": {
+            "status": "validated",
+            "scope": "FullSerializer reflected fields omitted from authored JSON",
+            "initialization": "FormatterServices.GetSafeUninitializedObject",
+            "assignmentGate": "JSON-name dictionary lookup must succeed",
+            "managedValueTypeDefaults": {"System.Int32": 0},
+            "evidenceMethods": [
+                "DialogTree.ImportFromJson",
+                "NodeCanvas.Graph.Deserialize",
+                "JSONSerializer.TryDeserializeOverwrite<System.Object>",
+                "fsReflectedConverter.TryDeserialize",
+                "fsMetaType.CreateInstance",
+            ],
+        },
         "evidenceBoundary": (
             "The installed client proves how finish numbers are produced and "
             "tested. It does not reveal which option a player selected, which "
@@ -195,10 +253,38 @@ def _short_type(value: Any) -> str:
     return text.rsplit(".", 1)[-1]
 
 
+def resolve_serialized_field(
+    record: dict[str, Any],
+    field_name: str,
+    managed_type: str,
+    *,
+    runtime_defaults: dict[str, Any] | None = None,
+) -> tuple[Any | None, str]:
+    """Resolve one authored field without inventing object-specific defaults.
+
+    Explicit values always win.  An omitted field is admitted only when the
+    installed-runtime contract validated the general FullSerializer reflected
+    field behavior and declared the managed value type's default.
+    """
+    if field_name in record:
+        value = record[field_name]
+        if managed_type == "System.Int32" and type(value) is int:
+            return value, "serialized_explicit"
+        return None, "invalid_serialized_value"
+    defaults = runtime_defaults or {}
+    values = defaults.get("managedValueTypeDefaults") or {}
+    if defaults.get("status") == "validated" and managed_type in values:
+        value = values[managed_type]
+        if managed_type == "System.Int32" and type(value) is int:
+            return value, "runtime_default"
+    return None, "missing_without_validated_default"
+
+
 def decode_dialog_tree_finish_routes(
     outer: Any,
     *,
     source_file: str,
+    runtime_defaults: dict[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Decode exact option-to-finish routes, rejecting ambiguous node shapes.
 
@@ -279,7 +365,9 @@ def decode_dialog_tree_finish_routes(
                 }
             )
             continue
-        for option_id, start_id in zip(option_ids, outgoing, strict=True):
+        for option_ordinal, (option_id, start_id) in enumerate(
+            zip(option_ids, outgoing, strict=True)
+        ):
             seen: set[str] = set()
             current_id = start_id
             while current_id not in seen:
@@ -287,14 +375,23 @@ def decode_dialog_tree_finish_routes(
                 current = nodes[current_id]
                 current_type = _short_type(current.get("$type"))
                 if current_type == "DialogTreeFinishNode":
-                    finish_id = current.get("finishId")
-                    if "finishId" not in current or not isinstance(finish_id, int):
+                    finish_id, finish_id_source = resolve_serialized_field(
+                        current,
+                        "finishId",
+                        "System.Int32",
+                        runtime_defaults=runtime_defaults,
+                    )
+                    if finish_id_source in {
+                        "invalid_serialized_value",
+                        "missing_without_validated_default",
+                    }:
                         rejected.append(
                             {
                                 "sourceFile": source_file,
                                 "gate": "serializedFinishId",
                                 "nodeId": current_id,
                                 "optionId": option_id,
+                                "actual": finish_id_source,
                             }
                         )
                     else:
@@ -303,8 +400,16 @@ def decode_dialog_tree_finish_routes(
                                 "dialogId": dialog_id,
                                 "optionId": option_id,
                                 "finishId": finish_id,
+                                "finishIdSource": finish_id_source,
                                 "producerFamily": "dialog_tree_finish_node",
                                 "optionNodeId": node_id,
+                                "optionOrdinal": option_ordinal,
+                                "producerScope": {
+                                    "kind": "dialog_tree_option_node",
+                                    "key": f"node:{node_id}:option:{option_ordinal}",
+                                    "optionNodeId": node_id,
+                                    "optionOrdinal": option_ordinal,
+                                },
                                 "finishNodeId": current_id,
                                 "sourceFiles": [
                                     {
@@ -392,28 +497,42 @@ def decode_timeline_finish_routes(
                     "dialogId": dialog_id,
                     "optionId": option_id,
                     "finishId": finish_id,
+                    "finishIdSource": "serialized_explicit",
                     "producerFamily": "timeline_option_finish_override",
                     "timeline": str(timeline.get("timeline") or ""),
                     "optionIndex": option.get("optionIndex"),
+                    "producerScope": {
+                        "kind": "timeline_option_group",
+                        "key": (
+                            f"timeline:{timeline.get('timeline') or ''}:"
+                            f"group:{option.get('groupKey')}:"
+                            f"option:{option.get('optionIndex')}"
+                        ),
+                        "timeline": str(timeline.get("timeline") or ""),
+                        "groupKey": option.get("groupKey"),
+                        "optionIndex": option.get("optionIndex"),
+                    },
                     "sourceFiles": [row for row in files if row["sourceFile"]],
                 }
             )
 
     # Repeated clips are common.  They are safe only when every copy of the
     # same authored option agrees on one finish number.
-    by_option: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    by_scope: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for row in candidates:
-        by_option[(row["dialogId"], row["optionId"])].append(row)
+        by_scope[(row["dialogId"], row["producerScope"]["key"])].append(row)
     rows: list[dict[str, Any]] = []
-    for (dialog_id, option_id), group in sorted(by_option.items()):
+    for (dialog_id, scope_key), group in sorted(by_scope.items()):
         finish_ids = {row["finishId"] for row in group}
-        if len(finish_ids) != 1:
+        option_ids = {row["optionId"] for row in group}
+        if len(finish_ids) != 1 or len(option_ids) != 1:
             rejected.append(
                 {
-                    "gate": "timelineOptionFinishAgreement",
+                    "gate": "timelineOptionScopeAgreement",
                     "dialogId": dialog_id,
-                    "optionId": option_id,
-                    "actual": sorted(finish_ids),
+                    "producerScope": scope_key,
+                    "optionIds": sorted(option_ids),
+                    "finishIds": sorted(finish_ids),
                 }
             )
             continue
@@ -509,6 +628,8 @@ def _collect_mission_consumers(
 
 def _collect_dialog_tree_producers(
     payloads: dict[str, dict[str, Any]],
+    *,
+    runtime_defaults: dict[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     source_files = sorted(
         {
@@ -530,7 +651,9 @@ def _collect_dialog_tree_producers(
                 f"expected=file actual=missing source={path}"
             )
         decoded, failures = decode_dialog_tree_finish_routes(
-            read_json(path), source_file=source_label(path)
+            read_json(path),
+            source_file=source_label(path),
+            runtime_defaults=runtime_defaults,
         )
         rows.extend(decoded)
         rejected.extend(failures)
@@ -540,20 +663,28 @@ def _collect_dialog_tree_producers(
 def _normalize_producers(
     rows: Iterable[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Require all source families for one option to agree on one finish ID."""
-    grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    """Normalize only within an original runtime branch scope.
+
+    Localization option IDs can be reused by distinct option nodes.  The
+    serialized current node/option slot is the runtime identity, so agreement
+    is required within that scope rather than globally by display-text ID.
+    """
+    grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
-        grouped[(row["dialogId"], row["optionId"])].append(row)
+        scope = row.get("producerScope") or {}
+        grouped[(row["dialogId"], str(scope.get("kind") or ""), str(scope.get("key") or ""))].append(row)
     accepted: list[dict[str, Any]] = []
     conflicts: list[dict[str, Any]] = []
-    for (dialog_id, option_id), group in sorted(grouped.items()):
+    for (dialog_id, scope_kind, scope_key), group in sorted(grouped.items()):
         finish_ids = {row["finishId"] for row in group}
-        if len(finish_ids) != 1:
+        option_ids = {row["optionId"] for row in group}
+        if not scope_kind or not scope_key or len(finish_ids) != 1 or len(option_ids) != 1:
             conflicts.append(
                 {
-                    "gate": "crossFamilyFinishAgreement",
+                    "gate": "producerScopeAgreement",
                     "dialogId": dialog_id,
-                    "optionId": option_id,
+                    "producerScope": {"kind": scope_kind, "key": scope_key},
+                    "optionIds": sorted(option_ids),
                     "finishIds": sorted(finish_ids),
                     "producerFamilies": sorted({row["producerFamily"] for row in group}),
                 }
@@ -564,12 +695,47 @@ def _normalize_producers(
             by_family[row["producerFamily"]].append(row)
         merged = dict(group[0])
         merged["producerFamilies"] = sorted(by_family)
+        merged["finishIdSources"] = sorted(
+            {str(row.get("finishIdSource") or "unknown") for row in group}
+        )
         merged.pop("producerFamily", None)
+        merged.pop("finishIdSource", None)
         merged["sourceFiles"] = _dedupe_source_rows(
             source for row in group for source in row.get("sourceFiles") or []
         )
         accepted.append(merged)
     return accepted, conflicts
+
+
+def _collect_reused_option_scopes(
+    rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Report localization IDs reused by distinct structural branch scopes."""
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        grouped[(row["dialogId"], row["optionId"])].append(row)
+    output: list[dict[str, Any]] = []
+    for (dialog_id, option_id), group in sorted(grouped.items()):
+        scopes = {
+            (str((row.get("producerScope") or {}).get("kind") or ""),
+             str((row.get("producerScope") or {}).get("key") or ""))
+            for row in group
+        }
+        if len(scopes) <= 1:
+            continue
+        output.append(
+            {
+                "dialogId": dialog_id,
+                "optionId": option_id,
+                "finishIds": sorted({row["finishId"] for row in group}),
+                "producerScopes": [row["producerScope"] for row in group],
+                "interpretation": (
+                    "The localization option ID is reused by distinct original "
+                    "runtime branch scopes; it is not a global branch identity."
+                ),
+            }
+        )
+    return output
 
 
 def build_report(
@@ -582,10 +748,14 @@ def build_report(
     validator = "dialog_finish_branch_recovery"
     native_contract = native_contract or validate_native_contract()
     consumers, payloads = _collect_mission_consumers(index, pipeline_root)
-    tree_rows, tree_rejected = _collect_dialog_tree_producers(payloads)
+    runtime_defaults = native_contract.get("serializedFieldDefaults") or {}
+    tree_rows, tree_rejected = _collect_dialog_tree_producers(
+        payloads, runtime_defaults=runtime_defaults
+    )
     timeline_payload = read_json(timeline_orders_path) if timeline_orders_path.is_file() else {}
     timeline_rows, timeline_rejected = decode_timeline_finish_routes(timeline_payload)
     producers, conflicts = _normalize_producers([*tree_rows, *timeline_rows])
+    reused_option_scopes = _collect_reused_option_scopes(producers)
     producers_by_finish: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
     for producer in producers:
         producers_by_finish[(producer["dialogId"], producer["finishId"])].append(producer)
@@ -655,13 +825,15 @@ def build_report(
         )
     )
     report = {
-        "schemaVersion": "dialogFinishMissionBranchAudit.v1",
+        "schemaVersion": "dialogFinishMissionBranchAudit.v2",
         "status": "validated",
         "validator": validator,
         "evidencePolicy": (
             "Only exact nonnegative dialog finish IDs shared by an original "
             "DialogTree/Timeline option producer and MissionRuntime objective are "
-            "admitted. OCR and manual overrides are not read."
+            "admitted. An omitted DialogTree Int32 is admitted as zero only under "
+            "the hash-locked FullSerializer reflected-field default contract. OCR "
+            "and manual overrides are not read."
         ),
         "nativeContract": native_contract,
         "sources": {
@@ -671,6 +843,12 @@ def build_report(
         "counts": {
             "exactMissionConsumers": len(consumers),
             "dialogTreeProducerRows": len(tree_rows),
+            "dialogTreeExplicitFinishRows": sum(
+                row.get("finishIdSource") == "serialized_explicit" for row in tree_rows
+            ),
+            "dialogTreeRuntimeDefaultFinishRows": sum(
+                row.get("finishIdSource") == "runtime_default" for row in tree_rows
+            ),
             "timelineProducerRows": len(timeline_rows),
             "acceptedOptionProducers": len(producers),
             "publishedDependencies": len(dependencies),
@@ -683,6 +861,7 @@ def build_report(
             "unresolvedExactConsumers": len(unresolved),
             "rejectedProducerShapes": len(tree_rejected) + len(timeline_rejected),
             "conflictingOptionProducers": len(conflicts),
+            "reusedOptionIdsAcrossScopes": len(reused_option_scopes),
         },
         "producerFamilyCounts": dict(
             sorted(Counter(family for row in producers for family in row["producerFamilies"]).items())
@@ -691,6 +870,7 @@ def build_report(
         "unresolvedExactConsumers": unresolved,
         "rejectedProducerShapes": [*tree_rejected, *timeline_rejected],
         "conflictingOptionProducers": conflicts,
+        "reusedOptionIdsAcrossScopes": reused_option_scopes,
     }
     return report, payloads
 
@@ -769,23 +949,40 @@ def markdown_report(report: dict[str, Any]) -> str:
         "",
         f"- Exact MissionRuntime consumers: {counts.get('exactMissionConsumers', 0)}",
         f"- Accepted option producers: {counts.get('acceptedOptionProducers', 0)}",
+        f"- DialogTree explicit / runtime-default finish rows: {counts.get('dialogTreeExplicitFinishRows', 0)} / {counts.get('dialogTreeRuntimeDefaultFinishRows', 0)}",
         f"- Published dependencies: {counts.get('publishedDependencies', 0)}",
         f"- Missions / quests: {counts.get('missions', 0)} / {counts.get('quests', 0)}",
         f"- Unresolved exact consumers: {counts.get('unresolvedExactConsumers', 0)}",
         f"- Rejected / conflicting producer shapes: {counts.get('rejectedProducerShapes', 0)} / {counts.get('conflictingOptionProducers', 0)}",
+        f"- Localization option IDs reused across runtime scopes: {counts.get('reusedOptionIdsAcrossScopes', 0)}",
         "",
         "## Recovered dependencies",
         "",
-        "| Mission | Quest | Dialog finish | Authored option outcome | Producer |",
-        "| --- | --- | --- | --- | --- |",
+        "| Mission | Quest | Dialog finish | Authored option outcome | Producer | Value source |",
+        "| --- | --- | --- | --- | --- | --- |",
     ]
     for row in report.get("dependencies") or []:
         lines.append(
             f"| `{row['missionId']}` | `{row['questId']}` | "
             f"`{row['dialogId']}` / `{row['finishId']}` | "
             f"{', '.join(f'`{value}`' for value in row['optionIds'])} | "
-            f"{', '.join(f'`{value}`' for value in row['producerFamilies'])} |"
+            f"{', '.join(f'`{value}`' for value in row['producerFamilies'])} | "
+            f"{', '.join(f'`{value}`' for value in sorted({source for producer in row.get('producerEvidence') or [] for source in producer.get('finishIdSources') or []}))} |"
         )
+    lines.extend(["", "## Reused localization IDs", ""])
+    reused = report.get("reusedOptionIdsAcrossScopes") or []
+    if reused:
+        for row in reused:
+            scopes = ", ".join(
+                f"`{scope.get('kind')}:{scope.get('key')}`"
+                for scope in row.get("producerScopes") or []
+            )
+            lines.append(
+                f"- `{row['dialogId']}` / `{row['optionId']}` produces finishes "
+                f"{', '.join(f'`{value}`' for value in row['finishIds'])} in {scopes}."
+            )
+    else:
+        lines.append("- None.")
     lines.extend(
         [
             "",

@@ -168,8 +168,11 @@ sns_topic_map02_lv005_12002
   selection.
 - Exact DialogTree/Timeline option finish outcomes may be shown beside the
   MissionRuntime objective that consumes the same finish ID. Each row exposes
-  hash-validated original files and remains a dependency, not an observed
-  player choice or server-selected successor.
+  hash-validated original files, the structural option-node/slot scope, and
+  whether the finish was explicit or the binary-validated runtime-default
+  `Int32 0`. Reused localization option IDs stay separated by runtime scope.
+  Each row remains a dependency, not an observed player choice or
+  server-selected successor.
 - Manual Story order and OCR proposals are cross-reference material, not graph
   evidence.
 
