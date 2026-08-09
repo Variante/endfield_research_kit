@@ -394,6 +394,155 @@ class TimelineEmbeddedStoryRuntimeAuditTests(unittest.TestCase):
         ]
         self.assertEqual([], audit.local_order_edges(rows))
 
+    def test_parent_dialog_activation_join_is_shape_driven(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            levelscript = root / "level_general" / "70001.json"
+            leveldata = root / "level_general_lv_data_sub_mission_general.json"
+            mission_root = root / "MissionRuntimeAsset"
+            mission = mission_root / "mission_general.json"
+            levelscript.parent.mkdir()
+            mission_root.mkdir()
+            for path, data in (
+                (gameassembly, b"binary"),
+                (metadata, b"metadata"),
+                (levelscript, b"levelscript"),
+                (leveldata, b"leveldata"),
+                (mission, b"{}"),
+            ):
+                path.write_bytes(data)
+
+            timeline_rows = [{
+                "key": "black_general",
+                "dialogKey": "dlg_general_parent",
+                "missionOwnership": False,
+            }]
+            mapping_id = "runtime-indexed-general"
+            header_report = {
+                "summary": {"runtimeSlotMappingId": mapping_id},
+                "headerRows": [{
+                    "levelId": "level_general",
+                    "sourceScript": "70001",
+                    "file": str(levelscript),
+                    "header": {
+                        "localId": 5,
+                        "offset": "0x60",
+                        "opcode": "0x1000/0x00",
+                    },
+                    "headerName": "ScriptEvent_OnGeneralEvent",
+                    "targetSource": "actionHeader.nextId",
+                    "targetLocalId": 6,
+                    "runtimeSlotStatus": "active-final-serialized-slot",
+                    "runtimeSlotMappingId": mapping_id,
+                    "targetStatus": "action-list",
+                    "chainStatus": "complete",
+                    "playActions": [{
+                        "localId": 6,
+                        "offset": "0x10",
+                        "opcode": "0x2000/0x00",
+                        "class": "play_dialog",
+                        "texts": ["dlg_general_parent"],
+                    }],
+                    "sceneTexts": ["dlg_general_parent"],
+                    "chain": [{
+                        "localId": 6,
+                        "class": "play_dialog",
+                        "texts": ["dlg_general_parent"],
+                    }],
+                }],
+            }
+            mission_hosts = {("level_general", "70001"): {
+                "status": "unique",
+                "hostMissionIds": ["mission_general"],
+                "hosts": [{
+                    "missionId": "mission_general",
+                    "levelDataFile": str(leveldata),
+                    "byteOffsets": [24],
+                    "entryEndOffsets": [72],
+                    "encoding": "leveldata_member22_levelscriptbriefdata",
+                    "nativeSchema": "LevelData.member22",
+                    "briefData": [{
+                        "scriptId": "70001",
+                        "keyOffset": 24,
+                        "endOffset": 72,
+                        "dictionaryCountOffset": 20,
+                        "dictionaryEntryCount": 1,
+                    }],
+                }],
+            }}
+
+            result = audit.join_parent_dialog_activation_routes(
+                timeline_rows,
+                header_report,
+                mission_hosts,
+                {},
+                gameassembly=gameassembly,
+                metadata=metadata,
+                mission_runtime_root=mission_root,
+            )
+
+        self.assertEqual("validated", result["validation"]["status"])
+        self.assertEqual(1, result["counts"]["exactActivationRoutes"])
+        route = result["routes"][0]
+        self.assertEqual("dlg_general_parent", route["dialogKey"])
+        self.assertEqual(["mission_general"], route["missionShellIds"])
+        self.assertTrue(route["missionShellOwnership"])
+        self.assertFalse(route["questActivation"])
+        self.assertEqual([route["id"]], timeline_rows[0]["parentDialogActivationRouteIds"])
+        self.assertTrue(timeline_rows[0]["missionOwnership"])
+        roles = {row["role"] for row in route["relatedOriginalFiles"]}
+        self.assertIn("levelscript_event_action_source", roles)
+        self.assertIn("mission_leveldata_script_host", roles)
+        self.assertIn("original_game_binary", roles)
+
+    def test_parent_dialog_activation_failure_names_exact_gate(self) -> None:
+        rows = [{"key": "black_general", "dialogKey": "dlg_general"}]
+        result = audit.join_parent_dialog_activation_routes(
+            rows,
+            {
+                "summary": {"runtimeSlotMappingId": "mapping"},
+                "headerRows": [{
+                    "levelId": "level_general",
+                    "sourceScript": "1",
+                    "file": "missing.json",
+                    "header": {"localId": 2},
+                    "headerName": "ScriptEvent_OnGeneralEvent",
+                    "runtimeSlotStatus": "active-final-serialized-slot",
+                    "runtimeSlotMappingId": "mapping",
+                    "targetStatus": "action-list",
+                    "chainStatus": "truncated",
+                    "playActions": [],
+                    "sceneTexts": ["dlg_general"],
+                }],
+            },
+            {},
+            {},
+            gameassembly=Path("unused"),
+            metadata=Path("unused"),
+            mission_runtime_root=Path("unused"),
+        )
+        self.assertEqual("failed", result["validation"]["status"])
+        failure = result["validation"]["failures"][0]
+        self.assertEqual("parent_dialog_event_action_path", failure["gate"])
+        self.assertEqual("truncated", failure["actual"]["chainStatus"])
+        self.assertEqual("missing.json", failure["sourceFile"])
+
+    def test_candidate_level_discovery_uses_dialog_bytes_not_names(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            wanted = root / "level_alpha" / "90001.json"
+            unrelated = root / "level_beta" / "dlg_general.json"
+            wanted.parent.mkdir()
+            unrelated.parent.mkdir()
+            wanted.write_bytes(b"prefix dlg_general_parent suffix")
+            unrelated.write_bytes(b"no matching serialized value")
+            levels = audit.discover_parent_dialog_candidate_levels(
+                {"dlg_general_parent"}, root
+            )
+        self.assertEqual(["level_alpha"], levels)
+
 
 if __name__ == "__main__":
     unittest.main()

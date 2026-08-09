@@ -56,6 +56,25 @@ DEFAULT_JSON = (
 DEFAULT_MD = DEFAULT_JSON.with_suffix(".md")
 
 
+def _story_recovery_modules() -> tuple[Any, Any, Any]:
+    """Load the shared native topology and LevelData host recoveries lazily.
+
+    Keeping these imports lazy avoids making the Timeline object scanner own a
+    second copy of either parser.  Both helpers are corpus-driven and validate
+    current serialized shapes; no dialog, mission, level, or script identifiers
+    are declared here.
+    """
+    try:
+        from scripts.story_builder import context as story_context
+        from scripts.story_builder import level_bindings
+        from scripts.story_recovery import build_levelscript_header_chain_audit
+    except ModuleNotFoundError:
+        from story_builder import context as story_context
+        from story_builder import level_bindings
+        from story_recovery import build_levelscript_header_chain_audit
+    return story_context, level_bindings, build_levelscript_header_chain_audit
+
+
 def load_module(name: str, path: Path) -> Any:
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
@@ -437,6 +456,395 @@ def original_file_record(path_value: str, role: str) -> dict[str, Any]:
         "rawDataSha256": meta.get("rawDataSha256"),
         "exportedJsonSha256": sha256_path(path),
     }
+
+
+def hashed_source_record(path_value: Path | str, role: str) -> dict[str, Any]:
+    """Describe an exact original binary/serialized input with its live hash."""
+    path = Path(path_value)
+    if not path.is_absolute():
+        path = ROOT / path
+    if not path.is_file():
+        raise RuntimeError(
+            "validator=timeline_embedded_story_runtime failed: "
+            "gate=related_original_file; "
+            f"source={path}; expected=existing file; actual=missing"
+        )
+    return {
+        "role": role,
+        "path": repo_path(path),
+        "byteSize": path.stat().st_size,
+        "sha256": sha256_path(path),
+    }
+
+
+def discover_parent_dialog_candidate_levels(
+    dialog_keys: set[str],
+    levelscript_root: Path,
+) -> list[str]:
+    """Find only levels whose original LevelScript bytes carry a target key."""
+    needles = tuple(
+        value.encode("utf-8")
+        for value in sorted(dialog_keys)
+        if value
+    )
+    if not needles or not levelscript_root.is_dir():
+        return []
+    levels: set[str] = set()
+    for path in sorted(levelscript_root.glob("*/*.json")):
+        try:
+            data = path.read_bytes()
+        except OSError:
+            continue
+        if any(needle in data for needle in needles):
+            levels.add(path.parent.name)
+    return sorted(levels)
+
+
+def _compact_mission_host(host: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "missionId": host.get("missionId"),
+        "levelDataFile": host.get("levelDataFile"),
+        "byteOffsets": host.get("byteOffsets") or [],
+        "entryEndOffsets": host.get("entryEndOffsets") or [],
+        "encoding": host.get("encoding"),
+        "nativeSchema": host.get("nativeSchema"),
+        "briefData": [
+            {
+                key: row.get(key)
+                for key in (
+                    "scriptId", "keyOffset", "endOffset", "dataPathHash",
+                    "levelScriptType", "maxStage", "parentLevelScriptId",
+                    "dictionaryCountOffset", "dictionaryEntryCount",
+                )
+            }
+            for row in host.get("briefData") or []
+            if isinstance(row, dict)
+        ],
+    }
+
+
+def join_parent_dialog_activation_routes(
+    rows: list[dict[str, Any]],
+    header_report: dict[str, Any],
+    mission_hosts: dict[tuple[str, str], dict[str, Any]],
+    mission_area_hosts: dict[tuple[str, str], dict[str, Any]],
+    *,
+    gameassembly: Path,
+    metadata: Path,
+    mission_runtime_root: Path,
+) -> dict[str, Any]:
+    """Join native event roots to Timeline parents by exact dialog identity.
+
+    The general shape is:
+
+    ``active header slot -> nextId action chain -> StartDialog(dialog key)``
+    ``-> dialog registry Timeline -> PlayableDirector/ControlPlayableAsset``.
+
+    A fully decoded LevelData member-22 host can additionally prove the owning
+    mission shell.  It never proves a quest activator, selected branch, or
+    chronology inside/between missions.
+    """
+    dialog_to_story: dict[str, set[str]] = defaultdict(set)
+    for row in rows:
+        dialog_key = str(row.get("dialogKey") or "")
+        story_key = str(row.get("key") or "")
+        if dialog_key and story_key:
+            dialog_to_story[dialog_key].add(story_key)
+    wanted = set(dialog_to_story)
+    expected_slot_mapping = str(
+        (header_report.get("summary") or {}).get("runtimeSlotMappingId") or ""
+    )
+    failures: list[dict[str, Any]] = []
+    routes: list[dict[str, Any]] = []
+
+    for header_row in header_report.get("headerRows") or []:
+        if not isinstance(header_row, dict):
+            continue
+        dialogs = sorted(
+            wanted.intersection(
+                str(value) for value in header_row.get("sceneTexts") or []
+            )
+        )
+        if not dialogs:
+            continue
+        level_id = str(header_row.get("levelId") or "")
+        script_id = str(header_row.get("sourceScript") or "")
+        source_file = str(header_row.get("file") or "")
+        strict_common = (
+            bool(expected_slot_mapping)
+            and
+            header_row.get("runtimeSlotStatus") == "active-final-serialized-slot"
+            and str(header_row.get("runtimeSlotMappingId") or "")
+            == expected_slot_mapping
+            and header_row.get("targetStatus") == "action-list"
+            and header_row.get("chainStatus") == "complete"
+            and bool(header_row.get("headerName"))
+            and level_id
+            and script_id.isdigit()
+            and source_file
+        )
+        for dialog_key in dialogs:
+            play_actions = [
+                action
+                for action in header_row.get("playActions") or []
+                if isinstance(action, dict)
+                and action.get("class") == "play_dialog"
+                and dialog_key in {
+                    str(value) for value in action.get("texts") or []
+                }
+            ]
+            if not strict_common or len(play_actions) != 1:
+                failures.append(validation_failure(
+                    "parent_dialog_event_action_path",
+                    "one active named header -> complete action-list chain -> exact play_dialog",
+                    {
+                        "runtimeSlotStatus": header_row.get("runtimeSlotStatus"),
+                        "runtimeSlotMappingId": header_row.get("runtimeSlotMappingId"),
+                        "expectedRuntimeSlotMappingId": expected_slot_mapping,
+                        "targetStatus": header_row.get("targetStatus"),
+                        "chainStatus": header_row.get("chainStatus"),
+                        "playDialogMatches": len(play_actions),
+                    },
+                    source_file or f"{level_id}/{script_id}",
+                ))
+                continue
+
+            pair = (level_id, script_id)
+            host = mission_hosts.get(pair) or {}
+            host_ids = sorted({
+                str(value) for value in host.get("hostMissionIds") or [] if value
+            })
+            mission_shell_ownership = (
+                host.get("status") == "unique" and len(host_ids) == 1
+            )
+            area_host = mission_area_hosts.get(pair) or {}
+            related_files = [
+                hashed_source_record(source_file, "levelscript_event_action_source"),
+                hashed_source_record(gameassembly, "original_game_binary"),
+                hashed_source_record(metadata, "original_game_metadata"),
+            ]
+            compact_hosts = [
+                _compact_mission_host(value)
+                for value in host.get("hosts") or []
+                if isinstance(value, dict)
+            ]
+            for compact_host in compact_hosts:
+                leveldata_file = str(compact_host.get("levelDataFile") or "")
+                if leveldata_file:
+                    related_files.append(hashed_source_record(
+                        leveldata_file, "mission_leveldata_script_host"
+                    ))
+            for mission_id in host_ids:
+                mission_path = mission_runtime_root / f"{mission_id}.json"
+                if mission_path.is_file():
+                    related_files.append(hashed_source_record(
+                        mission_path, "mission_runtime_shell_identity"
+                    ))
+            area_references: list[dict[str, Any]] = []
+            for area_shell in area_host.get("hosts") or []:
+                if not isinstance(area_shell, dict):
+                    continue
+                for reference in area_shell.get("missionAreaReferences") or []:
+                    if not isinstance(reference, dict):
+                        continue
+                    area_references.append({
+                        key: reference.get(key)
+                        for key in (
+                            "missionId", "questId", "missionAreaId",
+                            "subDataParentId", "trackingType", "sourceFile",
+                        )
+                    })
+                    reference_file = str(reference.get("sourceFile") or "")
+                    if reference_file:
+                        related_files.append(hashed_source_record(
+                            reference_file, "mission_area_tracking_context"
+                        ))
+            deduped_files = {
+                (str(file.get("role") or ""), str(file.get("path") or "")): file
+                for file in related_files
+            }
+            header = header_row.get("header") or {}
+            play_action = play_actions[0]
+            route_id = (
+                f"{level_id}/{script_id}/"
+                f"{header.get('localId')}/{dialog_key}"
+            )
+            routes.append({
+                "id": route_id,
+                "dialogKey": dialog_key,
+                "storyKeys": sorted(dialog_to_story[dialog_key]),
+                "levelId": level_id,
+                "scriptId": script_id,
+                "headerName": header_row.get("headerName"),
+                "headerLocalId": header.get("localId"),
+                "headerOffset": header.get("offset"),
+                "headerOpcode": header.get("opcode"),
+                "targetSource": header_row.get("targetSource"),
+                "targetLocalId": header_row.get("targetLocalId"),
+                "playActionLocalId": play_action.get("localId"),
+                "playActionOffset": play_action.get("offset"),
+                "playActionOpcode": play_action.get("opcode"),
+                "actionChain": header_row.get("chain") or [],
+                "chainStatus": header_row.get("chainStatus"),
+                "runtimeSlotStatus": header_row.get("runtimeSlotStatus"),
+                "runtimeSlotMappingId": header_row.get("runtimeSlotMappingId"),
+                "missionShellStatus": host.get("status") or "unresolved",
+                "missionShellIds": host_ids,
+                "missionShellOwnership": mission_shell_ownership,
+                "missionLevelDataHosts": compact_hosts,
+                "missionAreaContextStatus": area_host.get("status") or "unresolved",
+                "missionAreaReferences": sorted(
+                    area_references,
+                    key=lambda value: (
+                        str(value.get("missionId") or ""),
+                        str(value.get("questId") or ""),
+                        str(value.get("missionAreaId") or ""),
+                    ),
+                ),
+                "questActivation": False,
+                "branchSelection": False,
+                "crossTimelineOrder": False,
+                "relatedOriginalFiles": sorted(
+                    deduped_files.values(),
+                    key=lambda value: (
+                        str(value.get("role") or ""),
+                        str(value.get("path") or ""),
+                    ),
+                ),
+            })
+
+    routes.sort(key=lambda route: route["id"])
+    route_ids_by_dialog: dict[str, list[str]] = defaultdict(list)
+    for route in routes:
+        route_ids_by_dialog[str(route["dialogKey"])].append(str(route["id"]))
+    story_keys_with_routes: set[str] = set()
+    mission_shell_ids: set[str] = set()
+    for row in rows:
+        route_ids = route_ids_by_dialog.get(str(row.get("dialogKey") or ""), [])
+        row["parentDialogActivationRouteIds"] = route_ids
+        if route_ids:
+            story_keys_with_routes.add(str(row.get("key") or ""))
+        row_routes = [route for route in routes if route["id"] in route_ids]
+        owned_missions = sorted({
+            mission_id
+            for route in row_routes
+            if route.get("missionShellOwnership")
+            for mission_id in route.get("missionShellIds") or []
+        })
+        row["missionOwnership"] = bool(owned_missions)
+        row["missionShellIds"] = owned_missions
+        mission_shell_ids.update(owned_missions)
+
+    matched_dialogs = {str(route["dialogKey"]) for route in routes}
+    return {
+        "validation": {
+            "status": "validated" if not failures else "failed",
+            "failures": failures,
+        },
+        "routes": routes,
+        "counts": {
+            "parentDialogKeys": len(wanted),
+            "candidateHeaderRows": sum(
+                1
+                for header_row in header_report.get("headerRows") or []
+                if isinstance(header_row, dict) and wanted.intersection(
+                    str(value) for value in header_row.get("sceneTexts") or []
+                )
+            ),
+            "exactActivationRoutes": len(routes),
+            "parentDialogsWithExactActivation": len(matched_dialogs),
+            "parentDialogsWithoutExactActivation": len(wanted - matched_dialogs),
+            "storyKeysWithExactActivation": len(story_keys_with_routes),
+            "uniqueMissionShells": len(mission_shell_ids),
+            "missionOwnedRoutes": sum(
+                bool(route.get("missionShellOwnership")) for route in routes
+            ),
+        },
+        "evidenceBoundary": {
+            "eventToActionTopology": True,
+            "parentDialogPlayback": True,
+            "missionShellOwnership": "unique_validated_leveldata_hosts_only",
+            "questActivation": False,
+            "branchSelection": False,
+            "crossTimelineOrder": False,
+            "ocrOrManualOverrideUsed": False,
+        },
+    }
+
+
+def recover_parent_dialog_activation_routes(
+    rows: list[dict[str, Any]],
+    *,
+    gameassembly: Path,
+    metadata: Path,
+    levelscript_root: Path | None = None,
+) -> dict[str, Any]:
+    """Run the exact activation join over every discovered parent dialog."""
+    story_context, level_bindings, header_audit = _story_recovery_modules()
+    levelscript_root = levelscript_root or story_context.LEVELSCRIPT_DIR
+    dialog_keys = {
+        str(row.get("dialogKey") or "") for row in rows if row.get("dialogKey")
+    }
+    if not dialog_keys:
+        empty = join_parent_dialog_activation_routes(
+            rows,
+            {"summary": {}, "headerRows": []},
+            {},
+            {},
+            gameassembly=gameassembly,
+            metadata=metadata,
+            mission_runtime_root=story_context.MRA_DIR,
+        )
+        empty["source"] = {
+            "candidateLevels": [],
+            "levelScriptRoot": repo_path(levelscript_root),
+            "runtimeSlotMappingId": "",
+        }
+        return empty
+    levels = discover_parent_dialog_candidate_levels(dialog_keys, levelscript_root)
+    header_report = header_audit.build_report(SimpleNamespace(
+        level=levels,
+        mapping=header_audit.DEFAULT_MAPPING,
+        chain_preview=64,
+        samples_per_event=0,
+        play_samples=0,
+        unresolved_samples=0,
+    ))
+    script_pairs = {
+        (str(row.get("levelId") or ""), str(row.get("sourceScript") or ""))
+        for row in header_report.get("headerRows") or []
+        if dialog_keys.intersection(
+            str(value) for value in row.get("sceneTexts") or []
+        )
+    }
+    mission_runtime_ids = {
+        path.stem
+        for path in story_context.MRA_DIR.glob("*.json")
+        if not path.stem.endswith("_meta")
+    }
+    mission_hosts = level_bindings.build_leveldata_mission_script_host_index(
+        script_pairs, mission_runtime_ids
+    )
+    mission_area_hosts = level_bindings.build_leveldata_mission_area_script_host_index(
+        script_pairs
+    )
+    result = join_parent_dialog_activation_routes(
+        rows,
+        header_report,
+        mission_hosts,
+        mission_area_hosts,
+        gameassembly=gameassembly,
+        metadata=metadata,
+        mission_runtime_root=story_context.MRA_DIR,
+    )
+    result["source"] = {
+        "candidateLevels": levels,
+        "levelScriptRoot": repo_path(levelscript_root),
+        "runtimeSlotMappingId": (
+            (header_report.get("summary") or {}).get("runtimeSlotMappingId")
+        ),
+    }
+    return result
 
 
 def enrich_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1116,9 +1524,22 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                     row["relatedOriginalFiles"].append(file)
                     known_files.add(identity)
         row["relatedOriginalFiles"].sort(key=lambda file: (file["role"], file["path"]))
+    activation = recover_parent_dialog_activation_routes(
+        rows,
+        gameassembly=args.gameassembly,
+        metadata=args.metadata,
+    )
+    if activation["validation"]["status"] != "validated":
+        failure = (activation["validation"]["failures"] or [{}])[0]
+        raise RuntimeError(
+            "timeline parent-dialog activation validation failed: "
+            f"validator={failure.get('validator')}; gate={failure.get('gate')}; "
+            f"source={failure.get('sourceFile')}; expected={failure.get('expected')!r}; "
+            f"actual={failure.get('actual')!r}"
+        )
     edges = local_order_edges(rows)
     return {
-        "schemaVersion": "timelineEmbeddedStoryRuntimeAudit.v2",
+        "schemaVersion": "timelineEmbeddedStoryRuntimeAudit.v3",
         "source": {
             "gameAssembly": str(args.gameassembly),
             "gameAssemblySha256": sha256_path(args.gameassembly),
@@ -1131,11 +1552,14 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "runtimeContract": contract["validation"],
             "controlRuntimeContract": control_contract["validation"],
             "directorHosts": director_hosts["validation"],
+            "parentDialogActivation": activation["validation"],
             "storyLineIndex": line_validation,
         },
         "runtimeContract": contract,
         "controlRuntimeContract": control_contract,
         "directorHosts": director_hosts,
+        "parentDialogActivation": activation,
+        "activationRoutes": activation["routes"],
         "counts": {
             "runtimeCarrierFamilies": len(contract["families"]),
             "serializedClipRows": len(rows),
@@ -1147,7 +1571,14 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 director_hosts["counts"]["controlledDirectorInstances"]
             ),
             "controlChains": director_hosts["counts"]["controlChains"],
-            "missionOwnershipEdges": 0,
+            "parentDialogActivationRoutes": activation["counts"]["exactActivationRoutes"],
+            "parentDialogsWithExactActivation": (
+                activation["counts"]["parentDialogsWithExactActivation"]
+            ),
+            "storyKeysWithExactActivation": (
+                activation["counts"]["storyKeysWithExactActivation"]
+            ),
+            "missionOwnershipEdges": activation["counts"]["missionOwnedRoutes"],
             "branchSelectionEdges": 0,
         },
         "rows": rows,
@@ -1158,7 +1589,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "sameTrackNonOverlappingClipOrder": True,
             "playableDirectorInstances": True,
             "exposedReferenceControlChains": True,
-            "missionOwnership": False,
+            "parentDialogEventActionChains": True,
+            "missionOwnership": "unique_validated_leveldata_hosts_only",
             "questActivation": False,
             "branchSelection": False,
             "crossTimelineOrder": False,
@@ -1182,6 +1614,13 @@ def render_markdown(report: dict[str, Any]) -> str:
         "- exposed-reference controlled director instances: "
         f"`{counts['controlledDirectorInstances']}`",
         f"- exact nested control chains: `{counts['controlChains']}`",
+        "- exact parent-dialog event/action activation routes: "
+        f"`{counts['parentDialogActivationRoutes']}`",
+        "- parent dialogs with exact activation: "
+        f"`{counts['parentDialogsWithExactActivation']}`",
+        "- Story keys reached through exact parent activation: "
+        f"`{counts['storyKeysWithExactActivation']}`",
+        f"- unique mission-shell ownership edges: `{counts['missionOwnershipEdges']}`",
         f"- GameAssembly SHA-256: `{report['source']['gameAssemblySha256']}`",
         f"- metadata SHA-256: `{report['source']['metadataSha256']}`",
         "",
@@ -1209,9 +1648,11 @@ def render_markdown(report: dict[str, Any]) -> str:
         "The installed binary proves that these serialized text fields are resolved and "
         "passed into live Timeline behaviours. Exact PathID links prove the playable, "
         "clip, track, Actor root, PlayableDirector instances, and any published "
-        "ExposedReference/ControlPlayableAsset chain. Non-overlapping clip times prove only local order "
-        "inside one track and option lane. They do not prove the owning mission/quest, "
-        "which branch is selected, or any order across Timeline roots. OCR and manual "
+        "ExposedReference/ControlPlayableAsset chain. An active LevelScript event-to-action "
+        "path can prove parent-dialog playback; a unique validated LevelData member-22 host "
+        "can additionally prove only the mission shell. Non-overlapping clip times prove only "
+        "local order inside one track and option lane. These joins do not prove the quest "
+        "activator, selected branch, or any order across Timeline roots. OCR and manual "
         "overrides are not used.",
         "",
         "## Recovered Rows",
@@ -1230,6 +1671,15 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"director `{host['directorIdentity']['sourceFile']}` / "
             f"`{host['directorIdentity']['pathId']}`; "
             f"control chains `{len(host['controlChains'])}`"
+        )
+    lines.extend(["", "## Parent Dialog Activation", ""])
+    for route in report.get("activationRoutes") or []:
+        missions = ", ".join(route.get("missionShellIds") or []) or "unresolved"
+        lines.append(
+            f"- `{route['headerName']}` in `{route['levelId']}/{route['scriptId']}` "
+            f"-> `#{route['playActionLocalId']}` `{route['dialogKey']}` -> "
+            f"`{', '.join(route['storyKeys'])}`; mission shell `{missions}`; "
+            "quest activation and branch selection unresolved"
         )
     lines.append("")
     return "\n".join(lines)

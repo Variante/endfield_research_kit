@@ -30,7 +30,7 @@ Latest CN reports:
 | Local DialogTree conditional census | 13 exact same-Story routes / 26 serialized arms across 7 Story files; hash-locked `DialogTreeIfNode` polarity, 0 validation failures; selection evidence only, never file order |
 | Serialized DialogTree IfNode census | 78 binary-validated nodes / 156 arms; 1 malformed node retained as a structured failure; internal selection evidence only |
 | Timeline option-route binary contract | 25 route groups / 84 related-file occurrences; exact serialized Runtime Jump/clip tracks plus hash-locked option-index/active-clip contract; 0 validation failures; selection/track evidence only |
-| Timeline-embedded Story runtime | 2 carrier families discovered by metadata shape / 21 exact clips / 16 Story keys / 14 Timeline roots / 24 exact PlayableDirector instances across 13 roots / 10 ExposedReference-ControlPlayableAsset chains / 1 same-track local-order edge / 0 ownership or branch-selection edges; every attached original object retains its original-byte SHA-256 |
+| Timeline-embedded Story runtime | 2 carrier families / 21 exact clips / 16 Story keys / 14 Timeline roots / 24 exact PlayableDirector instances across 13 roots / 10 ExposedReference-ControlPlayableAsset chains / 8 exact parent-dialog event/action routes covering 10 Story keys and 7 unique mission shells / 1 same-track local-order edge / 0 quest-activation or branch-selection edges; every attached original input retains its SHA-256 |
 | Binary parallel-fan-out authority | 1 structural scheduler carrier / 2 admitted writer methods / 3 decoded direct calls / 44 Split branch groups / 77 transitions / 104 evidence rows |
 | Source-comparable scene pairs | 3,845 / 249,695 (1.54%) |
 | Cyclic components | 0 |
@@ -132,13 +132,23 @@ in five payloads.
   `CutsceneRoot`. The remaining `black_c27m3_2` root has no exported director
   instance and stays an explicit gap. Non-overlapping times prove one local edge,
   `black_c31m2_2 -> black_c31m2_6`, inside one track/option lane. This is not a
-  mission-order edge. For `black_c31m1_3`, live left-subtitle presentation at
-  0.167s for 3.7s plus its exact nested director composition under
-  `dlgtl_c31m1_9_sub_1` are proven, while its mission/quest activator, branch
-  selection, and cross-Timeline order remain unknown. Discovery is driven by
-  the recovered Timeline-root corpus and serialized identities, with no
-  Story/mission/CAB/PathID allowlist. Ambiguous emitted line IDs are enumerated
-  and excluded rather than guessed; OCR and overrides are not inputs.
+  mission-order edge. A third corpus-driven join now discovers every parent
+  dialog token in original LevelScript bytes, decodes only those candidate
+  levels, and requires an active indexed event slot, exact `nextId` action
+  chain, and one typed `play_dialog` carrying the same dialog key. It then
+  validates the complete 64-bit script id inside the general
+  `LevelData/43.member22` BriefData dictionary; a unique mission-named shell is
+  published as mission-shell ownership only. Eight exact
+  `OnLeaderEnterTriggerVolume -> StartDialog` routes cover 10 of the 16 Story
+  keys and seven mission shells. For `black_c31m1_3`, this closes the chain from
+  `indie_dg005/25600140003` header `#5`, through action `#6` and
+  `dlg_c31m1_9`, into the nested director composition under
+  `dlgtl_c31m1_9_sub_1`, with exact LevelScript, LevelData, MissionRuntime,
+  GameAssembly, and metadata hashes. Six parent dialogs still have no exact
+  client-visible event/action route; all eight recovered routes still lack an
+  activating quest and selected-branch carrier. Discovery uses no
+  Story/mission/level/script/CAB/PathID allowlist. Ambiguous emitted line IDs
+  are excluded rather than guessed; OCR and overrides are not inputs.
 - A general, id-free direct-call census now maps the complete hash-pinned
   `GameAssembly.dll`/metadata method corpus and classifies every caller crossing
   MissionSystem, DynamicScene, LevelScript, or Story API families. Four
@@ -1850,8 +1860,12 @@ The eight unmatched BlackBox rows are now source-bounded current-build
 definitions, not open placement candidates. Reopen them only if a changed
 binary or serialized producer/consumer surface contains an exact row identity;
 numeric suffixes, dungeon sort ids, guide-hint names, task ids, asset paths,
-OCR, and manual order remain non-evidence. Highest-value next work is the 156
-exact native playback files that still lack a mission/quest activation bridge,
+OCR, and manual order remain non-evidence. Highest-value next work has two
+bounded fronts: recover a typed quest/event owner for the eight newly
+mission-scoped parent-dialog routes (without treating same-scene tracking as
+activation), and inspect the six remaining Timeline parent dialogs that have no
+exact LevelScript event/action route. The broader queue still contains 156
+exact native playback files without a mission/quest activation bridge,
 especially repeated typed LevelData receiver contracts that may expose a new
 foreign key. The former final three isolated keys are now closed by general
 provenance rules: every exact `SNSDialogTable` identity, regardless of filename

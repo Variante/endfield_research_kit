@@ -169,7 +169,7 @@ for (const [key, category] of [
         self.assertIn("context.relatedOriginalFiles", source)
         self.assertIn("nativeReceiverStoryContextHint", source)
 
-    def test_mission_pipeline_surfaces_timeline_runtime_without_promoting_owner(self) -> None:
+    def test_mission_pipeline_surfaces_timeline_runtime_and_exact_activation_boundary(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("timelineEmbeddedStoryRuntimeAudit", source)
         self.assertIn("timelineRuntimeHtml", source)
@@ -180,8 +180,14 @@ for (const [key, category] of [
         self.assertIn("control.parentTimelineIdentity", source)
         self.assertIn('t("timelineEmbeddedDirectorBoundary")', source)
         self.assertIn("file.rawDataSha256", source)
+        self.assertIn("timelineActivationRoutesById", source)
+        self.assertIn("row.parentDialogActivationRouteIds", source)
+        self.assertIn('t("timelineEmbeddedActivationRoute")', source)
+        self.assertIn("route.missionShellIds", source)
+        self.assertIn("route.actionChain", source)
+        self.assertIn("route.relatedOriginalFiles", source)
         self.assertIn(
-            "It does not prove mission/quest ownership, branch selection, or cross-Timeline order.",
+            "It does not prove the activating quest, selected branch, or cross-Timeline order.",
             source,
         )
 
