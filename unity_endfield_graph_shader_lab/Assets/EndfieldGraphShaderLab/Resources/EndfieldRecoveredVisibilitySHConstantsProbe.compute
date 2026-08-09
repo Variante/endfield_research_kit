@@ -1,0 +1,30 @@
+// Reads the exact global VisibilitySHConstData binding used by deferred pass 0.
+
+#pragma kernel Readback
+#pragma target 5.0
+
+cbuffer VisibilitySHConstData
+{
+    float4 _EndfieldRecoveredVisibilitySHConstDataVectors[8];
+};
+
+float _EndfieldRecoveredVisibilitySHConstDataReady;
+RWStructuredBuffer<uint> _EndfieldRecoveredVisibilitySHConstantsReadback;
+
+[numthreads(1, 1, 1)]
+void Readback(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    _EndfieldRecoveredVisibilitySHConstantsReadback[0] =
+        asuint(_EndfieldRecoveredVisibilitySHConstDataReady);
+    [unroll]
+    for (uint vectorIndex = 0u; vectorIndex < 8u; ++vectorIndex)
+    {
+        uint4 bits = asuint(
+            _EndfieldRecoveredVisibilitySHConstDataVectors[vectorIndex]);
+        uint wordBase = 1u + vectorIndex * 4u;
+        _EndfieldRecoveredVisibilitySHConstantsReadback[wordBase + 0u] = bits.x;
+        _EndfieldRecoveredVisibilitySHConstantsReadback[wordBase + 1u] = bits.y;
+        _EndfieldRecoveredVisibilitySHConstantsReadback[wordBase + 2u] = bits.z;
+        _EndfieldRecoveredVisibilitySHConstantsReadback[wordBase + 3u] = bits.w;
+    }
+}

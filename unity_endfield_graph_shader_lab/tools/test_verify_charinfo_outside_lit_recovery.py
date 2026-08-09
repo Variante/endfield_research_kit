@@ -235,6 +235,68 @@ class LightBinningContractTests(unittest.TestCase):
             )
 
 
+class VisibilitySHConstantsContractTests(unittest.TestCase):
+    @staticmethod
+    def load_current_contract() -> tuple[dict[str, object], dict[str, object]]:
+        contract = json.loads(
+            verifier.BINDING_CONTRACT_PATH.read_text(encoding="utf-8")
+        )
+        transport = contract["visibility_sh_resource_binding"][
+            "constants_transport"
+        ]
+        audit = json.loads(
+            (verifier.LAB_ROOT / transport["audit_path"]).read_text(
+                encoding="utf-8"
+            )
+        )
+        return transport, audit
+
+    def test_current_visibility_sh_constants_audit_passes(self) -> None:
+        transport, audit = self.load_current_contract()
+        verifier.verify_visibility_sh_constants_audit(
+            transport,
+            audit,
+            Path("fixture_contract.json"),
+        )
+
+    def test_selected_consumer_failure_is_actionable(self) -> None:
+        transport, _ = self.load_current_contract()
+        evidence = transport["gpu_reports"]["d3d12"]
+        report = json.loads(
+            (verifier.LAB_ROOT / evidence["path"]).read_text(encoding="utf-8")
+        )
+        changed = copy.deepcopy(report)
+        changed["selectedDeferredWordsMatch"] = False
+        with self.assertRaisesRegex(
+            AssertionError,
+            "VisibilitySHConstData validator failed: "
+            "check=gpu_report.d3d12.publication; "
+            "source=fixture_contract.json; expected=.*True.*actual=.*False",
+        ):
+            verifier.verify_visibility_sh_constants_gpu_report(
+                transport,
+                changed,
+                "d3d12",
+                Path("fixture_contract.json"),
+            )
+
+    def test_native_ab_params_failure_is_actionable(self) -> None:
+        transport, audit = self.load_current_contract()
+        changed = copy.deepcopy(audit)
+        changed["fixedRows"]["abParams"]["wordBits"][1] = "0x00000000"
+        with self.assertRaisesRegex(
+            AssertionError,
+            "VisibilitySHConstData validator failed: "
+            "check=audit.ab_params_bits; source=fixture_contract.json; "
+            "expected=.*0x3ea16095.*actual=.*0x00000000",
+        ):
+            verifier.verify_visibility_sh_constants_audit(
+                transport,
+                changed,
+                Path("fixture_contract.json"),
+            )
+
+
 class HdplsMatrixFormulaContractTests(unittest.TestCase):
     @staticmethod
     def load_current_contract() -> tuple[dict[str, object], dict[str, object]]:

@@ -828,6 +828,233 @@ def verify_canonical_reflection_frame_gpu_report(
         require_light_binning_value(source, check, actual, expected)
 
 
+def require_visibility_sh_constants_value(
+    source: Path,
+    check: str,
+    actual: object,
+    expected: object,
+) -> None:
+    if actual != expected:
+        raise AssertionError(
+            "VisibilitySHConstData validator failed: "
+            f"check={check}; source={source}; "
+            f"expected={expected!r}; actual={actual!r}"
+        )
+
+
+def verify_visibility_sh_constants_audit(
+    transport: dict[str, object],
+    audit: dict[str, object],
+    source: Path = BINDING_CONTRACT_PATH,
+) -> None:
+    checks = (
+        (
+            "audit.schema",
+            audit["schema"],
+            "endfield.charinfo.visibility-sh-constants.v1",
+        ),
+        ("audit.valid", audit["valid"], True),
+        (
+            "contract.layout",
+            (
+                transport["buffer_name"],
+                transport["size_bytes"],
+                transport["selected_used_byte_ranges"],
+            ),
+            ("VisibilitySHConstData", 128, [[32, 47], [48, 63]]),
+        ),
+        (
+            "audit.layout",
+            audit["layout"],
+            {
+                "bufferName": "VisibilitySHConstData",
+                "sizeBytes": 128,
+                "vectorCount": 8,
+                "fields": {
+                    "logSHParams": 0,
+                    "gStarParams": 16,
+                    "abParams": 32,
+                    "fHatParams": 48,
+                    "sphereParams": 64,
+                    "tileParam0": 80,
+                    "tileParam1": 96,
+                    "tileParam2": 112,
+                },
+            },
+        ),
+        (
+            "audit.native_producer",
+            (
+                audit["nativeProducer"]["methodIndex"],
+                audit["nativeProducer"]["token"],
+                audit["nativeProducer"]["va"],
+                audit["nativeProducer"]["size"],
+                audit["nativeProducer"]["sha256"],
+            ),
+            (
+                285491,
+                "0x060009af",
+                "0x189d15978",
+                4189,
+                "8ccfdc128db265d7a80feba1120b60ca"
+                "f0bfd0d25d8dfc32ee8657f22f768894",
+            ),
+        ),
+        (
+            "audit.ab_params_bits",
+            audit["fixedRows"]["abParams"]["wordBits"],
+            ["0x3f800000", "0x3ea16095", "0x3f800000", "0x3f800000"],
+        ),
+        (
+            "audit.f_hat_x",
+            audit["scalars"]["fHatX"]["bits"],
+            "0x3e5b57c6",
+        ),
+        (
+            "audit.retail_defaults",
+            audit["retailDefaults"],
+            {
+                "enabled": True,
+                "halfResolution": True,
+                "sphereIntervalScaleBits": "0x3f4ccccd",
+                "sphereRangeScaleBits": "0x40a00000",
+                "dimensionFormula": (
+                    "signed truncating width/2 and height/2 for positive "
+                    "camera dimensions"
+                ),
+                "sphereParamsFormula": (
+                    "(clamp(interval,0.8,2), clamp(range,0.01,5), "
+                    "1/outputWidth, 1/outputHeight)"
+                ),
+            },
+        ),
+        (
+            "audit.selected_consumer",
+            (
+                audit["selectedDeferredConsumer"]["usedMembers"],
+                audit["selectedDeferredConsumer"]["usedByteRanges"],
+            ),
+            (
+                [
+                    "VisibilitySHConstData_ABParams",
+                    "VisibilitySHConstData_FHatParams",
+                ],
+                [[32, 47], [48, 63]],
+            ),
+        ),
+    )
+    for check, actual, expected in checks:
+        require_visibility_sh_constants_value(source, check, actual, expected)
+
+
+def verify_visibility_sh_constants_gpu_report(
+    transport: dict[str, object],
+    report: dict[str, object],
+    api: str,
+    source: Path = BINDING_CONTRACT_PATH,
+) -> None:
+    expected_words = [
+        "0x409D41DD", "0x40956445", "0xC09D41DD", "0xC0956445",
+        "0x418B5D98", "0x4118E06B", "0xC18B5D98", "0xC118E06B",
+        "0x3F800000", "0x3EA16095", "0x3F800000", "0x3F800000",
+        "0x3E5B57C6", "0x00000000", "0x44F00000", "0x44870000",
+        "0x3F4CCCCD", "0x40A00000", "0x3A088889", "0x3A72B9D6",
+    ] + ["0x00000000"] * 12
+    expected_gates = [
+        {
+            "gate": "zero_width",
+            "input": "width=0, height=2160",
+            "requiredDiagnosticToken": "camera dimensions must be positive",
+            "diagnostic": "camera dimensions must be positive",
+            "rejected": True,
+            "diagnosticMatched": True,
+        },
+        {
+            "gate": "half_width_zero",
+            "input": "width=1, height=2160",
+            "requiredDiagnosticToken": (
+                "half-resolution dimensions must remain positive"
+            ),
+            "diagnostic": (
+                "retail half-resolution dimensions must remain positive"
+            ),
+            "rejected": True,
+            "diagnosticMatched": True,
+        },
+        {
+            "gate": "float_integer_overflow",
+            "input": "width=16777216, height=2160",
+            "requiredDiagnosticToken": "exceed exact float-integer transport",
+            "diagnostic": (
+                "camera dimensions exceed exact float-integer transport"
+            ),
+            "rejected": True,
+            "diagnosticMatched": True,
+        },
+    ]
+    checks = (
+        (
+            f"gpu_report.{api}.schema",
+            report["schema"],
+            "endfield-recovered-visibility-sh-constants-validation-v1",
+        ),
+        (f"gpu_report.{api}.valid", report["valid"], True),
+        (f"gpu_report.{api}.graphics_api", report["graphicsApi"], api),
+        (f"gpu_report.{api}.default_off", report["defaultOff"], True),
+        (
+            f"gpu_report.{api}.retail_visibility_texture_closed",
+            report["retailVisibilityTextureClosed"],
+            False,
+        ),
+        (
+            f"gpu_report.{api}.source_audit",
+            (
+                report["sourceAuditSha256"],
+                report["expectedSourceAuditSha256"],
+                report["sourceAuditHashMatches"],
+            ),
+            (transport["audit_sha256"], transport["audit_sha256"], True),
+        ),
+        (
+            f"gpu_report.{api}.fixture",
+            (
+                report["cameraWidth"],
+                report["cameraHeight"],
+                report["outputWidth"],
+                report["outputHeight"],
+                report["bufferBytes"],
+                report["selectedFirstWord"],
+                report["selectedWordCount"],
+            ),
+            (3840, 2160, 1920, 1080, 128, 8, 8),
+        ),
+        (
+            f"gpu_report.{api}.publication",
+            (
+                report["publicationReturnedReady"],
+                report["readyObserved"],
+                report["allPublishedWordsMatch"],
+                report["selectedDeferredWordsMatch"],
+                report["deterministicLabTailIsZero"],
+            ),
+            (True, True, True, True, True),
+        ),
+        (
+            f"gpu_report.{api}.words",
+            (report["expectedWords"], report["actualWords"]),
+            (expected_words, expected_words),
+        ),
+        (
+            f"gpu_report.{api}.fail_closed_gates",
+            report["failClosedGates"],
+            expected_gates,
+        ),
+        (f"gpu_report.{api}.failures", report["failures"], []),
+    )
+    for check, actual, expected in checks:
+        require_visibility_sh_constants_value(source, check, actual, expected)
+
+
 def require_hdpls_matrix_value(
     source: Path,
     check: str,
@@ -2418,6 +2645,104 @@ def verify_selected_resolver_binding_contract() -> None:
     visibility_resource = contract["visibility_sh_resource_binding"]
     assert visibility_resource["published_by_lab"] is False
     assert "source-closed" in visibility_resource["status"]
+    visibility_constants = visibility_resource["constants_transport"]
+    assert visibility_constants["published_by_default"] is False
+    assert visibility_constants["canonical_frame_ready_property"] == (
+        "_EndfieldRecoveredVisibilitySHConstDataReady"
+    )
+    for path_key, hash_key in (
+        ("audit_path", "audit_sha256"),
+        ("auditor_path", "auditor_sha256"),
+        ("contract_path", "contract_sha256"),
+        ("owner_path", "owner_sha256"),
+        ("pipeline_path", "pipeline_sha256"),
+        ("probe_path", "probe_sha256"),
+        ("verifier_path", "verifier_sha256"),
+        ("wrapper_path", "wrapper_sha256"),
+    ):
+        require_hash(
+            LAB_ROOT / visibility_constants[path_key],
+            visibility_constants[hash_key],
+        )
+    visibility_constants_audit = json.loads(
+        (LAB_ROOT / visibility_constants["audit_path"]).read_text(
+            encoding="utf-8"
+        )
+    )
+    verify_visibility_sh_constants_audit(
+        visibility_constants,
+        visibility_constants_audit,
+        BINDING_CONTRACT_PATH,
+    )
+    require_tokens(
+        LAB_ROOT / visibility_constants["contract_path"],
+        [
+            "public const int SizeBytes = 128;",
+            "public const int SelectedReadFirstVector = 2;",
+            "0x3EA16095u",
+            "0x3E5B57C6u",
+            "1.0f / outputWidth",
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / visibility_constants["owner_path"],
+        [
+            'Shader.PropertyToID("VisibilitySHConstData")',
+            'Shader.PropertyToID("_EndfieldRecoveredVisibilitySHConstDataReady")',
+            "public bool PrepareAndPublish(",
+            "commandBuffer.SetGlobalConstantBuffer(",
+            "commandBuffer.SetGlobalFloat(ReadyId, 1.0f);",
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / visibility_constants["pipeline_path"],
+        [
+            "recoveredVisibilitySHConstants.ResetPublication(commandBuffer);",
+            "recoveredVisibilitySHConstants.PrepareAndPublish(",
+            "recoveredReflectionProbeFallback.ResetPublication(",
+            "selected-consumer VisibilitySHConstData",
+        ],
+    )
+    require_tokens(
+        LAB_ROOT / visibility_constants["probe_path"],
+        [
+            "cbuffer VisibilitySHConstData",
+            "_EndfieldRecoveredVisibilitySHConstDataReady",
+            "_EndfieldRecoveredVisibilitySHConstantsReadback",
+        ],
+    )
+    for api, evidence in visibility_constants["gpu_reports"].items():
+        report_path = LAB_ROOT / evidence["path"]
+        require_hash(report_path, evidence["sha256"])
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        verify_visibility_sh_constants_gpu_report(
+            visibility_constants,
+            report,
+            api,
+            BINDING_CONTRACT_PATH,
+        )
+        require_unity_log(
+            LAB_ROOT / evidence["log_path"],
+            evidence["log_sha256"],
+            [
+                "Recovered VisibilitySHConstData validation passed:",
+                "selected words=8/8",
+                "fail-closed gates=3/3",
+                f"api={api}",
+                "Exiting batchmode successfully now!",
+            ],
+        )
+    actual_scene = visibility_constants["actual_scene_oracle"]
+    require_hash(LAB_ROOT / actual_scene["png_path"], actual_scene["png_sha256"])
+    require_unity_log(
+        LAB_ROOT / actual_scene["log_path"],
+        actual_scene["log_sha256"],
+        [
+            "Recovered canonical _BinningBuffer active",
+            "selected-consumer VisibilitySHConstData frame resources are active",
+            "Exiting batchmode successfully now!",
+        ],
+    )
     require_hash(
         LAB_ROOT / visibility_resource["audit_path"],
         visibility_resource["audit_sha256"],
@@ -4211,8 +4536,9 @@ def main() -> int:
         "the exact reflection Cubemap's binary-derived 576x576x32 RGBAHalf "
         "slice-0 oct producer, the 4,160-byte global-buffer producer and "
         "serialized CharInfo SH-luminance fallback, plus the default-off "
-        "D3D11/D3D12 bit-exact canonical light/zero-reflection binning "
-        "byte-address transport are pinned; presentation remains "
+        "D3D11/D3D12 bit-exact canonical light/zero-reflection binning, "
+        "same-frame reflection resources, and b33 selected-consumer "
+        "constant transport are pinned; presentation remains "
         "default-off because the CharInfo-frame runtime contract is not closed."
     )
     return 0

@@ -2184,6 +2184,11 @@ oct texture/global buffer in the same camera command stream without replacing
 the canonical `_BinningBuffer`. D3D11/D3D12 probes observe both ready flags,
 preserved light/reflection sentinels, exact header words, and the 576x576x32
 texture together; missing or wrong sources clear readiness and fail closed.
+The native 128-byte `VisibilitySHConstData` b33 layout and fixed rows are also
+closed. Its camera-derived dimensions/scales plus the selected deferred
+consumer's exact bytes 32..63 now join that same default-off frame gate and
+read back bit-exactly on D3D11/D3D12. The lab keeps bytes 80..127 deterministic
+zero without claiming the native stack-derived values used by other consumers.
 The original pass-0 consumer remains deliberately disabled. The remaining streamed
 `m_defaultIV` voxel contents/per-frame parameters, light/shadow resources,
 settled VisibilitySH `PassInput.enabled`, exact posed record values and
@@ -2207,6 +2212,7 @@ verify_charinfo_presentation_recovery.bat
 python tools\verify_charinfo_outside_lit_recovery.py
 verify_recovered_canonical_binning_buffer.bat --all
 verify_recovered_canonical_reflection_frame.bat --all
+verify_recovered_visibility_sh_constants.bat --all
 verify_sphereoutside_hgbuffer_diagnostic.bat
 verify_charinfo_shadow_receiver_recovery.bat
 ```
