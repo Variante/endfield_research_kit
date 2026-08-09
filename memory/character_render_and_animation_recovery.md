@@ -105,7 +105,14 @@ NPC archetypes are imported as labeled source kits.
   shadow words. All 8,216 words match through `_LightDataBuffer` and the D3D11
   `EndfieldCB4` bridge on both APIs; unknown words remain zero, same-frame
   activation is fail-closed, beauty is unchanged, and pass 0 remains disabled.
-  General-scene punctual payloads are still unrecovered.
+  The installed `PrepareCPUData` body now also closes the complete eight-float4
+  write schema for both Spot and Point/linear-extension rows. The exact
+  selected-aspect Gacha room contribution is one Spot, six ordinary Point,
+  and four positive-length linear-extension Point lights; all eleven enable
+  authored OBB culling and are unshadowed/cookie-free. Their serialized Unity
+  Light inputs are censused, but the room `HGAdditionalLightData` defaults,
+  target-frame packed OBB words/transforms, runtime list carry-in, and final
+  byte-exact b31 rows remain open.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData`; the selected
   resolver reads only its Punctual rows `c64..c400` (bytes 1,024..6,415).
   Native allocation, four-section copy/bind transport, atlas sizing/format,

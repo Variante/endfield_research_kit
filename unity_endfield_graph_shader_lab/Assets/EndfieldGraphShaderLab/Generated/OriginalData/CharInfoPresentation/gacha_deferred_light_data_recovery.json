@@ -1,0 +1,669 @@
+{
+  "schema": "endfield.gacha-deferred-light-data-recovery.v1",
+  "status": "native_point_spot_row_schema_closed_room_inputs_censused",
+  "installedInputs": {
+    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "selectedFragmentSha256": "44dc5090af87a8f65ffca870f9e02b8525c4cfe14f84cf8feaa3ea6c49e4b9db",
+    "gachaPopulationSha256": "02e15c70197bcd96f804007fe042fcb46577c0014d956d78a28f2d96162e189a",
+    "roomHierarchySha256": "bf26b44919a7563bd6c7ee137346d7f8880bb1a32911a8972c586b2bb0c87db9"
+  },
+  "nativeProducer": {
+    "method": "HG.Rendering.Runtime.LightCulling.PrepareCPUData",
+    "methodIndex": 285282,
+    "virtualAddress": "0x189D0C7BC",
+    "fileOffset": "0x9D0ADBC",
+    "sizeBytes": 6200,
+    "bodySha256": "c55bd6dc86c971123c433a5dd29b446b557f8713f73b132da25c257369e9bd0b",
+    "recordWrites": {
+      "spot": [
+        {
+          "record": 0,
+          "absoluteVectorOffset": 6,
+          "addressInstructionOffset": "0x0DF7",
+          "storeInstructionOffset": "0x0E0D"
+        },
+        {
+          "record": 1,
+          "absoluteVectorOffset": 7,
+          "addressInstructionOffset": "0x0E6D",
+          "storeInstructionOffset": "0x0E89"
+        },
+        {
+          "record": 2,
+          "absoluteVectorOffset": 8,
+          "addressInstructionOffset": "0x0ED6",
+          "storeInstructionOffset": "0x0EDD"
+        },
+        {
+          "record": 3,
+          "absoluteVectorOffset": 9,
+          "addressInstructionOffset": "0x0F21",
+          "storeInstructionOffset": "0x0F28"
+        },
+        {
+          "record": 4,
+          "absoluteVectorOffset": 10,
+          "addressInstructionOffset": "0x0F5D",
+          "storeInstructionOffset": "0x0F83"
+        },
+        {
+          "record": 5,
+          "absoluteVectorOffset": 11,
+          "addressInstructionOffset": "0x0FDE",
+          "storeInstructionOffset": "0x0FED"
+        },
+        {
+          "record": 6,
+          "absoluteVectorOffset": 12,
+          "addressInstructionOffset": "0x1024",
+          "storeInstructionOffset": "0x102B"
+        }
+      ],
+      "point_or_linear": [
+        {
+          "record": 0,
+          "absoluteVectorOffset": 6,
+          "addressInstructionOffset": "0x136A",
+          "storeInstructionOffset": "0x1380"
+        },
+        {
+          "record": 1,
+          "absoluteVectorOffset": 7,
+          "addressInstructionOffset": "0x13C5",
+          "storeInstructionOffset": "0x13CC"
+        },
+        {
+          "record": 2,
+          "absoluteVectorOffset": 8,
+          "addressInstructionOffset": "0x1441",
+          "storeInstructionOffset": "0x1448"
+        },
+        {
+          "record": 3,
+          "absoluteVectorOffset": 9,
+          "addressInstructionOffset": "0x148C",
+          "storeInstructionOffset": "0x1493"
+        },
+        {
+          "record": 4,
+          "absoluteVectorOffset": 10,
+          "addressInstructionOffset": "0x14BC",
+          "storeInstructionOffset": "0x14E2"
+        },
+        {
+          "record": 5,
+          "absoluteVectorOffset": 11,
+          "addressInstructionOffset": "0x153E",
+          "storeInstructionOffset": "0x1555"
+        },
+        {
+          "record": 6,
+          "absoluteVectorOffset": 12,
+          "addressInstructionOffset": "0x158C",
+          "storeInstructionOffset": "0x1593"
+        }
+      ],
+      "common": [
+        {
+          "record": 7,
+          "absoluteVectorOffset": 13,
+          "addressInstructionOffset": "0x15F8",
+          "storeInstructionOffset": "0x15FF"
+        }
+      ]
+    },
+    "resolvedCalls": [
+      {
+        "offset": "0x08DB",
+        "target": "0x1832040F0",
+        "method": "LightExtensions.GetLightAdditionalData"
+      },
+      {
+        "offset": "0x0A68",
+        "target": "0x18B3BDD4C",
+        "method": "HGSharedLightData.get_enableOBBCullingBox_Injected"
+      },
+      {
+        "offset": "0x0A77",
+        "target": "0x18B3BDD88",
+        "method": "HGSharedLightData.get_enableOverrideShadowLight_Injected"
+      },
+      {
+        "offset": "0x0CF8",
+        "target": "0x18B3BDF2C",
+        "method": "HGSharedLightData.get_innerSpotAngle_Injected"
+      },
+      {
+        "offset": "0x0D1C",
+        "target": "0x18B3BE5FC",
+        "method": "HGSharedLightData.get_spotAngle_Injected"
+      },
+      {
+        "offset": "0x0DD9",
+        "target": "0x18B3BE4D0",
+        "method": "HGSharedLightData.get_shadowOnly_Injected"
+      },
+      {
+        "offset": "0x1046",
+        "target": "0x18B3BDB48",
+        "method": "HGSharedLightData.get_cullingBoxFalloffThreshold_Injected"
+      },
+      {
+        "offset": "0x105A",
+        "target": "0x18B3BE584",
+        "method": "HGSharedLightData.get_softSourceRadius_Injected"
+      },
+      {
+        "offset": "0x106E",
+        "target": "0x18B3BE5C0",
+        "method": "HGSharedLightData.get_specularIntensity_Injected"
+      },
+      {
+        "offset": "0x13F4",
+        "target": "0x18B3BE030",
+        "method": "HGSharedLightData.get_length_Injected"
+      },
+      {
+        "offset": "0x15AE",
+        "target": "0x18B3BDB48",
+        "method": "HGSharedLightData.get_cullingBoxFalloffThreshold_Injected"
+      },
+      {
+        "offset": "0x15BF",
+        "target": "0x18B3BE584",
+        "method": "HGSharedLightData.get_softSourceRadius_Injected"
+      },
+      {
+        "offset": "0x15D0",
+        "target": "0x18B3BE5C0",
+        "method": "HGSharedLightData.get_specularIntensity_Injected"
+      }
+    ]
+  },
+  "selectedConsumer": {
+    "path": "scratch/reverse_engineering/sphereoutside_deferred_variant/selected_fragment.hlsl",
+    "binding": 31,
+    "strideVectors": 8,
+    "records": {
+      "0": "final color xyz; packed light-kind/shadow-only discriminator w",
+      "1": "world position xyz; inverse range w",
+      "2": "octahedral direction xy; spot cone or linear-area terms zw",
+      "3": "shadow/cookie addressing and additional-light flags; CharacterOnly is z",
+      "4": "HGLightAdditionalData.lightNPRData",
+      "5": "first packed OBB transform words; OBB/override bit field w",
+      "6": "remaining packed OBB transform words; falloff exponent/mode w",
+      "7": "OBB falloff threshold, soft-source radius, specular intensity, cookie slot"
+    }
+  },
+  "selectedAuthoredRoomRows": {
+    "count": 11,
+    "typeCounts": {
+      "Spot": 1,
+      "PointOrLinearExtension": 10
+    },
+    "linearExtensionPointCount": 4,
+    "ordinaryPointCount": 6,
+    "allObbEnabled": true,
+    "allUnshadowed": true,
+    "allCookieFree": true,
+    "rows": [
+      {
+        "name": "Spot Light (12)",
+        "lightPathId": 3145527971969281504,
+        "sourcePath": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#381_p2BA729065848ADE0.json",
+        "sourceRawDataSha256": "720742dae08665fde2674a86311217b29e78545fd2dd5c9742dfd9d5ec1a2330",
+        "unityLightType": 0,
+        "color": [
+          1.0,
+          0.8039216,
+          0.5019608,
+          1.0
+        ],
+        "intensity": 100.0,
+        "range": 10.0,
+        "innerSpotAngleDegrees": 90.0,
+        "outerSpotAngleDegrees": 140.0,
+        "linearLightLength": -1.0,
+        "softSourceRadius": 2.0,
+        "specularIntensity": 1.0,
+        "cullingBoxRelativePosition": {
+          "x": 0.7330458,
+          "y": -6.433196,
+          "z": 0.5580988
+        },
+        "cullingBoxHalfExtents": {
+          "x": 6.5248904,
+          "y": 0.6183853,
+          "z": 10.962412
+        },
+        "cullingBoxOrientationZxyDegrees": {
+          "x": -0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "cullingBoxFalloffThreshold": 0.8,
+        "shadowOnly": false,
+        "overrideShadowLight": false,
+        "cookiePathId": 0,
+        "shadowType": 0
+      },
+      {
+        "name": "Spot Light (19)",
+        "lightPathId": 6723905289426087392,
+        "sourcePath": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#471_p5D501C3C679CADE0.json",
+        "sourceRawDataSha256": "da218e4caf6e4a3aa8f620317f12c670004b801541b420a9e6b88ac9419eb23c",
+        "unityLightType": 2,
+        "color": [
+          1.0,
+          0.7637795,
+          0.39999998,
+          1.0
+        ],
+        "intensity": 4.0,
+        "range": 7.0468225,
+        "innerSpotAngleDegrees": 0.0,
+        "outerSpotAngleDegrees": 150.1144,
+        "linearLightLength": -1.0,
+        "softSourceRadius": 7.0,
+        "specularIntensity": 1.0,
+        "cullingBoxRelativePosition": {
+          "x": -0.20409894,
+          "y": 1.5955153,
+          "z": -2.789011
+        },
+        "cullingBoxHalfExtents": {
+          "x": 3.8251476,
+          "y": 0.8664541,
+          "z": 2.1664677
+        },
+        "cullingBoxOrientationZxyDegrees": {
+          "x": -0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "cullingBoxFalloffThreshold": 0.6,
+        "shadowOnly": false,
+        "overrideShadowLight": false,
+        "cookiePathId": 0,
+        "shadowType": 0
+      },
+      {
+        "name": "Linear Light (12)",
+        "lightPathId": -7516039918534742560,
+        "sourcePath": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#40_p97B1A9840A14ADE0.json",
+        "sourceRawDataSha256": "44e9b1e45db49c8b99245bad64fca6fed34c8502b62757085f470f31b8e84781",
+        "unityLightType": 2,
+        "color": [
+          1.0,
+          0.7637795,
+          0.39999998,
+          1.0
+        ],
+        "intensity": 60.0,
+        "range": 10.0,
+        "innerSpotAngleDegrees": 21.80208,
+        "outerSpotAngleDegrees": 30.0,
+        "linearLightLength": 18.0,
+        "softSourceRadius": 5.0,
+        "specularIntensity": 1.0,
+        "cullingBoxRelativePosition": {
+          "x": 1.0759821,
+          "y": -2.1362376,
+          "z": 0.8755455
+        },
+        "cullingBoxHalfExtents": {
+          "x": 1.1103137,
+          "y": 2.5167449,
+          "z": 10.0
+        },
+        "cullingBoxOrientationZxyDegrees": {
+          "x": -0.0,
+          "y": 1.6822746,
+          "z": 0.0
+        },
+        "cullingBoxFalloffThreshold": 0.8,
+        "shadowOnly": false,
+        "overrideShadowLight": false,
+        "cookiePathId": 0,
+        "shadowType": 0
+      },
+      {
+        "name": "Linear Light (13)",
+        "lightPathId": -6003850056218071584,
+        "sourcePath": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#92_pACAE0A2F0269ADE0.json",
+        "sourceRawDataSha256": "89b558afb131f4c20defb11809ded9c9491cb25e3291bf39b48818db0e9d5da1",
+        "unityLightType": 2,
+        "color": [
+          1.0,
+          0.7637795,
+          0.39999998,
+          1.0
+        ],
+        "intensity": 60.0,
+        "range": 10.0,
+        "innerSpotAngleDegrees": 21.80208,
+        "outerSpotAngleDegrees": 30.0,
+        "linearLightLength": 18.0,
+        "softSourceRadius": 5.0,
+        "specularIntensity": 1.0,
+        "cullingBoxRelativePosition": {
+          "x": -1.0767765,
+          "y": -2.1280732,
+          "z": 0.9132333
+        },
+        "cullingBoxHalfExtents": {
+          "x": 1.1103137,
+          "y": 2.5167449,
+          "z": 10.0
+        },
+        "cullingBoxOrientationZxyDegrees": {
+          "x": -0.0,
+          "y": 1.6822791,
+          "z": 0.0
+        },
+        "cullingBoxFalloffThreshold": 0.8,
+        "shadowOnly": false,
+        "overrideShadowLight": false,
+        "cookiePathId": 0,
+        "shadowType": 0
+      },
+      {
+        "name": "Linear Light (14)",
+        "lightPathId": -4966856337038791200,
+        "sourcePath": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#133_pBB122E7A1C67ADE0.json",
+        "sourceRawDataSha256": "29a8edc793b0490f29fe5ef1ecc09cb7313313109fc78f0035c4ed83ea5763e4",
+        "unityLightType": 2,
+        "color": [
+          1.0,
+          0.7637795,
+          0.39999998,
+          1.0
+        ],
+        "intensity": 100.0,
+        "range": 14.0,
+        "innerSpotAngleDegrees": 21.80208,
+        "outerSpotAngleDegrees": 30.0,
+        "linearLightLength": 18.0,
+        "softSourceRadius": 10.0,
+        "specularIntensity": 1.0,
+        "cullingBoxRelativePosition": {
+          "x": 3.0690973,
+          "y": -2.6728835,
+          "z": 0.8993182
+        },
+        "cullingBoxHalfExtents": {
+          "x": 1.1103134,
+          "y": 3.0615554,
+          "z": 10.0
+        },
+        "cullingBoxOrientationZxyDegrees": {
+          "x": -0.0,
+          "y": 1.6822729,
+          "z": 0.0
+        },
+        "cullingBoxFalloffThreshold": 0.8,
+        "shadowOnly": false,
+        "overrideShadowLight": false,
+        "cookiePathId": 0,
+        "shadowType": 0
+      },
+      {
+        "name": "Spot Light (17)",
+        "lightPathId": 4336752956264328672,
+        "sourcePath": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#413_p3C2F3DD62CC2ADE0.json",
+        "sourceRawDataSha256": "7bd820b8bf1b443dd989681b5e406bb628f03aaf038996301e360e87f31982f5",
+        "unityLightType": 2,
+        "color": [
+          1.0,
+          0.8039216,
+          0.5019608,
+          1.0
+        ],
+        "intensity": 4.0,
+        "range": 5.0,
+        "innerSpotAngleDegrees": 0.0,
+        "outerSpotAngleDegrees": 150.1144,
+        "linearLightLength": -1.0,
+        "softSourceRadius": 5.0,
+        "specularIntensity": 1.0,
+        "cullingBoxRelativePosition": {
+          "x": -1.3343492,
+          "y": 1.3305151,
+          "z": -0.59385014
+        },
+        "cullingBoxHalfExtents": {
+          "x": 2.2124114,
+          "y": 0.8664541,
+          "z": 2.9571095
+        },
+        "cullingBoxOrientationZxyDegrees": {
+          "x": -0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "cullingBoxFalloffThreshold": 0.8,
+        "shadowOnly": false,
+        "overrideShadowLight": false,
+        "cookiePathId": 0,
+        "shadowType": 0
+      },
+      {
+        "name": "Linear Light (15)",
+        "lightPathId": -2247457476464562720,
+        "sourcePath": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#228_pE0CF6D552B88ADE0.json",
+        "sourceRawDataSha256": "a7a45026da45d4004f09faa85af7129c0d70a96e5511c28e7754dc31b155470b",
+        "unityLightType": 2,
+        "color": [
+          1.0,
+          0.7637795,
+          0.39999998,
+          1.0
+        ],
+        "intensity": 100.0,
+        "range": 14.0,
+        "innerSpotAngleDegrees": 21.80208,
+        "outerSpotAngleDegrees": 30.0,
+        "linearLightLength": 18.0,
+        "softSourceRadius": 10.0,
+        "specularIntensity": 1.0,
+        "cullingBoxRelativePosition": {
+          "x": -2.1162224,
+          "y": -2.3353767,
+          "z": 0.87074184
+        },
+        "cullingBoxHalfExtents": {
+          "x": 1.1103139,
+          "y": 2.7240484,
+          "z": 10.0
+        },
+        "cullingBoxOrientationZxyDegrees": {
+          "x": -0.0,
+          "y": 1.6822791,
+          "z": 0.0
+        },
+        "cullingBoxFalloffThreshold": 0.8,
+        "shadowOnly": false,
+        "overrideShadowLight": false,
+        "cookiePathId": 0,
+        "shadowType": 0
+      },
+      {
+        "name": "Spot Light (18)",
+        "lightPathId": 1177420952804240864,
+        "sourcePath": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#324_p10570A1E4AFFADE0.json",
+        "sourceRawDataSha256": "f532705bda89417f404bde246f557d449af231cbb5a3db63867cbb32f2b09b35",
+        "unityLightType": 2,
+        "color": [
+          1.0,
+          0.8039216,
+          0.5019608,
+          1.0
+        ],
+        "intensity": 4.0,
+        "range": 5.0,
+        "innerSpotAngleDegrees": 0.0,
+        "outerSpotAngleDegrees": 150.1144,
+        "linearLightLength": -1.0,
+        "softSourceRadius": 5.0,
+        "specularIntensity": 1.0,
+        "cullingBoxRelativePosition": {
+          "x": 1.2049856,
+          "y": 1.3005152,
+          "z": -0.23785019
+        },
+        "cullingBoxHalfExtents": {
+          "x": 2.1709516,
+          "y": 0.8664541,
+          "z": 2.9571095
+        },
+        "cullingBoxOrientationZxyDegrees": {
+          "x": -0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "cullingBoxFalloffThreshold": 0.6,
+        "shadowOnly": false,
+        "overrideShadowLight": false,
+        "cookiePathId": 0,
+        "shadowType": 0
+      },
+      {
+        "name": "Spot Light (9)",
+        "lightPathId": 7037844248082165216,
+        "sourcePath": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#486_p61AB720E3776ADE0.json",
+        "sourceRawDataSha256": "ca50f80494de46082daa63b0f8505fab2e988b4987d69f5c17c155a5cfb6a176",
+        "unityLightType": 2,
+        "color": [
+          1.0,
+          0.76209146,
+          0.3,
+          1.0
+        ],
+        "intensity": 60.0,
+        "range": 6.9279203,
+        "innerSpotAngleDegrees": 0.0,
+        "outerSpotAngleDegrees": 150.1144,
+        "linearLightLength": -1.0,
+        "softSourceRadius": 3.0,
+        "specularIntensity": 1.0,
+        "cullingBoxRelativePosition": {
+          "x": -0.49392867,
+          "y": -1.5946023,
+          "z": 0.7165575
+        },
+        "cullingBoxHalfExtents": {
+          "x": 6.800811,
+          "y": 3.6230037,
+          "z": 4.69168
+        },
+        "cullingBoxOrientationZxyDegrees": {
+          "x": -0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "cullingBoxFalloffThreshold": 0.8,
+        "shadowOnly": false,
+        "overrideShadowLight": false,
+        "cookiePathId": 0,
+        "shadowType": 0
+      },
+      {
+        "name": "Spot Light (11)",
+        "lightPathId": 7142192322960010720,
+        "sourcePath": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#489_p631E2A13A78DADE0.json",
+        "sourceRawDataSha256": "db14d0a346abcb4d38677d093bce62b18db02cb1f4b25bcce5dfa04b70c3a69d",
+        "unityLightType": 2,
+        "color": [
+          1.0,
+          0.6862745,
+          0.19999999,
+          1.0
+        ],
+        "intensity": 30.0,
+        "range": 20.0,
+        "innerSpotAngleDegrees": 0.0,
+        "outerSpotAngleDegrees": 150.1144,
+        "linearLightLength": -1.0,
+        "softSourceRadius": 2.41,
+        "specularIntensity": 0.9,
+        "cullingBoxRelativePosition": {
+          "x": -0.9361551,
+          "y": -2.7084107,
+          "z": -2.112834
+        },
+        "cullingBoxHalfExtents": {
+          "x": 7.930528,
+          "y": 2.1084466,
+          "z": 5.588236
+        },
+        "cullingBoxOrientationZxyDegrees": {
+          "x": -0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "cullingBoxFalloffThreshold": 0.99,
+        "shadowOnly": false,
+        "overrideShadowLight": false,
+        "cookiePathId": 0,
+        "shadowType": 0
+      },
+      {
+        "name": "Spot Light (10)",
+        "lightPathId": 7763697698425908704,
+        "sourcePath": "scratch/animestudio/zhuangfy_gacha_room_lights/json/Light/Light#513_p6BBE31EC4231ADE0.json",
+        "sourceRawDataSha256": "fbf47c37b3391ded9e8046cc6150330f9cf158bc037889b591028412629b561d",
+        "unityLightType": 2,
+        "color": [
+          1.0,
+          0.8039216,
+          0.5019608,
+          1.0
+        ],
+        "intensity": 140.0,
+        "range": 15.0,
+        "innerSpotAngleDegrees": 0.0,
+        "outerSpotAngleDegrees": 150.1144,
+        "linearLightLength": -1.0,
+        "softSourceRadius": 10.0,
+        "specularIntensity": 1.0,
+        "cullingBoxRelativePosition": {
+          "x": -0.9361546,
+          "y": -4.2274466,
+          "z": -4.4271173
+        },
+        "cullingBoxHalfExtents": {
+          "x": 10.325,
+          "y": 3.1371279,
+          "z": 5.6767054
+        },
+        "cullingBoxOrientationZxyDegrees": {
+          "x": -0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "cullingBoxFalloffThreshold": 0.6,
+        "shadowOnly": false,
+        "overrideShadowLight": false,
+        "cookiePathId": 0,
+        "shadowType": 0
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "closed": [
+      "PrepareCPUData owns all eight float4 writes for both native Spot and Point/linear-extension branches",
+      "the selected deferred consumer's record offsets and observed lane semantics",
+      "the exact selected-aspect 11-row authored room membership and raw Unity Light inputs",
+      "one Spot, six ordinary Point, and four positive-length linear-extension Point rows",
+      "all eleven selected room rows enable OBB culling and have no cookie, shadow, shadow-only, or override-shadow state"
+    ],
+    "open": [
+      "room HGAdditionalLightData component/default resolution, including NPR data, CharacterOnly, volumetric, and falloff lanes",
+      "exact float32 color/intensity helper results and camera-relative position/direction values at the target frame",
+      "exact packed OBB half words and shadow/cookie cache indices for the eleven rows",
+      "the complete retail survivor array, runtime/custom carry-in, and final lightCount"
+    ],
+    "decision": "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, but do not publish a byte-exact Gacha b31 fixture or enable deferred pass 0 until the additional-light defaults, target-frame transforms, and runtime list boundary are closed."
+  }
+}

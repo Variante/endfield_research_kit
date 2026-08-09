@@ -2229,7 +2229,15 @@ SphereOutside program exits before unresolved general-light or shadow fields.
 All 8,216 words match on D3D11/D3D12 through both `_LightDataBuffer` and the
 original DXBC-shell `EndfieldCB4` bridge, with unknown words zero and unchanged
 beauty output. This source-closes only that consumer subset; general-scene
-punctual records and pass 0 remain open.
+punctual records and pass 0 remain open. The installed `PrepareCPUData` body
+now closes the native eight-float4 row schema itself for both Spot and
+Point/linear-extension branches. For the selected-aspect Gacha room, the exact
+authored contribution is one Spot, six ordinary Point, and four
+positive-length linear-extension Point rows. All eleven source Lights enable
+OBB culling and carry no cookie or shadow. The serialized Light inputs are now
+audited, while `HGAdditionalLightData` defaults, target-frame packed OBB
+words/transforms, runtime/custom carry-in, the final light count, and a
+byte-exact room b31 fixture remain open.
 
 `ShaderVariablesGlobal` b35 is now exactly scoped and transported. The
 selected body references 33 fields, and installed native reset producers close
