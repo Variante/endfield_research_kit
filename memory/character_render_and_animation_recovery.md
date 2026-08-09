@@ -127,8 +127,11 @@ NPC archetypes are imported as labeled source kits.
   temperature, distance/far-show falloff, animation, multistate, and flicker.
   UnityPlayer `finalColor`, `Color.linear`, animation-disable, and flicker
   bodies therefore close exact b31 record0.xyz bits as linearized authored RGB
-  times intensity, with falloff/flicker both 1. Target-frame transforms,
-  record0.w, runtime carry-in, and final byte-exact b31 rows remain open.
+  times intensity, with falloff/flicker both 1. The two `PrepareCPUData`
+  branches close record0.w as `float(lightKind + 2*shadowOnly)`: the one Spot
+  row is exactly 0 and all ten Point/linear-extension rows are exactly 1.
+  Record0 is therefore fully closed. Target-frame transforms, runtime carry-in,
+  and final byte-exact b31 rows remain open.
 - Deferred binding 34 is the exact 11,440-byte `ShadowData`; the selected
   resolver reads only its Punctual rows `c64..c400` (bytes 1,024..6,415).
   Native allocation, four-section copy/bind transport, atlas sizing/format,

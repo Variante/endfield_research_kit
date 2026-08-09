@@ -249,10 +249,11 @@ NATIVE_CALLS = {
     0x0CBE: (PACK_TWO_HALF_VA, "HGUtils.PackTwoHalfValuesAsFloat row2.zw"),
     0x0CF8: (0x18B3BDF2C, "HGSharedLightData.get_innerSpotAngle_Injected"),
     0x0D1C: (0x18B3BE5FC, "HGSharedLightData.get_spotAngle_Injected"),
-    0x0DD9: (0x18B3BE4D0, "HGSharedLightData.get_shadowOnly_Injected"),
+    0x0DD9: (0x18B3BE4D0, "HGSharedLightData.get_shadowOnly_Injected Spot"),
     0x1046: (0x18B3BDB48, "HGSharedLightData.get_cullingBoxFalloffThreshold_Injected"),
     0x105A: (0x18B3BE584, "HGSharedLightData.get_softSourceRadius_Injected"),
     0x106E: (0x18B3BE5C0, "HGSharedLightData.get_specularIntensity_Injected"),
+    0x1347: (0x18B3BE4D0, "HGSharedLightData.get_shadowOnly_Injected Point"),
     0x13F4: (0x18B3BE030, "HGSharedLightData.get_length_Injected"),
     0x15AE: (0x18B3BDB48, "HGSharedLightData.get_cullingBoxFalloffThreshold_Injected"),
     0x15BF: (0x18B3BE584, "HGSharedLightData.get_softSourceRadius_Injected"),
@@ -719,6 +720,40 @@ def validate_record_writes(body: bytes) -> dict[str, Any]:
     return result
 
 
+def validate_record0_discriminator_native(body: bytes) -> dict[str, Any]:
+    spot = bytes.fromhex(
+        "e8360f6b010fb6c003c00fafde660f6ec0498b85c80000000f5bc04863cb"
+        "4883c1064803c9f30f1185dc000000"
+    )
+    point = bytes.fromhex(
+        "e8c8096b010fb6c00fafde8d044501000000660f6ec0498b85c80000000f5bc0"
+        "4863cb4883c1064803c9f30f11850c010000"
+    )
+    require(
+        "record0_spot_discriminator_sequence",
+        body[0x0DD9 : 0x0DD9 + len(spot)],
+        spot,
+        GAME_ASSEMBLY,
+    )
+    require(
+        "record0_point_discriminator_sequence",
+        body[0x1347 : 0x1347 + len(point)],
+        point,
+        GAME_ASSEMBLY,
+    )
+    return {
+        "formula": "float(lightKind + 2 * shadowOnly)",
+        "lightKind": {"Spot": 0, "PointOrLinearExtension": 1},
+        "encodedValues": {
+            "Spot": {"normal": 0.0, "shadowOnly": 2.0},
+            "PointOrLinearExtension": {"normal": 1.0, "shadowOnly": 3.0},
+        },
+        "spotSequenceOffset": "0x0DD9",
+        "pointSequenceOffset": "0x1347",
+        "destination": "record0.w",
+    }
+
+
 def validate_native_body(body: bytes) -> dict[str, Any]:
     require("prepare_cpu_data_size", len(body), PREPARE_CPU_DATA_SIZE, GAME_ASSEMBLY)
     body_hash = hashlib.sha256(body).hexdigest()
@@ -740,6 +775,7 @@ def validate_native_body(body: bytes) -> dict[str, Any]:
         "sizeBytes": PREPARE_CPU_DATA_SIZE,
         "bodySha256": body_hash,
         "recordWrites": validate_record_writes(body),
+        "record0Discriminator": validate_record0_discriminator_native(body),
         "resolvedCalls": calls,
     }
 
@@ -1497,6 +1533,30 @@ def recover_record0_color(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def recover_record0_discriminator(row: dict[str, Any]) -> dict[str, Any]:
+    source = REPO_ROOT / row["sourcePath"]
+    light_type = int(row["unityLightType"])
+    require(
+        f"room_{row['lightPathId']}_record0_supported_light_type",
+        light_type in (0, 2),
+        True,
+        source,
+    )
+    light_kind = 0 if light_type == 0 else 1
+    shadow_only = bool(row["shadowOnly"])
+    encoded_integer = light_kind + 2 * int(shadow_only)
+    encoded_value = f32(float(encoded_integer))
+    return {
+        "producerFormula": "float(lightKind + 2 * shadowOnly)",
+        "nativeBranch": "Spot" if light_kind == 0 else "PointOrLinearExtension",
+        "lightKind": light_kind,
+        "shadowOnly": shadow_only,
+        "encodedInteger": encoded_integer,
+        "record0W": encoded_value,
+        "record0WBits": f"0x{float32_bits(encoded_value):08X}",
+    }
+
+
 def validate_consumer(text: str) -> dict[str, Any]:
     checks = {
         "recordStride": "int((32u * _747) + _758) * 8",
@@ -1576,6 +1636,7 @@ def build_audit() -> dict[str, Any]:
     rows = attach_room_additional_data(room_light_rows(population, hierarchy))
     for row in rows:
         row["record0Color"] = recover_record0_color(row)
+        row["record0Discriminator"] = recover_record0_discriminator(row)
         row["obbPackedTransform"] = recover_obb_pack(row)
     consumer = validate_consumer(SELECTED_FRAGMENT.read_text(encoding="utf-8"))
     native = validate_native_body(body)
@@ -1598,6 +1659,15 @@ def build_audit() -> dict[str, Any]:
     volumetric_counts = Counter(
         row["additionalLightData"]["volumetricScatteringIntensity"] for row in rows
     )
+    record0_discriminator_counts = Counter(
+        row["record0Discriminator"]["encodedInteger"] for row in rows
+    )
+    require(
+        "selected_room_record0_discriminator_counts",
+        record0_discriminator_counts,
+        Counter({1: 10, 0: 1}),
+        ROOM_LIGHT_ROOT,
+    )
     obb_boundaries = [
         {
             "name": row["name"],
@@ -1617,8 +1687,8 @@ def build_audit() -> dict[str, Any]:
         for row in rows
     )
     return {
-        "schema": "endfield.gacha-deferred-light-data-recovery.v4",
-        "status": "room_record0_color_and_obb_candidates_closed",
+        "schema": "endfield.gacha-deferred-light-data-recovery.v5",
+        "status": "room_record0_and_obb_candidates_closed",
         "installedInputs": hashes,
         "originalGlobalLightingSettings": validate_global_lighting_settings(
             global_game_managers_data
@@ -1650,6 +1720,18 @@ def build_audit() -> dict[str, Any]:
                 "allFlickerScale": 1.0,
                 "exactCandidateCount": len(rows),
                 "closedLanes": ["record0.x", "record0.y", "record0.z"],
+            },
+            "record0DiscriminatorSummary": {
+                "producerFormula": "float(lightKind + 2 * shadowOnly)",
+                "spotCount": 1,
+                "pointOrLinearExtensionCount": 10,
+                "shadowOnlyCount": 0,
+                "valueCounts": {
+                    "0": record0_discriminator_counts[0],
+                    "1": record0_discriminator_counts[1],
+                },
+                "exactCandidateCount": len(rows),
+                "closedLanes": ["record0.w"],
             },
             "obbHalfPackingSummary": {
                 "producerFormula": "inverse TRS of authored relative position, ZXY Euler orientation, and half extents",
@@ -1698,17 +1780,18 @@ def build_audit() -> dict[str, Any]:
                 "the UnityPlayer finalColor producer, Color.linear body, light-animation disable path, and flickerScale inactive fallback of exactly 1.0",
                 "all eleven rows disable per-light color temperature, culling-distance/far-show falloff, animation, multistate, and flicker; their state tables and flicker references are empty",
                 "exact UnityPlayer-derived record0.xyz IEEE-754 candidates for all eleven rows: linearized serialized RGB times intensity, with falloff and flickerScale both 1",
+                "the native record0.w discriminator formula float(lightKind + 2*shadowOnly), yielding exact 0.0 for the one Spot row and 1.0 for all ten Point/linear-extension rows",
             ],
             "open": [
-                "camera-relative position/direction values at the target frame and the exact record0.w kind/shadow discriminator payload",
+                "camera-relative position/direction values at the target frame",
                 "exact IEEE signed-zero bits in the packed OBB lanes, the UnityPlayer internal inverse result for one reciprocal at a one-float32-ULP half boundary, and shadow/cookie cache indices",
                 "the complete retail survivor array, runtime/custom carry-in, and final lightCount",
             ],
             "decision": (
                 "Treat the eight-record native schema and the eleven serialized room inputs as source-closed, "
-                "including their record0.xyz color, additional-light lanes, and bounded OBB transform candidates. Do not publish "
+                "including all record0 lanes, additional-light lanes, and bounded OBB transform candidates. Do not publish "
                 "a byte-exact Gacha b31 fixture or enable deferred pass 0 until the remaining UnityPlayer/boundary "
-                "bits, target-frame transforms, record0.w, and runtime list boundary are closed."
+                "bits, target-frame transforms, and runtime list boundary are closed."
             ),
         },
     }
@@ -1726,7 +1809,7 @@ def main() -> int:
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
         "Gacha deferred LightData audit passed: native Spot/Point 8-float4 schema, "
-        "all 11 record0.xyz colors/additional-light components, and bounded OBB half candidates closed."
+        "all 11 record0 float4 values/additional-light components, and bounded OBB half candidates closed."
     )
     return 0
 
