@@ -39,8 +39,10 @@ NPC archetypes are imported as labeled source kits.
   fail-closed standalone diagnostic, while live frame bindings remain open.
 - Deferred binding 32 now has its exact native 48-byte
   `_LightBinningConstants` layout/upload and a default-off isolated-count
-  publisher verified bit-for-bit on D3D11/D3D12. Retail whole-scene light-cull
-  survivors and the final `lightCount` remain open.
+  publisher verified bit-for-bit on D3D11/D3D12. Its unique native
+  `CullLights` producer, two `HGCamera.DoECSCulling` call sites, 256-candidate
+  cap, pointer/count ABI, and first consumer are also closed; only an
+  authorized target-frame array capture can settle retail order/`lightCount`.
 
 ## Main rendering gap
 

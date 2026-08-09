@@ -1492,6 +1492,13 @@ field offsets, and failure diagnostics on D3D11 and D3D12. The verified Wulfa
 fixture has 8 isolated lights and 120x68 tiles at 3840x2160. It is not the
 retail room census: the native whole-scene candidate/survivor list and final
 `lightCount` remain open, and the 12 authored room lights are not substituted.
+Offline IL2CPP/xref recovery now fixes the handoff precisely:
+`LightCullResult` is `visibleLightsPtr + visibleLightCount`; its only direct
+producer is `HGCullingSystem.CullLights`, both GameAssembly call sites belong
+to `HGCamera.DoECSCulling`, and both pass `maxCount=256` before `SetupState`
+filters native types 0/2 and applies the punctual capacity. Closing the retail
+value now requires an explicitly authorized target-frame capture of that
+pointer/count and array; no retail-process attachment or injection was used.
 
 The normal-mapped body Skin branch is separate from that face reduction and is
 source-gated to exactly `M_actor_wulfa_body_01` (Material PathID
