@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.recovered-light-cull-cap.v2",
-  "status": "installed_cap_native_producer_and_capture_abi_source_closed",
-  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. The target-frame pointer/count and unrelated live native lights remain capture-only.",
+  "schema": "endfield.recovered-light-cull-cap.v3",
+  "status": "installed_cap_cull_view_native_producer_and_capture_abi_source_closed",
+  "outcome": "The installed Windows desktop route resolves PunctualLightMaxCount to 256. SetupState accepts only VisibleLight types 0/2, sorts by priority descending then squared distance ascending, and applies min(survivorCount, cap). Because HGCullingSystem.CullLights already receives maxCount=256, the desktop settings cap cannot further truncate that native result. The GameAssembly handoff, UnityPlayer native candidate gates, 16-byte LightCullResult, and 148-byte VisibleLight capture stride are source-closed. AddCullViewByMatrix also closes the scheduled view layout and visibility-then-camera-mask gate. Its downstream screen-threshold job formula, the target-frame pointer/count and unrelated live native lights remain capture-only.",
   "installedInputs": {
     "gameAssembly": {
       "sizeBytes": 280436712,
@@ -108,7 +108,19 @@
     },
     "installedPlayer": "Windows desktop",
     "deviceSelection": "HGRenderPipelineSettings.PopulateDeviceInfo uses UnityEngine.SystemInfo.GetDeviceType when no override is supplied",
-    "desktopCloudInheritance": "CloudDesktopOverride contains no PunctualLightMaxCount and inherits DesktopSettings"
+    "desktopCloudInheritance": "CloudDesktopOverride contains no PunctualLightMaxCount and inherits DesktopSettings",
+    "screenSizeMinimum": {
+      "constructorDefault": 0.0,
+      "desktopOrCloudOverride": null,
+      "onlyExtractedOverrides": {
+        "MobileSettings": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "managedInput": "square before AddCullViewByMatrix"
+    }
   },
   "capDefinitions": {
     "DesktopSettings": [
@@ -377,6 +389,155 @@
         }
       ]
     },
+    "unityPlayerCullViewConstructor": {
+      "internalCall": {
+        "index": 3304,
+        "name": "UnityEngine.HyperGryph.HGCullingSystem::AddCullViewByMatrix",
+        "targetVirtualAddress": "0x1800F9790"
+      },
+      "callChain": [
+        "0x1800F9790 injected binding and 16-argument repack",
+        "0x18104A190 six-plane extraction from the supplied culling matrix",
+        "0x18104A7A0 scheduled cull-view constructor"
+      ],
+      "managedInputContract": {
+        "sceneCullingMask": {
+          "argumentIndex": 2,
+          "scheduledStackSlot": "entry+0x50 / rbp+0x1D8",
+          "constructorRead": false,
+          "boundary": "forwarded by the binding/core but not read by the complete hash-pinned scheduled-constructor body"
+        },
+        "cameraCullingMask": {
+          "argumentIndex": 3,
+          "scheduledStackSlot": "entry+0x58 / rbp+0x1E0",
+          "viewRecordOffset": "0x04"
+        },
+        "screenSizeMinimum": {
+          "argumentIndex": 7,
+          "managedTransform": "cullingViewScreenSizeMin squared",
+          "scheduledStackSlot": "entry+0x78 / rbp+0x200",
+          "viewRecordOffset": "0x18",
+          "storage": "verbatim squared float",
+          "installedDesktopDefaultBeforeRuntimeOverride": 0.0
+        },
+        "occlusionDimensions": {
+          "argumentIndices": [
+            10,
+            11
+          ],
+          "scheduledStackSlots": [
+            "entry+0x90 / rbp+0x218",
+            "entry+0x98 / rbp+0x220"
+          ],
+          "allocationGate": "instanceId != 0 && width != 0 && height != 0"
+        },
+        "occlusionScreenSizeMinimum": {
+          "argumentIndex": 15,
+          "managedTransform": "ocScreenSizeMin squared",
+          "scheduledStackSlot": "entry+0xC0 / rbp+0x248",
+          "viewRecordOffset": "0x34"
+        }
+      },
+      "viewRecord": {
+        "instanceIdOffset": "0x00",
+        "cameraCullingMaskOffset": "0x04",
+        "forcedBit0Words": [
+          "0x08",
+          "0x0C"
+        ],
+        "lodCrossFadeDataOffset": "0x10",
+        "screenSizeMinimumSquaredOffset": "0x18",
+        "cameraTypeOffset": "0x2C",
+        "uniqueIdOffset": "0x30",
+        "occlusionScreenSizeMinimumSquaredOffset": "0x34",
+        "planeCountOffset": "0x58",
+        "normalizedPlaneArrayOffset": "0x5C",
+        "planeCount": 6
+      },
+      "candidateGateOrder": [
+        "candidate synchronous visibility/AABB-plane result bit 0",
+        "candidate mask-enabled flag bit 0",
+        "view cameraCullingMask & candidate layer mask != 0"
+      ],
+      "evidenceBoundary": {
+        "closed": [
+          "managed-to-native 16-argument repack",
+          "six culling-matrix plane extraction and normalization",
+          "scheduled view field projection",
+          "occlusion allocation gate",
+          "generic visibility then culling-mask evaluation order"
+        ],
+        "open": [
+          "downstream scheduled-job screen-size threshold equation",
+          "a separate consumer, if any, for the forwarded sceneCullingMask slot",
+          "target-frame runtime overrides and final survivor rows"
+        ]
+      },
+      "verifiedBodies": [
+        {
+          "label": "injected_binding",
+          "virtualAddress": "0x1800F9790",
+          "sizeBytes": 242,
+          "sha256": "386a7e4b825187d828baf76b7b87b9e017fd2be2cd10f431ffc2c63f56b538fd"
+        },
+        {
+          "label": "matrix_plane_core",
+          "virtualAddress": "0x18104A190",
+          "sizeBytes": 649,
+          "sha256": "cfdc4bfdf1e258b63bcc52842fa3fd274939ef858e8860ea7dc4d9788567c060"
+        },
+        {
+          "label": "scheduled_constructor",
+          "virtualAddress": "0x18104A7A0",
+          "sizeBytes": 4226,
+          "sha256": "e3f1d5de1f4f32ee7198d0d4a8a789b7789bf34c10b83ba3fc5281de62d1d681"
+        }
+      ],
+      "verifiedInstructionSlices": [
+        {
+          "label": "binding_to_matrix_plane_core",
+          "virtualAddress": "0x1800F9864",
+          "sizeBytes": 5,
+          "sha256": "d5992236bab8f2ea797ff91aed6b8f44f78bcbe2057c970e9df6d04b4c5bae4c"
+        },
+        {
+          "label": "matrix_plane_core_to_scheduled_constructor",
+          "virtualAddress": "0x18104A3D3",
+          "sizeBytes": 61,
+          "sha256": "903d0312b3f5c939338f2757b4c074aeb7536045af8a31c23f879f901c6bf4a3"
+        },
+        {
+          "label": "scheduled_view_header_projection",
+          "virtualAddress": "0x18104A83B",
+          "sizeBytes": 38,
+          "sha256": "75e8674da2a334a74da1db0c40f82c7a588e082bccd93ac1bcc6f82498def677"
+        },
+        {
+          "label": "scheduled_screen_camera_occlusion_projection",
+          "virtualAddress": "0x18104A8DB",
+          "sizeBytes": 79,
+          "sha256": "8cd4698b6ed8abdfae61da6bb5bc1c8eaa5fab92107f275c987a0d21ffdfff91"
+        },
+        {
+          "label": "scheduled_occlusion_allocation_gate",
+          "virtualAddress": "0x18104AA66",
+          "sizeBytes": 40,
+          "sha256": "5d4e1fb75c7debbd7629d317817576854ce28cbff8a712dc8506bf0e56899b12"
+        },
+        {
+          "label": "candidate_visibility_then_culling_mask_gate",
+          "virtualAddress": "0x181051FD3",
+          "sizeBytes": 32,
+          "sha256": "679343bdaa24fd536929f471f83c3c576248057bee693524e7f1caa2f1113e9c"
+        },
+        {
+          "label": "scheduled_constructor_return_handle",
+          "virtualAddress": "0x18104B7E3",
+          "sizeBytes": 63,
+          "sha256": "4e9439fe0a6f8815fcee146dc4aa608355571f4226ba88eb05836c54a26c1585"
+        }
+      ]
+    },
     "desktopNoSecondTruncation": true
   },
   "sourceFiles": {
@@ -395,6 +556,10 @@
     "light_cluster_source": {
       "path": "tools/FractalMiner/Assets/Project/EndField/HGRP/packages/com.hg.render-pipelines/runtime/HG/Rendering/Runtime/LightClusteringPassConstructor.cs",
       "sha256": "a81ef9843339141a86c910a6915ab96e647f1f43c25631d537fe872ef4ead888"
+    },
+    "hg_camera_source": {
+      "path": "tools/FractalMiner/Assets/Project/EndField/HGRP/packages/com.hg.render-pipelines/runtime/HG/Rendering/Runtime/HGCamera.cs",
+      "sha256": "2f0e098481f25f0e77de8d203c7cae1e4d748b4521d5157af0ab1aaa1163205a"
     }
   },
   "evidenceBoundary": {
@@ -407,12 +572,15 @@
       "the unique UnityPlayer CullLightsInternal_Injected binding and native candidate gate chain",
       "both GameAssembly DoECSCulling call sites and their exact input/result registers",
       "the 16-byte LightCullResult pointer/count ABI and NativeArray projection",
-      "the 148-byte VisibleLight capture stride plus SetupState type, priority, and world-position offsets"
+      "the 148-byte VisibleLight capture stride plus SetupState type, priority, and world-position offsets",
+      "the AddCullViewByMatrix binding, six-plane constructor, view layout, and generic visibility/mask gate order"
     ],
     "captureOnly": [
       "target-frame LightCullResult pointer, count, and 148-byte rows",
       "unrelated active native lights",
       "arbitrary/asymmetric final selected-view planes",
+      "the downstream scheduled-job screen-size threshold equation",
+      "any separate consumer of the forwarded sceneCullingMask slot",
       "future or separately delivered IFix/settings payloads"
     ]
   }

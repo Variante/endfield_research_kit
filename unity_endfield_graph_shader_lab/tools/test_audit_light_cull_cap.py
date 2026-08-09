@@ -51,7 +51,12 @@ class LightCullCapAuditTests(unittest.TestCase):
             ),
             "CloudDesktopOverride": "[Streaming@1000]\nchunkLoadRadius = 128\n",
             "ConsoleSettings": "[Lighting@1000]\nPunctualLightMaxCount = 256\n",
-            "MobileSettings": "[Lighting@1000]\nPunctualLightMaxCount = 32\n",
+            "MobileSettings": (
+                "[ECS@5000]\nCullingViewScreenSizeMin = 0.0\n\n"
+                "[ECS@3000]\nCullingViewScreenSizeMin = 0.0\n\n"
+                "[ECS@1000]\nCullingViewScreenSizeMin = 0.0\n\n"
+                "[Lighting@1000]\nPunctualLightMaxCount = 32\n"
+            ),
             "CinematicSettings": "[Lighting@1000]\nOtherValue = 1\n",
         }
         for logical_name, (file_name, _, _) in AUDIT.TEXT_ASSETS.items():
@@ -87,6 +92,23 @@ class LightCullCapAuditTests(unittest.TestCase):
                 AssertionError,
                 r"validator=light_cull_cap; check=cap_definitions;.*"
                 r"CommonSettings.*64",
+            ):
+                AUDIT.validate_settings_payloads(root, verify_hashes=False)
+
+    def test_unexpected_desktop_screen_threshold_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            self.write_fixture(root)
+            desktop = root / AUDIT.TEXT_ASSETS["DesktopSettings"][0]
+            desktop.write_text(
+                desktop.read_text(encoding="utf-8")
+                + "\n[ECS@1000]\nCullingViewScreenSizeMin = 0.01\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; check=screen_threshold_definitions;.*"
+                r"DesktopSettings.*0\.01",
             ):
                 AUDIT.validate_settings_payloads(root, verify_hashes=False)
 
@@ -138,6 +160,43 @@ class LightCullCapAuditTests(unittest.TestCase):
                 r"source=.*UnityPlayer.dll; expected=.*actual=",
             ):
                 AUDIT.validate_unity_native_producer(image)
+
+    def test_unity_scheduled_cull_view_constructor(self) -> None:
+        result = AUDIT.validate_unity_cull_view_constructor(
+            AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        )
+        self.assertEqual(result["internalCall"]["index"], 3304)
+        self.assertEqual(
+            result["managedInputContract"]["cameraCullingMask"]["viewRecordOffset"],
+            "0x04",
+        )
+        self.assertFalse(
+            result["managedInputContract"]["sceneCullingMask"]["constructorRead"]
+        )
+        self.assertEqual(result["viewRecord"]["planeCount"], 6)
+        self.assertEqual(
+            result["candidateGateOrder"][0],
+            "candidate synchronous visibility/AABB-plane result bit 0",
+        )
+
+    def test_changed_scheduled_cull_view_body_fails_closed(self) -> None:
+        image = AUDIT.PEImage(AUDIT.UNITY_PLAYER)
+        original_read = image.read
+
+        def changed_read(virtual_address: int, size: int) -> bytes:
+            data = bytearray(original_read(virtual_address, size))
+            if virtual_address == 0x18104A7A0 and size == 0x1082:
+                data[0] ^= 1
+            return bytes(data)
+
+        with mock.patch.object(image, "read", changed_read):
+            with self.assertRaisesRegex(
+                AssertionError,
+                r"validator=light_cull_cap; "
+                r"check=unity_cull_view_scheduled_constructor_sha256; "
+                r"source=.*UnityPlayer.dll; expected=.*actual=",
+            ):
+                AUDIT.validate_unity_cull_view_constructor(image)
 
 
 if __name__ == "__main__":
