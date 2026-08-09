@@ -680,6 +680,36 @@ body:not(.show-debug) .mp-source-provenance { display: none; }
   overflow: auto;
 }
 
+.mp-unassigned-story-row {
+  display: grid;
+  gap: 4px;
+}
+
+.mp-timeline-runtime {
+  padding: 5px 7px;
+  border: 1px solid #8aa0a6;
+  border-left: 3px solid #657f87;
+  border-radius: 7px;
+  background: rgba(101, 127, 135, 0.07);
+  font-size: 8px;
+}
+
+.mp-timeline-runtime > summary {
+  cursor: pointer;
+  color: #506970;
+}
+
+.mp-timeline-runtime article {
+  display: grid;
+  gap: 2px;
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px dashed #aebdc1;
+}
+
+.mp-timeline-runtime p,
+.mp-timeline-runtime small { margin: 0; overflow-wrap: anywhere; }
+
 /* Source-proven non-mission content is a closed class, not an open gap. */
 .mp-non-mission-content > summary {
   color: var(--muted);

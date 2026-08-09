@@ -8,6 +8,7 @@ from pathlib import Path
 from scripts.story_builder.timeline_recovery import (
     path_id_suffix,
     recover_black_timeline_attachments,
+    recover_timeline_text_attachments,
 )
 
 
@@ -107,6 +108,17 @@ class TimelineBlackAttachmentTests(unittest.TestCase):
             self.assertEqual("source_timeline_actor_root", rows[0]["dialogJoin"])
             self.assertEqual(asset_path.as_posix(), rows[0]["assetPath"])
             self.assertEqual(track_path.as_posix(), rows[0]["trackPath"])
+
+            general_rows = recover_timeline_text_attachments(
+                str(line_orders_path),
+                str(extract_dir),
+                str(root / "missing_dialog_registry.json"),
+                line_id_to_story_key={"black_e5m1_1_001": "scene_general"},
+                playable_asset_type_names=("DialogCenterTextPlayableAsset",),
+            )
+            self.assertEqual(1, len(general_rows))
+            self.assertEqual("scene_general", general_rows[0]["key"])
+            self.assertEqual(2.5, general_rows[0]["clipStart"])
 
             registry_path = root / "dialog_id_table_index.json"
             registry_path.write_text(

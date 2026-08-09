@@ -30,6 +30,7 @@ Latest CN reports:
 | Local DialogTree conditional census | 13 exact same-Story routes / 26 serialized arms across 7 Story files; hash-locked `DialogTreeIfNode` polarity, 0 validation failures; selection evidence only, never file order |
 | Serialized DialogTree IfNode census | 78 binary-validated nodes / 156 arms; 1 malformed node retained as a structured failure; internal selection evidence only |
 | Timeline option-route binary contract | 25 route groups / 84 related-file occurrences; exact serialized Runtime Jump/clip tracks plus hash-locked option-index/active-clip contract; 0 validation failures; selection/track evidence only |
+| Timeline-embedded Story runtime | 2 carrier families discovered by metadata shape / 21 exact clips / 16 Story keys / 14 Timeline roots / 1 same-track local-order edge / 0 ownership or branch-selection edges; all playable, track, and Actor-root objects retain original-byte SHA-256 |
 | Binary parallel-fan-out authority | 1 structural scheduler carrier / 2 admitted writer methods / 3 decoded direct calls / 44 Split branch groups / 77 transitions / 104 evidence rows |
 | Source-comparable scene pairs | 3,845 / 249,695 (1.54%) |
 | Cyclic components | 0 |
@@ -116,6 +117,20 @@ in five payloads.
   manual order never enter this provenance pass.
 - Typed LevelScript, DialogTree, Timeline, FMV, quest-state, interactive, and
   selected runtime receiver evidence.
+- A corpus-driven Timeline text-carrier audit discovers every current
+  `PlayableAsset` with serialized `_textId[_N]`, `CreatePlayable`, and
+  `_GetText` shape, then requires the installed GameAssembly call chain into a
+  text behaviour plus both localization resolvers. It currently finds
+  `DialogCenterTextPlayableAsset` and `LeftSubtitlePlayableAsset`, then joins
+  their exact PathIDs to clips, tracks, and Actor roots without Story/Timeline
+  allowlists or companion-track names. Twenty-one clips cover 16 Story keys in
+  14 roots. Non-overlapping times prove one local edge,
+  `black_c31m2_2 -> black_c31m2_6`, inside one track/option lane. This is not a
+  mission-order edge. For `black_c31m1_3`, live left-subtitle presentation at
+  0.167s for 3.7s and all three original object hashes are proven, while its
+  mission/quest owner and branch selection remain unknown. Ambiguous emitted
+  line IDs are enumerated and excluded rather than guessed; OCR and overrides
+  are not inputs.
 - A general, id-free direct-call census now maps the complete hash-pinned
   `GameAssembly.dll`/metadata method corpus and classifies every caller crossing
   MissionSystem, DynamicScene, LevelScript, or Story API families. Four
@@ -1598,7 +1613,9 @@ groups unchanged; connected/unlinked Story counts are now 4,237 / 1,327.
    has no MissionRuntime payload; this is not inferred ownership.
 2. **Black screens:** 64 remain unassigned. Fifty-eight are definition-only
    without a current-build playback consumer; five have exact native playback
-   but no static owner, and one retains unresolved serialized containment.
+   but no static owner. The remaining `black_c31m1_3` now has binary-proven live
+   Timeline presentation and exact serialized clip/track/root containment, but
+   still no static mission/quest owner or branch selector.
 3. **Story recovery queues:** all quest-attachment gaps are now either strict
    typed attachments or bounded graph-neutral diagnostics. Main, event, major,
    character, and other missions have no actionable core-isolated files. Missing
@@ -2018,6 +2035,7 @@ reports/mission_order/source_story_order_cross_reference_CN.md
 reports/mission_order/source_story_gap_queue_CN.md
 reports/story/recovery/native_receiver_activation_frontier.md
 reports/story/recovery/protocol_registry_audit.md
+reports/story/recovery/timeline_embedded_story_runtime_audit.md
 reports/story/build/narrative_videos_CN.md
 ```
 
@@ -2028,6 +2046,7 @@ Useful commands:
 .\export.bat --mission-pipeline-data-only
 python tools\endfield_source_graph.py story STORY_KEY
 python scripts\story_recovery\build_source_story_gap_queue.py --language CN
+python scripts\story_recovery\build_timeline_embedded_story_runtime_audit.py
 ```
 
 Treat report counts as current truth; this note records only the stable
